@@ -1,0 +1,3891 @@
+import {
+  Evidence,
+  EvidenceType,
+  Signal,
+  SignalCategory,
+  FreshnessState,
+  Scoping,
+  IdGenerator,
+  makeRef,
+  Freshness,
+  PageContentPayload,
+  RedirectPayload,
+  CheckoutIndicatorPayload,
+  ProviderIndicatorPayload,
+  PlatformIndicatorPayload,
+  PolicyPagePayload,
+  FormPayload,
+  HttpResponsePayload,
+  ScriptPayload,
+  IframePayload,
+  TechnologyDetectedPayload,
+  StructuredDataItemPayload,
+  MobileVerificationResultPayload,
+  ClassifiedRuntimeErrorsPayload,
+  NucleiMatchPayload,
+  KatanaDiscoveryPayload,
+  NetworkAnalysisPayload,
+  MetaPayload,
+  LinkPayload,
+  BrandImpersonationMatchPayload,
+  BehavioralSessionPayload,
+  SurfaceVitalityPayload,
+} from '../domain';
+import { BuiltGraph, GraphQuery } from '../graph';
+
+// ──────────────────────────────────────────────
+// Signal Engine — extracts signals from evidence + graph
+// Deterministic: scoped ID generator
+// ──────────────────────────────────────────────
+
+export function extractSignals(
+  evidence: Evidence[],
+  graph: BuiltGraph,
+  scoping: Scoping,
+  cycle_ref: string,
+): Signal[] {
+  const signals: Signal[] = [];
+  const query = new GraphQuery(graph);
+  const ids = new IdGenerator('sig');
+
+  // Group evidence by type for efficient processing
+  const byType = new Map<EvidenceType, Evidence[]>();
+  for (const e of evidence) {
+    const list = byType.get(e.evidence_type) || [];
+    list.push(e);
+    byType.set(e.evidence_type, list);
+  }
+
+  // Checkout signals
+  extractCheckoutSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Policy signals
+  extractPolicySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Trust signals
+  extractTrustSignals(query, scoping, cycle_ref, signals, evidence, ids);
+
+  // Measurement signals
+  extractMeasurementSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Platform signals
+  extractPlatformSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Operational signals
+  extractOperationalSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Revenue signals — commercial flow analysis
+  extractRevenueFlowSignals(byType, query, scoping, cycle_ref, signals, evidence, ids);
+
+  // Friction signals — conversion path obstacles
+  extractFrictionSignals(byType, query, scoping, cycle_ref, signals, evidence, ids);
+
+  // Clarity signals — CTA and conversion intent
+  extractClaritySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Support signals — contact and support channel detection
+  extractSupportSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Expectation signals — pricing clarity and post-purchase guidance
+  extractExpectationSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 30: Data boundary signals — forms sending data to unrecognized external domains
+  extractDataBoundarySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 30: Provider fragmentation signals — multiple competing payment providers
+  extractProviderFragmentationSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 30B: Redirect trust erosion on checkout path
+  extractRedirectTrustSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 30B: Language discontinuity across commercial journey
+  extractLanguageDiscontinuitySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 30B: Orphan commercial pages (no inbound links from graph)
+  extractOrphanCommercialSignals(query, byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 30B: Untrusted external embeds on commercial pages
+  extractUntrustedEmbedSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 30B: Platform-specific checkout risk patterns
+  extractPlatformCheckoutRiskSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 30B: Post-purchase confirmation gap
+  extractPostPurchaseGapSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 2: Signals from deepened collection
+  extractPolicyDepthSignals(byType, scoping, cycle_ref, signals, ids);
+  extractSupportWidgetSignals(byType, scoping, cycle_ref, signals, ids);
+  extractTrustSignalDepthSignals(byType, scoping, cycle_ref, signals, ids);
+  extractTrackingStackSignals(byType, scoping, cycle_ref, signals, ids);
+  extractConsentMeasurementSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 2B: Mobile & runtime signals
+  extractMobileVerificationSignals(byType, scoping, cycle_ref, signals, ids);
+  extractRuntimeErrorSignals(byType, scoping, cycle_ref, signals, ids);
+  extractSecondaryFlowSignals(query, byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 2C: Composite signals from current evidence
+  extractSupportJourneyPositionSignals(byType, scoping, cycle_ref, signals, ids);
+  extractHiddenReassuranceRouteSignals(query, byType, scoping, cycle_ref, signals, ids);
+  extractAlternateFlowMeasurementSignals(query, byType, scoping, cycle_ref, signals, ids);
+  extractRuntimeReassuranceBreakSignals(byType, scoping, cycle_ref, signals, ids);
+  extractProviderPathWeaknessSignals(byType, scoping, cycle_ref, signals, ids);
+  extractAlternateFlowTrustMeasurementSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 3A: Channel integrity signals from Nuclei evidence
+  extractChannelIntegritySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 3B: Deep discovery signals from Katana evidence
+  extractDeepDiscoverySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 2D: Network analysis signals from browser verification
+  extractNetworkAnalysisSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 3E: Discoverability signals from existing evidence
+  extractDiscoverabilitySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 3E: Brand integrity signals from impersonation evidence
+  extractBrandIntegritySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 4B: Behavioral intelligence signals from snippet evidence
+  extractBehavioralSignals(byType, scoping, cycle_ref, signals, ids);
+
+  return signals;
+}
+
+function extractCheckoutSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  const providerIndicators = byType.get(EvidenceType.ProviderIndicator) || [];
+
+  if (checkoutIndicators.length === 0) {
+    // No checkout detected
+    signals.push(createSignal({ ids,
+      signal_key: 'checkout_detected',
+      category: SignalCategory.Checkout,
+      attribute: 'checkout.detected',
+      value: 'false',
+      confidence: 60,
+      scoping, cycle_ref,
+      evidence_refs: [],
+      description: 'No checkout indicators detected on the site',
+    }));
+    return;
+  }
+
+  // Checkout mode detection
+  const externalCheckouts = checkoutIndicators.filter(
+    (e) => (e.payload as CheckoutIndicatorPayload).is_external,
+  );
+  const embeddedCheckouts = checkoutIndicators.filter(
+    (e) => (e.payload as CheckoutIndicatorPayload).checkout_mode === 'embedded',
+  );
+
+  if (externalCheckouts.length > 0) {
+    const hosts = new Set(
+      externalCheckouts.map((e) => (e.payload as CheckoutIndicatorPayload).target_host).filter(Boolean),
+    );
+    signals.push(createSignal({ ids,
+      signal_key: 'checkout_mode',
+      category: SignalCategory.Checkout,
+      attribute: 'checkout.mode',
+      value: 'redirect',
+      confidence: 70,
+      scoping, cycle_ref,
+      evidence_refs: externalCheckouts.map((e) => makeRef('evidence', e.id)),
+      description: `Checkout redirects to external host(s): ${Array.from(hosts).join(', ')}`,
+    }));
+
+    signals.push(createSignal({ ids,
+      signal_key: 'checkout_off_domain',
+      category: SignalCategory.Checkout,
+      attribute: 'checkout.off_domain',
+      value: 'true',
+      confidence: 75,
+      scoping, cycle_ref,
+      evidence_refs: externalCheckouts.map((e) => makeRef('evidence', e.id)),
+      description: 'Checkout flow leaves the primary domain',
+    }));
+  } else if (embeddedCheckouts.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'checkout_mode',
+      category: SignalCategory.Checkout,
+      attribute: 'checkout.mode',
+      value: 'embedded',
+      confidence: 65,
+      scoping, cycle_ref,
+      evidence_refs: embeddedCheckouts.map((e) => makeRef('evidence', e.id)),
+      description: 'Checkout appears to be embedded on the page',
+    }));
+  }
+
+  // Provider detection
+  if (providerIndicators.length > 0) {
+    const providers = new Map<string, { confidence: number; refs: string[] }>();
+    for (const e of providerIndicators) {
+      const p = e.payload as ProviderIndicatorPayload;
+      const existing = providers.get(p.provider_name);
+      if (existing) {
+        existing.confidence = Math.max(existing.confidence, p.confidence);
+        existing.refs.push(makeRef('evidence', e.id));
+      } else {
+        providers.set(p.provider_name, {
+          confidence: p.confidence,
+          refs: [makeRef('evidence', e.id)],
+        });
+      }
+    }
+
+    for (const [name, data] of providers) {
+      signals.push(createSignal({ ids,
+        signal_key: `provider_${name}`,
+        category: SignalCategory.Checkout,
+        attribute: 'provider.guess',
+        value: name,
+        confidence: data.confidence,
+        scoping, cycle_ref,
+        evidence_refs: data.refs,
+        description: `Payment provider detected: ${name}`,
+      }));
+    }
+  }
+}
+
+function extractPolicySignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+  const policyTypes = new Set(
+    policyPages.map((e) => (e.payload as PolicyPagePayload).policy_type),
+  );
+
+  const requiredPolicies = ['privacy', 'terms', 'refund'];
+  for (const policy of requiredPolicies) {
+    const present = policyTypes.has(policy as any);
+    const refs = policyPages
+      .filter((e) => (e.payload as PolicyPagePayload).policy_type === policy)
+      .map((e) => makeRef('evidence', e.id));
+
+    signals.push(createSignal({ ids,
+      signal_key: `policy_${policy}_present`,
+      category: SignalCategory.Policy,
+      attribute: `policy.${policy}.present`,
+      value: present ? 'true' : 'false',
+      confidence: present ? 65 : 50,
+      scoping, cycle_ref,
+      evidence_refs: refs,
+      description: present
+        ? `${policy} policy page detected`
+        : `No ${policy} policy page found`,
+    }));
+  }
+
+  // Overall policy coverage
+  const coverageCount = requiredPolicies.filter((p) => policyTypes.has(p as any)).length;
+  const coverageRatio = coverageCount / requiredPolicies.length;
+  const coverageLevel = coverageRatio >= 1 ? 'full' : coverageRatio >= 0.5 ? 'partial' : 'weak';
+
+  signals.push(createSignal({ ids,
+    signal_key: 'policy_coverage',
+    category: SignalCategory.Policy,
+    attribute: 'policy.coverage',
+    value: coverageLevel,
+    numeric_value: Math.round(coverageRatio * 100),
+    confidence: 60,
+    scoping, cycle_ref,
+    evidence_refs: policyPages.map((e) => makeRef('evidence', e.id)),
+    description: `Policy coverage: ${coverageCount}/${requiredPolicies.length} required policies found`,
+  }));
+}
+
+function extractTrustSignals(
+  query: GraphQuery,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  evidence: Evidence[],
+  ids: IdGenerator,
+): void {
+  const boundaries = query.findTrustBoundaries();
+
+  if (boundaries.trust_gaps.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'trust_boundary_crossed',
+      category: SignalCategory.Trust,
+      attribute: 'trust.boundary_crossed',
+      value: 'true',
+      numeric_value: boundaries.trust_gaps.length,
+      confidence: 70,
+      scoping, cycle_ref,
+      evidence_refs: boundaries.boundary_edges
+        .filter((e) => e.evidence_ref)
+        .map((e) => e.evidence_ref!),
+      description: `${boundaries.trust_gaps.length} trust boundary crossing(s) detected to: ${boundaries.external_hosts.join(', ')}`,
+    }));
+
+    const highSeverityGaps = boundaries.trust_gaps.filter((g) => g.severity === 'high');
+    if (highSeverityGaps.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: 'weak_trust_surface',
+        category: SignalCategory.Trust,
+        attribute: 'trust.surface_weakness',
+        value: 'high',
+        numeric_value: highSeverityGaps.length,
+        confidence: 65,
+        scoping, cycle_ref,
+        evidence_refs: [],
+        description: `${highSeverityGaps.length} high-severity trust gap(s) — unknown providers or unverified handoffs`,
+      }));
+    }
+  }
+
+  // Redirect chains
+  const redirectEdges = query.findRedirectChains();
+  if (redirectEdges.length > 0) {
+    const redirectEvidence = evidence.filter(
+      (e) => e.evidence_type === EvidenceType.Redirect,
+    );
+    const maxHops = Math.max(
+      ...redirectEvidence.map((e) => (e.payload as any).hop_count || 0),
+    );
+
+    if (maxHops > 2) {
+      signals.push(createSignal({ ids,
+        signal_key: 'external_redirect_chain',
+        category: SignalCategory.Trust,
+        attribute: 'trust.redirect_chain_length',
+        value: maxHops > 3 ? 'high' : 'medium',
+        numeric_value: maxHops,
+        confidence: 80,
+        scoping, cycle_ref,
+        evidence_refs: redirectEvidence.map((e) => makeRef('evidence', e.id)),
+        description: `Redirect chain with ${maxHops} hop(s) detected`,
+      }));
+    }
+  }
+}
+
+function extractMeasurementSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const scripts = byType.get(EvidenceType.Script) || [];
+  const analyticsPatterns = [
+    { name: 'google_analytics', regex: /google-analytics|googletagmanager|gtag/i },
+    { name: 'facebook_pixel', regex: /connect\.facebook|fbevents/i },
+    { name: 'hotjar', regex: /hotjar/i },
+    { name: 'segment', regex: /segment\.com|cdn\.segment/i },
+  ];
+
+  const detectedAnalytics: string[] = [];
+  for (const pattern of analyticsPatterns) {
+    const found = scripts.some((e) =>
+      pattern.regex.test((e.payload as any).src || ''),
+    );
+    if (found) detectedAnalytics.push(pattern.name);
+  }
+
+  const coverage = detectedAnalytics.length >= 2 ? 'adequate' :
+    detectedAnalytics.length === 1 ? 'shallow' : 'none';
+
+  signals.push(createSignal({ ids,
+    signal_key: 'measurement_coverage',
+    category: SignalCategory.Measurement,
+    attribute: 'measurement.coverage',
+    value: coverage,
+    numeric_value: detectedAnalytics.length,
+    confidence: 55,
+    scoping, cycle_ref,
+    evidence_refs: scripts.map((e) => makeRef('evidence', e.id)),
+    description: `Measurement coverage: ${coverage} (${detectedAnalytics.length} analytics tool(s): ${detectedAnalytics.join(', ') || 'none'})`,
+  }));
+}
+
+function extractPlatformSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const platforms = byType.get(EvidenceType.PlatformIndicator) || [];
+
+  for (const e of platforms) {
+    const p = e.payload as PlatformIndicatorPayload;
+    signals.push(createSignal({ ids,
+      signal_key: `platform_${p.platform_name}`,
+      category: SignalCategory.Platform,
+      attribute: 'platform.detected',
+      value: p.platform_name,
+      confidence: p.confidence,
+      scoping, cycle_ref,
+      evidence_refs: [makeRef('evidence', e.id)],
+      description: `Platform detected: ${p.platform_name} (via ${p.detection_source})`,
+    }));
+  }
+}
+
+function extractOperationalSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const httpResponses = byType.get(EvidenceType.HttpResponse) || [];
+
+  // Check for slow responses
+  const slowPages = httpResponses.filter(
+    (e) => (e.payload as HttpResponsePayload).response_time_ms > 3000,
+  );
+  if (slowPages.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'slow_response',
+      category: SignalCategory.Operational,
+      attribute: 'operational.slow_responses',
+      value: 'true',
+      numeric_value: slowPages.length,
+      confidence: 80,
+      scoping, cycle_ref,
+      evidence_refs: slowPages.map((e) => makeRef('evidence', e.id)),
+      description: `${slowPages.length} page(s) with response time > 3s`,
+    }));
+  }
+
+  // Check for error responses
+  const errorPages = httpResponses.filter(
+    (e) => (e.payload as HttpResponsePayload).status_code >= 400,
+  );
+  if (errorPages.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'http_errors',
+      category: SignalCategory.Operational,
+      attribute: 'operational.http_errors',
+      value: 'true',
+      numeric_value: errorPages.length,
+      confidence: 90,
+      scoping, cycle_ref,
+      evidence_refs: errorPages.map((e) => makeRef('evidence', e.id)),
+      description: `${errorPages.length} page(s) returning HTTP errors`,
+    }));
+  }
+
+  // Phase 30: Critical page errors — HTTP errors specifically on revenue-critical pages
+  const criticalPagePattern = /checkout|cart|pay|payment|pricing|login|order|billing|purchase/i;
+  const criticalErrors = httpResponses.filter((e) => {
+    const p = e.payload as HttpResponsePayload;
+    return p.status_code >= 400 && criticalPagePattern.test(p.url);
+  });
+  if (criticalErrors.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'critical_page_error',
+      category: SignalCategory.Operational,
+      attribute: 'operational.critical_page_error',
+      value: 'true',
+      numeric_value: criticalErrors.length,
+      confidence: 90,
+      scoping, cycle_ref,
+      evidence_refs: criticalErrors.map((e) => makeRef('evidence', e.id)),
+      description: `${criticalErrors.length} revenue-critical page(s) (checkout, cart, pricing, login) returning HTTP errors. Direct conversion path break.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Revenue Flow Signals
+// ──────────────────────────────────────────────
+
+function extractRevenueFlowSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  query: GraphQuery,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  evidence: Evidence[],
+  ids: IdGenerator,
+): void {
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  const forms = byType.get(EvidenceType.Form) || [];
+  const redirects = byType.get(EvidenceType.Redirect) || [];
+  const pages = byType.get(EvidenceType.PageContent) || [];
+
+  // Funnel entry detection — do we see a clear conversion path start?
+  const hasCheckout = checkoutIndicators.length > 0;
+  const hasForms = forms.length > 0;
+  const hasConversionPath = hasCheckout || hasForms;
+
+  signals.push(createSignal({ ids,
+    signal_key: 'funnel_entry_detected',
+    category: SignalCategory.Revenue,
+    attribute: 'revenue.funnel_entry',
+    value: hasConversionPath ? 'true' : 'false',
+    confidence: hasConversionPath ? 70 : 55,
+    scoping, cycle_ref,
+    evidence_refs: [
+      ...checkoutIndicators.slice(0, 3).map(e => makeRef('evidence', e.id)),
+      ...forms.slice(0, 3).map(e => makeRef('evidence', e.id)),
+    ],
+    description: hasConversionPath
+      ? 'Conversion path entry detected via checkout indicators or forms.'
+      : 'No clear conversion path entry found.',
+  }));
+
+  // Redirect before checkout — friction in commercial path
+  const checkoutRedirects = redirects.filter(e => {
+    const p = e.payload as RedirectPayload;
+    const target = (p.target_url || '').toLowerCase();
+    return /checkout|cart|pay|order|billing/.test(target);
+  });
+
+  if (checkoutRedirects.length > 0) {
+    const maxHops = Math.max(...checkoutRedirects.map(e => (e.payload as RedirectPayload).hop_count));
+    signals.push(createSignal({ ids,
+      signal_key: 'redirect_before_checkout',
+      category: SignalCategory.Revenue,
+      attribute: 'revenue.redirect_before_checkout',
+      value: maxHops > 2 ? 'high' : 'medium',
+      numeric_value: maxHops,
+      confidence: 75,
+      scoping, cycle_ref,
+      evidence_refs: checkoutRedirects.map(e => makeRef('evidence', e.id)),
+      description: `${checkoutRedirects.length} redirect(s) before checkout (max ${maxHops} hops). Adds friction to the revenue path.`,
+    }));
+  }
+
+  // Off-domain checkout — revenue leaves the domain
+  const externalCheckouts = checkoutIndicators.filter(
+    e => (e.payload as CheckoutIndicatorPayload).is_external,
+  );
+  if (externalCheckouts.length > 0) {
+    const hosts = new Set(
+      externalCheckouts.map(e => (e.payload as CheckoutIndicatorPayload).target_host).filter(Boolean),
+    );
+    signals.push(createSignal({ ids,
+      signal_key: 'off_domain_checkout_revenue',
+      category: SignalCategory.Revenue,
+      attribute: 'revenue.off_domain_checkout',
+      value: 'true',
+      numeric_value: hosts.size,
+      confidence: 75,
+      scoping, cycle_ref,
+      evidence_refs: externalCheckouts.map(e => makeRef('evidence', e.id)),
+      description: `Checkout leaves domain to ${Array.from(hosts).join(', ')}. Revenue attribution and trust continuity at risk.`,
+    }));
+  }
+
+  // Fragmented conversion path — checkout scattered across multiple external hosts
+  const externalFormHosts = new Set(
+    forms.filter(e => (e.payload as FormPayload).is_external)
+      .map(e => (e.payload as FormPayload).target_host).filter(Boolean),
+  );
+  const allExternalHosts = new Set([
+    ...Array.from(externalFormHosts),
+    ...externalCheckouts.map(e => (e.payload as CheckoutIndicatorPayload).target_host).filter(Boolean),
+  ]);
+
+  if (allExternalHosts.size > 1) {
+    signals.push(createSignal({ ids,
+      signal_key: 'fragmented_conversion_path',
+      category: SignalCategory.Revenue,
+      attribute: 'revenue.fragmented_path',
+      value: 'true',
+      numeric_value: allExternalHosts.size,
+      confidence: 65,
+      scoping, cycle_ref,
+      evidence_refs: [
+        ...externalCheckouts.slice(0, 3).map(e => makeRef('evidence', e.id)),
+        ...forms.filter(e => (e.payload as FormPayload).is_external).slice(0, 3).map(e => makeRef('evidence', e.id)),
+      ],
+      description: `Conversion path fragments across ${allExternalHosts.size} external hosts: ${Array.from(allExternalHosts).join(', ')}.`,
+    }));
+  }
+
+  // Missing tracking on key commercial steps
+  const scripts = byType.get(EvidenceType.Script) || [];
+  const analyticsPatterns = [
+    /google-analytics|googletagmanager|gtag/i,
+    /connect\.facebook|fbevents/i,
+    /segment\.com|cdn\.segment/i,
+  ];
+
+  // Check if checkout/cart pages have analytics
+  const commercialPageUrls = new Set<string>();
+  for (const ci of checkoutIndicators) {
+    commercialPageUrls.add((ci.payload as CheckoutIndicatorPayload).page_url);
+  }
+  for (const f of forms) {
+    if ((f.payload as FormPayload).has_payment_fields) {
+      commercialPageUrls.add((f.payload as FormPayload).page_url);
+    }
+  }
+
+  if (commercialPageUrls.size > 0) {
+    const scriptsOnCommercialPages = scripts.filter(e =>
+      commercialPageUrls.has((e.payload as ScriptPayload).page_url),
+    );
+    const hasAnalyticsOnCommercial = scriptsOnCommercialPages.some(e =>
+      analyticsPatterns.some(p => p.test((e.payload as ScriptPayload).src)),
+    );
+
+    if (!hasAnalyticsOnCommercial) {
+      signals.push(createSignal({ ids,
+        signal_key: 'missing_tracking_on_commercial',
+        category: SignalCategory.Measurement,
+        attribute: 'revenue.missing_tracking_commercial',
+        value: 'true',
+        confidence: 60,
+        scoping, cycle_ref,
+        evidence_refs: Array.from(commercialPageUrls).slice(0, 3).map(url =>
+          makeRef('evidence', checkoutIndicators.find(e => (e.payload as CheckoutIndicatorPayload).page_url === url)?.id || ''),
+        ).filter(r => !r.endsWith(':')),
+        description: `No analytics tracking detected on ${commercialPageUrls.size} commercial page(s). Conversion measurement blind spot.`,
+      }));
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Friction Signals
+// ──────────────────────────────────────────────
+
+function extractFrictionSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  query: GraphQuery,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  evidence: Evidence[],
+  ids: IdGenerator,
+): void {
+  const httpResponses = byType.get(EvidenceType.HttpResponse) || [];
+  const redirects = byType.get(EvidenceType.Redirect) || [];
+  const forms = byType.get(EvidenceType.Form) || [];
+
+  // Excessive redirects — more than 3 total redirect chains
+  const totalRedirectHops = redirects.reduce(
+    (sum, e) => sum + ((e.payload as RedirectPayload).hop_count || 0), 0,
+  );
+  if (totalRedirectHops > 3) {
+    signals.push(createSignal({ ids,
+      signal_key: 'excessive_redirects',
+      category: SignalCategory.Friction,
+      attribute: 'friction.excessive_redirects',
+      value: totalRedirectHops > 6 ? 'high' : 'medium',
+      numeric_value: totalRedirectHops,
+      confidence: 80,
+      scoping, cycle_ref,
+      evidence_refs: redirects.map(e => makeRef('evidence', e.id)),
+      description: `${totalRedirectHops} total redirect hops across the site. Each redirect adds latency and drop-off risk.`,
+    }));
+  }
+
+  // Slow response on critical path — pages with response > 2s
+  const slowCritical = httpResponses.filter(e => {
+    const p = e.payload as HttpResponsePayload;
+    return p.response_time_ms > 2000;
+  });
+  if (slowCritical.length > 0) {
+    const avgTime = Math.round(
+      slowCritical.reduce((s, e) => s + (e.payload as HttpResponsePayload).response_time_ms, 0) / slowCritical.length,
+    );
+    signals.push(createSignal({ ids,
+      signal_key: 'slow_critical_path',
+      category: SignalCategory.Friction,
+      attribute: 'friction.slow_critical_path',
+      value: avgTime > 4000 ? 'high' : 'medium',
+      numeric_value: avgTime,
+      confidence: 80,
+      scoping, cycle_ref,
+      evidence_refs: slowCritical.map(e => makeRef('evidence', e.id)),
+      description: `${slowCritical.length} page(s) with response time > 2s (avg ${avgTime}ms). Slow pages on the critical path cause conversion drop-off.`,
+    }));
+  }
+
+  // Broken form actions — forms posting to URLs that returned errors
+  const errorUrls = new Set(
+    httpResponses
+      .filter(e => (e.payload as HttpResponsePayload).status_code >= 400)
+      .map(e => (e.payload as HttpResponsePayload).url),
+  );
+
+  const brokenForms = forms.filter(e => {
+    const action = (e.payload as FormPayload).action;
+    return errorUrls.has(action);
+  });
+  if (brokenForms.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'broken_form_action',
+      category: SignalCategory.Friction,
+      attribute: 'friction.broken_form_action',
+      value: 'true',
+      numeric_value: brokenForms.length,
+      confidence: 85,
+      scoping, cycle_ref,
+      evidence_refs: brokenForms.map(e => makeRef('evidence', e.id)),
+      description: `${brokenForms.length} form(s) submit to URLs returning errors. Direct revenue impact if these are conversion forms.`,
+    }));
+  }
+
+  // Domain switch without context — links to external domains without clear provider association
+  const boundaries = query.findTrustBoundaries();
+  const unknownExternalHandoffs = boundaries.trust_gaps.filter(g => g.gap_type === 'unknown_provider');
+  if (unknownExternalHandoffs.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'domain_switch_without_context',
+      category: SignalCategory.Friction,
+      attribute: 'friction.domain_switch_no_context',
+      value: 'true',
+      numeric_value: unknownExternalHandoffs.length,
+      confidence: 65,
+      scoping, cycle_ref,
+      evidence_refs: unknownExternalHandoffs
+        .filter(g => g.edge.evidence_ref)
+        .map(g => g.edge.evidence_ref!),
+      description: `${unknownExternalHandoffs.length} handoff(s) to unknown external domain(s). Users may lose trust and abandon.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Clarity Signals
+// ──────────────────────────────────────────────
+
+function extractClaritySignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  const forms = byType.get(EvidenceType.Form) || [];
+
+  // No primary conversion path — no checkout indicators found on any page
+  if (checkoutIndicators.length === 0 && forms.filter(e => (e.payload as FormPayload).has_payment_fields).length === 0) {
+    if (pages.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: 'no_primary_conversion_path',
+        category: SignalCategory.Clarity,
+        attribute: 'clarity.no_primary_conversion_path',
+        value: 'true',
+        confidence: 55,
+        scoping, cycle_ref,
+        evidence_refs: pages.slice(0, 3).map(e => makeRef('evidence', e.id)),
+        description: 'No clear primary conversion path detected. Users may not find how to convert.',
+      }));
+    }
+  }
+
+  // Multiple competing CTAs — multiple forms on the same page
+  const pageFormCounts = new Map<string, number>();
+  for (const f of forms) {
+    const url = (f.payload as FormPayload).page_url;
+    pageFormCounts.set(url, (pageFormCounts.get(url) || 0) + 1);
+  }
+  const pagesWithMultipleForms = Array.from(pageFormCounts.entries())
+    .filter(([_, count]) => count > 2);
+
+  if (pagesWithMultipleForms.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'multiple_competing_ctas',
+      category: SignalCategory.Clarity,
+      attribute: 'clarity.competing_ctas',
+      value: 'true',
+      numeric_value: pagesWithMultipleForms.length,
+      confidence: 55,
+      scoping, cycle_ref,
+      evidence_refs: forms.slice(0, 5).map(e => makeRef('evidence', e.id)),
+      description: `${pagesWithMultipleForms.length} page(s) with 3+ forms. Multiple competing CTAs reduce conversion clarity.`,
+    }));
+  }
+
+  // Missing policy near checkout — checkout pages without linked policy documents
+  if (checkoutIndicators.length > 0) {
+    const checkoutPageUrls = new Set(
+      checkoutIndicators.map(e => (e.payload as CheckoutIndicatorPayload).page_url),
+    );
+    const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+    const policyLinkedFromCheckout = policyPages.some(e => {
+      const policyPageUrl = (e.payload as PolicyPagePayload).url;
+      // Check if any checkout page links to a policy page (simplified: same domain)
+      return true; // Policy detection is at site level, not per-page
+    });
+    const hasPolicies = policyPages.length > 0;
+
+    if (!hasPolicies) {
+      signals.push(createSignal({ ids,
+        signal_key: 'missing_policy_near_checkout',
+        category: SignalCategory.Trust,
+        attribute: 'trust.missing_policy_near_checkout',
+        value: 'true',
+        confidence: 65,
+        scoping, cycle_ref,
+        evidence_refs: checkoutIndicators.slice(0, 3).map(e => makeRef('evidence', e.id)),
+        description: 'No policy pages found near checkout flow. Trust and legal compliance risk at the conversion point.',
+      }));
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Support Signals — contact methods, support channels
+// ──────────────────────────────────────────────
+
+function extractSupportSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  const links = byType.get(EvidenceType.Link) || [];
+  const forms = byType.get(EvidenceType.Form) || [];
+
+  // Look for contact/support indicators in page content and links
+  const contactPatterns = /contact|contato|suporte|support|help|fale.?conosco|atendimento/i;
+  const emailPattern = /mailto:|email|e-mail/i;
+  const whatsappPattern = /whatsapp|wa\.me|api\.whatsapp/i;
+  const phonePattern = /tel:|phone|telefone|0800/i;
+
+  let hasContactPage = false;
+  let hasEmail = false;
+  let hasWhatsapp = false;
+  let hasPhone = false;
+  let hasContactForm = false;
+
+  // Check page URLs and titles for contact/support pages
+  for (const e of pages) {
+    const p = e.payload as PageContentPayload;
+    const url = p.url.toLowerCase();
+    const title = (p.title || '').toLowerCase();
+    if (contactPatterns.test(url) || contactPatterns.test(title)) {
+      hasContactPage = true;
+    }
+  }
+
+  // Check evidence subject refs for contact indicators
+  const allEvidence = [...pages, ...forms];
+  for (const e of allEvidence) {
+    const payload = e.payload as any;
+    const urlStr = (payload.url || payload.page_url || payload.action || '').toLowerCase();
+    if (emailPattern.test(urlStr)) hasEmail = true;
+    if (whatsappPattern.test(urlStr)) hasWhatsapp = true;
+    if (phonePattern.test(urlStr)) hasPhone = true;
+  }
+
+  // Check forms for contact forms
+  for (const e of forms) {
+    const p = e.payload as FormPayload;
+    const action = (p.action || '').toLowerCase();
+    const fields = p.field_names.map(f => f.toLowerCase());
+    if (contactPatterns.test(action) || fields.some(f => /message|mensagem|assunto|subject/.test(f))) {
+      hasContactForm = true;
+    }
+  }
+
+  const contactMethods: string[] = [];
+  if (hasEmail) contactMethods.push('email');
+  if (hasWhatsapp) contactMethods.push('whatsapp');
+  if (hasPhone) contactMethods.push('phone');
+  if (hasContactForm) contactMethods.push('form');
+
+  const hasAnyContact = hasContactPage || contactMethods.length > 0;
+
+  signals.push(createSignal({ ids,
+    signal_key: 'contact_method_present',
+    category: SignalCategory.Support,
+    attribute: 'support.contact_method_present',
+    value: hasAnyContact ? 'true' : 'false',
+    numeric_value: contactMethods.length,
+    confidence: hasAnyContact ? 65 : 55,
+    scoping, cycle_ref,
+    evidence_refs: pages.slice(0, 3).map(e => makeRef('evidence', e.id)),
+    description: hasAnyContact
+      ? `Contact methods found: ${contactMethods.join(', ') || 'contact page'}. ${contactMethods.length} channel(s).`
+      : 'No contact method detected. Users have no way to reach support.',
+  }));
+
+  if (!hasAnyContact) {
+    signals.push(createSignal({ ids,
+      signal_key: 'no_contact_method',
+      category: SignalCategory.Support,
+      attribute: 'support.no_contact',
+      value: 'true',
+      confidence: 60,
+      scoping, cycle_ref,
+      evidence_refs: [],
+      description: 'No email, phone, form, or chat contact method found. Customers cannot reach support, increasing dispute risk.',
+    }));
+  }
+
+  // Support visibility — is contact info easy to find?
+  if (hasAnyContact && !hasContactPage) {
+    signals.push(createSignal({ ids,
+      signal_key: 'support_visibility_low',
+      category: SignalCategory.Support,
+      attribute: 'support.visibility',
+      value: 'low',
+      confidence: 50,
+      scoping, cycle_ref,
+      evidence_refs: [],
+      description: 'Contact methods exist but no dedicated contact/support page found. Users may not find support easily.',
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Expectation Signals — pricing clarity, post-purchase
+// ──────────────────────────────────────────────
+
+function extractExpectationSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+
+  // Refund policy accessibility — is it specifically a refund/return policy, not just general terms?
+  const refundPolicies = policyPages.filter(e => {
+    const p = e.payload as PolicyPagePayload;
+    return p.policy_type === 'refund' || p.policy_type === 'shipping';
+  });
+
+  const hasRefundPolicy = refundPolicies.some(e => (e.payload as PolicyPagePayload).policy_type === 'refund');
+  const hasShippingPolicy = refundPolicies.some(e => (e.payload as PolicyPagePayload).policy_type === 'shipping');
+
+  signals.push(createSignal({ ids,
+    signal_key: 'refund_policy_accessible',
+    category: SignalCategory.Policy,
+    attribute: 'chargeback.refund_policy_accessible',
+    value: hasRefundPolicy ? 'true' : 'false',
+    confidence: hasRefundPolicy ? 65 : 55,
+    scoping, cycle_ref,
+    evidence_refs: refundPolicies.map(e => makeRef('evidence', e.id)),
+    description: hasRefundPolicy
+      ? 'Refund/return policy page detected and accessible.'
+      : 'No dedicated refund/return policy found. Customers may dispute charges instead of requesting refunds.',
+  }));
+
+  if (hasShippingPolicy) {
+    signals.push(createSignal({ ids,
+      signal_key: 'shipping_policy_present',
+      category: SignalCategory.Policy,
+      attribute: 'chargeback.shipping_policy_present',
+      value: 'true',
+      confidence: 60,
+      scoping, cycle_ref,
+      evidence_refs: refundPolicies.filter(e => (e.payload as PolicyPagePayload).policy_type === 'shipping').map(e => makeRef('evidence', e.id)),
+      description: 'Shipping policy detected. Helps set delivery expectations.',
+    }));
+  }
+
+  // Pricing visibility — do pages with checkout have clear pricing context?
+  const hasPricingPage = pages.some(e => {
+    const p = e.payload as PageContentPayload;
+    return /pricing|preco|plano|plans/i.test(p.url) || /pricing|preco/i.test(p.title || '');
+  });
+
+  if (checkoutIndicators.length > 0 && !hasPricingPage) {
+    signals.push(createSignal({ ids,
+      signal_key: 'pricing_not_visible',
+      category: SignalCategory.Expectation,
+      attribute: 'chargeback.pricing_not_visible',
+      value: 'true',
+      confidence: 50,
+      scoping, cycle_ref,
+      evidence_refs: checkoutIndicators.slice(0, 3).map(e => makeRef('evidence', e.id)),
+      description: 'Checkout exists but no pricing page detected. Users may not understand charges, increasing dispute risk.',
+    }));
+  }
+
+  // Post-purchase guidance — is there a thank-you or confirmation page?
+  const hasThankYou = pages.some(e => {
+    const p = e.payload as PageContentPayload;
+    return /thank|obrigado|confirma|success|pedido.?realizado/i.test(p.url) ||
+      /thank|obrigado|confirma|success/i.test(p.title || '');
+  });
+
+  if (checkoutIndicators.length > 0 && !hasThankYou) {
+    signals.push(createSignal({ ids,
+      signal_key: 'no_post_purchase_guidance',
+      category: SignalCategory.Expectation,
+      attribute: 'chargeback.no_post_purchase',
+      value: 'true',
+      confidence: 45,
+      scoping, cycle_ref,
+      evidence_refs: [],
+      description: 'No post-purchase confirmation or thank-you page detected. Customers may be uncertain their order was placed, increasing support contacts and disputes.',
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 30: Data Boundary Signals — forms sending data to unrecognized external domains
+// ──────────────────────────────────────────────
+
+function extractDataBoundarySignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const forms = byType.get(EvidenceType.Form) || [];
+  const providerIndicators = byType.get(EvidenceType.ProviderIndicator) || [];
+
+  // Build set of known/trusted external hosts from provider indicators
+  const knownProviderHosts = new Set<string>();
+  for (const e of providerIndicators) {
+    const p = e.payload as ProviderIndicatorPayload;
+    if (p.provider_name) {
+      // Extract domain from provider patterns (simplified — providers are already identified)
+      knownProviderHosts.add(p.provider_name.toLowerCase());
+    }
+  }
+
+  // Find forms that post to external domains NOT recognized as known providers
+  const externalForms = forms.filter(e => {
+    const p = e.payload as FormPayload;
+    if (!p.is_external || !p.target_host) return false;
+    // Check if the target host matches any known provider
+    const host = p.target_host.toLowerCase();
+    for (const known of knownProviderHosts) {
+      if (host.includes(known)) return false;
+    }
+    return true;
+  });
+
+  if (externalForms.length > 0) {
+    const targetHosts = new Set(
+      externalForms.map(e => (e.payload as FormPayload).target_host).filter(Boolean),
+    );
+    const hasPaymentFields = externalForms.some(e => (e.payload as FormPayload).has_payment_fields);
+
+    signals.push(createSignal({ ids,
+      signal_key: 'external_form_data_exposure',
+      category: SignalCategory.Trust,
+      attribute: 'trust.external_form_data_exposure',
+      value: hasPaymentFields ? 'high' : 'medium',
+      numeric_value: externalForms.length,
+      confidence: hasPaymentFields ? 80 : 65,
+      scoping, cycle_ref,
+      evidence_refs: externalForms.map(e => makeRef('evidence', e.id)),
+      description: `${externalForms.length} form(s) send user data to unrecognized external domain(s): ${Array.from(targetHosts).join(', ')}.${hasPaymentFields ? ' Includes payment fields.' : ''}`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 30: Provider Fragmentation Signals — multiple competing payment providers
+// ──────────────────────────────────────────────
+
+function extractProviderFragmentationSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const providerIndicators = byType.get(EvidenceType.ProviderIndicator) || [];
+  if (providerIndicators.length === 0) return;
+
+  const uniqueProviders = new Set<string>();
+  for (const e of providerIndicators) {
+    const p = e.payload as ProviderIndicatorPayload;
+    uniqueProviders.add(p.provider_name.toLowerCase());
+  }
+
+  if (uniqueProviders.size >= 3) {
+    signals.push(createSignal({ ids,
+      signal_key: 'multiple_payment_providers',
+      category: SignalCategory.Checkout,
+      attribute: 'checkout.provider_count',
+      value: uniqueProviders.size >= 4 ? 'high' : 'medium',
+      numeric_value: uniqueProviders.size,
+      confidence: 70,
+      scoping, cycle_ref,
+      evidence_refs: providerIndicators.map(e => makeRef('evidence', e.id)),
+      description: `${uniqueProviders.size} distinct payment providers detected: ${Array.from(uniqueProviders).join(', ')}. Multiple competing providers create inconsistent checkout experience.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 30B: Redirect Trust Erosion — redirect chains eroding trust on checkout path
+// ──────────────────────────────────────────────
+
+function extractRedirectTrustSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const redirects = byType.get(EvidenceType.Redirect) || [];
+  if (redirects.length === 0) return;
+
+  // Find redirects that cross domain boundaries on the path to checkout
+  const commercialPattern = /checkout|cart|pay|payment|order|billing|purchase|comprar|pedido/i;
+  const crossDomainCheckoutRedirects = redirects.filter(e => {
+    const p = e.payload as RedirectPayload;
+    if (!p.chain || p.chain.length < 2) return false;
+    const targetIsCommercial = commercialPattern.test(p.target_url || '');
+    const sourceIsCommercial = commercialPattern.test(p.source_url || '');
+    if (!targetIsCommercial && !sourceIsCommercial) return false;
+    // Check if chain crosses domains
+    const hosts = new Set(p.chain.map(h => h.host).filter(Boolean));
+    return hosts.size > 1;
+  });
+
+  if (crossDomainCheckoutRedirects.length > 0) {
+    const maxHops = Math.max(...crossDomainCheckoutRedirects.map(e => (e.payload as RedirectPayload).hop_count || 0));
+    const uniqueHosts = new Set<string>();
+    for (const e of crossDomainCheckoutRedirects) {
+      const p = e.payload as RedirectPayload;
+      for (const hop of (p.chain || [])) {
+        if (hop.host) uniqueHosts.add(hop.host);
+      }
+    }
+
+    signals.push(createSignal({ ids,
+      signal_key: 'checkout_redirect_trust_erosion',
+      category: SignalCategory.Trust,
+      attribute: 'trust.checkout_redirect_erosion',
+      value: maxHops >= 3 ? 'high' : 'medium',
+      numeric_value: maxHops,
+      confidence: 75,
+      scoping, cycle_ref,
+      evidence_refs: crossDomainCheckoutRedirects.map(e => makeRef('evidence', e.id)),
+      description: `${crossDomainCheckoutRedirects.length} redirect chain(s) crossing ${uniqueHosts.size} domain(s) on the path to checkout (max ${maxHops} hops). Each hop erodes buyer trust and loses users.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 30B: Language Discontinuity — language switches along commercial journey
+// ──────────────────────────────────────────────
+
+function extractLanguageDiscontinuitySignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  if (pages.length < 2) return;
+
+  // Get homepage language
+  const homepages = pages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    return p.url?.match(/^https?:\/\/[^/]+\/?$/);
+  });
+  const homepageLang = homepages.length > 0
+    ? ((homepages[0].payload as PageContentPayload).lang || '').toLowerCase().slice(0, 2)
+    : null;
+
+  if (!homepageLang || homepageLang.length < 2) return;
+
+  // Check commercial pages for language mismatches
+  const commercialPattern = /checkout|cart|pay|payment|pricing|order|billing|purchase|login|comprar|pedido|plano/i;
+  const commercialPages = pages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    return commercialPattern.test(p.url || '');
+  });
+
+  const mismatchedPages: Evidence[] = [];
+  for (const e of commercialPages) {
+    const p = e.payload as PageContentPayload;
+    const pageLang = (p.lang || '').toLowerCase().slice(0, 2);
+    if (pageLang && pageLang.length >= 2 && pageLang !== homepageLang) {
+      mismatchedPages.push(e);
+    }
+  }
+
+  if (mismatchedPages.length > 0) {
+    const mismatchLangs = new Set(mismatchedPages.map(e => ((e.payload as PageContentPayload).lang || '').toLowerCase().slice(0, 2)));
+    signals.push(createSignal({ ids,
+      signal_key: 'language_discontinuity_commercial',
+      category: SignalCategory.Friction,
+      attribute: 'friction.language_discontinuity',
+      value: 'true',
+      numeric_value: mismatchedPages.length,
+      confidence: 70,
+      scoping, cycle_ref,
+      evidence_refs: [...homepages.slice(0, 1), ...mismatchedPages].map(e => makeRef('evidence', e.id)),
+      description: `${mismatchedPages.length} commercial page(s) switch language from '${homepageLang}' to '${Array.from(mismatchLangs).join(', ')}'. Language break on checkout/pricing path creates confusion and drops conversion.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 30B: Orphan Commercial Pages — critical pages not connected from main journey
+// ──────────────────────────────────────────────
+
+function extractOrphanCommercialSignals(
+  query: GraphQuery,
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  if (pages.length < 2) return;
+
+  // SPA guardrail: if the site looks SPA-heavy, orphan detection is unreliable
+  // because JS-driven navigation won't appear as anchor edges in the graph.
+  // Detect SPA indicators: high script count with low link count suggests JS navigation.
+  const scripts = byType.get(EvidenceType.Script) || [];
+  const totalScripts = scripts.length;
+  const totalInternalLinks = pages.reduce((sum, e) => {
+    const p = e.payload as PageContentPayload;
+    return sum + (p.internal_link_count || 0);
+  }, 0);
+
+  // If script-heavy and link-light, this is likely SPA — skip orphan detection
+  // to avoid false positives from JS-routed navigation we can't see
+  if (totalScripts > 15 && totalInternalLinks < 5) return;
+
+  const commercialPattern = /checkout|cart|pricing|login|billing|order|purchase|pay(?:ment)?|plano|comprar/i;
+  const commercialPages = pages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    return commercialPattern.test(p.url || '') || commercialPattern.test(p.title || '');
+  });
+
+  // For each commercial page, check if it has incoming edges from other internal pages
+  const orphanPages: Evidence[] = [];
+  for (const e of commercialPages) {
+    const p = e.payload as PageContentPayload;
+    const node = query.getNodeByUrl(p.url);
+    if (!node) continue;
+
+    const incomingEdges = query.getEdgesTo(node.id);
+    // Include all structural navigation edges + redirects (redirect = path exists even if indirect)
+    const internalIncoming = incomingEdges.filter(edge =>
+      edge.edge_type === 'anchor' || edge.edge_type === 'form_action' ||
+      edge.edge_type === 'intent_target' || edge.edge_type === 'redirect',
+    );
+
+    if (internalIncoming.length === 0) {
+      orphanPages.push(e);
+    }
+  }
+
+  if (orphanPages.length > 0) {
+    const orphanUrls = orphanPages.map(e => (e.payload as PageContentPayload).url).filter(Boolean);
+    // SPA-aware confidence: lower confidence when site has moderate script activity
+    // (suggests some JS navigation may exist that we can't observe)
+    const spaAdjustedConfidence = totalScripts > 8 ? 50 : 65;
+
+    signals.push(createSignal({ ids,
+      signal_key: 'orphan_commercial_page',
+      category: SignalCategory.Revenue,
+      attribute: 'revenue.orphan_commercial_page',
+      value: orphanPages.length >= 2 ? 'high' : 'medium',
+      numeric_value: orphanPages.length,
+      confidence: spaAdjustedConfidence,
+      scoping, cycle_ref,
+      evidence_refs: orphanPages.map(e => makeRef('evidence', e.id)),
+      description: `${orphanPages.length} commercial page(s) not linked from the main site navigation: ${orphanUrls.slice(0, 3).join(', ')}. Visitors cannot discover these pages through normal browsing.${totalScripts > 8 ? ' Note: site uses significant JavaScript — some navigation paths may not be visible to static analysis.' : ''}`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 30B: Untrusted External Embeds on Commercial Pages
+// ──────────────────────────────────────────────
+
+function extractUntrustedEmbedSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const iframes = byType.get(EvidenceType.Iframe) || [];
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  if (iframes.length === 0) return;
+
+  // Get commercial page URLs
+  const commercialPattern = /checkout|cart|pricing|pay|payment|billing|order|purchase/i;
+  const commercialUrls = new Set<string>();
+  for (const ci of checkoutIndicators) {
+    commercialUrls.add((ci.payload as CheckoutIndicatorPayload).page_url);
+  }
+
+  // Find external iframes on commercial pages that aren't known providers
+  const untrustedEmbeds = iframes.filter(e => {
+    const p = e.payload as IframePayload;
+    if (!p.is_external) return false;
+    if (p.known_provider) return false; // Stripe, PayPal, etc. are expected
+    // Check if iframe is on a commercial page or the page itself is commercial
+    const isOnCommercialPage = commercialUrls.has(p.page_url) || commercialPattern.test(p.page_url || '');
+    return isOnCommercialPage;
+  });
+
+  if (untrustedEmbeds.length > 0) {
+    const unknownHosts = new Set(untrustedEmbeds.map(e => (e.payload as IframePayload).host).filter(Boolean));
+    signals.push(createSignal({ ids,
+      signal_key: 'untrusted_embed_on_commercial',
+      category: SignalCategory.Trust,
+      attribute: 'trust.untrusted_embed_commercial',
+      value: untrustedEmbeds.length >= 3 ? 'high' : 'medium',
+      numeric_value: untrustedEmbeds.length,
+      confidence: 65,
+      scoping, cycle_ref,
+      evidence_refs: untrustedEmbeds.map(e => makeRef('evidence', e.id)),
+      description: `${untrustedEmbeds.length} unrecognized external embed(s) on commercial page(s) from: ${Array.from(unknownHosts).join(', ')}. Unknown embeds near purchase surfaces erode buyer trust.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 30B: Platform-Specific Checkout Risk Patterns
+// ──────────────────────────────────────────────
+
+function extractPlatformCheckoutRiskSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const platforms = byType.get(EvidenceType.PlatformIndicator) || [];
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  if (platforms.length === 0 || checkoutIndicators.length === 0) return;
+
+  // Gate: require strong platform confidence (at least one indicator with confidence >= 60)
+  const strongPlatformEvidence = platforms.some(e => (e.payload as PlatformIndicatorPayload).confidence >= 60);
+  if (!strongPlatformEvidence) return;
+
+  // Gate: require strong checkout posture (at least 2 checkout indicators OR 1 with high confidence)
+  const strongCheckoutPosture = checkoutIndicators.length >= 2 ||
+    checkoutIndicators.some(e => (e.payload as CheckoutIndicatorPayload).confidence >= 70);
+  if (!strongCheckoutPosture) return;
+
+  const detectedPlatforms = new Set(
+    platforms.map(e => (e.payload as PlatformIndicatorPayload).platform_name.toLowerCase()),
+  );
+  const hasExternalCheckout = checkoutIndicators.some(
+    e => (e.payload as CheckoutIndicatorPayload).is_external,
+  );
+
+  // Platform-specific risk rules (only fire when platform + checkout posture are both strong)
+  // WooCommerce: checkout should be on-domain; external = misconfigured
+  // Magento: checkout should be on-domain; external = abandoned migration
+  // Shopify: external checkout is expected but compound risk if refund policy also missing
+  const riskPatterns: { platform: string; reason: string }[] = [];
+
+  if (detectedPlatforms.has('woocommerce') && hasExternalCheckout) {
+    riskPatterns.push({
+      platform: 'WooCommerce',
+      reason: 'WooCommerce checkout is off-domain — this platform should handle checkout natively. External redirect indicates misconfiguration or abandoned migration.',
+    });
+  }
+  if (detectedPlatforms.has('magento') && hasExternalCheckout) {
+    riskPatterns.push({
+      platform: 'Magento',
+      reason: 'Magento checkout is off-domain — this platform includes native checkout. External handoff creates unnecessary trust break.',
+    });
+  }
+  if (detectedPlatforms.has('shopify')) {
+    const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+    const hasRefundPolicy = policyPages.some(e => (e.payload as PolicyPagePayload).policy_type === 'refund');
+    // Only fire Shopify risk when compound gap: hosted checkout + no refund policy
+    if (!hasRefundPolicy && hasExternalCheckout) {
+      riskPatterns.push({
+        platform: 'Shopify',
+        reason: 'Shopify store with hosted checkout but no visible refund policy — the domain switch to checkout.shopify.com combined with missing return policy increases chargeback exposure.',
+      });
+    }
+  }
+
+  if (riskPatterns.length > 0) {
+    // Confidence reflects combined strength of platform + checkout evidence
+    const avgPlatformConf = platforms.reduce((s, e) => s + (e.payload as PlatformIndicatorPayload).confidence, 0) / platforms.length;
+    const signalConfidence = Math.min(75, Math.round(avgPlatformConf * 0.9));
+
+    signals.push(createSignal({ ids,
+      signal_key: 'platform_checkout_risk',
+      category: SignalCategory.Checkout,
+      attribute: 'checkout.platform_risk',
+      value: riskPatterns.length >= 2 ? 'high' : 'medium',
+      numeric_value: riskPatterns.length,
+      confidence: signalConfidence,
+      scoping, cycle_ref,
+      evidence_refs: [
+        ...platforms.map(e => makeRef('evidence', e.id)),
+        ...checkoutIndicators.slice(0, 3).map(e => makeRef('evidence', e.id)),
+      ],
+      description: riskPatterns.map(r => r.reason).join(' '),
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 30B: Post-Purchase Confirmation Gap
+// ──────────────────────────────────────────────
+
+function extractPostPurchaseGapSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  if (checkoutIndicators.length === 0) return;
+
+  const hasThankYou = pages.some(e => {
+    const p = e.payload as PageContentPayload;
+    return /thank|obrigado|confirma|success|pedido.?realizado|order.?complete/i.test(p.url) ||
+      /thank|obrigado|confirma|success|order.?complete/i.test(p.title || '');
+  });
+
+  const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+  const hasRefundPolicy = policyPages.some(e => (e.payload as PolicyPagePayload).policy_type === 'refund');
+
+  // Only fire if: no confirmation page AND (no refund policy — compound gap)
+  if (!hasThankYou && !hasRefundPolicy) {
+    signals.push(createSignal({ ids,
+      signal_key: 'post_purchase_gap_compound',
+      category: SignalCategory.Expectation,
+      attribute: 'chargeback.post_purchase_gap_compound',
+      value: 'high',
+      numeric_value: 2, // missing confirmation + missing refund = 2 gaps
+      confidence: 60,
+      scoping, cycle_ref,
+      evidence_refs: checkoutIndicators.slice(0, 3).map(e => makeRef('evidence', e.id)),
+      description: 'No order confirmation page and no refund policy detected. Customers who are unsure their order was placed and cannot find return terms will file chargebacks.',
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2: Policy Content Depth Signals
+// ──────────────────────────────────────────────
+
+function extractPolicyDepthSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+  if (policyPages.length === 0) return;
+
+  const refundPolicies = policyPages.filter(e =>
+    (e.payload as PolicyPagePayload).policy_type === 'refund',
+  );
+
+  for (const e of refundPolicies) {
+    const p = e.payload as PolicyPagePayload;
+
+    // Signal 1: Thin refund policy (word count < 200)
+    if (p.word_count !== null && p.word_count < 200) {
+      signals.push(createSignal({ ids,
+        signal_key: 'thin_refund_policy',
+        category: SignalCategory.Policy,
+        attribute: 'policy.refund_thin',
+        value: 'true',
+        numeric_value: p.word_count,
+        confidence: 70,
+        scoping, cycle_ref,
+        evidence_refs: [makeRef('evidence', e.id)],
+        description: `Refund/return policy is only ${p.word_count} words. Policies under 200 words lack sufficient detail to set buyer expectations and defuse disputes.`,
+      }));
+    }
+
+    // Signal 2 (Phase 2C): Refund process vague — policy exists but lacks actionable details
+    // Only fires when the page has been analyzed (rich fields available)
+    if (p.has_refund_process !== null) {
+      const missingDetails: string[] = [];
+      if (!p.has_return_window) missingDetails.push('no return window specified');
+      if (!p.has_refund_process) missingDetails.push('no refund process described');
+      if (!p.has_contact_info) missingDetails.push('no contact info for returns');
+
+      // Vague = 2+ critical details missing, even if policy is long enough
+      if (missingDetails.length >= 2) {
+        signals.push(createSignal({ ids,
+          signal_key: 'refund_process_vague',
+          category: SignalCategory.Policy,
+          attribute: 'policy.refund_process_vague',
+          value: missingDetails.length >= 3 ? 'high' : 'medium',
+          numeric_value: missingDetails.length,
+          confidence: 65,
+          scoping, cycle_ref,
+          evidence_refs: [makeRef('evidence', e.id)],
+          description: `Refund policy exists but is missing critical actionable details: ${missingDetails.join(', ')}. Buyers who need to return or dispute cannot understand what to do.`,
+        }));
+      }
+    }
+
+    break; // only process first refund policy
+  }
+
+  // Signal 3 (Phase 2C): Post-purchase confirmation page quality
+  // Check if confirmation/thank-you page exists and whether it's useful as proof
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  if (checkoutIndicators.length === 0) return;
+
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  const confirmPages = pages.filter(e => {
+    const pg = e.payload as PageContentPayload;
+    return /thank|obrigado|confirma|success|pedido.?realizado|order.?complete/i.test(pg.url || '') ||
+      /thank|obrigado|confirma|success|order.?complete/i.test(pg.title || '');
+  });
+
+  if (confirmPages.length > 0) {
+    // Confirmation page exists — check if it's too thin to serve as proof
+    const firstConfirm = confirmPages[0];
+    const pg = firstConfirm.payload as PageContentPayload;
+    const confirmWordCount = pg.body_word_count || 0;
+
+    if (confirmWordCount < 100) {
+      signals.push(createSignal({ ids,
+        signal_key: 'post_purchase_proof_weak',
+        category: SignalCategory.Expectation,
+        attribute: 'chargeback.post_purchase_proof_weak',
+        value: confirmWordCount < 50 ? 'high' : 'medium',
+        numeric_value: confirmWordCount,
+        confidence: 55,
+        scoping, cycle_ref,
+        evidence_refs: [makeRef('evidence', firstConfirm.id)],
+        description: `Order confirmation page exists but is only ${confirmWordCount} words — too thin to serve as purchase proof. A confirmation page that does not clearly show order details, expected delivery, and next steps leaves customers uncertain about what they bought and when they will get it.`,
+      }));
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2: Support Widget Detection Signals
+// ──────────────────────────────────────────────
+
+function extractSupportWidgetSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const techEvidence = byType.get(EvidenceType.TechnologyDetected) || [];
+  const supportWidgets = techEvidence.filter(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'support_widget',
+  );
+
+  if (supportWidgets.length > 0) {
+    const widgetNames = supportWidgets.map(e => (e.payload as TechnologyDetectedPayload).display_name);
+
+    // Check if support widget is on commercial pages
+    const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+    const commercialUrls = new Set(
+      checkoutIndicators.map(e => (e.payload as CheckoutIndicatorPayload).page_url),
+    );
+    const widgetOnCommercial = supportWidgets.some(e => {
+      const detectedOn = (e.payload as TechnologyDetectedPayload).detected_on || [];
+      return detectedOn.some(url => commercialUrls.has(url));
+    });
+
+    signals.push(createSignal({ ids,
+      signal_key: 'support_widget_detected',
+      category: SignalCategory.Support,
+      attribute: 'support.widget_detected',
+      value: 'true',
+      numeric_value: supportWidgets.length,
+      confidence: 75,
+      scoping, cycle_ref,
+      evidence_refs: supportWidgets.map(e => makeRef('evidence', e.id)),
+      description: `Live support widget detected: ${widgetNames.join(', ')}.${widgetOnCommercial ? ' Present on commercial pages.' : ' Not found on checkout/payment pages.'}`,
+    }));
+
+    // If widget exists but NOT on commercial pages, that's a hidden-support signal
+    if (!widgetOnCommercial && commercialUrls.size > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: 'support_widget_hidden_from_checkout',
+        category: SignalCategory.Support,
+        attribute: 'support.widget_hidden_checkout',
+        value: 'true',
+        confidence: 60,
+        scoping, cycle_ref,
+        evidence_refs: supportWidgets.map(e => makeRef('evidence', e.id)),
+        description: `Live support widget (${widgetNames.join(', ')}) exists but is not present on checkout/payment pages where buyers most need reassurance.`,
+      }));
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2: Trust Signal Depth — Structured Data as Trust Surface
+// ──────────────────────────────────────────────
+
+function extractTrustSignalDepthSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const structuredData = byType.get(EvidenceType.StructuredDataItem) || [];
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  if (checkoutIndicators.length === 0) return; // only relevant for commerce sites
+
+  const trustTypes = structuredData.filter(e =>
+    (e.payload as StructuredDataItemPayload).is_trust_signal,
+  );
+  const commerceTypes = structuredData.filter(e =>
+    (e.payload as StructuredDataItemPayload).is_commerce_signal,
+  );
+
+  // Count total trust-building signals: structured data + policies + providers
+  const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+  const providers = byType.get(EvidenceType.ProviderIndicator) || [];
+
+  const trustSignalCount = trustTypes.length + policyPages.length + (providers.length > 0 ? 1 : 0);
+
+  if (trustSignalCount < 2) {
+    signals.push(createSignal({ ids,
+      signal_key: 'trust_signals_thin_on_commercial',
+      category: SignalCategory.Trust,
+      attribute: 'trust.signals_thin',
+      value: trustSignalCount === 0 ? 'high' : 'medium',
+      numeric_value: trustSignalCount,
+      confidence: 60,
+      scoping, cycle_ref,
+      evidence_refs: [
+        ...trustTypes.map(e => makeRef('evidence', e.id)),
+        ...policyPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
+      ],
+      description: `Only ${trustSignalCount} trust-building signal(s) found (structured business data, policies, recognized providers). Commerce sites with thin trust surfaces see higher checkout abandonment.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2: Tracking Stack Completeness
+// ──────────────────────────────────────────────
+
+function extractTrackingStackSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const techEvidence = byType.get(EvidenceType.TechnologyDetected) || [];
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  if (checkoutIndicators.length === 0) return; // only relevant for commerce
+
+  const analytics = techEvidence.filter(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'analytics',
+  );
+  const tagManagers = techEvidence.filter(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'tag_manager',
+  );
+  const errorTracking = techEvidence.filter(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'error_tracking',
+  );
+
+  // Commerce site needs: analytics (conversion measurement) + tag manager (deployment flexibility)
+  // Error tracking is bonus but strengthens readiness
+  const hasAnalytics = analytics.length > 0;
+  const hasTagManager = tagManagers.length > 0;
+  const hasErrorTracking = errorTracking.length > 0;
+
+  const trackingGaps: string[] = [];
+  if (!hasAnalytics) trackingGaps.push('no analytics tool');
+  if (!hasTagManager) trackingGaps.push('no tag manager');
+
+  if (trackingGaps.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'tracking_stack_incomplete',
+      category: SignalCategory.Measurement,
+      attribute: 'measurement.tracking_stack_incomplete',
+      value: trackingGaps.length >= 2 ? 'high' : 'medium',
+      numeric_value: trackingGaps.length,
+      confidence: 65,
+      scoping, cycle_ref,
+      evidence_refs: techEvidence.map(e => makeRef('evidence', e.id)),
+      description: `Commerce tracking stack gaps: ${trackingGaps.join(', ')}. ${!hasAnalytics ? 'Without analytics, conversion optimization is impossible.' : ''} ${!hasTagManager ? 'Without a tag manager, tracking changes require code deploys.' : ''}`.trim(),
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2: Consent × Measurement Conflict
+// ──────────────────────────────────────────────
+
+function extractConsentMeasurementSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const techEvidence = byType.get(EvidenceType.TechnologyDetected) || [];
+
+  const consentManagers = techEvidence.filter(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'consent_manager',
+  );
+  const analytics = techEvidence.filter(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'analytics',
+  );
+  const tagManagers = techEvidence.filter(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'tag_manager',
+  );
+
+  // Consent manager present but no tag manager = consent may be blocking analytics
+  // without a proper consent-aware tag firing mechanism
+  if (consentManagers.length > 0 && tagManagers.length === 0 && analytics.length > 0) {
+    const consentName = (consentManagers[0].payload as TechnologyDetectedPayload).display_name;
+    signals.push(createSignal({ ids,
+      signal_key: 'consent_measurement_conflict',
+      category: SignalCategory.Measurement,
+      attribute: 'measurement.consent_conflict',
+      value: 'medium',
+      confidence: 55,
+      scoping, cycle_ref,
+      evidence_refs: [
+        ...consentManagers.map(e => makeRef('evidence', e.id)),
+        ...analytics.map(e => makeRef('evidence', e.id)),
+      ],
+      description: `Consent manager (${consentName}) detected without a tag manager. Analytics may be blocked for consenting users because there is no consent-aware tag firing mechanism. This can silently break measurement continuity.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2B: Mobile Verification Signals
+// ──────────────────────────────────────────────
+
+function extractMobileVerificationSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const mobileResults = byType.get(EvidenceType.MobileVerificationResult) || [];
+  if (mobileResults.length === 0) return;
+
+  for (const ev of mobileResults) {
+    const p = ev.payload as MobileVerificationResultPayload;
+
+    // Mobile commercial path blocked
+    if (!p.commercial_path_reachable || !p.checkout_reachable) {
+      signals.push(createSignal({ ids,
+        signal_key: 'mobile_commercial_path_blocked',
+        category: SignalCategory.Friction,
+        attribute: 'mobile.commercial_path_blocked',
+        value: !p.commercial_path_reachable ? 'high' : 'medium',
+        confidence: 75,
+        scoping, cycle_ref,
+        evidence_refs: [makeRef('evidence', ev.id)],
+        description: `Mobile commercial path ${!p.commercial_path_reachable ? 'unreachable' : 'partially degraded'}. ${p.steps_failed} step(s) failed on mobile. Checkout ${p.checkout_reachable ? 'reachable' : 'blocked'}.`,
+      }));
+    }
+
+    // Mobile trust degraded vs desktop
+    if (p.trust_degraded_vs_desktop) {
+      signals.push(createSignal({ ids,
+        signal_key: 'mobile_trust_weaker_than_desktop',
+        category: SignalCategory.Trust,
+        attribute: 'mobile.trust_degraded',
+        value: 'true',
+        confidence: 65,
+        scoping, cycle_ref,
+        evidence_refs: [makeRef('evidence', ev.id)],
+        description: 'Mobile trust experience is weaker than desktop. Trust indicators, policies, or provider signals differ between viewports.',
+      }));
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2B: Classified Runtime Error Signals
+// ──────────────────────────────────────────────
+
+function extractRuntimeErrorSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const runtimeErrors = byType.get(EvidenceType.ClassifiedRuntimeErrors) || [];
+  if (runtimeErrors.length === 0) return;
+
+  let totalCommercialErrors = 0;
+  let totalTrackingErrors = 0;
+  let hasPurchaseInterruption = false;
+  const allRefs: string[] = [];
+
+  for (const ev of runtimeErrors) {
+    const p = ev.payload as ClassifiedRuntimeErrorsPayload;
+    allRefs.push(makeRef('evidence', ev.id));
+    totalCommercialErrors += p.total_commercial_errors;
+
+    for (const err of p.errors) {
+      if (err.bucket === 'purchase_interruption' || err.bucket === 'payment_provider_error') {
+        hasPurchaseInterruption = true;
+      }
+      if (err.bucket === 'tracking_failure') {
+        totalTrackingErrors += err.count;
+      }
+    }
+  }
+
+  // Purchase journey interrupted by runtime failure
+  if (hasPurchaseInterruption) {
+    signals.push(createSignal({ ids,
+      signal_key: 'runtime_purchase_interrupted',
+      category: SignalCategory.Friction,
+      attribute: 'runtime.purchase_interrupted',
+      value: 'high',
+      confidence: 75,
+      scoping, cycle_ref,
+      evidence_refs: allRefs,
+      description: `Runtime errors detected that directly affect the purchase flow — payment SDK failures, checkout errors, or transaction-blocking JavaScript exceptions. These actively prevent buyers from completing purchases.`,
+    }));
+  }
+
+  // Runtime tracking/measurement failures
+  if (totalTrackingErrors > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'runtime_tracking_broken',
+      category: SignalCategory.Measurement,
+      attribute: 'runtime.tracking_broken',
+      value: totalTrackingErrors >= 3 ? 'high' : 'medium',
+      numeric_value: totalTrackingErrors,
+      confidence: 65,
+      scoping, cycle_ref,
+      evidence_refs: allRefs,
+      description: `${totalTrackingErrors} runtime error(s) affecting analytics, pixel, or tag manager execution. Tracking scripts are failing at runtime, silently breaking measurement continuity on commercial pages.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2B: Secondary Commercial Flow Detection
+// ──────────────────────────────────────────────
+
+function extractSecondaryFlowSignals(
+  query: GraphQuery,
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  if (pages.length < 5) return; // need meaningful crawl depth
+
+  // Look for commercial pages that were discovered via recursive crawl
+  // but are not connected to the main commercial path from the homepage
+  const commercialPattern = /checkout|cart|pay|payment|billing|order|purchase|pricing|comprar|pedido/i;
+  const homepageUrl = pages[0] ? (pages[0].payload as PageContentPayload).url : null;
+  if (!homepageUrl) return;
+
+  const commercialPages = pages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    return commercialPattern.test(p.url || '') && p.url !== homepageUrl;
+  });
+
+  if (commercialPages.length < 2) return; // need at least 2 commercial pages for secondary flow detection
+
+  // Use graph to check if these commercial pages share the same entry path
+  const commercialEntryPaths = new Set<string>();
+  for (const e of commercialPages) {
+    const p = e.payload as PageContentPayload;
+    const node = query.getNodeByUrl(p.url);
+    if (!node) continue;
+    const inbound = query.getEdgesTo(node.id);
+    for (const edge of inbound) {
+      if (edge.edge_type === 'anchor' || edge.edge_type === 'intent_target') {
+        commercialEntryPaths.add(edge.source_id);
+      }
+    }
+  }
+
+  // If commercial pages have multiple distinct entry points, there are secondary flows
+  if (commercialEntryPaths.size >= 3 && commercialPages.length >= 2) {
+    signals.push(createSignal({ ids,
+      signal_key: 'secondary_commercial_flows_detected',
+      category: SignalCategory.Revenue,
+      attribute: 'revenue.secondary_flows',
+      value: commercialEntryPaths.size >= 5 ? 'high' : 'medium',
+      numeric_value: commercialEntryPaths.size,
+      confidence: 55,
+      scoping, cycle_ref,
+      evidence_refs: commercialPages.slice(0, 3).map(e => makeRef('evidence', e.id)),
+      description: `${commercialEntryPaths.size} distinct entry points lead to commercial pages, suggesting secondary conversion flows that may bypass the main trust and measurement path.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2C: Composite Signals from Current Evidence
+// ──────────────────────────────────────────────
+
+// Target 4: Support reassurance appears too late in buying journey
+function extractSupportJourneyPositionSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  if (checkoutIndicators.length === 0 || pages.length < 3) return;
+
+  // Support/help/contact pages exist?
+  const supportPattern = /contact|contato|suporte|support|help|fale.?conosco|atendimento|faq/i;
+  const supportPages = pages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    return supportPattern.test(p.url || '') || supportPattern.test(p.title || '');
+  });
+
+  if (supportPages.length === 0) return; // no support found at all — covered by support_unreachable
+
+  // Check if support pages are linked from checkout/pricing pages (early in journey)
+  // vs only reachable from secondary paths (late in journey)
+  const commercialPattern = /checkout|cart|pricing|pay|billing|order|purchase/i;
+  const commercialPageUrls = new Set(
+    pages.filter(e => commercialPattern.test((e.payload as PageContentPayload).url || ''))
+      .map(e => (e.payload as PageContentPayload).url),
+  );
+
+  // If support exists but no commercial page links to it, support is late
+  const homepageUrl = pages[0] ? (pages[0].payload as PageContentPayload).url : null;
+  const supportUrls = supportPages.map(e => (e.payload as PageContentPayload).url);
+
+  // Check if any support URL appears in links from commercial pages
+  const links = byType.get(EvidenceType.Link) || [];
+  const linksFromCommercial = links.filter(e => {
+    const p = e.payload as any;
+    return commercialPageUrls.has(p.page_url);
+  });
+  const supportLinkedFromCommercial = linksFromCommercial.some(e => {
+    const p = e.payload as any;
+    return supportUrls.some(su => (p.href || '').includes(su) || supportPattern.test(p.href || ''));
+  });
+
+  if (!supportLinkedFromCommercial) {
+    signals.push(createSignal({ ids,
+      signal_key: 'support_late_in_journey',
+      category: SignalCategory.Support,
+      attribute: 'support.late_in_journey',
+      value: 'true',
+      confidence: 55,
+      scoping, cycle_ref,
+      evidence_refs: [
+        ...supportPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
+        ...checkoutIndicators.slice(0, 2).map(e => makeRef('evidence', e.id)),
+      ],
+      description: 'Support and help pages exist but are not linked from commercial surfaces (checkout, pricing, cart). Buyers encounter reassurance too late — after the hesitation moment, not during it.',
+    }));
+  }
+}
+
+// Target 5: Hidden reassurance routes (confirmation, help, FAQ) disconnected from main journey
+function extractHiddenReassuranceRouteSignals(
+  query: GraphQuery,
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  if (pages.length < 5) return; // need meaningful crawl depth
+
+  const reassurancePattern = /help|faq|confirm|success|thank|obrigado|garantia|warranty|exchange|troca|devolucao|suporte|support|return/i;
+  const reassurancePages = pages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    return reassurancePattern.test(p.url || '') || reassurancePattern.test(p.title || '');
+  });
+
+  if (reassurancePages.length === 0) return;
+
+  // Check which reassurance pages have no inbound links from the main site
+  const orphanReassurance: Evidence[] = [];
+  for (const e of reassurancePages) {
+    const p = e.payload as PageContentPayload;
+    const node = query.getNodeByUrl(p.url);
+    if (!node) continue;
+
+    const inbound = query.getEdgesTo(node.id);
+    const hasStructuralInbound = inbound.some(edge =>
+      edge.edge_type === 'anchor' || edge.edge_type === 'form_action' || edge.edge_type === 'intent_target',
+    );
+
+    if (!hasStructuralInbound) {
+      orphanReassurance.push(e);
+    }
+  }
+
+  if (orphanReassurance.length > 0) {
+    const orphanUrls = orphanReassurance.map(e => (e.payload as PageContentPayload).url).filter(Boolean);
+    signals.push(createSignal({ ids,
+      signal_key: 'hidden_reassurance_routes',
+      category: SignalCategory.Support,
+      attribute: 'support.hidden_reassurance',
+      value: orphanReassurance.length >= 2 ? 'high' : 'medium',
+      numeric_value: orphanReassurance.length,
+      confidence: 55,
+      scoping, cycle_ref,
+      evidence_refs: orphanReassurance.map(e => makeRef('evidence', e.id)),
+      description: `${orphanReassurance.length} reassurance page(s) (help, FAQ, confirmation, warranty) exist but have no navigation links from the main site: ${orphanUrls.slice(0, 3).join(', ')}. These pages could reduce buyer anxiety but are invisible to users navigating the commercial journey.`,
+    }));
+  }
+}
+
+// Target 8: Alternate flows bypass measurement continuity
+function extractAlternateFlowMeasurementSignals(
+  query: GraphQuery,
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  // This fires when secondary commercial flows exist AND measurement is incomplete
+  // Combines: secondary_commercial_flows_detected signal + tracking_stack_incomplete or missing_tracking_on_commercial
+  const techEvidence = byType.get(EvidenceType.TechnologyDetected) || [];
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  if (pages.length < 5) return;
+
+  // Check if secondary flows were detected
+  const commercialPattern = /checkout|cart|pay|payment|billing|order|purchase|pricing/i;
+  const commercialPages = pages.filter(e => commercialPattern.test((e.payload as PageContentPayload).url || ''));
+  if (commercialPages.length < 2) return;
+
+  // Check measurement completeness
+  const analytics = techEvidence.filter(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'analytics',
+  );
+  const hasAnalytics = analytics.length > 0;
+
+  // If multiple commercial pages but analytics coverage is thin, alternate flows are untracked
+  const scripts = byType.get(EvidenceType.Script) || [];
+  const analyticsPatterns = [/google-analytics|googletagmanager|gtag/i, /connect\.facebook|fbevents/i, /segment\.com|cdn\.segment/i];
+
+  // Check analytics presence on each commercial page
+  const commercialPagesWithoutAnalytics = commercialPages.filter(e => {
+    const pageUrl = (e.payload as PageContentPayload).url;
+    const pageScripts = scripts.filter(s => (s.payload as ScriptPayload).page_url === pageUrl);
+    return !pageScripts.some(s => analyticsPatterns.some(p => p.test((s.payload as ScriptPayload).src)));
+  });
+
+  if (commercialPagesWithoutAnalytics.length > 0 && commercialPages.length >= 2) {
+    signals.push(createSignal({ ids,
+      signal_key: 'alternate_flow_measurement_gap',
+      category: SignalCategory.Measurement,
+      attribute: 'measurement.alternate_flow_gap',
+      value: commercialPagesWithoutAnalytics.length >= 2 ? 'high' : 'medium',
+      numeric_value: commercialPagesWithoutAnalytics.length,
+      confidence: 55,
+      scoping, cycle_ref,
+      evidence_refs: commercialPagesWithoutAnalytics.map(e => makeRef('evidence', e.id)),
+      description: `${commercialPagesWithoutAnalytics.length} of ${commercialPages.length} commercial page(s) lack analytics tracking. Revenue flowing through these paths is unmeasured — ad spend attribution and conversion optimization are blind on these routes.`,
+    }));
+  }
+}
+
+// Target 10: Runtime failures breaking support/reassurance at hesitation moments
+function extractRuntimeReassuranceBreakSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const runtimeErrors = byType.get(EvidenceType.ClassifiedRuntimeErrors) || [];
+  if (runtimeErrors.length === 0) return;
+
+  let widgetFailureCount = 0;
+  const allRefs: string[] = [];
+
+  for (const ev of runtimeErrors) {
+    const p = ev.payload as ClassifiedRuntimeErrorsPayload;
+    allRefs.push(makeRef('evidence', ev.id));
+    for (const err of p.errors) {
+      if (err.bucket === 'widget_failure') {
+        widgetFailureCount += err.count;
+      }
+    }
+  }
+
+  if (widgetFailureCount > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: 'runtime_reassurance_broken',
+      category: SignalCategory.Support,
+      attribute: 'runtime.reassurance_broken',
+      value: widgetFailureCount >= 3 ? 'high' : 'medium',
+      numeric_value: widgetFailureCount,
+      confidence: 60,
+      scoping, cycle_ref,
+      evidence_refs: allRefs,
+      description: `${widgetFailureCount} runtime error(s) affecting support/chat widgets or consent tools. The reassurance layer that helps hesitant buyers is failing exactly where uncertainty is highest.`,
+    }));
+  }
+}
+
+// Target 13: Checkout mode sending buyers through weaker-than-expected provider path
+function extractProviderPathWeaknessSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const checkoutIndicators = byType.get(EvidenceType.CheckoutIndicator) || [];
+  const providers = byType.get(EvidenceType.ProviderIndicator) || [];
+  const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+  const techEvidence = byType.get(EvidenceType.TechnologyDetected) || [];
+
+  if (checkoutIndicators.length === 0) return;
+
+  const hasExternalCheckout = checkoutIndicators.some(e =>
+    (e.payload as CheckoutIndicatorPayload).is_external,
+  );
+
+  // Provider path is "weak" when:
+  // 1. Checkout is external (redirect mode) AND
+  // 2. No recognized payment provider detected (buyer goes to unknown endpoint) AND
+  // 3. No trust reinforcement (no policies, no structured data)
+  const hasRecognizedProvider = providers.length > 0;
+  const hasPolicies = policyPages.length >= 2;
+  const hasTrustSchema = techEvidence.some(e =>
+    (e.payload as TechnologyDetectedPayload).category === 'platform' &&
+    (e.payload as TechnologyDetectedPayload).confidence >= 60,
+  );
+
+  if (hasExternalCheckout && !hasRecognizedProvider) {
+    signals.push(createSignal({ ids,
+      signal_key: 'provider_path_weaker_than_expected',
+      category: SignalCategory.Checkout,
+      attribute: 'checkout.provider_path_weak',
+      value: !hasPolicies ? 'high' : 'medium',
+      confidence: 60,
+      scoping, cycle_ref,
+      evidence_refs: [
+        ...checkoutIndicators.slice(0, 3).map(e => makeRef('evidence', e.id)),
+        ...providers.slice(0, 2).map(e => makeRef('evidence', e.id)),
+      ],
+      description: `Checkout redirects buyers to an external domain without a recognized payment provider. ${!hasPolicies ? 'No policies reinforce trust.' : ''} ${!hasTrustSchema ? 'No verified business identity detected.' : ''} The provider path is weaker than buyers expect for a payment handoff.`,
+    }));
+  }
+}
+
+// Target 15: Trust and measurement break apart on alternate commerce paths (compound)
+function extractAlternateFlowTrustMeasurementSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  // Compound signal: fires only when BOTH trust AND measurement are weak on alternate paths
+  // This is a composite of secondary flows + trust thinness + measurement gaps
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  const policyPages = byType.get(EvidenceType.PolicyPage) || [];
+  const techEvidence = byType.get(EvidenceType.TechnologyDetected) || [];
+
+  if (pages.length < 5) return;
+
+  const commercialPattern = /checkout|cart|pay|payment|billing|order|purchase|pricing/i;
+  const commercialPages = pages.filter(e => commercialPattern.test((e.payload as PageContentPayload).url || ''));
+  if (commercialPages.length < 2) return;
+
+  // Trust assessment: few policies + few providers
+  const hasPolicies = policyPages.length >= 2;
+  const hasAnalytics = techEvidence.some(e => (e.payload as TechnologyDetectedPayload).category === 'analytics');
+
+  // Compound: multiple commercial pages with weak trust AND weak measurement
+  if (!hasPolicies && !hasAnalytics && commercialPages.length >= 2) {
+    signals.push(createSignal({ ids,
+      signal_key: 'alternate_flow_trust_measurement_compound',
+      category: SignalCategory.Revenue,
+      attribute: 'revenue.trust_measurement_compound_break',
+      value: 'high',
+      confidence: 55,
+      scoping, cycle_ref,
+      evidence_refs: commercialPages.slice(0, 3).map(e => makeRef('evidence', e.id)),
+      description: `Multiple commercial paths operate without both trust safeguards (policies < 2) and measurement coverage (no analytics detected). Revenue flowing through these paths has neither the trust infrastructure to convert nor the measurement infrastructure to optimize.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 3A: Channel Integrity Signals from Nuclei Evidence
+// ──────────────────────────────────────────────
+
+function extractChannelIntegritySignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const nucleiMatches = byType.get(EvidenceType.NucleiMatch) || [];
+  if (nucleiMatches.length === 0) return;
+
+  // ── Helpers for governance gates ──
+  const CONFIDENCE_FLOOR = 50; // signals below this average confidence do not fire
+  const groupBy = (family: string) => nucleiMatches.filter(e => (e.payload as NucleiMatchPayload).downside_family === family);
+  const avgConfidence = (matches: Evidence[]) => matches.length === 0 ? 0 : Math.round(matches.reduce((s, e) => s + (e.payload as NucleiMatchPayload).confidence, 0) / matches.length);
+  const highSevCount = (matches: Evidence[]) => matches.filter(e => (e.payload as NucleiMatchPayload).severity_weight === 'high').length;
+  const commercialCount = (matches: Evidence[]) => matches.filter(e => (e.payload as NucleiMatchPayload).is_commercial_surface).length;
+
+  // ── Payment integrity: script injection / formjacking ──
+  // Gate: requires at least 1 high-severity match OR 1 match on commercial surface
+  const paymentMatches = groupBy('payment_integrity');
+  const paymentHigh = highSevCount(paymentMatches);
+  const paymentCommercial = commercialCount(paymentMatches);
+  const paymentConf = avgConfidence(paymentMatches);
+
+  if (paymentMatches.length > 0 && paymentConf >= CONFIDENCE_FLOOR && (paymentHigh > 0 || paymentCommercial > 0)) {
+    signals.push(createSignal({ ids,
+      signal_key: 'payment_surface_script_exposure',
+      category: SignalCategory.Trust,
+      attribute: 'channel.payment_script_exposure',
+      value: paymentHigh > 0 ? 'high' : 'medium',
+      numeric_value: paymentMatches.length,
+      confidence: paymentConf,
+      scoping, cycle_ref,
+      evidence_refs: paymentMatches.map(e => makeRef('evidence', e.id)),
+      description: `${paymentMatches.length} payment integrity exposure(s).${paymentCommercial > 0 ? ` ${paymentCommercial} on checkout/payment surfaces.` : ''} Script injection or formjacking-pattern exposure near purchase-critical pages.`,
+    }));
+  }
+
+  // ── Channel trust: open redirects, CORS, directory listing ──
+  // Gate: requires at least 1 high-severity match (open redirect = high)
+  // Low-signal matches (directory listing, CORS) alone do not fire unless 2+ present
+  const channelMatches = groupBy('channel_trust');
+  const channelHigh = highSevCount(channelMatches);
+  const channelConf = avgConfidence(channelMatches);
+
+  if (channelMatches.length > 0 && channelConf >= CONFIDENCE_FLOOR && (channelHigh > 0 || channelMatches.length >= 2)) {
+    signals.push(createSignal({ ids,
+      signal_key: 'channel_hijack_exposure',
+      category: SignalCategory.Trust,
+      attribute: 'channel.hijack_exposure',
+      value: channelHigh > 0 ? 'high' : 'medium',
+      numeric_value: channelMatches.length,
+      confidence: channelConf,
+      scoping, cycle_ref,
+      evidence_refs: channelMatches.map(e => makeRef('evidence', e.id)),
+      description: `${channelMatches.length} channel trust exposure(s).${channelHigh > 0 ? ' Includes high-severity issues (open redirects) that enable phishing using the brand domain.' : ' Multiple posture weaknesses that compound to enable traffic diversion or impersonation.'}`,
+    }));
+  }
+
+  // ── Commerce continuity: admin panels, debug, env files ──
+  // Gate: always fires if present (these are unambiguously dangerous)
+  const opsMatches = groupBy('commerce_continuity');
+  const opsConf = avgConfidence(opsMatches);
+
+  if (opsMatches.length > 0 && opsConf >= CONFIDENCE_FLOOR) {
+    signals.push(createSignal({ ids,
+      signal_key: 'commerce_continuity_threat',
+      category: SignalCategory.Operational,
+      attribute: 'channel.commerce_continuity_threat',
+      value: highSevCount(opsMatches) > 0 ? 'high' : 'medium',
+      numeric_value: opsMatches.length,
+      confidence: opsConf,
+      scoping, cycle_ref,
+      evidence_refs: opsMatches.map(e => makeRef('evidence', e.id)),
+      description: `${opsMatches.length} operational exposure(s) threatening commerce continuity. Exposed admin panels, debug endpoints, or configuration files exploitable to disrupt the commercial operation.`,
+    }));
+  }
+
+  // ── Trust posture: HSTS, mixed content, expired cert ──
+  // TIGHTENED GATE: low-signal checks (missing HSTS alone, single mixed-content) do NOT fire.
+  // Requires: 1 high-severity match (expired cert) OR 2+ matches (pattern, not single config)
+  const trustMatches = groupBy('trust_posture');
+  const trustHigh = highSevCount(trustMatches);
+  const trustConf = avgConfidence(trustMatches);
+
+  if (trustMatches.length > 0 && trustConf >= CONFIDENCE_FLOOR && (trustHigh > 0 || trustMatches.length >= 2)) {
+    signals.push(createSignal({ ids,
+      signal_key: 'low_trust_technical_posture',
+      category: SignalCategory.Trust,
+      attribute: 'channel.low_trust_posture',
+      value: trustHigh > 0 ? 'high' : 'medium',
+      numeric_value: trustMatches.length,
+      confidence: trustConf,
+      scoping, cycle_ref,
+      evidence_refs: trustMatches.map(e => makeRef('evidence', e.id)),
+      description: `${trustMatches.length} trust posture weakness(es). ${trustHigh > 0 ? 'Includes critical issues (expired certificate, browser security warnings) that actively block buyers.' : 'Multiple visible weaknesses that compound to undermine purchase confidence.'}`,
+    }));
+  }
+
+  // ── Abuse exposure: APIs, business-logic, economic exploitation ──
+  // TIGHTENED GATE: single low-confidence match (GraphQL introspection alone) does NOT fire.
+  // Requires: 1 match on commercial surface OR 2+ matches OR 1 high-severity match
+  const abuseMatches = groupBy('abuse_exposure');
+  const abuseHigh = highSevCount(abuseMatches);
+  const abuseCommercial = commercialCount(abuseMatches);
+  const abuseConf = avgConfidence(abuseMatches);
+
+  if (abuseMatches.length > 0 && abuseConf >= CONFIDENCE_FLOOR && (abuseHigh > 0 || abuseCommercial > 0 || abuseMatches.length >= 2)) {
+    // Split: economic exploitation checks (cart, coupon, refund) vs generic API exposure
+    const economicChecks = ['vi_abuse_cart_manipulation', 'vi_abuse_coupon_enumeration', 'vi_abuse_refund_endpoint_exposed'];
+    const economicMatches = abuseMatches.filter(e => economicChecks.includes((e.payload as NucleiMatchPayload).check_id));
+    const genericAbuseMatches = abuseMatches.filter(e => !economicChecks.includes((e.payload as NucleiMatchPayload).check_id));
+
+    // Signal 1: Economic exploitation (cart/coupon/refund abuse)
+    if (economicMatches.length > 0) {
+      const econConf = avgConfidence(economicMatches);
+      signals.push(createSignal({ ids,
+        signal_key: 'economic_exploitation_exposure',
+        category: SignalCategory.Operational,
+        attribute: 'channel.economic_exploitation',
+        value: economicMatches.length >= 2 ? 'high' : 'medium',
+        numeric_value: economicMatches.length,
+        confidence: econConf,
+        scoping, cycle_ref,
+        evidence_refs: economicMatches.map(e => makeRef('evidence', e.id)),
+        description: `${economicMatches.length} business-logic exploitation condition(s). Cart manipulation, coupon enumeration, or refund endpoint exposure enables systematic margin theft, discount abuse, or automated refund fraud.`,
+      }));
+    }
+
+    // Signal 2: General abuse conditions (API exposure, enumeration, rate limiting)
+    if (genericAbuseMatches.length > 0 && (genericAbuseMatches.length >= 2 || abuseCommercial > 0)) {
+      const genConf = avgConfidence(genericAbuseMatches);
+      signals.push(createSignal({ ids,
+        signal_key: 'abuse_exposure_conditions',
+        category: SignalCategory.Operational,
+        attribute: 'channel.abuse_exposure',
+        value: genericAbuseMatches.length >= 2 ? 'high' : 'medium',
+        numeric_value: genericAbuseMatches.length,
+        confidence: genConf,
+        scoping, cycle_ref,
+        evidence_refs: genericAbuseMatches.map(e => makeRef('evidence', e.id)),
+        description: `${genericAbuseMatches.length} abuse-enabling condition(s). Exposed APIs, schema introspection, or missing rate limits enable automated fraud, scraping, and credential attacks at scale.`,
+      }));
+    }
+  }
+
+  // ── Compound: payment integrity + trust posture ──
+  // Gate: both families must have independently fired (already gated above)
+  if (paymentMatches.length > 0 && trustMatches.length > 0 &&
+      (paymentHigh > 0 || paymentCommercial > 0) && (trustHigh > 0 || trustMatches.length >= 2)) {
+    const allRefs = [...paymentMatches, ...trustMatches].map(e => makeRef('evidence', e.id));
+    signals.push(createSignal({ ids,
+      signal_key: 'checkout_infrastructure_brittle',
+      category: SignalCategory.Trust,
+      attribute: 'channel.checkout_infra_brittle',
+      value: 'high',
+      numeric_value: paymentMatches.length + trustMatches.length,
+      confidence: 65,
+      scoping, cycle_ref,
+      evidence_refs: allRefs.slice(0, 10),
+      description: `Payment integrity exposures (${paymentMatches.length}) combined with trust posture weaknesses (${trustMatches.length}). Checkout trust anchored to infrastructure that is both technically weak and actively exploitable.`,
+    }));
+  }
+
+  // ── Compound: multi-category exposure pattern ──
+  // Gate: requires 3+ exposures across 2+ families with at least 1 on commercial surface
+  const allExposures = nucleiMatches.length;
+  const allCommercial = commercialCount(nucleiMatches);
+  const familiesPresent = new Set(nucleiMatches.map(e => (e.payload as NucleiMatchPayload).downside_family)).size;
+
+  if (allExposures >= 3 && familiesPresent >= 2 && allCommercial >= 1) {
+    signals.push(createSignal({ ids,
+      signal_key: 'channel_compromise_pattern',
+      category: SignalCategory.Trust,
+      attribute: 'channel.compromise_pattern',
+      value: allCommercial >= 2 ? 'high' : 'medium',
+      numeric_value: allExposures,
+      confidence: 60,
+      scoping, cycle_ref,
+      evidence_refs: nucleiMatches.slice(0, 10).map(e => makeRef('evidence', e.id)),
+      description: `${allExposures} exposures across ${familiesPresent} categories, ${allCommercial} on commercial surfaces. Multiple simultaneous exposure types signal a channel not hardened for commercial operation.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 3B: Deep Discovery Signals from Katana
+//
+// Governance gates:
+// - CONFIDENCE_FLOOR: avg confidence must reach 50
+// - NET_NEW_MINIMUM: at least 1 net-new discovery required
+// - COMMERCIAL_REQUIRED for pricing/abuse families
+// - Per-family quality gates prevent false positives
+// ──────────────────────────────────────────────
+
+function extractDeepDiscoverySignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const katanaEvidence = byType.get(EvidenceType.KatanaDiscovery) || [];
+  if (katanaEvidence.length === 0) return;
+
+  const CONFIDENCE_FLOOR = 50;
+
+  // Helper: group by discovery family
+  const groupBy = (family: string) => katanaEvidence.filter(e =>
+    (e.payload as KatanaDiscoveryPayload).discovery_family === family,
+  );
+  const avgConfidence = (matches: Evidence[]) =>
+    matches.length === 0 ? 0 : Math.round(matches.reduce((s, e) =>
+      s + (e.payload as KatanaDiscoveryPayload).confidence, 0) / matches.length,
+    );
+  const netNewCount = (matches: Evidence[]) =>
+    matches.filter(e => (e.payload as KatanaDiscoveryPayload).is_net_new).length;
+  const guessableCount = (matches: Evidence[]) =>
+    matches.filter(e => (e.payload as KatanaDiscoveryPayload).appears_guessable).length;
+  const unsafeguardedCount = (matches: Evidence[]) =>
+    matches.filter(e =>
+      (e.payload as KatanaDiscoveryPayload).appears_guessable &&
+      !(e.payload as KatanaDiscoveryPayload).has_visible_safeguards,
+    ).length;
+  const commercialCount = (matches: Evidence[]) =>
+    matches.filter(e => (e.payload as KatanaDiscoveryPayload).is_commercial_surface).length;
+  const jsDiscoveredCount = (matches: Evidence[]) =>
+    matches.filter(e =>
+      (e.payload as KatanaDiscoveryPayload).discovery_method === 'js_crawl' ||
+      (e.payload as KatanaDiscoveryPayload).discovery_method === 'dynamic_route',
+    ).length;
+
+  // ── pricing_control family ──
+  const pricingMatches = groupBy('pricing_control');
+  if (pricingMatches.length > 0) {
+    const conf = avgConfidence(pricingMatches);
+    const netNew = netNewCount(pricingMatches);
+    const guessable = guessableCount(pricingMatches);
+
+    // Gate: must have net-new AND (commercial surface OR guessable) AND confidence floor
+    if (conf >= CONFIDENCE_FLOOR && netNew >= 1 && (commercialCount(pricingMatches) >= 1 || guessable >= 1)) {
+      const severity = guessable >= 2 && unsafeguardedCount(pricingMatches) >= 1 ? 'high' : netNew >= 2 ? 'medium' : 'low';
+      signals.push(createSignal({
+        signal_key: 'promotion_logic_abuse_exposure',
+        category: SignalCategory.Revenue,
+        attribute: 'deep_discovery.pricing_control',
+        value: severity,
+        numeric_value: pricingMatches.length,
+        confidence: conf,
+        scoping, cycle_ref,
+        evidence_refs: pricingMatches.map(e => makeRef('evidence', e.id)),
+        description: `${pricingMatches.length} promotion/discount/coupon routes discovered through deep crawl (${netNew} net-new, ${guessable} guessable). Discount logic is structurally exposed to enumeration or manipulation.`,
+        ids,
+      }));
+    }
+  }
+
+  // ── commerce_variant family — cart variants ──
+  const commerceVariants = groupBy('commerce_variant');
+  const cartVariants = commerceVariants.filter(e =>
+    (e.payload as KatanaDiscoveryPayload).route_intent === 'cart' ||
+    (e.payload as KatanaDiscoveryPayload).route_intent === 'checkout',
+  );
+  if (cartVariants.length >= 2) {
+    const conf = avgConfidence(cartVariants);
+    const netNew = netNewCount(cartVariants);
+
+    // Gate: 2+ cart/checkout variants with at least 1 net-new
+    if (conf >= CONFIDENCE_FLOOR && netNew >= 1) {
+      const severity = netNew >= 3 ? 'high' : netNew >= 2 ? 'medium' : 'low';
+      signals.push(createSignal({
+        signal_key: 'cart_variant_weak_pricing_control',
+        category: SignalCategory.Revenue,
+        attribute: 'deep_discovery.cart_variants',
+        value: severity,
+        numeric_value: cartVariants.length,
+        confidence: conf,
+        scoping, cycle_ref,
+        evidence_refs: cartVariants.map(e => makeRef('evidence', e.id)),
+        description: `${cartVariants.length} cart/checkout route variants discovered (${netNew} net-new). Multiple cart paths increase the risk of weaker pricing controls on alternate variants.`,
+        ids,
+      }));
+    }
+  }
+
+  // ── pricing_control + refund_return — hidden discount/refund routes ──
+  const refundAbuse = groupBy('business_logic_abuse').filter(e =>
+    (e.payload as KatanaDiscoveryPayload).route_intent === 'refund_return',
+  );
+  const discountRoutes = pricingMatches.filter(e =>
+    (e.payload as KatanaDiscoveryPayload).route_intent === 'coupon_discount',
+  );
+  const hiddenSafeguardRoutes = [...refundAbuse, ...discountRoutes];
+  if (hiddenSafeguardRoutes.length >= 1) {
+    const conf = avgConfidence(hiddenSafeguardRoutes);
+    const netNew = netNewCount(hiddenSafeguardRoutes);
+    const weakly = unsafeguardedCount(hiddenSafeguardRoutes);
+
+    // Gate: at least 1 net-new + confidence floor
+    if (conf >= CONFIDENCE_FLOOR && netNew >= 1) {
+      const severity = weakly >= 2 ? 'high' : weakly >= 1 ? 'medium' : 'low';
+      signals.push(createSignal({
+        signal_key: 'hidden_discount_refund_weakness',
+        category: SignalCategory.Revenue,
+        attribute: 'deep_discovery.hidden_safeguard_routes',
+        value: severity,
+        numeric_value: hiddenSafeguardRoutes.length,
+        confidence: conf,
+        scoping, cycle_ref,
+        evidence_refs: hiddenSafeguardRoutes.map(e => makeRef('evidence', e.id)),
+        description: `${hiddenSafeguardRoutes.length} discount/refund routes discovered outside the expected safeguard envelope (${netNew} net-new, ${weakly} without visible safeguards).`,
+        ids,
+      }));
+    }
+  }
+
+  // ── business_logic_abuse family — guessable business endpoints ──
+  const abuseMatches = groupBy('business_logic_abuse');
+  if (abuseMatches.length > 0) {
+    const conf = avgConfidence(abuseMatches);
+    const guessable = guessableCount(abuseMatches);
+    const weakly = unsafeguardedCount(abuseMatches);
+
+    // Gate: at least 1 guessable/unsafeguarded OR 2+ total + confidence floor
+    if (conf >= CONFIDENCE_FLOOR && (weakly >= 1 || abuseMatches.length >= 2)) {
+      const severity = weakly >= 3 ? 'high' : weakly >= 1 ? 'medium' : 'low';
+      signals.push(createSignal({
+        signal_key: 'guessable_business_endpoint_exposure',
+        category: SignalCategory.Operational,
+        attribute: 'deep_discovery.guessable_endpoints',
+        value: severity,
+        numeric_value: abuseMatches.length,
+        confidence: conf,
+        scoping, cycle_ref,
+        evidence_refs: abuseMatches.map(e => makeRef('evidence', e.id)),
+        description: `${abuseMatches.length} business-critical endpoints discovered through deep crawl (${guessable} guessable, ${weakly} without visible safeguards). Commerce actions are more discoverable than their business importance warrants.`,
+        ids,
+      }));
+    }
+  }
+
+  // ── safeguard_bypass family — alternate pricing safeguard bypass ──
+  const bypassMatches = groupBy('safeguard_bypass');
+  if (bypassMatches.length >= 1) {
+    const conf = avgConfidence(bypassMatches);
+    const netNew = netNewCount(bypassMatches);
+    const commercial = commercialCount(bypassMatches);
+
+    // Gate: net-new + commercial or 2+ total + confidence floor
+    if (conf >= CONFIDENCE_FLOOR && (netNew >= 1 && commercial >= 1 || bypassMatches.length >= 2)) {
+      const severity = netNew >= 2 && commercial >= 1 ? 'high' : netNew >= 1 ? 'medium' : 'low';
+      signals.push(createSignal({
+        signal_key: 'alternate_pricing_safeguard_bypass',
+        category: SignalCategory.Revenue,
+        attribute: 'deep_discovery.safeguard_bypass',
+        value: severity,
+        numeric_value: bypassMatches.length,
+        confidence: conf,
+        scoping, cycle_ref,
+        evidence_refs: bypassMatches.map(e => makeRef('evidence', e.id)),
+        description: `${bypassMatches.length} alternate commercial actions discovered that may bypass intended pricing safeguards (${netNew} net-new, ${commercial} on commercial surfaces).`,
+        ids,
+      }));
+    }
+  }
+
+  // ── commerce_variant family — JS-discovered purchase variants ──
+  const jsVariants = commerceVariants.filter(e =>
+    (e.payload as KatanaDiscoveryPayload).discovery_method === 'js_crawl' ||
+    (e.payload as KatanaDiscoveryPayload).discovery_method === 'dynamic_route',
+  );
+  if (jsVariants.length >= 1) {
+    const conf = avgConfidence(jsVariants);
+    const netNew = netNewCount(jsVariants);
+
+    // Gate: at least 1 net-new JS-discovered + confidence floor
+    if (conf >= CONFIDENCE_FLOOR && netNew >= 1) {
+      const severity = netNew >= 3 ? 'high' : netNew >= 2 ? 'medium' : 'low';
+      signals.push(createSignal({
+        signal_key: 'js_discovered_purchase_variant',
+        category: SignalCategory.Revenue,
+        attribute: 'deep_discovery.js_commerce_variants',
+        value: severity,
+        numeric_value: jsVariants.length,
+        confidence: conf,
+        scoping, cycle_ref,
+        evidence_refs: jsVariants.map(e => makeRef('evidence', e.id)),
+        description: `${jsVariants.length} JavaScript-discovered commerce routes found (${netNew} net-new). Client-side route variants may operate outside the main safeguard and measurement model.`,
+        ids,
+      }));
+    }
+  }
+
+  // ── Dynamic route weakness — all families, weak governance ──
+  const allDiscoveries = katanaEvidence;
+  const allUnsafeguarded = unsafeguardedCount(allDiscoveries);
+  const allJsDiscovered = jsDiscoveredCount(allDiscoveries);
+
+  if (allJsDiscovered >= 2 && allUnsafeguarded >= 1) {
+    const conf = avgConfidence(allDiscoveries);
+    if (conf >= CONFIDENCE_FLOOR) {
+      const severity = allUnsafeguarded >= 3 ? 'high' : allUnsafeguarded >= 2 ? 'medium' : 'low';
+      signals.push(createSignal({
+        signal_key: 'dynamic_route_weak_governance',
+        category: SignalCategory.Operational,
+        attribute: 'deep_discovery.dynamic_route_weakness',
+        value: severity,
+        numeric_value: allJsDiscovered,
+        confidence: conf,
+        scoping, cycle_ref,
+        evidence_refs: allDiscoveries.slice(0, 10).map(e => makeRef('evidence', e.id)),
+        description: `${allJsDiscovered} dynamically discovered routes with ${allUnsafeguarded} lacking visible safeguards. Commerce logic discovered through deep crawling is structurally weaker than the visible purchase flow.`,
+        ids,
+      }));
+    }
+  }
+
+  // ── support_burden family — hidden support actions ──
+  const supportMatches = groupBy('support_burden');
+  if (supportMatches.length >= 2) {
+    const conf = avgConfidence(supportMatches);
+    const netNew = netNewCount(supportMatches);
+
+    // Gate: 2+ support routes with at least 1 net-new + confidence floor
+    if (conf >= CONFIDENCE_FLOOR && netNew >= 1) {
+      const severity = netNew >= 3 ? 'medium' : 'low'; // support burden is inherently medium severity
+      signals.push(createSignal({
+        signal_key: 'hidden_support_burden_exposure',
+        category: SignalCategory.Support,
+        attribute: 'deep_discovery.support_burden',
+        value: severity,
+        numeric_value: supportMatches.length,
+        confidence: conf,
+        scoping, cycle_ref,
+        evidence_refs: supportMatches.map(e => makeRef('evidence', e.id)),
+        description: `${supportMatches.length} support/help routes structurally separated from the commercial journey (${netNew} not linked from purchase paths). Hidden support creates downstream burden instead of reducing buyer hesitation.`,
+        ids,
+      }));
+    }
+  }
+
+  // ── Compound: alternate variant control breakdown ──
+  // Fires when BOTH pricing control AND commerce variant signals exist
+  const hasPricingSignal = pricingMatches.length > 0 && avgConfidence(pricingMatches) >= CONFIDENCE_FLOOR && netNewCount(pricingMatches) >= 1;
+  const hasVariantSignal = commerceVariants.length >= 2 && avgConfidence(commerceVariants) >= CONFIDENCE_FLOOR && netNewCount(commerceVariants) >= 1;
+  if (hasPricingSignal && hasVariantSignal) {
+    const allEvidence = [...pricingMatches, ...commerceVariants];
+    const conf = avgConfidence(allEvidence);
+    if (conf >= CONFIDENCE_FLOOR) {
+      signals.push(createSignal({
+        signal_key: 'alternate_variant_control_breakdown',
+        category: SignalCategory.Revenue,
+        attribute: 'deep_discovery.compound_control_breakdown',
+        value: 'high',
+        numeric_value: allEvidence.length,
+        confidence: Math.min(conf, 85), // conservative on compound
+        scoping, cycle_ref,
+        evidence_refs: allEvidence.slice(0, 10).map(e => makeRef('evidence', e.id)),
+        description: `Both pricing control exposure (${pricingMatches.length} routes) and commerce variants (${commerceVariants.length} routes) detected. Trust, measurement, and pricing controls break apart on alternate commerce variants.`,
+        ids,
+      }));
+    }
+  }
+
+  // ── Compound: deep commerce exploitation risk ──
+  // Fires when business_logic_abuse + safeguard_bypass both present
+  // with unsafeguarded endpoints on commercial surfaces
+  const hasAbuseSignal = abuseMatches.length > 0 && avgConfidence(abuseMatches) >= CONFIDENCE_FLOOR && unsafeguardedCount(abuseMatches) >= 1;
+  const hasBypassSignal = bypassMatches.length >= 1 && avgConfidence(bypassMatches) >= CONFIDENCE_FLOOR;
+  const hasDeepExploitRisk = hasAbuseSignal && (hasBypassSignal || unsafeguardedCount(abuseMatches) >= 2);
+  if (hasDeepExploitRisk) {
+    const allEvidence = [...abuseMatches, ...bypassMatches];
+    const conf = avgConfidence(allEvidence);
+    const totalUnsafe = unsafeguardedCount(allEvidence);
+    if (conf >= CONFIDENCE_FLOOR) {
+      signals.push(createSignal({
+        signal_key: 'deep_commerce_exploitation_risk',
+        category: SignalCategory.Operational,
+        attribute: 'deep_discovery.compound_exploitation',
+        value: totalUnsafe >= 3 ? 'high' : 'medium',
+        numeric_value: allEvidence.length,
+        confidence: Math.min(conf, 85),
+        scoping, cycle_ref,
+        evidence_refs: allEvidence.slice(0, 10).map(e => makeRef('evidence', e.id)),
+        description: `${allEvidence.length} deeply reachable commerce surfaces with ${totalUnsafe} lacking safeguards. Business-logic abuse endpoints and safeguard bypass routes compound to make deep commerce surfaces easier to exploit than the primary flow.`,
+        ids,
+      }));
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2D: Network Analysis Signals
+//
+// Translates runtime network evidence into
+// business-grade signals about conversion,
+// trust, measurement, and mobile weakness.
+//
+// Governance gates:
+// - COMMERCIAL_SURFACE_REQUIRED for most signals
+// - MIN_PROBLEM_COUNT prevents single-event noise
+// - Comparative thresholds for "slower than rest"
+// - Mobile signals require mobile viewport evidence
+// ──────────────────────────────────────────────
+
+function extractNetworkAnalysisSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const networkEvidence = byType.get(EvidenceType.NetworkAnalysis) || [];
+  if (networkEvidence.length === 0) return;
+
+  // Separate desktop vs mobile evidence
+  const desktopEvidence: Evidence[] = [];
+  const mobileEvidence: Evidence[] = [];
+  const commercialEvidence: Evidence[] = [];
+
+  for (const ev of networkEvidence) {
+    const p = ev.payload as NetworkAnalysisPayload;
+    if (p.viewport === 'mobile') mobileEvidence.push(ev);
+    else desktopEvidence.push(ev);
+    if (p.is_commercial_surface) commercialEvidence.push(ev);
+  }
+
+  const allRefs = networkEvidence.map(e => makeRef('evidence', e.id));
+
+  // ── 1. Checkout API latency ──
+  const paymentSlowEvidence = networkEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.is_commercial_surface && p.payment_slowest_ms > 3000;
+  });
+  if (paymentSlowEvidence.length >= 1) {
+    const worst = paymentSlowEvidence.reduce((max, e) =>
+      (e.payload as NetworkAnalysisPayload).payment_slowest_ms > (max.payload as NetworkAnalysisPayload).payment_slowest_ms ? e : max,
+    );
+    const worstMs = (worst.payload as NetworkAnalysisPayload).payment_slowest_ms;
+    const severity = worstMs > 8000 ? 'high' : worstMs > 5000 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'checkout_api_latency_degrading',
+      category: SignalCategory.Friction,
+      attribute: 'network.checkout_api_latency',
+      value: severity,
+      numeric_value: worstMs,
+      confidence: 70,
+      scoping, cycle_ref, ids,
+      evidence_refs: paymentSlowEvidence.map(e => makeRef('evidence', e.id)),
+      description: `Payment-critical API responses taking ${worstMs}ms on commercial surfaces. Checkout latency above 3s degrades purchase completion progressively.`,
+    }));
+  }
+
+  // ── 2. Commercial pages slower than rest ──
+  if (networkEvidence.length >= 3) {
+    const commercialDurations = commercialEvidence
+      .map(e => (e.payload as NetworkAnalysisPayload).slowest_critical_request_ms)
+      .filter(d => d > 0);
+    const nonCommercialDurations = networkEvidence
+      .filter(e => !(e.payload as NetworkAnalysisPayload).is_commercial_surface)
+      .map(e => (e.payload as NetworkAnalysisPayload).slowest_critical_request_ms)
+      .filter(d => d > 0);
+
+    if (commercialDurations.length >= 1 && nonCommercialDurations.length >= 1) {
+      const avgCommercial = commercialDurations.reduce((s, d) => s + d, 0) / commercialDurations.length;
+      const avgNonCommercial = nonCommercialDurations.reduce((s, d) => s + d, 0) / nonCommercialDurations.length;
+      const ratio = avgCommercial / Math.max(avgNonCommercial, 1);
+      if (ratio > 1.5 && avgCommercial > 2000) {
+        const severity = ratio > 3 ? 'high' : ratio > 2 ? 'medium' : 'low';
+        signals.push(createSignal({
+          signal_key: 'commercial_pages_disproportionately_slow',
+          category: SignalCategory.Friction,
+          attribute: 'network.commercial_slow_ratio',
+          value: severity,
+          numeric_value: Math.round(ratio * 100),
+          confidence: 65,
+          scoping, cycle_ref, ids,
+          evidence_refs: commercialEvidence.slice(0, 5).map(e => makeRef('evidence', e.id)),
+          description: `Commercial pages are ${ratio.toFixed(1)}x slower than the rest of the site (${Math.round(avgCommercial)}ms vs ${Math.round(avgNonCommercial)}ms). The pages that generate revenue are disproportionately slow.`,
+        }));
+      }
+    }
+  }
+
+  // ── 3. Paid landing overloaded ──
+  const heavyLandings = networkEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.third_party_total_weight_ms > 8000 && p.total_third_party > 15;
+  });
+  if (heavyLandings.length >= 1) {
+    const worst = heavyLandings[0].payload as NetworkAnalysisPayload;
+    const severity = worst.third_party_total_weight_ms > 15000 ? 'high' : 'medium';
+    signals.push(createSignal({
+      signal_key: 'paid_landing_overloaded',
+      category: SignalCategory.Friction,
+      attribute: 'network.landing_overloaded',
+      value: severity,
+      numeric_value: worst.total_third_party,
+      confidence: 65,
+      scoping, cycle_ref, ids,
+      evidence_refs: heavyLandings.map(e => makeRef('evidence', e.id)),
+      description: `Landing page loads ${worst.total_third_party} third-party requests totaling ${worst.third_party_total_weight_ms}ms. Paid traffic is hitting a heavy runtime before buyers reach the first meaningful action.`,
+    }));
+  }
+
+  // ── 4. Third-party weight delaying trust/intent ──
+  const thirdPartyHeavy = commercialEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.third_party_total_weight_ms > 5000 && p.total_third_party > 10;
+  });
+  if (thirdPartyHeavy.length >= 1) {
+    const p = thirdPartyHeavy[0].payload as NetworkAnalysisPayload;
+    signals.push(createSignal({
+      signal_key: 'third_party_weight_delays_trust',
+      category: SignalCategory.Trust,
+      attribute: 'network.third_party_weight',
+      value: p.third_party_total_weight_ms > 10000 ? 'high' : 'medium',
+      numeric_value: p.third_party_total_weight_ms,
+      confidence: 60,
+      scoping, cycle_ref, ids,
+      evidence_refs: thirdPartyHeavy.map(e => makeRef('evidence', e.id)),
+      description: `${p.total_third_party} third-party requests on commercial surfaces adding ${p.third_party_total_weight_ms}ms of dependency weight. Non-essential external chains delay the moment of trust and buyer intent.`,
+    }));
+  }
+
+  // ── 5. Checkout depends on brittle third-party services ──
+  const brittleCheckout = commercialEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.payment_requests_failed > 0 || p.third_party_failed >= 2;
+  });
+  if (brittleCheckout.length >= 1) {
+    const totalPaymentFails = brittleCheckout.reduce((s, e) => s + (e.payload as NetworkAnalysisPayload).payment_requests_failed, 0);
+    const totalThirdPartyFails = brittleCheckout.reduce((s, e) => s + (e.payload as NetworkAnalysisPayload).third_party_failed, 0);
+    const severity = totalPaymentFails > 0 ? 'high' : totalThirdPartyFails >= 3 ? 'high' : 'medium';
+    signals.push(createSignal({
+      signal_key: 'checkout_brittle_third_party',
+      category: SignalCategory.Operational,
+      attribute: 'network.checkout_brittle_deps',
+      value: severity,
+      numeric_value: totalPaymentFails + totalThirdPartyFails,
+      confidence: 70,
+      scoping, cycle_ref, ids,
+      evidence_refs: brittleCheckout.map(e => makeRef('evidence', e.id)),
+      description: `${totalPaymentFails} payment and ${totalThirdPartyFails} third-party request failures on checkout surfaces. Purchase completion depends on unstable external services.`,
+    }));
+  }
+
+  // ── 6. Purchase flow blocked by failing requests ──
+  const purchaseBlocked = commercialEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.payment_failures > 0 || (p.commerce_content_failed > 0 && p.is_commercial_surface);
+  });
+  if (purchaseBlocked.length >= 1) {
+    const totalFails = purchaseBlocked.reduce((s, e) => {
+      const p = e.payload as NetworkAnalysisPayload;
+      return s + p.payment_failures + p.commerce_content_failed;
+    }, 0);
+    signals.push(createSignal({
+      signal_key: 'purchase_flow_blocked_by_failures',
+      category: SignalCategory.Friction,
+      attribute: 'network.purchase_blocked',
+      value: 'high',
+      numeric_value: totalFails,
+      confidence: 75,
+      scoping, cycle_ref, ids,
+      evidence_refs: purchaseBlocked.map(e => makeRef('evidence', e.id)),
+      description: `${totalFails} payment or commerce request failures detected on purchase surfaces. Buyers are actively blocked from completing transactions by failing requests.`,
+    }));
+  }
+
+  // ── 8. Measurement breaks on revenue path ──
+  const measurementBreaks = commercialEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.measurement_requests_failed > 0 && p.is_commercial_surface;
+  });
+  if (measurementBreaks.length >= 1) {
+    const totalFails = measurementBreaks.reduce((s, e) => s + (e.payload as NetworkAnalysisPayload).measurement_requests_failed, 0);
+    signals.push(createSignal({
+      signal_key: 'measurement_breaks_on_revenue_path',
+      category: SignalCategory.Measurement,
+      attribute: 'network.measurement_revenue_break',
+      value: totalFails >= 3 ? 'high' : 'medium',
+      numeric_value: totalFails,
+      confidence: 70,
+      scoping, cycle_ref, ids,
+      evidence_refs: measurementBreaks.map(e => makeRef('evidence', e.id)),
+      description: `${totalFails} measurement/analytics request failures on revenue-generating pages. Conversion data is silently dropping on the surfaces that matter most.`,
+    }));
+  }
+
+  // ── 9. Buyers reach purchase before deps ready ──
+  const depsNotReady = commercialEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return (p.payment_slowest_ms > 5000 || p.trust_latest_start_ms > 5000) && p.is_commercial_surface;
+  });
+  if (depsNotReady.length >= 1) {
+    const worst = depsNotReady[0].payload as NetworkAnalysisPayload;
+    const lateMs = Math.max(worst.payment_slowest_ms, worst.trust_latest_start_ms);
+    signals.push(createSignal({
+      signal_key: 'purchase_before_deps_ready',
+      category: SignalCategory.Friction,
+      attribute: 'network.deps_not_ready',
+      value: lateMs > 8000 ? 'high' : 'medium',
+      numeric_value: lateMs,
+      confidence: 60,
+      scoping, cycle_ref, ids,
+      evidence_refs: depsNotReady.map(e => makeRef('evidence', e.id)),
+      description: `Critical payment or trust dependencies take ${lateMs}ms to become available. Buyers can reach the purchase moment before essential services are ready.`,
+    }));
+  }
+
+  // ── 10. Trust/reassurance assets late load ──
+  const trustLate = commercialEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.trust_latest_start_ms > 5000 && p.trust_requests_total > 0;
+  });
+  if (trustLate.length >= 1) {
+    const worst = trustLate[0].payload as NetworkAnalysisPayload;
+    signals.push(createSignal({
+      signal_key: 'trust_assets_late_load',
+      category: SignalCategory.Trust,
+      attribute: 'network.trust_late_load',
+      value: worst.trust_latest_start_ms > 8000 ? 'high' : 'medium',
+      numeric_value: worst.trust_latest_start_ms,
+      confidence: 60,
+      scoping, cycle_ref, ids,
+      evidence_refs: trustLate.map(e => makeRef('evidence', e.id)),
+      description: `Trust and reassurance assets (support widgets, review badges, chat) start loading ${worst.trust_latest_start_ms}ms after page load. Buyers face hesitation before reassurance arrives.`,
+    }));
+  }
+
+  // ── 11. Mobile heavy runtime chain ──
+  const mobileHeavy = mobileEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.is_commercial_surface && (p.third_party_total_weight_ms > 6000 || p.total_third_party > 15);
+  });
+  if (mobileHeavy.length >= 1) {
+    const worst = mobileHeavy[0].payload as NetworkAnalysisPayload;
+    // Compare to desktop if available
+    const desktopCommercial = desktopEvidence.find(e => (e.payload as NetworkAnalysisPayload).is_commercial_surface);
+    const desktopWeight = desktopCommercial ? (desktopCommercial.payload as NetworkAnalysisPayload).third_party_total_weight_ms : null;
+    const mobileWorse = desktopWeight !== null && worst.third_party_total_weight_ms > desktopWeight * 1.3;
+    const severity = mobileWorse ? 'high' : worst.third_party_total_weight_ms > 10000 ? 'high' : 'medium';
+    signals.push(createSignal({
+      signal_key: 'mobile_heavy_runtime_chain',
+      category: SignalCategory.Friction,
+      attribute: 'network.mobile_heavy_runtime',
+      value: severity,
+      numeric_value: worst.third_party_total_weight_ms,
+      confidence: 65,
+      scoping, cycle_ref, ids,
+      evidence_refs: mobileHeavy.map(e => makeRef('evidence', e.id)),
+      description: `Mobile commerce path loaded ${worst.total_third_party} third-party requests totaling ${worst.third_party_total_weight_ms}ms dependency weight${mobileWorse ? ' — heavier than desktop' : ''}. Media spend is landing into a mobile experience that cannot convert efficiently.`,
+    }));
+  }
+
+  // ── 13. Support/payment/trust deps fail on mobile ──
+  const mobileFailing = mobileEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.is_commercial_surface && (p.payment_requests_failed > 0 || p.trust_requests_failed > 0 || p.measurement_requests_failed > 0);
+  });
+  if (mobileFailing.length >= 1) {
+    const totalFails = mobileFailing.reduce((s, e) => {
+      const p = e.payload as NetworkAnalysisPayload;
+      return s + p.payment_requests_failed + p.trust_requests_failed + p.measurement_requests_failed;
+    }, 0);
+    signals.push(createSignal({
+      signal_key: 'mobile_critical_deps_failing',
+      category: SignalCategory.Friction,
+      attribute: 'network.mobile_deps_failing',
+      value: totalFails >= 3 ? 'high' : 'medium',
+      numeric_value: totalFails,
+      confidence: 70,
+      scoping, cycle_ref, ids,
+      evidence_refs: mobileFailing.map(e => makeRef('evidence', e.id)),
+      description: `${totalFails} critical dependency failures (payment, trust, measurement) on mobile commercial surfaces. Mobile buyers face a weaker operational environment than desktop.`,
+    }));
+  }
+
+  // ── 15. Trust-critical surfaces rely on unstable deps ──
+  const unstableTrust = networkEvidence.filter(e => {
+    const p = e.payload as NetworkAnalysisPayload;
+    return p.trust_requests_failed > 0 || (p.third_party_failures > 0 && p.trust_requests_total > 0);
+  });
+  if (unstableTrust.length >= 1) {
+    const totalTrustFails = unstableTrust.reduce((s, e) => s + (e.payload as NetworkAnalysisPayload).trust_requests_failed, 0);
+    const totalThirdPartyFails = unstableTrust.reduce((s, e) => s + (e.payload as NetworkAnalysisPayload).third_party_failures, 0);
+    signals.push(createSignal({
+      signal_key: 'trust_surfaces_unstable_deps',
+      category: SignalCategory.Trust,
+      attribute: 'network.trust_unstable_deps',
+      value: totalTrustFails >= 2 ? 'high' : 'medium',
+      numeric_value: totalTrustFails + totalThirdPartyFails,
+      confidence: 65,
+      scoping, cycle_ref, ids,
+      evidence_refs: unstableTrust.slice(0, 5).map(e => makeRef('evidence', e.id)),
+      description: `${totalTrustFails} trust-layer and ${totalThirdPartyFails} third-party failures on surfaces that need to make buyers feel safe. Support widgets, review badges, and trust signals depend on unstable external services.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 3E: Discoverability Signals
+//
+// Extracts demand-capture and representation quality
+// signals from EXISTING evidence (PageContent, Meta,
+// StructuredData, Link). No new collectors needed.
+//
+// Gates:
+// - Commercial surface required for most signals
+// - Minimum page count to avoid low-evidence noise
+// - Compound conditions for weak signals
+// ──────────────────────────────────────────────
+
+function extractDiscoverabilitySignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const pages = byType.get(EvidenceType.PageContent) || [];
+  const metas = byType.get(EvidenceType.Meta) || [];
+  const structuredData = byType.get(EvidenceType.StructuredDataItem) || [];
+  const links = byType.get(EvidenceType.Link) || [];
+
+  if (pages.length < 3) return; // need meaningful crawl depth
+
+  const COMMERCIAL_PATTERN = /checkout|cart|pay|payment|billing|order|purchase|pricing|product|comprar|pedido|carrinho|carrito|precos|tienda/i;
+
+  const commercialPages = pages.filter(e => COMMERCIAL_PATTERN.test((e.payload as PageContentPayload).url));
+  if (commercialPages.length === 0) return; // discoverability only fires with commercial intent
+
+  // ── 1. Weak search representation on commercial pages ──
+  const weakSearchPages = commercialPages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    const missingTitle = !p.title || p.title.length < 10;
+    const missingDesc = !p.meta_description || p.meta_description.length < 30;
+    return missingTitle || missingDesc;
+  });
+
+  if (weakSearchPages.length >= 1) {
+    const ratio = weakSearchPages.length / commercialPages.length;
+    const severity = ratio > 0.5 ? 'high' : ratio > 0.25 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'commercial_pages_weak_search_representation',
+      category: SignalCategory.Discoverability,
+      attribute: 'discoverability.weak_search_representation',
+      value: severity,
+      numeric_value: weakSearchPages.length,
+      confidence: 70,
+      scoping, cycle_ref, ids,
+      evidence_refs: weakSearchPages.slice(0, 5).map(e => makeRef('evidence', e.id)),
+      description: `${weakSearchPages.length} of ${commercialPages.length} commercial pages have missing or thin title/description. Search engines and AI systems cannot properly represent these pages in results.`,
+    }));
+  }
+
+  // ── 2. Weak social previews ──
+  const metasByUrl = new Map<string, Evidence>();
+  for (const m of metas) metasByUrl.set((m.payload as MetaPayload).page_url, m);
+
+  const weakSocialPages = commercialPages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    const meta = metasByUrl.get(p.url);
+    if (!meta) return true;
+    const og = (meta.payload as MetaPayload).og_tags || {};
+    return !og['og:title'] || !og['og:description'] || !og['og:image'];
+  });
+
+  if (weakSocialPages.length >= 2) {
+    const ratio = weakSocialPages.length / commercialPages.length;
+    const severity = ratio > 0.6 ? 'high' : ratio > 0.3 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'social_previews_fail_commercial_value',
+      category: SignalCategory.Discoverability,
+      attribute: 'discoverability.weak_social_preview',
+      value: severity,
+      numeric_value: weakSocialPages.length,
+      confidence: 65,
+      scoping, cycle_ref, ids,
+      evidence_refs: weakSocialPages.slice(0, 5).map(e => makeRef('evidence', e.id)),
+      description: `${weakSocialPages.length} commercial pages lack Open Graph tags for social sharing. Shared links appear as raw URLs without product images, titles, or descriptions.`,
+    }));
+  }
+
+  // ── 3. Inconsistent brand representation ──
+  const titles = commercialPages
+    .map(e => (e.payload as PageContentPayload).title)
+    .filter((t): t is string => !!t && t.length > 3);
+
+  if (titles.length >= 3) {
+    // Check if titles share a consistent brand pattern (common word/phrase)
+    const wordFreq = new Map<string, number>();
+    for (const t of titles) {
+      const words = t.toLowerCase().split(/[\s|—–\-:]+/).filter(w => w.length > 3);
+      const seen = new Set<string>();
+      for (const w of words) {
+        if (!seen.has(w)) { wordFreq.set(w, (wordFreq.get(w) || 0) + 1); seen.add(w); }
+      }
+    }
+    const brandWord = [...wordFreq.entries()].sort((a, b) => b[1] - a[1])[0];
+    const brandConsistency = brandWord ? brandWord[1] / titles.length : 0;
+
+    if (brandConsistency < 0.4 && titles.length >= 4) {
+      signals.push(createSignal({
+        signal_key: 'brand_inconsistent_across_surfaces',
+        category: SignalCategory.Discoverability,
+        attribute: 'discoverability.brand_inconsistency',
+        value: brandConsistency < 0.2 ? 'high' : 'medium',
+        confidence: 55,
+        scoping, cycle_ref, ids,
+        evidence_refs: commercialPages.slice(0, 5).map(e => makeRef('evidence', e.id)),
+        description: `Commercial page titles show low brand consistency (${Math.round(brandConsistency * 100)}%). Brand appears inconsistently across search and sharing surfaces.`,
+      }));
+    }
+  }
+
+  // ── 4. Commercial pages unlikely to be reliably indexed ──
+  const noCanonical = commercialPages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    return !p.canonical_url;
+  });
+  // Check for noindex in meta
+  const noindexPages = commercialPages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    const meta = metasByUrl.get(p.url);
+    if (!meta) return false;
+    const robots = (meta.payload as MetaPayload).robots;
+    return robots && /noindex/i.test(robots);
+  });
+
+  const indexingProblems = noCanonical.length + noindexPages.length;
+  if (indexingProblems >= 2) {
+    const severity = noindexPages.length > 0 ? 'high' : indexingProblems > 3 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'commercial_pages_unlikely_indexed',
+      category: SignalCategory.Discoverability,
+      attribute: 'discoverability.indexing_risk',
+      value: severity,
+      numeric_value: indexingProblems,
+      confidence: 65,
+      scoping, cycle_ref, ids,
+      evidence_refs: [...noCanonical, ...noindexPages].slice(0, 5).map(e => makeRef('evidence', e.id)),
+      description: `${indexingProblems} commercial pages have indexing problems (${noCanonical.length} missing canonical, ${noindexPages.length} marked noindex). Revenue-generating pages may be invisible to search.`,
+    }));
+  }
+
+  // ── 5. Weak semantic intent signals ──
+  const commercialStructuredData = structuredData.filter(e =>
+    (e.payload as StructuredDataItemPayload).is_commerce_signal,
+  );
+  const hasProductSchema = commercialStructuredData.some(e =>
+    (e.payload as StructuredDataItemPayload).schema_type === 'Product',
+  );
+  const hasOrgSchema = structuredData.some(e =>
+    (e.payload as StructuredDataItemPayload).schema_type === 'Organization',
+  );
+
+  if (!hasProductSchema && commercialPages.length >= 2) {
+    signals.push(createSignal({
+      signal_key: 'weak_semantic_intent_signals',
+      category: SignalCategory.Discoverability,
+      attribute: 'discoverability.weak_semantic_signals',
+      value: !hasOrgSchema ? 'high' : 'medium',
+      confidence: 60,
+      scoping, cycle_ref, ids,
+      evidence_refs: commercialPages.slice(0, 3).map(e => makeRef('evidence', e.id)),
+      description: `Commercial pages lack structured data that helps search engines and AI understand page purpose. No Product schema found${!hasOrgSchema ? ', no Organization schema either' : ''}.`,
+    }));
+  }
+
+  // ── 6. Preview disconnected from conversion ──
+  const previewMismatch = commercialPages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    const meta = metasByUrl.get(p.url);
+    if (!meta || !p.title) return false;
+    const og = (meta.payload as MetaPayload).og_tags || {};
+    const ogTitle = og['og:title'];
+    if (!ogTitle) return false;
+    // Check if OG title substantially differs from page title
+    const similarity = simpleWordOverlap(p.title, ogTitle);
+    return similarity < 0.3;
+  });
+
+  if (previewMismatch.length >= 2) {
+    signals.push(createSignal({
+      signal_key: 'previews_disconnected_from_conversion',
+      category: SignalCategory.Discoverability,
+      attribute: 'discoverability.preview_mismatch',
+      value: previewMismatch.length >= 4 ? 'high' : 'medium',
+      numeric_value: previewMismatch.length,
+      confidence: 55,
+      scoping, cycle_ref, ids,
+      evidence_refs: previewMismatch.slice(0, 5).map(e => makeRef('evidence', e.id)),
+      description: `${previewMismatch.length} commercial pages have social/search previews that don't match the actual page content. Visitors arrive with mismatched expectations.`,
+    }));
+  }
+
+  // ── 7. Commercial pages not structurally exposed ──
+  const linksByTarget = new Map<string, number>();
+  for (const l of links) {
+    const p = l.payload as LinkPayload;
+    if (!p.is_external) {
+      const count = linksByTarget.get(p.href) || 0;
+      linksByTarget.set(p.href, count + 1);
+    }
+  }
+
+  const orphanedCommercial = commercialPages.filter(e => {
+    const p = e.payload as PageContentPayload;
+    const inboundCount = linksByTarget.get(p.url) || 0;
+    return inboundCount === 0;
+  });
+
+  if (orphanedCommercial.length >= 2) {
+    const ratio = orphanedCommercial.length / commercialPages.length;
+    const severity = ratio > 0.5 ? 'high' : ratio > 0.25 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'commercial_pages_not_exposed_for_discovery',
+      category: SignalCategory.Discoverability,
+      attribute: 'discoverability.pages_not_exposed',
+      value: severity,
+      numeric_value: orphanedCommercial.length,
+      confidence: 60,
+      scoping, cycle_ref, ids,
+      evidence_refs: orphanedCommercial.slice(0, 5).map(e => makeRef('evidence', e.id)),
+      description: `${orphanedCommercial.length} commercial pages have zero internal links pointing to them. Search crawlers and users cannot reach these pages through normal navigation.`,
+    }));
+  }
+}
+
+function simpleWordOverlap(a: string, b: string): number {
+  const wordsA = new Set(a.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+  const wordsB = new Set(b.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  let overlap = 0;
+  for (const w of wordsA) { if (wordsB.has(w)) overlap++; }
+  return overlap / Math.max(wordsA.size, wordsB.size);
+}
+
+// ──────────────────────────────────────────────
+// Phase 3E: Brand Integrity Signals
+//
+// Translates brand impersonation evidence into
+// business-grade signals about traffic interception,
+// fraud risk, and brand dilution.
+//
+// Gates:
+// - Minimum confidence score required
+// - Active domain required for high-severity signals
+// - Commerce signals boost confidence
+// ──────────────────────────────────────────────
+
+function extractBrandIntegritySignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const brandEvidence = byType.get(EvidenceType.BrandImpersonationMatch) || [];
+  if (brandEvidence.length === 0) return;
+
+  const CONFIDENCE_FLOOR = 40;
+
+  // ── Classify evidence by enhanced signals ──
+  const active = brandEvidence.filter(e =>
+    (e.payload as BrandImpersonationMatchPayload).is_active,
+  );
+  const highConf = active.filter(e =>
+    (e.payload as BrandImpersonationMatchPayload).confidence_score >= 70,
+  );
+  const medConf = active.filter(e => {
+    const score = (e.payload as BrandImpersonationMatchPayload).confidence_score;
+    return score >= 40 && score < 70;
+  });
+  const withCommerce = active.filter(e => {
+    const p = e.payload as BrandImpersonationMatchPayload;
+    return p.has_commerce_signals || p.has_payment_capture;
+  });
+  const typosquats = active.filter(e =>
+    (e.payload as BrandImpersonationMatchPayload).threat_type === 'typosquat',
+  );
+  const withCredentialCapture = active.filter(e =>
+    (e.payload as BrandImpersonationMatchPayload).has_credential_capture,
+  );
+  const withPaymentCapture = active.filter(e =>
+    (e.payload as BrandImpersonationMatchPayload).has_payment_capture,
+  );
+  const withSensitivePath = active.filter(e =>
+    (e.payload as BrandImpersonationMatchPayload).has_sensitive_path,
+  );
+
+  // ── 1. Lookalike domains competing for traffic ──
+  if (highConf.length >= 1 || medConf.length >= 3) {
+    const severity = highConf.length >= 3 ? 'high' : highConf.length >= 1 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'lookalike_domains_competing',
+      category: SignalCategory.BrandIntegrity,
+      attribute: 'brand.lookalike_domains',
+      value: severity,
+      numeric_value: highConf.length + medConf.length,
+      confidence: Math.min(85, 50 + highConf.length * 10),
+      scoping, cycle_ref, ids,
+      evidence_refs: [...highConf, ...medConf].slice(0, 10).map(e => makeRef('evidence', e.id)),
+      description: `${highConf.length} high-confidence and ${medConf.length} medium-confidence lookalike domains detected. Brand traffic is exposed to interception.`,
+    }));
+  }
+
+  // ── 2. External sites mimicking brand (title OR favicon match) ──
+  const mimicryEvidence = active.filter(e => {
+    const p = e.payload as BrandImpersonationMatchPayload;
+    const hasVisualMatch = p.favicon_similarity_score !== null && p.favicon_similarity_score >= 60;
+    const hasTitleMatch = p.title_similarity !== null && p.title_similarity > 50;
+    return (hasVisualMatch || hasTitleMatch) && p.confidence_score >= 40;
+  });
+  if (mimicryEvidence.length >= 1) {
+    const faviconMatches = mimicryEvidence.filter(e =>
+      (e.payload as BrandImpersonationMatchPayload).favicon_similarity_score !== null &&
+      (e.payload as BrandImpersonationMatchPayload).favicon_similarity_score! >= 60,
+    );
+    const severity = mimicryEvidence.length >= 3 ? 'high' : mimicryEvidence.length >= 2 ? 'high' : 'medium';
+    signals.push(createSignal({
+      signal_key: 'external_sites_mimicking_brand',
+      category: SignalCategory.BrandIntegrity,
+      attribute: 'brand.content_mimicry',
+      value: severity,
+      numeric_value: mimicryEvidence.length,
+      confidence: faviconMatches.length > 0 ? 80 : 70,
+      scoping, cycle_ref, ids,
+      evidence_refs: mimicryEvidence.map(e => makeRef('evidence', e.id)),
+      description: `${mimicryEvidence.length} external domains mimick the brand (${faviconMatches.length} with matching favicon, ${mimicryEvidence.length - faviconMatches.length} with similar titles). Active impersonation detected.`,
+    }));
+  }
+
+  // ── 3. Brand traffic exposed to deceptive surfaces ──
+  if (typosquats.length >= 1) {
+    const hasCapture = typosquats.some(e => {
+      const p = e.payload as BrandImpersonationMatchPayload;
+      return p.has_credential_capture || p.has_payment_capture;
+    });
+    const severity = hasCapture ? 'high' : typosquats.length >= 3 ? 'high' : typosquats.length >= 2 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'brand_traffic_deceptive_surfaces',
+      category: SignalCategory.BrandIntegrity,
+      attribute: 'brand.deceptive_surfaces',
+      value: severity,
+      numeric_value: typosquats.length,
+      confidence: hasCapture ? 80 : 65,
+      scoping, cycle_ref, ids,
+      evidence_refs: typosquats.map(e => makeRef('evidence', e.id)),
+      description: `${typosquats.length} typosquat domains are active${hasCapture ? ' — some contain credential or payment capture forms' : ''}. Users who mistype the brand URL land on deceptive surfaces.`,
+    }));
+  }
+
+  // ── 4. Suspicious domains capturing purchase intent ──
+  // Now requires commerce signals OR payment keywords/capture, medium+ confidence
+  if (withCommerce.length >= 1) {
+    const withPayment = withCommerce.filter(e =>
+      (e.payload as BrandImpersonationMatchPayload).has_payment_capture,
+    );
+    const severity = withPayment.length >= 1 ? 'high' : withCommerce.length >= 3 ? 'high' : withCommerce.length >= 2 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'suspicious_domains_purchase_intent',
+      category: SignalCategory.BrandIntegrity,
+      attribute: 'brand.commerce_interception',
+      value: severity,
+      numeric_value: withCommerce.length,
+      confidence: withPayment.length > 0 ? 80 : 70,
+      scoping, cycle_ref, ids,
+      evidence_refs: withCommerce.map(e => makeRef('evidence', e.id)),
+      description: `${withCommerce.length} lookalike domains show commerce intent${withPayment.length > 0 ? ` (${withPayment.length} with active payment capture)` : ''}. Purchase-intent traffic may be diverted to impostor storefronts.`,
+    }));
+  }
+
+  // ── 5. Phishing exposure (ENHANCED) ──
+  // Now requires: high confidence AND (credential_capture OR payment_capture OR sensitive_path)
+  const phishingCandidates = active.filter(e => {
+    const p = e.payload as BrandImpersonationMatchPayload;
+    return p.confidence_score >= 70 && (p.has_credential_capture || p.has_payment_capture || p.has_sensitive_path);
+  });
+  // Also include: medium+ confidence with BOTH capture signals
+  const strongPhishing = active.filter(e => {
+    const p = e.payload as BrandImpersonationMatchPayload;
+    return p.confidence_score >= 40 && (p.has_credential_capture || p.has_payment_capture) && !phishingCandidates.includes(e);
+  });
+  const allPhishing = [...phishingCandidates, ...strongPhishing];
+
+  if (allPhishing.length >= 1) {
+    const captureCount = allPhishing.filter(e => {
+      const p = e.payload as BrandImpersonationMatchPayload;
+      return p.has_credential_capture || p.has_payment_capture;
+    }).length;
+    const severity = captureCount >= 2 ? 'high' : captureCount >= 1 ? 'high' : 'medium';
+    signals.push(createSignal({
+      signal_key: 'customers_exposed_to_phishing',
+      category: SignalCategory.BrandIntegrity,
+      attribute: 'brand.phishing_exposure',
+      value: severity,
+      numeric_value: allPhishing.length,
+      confidence: captureCount > 0 ? 85 : 75,
+      scoping, cycle_ref, ids,
+      evidence_refs: allPhishing.map(e => makeRef('evidence', e.id)),
+      description: `${allPhishing.length} domains combine brand similarity with phishing patterns${captureCount > 0 ? ` — ${captureCount} actively capture credentials or payment data` : ''}. Customers are exposed to fraud through brand-mimicking surfaces.`,
+    }));
+  }
+
+  // ── 6. Brand dilution across variants ──
+  if (active.length >= 5) {
+    const avgConfidence = Math.round(active.reduce((s, e) =>
+      s + (e.payload as BrandImpersonationMatchPayload).confidence_score, 0) / active.length);
+    if (avgConfidence >= CONFIDENCE_FLOOR) {
+      signals.push(createSignal({
+        signal_key: 'brand_diluted_across_variants',
+        category: SignalCategory.BrandIntegrity,
+        attribute: 'brand.dilution',
+        value: active.length >= 10 ? 'high' : 'medium',
+        numeric_value: active.length,
+        confidence: 60,
+        scoping, cycle_ref, ids,
+        evidence_refs: active.slice(0, 10).map(e => makeRef('evidence', e.id)),
+        description: `${active.length} active domain variants with brand similarity detected. Brand presence is fragmented across multiple surfaces, reducing search click-through and buyer trust.`,
+      }));
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 4B: Behavioral Intelligence Signals
+//
+// Translates aggregated behavioral evidence into
+// business-grade signals about conversion path
+// integrity, hesitation, and commercial surface health.
+//
+// Gates:
+// - Minimum session count for statistical relevance
+// - Commercial surface requirement for most signals
+// - Rate thresholds to prevent noise
+// ──────────────────────────────────────────────
+
+function extractBehavioralSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const behavioralEvidence = byType.get(EvidenceType.BehavioralSession) || [];
+  if (behavioralEvidence.length === 0) return;
+
+  const MIN_SESSIONS = 20;
+
+  // Aggregate across all behavioral evidence
+  for (const ev of behavioralEvidence) {
+    const p = ev.payload as BehavioralSessionPayload;
+    if (p.session_count < MIN_SESSIONS) continue;
+
+    const refs = [makeRef('evidence', ev.id)];
+
+    // 1. Policy view then abandonment
+    if (p.policy_then_abandon_count > 0 && p.policy_opened_rate > 0.05) {
+      const rate = p.policy_then_abandon_count / p.session_count;
+      if (rate > 0.03) {
+        signals.push(createSignal({
+          signal_key: 'policy_view_then_abandonment',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.policy_abandon',
+          value: rate > 0.08 ? 'high' : rate > 0.05 ? 'medium' : 'low',
+          numeric_value: p.policy_then_abandon_count,
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.policy_then_abandon_count} sessions opened a policy page and then abandoned without further commercial action. Refund/return policy content is triggering doubt rather than building confidence.`,
+        }));
+      }
+    }
+
+    // 2. High-intent detour before abandonment
+    if (p.high_intent_detour_count > 0) {
+      const rate = p.high_intent_detour_count / p.session_count;
+      if (rate > 0.02) {
+        signals.push(createSignal({
+          signal_key: 'high_intent_detour_before_abandonment',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.intent_detour',
+          value: rate > 0.06 ? 'high' : rate > 0.03 ? 'medium' : 'low',
+          numeric_value: p.high_intent_detour_count,
+          confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.high_intent_detour_count} sessions reached checkout then detoured to reassurance content before abandoning. High-intent buyers are losing confidence at the moment of commitment.`,
+        }));
+      }
+    }
+
+    // 3. Support discovered too late
+    if (p.support_after_checkout_count > 0 && p.support_opened_rate > 0.03) {
+      const rate = p.support_after_checkout_count / p.session_count;
+      if (rate > 0.02) {
+        signals.push(createSignal({
+          signal_key: 'support_discovered_too_late',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.support_late',
+          value: rate > 0.05 ? 'high' : 'medium',
+          numeric_value: p.support_after_checkout_count,
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.support_after_checkout_count} sessions only discovered support AFTER reaching checkout. Support is being found too late to resolve pre-purchase hesitation.`,
+        }));
+      }
+    }
+
+    // 4. CTA visible but behaviorally dead
+    if (p.dead_cta_surface_count > 0) {
+      signals.push(createSignal({
+        signal_key: 'cta_visible_but_dead',
+        category: SignalCategory.Behavioral,
+        attribute: 'behavioral.dead_cta',
+        value: p.dead_cta_surface_count >= 3 ? 'high' : p.dead_cta_surface_count >= 2 ? 'medium' : 'low',
+        numeric_value: p.dead_cta_surface_count,
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `${p.dead_cta_surface_count} commercial surfaces have CTAs that are visible but behaviorally dead — high views with near-zero click-through.`,
+      }));
+    }
+
+    // 5. Purchase hesitation with backtrack
+    if (p.backtrack_rate > 0.10) {
+      signals.push(createSignal({
+        signal_key: 'purchase_hesitation_backtrack',
+        category: SignalCategory.Behavioral,
+        attribute: 'behavioral.backtrack',
+        value: p.backtrack_rate > 0.20 ? 'high' : 'medium',
+        numeric_value: p.backtrack_session_count,
+        confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `${Math.round(p.backtrack_rate * 100)}% of sessions backtrack during the purchase journey. Buyers reach a commercial step and retreat — indicating hesitation or missing trust signals.`,
+      }));
+    }
+
+    // 6. Critical step retries before abandonment
+    if (p.retry_then_abandon_count > 0) {
+      const rate = p.retry_then_abandon_count / p.session_count;
+      if (rate > 0.02) {
+        signals.push(createSignal({
+          signal_key: 'critical_step_retries_before_abandonment',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.retry_abandon',
+          value: rate > 0.05 ? 'high' : 'medium',
+          numeric_value: p.retry_then_abandon_count,
+          confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.retry_then_abandon_count} sessions repeatedly retried a critical step before abandoning. Users encounter errors or confusion that blocks progression.`,
+        }));
+      }
+    }
+
+    // 7. Mobile fails first commercial action
+    if (p.mobile_session_count > MIN_SESSIONS && p.mobile_first_action_failure_rate > 0.15) {
+      signals.push(createSignal({
+        signal_key: 'mobile_fails_first_commercial_action',
+        category: SignalCategory.Behavioral,
+        attribute: 'behavioral.mobile_first_action_fail',
+        value: p.mobile_first_action_failure_rate > 0.30 ? 'high' : 'medium',
+        numeric_value: Math.round(p.mobile_first_action_failure_rate * 100),
+        confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `${Math.round(p.mobile_first_action_failure_rate * 100)}% of mobile sessions fail to progress past the first commercial action. Mobile users face a broken or unusable entry point to the commercial flow.`,
+      }));
+    }
+
+    // 8. Funnel step alive but not advancing
+    if (p.stalled_step_count > 0) {
+      signals.push(createSignal({
+        signal_key: 'funnel_step_alive_not_advancing',
+        category: SignalCategory.Behavioral,
+        attribute: 'behavioral.stalled_step',
+        value: p.stalled_step_count >= 3 ? 'high' : p.stalled_step_count >= 2 ? 'medium' : 'low',
+        numeric_value: p.stalled_step_count,
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `${p.stalled_step_count} funnel steps are alive (receiving sessions) but not advancing users to the next step. These are behavioral dead ends in the commercial flow.`,
+      }));
+    }
+
+    // ── Phase 4B Hardening: 12 new behavioral signals ──
+
+    // 9. Hesitation before conversion due to missing trust signals near CTA
+    if (p.hesitation_before_cta_count > 0) {
+      const rate = p.hesitation_before_cta_count / p.session_count;
+      if (rate > 0.05) {
+        signals.push(createSignal({
+          signal_key: 'hesitation_before_conversion_missing_trust',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.hesitation_trust',
+          value: rate > 0.15 ? 'high' : rate > 0.08 ? 'medium' : 'low',
+          numeric_value: p.hesitation_before_cta_count,
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.hesitation_before_cta_count} sessions show hesitation pauses before conversion CTAs on commercial surfaces. Users view the action but delay engagement — indicating insufficient trust or reassurance at the decision point.`,
+        }));
+      }
+    }
+
+    // 10. Pricing hesitation with unclear value justification
+    // COMPOUND GATE: requires BOTH pricing hesitation AND pricing backtrack.
+    // rapid_backtrack alone is never a standalone explanation — it must be paired
+    // with pricing surface view + failure to advance to conversion.
+    if (p.pricing_then_hesitation_count > 0 && p.pricing_backtrack_count > 0) {
+      const rate = p.pricing_backtrack_count / p.session_count;
+      // Additional compound gate: pricing backtracks must represent meaningful share
+      // of pricing views, not just isolated navigation noise
+      const pricingHesitationRate = p.pricing_then_hesitation_count / p.session_count;
+      if (rate > 0.04 && pricingHesitationRate > 0.02) {
+        signals.push(createSignal({
+          signal_key: 'pricing_hesitation_unclear_value',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.pricing_hesitation',
+          value: rate > 0.12 ? 'high' : rate > 0.06 ? 'medium' : 'low',
+          numeric_value: p.pricing_backtrack_count,
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.pricing_backtrack_count} sessions view pricing then backtrack to product or explanation pages without advancing. The price is seen but the value case is not carrying it.`,
+        }));
+      }
+    }
+
+    // 11. Policy detour before conversion
+    if (p.policy_detour_before_conversion_count > 0) {
+      const rate = p.policy_detour_before_conversion_count / p.session_count;
+      if (rate > 0.03) {
+        signals.push(createSignal({
+          signal_key: 'policy_detour_before_conversion',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.policy_detour',
+          value: rate > 0.10 ? 'high' : rate > 0.05 ? 'medium' : 'low',
+          numeric_value: p.policy_detour_before_conversion_count,
+          confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.policy_detour_before_conversion_count} sessions open policy pages after expressing intent but before converting. Users seek trust reassurance at the commitment moment rather than proceeding.`,
+        }));
+      }
+    }
+
+    // 12. CTA viewed but not engaged — calibrated by surface context
+    if (p.cta_viewed_count > 0 && p.cta_clicked_count >= 0) {
+      const engagementRate = p.cta_viewed_count > 0 ? p.cta_clicked_count / p.cta_viewed_count : 0;
+
+      // Surface-aware engagement thresholds:
+      // High-intent surfaces (checkout, pricing, cart) expect higher engagement → stricter threshold
+      // General surfaces (homepage, landing, product) tolerate lower engagement → looser threshold
+      // This prevents false positives on informational pages while catching real CTA failures
+      // on pages where users arrive with purchase intent.
+      const hasHighIntentSurfaces = p.checkout_reached_rate > 0.10 || p.milestone_intent_count > (p.session_count * 0.15);
+      const minViews = hasHighIntentSurfaces ? 30 : 80;
+      const engagementCeiling = hasHighIntentSurfaces ? 0.08 : 0.04;
+
+      if (p.cta_viewed_count >= minViews && engagementRate < engagementCeiling) {
+        // Severity also scales with surface context: low engagement on high-intent = more severe
+        let value: string;
+        if (hasHighIntentSurfaces) {
+          value = engagementRate < 0.02 ? 'high' : engagementRate < 0.05 ? 'medium' : 'low';
+        } else {
+          value = engagementRate < 0.01 ? 'high' : engagementRate < 0.03 ? 'medium' : 'low';
+        }
+        const contextNote = hasHighIntentSurfaces
+          ? 'on high-intent surfaces where users arrive with purchase motivation'
+          : 'across general commercial surfaces';
+
+        signals.push(createSignal({
+          signal_key: 'cta_viewed_not_engaged',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.cta_low_engagement',
+          value,
+          numeric_value: Math.round(engagementRate * 10000) / 100,
+          confidence: hasHighIntentSurfaces ? 70 : 60, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `Primary CTAs are viewed ${p.cta_viewed_count} times but clicked only ${p.cta_clicked_count} times (${Math.round(engagementRate * 100)}% engagement) ${contextNote}. The CTA is visible but fails to compel action — indicating weak positioning, copy, or surrounding context.`,
+        }));
+      }
+    }
+
+    // 13. Sensitive input abandonment — suppressed when no concrete field kind
+    if (p.sensitive_input_abandon_count > 0 && p.sensitive_input_abandon_top_kinds.length > 0) {
+      const rate = p.sensitive_input_abandon_count / p.session_count;
+      const topKind = p.sensitive_input_abandon_top_kinds[0];
+      // Require a defensible, specific field kind — not 'other'
+      if (rate > 0.03 && topKind && topKind !== 'other') {
+        signals.push(createSignal({
+          signal_key: 'sensitive_input_abandonment',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.sensitive_input_abandon',
+          // Encode severity:field_kind so inference can parameterize the title
+          value: `${rate > 0.10 ? 'high' : rate > 0.05 ? 'medium' : 'low'}:${topKind}`,
+          numeric_value: p.sensitive_input_abandon_count,
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.sensitive_input_abandon_count} sessions abandon after interacting with ${topKind} input fields. Users engage with the form but drop off after encountering sensitive data requests.`,
+        }));
+      }
+    }
+
+    // 14. Form excessive fields before conversion
+    if (p.form_excessive_field_count > 0) {
+      const formStartRate = p.session_count > 0 ? (p.checkout_reached_count + p.conversion_count) / p.session_count : 0;
+      if (formStartRate < 0.30 || p.form_excessive_field_count >= 2) {
+        signals.push(createSignal({
+          signal_key: 'form_excessive_fields_before_conversion',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.form_excessive',
+          value: p.form_excessive_field_count >= 3 ? 'high' : p.form_excessive_field_count >= 2 ? 'medium' : 'low',
+          numeric_value: p.form_excessive_field_count,
+          confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.form_excessive_field_count} conversion-proximate forms require excessive or sensitive fields. High field count and sensitive data requests create measurable friction before conversion.`,
+        }));
+      }
+    }
+
+    // 15. Form submission retry friction
+    if (p.form_retry_session_count > 0) {
+      const rate = p.form_retry_rate;
+      if (rate > 0.03) {
+        signals.push(createSignal({
+          signal_key: 'form_submission_retry_friction',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.form_retry',
+          value: rate > 0.10 ? 'high' : rate > 0.05 ? 'medium' : 'low',
+          numeric_value: p.form_retry_session_count,
+          confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.form_retry_session_count} sessions retry form submission multiple times. Users re-submit without progress — indicating poor validation feedback or broken submission handling.`,
+        }));
+      }
+    }
+
+    // 16. Surface oscillation before dropoff — suppressed when surface pair is not concrete
+    if (p.surface_oscillation_count > 0 && p.surface_oscillation_top_pairs.length > 0) {
+      const rate = p.surface_oscillation_count / p.session_count;
+      if (rate > 0.03) {
+        const topPair = p.surface_oscillation_top_pairs[0];
+        // Require both surfaces to be identifiable (not just surface IDs)
+        const surfaceA = topPair.surface_a;
+        const surfaceB = topPair.surface_b;
+        if (surfaceA && surfaceB && surfaceA !== surfaceB) {
+          signals.push(createSignal({
+            signal_key: 'surface_oscillation_before_dropoff',
+            category: SignalCategory.Behavioral,
+            attribute: 'behavioral.surface_oscillation',
+            // Encode severity:surfaceA:surfaceB so inference can parameterize the title
+            value: `${rate > 0.10 ? 'high' : rate > 0.05 ? 'medium' : 'low'}:${surfaceA}:${surfaceB}`,
+            numeric_value: p.surface_oscillation_count,
+            confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+            description: `${p.surface_oscillation_count} sessions oscillate between ${surfaceA} and ${surfaceB} before dropping off. Back-and-forth navigation indicates an unresolved decision that neither surface addresses.`,
+          }));
+        }
+      }
+    }
+
+    // 17. Conversion final-step retry
+    if (p.conversion_retry_count > 0) {
+      const rate = p.conversion_retry_count / p.session_count;
+      if (rate > 0.02) {
+        signals.push(createSignal({
+          signal_key: 'conversion_final_step_retry',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.conversion_retry',
+          value: rate > 0.08 ? 'high' : rate > 0.04 ? 'medium' : 'low',
+          numeric_value: p.conversion_retry_count,
+          confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.conversion_retry_count} sessions attempt conversion multiple times in the final steps. Repeated attempts without confirmation indicate friction at the moment of closure.`,
+        }));
+      }
+    }
+
+    // 18. CTA late availability delays action
+    if (p.cta_rendered_late_count > 0) {
+      if (p.cta_rendered_late_count >= 2 || (p.avg_time_to_first_commercial_action_ms && p.avg_time_to_first_commercial_action_ms > 10000)) {
+        signals.push(createSignal({
+          signal_key: 'cta_late_availability_delays_action',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.cta_late',
+          value: p.cta_rendered_late_count >= 5 ? 'high' : p.cta_rendered_late_count >= 3 ? 'medium' : 'low',
+          numeric_value: p.cta_rendered_late_count,
+          confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.cta_rendered_late_count} primary CTAs render late on high-intent surfaces. Users must wait for the action to become available — delaying the first meaningful commercial action.`,
+        }));
+      }
+    }
+
+    // 19. Checkout abandon without feedback
+    if (p.checkout_immediate_abandon_count > 0) {
+      const rate = p.checkout_immediate_abandon_count / p.session_count;
+      if (rate > 0.03) {
+        signals.push(createSignal({
+          signal_key: 'checkout_abandon_no_feedback',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.checkout_abandon',
+          value: rate > 0.10 ? 'high' : rate > 0.05 ? 'medium' : 'low',
+          numeric_value: p.checkout_immediate_abandon_count,
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.checkout_immediate_abandon_count} sessions initiate checkout then abandon without any progress indication. The UI provides no immediate feedback or reassurance after the commitment action.`,
+        }));
+      }
+    }
+
+    // 20. Sensitive input perceived risk dropoff — suppressed when no concrete field kind
+    if (p.sensitive_field_dropoff_count > 0 && p.sensitive_field_dropoff_top_kinds.length > 0) {
+      const rate = p.sensitive_field_dropoff_count / p.session_count;
+      const topKind = p.sensitive_field_dropoff_top_kinds[0];
+      if (rate > 0.03 && topKind && topKind !== 'other') {
+        signals.push(createSignal({
+          signal_key: 'sensitive_input_perceived_risk_dropoff',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.sensitive_risk_dropoff',
+          // Encode severity:field_kind for parameterized reasoning
+          value: `${rate > 0.10 ? 'high' : rate > 0.05 ? 'medium' : 'low'}:${topKind}`,
+          numeric_value: p.sensitive_field_dropoff_count,
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${p.sensitive_field_dropoff_count} sessions drop off immediately after interacting with ${topKind} fields. Users perceive risk at the sensitive data entry moment — the trust model is insufficient for the data being requested.`,
+        }));
+      }
+    }
+  }
+}
+
+function createSignal(params: {
+  signal_key: string;
+  category: SignalCategory;
+  attribute: string;
+  value: string;
+  numeric_value?: number;
+  confidence: number;
+  scoping: Scoping;
+  cycle_ref: string;
+  evidence_refs: string[];
+  description: string;
+  ids: IdGenerator;
+}): Signal {
+  const now = new Date();
+  return {
+    id: params.ids.next(),
+    signal_key: params.signal_key,
+    category: params.category,
+    scoping: params.scoping,
+    cycle_ref: params.cycle_ref,
+    freshness: {
+      observed_at: now,
+      fresh_until: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      freshness_state: FreshnessState.Fresh,
+      staleness_reason: null,
+    },
+    attribute: params.attribute,
+    value: params.value,
+    numeric_value: params.numeric_value ?? null,
+    confidence: params.confidence,
+    evidence_refs: params.evidence_refs,
+    subject_label: null,
+    description: params.description,
+    created_at: now,
+    updated_at: now,
+  };
+}

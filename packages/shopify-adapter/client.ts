@@ -1,0 +1,219 @@
+import {
+  ShopifyCredentials,
+  ShopifyConnectionState,
+  ShopifyConnectionStatus,
+  ShopifyErrorType,
+  ShopifyRawOrder,
+  REQUIRED_SCOPES,
+} from './types';
+
+// ──────────────────────────────────────────────
+// Shopify Admin API Client — Read-Only
+//
+// Lightweight client for Shopify Admin REST API.
+// Only reads orders, refunds, and transactions.
+//
+// Safety:
+// - No write operations
+// - No mutation endpoints
+// - Rate limited (Shopify: 2 req/s for REST)
+// - Timeout enforced
+// ──────────────────────────────────────────────
+
+const API_VERSION = '2024-01';
+const REQUEST_TIMEOUT = 10000; // 10s
+
+/**
+ * Verify connection and scopes.
+ */
+export async function verifyConnection(
+  credentials: ShopifyCredentials,
+): Promise<ShopifyConnectionState> {
+  try {
+    const response = await shopifyFetch(credentials, '/shop.json');
+    if (!response.ok) {
+      const errorType = classifyHttpError(response.status);
+      const status: ShopifyConnectionStatus = errorType === 'auth_error' ? 'invalid_credentials' : 'error';
+      return {
+        status,
+        shop_domain: credentials.shop_domain,
+        shop_name: null,
+        last_sync_at: null,
+        last_successful_sync_at: null,
+        last_error: `HTTP ${response.status}`,
+        error_type: errorType,
+        scopes_verified: false,
+        initial_sync_complete: false,
+        summary_30d: null,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      status: 'connected',
+      shop_domain: credentials.shop_domain,
+      shop_name: data.shop?.name || null,
+      last_sync_at: new Date(),
+      last_successful_sync_at: new Date(),
+      last_error: null,
+      error_type: null,
+      scopes_verified: true,
+      initial_sync_complete: false, // set true after first full poll
+      summary_30d: null, // populated after first poll
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      status: 'error',
+      shop_domain: credentials.shop_domain,
+      shop_name: null,
+      last_sync_at: null,
+      last_successful_sync_at: null,
+      last_error: msg,
+      error_type: classifyNetworkError(msg),
+      scopes_verified: false,
+      initial_sync_complete: false,
+      summary_30d: null,
+    };
+  }
+}
+
+/**
+ * Classify HTTP error status into ShopifyErrorType.
+ */
+export function classifyHttpError(status: number): ShopifyErrorType {
+  if (status === 401 || status === 403) return 'auth_error';
+  if (status === 429) return 'rate_limit';
+  return 'unknown';
+}
+
+/**
+ * Classify network error message into ShopifyErrorType.
+ */
+export function classifyNetworkError(message: string): ShopifyErrorType {
+  if (/abort|timeout/i.test(message)) return 'network_error';
+  if (/ENOTFOUND|ECONNREFUSED|ECONNRESET/i.test(message)) return 'network_error';
+  if (/JSON|parse|unexpected/i.test(message)) return 'data_parsing_error';
+  return 'unknown';
+}
+
+/**
+ * Fetch orders within a date range (inclusive).
+ * Returns minimal order data with refunds and transactions.
+ */
+export async function fetchOrders(
+  credentials: ShopifyCredentials,
+  since: Date,
+  until: Date,
+  limit: number = 250,
+): Promise<{ orders: ShopifyRawOrder[]; errors: string[] }> {
+  const errors: string[] = [];
+  const allOrders: ShopifyRawOrder[] = [];
+
+  const sinceISO = since.toISOString();
+  const untilISO = until.toISOString();
+
+  let pageUrl: string | null =
+    `/orders.json?status=any&created_at_min=${sinceISO}&created_at_max=${untilISO}&limit=${Math.min(limit, 250)}&fields=id,created_at,total_price,currency,financial_status,fulfillment_status,cancelled_at,landing_site,referring_site,total_discounts,discount_codes,gateway,refunds,transactions`;
+
+  let pageCount = 0;
+  const MAX_PAGES = 10; // safety limit
+
+  while (pageUrl && pageCount < MAX_PAGES) {
+    try {
+      const response = await shopifyFetch(credentials, pageUrl);
+      if (!response.ok) {
+        errors.push(`Orders fetch failed: HTTP ${response.status}`);
+        break;
+      }
+
+      const data = await response.json();
+      const orders: ShopifyRawOrder[] = data.orders || [];
+      allOrders.push(...orders);
+
+      // Pagination: check Link header for next page
+      const linkHeader = response.headers.get('link');
+      pageUrl = extractNextPageUrl(linkHeader, credentials.shop_domain);
+      pageCount++;
+
+      // Rate limiting: Shopify allows ~2 req/s for REST
+      await delay(500);
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+      break;
+    }
+  }
+
+  return { orders: allOrders, errors };
+}
+
+/**
+ * Fetch orders incrementally using cursor (order ID).
+ */
+export async function fetchOrdersSinceCursor(
+  credentials: ShopifyCredentials,
+  sinceId: string | null,
+  limit: number = 250,
+): Promise<{ orders: ShopifyRawOrder[]; last_id: string | null; errors: string[] }> {
+  const errors: string[] = [];
+
+  const sinceParam = sinceId ? `&since_id=${sinceId}` : '';
+  const url = `/orders.json?status=any&limit=${Math.min(limit, 250)}&fields=id,created_at,total_price,currency,financial_status,fulfillment_status,cancelled_at,landing_site,referring_site,total_discounts,discount_codes,gateway,refunds,transactions${sinceParam}`;
+
+  try {
+    const response = await shopifyFetch(credentials, url);
+    if (!response.ok) {
+      errors.push(`Orders fetch failed: HTTP ${response.status}`);
+      return { orders: [], last_id: sinceId, errors };
+    }
+
+    const data = await response.json();
+    const orders: ShopifyRawOrder[] = data.orders || [];
+    const lastId = orders.length > 0 ? String(orders[orders.length - 1].id) : sinceId;
+
+    return { orders, last_id: lastId, errors };
+  } catch (err) {
+    errors.push(err instanceof Error ? err.message : String(err));
+    return { orders: [], last_id: sinceId, errors };
+  }
+}
+
+// ──────────────────────────────────────────────
+// Internal helpers
+// ──────────────────────────────────────────────
+
+async function shopifyFetch(
+  credentials: ShopifyCredentials,
+  path: string,
+): Promise<Response> {
+  const baseUrl = `https://${credentials.shop_domain}/admin/api/${API_VERSION}`;
+  const url = path.startsWith('http') ? path : `${baseUrl}${path}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  try {
+    return await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Shopify-Access-Token': credentials.access_token,
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function extractNextPageUrl(linkHeader: string | null, shopDomain: string): string | null {
+  if (!linkHeader) return null;
+  const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+  if (!match) return null;
+  // Return the full URL (Shopify pagination uses full URLs)
+  return match[1];
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

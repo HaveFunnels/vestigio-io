@@ -1,0 +1,83 @@
+"use client";
+
+/**
+ * FindingCard — Inline finding preview in chat messages.
+ * Shows severity, title, impact range, pack, and root cause.
+ * Clicking navigates to the Analysis page with the finding selected.
+ */
+
+import type { FindingCardBlock } from "@/lib/chat-types";
+import SeverityBadge from "../SeverityBadge";
+
+interface FindingCardProps {
+  block: FindingCardBlock;
+  onNavigate?: (href: string) => void;
+}
+
+function formatCurrency(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
+  return `$${value.toFixed(0)}`;
+}
+
+export function FindingCard({ block, onNavigate }: FindingCardProps) {
+  const { finding } = block;
+  const impactColor =
+    finding.impact_mid >= 5000
+      ? "text-red-400"
+      : finding.impact_mid >= 1000
+        ? "text-amber-400"
+        : "text-zinc-400";
+
+  return (
+    <button
+      onClick={() => onNavigate?.(`/app/analysis?finding=${finding.id}`)}
+      className="my-1.5 flex w-full items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3.5 py-3 text-left transition-colors hover:border-zinc-700 hover:bg-zinc-800/60"
+    >
+      {/* Severity indicator bar */}
+      <div
+        className={`mt-0.5 h-8 w-0.5 shrink-0 rounded-full ${
+          finding.severity === "critical"
+            ? "bg-red-500"
+            : finding.severity === "high"
+              ? "bg-orange-500"
+              : finding.severity === "medium"
+                ? "bg-amber-500"
+                : "bg-blue-500"
+        }`}
+      />
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-medium text-zinc-200">{finding.title}</p>
+          <span className={`shrink-0 font-mono text-sm font-bold ${impactColor}`}>
+            {formatCurrency(finding.impact_mid)}
+            <span className="text-[10px] font-normal text-zinc-600">/mo</span>
+          </span>
+        </div>
+
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <SeverityBadge value={finding.severity} />
+          <span className="font-mono text-[10px] text-zinc-500">
+            {finding.confidence}% conf
+          </span>
+          <span className="text-[10px] text-zinc-600">
+            {finding.pack.replace(/_/g, " ")}
+          </span>
+        </div>
+
+        {finding.root_cause && (
+          <p className="mt-1.5 text-xs text-zinc-500">
+            Root cause: {finding.root_cause}
+          </p>
+        )}
+      </div>
+
+      {/* Arrow */}
+      <svg className="mt-1 h-3.5 w-3.5 shrink-0 text-zinc-600" viewBox="0 0 16 16" fill="none">
+        <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  );
+}

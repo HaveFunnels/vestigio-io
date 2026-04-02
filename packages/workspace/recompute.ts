@@ -1,0 +1,673 @@
+import {
+  Evidence,
+  Signal,
+  Inference,
+  Decision,
+  Action,
+  RiskEvaluation,
+  Scoping,
+  Opportunity,
+  SuppressionRule,
+  BusinessProfile,
+  makeRef,
+} from '../domain';
+import { buildGraph } from '../graph';
+import { extractSignals } from '../signals';
+import { computeInferences } from '../inference';
+import { produceDecision, DecisionResult } from '../decision';
+import { resolveDecisionConflicts, ConflictReport } from '../decision/conflict-resolver';
+import { generateOpportunities, OpportunityGenerationResult } from '../decision/opportunity-gate';
+import { deriveActions } from '../actions';
+import { produceIntelligence, DecisionIntelligenceResult } from '../intelligence';
+import { estimateImpact, summarizeImpact, QuantifiedValueCase, ImpactSummary, BusinessInputs } from '../impact';
+import { computeClassification, extractClassificationInput, ClassificationState } from '../classification';
+import { computePackEligibility, PackEligibility } from '../classification/eligibility';
+import { extractSaasSignals } from '../signals/saas-signals';
+import { computeSaasInferences } from '../inference/saas-inference';
+import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
+import { adjustConfidenceByQuality, QualityAdjustmentResult } from '../evidence/confidence-adjuster';
+import { harmonizeSignals, HarmonizationResult } from '../truth';
+import { guardTruthConsistency, TruthConsistencyResult } from '../truth/consistency-guard';
+import { applySuppressionEffects, SuppressionApplicationResult } from '../suppression';
+import { computeSuppressionGovernance, SuppressionGovernanceResult } from '../suppression/governance';
+import { detectChanges, CycleSnapshot, CycleChangeReport } from '../change-detection';
+import {
+  createVersionedSnapshot,
+  VersionedSnapshot,
+} from '../change-detection/snapshot-store';
+import {
+  evaluateProfileFreshness,
+  profileConfidencePenalty,
+  ProfileFreshnessCheck,
+  ProfileDriftSignal,
+} from '../domain/business-profile-lifecycle';
+import { buildConfidenceAudit, ConfidenceIntegrityResult, ConfidenceAdjustment } from './confidence-audit';
+import { validateBehavior, BehavioralValidationResult } from './behavioral-validation';
+import type { EngineTranslations } from '../projections/types';
+
+// Phase 29: Cross-layer penalty budget
+// Maximum total confidence reduction across all penalty layers (suppression, profile, coherence).
+// Confidence cannot drop below PENALTY_BUDGET_FLOOR fraction of its pre-penalty value.
+const PENALTY_BUDGET_FLOOR = 0.40; // max 60% total reduction
+import { createPreflightWorkspace, WorkspaceResult } from './workspace';
+import { createRevenueWorkspace, RevenueWorkspaceResult } from './revenue-workspace';
+import { createChargebackWorkspace, ChargebackWorkspaceResult } from './chargeback-workspace';
+
+export interface RecomputeInput {
+  evidence: Evidence[];
+  scoping: Scoping;
+  cycle_ref: string;
+  root_domain: string;
+  landing_url: string;
+  question_key: string;
+  conversion_proximity: number;
+  is_production: boolean;
+}
+
+export interface GraphStats {
+  total_nodes: number;
+  total_edges: number;
+  external_nodes: number;
+  internal_nodes: number;
+  node_types: Record<string, number>;
+  edge_types: Record<string, number>;
+}
+
+export interface RecomputeResult {
+  graph_stats: GraphStats;
+  signals: Signal[];
+  inferences: Inference[];
+  decision: Decision;
+  risk_evaluation: RiskEvaluation;
+  actions: Action[];
+  workspace: WorkspaceResult;
+}
+
+export function recompute(input: RecomputeInput): RecomputeResult {
+  const {
+    evidence, scoping, cycle_ref, root_domain, landing_url,
+    question_key, conversion_proximity, is_production,
+  } = input;
+
+  const graph = buildGraph(evidence, root_domain, cycle_ref);
+  const graphStats = summarizeGraph(graph);
+  const signals = extractSignals(evidence, graph, scoping, cycle_ref);
+  const inferences = computeInferences(signals, scoping, cycle_ref);
+
+  const { decision, risk_evaluation }: DecisionResult = produceDecision({
+    question_key, scoping, cycle_ref, signals, inferences,
+    conversion_proximity, is_production,
+  });
+
+  const actions = deriveActions(decision);
+
+  const workspace = createPreflightWorkspace(
+    { name: `recompute_${root_domain}`, type: 'analysis', scoping, landing_url, cycle_ref },
+    decision, actions, inferences,
+  );
+
+  return { graph_stats: graphStats, signals, inferences, decision, risk_evaluation, actions, workspace };
+}
+
+// ──────────────────────────────────────────────
+// Multi-pack recomputation
+// ──────────────────────────────────────────────
+
+export interface MultiPackInput {
+  evidence: Evidence[];
+  scoping: Scoping;
+  cycle_ref: string;
+  root_domain: string;
+  landing_url: string;
+  conversion_proximity: number;
+  is_production: boolean;
+  business_inputs?: BusinessInputs | null;
+  /** Onboarding-declared business model (prior, not truth) */
+  onboarding_business_model?: string | null;
+  /** Onboarding-declared conversion model (prior) */
+  onboarding_conversion_model?: string | null;
+
+  // Phase 26: Systemic integration inputs
+  /** Active suppression rules to apply to decisions */
+  suppression_rules?: SuppressionRule[];
+  /** Previous cycle snapshot for change detection */
+  previous_snapshot?: CycleSnapshot | null;
+  /** Current business profile for freshness/drift evaluation */
+  business_profile?: BusinessProfile | null;
+  /** Observed drift signals for business profile */
+  profile_drift_signals?: ProfileDriftSignal[];
+  /** Engine translations for i18n support */
+  translations?: EngineTranslations;
+}
+
+export interface MultiPackResult {
+  graph_stats: GraphStats;
+  signals: Signal[];
+  inferences: Inference[];
+  scale_readiness: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: WorkspaceResult;
+  };
+  revenue_integrity: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: RevenueWorkspaceResult;
+  };
+  chargeback_resilience: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: ChargebackWorkspaceResult;
+  };
+  saas_growth_readiness: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: WorkspaceResult;
+  } | null; // null when SaaS pack not eligible
+  intelligence: DecisionIntelligenceResult;
+  impact: {
+    value_cases: QuantifiedValueCase[];
+    summary: ImpactSummary;
+  };
+  classification: ClassificationState;
+  pack_eligibility: PackEligibility;
+  // Phase 25: Systemic consistency layers
+  conflict_report: ConflictReport;
+  opportunities: OpportunityGenerationResult;
+  evidence_quality: EvidenceQuality[];
+
+  // Phase 26: Operationalized systemic layers
+  /** Truth resolution applied to multi-source signals */
+  truth_harmonization: HarmonizationResult | null;
+  /** Truth consistency guard — contradiction metadata for explainability */
+  truth_consistency: TruthConsistencyResult | null;
+  /** Evidence quality → confidence adjustments */
+  quality_adjustments: QualityAdjustmentResult | null;
+  /** Suppression effects applied to decisions */
+  suppression_result: SuppressionApplicationResult | null;
+  /** Suppression governance — blind spots, escalations, explanations */
+  suppression_governance: SuppressionGovernanceResult | null;
+  /** Cycle-to-cycle change detection */
+  change_report: CycleChangeReport | null;
+  /** Versioned snapshot for persistence */
+  current_snapshot: VersionedSnapshot | null;
+  /** Business profile freshness evaluation */
+  profile_freshness: ProfileFreshnessCheck | null;
+  /** Confidence pipeline audit trail */
+  confidence_audit: ConfidenceIntegrityResult | null;
+  /** Behavioral validation results */
+  behavioral_validation: BehavioralValidationResult | null;
+}
+
+export function recomputeAll(input: MultiPackInput): MultiPackResult {
+  const {
+    evidence, scoping, cycle_ref, root_domain, landing_url,
+    conversion_proximity, is_production, translations,
+  } = input;
+
+  // ─── Phase 26: Evidence quality assessment (early, feeds confidence) ───
+  const evidenceQuality = assessAllEvidenceQuality(evidence);
+
+  // ─── Shared pipeline: graph + signals + inferences ───
+  const graph = buildGraph(evidence, root_domain, cycle_ref);
+  const graphStats = summarizeGraph(graph);
+  const rawSignals = extractSignals(evidence, graph, scoping, cycle_ref);
+
+  // ─── Phase 26: Truth resolution — harmonize multi-source signals ───
+  const truthHarmonization = harmonizeSignals(rawSignals, evidence);
+  const truthResolvedSignals = truthHarmonization.signals;
+
+  // ─── Phase 27: Truth consistency guard — attach contradiction metadata ───
+  const truthConsistency = guardTruthConsistency(rawSignals, truthResolvedSignals, truthHarmonization);
+
+  // ─── Phase 26: Evidence quality → confidence adjustment ───
+  // Use truth-resolved signals (consistency guard is observational, not mutating)
+  const qualityAdjustment = adjustConfidenceByQuality(truthResolvedSignals, evidenceQuality);
+  const signals = qualityAdjustment.signals;
+
+  // ─── Inferences from quality-adjusted, truth-resolved signals ───
+  const inferences = computeInferences(signals, scoping, cycle_ref);
+
+  // Scale readiness decision
+  const scaleResult: DecisionResult = produceDecision({
+    question_key: 'is_it_safe_to_scale_traffic',
+    scoping, cycle_ref, signals, inferences,
+    conversion_proximity, is_production, translations,
+  });
+  const scaleActions = deriveActions(scaleResult.decision);
+  const scaleWorkspace = createPreflightWorkspace(
+    { name: 'Preflight', type: 'analysis', scoping, landing_url, cycle_ref },
+    scaleResult.decision, scaleActions, inferences,
+  );
+
+  // Revenue integrity decision
+  const revenueResult: DecisionResult = produceDecision({
+    question_key: 'is_there_revenue_leakage_in_high_intent_paths',
+    scoping, cycle_ref, signals, inferences,
+    conversion_proximity, is_production, translations,
+  });
+  const revenueActions = deriveActions(revenueResult.decision);
+  const revenueWorkspace = createRevenueWorkspace(
+    { name: 'Revenue Analysis', scoping, landing_url, cycle_ref },
+    revenueResult.decision, revenueActions, inferences,
+  );
+
+  // Chargeback resilience decision
+  const chargebackResult: DecisionResult = produceDecision({
+    question_key: 'is_chargeback_pressure_elevated',
+    scoping, cycle_ref, signals, inferences,
+    conversion_proximity, is_production, translations,
+  });
+  const chargebackActions = deriveActions(chargebackResult.decision);
+  const chargebackWorkspace = createChargebackWorkspace(
+    { name: 'Chargeback Analysis', scoping, landing_url, cycle_ref },
+    chargebackResult.decision, chargebackActions, inferences,
+  );
+
+  // Classification — probabilistic business model + surface hypotheses
+  const classInput = extractClassificationInput(
+    evidence,
+    input.onboarding_business_model || null,
+    input.onboarding_conversion_model || null,
+  );
+  const classification = computeClassification(classInput);
+  const packEligibility = computePackEligibility(classification, null, null);
+
+  // SaaS growth readiness (only if eligible)
+  let saasGrowthReadiness: MultiPackResult['saas_growth_readiness'] = null;
+  let saasSignals: Signal[] = [];
+  let saasInferences: Inference[] = [];
+
+  if (packEligibility.saas_pack.eligible) {
+    saasSignals = extractSaasSignals(evidence, scoping, cycle_ref);
+    saasInferences = computeSaasInferences([...signals, ...saasSignals], scoping, cycle_ref);
+
+    if (saasInferences.length > 0) {
+      const saasResult: DecisionResult = produceDecision({
+        question_key: 'is_saas_growth_ready',
+        scoping, cycle_ref, signals: [...signals, ...saasSignals], inferences: [...inferences, ...saasInferences],
+        conversion_proximity, is_production, translations,
+      });
+      const saasActions = deriveActions(saasResult.decision);
+      const saasWorkspace = createPreflightWorkspace(
+        { name: 'SaaS Growth', type: 'analysis', scoping, landing_url, cycle_ref },
+        saasResult.decision, saasActions, [...inferences, ...saasInferences],
+      );
+      saasGrowthReadiness = {
+        decision: saasResult.decision,
+        risk_evaluation: saasResult.risk_evaluation,
+        actions: saasActions,
+        workspace: saasWorkspace,
+      };
+    }
+  }
+
+  // Merge SaaS signals/inferences into main arrays
+  const allSignals = [...signals, ...saasSignals];
+  const allInferences = [...inferences, ...saasInferences];
+
+  // Collect all decisions and risk evaluations
+  let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision];
+  let allRiskEvals = [scaleResult.risk_evaluation, revenueResult.risk_evaluation, chargebackResult.risk_evaluation];
+  if (saasGrowthReadiness) {
+    allDecisions.push(saasGrowthReadiness.decision);
+    allRiskEvals.push(saasGrowthReadiness.risk_evaluation);
+  }
+
+  // ─── Phase 29: Instrumented confidence adjustment tracking ───
+  const instrumentedAdjustments: ConfidenceAdjustment[] = [];
+
+  // Capture pre-penalty confidence for penalty budget enforcement
+  const prePenaltyConfidence = new Map<string, number>();
+  for (const d of allDecisions) {
+    prePenaltyConfidence.set(makeRef('decision', d.id), d.confidence_score);
+  }
+
+  // ─── Phase 26: Suppression effects → confidence adjustment ───
+  let suppressionResult: SuppressionApplicationResult | null = null;
+  const suppressionRules = input.suppression_rules || [];
+  if (suppressionRules.length > 0) {
+    // Snapshot before suppression for instrumentation
+    const preSuppressionConf = new Map(allDecisions.map(d => [makeRef('decision', d.id), d.confidence_score]));
+
+    suppressionResult = applySuppressionEffects(allDecisions, allRiskEvals, suppressionRules);
+    allDecisions = suppressionResult.decisions;
+    allRiskEvals = suppressionResult.risk_evaluations;
+
+    // Record instrumented suppression adjustments
+    for (const d of allDecisions) {
+      const ref = makeRef('decision', d.id);
+      const before = preSuppressionConf.get(ref) ?? d.confidence_score;
+      if (before !== d.confidence_score) {
+        const wasCapped = d.confidence_score === 5 && (before - d.confidence_score) < (before - 5);
+        instrumentedAdjustments.push({
+          layer: 'suppression',
+          subject_type: 'decision',
+          subject_ref: ref,
+          adjustment_type: 'penalty',
+          value: d.confidence_score - before,
+          before,
+          after: d.confidence_score,
+          reason: `Suppression reduced confidence by ${before - d.confidence_score} points.`,
+          capped: d.confidence_score === 5,
+          cap_type: d.confidence_score === 5 ? 'floor' : null,
+        });
+      }
+    }
+  }
+
+  // ─── Phase 27: Suppression governance — blind spots, escalations ───
+  let suppressionGovernance: SuppressionGovernanceResult | null = null;
+  if (suppressionResult) {
+    suppressionGovernance = computeSuppressionGovernance(
+      suppressionResult, allDecisions, suppressionRules,
+    );
+  }
+
+  // ─── Phase 26+29: Business profile freshness → graduated confidence penalty ───
+  let profileFreshness: ProfileFreshnessCheck | null = null;
+  let profilePenalty = 1.0;
+  if (input.business_profile) {
+    const driftSignals = input.profile_drift_signals || [];
+    profileFreshness = evaluateProfileFreshness(input.business_profile, driftSignals);
+    profilePenalty = profileConfidencePenalty(profileFreshness);
+
+    // Phase 29: Apply graduated profile penalty directly (no dead zone cap)
+    if (profilePenalty < 1.0) {
+      allDecisions = allDecisions.map(d => {
+        const ref = makeRef('decision', d.id);
+        const before = d.confidence_score;
+        const after = Math.max(5, Math.round(before * profilePenalty));
+        if (before !== after) {
+          instrumentedAdjustments.push({
+            layer: 'profile_freshness',
+            subject_type: 'decision',
+            subject_ref: ref,
+            adjustment_type: 'multiplier',
+            value: after - before,
+            before,
+            after,
+            reason: `Profile ${profileFreshness!.staleness_days}d old` +
+              (profileFreshness!.drift_detected ? ` + ${profileFreshness!.drift_signals.length} drift signal(s)` : '') +
+              `. Penalty: ${profilePenalty}x.`,
+            capped: after === 5,
+            cap_type: after === 5 ? 'floor' : null,
+          });
+        }
+        return { ...d, confidence_score: after };
+      });
+      allRiskEvals = allRiskEvals.map(r => {
+        const before = r.confidence_score;
+        const after = Math.max(5, Math.round(before * profilePenalty));
+        return {
+          ...r,
+          confidence_score: after,
+          rationale: {
+            ...r.rationale,
+            penalties: [
+              ...r.rationale.penalties,
+              {
+                type: 'business_context' as const,
+                description: `Business profile is ${profileFreshness!.staleness_days} days old. ` +
+                  `Decision confidence reduced by ${Math.round((1 - profilePenalty) * 100)}% (${profilePenalty}x multiplier).`,
+                adjustment: after - before,
+              },
+            ],
+          },
+        };
+      });
+    }
+  }
+
+  // Intelligence layer — root causes, linking, global action prioritization
+  const actionsByDecision = new Map<string, Action[]>();
+  actionsByDecision.set(makeRef('decision', allDecisions[0].id), scaleActions);
+  actionsByDecision.set(makeRef('decision', allDecisions[1].id), revenueActions);
+  actionsByDecision.set(makeRef('decision', allDecisions[2].id), chargebackActions);
+  if (saasGrowthReadiness && allDecisions.length > 3) {
+    actionsByDecision.set(makeRef('decision', allDecisions[3].id), saasGrowthReadiness.actions);
+  }
+
+  const intelligence = produceIntelligence({
+    inferences: allInferences,
+    decisions: allDecisions,
+    actions_by_decision: actionsByDecision,
+    translations,
+  });
+
+  // Impact estimation — with profile freshness penalty applied
+  const valueCases = estimateImpact(allInferences, input.business_inputs || null, profilePenalty);
+  const impactSummary = summarizeImpact(valueCases);
+
+  // Phase 25: Decision conflict resolution
+  const conflictReport = resolveDecisionConflicts(allDecisions);
+
+  // ─── Phase 29: Coherence consequences — graduated penalty for incoherence ───
+  const coherenceScore = conflictReport.resolved_decisions?.coherence_score ?? 100;
+  if (coherenceScore < 70) {
+    // Phase 29: Lowered floor from 0.85 to 0.65 for meaningful severe-incoherence penalties
+    const coherencePenalty = Math.max(0.65, coherenceScore / 100);
+    allDecisions = allDecisions.map(d => {
+      const resolved = conflictReport.resolved_decisions?.decisions.find(
+        rd => rd.decision_ref === makeRef('decision', d.id),
+      );
+      // Only penalize decisions involved in conflicts
+      if (resolved && resolved.conflict_refs.length > 0) {
+        const ref = makeRef('decision', d.id);
+        const before = d.confidence_score;
+        const after = Math.max(5, Math.round(before * coherencePenalty));
+        if (before !== after) {
+          instrumentedAdjustments.push({
+            layer: 'coherence',
+            subject_type: 'decision',
+            subject_ref: ref,
+            adjustment_type: 'multiplier',
+            value: after - before,
+            before,
+            after,
+            reason: `Coherence score ${coherenceScore}/100. Penalty: ${coherencePenalty}x (applied to conflicting decisions only).`,
+            capped: after === 5,
+            cap_type: after === 5 ? 'floor' : null,
+          });
+        }
+        return { ...d, confidence_score: after };
+      }
+      return d;
+    });
+  }
+
+  // ─── Phase 29: Cross-layer penalty budget enforcement ───
+  // Prevent combined penalties (suppression + profile + coherence) from exceeding
+  // the budget limit. Each decision's confidence cannot drop below PENALTY_BUDGET_FLOOR
+  // of its pre-penalty value.
+  allDecisions = allDecisions.map(d => {
+    const ref = makeRef('decision', d.id);
+    const original = prePenaltyConfidence.get(ref);
+    if (original === undefined || original === d.confidence_score) return d;
+
+    const budgetFloor = Math.max(5, Math.round(original * PENALTY_BUDGET_FLOOR));
+    if (d.confidence_score < budgetFloor) {
+      instrumentedAdjustments.push({
+        layer: 'penalty_budget',
+        subject_type: 'decision',
+        subject_ref: ref,
+        adjustment_type: 'budget_cap',
+        value: budgetFloor - d.confidence_score,
+        before: d.confidence_score,
+        after: budgetFloor,
+        reason: `Cross-layer penalty budget: total reduction capped at ${Math.round((1 - PENALTY_BUDGET_FLOOR) * 100)}%. ` +
+          `Original: ${original}, uncapped: ${d.confidence_score}, budget floor: ${budgetFloor}.`,
+        capped: true,
+        cap_type: 'budget',
+      });
+      return { ...d, confidence_score: budgetFloor };
+    }
+    return d;
+  });
+
+  // Apply penalty budget to risk evaluations as well
+  allRiskEvals = allRiskEvals.map((r, i) => {
+    const d = allDecisions[i];
+    if (!d) return r;
+    // Risk evals track the matching decision's confidence
+    const ref = makeRef('decision', d.id);
+    const original = prePenaltyConfidence.get(ref);
+    if (original === undefined) return r;
+    const budgetFloor = Math.max(5, Math.round(original * PENALTY_BUDGET_FLOOR));
+    if (r.confidence_score < budgetFloor) {
+      return { ...r, confidence_score: budgetFloor };
+    }
+    return r;
+  });
+
+  // Phase 25: Rigorous opportunity generation with gates
+  const opportunityResult = generateOpportunities(
+    allDecisions, allInferences, valueCases, scoping, cycle_ref,
+  );
+
+  // ─── Phase 26+27: Change detection — always produce a snapshot ───
+  let changeReport: CycleChangeReport | null = null;
+  const cycleSnapshot: CycleSnapshot = {
+    cycle_ref,
+    decisions: allDecisions,
+    signals: allSignals,
+  };
+  if (input.previous_snapshot) {
+    changeReport = detectChanges(input.previous_snapshot, cycleSnapshot);
+  }
+
+  // ─── Phase 30B: Inject regression inference from change detection ───
+  // Regressions are composite interpretations of cycle-to-cycle state,
+  // injected as inferences so they flow canonically through impact/projections.
+  if (changeReport && changeReport.regressions.length > 0) {
+    const materialRegressions = changeReport.regressions.filter(
+      r => r.severity === 'notable' || r.severity === 'significant' || r.severity === 'critical',
+    );
+    if (materialRegressions.length > 0) {
+      const regressedKeys = materialRegressions.map(r => r.decision_key);
+      const worstSeverity = materialRegressions.some(r => r.severity === 'critical' || r.severity === 'significant') ? 'high' : 'medium';
+      const now = new Date();
+      const regressionInference: Inference = {
+        id: `inf_regression_${cycle_ref}`,
+        inference_key: 'revenue_path_regressed',
+        category: 'revenue_path' as any,
+        scoping,
+        cycle_ref,
+        freshness: { observed_at: now, fresh_until: new Date(now.getTime() + 86400000), freshness_state: 'fresh' as any, staleness_reason: null },
+        conclusion: 'revenue_path_regressed',
+        conclusion_value: worstSeverity,
+        severity_hint: worstSeverity,
+        confidence: 75,
+        signal_refs: [],
+        evidence_refs: [],
+        reasoning: `${materialRegressions.length} material regression(s) detected since last audit. Worsened decisions: ${regressedKeys.slice(0, 3).join(', ')}. This is a confirmed degradation of a previously better state.`,
+        description: null,
+        created_at: now,
+        updated_at: now,
+      };
+      allInferences.push(regressionInference);
+    }
+  }
+
+  // ─── Phase 27: Create versioned snapshot for persistence ───
+  const versionedSnapshot = createVersionedSnapshot(
+    cycle_ref,
+    scoping.workspace_ref,
+    scoping.environment_ref,
+    allDecisions,
+    allSignals,
+  );
+
+  // Reassemble pack results with possibly-adjusted decisions and risk evaluations
+  const assembledResult: MultiPackResult = {
+    graph_stats: graphStats,
+    signals: allSignals,
+    inferences: allInferences,
+    scale_readiness: {
+      decision: allDecisions[0],
+      risk_evaluation: allRiskEvals[0],
+      actions: scaleActions,
+      workspace: scaleWorkspace,
+    },
+    revenue_integrity: {
+      decision: allDecisions[1],
+      risk_evaluation: allRiskEvals[1],
+      actions: revenueActions,
+      workspace: revenueWorkspace,
+    },
+    chargeback_resilience: {
+      decision: allDecisions[2],
+      risk_evaluation: allRiskEvals[2],
+      actions: chargebackActions,
+      workspace: chargebackWorkspace,
+    },
+    saas_growth_readiness: saasGrowthReadiness ? {
+      decision: allDecisions[3] || saasGrowthReadiness.decision,
+      risk_evaluation: allRiskEvals[3] || saasGrowthReadiness.risk_evaluation,
+      actions: saasGrowthReadiness.actions,
+      workspace: saasGrowthReadiness.workspace,
+    } : null,
+    intelligence,
+    impact: {
+      value_cases: valueCases,
+      summary: impactSummary,
+    },
+    classification,
+    pack_eligibility: packEligibility,
+    conflict_report: conflictReport,
+    opportunities: opportunityResult,
+    evidence_quality: evidenceQuality,
+
+    // Phase 26: Operationalized systemic layers
+    truth_harmonization: truthHarmonization,
+    truth_consistency: truthConsistency,
+    quality_adjustments: qualityAdjustment,
+    suppression_result: suppressionResult,
+    suppression_governance: suppressionGovernance,
+    change_report: changeReport,
+    current_snapshot: versionedSnapshot,
+    profile_freshness: profileFreshness,
+
+    // Phase 27: Confidence audit and behavioral validation (computed post-assembly)
+    confidence_audit: null,       // set below
+    behavioral_validation: null,  // set below
+  };
+
+  // ─── Phase 29: Confidence audit — instrumented with real before/after values ───
+  assembledResult.confidence_audit = buildConfidenceAudit(assembledResult, instrumentedAdjustments);
+
+  // ─── Phase 27: Behavioral validation — edge case checks ───
+  assembledResult.behavioral_validation = validateBehavior(assembledResult, assembledResult.confidence_audit);
+
+  return assembledResult;
+}
+
+function summarizeGraph(graph: ReturnType<typeof buildGraph>): GraphStats {
+  let externalNodes = 0;
+  let internalNodes = 0;
+  const nodeTypes: Record<string, number> = {};
+  const edgeTypes: Record<string, number> = {};
+
+  for (const node of graph.nodes.values()) {
+    if (node.is_external) externalNodes++;
+    else internalNodes++;
+    nodeTypes[node.node_type] = (nodeTypes[node.node_type] || 0) + 1;
+  }
+
+  for (const edge of graph.edges) {
+    edgeTypes[edge.edge_type] = (edgeTypes[edge.edge_type] || 0) + 1;
+  }
+
+  return {
+    total_nodes: graph.nodes.size,
+    total_edges: graph.edges.length,
+    external_nodes: externalNodes,
+    internal_nodes: internalNodes,
+    node_types: nodeTypes,
+    edge_types: edgeTypes,
+  };
+}

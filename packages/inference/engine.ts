@@ -1,0 +1,2505 @@
+import {
+  Signal,
+  Inference,
+  InferenceCategory,
+  FreshnessState,
+  Scoping,
+  IdGenerator,
+  makeRef,
+} from '../domain';
+
+// ──────────────────────────────────────────────
+// Inference Engine — composite interpretations from signals
+// Deterministic: scoped ID generator, no global state
+// ──────────────────────────────────────────────
+
+export function computeInferences(
+  signals: Signal[],
+  scoping: Scoping,
+  cycle_ref: string,
+): Inference[] {
+  const inferences: Inference[] = [];
+  const ids = new IdGenerator('inf');
+
+  // Index signals by attribute — supports multiple signals per attribute
+  const byAttribute = new Map<string, Signal[]>();
+  for (const s of signals) {
+    const list = byAttribute.get(s.attribute) || [];
+    list.push(s);
+    byAttribute.set(s.attribute, list);
+  }
+
+  // Helper: get first signal for an attribute (most common case)
+  const first = (attr: string): Signal | undefined => {
+    const list = byAttribute.get(attr);
+    return list ? list[0] : undefined;
+  };
+
+  // Also index by signal_key for direct lookups
+  const byKey = new Map<string, Signal>();
+  for (const s of signals) {
+    byKey.set(s.signal_key, s);
+  }
+
+  // Existing inference rules (scale_readiness)
+  inferences.push(...inferCommerceContext(first, byKey, signals, scoping, cycle_ref, ids));
+  inferences.push(...inferTrustBoundary(first, scoping, cycle_ref, ids));
+  inferences.push(...inferPolicyGap(first, byKey, signals, scoping, cycle_ref, ids));
+  inferences.push(...inferRevenuePathFragility(first, scoping, cycle_ref, ids));
+  inferences.push(...inferMeasurementCoverage(first, scoping, cycle_ref, ids));
+  inferences.push(...inferCheckoutIntegrity(first, scoping, cycle_ref, ids));
+
+  // Revenue inference rules (revenue_integrity)
+  inferences.push(...inferConversionFlowFragmentation(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFrictionOnCriticalPath(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferRevenueLeakage(first, byKey, signals, scoping, cycle_ref, ids));
+  inferences.push(...inferTrustRevenueImpact(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMeasurementBlindspot(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferConversionClarity(first, byKey, scoping, cycle_ref, ids));
+
+  // Chargeback inference rules (chargeback_resilience)
+  inferences.push(...inferRefundPolicyRisk(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSupportAccessibility(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferExpectationAlignment(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferDisputeRisk(first, byKey, signals, scoping, cycle_ref, ids));
+
+  // Phase 30: New inference rules from existing evidence
+  inferences.push(...inferCriticalPathBroken(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFormDataLeavesDomain(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferProviderFragmentation(first, byKey, signals, scoping, cycle_ref, ids));
+
+  // Phase 30B: Extended inference rules
+  inferences.push(...inferRedirectTrustErosion(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferLanguageDiscontinuity(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferOrphanCommercialPage(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferUntrustedEmbed(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPlatformCheckoutRisk(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPostPurchaseGap(byKey, first, scoping, cycle_ref, ids));
+  inferences.push(...inferCommercialMeasurementBlind(first, byKey, scoping, cycle_ref, ids));
+
+  // Phase 2: Inference rules from deepened collection
+  inferences.push(...inferThinPolicyContent(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferHiddenSupportWidget(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferTrustSignalsThin(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferTrackingStackIncomplete(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferConsentMeasurementConflict(byKey, scoping, cycle_ref, ids));
+
+  // Phase 2B: Mobile & runtime inference rules
+  inferences.push(...inferMobilePathBlocked(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMobileTrustDegraded(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferRuntimePurchaseInterruption(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferRuntimeMeasurementBreak(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSecondaryFlowBypassing(byKey, scoping, cycle_ref, ids));
+
+  // Phase 2C: Composite inference rules
+  inferences.push(...inferRefundProcessUnclear(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPostPurchaseProofWeak(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSupportLateInJourney(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferHiddenReassuranceRoutes(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAlternateFlowMeasurementGap(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferRuntimeReassuranceBreak(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferProviderPathWeak(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferTrustMeasurementCompoundBreak(byKey, scoping, cycle_ref, ids));
+
+  // Phase 3A: Channel integrity inferences
+  inferences.push(...inferPaymentSurfaceExposure(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferChannelHijackExposure(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCommerceContinuityThreat(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferLowTrustPosture(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferChannelCompromisePattern(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAbuseExposure(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCheckoutInfraBrittle(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferEconomicExploitation(byKey, scoping, cycle_ref, ids));
+
+  // Phase 3B: Deep discovery inferences from Katana evidence
+  inferences.push(...inferPromotionLogicExposed(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCartVariantWeakControl(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferHiddenDiscountRefundRoute(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferGuessableBusinessEndpoint(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAlternatePricingSafeguardBypass(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferJsDiscoveredPurchaseVariant(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferDynamicRouteWeakControl(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferHiddenSupportBurden(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAlternateVariantControlBreakdown(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferDeepCommerceExploitationRisk(byKey, scoping, cycle_ref, ids));
+
+  // Phase 2D: Network analysis inferences
+  inferences.push(...inferCheckoutApiLatency(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCommercialPagesSlow(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPaidLandingOverloaded(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferThirdPartyWeightDelaysTrust(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCheckoutBrittleThirdParty(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPurchaseBlockedFailingRequests(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMeasurementBreaksRevenuePath(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPurchaseBeforeDepsReady(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferTrustAssetsLateLoad(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMobileHeavyRuntimeChain(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMobileTrustPaymentDepsFailing(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferTrustSurfacesUnstableDeps(byKey, scoping, cycle_ref, ids));
+
+  // Phase 3E: Discoverability inferences
+  inferences.push(...inferWeakSearchRepresentation(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSocialPreviewsFailValue(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferBrandInconsistentSurfaces(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCommercialPagesUnlikelyIndexed(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferWeakSemanticIntentSignals(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPreviewsDisconnectedConversion(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCommercialPagesNotExposed(byKey, scoping, cycle_ref, ids));
+
+  // Phase 3E: Brand integrity inferences
+  inferences.push(...inferLookalikeDomains(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferExternalMimicry(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferBrandTrafficDeceptive(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSuspiciousDomainsPurchaseIntent(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPhishingExposure(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferBrandDilution(byKey, scoping, cycle_ref, ids));
+
+  // Phase 4B: Behavioral intelligence inferences
+  inferences.push(...inferPolicyViewAbandonment(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferHighIntentDetour(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSupportTooLateToConvert(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCtaBehaviorallyDead(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPurchaseHesitationBacktrack(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCriticalStepRetries(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMobileFirstActionFails(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFunnelStepStalled(byKey, scoping, cycle_ref, ids));
+  // Phase 4B Hardening: 12 new behavioral inferences
+  inferences.push(...inferHesitationBeforeConversionMissingTrust(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPricingHesitationUnclearValue(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPolicyDetourBeforeConversion(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCtaViewedNotEngaged(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSensitiveInputAbandonment(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFormExcessiveFieldsBeforeConversion(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFormSubmissionRetryFriction(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSurfaceOscillationBeforeDropoff(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferConversionFinalStepRetry(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCtaLateAvailabilityDelaysAction(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCheckoutAbandonNoFeedback(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSensitiveInputPerceivedRiskDropoff(byKey, scoping, cycle_ref, ids));
+
+  return inferences;
+}
+
+function inferCommerceContext(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  signals: Signal[],
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const checkoutDetected = first('checkout.detected');
+  const checkoutMode = first('checkout.mode');
+  const providerSignals = signals.filter((s) => s.attribute === 'provider.guess');
+
+  // Commerce is detected if:
+  // 1. checkout.detected exists with value != 'false', OR
+  // 2. checkout.mode signal exists (implies checkout was found), OR
+  // 3. payment provider signals exist
+  const hasCommerce =
+    (checkoutDetected && checkoutDetected.value !== 'false') ||
+    checkoutMode != null ||
+    providerSignals.length > 0;
+
+  const allSignals = [checkoutDetected, checkoutMode, ...providerSignals].filter(
+    (s): s is Signal => s != null,
+  );
+
+  return [
+    createInference({
+      inference_key: 'commerce_context',
+      category: InferenceCategory.CommerceContext,
+      conclusion: 'commerce_context',
+      conclusion_value: hasCommerce ? 'true' : 'false',
+      confidence: hasCommerce ? 70 : 50,
+      scoping, cycle_ref, ids,
+      signal_refs: allSignals.map((s) => makeRef('signal', s.id)),
+      evidence_refs: allSignals.flatMap((s) => s.evidence_refs),
+      reasoning: hasCommerce
+        ? 'Commerce indicators found: checkout flow, payment forms, or known payment providers detected.'
+        : 'No commerce indicators detected. Site may be informational or use non-standard checkout.',
+    }),
+  ];
+}
+
+function inferTrustBoundary(
+  first: (attr: string) => Signal | undefined,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const boundaryCrossed = first('trust.boundary_crossed');
+  const checkoutOffDomain = first('checkout.off_domain');
+  const weakSurface = first('trust.surface_weakness');
+  const redirectChain = first('trust.redirect_chain_length');
+
+  if (!boundaryCrossed && !checkoutOffDomain) return [];
+
+  const isCrossed = boundaryCrossed?.value === 'true' || checkoutOffDomain?.value === 'true';
+  const hasWeakSurface = weakSurface?.value === 'high';
+  const hasLongRedirect = redirectChain != null && (redirectChain.numeric_value || 0) > 2;
+
+  let severity = 'low';
+  let confidence = 55;
+
+  if (isCrossed && hasWeakSurface) {
+    severity = 'high';
+    confidence = 75;
+  } else if (isCrossed && hasLongRedirect) {
+    severity = 'high';
+    confidence = 70;
+  } else if (isCrossed) {
+    severity = 'medium';
+    confidence = 65;
+  }
+
+  const relevantSignals = [boundaryCrossed, checkoutOffDomain, weakSurface, redirectChain].filter(
+    (s): s is Signal => s != null,
+  );
+
+  return [
+    createInference({
+      inference_key: 'trust_boundary_crossed',
+      category: InferenceCategory.TrustBoundary,
+      conclusion: 'trust_boundary_crossed',
+      conclusion_value: isCrossed ? 'true' : 'false',
+      severity_hint: severity,
+      confidence,
+      scoping, cycle_ref, ids,
+      signal_refs: relevantSignals.map((s) => makeRef('signal', s.id)),
+      evidence_refs: relevantSignals.flatMap((s) => s.evidence_refs),
+      reasoning: buildTrustBoundaryReasoning(isCrossed, hasWeakSurface, hasLongRedirect),
+    }),
+  ];
+}
+
+function buildTrustBoundaryReasoning(
+  crossed: boolean,
+  weakSurface: boolean,
+  longRedirect: boolean,
+): string {
+  if (!crossed) return 'No trust boundary crossing detected.';
+  const parts = ['Trust boundary crossed: user leaves the primary domain during the conversion flow.'];
+  if (weakSurface) parts.push('Unknown providers or unverified handoffs increase risk.');
+  if (longRedirect) parts.push('Long redirect chain adds friction and reduces trust continuity.');
+  return parts.join(' ');
+}
+
+function inferPolicyGap(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  signals: Signal[],
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const coverage = first('policy.coverage');
+  if (!coverage) return [];
+
+  // Check for commerce: look for checkout.mode signal (emitted when checkout IS detected)
+  // or any provider signal. The checkout_detected signal with value='false' means NO checkout.
+  const checkoutMode = first('checkout.mode');
+  const hasProviders = signals.some((s) => s.attribute === 'provider.guess');
+  const isCommerce = checkoutMode != null || hasProviders;
+
+  const coverageLevel = coverage.value;
+
+  let gap = 'none';
+  if (isCommerce && coverageLevel === 'weak') {
+    gap = 'high';
+  } else if (isCommerce && coverageLevel === 'partial') {
+    gap = 'medium';
+  } else if (!isCommerce && coverageLevel === 'weak') {
+    gap = 'low';
+  }
+
+  if (gap === 'none') return [];
+
+  const relevantSignals: Signal[] = [coverage];
+  if (checkoutMode) relevantSignals.push(checkoutMode);
+
+  return [
+    createInference({
+      inference_key: 'policy_gap',
+      category: InferenceCategory.PolicyGap,
+      conclusion: 'policy_gap',
+      conclusion_value: gap,
+      severity_hint: gap,
+      confidence: gap === 'high' ? 70 : 55,
+      scoping, cycle_ref, ids,
+      signal_refs: relevantSignals.map((s) => makeRef('signal', s.id)),
+      evidence_refs: relevantSignals.flatMap((s) => s.evidence_refs),
+      reasoning: `Commerce context ${isCommerce ? 'detected' : 'not detected'} with ${coverageLevel} policy coverage. ` +
+        (gap === 'high'
+          ? 'Critical: commercial site missing essential consumer protection policies.'
+          : 'Some required policies are missing or not detected.'),
+    }),
+  ];
+}
+
+function inferRevenuePathFragility(
+  first: (attr: string) => Signal | undefined,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const checkoutOffDomain = first('checkout.off_domain');
+  const redirectChain = first('trust.redirect_chain_length');
+  const slowResponse = first('operational.slow_responses');
+  const httpErrors = first('operational.http_errors');
+
+  // Fixed: removed trust.boundary_crossed to avoid double-counting with checkout.off_domain
+  // trust_boundary_crossed is already accounted for in its own inference
+  const fragileSignals: Signal[] = [];
+  let score = 0;
+
+  if (checkoutOffDomain?.value === 'true') { fragileSignals.push(checkoutOffDomain); score += 30; }
+  if (redirectChain) { fragileSignals.push(redirectChain); score += 15; }
+  if (slowResponse) { fragileSignals.push(slowResponse); score += 10; }
+  if (httpErrors) { fragileSignals.push(httpErrors); score += 20; }
+
+  if (score === 0) return [];
+
+  const fragility = score >= 45 ? 'high' : score >= 25 ? 'medium' : 'low';
+
+  return [
+    createInference({
+      inference_key: 'revenue_path_fragile',
+      category: InferenceCategory.RevenuePath,
+      conclusion: 'revenue_path_fragile',
+      conclusion_value: fragility,
+      severity_hint: fragility,
+      confidence: Math.min(80, 50 + fragileSignals.length * 5),
+      scoping, cycle_ref, ids,
+      signal_refs: fragileSignals.map((s) => makeRef('signal', s.id)),
+      evidence_refs: fragileSignals.flatMap((s) => s.evidence_refs),
+      reasoning: `Revenue path fragility: ${fragility}. Contributing factors: ` +
+        fragileSignals.map((s) => s.description).join('; '),
+    }),
+  ];
+}
+
+function inferMeasurementCoverage(
+  first: (attr: string) => Signal | undefined,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const measurement = first('measurement.coverage');
+  if (!measurement) return [];
+
+  const level = measurement.value;
+
+  return [
+    createInference({
+      inference_key: 'measurement_coverage',
+      category: InferenceCategory.MeasurementCoverage,
+      conclusion: 'measurement_sufficient',
+      conclusion_value: level === 'adequate' ? 'true' : 'false',
+      confidence: measurement.confidence,
+      scoping, cycle_ref, ids,
+      signal_refs: [makeRef('signal', measurement.id)],
+      evidence_refs: measurement.evidence_refs,
+      reasoning: level === 'adequate'
+        ? 'Measurement coverage is adequate for optimization decisions.'
+        : level === 'shallow'
+          ? 'Only basic analytics detected. Attribution and optimization capabilities are limited.'
+          : 'No analytics tools detected. Measurement is insufficient for any optimization.',
+    }),
+  ];
+}
+
+function inferCheckoutIntegrity(
+  first: (attr: string) => Signal | undefined,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const checkoutMode = first('checkout.mode');
+  const checkoutOffDomain = first('checkout.off_domain');
+  const policyCoverage = first('policy.coverage');
+
+  if (!checkoutMode) return [];
+
+  let integrityScore = 100;
+  const issues: string[] = [];
+  const relevantSignals: Signal[] = [checkoutMode];
+
+  if (checkoutOffDomain?.value === 'true') {
+    integrityScore -= 35;
+    issues.push('checkout is off-domain');
+    relevantSignals.push(checkoutOffDomain);
+  }
+  // Removed trust.boundary_crossed here — it is redundant with checkout.off_domain
+  // and was causing double-counting of the same underlying issue
+  if (policyCoverage?.value === 'weak') {
+    integrityScore -= 25;
+    issues.push('weak policy coverage');
+    relevantSignals.push(policyCoverage);
+  } else if (policyCoverage?.value === 'partial') {
+    integrityScore -= 10;
+    issues.push('partial policy coverage');
+    relevantSignals.push(policyCoverage);
+  }
+
+  const integrity = integrityScore >= 70 ? 'adequate' :
+    integrityScore >= 40 ? 'fragile' : 'weak';
+
+  return [
+    createInference({
+      inference_key: 'checkout_integrity',
+      category: InferenceCategory.CheckoutIntegrity,
+      conclusion: 'checkout_integrity',
+      conclusion_value: integrity,
+      severity_hint: integrity === 'weak' ? 'high' : integrity === 'fragile' ? 'medium' : 'low',
+      confidence: 65,
+      scoping, cycle_ref, ids,
+      signal_refs: relevantSignals.map((s) => makeRef('signal', s.id)),
+      evidence_refs: relevantSignals.flatMap((s) => s.evidence_refs),
+      reasoning: issues.length > 0
+        ? `Checkout integrity is ${integrity} (score: ${integrityScore}/100). Issues: ${issues.join(', ')}.`
+        : `Checkout integrity is ${integrity} (score: ${integrityScore}/100). No significant issues detected.`,
+    }),
+  ];
+}
+
+// ──────────────────────────────────────────────
+// Revenue Inference Rules
+// ──────────────────────────────────────────────
+
+function inferConversionFlowFragmentation(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const fragmented = first('revenue.fragmented_path');
+  const offDomain = first('revenue.off_domain_checkout');
+  const redirectBefore = first('revenue.redirect_before_checkout');
+
+  if (!fragmented && !offDomain && !redirectBefore) return [];
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (fragmented?.value === 'true') {
+    factors.push(`conversion path fragments across ${fragmented.numeric_value} external hosts`);
+    relevantSignals.push(fragmented);
+    score += 35;
+  }
+  if (offDomain?.value === 'true') {
+    factors.push('checkout leaves the domain');
+    relevantSignals.push(offDomain);
+    score += 25;
+  }
+  if (redirectBefore) {
+    factors.push(`${redirectBefore.numeric_value} redirect hops before checkout`);
+    relevantSignals.push(redirectBefore);
+    score += redirectBefore.value === 'high' ? 20 : 10;
+  }
+
+  const severity = score >= 50 ? 'high' : score >= 25 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'conversion_flow_fragmented',
+    category: InferenceCategory.ConversionFlow,
+    conclusion: 'conversion_flow_fragmented',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(80, 50 + relevantSignals.length * 10),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Conversion flow is ${severity === 'high' ? 'severely' : 'moderately'} fragmented. ${factors.join('. ')}. Each fragment is a potential drop-off point that leaks revenue.`,
+  })];
+}
+
+function inferFrictionOnCriticalPath(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const excessive = first('friction.excessive_redirects');
+  const slowPath = first('friction.slow_critical_path');
+  const brokenForm = first('friction.broken_form_action');
+  const domainSwitch = first('friction.domain_switch_no_context');
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (brokenForm?.value === 'true') {
+    factors.push(`${brokenForm.numeric_value} broken form action(s)`);
+    relevantSignals.push(brokenForm);
+    score += 35;
+  }
+  if (slowPath) {
+    factors.push(`slow responses on critical path (avg ${slowPath.numeric_value}ms)`);
+    relevantSignals.push(slowPath);
+    score += slowPath.value === 'high' ? 25 : 15;
+  }
+  if (excessive) {
+    factors.push(`${excessive.numeric_value} redirect hops total`);
+    relevantSignals.push(excessive);
+    score += excessive.value === 'high' ? 20 : 10;
+  }
+  if (domainSwitch?.value === 'true') {
+    factors.push(`${domainSwitch.numeric_value} unexplained domain switch(es)`);
+    relevantSignals.push(domainSwitch);
+    score += 15;
+  }
+
+  if (score === 0) return [];
+
+  const severity = score >= 50 ? 'high' : score >= 25 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'friction_on_critical_path',
+    category: InferenceCategory.FrictionPath,
+    conclusion: 'friction_on_critical_path',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(80, 50 + relevantSignals.length * 8),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Critical path friction is ${severity}. ${factors.join('. ')}. Every friction point on the revenue path reduces conversion rate.`,
+  })];
+}
+
+function inferRevenueLeakage(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  signals: Signal[],
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const offDomain = first('revenue.off_domain_checkout');
+  const noFunnel = first('revenue.funnel_entry');
+  const fragmented = first('revenue.fragmented_path');
+  const brokenForm = first('friction.broken_form_action');
+  const missingTracking = byKey.get('missing_tracking_on_commercial');
+
+  const leakPoints: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (offDomain?.value === 'true') {
+    leakPoints.push('checkout leaves domain — attribution and trust break');
+    relevantSignals.push(offDomain);
+    score += 25;
+  }
+  if (noFunnel?.value === 'false') {
+    leakPoints.push('no clear conversion path entry — users cannot find how to convert');
+    relevantSignals.push(noFunnel);
+    score += 20;
+  }
+  if (fragmented?.value === 'true') {
+    leakPoints.push('conversion path fragments across multiple hosts');
+    relevantSignals.push(fragmented);
+    score += 20;
+  }
+  if (brokenForm?.value === 'true') {
+    leakPoints.push(`${brokenForm.numeric_value} broken form(s) — direct revenue loss`);
+    relevantSignals.push(brokenForm);
+    score += 30;
+  }
+  if (missingTracking) {
+    leakPoints.push('no measurement on commercial pages — leakage is invisible');
+    relevantSignals.push(missingTracking);
+    score += 15;
+  }
+
+  if (score === 0) return [];
+
+  const severity = score >= 50 ? 'high' : score >= 25 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'revenue_leakage',
+    category: InferenceCategory.RevenueLeakage,
+    conclusion: 'revenue_leakage',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(80, 45 + relevantSignals.length * 8),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Revenue leakage severity: ${severity}. ${leakPoints.length} leak point(s): ${leakPoints.join('; ')}.`,
+  })];
+}
+
+function inferTrustRevenueImpact(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const missingPolicy = first('trust.missing_policy_near_checkout');
+  const weakTrust = first('trust.surface_weakness');
+  const domainSwitch = first('friction.domain_switch_no_context');
+  const policyCoverage = first('policy.coverage');
+
+  const hasCheckout = first('checkout.mode') != null;
+  if (!hasCheckout) return [];
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (missingPolicy?.value === 'true') {
+    factors.push('no policies near checkout — legal and trust risk at conversion point');
+    relevantSignals.push(missingPolicy);
+    score += 30;
+  }
+  if (weakTrust?.value === 'high') {
+    factors.push('weak trust surface with unknown handoffs');
+    relevantSignals.push(weakTrust);
+    score += 20;
+  }
+  if (domainSwitch?.value === 'true') {
+    factors.push('domain switches without provider context');
+    relevantSignals.push(domainSwitch);
+    score += 15;
+  }
+  if (policyCoverage?.value === 'weak') {
+    factors.push('weak overall policy coverage');
+    relevantSignals.push(policyCoverage);
+    score += 15;
+  }
+
+  if (score === 0) return [];
+
+  const severity = score >= 40 ? 'high' : score >= 20 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'trust_break_in_checkout',
+    category: InferenceCategory.TrustRevenue,
+    conclusion: 'trust_break_in_checkout',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(75, 50 + relevantSignals.length * 7),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Trust break at checkout: ${severity}. ${factors.join('. ')}. Trust deficiencies at the conversion point directly reduce revenue.`,
+  })];
+}
+
+function inferMeasurementBlindspot(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const measurement = first('measurement.coverage');
+  const missingCommercial = byKey.get('missing_tracking_on_commercial');
+
+  if (!measurement && !missingCommercial) return [];
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (measurement?.value === 'none') {
+    factors.push('no analytics detected anywhere');
+    relevantSignals.push(measurement);
+    score += 30;
+  } else if (measurement?.value === 'shallow') {
+    factors.push('only basic analytics — attribution gaps likely');
+    relevantSignals.push(measurement);
+    score += 15;
+  }
+
+  if (missingCommercial) {
+    factors.push('no tracking on commercial pages — conversion measurement impossible');
+    relevantSignals.push(missingCommercial);
+    score += 25;
+  }
+
+  if (score === 0) return [];
+
+  const severity = score >= 40 ? 'high' : score >= 20 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'measurement_blindspot',
+    category: InferenceCategory.MeasurementBlindspot,
+    conclusion: 'measurement_blindspot',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(70, 45 + relevantSignals.length * 10),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Measurement blindspot: ${severity}. ${factors.join('. ')}. Without measurement, revenue leakage is invisible and unquantifiable.`,
+  })];
+}
+
+function inferConversionClarity(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const noConversion = first('clarity.no_primary_conversion_path');
+  const competingCtas = first('clarity.competing_ctas');
+
+  if (!noConversion && !competingCtas) return [];
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (noConversion?.value === 'true') {
+    factors.push('no clear primary conversion path detected');
+    relevantSignals.push(noConversion);
+    score += 35;
+  }
+  if (competingCtas?.value === 'true') {
+    factors.push(`pages with competing CTAs reduce conversion focus`);
+    relevantSignals.push(competingCtas);
+    score += 20;
+  }
+
+  const severity = score >= 35 ? 'high' : score >= 15 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'unclear_conversion_intent',
+    category: InferenceCategory.ConversionClarity,
+    conclusion: 'unclear_conversion_intent',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(65, 40 + relevantSignals.length * 10),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Conversion clarity: ${severity}. ${factors.join('. ')}. Unclear conversion intent means users cannot find or trust the path to purchase.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Chargeback Inference Rules
+// ──────────────────────────────────────────────
+
+function inferRefundPolicyRisk(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const refundPresent = first('policy.refund.present');
+  const refundAccessible = first('chargeback.refund_policy_accessible');
+  const policyCoverage = first('policy.coverage');
+
+  const hasCheckout = first('checkout.mode') != null;
+  if (!hasCheckout) return []; // no commerce, no chargeback risk from policy
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (refundPresent?.value === 'false') {
+    factors.push('refund policy not detected');
+    relevantSignals.push(refundPresent);
+    score += 35;
+  }
+  if (refundAccessible?.value === 'false') {
+    factors.push('no dedicated refund/return policy page');
+    relevantSignals.push(refundAccessible);
+    score += 20;
+  }
+  if (policyCoverage?.value === 'weak') {
+    factors.push('overall policy coverage is weak');
+    relevantSignals.push(policyCoverage);
+    score += 15;
+  }
+
+  if (score === 0) return [];
+
+  const severity = score >= 40 ? 'high' : score >= 20 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'refund_policy_gap',
+    category: InferenceCategory.RefundPolicyRisk,
+    conclusion: 'refund_policy_gap',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(75, 50 + relevantSignals.length * 8),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Refund policy risk: ${severity}. ${factors.join('. ')}. Without clear refund processes, customers resolve dissatisfaction through chargebacks.`,
+  })];
+}
+
+function inferSupportAccessibility(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const noContact = byKey.get('no_contact_method');
+  const contactPresent = first('support.contact_method_present');
+  const lowVisibility = byKey.get('support_visibility_low');
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (noContact) {
+    factors.push('no contact method detected');
+    relevantSignals.push(noContact);
+    score += 40;
+  } else if (contactPresent && (contactPresent.numeric_value || 0) < 2) {
+    factors.push('only one contact channel available');
+    relevantSignals.push(contactPresent);
+    score += 15;
+  }
+
+  if (lowVisibility) {
+    factors.push('support not prominently visible');
+    relevantSignals.push(lowVisibility);
+    score += 15;
+  }
+
+  if (score === 0) return [];
+
+  const severity = score >= 35 ? 'high' : score >= 15 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'support_unreachable',
+    category: InferenceCategory.SupportAccessibility,
+    conclusion: 'support_unreachable',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(70, 45 + relevantSignals.length * 10),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Support accessibility: ${severity}. ${factors.join('. ')}. When customers can't reach support, they file chargebacks instead.`,
+  })];
+}
+
+function inferExpectationAlignment(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const pricingNotVisible = byKey.get('pricing_not_visible');
+  const noPostPurchase = byKey.get('no_post_purchase_guidance');
+  const checkoutOffDomain = first('checkout.off_domain');
+
+  const hasCheckout = first('checkout.mode') != null;
+  if (!hasCheckout) return [];
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (pricingNotVisible) {
+    factors.push('no pricing page — customers may not understand charges');
+    relevantSignals.push(pricingNotVisible);
+    score += 25;
+  }
+  if (noPostPurchase) {
+    factors.push('no order confirmation page — customers unsure if purchase completed');
+    relevantSignals.push(noPostPurchase);
+    score += 20;
+  }
+  if (checkoutOffDomain?.value === 'true') {
+    factors.push('checkout leaves domain — brand disconnect creates charge confusion');
+    relevantSignals.push(checkoutOffDomain);
+    score += 15;
+  }
+
+  if (score === 0) return [];
+
+  const severity = score >= 35 ? 'high' : score >= 15 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'expectation_misalignment',
+    category: InferenceCategory.ExpectationAlignment,
+    conclusion: 'expectation_misalignment',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(65, 40 + relevantSignals.length * 8),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Expectation alignment: ${severity}. ${factors.join('. ')}. Misaligned expectations are the #1 driver of "unauthorized charge" disputes.`,
+  })];
+}
+
+function inferDisputeRisk(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  signals: Signal[],
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const hasCheckout = first('checkout.mode') != null;
+  if (!hasCheckout) return [];
+
+  // Aggregate chargeback risk from all contributing factors
+  const refundGap = first('policy.refund.present');
+  const noContact = byKey.get('no_contact_method');
+  const trustBoundary = first('trust.boundary_crossed');
+  const policyCoverage = first('policy.coverage');
+  const pricingNotVisible = byKey.get('pricing_not_visible');
+
+  const factors: string[] = [];
+  const relevantSignals: Signal[] = [];
+  let score = 0;
+
+  if (refundGap?.value === 'false') { factors.push('no refund policy'); relevantSignals.push(refundGap); score += 20; }
+  if (noContact) { factors.push('no contact method'); relevantSignals.push(noContact); score += 20; }
+  if (trustBoundary?.value === 'true') { factors.push('trust boundary crossed at checkout'); relevantSignals.push(trustBoundary); score += 15; }
+  if (policyCoverage?.value === 'weak') { factors.push('weak policy coverage'); relevantSignals.push(policyCoverage); score += 10; }
+  if (pricingNotVisible) { factors.push('pricing not visible'); relevantSignals.push(pricingNotVisible); score += 10; }
+
+  if (score === 0) return [];
+
+  const severity = score >= 45 ? 'high' : score >= 25 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'dispute_risk_elevated',
+    category: InferenceCategory.DisputeRisk,
+    conclusion: 'dispute_risk_elevated',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(75, 40 + relevantSignals.length * 7),
+    scoping, cycle_ref, ids,
+    signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
+    reasoning: `Dispute risk: ${severity}. ${factors.length} risk factor(s): ${factors.join('; ')}. Each factor independently increases the probability of chargebacks.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 30: New Inference Rules from Existing Evidence
+// ──────────────────────────────────────────────
+
+function inferCriticalPathBroken(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const criticalError = byKey.get('critical_page_error');
+  if (!criticalError) return [];
+
+  const count = criticalError.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : count >= 1 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'critical_path_broken',
+    category: InferenceCategory.CriticalPathBroken,
+    conclusion: 'critical_path_broken',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: 85,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', criticalError.id)],
+    evidence_refs: criticalError.evidence_refs,
+    reasoning: `${count} revenue-critical page(s) (checkout, cart, pricing, login) are returning HTTP errors. These pages are directly on the conversion path — every visitor hitting an error page is a lost transaction. This is not a generic SEO concern; it is an active break in the revenue path.`,
+  })];
+}
+
+function inferFormDataLeavesDomain(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const exposure = byKey.get('external_form_data_exposure');
+  if (!exposure) return [];
+
+  const isPayment = exposure.value === 'high';
+  const severity = isPayment ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'form_data_leaves_domain',
+    category: InferenceCategory.DataBoundaryRisk,
+    conclusion: 'form_data_leaves_domain',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: exposure.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', exposure.id)],
+    evidence_refs: exposure.evidence_refs,
+    reasoning: `${exposure.numeric_value} form(s) submit user data to unrecognized external domains. ${isPayment ? 'Payment fields are included — this is a direct trust and compliance risk at the conversion point.' : 'User data leaves the domain boundary without a recognized payment provider, creating trust and privacy concerns.'} This is distinct from a known provider redirect (Stripe, PayPal) — these are unrecognized external endpoints.`,
+  })];
+}
+
+function inferProviderFragmentation(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  signals: Signal[],
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const fragmentation = byKey.get('multiple_payment_providers');
+  if (!fragmentation) return [];
+
+  const count = fragmentation.numeric_value || 0;
+  const severity = count >= 4 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'checkout_provider_fragmented',
+    category: InferenceCategory.ProviderFragmentation,
+    conclusion: 'checkout_provider_fragmented',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: 65,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', fragmentation.id)],
+    evidence_refs: fragmentation.evidence_refs,
+    reasoning: `${count} distinct payment providers detected on the site. While offering payment choice can be positive, ${count}+ competing provider scripts create inconsistent checkout experiences, increase page weight, and fragment the user's path to purchase. Different providers may show conflicting UI patterns, currencies, or trust signals.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 30B: Extended Inference Rules
+// ──────────────────────────────────────────────
+
+function inferRedirectTrustErosion(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('checkout_redirect_trust_erosion');
+  if (!sig) return [];
+
+  const hops = sig.numeric_value || 0;
+  const severity = hops >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'redirect_chain_erodes_checkout_trust',
+    category: InferenceCategory.RedirectTrustErosion,
+    conclusion: 'redirect_chain_erodes_checkout_trust',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `The checkout path passes through ${hops} redirect hop(s) crossing multiple domains. Industry data shows each redirect loses 5-15% of users. On the path to payment, this compounds into direct revenue loss as buyers interpret domain changes as untrustworthy.`,
+  })];
+}
+
+function inferLanguageDiscontinuity(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('language_discontinuity_commercial');
+  if (!sig) return [];
+
+  const count = sig.numeric_value || 0;
+  const severity = count >= 2 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'commercial_journey_language_break',
+    category: InferenceCategory.LanguageDiscontinuity,
+    conclusion: 'commercial_journey_language_break',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${count} commercial page(s) switch language compared to the homepage. When a buyer moves from browsing in one language to a checkout or pricing page in another, it creates confusion, reduces trust, and increases abandonment — especially in markets where the primary audience does not speak the checkout language.`,
+  })];
+}
+
+function inferOrphanCommercialPage(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('orphan_commercial_page');
+  if (!sig) return [];
+
+  const count = sig.numeric_value || 0;
+  const severity = count >= 2 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'commercial_pages_disconnected',
+    category: InferenceCategory.OrphanCommercialPage,
+    conclusion: 'commercial_pages_disconnected',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${count} commercial page(s) (checkout, pricing, login, billing) have no inbound navigation links from the main site. These pages exist but visitors cannot reach them through normal browsing. Revenue-critical surfaces that are unreachable from the main journey represent direct conversion leakage.`,
+  })];
+}
+
+function inferUntrustedEmbed(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('untrusted_embed_on_commercial');
+  if (!sig) return [];
+
+  const count = sig.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'untrusted_embeds_near_purchase',
+    category: InferenceCategory.UntrustedEmbed,
+    conclusion: 'untrusted_embeds_near_purchase',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${count} unrecognized external iframe(s) embedded on commercial pages. Unlike known payment providers (Stripe, PayPal), these embeds are not recognized trust signals. External content from unknown sources near the purchase moment undermines buyer confidence and may introduce security perception risk.`,
+  })];
+}
+
+function inferPlatformCheckoutRisk(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('platform_checkout_risk');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'platform_checkout_risk_unaddressed',
+    category: InferenceCategory.PlatformCheckoutRisk,
+    conclusion: 'platform_checkout_risk_unaddressed',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: sig.description || 'Platform-specific checkout patterns creating unresolved risk.',
+  })];
+}
+
+function inferPostPurchaseGap(
+  byKey: Map<string, Signal>,
+  first: (attr: string) => Signal | undefined,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('post_purchase_gap_compound');
+  if (!sig) return [];
+
+  return [createInference({
+    inference_key: 'post_purchase_confirmation_absent',
+    category: InferenceCategory.PostPurchaseGap,
+    conclusion: 'post_purchase_confirmation_absent',
+    conclusion_value: 'high',
+    severity_hint: 'high',
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `No order confirmation page and no refund policy detected. This compound gap means customers who just paid have no immediate proof their order was received and no way to understand return terms. The result is "did my order go through?" support contacts and "I don't recognize this charge" disputes — the two highest-volume chargeback drivers.`,
+  })];
+}
+
+function inferCommercialMeasurementBlind(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  // Fires when: checkout/payment pages exist AND no analytics on those pages
+  // This is distinct from measurement_blindspot (sitewide) — this is specifically about
+  // high-intent surfaces operating without conversion visibility
+  const missingCommercial = byKey.get('missing_tracking_on_commercial');
+  const hasCheckout = first('checkout.mode') != null;
+
+  if (!missingCommercial || !hasCheckout) return [];
+
+  const measurement = first('measurement.coverage');
+  // Only fire if sitewide measurement exists but commercial pages are blind
+  // (If no measurement anywhere, the existing measurement_blindspot finding covers it)
+  if (measurement?.value === 'none') return [];
+
+  return [createInference({
+    inference_key: 'high_intent_surfaces_blind',
+    category: InferenceCategory.CommercialMeasurementBlind,
+    conclusion: 'high_intent_surfaces_blind',
+    conclusion_value: 'high',
+    severity_hint: 'high',
+    confidence: 65,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', missingCommercial.id), ...(measurement ? [makeRef('signal', measurement.id)] : [])],
+    evidence_refs: missingCommercial.evidence_refs,
+    reasoning: `Analytics tools are present on the site but absent from checkout and payment pages. The highest-intent surfaces — where conversion actually happens — are operating without measurement. Ad spend optimization, attribution, and conversion rate improvement are impossible on the pages that generate revenue.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 2: Inference Rules from Deepened Collection
+// ──────────────────────────────────────────────
+
+function inferThinPolicyContent(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('thin_refund_policy');
+  if (!sig) return [];
+
+  const wordCount = sig.numeric_value || 0;
+  const severity = wordCount < 100 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'refund_terms_too_thin',
+    category: InferenceCategory.ThinPolicyContent,
+    conclusion: 'refund_terms_too_thin',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `The refund/return policy is ${wordCount} words — too thin to defuse buyer disputes. A policy this brief cannot meaningfully explain return windows, refund processes, or exception handling. When dissatisfied customers cannot find clear terms, they bypass the merchant and file chargebacks.`,
+  })];
+}
+
+function inferHiddenSupportWidget(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('support_widget_hidden_from_checkout');
+  if (!sig) return [];
+
+  return [createInference({
+    inference_key: 'support_hidden_at_purchase',
+    category: InferenceCategory.HiddenSupportWidget,
+    conclusion: 'support_hidden_at_purchase',
+    conclusion_value: 'medium',
+    severity_hint: 'medium',
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `A live support widget exists on the site but is absent from checkout and payment pages. Buyers who hesitate at the purchase moment — with questions about shipping, returns, or product fit — have no way to get immediate answers. This pushes uncertain buyers toward abandonment instead of resolution.`,
+  })];
+}
+
+function inferTrustSignalsThin(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('trust_signals_thin_on_commercial');
+  if (!sig) return [];
+
+  const count = sig.numeric_value || 0;
+  const severity = count === 0 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'trust_surface_too_thin',
+    category: InferenceCategory.TrustSignalsThin,
+    conclusion: 'trust_surface_too_thin',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Only ${count} trust-building signal(s) found across the commercial surface (business schema, policy pages, recognized providers). Buyers evaluate trust through visible signals — business identity, review presence, policy accessibility, recognized checkout partners. A thin trust surface directly reduces checkout confidence and increases abandonment.`,
+  })];
+}
+
+function inferTrackingStackIncomplete(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('tracking_stack_incomplete');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'tracking_stack_gaps',
+    category: InferenceCategory.TrackingStackIncomplete,
+    conclusion: 'tracking_stack_gaps',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: sig.description || 'Commerce tracking infrastructure has gaps preventing full conversion visibility and optimization.',
+  })];
+}
+
+function inferConsentMeasurementConflict(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('consent_measurement_conflict');
+  if (!sig) return [];
+
+  return [createInference({
+    inference_key: 'consent_undermining_measurement',
+    category: InferenceCategory.ConsentMeasurementConflict,
+    conclusion: 'consent_undermining_measurement',
+    conclusion_value: 'medium',
+    severity_hint: 'medium',
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `A consent management platform is present but no tag manager was detected. Without a consent-aware tag firing mechanism, analytics scripts may be blocked entirely for users who consent — creating a silent gap in conversion data. The site appears to have measurement, but the consent layer may be preventing it from actually working for a portion of visitors.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 2B: Mobile & Runtime Inference Rules
+// ──────────────────────────────────────────────
+
+function inferMobilePathBlocked(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('mobile_commercial_path_blocked');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'mobile_commercial_path_blocked',
+    category: InferenceCategory.MobilePathBlocked,
+    conclusion: 'mobile_commercial_path_blocked',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `The commercial path is blocked or degraded on mobile. Mobile visitors — who represent the majority of traffic for most sites — cannot reach checkout, pricing, or key conversion pages. This is not a layout issue; it is a revenue path that does not exist for mobile buyers.`,
+  })];
+}
+
+function inferMobileTrustDegraded(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('mobile_trust_weaker_than_desktop');
+  if (!sig) return [];
+
+  return [createInference({
+    inference_key: 'mobile_trust_weaker_than_desktop',
+    category: InferenceCategory.MobileTrustDegraded,
+    conclusion: 'mobile_trust_weaker_than_desktop',
+    conclusion_value: 'medium',
+    severity_hint: 'medium',
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Mobile buyers experience a weaker trust surface than desktop visitors. Trust indicators, policy visibility, or provider signals present on desktop are absent or degraded on mobile. When mobile users see fewer reasons to trust, they abandon at higher rates.`,
+  })];
+}
+
+function inferRuntimePurchaseInterruption(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('runtime_purchase_interrupted');
+  if (!sig) return [];
+
+  return [createInference({
+    inference_key: 'runtime_errors_interrupt_purchase',
+    category: InferenceCategory.RuntimePurchaseInterruption,
+    conclusion: 'runtime_errors_interrupt_purchase',
+    conclusion_value: 'high',
+    severity_hint: 'high',
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `JavaScript runtime errors are directly interrupting the purchase journey. Payment provider scripts, checkout flow logic, or transaction-critical code is failing at execution time. Every instance is a buyer who wanted to pay but could not complete the transaction.`,
+  })];
+}
+
+function inferRuntimeMeasurementBreak(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('runtime_tracking_broken');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'runtime_measurement_broken',
+    category: InferenceCategory.RuntimeMeasurementBreak,
+    conclusion: 'runtime_measurement_broken',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Analytics, pixel, or tag manager scripts are failing at runtime on commercial pages. The tracking infrastructure appears to be present in the source code, but JavaScript errors prevent it from actually executing. Conversion data is silently dropping — the site thinks it has measurement, but the runtime tells a different story.`,
+  })];
+}
+
+function inferSecondaryFlowBypassing(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('secondary_commercial_flows_detected');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'secondary_flows_bypass_trust_path',
+    category: InferenceCategory.SecondaryFlowBypassing,
+    conclusion: 'secondary_flows_bypass_trust_path',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Multiple distinct entry points lead to commercial conversion pages, suggesting secondary or alternate checkout flows that bypass the main trust, support, and measurement path. Revenue flowing through these secondary paths may escape policy coverage, support visibility, and analytics tracking.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 2C: Composite Inference Rules
+// ──────────────────────────────────────────────
+
+function inferRefundProcessUnclear(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('refund_process_vague');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'refund_process_unclear',
+    category: InferenceCategory.RefundProcessUnclear,
+    conclusion: 'refund_process_unclear',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `A refund/return policy page exists but is missing ${sig.numeric_value} critical detail(s) that buyers need when something goes wrong. Without a clear return window, a described refund process, and contact information for returns, the policy exists in name only — it cannot actually guide a dissatisfied customer through resolution. The gap between "policy present" and "policy useful" is where chargebacks happen.`,
+  })];
+}
+
+function inferPostPurchaseProofWeak(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('post_purchase_proof_weak');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'post_purchase_proof_too_weak',
+    category: InferenceCategory.PostPurchaseProofWeak,
+    conclusion: 'post_purchase_proof_too_weak',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `An order confirmation page exists but contains only ${sig.numeric_value} words — too little to serve as meaningful purchase proof. A confirmation page that does not clearly show order details, expected delivery timeline, and next steps leaves the buyer uncertain whether the purchase was actually processed. This uncertainty drives "I didn't order this" and "I never received it" disputes. The page exists, but it does not reassure.`,
+  })];
+}
+
+function inferSupportLateInJourney(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('support_late_in_journey');
+  if (!sig) return [];
+
+  return [createInference({
+    inference_key: 'support_reassurance_too_late',
+    category: InferenceCategory.SupportLateInJourney,
+    conclusion: 'support_reassurance_too_late',
+    conclusion_value: 'medium',
+    severity_hint: 'medium',
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Support and help pages exist on the site but are not accessible from the commercial journey (checkout, pricing, cart). Buyers who hesitate — with questions about sizing, shipping, returns, or product fit — have no reassurance pathway available at the moment of decision. They must leave the purchase flow to find help, and most will not return.`,
+  })];
+}
+
+function inferHiddenReassuranceRoutes(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('hidden_reassurance_routes');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'reassurance_routes_disconnected',
+    category: InferenceCategory.HiddenReassuranceRoutes,
+    conclusion: 'reassurance_routes_disconnected',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Help, FAQ, confirmation, or warranty pages were discovered but have no navigation links from the main commercial journey. These pages were built to reduce buyer anxiety — but buyers cannot find them. The investment in reassurance content is wasted because the content is disconnected from the path where anxiety occurs.`,
+  })];
+}
+
+function inferAlternateFlowMeasurementGap(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('alternate_flow_measurement_gap');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'alternate_flows_unmeasured',
+    category: InferenceCategory.AlternateFlowMeasurementGap,
+    conclusion: 'alternate_flows_unmeasured',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Some commercial pages lack analytics coverage while others have it. Revenue flowing through the untracked paths cannot be attributed, measured, or optimized. The ad spend driving traffic to these paths is unaccountable — the business cannot tell whether these routes convert, leak, or waste budget.`,
+  })];
+}
+
+function inferRuntimeReassuranceBreak(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('runtime_reassurance_broken');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'runtime_breaking_reassurance',
+    category: InferenceCategory.RuntimeReassuranceBreak,
+    conclusion: 'runtime_breaking_reassurance',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Support widgets, chat tools, or consent managers are failing at runtime on commercial pages. These are the reassurance mechanisms that convert hesitant buyers — live chat answers last-minute questions, consent tools enable tracking. When they fail, buyers lose their reassurance channel at the exact moment they need it most.`,
+  })];
+}
+
+function inferProviderPathWeak(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('provider_path_weaker_than_expected');
+  if (!sig) return [];
+
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'checkout_provider_path_weak',
+    category: InferenceCategory.ProviderPathWeak,
+    conclusion: 'checkout_provider_path_weak',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `The checkout redirects buyers to an external domain, but no recognized payment provider (Stripe, PayPal, etc.) was detected on the destination. Combined with thin policy coverage, this creates a payment handoff that looks weaker than what buyers expect. Legitimate payment flows typically display recognized provider branding — this one does not.`,
+  })];
+}
+
+function inferTrustMeasurementCompoundBreak(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const sig = byKey.get('alternate_flow_trust_measurement_compound');
+  if (!sig) return [];
+
+  return [createInference({
+    inference_key: 'trust_and_measurement_both_absent',
+    category: InferenceCategory.TrustMeasurementCompoundBreak,
+    conclusion: 'trust_and_measurement_both_absent',
+    conclusion_value: 'high',
+    severity_hint: 'high',
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Multiple commercial paths operate without both trust infrastructure (policies, business identity) and measurement coverage (analytics, tracking). This is the worst compound scenario: revenue cannot convert well because trust is thin, and the business cannot see the problem because measurement is absent. Optimization is impossible on paths where both the experience and the visibility are broken.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 3A: Channel Integrity Inferences
+// ──────────────────────────────────────────────
+
+function inferPaymentSurfaceExposure(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('payment_surface_script_exposure');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'payment_surface_compromised',
+    category: InferenceCategory.PaymentSurfaceScriptExposure,
+    conclusion: 'payment_surface_compromised', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Purchase surfaces are exposed to unauthorized script execution. Injection patterns or missing script controls on checkout and payment pages enable formjacking, session hijack, and payment data interception. This is not a theoretical vulnerability — it is the exact pattern used in real-world payment compromises (Magecart, web skimming). Every transaction through these surfaces carries active fraud exposure.`,
+  })];
+}
+
+function inferChannelHijackExposure(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('channel_hijack_exposure');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'channel_traffic_divertible',
+    category: InferenceCategory.ChannelHijackExposure,
+    conclusion: 'channel_traffic_divertible', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Customer traffic can be diverted through weakly governed channel surfaces. Open redirects, permissive cross-origin policies, or exposed infrastructure enable attackers to create legitimate-looking links that route buyers to phishing destinations, fake checkout pages, or competitor sites — using the brand's own domain as the trust anchor.`,
+  })];
+}
+
+function inferCommerceContinuityThreat(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('commerce_continuity_threat');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'commerce_operations_exposed',
+    category: InferenceCategory.CommerceContinuityThreat,
+    conclusion: 'commerce_operations_exposed', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Public-facing operational surfaces — admin panels, debug endpoints, or configuration files — are accessible near the commercial footprint. An attacker who reaches these surfaces can modify pricing, disable checkout, extract customer data, or trigger downtime. The business impact is not "a security bug" — it is emergency refunds, commerce interruption, and forced incident response.`,
+  })];
+}
+
+function inferLowTrustPosture(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('low_trust_technical_posture');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'traffic_landing_low_trust_posture',
+    category: InferenceCategory.LowTrustTechnicalPosture,
+    conclusion: 'traffic_landing_low_trust_posture', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Paid and organic traffic is landing on a domain whose technical posture signals weakness to browsers and cautious buyers. Missing security headers, mixed content, or certificate issues create visible trust friction — browser warnings, missing padlock icons, or "not secure" indicators that suppress conversion before the buyer even reads the offer.`,
+  })];
+}
+
+function inferChannelCompromisePattern(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('channel_compromise_pattern');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'channel_compromise_visible',
+    category: InferenceCategory.ChannelCompromisePattern,
+    conclusion: 'channel_compromise_visible', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Multiple exposure types detected across the commercial channel — the pattern of simultaneous weaknesses (payment surfaces, channel governance, operational posture) signals a domain that has not been hardened for commercial operation. Even before a confirmed exploit, this exposure pattern is enough to trigger distrust from cautious buyers, security-conscious partners, and compliance reviewers.`,
+  })];
+}
+
+function inferAbuseExposure(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('abuse_exposure_conditions');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'commercial_path_abuse_friendly',
+    category: InferenceCategory.AbuseExposureConditions,
+    conclusion: 'commercial_path_abuse_friendly', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `The commercial path includes conditions that enable automated abuse — unauthenticated API endpoints, exposed schema introspection, or unprotected business-logic surfaces. Attackers can automate pricing manipulation, coupon abuse, inventory depletion, or account enumeration without needing to breach authentication. The result is margin leakage, operational noise, and increased support/fraud burden.`,
+  })];
+}
+
+function inferCheckoutInfraBrittle(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('checkout_infrastructure_brittle');
+  if (!sig) return [];
+  return [createInference({
+    inference_key: 'checkout_trust_brittle_infrastructure',
+    category: InferenceCategory.CheckoutInfrastructureBrittle,
+    conclusion: 'checkout_trust_brittle_infrastructure', conclusion_value: 'high', severity_hint: 'high',
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Checkout and payment trust is anchored to infrastructure that is both technically weak and actively exploitable. Payment integrity exposures exist alongside trust posture weaknesses on the same commercial domain — the combination means that not only is the checkout surface vulnerable to compromise, but the surrounding infrastructure provides no defense-in-depth. This is a launch/scale blocker: scaling traffic into this environment amplifies both fraud exposure and trust failure.`,
+  })];
+}
+
+function inferEconomicExploitation(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('economic_exploitation_exposure');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'economic_exploitation_active',
+    category: InferenceCategory.EconomicExploitationExposure,
+    conclusion: 'economic_exploitation_active', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Business-logic exploitation conditions are present on the commercial path. Cart or pricing endpoints respond to unauthorized manipulation, coupon endpoints are enumerable, or refund processes are accessible without authentication. This is not theoretical — these are the exact patterns used in automated margin theft: bots that modify prices before checkout, scripts that brute-force coupon codes, and tools that initiate fraudulent refunds at scale. The financial impact is direct: every exploited transaction reduces margin, every abused coupon erodes promotion ROI, every fraudulent refund becomes a net loss.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 3B: Deep Discovery Inferences from Katana
+// ──────────────────────────────────────────────
+
+function inferPromotionLogicExposed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('promotion_logic_abuse_exposure');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'promotion_logic_exposed',
+    category: InferenceCategory.PromotionLogicExposed,
+    conclusion: 'promotion_logic_exposed', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Deep discovery found promotion, discount, or coupon routes that are structurally exposed to abuse. These endpoints follow predictable patterns or lack rate limiting and authentication gates — the exact conditions that enable automated coupon enumeration, discount stacking, and promotional code brute-forcing. Each exploited promotion directly reduces margin and erodes the ROI of marketing campaigns.`,
+  })];
+}
+
+function inferCartVariantWeakControl(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('cart_variant_weak_pricing_control');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'cart_variant_weak_control',
+    category: InferenceCategory.CartVariantWeakControl,
+    conclusion: 'cart_variant_weak_control', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Multiple cart or checkout route variants were discovered through deep crawling. Alternate cart paths often carry weaker price validation, missing inventory checks, or inconsistent tax calculations compared to the primary flow. When pricing controls are not uniform across all cart variants, the weakest path becomes the attack surface — bots route through whichever variant applies the fewest safeguards.`,
+  })];
+}
+
+function inferHiddenDiscountRefundRoute(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('hidden_discount_refund_weakness');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'hidden_discount_refund_route',
+    category: InferenceCategory.HiddenDiscountRefundRoute,
+    conclusion: 'hidden_discount_refund_route', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Discount and refund routes discovered outside the expected safeguard envelope. These paths exist in the application but are not governed by the same controls that protect the primary commercial flow. Discoverable refund endpoints without authentication enable fraudulent refund initiation, while exposed discount routes enable code enumeration and stacking. The business impact is margin erosion from the discount side and net financial loss from the refund side.`,
+  })];
+}
+
+function inferGuessableBusinessEndpoint(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('guessable_business_endpoint_exposure');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'guessable_business_endpoint',
+    category: InferenceCategory.GuessableBusinessEndpoint,
+    conclusion: 'guessable_business_endpoint', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Business-critical commerce endpoints follow predictable URL patterns and lack visible safeguards proportional to their business importance. Order management, billing, account, and refund actions are reachable through guessable paths — enabling automated probing, IDOR-style access, and business-logic manipulation. The risk is not theoretical: these patterns are the first targets in automated commerce fraud because they are trivially discoverable.`,
+  })];
+}
+
+function inferAlternatePricingSafeguardBypass(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('alternate_pricing_safeguard_bypass');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'alternate_pricing_safeguard_bypass',
+    category: InferenceCategory.AlternatePricingSafeguardBypass,
+    conclusion: 'alternate_pricing_safeguard_bypass', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Deep discovery found alternate commercial actions (legacy endpoints, beta paths, test routes, or parameter-based variants) that may bypass intended pricing safeguards. These are not generic alternate pages — they are structurally different commercial actions that process transactions or pricing through weaker validation than the primary checkout flow. The margin and offer integrity risk is that the weakest pricing path determines the actual price floor.`,
+  })];
+}
+
+function inferJsDiscoveredPurchaseVariant(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('js_discovered_purchase_variant');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'js_discovered_purchase_variant',
+    category: InferenceCategory.JsDiscoveredPurchaseVariant,
+    conclusion: 'js_discovered_purchase_variant', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Client-side JavaScript reveals commerce routes not visible through static navigation — alternate checkout paths, dynamic cart endpoints, or SPA-rendered purchase flows. These variants typically escape the main safeguard model: they may lack analytics instrumentation (invisible to optimization), skip trust-building elements (policies, provider badges), or bypass server-side validation that the primary flow enforces. Revenue flowing through these paths is both unprotected and unmeasured.`,
+  })];
+}
+
+function inferDynamicRouteWeakControl(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('dynamic_route_weak_governance');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'dynamic_route_weak_control',
+    category: InferenceCategory.DynamicRouteWeakControl,
+    conclusion: 'dynamic_route_weak_control', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Dynamically discovered commerce routes show weaker governance than the visible purchase flow. Routes found through JavaScript rendering lack the safeguards (authentication gates, rate limiting, CSRF protection) that protect the primary path. The structural gap means that the deeper you crawl, the weaker the controls become — creating a gradient of decreasing protection that automated tools exploit preferentially.`,
+  })];
+}
+
+function inferHiddenSupportBurden(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('hidden_support_burden_exposure');
+  if (!sig) return [];
+  const severity = sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'hidden_support_burden',
+    category: InferenceCategory.HiddenSupportBurden,
+    conclusion: 'hidden_support_burden', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Support, help, and FAQ routes exist but are structurally disconnected from the commercial journey — they were found through deep crawling, not through the normal buying path. This means buyers who need reassurance during purchase cannot find it, while the same support infrastructure generates downstream ticket volume from post-purchase confusion. The result is the worst of both worlds: support cost without conversion benefit.`,
+  })];
+}
+
+function inferAlternateVariantControlBreakdown(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('alternate_variant_control_breakdown');
+  if (!sig) return [];
+  return [createInference({
+    inference_key: 'alternate_variant_control_breakdown',
+    category: InferenceCategory.AlternateVariantControlBreakdown,
+    conclusion: 'alternate_variant_control_breakdown', conclusion_value: 'high', severity_hint: 'high',
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Both pricing control exposure and commerce variant proliferation are present. Alternate commerce variants lack the trust signals, measurement infrastructure, and pricing safeguards that protect the primary flow. This compound failure means: pricing can be manipulated on the weaker variant, the manipulation is invisible to analytics, and the buyer experience offers fewer trust signals to offset the weaker controls. Revenue integrity, measurement, and trust all degrade simultaneously on the alternate paths.`,
+  })];
+}
+
+function inferDeepCommerceExploitationRisk(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('deep_commerce_exploitation_risk');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'deep_commerce_exploitation_risk',
+    category: InferenceCategory.DeepCommerceExploitationRisk,
+    conclusion: 'deep_commerce_exploitation_risk', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Deeply reachable commerce surfaces combine business-logic abuse exposure with safeguard bypass conditions. Guessable endpoints without authentication, exposed refund/billing actions, and alternate pricing paths compound to make deep commerce surfaces materially easier to exploit than the primary purchase flow. This is the exploitation gradient: the primary checkout has security, the deeper endpoints have business logic but not the matching protection. Automated fraud tools target exactly this gap.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 2D: Network Analysis Inferences
+// ──────────────────────────────────────────────
+
+function inferCheckoutApiLatency(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('checkout_api_latency_degrading');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'checkout_api_latency_degraded',
+    category: InferenceCategory.CheckoutApiLatencyDegraded,
+    conclusion: 'checkout_api_latency_degraded', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Payment-critical API responses on checkout surfaces exceed acceptable latency thresholds. Every second of checkout latency costs conversion: buyers who wait for payment processing to respond are progressively more likely to abandon. This is not generic page slowness — it is latency at the exact moment of purchase commitment.`,
+  })];
+}
+
+function inferCommercialPagesSlow(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('commercial_pages_disproportionately_slow');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({
+    inference_key: 'commercial_pages_slow',
+    category: InferenceCategory.CommercialPagesSlow,
+    conclusion: 'commercial_pages_slow', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `The pages that generate revenue are disproportionately slower than the rest of the site. Visitors browse at normal speed but hit friction when they reach the commercial path. This asymmetry means the site performs well enough to attract buyers but degrades at the moment they try to convert.`,
+  })];
+}
+
+function inferPaidLandingOverloaded(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('paid_landing_overloaded');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'paid_landing_overloaded',
+    category: InferenceCategory.PaidLandingOverloaded,
+    conclusion: 'paid_landing_overloaded', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `The landing page is overloaded with third-party requests before buyers reach any meaningful action. Paid traffic — which has a real per-click cost — is hitting a heavy runtime wall. CAC increases because media spend arrives into a page that cannot present the offer quickly enough to capture intent.`,
+  })];
+}
+
+function inferThirdPartyWeightDelaysTrust(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('third_party_weight_delays_trust');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'third_party_weight_delays_trust',
+    category: InferenceCategory.ThirdPartyWeightDelaysTrust,
+    conclusion: 'third_party_weight_delays_trust', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Heavy third-party dependency chains on commercial surfaces delay the moment when buyers feel trust and form intent. Non-essential external scripts, widgets, and trackers are consuming bandwidth and execution time before the buyer reaches the point of confidence. Each delayed second widens the gap between intent arrival and trust formation.`,
+  })];
+}
+
+function inferCheckoutBrittleThirdParty(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('checkout_brittle_third_party');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'checkout_brittle_third_party',
+    category: InferenceCategory.CheckoutBrittleThirdParty,
+    conclusion: 'checkout_brittle_third_party', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Checkout completion depends on third-party services that are failing or unstable during browser verification. When payment providers, cart APIs, or checkout widgets fail to respond reliably, every affected session is a potential lost transaction. This is operational fragility at the revenue-critical surface.`,
+  })];
+}
+
+function inferPurchaseBlockedFailingRequests(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('purchase_flow_blocked_by_failures');
+  if (!sig) return [];
+  return [createInference({
+    inference_key: 'purchase_blocked_failing_requests',
+    category: InferenceCategory.PurchaseBlockedFailingRequests,
+    conclusion: 'purchase_blocked_failing_requests', conclusion_value: 'high', severity_hint: 'high',
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Payment or commerce API requests are failing on purchase surfaces. This is not slow loading — it is active failure. Buyers who reach checkout and attempt to purchase are being blocked by requests that return errors or never complete. Every instance is a buyer who wanted to pay but could not.`,
+  })];
+}
+
+function inferMeasurementBreaksRevenuePath(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('measurement_breaks_on_revenue_path');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'measurement_breaks_revenue_path',
+    category: InferenceCategory.MeasurementBreaksRevenuePath,
+    conclusion: 'measurement_breaks_revenue_path', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Analytics and measurement requests are failing at runtime on the pages that generate revenue. The instrumentation appears to be present but is not actually executing — conversion data, attribution, and funnel metrics are silently dropping on the surfaces that matter most for optimization and ROI measurement.`,
+  })];
+}
+
+function inferPurchaseBeforeDepsReady(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('purchase_before_deps_ready');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'purchase_before_deps_ready',
+    category: InferenceCategory.PurchaseBeforeDepsReady,
+    conclusion: 'purchase_before_deps_ready', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Critical payment and trust dependencies take too long to become available on checkout surfaces. Buyers can see and interact with the purchase UI before payment processing, trust badges, or support widgets are ready. This sequencing gap means the purchase moment arrives before the infrastructure that supports it — leading to failed transactions, missing trust signals, and incomplete checkout experiences.`,
+  })];
+}
+
+function inferTrustAssetsLateLoad(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('trust_assets_late_load');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'trust_assets_late_load',
+    category: InferenceCategory.TrustAssetsLateLoad,
+    conclusion: 'trust_assets_late_load', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Trust and reassurance assets — support chat, review widgets, trust badges — start loading well after the page is interactive. Buyers form their trust impression in the first few seconds. When reassurance layers arrive late, the hesitation window is already open and abandonment decisions have already been made. The reassurance investment is wasted because it arrives after the moment it was needed.`,
+  })];
+}
+
+function inferMobileHeavyRuntimeChain(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('mobile_heavy_runtime_chain');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'mobile_heavy_runtime_chain',
+    category: InferenceCategory.MobileHeavyRuntimeChain,
+    conclusion: 'mobile_heavy_runtime_chain', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `The mobile commerce path carries a heavy third-party runtime dependency chain. Mobile connections are slower and more constrained than desktop — the same dependency weight that is tolerable on desktop becomes conversion-killing on mobile. Media spend directed at mobile audiences is landing into an experience that physically cannot convert as efficiently as desktop due to runtime overload.`,
+  })];
+}
+
+function inferMobileTrustPaymentDepsFailing(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('mobile_critical_deps_failing');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'mobile_trust_payment_deps_failing',
+    category: InferenceCategory.MobileTrustPaymentDepsFailing,
+    conclusion: 'mobile_trust_payment_deps_failing', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `Payment, trust, and measurement dependencies are failing on mobile commercial surfaces. Mobile buyers — who typically represent the majority of traffic — are entering a weaker operational environment than desktop. Payment SDKs fail to load, support widgets do not appear, and measurement breaks on the very surfaces where mobile conversion needs the most support.`,
+  })];
+}
+
+function inferTrustSurfacesUnstableDeps(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('trust_surfaces_unstable_deps');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'trust_surfaces_unstable_deps',
+    category: InferenceCategory.TrustSurfacesUnstableDeps,
+    conclusion: 'trust_surfaces_unstable_deps', conclusion_value: severity, severity_hint: severity,
+    confidence: sig.confidence, scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
+    reasoning: `The layers that make buyers feel safe — support widgets, review badges, trust signals, chat tools — depend on external services that are failing or unreliable. Trust-critical surfaces are supposed to reduce hesitation and prevent abandonment, but when these dependencies fail, the trust infrastructure becomes invisible exactly when it matters most. The result is a checkout that looks bare and untrustworthy during outage or degradation of external providers.`,
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 3E: Discoverability Inferences
+// ──────────────────────────────────────────────
+
+function inferWeakSearchRepresentation(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('commercial_pages_weak_search_representation');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'commercial_pages_weak_search_representation', category: InferenceCategory.CommercialPagesWeakSearchRepresentation, conclusion: 'commercial_pages_weak_search_representation', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `High-intent commercial pages have missing or thin titles and descriptions. When search engines display these pages in results, the snippets are generic or auto-generated — reducing click-through rate. Every missed click on a high-intent query is discoverable demand that never reaches the site.` })];
+}
+
+function inferSocialPreviewsFailValue(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('social_previews_fail_commercial_value');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'social_previews_fail_commercial_value', category: InferenceCategory.SocialPreviewsFailCommercialValue, conclusion: 'social_previews_fail_commercial_value', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `When commercial pages are shared via messaging, social media, or email, they appear as raw URLs without product images, compelling titles, or value propositions. In a world where link previews drive click-through, a bare URL is a wasted distribution opportunity. Every share that fails to communicate value is a conversion the brand already earned but cannot capture.` })];
+}
+
+function inferBrandInconsistentSurfaces(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('brand_inconsistent_across_surfaces');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'brand_inconsistent_across_surfaces', category: InferenceCategory.BrandInconsistentAcrossSurfaces, conclusion: 'brand_inconsistent_across_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The brand appears inconsistently across search results, social previews, and sharing surfaces. When titles and descriptions vary widely between commercial pages, search engines cannot build a coherent brand signal. Buyers see an unreliable brand presence — some pages look professional while others look unfinished — reducing both click-through and trust.` })];
+}
+
+function inferCommercialPagesUnlikelyIndexed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('commercial_pages_unlikely_indexed');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'commercial_pages_unlikely_indexed', category: InferenceCategory.CommercialPagesUnlikelyIndexed, conclusion: 'commercial_pages_unlikely_indexed', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Revenue-generating pages have indexing problems — missing canonical URLs or explicit noindex directives. Search engines may not reliably include these pages in results. Demand that exists for these products or services cannot find the site through search, even when the content is commercially relevant.` })];
+}
+
+function inferWeakSemanticIntentSignals(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('weak_semantic_intent_signals');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'weak_semantic_intent_signals', category: InferenceCategory.WeakSemanticIntentSignals, conclusion: 'weak_semantic_intent_signals', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Search engines and AI systems receive weak signals about what these commercial pages offer. Without structured data (Product, Organization, Offer schemas), ranking algorithms and AI assistants must guess page purpose from raw HTML. The result is lower ranking for commercial queries and inaccurate AI-generated summaries that fail to capture the business offering.` })];
+}
+
+function inferPreviewsDisconnectedConversion(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('previews_disconnected_from_conversion');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'previews_disconnected_from_conversion', category: InferenceCategory.PreviewsDisconnectedFromConversion, conclusion: 'previews_disconnected_from_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Social and search previews show content that doesn't match the actual page. Visitors clicking through arrive with expectations set by the preview but encounter different content — creating a mismatch that drives immediate drop-off. The gap between what was promised and what was delivered converts the traffic acquisition cost into waste.` })];
+}
+
+function inferCommercialPagesNotExposed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('commercial_pages_not_exposed_for_discovery');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'commercial_pages_not_exposed_for_discovery', category: InferenceCategory.CommercialPagesNotExposedForDiscovery, conclusion: 'commercial_pages_not_exposed_for_discovery', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Key commercial pages have no internal links pointing to them — they exist in the site structure but are invisible to crawlers and users navigating the site. Without structural exposure, search engines cannot discover these pages reliably, and organic demand for the products or services offered on them cannot reach the site.` })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 3E: Brand Integrity Inferences
+// ──────────────────────────────────────────────
+
+function inferLookalikeDomains(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('lookalike_domains_competing');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'lookalike_domain_competing_for_traffic', category: InferenceCategory.LookalikeDomainCompetingForTraffic, conclusion: 'lookalike_domain_competing_for_traffic', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Active lookalike domains are competing for brand traffic. When customers search for the brand or type the domain from memory, some portion of traffic lands on impostor domains instead. This inflates effective customer acquisition cost — the brand pays for awareness that is captured by competitors or fraudsters through domain similarity.` })];
+}
+
+function inferExternalMimicry(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('external_sites_mimicking_brand');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'external_sites_mimicking_brand', category: InferenceCategory.ExternalSitesMimickingBrand, conclusion: 'external_sites_mimicking_brand', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `External domains are actively mimicking the brand's identity — matching titles, descriptions, and content patterns. This is not passive domain squatting; these sites are designed to look like the real brand. Customers who land on these surfaces may share payment information with fraudsters, damaging both the customer and the brand's reputation.` })];
+}
+
+function inferBrandTrafficDeceptive(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('brand_traffic_deceptive_surfaces');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'brand_traffic_exposed_to_deceptive_surfaces', category: InferenceCategory.BrandTrafficExposedToDeceptiveSurfaces, conclusion: 'brand_traffic_exposed_to_deceptive_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Typosquat domains — near-identical misspellings of the brand — are active and reachable. Users who make common typing errors land on these surfaces instead of the real site. This diverts direct-type traffic, damages trust when users realize the mistake, and creates chargeback and fraud exposure when the impostor site processes transactions.` })];
+}
+
+function inferSuspiciousDomainsPurchaseIntent(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('suspicious_domains_purchase_intent');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'suspicious_domains_capturing_purchase_intent', category: InferenceCategory.SuspiciousDomainsCapturingPurchaseIntent, conclusion: 'suspicious_domains_capturing_purchase_intent', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Lookalike domains show active commerce intent — checkout pages, cart functionality, or pricing structures. These are not passive parked domains; they are positioned to capture purchase-intent traffic and process transactions under a brand-similar identity. Revenue leakage is direct: customers who intended to buy from the brand are buying from impostors.` })];
+}
+
+function inferPhishingExposure(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('customers_exposed_to_phishing');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'customers_exposed_to_phishing_surfaces', category: InferenceCategory.CustomersExposedToPhishingSurfaces, conclusion: 'customers_exposed_to_phishing_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `High-confidence phishing surfaces combine brand domain similarity with active commerce patterns and content mimicry. Customers cannot distinguish these from the real site and may submit payment credentials to fraudsters. The downstream impact includes chargebacks on the brand's payment processor, legal liability from data breach exposure, and lasting trust damage when customers learn they were deceived through a brand-similar surface.` })];
+}
+
+function inferBrandDilution(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('brand_diluted_across_variants');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'brand_presence_diluted_across_variants', category: InferenceCategory.BrandPresenceDilutedAcrossVariants, conclusion: 'brand_presence_diluted_across_variants', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The brand's online presence is fragmented across many domain variants — each one diluting the authority of the legitimate site. Search engines may split ranking signals across multiple similar domains, reducing organic visibility. Buyers encountering multiple brand-similar sites lose confidence in which one is real, suppressing click-through and trust across all surfaces.` })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 4B: Behavioral Intelligence Inferences
+// ──────────────────────────────────────────────
+
+function inferPolicyViewAbandonment(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('policy_view_then_abandonment');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'policy_view_then_abandonment', category: InferenceCategory.PolicyViewThenAbandonment, conclusion: 'policy_view_then_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Sessions that open refund or return policy pages are abandoning without returning to the commercial flow. The policy content is triggering doubt rather than building confidence — buyers read the return terms and decide not to buy. This is behavioral evidence that the policy presentation is creating hesitation rather than resolving it.` })];
+}
+
+function inferHighIntentDetour(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('high_intent_detour_before_abandonment');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'high_intent_detour_before_abandonment', category: InferenceCategory.HighIntentDetourBeforeAbandonment, conclusion: 'high_intent_detour_before_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Buyers who reached the checkout step are detouring into reassurance content (FAQ, support, policy) before abandoning. These are high-intent sessions that failed to convert despite reaching the purchase moment — they needed reassurance that was not already embedded in the checkout experience and went looking for it elsewhere.` })];
+}
+
+function inferSupportTooLateToConvert(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('support_discovered_too_late');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'support_discovered_too_late_to_convert', category: InferenceCategory.SupportDiscoveredTooLateToConvert, conclusion: 'support_discovered_too_late_to_convert', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Support channels are being discovered only after users have already reached the purchase step. By the time buyers find help, their pre-purchase questions have already driven abandonment decisions. If support were accessible earlier in the journey — on product, pricing, or cart pages — it could resolve hesitation before it becomes abandonment.` })];
+}
+
+function inferCtaBehaviorallyDead(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('cta_visible_but_dead');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'cta_visible_but_behaviorally_dead', category: InferenceCategory.CtaVisibleButBehaviorallyDead, conclusion: 'cta_visible_but_behaviorally_dead', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Commercial CTAs on key surfaces are visible to users but generate near-zero behavioral engagement. Users see the call-to-action but do not click — indicating either the CTA copy fails to motivate action, the placement is wrong, or the surrounding context (pricing, trust, value proposition) is insufficient to drive progression.` })];
+}
+
+function inferPurchaseHesitationBacktrack(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('purchase_hesitation_backtrack');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'purchase_hesitation_with_backtrack', category: InferenceCategory.PurchaseHesitationWithBacktrack, conclusion: 'purchase_hesitation_with_backtrack', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `A significant portion of sessions are backtracking during the purchase journey — reaching a commercial step and then retreating to previous pages. This behavioral pattern indicates hesitation at the moment of commitment: buyers want to proceed but lack the confidence to do so. The missing element is typically trust reinforcement, price justification, or reassurance content at the decision point.` })];
+}
+
+function inferCriticalStepRetries(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('critical_step_retries_before_abandonment');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'critical_step_retries_before_abandonment', category: InferenceCategory.CriticalStepRetriesBeforeAbandonment, conclusion: 'critical_step_retries_before_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users are repeatedly attempting the same critical step before giving up. This is not casual browsing — these are users who want to complete the action but encounter errors, confusion, or friction that blocks them. Each retry represents a user fighting the interface before ultimately losing patience and abandoning.` })];
+}
+
+function inferMobileFirstActionFails(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('mobile_fails_first_commercial_action');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  return [createInference({ inference_key: 'mobile_fails_first_commercial_action', category: InferenceCategory.MobileFailsFirstCommercialAction, conclusion: 'mobile_fails_first_commercial_action', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Mobile users are failing to progress past the first commercial action at a rate that significantly exceeds acceptable thresholds. The mobile entry point to the commercial flow is broken or unusable — meaning the majority of traffic (mobile users) hits a dead end before the commercial journey even begins.` })];
+}
+
+function inferFunnelStepStalled(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('funnel_step_alive_not_advancing');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'funnel_step_alive_but_not_advancing', category: InferenceCategory.FunnelStepAliveButNotAdvancing, conclusion: 'funnel_step_alive_but_not_advancing', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Funnel steps that are actively receiving sessions are failing to advance users to the next step. These surfaces are alive from a vitality perspective but are behavioral dead ends — users arrive but do not progress. The step exists in the flow but does not function as a transition point, creating a bottleneck that blocks the entire downstream funnel.` })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 4B Hardening: 12 New Behavioral Inferences
+// ──────────���──────────────────────────────���────
+
+function inferHesitationBeforeConversionMissingTrust(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('hesitation_before_conversion_missing_trust');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'hesitation_before_conversion_missing_trust', category: InferenceCategory.HesitationBeforeConversionMissingTrust, conclusion: 'hesitation_before_conversion_missing_trust', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users hesitate before the primary conversion action on commercial surfaces. The pause pattern before CTA engagement indicates insufficient trust or reassurance at the decision point — buyers see the action, want to proceed, but lack the confidence signals they need to commit. The root cause is missing trust reinforcement (guarantees, social proof, policy visibility, support access) near the CTA zone.` })];
+}
+
+function inferPricingHesitationUnclearValue(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('pricing_hesitation_unclear_value');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'pricing_hesitation_unclear_value', category: InferenceCategory.PricingHesitationUnclearValue, conclusion: 'pricing_hesitation_unclear_value', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users view pricing then backtrack to product or explanation pages without advancing to conversion. The pricing surface creates a decision moment that the value proposition fails to carry — buyers see the price, cannot justify it from the surrounding context, and retreat to seek additional justification rather than proceeding.` })];
+}
+
+function inferPolicyDetourBeforeConversion(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('policy_detour_before_conversion');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'policy_detour_before_conversion', category: InferenceCategory.PolicyDetourBeforeConversion, conclusion: 'policy_detour_before_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users open policy pages after expressing purchase intent but before completing conversion. This pre-conversion policy detour indicates trust uncertainty at the commitment moment — buyers need to verify refund terms, privacy conditions, or terms of service before they feel safe proceeding. The root cause is insufficient confidence at the point of commitment, not general information seeking.` })];
+}
+
+function inferCtaViewedNotEngaged(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('cta_viewed_not_engaged');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'cta_viewed_not_engaged', category: InferenceCategory.CtaViewedNotEngaged, conclusion: 'cta_viewed_not_engaged', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The primary CTA is behaviorally visible to users — scrolled into view on pages with meaningful traffic — but generates disproportionately low engagement. Users see the call-to-action but do not interact with it. The CTA is present but not compelling: weak positioning, unclear copy, or insufficient surrounding context (value proposition, trust signals, urgency) fails to motivate action.` })];
+}
+
+function inferSensitiveInputAbandonment(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('sensitive_input_abandonment');
+  if (!sig) return [];
+  // Parse severity:field_kind from encoded signal value
+  const parts = sig.value.split(':');
+  const severity = parts[0] === 'high' ? 'high' : parts[0] === 'medium' ? 'medium' : 'low';
+  const fieldKind = parts[1] || null;
+  // Suppress if no concrete field kind — requirement from governance rules
+  if (!fieldKind) return [];
+
+  const FIELD_LABELS: Record<string, string> = {
+    email: 'email', phone: 'phone number', card_like: 'payment card',
+    cpf_cnpj_like: 'identity document (CPF/CNPJ)', password: 'password',
+    address: 'address',
+  };
+  const fieldLabel = FIELD_LABELS[fieldKind] || fieldKind;
+
+  // Sub-cause classification for richer reasoning
+  const isIdentityField = fieldKind === 'cpf_cnpj_like' || fieldKind === 'password';
+  const isPaymentField = fieldKind === 'card_like';
+  const isContactField = fieldKind === 'email' || fieldKind === 'phone';
+
+  let rootCauseContext: string;
+  if (isPaymentField) {
+    rootCauseContext = 'The root cause is lack of payment security reassurance — users encounter card fields without sufficient trust indicators (security badges, provider logos, encryption signals) to justify entering payment data.';
+  } else if (isIdentityField) {
+    rootCauseContext = 'The root cause is an unjustified sensitive data request — users are asked for identity documents or credentials at a point where the form has not established why this data is necessary or how it will be protected.';
+  } else if (isContactField) {
+    rootCauseContext = 'The root cause is premature personal data collection — users encounter contact fields before sufficient value exchange or trust context has been established, triggering privacy concern.';
+  } else {
+    rootCauseContext = 'The root cause is a trust deficit at the data capture point — the form asks for information without adequate context about why it is needed or what the user gets in return.';
+  }
+
+  return [createInference({ inference_key: 'sensitive_input_abandonment', category: InferenceCategory.SensitiveInputAbandonment, conclusion: 'sensitive_input_abandonment', conclusion_value: `${severity}:${fieldKind}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users abandon the form after interacting with ${fieldLabel} input fields. ${rootCauseContext}` })];
+}
+
+function inferFormExcessiveFieldsBeforeConversion(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('form_excessive_fields_before_conversion');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  // Differentiate sub-cause: excessive length vs sensitive mix
+  // The signal carries numeric_value = form_excessive_field_count
+  const formCount = sig.numeric_value ?? 1;
+  let subCauseReasoning: string;
+  if (formCount >= 3) {
+    subCauseReasoning = `Multiple conversion-proximate forms (${formCount}) require excessive input. The root cause is form proliferation — the conversion path demands data collection across too many forms, each adding cognitive load and abandonment risk. Users who are ready to convert encounter a data collection wall that compounds across steps.`;
+  } else {
+    subCauseReasoning = `Conversion-proximate forms demand disproportionate data collection through excessive field counts or sensitive field combinations. The root cause is a form that asks for more than the conversion step justifies — unnecessary fields reduce completion rate, and sensitive fields (payment, identity, contact) without trust context accelerate abandonment. The friction is not about form length alone but about the mismatch between what is asked and what the user perceives as necessary at this stage.`;
+  }
+  return [createInference({ inference_key: 'form_excessive_fields_before_conversion', category: InferenceCategory.FormExcessiveFieldsBeforeConversion, conclusion: 'form_excessive_fields_before_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: subCauseReasoning })];
+}
+
+function inferFormSubmissionRetryFriction(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('form_submission_retry_friction');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'form_submission_retry_friction', category: InferenceCategory.FormSubmissionRetryFriction, conclusion: 'form_submission_retry_friction', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users retry form submission multiple times without achieving progression. Repeated submissions indicate the form provides poor validation feedback, fails silently, or presents unclear error states — users believe the action should succeed but receive no confirmation of progress or clear explanation of failure. The root cause is inadequate submission feedback or broken validation.` })];
+}
+
+function inferSurfaceOscillationBeforeDropoff(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('surface_oscillation_before_dropoff');
+  if (!sig) return [];
+  // Parse severity:surfaceA:surfaceB from encoded signal value
+  const parts = sig.value.split(':');
+  const severity = parts[0] === 'high' ? 'high' : parts[0] === 'medium' ? 'medium' : 'low';
+  const surfaceA = parts.slice(1, -1).join(':') || null; // handle surface IDs that may contain colons
+  const surfaceB = parts[parts.length - 1] || null;
+  // Suppress if concrete surfaces are not known
+  if (!surfaceA || !surfaceB) return [];
+
+  // Extract readable labels from surface IDs (surface:host:/path → /path)
+  const labelA = surfaceA.replace(/^surface:[^:]+:/, '') || surfaceA;
+  const labelB = surfaceB.replace(/^surface:[^:]+:/, '') || surfaceB;
+
+  return [createInference({ inference_key: 'surface_oscillation_before_dropoff', category: InferenceCategory.SurfaceOscillationBeforeDropoff, conclusion: 'surface_oscillation_before_dropoff', conclusion_value: `${severity}:${labelA}:${labelB}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users oscillate back and forth between ${labelA} and ${labelB} before dropping off — neither surface resolves the user's decisive question. This pattern indicates unresolved decision friction: the user has a question that one surface raises but the other fails to answer, creating a navigational loop that ends in abandonment.` })];
+}
+
+function inferConversionFinalStepRetry(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('conversion_final_step_retry');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'conversion_final_step_retry', category: InferenceCategory.ConversionFinalStepRetry, conclusion: 'conversion_final_step_retry', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Conversion attempts in the final steps require multiple retries before completion or abandonment. Users who reach the final commitment moment are blocked by friction — failed submissions, unclear error states, or unresponsive interfaces at the purchase moment. Each retry erodes buyer confidence, and the accumulation of failed attempts directly causes abandonment at the highest-value step in the funnel.` })];
+}
+
+function inferCtaLateAvailabilityDelaysAction(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('cta_late_availability_delays_action');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'cta_late_availability_delays_action', category: InferenceCategory.CtaLateAvailabilityDelaysAction, conclusion: 'cta_late_availability_delays_action', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Primary CTAs render late on high-intent surfaces — users arrive with purchase intent but the action is not yet available. Late CTA availability creates a gap between user readiness and UI readiness. Users must wait for the page to fully render before they can act, widening the window for distraction, hesitation, or abandonment. The root cause is render-order or dependency-loading that deprioritizes the primary commercial action.` })];
+}
+
+function inferCheckoutAbandonNoFeedback(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('checkout_abandon_no_feedback');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'checkout_abandon_no_feedback', category: InferenceCategory.CheckoutAbandonNoFeedback, conclusion: 'checkout_abandon_no_feedback', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users initiate checkout then abandon without any visible progress or confirmation. The checkout UI provides no immediate feedback — no loading state, no progress indicator, no next-step preview — after the commitment action. This feedback vacuum creates uncertainty: users do not know if their action was received, if the system is working, or what comes next. The root cause is absent immediate feedback and progress indication at the checkout entry point.` })];
+}
+
+function inferSensitiveInputPerceivedRiskDropoff(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('sensitive_input_perceived_risk_dropoff');
+  if (!sig) return [];
+  const parts = sig.value.split(':');
+  const severity = parts[0] === 'high' ? 'high' : parts[0] === 'medium' ? 'medium' : 'low';
+  const fieldKind = parts[1] || null;
+  // Suppress if no concrete field kind
+  if (!fieldKind) return [];
+
+  const FIELD_LABELS: Record<string, string> = {
+    email: 'email', phone: 'phone number', card_like: 'payment card',
+    cpf_cnpj_like: 'identity document (CPF/CNPJ)', password: 'password', address: 'address',
+  };
+  const fieldLabel = FIELD_LABELS[fieldKind] || fieldKind;
+
+  // Sub-cause differentiation: perceived risk varies by field type
+  let riskContext: string;
+  if (fieldKind === 'card_like') {
+    riskContext = 'The root cause is payment security perception failure — users reach the payment data entry point but the surrounding context (missing security badges, unrecognized payment provider, absent encryption indicators) fails to justify the risk of entering card details. The trust-to-sensitivity gap is at its widest for payment data.';
+  } else if (fieldKind === 'cpf_cnpj_like' || fieldKind === 'password') {
+    riskContext = 'The root cause is unjustified identity exposure — users are asked for high-sensitivity identity data (documents, credentials) without sufficient explanation of why this data is required or how it will be protected. The perceived risk of identity theft or misuse exceeds the trust signals present.';
+  } else if (fieldKind === 'email' || fieldKind === 'phone') {
+    riskContext = 'The root cause is premature contact data capture — users encounter contact fields at a moment when insufficient value has been demonstrated or privacy context provided. The concern is unsolicited future contact (spam, calls) without a clear value exchange.';
+  } else {
+    riskContext = 'The root cause is a trust-to-sensitivity mismatch — the form asks for data on a surface that provides inadequate security reassurance, privacy context, or provider trust signals for the sensitivity level required.';
+  }
+
+  return [createInference({ inference_key: 'sensitive_input_perceived_risk_dropoff', category: InferenceCategory.SensitiveInputPerceivedRiskDropoff, conclusion: 'sensitive_input_perceived_risk_dropoff', conclusion_value: `${severity}:${fieldKind}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users drop off immediately after interacting with ${fieldLabel} fields. ${riskContext}` })];
+}
+
+function createInference(params: {
+  inference_key: string;
+  category: InferenceCategory;
+  conclusion: string;
+  conclusion_value: string;
+  severity_hint?: string;
+  confidence: number;
+  scoping: Scoping;
+  cycle_ref: string;
+  ids: IdGenerator;
+  signal_refs: string[];
+  evidence_refs: string[];
+  reasoning: string;
+}): Inference {
+  const now = new Date();
+  return {
+    id: params.ids.next(),
+    inference_key: params.inference_key,
+    category: params.category,
+    scoping: params.scoping,
+    cycle_ref: params.cycle_ref,
+    freshness: {
+      observed_at: now,
+      fresh_until: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      freshness_state: FreshnessState.Fresh,
+      staleness_reason: null,
+    },
+    conclusion: params.conclusion,
+    conclusion_value: params.conclusion_value,
+    severity_hint: params.severity_hint || null,
+    confidence: params.confidence,
+    signal_refs: params.signal_refs,
+    evidence_refs: params.evidence_refs,
+    reasoning: params.reasoning,
+    description: null,
+    created_at: now,
+    updated_at: now,
+  };
+}

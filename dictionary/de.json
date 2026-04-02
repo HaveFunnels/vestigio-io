@@ -1,0 +1,1010 @@
+{
+	"common": {
+		"account": "Konto",
+		"action": "Aktion",
+		"all_users": "Alle Benutzer",
+		"blog": "Blog",
+		"blog_grids": "Blog-Raster",
+		"copy": "Kopieren",
+		"copied": "Kopiert",
+		"copy_link": "Link kopieren",
+		"date": "Datum",
+		"delete_account": "Konto löschen",
+		"download": "Herunterladen",
+		"free_users": "Kostenlose Benutzer",
+		"home": "Startseite",
+		"invoice": "Rechnung",
+		"modal:delete": {
+			"cancel_button": "Abbrechen",
+			"confirm_button": "Löschen",
+			"confirm_button:loading": "Wird gelöscht",
+			"description": "Sind Sie sicher? Diese Aktion kann nicht rückgängig gemacht werden."
+		},
+		"name": "Name",
+		"no_posts": "Keine Beiträge gefunden",
+		"pro_users": "Pro-Benutzer",
+		"send_to": "Senden an",
+		"send": "Senden",
+		"welcome": "Willkommen"
+	},
+	"header": {
+		"features": "Funktionen",
+		"pricing": "Preise",
+		"blog": "Blog",
+		"pages": "Seiten",
+		"blogDetails": "Blog-Details",
+		"signIn": "Anmelden",
+		"signUp": "Registrieren",
+		"errors": "404 Fehler",
+		"support": "Support",
+		"buyNow": "Jetzt kaufen ↗",
+		"account_menu": {
+			"account_settings": "Kontoeinstellungen",
+			"dashboard": "Dashboard",
+			"logOut": "Abmelden"
+		},
+		"notification_menu": {
+			"title": "Benachrichtigungen",
+			"see_all": "Alle Benachrichtigungen anzeigen"
+		}
+	},
+	"homepage": {
+		"hero_section": {
+			"title": "Full-Stack <marker>SaaS Boilerplate</marker> auf Basis von Next.js",
+			"subtitle": "Ein Full-Stack SaaS Boilerplate und Starter-Kit mit allen wichtigen Integrationen, Seiten, Komponenten, Benutzer-/Admin-Dashboards, Landing-Page, Design-Quellen und allem, was Sie benötigen, um Ihre funktionsreiche SaaS-Startup-Idee innerhalb eines Tages in die Realität umzusetzen!",
+			"cta": "Demo testen",
+			"brandshowcase": {
+				"description": "Entwickelt vom selben Team, das hinter zahlreichen erfolgreichen SaaS- und digitalen Produkten steht"
+			}
+		},
+		"features_section": {
+			"title": "SaaS-Startup in Tagen starten",
+			"subtitle": "Alles, was Sie zum Aufbau, Start und zur Skalierung Ihres SaaS-Startups benötigen.",
+			"features": [
+				{
+					"title": "Sofort einsetzbare Integrationen",
+					"description": "Datenbank (Postgres mit Prisma ORM), Authentifizierung (NextAuth), Zahlungen (Stripe), Sanity (Blog), MailChimp (Newsletter), OpenAI, E-Mail und vieles mehr"
+				},
+				{
+					"title": "Hochmoderne Technologien",
+					"description": "Entwickelt mit modernsten Technologien, um eine robuste Grundlage für Ihr SaaS-Produkt zu schaffen und Ihnen einen Wettbewerbsvorteil im digitalen Markt zu verschaffen."
+				},
+				{
+					"title": "Hochwertige Gestaltung",
+					"description": "Jede einzelne Komponente und Seite wurde mit Liebe zum Detail in Figma gestaltet und mit Tailwind CSS für das Next.js-Frontend gestylt."
+				},
+				{
+					"title": "Admin- und Benutzer-Dashboard",
+					"description": "Ermöglicht Ihnen die einfache Verwaltung Ihrer SaaS-Operationen und erlaubt Endnutzern, ihre Kontoeinstellungen problemlos zu verwalten und zu ändern."
+				},
+				{
+					"title": "Vollständig anpassbar",
+					"description": "Vestigio bietet die Flexibilität, Ihre Audit-Konfiguration, den Analyseumfang und die Berichterstattung an Ihre spezifischen Geschäftsanforderungen anzupassen. Alles ist hochgradig anpassbar und modular."
+				},
+				{
+					"title": "Umfangreiche Dokumentation und E-Mail-Support",
+					"description": "Die Dokumentation enthält detaillierte, schrittweise Anleitungen für jeden Teil von Vestigio. Wenn Sie weitere Unterstützung benötigen, öffnen Sie einfach ein Support-Ticket und wir werden umgehend antworten."
+				}
+			]
+		},
+		"features_with_image_section": {
+			"title": "Heben Sie sich ab, starten Sie schnell!",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",
+			"items": [
+				{
+					"title": "Aufbauen, Starten, Skalieren mit Vestigio",
+					"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit praesent condimentum malesuada consequat quam.",
+					"features": [
+						"Sofort einsetzbare Integrationen",
+						"Hochmoderne Technologien",
+						"Hochwertige Gestaltung"
+					]
+				},
+				{
+					"title": "Das beste SaaS-Boilerplate im Web",
+					"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit praesent condimentum malesuada consequat quam.",
+					"features": [
+						"Admin- und Benutzer-Dashboard",
+						"Vollständig anpassbar",
+						"Umfangreiche Dokumentation und E-Mail-Support"
+					]
+				}
+			]
+		},
+		"pricing_section": {
+			"title": "Einfache und erschwingliche Preise",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"subscription": "monatlich",
+			"plans": [
+				{
+					"name": "Basic",
+					"for": "Für Einzelpersonen",
+					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"included": {
+						"title": "Was enthalten ist",
+						"items": [
+							"Alle Grundfunktionen",
+							"Bis zu 1.000.000 verfolgte Besuche",
+							"Premium E-Mail-Support",
+							"Bis zu 03 Teammitglieder"
+						]
+					},
+					"cta": "Loslegen"
+				},
+				{
+					"name": "Pro",
+					"for": "Für Startups",
+					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"included": {
+						"title": "Was enthalten ist",
+						"items": [
+							"Alle Grundfunktionen",
+							"Bis zu 1.000.000 verfolgte Besuche",
+							"Premium E-Mail-Support",
+							"Bis zu 03 Teammitglieder"
+						]
+					},
+					"cta": "Loslegen"
+				},
+				{
+					"name": "Enterprise",
+					"for": "Für große Unternehmen",
+					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"included": {
+						"title": "Was enthalten ist",
+						"items": [
+							"Alle Grundfunktionen",
+							"Bis zu 1.000.000 verfolgte Besuche",
+							"Premium E-Mail-Support",
+							"Bis zu 03 Teammitglieder"
+						]
+					},
+					"cta": "Loslegen"
+				}
+			]
+		},
+		"faq_section": {
+			"title": "Häufig gestellte Fragen",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"items": [
+				{
+					"question": "Bietet diese App eine kostenlose Testphase?",
+					"answer": "Alle individuellen Framer-Abonnements wurden zu einem Pro-Plan mit Ihrem bestehenden Tarif übernommen. Wenn Sie einen Small-Team-Plan hatten, wurden alle 5 Plätze zu Ihrem bestehenden Tarif in Pro-Plätze umgewandelt."
+				},
+				{
+					"question": "Wie viel kostet diese App?",
+					"answer": "Alle individuellen Framer-Abonnements wurden zu einem Pro-Plan mit Ihrem bestehenden Tarif übernommen. Wenn Sie einen Small-Team-Plan hatten, wurden alle 5 Plätze zu Ihrem bestehenden Tarif in Pro-Plätze umgewandelt."
+				},
+				{
+					"question": "Wie ist die Rückerstattungsrichtlinie?",
+					"answer": "Alle individuellen Framer-Abonnements wurden zu einem Pro-Plan mit Ihrem bestehenden Tarif übernommen. Wenn Sie einen Small-Team-Plan hatten, wurden alle 5 Plätze zu Ihrem bestehenden Tarif in Pro-Plätze umgewandelt."
+				}
+			]
+		},
+		"cta_section": {
+			"title": "Schauen Sie sich die Demo an",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"cta": "Live-Demo testen"
+		},
+		"testimonials_section": {
+			"title": "Geliebt von Unternehmen weltweit.",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",
+			"items": [
+				{
+					"name": "Devid Warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+				},
+				{
+					"name": "Devid Warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
+				},
+				{
+					"name": "Devid Warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
+				},
+				{
+					"name": "Devid Warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus."
+				},
+				{
+					"name": "Devid Warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+				},
+				{
+					"name": "Devid Warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros"
+				}
+			]
+		},
+		"counter_section": {
+			"title": "Zahlen, die für sich selbst sprechen"
+		},
+		"newsletter_section": {
+			"title": "Newsletter abonnieren",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"input": "Geben Sie Ihre E-Mail ein",
+			"cta": "Abonnieren"
+		},
+		"latest_blog_section": {
+			"title": "Neueste Blogs & News",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+		}
+	},
+	"footer": {
+		"copyright": "© Vestigio — Intelligence & Decision Engine for SaaS",
+		"company": {
+			"title": "Unternehmen",
+			"items": {
+				"aboutUs": "Über uns",
+				"ourStory": "Unsere Geschichte",
+				"workWithUs": "Arbeiten Sie mit uns"
+			}
+		},
+		"product": {
+			"title": "Produkt",
+			"items": {
+				"features": "Funktionen",
+				"integrations": "Integrationen",
+				"pricing": "Preise & Pläne",
+				"changelog": "Änderungsprotokoll"
+			}
+		},
+		"resources": {
+			"title": "Ressourcen",
+			"items": {
+				"ourBlog": "Unser Blog",
+				"heatMaps": "Heatmaps",
+				"affiliate": "Partnerprogramm",
+				"integrations": "Integrationen"
+			}
+		}
+	},
+	"signInPage": {
+		"socialSignIn": "Anmelden mit",
+		"or": "ODER",
+		"form": {
+			"email": {
+				"label": "E-Mail",
+				"placeholder": "Geben Sie Ihre E-Mail-Adresse ein"
+			},
+			"password": {
+				"label": "Passwort",
+				"placeholder": "Geben Sie Ihr Passwort ein"
+			},
+			"rememberMe": "Angemeldet bleiben",
+			"forgotPassword": "Passwort vergessen?",
+			"magicLinkSubmit": "Magic Link senden",
+			"passwordSubmit": "Anmelden"
+		},
+		"magicLink": "Magischer Link",
+		"password": "Passwort",
+		"noAccount": "Noch kein Konto? <link>Konto erstellen</link>",
+		"demo": {
+			"description": "Oder fortfahren als Demo-Benutzer, Admin",
+			"user": "Benutzer",
+			"admin": "Admin"
+		}
+	},
+	"signUpPage": {
+		"magicLink": "Magischer Link",
+		"email": "E-Mail",
+		"socialSignUp": "Registrieren mit",
+		"or": "ODER",
+		"form": {
+			"name": {
+				"label": "Name",
+				"placeholder": "Gib deinen Benutzernamen ein"
+			},
+			"email": {
+				"label": "E-Mail",
+				"placeholder": "Gib deine E-Mail-Adresse ein"
+			},
+			"password": {
+				"label": "Passwort",
+				"placeholder": "Gib dein Passwort ein"
+			},
+			"submit": "Registrieren"
+		},
+		"alreadyHaveAccount": "Hast du schon ein Konto? <link>Anmelden</link>"
+	},
+	"support_page": {
+		"heading": "Support",
+		"title": "Brauchen Sie Hilfe? Eröffnen Sie einfach ein Support-Ticket",
+		"subtitle": "Unser Support-Team wird sich so schnell wie möglich bei Ihnen melden.",
+		"form": {
+			"full_name": {
+				"label": "Vollständiger Name",
+				"placeholder": "Geben Sie Ihren vollständigen Namen ein"
+			},
+			"email": {
+				"label": "E-Mail",
+				"placeholder": "Geben Sie Ihre E-Mail-Adresse ein"
+			},
+			"message": {
+				"label": "Nachricht",
+				"placeholder": "Geben Sie Ihre Nachricht ein"
+			},
+			"submit": "Nachricht senden"
+		}
+	},
+	"404_page": {
+		"title": "Seite nicht gefunden",
+		"description": "Die Seite, die Sie suchen, existiert nicht. Hier sind einige hilfreiche Links:",
+		"cta": {
+			"home": "Zur Startseite",
+			"go_back": "Zurück gehen"
+		}
+	},
+	"global_search": {
+		"placeholder": "Website durchsuchen... (Unterstützt von Algolia)",
+		"no_results": "Keine Ergebnisse gefunden..."
+	},
+	"account_settings_page": {
+		"heading": "Kontoeinstellungen",
+		"danger_zone": {
+			"title": "Gefahrenzone",
+			"delete_account": {
+				"title": "Konto löschen",
+				"description": "Das Löschen des Kontos entfernt alle Spuren dieses Kontos, einschließlich aller Einreichungen, Datei-Uploads und Einstellungen.",
+				"button": "Löschen"
+			}
+		},
+		"edit_profile": {
+			"title": "Profil bearbeiten",
+			"form": {
+				"upload_image": {
+					"recommend": "Empfohlene Größe: 300x300px",
+					"support": "Unterstützte Formate: jpeg, png, jpg",
+					"max_size": "Maximale Größe: 2MB"
+				},
+				"name": {
+					"label": "Ihr Name",
+					"placeholder": "Geben Sie Ihren Namen ein"
+				},
+				"email": {
+					"label": "E-Mail-Adresse",
+					"placeholder": "Geben Sie Ihre E-Mail-Adresse ein"
+				},
+				"submit": "Änderungen speichern",
+				"submit:loading": "Wird gespeichert"
+			}
+		},
+		"change_password": {
+			"title": "Passwort",
+			"form": {
+				"current_password": {
+					"label": "Aktuelles Passwort",
+					"placeholder": "Geben Sie Ihr aktuelles Passwort ein"
+				},
+				"new_password": {
+					"label": "Neues Passwort",
+					"placeholder": "Geben Sie Ihr neues Passwort ein"
+				},
+				"confirm_password": {
+					"label": "Neues Passwort bestätigen",
+					"placeholder": "Geben Sie Ihr neues Passwort erneut ein"
+				},
+				"submit": "Passwort ändern",
+				"submit:loading": "Wird geändert"
+			}
+		}
+	},
+	"invoice_page": {
+		"heading": "Rechnung",
+		"empty_state": {
+			"title": "Sie haben keine Kaufhistorie",
+			"description": "Bitte kaufen Sie einen Plan, um die Historie anzuzeigen! Vielen Dank.",
+			"cta": "Preise"
+		},
+		"table_columns": {
+			"plan": "Plan",
+			"next_billing_date": "Nächstes Abrechnungsdatum",
+			"txnId": "Transaktions-ID",
+			"amount": "Gesamtbetrag",
+			"action": "Aktion"
+		}
+	},
+	"api_page": {
+		"heading": "API",
+		"create_token": {
+			"title": "Möchten Sie die API nutzen?",
+			"description": "Erstellen Sie ein neues Token, um Zugriff zu erhalten.",
+			"form": {
+				"token_name": {
+					"label": "Token-Name",
+					"placeholder": "Geben Sie einen Token-Namen ein"
+				},
+				"submit": "Token erstellen",
+				"success_toast_message": "Token erfolgreich erstellt!",
+				"error_toast_message": "Fehler beim Erstellen des Tokens"
+			}
+		},
+		"token_list": {
+			"title": "Liste der aktiven Tokens",
+			"no_token": "Kein aktives Token verfügbar!",
+			"delete_api_key": "API-Schlüssel löschen",
+			"error_toast_message": "Fehler beim Löschen des Tokens"
+		}
+	},
+	"sidebar": {
+		"account_settings": "Kontoeinstellungen",
+		"api": "API",
+		"billing": "Abrechnung",
+		"invoice": "Rechnung",
+		"dashboard": "Dashboard",
+		"users": "Benutzer",
+		"ai_integration": "KI-Integration",
+		"send_notification": "Benachrichtigung senden",
+		"send_newsletter": "Newsletter senden",
+		"main_menu": "Hauptmenü",
+		"others": "Andere",
+		"soon": "Bald"
+	},
+	"ai_integration_page": {
+		"heading": "KI-Integration",
+		"set_api_key": {
+			"title": "Sie benötigen einen OpenAI-API-Schlüssel, um die Funktionen der KI-Tools-Vorlage zu nutzen.",
+			"subtitle": "Legen Sie also zuerst Ihren API-Schlüssel fest und beginnen Sie mit der Nutzung...",
+			"cta": "API-Schlüssel festlegen",
+			"modal": {
+				"title": "Geben Sie Ihren OpenAI-API-Schlüssel ein",
+				"description": "Um die Funktionen der KI-Tools-Vorlage nutzen zu können, ist ein gültiger OpenAI-API-Schlüssel erforderlich.",
+				"form": {
+					"submit": "API-Schlüssel festlegen"
+				},
+				"get_api_key": "Holen Sie sich Ihren API-Schlüssel von OpenAI"
+			}
+		},
+		"content_topic": {
+			"title": "Inhaltsthema",
+			"description": "Worüber soll Ihr Inhalt handeln?",
+			"form": {
+				"topic": "Geben Sie Ihr Thema ein",
+				"paragraph_number": {
+					"label": "Anzahl der Absätze",
+					"placeholder": "Option auswählen"
+				},
+				"type": {
+					"label": "Wählen Sie Ihren Typ",
+					"placeholder": "Option auswählen"
+				},
+				"submit": "Generieren"
+			}
+		},
+		"output_result": {
+			"title": "Ergebnis",
+			"description": "Genießen Sie Ihren herausragenden Inhalt basierend auf Ihrem Thema",
+			"placeholder": "Ihre generierte Antwort wird hier angezeigt..."
+		}
+	},
+	"manage_users_page": {
+		"heading": "Benutzer verwalten",
+		"log_in": "Anmelden",
+		"table_header": {
+			"name": "Name",
+			"email": "E-Mail",
+			"role": "Rolle",
+			"registered_on": "Registriert am",
+			"action": "Aktion"
+		},
+		"top_bar": {
+			"admin": "Admin",
+			"user": "Benutzer",
+			"all_users": "Alle Benutzer",
+			"search_user": "Benutzer suchen",
+			"add_new_user": {
+				"title": "Neuen Benutzer hinzufügen",
+				"form": {
+					"email": {
+						"label": "Benutzer-E-Mail",
+						"placeholder": "john@gmail.com"
+					},
+					"role": {
+						"label": "Benutzerrolle auswählen",
+						"placeholder": "Rolle auswählen"
+					},
+					"submit": "Benutzer hinzufügen",
+					"missing_field_error": "Bitte füllen Sie alle Felder aus"
+				}
+			}
+		},
+		"no_users": {
+			"title": "Sie haben noch keine registrierten Benutzer!",
+			"subtitle": "Wenn sich jemand auf Ihrer Website registriert, können Sie ihn hier sehen"
+		}
+	},
+	"admin_page": {
+		"heading": "Dashboard",
+		"stats": {
+			"total_visitors": "Gesamtbesucher",
+			"total_revenue": "Gesamteinnahmen",
+			"free_users": "Kostenlose Benutzer",
+			"pro_users": "Pro-Benutzer"
+		},
+		"overview": {
+			"title": "Übersicht",
+			"description": "Eine Übersicht über die Aktivitäten und Leistungen Ihrer Organisation in allen Projekten.",
+			"stats": {
+				"monthly_recurring_revenue": "Monatliche wiederkehrende Einnahmen",
+				"revenue": "Einnahmen",
+				"fees": "Gebühren",
+				"new_customers": "Neue Kunden",
+				"churn": "Kundenabwanderung",
+				"support_ticket": "Support-Ticket"
+			}
+		}
+	},
+	"send_notification_page": {
+		"heading": "Benachrichtigung senden",
+		"notification_content": {
+			"title": "Benachrichtigungsinhalt",
+			"description": "Geben Sie Ihre Nachricht ein, die Sie Ihrem Publikum mitteilen möchten"
+		}
+	},
+	"send_newsletter_page": {
+		"heading": "Newsletter senden",
+		"newsletter_content": {
+			"title": "Newsletter-Inhalt",
+			"description": "Geben Sie Ihre Nachricht ein, die Sie Ihrem Publikum mitteilen möchten"
+		}
+	},
+	"console": {
+		"common": {
+			"severity": {
+				"all": "__TODO__",
+				"critical": "__TODO__",
+				"high": "__TODO__",
+				"medium": "__TODO__",
+				"low": "__TODO__"
+			},
+			"packs": {
+				"all": "__TODO__",
+				"scale_readiness": "__TODO__",
+				"revenue_integrity": "__TODO__",
+				"chargeback_resilience": "__TODO__",
+				"saas_growth_readiness": "__TODO__"
+			},
+			"pack_labels": {
+				"scale_readiness": "__TODO__",
+				"revenue_integrity": "__TODO__",
+				"chargeback_resilience": "__TODO__",
+				"saas_growth_readiness": "__TODO__"
+			},
+			"polarity": {
+				"all": "__TODO__",
+				"negative": "__TODO__",
+				"positive": "__TODO__",
+				"neutral": "__TODO__"
+			},
+			"impact_types": {
+				"revenue_loss": "__TODO__",
+				"conversion_loss": "__TODO__",
+				"chargeback_risk": "__TODO__",
+				"traffic_waste": "__TODO__",
+				"lifetime_value_loss": "__TODO__",
+				"none": "__TODO__"
+			},
+			"workspace_types": {
+				"preflight": "__TODO__",
+				"revenue": "__TODO__",
+				"chargeback": "__TODO__"
+			},
+			"columns": {
+				"finding": "__TODO__",
+				"severity": "__TODO__",
+				"confidence": "__TODO__",
+				"est_impact": "__TODO__",
+				"type": "__TODO__",
+				"pack": "__TODO__",
+				"surface": "__TODO__",
+				"action": "__TODO__",
+				"scope": "__TODO__",
+				"status": "__TODO__",
+				"sessions": "__TODO__",
+				"findings": "__TODO__",
+				"sources": "__TODO__"
+			},
+			"healthy": "__TODO__",
+			"confidence_label": "__TODO__",
+			"loading": "__TODO__",
+			"clear_filters": "__TODO__",
+			"hide_positive_signals": "__TODO__",
+			"n_of_total": "__TODO__"
+		},
+		"analysis": {
+			"title": "__TODO__",
+			"subtitle_ongoing": "__TODO__",
+			"subtitle_complete": "__TODO__",
+			"loading": "__TODO__",
+			"empty": "__TODO__",
+			"coverage": "__TODO__",
+			"protection_detected": "__TODO__",
+			"protection_description": "__TODO__",
+			"connection_lost": "__TODO__",
+			"updating": "__TODO__",
+			"cards": {
+				"findings": "__TODO__",
+				"findings_value": "__TODO__",
+				"est_monthly_impact": "__TODO__",
+				"per_month_midpoint": "__TODO__",
+				"high_impact_issues": "__TODO__",
+				"high_impact_threshold": "__TODO__",
+				"avg_confidence": "__TODO__"
+			},
+			"discuss": "__TODO__",
+			"analyze_together": "__TODO__",
+			"no_match": "__TODO__"
+		},
+		"finding_drawer": {
+			"summary": "__TODO__",
+			"effect": "__TODO__",
+			"root_cause": "__TODO__",
+			"impact_breakdown": "__TODO__",
+			"monthly_range": "__TODO__",
+			"midpoint": "__TODO__",
+			"impact_type": "__TODO__",
+			"reasoning": "__TODO__",
+			"why_good": "__TODO__",
+			"evidence_contradictions": "__TODO__",
+			"contradictions_detected": "__TODO__",
+			"discuss_finding": "__TODO__"
+		},
+		"workspaces": {
+			"title": "__TODO__",
+			"subtitle": "__TODO__",
+			"loading": "__TODO__",
+			"empty": "__TODO__",
+			"monthly_loss": "__TODO__",
+			"issues": "__TODO__",
+			"confidence": "__TODO__",
+			"top_issue": "__TODO__",
+			"cards": {
+				"total_monthly_loss": "__TODO__",
+				"highest_impact": "__TODO__",
+				"issues_found": "__TODO__",
+				"confidence": "__TODO__"
+			},
+			"findings_heading": "__TODO__"
+		},
+		"chat": {
+			"title": "__TODO__",
+			"subtitle": "__TODO__",
+			"placeholder": "__TODO__",
+			"send": "__TODO__",
+			"open_playbooks": "__TODO__",
+			"clear_context": "__TODO__",
+			"est_monthly_loss": "__TODO__",
+			"suggested_followups": "__TODO__",
+			"next_step": "__TODO__",
+			"why": "__TODO__",
+			"analysis": "__TODO__",
+			"actions": "__TODO__",
+			"analyzing_finding": "__TODO__",
+			"batch_analysis": "__TODO__",
+			"findings_selected": "__TODO__",
+			"shared": "__TODO__",
+			"confidence": "__TODO__",
+			"discussing_finding": "__TODO__",
+			"batch_analysis_label": "__TODO__",
+			"findings_label": "__TODO__",
+			"playbook_running": "__TODO__",
+			"playbook_step": "__TODO__",
+			"no_context": "__TODO__",
+			"step_failed": "__TODO__",
+			"preset_questions": {
+				"scale_traffic": "__TODO__",
+				"losing_money": "__TODO__",
+				"underlying_cause": "__TODO__",
+				"fix_first": "__TODO__"
+			},
+			"validation": {
+				"accidental": "__TODO__",
+				"too_short": "__TODO__",
+				"too_vague": "__TODO__",
+				"too_broad": "__TODO__",
+				"try_specific": "__TODO__",
+				"asked_recently": "__TODO__"
+			},
+			"playbooks": {
+				"revenue_leaks": {
+					"title": "__TODO__",
+					"description": "__TODO__"
+				},
+				"conversion": {
+					"title": "__TODO__",
+					"description": "__TODO__"
+				},
+				"chargeback": {
+					"title": "__TODO__",
+					"description": "__TODO__"
+				},
+				"onboarding": {
+					"title": "__TODO__",
+					"description": "__TODO__"
+				},
+				"trust": {
+					"title": "__TODO__",
+					"description": "__TODO__"
+				},
+				"landing_vs_app": {
+					"title": "__TODO__",
+					"description": "__TODO__"
+				}
+			}
+		},
+		"actions": {
+			"title": "__TODO__",
+			"subtitle": "__TODO__",
+			"loading": "__TODO__",
+			"empty": "__TODO__",
+			"cards": {
+				"total_actions": "__TODO__",
+				"total_impact": "__TODO__",
+				"per_month_midpoint": "__TODO__",
+				"cross_pack": "__TODO__",
+				"high_severity": "__TODO__"
+			},
+			"scope": {
+				"cross_pack": "__TODO__",
+				"single": "__TODO__"
+			},
+			"drawer": {
+				"what_fixes": "__TODO__",
+				"impact_unlocked": "__TODO__",
+				"monthly_range": "__TODO__",
+				"midpoint": "__TODO__",
+				"root_cause": "__TODO__",
+				"scope": "__TODO__",
+				"affects_multiple": "__TODO__",
+				"single_pack": "__TODO__",
+				"request_verification": "__TODO__"
+			}
+		},
+		"data_sources": {
+			"title": "__TODO__",
+			"subtitle": "__TODO__",
+			"snippet_section": "__TODO__",
+			"commerce_section": "__TODO__",
+			"snippet_label": "__TODO__",
+			"copy": "__TODO__",
+			"copied": "__TODO__",
+			"copy_snippet": "__TODO__",
+			"connect": "__TODO__",
+			"status": {
+				"connected": "__TODO__",
+				"error": "__TODO__",
+				"not_connected": "__TODO__"
+			},
+			"last_event": "__TODO__",
+			"integrations": {
+				"shopify": {
+					"name": "__TODO__",
+					"description": "__TODO__"
+				},
+				"wordpress": {
+					"name": "__TODO__",
+					"description": "__TODO__"
+				},
+				"wix": {
+					"name": "__TODO__",
+					"description": "__TODO__"
+				},
+				"framer": {
+					"name": "__TODO__",
+					"description": "__TODO__"
+				},
+				"webflow": {
+					"name": "__TODO__",
+					"description": "__TODO__"
+				},
+				"vibecoding": {
+					"name": "__TODO__",
+					"description": "__TODO__"
+				},
+				"other": {
+					"name": "__TODO__",
+					"description": "__TODO__"
+				},
+				"shopify_commerce": {
+					"name": "__TODO__",
+					"description": "__TODO__"
+				}
+			}
+		},
+		"inventory": {
+			"title": "__TODO__",
+			"subtitle": "__TODO__",
+			"cards": {
+				"total_surfaces": "__TODO__",
+				"live": "__TODO__",
+				"commercial": "__TODO__",
+				"with_findings": "__TODO__"
+			},
+			"status": {
+				"live": "__TODO__",
+				"not_seen": "__TODO__",
+				"all": "__TODO__"
+			},
+			"type_filter": {
+				"all": "__TODO__",
+				"commercial": "__TODO__",
+				"support": "__TODO__",
+				"policy": "__TODO__",
+				"other": "__TODO__"
+			},
+			"empty": {
+				"title": "__TODO__",
+				"description": "__TODO__"
+			}
+		},
+		"maps": {
+			"title": "__TODO__",
+			"subtitle": "__TODO__",
+			"loading": "__TODO__",
+			"empty": "__TODO__",
+			"node_types": {
+				"root_cause": "__TODO__",
+				"finding": "__TODO__",
+				"action": "__TODO__",
+				"category": "__TODO__"
+			},
+			"edge_types": {
+				"causal": "__TODO__",
+				"contributes": "__TODO__",
+				"addresses": "__TODO__"
+			},
+			"impact_unlocks": "__TODO__"
+		},
+		"onboard": {
+			"step_indicator": "__TODO__",
+			"nav": {
+				"previous": "__TODO__",
+				"next": "__TODO__"
+			},
+			"org_name": {
+				"title": "__TODO__",
+				"subtitle": "__TODO__",
+				"label": "__TODO__",
+				"placeholder": "__TODO__"
+			},
+			"domain": {
+				"title": "__TODO__",
+				"subtitle": "__TODO__",
+				"label": "__TODO__",
+				"placeholder": "__TODO__"
+			},
+			"business_context": {
+				"title": "__TODO__",
+				"subtitle": "__TODO__",
+				"business_type": "__TODO__",
+				"types": {
+					"ecommerce": "__TODO__",
+					"ecommerce_desc": "__TODO__",
+					"lead_gen": "__TODO__",
+					"lead_gen_desc": "__TODO__",
+					"saas": "__TODO__",
+					"saas_desc": "__TODO__",
+					"hybrid": "__TODO__",
+					"hybrid_desc": "__TODO__"
+				},
+				"monthly_revenue": "__TODO__",
+				"monthly_revenue_placeholder": "__TODO__",
+				"avg_order_value": "__TODO__",
+				"avg_order_value_placeholder": "__TODO__",
+				"optional": "__TODO__",
+				"conversion_model": "__TODO__",
+				"conversion_models": {
+					"checkout": "__TODO__",
+					"whatsapp": "__TODO__",
+					"form": "__TODO__",
+					"external": "__TODO__"
+				}
+			},
+			"saas_access": {
+				"title": "__TODO__",
+				"subtitle": "__TODO__",
+				"login_url": "__TODO__",
+				"login_url_placeholder": "__TODO__",
+				"email": "__TODO__",
+				"email_placeholder": "__TODO__",
+				"auth_method": "__TODO__",
+				"auth_methods": {
+					"unknown": "__TODO__",
+					"password": "__TODO__",
+					"oauth": "__TODO__",
+					"magic_link": "__TODO__"
+				},
+				"mfa": "__TODO__",
+				"mfa_options": {
+					"unknown": "__TODO__",
+					"none": "__TODO__",
+					"optional": "__TODO__",
+					"required": "__TODO__"
+				},
+				"skip_note": "__TODO__",
+				"skip": "__TODO__"
+			},
+			"review": {
+				"title": "__TODO__",
+				"subtitle": "__TODO__",
+				"organization": "__TODO__",
+				"domain": "__TODO__",
+				"business_type": "__TODO__",
+				"monthly_revenue": "__TODO__",
+				"avg_order_value": "__TODO__",
+				"conversion_model": "__TODO__",
+				"saas_access": "__TODO__",
+				"not_provided": "__TODO__",
+				"saas_skipped": "__TODO__",
+				"saas_not_configured": "__TODO__"
+			},
+			"plan": {
+				"title": "__TODO__",
+				"subtitle": "__TODO__",
+				"recommended": "__TODO__",
+				"per_month": "__TODO__",
+				"redirecting": "__TODO__",
+				"activate": "__TODO__",
+				"stripe_note": "__TODO__",
+				"plans": {
+					"vestigio": {
+						"name": "__TODO__",
+						"price": "__TODO__",
+						"features": [
+							"__TODO__",
+							"__TODO__",
+							"__TODO__",
+							"__TODO__"
+						]
+					},
+					"pro": {
+						"name": "__TODO__",
+						"price": "__TODO__",
+						"features": [
+							"__TODO__",
+							"__TODO__",
+							"__TODO__",
+							"__TODO__"
+						]
+					},
+					"max": {
+						"name": "__TODO__",
+						"price": "__TODO__",
+						"features": [
+							"__TODO__",
+							"__TODO__",
+							"__TODO__",
+							"__TODO__"
+						]
+					}
+				}
+			},
+			"errors": {
+				"something_wrong": "__TODO__",
+				"network_error": "__TODO__"
+			}
+		},
+		"settings": {
+			"title": "__TODO__",
+			"subtitle": "__TODO__",
+			"domains": {
+				"title": "__TODO__",
+				"description": "__TODO__"
+			},
+			"data_overview": {
+				"title": "__TODO__",
+				"description": "__TODO__"
+			},
+			"account": {
+				"title": "__TODO__",
+				"description": "__TODO__"
+			}
+		}
+	}
+}

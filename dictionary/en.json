@@ -1,0 +1,1348 @@
+{
+	"common": {
+		"account": "Account",
+		"action": "Action",
+		"all_users": "All Users",
+		"blog": "Blog",
+		"blog_grids": "Blog Grids",
+		"copy": "Copy",
+		"copied": "Copied",
+		"copy_link": "Copy Link",
+		"date": "Date",
+		"delete_account": "Delete Account",
+		"download": "Download",
+		"free_users": "Free Users",
+		"home": "Home",
+		"invoice": "Invoice",
+		"modal:delete": {
+			"cancel_button": "Cancel",
+			"confirm_button": "Delete",
+			"confirm_button:loading": "Deleting",
+			"description": "Are you sure? This action can not be undone."
+		},
+		"name": "Name",
+		"no_posts": "No posts found",
+		"pro_users": "Pro Users",
+		"send_to": "Send To",
+		"send": "Send",
+		"welcome": "Welcome"
+	},
+	"header": {
+		"features": "Features",
+		"pricing": "Pricing",
+		"blog": "Blog",
+		"pages": "Pages",
+		"blogDetails": "Blog Details",
+		"signIn": "Sign In",
+		"signUp": "Sign Up",
+		"errors": "404 Errors",
+		"support": "Support",
+		"buyNow": "Buy Now ↗",
+		"account_menu": {
+			"account_settings": "Account Settings",
+			"dashboard": "Dashboard",
+			"logOut": "Log Out"
+		},
+		"notification_menu": {
+			"title": "Notifications",
+			"see_all": "See All Notifications"
+		}
+	},
+	"homepage": {
+		"hero_section": {
+			"title": "Full-Stack <marker>SaaS Boilerplate</marker> Built on Next.js",
+			"subtitle": "A full-stack SaaS boilerplate and starter kit comes with all essential integrations, pages, components, user/admin dashboards, landing page, design source and everything you need to turn your feature-rich SaaS startup idea into reality in a day!",
+			"cta": "Try Demo",
+			"brandshowcase": {
+				"description": "Built by the same team behind numerous successful SaaS and digital products"
+			}
+		},
+		"features_section": {
+			"title": "Launch SaaS Startup in Days",
+			"subtitle": "Everything you need to build, launch, and scale your SaaS startup.",
+			"features": [
+				{
+					"title": "Ready-to-Use Integrations",
+					"description": "Database (Postgres with Prisma ORM), Auth (NextAuth), Payments (Stripe), Sanity (Blog), MailChimp (Newsletter), OpenAI, Email, and Many More"
+				},
+				{
+					"title": "Cutting-edge Technologies",
+					"description": "Built-with cutting-edge technologies to provide a robust foundation for your SaaS product, giving you a competitive edge in the digital market."
+				},
+				{
+					"title": "High-quality Design",
+					"description": "Every single component and page is designed with attention to detail on Figma and styled with Tailwind CSS for the Next.js front-end."
+				},
+				{
+					"title": "Admin and User Dashboard",
+					"description": "Allows you to easily manage your SaaS operations and enables end-users to easily manage and modify their account settings with ease."
+				},
+				{
+					"title": "Fully Customizable",
+					"description": "Vestigio provides the flexibility to customize your audit configuration, analysis scope, and reporting to meet your specific business requirements. Everything is highly customizable and modular."
+				},
+				{
+					"title": "Rich Docs and Email Support",
+					"description": "Docs includes detailed, step-by-step guides for every part of Vestigio. If you need further assistance, simply open a support ticket and we will respond promptly."
+				}
+			]
+		},
+		"features_with_image_section": {
+			"title": "Stand Out, Launch Fast!",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",
+			"items": [
+				{
+					"title": "Build, Launch, Scale with Vestigio",
+					"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit praesent condimentum malesuada consequat quam.",
+					"features": [
+						"Ready-to-Use Integrations",
+						"Cutting-edge Technologies",
+						"High-quality Design"
+					]
+				},
+				{
+					"title": "The Best SaaS Boilerplate Available on The Web",
+					"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit praesent condimentum malesuada consequat quam.",
+					"features": [
+						"Admin and User Dashboard",
+						"Fully Customizable",
+						"Rich Docs and Email Support"
+					]
+				}
+			]
+		},
+		"pricing_section": {
+			"title": "Simple Affordable Pricing",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"subscription": "monthly",
+			"plans": [
+				{
+					"name": "Basic",
+					"for": "For Individuals",
+					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"included": {
+						"title": "What's included",
+						"items": [
+							"All basic features",
+							"Up to 1,000,000 tracked visits",
+							"Premium email support",
+							"Up to 03 team members"
+						]
+					},
+					"cta": "Get Started"
+				},
+				{
+					"name": "Pro",
+					"for": "For Startups",
+					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"included": {
+						"title": "What's included",
+						"items": [
+							"All basic features",
+							"Up to 1,000,000 tracked visits",
+							"Premium email support",
+							"Up to 03 team members"
+						]
+					},
+					"cta": "Get Started"
+				},
+				{
+					"name": "Enterprise",
+					"for": "For big companies",
+					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"included": {
+						"title": "What's included",
+						"items": [
+							"All basic features",
+							"Up to 1,000,000 tracked visits",
+							"Premium email support",
+							"Up to 03 team members"
+						]
+					},
+					"cta": "Get Started"
+				}
+			]
+		},
+		"faq_section": {
+			"title": "Frequently Asked Questions",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"items": [
+				{
+					"question": "Does this app offer a free trial period?",
+					"answer": "All individual Framer subscriptions have been grandfathered into a Pro plan at your existing rate. If you were on a Small Team plan, then all 5 seats have been converted over to Pro seats at your existing rate."
+				},
+				{
+					"question": "How much does this app cost?",
+					"answer": "All individual Framer subscriptions have been grandfathered into a Pro plan at your existing rate. If you were on a Small Team plan, then all 5 seats have been converted over to Pro seats at your existing rate."
+				},
+				{
+					"question": "What's the refund policy?",
+					"answer": "All individual Framer subscriptions have been grandfathered into a Pro plan at your existing rate. If you were on a Small Team plan, then all 5 seats have been converted over to Pro seats at your existing rate."
+				}
+			]
+		},
+		"cta_section": {
+			"title": "Check Out The Demo",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"cta": "Try Live Demo"
+		},
+		"testimonials_section": {
+			"title": "Loved by businesses worldwide.",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",
+			"items": [
+				{
+					"name": "Devid warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+				},
+				{
+					"name": "Devid warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
+				},
+				{
+					"name": "Devid warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
+				},
+				{
+					"name": "Devid warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus."
+				},
+				{
+					"name": "Devid warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+				},
+				{
+					"name": "Devid warner",
+					"designation": "CEO, ABC Company",
+					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros"
+				}
+			]
+		},
+		"counter_section": {
+			"title": "Numbers speaking for themselves"
+		},
+		"newsletter_section": {
+			"title": "Subscribe newsletter",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"input": "Enter your email",
+			"cta": "Subscribe"
+		},
+		"latest_blog_section": {
+			"title": "Latest Blogs & News",
+			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+		}
+	},
+	"footer": {
+		"copyright": "© Vestigio — Intelligence & Decision Engine for SaaS",
+		"company": {
+			"title": "Company",
+			"items": {
+				"aboutUs": "About Us",
+				"ourStory": "Our Story",
+				"workWithUs": "Work with Us"
+			}
+		},
+		"product": {
+			"title": "Product",
+			"items": {
+				"features": "Features",
+				"integrations": "Integrations",
+				"pricing": "Pricing & Plans",
+				"changelog": "Changelog"
+			}
+		},
+		"resources": {
+			"title": "Resources",
+			"items": {
+				"ourBlog": "Our Blog",
+				"heatMaps": "Heatmaps",
+				"affiliate": "Affiliate Program",
+				"integrations": "Integrations"
+			}
+		}
+	},
+	"signInPage": {
+		"socialSignIn": "Sign in with",
+		"or": "OR",
+		"form": {
+			"email": {
+				"label": "Email",
+				"placeholder": "Enter your email"
+			},
+			"password": {
+				"label": "Password",
+				"placeholder": "Enter your password"
+			},
+			"rememberMe": "Remember me",
+			"forgotPassword": "Forgot password?",
+			"magicLinkSubmit": "Send magic link",
+			"passwordSubmit": "Sign In"
+		},
+		"magicLink": "Magic Link",
+		"password": "Password",
+		"noAccount": "Don't have an account yet? <link>Create account</link>",
+		"demo": {
+			"description": "Or Continue as Demo User, Admin",
+			"user": "User",
+			"admin": "Admin"
+		}
+	},
+	"signUpPage": {
+		"magicLink": "Magic Link",
+		"email": "Email",
+		"socialSignUp": "Sign up with",
+		"or": "OR",
+		"form": {
+			"name": {
+				"label": "Name",
+				"placeholder": "Enter your username"
+			},
+			"email": {
+				"label": "Email",
+				"placeholder": "Enter your email"
+			},
+			"password": {
+				"label": "Password",
+				"placeholder": "Enter your password"
+			},
+			"submit": "Sign Up"
+		},
+		"alreadyHaveAccount": "Already have an account? <link>Sign In</link>"
+	},
+	"support_page": {
+		"heading": "Support",
+		"title": "Need any help? Just open a support ticket",
+		"subtitle": "Our support team will get back to as soon as they can.",
+		"form": {
+			"full_name": {
+				"label": "Full Name",
+				"placeholder": "Enter your full name"
+			},
+			"email": {
+				"label": "Email",
+				"placeholder": "Enter your email"
+			},
+			"message": {
+				"label": "Message",
+				"placeholder": "Enter your message"
+			},
+			"submit": "Send Message"
+		}
+	},
+	"404_page": {
+		"title": "Page not found",
+		"description": "The page you are looking for doesn't exist. Here are some helpful links:",
+		"cta": {
+			"home": "Take me home",
+			"go_back": "Go back"
+		}
+	},
+	"global_search": {
+		"placeholder": "Site Search... (Powered by Algolia)",
+		"no_results": "No items found..."
+	},
+	"account_settings_page": {
+		"heading": "Account Settings",
+		"danger_zone": {
+			"title": "Danger Zone",
+			"delete_account": {
+				"title": "Delete Account",
+				"description": "Deleting the Account will erase all traces of this Account, including all submissions and file uploads and Settings.",
+				"button": "Delete"
+			}
+		},
+		"edit_profile": {
+			"title": "Edit Profile",
+			"form": {
+				"upload_image": {
+					"recommend": "Recommended size: 300x300px",
+					"support": "Supported formats: jpeg, png, jpg",
+					"max_size": "Max size: 2MB"
+				},
+				"name": {
+					"label": "Your Name",
+					"placeholder": "Enter your name"
+				},
+				"email": {
+					"label": "Email Address",
+					"placeholder": "Enter your email address"
+				},
+				"submit": "Save Changes",
+				"submit:loading": "Saving"
+			}
+		},
+		"change_password": {
+			"title": "Password",
+			"form": {
+				"current_password": {
+					"label": "Current Password",
+					"placeholder": "Enter your current password"
+				},
+				"new_password": {
+					"label": "New Password",
+					"placeholder": "Enter your new password"
+				},
+				"confirm_password": {
+					"label": "Re-type new Password",
+					"placeholder": "Re-type your new password"
+				},
+				"submit": "Change Password",
+				"submit:loading": "Changing"
+			}
+		}
+	},
+	"invoice_page": {
+		"heading": "Invoice",
+		"empty_state": {
+			"title": "You don't have any purchase history",
+			"description": "Please purchase any plan to see the history! Thank you.",
+			"cta": "Pricing"
+		},
+		"table_columns": {
+			"plan": "Plan",
+			"next_billing_date": "Next Billing Date",
+			"txnId": "Transaction ID",
+			"amount": "Total Amount",
+			"action": "Action"
+		}
+	},
+	"api_page": {
+		"heading": "API",
+		"create_token": {
+			"title": "Want to use the API?",
+			"description": "Create a new token to get the access.",
+			"form": {
+				"token_name": {
+					"label": "Token Name",
+					"placeholder": "Enter a token name"
+				},
+				"submit": "Create Token",
+				"success_toast_message": "Token created successfully!",
+				"error_toast_message": "Failed to create token"
+			}
+		},
+		"token_list": {
+			"title": "List of active tokens",
+			"no_token": "No active token available!",
+			"delete_api_key": "Delete API Key",
+			"error_toast_message": "Failed to delete token"
+		}
+	},
+	"sidebar": {
+		"account_settings": "Account Settings",
+		"api": "API",
+		"billing": "Billing",
+		"invoice": "Invoice",
+		"dashboard": "Dashboard",
+		"users": "Users",
+		"ai_integration": "AI Integration",
+		"send_notification": "Send Notification",
+		"send_newsletter": "Send Newsletter",
+		"main_menu": "Main Menu",
+		"others": "Others",
+		"soon": "Soon"
+	},
+	"ai_integration_page": {
+		"heading": "AI Integration",
+		"set_api_key": {
+			"title": "You need an OpenAI API Key to use AI Tools Template's features.",
+			"subtitle": "So set your API key first and start using...",
+			"cta": "Set API Key",
+			"modal": {
+				"title": "Enter your OpenAI API Key",
+				"description": "To access the capabilities of AI Tools Template, a valid OpenAI API Key is required.",
+				"form": {
+					"submit": "Set API Key"
+				},
+				"get_api_key": "Get your API key from Open AI"
+			}
+		},
+		"content_topic": {
+			"title": "Content Topic",
+			"description": "What your content will be about?",
+			"form": {
+				"topic": "Type your topic",
+				"paragraph_number": {
+					"label": "Number Of Paragraph",
+					"placeholder": "Select option"
+				},
+				"type": {
+					"label": "Select Your Type",
+					"placeholder": "Select option"
+				},
+				"submit": "Generate"
+			}
+		},
+		"output_result": {
+			"title": "Output Result",
+			"description": "Enjoy your outstanding content based on your topic",
+			"placeholder": "Your generated response will appear here..."
+		}
+	},
+	"manage_users_page": {
+		"heading": "Manage Users",
+		"log_in": "Log In",
+		"table_header": {
+			"name": "Name",
+			"email": "Email",
+			"role": "Role",
+			"registered_on": "Registered On",
+			"action": "Action"
+		},
+		"top_bar": {
+			"admin": "Admin",
+			"user": "User",
+			"all_users": "All Users",
+			"search_user": "Search user",
+			"add_new_user": {
+				"title": "Add New User",
+				"form": {
+					"email": {
+						"label": "User Email",
+						"placeholder": "john@gmail.com"
+					},
+					"role": {
+						"label": "Select User Role",
+						"placeholder": "Select role"
+					},
+					"submit": "Add User",
+					"missing_field_error": "Please fill all the fields"
+				}
+			}
+		},
+		"no_users": {
+			"title": "You don't have any registered user yet!",
+			"subtitle": "If any one register to your site then you can see them in here"
+		}
+	},
+	"admin_page": {
+		"heading": "Dashboard",
+		"stats": {
+			"total_visitors": "Total Visitors",
+			"total_revenue": "Total Revenue",
+			"free_users": "Free Users",
+			"pro_users": "Pro Users"
+		},
+		"overview": {
+			"title": "Overview",
+			"description": "An overview of your organization's activity and performance across all your projects.",
+			"stats": {
+				"monthly_recurring_revenue": "Monthly Recurring Revenue",
+				"revenue": "Revenue",
+				"fees": "Fees",
+				"new_customers": "New Customers",
+				"churn": "Churn",
+				"support_ticket": "Support Ticket"
+			}
+		}
+	},
+	"send_notification_page": {
+		"heading": "Send Notification",
+		"notification_content": {
+			"title": "Notification Content",
+			"description": "Type your message that you want to notify your audience"
+		}
+	},
+	"send_newsletter_page": {
+		"heading": "Send Newsletter",
+		"newsletter_content": {
+			"title": "Newsletter Content",
+			"description": "Type your message that you want to notify your audience"
+		}
+	},
+	"console": {
+		"common": {
+			"severity": {
+				"all": "All Severities",
+				"critical": "Critical",
+				"high": "High",
+				"medium": "Medium",
+				"low": "Low"
+			},
+			"packs": {
+				"all": "All Packs",
+				"scale_readiness": "Scale Readiness",
+				"revenue_integrity": "Revenue Integrity",
+				"chargeback_resilience": "Chargeback Resilience",
+				"saas_growth_readiness": "SaaS Growth"
+			},
+			"pack_labels": {
+				"scale_readiness": "Scale",
+				"revenue_integrity": "Revenue",
+				"chargeback_resilience": "Chargeback",
+				"saas_growth_readiness": "SaaS"
+			},
+			"polarity": {
+				"all": "All Findings",
+				"negative": "Issues",
+				"positive": "Positive",
+				"neutral": "Neutral"
+			},
+			"impact_types": {
+				"revenue_loss": "Revenue Loss",
+				"conversion_loss": "Conversion Loss",
+				"chargeback_risk": "Chargeback Risk",
+				"traffic_waste": "Traffic Waste",
+				"lifetime_value_loss": "LTV Loss",
+				"none": "—"
+			},
+			"workspace_types": {
+				"preflight": "Scale Readiness",
+				"revenue": "Revenue Integrity",
+				"chargeback": "Chargeback Resilience"
+			},
+			"columns": {
+				"finding": "Finding",
+				"severity": "Severity",
+				"confidence": "Conf",
+				"est_impact": "Est. Impact",
+				"type": "Type",
+				"pack": "Pack",
+				"surface": "Surface",
+				"action": "Action",
+				"scope": "Scope",
+				"status": "Status",
+				"sessions": "Sessions",
+				"findings": "Findings",
+				"sources": "Sources"
+			},
+			"healthy": "Healthy",
+			"confidence_label": "Confidence {value}%",
+			"loading": "Loading...",
+			"clear_filters": "Clear filters",
+			"hide_positive_signals": "Hide positive signals",
+			"n_of_total": "{filtered} of {total} findings"
+		},
+		"analysis": {
+			"title": "Analysis",
+			"subtitle_ongoing": "Analysis in progress — findings appear as they're ready.",
+			"subtitle_complete": "Global findings with quantified financial impact.",
+			"loading": "Analyzing your domain...",
+			"empty": "No findings detected yet.",
+			"coverage": "{score}% coverage",
+			"protection_detected": "Protection detected: {type}",
+			"protection_description": "Access to {url} is restricted. Add Vestigio's IP to your allowlist for optimal results.",
+			"connection_lost": "Connection lost",
+			"updating": "updating...",
+			"cards": {
+				"findings": "Findings",
+				"findings_value": "{issues} issues, {strengths} strengths",
+				"est_monthly_impact": "Est. Monthly Impact",
+				"per_month_midpoint": "/month (midpoint)",
+				"high_impact_issues": "High Impact Issues",
+				"high_impact_threshold": "> $10k/mo",
+				"avg_confidence": "Avg Confidence"
+			},
+			"discuss": "Discuss",
+			"analyze_together": "Analyze {count} Together",
+			"no_match": "No findings match the current filters."
+		},
+		"finding_drawer": {
+			"summary": "Summary",
+			"effect": "Effect",
+			"root_cause": "Root Cause",
+			"impact_breakdown": "Impact Breakdown",
+			"monthly_range": "Monthly Range",
+			"midpoint": "Midpoint",
+			"impact_type": "Impact Type",
+			"reasoning": "Reasoning",
+			"why_good": "Why This Is Good",
+			"evidence_contradictions": "Evidence Contradictions",
+			"contradictions_detected": "{count} contradiction(s) detected in backing evidence. Confidence adjusted by {delta}%.",
+			"discuss_finding": "Discuss This Finding"
+		},
+		"workspaces": {
+			"title": "Workspaces",
+			"subtitle": "Contextual analysis views with quantified impact.",
+			"loading": "Loading workspaces...",
+			"empty": "No workspaces available.",
+			"monthly_loss": "Monthly Loss",
+			"issues": "Issues",
+			"confidence": "Confidence",
+			"top_issue": "Top Issue",
+			"cards": {
+				"total_monthly_loss": "Total Monthly Loss",
+				"highest_impact": "Highest Impact",
+				"issues_found": "Issues Found",
+				"confidence": "Confidence"
+			},
+			"findings_heading": "Findings — {name}"
+		},
+		"chat": {
+			"title": "Ask Vestigio",
+			"subtitle": "Choose a question, run a playbook, or type your own.",
+			"placeholder": "Ask Vestigio...",
+			"send": "Send",
+			"open_playbooks": "Open Playbooks",
+			"clear_context": "Clear context",
+			"est_monthly_loss": "Est. Monthly Loss",
+			"suggested_followups": "Suggested follow-ups",
+			"next_step": "Next step",
+			"why": "Why",
+			"analysis": "Analysis",
+			"actions": "Actions",
+			"analyzing_finding": "Analyzing Finding",
+			"batch_analysis": "Batch Analysis",
+			"findings_selected": "findings selected",
+			"shared": "Shared: ",
+			"confidence": "% confidence",
+			"discussing_finding": "Discussing finding",
+			"batch_analysis_label": "Batch analysis",
+			"findings_label": "findings",
+			"playbook_running": "Playbook running",
+			"playbook_step": "Step {step}/{total}",
+			"no_context": "No analysis context loaded. Complete onboarding first.",
+			"step_failed": "Step could not be completed.",
+			"preset_questions": {
+				"scale_traffic": "Can I scale traffic?",
+				"losing_money": "Where am I losing money?",
+				"underlying_cause": "What is the underlying cause?",
+				"fix_first": "What should I fix first?"
+			},
+			"validation": {
+				"accidental": "This looks like an accidental submit.",
+				"too_short": "Input is too short to be useful.",
+				"too_vague": "Too vague — try asking about revenue, scaling, or what to fix.",
+				"too_broad": "This question is broad. A specific version gives better results.",
+				"try_specific": "Try a more specific question for better results.",
+				"asked_recently": "You asked this recently. Try a follow-up instead."
+			},
+			"playbooks": {
+				"revenue_leaks": {
+					"title": "Find Revenue Leaks",
+					"description": "Identify where money is being lost in your conversion funnel."
+				},
+				"conversion": {
+					"title": "Improve Conversion",
+					"description": "Analyze your checkout and conversion paths for friction points."
+				},
+				"chargeback": {
+					"title": "Reduce Chargeback Risk",
+					"description": "Identify trust gaps and policy issues increasing chargebacks."
+				},
+				"onboarding": {
+					"title": "Audit Onboarding Friction",
+					"description": "Check your onboarding flow for friction and activation blockers."
+				},
+				"trust": {
+					"title": "Check Trust & Readiness",
+					"description": "Evaluate whether your site builds enough trust to convert."
+				},
+				"landing_vs_app": {
+					"title": "Landing vs App Reality",
+					"description": "Compare what your landing page promises vs what the app delivers."
+				}
+			}
+		},
+		"actions": {
+			"title": "Actions",
+			"subtitle": "Globally prioritized actions sorted by estimated financial impact. Fix what matters most.",
+			"loading": "Loading prioritized actions...",
+			"empty": "No actions required. Your site has no significant issues detected.",
+			"cards": {
+				"total_actions": "Total Actions",
+				"total_impact": "Total Impact Addressable",
+				"per_month_midpoint": "/month (midpoint)",
+				"cross_pack": "Cross-Pack",
+				"high_severity": "High Severity"
+			},
+			"scope": {
+				"cross_pack": "cross-pack",
+				"single": "single"
+			},
+			"drawer": {
+				"what_fixes": "What This Fixes",
+				"impact_unlocked": "Impact Unlocked",
+				"monthly_range": "Monthly Range",
+				"midpoint": "Midpoint",
+				"root_cause": "Root Cause",
+				"scope": "Scope",
+				"affects_multiple": "Affects multiple packs",
+				"single_pack": "Single pack",
+				"request_verification": "Request Verification"
+			}
+		},
+		"data_sources": {
+			"title": "Data Sources",
+			"subtitle": "Connect behavioral intelligence and commerce data",
+			"snippet_section": "Behavioral Snippet",
+			"commerce_section": "Commerce Platforms",
+			"snippet_label": "Your snippet code:",
+			"copy": "Copy",
+			"copied": "Copied!",
+			"copy_snippet": "Copy snippet",
+			"connect": "Connect",
+			"status": {
+				"connected": "Connected",
+				"error": "Error",
+				"not_connected": "Not connected"
+			},
+			"last_event": "Last event: ",
+			"integrations": {
+				"shopify": {
+					"name": "Shopify Runtime Pixel",
+					"description": "Add to Shopify via Online Store > Preferences > Additional Scripts"
+				},
+				"wordpress": {
+					"name": "WordPress Runtime Pixel",
+					"description": "Add to WordPress via Appearance > Theme Editor > header.php"
+				},
+				"wix": {
+					"name": "Wix Runtime Pixel",
+					"description": "Add to Wix via Settings > Custom Code > Head"
+				},
+				"framer": {
+					"name": "Framer Runtime Pixel",
+					"description": "Add to Framer via Site Settings > Custom Code > Head"
+				},
+				"webflow": {
+					"name": "Webflow Runtime Pixel",
+					"description": "Add to Webflow via Project Settings > Custom Code > Head Code"
+				},
+				"vibecoding": {
+					"name": "Vibecoding Runtime Pixel",
+					"description": "Add the snippet to your HTML head tag"
+				},
+				"other": {
+					"name": "Other Platform",
+					"description": "Copy the snippet code and add it to your site's <head> tag"
+				},
+				"shopify_commerce": {
+					"name": "Shopify",
+					"description": "Connect your Shopify store for real revenue and order data"
+				}
+			}
+		},
+		"inventory": {
+			"title": "Inventory",
+			"subtitle": "Normalized surfaces across your commercial environment",
+			"cards": {
+				"total_surfaces": "Total Surfaces",
+				"live": "Live",
+				"commercial": "Commercial",
+				"with_findings": "With Findings"
+			},
+			"status": {
+				"live": "Live",
+				"not_seen": "Not seen",
+				"all": "All Status"
+			},
+			"type_filter": {
+				"all": "All Types",
+				"commercial": "Commercial",
+				"support": "Support",
+				"policy": "Policy",
+				"other": "Other"
+			},
+			"empty": {
+				"title": "No surfaces discovered yet",
+				"description": "Install the Vestigio snippet to start collecting behavioral data and surface inventory."
+			}
+		},
+		"maps": {
+			"title": "Maps",
+			"subtitle": "Causal visualization — see relationships between issues, root causes, and actions.",
+			"loading": "Generating maps...",
+			"empty": "No causal maps available yet.",
+			"node_types": {
+				"root_cause": "Root Cause",
+				"finding": "Finding",
+				"action": "Action",
+				"category": "Category"
+			},
+			"edge_types": {
+				"causal": "Causal",
+				"contributes": "Contributes",
+				"addresses": "Addresses"
+			},
+			"impact_unlocks": "unlocks {amount}/mo"
+		},
+		"onboard": {
+			"step_indicator": "Step {current}/{total}",
+			"nav": {
+				"previous": "Previous",
+				"next": "Next"
+			},
+			"org_name": {
+				"title": "Name your organization",
+				"subtitle": "This is your team or company name in Vestigio.",
+				"label": "Organization name",
+				"placeholder": "Acme Corp"
+			},
+			"domain": {
+				"title": "What domain do you want to audit?",
+				"subtitle": "Enter your website URL so Vestigio can start the analysis.",
+				"label": "Domain",
+				"placeholder": "https://example.com"
+			},
+			"business_context": {
+				"title": "Business context",
+				"subtitle": "Help Vestigio tailor its analysis to your business model.",
+				"business_type": "Business type",
+				"types": {
+					"ecommerce": "Ecommerce",
+					"ecommerce_desc": "Direct online sales",
+					"lead_gen": "Lead Gen",
+					"lead_gen_desc": "Lead capture and nurture",
+					"saas": "SaaS",
+					"saas_desc": "Subscription software",
+					"hybrid": "Hybrid",
+					"hybrid_desc": "Mixed business model"
+				},
+				"monthly_revenue": "Monthly revenue",
+				"monthly_revenue_placeholder": "e.g. $50k",
+				"avg_order_value": "Average order value",
+				"avg_order_value_placeholder": "e.g. $120",
+				"optional": "(optional)",
+				"conversion_model": "Conversion model",
+				"conversion_models": {
+					"checkout": "Checkout (on-site purchase)",
+					"whatsapp": "WhatsApp / Messaging",
+					"form": "Form Submission",
+					"external": "External Redirect"
+				}
+			},
+			"saas_access": {
+				"title": "Authenticated app access",
+				"subtitle": "Since you're running a SaaS, Vestigio can analyze your app behind the login wall.\nThis is optional — you can configure it later in Settings.",
+				"login_url": "App login URL",
+				"login_url_placeholder": "https://app.example.com/login",
+				"email": "Test account email",
+				"email_placeholder": "test@example.com",
+				"auth_method": "Auth method",
+				"auth_methods": {
+					"unknown": "Not sure",
+					"password": "Email + Password",
+					"oauth": "OAuth / SSO",
+					"magic_link": "Magic Link"
+				},
+				"mfa": "MFA / 2FA",
+				"mfa_options": {
+					"unknown": "Not sure",
+					"none": "No MFA",
+					"optional": "Optional",
+					"required": "Required"
+				},
+				"skip_note": "You can complete this later in Settings → Data Sources. Skipping will not affect your onboarding.",
+				"skip": "Skip for now"
+			},
+			"review": {
+				"title": "Review your setup",
+				"subtitle": "Confirm your details before choosing a plan.",
+				"organization": "Organization",
+				"domain": "Domain",
+				"business_type": "Business Type",
+				"monthly_revenue": "Monthly Revenue",
+				"avg_order_value": "Avg. Order Value",
+				"conversion_model": "Conversion Model",
+				"saas_access": "SaaS Access",
+				"not_provided": "Not provided",
+				"saas_skipped": "Skipped — configure later in Data Sources",
+				"saas_not_configured": "Not configured — configure later in Data Sources"
+			},
+			"plan": {
+				"title": "Choose your plan",
+				"subtitle": "A plan is required to activate Vestigio. You can upgrade anytime.",
+				"recommended": "Recommended",
+				"per_month": "/mo",
+				"redirecting": "Redirecting to checkout...",
+				"activate": "Activate {plan} — {price}/mo",
+				"stripe_note": "You will be redirected to Stripe for secure payment.",
+				"plans": {
+					"vestigio": {
+						"name": "Vestigio",
+						"price": "$99",
+						"features": [
+							"1 domain",
+							"50 MCP calls/mo",
+							"Full analysis",
+							"Impact quantification"
+						]
+					},
+					"pro": {
+						"name": "Vestigio Pro",
+						"price": "$199",
+						"features": [
+							"3 domains",
+							"250 MCP calls/mo",
+							"Continuous audits",
+							"Root cause maps"
+						]
+					},
+					"max": {
+						"name": "Vestigio Max",
+						"price": "$399",
+						"features": [
+							"10 domains",
+							"1000 MCP calls/mo",
+							"Credits system",
+							"Priority support"
+						]
+					}
+				}
+			},
+			"errors": {
+				"something_wrong": "Something went wrong",
+				"network_error": "Network error. Please try again."
+			}
+		},
+		"settings": {
+			"title": "Settings",
+			"subtitle": "Manage domains, review data coverage, and configure your account.",
+			"domains": {
+				"title": "Domains",
+				"description": "Domains are configured through onboarding and managed per environment."
+			},
+			"data_overview": {
+				"title": "Data Overview",
+				"description": "Data overview will be available after the first audit cycle completes."
+			},
+			"account": {
+				"title": "Account",
+				"description": "Account settings managed through the control plane."
+			}
+		}
+	},
+	"engine": {
+		"inference_titles": {
+			"trust_boundary_crossed": "Checkout trust continuity broken",
+			"policy_gap": "Consumer protection policies missing or incomplete",
+			"checkout_integrity": "Checkout structural integrity degraded",
+			"revenue_path_fragile": "Revenue path structurally fragile under scale",
+			"measurement_coverage": "Measurement infrastructure insufficient for optimization",
+			"conversion_flow_fragmented": "Conversion flow scattered across domains",
+			"friction_on_critical_path": "Friction barriers on the revenue path",
+			"revenue_leakage": "Revenue actively leaking from conversion path",
+			"trust_break_in_checkout": "Trust signals absent at the purchase moment",
+			"measurement_blindspot": "Blind spot on commercial page measurement",
+			"unclear_conversion_intent": "Primary conversion path unclear to visitors",
+			"refund_policy_gap": "Refund and return expectations undocumented",
+			"support_unreachable": "Customer support channels invisible or missing",
+			"expectation_misalignment": "Purchase expectations poorly set before checkout",
+			"dispute_risk_elevated": "Compound chargeback risk from multiple deficiencies",
+			"activation_blocked": "Activation path blocked before first value",
+			"activation_friction_high": "Onboarding friction eroding trial-to-paid conversion",
+			"unclear_next_step": "Users stranded without clear next action in onboarding",
+			"empty_state_without_guidance": "Empty screens driving early-session abandonment",
+			"navigation_overcomplex": "App navigation burying core features",
+			"feature_discovery_poor": "Key features hidden behind complex navigation",
+			"upgrade_invisible": "Upgrade surfaces hidden at value moments",
+			"upgrade_timing_wrong": "Upgrade prompts shown without value context",
+			"no_expansion_path": "No self-serve path from free to paid",
+			"landing_app_mismatch": "Landing page promise disconnected from app reality",
+			"critical_path_broken": "Revenue-critical pages unreachable",
+			"form_data_leaves_domain": "Buyer data leaving the domain through unrecognized form targets",
+			"checkout_provider_fragmented": "Checkout fragmented across competing providers",
+			"redirect_chain_erodes_checkout_trust": "Checkout trust eroded by redirect chain",
+			"commercial_journey_language_break": "Commercial journey switches language before conversion",
+			"commercial_pages_disconnected": "Commercial pages disconnected from main journey",
+			"untrusted_embeds_near_purchase": "Unknown external embeds weakening purchase trust",
+			"platform_checkout_risk_unaddressed": "Platform-specific checkout risk left unaddressed",
+			"post_purchase_confirmation_absent": "Post-purchase confirmation and return terms both absent",
+			"high_intent_surfaces_blind": "High-intent surfaces operating without optimization visibility",
+			"revenue_path_regressed": "Revenue path degraded since last audit",
+			"refund_terms_too_thin": "Refund and return terms too thin to defuse disputes",
+			"support_hidden_at_purchase": "Support exists but hidden when buyers need reassurance",
+			"trust_surface_too_thin": "Commercial trust signals too thin on high-intent surfaces",
+			"tracking_stack_gaps": "High-intent tracking stack incomplete where optimization matters",
+			"consent_undermining_measurement": "Consent setup silently undermining measurement continuity",
+			"mobile_commercial_path_blocked": "Mobile navigation blocking access to commercial paths",
+			"mobile_trust_weaker_than_desktop": "Mobile buyers routed into weaker trust experience than desktop",
+			"runtime_errors_interrupt_purchase": "Runtime failures interrupting the purchase journey",
+			"runtime_measurement_broken": "Runtime failures weakening measurement on high-intent paths",
+			"secondary_flows_bypass_trust_path": "Secondary commercial flows bypassing the main trust path",
+			"refund_process_unclear": "Refund process too vague to defuse post-purchase panic",
+			"post_purchase_proof_too_weak": "Post-purchase proof too weak to prevent disputes",
+			"support_reassurance_too_late": "Support reassurance appears too late in the buying journey",
+			"reassurance_routes_disconnected": "Reassurance content disconnected from the commercial journey",
+			"alternate_flows_unmeasured": "Alternate commercial flows operating without measurement",
+			"runtime_breaking_reassurance": "Runtime failures breaking support where buyers hesitate most",
+			"checkout_provider_path_weak": "Checkout sending buyers through a weaker-than-expected provider path",
+			"trust_and_measurement_both_absent": "Trust and measurement both absent on commercial paths",
+			"payment_surface_compromised": "Purchase surface exposed to unauthorized script influence",
+			"channel_traffic_divertible": "Customer traffic exposed to diversion through weakly governed surfaces",
+			"commerce_operations_exposed": "Operational admin surfaces publicly accessible near commercial infrastructure",
+			"traffic_landing_low_trust_posture": "Paid traffic landing inside a low-trust technical posture",
+			"channel_compromise_visible": "Commercial channel exposed to compromise patterns that trigger distrust",
+			"commercial_path_abuse_friendly": "Commercial path exposed to abuse-friendly technical conditions",
+			"checkout_trust_brittle_infrastructure": "Checkout trust anchored to brittle public infrastructure",
+			"economic_exploitation_active": "Commerce exposed to systematic economic exploitation",
+			"promotion_logic_exposed": "Promotion logic exposed to abusive discount behavior",
+			"cart_variant_weak_control": "Cart variants allow weaker pricing controls",
+			"hidden_discount_refund_route": "Hidden discount or refund routes weaken commercial safeguards",
+			"guessable_business_endpoint": "Business-critical commerce actions reachable through predictable paths",
+			"alternate_pricing_safeguard_bypass": "Alternate commercial actions bypass intended pricing safeguards",
+			"js_discovered_purchase_variant": "Hidden purchase paths operating outside the main safeguard model",
+			"dynamic_route_weak_control": "Deeper commerce logic governed more weakly than the visible purchase flow",
+			"hidden_support_burden": "Hidden support actions increase burden instead of reducing hesitation",
+			"alternate_variant_control_breakdown": "Trust, measurement, and pricing controls break on alternate commerce variants",
+			"deep_commerce_exploitation_risk": "Deeply reachable commerce surfaces easier to exploit than the primary flow",
+			"checkout_api_latency_degraded": "Checkout API latency degrading purchase completion",
+			"commercial_pages_slow": "Critical commerce pages slower than the rest of the site",
+			"paid_landing_overloaded": "Paid landing overloaded before buyers reach the first meaningful action",
+			"third_party_weight_delays_trust": "Third-party request weight delaying the moment of trust and intent",
+			"checkout_brittle_third_party": "Checkout reliability depends on brittle third-party services",
+			"purchase_blocked_failing_requests": "Purchase flow blocked by failing third-party requests",
+			"measurement_breaks_revenue_path": "Measurement continuity breaks on the path that generates revenue",
+			"purchase_before_deps_ready": "Buyers reach the purchase moment before critical dependencies are ready",
+			"trust_assets_late_load": "Trust and reassurance assets load too late to calm hesitation",
+			"mobile_heavy_runtime_chain": "Mobile commerce path degraded by heavy runtime dependency chain",
+			"mobile_trust_payment_deps_failing": "Support, payment, or trust layers fail on mobile-first sessions",
+			"trust_surfaces_unstable_deps": "Trust-critical surfaces rely on unstable external dependencies",
+			"commercial_pages_weak_search_representation": "High-intent pages not properly represented in search surfaces",
+			"social_previews_fail_commercial_value": "Shared links fail to communicate commercial value",
+			"brand_inconsistent_across_surfaces": "Brand appears inconsistently across search and sharing surfaces",
+			"commercial_pages_unlikely_indexed": "Commercial pages unlikely to be reliably indexed",
+			"weak_semantic_intent_signals": "Search and AI systems receive weak signals about page purpose",
+			"previews_disconnected_from_conversion": "Social and search previews disconnected from conversion intent",
+			"commercial_pages_not_exposed_for_discovery": "Key commercial pages not structurally exposed for discovery",
+			"lookalike_domain_competing_for_traffic": "Lookalike domains competing for brand traffic",
+			"external_sites_mimicking_brand": "External sites mimicking brand identity",
+			"brand_traffic_exposed_to_deceptive_surfaces": "Brand traffic exposed to deceptive landing surfaces",
+			"suspicious_domains_capturing_purchase_intent": "Suspicious domains positioned to capture purchase intent",
+			"customers_exposed_to_phishing_surfaces": "Customers exposed to potential phishing surfaces",
+			"brand_presence_diluted_across_variants": "Brand presence diluted across competing domain variants",
+			"policy_view_then_abandonment": "Users drop off after opening refund or return policies",
+			"high_intent_detour_before_abandonment": "High-intent sessions detour into reassurance content before abandonment",
+			"support_discovered_too_late_to_convert": "Support is being discovered too late to save the conversion",
+			"cta_visible_but_behaviorally_dead": "Commercial CTA is visible but behaviorally dead",
+			"purchase_hesitation_with_backtrack": "Users hesitate on the purchase step and backtrack into trust content",
+			"critical_step_retries_before_abandonment": "Critical commercial step triggers repeated retries before abandonment",
+			"mobile_fails_first_commercial_action": "Mobile users fail to progress past the first commercial action",
+			"funnel_step_alive_but_not_advancing": "Funnel step is alive but not advancing sessions",
+			"hesitation_before_conversion_missing_trust": "Users hesitate before conversion due to missing trust signals near CTA",
+			"pricing_hesitation_unclear_value": "Users delay conversion after viewing pricing due to unclear value justification",
+			"policy_detour_before_conversion": "Users open policies before converting due to trust uncertainty",
+			"cta_viewed_not_engaged": "Primary CTA is viewed but not engaged",
+			"sensitive_input_abandonment": "Users abandon after interacting with sensitive input",
+			"form_excessive_fields_before_conversion": "Form requires high-effort input before conversion due to excessive or sensitive fields",
+			"form_submission_retry_friction": "Users retry form submission multiple times",
+			"surface_oscillation_before_dropoff": "Back-and-forth between surfaces before dropoff due to unresolved decision friction",
+			"conversion_final_step_retry": "Conversion attempts require multiple retries due to friction in final steps",
+			"cta_late_availability_delays_action": "Users delay action due to late availability of primary CTA",
+			"checkout_abandon_no_feedback": "Users abandon after initiating checkout due to lack of immediate feedback or progress indication",
+			"sensitive_input_perceived_risk_dropoff": "Users drop off after entering sensitive information due to perceived risk"
+		},
+		"root_cause_titles": {
+			"trust_failure_at_checkout": "Trust failure at checkout",
+			"fragmented_conversion_path": "Fragmented conversion path",
+			"friction_barrier_on_path": "Friction barrier on critical path",
+			"measurement_blindspot": "Measurement blind spot",
+			"policy_deficiency": "Policy and compliance deficiency",
+			"active_revenue_leakage": "Active revenue leakage",
+			"weak_conversion_signal": "Weak conversion signal",
+			"support_gap": "Support accessibility gap",
+			"expectation_failure": "Customer expectation misalignment",
+			"elevated_dispute_risk": "Elevated dispute and chargeback risk",
+			"channel_integrity_compromise": "Channel integrity compromised",
+			"commerce_continuity_exposure": "Commerce continuity threatened by operational exposure",
+			"weak_channel_posture": "Weak channel technical posture",
+			"abuse_friendly_channel": "Abuse-friendly channel conditions",
+			"deep_commerce_abuse_surface": "Deep commerce surfaces exposed to systematic abuse",
+			"weak_commerce_governance": "Weak governance on discoverable commerce endpoints",
+			"uncontrolled_commerce_variant": "Uncontrolled commerce variants escaping the safeguard model",
+			"runtime_commerce_fragility": "Runtime fragility on commerce-critical surfaces",
+			"third_party_dependency_risk": "Third-party dependency risk on trust and purchase surfaces",
+			"saas_activation_barrier": "Activation barrier blocking trial-to-paid conversion",
+			"saas_product_experience_gap": "Product experience gap eroding perceived value",
+			"saas_expansion_blocked": "Expansion revenue blocked by invisible upgrade path",
+			"weak_discoverability_signals": "Weak search and social representation on commercial pages",
+			"inconsistent_surface_representation": "Inconsistent brand representation across discovery surfaces",
+			"commercial_pages_not_exposed": "Commercial pages not structurally exposed for crawling and discovery",
+			"weak_semantic_intent_signaling": "Weak semantic signals preventing search and AI understanding",
+			"brand_impersonation_exposure": "Brand exposed to active impersonation and fraud",
+			"traffic_interception_risk": "Brand traffic exposed to interception by lookalike domains",
+			"brand_surface_fragmentation": "Brand presence fragmented across competing domain variants",
+			"behavioral_hesitation_at_commitment": "Behavioral hesitation at the moment of purchase commitment",
+			"behavioral_path_disconnection": "Commercial path disconnected from behavioral reality",
+			"behavioral_value_justification_gap": "Value proposition fails to carry the price at the decision moment",
+			"behavioral_trust_failure_at_input": "Trust insufficient at sensitive data capture moment"
+		},
+		"root_cause_descriptions": {
+			"trust_failure_at_checkout": "Users encounter trust breaks during the checkout flow — off-domain handoffs, unknown providers, or missing trust signals reduce conversion and increase chargeback risk.",
+			"fragmented_conversion_path": "The conversion path is structurally fragmented across multiple domains or requires excessive steps, causing drop-off at each transition.",
+			"friction_barrier_on_path": "Technical obstacles on the revenue path — slow pages, broken forms, excessive redirects — create friction that directly reduces conversion rate.",
+			"measurement_blindspot": "Analytics coverage is insufficient to measure conversion performance. Revenue leakage cannot be quantified or optimized.",
+			"policy_deficiency": "Required consumer protection policies (privacy, terms, refund) are missing or incomplete, creating legal and trust risk.",
+			"active_revenue_leakage": "Revenue is actively being lost through broken forms, missing conversion paths, or fragmented checkout flows.",
+			"weak_conversion_signal": "Users cannot find or understand the primary conversion path. Competing CTAs or missing calls-to-action reduce purchase intent.",
+			"support_gap": "Customers cannot reach support effectively. Missing or low-visibility contact methods force dissatisfied customers toward chargeback as their only recourse.",
+			"channel_integrity_compromise": "The commercial channel is exposed to compromise through script injection, traffic diversion, or weakly governed infrastructure — creating active fraud exposure and trust collapse on purchase surfaces.",
+			"commerce_continuity_exposure": "Operational surfaces (admin panels, debug endpoints, configuration files) are publicly accessible near the commercial footprint — enabling pricing manipulation, checkout disruption, or data extraction.",
+			"weak_channel_posture": "The public technical posture of the commercial domain signals weakness to browsers and cautious buyers — missing security indicators, mixed content, or certificate issues suppress conversion before the offer is read.",
+			"abuse_friendly_channel": "Exposed APIs, schema introspection, or unprotected business-logic endpoints enable automated fraud, pricing abuse, and inventory manipulation at scale.",
+			"deep_commerce_abuse_surface": "Deep-discovered discount, cart, and refund routes expose pricing controls and commercial safeguards to systematic abuse — automated tools exploit discoverable endpoints to manipulate margins, enumerate coupons, and initiate fraudulent refunds.",
+			"weak_commerce_governance": "Business-critical commerce endpoints follow predictable patterns and lack safeguards proportional to their importance — guessable billing, order, and account actions are reachable outside the intended protection model.",
+			"uncontrolled_commerce_variant": "JavaScript-discovered and dynamically rendered commerce variants operate outside the main trust, measurement, and pricing safeguard model — revenue through these paths is simultaneously unprotected and invisible to analytics.",
+			"runtime_commerce_fragility": "The commerce-critical runtime — checkout APIs, payment processing, cart operations — suffers from latency, overloaded dependencies, and sequencing problems that degrade purchase completion under real browser conditions.",
+			"third_party_dependency_risk": "Trust, payment, and measurement layers depend on external services that fail, load late, or add excessive weight — making conversion and trust formation fragile to third-party reliability.",
+			"saas_activation_barrier": "The activation path blocks or frustrates trial users before they reach product value — high-complexity onboarding, missing next steps, or landing-to-app disconnect cause trial-to-paid conversion loss.",
+			"saas_product_experience_gap": "The in-product experience fails to demonstrate value — empty states without guidance, buried features, and complex navigation prevent users from discovering what the product can do for them.",
+			"saas_expansion_blocked": "Users who would pay cannot find or evaluate the upgrade path — hidden pricing, absent upgrade CTAs, or poorly timed prompts cap revenue at the current tier.",
+			"weak_discoverability_signals": "Commercial pages have missing or thin titles, descriptions, and social preview tags — search engines and social platforms cannot properly represent the brand offering, reducing click-through on every discoverable query.",
+			"inconsistent_surface_representation": "The brand appears differently across search results, social previews, and AI summaries — inconsistency reduces recognition and trust before buyers reach the site.",
+			"commercial_pages_not_exposed": "Revenue-generating pages have indexing problems or no internal links — search crawlers cannot discover them and organic demand for these products is invisible.",
+			"weak_semantic_intent_signaling": "Without structured data, search engines and AI assistants cannot understand page purpose — resulting in lower ranking for commercial queries and inaccurate AI-generated summaries.",
+			"brand_impersonation_exposure": "Active lookalike domains with brand similarity and commerce patterns — positioned to intercept traffic, process fraudulent transactions, and damage brand trust through confusion.",
+			"traffic_interception_risk": "Typosquat and brand-keyword domains capture mistyped or search-diverted traffic — every intercepted visitor is a direct loss of brand-earned demand.",
+			"brand_surface_fragmentation": "The brand presence is split across many domain variants — diluting search authority, splitting ranking signals, and creating buyer confusion about which surface is legitimate.",
+			"behavioral_hesitation_at_commitment": "Real user sessions reveal hesitation at the moment of purchase — buyers reach the commercial step, seek reassurance elsewhere, and abandon. The gap between intent and confidence is behaviorally observable and recoverable.",
+			"behavioral_path_disconnection": "The commercial path exists structurally but fails behaviorally — funnel steps do not advance sessions, CTAs do not generate engagement, mobile entry points are broken, and critical steps trigger retries instead of progression.",
+			"behavioral_value_justification_gap": "Users view pricing and evaluate the offer but the surrounding context fails to justify the price — they backtrack to product pages, oscillate between surfaces, or abandon. The value proposition is structurally present but behaviorally insufficient to close the gap between price awareness and purchase confidence.",
+			"behavioral_trust_failure_at_input": "Forms on conversion-proximate surfaces request sensitive data without adequate trust context — users encounter email, payment, or identity fields but the trust signals (security indicators, privacy reassurance, provider recognition) are insufficient for the sensitivity level. The mismatch between what is asked and what is promised causes immediate dropoff.",
+			"expectation_failure": "Customer expectations are not properly set — missing pricing visibility, no order confirmation, or brand disconnect at checkout create confusion about what was purchased.",
+			"elevated_dispute_risk": "Multiple structural factors — missing policies, unreachable support, unclear expectations — compound to create elevated chargeback and dispute exposure."
+		},
+		"positive_checks": {
+			"strong_cta_clarity": {
+				"title": "Conversion intent is clear and unambiguous",
+				"description": "The primary conversion path is identifiable and free of competing calls-to-action. Visitors can find how to purchase."
+			},
+			"trust_continuity_good": {
+				"title": "Trust continuity maintained through checkout",
+				"description": "The conversion flow stays on-domain with no trust boundary breaks. Users are not redirected to unknown domains during purchase."
+			},
+			"policy_coverage_complete": {
+				"title": "Consumer protection policies in place",
+				"description": "Privacy, terms, and refund policies are present and accessible. This supports buyer confidence and regulatory compliance."
+			},
+			"low_friction_checkout": {
+				"title": "Revenue path free of structural friction",
+				"description": "No broken forms, excessive redirects, or slow-loading pages detected on the conversion path. The path from intent to purchase is clean."
+			},
+			"measurement_covered": {
+				"title": "Measurement infrastructure covers commercial paths",
+				"description": "Analytics tools are present at sufficient depth to support attribution, optimization, and conversion measurement."
+			},
+			"support_reachable": {
+				"title": "Support channels visible and accessible",
+				"description": "Contact methods are available and discoverable. Customers can resolve issues through support rather than filing disputes."
+			},
+			"smooth_activation": {
+				"title": "Activation flow is clear and low-friction",
+				"description": "The onboarding path has clear next steps, progress indicators, and manageable complexity. New users can reach value quickly."
+			},
+			"navigation_clean": {
+				"title": "App navigation is clean and navigable",
+				"description": "Navigation structure is manageable in depth and breadth. Users can find core features without being overwhelmed."
+			},
+			"upgrade_path_visible": {
+				"title": "Upgrade path is visible with clear value context",
+				"description": "Upgrade surfaces are present, prominent, and include value propositions. Users can discover and evaluate paid plans."
+			},
+			"empty_states_guided": {
+				"title": "Empty states provide clear guidance",
+				"description": "Empty screens include direction, sample data options, or next-step guidance. New users are not left staring at blank interfaces."
+			}
+		},
+		"field_kind_labels": {
+			"email": "email",
+			"phone": "phone number",
+			"card_like": "payment card",
+			"cpf_cnpj_like": "identity document",
+			"password": "password",
+			"address": "address",
+			"name": "name",
+			"company": "company",
+			"coupon": "coupon"
+		},
+		"parametric_titles": {
+			"sensitive_input_abandonment": "Users abandon after interacting with {field_kind} input",
+			"surface_oscillation_before_dropoff": "Back-and-forth between {surfaceA} and {surfaceB} before dropoff due to unresolved decision friction"
+		},
+		"actions": {
+			"default_primary": "Review findings and address highest severity issues first.",
+			"default_verification": "Re-run analysis after changes to confirm resolution.",
+			"scale_readiness": {
+				"block_primary": "Do not scale traffic until critical issues are resolved.",
+				"block_fix_checkout": "Fix checkout integrity: ensure checkout flow stays on-domain or uses a verified provider.",
+				"block_resolve_trust": "Resolve trust boundary issues: reduce off-domain handoffs or verify external providers.",
+				"block_add_policies": "Add missing policies: privacy, terms, and refund policies are required for commercial sites.",
+				"block_verify_full": "Re-run full analysis after fixes to confirm readiness.",
+				"block_verify_checkout": "Verify checkout flow manually before scaling.",
+				"fix_primary": "Address high-priority issues before increasing traffic significantly.",
+				"fix_improve_policy": "Improve policy coverage to reduce compliance risk.",
+				"fix_install_analytics": "Install analytics tools to enable proper attribution and optimization.",
+				"fix_strengthen_revenue": "Strengthen revenue path: reduce redirects and friction in the conversion flow.",
+				"fix_verify": "Re-run analysis after implementing changes.",
+				"optimize_primary": "Traffic can be scaled. Monitor for regressions.",
+				"optimize_measurement": "Consider improving measurement coverage for better optimization.",
+				"optimize_verify": "Schedule periodic re-analysis to detect regressions."
+			},
+			"revenue_integrity": {
+				"block_primary": "Revenue is actively leaking. Fix the conversion path immediately.",
+				"block_close_leak": "Close revenue leak points: fix broken forms, consolidate checkout to one domain, and ensure clear conversion entry.",
+				"block_consolidate": "Consolidate conversion path: reduce external host fragmentation and eliminate unnecessary redirects before checkout.",
+				"block_restore_trust": "Restore trust at checkout: add policies, verify providers, ensure brand continuity through the purchase flow.",
+				"block_reduce_friction": "Reduce critical path friction: fix broken form actions, speed up slow pages, eliminate unnecessary redirects.",
+				"block_verify_revenue": "Re-run revenue analysis after fixes to confirm leakage is resolved.",
+				"block_verify_conversion": "Monitor conversion rate after changes to measure improvement.",
+				"fix_primary": "Revenue path has structural issues. Address before scaling ad spend.",
+				"fix_measurement": "Improve measurement: install analytics on commercial pages to make revenue leakage visible.",
+				"fix_clarify_intent": "Clarify conversion intent: establish a clear primary CTA and reduce competing actions.",
+				"fix_streamline": "Streamline checkout flow: minimize handoffs and keep the conversion path on-domain where possible.",
+				"fix_verify": "Re-run analysis after implementing changes.",
+				"optimize_primary": "Revenue path is functional but has optimization opportunities.",
+				"optimize_measurement": "Improve measurement coverage to better quantify revenue impact.",
+				"optimize_clarify": "Clarify primary conversion path for better conversion rates.",
+				"optimize_verify": "Schedule periodic revenue analysis to track improvements.",
+				"stable_primary": "Revenue integrity is stable. No significant leakage detected.",
+				"stable_verify": "Schedule periodic revenue analysis to detect regressions."
+			},
+			"chargeback": {
+				"block_primary": "High chargeback exposure. Add refund policy, support channels, and trust signals immediately.",
+				"block_refund_policy": "Add a clear, accessible refund/return policy. This is the single most effective chargeback prevention measure.",
+				"block_add_support": "Add visible support channels (email, phone, or chat). Customers who can reach support resolve issues without disputes.",
+				"block_clarify_pricing": "Clarify pricing and add order confirmation. Expectation misalignment drives \"unauthorized charge\" disputes.",
+				"block_verify_policies": "Re-run analysis after adding policies and support channels.",
+				"block_verify_checkout": "Review checkout flow for brand continuity and charge clarity.",
+				"fix_primary": "Moderate chargeback risk. Strengthen policies and support before scaling.",
+				"fix_refund": "Improve refund policy clarity and accessibility.",
+				"fix_support": "Add additional support channels for better customer accessibility.",
+				"fix_confirmation": "Add order confirmation and pricing transparency.",
+				"fix_verify": "Re-run analysis after improvements.",
+				"optimize_primary": "Low chargeback risk. Minor improvements available.",
+				"optimize_support": "Consider adding more support channels for redundancy.",
+				"optimize_communication": "Improve post-purchase communication for better customer experience.",
+				"optimize_verify": "Monitor chargeback rates periodically.",
+				"strong_primary": "Chargeback resilience is strong. Continue monitoring.",
+				"strong_verify": "Schedule periodic chargeback risk assessment."
+			}
+		},
+		"summaries": {
+			"unsafe_to_scale_traffic": "Scaling traffic is unsafe. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Critical issues must be resolved first.",
+			"fix_before_scale": "Issues should be fixed before scaling traffic. Risk score: {risk_score}/100, confidence: {confidence_score}/100.",
+			"ready_with_risks": "Traffic can be scaled with caution. Some risks remain (score: {risk_score}/100) but are not blocking.",
+			"safe_to_scale": "Safe to scale traffic. No significant risks detected (score: {risk_score}/100).",
+			"revenue_leakage_detected": "Active revenue leakage detected. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Conversion path has critical structural issues losing money.",
+			"revenue_at_risk": "Revenue path has significant issues. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Fix before increasing ad spend.",
+			"revenue_path_fragile": "Revenue path is functional but fragile. Risk score: {risk_score}/100. Optimization opportunities exist to reduce leakage.",
+			"revenue_integrity_stable": "Revenue integrity is stable. No significant leakage detected (score: {risk_score}/100).",
+			"high_chargeback_risk": "High chargeback risk. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Missing policies, support gaps, and expectation issues create significant dispute exposure.",
+			"moderate_chargeback_risk": "Moderate chargeback risk. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Some protective measures are missing.",
+			"low_chargeback_risk": "Low chargeback risk. Risk score: {risk_score}/100. Minor improvements available but not blocking.",
+			"chargeback_resilience_strong": "Chargeback resilience is strong. No significant dispute risk detected (score: {risk_score}/100).",
+			"default_summary": "Decision: {decision_key}. Risk: {risk_score}/100, Confidence: {confidence_score}/100."
+		},
+		"confidence_narrative": {
+			"high_high": "Analysis is structurally sound and economic estimates are well-calibrated.",
+			"high_not_high": "Structural analysis is reliable, but economic estimates carry uncertainty. The issues identified are real; the dollar amounts should be treated as directional.",
+			"not_high_high": "Economic data is strong but structural evidence could be stronger. Consider verification to strengthen confidence in the identified issues.",
+			"low_low": "Both structural evidence and economic data carry uncertainty. Findings are directional — verify before taking action on specific dollar estimates.",
+			"profile_stale": "Business profile is {days} days old",
+			"drift_detected": "{count} profile drift signal(s) detected",
+			"heuristic_basis": "{count} finding(s) using estimated business metrics",
+			"confidence_unhealthy": "Confidence pipeline has integrity issues"
+		},
+		"workspace_names": {
+			"preflight": "Preflight",
+			"revenue": "Revenue Analysis",
+			"chargeback": "Chargeback Analysis",
+			"saas": "SaaS Growth"
+		}
+	}
+}

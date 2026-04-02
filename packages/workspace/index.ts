@@ -1,0 +1,12 @@
+export { createPreflightWorkspace } from './workspace';
+export type { WorkspaceConfig, WorkspaceType, WorkspaceResult } from './workspace';
+export { createRevenueWorkspace } from './revenue-workspace';
+export type { RevenueWorkspaceConfig, RevenueWorkspaceResult, RevenueContext, LeakagePoint, RevenueSummary } from './revenue-workspace';
+export { createChargebackWorkspace } from './chargeback-workspace';
+export type { ChargebackWorkspaceConfig, ChargebackWorkspaceResult, ChargebackContext, ChargebackRiskFactor, ChargebackSummary } from './chargeback-workspace';
+export { recompute, recomputeAll } from './recompute';
+export type { RecomputeInput, RecomputeResult, GraphStats, MultiPackInput, MultiPackResult } from './recompute';
+export { buildConfidenceAudit } from './confidence-audit';
+export type { ConfidenceIntegrityResult, ConfidenceAdjustment, ConfidenceIssue, LayerImpactSummary, ConfidenceLayer } from './confidence-audit';
+export { validateBehavior } from './behavioral-validation';
+export type { BehavioralValidationResult, BehavioralValidation } from './behavioral-validation';

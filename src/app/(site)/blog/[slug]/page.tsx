@@ -1,13 +1,15 @@
 import RenderBodyContent from "@/components/Blog/RenderBodyContent";
 import SocialShare from "@/components/Blog/SocialShare";
 import CopyToClipboard from "@/components/Common/CopyToClipboard";
-import { structuredAlgoliaHtmlData } from "@/libs/crawlIndex";
 import { getPostBySlug, imageBuilder } from "@/sanity/sanity-utils";
 import { Blog } from "@/types/blog";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import Link from "next/link";
 import { integrations, messages } from "../../../../../integrations.config";
+
+// Force dynamic rendering — avoids build-time data collection errors
+export const dynamic = "force-dynamic";
 
 type Props = {
 	params: Promise<{
@@ -94,16 +96,6 @@ const SingleBlog = async (props: Props) => {
 		? await getPostBySlug(slug)
 		: ({} as Blog);
 	const postURL = `${process.env.SITE_URL}blog/${post?.slug?.current}`;
-
-	if (post) {
-		await structuredAlgoliaHtmlData({
-			type: "blog",
-			title: post?.title || "",
-			htmlString: post?.metadata || "",
-			pageUrl: `${process.env.SITE_URL}/blog/${post?.slug?.current}`,
-			imageURL: imageBuilder(post?.mainImage).url() as string,
-		});
-	}
 
 	const t = await getTranslations("common");
 

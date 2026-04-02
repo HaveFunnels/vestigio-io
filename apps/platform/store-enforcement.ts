@@ -6,6 +6,8 @@ import { setAuthLogPrisma } from './auth-logging';
 import { setMcpPersistenceStore, InMemoryMcpPersistenceStore, PrismaMcpPersistenceStore } from './mcp-persistence';
 import { setTokenLedgerStore, InMemoryTokenLedgerStore, PrismaTokenLedgerStore } from './token-ledger';
 import { setConversationStore, InMemoryConversationStore, PrismaConversationStore } from './conversation-store';
+import { isRedisConfigured } from '../../src/libs/redis';
+import { isRedisJobQueue } from './redis-job-queue';
 
 // ──────────────────────────────────────────────
 // Production Store Enforcement
@@ -96,7 +98,11 @@ export function validateStoreConfiguration(): {
     }
   }
 
-  return { valid: true, message: 'Store configuration OK' };
+  const redisStatus = isRedisConfigured()
+    ? (isRedisJobQueue() ? 'Redis job queue active' : 'Redis configured (connecting)')
+    : 'no Redis (in-memory job queue)';
+
+  return { valid: true, message: `Store configuration OK — ${redisStatus}` };
 }
 
 // For testing: reset initialization flag

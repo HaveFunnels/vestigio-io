@@ -12,6 +12,7 @@ export interface PlanConfig {
   key: string;
   label: string;
   priceId: string;          // Stripe price ID
+  paddleProductId?: string; // Paddle product ID (auto-synced)
   paddlePriceId?: string;   // Paddle price ID
   lemonSqueezyPriceId?: string;
   monthlyPriceCents: number;
@@ -23,9 +24,9 @@ export interface PlanConfig {
 }
 
 const DEFAULT_PLANS: PlanConfig[] = [
-  { key: "vestigio", label: "Vestigio", priceId: "", paddlePriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
-  { key: "pro", label: "Vestigio Pro", priceId: "", paddlePriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
-  { key: "max", label: "Vestigio Max", priceId: "", paddlePriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
+  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
+  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
+  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
 ];
 
 let cached: PlanConfig[] | null = null;

@@ -11,6 +11,7 @@ interface PlanConfig {
   key: string;
   label: string;
   priceId: string;
+  paddleProductId: string;
   paddlePriceId: string;
   lemonSqueezyPriceId: string;
   monthlyPriceCents: number;
@@ -33,6 +34,9 @@ export default function AdminPricingPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paddleSyncing, setPaddleSyncing] = useState(false);
+  const [paddleSyncStatus, setPaddleSyncStatus] = useState<string | null>(null);
+  const [paddleSyncError, setPaddleSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/pricing")
@@ -40,6 +44,7 @@ export default function AdminPricingPage() {
       .then((data) => {
         setPlans(data.plans.map((p: any) => ({
           ...p,
+          paddleProductId: p.paddleProductId || "",
           paddlePriceId: p.paddlePriceId || "",
           lemonSqueezyPriceId: p.lemonSqueezyPriceId || "",
         })));
@@ -61,6 +66,7 @@ export default function AdminPricingPage() {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
+    setPaddleSyncError(null);
     try {
       const res = await fetch("/api/admin/pricing", {
         method: "POST",
@@ -71,12 +77,58 @@ export default function AdminPricingPage() {
         const data = await res.json();
         throw new Error(data.message || "Save failed");
       }
+      const data = await res.json();
+      // Update plans with any new Paddle IDs from sync
+      if (data.plans) {
+        setPlans(data.plans.map((p: any) => ({
+          ...p,
+          paddleProductId: p.paddleProductId || "",
+          paddlePriceId: p.paddlePriceId || "",
+          lemonSqueezyPriceId: p.lemonSqueezyPriceId || "",
+        })));
+      }
+      if (data.paddleSyncError) {
+        setPaddleSyncError(data.paddleSyncError);
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePaddleSync = async () => {
+    setPaddleSyncing(true);
+    setPaddleSyncError(null);
+    setPaddleSyncStatus(null);
+    try {
+      const res = await fetch("/api/admin/pricing/paddle-sync", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Paddle sync failed");
+      }
+      // Update plans with synced Paddle IDs
+      if (data.plans) {
+        setPlans(data.plans.map((p: any) => ({
+          ...p,
+          paddleProductId: p.paddleProductId || "",
+          paddlePriceId: p.paddlePriceId || "",
+          lemonSqueezyPriceId: p.lemonSqueezyPriceId || "",
+        })));
+      }
+      setPaddleSyncStatus(data.message);
+      if (data.errors) {
+        setPaddleSyncError(data.errors.join("; "));
+      }
+      setTimeout(() => setPaddleSyncStatus(null), 5000);
+    } catch (err: any) {
+      setPaddleSyncError(err.message);
+    } finally {
+      setPaddleSyncing(false);
     }
   };
 
@@ -164,13 +216,14 @@ export default function AdminPricingPage() {
       {/* Price IDs per provider */}
       <div className="mb-8 space-y-4">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-body-color">Payment Provider Price IDs</h2>
-        <p className="text-xs text-body-color">Configure the price IDs from each payment provider dashboard.</p>
+        <p className="text-xs text-body-color">Configure the price IDs from each payment provider dashboard. Paddle IDs marked &quot;auto&quot; are managed via Sync.</p>
         <div className="overflow-x-auto rounded-lg border border-stroke dark:border-stroke-dark">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-stroke bg-gray-1 dark:border-stroke-dark dark:bg-gray-dark">
                 <th className="px-4 py-3 font-medium">Plan</th>
                 <th className="px-4 py-3 font-medium">Stripe Price ID</th>
+                <th className="px-4 py-3 font-medium">Paddle Product ID</th>
                 <th className="px-4 py-3 font-medium">Paddle Price ID</th>
                 <th className="px-4 py-3 font-medium">Lemon Squeezy ID</th>
               </tr>
@@ -185,9 +238,24 @@ export default function AdminPricingPage() {
                       className="w-64 rounded border border-stroke bg-transparent px-2 py-1 text-xs font-mono dark:border-stroke-dark" />
                   </td>
                   <td className="px-4 py-3">
-                    <input type="text" value={plan.paddlePriceId} placeholder="pri_..."
-                      onChange={(e) => updatePlan(i, "paddlePriceId", e.target.value)}
-                      className="w-64 rounded border border-stroke bg-transparent px-2 py-1 text-xs font-mono dark:border-stroke-dark" />
+                    {plan.paddleProductId ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-mono text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        {plan.paddleProductId}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-body-color/50 italic">Not synced</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {plan.paddlePriceId ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-mono text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        {plan.paddlePriceId}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-body-color/50 italic">Not synced</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <input type="text" value={plan.lemonSqueezyPriceId} placeholder="375601"
@@ -199,6 +267,61 @@ export default function AdminPricingPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Paddle Sync */}
+      <div className="mb-8 space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-body-color">Paddle Sync</h2>
+        <p className="text-xs text-body-color">
+          Automatically create products and prices in Paddle for plans that are missing IDs.
+          Paddle IDs are auto-generated when you save, or you can trigger a manual sync.
+        </p>
+
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handlePaddleSync}
+            disabled={paddleSyncing}
+            className="rounded-md border border-stroke bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-1 disabled:opacity-50 dark:border-stroke-dark dark:hover:bg-gray-dark"
+          >
+            {paddleSyncing ? (
+              <span className="flex items-center gap-2">
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-zinc-600 border-t-emerald-500" />
+                Syncing...
+              </span>
+            ) : (
+              "Sync to Paddle"
+            )}
+          </button>
+
+          {/* Sync status indicator */}
+          {paddleSyncStatus && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {paddleSyncStatus}
+            </span>
+          )}
+
+          {/* Overall sync status based on plan data */}
+          {!paddleSyncStatus && plans.length > 0 && (
+            plans.every((p) => p.paddleProductId && p.paddlePriceId) ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                All plans synced
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-xs text-amber-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {plans.filter((p) => !p.paddleProductId || !p.paddlePriceId).length} plan(s) not synced
+              </span>
+            )
+          )}
+        </div>
+
+        {paddleSyncError && (
+          <div className="rounded-md border border-red-800/50 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+            Paddle sync error: {paddleSyncError}
+          </div>
+        )}
       </div>
 
       {/* Credit pricing */}

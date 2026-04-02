@@ -25,6 +25,7 @@ const PRODUCTION_REQUIRED_VARS: { key: string; description: string }[] = [
 ];
 
 const PRODUCTION_RECOMMENDED_VARS: { key: string; description: string }[] = [
+  { key: 'REDIS_URL', description: 'Redis connection URL for job queue, rate limiting, and session persistence' },
   { key: 'PADDLE_API_KEY', description: 'Paddle API key (primary payment)' },
   { key: 'NEXT_PUBLIC_PADDLE_CLIENT_TOKEN', description: 'Paddle client token for checkout' },
   { key: 'STRIPE_SECRET_KEY', description: 'Stripe API key (fallback payment)' },

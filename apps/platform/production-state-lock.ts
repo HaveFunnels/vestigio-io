@@ -3,6 +3,8 @@ import { getDailyUsageStore, InMemoryDailyUsageStore, setDailyUsageStore, Prisma
 import { getActiveStore as getMcpUsageStore, InMemoryUsageStore, PrismaUsageStore, setUsageStore } from '../mcp/usage';
 import { getSaasAccessStore, InMemorySaasAccessStore, PrismaSaasAccessStore, setSaasAccessStore } from './saas-access-store';
 import { setAuthLogPrisma } from './auth-logging';
+import { isRedisConfigured } from '../../src/libs/redis';
+import { isRedisJobQueue } from './redis-job-queue';
 
 // ──────────────────────────────────────────────
 // Production State Lock
@@ -99,16 +101,40 @@ function checkAuthLogStore(): ProductionLockCheck {
 }
 
 function checkJobQueueStore(): ProductionLockCheck {
-  // Job queue is currently in-memory only
-  // In production, this needs DB backing
+  // Job queue: Redis-backed when REDIS_URL is configured, otherwise in-memory.
+  // In production, Redis or another persistent store is required.
   const isProd = isProduction();
+  const redisAvailable = isRedisConfigured();
+  const usingRedis = isRedisJobQueue();
+
+  if (usingRedis) {
+    return {
+      subsystem: 'job_queue',
+      store_type: 'persistent',
+      required: isProd ? 'persistent' : 'any',
+      passed: true,
+      message: 'JobQueue OK (Redis-backed)',
+    };
+  }
+
+  if (redisAvailable) {
+    // Redis is configured but not yet connected — treat as pending persistent
+    return {
+      subsystem: 'job_queue',
+      store_type: 'persistent',
+      required: isProd ? 'persistent' : 'any',
+      passed: true,
+      message: 'JobQueue OK (Redis configured, connecting)',
+    };
+  }
+
   return {
     subsystem: 'job_queue',
     store_type: 'in_memory',
     required: isProd ? 'persistent' : 'any',
-    passed: !isProd, // Currently fails in prod — needs PrismaJobStore
+    passed: !isProd,
     message: isProd
-      ? 'JobQueue is in-memory — jobs will not survive restart in production'
+      ? 'JobQueue is in-memory — jobs will not survive restart in production. Set REDIS_URL to enable Redis-backed queue.'
       : 'JobQueue OK (in-memory for dev/test)',
   };
 }

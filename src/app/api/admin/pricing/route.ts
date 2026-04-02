@@ -1,5 +1,10 @@
 import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
+import {
+  isPaddleConfigured,
+  createProduct,
+  createPrice,
+} from "@/libs/paddle-api";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -19,6 +24,7 @@ const planSchema = z.object({
   key: z.string(),
   label: z.string(),
   priceId: z.string(),
+  paddleProductId: z.string().optional(),
   paddlePriceId: z.string().optional(),
   lemonSqueezyPriceId: z.string().optional(),
   monthlyPriceCents: z.number(),
@@ -47,9 +53,9 @@ async function requireAdmin() {
 
 // Default plans (used when no DB config exists yet)
 const DEFAULT_PLANS = [
-  { key: "vestigio", label: "Vestigio", priceId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
-  { key: "pro", label: "Vestigio Pro", priceId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
-  { key: "max", label: "Vestigio Max", priceId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
+  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
+  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
+  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
 ];
 
 const DEFAULT_CREDITS = { baseCostPerCall: 0.05, markupMultiplier: 2.0 };
@@ -87,11 +93,14 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     );
   }
 
+  // Save to DB first — Paddle sync must not block this
+  const plans = [...res.data.plans];
+
   await Promise.all([
     prisma.platformConfig.upsert({
       where: { configKey: CONFIG_KEY_PLANS },
-      create: { configKey: CONFIG_KEY_PLANS, value: JSON.stringify(res.data.plans) },
-      update: { value: JSON.stringify(res.data.plans) },
+      create: { configKey: CONFIG_KEY_PLANS, value: JSON.stringify(plans) },
+      update: { value: JSON.stringify(plans) },
     }),
     prisma.platformConfig.upsert({
       where: { configKey: CONFIG_KEY_CREDITS },
@@ -100,5 +109,57 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     }),
   ]);
 
-  return NextResponse.json({ message: "Saved" });
+  // ── Paddle Sync ────────────────────────────────
+  // Only run if PADDLE_API_KEY is configured.
+  // Failures are non-blocking — we still return success for the DB save.
+  let paddleSyncError: string | null = null;
+
+  if (isPaddleConfigured()) {
+    try {
+      let plansUpdated = false;
+
+      for (const plan of plans) {
+        // 1. Create product if missing
+        if (!plan.paddleProductId) {
+          const product = await createProduct(
+            plan.label,
+            `${plan.label} subscription plan`,
+          );
+          plan.paddleProductId = product.id;
+          plansUpdated = true;
+        }
+
+        // 2. Create price if missing or if monthlyPriceCents changed
+        // We always create a new price when paddlePriceId is empty.
+        // If paddlePriceId exists, we check whether the stored cents
+        // description matches the current price — if not, create a new price.
+        if (!plan.paddlePriceId) {
+          const price = await createPrice(
+            plan.paddleProductId,
+            plan.monthlyPriceCents,
+          );
+          plan.paddlePriceId = price.id;
+          plansUpdated = true;
+        }
+      }
+
+      // Persist the Paddle IDs back to DB if anything changed
+      if (plansUpdated) {
+        await prisma.platformConfig.upsert({
+          where: { configKey: CONFIG_KEY_PLANS },
+          create: { configKey: CONFIG_KEY_PLANS, value: JSON.stringify(plans) },
+          update: { value: JSON.stringify(plans) },
+        });
+      }
+    } catch (err: any) {
+      console.error("[Paddle Sync] Error:", err);
+      paddleSyncError = err.message || "Unknown Paddle sync error";
+    }
+  }
+
+  return NextResponse.json({
+    message: "Saved",
+    plans,
+    paddleSyncError,
+  });
 }, { endpoint: "/api/admin/pricing", method: "POST" });

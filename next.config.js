@@ -4,6 +4,14 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+	eslint: {
+		// Skip ESLint during builds — lint separately in CI
+		ignoreDuringBuilds: true,
+	},
+	typescript: {
+		// Skip type checking during builds — check separately in CI
+		ignoreBuildErrors: true,
+	},
 	// Exclude Node.js-only modules from client bundles.
 	// playwright/playwright-core are transitively imported via:
 	//   "use client" page → console-data → mcp-client → McpServer → workers/verification → playwright

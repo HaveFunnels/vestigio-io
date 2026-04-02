@@ -4,23 +4,73 @@ import { NextResponse } from "next/server";
 // ──────────────────────────────────────────────
 // Unified Middleware
 //
-// Route model:
+// Domain model:
+// - vestigio.io       → marketing (homepage, pricing, blog)
+// - app.vestigio.io   → authenticated app (dashboard, chat, admin)
+//
+// Route model (on app.vestigio.io):
 // - /app/*           → authenticated (any role)
 // - /app/admin/*     → platform ADMIN only
-// - /user            → redirect to /app
-// - /admin           → redirect to /app/admin/overview (if admin)
-// - /(console) routes → redirect to /app equivalents
+// - /auth/*          → login/signup/reset (public)
 //
-// Legacy /user and /admin routes remain for boilerplate
-// pages that are still needed (auth, billing portal).
+// Auth pages on the marketing domain redirect to app domain.
+// App routes on the marketing domain redirect to app domain.
 // ──────────────────────────────────────────────
+
+const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || "app.vestigio.io";
+const MARKETING_DOMAIN = process.env.NEXT_PUBLIC_MARKETING_DOMAIN || "vestigio.io";
+
+function isAppDomain(host: string): boolean {
+	// Match app.vestigio.io, app.vestigio.io:3000, localhost, Railway generated domain
+	return (
+		host.startsWith(`${APP_DOMAIN}`) ||
+		host.startsWith("localhost") ||
+		host.includes(".up.railway.app")
+	);
+}
+
+function isMarketingDomain(host: string): boolean {
+	// Match vestigio.io (no subdomain) or www.vestigio.io
+	const stripped = host.split(":")[0]; // remove port
+	return (
+		stripped === MARKETING_DOMAIN ||
+		stripped === `www.${MARKETING_DOMAIN}`
+	);
+}
+
+function appUrl(path: string, req: NextRequestWithAuth): URL {
+	// In production, redirect to app.vestigio.io
+	// In dev / Railway preview, use the current host
+	const host = req.headers.get("host") || "";
+	if (isAppDomain(host)) {
+		return new URL(path, req.url);
+	}
+	const protocol = req.nextUrl.protocol || "https:";
+	return new URL(`${protocol}//${APP_DOMAIN}${path}`);
+}
 
 export default withAuth(
 	function middleware(req: NextRequestWithAuth) {
 		const pathname = req.nextUrl?.pathname;
+		const host = req.headers.get("host") || "";
 		const isAdmin = req.nextauth.token?.role === "ADMIN";
 
-		// ── Legacy redirects ────────────────────────────
+		// ── Domain routing ──────────────────────────
+		// Marketing domain: redirect auth/app routes to app domain
+		if (isMarketingDomain(host)) {
+			if (
+				pathname.startsWith("/app") ||
+				pathname.startsWith("/auth") ||
+				pathname.startsWith("/user") ||
+				pathname.startsWith("/admin")
+			) {
+				return NextResponse.redirect(appUrl(pathname, req));
+			}
+			// Marketing pages — let through
+			return NextResponse.next();
+		}
+
+		// ── Legacy redirects (app domain) ───────────
 
 		// /user root → /app
 		if (pathname === "/user" || pathname === "/user/") {
@@ -84,7 +134,24 @@ export default withAuth(
 		secret: process.env.SECRET,
 		callbacks: {
 			authorized: (params) => {
+				const { req } = params;
 				const { token } = params;
+				const pathname = req.nextUrl?.pathname;
+
+				// Marketing pages don't require auth
+				const host = req.headers.get("host") || "";
+				if (isMarketingDomain(host)) {
+					// Only require auth for /app and /admin routes on marketing domain
+					// (they'll be redirected to app domain anyway)
+					if (!pathname.startsWith("/app") && !pathname.startsWith("/admin") && !pathname.startsWith("/user")) {
+						return true;
+					}
+				}
+
+				// Auth pages are public
+				if (pathname.startsWith("/auth/")) return true;
+
+				// Everything else requires a token
 				return !!token;
 			},
 		},
@@ -95,6 +162,8 @@ export const config = {
 	matcher: [
 		// Unified app shell
 		"/app/:path*",
+		// Auth pages (need middleware for domain routing)
+		"/auth/:path*",
 		// Legacy routes (redirect or protect)
 		"/user/:path*",
 		"/admin/:path*",

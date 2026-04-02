@@ -32,6 +32,10 @@ export async function sanityFetch<QueryResponse>({
 }
 
 export function imageBuilder(source: string) {
+	if (!clientConfig.projectId) {
+		// Return a stub that won't crash when .url() is called
+		return { url: () => "/images/placeholder.svg" } as any;
+	}
 	return ImageUrlBuilder(clientConfig).image(source);
 }
 

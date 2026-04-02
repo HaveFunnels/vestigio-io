@@ -9,8 +9,6 @@ import FAQ from "./FAQ";
 import Blog from "./Blog";
 import Newsletter from "./Newsletter";
 
-import { integrations } from "../../../integrations.config";
-
 const Home = () => {
 	return (
 		<>
@@ -23,7 +21,7 @@ const Home = () => {
 			<Pricing />
 			<FAQ />
 			<Newsletter />
-			{integrations?.isSanityEnabled && <Blog />}
+			<Blog />
 		</>
 	);
 };

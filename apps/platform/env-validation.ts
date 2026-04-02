@@ -21,13 +21,18 @@ const REQUIRED_VARS: { key: string; description: string }[] = [
 
 const PRODUCTION_REQUIRED_VARS: { key: string; description: string }[] = [
   { key: 'VESTIGIO_SECRET_KEY', description: 'AES-256 encryption key for stored credentials (openssl rand -hex 32)' },
-  { key: 'STRIPE_SECRET_KEY', description: 'Stripe API secret key (sk_live_...)' },
-  { key: 'STRIPE_WEBHOOK_SECRET', description: 'Stripe webhook signing secret (whsec_...)' },
-  { key: 'EMAIL_SERVER_HOST', description: 'SMTP server host' },
+  { key: 'ANTHROPIC_API_KEY', description: 'Anthropic API key for Claude LLM chat (sk-ant-...)' },
+];
+
+const PRODUCTION_RECOMMENDED_VARS: { key: string; description: string }[] = [
+  { key: 'PADDLE_API_KEY', description: 'Paddle API key (primary payment)' },
+  { key: 'NEXT_PUBLIC_PADDLE_CLIENT_TOKEN', description: 'Paddle client token for checkout' },
+  { key: 'STRIPE_SECRET_KEY', description: 'Stripe API key (fallback payment)' },
+  { key: 'STRIPE_WEBHOOK_SECRET', description: 'Stripe webhook signing secret' },
+  { key: 'EMAIL_SERVER_HOST', description: 'SMTP server host (required for magic link / invites)' },
   { key: 'EMAIL_SERVER_USER', description: 'SMTP username' },
   { key: 'EMAIL_SERVER_PASSWORD', description: 'SMTP password' },
-  { key: 'EMAIL_FROM', description: 'Sender email address (e.g. noreply@yourdomain.com)' },
-  { key: 'ANTHROPIC_API_KEY', description: 'Anthropic API key for Claude LLM chat (sk-ant-...)' },
+  { key: 'EMAIL_FROM', description: 'Sender email address' },
 ];
 
 const RECOMMENDED_VARS: { key: string; description: string }[] = [
@@ -57,6 +62,13 @@ export function validateEnv(env: Record<string, string | undefined> = process.en
   // Recommended (warnings only)
   for (const v of RECOMMENDED_VARS) {
     if (!env[v.key]) warnings.push(`${v.key} — ${v.description}`);
+  }
+
+  // Production recommended (warnings, not blockers)
+  if (isProduction) {
+    for (const v of PRODUCTION_RECOMMENDED_VARS) {
+      if (!env[v.key]) warnings.push(`[PRODUCTION] ${v.key} — ${v.description}`);
+    }
   }
 
   return { valid: missing.length === 0, missing, warnings };

@@ -161,7 +161,7 @@ function FindingDrawerContent({ node }: { node: MapNode }) {
           {node.severity && <SeverityBadge value={node.severity} />}
           {node.metadata.confidence != null && <span className="text-xs text-zinc-500">Confidence {String(node.metadata.confidence)}%</span>}
           {node.pack && <span className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">{node.pack}</span>}
-          {node.metadata.surface && <code className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-500">{String(node.metadata.surface)}</code>}
+          {node.metadata.surface != null && <code className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-500">{String(node.metadata.surface)}</code>}
         </div>
       </section>
 

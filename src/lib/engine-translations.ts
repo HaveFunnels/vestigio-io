@@ -18,7 +18,11 @@ export async function loadEngineTranslations(): Promise<EngineTranslations | und
   }
 
   try {
-    const dict = (await import(`../../../dictionary/${locale}.json`)).default;
+    const path = await import("node:path");
+    const fs = await import("node:fs");
+    const filePath = path.join(process.cwd(), "dictionary", `${locale}.json`);
+    const raw = fs.readFileSync(filePath, "utf-8");
+    const dict = JSON.parse(raw);
     return dict.engine as EngineTranslations | undefined;
   } catch {
     return undefined;

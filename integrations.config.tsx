@@ -1,5 +1,5 @@
 const integrations = {
-	isSanityEnabled: !!process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
+	isSanityEnabled: !!(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID && process.env.NEXT_PUBLIC_SANITY_PROJECT_ID !== "disabled"),
 	isOpenAIEnabled: true,
 	isAlgoliaEnabled: true,
 	isMailchimpEnabled: true,

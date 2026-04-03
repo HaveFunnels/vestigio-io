@@ -70,9 +70,18 @@ export default withAuth(
 			return NextResponse.next();
 		}
 
+		// ── Sanity Studio: ADMIN only ──────────────────
+		if (pathname.startsWith("/studio")) {
+			if (!req.nextauth.token) {
+				return NextResponse.redirect(new URL("/auth/signin", req.url));
+			}
+			if (req.nextauth.token.role !== "ADMIN") {
+				return NextResponse.redirect(new URL("/", req.url));
+			}
+			return NextResponse.next();
+		}
+
 		// ── Authenticated user on auth pages → redirect to /app ──
-		// If a logged-in user lands on /auth/signin (or any /auth/* page),
-		// redirect them to /app instead of showing the sign-in form.
 		if (isAppDomain(host) && pathname.startsWith("/auth/") && req.nextauth.token) {
 			return NextResponse.redirect(new URL("/app", req.url));
 		}
@@ -181,8 +190,10 @@ export default withAuth(
 				// Auth pages are public
 				if (pathname.startsWith("/auth/")) return true;
 
+				// Studio — let through to middleware function (it checks ADMIN)
+				if (pathname.startsWith("/studio")) return true;
+
 				// App domain root — allow through so middleware function can handle redirect
-				// (withAuth requires returning true to let the middleware function run)
 				if (pathname === "/" || pathname === "") return true;
 
 				// Everything else requires a token
@@ -203,6 +214,8 @@ export const config = {
 		// Legacy routes (redirect or protect)
 		"/user/:path*",
 		"/admin/:path*",
+		// Sanity Studio (admin-protected)
+		"/studio/:path*",
 		// Old console routes (redirect)
 		"/analysis/:path*",
 		"/actions/:path*",

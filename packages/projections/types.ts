@@ -38,6 +38,21 @@ export interface FindingProjection {
   truth_context: FindingTruthContext | null;
   /** Phase 27: Suppression context — is this finding affected by suppression? */
   suppression_context: FindingSuppressionContext | null;
+
+  /** Phase 0 UX: Verification lifecycle maturity */
+  verification_maturity: 'unverified' | 'pending' | 'partially' | 'verified' | 'degraded' | 'stale' | null;
+  /** Phase 0 UX: How this finding was verified */
+  verification_method: 'static_only' | 'browser_verified' | 'mixed' | 'unknown';
+  /** Phase 0 UX: Change class from cycle-to-cycle change detection */
+  change_class: 'regression' | 'improvement' | 'new_issue' | 'resolved' | 'stable_risk' | null;
+  /** Phase 0 UX: Aggregated evidence quality scores */
+  evidence_quality: {
+    source_reliability: number;
+    completeness: number;
+    recency: number;
+    corroboration: number;
+    composite: number;
+  } | null;
 }
 
 export interface FindingTruthContext {
@@ -76,6 +91,21 @@ export interface ActionProjection {
   priority_score: number;
   severity: string;
   action_type: string;
+
+  /** Phase 1B UX: Categorized action type for operational display */
+  category: 'incident' | 'opportunity' | 'verification' | 'observation';
+  /** Phase 1B UX: Operational status from matching incident/opportunity */
+  operational_status: string | null;
+  /** Phase 1B UX: Decision lifecycle status */
+  decision_status: string | null;
+  /** Phase 1B UX: Effort hint from domain action or global action */
+  effort_hint: string | null;
+  /** Phase 1B UX: Change class from cycle-to-cycle change detection */
+  change_class: 'regression' | 'improvement' | 'new_issue' | 'resolved' | 'stable_risk' | null;
+  /** Phase 1B UX: Verification lifecycle maturity */
+  verification_maturity: 'unverified' | 'pending' | 'partially' | 'verified' | 'degraded' | 'stale' | null;
+  /** Phase 1B UX: Suggested resolution path */
+  resolve_path: 'fix' | 'verify' | 'track' | 'dismiss' | null;
 }
 
 export interface WorkspaceProjection {
@@ -102,6 +132,14 @@ export interface WorkspaceProjection {
 
   /** Phase 27: Profile-aware trust narrative */
   confidence_narrative: ConfidenceNarrative | null;
+
+  /** Phase 2 UX: Workspace-level change summary from continuous monitoring */
+  change_summary: {
+    trend: 'improving' | 'degrading' | 'stable' | 'mixed';
+    regression_count: number;
+    improvement_count: number;
+    resolved_count: number;
+  } | null;
 }
 
 /**
@@ -126,6 +164,35 @@ export interface WorkspaceCoherence {
   suppressed: boolean;            // true if this workspace's decision is suppressed by a higher-priority pack
 }
 
+export interface DecisionChangeProjection {
+  decision_key: string;
+  title: string;
+  change_class: string;
+  change_severity: string;
+  risk_score_delta: number;
+  previous_severity: string | null;
+  current_severity: string | null;
+  previous_impact: string | null;
+  current_impact: string | null;
+  contributing_factors: string[];
+}
+
+export interface ChangeReportProjection {
+  headline: string;
+  overall_trend: 'improving' | 'degrading' | 'stable' | 'mixed';
+  regression_count: number;
+  improvement_count: number;
+  new_issue_count: number;
+  resolved_count: number;
+  stable_risk_count: number;
+  regressions: DecisionChangeProjection[];
+  improvements: DecisionChangeProjection[];
+  new_issues: DecisionChangeProjection[];
+  resolved: DecisionChangeProjection[];
+  previous_cycle_ref: string | null;
+  current_cycle_ref: string | null;
+}
+
 export interface ProjectionResult {
   findings: FindingProjection[];
   actions: ActionProjection[];
@@ -134,6 +201,8 @@ export interface ProjectionResult {
   coherence_score: number;
   /** Phase 27: System health indicators */
   system_health: SystemHealthIndicators | null;
+  /** Phase 1C: Change report projection */
+  change_report: ChangeReportProjection | null;
 }
 
 export interface SystemHealthIndicators {

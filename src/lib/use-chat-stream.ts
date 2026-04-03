@@ -273,7 +273,7 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
 // Parses $$FINDING{...}$$, $$ACTION{...}$$, $$IMPACT{...}$$ from Claude's text
 // and converts them into typed ContentBlocks.
 
-const BLOCK_MARKER_REGEX = /\$\$(FINDING|ACTION|IMPACT|CREATEACTION)\{([^}]+)\}\$\$/g;
+const BLOCK_MARKER_REGEX = /\$\$(FINDING|ACTION|IMPACT|CREATEACTION|NAVIGATE)\{([^}]+)\}\$\$/g;
 
 function parseBlockMarkers(text: string): ContentBlock[] {
   const blocks: ContentBlock[] = [];
@@ -341,6 +341,18 @@ function parseBlockMarkers(text: string): ContentBlock[] {
           description: data.description || "",
           severity: data.severity || "medium",
           estimatedImpact: data.estimatedImpact,
+        });
+      } else if (markerType === "NAVIGATE") {
+        // Try parsing as-is first, then with braces wrapper
+        let data;
+        try { data = JSON.parse(markerContent); } catch { data = JSON.parse(`{${markerContent}}`); }
+        // Support single target shorthand or array
+        const targets = Array.isArray(data)
+          ? data
+          : [{ label: data.label || "Go", href: data.href || "/", variant: data.variant || "primary" }];
+        blocks.push({
+          type: "navigation_cta",
+          targets,
         });
       }
     } catch {

@@ -15,7 +15,10 @@ import {
   FindingTruthContext,
   FindingSuppressionContext,
   EngineTranslations,
+  ChangeReportProjection,
+  DecisionChangeProjection,
 } from './types';
+import type { DecisionChange } from '../change-detection/types';
 
 // ──────────────────────────────────────────────
 // Projection Engine
@@ -477,7 +480,8 @@ export function projectAll(result: MultiPackResult, translations?: EngineTransla
   const workspaces = projectWorkspaces(result, findings, translations);
   const coherenceScore = result.conflict_report?.resolved_decisions?.coherence_score ?? 100;
   const systemHealth = buildSystemHealth(result);
-  return { findings, actions, workspaces, coherence_score: coherenceScore, system_health: systemHealth };
+  const changeReport = projectChangeReport(result);
+  return { findings, actions, workspaces, coherence_score: coherenceScore, system_health: systemHealth, change_report: changeReport };
 }
 
 export function projectFindings(result: MultiPackResult, translations?: EngineTranslations): FindingProjection[] {
@@ -537,6 +541,11 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
     // Phase 27: Build suppression context
     const suppressionContext = buildFindingSuppressionContext(inf, result);
 
+    // Phase 0 UX: Build verification, change, and evidence quality context
+    const verificationCtx = buildFindingVerificationContext(inf, result);
+    const changeClass = buildFindingChangeClass(vc.inference_key, result);
+    const evidenceQualityCtx = buildFindingEvidenceQuality(inf, result);
+
     // Parameterize titles for findings that carry concrete parameters
     let title = translations?.inference_titles?.[vc.inference_key] ?? INFERENCE_TITLES[vc.inference_key] ?? vc.cause;
     if (inf.conclusion_value) {
@@ -576,6 +585,10 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       polarity: computePolarity(inf, vc),
       truth_context: truthContext,
       suppression_context: suppressionContext,
+      verification_maturity: verificationCtx.maturity,
+      verification_method: verificationCtx.method,
+      change_class: changeClass,
+      evidence_quality: evidenceQualityCtx,
     });
   }
 
@@ -603,6 +616,40 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
   // Build map: root_cause_ref → sum of value case impacts
   const rcImpact = computeRootCauseImpact(rootCauses, valueCases, inferences);
 
+  // Phase 1B: Build decision lookup by ref for decision_status
+  const decisionsByRef = new Map<string, { status: string; decision_key: string }>();
+  const allDecisions = [
+    result.scale_readiness.decision,
+    result.revenue_integrity.decision,
+    result.chargeback_resilience.decision,
+    ...(result.saas_growth_readiness ? [result.saas_growth_readiness.decision] : []),
+  ];
+  for (const d of allDecisions) {
+    decisionsByRef.set(makeRef('decision', d.id), { status: d.status, decision_key: d.decision_key });
+  }
+
+  // Phase 1B: Build domain action lookup by ref for effort_hint
+  const allDomainActions = [
+    ...result.scale_readiness.actions,
+    ...result.revenue_integrity.actions,
+    ...result.chargeback_resilience.actions,
+    ...(result.saas_growth_readiness?.actions || []),
+  ];
+  const domainActionByRef = new Map<string, { effort_hint: string | null }>();
+  for (const da of allDomainActions) {
+    domainActionByRef.set(makeRef('action', da.id), da);
+  }
+
+  // Phase 1B: Build opportunity lookup by decision_ref for operational_status
+  const opportunityByDecisionRef = new Map<string, string>();
+  if (result.opportunities?.opportunities) {
+    for (const opp of result.opportunities.opportunities) {
+      for (const dref of opp.decision_refs) {
+        opportunityByDecisionRef.set(dref, opp.status);
+      }
+    }
+  }
+
   const actions: ActionProjection[] = globalActions.map(action => {
     const rc = action.root_cause_ref
       ? rootCauses.find(r => makeRef('root_cause', r.id) === action.root_cause_ref)
@@ -624,6 +671,27 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       ? (translations?.root_cause_titles?.[rc.root_cause_key] ?? rc.title)
       : null;
 
+    // Phase 1B: Map action_type to category
+    const category = mapActionTypeToCategory(action.action_type);
+
+    // Phase 1B: Resolve decision_status from source decisions
+    const decisionStatus = resolveDecisionStatus(action.source_decisions, decisionsByRef);
+
+    // Phase 1B: Resolve operational_status from matching incident/opportunity
+    const operationalStatus = resolveOperationalStatus(action.source_decisions, category, opportunityByDecisionRef);
+
+    // Phase 1B: Resolve effort_hint from domain actions via merged_from
+    const effortHint = resolveEffortHint(action.merged_from, domainActionByRef);
+
+    // Phase 1B: Change class from change report (cross-reference via action_key)
+    const changeClass = buildActionChangeClass(action.action_key, result);
+
+    // Phase 1B: Verification maturity (derived from decision lifecycle state)
+    const verificationMaturity = buildActionVerificationMaturity(action, decisionsByRef);
+
+    // Phase 1B: Derive resolve_path
+    const resolvePath = deriveResolvePath(category, verificationMaturity, decisionStatus);
+
     return {
       id: action.action_key,
       title: action.title,
@@ -635,6 +703,13 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       priority_score: priorityScore,
       severity: action.severity,
       action_type: action.action_type,
+      category,
+      operational_status: operationalStatus,
+      decision_status: decisionStatus,
+      effort_hint: effortHint,
+      change_class: changeClass,
+      verification_maturity: verificationMaturity,
+      resolve_path: resolvePath,
     };
   });
 
@@ -651,6 +726,136 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
   return actions;
 }
 
+// ──────────────────────────────────────────────
+// Phase 1B UX: Action projection helpers
+// ──────────────────────────────────────────────
+
+function mapActionTypeToCategory(
+  actionType: string,
+): ActionProjection['category'] {
+  switch (actionType) {
+    case 'risk_mitigation': return 'incident';
+    case 'opportunity_capture': return 'opportunity';
+    case 'verification': return 'verification';
+    case 'observation': return 'observation';
+    default: return 'observation';
+  }
+}
+
+function resolveDecisionStatus(
+  sourceDecisions: string[],
+  decisionsByRef: Map<string, { status: string; decision_key: string }>,
+): string | null {
+  for (const ref of sourceDecisions) {
+    const d = decisionsByRef.get(ref);
+    if (d) return d.status;
+  }
+  return null;
+}
+
+function resolveOperationalStatus(
+  sourceDecisions: string[],
+  category: ActionProjection['category'],
+  opportunityByDecisionRef: Map<string, string>,
+): string | null {
+  // For opportunity actions, look up matching opportunity status
+  if (category === 'opportunity') {
+    for (const ref of sourceDecisions) {
+      const status = opportunityByDecisionRef.get(ref);
+      if (status) return status;
+    }
+  }
+  // For incidents, we would look up matching incident status, but incidents
+  // are not yet part of MultiPackResult. Return null safely.
+  return null;
+}
+
+function resolveEffortHint(
+  mergedFrom: string[],
+  domainActionByRef: Map<string, { effort_hint: string | null }>,
+): string | null {
+  for (const ref of mergedFrom) {
+    const da = domainActionByRef.get(ref);
+    if (da?.effort_hint) return da.effort_hint;
+  }
+  return null;
+}
+
+function buildActionChangeClass(
+  actionKey: string,
+  result: MultiPackResult,
+): ActionProjection['change_class'] {
+  if (!result.change_report) return null;
+
+  const report = result.change_report;
+
+  for (const dc of report.regressions) {
+    if (dc.decision_key.includes(actionKey) || actionKey.includes(dc.decision_key)) {
+      return 'regression';
+    }
+  }
+  for (const dc of report.improvements) {
+    if (dc.decision_key.includes(actionKey) || actionKey.includes(dc.decision_key)) {
+      return 'improvement';
+    }
+  }
+  for (const dc of report.new_issues) {
+    if (dc.decision_key.includes(actionKey) || actionKey.includes(dc.decision_key)) {
+      return 'new_issue';
+    }
+  }
+  for (const dc of report.resolved_issues) {
+    if (dc.decision_key.includes(actionKey) || actionKey.includes(dc.decision_key)) {
+      return 'resolved';
+    }
+  }
+  for (const dc of report.stable_risks) {
+    if (dc.decision_key.includes(actionKey) || actionKey.includes(dc.decision_key)) {
+      return 'stable_risk';
+    }
+  }
+
+  return null;
+}
+
+function buildActionVerificationMaturity(
+  action: { source_decisions: string[] },
+  decisionsByRef: Map<string, { status: string; decision_key: string }>,
+): ActionProjection['verification_maturity'] {
+  // Map decision status to a verification maturity analog:
+  // 'created' → unverified, 'confirmed' → pending, 'resolved' → verified,
+  // 'stale' → stale, 'regressed' → degraded
+  for (const ref of action.source_decisions) {
+    const d = decisionsByRef.get(ref);
+    if (!d) continue;
+    switch (d.status) {
+      case 'created': return 'unverified';
+      case 'confirmed': return 'pending';
+      case 'resolved': return 'verified';
+      case 'stale': return 'stale';
+      case 'regressed': return 'degraded';
+      default: return null;
+    }
+  }
+  return null;
+}
+
+function deriveResolvePath(
+  category: ActionProjection['category'],
+  verificationMaturity: ActionProjection['verification_maturity'],
+  decisionStatus: string | null,
+): ActionProjection['resolve_path'] {
+  if (category === 'incident') {
+    if (verificationMaturity === 'verified' && decisionStatus === 'resolved') {
+      return 'track';
+    }
+    return 'fix';
+  }
+  if (category === 'opportunity') return 'verify';
+  if (category === 'verification') return 'verify';
+  return null;
+}
+
 export function projectWorkspaces(
   result: MultiPackResult,
   allFindings?: FindingProjection[],
@@ -664,6 +869,10 @@ export function projectWorkspaces(
 
   // Phase 27: Build confidence narrative from profile/impact state
   const narrative = buildConfidenceNarrative(result, translations);
+
+  // Phase 2 UX: Build workspace-level change summaries
+  const changeReport = projectChangeReport(result);
+  const changeSummaryMap = buildWorkspaceChangeSummaries(changeReport);
 
   const scaleFindings = findings.filter(f => f.pack === 'scale_readiness');
   const revenueFindings = findings.filter(f => f.pack === 'revenue_integrity');
@@ -681,6 +890,7 @@ export function projectWorkspaces(
       scaleFindings,
       coherenceByDecisionRef.get(makeRef('decision', result.scale_readiness.decision.id)) || null,
       narrative,
+      changeSummaryMap.get('scale_readiness_pack') ?? null,
     ),
     buildWorkspaceProjection(
       'revenue', wn?.revenue ?? 'Revenue Analysis', 'revenue',
@@ -690,6 +900,7 @@ export function projectWorkspaces(
       revenueFindings,
       coherenceByDecisionRef.get(makeRef('decision', result.revenue_integrity.decision.id)) || null,
       narrative,
+      changeSummaryMap.get('revenue_integrity_pack') ?? null,
     ),
     buildWorkspaceProjection(
       'chargeback', wn?.chargeback ?? 'Chargeback Analysis', 'chargeback',
@@ -699,6 +910,7 @@ export function projectWorkspaces(
       chargebackFindings,
       coherenceByDecisionRef.get(makeRef('decision', result.chargeback_resilience.decision.id)) || null,
       narrative,
+      changeSummaryMap.get('chargeback_resilience_pack') ?? null,
     ),
   ];
 
@@ -713,11 +925,105 @@ export function projectWorkspaces(
         saasFindings,
         coherenceByDecisionRef.get(makeRef('decision', result.saas_growth_readiness.decision.id)) || null,
         narrative,
+        changeSummaryMap.get('saas_growth_readiness_pack') ?? null,
       ),
     );
   }
 
   return workspaces;
+}
+
+// ──────────────────────────────────────────────
+// Phase 2 UX: Workspace-level change summaries
+// ──────────────────────────────────────────────
+
+/** Map decision_key values to their owning pack_key. */
+const DECISION_KEY_TO_PACK: Record<string, string> = {
+  // Scale Readiness
+  unsafe_to_scale_traffic: 'scale_readiness_pack',
+  fix_before_scale: 'scale_readiness_pack',
+  ready_with_risks: 'scale_readiness_pack',
+  safe_to_scale: 'scale_readiness_pack',
+  // Revenue Integrity
+  revenue_leakage_detected: 'revenue_integrity_pack',
+  revenue_at_risk: 'revenue_integrity_pack',
+  revenue_path_fragile: 'revenue_integrity_pack',
+  revenue_integrity_stable: 'revenue_integrity_pack',
+  // Chargeback Resilience
+  high_chargeback_risk: 'chargeback_resilience_pack',
+  moderate_chargeback_risk: 'chargeback_resilience_pack',
+  low_chargeback_risk: 'chargeback_resilience_pack',
+  chargeback_resilience_strong: 'chargeback_resilience_pack',
+  // SaaS Growth Readiness
+  is_saas_growth_ready_result: 'saas_growth_readiness_pack',
+  // Channel Integrity
+  is_channel_integrity_compromised_result: 'channel_integrity_pack',
+};
+
+function resolvePackKeyForDecision(decisionKey: string): string | null {
+  if (DECISION_KEY_TO_PACK[decisionKey]) return DECISION_KEY_TO_PACK[decisionKey];
+  // Fallback: try suffix-based heuristic for dynamic question_key_result patterns
+  if (decisionKey.includes('scale') || decisionKey.includes('preflight')) return 'scale_readiness_pack';
+  if (decisionKey.includes('revenue')) return 'revenue_integrity_pack';
+  if (decisionKey.includes('chargeback')) return 'chargeback_resilience_pack';
+  if (decisionKey.includes('saas') || decisionKey.includes('growth')) return 'saas_growth_readiness_pack';
+  if (decisionKey.includes('channel')) return 'channel_integrity_pack';
+  return null;
+}
+
+function buildWorkspaceChangeSummaries(
+  changeReport: ChangeReportProjection | null,
+): Map<string, WorkspaceProjection['change_summary']> {
+  const map = new Map<string, NonNullable<WorkspaceProjection['change_summary']>>();
+  if (!changeReport) return map;
+
+  const allChanges = [
+    ...changeReport.regressions,
+    ...changeReport.improvements,
+    ...changeReport.new_issues,
+    ...changeReport.resolved,
+  ];
+
+  // Accumulate counts per pack_key
+  const accum = new Map<string, { regressions: number; improvements: number; resolved: number }>();
+
+  for (const change of allChanges) {
+    const packKey = resolvePackKeyForDecision(change.decision_key);
+    if (!packKey) continue;
+
+    if (!accum.has(packKey)) {
+      accum.set(packKey, { regressions: 0, improvements: 0, resolved: 0 });
+    }
+    const counts = accum.get(packKey)!;
+
+    if (change.change_class === 'regression') counts.regressions++;
+    else if (change.change_class === 'improvement') counts.improvements++;
+    else if (change.change_class === 'resolved') counts.resolved++;
+    // new_issue is a special case — count as regression for trend purposes
+    else if (change.change_class === 'new_issue') counts.regressions++;
+  }
+
+  for (const [packKey, counts] of accum) {
+    let trend: 'improving' | 'degrading' | 'stable' | 'mixed';
+    if (counts.regressions > 0 && counts.improvements === 0 && counts.resolved === 0) {
+      trend = 'degrading';
+    } else if (counts.regressions === 0 && (counts.improvements > 0 || counts.resolved > 0)) {
+      trend = 'improving';
+    } else if (counts.regressions > 0 && (counts.improvements > 0 || counts.resolved > 0)) {
+      trend = 'mixed';
+    } else {
+      trend = 'stable';
+    }
+
+    map.set(packKey, {
+      trend,
+      regression_count: counts.regressions,
+      improvement_count: counts.improvements,
+      resolved_count: counts.resolved,
+    });
+  }
+
+  return map;
 }
 
 // ──────────────────────────────────────────────
@@ -808,6 +1114,10 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         polarity: 'positive',
         truth_context: null,
         suppression_context: null,
+        verification_maturity: null,
+        verification_method: 'unknown',
+        change_class: null,
+        evidence_quality: null,
       });
     }
   }
@@ -823,6 +1133,7 @@ function buildWorkspaceProjection(
   findings: FindingProjection[],
   coherence: WorkspaceCoherence | null = null,
   confidenceNarrative: ConfidenceNarrative | null = null,
+  changeSummary: WorkspaceProjection['change_summary'] = null,
 ): WorkspaceProjection {
   let totalMin = 0;
   let totalMax = 0;
@@ -856,6 +1167,7 @@ function buildWorkspaceProjection(
     findings,
     coherence,
     confidence_narrative: confidenceNarrative,
+    change_summary: changeSummary,
   };
 }
 
@@ -1101,6 +1413,53 @@ function buildConfidenceNarrative(result: MultiPackResult, translations?: Engine
 }
 
 // ──────────────────────────────────────────────
+// Phase 1C: Change report projection
+// ──────────────────────────────────────────────
+
+function mapDecisionChange(dc: DecisionChange): DecisionChangeProjection {
+  return {
+    decision_key: dc.decision_key,
+    title: dc.summary,
+    change_class: dc.change_class,
+    change_severity: dc.severity,
+    risk_score_delta: dc.risk_score_delta,
+    previous_severity: dc.severity_change?.from ?? null,
+    current_severity: dc.severity_change?.to ?? null,
+    previous_impact: dc.impact_change?.from ?? null,
+    current_impact: dc.impact_change?.to ?? null,
+    contributing_factors: dc.contributing_factors,
+  };
+}
+
+export function projectChangeReport(result: MultiPackResult): ChangeReportProjection | null {
+  if (!result.change_report) return null;
+
+  const report = result.change_report;
+  const summary = report.summary;
+
+  const regressions = report.regressions.map(mapDecisionChange);
+  const improvements = report.improvements.map(mapDecisionChange);
+  const newIssues = report.new_issues.map(mapDecisionChange);
+  const resolved = report.resolved_issues.map(mapDecisionChange);
+
+  return {
+    headline: summary.headline,
+    overall_trend: summary.overall_trend,
+    regression_count: summary.regression_count,
+    improvement_count: summary.improvement_count,
+    new_issue_count: summary.new_issue_count,
+    resolved_count: summary.resolved_count,
+    stable_risk_count: summary.stable_risk_count,
+    regressions,
+    improvements,
+    new_issues: newIssues,
+    resolved,
+    previous_cycle_ref: report.previous_cycle_ref,
+    current_cycle_ref: report.current_cycle_ref,
+  };
+}
+
+// ──────────────────────────────────────────────
 // Phase 27: System health indicators
 // ──────────────────────────────────────────────
 
@@ -1111,5 +1470,138 @@ function buildSystemHealth(result: MultiPackResult): SystemHealthIndicators {
     truth_consistent: result.truth_consistency?.fully_consistent ?? true,
     blind_spot_count: result.suppression_governance?.blind_spots.length ?? 0,
     change_trend: result.change_report?.summary.overall_trend ?? null,
+  };
+}
+
+// ──────────────────────────────────────────────
+// Phase 0 UX: Verification context for findings
+// ──────────────────────────────────────────────
+
+function buildFindingVerificationContext(
+  inf: Inference,
+  result: MultiPackResult,
+): { maturity: FindingProjection['verification_maturity']; method: FindingProjection['verification_method'] } {
+  // Determine verification method from evidence source kinds
+  const backingEvidenceRefs = new Set(inf.evidence_refs);
+  let hasBrowser = false;
+  let hasStatic = false;
+
+  for (const ev of result.signals) {
+    const ref = makeRef('signal', ev.id);
+    if (backingEvidenceRefs.has(ref) || backingEvidenceRefs.has(ev.id)) {
+      // Check signal's backing evidence source kinds
+      for (const evRef of ev.evidence_refs) {
+        const evidenceId = evRef.replace('evidence:', '');
+        // We don't have direct access to evidence objects here, but we can
+        // infer from signal keys or the quality adjustments
+        if (ev.signal_key.includes('browser_') || ev.signal_key.includes('authenticated_')) {
+          hasBrowser = true;
+        } else {
+          hasStatic = true;
+        }
+      }
+    }
+  }
+
+  // Also check from evidence quality data (source reliability correlates with method)
+  const qualityData = result.evidence_quality;
+  if (qualityData.length > 0) {
+    for (const eq of qualityData) {
+      if (eq.source_reliability >= 75) hasBrowser = true;
+      if (eq.source_reliability < 60) hasStatic = true;
+    }
+  }
+
+  let method: FindingProjection['verification_method'] = 'unknown';
+  if (hasBrowser && hasStatic) method = 'mixed';
+  else if (hasBrowser) method = 'browser_verified';
+  else if (hasStatic) method = 'static_only';
+
+  // Verification maturity: not yet tracked at finding level in the lifecycle module,
+  // so default to null. Future phases will integrate VerificationState per finding.
+  return { maturity: null, method };
+}
+
+// ──────────────────────────────────────────────
+// Phase 0 UX: Change class for findings
+// ──────────────────────────────────────────────
+
+function buildFindingChangeClass(
+  inferenceKey: string,
+  result: MultiPackResult,
+): FindingProjection['change_class'] {
+  if (!result.change_report) return null;
+
+  // Match by decision_key against change report entries
+  const report = result.change_report;
+
+  // Check regressions
+  for (const dc of report.regressions) {
+    if (dc.decision_key.includes(inferenceKey) || inferenceKey.includes(dc.decision_key)) {
+      return 'regression';
+    }
+  }
+
+  // Check improvements
+  for (const dc of report.improvements) {
+    if (dc.decision_key.includes(inferenceKey) || inferenceKey.includes(dc.decision_key)) {
+      return 'improvement';
+    }
+  }
+
+  // Check new issues
+  for (const dc of report.new_issues) {
+    if (dc.decision_key.includes(inferenceKey) || inferenceKey.includes(dc.decision_key)) {
+      return 'new_issue';
+    }
+  }
+
+  // Check resolved issues
+  for (const dc of report.resolved_issues) {
+    if (dc.decision_key.includes(inferenceKey) || inferenceKey.includes(dc.decision_key)) {
+      return 'resolved';
+    }
+  }
+
+  // Check stable risks
+  for (const dc of report.stable_risks) {
+    if (dc.decision_key.includes(inferenceKey) || inferenceKey.includes(dc.decision_key)) {
+      return 'stable_risk';
+    }
+  }
+
+  return null;
+}
+
+// ──────────────────────────────────────────────
+// Phase 0 UX: Evidence quality for findings
+// ──────────────────────────────────────────────
+
+function buildFindingEvidenceQuality(
+  inf: Inference,
+  result: MultiPackResult,
+): FindingProjection['evidence_quality'] {
+  if (result.evidence_quality.length === 0) return null;
+
+  // Collect quality scores for evidence backing this inference
+  const backingEvidenceRefs = new Set(inf.evidence_refs);
+  const matchingQuality = result.evidence_quality.filter(eq =>
+    backingEvidenceRefs.has(eq.evidence_ref) ||
+    backingEvidenceRefs.has(eq.evidence_ref.replace('evidence:', '')),
+  );
+
+  // If no direct matches, aggregate all evidence quality as a fallback
+  const pool = matchingQuality.length > 0 ? matchingQuality : result.evidence_quality;
+
+  if (pool.length === 0) return null;
+
+  const avg = (arr: number[]) => Math.round(arr.reduce((s, v) => s + v, 0) / arr.length);
+
+  return {
+    source_reliability: avg(pool.map(eq => eq.source_reliability)),
+    completeness: avg(pool.map(eq => eq.completeness)),
+    recency: avg(pool.map(eq => eq.recency)),
+    corroboration: avg(pool.map(eq => eq.corroboration)),
+    composite: avg(pool.map(eq => eq.composite_score)),
   };
 }

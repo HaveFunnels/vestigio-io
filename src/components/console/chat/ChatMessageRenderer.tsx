@@ -169,6 +169,9 @@ function BlockRenderer({
               map: "border-emerald-800/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20",
               analysis: "border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300",
               actions: "border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300",
+              changes: "border-amber-800/50 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20",
+              primary: "border-emerald-600 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20",
+              secondary: "border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300",
             };
             return (
               <button key={idx} onClick={() => onNavigate?.(target.href)} className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${styles[target.variant] || styles.analysis}`}>

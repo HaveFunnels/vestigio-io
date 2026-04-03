@@ -4,7 +4,7 @@ import {
   FindingChatContext,
   MultiFindingContext,
 } from './types';
-import { EngineContext, getFindingProjections, getActionProjections, getImpactSummary } from './context';
+import { EngineContext, getFindingProjections, getActionProjections, getChangeReport, getImpactSummary } from './context';
 import { ProjectionResult, FindingProjection } from '../../packages/projections';
 import { generateNextQuestions, generateFindingPrompts, generateMultiFindingPrompts } from './questions';
 
@@ -28,6 +28,7 @@ export function buildSuggestions(
     workspaces: [], // not needed for suggestions
     coherence_score: ctx.result.conflict_report?.resolved_decisions?.coherence_score ?? 100,
     system_health: null, // not needed for suggestions
+    change_report: getChangeReport(ctx),
   };
   const impactSummary = getImpactSummary(ctx);
 

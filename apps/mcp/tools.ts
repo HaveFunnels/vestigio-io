@@ -1,4 +1,4 @@
-import { EngineContext, getFindingProjections, getActionProjections, getWorkspaceProjections, getMap, getMaps } from './context';
+import { EngineContext, getFindingProjections, getActionProjections, getWorkspaceProjections, getChangeReport, getMap, getMaps } from './context';
 import {
   McpToolDefinition,
   McpAnswer,
@@ -33,7 +33,7 @@ import {
   validateVerificationRequest,
 } from './verification';
 import { VerificationRequest, VerificationType } from '../../packages/domain';
-import type { FindingProjection, ActionProjection, WorkspaceProjection } from '../../packages/projections';
+import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection } from '../../packages/projections';
 import type { MapDefinition } from '../../packages/maps';
 
 // ──────────────────────────────────────────────
@@ -132,6 +132,11 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
     input_schema: {},
   },
   {
+    name: 'get_change_report',
+    description: 'Get the cycle-to-cycle change report projection — regressions, improvements, new issues, resolved items, and overall trend.',
+    input_schema: {},
+  },
+  {
     name: 'get_map',
     description: 'Get a causal visualization map (revenue_leakage, chargeback_risk, or root_cause).',
     input_schema: { map_type: { type: 'string', enum: ['revenue_leakage', 'chargeback_risk', 'root_cause'] } },
@@ -178,6 +183,7 @@ export type ToolResult =
   | { type: 'finding_projections'; data: FindingProjection[] }
   | { type: 'action_projections'; data: ActionProjection[] }
   | { type: 'workspace_projections'; data: WorkspaceProjection[] }
+  | { type: 'change_report'; data: ChangeReportProjection | null }
   | { type: 'map'; data: MapDefinition | null }
   | { type: 'verification_skipped'; data: VerificationSkippedView }
   | { type: 'error'; data: { message: string } };
@@ -258,6 +264,9 @@ export function executeTool(
 
     case 'get_workspace_projections':
       return { type: 'workspace_projections', data: getWorkspaceProjections(ctx) };
+
+    case 'get_change_report':
+      return { type: 'change_report', data: getChangeReport(ctx) };
 
     case 'get_map': {
       const mapType = params.map_type as string;

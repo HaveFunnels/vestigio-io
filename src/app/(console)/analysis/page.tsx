@@ -2,12 +2,17 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
+import VerificationBadge from "@/components/console/VerificationBadge";
+import ChangeBadge from "@/components/console/ChangeBadge";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
+import VerificationPanel from "@/components/console/VerificationPanel";
+import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { loadFindings } from "@/lib/console-data";
 import type { FindingProjection } from "../../../../packages/projections";
 
@@ -294,6 +299,8 @@ function AnalysisContent({
 
   const filtered = useMemo(() => {
     return findings.filter((f) => {
+      // Phase 0 UX: Hide suppressed findings with 'hidden' visibility
+      if (f.suppression_context?.visibility === 'hidden') return false;
       if (severityFilter !== "all" && f.severity !== severityFilter) return false;
       if (packFilter !== "all" && f.pack !== packFilter) return false;
       if (polarityFilter !== "all" && f.polarity !== polarityFilter) return false;
@@ -355,18 +362,37 @@ function AnalysisContent({
     },
     {
       key: "title", label: "Finding",
-      render: (row) => (
-        <div>
-          <div className={`text-sm ${row.polarity === 'positive' ? 'text-emerald-300' : 'text-zinc-200'}`}>{row.title}</div>
-          {row.root_cause && <div className="mt-0.5 text-xs text-zinc-500">{row.root_cause}</div>}
-        </div>
-      ),
+      render: (row) => {
+        const isDimmed = row.suppression_context?.visibility === 'dimmed';
+        const isAnnotated = row.suppression_context?.visibility === 'annotated';
+        return (
+          <div className={isDimmed ? 'opacity-50' : ''}>
+            <div className="flex items-center gap-2">
+              <span className={`text-sm ${row.polarity === 'positive' ? 'text-emerald-300' : 'text-zinc-200'}`}>{row.title}</span>
+              {isAnnotated && (
+                <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+                  Suppressed
+                </span>
+              )}
+            </div>
+            {row.root_cause && <div className="mt-0.5 text-xs text-zinc-500">{row.root_cause}</div>}
+          </div>
+        );
+      },
     },
     {
       key: "severity", label: "Severity", className: "w-24",
       render: (row) => row.polarity === 'positive'
         ? <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">Healthy</span>
         : <SeverityBadge value={row.severity} />,
+    },
+    {
+      key: "verification", label: "Verified", className: "w-24",
+      render: (row) => <VerificationBadge value={row.verification_maturity} />,
+    },
+    {
+      key: "change", label: "Change", className: "w-28",
+      render: (row) => <ChangeBadge value={row.change_class} />,
     },
     { key: "confidence", label: "Conf", className: "w-16", render: (row) => <span className="font-mono text-xs text-zinc-400">{row.confidence}%</span> },
     {
@@ -446,11 +472,33 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
           {finding.polarity === 'positive'
             ? <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">Healthy</span>
             : <SeverityBadge value={finding.severity} />}
+          <VerificationBadge value={finding.verification_maturity} />
+          {finding.change_class && <ChangeBadge value={finding.change_class} />}
           <span className="text-xs text-zinc-500">Confidence {finding.confidence}%</span>
           <span className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">{packLabels[finding.pack] || finding.pack}</span>
           {finding.surface && <code className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-500">{finding.surface}</code>}
         </div>
       </section>
+
+      {/* Suppression Callout */}
+      {finding.suppression_context && finding.suppression_context.is_suppressed && (
+        <section>
+          <div className="rounded-md border border-amber-900/50 bg-amber-500/5 px-4 py-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-amber-500 text-xs font-semibold">Suppressed</span>
+              <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-400">
+                {finding.suppression_context.visibility}
+              </span>
+            </div>
+            <p className="text-xs text-amber-300/80">{finding.suppression_context.explanation}</p>
+            {finding.suppression_context.confidence_reduction > 0 && (
+              <p className="mt-1 text-xs text-amber-400/60">
+                Confidence reduced by {finding.suppression_context.confidence_reduction} points
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Effect */}
       {finding.effect && (
@@ -491,6 +539,41 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
         </section>
       )}
 
+      {/* Evidence Quality */}
+      {finding.evidence_quality && (
+        <section>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Evidence Quality</h3>
+          <div className="space-y-2 rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+            <EvidenceQualityBar label="Source Reliability" value={finding.evidence_quality.source_reliability} />
+            <EvidenceQualityBar label="Completeness" value={finding.evidence_quality.completeness} />
+            <EvidenceQualityBar label="Recency" value={finding.evidence_quality.recency} />
+            <EvidenceQualityBar label="Corroboration" value={finding.evidence_quality.corroboration} />
+          </div>
+        </section>
+      )}
+
+      {/* Verification Lifecycle Panel */}
+      <section>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Verification</h3>
+        <VerificationPanel
+          maturity={finding.verification_maturity}
+          method={finding.verification_method}
+          verifiedAt={null}
+          expiresAt={null}
+          confidenceAtVerification={null}
+          currentConfidence={null}
+          reTriggerReason={null}
+          decisionStatus={null}
+          onRequestVerification={() => toast.success("Verification requested")}
+        />
+      </section>
+
+      {/* Verification Sufficiency Warning */}
+      <VerificationSufficiencyWarning
+        severity={finding.severity}
+        maturity={finding.verification_maturity}
+      />
+
       {/* Reasoning */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -521,6 +604,26 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
           </button>
         </section>
       )}
+    </div>
+  );
+}
+
+function EvidenceQualityBar({ label, value }: { label: string; value: number }) {
+  const barColor =
+    value >= 70 ? 'bg-emerald-500' :
+    value >= 40 ? 'bg-amber-500' :
+    'bg-red-500';
+
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-28 shrink-0 text-xs text-zinc-500">{label}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-zinc-800">
+        <div
+          className={`h-1.5 rounded-full transition-all ${barColor}`}
+          style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+        />
+      </div>
+      <span className="w-8 text-right font-mono text-xs text-zinc-400">{value}</span>
     </div>
   );
 }

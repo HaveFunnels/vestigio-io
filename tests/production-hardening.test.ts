@@ -110,6 +110,10 @@ function mockFinding(key: string, polarity: 'negative' | 'positive' | 'neutral' 
     polarity,
     truth_context: null,
     suppression_context: null,
+    verification_maturity: null,
+    verification_method: 'unknown',
+    change_class: null,
+    evidence_quality: null,
   };
 }
 

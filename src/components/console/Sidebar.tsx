@@ -6,9 +6,9 @@ import { useState } from "react";
 
 const navItems = [
   { href: "/onboard", label: "Onboard", icon: "rocket" },
-  { href: "/chat", label: "Chat", icon: "chat" },
   { href: "/actions", label: "Actions", icon: "bolt" },
   { href: "/workspaces", label: "Workspaces", icon: "grid" },
+  { href: "/chat", label: "Chat", icon: "chat" },
   { href: "/analysis", label: "Findings", icon: "search" },
   { href: "/inventory", label: "Inventory", icon: "layers" },
   { href: "/data-sources", label: "Data Sources", icon: "plug" },

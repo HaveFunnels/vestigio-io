@@ -97,6 +97,23 @@ export function generateNextQuestions(
     if (!asked.has(q)) candidates.push({ question: q, score: 6000 });
   }
 
+  // 8. Change report awareness — suggest if not yet explored
+  if (projections.change_report) {
+    const cr = projections.change_report;
+    if (cr.regression_count > 0) {
+      const q = `${cr.regression_count} regression(s) detected since last analysis. Want to see what got worse?`;
+      if (!asked.has(q)) candidates.push({ question: q, score: 7000 });
+    }
+    if (cr.improvement_count > 0) {
+      const q = `${cr.improvement_count} improvement(s) since last analysis. Want to see what got better?`;
+      if (!asked.has(q)) candidates.push({ question: q, score: 3500 });
+    }
+    if (cr.resolved_count > 0) {
+      const q = `${cr.resolved_count} issue(s) were resolved. Want a summary of what's fixed?`;
+      if (!asked.has(q)) candidates.push({ question: q, score: 3000 });
+    }
+  }
+
   // Sort by score desc, take top 5
   candidates.sort((a, b) => b.score - a.score);
   return candidates.slice(0, 5).map(c => c.question);

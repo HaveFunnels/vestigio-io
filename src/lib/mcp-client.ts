@@ -14,7 +14,7 @@ import type {
   McpAnswer,
 } from '../../apps/mcp/types';
 import type { VerificationRequest } from '../../packages/domain';
-import type { FindingProjection, ActionProjection, WorkspaceProjection } from '../../packages/projections';
+import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection } from '../../packages/projections';
 import type { MapDefinition } from '../../packages/maps';
 import type { McpSessionContext } from '../../apps/mcp/types';
 
@@ -133,6 +133,11 @@ export function fetchActionProjections(): ActionProjection[] {
 export function fetchWorkspaceProjections(): WorkspaceProjection[] {
   const result = getMcpServer().callTool('get_workspace_projections');
   return result.type === 'workspace_projections' ? result.data : [];
+}
+
+export function fetchChangeReport(): ChangeReportProjection | null {
+  const result = getMcpServer().callTool('get_change_report');
+  return result.type === 'change_report' ? result.data : null;
 }
 
 export function fetchMap(mapType: string): MapDefinition | null {

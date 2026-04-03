@@ -408,6 +408,8 @@ const QUICK_PRESETS = [
   { text: "Can I safely scale paid traffic?", label: "Scale readiness" },
   { text: "What should I fix first?", label: "Priority actions" },
   { text: "What's my chargeback risk?", label: "Chargeback exposure" },
+  { text: "What changed since last analysis?", label: "Recent changes" },
+  { text: "Are there any regressions?", label: "Regressions" },
 ];
 
 // Curated playbooks for empty state — 1 per category, most accessible
@@ -502,7 +504,7 @@ function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
       </p>
 
       {/* Quick questions */}
-      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {QUICK_PRESETS.map((p) => (
           <button
             key={p.text}

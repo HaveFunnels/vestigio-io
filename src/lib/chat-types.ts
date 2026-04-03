@@ -107,7 +107,7 @@ export interface NavigationCtaBlock {
   targets: Array<{
     label: string;
     href: string;
-    variant: 'workspace' | 'map' | 'analysis' | 'actions';
+    variant: 'workspace' | 'map' | 'analysis' | 'actions' | 'changes' | 'primary' | 'secondary';
   }>;
 }
 

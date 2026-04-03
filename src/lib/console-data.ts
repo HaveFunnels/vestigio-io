@@ -1,5 +1,5 @@
 import { getMcpServer } from './mcp-client';
-import type { FindingProjection, ActionProjection, WorkspaceProjection } from '../../packages/projections';
+import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection } from '../../packages/projections';
 import type { MapDefinition } from '../../packages/maps';
 import type { McpAnswer } from '../../apps/mcp/types';
 import type { SaasSetupChecklist } from '../../apps/mcp/saas-awareness';
@@ -77,6 +77,26 @@ export function loadWorkspaces(): DataState<WorkspaceProjection[]> {
     return { status: 'error', message: 'Unexpected response type' };
   } catch (err) {
     return { status: 'error', message: err instanceof Error ? err.message : 'Unknown error loading workspaces' };
+  }
+}
+
+export function loadChangeReport(): DataState<ChangeReportProjection> {
+  try {
+    const server = getMcpServer();
+    if (!server.getContext()) {
+      return { status: 'not_ready', reason: 'No analysis context loaded. Complete onboarding or select an environment.' };
+    }
+    const result = server.callTool('get_change_report');
+    if (result.type === 'error') {
+      return { status: 'error', message: result.data.message };
+    }
+    if (result.type === 'change_report') {
+      if (!result.data) return { status: 'empty' };
+      return { status: 'ready', data: result.data };
+    }
+    return { status: 'error', message: 'Unexpected response type' };
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : 'Unknown error loading change report' };
   }
 }
 

@@ -17,7 +17,7 @@ import type {
   DecisionLink,
   DecisionIntelligenceResult,
 } from '../../packages/intelligence';
-import { projectAll, ProjectionResult, FindingProjection, ActionProjection, WorkspaceProjection, EngineTranslations } from '../../packages/projections';
+import { projectAll, ProjectionResult, FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection, EngineTranslations } from '../../packages/projections';
 import { buildAllMaps, MapDefinition } from '../../packages/maps';
 import { McpRequestScope } from './types';
 
@@ -138,6 +138,10 @@ export function getActionProjections(ctx: EngineContext): ActionProjection[] {
 
 export function getWorkspaceProjections(ctx: EngineContext): WorkspaceProjection[] {
   return projectAll(ctx.result, ctx.translations).workspaces;
+}
+
+export function getChangeReport(ctx: EngineContext): ChangeReportProjection | null {
+  return projectAll(ctx.result, ctx.translations).change_report;
 }
 
 export function getMaps(ctx: EngineContext): MapDefinition[] {

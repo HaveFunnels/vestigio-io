@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
 // ──────────────────────────────────────────────
-// Solution Layers — sticky scroll-driven cards
-// Cards start stacked, unstack as you scroll,
-// then restack at the end. Full width.
+// Solution Layers — sticky stacking cards
+//
+// Each card scrolls up and sticks at the top of the
+// viewport. The next card scrolls over the previous,
+// creating a natural stacking effect. Pure CSS sticky.
 // ──────────────────────────────────────────────
 
 const layers = [
@@ -39,172 +39,64 @@ const layers = [
 ];
 
 const colors = {
-	emerald: { border: "border-emerald-500/20", text: "text-emerald-400", bg: "bg-emerald-500/10", glow: "rgba(16,185,129,0.15)", pill: "bg-emerald-500/10 text-emerald-400" },
-	violet:  { border: "border-violet-500/20",  text: "text-violet-400",  bg: "bg-violet-500/10",  glow: "rgba(139,92,246,0.15)", pill: "bg-violet-500/10 text-violet-400" },
-	amber:   { border: "border-amber-500/20",   text: "text-amber-400",   bg: "bg-amber-500/10",   glow: "rgba(245,158,11,0.15)", pill: "bg-amber-500/10 text-amber-400" },
+	emerald: { border: "border-emerald-500/20", text: "text-emerald-400", bg: "bg-emerald-500/10", glow: "shadow-[0_8px_60px_-15px_rgba(16,185,129,0.2)]", pill: "bg-emerald-500/10 text-emerald-400", dot: "bg-emerald-400" },
+	violet:  { border: "border-violet-500/20",  text: "text-violet-400",  bg: "bg-violet-500/10",  glow: "shadow-[0_8px_60px_-15px_rgba(139,92,246,0.2)]", pill: "bg-violet-500/10 text-violet-400",  dot: "bg-violet-400" },
+	amber:   { border: "border-amber-500/20",   text: "text-amber-400",   bg: "bg-amber-500/10",   glow: "shadow-[0_8px_60px_-15px_rgba(245,158,11,0.2)]", pill: "bg-amber-500/10 text-amber-400",   dot: "bg-amber-400" },
 };
 
-export default function SolutionLayers() {
-	const sectionRef = useRef<HTMLDivElement>(null);
-	const [scrollProgress, setScrollProgress] = useState(0);
-
-	useEffect(() => {
-		const onScroll = () => {
-			if (!sectionRef.current) return;
-			const rect = sectionRef.current.getBoundingClientRect();
-			const sectionH = sectionRef.current.offsetHeight;
-			const viewH = window.innerHeight;
-
-			// 0 = section top hits viewport bottom, 1 = section bottom hits viewport top
-			const raw = (viewH - rect.top) / (sectionH + viewH);
-			setScrollProgress(Math.max(0, Math.min(1, raw)));
-		};
-
-		window.addEventListener("scroll", onScroll, { passive: true });
-		onScroll();
-		return () => window.removeEventListener("scroll", onScroll);
-	}, []);
-
-	// Phase mapping: header (0-0.15), cards (0.15-0.7), chat (0.7-0.9), end (0.9-1)
-	const headerOpacity = Math.min(1, scrollProgress / 0.15);
-
-	return (
-		<section
-			ref={sectionRef}
-			className="relative bg-[#090911]"
-			style={{ minHeight: "250vh" }}
-		>
-			{/* Background */}
-			<div className="pointer-events-none absolute inset-0 -z-10">
-				<div className="absolute left-1/2 top-[40%] h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-900/8 blur-[200px]" />
-			</div>
-
-			{/* Sticky container */}
-			<div className="sticky top-0 flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-16 sm:px-8">
-				{/* Header */}
-				<div
-					className="mb-12 max-w-[700px] text-center lg:mb-16"
-					style={{ opacity: headerOpacity, transform: `translateY(${(1 - headerOpacity) * 20}px)` }}
-				>
-					<span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">
-						Solution
-					</span>
-					<h2 className="mb-4 text-3xl font-bold leading-[1.12] tracking-tight text-white sm:text-4xl lg:text-5xl">
-						Recuse escalar seu negócio no escuro.
-					</h2>
-					<p className="text-base leading-relaxed text-gray-400 sm:text-lg">
-						Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.
-					</p>
-				</div>
-
-				{/* Cards area */}
-				<div className="relative w-full max-w-[1100px]">
-					{/* Stacking cards */}
-					<div className="relative" style={{ height: 320 }}>
-						{layers.map((layer, i) => {
-							const c = colors[layer.accent];
-							// Each card occupies a scroll band
-							const bandSize = 0.55 / 3; // cards phase = 0.15 to 0.7
-							const cardStart = 0.15 + i * bandSize;
-							const cardPeak = cardStart + bandSize * 0.5;
-							const cardEnd = cardStart + bandSize;
-
-							// Card unfold: 0 = stacked, 1 = fully visible
-							let unfold = 0;
-							if (scrollProgress < cardStart) unfold = 0;
-							else if (scrollProgress < cardPeak) unfold = (scrollProgress - cardStart) / (cardPeak - cardStart);
-							else if (scrollProgress < cardEnd) unfold = 1;
-							else if (scrollProgress < 0.9) unfold = 1;
-							else unfold = 1 - ((scrollProgress - 0.9) / 0.1); // restack at end
-
-							unfold = Math.max(0, Math.min(1, unfold));
-
-							// Stack offset when collapsed
-							const stackOffset = i * 12;
-							const stackScale = 1 - i * 0.03;
-
-							// Interpolated transforms
-							const y = (1 - unfold) * stackOffset;
-							const scale = stackScale + unfold * (1 - stackScale);
-							const opacity = 0.3 + unfold * 0.7;
-							const zIndex = unfold > 0.5 ? 10 + i : 3 - i;
-
-							return (
-								<div
-									key={layer.eyebrow}
-									className={`absolute inset-x-0 top-0 rounded-2xl border ${c.border} bg-[#0d0d14]/90 backdrop-blur-md`}
-									style={{
-										transform: `translateY(${y}px) scale(${scale})`,
-										opacity,
-										zIndex,
-										boxShadow: unfold > 0.5 ? `0 0 80px -20px ${c.glow}` : "none",
-										transition: "box-shadow 0.3s ease",
-									}}
-								>
-									<div className="flex flex-col gap-6 p-8 sm:flex-row sm:items-start sm:p-10 lg:p-12">
-										{/* Left: content */}
-										<div className="flex-1">
-											<div className="mb-4 flex items-center gap-3">
-												<span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${c.pill}`}>
-													{layer.eyebrow}
-												</span>
-											</div>
-											<h3 className="mb-3 text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">
-												{layer.title}
-											</h3>
-											<p className="mb-3 text-sm leading-relaxed text-gray-300 sm:text-base">
-												{layer.body}
-											</p>
-											<p className="text-xs leading-relaxed text-gray-500 sm:text-sm">
-												{layer.support}
-											</p>
-										</div>
-
-										{/* Right: tool pills */}
-										<div className="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-end sm:pt-10">
-											{layer.tools.map((tool) => (
-												<span
-													key={tool}
-													className={`rounded-lg border ${c.border} px-3 py-1.5 text-xs font-medium ${c.text}`}
-												>
-													{tool}
-												</span>
-											))}
-										</div>
-									</div>
-								</div>
-							);
-						})}
-					</div>
-
-					{/* MCP Chat — appears after cards */}
-					<AgenticChatFlow progress={scrollProgress} />
-				</div>
-			</div>
-		</section>
-	);
-}
-
-// ──────────────────────────────────────────────
-// Agentic Chat Flow — shows how the 3 layers
-// feed into the chat with a proper flowchart
-// ──────────────────────────────────────────────
-
-function AgenticChatFlow({ progress }: { progress: number }) {
-	const reveal = Math.max(0, Math.min(1, (progress - 0.65) / 0.15));
+function LayerCard({ layer, index }: { layer: (typeof layers)[0]; index: number }) {
+	const c = colors[layer.accent];
+	// Each card sticks a bit lower so they peek behind each other
+	const stickyTop = 80 + index * 16;
 
 	return (
 		<div
-			className="mt-16"
-			style={{
-				opacity: reveal,
-				transform: `translateY(${(1 - reveal) * 30}px)`,
-				transition: "opacity 0.15s ease-out",
-			}}
+			className="sticky z-10 pb-6"
+			style={{ top: stickyTop }}
 		>
-			{/* Flow diagram */}
-			<div className="rounded-2xl border border-white/[0.06] bg-[#0d0d14]/80 p-8 backdrop-blur-md sm:p-10 lg:p-12">
-				<div className="mb-8 text-center">
+			<div className={`rounded-2xl border ${c.border} ${c.glow} bg-[#0c0c14] backdrop-blur-md`}>
+				<div className="flex flex-col gap-6 p-7 sm:flex-row sm:items-start sm:p-10 lg:p-12">
+					{/* Left: content */}
+					<div className="flex-1 min-w-0">
+						<div className="mb-5 flex items-center gap-3">
+							<span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${c.pill}`}>
+								{layer.eyebrow}
+							</span>
+						</div>
+						<h3 className="mb-3 text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">
+							{layer.title}
+						</h3>
+						<p className="mb-3 text-sm leading-relaxed text-gray-300 sm:text-base">
+							{layer.body}
+						</p>
+						<p className="text-xs leading-relaxed text-gray-500 sm:text-sm">
+							{layer.support}
+						</p>
+					</div>
+
+					{/* Right: tool pills */}
+					<div className="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-end sm:pt-8">
+						{layer.tools.map((tool) => (
+							<span
+								key={tool}
+								className={`rounded-lg border ${c.border} px-3 py-1.5 text-xs font-medium ${c.text}`}
+							>
+								{tool}
+							</span>
+						))}
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function AgenticChatFlow() {
+	return (
+		<div className="relative z-20 pt-8 pb-4">
+			<div className="rounded-2xl border border-white/[0.06] bg-[#0c0c14] p-7 backdrop-blur-md sm:p-10 lg:p-12">
+				{/* Header */}
+				<div className="mb-10 text-center">
 					<span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">
 						Agentic Chat
 					</span>
@@ -213,62 +105,53 @@ function AgenticChatFlow({ progress }: { progress: number }) {
 					</h3>
 				</div>
 
-				{/* Flowchart: 3 layers → MCP → response */}
-				<div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:gap-0">
+				{/* Flowchart */}
+				<div className="flex flex-col items-center gap-6 lg:flex-row lg:items-center lg:gap-0">
 					{/* Source layers */}
-					<div className="flex shrink-0 flex-row gap-3 lg:flex-col lg:gap-4">
+					<div className="flex shrink-0 flex-row gap-3 lg:flex-col lg:gap-3">
 						{(["emerald", "violet", "amber"] as const).map((accent, i) => {
 							const c = colors[accent];
 							const labels = ["Findings", "Actions", "Verification"];
 							return (
 								<div
 									key={accent}
-									className={`flex items-center gap-2.5 rounded-xl border ${c.border} ${c.bg} px-4 py-2.5`}
+									className={`flex items-center gap-2 rounded-xl border ${c.border} ${c.bg} px-4 py-2.5`}
 								>
-									<div className={`h-2 w-2 rounded-full ${accent === "emerald" ? "bg-emerald-400" : accent === "violet" ? "bg-violet-400" : "bg-amber-400"}`} />
+									<div className={`h-2 w-2 rounded-full ${c.dot}`} />
 									<span className={`text-xs font-semibold ${c.text}`}>{labels[i]}</span>
 								</div>
 							);
 						})}
 					</div>
 
-					{/* Connector arrows */}
-					<div className="flex items-center justify-center lg:flex-1 lg:px-4">
-						<svg className="hidden h-20 w-full lg:block" viewBox="0 0 200 80" fill="none" preserveAspectRatio="none">
-							<path d="M0 10 C60 10, 140 40, 200 40" stroke="rgb(52 211 153)" strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
-							<path d="M0 40 C60 40, 140 40, 200 40" stroke="rgb(167 139 250)" strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
-							<path d="M0 70 C60 70, 140 40, 200 40" stroke="rgb(251 191 36)" strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
-							<circle cx="200" cy="40" r="4" fill="white" opacity="0.6" />
-						</svg>
-						{/* Mobile: vertical arrow */}
-						<svg className="block h-8 w-8 text-white/20 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+					{/* Connector → MCP */}
+					<div className="flex items-center lg:flex-1 lg:px-3">
+						<div className="hidden h-px flex-1 bg-gradient-to-r from-emerald-500/20 via-violet-500/20 to-violet-500/30 lg:block" />
+						<svg className="block h-6 w-6 text-white/20 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" />
 						</svg>
 					</div>
 
-					{/* MCP Engine node */}
-					<div className="relative shrink-0">
-						<div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-emerald-500/10 shadow-[0_0_60px_-15px_rgba(139,92,246,0.3)]">
-							<svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+					{/* MCP Engine */}
+					<div className="shrink-0 text-center">
+						<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-emerald-500/10 shadow-[0_0_50px_-12px_rgba(139,92,246,0.25)]">
+							<svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
 							</svg>
 						</div>
-						<span className="mt-2 block text-center text-[10px] font-semibold uppercase tracking-widest text-gray-500">MCP Engine</span>
+						<span className="mt-2 block text-[10px] font-semibold uppercase tracking-widest text-gray-500">MCP Engine</span>
 					</div>
 
-					{/* Connector arrow to response */}
-					<div className="flex items-center justify-center lg:flex-1 lg:px-4">
-						<svg className="hidden h-20 w-full lg:block" viewBox="0 0 200 80" fill="none" preserveAspectRatio="none">
-							<path d="M0 40 L200 40" stroke="white" strokeWidth="1" strokeDasharray="4 3" opacity="0.2" />
-							<polygon points="195,35 200,40 195,45" fill="white" opacity="0.3" />
-						</svg>
-						<svg className="block h-8 w-8 text-white/20 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+					{/* Connector → Response */}
+					<div className="flex items-center lg:flex-1 lg:px-3">
+						<div className="hidden h-px flex-1 bg-gradient-to-r from-violet-500/30 to-white/10 lg:block" />
+						<svg className="block h-6 w-6 text-white/20 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" />
 						</svg>
 					</div>
 
-					{/* Response card */}
-					<div className="w-full max-w-xs shrink-0 rounded-xl border border-white/10 bg-white/[0.04] p-5">
+					{/* Response */}
+					<div className="w-full max-w-xs shrink-0 rounded-xl border border-white/10 bg-white/[0.03] p-5">
 						<div className="mb-3 flex items-center gap-2">
 							<div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
 							<span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">Structured Response</span>
@@ -285,5 +168,39 @@ function AgenticChatFlow({ progress }: { progress: number }) {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export default function SolutionLayers() {
+	return (
+		<section className="relative bg-[#090911] py-20 lg:py-28">
+			{/* Background */}
+			<div className="pointer-events-none absolute inset-0 -z-10">
+				<div className="absolute left-1/2 top-[30%] h-[600px] w-[700px] -translate-x-1/2 rounded-full bg-violet-900/8 blur-[180px]" />
+			</div>
+
+			{/* Section header (not sticky) */}
+			<div className="mx-auto mb-16 max-w-[700px] px-4 text-center sm:px-8 lg:mb-20">
+				<span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">
+					Solution
+				</span>
+				<h2 className="mb-5 text-3xl font-bold leading-[1.12] tracking-tight text-white sm:text-4xl lg:text-5xl">
+					Recuse escalar seu negócio no escuro.
+				</h2>
+				<p className="text-base leading-relaxed text-gray-400 sm:text-lg">
+					Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.
+				</p>
+			</div>
+
+			{/* Stacking cards container */}
+			<div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">
+				{layers.map((layer, i) => (
+					<LayerCard key={layer.eyebrow} layer={layer} index={i} />
+				))}
+
+				{/* MCP Chat flow — scrolls in after all cards are stacked */}
+				<AgenticChatFlow />
+			</div>
+		</section>
 	);
 }

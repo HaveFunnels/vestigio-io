@@ -67,16 +67,9 @@ export async function register() {
     }
   }
 
-  // 5. Initialize Redis asynchronously (non-blocking)
+  // 5. Redis initializes lazily on first use (in redis.ts)
+  // Not imported here to avoid webpack bundling ioredis (Node.js builtins).
   if (process.env.REDIS_URL) {
-    import('@/libs/redis').then(({ initRedis }) => {
-      initRedis().then(() => {
-        console.log('✓ Redis initialized');
-      }).catch((err) => {
-        console.warn('⚠ Redis initialization failed (falling back to in-memory):', err);
-      });
-    }).catch(() => {
-      console.warn('⚠ Redis module not available');
-    });
+    console.log('✓ Redis configured — will connect on first use');
   }
 }

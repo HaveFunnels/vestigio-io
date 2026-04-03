@@ -1,6 +1,10 @@
 import { enforceEnv, isProduction, validateEnv } from './env-validation';
 import { initializeStores, validateStoreConfiguration, resetStoreEnforcement } from './store-enforcement';
-import { isRedisConfigured, initRedis, isRedisAvailable } from '../../src/libs/redis';
+
+// Redis check without importing redis.ts (which pulls in ioredis → Node.js builtins)
+function isRedisConfigured(): boolean {
+  return !!process.env.REDIS_URL;
+}
 
 // ──────────────────────────────────────────────
 // Platform Startup — single entry point

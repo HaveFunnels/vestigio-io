@@ -1,6 +1,6 @@
 "use client";
 
-import { useBranding } from "@/components/BrandingProvider";
+import { useBranding, useFeatureFlags } from "@/components/BrandingProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -33,13 +33,15 @@ export default function AppSidebar({
 }: AppSidebarProps) {
 	const pathname = usePathname();
 	const branding = useBranding();
+	const flags = useFeatureFlags();
 	const [hovered, setHovered] = useState(false);
 	const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	// Expandable submenus
+	// Expandable submenus — auto-open groups containing the active route
 	const [expandedMenus, setExpandedMenus] = useState<Set<string>>(() => {
 		const initial = new Set<string>();
-		for (const item of productNav) {
+		const allNavs = [...productNav, ...adminNav];
+		for (const item of allNavs) {
 			if (item.children?.some((c) => c.href && (pathname === c.href || pathname.startsWith(c.href + "/")))) {
 				initial.add(item.id);
 			}
@@ -241,7 +243,10 @@ export default function AppSidebar({
 
 			{/* Nav */}
 			<nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-				{!isAdmin && renderSection("Product", productNav)}
+				{!isAdmin && renderSection("Product", productNav.filter((item) => {
+					if (item.id === "chat" && !flags.ai_chat_enabled) return false;
+					return true;
+				}))}
 				{!isAdmin && renderSection("Control Plane", controlPlaneNav)}
 				{isAdmin && renderSection("Platform Admin", adminNav)}
 			</nav>

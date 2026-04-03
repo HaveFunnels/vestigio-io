@@ -2,31 +2,37 @@ import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
 
 // Public endpoint — no auth required.
-// Returns branding_config (logos, favicon, og_image) with cache headers.
+// Returns branding_config, theme_config, and feature_flags with cache headers.
+
+const KEYS = ["branding_config", "theme_config", "feature_flags"] as const;
 
 export async function GET() {
   try {
-    const row = await prisma.platformConfig.findUnique({
-      where: { configKey: "branding_config" },
+    const rows = await prisma.platformConfig.findMany({
+      where: { configKey: { in: KEYS as unknown as string[] } },
     });
 
-    let branding: Record<string, unknown> = {
-      logo_light: null,
-      logo_dark: null,
-      favicon: null,
-      og_image: null,
+    const map = new Map(rows.map((r: any) => [r.configKey, r.value]));
+
+    const parse = (key: string, defaults: Record<string, unknown>) => {
+      const raw = map.get(key);
+      if (!raw) return defaults;
+      try { return { ...defaults, ...JSON.parse(raw) }; }
+      catch { return defaults; }
     };
 
-    if (row) {
-      try {
-        branding = { ...branding, ...JSON.parse(row.value) };
-      } catch {
-        // keep defaults
-      }
-    }
+    const branding = parse("branding_config", {
+      logo_light: null, logo_dark: null, favicon: null, og_image: null,
+    });
+
+    const theme = parse("theme_config", {});
+    const flags = parse("feature_flags", {
+      blog_enabled: true, newsletter_enabled: true,
+      i18n_enabled: false, ai_chat_enabled: true,
+    });
 
     return NextResponse.json(
-      { branding },
+      { branding, theme, flags },
       {
         headers: {
           "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
@@ -36,7 +42,7 @@ export async function GET() {
   } catch (err: any) {
     console.error("[branding GET]", err);
     return NextResponse.json(
-      { branding: { logo_light: null, logo_dark: null, favicon: null, og_image: null } },
+      { branding: { logo_light: null, logo_dark: null, favicon: null, og_image: null }, theme: {}, flags: {} },
       { status: 200 },
     );
   }

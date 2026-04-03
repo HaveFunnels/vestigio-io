@@ -1,15 +1,18 @@
 import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
+import { getSmtpTransport } from "@/libs/email";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
+const BATCH_SIZE = 50;
+
 /**
  * POST /api/admin/newsletters/[id]/send — send a draft newsletter
  * Updates status from draft -> sending -> sent.
- * Actual email delivery is a future integration.
+ * Sends emails in batches of 50 via SMTP (DB config with env var fallback).
  */
 export const POST = withErrorTracking(async function POST(
   req: NextRequest,
@@ -46,7 +49,7 @@ export const POST = withErrorTracking(async function POST(
       data: { status: "sending" },
     });
 
-    // Count recipients based on audience
+    // ── Resolve recipient emails based on audience ──────────────
     const planFilter: Record<string, string | undefined> = {
       all: undefined,
       free: "vestigio",
@@ -55,18 +58,70 @@ export const POST = withErrorTracking(async function POST(
     };
     const planValue = planFilter[newsletter.audience];
 
-    let recipientCount = 0;
-    if (planValue) {
-      recipientCount = await prisma.organization.count({
-        where: { plan: planValue, status: "active" },
+    const orgWhere = planValue
+      ? { plan: planValue, status: "active" }
+      : { status: "active" as const };
+
+    // Get unique user emails via memberships in matching organisations
+    const memberships = await prisma.membership.findMany({
+      where: { organization: orgWhere },
+      select: { user: { select: { email: true } } },
+    });
+
+    const recipientEmails = [
+      ...new Set(
+        memberships
+          .map((m) => m.user.email)
+          .filter((e): e is string => Boolean(e)),
+      ),
+    ];
+
+    const recipientCount = recipientEmails.length;
+
+    if (recipientCount === 0) {
+      // Nothing to send — mark as sent with 0 recipients
+      const updated = await prisma.newsletter.update({
+        where: { id },
+        data: { status: "sent", recipientCount: 0, sentAt: new Date() },
       });
-    } else {
-      recipientCount = await prisma.organization.count({
-        where: { status: "active" },
-      });
+
+      return NextResponse.json({ newsletter: formatNewsletter(updated) });
     }
 
-    // Mark as sent (actual email sending integration can come later)
+    // ── Send emails in batches ──────────────────────────────────
+    try {
+      const { transporter, from } = await getSmtpTransport();
+
+      for (let i = 0; i < recipientEmails.length; i += BATCH_SIZE) {
+        const batch = recipientEmails.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((email) =>
+            transporter.sendMail({
+              from,
+              to: email,
+              subject: newsletter.subject,
+              html: newsletter.content,
+            }),
+          ),
+        );
+      }
+    } catch (sendError: unknown) {
+      // Sending failed — mark newsletter as failed with error info
+      const errorMessage =
+        sendError instanceof Error ? sendError.message : String(sendError);
+
+      await prisma.newsletter.update({
+        where: { id },
+        data: { status: "failed" },
+      });
+
+      return NextResponse.json(
+        { message: `Email delivery failed: ${errorMessage}` },
+        { status: 502 },
+      );
+    }
+
+    // ── Mark as sent ────────────────────────────────────────────
     const updated = await prisma.newsletter.update({
       where: { id },
       data: {
@@ -90,17 +145,7 @@ export const POST = withErrorTracking(async function POST(
     });
 
     return NextResponse.json({
-      newsletter: {
-        id: updated.id,
-        subject: updated.subject,
-        content: updated.content,
-        audience: updated.audience,
-        status: updated.status,
-        recipientCount: updated.recipientCount,
-        sentAt: updated.sentAt?.toISOString() ?? null,
-        createdAt: updated.createdAt.toISOString(),
-        updatedAt: updated.updatedAt.toISOString(),
-      },
+      newsletter: formatNewsletter(updated),
     });
   } catch {
     return NextResponse.json(
@@ -109,3 +154,28 @@ export const POST = withErrorTracking(async function POST(
     );
   }
 }, { endpoint: "/api/admin/newsletters/[id]/send", method: "POST" });
+
+// ── Helpers ───────────────────────────────────────────────────────
+function formatNewsletter(n: {
+  id: string;
+  subject: string;
+  content: string;
+  audience: string;
+  status: string;
+  recipientCount: number | null;
+  sentAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: n.id,
+    subject: n.subject,
+    content: n.content,
+    audience: n.audience,
+    status: n.status,
+    recipientCount: n.recipientCount,
+    sentAt: n.sentAt?.toISOString() ?? null,
+    createdAt: n.createdAt.toISOString(),
+    updatedAt: n.updatedAt.toISOString(),
+  };
+}

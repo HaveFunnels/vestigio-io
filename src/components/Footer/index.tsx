@@ -1,10 +1,11 @@
 "use client";
-import { useBranding } from "@/components/BrandingProvider";
+import { useBranding, useFeatureFlags } from "@/components/BrandingProvider";
 import Image from "next/image";
 import Link from "next/link";
 
 const Footer = () => {
 	const branding = useBranding();
+	const flags = useFeatureFlags();
 	const logoSrc = branding.logo_light?.dataUrl || "/images/logo/logo-light.svg";
 
 	return (
@@ -90,21 +91,25 @@ const Footer = () => {
 								Resources
 							</h2>
 							<ul className='flex flex-col gap-3'>
-								<li>
-									<Link className='text-sm text-gray-500 transition-colors hover:text-white' href='/blog'>
-										Blog
-									</Link>
-								</li>
+								{flags.blog_enabled && (
+									<li>
+										<Link className='text-sm text-gray-500 transition-colors hover:text-white' href='/blog'>
+											Blog
+										</Link>
+									</li>
+								)}
 								<li>
 									<Link className='text-sm text-gray-500 transition-colors hover:text-white' href='/support'>
 										Support
 									</Link>
 								</li>
-								<li>
-									<Link className='text-sm text-gray-500 transition-colors hover:text-white' href='/blog'>
-										Changelog
-									</Link>
-								</li>
+								{flags.blog_enabled && (
+									<li>
+										<Link className='text-sm text-gray-500 transition-colors hover:text-white' href='/blog'>
+											Changelog
+										</Link>
+									</li>
+								)}
 							</ul>
 						</div>
 

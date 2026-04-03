@@ -74,12 +74,12 @@ export async function trackError(error: unknown, context: ErrorContext = {}) {
  * Use this to wrap your route handler functions.
  */
 export function withErrorTracking(
-	handler: (request: any) => Promise<Response>,
+	handler: (...args: any[]) => Promise<Response>,
 	routeInfo?: { endpoint: string; method: string },
 ) {
-	return async (request: Request): Promise<Response> => {
+	return async (request: Request, context?: any): Promise<Response> => {
 		try {
-			return await handler(request);
+			return await handler(request, context);
 		} catch (error) {
 			await trackError(error, {
 				endpoint: routeInfo?.endpoint ?? 'unknown',

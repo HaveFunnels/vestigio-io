@@ -1,117 +1,35 @@
-import { getPostsByAuthor, getAuthorBySlug } from "@/sanity/sanity-utils";
-import BlogItem from "@/components/Blog/BlogItem";
-import Breadcrumbs from "@/components/Common/Breadcrumbs";
-import { Author } from "@/types/blog";
-import Image from "next/image";
-import { imageBuilder } from "@/sanity/sanity-utils";
+import { notFound } from "next/navigation";
+import { integrations } from "../../../../../../integrations.config";
 
-type Props = {
-	params: Promise<{
-		slug: string;
-	}>;
-};
+export const dynamic = "force-dynamic";
 
-export async function generateMetadata(props: Props) {
-    const params = await props.params;
-    const { slug } = params;
-    const author = (await getAuthorBySlug(slug)) as Author;
-    const siteURL = process.env.SITE_URL;
-    const authorName = process.env.AUTHOR_NAME;
+type Props = { params: Promise<{ slug: string }> };
 
-    if (author) {
-		return {
-			title: `${
-				author.name || "Author Page"
-			} | ${authorName} - Vestigio`,
-			description: author.bio,
-			author: authorName,
+export default async function AuthorPage(props: Props) {
+	if (!integrations?.isSanityEnabled) return notFound();
 
-			robots: {
-				index: false,
-				follow: false,
-				nocache: true,
-			},
+	const { getPostsByAuthor, getAuthorBySlug, imageBuilder } = await import("@/sanity/sanity-utils");
+	const BlogItem = (await import("@/components/Blog/BlogItem")).default;
+	const Image = (await import("next/image")).default;
 
-			openGraph: {
-				title: `${author.name} | ${authorName}`,
-				description: author.bio,
-				url: `${siteURL}/blog/author/${slug}`,
-				siteName: authorName,
-				images: [
-					{
-						url: imageBuilder(author.image).url(),
-						width: 343,
-						height: 343,
-						alt: author.name,
-					},
-				],
-				locale: "en_US",
-				type: "article",
-			},
+	const params = await props.params;
+	const { slug } = params;
+	const posts = await getPostsByAuthor(slug);
+	const author = (await getAuthorBySlug(slug)) as any;
 
-			twitter: {
-				card: "summary_large_image",
-				title: `${author.name} | ${authorName}`,
-				description: `${author.bio?.slice(0, 136)}...`,
-				creator: `@${authorName}`,
-				site: `@${authorName}`,
-				images: [imageBuilder(author.image).url()],
-				url: `${siteURL}/blog/author/${slug}`,
-			},
-		};
-	} else {
-		return {
-			title: "Not Found",
-			description: "No Author Found has been found",
-		};
-	}
-}
+	if (!author) return notFound();
 
-const BlogGrid = async (props: Props) => {
-    const params = await props.params;
-    const { slug } = params;
-
-    const posts = await getPostsByAuthor(slug);
-    const author = (await getAuthorBySlug(slug)) as Author;
-
-    return (
+	return (
 		<main>
-			<section className='lg:ub-pb-22.5 relative z-1 overflow-hidden pb-17.5 pt-35 xl:pb-27.5'>
-				{/* <!-- bg shapes --> */}
-				<div>
-					<div className='absolute left-0 top-0 -z-1'>
-						<Image
-							src='/images/blog/blog-shape-01.svg'
-							alt='shape'
-							width={340}
-							height={680}
-						/>
-					</div>
-					<div className='absolute right-0 top-0 -z-1'>
-						<Image
-							src='/images/blog/blog-shape-02.svg'
-							alt='shape'
-							width={425}
-							height={682}
-						/>
-					</div>
-				</div>
-
-				<Breadcrumbs title={author?.name} pages={["Home", author?.name]} />
-
-				<div className='mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>
-					<div className='grid grid-cols-1 gap-x-7.5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3'>
-						{/* Blog Item */}
-						{posts?.length > 0 ? (
-							posts?.map((item, key) => <BlogItem key={key} blog={item} />)
-						) : (
-							<p>No posts available!</p>
-						)}
+			<section className="relative z-1 overflow-hidden pb-17.5 pt-35">
+				<div className="mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0">
+					<h1 className="mb-8 text-2xl font-bold">{author?.name}</h1>
+					<div className="grid grid-cols-1 gap-7.5 sm:grid-cols-2 lg:grid-cols-3">
+						{posts?.map((item: any, key: number) => <BlogItem key={key} blog={item} />)}
+						{!posts?.length && <p>No posts available.</p>}
 					</div>
 				</div>
 			</section>
 		</main>
 	);
-};
-
-export default BlogGrid;
+}

@@ -1,6 +1,8 @@
 import Home from "@/components/Home";
 import { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
 	title: "Vestigio — Intelligence & Decision Engine for SaaS",
 	description:

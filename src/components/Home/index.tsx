@@ -1,4 +1,5 @@
 import Hero from "./Hero";
+import SolutionLayers from "./SolutionLayers";
 import Features from "./Features";
 import FeaturesWithImage from "./FeaturesWithImage";
 import Counter from "./Counter";
@@ -11,6 +12,7 @@ const Home = () => {
 	return (
 		<>
 			<Hero />
+			<SolutionLayers />
 			<Features />
 			<FeaturesWithImage />
 			<Counter />

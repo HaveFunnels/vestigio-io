@@ -52,19 +52,20 @@ export default function UserAction({ user }: any) {
 	const handleLogin = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 
-		signIn("impersonate", {
+		if (!confirm(`Login as ${user?.email}?\n\nYou will be signed out of your admin session.`)) return;
+
+		const result = await signIn("impersonate", {
+			redirect: false,
 			adminEmail: session?.user?.email,
 			userEmail: user?.email,
-		}).then((callback) => {
-			if (callback?.error) {
-				toast.error(callback.error);
-			}
-
-			if (callback?.ok && !callback?.error) {
-				toast.success("Logged in successfully");
-				router.refresh();
-			}
 		});
+
+		if (result?.error) {
+			toast.error(result.error);
+		} else if (result?.ok) {
+			toast.success("Logged in as user");
+			window.location.href = "/app";
+		}
 	};
 
 	return (

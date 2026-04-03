@@ -70,6 +70,13 @@ export default withAuth(
 			return NextResponse.next();
 		}
 
+		// ── Authenticated user on auth pages → redirect to /app ──
+		// If a logged-in user lands on /auth/signin (or any /auth/* page),
+		// redirect them to /app instead of showing the sign-in form.
+		if (isAppDomain(host) && pathname.startsWith("/auth/") && req.nextauth.token) {
+			return NextResponse.redirect(new URL("/app", req.url));
+		}
+
 		// ── App domain root ─────────────────────────
 		// app.vestigio.io/ (root) → redirect to /app (auth required)
 		// or /auth/signin if not authenticated

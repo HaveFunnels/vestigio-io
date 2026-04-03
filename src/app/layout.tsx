@@ -1,6 +1,8 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { Inter } from "next/font/google";
+import "../styles/globals.css";
+import "../styles/satoshi.css";
 
 const inter = Inter({ subsets: ["latin"] });
 

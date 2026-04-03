@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export const GET = withErrorTracking(async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: any,
 ) {
   const session = await getServerSession(authOptions);
 
@@ -17,7 +17,9 @@ export const GET = withErrorTracking(async function GET(
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
-  const { id } = params;
+  // Next.js 15: params may be a Promise
+  const params = await context.params;
+  const id = params.id;
 
   try {
     const org = await prisma.organization.findUnique({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 // ──────────────────────────────────────────────
@@ -99,6 +99,88 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
+/* ---------- Animated Counter ---------- */
+
+function AnimatedValue({ value, prefix = "", suffix = "" }: { value: string; prefix?: string; suffix?: string }) {
+  const [display, setDisplay] = useState(value);
+  const prevRef = useRef(value);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    if (prevRef.current === value) return;
+    prevRef.current = value;
+
+    // Try to animate numeric values
+    const numMatch = value.match(/^[\d,.]+/);
+    if (numMatch) {
+      const target = parseFloat(value.replace(/[^0-9.]/g, ""));
+      const duration = 600;
+      const start = Date.now();
+      setAnimating(true);
+
+      const tick = () => {
+        const elapsed = Date.now() - start;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(target * eased);
+
+        // Preserve formatting
+        if (value.includes("k")) {
+          setDisplay(`${(current / 1000).toFixed(1)}k`);
+        } else if (value.includes("M")) {
+          setDisplay(`${(current / 1000000).toFixed(1)}M`);
+        } else if (value.includes("$")) {
+          setDisplay(value); // Keep dollar formatting as-is once done
+        } else {
+          setDisplay(current.toLocaleString());
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          setDisplay(value);
+          setAnimating(false);
+        }
+      };
+      requestAnimationFrame(tick);
+    } else {
+      setDisplay(value);
+    }
+  }, [value]);
+
+  return <span className={animating ? "tabular-nums" : ""}>{prefix}{display}{suffix}</span>;
+}
+
+/* ---------- Skeleton ---------- */
+
+function SkeletonCard() {
+  return (
+    <div className="relative overflow-hidden rounded-lg border border-edge bg-surface-card p-5">
+      <div className="flex items-start justify-between">
+        <div className="flex-1 space-y-3">
+          <div className="h-3 w-20 animate-pulse rounded bg-white/[0.06]" />
+          <div className="h-7 w-24 animate-pulse rounded bg-white/[0.06]" />
+          <div className="h-3 w-32 animate-pulse rounded bg-white/[0.06]" />
+        </div>
+        <div className="h-10 w-10 animate-pulse rounded-lg bg-white/[0.06]" />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonRow() {
+  return (
+    <div className="flex items-center justify-between px-5 py-3">
+      <div className="flex-1 space-y-2">
+        <div className="h-4 w-32 animate-pulse rounded bg-white/[0.06]" />
+        <div className="h-3 w-24 animate-pulse rounded bg-white/[0.06]" />
+      </div>
+      <div className="h-5 w-16 animate-pulse rounded bg-white/[0.06]" />
+    </div>
+  );
+}
+
 /* ---------- Stat Card ---------- */
 
 function StatCard({
@@ -108,6 +190,7 @@ function StatCard({
   accent,
   icon,
   warn,
+  loading,
 }: {
   label: string;
   value: string;
@@ -115,9 +198,12 @@ function StatCard({
   accent?: boolean;
   icon: React.ReactNode;
   warn?: boolean;
+  loading?: boolean;
 }) {
+  if (loading) return <SkeletonCard />;
+
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-edge bg-surface-card p-5 transition-colors hover:bg-surface-card-hover">
+    <div className="group relative overflow-hidden rounded-lg border border-edge bg-surface-card p-5 transition-all duration-300 hover:bg-surface-card-hover">
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
@@ -132,14 +218,14 @@ function StatCard({
                   : "text-content"
             }`}
           >
-            {value}
+            <AnimatedValue value={value} />
           </p>
           {sub && (
             <p className="mt-1 text-xs text-content-faint">{sub}</p>
           )}
         </div>
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
             warn
               ? "bg-amber-500/10 text-amber-400"
               : accent
@@ -316,8 +402,6 @@ export default function AdminOverviewPage() {
     planCounts[p] = (planCounts[p] || 0) + 1;
   }
 
-  const placeholder = loading ? "..." : "--";
-
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
@@ -334,32 +418,36 @@ export default function AdminOverviewPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Organizations"
-          value={loading ? placeholder : String(totalOrgs)}
+          value={String(totalOrgs)}
           sub={`${activeOrgs} active, ${totalOrgs - activeOrgs} inactive`}
           icon={icons.building}
+          loading={loading}
         />
         <StatCard
           label="Active Subscriptions"
-          value={loading ? placeholder : String(activeOrgs)}
+          value={String(activeOrgs)}
           sub={Object.entries(planCounts)
             .map(([k, v]) => `${v} ${k}`)
             .join(" / ")}
           icon={icons.checkBadge}
           accent
+          loading={loading}
         />
         <StatCard
           label="Monthly Recurring Revenue"
-          value={loading ? placeholder : dollars(mrr)}
-          sub={loading ? undefined : `${cents(mrr)} / month`}
+          value={dollars(mrr)}
+          sub={`${cents(mrr)} / month`}
           icon={icons.currencyDollar}
           accent
+          loading={loading}
         />
         <StatCard
           label="MCP Queries Today"
-          value={loading ? placeholder : formatNum(mcpToday)}
+          value={formatNum(mcpToday)}
           sub={overLimit > 0 ? `${overLimit} org(s) over limit` : "All within limits"}
           icon={icons.bolt}
           warn={overLimit > 0}
+          loading={loading}
         />
       </div>
 
@@ -367,19 +455,21 @@ export default function AdminOverviewPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Users"
-          value={loading ? placeholder : formatNum(totalMembers)}
+          value={formatNum(totalMembers)}
           sub={`Across ${totalOrgs} organizations`}
           icon={icons.users}
+          loading={loading}
         />
         <StatCard
           label="Playwright Runs Today"
-          value={loading ? placeholder : formatNum(playwrightToday)}
-          sub={loading ? undefined : `Est. cost: ${cents(costToday)}`}
+          value={formatNum(playwrightToday)}
+          sub={`Est. cost: ${cents(costToday)}`}
           icon={icons.playwright}
+          loading={loading}
         />
         <StatCard
           label="Unresolved Errors"
-          value={loading ? placeholder : String(unresolvedErrors)}
+          value={String(unresolvedErrors)}
           sub={
             errorSummary && errorSummary.groupedByType.length > 0
               ? `Top: ${errorSummary.groupedByType[0].errorType} (${errorSummary.groupedByType[0].count})`
@@ -387,17 +477,16 @@ export default function AdminOverviewPage() {
           }
           icon={icons.exclamation}
           warn={unresolvedErrors > 0}
+          loading={loading}
         />
         <StatCard
           label="System Health"
           value={
-            loading
-              ? placeholder
-              : healthData
-                ? healthOk
-                  ? "Healthy"
-                  : `${failedChecks} issue(s)`
-                : "Unknown"
+            healthData
+              ? healthOk
+                ? "Healthy"
+                : `${failedChecks} issue(s)`
+              : "Unknown"
           }
           sub={
             healthData
@@ -407,6 +496,7 @@ export default function AdminOverviewPage() {
           icon={icons.heart}
           accent={healthOk}
           warn={healthData != null && !healthOk}
+          loading={loading}
         />
       </div>
 
@@ -441,9 +531,7 @@ export default function AdminOverviewPage() {
           </div>
           <div className="divide-y divide-edge">
             {loading ? (
-              <div className="px-5 py-8 text-center text-sm text-content-faint">
-                Loading...
-              </div>
+              <>{Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}</>
             ) : topUsageOrgs.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-content-faint">
                 No usage data yet.
@@ -506,9 +594,7 @@ export default function AdminOverviewPage() {
           </div>
           <div className="divide-y divide-edge">
             {loading ? (
-              <div className="px-5 py-8 text-center text-sm text-content-faint">
-                Loading...
-              </div>
+              <>{Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}</>
             ) : recentOrgs.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-content-faint">
                 No organizations yet.

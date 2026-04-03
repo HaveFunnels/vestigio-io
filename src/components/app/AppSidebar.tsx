@@ -239,7 +239,7 @@ export default function AppSidebar({
 				onMouseLeave={handleMouseLeave}
 				className={cn(
 					"hidden flex-col border-r border-white/[0.06] md:flex",
-					"bg-gradient-to-b from-[#111318] via-[#0d0f13] to-[#0a0c0f]",
+					"bg-gradient-to-b from-[#1a1d25] via-[#13151b] to-[#0e1014]",
 					"transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
 					isExpanded ? "w-56" : "w-14"
 				)}
@@ -264,7 +264,7 @@ export default function AppSidebar({
 				<aside
 					className={cn(
 						"absolute left-0 top-0 flex h-full w-64 flex-col",
-						"bg-gradient-to-b from-[#111318] via-[#0d0f13] to-[#0a0c0f]",
+						"bg-gradient-to-b from-[#1a1d25] via-[#13151b] to-[#0e1014]",
 						"transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
 						mobileOpen ? "translate-x-0" : "-translate-x-full"
 					)}

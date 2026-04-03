@@ -653,12 +653,7 @@ export default function AdminOverviewPage() {
           <QuickLink
             href="/app/admin/organizations"
             label="Organizations"
-            desc="Manage tenants, plans, and suspensions"
-          />
-          <QuickLink
-            href="/app/admin/environments"
-            label="Environments"
-            desc="Domains, audit status, production flags"
+            desc="Manage tenants, members, environments"
           />
           <QuickLink
             href="/app/admin/pricing"

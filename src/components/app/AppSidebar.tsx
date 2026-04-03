@@ -214,8 +214,8 @@ export default function AppSidebar({
 				</span>
 			</div>
 			<nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-				{renderSection("Product", productNav)}
-				{renderSection("Control Plane", controlPlaneNav)}
+				{!isAdmin && renderSection("Product", productNav)}
+				{!isAdmin && renderSection("Control Plane", controlPlaneNav)}
 				{isAdmin && renderSection("Platform Admin", adminNav)}
 			</nav>
 		</>

@@ -1,3 +1,4 @@
+import { evaluateAlerts } from "@/libs/alert-evaluator";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { checkRateLimit } from "@/libs/limiter";
 import { prisma } from "@/libs/prismaDb";
@@ -57,6 +58,9 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 				...newUser,
 			},
 		});
+
+		// Fire-and-forget: evaluate alert rules for new signups
+		evaluateAlerts("new_signup").catch(() => {});
 
 		return NextResponse.json(
 			{

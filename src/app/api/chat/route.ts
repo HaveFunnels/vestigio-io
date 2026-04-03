@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
+import { evaluateAlerts } from "@/libs/alert-evaluator";
 import { trackError } from "@/libs/error-tracker";
 import {
   executePipeline,
@@ -150,6 +151,10 @@ export async function POST(request: Request) {
       { status: 429 },
     );
   }
+
+  // Fire-and-forget: evaluate alert rules for mcp_usage and org_over_limit
+  evaluateAlerts("mcp_usage").catch(() => {});
+  evaluateAlerts("org_over_limit").catch(() => {});
 
   // For ultra: check if remaining budget covers the extra cost
   if (queryCost > 1 && budgetCheck.current + queryCost - 1 > budgetCheck.limit) {

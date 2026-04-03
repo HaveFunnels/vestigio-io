@@ -1,4 +1,5 @@
 import { prisma } from "@/libs/prismaDb";
+import { evaluateAlerts } from "@/libs/alert-evaluator";
 import crypto from "node:crypto";
 
 type ErrorContext = {
@@ -63,6 +64,9 @@ export async function trackError(error: unknown, context: ErrorContext = {}) {
 				severity: context.severity || "error",
 			},
 		});
+
+		// Fire-and-forget: evaluate alert rules for error_rate
+		evaluateAlerts("error_rate").catch(() => {});
 	} catch {
 		// Never let error tracking itself crash the app
 		console.error("[error-tracker] Failed to persist error:", error);

@@ -1,11 +1,17 @@
 import { prisma } from "@/libs/prismaDb";
+import { checkRateLimit } from "@/libs/limiter";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * POST /api/analytics/event — Public, no auth.
+ * POST /api/analytics/event — Public, rate-limited.
  * Records a marketing event (click, scroll, CTA, etc.)
+ * Limit: 60 requests per minute per IP.
  */
 export async function POST(req: NextRequest) {
+  // Rate limit: 60 events per minute per IP
+  const rateLimitResponse = await checkRateLimit(60, 60000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await req.json();
 
@@ -16,6 +22,17 @@ export async function POST(req: NextRequest) {
         { message: "sessionId, eventType, and path are required" },
         { status: 400 },
       );
+    }
+
+    // Validate inputs
+    if (typeof sessionId !== "string" || sessionId.length > 100) {
+      return NextResponse.json({ ok: false }, { status: 400 });
+    }
+
+    // Allowlist of valid event types
+    const validEventTypes = ["click", "scroll_depth", "cta_click", "form_start", "form_complete", "signup", "time_on_page", "drop_off"];
+    if (!validEventTypes.includes(eventType)) {
+      return NextResponse.json({ ok: false }, { status: 400 });
     }
 
     // Fire and forget

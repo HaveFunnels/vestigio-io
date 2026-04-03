@@ -52,11 +52,13 @@ export default function UserAction({ user }: any) {
 	const handleLogin = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 
-		if (!confirm(`Login as ${user?.email}?\n\nYou will be signed out of your admin session.`)) return;
+		const adminPassword = prompt(`Enter your admin password to login as ${user?.email}.\n\nYou will be signed out of your admin session.`);
+		if (!adminPassword) return;
 
 		const result = await signIn("impersonate", {
 			redirect: false,
 			adminEmail: session?.user?.email,
+			adminPassword,
 			userEmail: user?.email,
 		});
 

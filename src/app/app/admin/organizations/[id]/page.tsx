@@ -315,11 +315,8 @@ export default function AdminOrganizationDetailPage() {
   async function handleImpersonate() {
     if (!org) return;
     if (
-      !confirm(
-        `Login as the owner of "${org.name}"?\n\nYou will be signed out of your admin session.`
-      )
-    )
-      return;
+    const adminPassword = prompt(`Enter your admin password to impersonate "${org.name}" owner.\n\nYou will be signed out.`);
+    if (!adminPassword) return;
 
     setActionLoading(true);
     try {
@@ -343,6 +340,7 @@ export default function AdminOrganizationDetailPage() {
       const result = await signIn("impersonate", {
         redirect: false,
         adminEmail,
+        adminPassword,
         userEmail: data.email,
       });
 

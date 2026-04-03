@@ -28,6 +28,18 @@ export function vestigioStartup(prisma?: any): StartupResult {
   console.log(`│  VESTIGIO — Starting (${env})              │`);
   console.log(`└──────────────────────────────────────────┘\n`);
 
+  // 0. Check SECRET strength
+  const secret = process.env.SECRET;
+  const secretWeak = !secret || secret.length < 32;
+  if (secretWeak) {
+    console.warn('⚠ WARNING: SECRET is missing or too short (< 32 chars). Generate one with: openssl rand -base64 32');
+  }
+  checks.push({
+    name: 'SECRET strength',
+    passed: !secretWeak,
+    message: secretWeak ? 'SECRET missing or weak (< 32 chars) — generate with: openssl rand -base64 32' : 'SECRET configured (32+ chars)',
+  });
+
   // 1. Validate environment
   const envResult = validateEnv();
   checks.push({

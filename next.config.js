@@ -96,6 +96,22 @@ const nextConfig = {
 						key: "Permissions-Policy",
 						value: "camera=(), microphone=(), geolocation=()",
 					},
+					{
+						key: "Content-Security-Policy",
+						value: [
+							"default-src 'self'",
+							"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sanity.io https://*.paddle.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com",
+							"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.sanity.io",
+							"img-src 'self' data: blob: https://cdn.sanity.io https://*.googleusercontent.com https://*.githubusercontent.com https://*.r2.cloudflarestorage.com",
+							"font-src 'self' https://fonts.gstatic.com",
+							"connect-src 'self' https://*.sanity.io https://*.paddle.com https://*.google-analytics.com wss://*.sanity.io",
+							"frame-src 'self' https://*.paddle.com https://*.sanity.io",
+							"object-src 'none'",
+							"base-uri 'self'",
+							"form-action 'self'",
+							"frame-ancestors 'none'",
+						].join("; "),
+					},
 				],
 			},
 		];

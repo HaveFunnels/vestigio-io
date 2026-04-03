@@ -1,11 +1,17 @@
 import { prisma } from "@/libs/prismaDb";
+import { checkRateLimit } from "@/libs/limiter";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * POST /api/analytics/pageview — Public, no auth.
+ * POST /api/analytics/pageview — Public, rate-limited.
  * Records a marketing page view.
+ * Limit: 30 requests per minute per IP.
  */
 export async function POST(req: NextRequest) {
+  // Rate limit: 30 page views per minute per IP
+  const rateLimitResponse = await checkRateLimit(30, 60000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await req.json();
 
@@ -29,6 +35,11 @@ export async function POST(req: NextRequest) {
         { message: "sessionId and path are required" },
         { status: 400 },
       );
+    }
+
+    // Validate sessionId format (prevent injection)
+    if (typeof sessionId !== "string" || sessionId.length > 100) {
+      return NextResponse.json({ ok: false }, { status: 400 });
     }
 
     // Fire and forget — don't block the response

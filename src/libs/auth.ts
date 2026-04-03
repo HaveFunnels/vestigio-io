@@ -18,6 +18,36 @@ declare module "next-auth" {
 	}
 }
 
+// ── Account lockout: track failed attempts ──
+const failedAttempts: Record<string, { count: number; lockedUntil: number }> = {};
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkLockout(email: string): boolean {
+	const entry = failedAttempts[email];
+	if (!entry) return false;
+	if (entry.lockedUntil > Date.now()) return true;
+	// Lockout expired — reset
+	delete failedAttempts[email];
+	return false;
+}
+
+function recordFailedAttempt(email: string): void {
+	const entry = failedAttempts[email] || { count: 0, lockedUntil: 0 };
+	entry.count += 1;
+	if (entry.count >= MAX_FAILED_ATTEMPTS) {
+		entry.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+	}
+	failedAttempts[email] = entry;
+}
+
+function clearFailedAttempts(email: string): void {
+	delete failedAttempts[email];
+}
+
+// Generic error message to prevent email enumeration
+const INVALID_CREDENTIALS = "Invalid email or password";
+
 export const authOptions: NextAuthOptions = {
 	pages: {
 		signIn: "/auth/signin",
@@ -37,39 +67,44 @@ export const authOptions: NextAuthOptions = {
 			name: "credentials",
 			id: "credentials",
 			credentials: {
-				email: { label: "Email", type: "text", placeholder: "Jhondoe" },
+				email: { label: "Email", type: "text" },
 				password: { label: "Password", type: "password" },
-				username: { label: "Username", type: "text", placeholder: "Jhon Doe" },
 			},
 
 			async authorize(credentials) {
-				// check to see if eamil and password is there
 				if (!credentials?.email || !credentials?.password) {
-					throw new Error("Please enter an email or password");
+					throw new Error(INVALID_CREDENTIALS);
 				}
 
-				// check to see if user already exist
+				const email = credentials.email.toLowerCase();
+
+				// Check account lockout
+				if (checkLockout(email)) {
+					throw new Error("Account temporarily locked. Try again in 15 minutes.");
+				}
+
 				const user = await prisma.user.findUnique({
-					where: {
-						email: credentials.email,
-					},
+					where: { email },
 				});
 
-				// if user was not found
-				if (!user || !user?.password) {
-					throw new Error("No user found");
+				// User not found — same error as wrong password (prevent enumeration)
+				if (!user || !user.password) {
+					recordFailedAttempt(email);
+					throw new Error(INVALID_CREDENTIALS);
 				}
 
-				// check to see if passwords match
 				const passwordMatch = await bcrypt.compare(
 					credentials.password,
 					user.password
 				);
 
 				if (!passwordMatch) {
-					throw new Error("Incorrect password");
+					recordFailedAttempt(email);
+					throw new Error(INVALID_CREDENTIALS);
 				}
 
+				// Successful login — clear failed attempts
+				clearFailedAttempts(email);
 				return user;
 			},
 		}),
@@ -78,77 +113,52 @@ export const authOptions: NextAuthOptions = {
 			name: "impersonate",
 			id: "impersonate",
 			credentials: {
-				adminEmail: {
-					label: "Admin Email",
-					type: "text",
-					placeholder: "Jhondoe@gmail.com",
-				},
-				userEmail: {
-					label: "User Email",
-					type: "text",
-					placeholder: "Jhondoe@gmail.com",
-				},
+				adminEmail: { label: "Admin Email", type: "text" },
+				adminPassword: { label: "Admin Password", type: "password" },
+				userEmail: { label: "User Email", type: "text" },
 			},
 
 			async authorize(credentials) {
-				// check to see if eamil and password is there
-				if (!credentials?.adminEmail || !credentials?.userEmail) {
-					throw new Error("User email or Admin email is missing");
+				if (!credentials?.adminEmail || !credentials?.userEmail || !credentials?.adminPassword) {
+					throw new Error("Admin email, password, and target user email are required");
 				}
 
 				const admin = await prisma.user.findUnique({
-					where: {
-						email: credentials.adminEmail.toLocaleLowerCase(),
-					},
-				});
-
-				const user = await prisma.user.findUnique({
-					where: {
-						email: credentials.userEmail.toLocaleLowerCase(),
-					},
+					where: { email: credentials.adminEmail.toLowerCase() },
 				});
 
 				if (!admin || admin.role !== "ADMIN") {
 					throw new Error("Access denied");
 				}
 
-				// if user was not found
-				if (!user) {
-					throw new Error("No user found");
+				// Require admin to re-authenticate with password
+				if (!admin.password) {
+					throw new Error("Admin account has no password configured");
 				}
-				return user;
-			},
-		}),
-		CredentialsProvider({
-			name: "fetchSession",
-			id: "fetchSession",
-			credentials: {
-				email: {
-					label: "User Email",
-					type: "text",
-					placeholder: "Jhondoe@gmail.com",
-				},
-			},
 
-			async authorize(credentials) {
-				// check to see if eamil and password is there
-				if (!credentials?.email) {
-					throw new Error("User email is missing");
+				const passwordMatch = await bcrypt.compare(
+					credentials.adminPassword,
+					admin.password
+				);
+
+				if (!passwordMatch) {
+					throw new Error("Invalid admin password");
 				}
 
 				const user = await prisma.user.findUnique({
-					where: {
-						email: credentials.email.toLocaleLowerCase(),
-					},
+					where: { email: credentials.userEmail.toLowerCase() },
 				});
 
-				// if user was not found
 				if (!user) {
-					throw new Error("No user found");
+					throw new Error("Target user not found");
 				}
+
 				return user;
 			},
 		}),
+
+		// fetchSession provider REMOVED — was a security vulnerability
+		// (authenticated any user by email alone without password)
 
 		EmailProvider({
 			server: {
@@ -179,15 +189,11 @@ export const authOptions: NextAuthOptions = {
 
 	callbacks: {
 		redirect: async ({ url, baseUrl }) => {
-			// If the url is a relative path, prefix with baseUrl
 			if (url.startsWith("/")) {
-				// Prevent redirect loops to auth pages after sign-in
 				if (url.startsWith("/auth/")) return `${baseUrl}/app`;
 				return `${baseUrl}${url}`;
 			}
-			// Same origin — allow
 			if (url.startsWith(baseUrl)) return url;
-			// Default — go to app (middleware handles onboarding gate)
 			return `${baseUrl}/app`;
 		},
 
@@ -196,7 +202,6 @@ export const authOptions: NextAuthOptions = {
 			const user: User = payload.user;
 
 			if (trigger === "update") {
-				// Re-check org membership from DB on session refresh
 				const membership = await prisma.membership.findFirst({
 					where: {
 						userId: token.sub as string,
@@ -209,15 +214,10 @@ export const authOptions: NextAuthOptions = {
 					hasOrganization: !!membership,
 					picture: session?.user?.image ?? token.picture,
 					image: session?.user?.image ?? token.image,
-					priceId: session?.user?.priceId ?? token.priceId,
-					currentPeriodEnd: session?.user?.currentPeriodEnd ?? token.currentPeriodEnd,
-					subscriptionId: session?.user?.subscriptionId ?? token.subscriptionId,
-					customerId: session?.user?.customerId ?? token.customerId,
 				};
 			}
 
 			if (user) {
-				// Initial sign-in — check if user has an active organization
 				const membership = await prisma.membership.findFirst({
 					where: {
 						userId: user.id,
@@ -225,7 +225,6 @@ export const authOptions: NextAuthOptions = {
 					},
 				});
 
-				// Mark impersonated sessions so middleware allows admin-as-user access
 				const isImpersonating = account?.provider === "impersonate";
 
 				return {
@@ -233,12 +232,11 @@ export const authOptions: NextAuthOptions = {
 					uid: user.id,
 					hasOrganization: !!membership,
 					isImpersonating,
-					priceId: user.priceId,
-					currentPeriodEnd: user.currentPeriodEnd,
-					subscriptionId: user.subscriptionId,
 					role: user.role,
 					picture: user.image,
 					image: user.image,
+					// Sensitive billing fields stripped from JWT
+					// Access via API when needed, not stored in client token
 				};
 			}
 			return token;
@@ -253,19 +251,15 @@ export const authOptions: NextAuthOptions = {
 						id: token.sub,
 						hasOrganization: token.hasOrganization ?? true,
 						isImpersonating: token.isImpersonating ?? false,
-						priceId: token.priceId,
-						currentPeriodEnd: token.currentPeriodEnd,
-						subscriptionId: token.subscriptionId,
 						role: token.role,
 						image: token.picture,
+						// Billing fields not exposed in session
 					},
 				};
 			}
 			return session;
 		},
 	},
-
-	// debug: process.env.NODE_ENV === "developement",
 };
 
 export const getAuthSession = async () => {

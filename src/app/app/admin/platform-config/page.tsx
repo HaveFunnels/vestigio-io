@@ -301,7 +301,10 @@ function SectionCard({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
-  const [local, setLocal] = useState<Record<string, unknown>>(data);
+  const [local, setLocal] = useState<Record<string, unknown>>(data ?? {});
+
+  // Guard: if meta is missing, skip rendering
+  if (!meta) return null;
 
   // Sync when parent data changes (e.g. after initial load)
   useEffect(() => {
@@ -550,7 +553,7 @@ export default function PlatformConfigPage() {
             <SectionCard
               key={key}
               sectionKey={key}
-              data={config[key] as Record<string, unknown>}
+              data={(config[key] ?? DEFAULTS[key]) as Record<string, unknown>}
               onUpdate={handleUpdate}
             />
           ))}

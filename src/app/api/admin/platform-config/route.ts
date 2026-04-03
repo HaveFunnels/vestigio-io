@@ -1,5 +1,4 @@
 import { authOptions } from "@/libs/auth";
-import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -108,18 +107,19 @@ async function requireAdmin() {
 
 // ── GET ──────────────────────────────────────
 
-export const GET = withErrorTracking(
-  async function GET() {
+export async function GET() {
+  try {
     const admin = await requireAdmin();
     if (!admin) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    const keys: string[] = CONFIG_KEYS.slice();
     const rows = await prisma.platformConfig.findMany({
-      where: { configKey: { in: [...CONFIG_KEYS] } },
+      where: { configKey: { in: keys } },
     });
 
-    const rowMap = new Map(rows.map((r) => [r.configKey, r.value]));
+    const rowMap = new Map(rows.map((r: any) => [r.configKey, r.value]));
 
     const config: Record<string, Record<string, unknown>> = {};
 
@@ -133,20 +133,24 @@ export const GET = withErrorTracking(
           parsed = {};
         }
       }
-      // Merge with defaults so new fields appear
       const merged = { ...DEFAULTS[key], ...parsed };
       config[key] = maskSecrets(key, merged);
     }
 
     return NextResponse.json({ config });
-  },
-  { endpoint: "/api/admin/platform-config", method: "GET" },
-);
+  } catch (err: any) {
+    console.error("[platform-config GET]", err);
+    return NextResponse.json(
+      { message: err?.message || "Internal error" },
+      { status: 500 },
+    );
+  }
+}
 
 // ── POST ─────────────────────────────────────
 
-export const POST = withErrorTracking(
-  async function POST(request: Request) {
+export async function POST(request: Request) {
+  try {
     const admin = await requireAdmin();
     if (!admin) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -201,6 +205,11 @@ export const POST = withErrorTracking(
     });
 
     return NextResponse.json({ message: "Saved", section });
-  },
-  { endpoint: "/api/admin/platform-config", method: "POST" },
-);
+  } catch (err: any) {
+    console.error("[platform-config POST]", err);
+    return NextResponse.json(
+      { message: err?.message || "Internal error" },
+      { status: 500 },
+    );
+  }
+}

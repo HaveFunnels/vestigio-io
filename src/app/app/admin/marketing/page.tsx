@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import ExportButton from "@/components/app/ExportButton";
 
 // ──────────────────────────────────────────────
 // Admin — Marketing Dashboard & Analytics
@@ -8,6 +9,15 @@ import { useState, useEffect, useCallback } from "react";
 // ──────────────────────────────────────────────
 
 /* ========== Types ========== */
+
+interface BlogPost {
+  path: string;
+  views: number;
+  avgDuration: number;
+  avgScrollDepth: number;
+  bounceRate: number;
+  conversionRate: number;
+}
 
 interface StatsData {
   period: string;
@@ -32,6 +42,28 @@ interface StatsData {
   };
   topJourneys: { journey: string; count: number }[];
   dropOffs: { path: string; exits: number; exitRate: number }[];
+  liveVisitors: number;
+  countries: { country: string; views: number; sessions: number }[];
+  goals: {
+    signupsThisMonth: number;
+    blogViewsThisMonth: number;
+    demoRequestsThisMonth: number;
+  };
+  previous?: {
+    summary: {
+      totalPageViews: number;
+      uniqueSessions: number;
+      avgTimeOnPage: number;
+      bounceRate: number;
+    };
+  };
+  blog: {
+    totalViews: number;
+    avgDuration: number;
+    avgScrollDepth: number;
+    topConvertingPost: string;
+    posts: BlogPost[];
+  };
 }
 
 interface ABTest {
@@ -138,6 +170,8 @@ function StatCard({
   icon,
   warn,
   loading,
+  delta,
+  invertDelta,
 }: {
   label: string;
   value: string;
@@ -146,8 +180,16 @@ function StatCard({
   icon: React.ReactNode;
   warn?: boolean;
   loading?: boolean;
+  /** Percentage delta from previous period (e.g. 12.5 or -5.3) */
+  delta?: number | null;
+  /** If true, negative delta is good (e.g. bounce rate going down) */
+  invertDelta?: boolean;
 }) {
   if (loading) return <SkeletonCard />;
+
+  const showDelta = delta !== undefined && delta !== null;
+  const isPositive = (delta ?? 0) >= 0;
+  const isGood = invertDelta ? !isPositive : isPositive;
 
   return (
     <div className="group relative overflow-hidden rounded-lg border border-edge bg-surface-card p-5 transition-all duration-300 hover:bg-surface-card-hover">
@@ -156,17 +198,32 @@ function StatCard({
           <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
             {label}
           </p>
-          <p
-            className={`mt-2 text-2xl font-bold tracking-tight ${
-              warn
-                ? "text-amber-400"
-                : accent
-                  ? "text-accent-text"
-                  : "text-content"
-            }`}
-          >
-            {value}
-          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <p
+              className={`text-2xl font-bold tracking-tight ${
+                warn
+                  ? "text-amber-400"
+                  : accent
+                    ? "text-accent-text"
+                    : "text-content"
+              }`}
+            >
+              {value}
+            </p>
+            {showDelta && (
+              <span
+                className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                  isGood
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "bg-red-500/10 text-red-400"
+                }`}
+              >
+                {isPositive ? "+" : ""}
+                {delta!.toFixed(1)}%{" "}
+                {isPositive ? "\u2191" : "\u2193"}
+              </span>
+            )}
+          </div>
           {sub && (
             <p className="mt-1 text-xs text-content-faint">{sub}</p>
           )}
@@ -378,7 +435,7 @@ function StatusBadge({ status }: { status: string }) {
 
 /* ========== Tab Definitions ========== */
 
-type TabKey = "overview" | "utm" | "ab_testing" | "pixels" | "journeys";
+type TabKey = "overview" | "utm" | "ab_testing" | "pixels" | "journeys" | "blog";
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Overview" },
@@ -386,14 +443,20 @@ const tabs: { key: TabKey; label: string }[] = [
   { key: "ab_testing", label: "A/B Testing" },
   { key: "pixels", label: "Pixels & Tracking" },
   { key: "journeys", label: "User Journeys" },
+  { key: "blog", label: "Blog" },
 ];
 
 /* ========== Main Page ========== */
 
 export default function AdminMarketingPage() {
   const [tab, setTab] = useState<TabKey>("overview");
-  const [period, setPeriod] = useState<"7d" | "30d" | "90d">("7d");
+  const [period, setPeriod] = useState<"1d" | "7d" | "30d" | "90d" | "custom">("7d");
   const [loading, setLoading] = useState(true);
+
+  // Custom date range
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [showCustomRange, setShowCustomRange] = useState(false);
 
   // Data states
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -410,12 +473,56 @@ export default function AdminMarketingPage() {
   const [newPixelType, setNewPixelType] = useState("google_analytics");
   const [newPixelId, setNewPixelId] = useState("");
 
+  // Comparison mode
+  const [compareMode, setCompareMode] = useState(false);
+
+  // Campaign ROI spend (localStorage)
+  const [campaignSpend, setCampaignSpend] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return JSON.parse(localStorage.getItem("vestigio-campaign-spend") || "{}");
+      } catch { return {}; }
+    }
+    return {};
+  });
+
+  // Goal targets (localStorage)
+  const [goalTargets, setGoalTargets] = useState<{ signups: number; blogViews: number; demoRequests: number }>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = JSON.parse(localStorage.getItem("vestigio-marketing-goals") || "{}");
+        return {
+          signups: saved.signups ?? 100,
+          blogViews: saved.blogViews ?? 5000,
+          demoRequests: saved.demoRequests ?? 50,
+        };
+      } catch { return { signups: 100, blogViews: 5000, demoRequests: 50 }; }
+    }
+    return { signups: 100, blogViews: 5000, demoRequests: 50 };
+  });
+
+  // Copied variant link
+  const [copiedVariantId, setCopiedVariantId] = useState<string | null>(null);
+
+  // Live visitors auto-refresh
+  const liveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // ── Fetchers ──
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/marketing/stats?period=${period}`);
+      let url = `/api/admin/marketing/stats`;
+      if (period === "custom" && customFrom) {
+        url += `?from=${customFrom}`;
+        if (customTo) url += `&to=${customTo}`;
+      } else {
+        url += `?period=${period}`;
+      }
+      if (compareMode) {
+        url += (url.includes("?") ? "&" : "?") + "compare=true";
+      }
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setStats(data);
@@ -425,7 +532,7 @@ export default function AdminMarketingPage() {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, customFrom, customTo, compareMode]);
 
   const fetchAbTests = useCallback(async () => {
     try {
@@ -464,7 +571,7 @@ export default function AdminMarketingPage() {
   }, []);
 
   useEffect(() => {
-    if (tab === "overview" || tab === "utm" || tab === "journeys") {
+    if (tab === "overview" || tab === "utm" || tab === "journeys" || tab === "blog") {
       fetchStats();
     }
     if (tab === "ab_testing") {
@@ -475,6 +582,28 @@ export default function AdminMarketingPage() {
       fetchPixels();
     }
   }, [tab, period, fetchStats, fetchAbTests, fetchVariants, fetchPixels]);
+
+  // Auto-refresh live visitors every 15 seconds on overview tab
+  useEffect(() => {
+    if (tab === "overview") {
+      liveIntervalRef.current = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/admin/marketing/stats?period=1d`);
+          if (res.ok) {
+            const data = await res.json();
+            setStats((prev) =>
+              prev ? { ...prev, liveVisitors: data.liveVisitors } : prev,
+            );
+          }
+        } catch {
+          /* ignore */
+        }
+      }, 15_000);
+      return () => {
+        if (liveIntervalRef.current) clearInterval(liveIntervalRef.current);
+      };
+    }
+  }, [tab]);
 
   // ── Actions ──
 
@@ -568,59 +697,215 @@ export default function AdminMarketingPage() {
     }
   }
 
+  // ── Helpers for localStorage-backed state ──
+
+  function updateCampaignSpend(source: string, value: string) {
+    setCampaignSpend((prev) => {
+      const next = { ...prev, [source]: value };
+      try { localStorage.setItem("vestigio-campaign-spend", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
+  function updateGoalTarget(key: "signups" | "blogViews" | "demoRequests", value: number) {
+    setGoalTargets((prev) => {
+      const next = { ...prev, [key]: value };
+      try { localStorage.setItem("vestigio-marketing-goals", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
+  function computeDelta(current: number, previous: number): number | null {
+    if (!compareMode || previous === 0) return current > 0 && previous === 0 ? 100 : null;
+    return ((current - previous) / previous) * 100;
+  }
+
+  function copyVariantLink(slug: string, variantId: string) {
+    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/?variant=${slug}`;
+    navigator.clipboard.writeText(url);
+    setCopiedVariantId(variantId);
+    setTimeout(() => setCopiedVariantId(null), 2000);
+  }
+
   // ── Derived ──
 
   const summary = stats?.summary;
+  const prevSummary = stats?.previous?.summary;
   const deviceTotal = stats?.devices
     ? Object.values(stats.devices).reduce((s, n) => s + n, 0)
     : 0;
+
+  // Export data based on active tab
+  function getExportData(): Record<string, any>[] {
+    if (!stats) return [];
+    if (tab === "overview") {
+      return [
+        ...(stats.topPages || []).map((p) => ({
+          type: "Top Page",
+          path: p.path,
+          views: p.views,
+        })),
+        ...(stats.topReferrers || []).map((r) => ({
+          type: "Referrer",
+          referrer: r.referrer,
+          views: r.views,
+        })),
+      ];
+    }
+    if (tab === "utm") {
+      return (stats.utmSources || []).map((s) => ({
+        source: s.source,
+        pageViews: s.views,
+        share:
+          summary && summary.totalPageViews > 0
+            ? `${Math.round((s.views / summary.totalPageViews) * 100)}%`
+            : "--",
+      }));
+    }
+    if (tab === "blog") {
+      return (stats.blog?.posts || []).map((p) => ({
+        title: blogTitleFromPath(p.path),
+        path: p.path,
+        views: p.views,
+        avgDuration: p.avgDuration,
+        avgScrollDepth: `${p.avgScrollDepth}%`,
+        bounceRate: `${p.bounceRate}%`,
+        conversionRate: `${p.conversionRate}%`,
+      }));
+    }
+    return [];
+  }
+
+  function blogTitleFromPath(path: string): string {
+    const slug = path.replace(/^\/blog\//, "").replace(/\/$/, "");
+    return slug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ") || path;
+  }
+
+  const showPeriodSelector = tab === "overview" || tab === "utm" || tab === "journeys" || tab === "blog";
 
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-content">Marketing</h1>
-          <p className="mt-1 text-sm text-content-muted">
-            Website analytics, A/B testing, and conversion tracking.
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-content">Marketing</h1>
+            <p className="mt-1 text-sm text-content-muted">
+              Website analytics, A/B testing, and conversion tracking.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Tab switcher */}
-          <div className="flex rounded-lg border border-edge">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                  tab === t.key
-                    ? "bg-accent-subtle-bg/10 text-accent-text"
-                    : "text-content-muted hover:text-content-secondary"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          {/* Period selector (for overview/utm/journeys) */}
-          {(tab === "overview" || tab === "utm" || tab === "journeys") && (
+          {/* Export button */}
+          {(tab === "overview" || tab === "utm" || tab === "blog") && (
+            <ExportButton
+              data={getExportData()}
+              filename={`marketing-${tab}-${period}`}
+              label="Export CSV"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Tab switcher + Period selector row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex rounded-lg border border-edge">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                tab === t.key
+                  ? "bg-accent-subtle-bg/10 text-accent-text"
+                  : "text-content-muted hover:text-content-secondary"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Date Range Picker */}
+        {showPeriodSelector && (
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex rounded-lg border border-edge">
-              {(["7d", "30d", "90d"] as const).map((p) => (
+              {(["1d", "7d", "30d", "90d"] as const).map((p) => (
                 <button
                   key={p}
-                  onClick={() => setPeriod(p)}
+                  onClick={() => {
+                    setPeriod(p);
+                    setShowCustomRange(false);
+                  }}
                   className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                     period === p
                       ? "bg-accent-subtle-bg/10 text-accent-text"
                       : "text-content-muted hover:text-content-secondary"
                   }`}
                 >
-                  {p}
+                  {p === "1d" ? "Today" : p}
                 </button>
               ))}
+              <button
+                onClick={() => {
+                  setShowCustomRange(!showCustomRange);
+                  if (!showCustomRange) setPeriod("custom");
+                }}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  period === "custom"
+                    ? "bg-accent-subtle-bg/10 text-accent-text"
+                    : "text-content-muted hover:text-content-secondary"
+                }`}
+              >
+                Custom
+              </button>
             </div>
-          )}
-        </div>
+            {showCustomRange && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="rounded-lg border border-edge bg-surface-card px-2.5 py-1.5 text-xs text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+                />
+                <span className="text-xs text-content-faint">to</span>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="rounded-lg border border-edge bg-surface-card px-2.5 py-1.5 text-xs text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+                />
+                <button
+                  onClick={() => {
+                    if (customFrom) fetchStats();
+                  }}
+                  disabled={!customFrom}
+                  className="rounded-lg bg-accent-text px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-text/90 disabled:opacity-50"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+            {/* Compare toggle */}
+            {tab === "overview" && (
+              <button
+                onClick={() => setCompareMode(!compareMode)}
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  compareMode
+                    ? "border-accent/50 bg-accent-subtle-bg/10 text-accent-text"
+                    : "border-edge text-content-muted hover:text-content-secondary"
+                }`}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                </svg>
+                Compare
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════
@@ -628,37 +913,58 @@ export default function AdminMarketingPage() {
           ═══════════════════════════════════════════ */}
       {tab === "overview" && (
         <>
+          {/* Live Visitors */}
+          {stats && (
+            <div className="flex items-center gap-3 rounded-lg border border-edge bg-surface-card px-5 py-3">
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-sm font-semibold text-emerald-400">
+                {stats.liveVisitors ?? 0} {(stats.liveVisitors ?? 0) === 1 ? "visitor" : "visitors"} right now
+              </span>
+              <span className="text-xs text-content-faint">
+                (active in the last 5 minutes -- auto-refreshes every 15s)
+              </span>
+            </div>
+          )}
+
           {/* KPI Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="Total Page Views"
               value={summary ? formatNum(summary.totalPageViews) : "..."}
-              sub={`Last ${period}`}
+              sub={compareMode && prevSummary ? `vs ${formatNum(prevSummary.totalPageViews)} prev` : (period === "custom" ? "Custom range" : `Last ${period}`)}
               icon={icons.eye}
               accent
               loading={loading}
+              delta={prevSummary ? computeDelta(summary?.totalPageViews ?? 0, prevSummary.totalPageViews) : undefined}
             />
             <StatCard
               label="Unique Sessions"
               value={summary ? formatNum(summary.uniqueSessions) : "..."}
-              sub={`Last ${period}`}
+              sub={compareMode && prevSummary ? `vs ${formatNum(prevSummary.uniqueSessions)} prev` : (period === "custom" ? "Custom range" : `Last ${period}`)}
               icon={icons.users}
               loading={loading}
+              delta={prevSummary ? computeDelta(summary?.uniqueSessions ?? 0, prevSummary.uniqueSessions) : undefined}
             />
             <StatCard
               label="Avg Time on Page"
               value={summary ? `${summary.avgTimeOnPage}s` : "..."}
-              sub="Estimated from events"
+              sub={compareMode && prevSummary ? `vs ${prevSummary.avgTimeOnPage}s prev` : "Estimated from events"}
               icon={icons.clock}
               loading={loading}
+              delta={prevSummary ? computeDelta(summary?.avgTimeOnPage ?? 0, prevSummary.avgTimeOnPage) : undefined}
             />
             <StatCard
               label="Bounce Rate"
               value={summary ? pct(summary.bounceRate) : "..."}
-              sub="Single-page sessions"
+              sub={compareMode && prevSummary ? `vs ${pct(prevSummary.bounceRate)} prev` : "Single-page sessions"}
               icon={icons.arrowTrendingDown}
               warn={summary ? summary.bounceRate > 70 : false}
               loading={loading}
+              delta={prevSummary ? computeDelta(summary?.bounceRate ?? 0, prevSummary.bounceRate) : undefined}
+              invertDelta
             />
           </div>
 
@@ -784,6 +1090,156 @@ export default function AdminMarketingPage() {
               </div>
             )}
           </div>
+
+          {/* Geographic Breakdown */}
+          <div className="rounded-lg border border-edge bg-surface-card">
+            <div className="border-b border-edge px-5 py-4">
+              <h2 className="text-sm font-semibold text-content">
+                Geographic Breakdown
+              </h2>
+            </div>
+            {loading ? (
+              <SkeletonTable rows={5} />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-edge">
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Country
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Views
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Sessions
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Share
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-edge">
+                    {(!stats?.countries || stats.countries.length === 0) ? (
+                      <tr>
+                        <td colSpan={4} className="px-5 py-8 text-center text-sm text-content-faint">
+                          No geographic data yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      stats.countries.map((c) => {
+                        const totalViews = stats.summary.totalPageViews || 1;
+                        const sharePct = Math.round((c.views / totalViews) * 100);
+                        return (
+                          <tr key={c.country} className="hover:bg-surface-card-hover">
+                            <td className="px-5 py-3 font-medium text-content">
+                              {c.country}
+                            </td>
+                            <td className="px-5 py-3 tabular-nums text-content">
+                              {formatNum(c.views)}
+                            </td>
+                            <td className="px-5 py-3 tabular-nums text-content">
+                              {formatNum(c.sessions)}
+                            </td>
+                            <td className="px-5 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 w-24 overflow-hidden rounded-full bg-surface-inset">
+                                  <div
+                                    className="h-full rounded-full bg-accent-text/40 transition-all"
+                                    style={{ width: `${sharePct}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs tabular-nums text-content-faint">
+                                  {sharePct}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Goals */}
+          <div className="rounded-lg border border-edge bg-surface-card p-5">
+            <h2 className="mb-4 text-sm font-semibold text-content">
+              Goals
+            </h2>
+            {loading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-12 animate-pulse rounded bg-white/[0.06]" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {[
+                  {
+                    key: "signups" as const,
+                    name: "Signups this month",
+                    actual: stats?.goals?.signupsThisMonth ?? 0,
+                    target: goalTargets.signups,
+                  },
+                  {
+                    key: "blogViews" as const,
+                    name: "Blog views this month",
+                    actual: stats?.goals?.blogViewsThisMonth ?? 0,
+                    target: goalTargets.blogViews,
+                  },
+                  {
+                    key: "demoRequests" as const,
+                    name: "Demo requests this month",
+                    actual: stats?.goals?.demoRequestsThisMonth ?? 0,
+                    target: goalTargets.demoRequests,
+                  },
+                ].map((goal) => {
+                  const pctComplete = goal.target > 0 ? Math.min(Math.round((goal.actual / goal.target) * 100), 100) : 0;
+                  const barColor =
+                    pctComplete >= 75
+                      ? "bg-emerald-500"
+                      : pctComplete >= 50
+                        ? "bg-amber-500"
+                        : "bg-red-500";
+                  return (
+                    <div key={goal.key}>
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-xs font-medium text-content-secondary">
+                          {goal.name}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs tabular-nums text-content">
+                            {formatNum(goal.actual)}
+                          </span>
+                          <span className="text-xs text-content-faint">/</span>
+                          <input
+                            type="number"
+                            value={goal.target}
+                            onChange={(e) =>
+                              updateGoalTarget(goal.key, Math.max(1, parseInt(e.target.value) || 1))
+                            }
+                            className="w-16 rounded border border-edge bg-surface-inset px-1.5 py-0.5 text-right text-xs tabular-nums text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+                          />
+                        </div>
+                      </div>
+                      <div className="h-3 w-full overflow-hidden rounded-full bg-surface-inset">
+                        <div
+                          className={`h-full rounded-full transition-all ${barColor}`}
+                          style={{ width: `${pctComplete}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-right text-[10px] tabular-nums text-content-faint">
+                        {pctComplete}%
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </>
       )}
 
@@ -847,54 +1303,85 @@ export default function AdminMarketingPage() {
             )}
           </div>
 
-          {/* Conversion Funnel */}
+          {/* Visual Conversion Funnel */}
           <div className="rounded-lg border border-edge bg-surface-card p-5">
-            <h2 className="mb-4 text-sm font-semibold text-content">
+            <h2 className="mb-6 text-sm font-semibold text-content">
               Conversion Funnel
             </h2>
             {loading ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-8 animate-pulse rounded bg-white/[0.06]" />
+                  <div key={i} className="flex flex-col items-center">
+                    <div
+                      className="h-12 animate-pulse rounded-lg bg-white/[0.06]"
+                      style={{ width: `${100 - i * 15}%` }}
+                    />
+                  </div>
                 ))}
               </div>
-            ) : (
-              <div className="space-y-3">
-                {[
-                  { label: "Page Views", value: stats?.funnel?.pageViews || 0 },
-                  { label: "Unique Sessions", value: stats?.funnel?.uniqueSessions || 0 },
-                  { label: "CTA Clicks", value: stats?.funnel?.ctaClicks || 0 },
-                  { label: "Form Starts", value: stats?.funnel?.formStarts || 0 },
-                  { label: "Form Completes", value: stats?.funnel?.formCompletes || 0 },
-                  { label: "Signups", value: stats?.funnel?.signups || 0 },
-                ].map((step, i) => {
-                  const maxVal = stats?.funnel?.pageViews || 1;
-                  const width = Math.max((step.value / maxVal) * 100, 2);
-                  return (
-                    <div key={i}>
-                      <div className="mb-1 flex items-baseline justify-between">
-                        <span className="text-xs font-medium text-content-secondary">
-                          {step.label}
-                        </span>
-                        <span className="text-xs tabular-nums text-content-faint">
-                          {formatNum(step.value)}
-                        </span>
-                      </div>
-                      <div className="h-6 w-full overflow-hidden rounded bg-surface-inset">
+            ) : (() => {
+              const funnelSteps = [
+                { label: "Page Views", value: stats?.funnel?.pageViews || 0 },
+                { label: "Sessions", value: stats?.funnel?.uniqueSessions || 0 },
+                { label: "CTA Clicks", value: stats?.funnel?.ctaClicks || 0 },
+                { label: "Form Starts", value: stats?.funnel?.formStarts || 0 },
+                { label: "Signups", value: stats?.funnel?.signups || 0 },
+              ];
+              const maxVal = funnelSteps[0].value || 1;
+
+              return (
+                <div className="flex flex-col items-center gap-0">
+                  {funnelSteps.map((step, i) => {
+                    const widthPct = Math.max((step.value / maxVal) * 100, 12);
+                    const prevValue = i > 0 ? funnelSteps[i - 1].value : 0;
+                    const conversionPct =
+                      i > 0 && prevValue > 0
+                        ? ((step.value / prevValue) * 100).toFixed(1)
+                        : null;
+
+                    return (
+                      <div key={i} className="flex w-full flex-col items-center">
+                        {/* Conversion arrow between stages */}
+                        {conversionPct !== null && (
+                          <div className="flex flex-col items-center py-1.5">
+                            <svg
+                              className="h-4 w-4 text-emerald-400/60"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3"
+                              />
+                            </svg>
+                            <span className="text-[11px] font-semibold tabular-nums text-emerald-400">
+                              {conversionPct}%
+                            </span>
+                          </div>
+                        )}
+                        {/* Funnel bar */}
                         <div
-                          className="flex h-full items-center rounded bg-accent-text/20 transition-all"
-                          style={{ width: `${width}%` }}
+                          className="relative flex h-12 items-center justify-center rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
+                          style={{ width: `${widthPct}%`, minWidth: "120px" }}
                         >
-                          <span className="px-2 text-[10px] font-medium text-accent-text">
-                            {maxVal > 0 ? `${Math.round((step.value / maxVal) * 100)}%` : ""}
-                          </span>
+                          <div className="flex items-center gap-2 px-4">
+                            <span className="text-sm font-semibold text-white">
+                              {step.label}
+                            </span>
+                            <span className="rounded bg-white/20 px-1.5 py-0.5 text-xs font-bold tabular-nums text-white">
+                              {formatNum(step.value)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Referrer Analysis */}
@@ -938,6 +1425,117 @@ export default function AdminMarketingPage() {
                     );
                   })
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Campaign ROI Calculator */}
+          <div className="rounded-lg border border-edge bg-surface-card">
+            <div className="border-b border-edge px-5 py-4">
+              <h2 className="text-sm font-semibold text-content">
+                Campaign ROI
+              </h2>
+              <p className="mt-0.5 text-xs text-content-faint">
+                Enter spend per source to estimate ROI. Revenue assumes $99/mo plan value.
+              </p>
+            </div>
+            {loading ? (
+              <SkeletonTable rows={4} />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-edge">
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Source
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Views
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Conversions
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Spend ($)
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Est. Revenue
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        ROI
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-edge">
+                    {(!stats?.utmSources || stats.utmSources.length === 0) ? (
+                      <tr>
+                        <td colSpan={6} className="px-5 py-8 text-center text-sm text-content-faint">
+                          No UTM source data. Add UTM parameters to your campaign URLs.
+                        </td>
+                      </tr>
+                    ) : (
+                      stats.utmSources.map((s) => {
+                        // Estimate conversions: use funnel signup rate applied to this source's share
+                        const funnelConvRate =
+                          stats.funnel && stats.funnel.pageViews > 0
+                            ? stats.funnel.signups / stats.funnel.pageViews
+                            : 0;
+                        const estConversions = Math.round(s.views * funnelConvRate);
+                        const estRevenue = estConversions * 99;
+                        const spend = parseFloat(campaignSpend[s.source] || "0") || 0;
+                        const roi = spend > 0 ? Math.round(((estRevenue - spend) / spend) * 100) : 0;
+
+                        return (
+                          <tr key={s.source} className="hover:bg-surface-card-hover">
+                            <td className="px-5 py-3 font-medium text-content">
+                              {s.source}
+                            </td>
+                            <td className="px-5 py-3 tabular-nums text-content">
+                              {formatNum(s.views)}
+                            </td>
+                            <td className="px-5 py-3 tabular-nums text-content">
+                              {estConversions}
+                            </td>
+                            <td className="px-5 py-3">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-content-faint">$</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={campaignSpend[s.source] || ""}
+                                  onChange={(e) => updateCampaignSpend(s.source, e.target.value)}
+                                  placeholder="0"
+                                  className="w-20 rounded border border-edge bg-surface-inset px-2 py-1 text-right text-xs tabular-nums text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+                                />
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 tabular-nums text-content">
+                              ${formatNum(estRevenue)}
+                            </td>
+                            <td className="px-5 py-3">
+                              {spend > 0 ? (
+                                <span
+                                  className={`rounded px-2 py-0.5 text-xs font-medium tabular-nums ${
+                                    roi > 0
+                                      ? "bg-emerald-500/10 text-emerald-400"
+                                      : roi < 0
+                                        ? "bg-red-500/10 text-red-400"
+                                        : "bg-surface-inset text-content-faint"
+                                  }`}
+                                >
+                                  {roi > 0 ? "+" : ""}{roi}%
+                                </span>
+                              ) : (
+                                <span className="text-xs text-content-faint">--</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -1147,12 +1745,25 @@ export default function AdminMarketingPage() {
                       </div>
                       <p className="mt-0.5 text-xs text-content-faint">
                         /{v.slug}
-                        {v.heroTitle ? ` — "${v.heroTitle.slice(0, 60)}"` : ""}
+                        {v.heroTitle ? ` \u2014 "${v.heroTitle.slice(0, 60)}${(v.heroTitle?.length ?? 0) > 60 ? "..." : ""}"` : ""}
                       </p>
                     </div>
-                    <span className="ml-4 font-mono text-xs text-content-faint">
-                      {v.slug}
-                    </span>
+                    <div className="ml-4 flex shrink-0 items-center gap-2">
+                      <a
+                        href={`/?variant=${v.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded bg-accent-subtle-bg/10 px-2.5 py-1 text-[10px] font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/20"
+                      >
+                        Preview
+                      </a>
+                      <button
+                        onClick={() => copyVariantLink(v.slug, v.id)}
+                        className="rounded bg-surface-inset px-2.5 py-1 text-[10px] font-medium text-content-muted transition-colors hover:bg-surface-inset/80 hover:text-content"
+                      >
+                        {copiedVariantId === v.id ? "Copied!" : "Copy Link"}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -1397,6 +2008,160 @@ export default function AdminMarketingPage() {
                               }`}
                             >
                               {d.exitRate}%
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ═══════════ Tab 6: Blog Performance ═══════════ */}
+      {tab === "blog" && (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label="Total Blog Views"
+              value={stats?.blog ? formatNum(stats.blog.totalViews) : "..."}
+              sub={period === "custom" ? "Custom range" : `Last ${period}`}
+              icon={icons.eye}
+              accent
+              loading={loading}
+            />
+            <StatCard
+              label="Avg Time on Posts"
+              value={stats?.blog ? `${stats.blog.avgDuration}s` : "..."}
+              sub="Average duration per view"
+              icon={icons.clock}
+              loading={loading}
+            />
+            <StatCard
+              label="Avg Scroll Depth"
+              value={stats?.blog ? pct(stats.blog.avgScrollDepth) : "..."}
+              sub="How far readers scroll"
+              icon={icons.arrowTrendingDown}
+              loading={loading}
+            />
+            <StatCard
+              label="Top Converting Post"
+              value={
+                stats?.blog?.topConvertingPost
+                  ? blogTitleFromPath(stats.blog.topConvertingPost)
+                  : "N/A"
+              }
+              sub={stats?.blog?.topConvertingPost || "No conversions yet"}
+              icon={icons.megaphone}
+              loading={loading}
+            />
+          </div>
+          <div className="rounded-lg border border-edge bg-surface-card">
+            <div className="border-b border-edge px-5 py-4">
+              <h2 className="text-sm font-semibold text-content">
+                Blog Post Performance
+              </h2>
+            </div>
+            {loading ? (
+              <SkeletonTable rows={6} />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-edge">
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Title
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Views
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Avg Duration
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Scroll Depth
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Bounce Rate
+                      </th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
+                        Conv. Rate
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-edge">
+                    {(stats?.blog?.posts || []).length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-5 py-8 text-center text-sm text-content-faint"
+                        >
+                          No blog page views yet. Views for paths starting with
+                          /blog/ will appear here.
+                        </td>
+                      </tr>
+                    ) : (
+                      stats!.blog.posts.map((post) => (
+                        <tr
+                          key={post.path}
+                          className="hover:bg-surface-card-hover"
+                        >
+                          <td className="px-5 py-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-content">
+                                {blogTitleFromPath(post.path)}
+                              </p>
+                              <p className="mt-0.5 truncate font-mono text-xs text-content-faint">
+                                {post.path}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 tabular-nums text-content">
+                            {formatNum(post.views)}
+                          </td>
+                          <td className="px-5 py-3 tabular-nums text-content">
+                            {post.avgDuration}s
+                          </td>
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-16 overflow-hidden rounded-full bg-surface-inset">
+                                <div
+                                  className="h-full rounded-full bg-emerald-500 transition-all"
+                                  style={{
+                                    width: `${Math.min(post.avgScrollDepth, 100)}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs tabular-nums text-content-faint">
+                                {post.avgScrollDepth}%
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3">
+                            <span
+                              className={`rounded px-2 py-0.5 text-xs font-medium tabular-nums ${
+                                post.bounceRate > 70
+                                  ? "bg-red-500/10 text-red-400"
+                                  : post.bounceRate > 50
+                                    ? "bg-amber-500/10 text-amber-400"
+                                    : "bg-emerald-500/10 text-emerald-400"
+                              }`}
+                            >
+                              {post.bounceRate}%
+                            </span>
+                          </td>
+                          <td className="px-5 py-3">
+                            <span
+                              className={`rounded px-2 py-0.5 text-xs font-medium tabular-nums ${
+                                post.conversionRate > 0
+                                  ? "bg-emerald-500/10 text-emerald-400"
+                                  : "bg-surface-inset text-content-faint"
+                              }`}
+                            >
+                              {post.conversionRate}%
                             </span>
                           </td>
                         </tr>

@@ -101,7 +101,7 @@ const SignupWithPassword = () => {
 				setLoading(false);
 			} else if (res?.ok) {
 				toast.success("User registration successful.");
-				router.push("/app");
+				window.location.href = "/app";
 			}
 		} catch (error) {
 			if (error instanceof AxiosError) {

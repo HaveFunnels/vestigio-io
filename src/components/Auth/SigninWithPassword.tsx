@@ -82,7 +82,9 @@ export default function SigninWithPassword() {
 				} else if (callback?.ok) {
 					toast.success("Logged in successfully");
 					setData({ email: "", password: "", remember: false });
-					router.push("/app");
+					// Use window.location for a full page navigation to ensure
+					// middleware runs and session cookie is sent properly
+					window.location.href = "/app";
 				}
 			})
 			.finally(() => setLoading(false));

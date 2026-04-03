@@ -2,7 +2,7 @@
 
 ## Overview
 
-AI-powered commerce analyst that identifies revenue leakage, scaling risks, chargeback exposure, and growth opportunities. Claude LLM + 20 MCP tools + 30 expert playbooks.
+AI-powered commerce analyst that identifies revenue leakage, scaling risks, chargeback exposure, and growth opportunities. Claude LLM + 21 MCP tools + 30 expert playbooks.
 
 Three design principles:
 1. **Evidence-first** — every claim grounded in tool data from the organization's audit
@@ -40,7 +40,7 @@ User message
   │  ◄── tool_use loop    Max 5 rounds. Verification budget: 1/request.
   │       │               Tool results summarized: top-5 full + next-10 compact (<200 tokens)
   │       ▼               Tool output sanitized for indirect injection patterns
-  │  McpServer.callTool   20 tools against cached audit data (no external calls except verification)
+  │  McpServer.callTool   21 tools against cached audit data (no external calls except verification)
   ▼
 [6] Output Classifier     Haiku post-screen (FAIL-CLOSED)
   │                       Checks: hallucination, off-topic drift, data leakage, tone
@@ -109,7 +109,7 @@ System prompt static portion (~700 tokens) cached via `cache_control: { type: "e
 
 ---
 
-## Tools (20)
+## Tools (21)
 
 | Tool | Description |
 |------|-------------|
@@ -118,7 +118,7 @@ System prompt static portion (~700 tokens) cached via `cache_control: { type: "e
 | `answer_underlying_cause` | Root cause analysis across packs |
 | `answer_fix_first` | Prioritized actions ranked by impact |
 | `get_finding_projections` | All findings with financial impact (severity, range, confidence, pack, root cause) |
-| `get_action_projections` | All actions with impact estimates and priority scores |
+| `get_action_projections` | All actions with impact estimates, priority scores, decision status, verification maturity |
 | `get_root_causes` | Root causes connecting problems across packs |
 | `get_workspace_summary` | High-level overview: packs, root causes, health status |
 | `get_prioritized_actions` | Deduplicated global action ranking |
@@ -126,7 +126,8 @@ System prompt static portion (~700 tokens) cached via `cache_control: { type: "e
 | `get_revenue_integrity_summary` | Leakage points, trust gaps, measurement gaps |
 | `get_decision_explainability` | Why a specific decision was made (per pack) |
 | `get_graph_path_summary` | Evidence graph: pages, hosts, providers, redirects, trust gaps |
-| `get_workspace_projections` | Workspace summaries with scoped findings |
+| `get_workspace_projections` | Workspace summaries with scoped findings and change summaries |
+| `get_change_report` | Cycle-to-cycle change report: regressions, improvements, trend |
 | `get_map` | Causal visualization (revenue_leakage, chargeback_risk, root_cause) |
 | `discuss_finding` | Deep dive into one finding |
 | `analyze_findings` | Cross-analysis of multiple findings |
@@ -134,9 +135,9 @@ System prompt static portion (~700 tokens) cached via `cache_control: { type: "e
 | `get_verification_status` | Poll verification result |
 | `list_verifications` | List all verification requests |
 
-**Safety**: 19 safe (read-only, cached data) + 1 expensive (`request_verification` — Playwright/HTTP).
+**Safety**: 20 safe (read-only, cached data) + 1 expensive (`request_verification` -- Playwright/HTTP).
 
-**Summarization**: Findings top-5 full + next-10 compact (~200 tokens). Actions top-5 + next-5. All others <200 tokens.
+**Summarization**: Findings top-5 full + next-10 compact (~200 tokens). Actions top-5 + next-5. All others <200 tokens. Change report summarized to trend + top regressions.
 
 ---
 

@@ -1,6 +1,6 @@
 # FINDINGS_OPPORTUNITIES.md — Untapped Findings From Existing Evidence
 
-> Last updated: 2026-03-29
+> Last updated: 2026-04-02 (Documentation refresh)
 > Grounded in: current codebase inspection
 > Companion to: [FINDINGS.md](FINDINGS.md), [COLLECT.md](COLLECT.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 
@@ -27,13 +27,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-1: Redirect Chain Trust Degradation
+### FO-1: Redirect Chain Trust Degradation -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Trust erodes through redirect chain |
-| **Description** | Each redirect hop in the checkout path loses a percentage of users and reduces trust. A 3+ hop chain to checkout indicates poor UX architecture. Currently the system detects redirect chains as a binary signal, but doesn't quantify per-hop trust loss. |
-| **Status** | Possible with minor rule additions |
+| **Finding title** | Checkout trust eroded by redirect chain |
+| **Description** | Each redirect hop in the checkout path loses a percentage of users and reduces trust. A 3+ hop chain to checkout indicates poor UX architecture. |
+| **Status** | **Implemented** (Phase 30B — `redirect_chain_erodes_checkout_trust` finding in Revenue Integrity pack) |
 | **Existing data** | `RedirectPayload` already captures full chain with per-hop URL, status_code, host. `external_redirect_chain` signal counts hops. |
 | **What is missing** | Per-hop trust scoring. New signal: `redirect_trust_score` that assigns diminishing trust per hop, with extra penalty for cross-domain hops. Projection with per-hop visualization. |
 | **Likely pack(s)** | revenue_integrity, scale_readiness |
@@ -44,13 +44,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-2: Cross-Domain Form Posting Risk
+### FO-2: Cross-Domain Form Posting Risk -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Forms post data to external domains |
-| **Description** | Forms with `is_external=true` in `FormPayload` send user data to third-party domains. This is a trust and privacy concern, especially for payment forms. Currently the parser detects external forms, but only checkout-specific forms produce findings. General external form posting is not surfaced. |
-| **Status** | Possible now from current evidence |
+| **Finding title** | User data submitted to unrecognized external endpoints |
+| **Description** | Forms with `is_external=true` in `FormPayload` send user data to third-party domains. Payment fields escalate severity. |
+| **Status** | **Implemented** (Phase 30 — `form_data_leaves_domain` finding in Scale Readiness pack) |
 | **Existing data** | `FormPayload` with `is_external`, `target_host`, `field_names`, `has_payment_fields` |
 | **What is missing** | Signal: `external_form_data_leak`. Inference: `user_data_leaving_domain`. Finding: user-facing privacy/trust risk. |
 | **Likely pack(s)** | scale_readiness, chargeback_resilience |
@@ -61,13 +61,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-3: Iframe Trust Boundary Analysis
+### FO-3: Iframe Trust Boundary Analysis -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Critical flows embedded via third-party iframes |
-| **Description** | `IframePayload` captures all iframes with host and external classification. External iframes on checkout or payment pages represent trust boundaries that are currently only partially analyzed (provider detection uses iframes, but general iframe trust analysis doesn't exist). |
-| **Status** | Possible now from current evidence |
+| **Finding title** | Unknown external embeds weakening purchase trust |
+| **Description** | External iframes on commercial pages that are NOT known providers (Stripe, PayPal). |
+| **Status** | **Implemented** (Phase 30B — `untrusted_embeds_near_purchase` finding in Scale Readiness pack) |
 | **Existing data** | `IframePayload` with `src`, `host`, `is_external`, `known_provider` |
 | **What is missing** | Signal: `untrusted_iframe_on_critical_page`. Distinguish known-provider iframes (Stripe, PayPal) from unknown external iframes. |
 | **Likely pack(s)** | scale_readiness, revenue_integrity |
@@ -78,13 +78,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-4: HTTP Error Page Classification
+### FO-4: HTTP Error Page Classification -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Error pages on critical conversion paths |
-| **Description** | `HttpResponsePayload` captures status codes for every fetched page. The signal engine produces `http_errors` (count of 4xx/5xx), but doesn't classify WHICH pages have errors. A 404 on `/about` is less critical than a 404 on `/checkout`. |
-| **Status** | Possible now from current evidence |
+| **Finding title** | Revenue-critical pages unreachable |
+| **Description** | HTTP errors (4xx/5xx) specifically on checkout, cart, pricing, login, order pages. |
+| **Status** | **Implemented** (Phase 30 — `critical_path_broken` finding in Revenue Integrity pack) |
 | **Existing data** | `HttpResponsePayload.status_code` for every page, `PageType` classification from crawl discovery |
 | **What is missing** | Correlation: map status_code to page_type/criticality. Signal: `critical_page_error` (4xx/5xx on checkout, cart, login, pricing pages). |
 | **Likely pack(s)** | scale_readiness, revenue_integrity |
@@ -146,13 +146,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-8: Platform-Specific Risk Profiling
+### FO-8: Platform-Specific Risk Profiling -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Platform-specific risks identified (e.g. "Shopify stores commonly face X") |
-| **Description** | `PlatformIndicatorPayload` detects Shopify, WordPress, WooCommerce, Magento, Wix, Squarespace. Each platform has known checkout patterns, default policies, and common weaknesses. This knowledge is not used. |
-| **Status** | Possible with composed heuristics |
+| **Finding title** | Platform-specific checkout risk left unaddressed |
+| **Description** | Platform-aware checkout anti-patterns (WooCommerce off-domain, Shopify without refund policy, etc.). |
+| **Status** | **Implemented** (Phase 30B — `platform_checkout_risk_unaddressed` finding in Scale Readiness pack) |
 | **Existing data** | Platform detection with confidence score |
 | **What is missing** | Platform-specific inference rules. E.g.: Shopify stores use hosted checkout by default (expected trust boundary crossing), WooCommerce stores often lack CDN (expected slow responses). |
 | **Likely pack(s)** | All packs (platform-conditional rules) |
@@ -180,13 +180,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-10: Graph-Based Orphan Page Detection
+### FO-10: Graph-Based Orphan Page Detection -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Critical pages are not linked from the main navigation |
-| **Description** | The evidence graph (`packages/graph/`) builds a complete page→page relationship map. `GraphQuery.findCriticalRoutes()` finds internal pages, and `findCommercialPaths()` traces paths to checkout. But orphan detection (important pages with no incoming links) is not performed. |
-| **Status** | Possible now from current evidence |
+| **Finding title** | Commercial pages disconnected from main journey |
+| **Description** | Commercial pages with zero inbound navigation links from graph. |
+| **Status** | **Implemented** (Phase 30B — `commercial_pages_disconnected` finding in Revenue Integrity pack) |
 | **Existing data** | Full evidence graph with nodes and edges. Page classification by type. |
 | **What is missing** | Query: `findOrphanCriticalPages()` — pages classified as checkout, pricing, or contact that have zero incoming edges from other internal pages. |
 | **Likely pack(s)** | revenue_integrity, scale_readiness |
@@ -197,13 +197,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-11: Evidence Corroboration Scoring for Findings
+### FO-11: Evidence Corroboration Scoring for Findings -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Finding confidence is stronger when corroborated by multiple evidence sources |
-| **Description** | The evidence quality system (`packages/evidence/quality.ts`) computes corroboration scores (diversity of sources). The truth resolution system (`packages/truth/`) resolves conflicts. But the FINDING layer doesn't surface corroboration strength to users. |
-| **Status** | Possible now from current evidence |
+| **Finding title** | Evidence quality scoring surfaced per finding |
+| **Description** | `FindingProjection.evidence_quality` now surfaces source_reliability, completeness, recency, corroboration, and composite scores. |
+| **Status** | **Implemented** (Phase 0 UX — `evidence_quality` field in `FindingProjection`) |
 | **Existing data** | Corroboration score per evidence group, truth resolution metadata, contradiction counts |
 | **What is missing** | Finding-level corroboration indicator: "This finding is backed by X evidence sources with Y% corroboration." Would help users prioritize high-confidence findings. |
 | **Likely pack(s)** | All packs |
@@ -231,13 +231,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-13: Language Consistency Across Journey
+### FO-13: Language Consistency Across Journey -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Language switches during conversion journey |
-| **Description** | `PageContentPayload.lang` is collected for every page. If the homepage is in Portuguese but the checkout page switches to English (common with hosted checkout), this creates friction and confusion. Currently not analyzed. |
-| **Status** | Possible now from current evidence |
+| **Finding title** | Commercial journey switches language before conversion |
+| **Description** | Homepage language differs from checkout/pricing page language. |
+| **Status** | **Implemented** (Phase 30B — `commercial_journey_language_break` finding in Revenue Integrity pack) |
 | **Existing data** | `lang` attribute per page, page classification by URL tokens |
 | **What is missing** | Cross-page comparison: detect language changes between classified journey stages (homepage → product → checkout). |
 | **Likely pack(s)** | revenue_integrity, chargeback_resilience |
@@ -248,13 +248,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-14: Multiple Payment Provider Fragmentation
+### FO-14: Multiple Payment Provider Fragmentation -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Multiple competing payment providers detected |
-| **Description** | Provider indicators may detect Stripe AND PayPal AND Mercado Pago on the same site. This is sometimes intentional (offering choice) but can indicate fragmented checkout or A/B testing leakage. Currently each provider is detected independently. |
-| **Status** | Possible now from current evidence |
+| **Finding title** | Checkout fragmented across competing providers |
+| **Description** | 3+ distinct payment providers detected. Inconsistent checkout UX. |
+| **Status** | **Implemented** (Phase 30 — `checkout_provider_fragmented` finding in Revenue Integrity pack) |
 | **Existing data** | All `ProviderIndicatorPayload` entries per site |
 | **What is missing** | Composite signal: `multiple_payment_providers` with count. Inference: `checkout_provider_fragmentation` when > 2 providers detected. |
 | **Likely pack(s)** | revenue_integrity, scale_readiness |
@@ -265,13 +265,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-15: Change Detection Regression Findings
+### FO-15: Change Detection Regression Findings -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Regression detected: [metric] worsened since last audit |
-| **Description** | The change detection engine (`packages/change-detection/`) compares decisions across audit cycles, classifying changes as regression/improvement/stable. But these regressions are NOT surfaced as findings. They remain internal metadata. |
-| **Status** | Possible now from current evidence |
+| **Finding title** | Revenue path degraded since last audit |
+| **Description** | Material regressions detected in change detection between audit cycles. `ChangeReportProjection` provides full aggregate. |
+| **Status** | **Implemented** (Phase 30B — `revenue_path_regressed` finding + `ChangeReportProjection` in projection types) |
 | **Existing data** | `CycleChangeReport` with regressions[], improvements[], `overall_trend` |
 | **What is missing** | Projection: convert regressions into finding-level alerts. E.g. "Checkout integrity degraded from 'adequate' to 'fragile' since last audit." |
 | **Likely pack(s)** | All packs |
@@ -282,13 +282,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-16: Verification Maturity as Finding Context
+### FO-16: Verification Maturity as Finding Context -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | This finding has not been verified / This finding is browser-verified |
-| **Description** | The verification lifecycle (`packages/verification-lifecycle/`) tracks maturity per decision: Unverified → PendingVerification → PartiallyVerified → Verified → Degraded → Stale. This maturity level is not surfaced to users alongside findings. |
-| **Status** | Possible now from current evidence |
+| **Finding title** | Verification maturity surfaced per finding |
+| **Description** | `FindingProjection.verification_maturity` and `FindingProjection.verification_method` now surface the verification lifecycle state alongside each finding. |
+| **Status** | **Implemented** (Phase 0 UX — `verification_maturity` and `verification_method` fields in `FindingProjection`) |
 | **Existing data** | `VerificationState` with maturity, confidence_at_verification, verification_count |
 | **What is missing** | Finding-level annotation: "Verified by browser" or "Unverified — static analysis only." |
 | **Likely pack(s)** | All packs |
@@ -333,13 +333,13 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ---
 
-### FO-19: SaaS Positive Findings
+### FO-19: SaaS Positive Findings -- IMPLEMENTED
 
 | Field | Value |
 |-------|-------|
-| **Finding title** | Smooth activation flow / Clear upgrade path / Clean navigation |
-| **Description** | Commerce packs have 6 positive findings. SaaS growth readiness has ZERO positive findings. When activation is smooth, navigation is clean, or upgrade paths are clear, no positive signal is surfaced. |
-| **Status** | Possible with minor rule additions |
+| **Finding title** | Smooth activation flow / Clear upgrade path / Clean navigation / Guided empty states |
+| **Description** | SaaS growth readiness now has 4 positive findings. |
+| **Status** | **Implemented** (Phase 30 — `smooth_activation`, `navigation_clean`, `upgrade_path_visible`, `empty_states_guided`) |
 | **Existing data** | All SaaS evidence (activation steps, empty states, upgrade surfaces, navigation structure) |
 | **What is missing** | Positive finding rules: activation_step_count <= 3 + has_clear_cta → "Smooth activation flow"; navigation_complexity = low → "Clean navigation"; upgrade_surface_visibility = high + has_value_proposition → "Clear upgrade path" |
 | **Likely pack(s)** | saas_growth_readiness |
@@ -371,25 +371,27 @@ The opportunities below require **no new collection** — only new rules, signal
 
 ### Quick Wins (Low effort, high value, low false-positive risk)
 
-| # | Opportunity | Effort | Value |
-|---|------------|--------|-------|
-| FO-4 | HTTP error page classification by criticality | Low | Revenue, Scale |
-| FO-6 | Canonical URL mismatch detection | Low | Scale |
-| FO-9 | Provider-based checkout mode inference | Low | Confidence improvement |
-| FO-13 | Language consistency across journey | Low | Revenue, Chargeback |
-| FO-16 | Verification maturity as finding context | Low | Trust, all packs |
-| FO-19 | SaaS positive findings | Low | SaaS balance |
-| FO-2 | Cross-domain form posting risk | Low | Trust |
-| FO-11 | Evidence corroboration scoring for findings | Low | Decision quality |
+**Many quick wins have been implemented since the original assessment.** Remaining:
+
+| # | Opportunity | Effort | Value | Status |
+|---|------------|--------|-------|--------|
+| FO-4 | HTTP error page classification by criticality | Low | Revenue, Scale | **DONE** |
+| FO-6 | Canonical URL mismatch detection | Low | Scale | Still pending |
+| FO-9 | Provider-based checkout mode inference | Low | Confidence improvement | Still pending |
+| FO-13 | Language consistency across journey | Low | Revenue, Chargeback | **DONE** |
+| FO-16 | Verification maturity as finding context | Low | Trust, all packs | **DONE** |
+| FO-19 | SaaS positive findings | Low | SaaS balance | **DONE** |
+| FO-2 | Cross-domain form posting risk | Low | Trust | **DONE** |
+| FO-11 | Evidence corroboration scoring for findings | Low | Decision quality | **DONE** |
 
 ### High-Value but Higher Implementation Effort
 
-| # | Opportunity | Effort | Value | Risk |
-|---|------------|--------|-------|------|
-| FO-8 | Platform-specific risk profiling | Medium | All packs | Heuristic validation needed |
-| FO-10 | Graph-based orphan page detection | Low-Medium | Revenue | SPA false positives |
-| FO-12 | Surface relation anomalies | Medium | Security, trust | Intentional patterns |
-| FO-15 | Change detection regression findings | Medium | Operational awareness | Noise in early cycles |
+| # | Opportunity | Effort | Value | Risk | Status |
+|---|------------|--------|-------|------|--------|
+| FO-8 | Platform-specific risk profiling | Medium | All packs | Heuristic validation needed | **DONE** |
+| FO-10 | Graph-based orphan page detection | Low-Medium | Revenue | SPA false positives | **DONE** |
+| FO-12 | Surface relation anomalies | Medium | Security, trust | Intentional patterns | Still pending |
+| FO-15 | Change detection regression findings | Medium | Operational awareness | Noise in early cycles | **DONE** |
 
 ### Findings That Need Only Better Projections
 

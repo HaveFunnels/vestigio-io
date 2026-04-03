@@ -1,5 +1,7 @@
 # Vestigio.io - Proposta de Frontend Baseada em Mockups de Referencia
 
+> **SUPERSEDED** — This document was the original proposal based on mockup references. The frontend has been significantly built out since then. For the current state of all screens and components, see `docs/FRONTEND_DESCRIPTION.md`. For the current UX hierarchy and interaction model, see `docs/UX_SURFACES.md`.
+
 > Analise das caracteristicas visuais dos mockups de referencia, mapeamento para componentes Vestigio, e status de implementacao.
 
 ---
@@ -98,14 +100,17 @@ Os mockups usam violeta/roxo como cor primaria. A Vestigio optou por manter **em
 
 ### 2.2 Estrutura de Navegacao Implementada
 
+> **Updated**: Sidebar order changed in the UX overhaul. Actions is now first (default landing). Analysis moved to 4th position as expandable parent.
+
 ```
 Product
+├── Actions → /app/actions (DEFAULT LANDING)
+├── Workspaces → /app/workspaces
+│   └── Detail → /app/workspaces/[id]
+├── Chat → /app/chat
 ├── Analysis (expansivel)
 │   ├── Findings → /app/analysis
 │   └── Inventory → /app/inventory
-├── Chat → /app/chat
-├── Actions → /app/actions
-├── Workspaces → /app/workspaces
 └── Maps → /app/maps
 
 Control Plane
@@ -260,6 +265,8 @@ Nos mockups, "Inventory" mostra APIs. Na Vestigio:
 
 ### 7.1 Componentes — Status Atualizado
 
+> **Note**: This table reflects the state after the UX overhaul. For the full current description, see `docs/FRONTEND_DESCRIPTION.md`.
+
 | Componente do Mockup | Equivalente Vestigio | Status |
 |---|---|---|
 | Sidebar colapsada (hover-expand) | AppSidebar | **Implementado** |
@@ -273,6 +280,17 @@ Nos mockups, "Inventory" mostra APIs. Na Vestigio:
 | SideDrawer com tokens semanticos | SideDrawer | **Implementado** |
 | ConsoleState com tokens semanticos | ConsoleState | **Implementado** |
 | OrgSelector com tokens semanticos | OrgSelector | **Implementado** |
+| VerificationBadge | VerificationBadge | **Implementado** — maturity badges on all tables |
+| ChangeBadge | ChangeBadge | **Implementado** — change class per finding/action |
+| VerificationPanel | VerificationPanel | **Implementado** — stepped progress in drawers |
+| ChangeTimeline | ChangeTimeline | **Implementado** — vertical timeline in workspaces |
+| VerificationSufficiencyWarning | VerificationSufficiencyWarning | **Implementado** — alerts for under-verified items |
+| PreflightChecklist | PreflightChecklist (inline) | **Implementado** — pass/fail/warning checklist mode |
+| Category tabs (Actions) | Actions page tabs | **Implementado** — All/Incidents/Opportunities/Verifications |
+| Workspace detail page | `/workspaces/[id]` | **Implementado** — full detail with change tracking |
+| Chat rich content blocks | ChatMessageRenderer | **Implementado** — 10+ block types including navigation CTA |
+| ConversationSidebar | ConversationSidebar | **Implementado** — date grouping, hover delete |
+| ModelSelector | ModelSelector | **Implementado** — Default/Ultra with plan gating |
 | Pill filter bar | — | **Pendente** |
 | Paginacao | — | **Pendente** |
 | Risk score gradient bar | — | **Pendente** |

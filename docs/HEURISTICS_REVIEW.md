@@ -1,5 +1,7 @@
 # Heuristics Review
 
+> **Verified 2026-04-02:** This document remains accurate as a reference for legacy heuristic patterns and rewrite guidance. The rewrite has refactored overlapping responsibilities into shared services as recommended (route classification, checkout/provider inference, trust boundary evaluation, policy coverage, confidence/gate evaluation). Duplicated concepts (checkout_mode in multiple modules, off-domain logic in multiple modules) have been consolidated into the canonical pipeline.
+
 ## Scope
 
 This document validates the current heuristics in four major areas:

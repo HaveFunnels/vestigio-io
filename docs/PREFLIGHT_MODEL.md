@@ -221,11 +221,40 @@ Preflight nao e dono desses objetos, mas pode projetar:
 
 | Surface | Preflight role |
 |---|---|
-| Dashboard | readiness summary por landing/environment |
+| Workspace detail (`/workspaces/[id]`) | **Primary surface**: checklist rendering mode com readiness badge |
+| Actions | blockers e riscos ativos ligados ao landing, categorizados como incidents |
 | Chat | resposta direta para "posso subir trafego?" |
-| Incident board | blockers e riscos ativos ligados ao landing |
-| Opportunity board | melhorias de upside ligadas ao path |
-| Findings table | supporting details filtrados por profile |
+| Findings table | supporting details filtrados por profile com VerificationBadge |
+
+## UX rendering: Checklist mode
+
+When a preflight workspace has readiness data (`preflightReadiness` available), the workspace detail page renders in **checklist mode** via the `PreflightChecklist` component.
+
+### Checklist structure
+
+- **Overall readiness badge** at the top:
+  - `READY` — green, no blockers
+  - `READY WITH RISKS` — amber, risks but no blockers
+  - `NOT READY` — red, at least one blocker
+  - `N/A` — gray, insufficient context
+
+- **Checklist items** grouped by category (blocker / risk / opportunity):
+  - Each item displays:
+    - **Status icon**: pass (green check), fail (red X), warning (amber triangle)
+    - **Title** — finding or decision title
+    - **Severity** — badge
+    - **Related finding reference** — link to the finding in context
+  - Blockers appear first, then risks, then opportunities
+
+- **Below the checklist**: standard workspace findings table with VerificationBadge and ChangeBadge per row
+
+### Data flow
+
+PreflightChecklist receives:
+- `findings` — array of findings scoped to the workspace
+- `readiness` — preflight readiness evaluation with overall_status, blockers, risks, opportunities
+
+The component does not perform its own analysis. It renders the preflight_evaluation output produced by the decision engine.
 
 ## Rewrite contract
 

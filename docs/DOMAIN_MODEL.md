@@ -30,68 +30,85 @@ O produto nao e um scanner de findings. `finding` passa a ser projeção. As uni
 
 ## Canonical entities
 
-### 1. `workspace`
+### 1. `workspace` / `organization`
 
-Container comercial e administrativo.
+Container comercial e administrativo. **Implemented as `Organization` in Prisma.**
 
 Source of truth:
 
-- control plane
+- `prisma/schema.prisma` — `Organization` model
+- `packages/domain/workspace.ts` — domain contract
+
+Campos implementados (Prisma `Organization`):
+
+- `id`, `name`, `ownerId`
+- `plan` — vestigio | pro | max
+- `status` — pending | active | suspended
+- relationships: memberships, environments, businessProfile, auditCycles, usage, conversations, tokenLedger
 
 Responsavel por:
 
 - tenant boundary
 - billing and plan
-- access control
+- access control via `Membership` (owner | admin | member)
 - business profile ownership
 - environment registry
 
 ### 2. `environment`
 
-Representa um ambiente monitorado dentro do workspace.
-
-Exemplos:
-
-- `production`
-- `staging`
-- `brand-microsite`
-- `checkout-subdomain`
+Representa um ambiente monitorado dentro do workspace. **Implemented in Prisma.**
 
 Source of truth:
 
-- rewrite: entity propria ligada ao control plane
-- hoje: implícito em `website`, host roots e selecao manual
+- `prisma/schema.prisma` — `Environment` model
+- `packages/domain/workspace.ts` — domain contract
 
-Campos centrais:
+Campos implementados (Prisma `Environment`):
 
-- `workspace_ref`
-- `environment_key`
-- `environment_type`
-- `root_domains[]`
-- `path_scopes[]`
-- `business_unit`
-- `is_customer_facing`
-- `is_production`
+- `id`, `organizationId`, `domain`, `landingUrl`, `isProduction`
+- relationships: organization, auditCycles, saasAccessConfig
+
+Campos no domain contract (extended):
+
+- `workspace_ref`, `environment_key`, `environment_type`
+- `root_domains[]`, `path_scopes[]`
+- `business_unit`, `is_customer_facing`, `is_production`
+
+Cada environment pode ter um `SaasAccessConfig` associado para analise autenticada.
 
 ### 3. `business_profile`
 
-Perfil economico e operacional do negocio.
+Perfil economico e operacional do negocio. **Implemented in Prisma + domain contracts.**
 
 Source of truth:
 
-- onboarding + manual inputs + future integrated metrics
+- `prisma/schema.prisma` — `BusinessProfile` model + `BusinessProfileVersion` model
+- `packages/domain/workspace.ts` — domain contract with SaaS extensions
+- `packages/domain/business-profile-lifecycle.ts` — versioning, drift detection, recalibration
 
-Campos:
+Campos implementados (Prisma `BusinessProfile`):
 
-- `business_model` (`ecommerce`, `lead_gen`, `saas`, `hybrid`)
-- `monthly_revenue_range`
-- `average_ticket_range`
-- `chargeback_rate_range`
-- `churn_rate_range`
-- `traffic_plan_range`
-- `growth_goal`
-- `platform_hints[]`
-- `provider_hints[]`
+- `id`, `organizationId` (unique)
+- `businessModel` — ecommerce | lead_gen | saas | hybrid
+- `monthlyRevenue`, `averageOrderValue`, `monthlyTransactions`
+- `conversionRate`, `chargebackRate`, `churnRate`
+- `conversionModel` — checkout | whatsapp | form | external
+
+Campos no domain contract (extended):
+
+- `monthly_revenue_range`, `average_ticket_range`
+- `chargeback_rate_range`, `churn_rate_range`
+- `traffic_plan_range`, `growth_goal`
+- `platform_hints[]`, `provider_hints[]`
+- `saas` — SaaS profile extension (auth_method, mfa_mode, trial, activation goal, upgrade path)
+
+Lifecycle management (implemented in `packages/domain/business-profile-lifecycle.ts`):
+
+- `BusinessProfileVersion` — versioned snapshots with source tracking
+- `evaluateProfileFreshness()` — graduated staleness bands (30/60/90/180 days)
+- `detectProfileDrift()` — compares declared profile against observed signals
+- `profileConfidencePenalty()` — confidence multiplier based on staleness and drift
+- `BusinessProfileVersion` Prisma model stores version history with source and change summary
 
 Papel:
 
@@ -114,28 +131,69 @@ Observacao:
 
 ### 5. `audit_cycle`
 
-Unidade canonica de coleta, versionamento e avaliacao.
+Unidade canonica de coleta, versionamento e avaliacao. **Implemented in Prisma.**
 
 Source of truth:
 
-- `audit_refresh_cycles`
+- `prisma/schema.prisma` — `AuditCycle` model
+- `packages/domain/audit-cycle.ts` — domain contract
 
-Campos centrais:
+Campos implementados (Prisma `AuditCycle`):
 
-- `cycle_type` (`full`, `incremental`, `verification`)
-- `trigger_source`
-- `started_at`, `completed_at`
-- `freshness_state`
-- `coverage_summary`
+- `id`, `organizationId`, `environmentId`
+- `status` — pending | running | complete | failed
+- `cycleType` — full | incremental | verification
+- `createdAt`, `completedAt`
+- relationships: organization, environment, evidence[]
 
-### 6. `core_snapshot`
+### 5a. `saas_access_config` (new)
 
-Snapshot bruto do ciclo.
+Configuracao de acesso autenticado para analise de SaaS. **Implemented in Prisma.**
 
 Source of truth:
 
-- hoje: `audits.data`, `audits.issues`, campos em `audits`
-- rewrite: entidade tipada derivada do `audit_cycle`
+- `prisma/schema.prisma` — `SaasAccessConfig` model
+- `packages/domain/saas-access.ts` — domain contract
+
+Campos:
+
+- `environmentId` (unique), `loginUrl`, `email`, `passwordEncrypted`
+- `authMethod` — password | oauth | magic_link | unknown
+- `mfaMode` — none | optional | required | unknown
+- `hasTrial`, `requiresSeedData`, `testAccountAvailable`
+- `activationGoal`, `primaryUpgradePath`
+- `status` — unconfigured | configured | verified | failed | expired | awaiting_manual_mfa
+
+Created during onboarding. Consumed by the verification layer.
+
+### 5b. `platform_config` (new)
+
+Configuracao de plataforma para pricing e limites de plano. **Implemented in Prisma.**
+
+Source of truth:
+
+- `prisma/schema.prisma` — `PlatformConfig` model
+- `src/libs/plan-config.ts`
+
+Campos: `configKey` (unique), `value` (JSON text).
+
+Stores plan configurations (price IDs, limits, features) synced from Paddle.
+
+### 6. `versioned_snapshot`
+
+Snapshot versionado do ciclo para change detection. **Replaces legacy `core_snapshot`.**
+
+Source of truth:
+
+- `prisma/schema.prisma` — `VersionedSnapshot` model
+- `packages/change-detection/`
+
+Campos implementados:
+
+- `cycleRef`, `workspaceRef`, `environmentRef`
+- `schemaVersion`, `snapshot` (JSON), `isBaseline`
+- `decisionCount`, `signalCount`, `auditMode`
+- `recomputeMs`, `contentHash`
 
 ### 7. `page_inventory_item`
 
@@ -191,26 +249,27 @@ Source of truth:
 
 ### 12. `evidence`
 
-Entidade canonica de observacao.
+Entidade canonica de observacao. **Implemented and persisted.**
 
 Source of truth:
 
-- rewrite: typed evidence store
-- hoje: espalhado entre inventory, relations, heartbeat, journey, radars e blobs
+- `packages/domain/evidence.ts` — typed contract with ~30 payload types
+- `packages/evidence/store.ts` — in-memory evidence store
+- `packages/evidence/prisma-store.ts` — PostgreSQL persistence via `PrismaEvidenceStore`
+- `prisma/schema.prisma` — `Evidence` model
 
-Campos minimos:
+Campos implementados:
 
 - `evidence_key`
-- `evidence_type`
+- `evidence_type` — extensive enum: http_response, page_content, redirect, script, form, link, iframe, meta, certificate, policy_page, checkout_indicator, provider_indicator, platform_indicator, browser_navigation_trace, browser_checkout_confirmation, browser_failure_event, browser_redirect_chain, authenticated_session_attempt, authentication_blocked_event, prerequisite_missing_event, authenticated_page_view, activation_step_observed, empty_state_observed, upgrade_surface_observed, navigation_structure_observed, inline_script_content, structured_data_item, technology_detected, mobile_verification_result, classified_runtime_errors, nuclei_match, katana_discovery, network_analysis, brand_impersonation_match, shopify_store_metrics, behavioral_session, surface_vitality
 - `subject_ref`
-- `environment_ref`
+- `scoping` (workspace_ref, environment_ref, subject_ref, path_scope)
 - `cycle_ref`
-- `observed_at`
-- `fresh_until`
-- `source_kind`
-- `collection_method`
-- `payload`
-- `quality_score`
+- `freshness` (observed_at, fresh_until, freshness_state, staleness_reason)
+- `source_kind` — crawl, http_fetch, pixel, heartbeat, integration, browser_verification, manual, nuclei_scan, katana_crawl, brand_intel_scan, shopify_integration, behavioral_snippet
+- `collection_method` — static_fetch, dynamic_render, api_call, passive_collection, manual_input, external_tool_scan
+- `payload` — typed union, JSON-serialized in Prisma
+- `quality_score` — 0..100
 
 ### 13. `signal`
 
@@ -335,39 +394,82 @@ Tipos:
 - `light_probe`
 - `browser_verification`
 - `integration_pull`
+- `authenticated_journey_verification` (new — SaaS authenticated verification)
+
+### 24. `action` (new — implemented)
+
+Unidade operacional derivada de decisions. **Primary UI surface.**
+
+Source of truth:
+
+- `packages/domain/actions.ts` — domain contract
+- `packages/projections/types.ts` — `ActionProjection`
+
+Campos:
+
+- `action_key`, `scoping`, `cycle_ref`, `decision_ref`
+- `action_type` — risk_mitigation | opportunity_capture | verification | observation
+- `title`, `description`, `priority`, `severity`, `decision_impact`
+- `effort_hint`, `evidence_refs[]`, `status` (pending | in_progress | completed | dismissed)
+
+Projection extensions:
+
+- `category` — incident | opportunity | verification | observation
+- `operational_status`, `decision_status`, `change_class`, `verification_maturity`, `resolve_path`
+
+### 25. `conversation` (new — implemented)
+
+Sessao de chat LLM persistida.
+
+Source of truth:
+
+- `prisma/schema.prisma` — `Conversation`, `ConversationMessage`, `TokenCostLedger` models
+
+### 26. `analysis_job` (new — implemented)
+
+Job de analise com status, progresso e stages.
+
+Source of truth:
+
+- `prisma/schema.prisma` — `AnalysisJob` model
 
 ## Relationship model
 
 ```text
-workspace
-  -> business_profile
-  -> environment
-      -> website
-          -> audit_cycle
-              -> core_snapshot
-              -> evidence
-              -> signal
-              -> inference
-              -> risk_evaluation
-              -> decision
-              -> artifact
-          -> page_inventory_item
-          -> surface_relation
-          -> behavioral_event
-          -> behavioral_session
-          -> journey_graph
-      -> preflight_profile
-          -> preflight_evaluation
+organization (Prisma)
+  -> membership[] (user + role)
+  -> business_profile (1:1, with versioning via business_profile_version[])
+  -> environment[]
+      -> saas_access_config (1:1, optional)
+      -> website[]
+          -> page_inventory_item[]
+          -> surface_relation[]
+      -> audit_cycle[]
+          -> evidence[] (persisted in PostgreSQL via PrismaEvidenceStore)
+          -> versioned_snapshot (for change detection)
+          -> signal (in-memory, derived)
+          -> inference (in-memory, derived)
+          -> risk_evaluation (in-memory, derived)
+          -> decision (in-memory, derived)
+      -> analysis_job
+  -> usage[]
+  -> conversation[]
+      -> conversation_message[]
+      -> token_cost_ledger[]
 
 decision
-  -> finding projection
+  -> action projection (primary UI surface)
+  -> finding projection (detail view)
   -> incident (downside path)
   -> opportunity (upside path)
   -> value_case
   -> verification_request
 
-suppression_rule
+suppression_rule (Prisma)
   -> decision / finding / signal visibility
+
+platform_config (Prisma)
+  -> plan pricing, limits, features
 ```
 
 ## Source of truth rules
@@ -442,17 +544,20 @@ Preservar conceitualmente:
 - hybrid discovery
 - shared evidence graph
 
-Reconstruir com contrato novo:
+Reconstruido com contrato novo (implemented):
 
-- signal store
-- inference store
-- decision store
-- incident/opportunity model
-- business profile model
-- suppression governance
+- signal extraction (`packages/signals/`)
+- inference synthesis (`packages/inference/`)
+- decision engine (`packages/decision/`) with conflict resolver
+- incident/opportunity model (`packages/domain/incident.ts`, `packages/domain/opportunity.ts`)
+- business profile model with lifecycle (`packages/domain/business-profile-lifecycle.ts`)
+- suppression governance (`packages/suppression/`, `SuppressionRule` Prisma model)
+- action derivation (`packages/actions/`, `packages/domain/actions.ts`)
+- change detection (`packages/change-detection/`, `VersionedSnapshot` Prisma model)
+- truth resolution (`packages/truth/`)
 
-## Open Questions
+## Resolved Questions
 
-- O `workspace` vai suportar multiplos ambientes produtivos paralelos por marca/regiao desde o dia zero, ou apenas um `production` principal com extensoes futuras?
-- `business_profile` entrara somente por onboarding/manual input no inicio, ou havera um contrato minimo obrigatorio para importacao de metrics externas ja na fase 1?
-- `incident` e `opportunity` terao ownership humano explicito desde o primeiro release, ou inicialmente serao apenas estados operacionais sem workflow de assignee?
+- **Multiple environments**: Organization supports multiple environments. Each environment has its own domain, landing URL, and production flag. SaaS access is per-environment.
+- **Business profile source**: Enters via onboarding and manual input. BusinessProfileVersion tracks source (onboarding, user_update, integration_sync, system_inference). Drift detection compares declared profile against observed signals.
+- **Incident/opportunity ownership**: Currently operational states without explicit human assignee workflow. Actions page serves as the primary operational interface.

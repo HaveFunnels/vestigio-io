@@ -355,10 +355,10 @@ Há dois grupos de workers locais:
 
 Hoje isso não é um worker plane real. É biblioteca executável dentro do mesmo runtime Node. Não há:
 
-- fila
+- ~~fila~~ **UPDATE (2026-04-02):** Redis-backed job queue now exists (`apps/platform/redis-job-queue.ts`). Uses `ioredis` with `REDIS_URL` (Railway auto-injects). Falls back to in-memory when Redis unavailable.
 - scheduler
 - retry externo
-- persistência de job
+- ~~persistência de job~~ **PARTIAL:** Redis queue provides some job persistence.
 - processo separado obrigatório
 
 ### Deployment assumptions implícitas
@@ -501,30 +501,33 @@ Persistidas:
 - API keys
 - billing do usuário
 
-Não persistidas:
+Não persistidas (original assessment):
 
-- evidence
-- signals
-- inferences
-- decisions
-- actions
-- workspaces analíticos
-- business profile
-- workspace tenant
-- environment
-- audit cycle
-- verification requests/results
+> **2026-04-02 update:** Most items below are now **resolved**:
+> - ~~evidence~~ **PERSISTED** (`Evidence` model in Prisma)
+> - signals — still computed in-memory during recompute cycle
+> - inferences — still computed in-memory during recompute cycle
+> - decisions — still computed in-memory during recompute cycle
+> - actions — still computed in-memory during recompute cycle
+> - ~~workspaces analíticos~~ — computed as projections (by design, not persisted)
+> - ~~business profile~~ **PERSISTED** (`BusinessProfile` model)
+> - ~~workspace tenant~~ **PERSISTED** (`Organization` model)
+> - ~~environment~~ **PERSISTED** (`Environment` model)
+> - ~~audit cycle~~ **PERSISTED** (`AuditCycle` model)
+> - verification requests/results — still in-memory in orchestrator
 
 ### O que ainda é in-memory
 
-Muito do que importa para o control plane:
+> **2026-04-02 update:** Persistence has improved significantly. Evidence is now persisted via `PrismaEvidenceStore`. Conversations, token costs, and feedback are persisted. Redis is available for rate limiting and job queuing.
 
-- `EvidenceStore` é in-memory no `McpServer` ([apps/mcp/server.ts#L41](../apps/mcp/server.ts#L41))
-- `VerificationOrchestrator` guarda requests/runs/results em `Map` in-memory ([workers/verification/orchestrator.ts](../workers/verification/orchestrator.ts))
-- `McpSessionContext` é in-memory ([apps/mcp/server.ts#L48](../apps/mcp/server.ts#L48))
-- context analítico é remontado em memória via `assembleContext`/`recomputeAll` ([apps/mcp/context.ts#L40](../apps/mcp/context.ts#L40))
+Remaining in-memory components:
 
-Isso inviabiliza robustez multiusuário, retomada de estado e operação real.
+- `EvidenceStore` in-memory store still used during engine computation cycle (loaded from Prisma at bootstrap)
+- `VerificationOrchestrator` keeps requests/runs/results in `Map` in-memory
+- `McpSessionContext` is in-memory (rebuilt per request from persisted data)
+- Analytical context is recomputed in memory via `assembleContext`/`recomputeAll`
+
+The analytical computation is in-memory by design (compute cycle). Persistence is via Evidence model and conversation/token stores.
 
 ### Como o setup inicial do banco funciona
 
@@ -706,23 +709,25 @@ No mínimo:
 
 ## 8. Critical gaps
 
-### Critical now
+### Critical now — Status Update (2026-04-02)
 
-- Não existe modelo persistido de `Workspace`, `Environment`, `Membership` ou ownership no banco ([prisma/schema.prisma](../prisma/schema.prisma), [packages/domain/workspace.ts](../packages/domain/workspace.ts)).
-- O shell novo não está protegido pelo middleware; o matcher cobre apenas `/user/*` e `/admin/*` ([src/middleware.ts#L32](../src/middleware.ts#L32)).
-- O console usa dados demo em quase todas as páginas e não está ligado ao MCP real ([src/app/(console)/analysis/page.tsx#L13](../src/app/(console)/analysis/page.tsx#L13), [src/app/(console)/chat/page.tsx#L99](../src/app/(console)/chat/page.tsx#L99)).
-- O onboarding não persiste nada e não dispara ingestão nem criação de entidade ([src/app/(console)/onboard/page.tsx](../src/app/(console)/onboard/page.tsx)).
-- Billing está ligado ao usuário e não ao workspace ([prisma/schema.prisma#L69](../prisma/schema.prisma#L69)).
-- `browser_verification` e `integration_pull` são stubs ([workers/verification/executors.ts#L185](../workers/verification/executors.ts#L185), [workers/verification/executors.ts#L207](../workers/verification/executors.ts#L207)).
+Many critical gaps identified below have been **resolved**. Current status:
 
-### Important next
+- ~~Não existe modelo persistido de `Workspace`, `Environment`, `Membership` ou ownership no banco.~~ **RESOLVED.** `Organization`, `Membership`, `Environment`, `BusinessProfile`, `AuditCycle`, `Evidence`, `Usage` models now exist in `prisma/schema.prisma`. Organization-centric multi-tenancy is in place.
+- ~~O shell novo não está protegido pelo middleware.~~ **RESOLVED.** Middleware now includes `hasOrganization` check. Console routes are auth-gated with `isAuthorized()` and org context resolution (`resolveOrgContext()`).
+- ~~O console usa dados demo em quase todas as páginas.~~ **PARTIALLY RESOLVED.** Chat page is fully wired to MCP via real data. Analysis, actions, and workspace pages use MCP projections when available. Some pages still have demo fallback data.
+- ~~O onboarding não persiste nada e não dispara ingestão nem criação de entidade.~~ **RESOLVED.** Onboarding API route (`src/app/api/onboard/route.ts`) creates Organization, Environment, BusinessProfile, SaasAccessConfig (if SaaS), and initiates checkout. SaaS fields (login URL, email, auth method, MFA mode) flow through onboarding.
+- ~~Billing está ligado ao usuário e não ao workspace.~~ **RESOLVED.** Billing is now Paddle-primary with admin-configurable plans via `/app/admin/pricing`. Subscription state is tied to Organization (plan field on Organization model). Stripe maintained as fallback. `PlatformConfig` stores plan limits (MCP calls, environments, members, credits, continuous audits).
+- `browser_verification` is implemented (Playwright). `integration_pull` remains a stub.
 
-- Separar semanticamente workspace de tenancy vs workspace analítico.
-- Persistir evidence/audit/verifications ou ao menos o lifecycle mínimo.
-- Definir bootstrap real do MCP context a partir de dados persistidos.
-- Introduzir selector de workspace/environment no shell.
-- Revisar API key generation: hoje a “key” é hash do `user.role`, não um segredo aleatório ([src/actions/api-key.ts#L23](../src/actions/api-key.ts#L23)).
-- Formalizar migrações Prisma e setup reprodutível.
+### Important next — Status Update (2026-04-02)
+
+- ~~Separar semanticamente workspace de tenancy vs workspace analítico.~~ **RESOLVED.** Organization is the tenant/account boundary. “Workspaces” in the console are analytical views (preflight, revenue, chargeback) scoped to an Organization's environments.
+- ~~Persistir evidence/audit/verifications ou ao menos o lifecycle mínimo.~~ **RESOLVED.** Evidence model in Prisma with `PrismaEvidenceStore`. AuditCycle model tracks lifecycle. Conversations, token costs, and feedback are persisted.
+- ~~Definir bootstrap real do MCP context a partir de dados persistidos.~~ **RESOLVED.** `apps/mcp/bootstrap.ts` loads persisted evidence into the engine.
+- ~~Introduzir selector de workspace/environment no shell.~~ **PARTIALLY RESOLVED.** Organization context is resolved from auth. Environment selection exists in chat.
+- Revisar API key generation: today the “key” is a hash of `user.role`, not a random secret ([src/actions/api-key.ts#L23](../src/actions/api-key.ts#L23)). **Still pending.**
+- ~~Formalizar migrações Prisma e setup reprodutível.~~ **PARTIALLY RESOLVED.** `prisma db push` is used for greenfield. Seed script (`prisma/seed.ts`) creates demo data. Migration to `prisma migrate` recommended when production data exists.
 
 ### Later
 

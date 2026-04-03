@@ -80,14 +80,21 @@ Control Plane
 
 ## Control Plane
 
-### Responsibilities
+### Responsibilities (implemented in `apps/platform/` and `src/app/`)
 
-- workspace and user management
-- plan entitlements
-- environment registry
-- onboarding and business profile capture
-- scheduling policy
+- workspace and user management (Organization, Membership with full CRUD)
+- plan entitlements (`packages/plans/`, `PlatformConfig` model)
+- environment registry (Environment model with domain, landing URL, production flag)
+- onboarding and business profile capture (BusinessProfile + BusinessProfileVersion)
+- SaaS access configuration (SaasAccessConfig created during onboarding, per-environment)
+- scheduling policy (`apps/platform/audit-scheduler.ts`)
+- billing integration (Paddle primary, Stripe fallback)
+- Redis-backed job queue with in-memory fallback
+- rate limiting (Redis-backed with in-memory fallback)
 - notifications and workflow states
+- platform error tracking and observability (`PlatformError` model)
+- auth event logging (`AuthEvent` model)
+- token cost ledger and usage tracking
 
 ### Must not own
 
@@ -145,25 +152,29 @@ Control Plane
 - structural and behavioral overlays
 - integration snapshot storage
 
-### Canonical stores
+### Canonical stores (implemented)
 
-- cycle store
-- evidence store
-- graph store
-- artifact store
-- freshness store
+- cycle store (`packages/evidence/cycle-store.ts`)
+- evidence store — in-memory (`packages/evidence/store.ts`) + PostgreSQL (`packages/evidence/prisma-store.ts`)
+- graph store (`packages/graph/`)
+- quality scoring (`packages/evidence/quality.ts`)
+- confidence adjuster (`packages/evidence/confidence-adjuster.ts`)
+
+### Implemented in Prisma
+
+- `Evidence` model with full scoping, freshness, quality metadata
+- `Website` model with pages and surface relations
+- `PageInventoryItem` model with type, tier, criticality, freshness
+- `SurfaceRelation` model with relation types and cross-domain tracking
+- `AuditCycle` model with status, type, timestamps
+- `VersionedSnapshot` for change detection baselines
 
 ### Preserve
 
-- `website_page_inventory`
-- `website_surface_relations`
-- behavioral journey tables
+- `website_page_inventory` (now `PageInventoryItem` in Prisma)
+- `website_surface_relations` (now `SurfaceRelation` in Prisma)
+- behavioral session intelligence (`packages/behavioral/`)
 - cycle model
-
-### Replace
-
-- `audits.data` as intelligence hub
-- radar-local copy tables as truth source
 
 ## 3. Intelligence Layer
 
@@ -303,20 +314,104 @@ Centralize:
 - UI fallback semantics
 - fragmented freshness handling
 
-## Recommended repo/modules shape
+## Current repo/modules shape
 
 ```text
-control-plane/
-engine/
-  ingestion/
-  evidence/
-  intelligence/
-  decision/
-  projections/
-  workers/
-mcp/
-shared-contracts/
+apps/
+  platform/          — control plane services (job queue, billing safety, auth logging,
+                       Redis job queue, SaaS access store, token ledger, env validation)
+  mcp/               — cognitive layer (LLM pipeline, tools, resources, playbooks,
+                       context chaining, suggestion engine, session management)
+
+packages/
+  domain/            — canonical contracts (evidence, signal, inference, decision, action,
+                       incident, opportunity, value-case, suppression, verification,
+                       saas-access, business-profile-lifecycle, workspace, website)
+  evidence/          — typed evidence persistence (in-memory store + PrismaEvidenceStore
+                       backed by PostgreSQL), cycle store, quality scoring, confidence adjuster
+  graph/             — evidence graph model and query layer
+  signals/           — signal extraction
+  inference/         — inference synthesis
+  decision/          — decision engine, conflict resolver
+  risk/              — risk evaluation
+  intelligence/      — shared domain services, root cause analysis, global actions
+  classification/    — pack eligibility, route classification
+  projections/       — projection engine: findings, actions, workspaces, change reports,
+                       verification maturity, change class, evidence quality
+  workspace/         — workspace orchestration (preflight, revenue, chargeback packs),
+                       recompute engine, confidence audit, behavioral validation
+  impact/            — quantified value cases, impact summaries
+  plans/             — plan entitlements and limits
+  maps/              — use-case maps
+  suppression/       — suppression governance
+  truth/             — truth resolution, contradiction detection
+  change-detection/  — cycle-to-cycle change detection, versioned snapshots
+  verification-lifecycle/ — verification request lifecycle
+  verification-economics/ — cost/benefit analysis for verification
+  behavioral/        — behavioral intelligence aggregates
+  technology-registry/ — technology/provider fingerprinting
+  brand-adapter/     — brand impersonation detection
+  nuclei-adapter/    — nuclei scan integration
+  katana-adapter/    — katana deep discovery
+  shopify-adapter/   — Shopify integration
+  actions/           — action derivation from decisions
+
+workers/
+  ingestion/         — HTTP client, parser, crawl pipeline, staged pipeline
+  verification/      — browser verification (Playwright runtime), authenticated runtime
+  brand-intel/       — brand intelligence worker
+  nuclei/            — nuclei scan worker
+  katana/            — katana discovery worker
+  shopify/           — Shopify data sync worker
+
+src/app/             — Next.js application
+  (site)/            — marketing site (vestigio.io): homepage, pricing, auth, blog
+  (console)/         — legacy console routes (onboard)
+  app/               — authenticated app (app.vestigio.io): actions, workspaces, chat,
+                       analysis, inventory, maps, billing, settings, admin, onboarding,
+                       members, organization
+  api/               — API routes: analysis, chat, conversations, admin, paddle, stripe,
+                       onboard, usage, inventory, data-sources, validate-domain
 ```
+
+### Dual domain model
+
+- `vestigio.io` — marketing site (homepage, pricing, auth, blog, support)
+- `app.vestigio.io` — authenticated application (actions, workspaces, chat, analysis, admin)
+
+Routing is enforced in `src/middleware.ts` via hostname detection.
+
+### Evidence persistence (implemented)
+
+Evidence is now persisted in PostgreSQL via `PrismaEvidenceStore` (`packages/evidence/prisma-store.ts`).
+The Prisma `Evidence` model stores typed evidence with full scoping, freshness, and quality metadata.
+The in-memory `EvidenceStore` remains for fast access; Prisma store provides durability across restarts.
+
+### Redis integration (implemented)
+
+Redis provides:
+
+- **Job queue**: `apps/platform/redis-job-queue.ts` — persistent job state with TTL, FIFO queue, and per-environment locks
+- **Rate limiting**: `src/libs/limiter.ts` — Redis-backed fixed-window counters with in-memory fallback
+- **MCP rate limiting**: `apps/mcp/llm/rate-limiter.ts`
+- **Session support**: shared across instances
+
+Redis is optional — the system gracefully falls back to in-memory when `REDIS_URL` is not set.
+
+### Payment providers (implemented)
+
+- **Paddle** is the primary payment provider (`src/paddle/`, `src/app/api/paddle/`)
+- **Stripe** is the fallback provider (`src/stripe/`, `src/app/api/stripe/`)
+- Plan configuration is managed via `PlatformConfig` model in Prisma and `src/libs/plan-config.ts`
+
+### UX hierarchy
+
+The product surfaces are ordered by operational priority:
+
+1. **Actions** — primary surface, decision-derived prioritized actions (`src/app/app/actions/`)
+2. **Workspaces** — pack-level decision aggregation with workspace detail (`src/app/app/workspaces/[id]/`)
+3. **Chat** — conversational intelligence interface (`src/app/app/chat/`)
+4. **Analysis** — deep analysis and evidence exploration (`src/app/app/analysis/`)
 
 ## Primary flows
 
@@ -352,8 +447,8 @@ shared-contracts/
 - economic estimates without confidence bands
 - MCP bypassing engine contracts
 
-## Open Questions
+## Resolved Questions
 
-- A primeira fase do rewrite precisa suportar um engine fisicamente separado do control plane em repos/processos distintos, ou o isolamento logico com boundaries fortes ja basta?
-- `browser_verification` sera executado dentro do mesmo runtime operacional do audit ou em worker pool dedicado desde o inicio?
-- Qual projeção sera considerada o read model prioritario no launch: workspace summary, incident board ou chat-first surface?
+- **Repo structure**: The system lives in a single monorepo with strong logical boundaries (`packages/`, `apps/`, `workers/`, `src/`). No physical separation needed.
+- **Browser verification**: Runs in a dedicated worker pool (`workers/verification/`) with Playwright runtime, separate from the audit pipeline.
+- **Primary read model**: Actions page is the primary surface. Workspace summary is the second. Chat is the third. Analysis/findings is the fourth.

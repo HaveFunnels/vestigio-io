@@ -639,6 +639,37 @@ If any of these happen, the rewrite is drifting the wrong way:
 
 ---
 
+## Rewrite Progress (2026-04-02)
+
+The V2 rewrite has addressed the majority of concerns raised in this document:
+
+| Concern | Status |
+|---------|--------|
+| Hybrid discovery preserved | Done -- multi-source discovery with confidence tags, crawl constraints, URL classification |
+| Evidence graph as first-class substrate | Done -- `packages/graph/` with structural, trust, behavioral, and decision layers |
+| Business constructs preserved | Done -- Revenue integrity, chargeback resilience, scale readiness, SaaS growth as decision packs |
+| Confidence as shared contract | Done -- confidence independent from severity, convergence requirements, freshness policies |
+| Pixel optionality | Done -- zero-install baseline, behavioral overlays as optional enrichment |
+| Preflight as projection | Done -- preflight is a workspace projection over shared decisions |
+| No omni-blob | Done -- evidence, signals, inferences, decisions, and projections are separate layers |
+| Canonical risk model | Done -- `packages/decisions/` with unified risk evaluation, effective severity, decision impact |
+| Shared services | Done -- route classification, provider inference, trust boundary, policy coverage as shared contracts |
+| UI not a semantic layer | Done -- UI renders projections; does not reconstruct meaning |
+| Freshness as universal metadata | Done -- every evidence item carries freshness state, TTL, and staleness reason |
+| False-positive governance | Done -- suppression rules, trusted handoffs, allowlists, blind spot detection, escalation |
+
+### Red flags status
+
+None of the red flags listed below have materialized:
+- No omni-blob as source of truth
+- MCP does not invent decisions (grounded in tool data)
+- UI does not infer business status from raw evidence
+- Trust boundary logic is shared, not module-local
+- Confidence is not dropped
+- Stale inputs degrade decisions via freshness penalties
+- Incidents/opportunities flow through decision contracts
+- Business profile influences value estimation
+
 ## Final rewrite lens
 
 When deciding whether to preserve a legacy concept, ask:

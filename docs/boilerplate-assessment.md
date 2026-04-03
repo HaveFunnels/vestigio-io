@@ -1,5 +1,7 @@
 # Boilerplate Assessment for Vestigio Control Plane
 
+> **2026-04-02 Status Update:** Many critical gaps identified in this assessment have been addressed. See inline status annotations marked with `[RESOLVED]` or `[UPDATED]` throughout the document.
+
 ## 1. Executive summary
 
 This repository is usable as a **control plane starting point**, but **not as-is** for a serious multi-tenant control plane. My recommendation is:
@@ -543,13 +545,11 @@ This simplicity helps speed, but it also means domain boundaries are not strongl
 
 ### 1. No true multitenancy
 
-This is the largest risk.
+~~This is the largest risk.~~
 
-- No org/workspace/membership model
-- No tenant-scoped authorization model
-- No tenant-scoped billing model
+**[RESOLVED 2026-04-02]** Organization, Membership, and Environment models now exist in Prisma. Organization-centric multi-tenancy with owner/admin/member roles. Billing tied to Organization (plan field). Auth middleware includes `hasOrganization` check.
 
-If Vestigio needs workspace-first control plane behavior, this repo does not provide it yet.
+~~If Vestigio needs workspace-first control plane behavior, this repo does not provide it yet.~~
 
 ### 2. Role split is too coarse
 
@@ -568,19 +568,16 @@ Relevant files:
 
 ### 3. Billing is coupled to user identity
 
-Subscription state is stored directly on `User`. That becomes a structural liability if Vestigio bills by workspace, seats, usage, or account hierarchy.
+~~Subscription state is stored directly on `User`.~~
+
+**[RESOLVED 2026-04-02]** Billing is now Paddle-primary with plan state on Organization model (not User). Admin-configurable pricing via `/app/admin/pricing` with Paddle Price IDs. Stripe maintained as fallback. `PlatformConfig` stores plan limits. Onboarding creates checkout tied to Organization.
 
 ### 4. No queue / worker support
 
-There is no native support for:
+**[UPDATED 2026-04-02]** Redis-backed job queue now exists (`apps/platform/redis-job-queue.ts`). Rate limiting uses Redis sorted sets with in-memory fallback. However, full workflow orchestration, retries, and scheduling are still absent.
 
-- execution jobs
-- workflow orchestration
-- retries
-- scheduling
-- background processing
-
-That makes the repo unsuitable for hosting the audit/execution plane or heavy engine operations.
+~~That makes the repo unsuitable for hosting the audit/execution plane or heavy engine operations.~~
+Heavy engine operations now run in-process but with Redis backing for job queuing.
 
 ### 5. No clear separation between control plane and domain engine
 
@@ -588,7 +585,7 @@ The current app is a single Next.js app with direct Prisma access from routes an
 
 ### 6. Weak feature enforcement
 
-There is no entitlement layer, only plan IDs and UI checks. That is not enough for serious product packaging.
+**[UPDATED 2026-04-02]** Plan enforcement improved. `PlatformConfig` stores per-plan limits (MCP calls/mo, environments, members, credits, continuous audits). Store enforcement (`apps/platform/store-enforcement.ts`) validates limits. Rate limiter is plan-aware (3/10/30 req/min for vestigio/pro/max). Daily query budgets enforced. Ultra model gated to Pro+ plans.
 
 ### 7. Some integrations are template/demo flavored
 
@@ -611,7 +608,7 @@ This is not a reusable foundation for machine-to-machine auth in Vestigio.
 
 ### 9. Rate limiting is in-memory
 
-[`src/libs/limiter.ts`](../src/libs/limiter.ts) stores counters in process memory. That is not durable or horizontally safe.
+**[RESOLVED 2026-04-02]** Rate limiting now uses Redis sorted sets (`apps/mcp/llm/rate-limiter.ts`) with automatic fallback to in-memory when Redis is unavailable. `src/libs/limiter.ts` still exists for non-chat endpoints but the critical chat path is Redis-backed and horizontally safe.
 
 ### 10. No committed migration history
 

@@ -181,13 +181,13 @@ A aplicacao possui **2 layouts principais** usados pelo usuario, mais 2 auxiliar
 
 1. **Logo** "VESTIGIO" em `text-accent-text`, oculto quando colapsado (opacity transition)
 2. **Secao "Product"** (label uppercase, 10px):
+   - **Actions** (icone de raio, `/app/actions`) — **primeiro item, default landing**
+   - **Workspaces** (icone de grid, `/app/workspaces`)
+   - **Chat** (icone de balao de mensagem, `/app/chat`)
    - **Analysis** (icone de lupa) — **expansivel**, com chevron rotativo:
      - Findings (icone de documento, `/app/analysis`)
      - Inventory (icone de camadas, `/app/inventory`)
-   - Chat (icone de balao de mensagem)
-   - Actions (icone de raio)
-   - Workspaces (icone de grid)
-   - Maps (icone de mapa)
+   - **Maps** (icone de mapa, `/app/maps`)
 3. **Secao "Control Plane"**:
    - Organization, Billing, Members, Settings, Data Sources
 4. **Secao "Platform Admin"** (somente se `isAdmin === true`):
@@ -445,16 +445,21 @@ A home page e composta por secoes empilhadas verticalmente, cada uma como compon
    - Est. Impact com range badge
    - Tipo de impacto (Revenue Loss, Conversion Loss, etc.)
    - Pack label (Scale, Revenue, Chargeback, SaaS)
+   - **VerificationBadge**: Maturity indicator (unverified/pending/partially/verified/degraded/stale) com cores e icones
+   - **ChangeBadge**: Change class (regression/improvement/new/resolved/stable) com cores semanticas
    - Botao "Discuss" (borda zinc-700, hover emerald)
 
 7. **SideDrawer** (abre ao clicar em linha):
    - Painel deslizante da direita, fundo zinc com backdrop preto
-   - **Summary**: Texto da causa + badges (severity, confidence %, pack, surface)
+   - **Summary**: Texto da causa + badges (severity, confidence %, pack, surface, **verification maturity**, **change class**)
    - **Effect**: Texto descritivo em zinc-400
    - **Root Cause**: Container escuro (`border-zinc-800, bg-zinc-900/50`) em monospace
    - **Impact Breakdown**: 3 boxes com Monthly Range, Midpoint, Impact Type
    - **Reasoning**: Texto explicativo longo
    - **Evidence Contradictions**: Alerta ambar (se aplicavel) com contagem e delta de confianca
+   - **VerificationPanel**: Stepped progress bar mostrando lifecycle de verificacao (unverified → pending → partially → verified), method label, freshness indicator, degradation warnings
+   - **VerificationSufficiencyWarning**: Alerta quando finding de alto impacto nao tem verificacao suficiente
+   - **Suppression transparency**: Se evidence foi suprimida, razao visivel
    - Botao "Discuss" full-width emerald
 
 ### 5.3 Chat
@@ -484,16 +489,18 @@ A home page e composta por secoes empilhadas verticalmente, cada uma como compon
    - **Mensagem do usuario**: Alinhada a direita, borda zinc-800, texto zinc-100
    - **Mensagem do sistema**: Alinhada a esquerda, borda zinc-800, fundo zinc-900/70
 
-5. **Conteudo do Answer Card** (dentro da bolha do sistema):
-   - Header contextual (azul para finding unico, roxo para batch)
-   - Resposta direta em texto zinc-200
-   - Badge de confianca (emerald >=70%, ambar 50-69%, red <50%)
-   - Card de impacto (se aplicavel, tema vermelho)
-   - Secao "Why" com lista bullet
-   - "Next Step" com recomendacao
-   - Card de sugestao de chain (botao emerald com seta)
-   - Prompts sugeridos: botoes horizontais (borda zinc-700, hover emerald)
-   - Botoes de navegacao: links para Workspaces, Maps, Analysis, Actions
+5. **Conteudo via ChatMessageRenderer** (ContentBlock system dentro da bolha do sistema):
+   - **markdown**: Resposta formatada em texto zinc-200
+   - **tool_call**: Spinner que vira checkmark, label descritivo ("Analyzing findings..."), duracao, resultado expansivel
+   - **finding_card**: Card inline com severity bar, titulo, impact range, pack, root cause, click-to-navigate
+   - **action_card**: Card inline com priority circle, titulo, cross-pack badge, savings estimate
+   - **impact_summary**: Visualizacao de impacto financeiro
+   - **confidence**: Badge de confianca (emerald >=70%, ambar 50-69%, red <50%)
+   - **navigation_cta**: **Botoes de navegacao para outras surfaces** (Actions, Maps, Analysis, Workspaces) — o chat direciona o usuario para onde agir
+   - **suggested_prompts**: Botoes horizontais de follow-up (borda zinc-700, hover emerald), **incluindo prompts sobre mudancas** ("What regressed?", "Show resolved issues")
+   - **create_action**: Formulario ambar editavel para salvar como action
+   - **quote**: Blockquote com borda esquerda e fonte
+   - **data_rows**: Tabela key-value com severity badges
 
 6. **Estado vazio** (sem mensagens):
    - "Ask Vestigio" centralizado com subtitulo
@@ -515,59 +522,106 @@ A home page e composta por secoes empilhadas verticalmente, cada uma como compon
    - 6 templates (Find Revenue Leaks, Improve Conversion, etc.)
    - Labels de categoria, estimativa de queries, requisitos de plano
 
-### 5.4 Actions
+### 5.4 Actions (Default Landing Page)
 
-**Rota**: `/app/actions` (alias de `/actions`)
+**Rota**: `/app/actions` (alias de `/actions`) — **default landing page after login**
 **Arquivo**: `src/app/(console)/actions/page.tsx`
 
-**Descricao visual**: Lista de acoes priorizadas globalmente por impacto financeiro.
+**Descricao visual**: Operational queue categorizando incidents, opportunities e verifications. Superficie primaria de valor.
 
 **Elementos dispostos**:
 
 1. **Header**: "Actions" + subtitulo sobre priorizacao
-2. **Summary Cards** (4 cards):
+
+2. **Category Tabs**: Barra de tabs no topo para filtrar por tipo:
+   - All | Incidents | Opportunities | Verifications
+   - Cada tab com contagem de itens e dot colorido por categoria
+
+3. **Change Summary Banner** (quando change report disponivel):
+   - Contagens de regressions, improvements, new issues, resolved items
+   - Indicador de trend geral
+   - Link para ChangeTimeline expandido
+
+4. **Summary Cards** (4 cards):
    - "Total Actions" (contagem)
    - "Total Impact Addressable" (valor monetario, variante "danger" vermelho)
    - "Cross-Pack" (contagem, variante "info" azul)
    - "High Severity" (contagem, variante "warning" ambar)
-3. **DataTable**:
+
+5. **DataTable**:
    - **Priority (#)**: Monospace, zinc-400
    - **Action Title**: Bold zinc-200 + root cause em zinc-500
+   - **Category badge**: Incident (red dot), Opportunity (emerald dot), Verification (blue dot), Observation (zinc dot) — com estilo `bg-[color]-500/10 text-[color]-400 border-[color]-500/20`
    - **Severity**: Badge colorido (Critical/High/Medium/Low)
    - **Est. Impact**: Range badge com valor min-max
    - **Confidence**: Porcentagem monospace
+   - **Effort hint**: Trivial/Low/Medium/High/Very High com cor progressiva
+   - **VerificationBadge**: Maturity indicator (unverified/pending/partially/verified/degraded/stale)
+   - **ChangeBadge**: Change class (regression/improvement/new/resolved/stable)
    - **Scope**: "cross-pack" (emerald-400) ou "single" (zinc-500)
-4. **SideDrawer** (ao clicar):
-   - "What This Fixes" com descricao + badges
+
+6. **SideDrawer** (ao clicar):
+   - "What This Fixes" com descricao + badges (category, severity, verification maturity, change)
+   - "Operational Status Timeline" — timeline visual de transicoes de status
+   - **VerificationPanel**: stepped progress bar com method, freshness, degradation warnings
+   - **VerificationSufficiencyWarning**: alerta se verificacao insuficiente para item de alto impacto
    - "Impact Unlocked" com Monthly Range e Midpoint
    - "Root Cause" em box escuro
    - Badge de scope
-   - Botao "Request Verification" (emerald full-width)
+   - **Resolve path buttons**: "Request Verification" (emerald), "Mark Resolved" (com confirmacao), "Suppress" (com transparencia)
+   - Botao "Discuss" para navegar ao Chat com contexto
 
 ### 5.5 Workspaces
 
-**Rota**: `/app/workspaces`
-**Arquivo**: `src/app/(console)/workspaces/page.tsx`
+**Rota**: `/app/workspaces` (list), `/app/workspaces/[id]` (detail)
+**Arquivos**: `src/app/(console)/workspaces/page.tsx`, `src/app/(console)/workspaces/[id]/page.tsx`
 
-**Descricao visual**: Views contextuais agrupadas por decision pack.
+**Descricao visual**: Persistent operational instruments agrupados por decision pack. Nao sao views — sao contextos versionados que rastreiam estado entre ciclos.
+
+#### List View (`/app/workspaces`)
 
 **Elementos dispostos**:
 
 1. **Header**: "Workspaces" + subtitulo
 2. **Grid de Workspace Cards** (1 coluna mobile, 3 em lg):
-   - Cards clicaveis como botoes
+   - Cards clicaveis como links para `/workspaces/[id]`
    - Inativo: `border-zinc-800, bg-zinc-900/50`, hover: `border-zinc-700`
-   - Ativo: `border-blue-600/50, bg-blue-500/5`
    - **Interior do card**:
-     - Nome (text-base, bold, zinc-100) + badge de tipo
+     - Nome (text-base, bold, zinc-100) + badge de tipo colorido
+     - **Trend arrow** (melhoria/regressao vs ciclo anterior)
      - Badge de severity a direita
      - Grid 2x2 de metricas: Monthly Loss (red-400), Issues (zinc-300), Confidence (zinc-300), Top Issue (zinc-400 truncado)
 3. **Tipos de workspace**: Preflight (Scale Readiness), Revenue (Revenue Integrity), Chargeback (Chargeback Resilience)
-4. **View expandida do workspace ativo**:
-   - Summary Cards (4): Total Monthly Loss, Highest Impact, Issues Found, Confidence
-   - Subtitulo "Findings — [Nome]" uppercase
-   - DataTable de findings com severity, impact, confidence, surface
-5. **SideDrawer**: Mesma estrutura do Analysis (Summary, Effect, Root Cause, Impact Breakdown, Reasoning, Evidence Contradictions)
+
+#### Detail View (`/app/workspaces/[id]`)
+
+**Elementos dispostos**:
+
+1. **Header**: Nome do workspace + badge de tipo + trend arrow + botao "Back to Workspaces"
+2. **Summary Cards** (4): Total Monthly Loss, Highest Impact, Issues Found, Confidence
+
+3. **Preflight Checklist Mode** (somente para tipo `preflight` com readiness data):
+   - **PreflightChecklist**: Lista de items com icones pass/fail/warning
+   - Cada item: titulo, status, severity, referencia ao finding
+   - **Overall readiness badge** no topo: READY / READY WITH RISKS / NOT READY / N/A
+   - Items agrupados por blocker / risk / opportunity
+
+4. **ChangeTimeline** (quando change report disponivel):
+   - Timeline vertical de mudancas ordenadas por criticidade
+   - Regressions primeiro, depois new issues, improvements, resolved
+   - Cada item com ChangeBadge e titulo
+   - Collapsible com maxItems default
+
+5. **Trust Strength Panels**: Avaliacao de trust por categoria com indicadores de forca
+
+6. **Verification Sufficiency Warnings** (VerificationSufficiencyWarning): Alerta quando findings de alto impacto nao tem verificacao suficiente
+
+7. **DataTable de findings**:
+   - Severity, impact, confidence, surface
+   - **VerificationBadge** e **ChangeBadge** por linha
+   - Evidence quality indicators
+
+8. **SideDrawer**: Mesma estrutura do Analysis (Summary, Effect, Root Cause, Impact Breakdown, Reasoning, Evidence Contradictions, **VerificationPanel**, **VerificationSufficiencyWarning**)
 
 ### 5.6 Maps
 
@@ -849,10 +903,11 @@ Onboarding (/app/onboarding)
     │
     ▼
 Console do Produto
-    ├── Analysis (/app/analysis) — Ponto de entrada padrao
-    ├── Chat (/app/chat) — Perguntas sobre findings
-    ├── Actions (/app/actions) — Acoes priorizadas
-    ├── Workspaces (/app/workspaces) — Views por pack
+    ├── Actions (/app/actions) — Ponto de entrada padrao (operational queue)
+    ├── Workspaces (/app/workspaces) — Instrumentos operacionais persistentes
+    │     └── Detail (/app/workspaces/[id]) — Checklist, change tracking, trust strength
+    ├── Chat (/app/chat) — Perguntas + change report awareness + navigation CTAs
+    ├── Analysis (/app/analysis) — Findings com verificacao e change badges
     ├── Maps (/app/maps) — Visualizacao causal
     └── Inventory (/inventory) — Surfaces descobertas
 ```
@@ -860,24 +915,32 @@ Console do Produto
 ### 8.2 Jornada de Uso Recorrente
 
 ```
-Sign In → Console (Analysis como default)
+Sign In → Console (Actions como default)
     │
-    ├── Revisa findings na Analysis
-    │     └── Clica em finding → SideDrawer com detalhes
-    │           └── "Discuss" → Vai para Chat com contexto
+    ├── Revisa operational queue na Actions
+    │     ├── Filtra por tab: Incidents / Opportunities / Verifications
+    │     ├── Observa Change Summary Banner (regressions, new, resolved)
+    │     └── Clica em action → SideDrawer com VerificationPanel, resolve paths
     │
-    ├── Conversa no Chat sobre findings
-    │     ├── Perguntas pre-definidas
+    ├── Navega para Workspaces para contexto profundo
+    │     ├── Seleciona workspace → Detail page (/workspaces/[id])
+    │     ├── Revisa ChangeTimeline e trust strength panels
+    │     └── Preflight: checklist mode com pass/fail/warning
+    │
+    ├── Conversa no Chat sobre decisions e changes
+    │     ├── Perguntas pre-definidas + prompts sobre mudancas
     │     ├── Playbooks guiados
-    │     └── Sugestoes de proximo passo → navega para Maps/Actions
+    │     ├── Navigation CTA blocks → navega para surfaces relevantes
+    │     └── Change report awareness ("what regressed?")
+    │
+    ├── Revisa findings detalhados na Analysis
+    │     └── Clica em finding → SideDrawer com verificacao e evidence
+    │           └── "Discuss" → Vai para Chat com contexto
     │
     ├── Visualiza Maps para entender causas raiz
     │     └── Nodes interativos com relacoes causais
     │
-    ├── Prioriza Actions por impacto financeiro
-    │     └── "Request Verification" para acoes criticas
-    │
-    └── Gerencia Workspaces por contexto de decisao
+    └── Gerencia Workspaces como instrumentos persistentes
 ```
 
 ### 8.3 Jornada do Admin
@@ -940,11 +1003,12 @@ Console (ja vinculado a organizacao do convidante)
 ### Rotas do Produto (usuario autenticado)
 | Rota | Tela | Layout |
 |---|---|---|
-| `/app` | Redirect → `/app/analysis` | App |
-| `/app/analysis` | Findings com impacto financeiro | Console |
-| `/app/chat` | Chat conversacional MCP | Console |
-| `/app/actions` | Acoes priorizadas | Console |
-| `/app/workspaces` | Views por decision pack | Console |
+| `/app` | Redirect → `/app/actions` | App |
+| `/app/actions` | Operational queue (default landing) — tabs, change banner, verification | Console |
+| `/app/workspaces` | Workspace list — persistent operational instruments | Console |
+| `/app/workspaces/[id]` | Workspace detail — checklist, ChangeTimeline, trust strength | Console |
+| `/app/chat` | Chat conversacional com rich content blocks + navigation CTAs | Console |
+| `/app/analysis` | Findings com verificacao e change badges | Console |
 | `/app/maps` | Visualizacao causal ReactFlow | Console |
 | `/app/onboarding` | Wizard de setup multi-step | Console |
 | `/app/settings` | Configuracoes gerais | Console |
@@ -986,13 +1050,23 @@ Console (ja vinculado a organizacao do convidante)
 | Componente | Arquivo | Descricao |
 |---|---|---|
 | DataTable | `src/components/console/DataTable.tsx` | Tabela generica tipada com colunas customizaveis |
-| SummaryCards | `src/components/console/SummaryCards.tsx` | Grid de cards de metricas com variantes de cor |
+| SummaryCards | `src/components/console/SummaryCards.tsx` | Grid de cards de metricas com variantes de cor e sparklines |
 | SideDrawer | `src/components/console/SideDrawer.tsx` | Painel lateral deslizante (escape/backdrop para fechar) |
 | SeverityBadge | `src/components/console/SeverityBadge.tsx` | Badge de severidade com cores por nivel |
 | ImpactBadge | `src/components/console/ImpactBadge.tsx` | Badge de impacto com range monetario |
+| **VerificationBadge** | `src/components/console/VerificationBadge.tsx` | Badge de maturity de verificacao (unverified/pending/partially/verified/degraded/stale) |
+| **ChangeBadge** | `src/components/console/ChangeBadge.tsx` | Badge de classe de mudanca (regression/improvement/new/resolved/stable) |
+| **VerificationPanel** | `src/components/console/VerificationPanel.tsx` | Painel de lifecycle de verificacao com stepped progress bar, method, freshness, degradation |
+| **VerificationSufficiencyWarning** | `src/components/console/VerificationSufficiencyWarning.tsx` | Alerta quando itens de alto impacto nao tem verificacao suficiente |
+| **ChangeTimeline** | `src/components/console/ChangeTimeline.tsx` | Timeline vertical de mudancas entre ciclos, ordenada por criticidade |
+| **ChatMessageRenderer** | `src/components/console/chat/ChatMessageRenderer.tsx` | Dispatcher de ContentBlock[] para sub-componentes (markdown, tool_call, finding_card, action_card, navigation_cta, etc.) |
+| **ConversationSidebar** | `src/components/console/chat/ConversationSidebar.tsx` | Painel lateral colapsavel com historico de conversas, date grouping, hover delete |
+| **ModelSelector** | `src/components/console/chat/ModelSelector.tsx` | Pill dropdown compacto: Default/Ultra com plan gating e cost badge |
+| **ChatInputBar** | `src/components/console/chat/ChatInputBar.tsx` | Input auto-resize com Shift+Enter, model selector embutido |
 | PromptGateCard | `src/components/console/PromptGateCard.tsx` | Card de avaliacao de qualidade de prompt |
 | ChatBudgetBar | `src/components/console/ChatBudgetBar.tsx` | Barra de uso MCP com thresholds de cor |
 | OrgSelector | `src/components/console/OrgSelector.tsx` | Dropdown de selecao de organizacao |
+| ConsoleState | `src/components/console/ConsoleState.tsx` | Estados vazios e de carregamento com tokens semanticos |
 | AppSidebar | `src/components/app/AppSidebar.tsx` | Sidebar colapsavel do app |
 | InputGroup | `src/components/Common/Dashboard/InputGroup.tsx` | Input com label, toggle de senha |
 | FormButton | `src/components/Common/Dashboard/FormButton.tsx` | Botao de submit full-width |

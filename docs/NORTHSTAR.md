@@ -139,9 +139,9 @@ Outputs such as findings, incidents, preflight summaries and chat answers exist 
 
 ## Core architectural truths
 
-### 1. MCP is not the brain
+### 1. MCP / Chat is not the brain
 
-MCP is the cognitive interface.
+MCP is the cognitive interface, implemented as a 3-layer LLM pipeline (input guard, core chat, output classifier) with playbooks, context chaining, and conversation memory.
 It is not the owner of business semantics.
 
 MCP may:
@@ -149,6 +149,8 @@ MCP may:
 - retrieve evidence
 - explain paths
 - request verification
+- chain context across conversations
+- suggest next actions via playbooks
 
 MCP may not:
 - invent business rules
@@ -188,22 +190,26 @@ Expensive or fresh verification should happen:
 
 ## Product principles
 
-### Principle 1 — Fast first value
+### Principle 1 — Actions first, not findings first
+
+The user's primary surface is the Actions page. Vestigio is a decision-first operating layer, not a findings-first audit tool. Every projection exists to answer “what should I do next?” with prioritized, categorized, evidence-backed actions.
+
+### Principle 2 — Fast first value
 
 The user should get useful answers quickly.
 Vestigio must prefer phased enrichment over “wait hours for full truth.”
 
-### Principle 2 — Optional enrichment, not mandatory instrumentation
+### Principle 3 — Optional enrichment, not mandatory instrumentation
 
 Pixel and external integrations are optional enrichers.
 They must never become prerequisites for core product value.
 
-### Principle 3 — Business impact is mandatory
+### Principle 4 — Business impact is mandatory
 
 A meaningful decision must map to business impact.
 If impact cannot be quantified, it must at least be qualified explicitly.
 
-### Principle 4 — Explainability by design
+### Principle 5 — Explainability by design
 
 The system must always be able to answer:
 - why am I saying this?
@@ -211,7 +217,7 @@ The system must always be able to answer:
 - what made confidence high or low?
 - what would change this conclusion?
 
-### Principle 5 — Environment-aware truth
+### Principle 6 — Environment-aware truth
 
 No meaningful decision should mix:
 - production with staging
@@ -220,13 +226,17 @@ No meaningful decision should mix:
 - one checkout path with another
 without explicit scoping
 
-### Principle 6 — Suppression is governance, not deletion
+### Principle 7 — Suppression is governance, not deletion
 
 False positives, trusted handoffs, allowlists and overrides must reduce exposure and priority without erasing historical reasoning.
 
-### Principle 7 — Shared semantics beat per-module semantics
+### Principle 8 — Shared semantics beat per-module semantics
 
-Route classification, checkout inference, policy coverage, trust boundary, freshness and confidence must become shared services/contracts, not repeated module-local logic.
+Route classification, checkout inference, policy coverage, trust boundary, freshness and confidence must be shared services/contracts, not repeated module-local logic.
+
+### Principle 9 — Change awareness is continuous
+
+The system tracks cycle-to-cycle changes (regressions, improvements, new issues, resolutions) and surfaces change class on every action and finding. The operator should always know: “what changed?”
 
 ---
 
@@ -255,33 +265,31 @@ Vestigio should not optimize for:
 
 ## Canonical business surfaces
 
-Every core product surface must be interpretable as a projection over decisions:
+Every core product surface must be interpretable as a projection over decisions.
+The UX hierarchy is strictly ordered: Actions first, Workspaces second, Chat third, Analysis fourth.
+
+### Actions (primary surface)
+Decision-derived, prioritized actions with categories (incident, opportunity, verification, observation), operational status, change class, verification maturity, and suggested resolve paths. This is where the operator lives. Actions answer: "what should I do next?"
+
+### Workspaces
+Pack-level decision aggregation with coherence scoring, confidence narratives, and change summaries. Workspace detail views show findings scoped to a specific decision pack.
 
 ### Chat
-Primary conversational interface for decision retrieval and guided verification.
+Conversational intelligence interface for decision retrieval, guided verification, and exploration. Backed by 3-layer LLM pipeline with playbooks and context chaining.
 
-### Dashboard
-Summary of active state, deltas, and priorities across environments/workspaces.
+### Analysis
+Deep analysis with evidence exploration, signal and inference details, and system health indicators.
 
 ### Findings table
-Detailed supporting evidence and filters, never the top semantic layer.
+Detailed supporting evidence with truth context, suppression context, verification maturity, change class, and evidence quality. Never the top semantic layer.
 
-### Incident board
-Active downside states requiring action.
-
-### Opportunity board
-Plausible upside states worth prioritizing.
-
-### Preflight
-Readiness lens over a selected landing/commercial path.
+### Inventory
+Site inventory (pages, surface relations) managed via Prisma models.
 
 ### Use-case maps
 Grouped decision packs answering coherent business questions.
 
-### Workspace summary
-Portfolio-level decision aggregation.
-
-If a surface cannot be clearly expressed as a projection over decisions/evidence, it likely does not belong in the first releases.
+If a surface cannot be clearly expressed as a projection over decisions/evidence, it likely does not belong in the product.
 
 ---
 
@@ -345,33 +353,32 @@ evidence -> signal -> inference -> evaluation -> decision -> projection
 
 ## Build discipline
 
-The system must be built in vertical slices, not in disconnected layers of abstraction.
+The system is built in vertical slices, not in disconnected layers of abstraction.
 
-The first meaningful slice should prove:
+The first meaningful slice has been proven:
 
-- a domain can be ingested
-- evidence can be stored
-- graph can be built
-- signals can be derived
-- inferences can be made
-- one decision pack can answer one real business question
+- a domain can be ingested (via `workers/ingestion/`)
+- evidence is stored (in-memory + PostgreSQL via `PrismaEvidenceStore`)
+- graph is built (`packages/graph/`)
+- signals are derived (`packages/signals/`)
+- inferences are made (`packages/inference/`)
+- multiple decision packs answer real business questions (`packages/workspace/`)
+- projections produce Actions, Findings, and Workspace summaries (`packages/projections/`)
 
-Until that works end-to-end, no amount of extra tooling, UI, or automation counts as progress.
+The vertical slice is now extended through advanced ingestion (nuclei, katana, brand intelligence, behavioral), browser verification, authenticated SaaS analysis, and conversational chat.
 
 ---
 
 ## Decision packs as product spine
 
-Vestigio should organize value around business-question packs, not technical modules.
+Vestigio organizes value around business-question packs, not technical modules.
 
-Initial packs should include:
+Implemented packs:
 
-- scale readiness
-- launch readiness
-- revenue integrity
-- chargeback resilience
-- trust and conversion
-- measurement confidence
+- **scale readiness** — "can I safely scale traffic?" (`packages/workspace/`)
+- **revenue integrity** — "where am I leaking revenue?" (`packages/workspace/revenue-workspace.ts`)
+- **chargeback resilience** — "what is making me vulnerable to chargebacks?" (`packages/workspace/chargeback-workspace.ts`)
+- **SaaS growth readiness** — "is my SaaS product ready for growth?" (via classification + inference)
 
 These are not mere UI groupings.
 They are product promises.
@@ -407,14 +414,21 @@ Vestigio V2 is a rewrite of architecture, not a rewrite of product intelligence.
 
 ## Relationship with the control plane
 
-The SaaS boilerplate is allowed to own:
+The control plane (`apps/platform/` and `src/app/`) owns:
 
-- auth
-- billing
-- workspace CRUD
+- auth and session management
+- billing (Paddle primary, Stripe fallback)
+- organization/membership CRUD
 - environment registry
-- onboarding flows
-- admin/settings shell
+- SaaS access configuration
+- onboarding flows (business profile, environment setup)
+- admin panel (organizations, environments, pricing, errors, usage, system health)
+- settings (data sources, SaaS access)
+- job queue (Redis-backed with in-memory fallback)
+- rate limiting (Redis-backed)
+- token cost tracking and usage metering
+- conversation persistence
+- platform error tracking
 - notifications shell
 
 It is not allowed to own:
@@ -426,8 +440,9 @@ It is not allowed to own:
 - MCP semantics
 - worker semantics
 
-The control plane is the management shell and reusable for other projects.
-The engine is the product brain and modular.
+The control plane is the management shell.
+The engine packages (`packages/`) are the product brain.
+The dual domain model separates marketing (`vestigio.io`) from the app (`app.vestigio.io`).
 
 ---
 

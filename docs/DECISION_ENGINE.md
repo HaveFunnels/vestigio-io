@@ -374,6 +374,24 @@ Decision:
 - workspace-level action ordering
 - incident/opportunity lifecycle
 
+## Implementation Status (2026-04-02)
+
+### Decision status projection
+
+Decision status (`created`, `confirmed`, `stale`, `resolved`, `regressed`) is now projected to the frontend via `ActionProjection.decision_status` (`packages/projections/types.ts`). Each action card in the UI carries the lifecycle state of its backing decision, enabling operators to distinguish between fresh, confirmed, and degraded decisions at a glance.
+
+### Change detection in projections
+
+Change detection feeds into the projection layer through `ChangeReportProjection` (`packages/projections/types.ts`). The `ProjectionResult` includes a `change_report` field containing regressions, improvements, new issues, resolved items, and overall trend. `WorkspaceProjection` also carries a `change_summary` with trend, regression count, improvement count, and resolved count.
+
+### Verification maturity in projections
+
+Verification maturity is projected alongside decisions and findings:
+
+- `ActionProjection.verification_maturity`: `unverified | pending | partially | verified | degraded | stale`
+- `FindingProjection.verification_maturity`: same enum, surfaced per finding
+- `ActionProjection.resolve_path`: `fix | verify | track | dismiss` — suggested resolution path based on verification state and decision lifecycle
+
 ## Open Questions
 
 - O primeiro release de `opportunity` deve compartilhar exatamente o mesmo workflow de `incident`, ou precisa de um lifecycle mais leve desde o inicio?

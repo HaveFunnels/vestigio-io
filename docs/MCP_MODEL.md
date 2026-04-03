@@ -54,13 +54,23 @@ Exemplos:
 
 Operacoes controladas.
 
-Exemplos:
+Implemented tools:
+
+- `get_finding_projections` — get finding projections with impact summaries
+- `get_action_projections` — get action projections with priority and categorization
+- `get_workspace_projections` — get workspace projections with scoped findings
+- `get_change_report` — **get cycle-to-cycle change report: regressions, improvements, new issues, resolved items, and overall trend**
+- `get_map` — get a specific map definition (revenue_leakage, chargeback_risk, root_cause)
+- `get_preflight_status` — get preflight readiness evaluation
+- `request_verification` — trigger browser or probe verification (expensive, budget-limited)
+- `answer_can_i_scale` — answer the "can I scale traffic?" question
+- `answer_where_losing_money` — answer the "where am I losing money?" question
+
+Planned tools:
 
 - `get_decision_pack`
 - `get_decision_explainability`
 - `get_graph_path`
-- `get_preflight_status`
-- `request_verification`
 - `list_incidents`
 - `list_opportunities`
 
@@ -195,6 +205,42 @@ Resposta de chat ideal:
 - `recommended_next_step`
 - `optional_verification`
 
+### Chat content block system
+
+Chat responses are composed of typed content blocks rendered by `ChatMessageRenderer`:
+
+| Block type | Description |
+|---|---|
+| `markdown` | Formatted text response |
+| `tool_call` | Spinner/checkmark with label, duration, expandable result |
+| `finding_card` | Inline finding card with severity, impact, pack |
+| `action_card` | Inline action card with priority, savings estimate |
+| `impact_summary` | Revenue impact visualization |
+| `confidence` | Confidence badge |
+| `navigation_cta` | **Buttons directing user to relevant surfaces** (Actions, Maps, Analysis, Workspaces) |
+| `suggested_prompts` | Clickable follow-up question pills, **including change-related prompts** |
+| `create_action` | Editable form to save as action |
+| `quote` | Blockquote with source |
+| `data_rows` | Key-value table with severity badges |
+
+### Navigation CTA blocks
+
+`navigation_cta` blocks allow MCP responses to direct users to the appropriate surface for action. Each target has:
+
+- `label` — button text
+- `href` — destination route
+- `variant` — primary / secondary / ghost
+
+This closes the loop between cognitive interface (Chat) and operational surfaces (Actions, Workspaces, Maps).
+
+### Change report awareness
+
+When the user asks about changes, MCP uses `get_change_report` to fetch cycle-to-cycle data and surfaces:
+
+- regressions, improvements, new issues, resolved items
+- overall trend
+- suggested follow-up prompts ("What regressed?", "Show resolved issues", "What new incidents appeared?")
+
 ## History and memory
 
 MCP precisa de memoria suficiente para:
@@ -229,11 +275,13 @@ Guardrails:
 
 | Surface | MCP role |
 |---|---|
-| Chat | primary conversational interface |
-| Dashboard drill-down | explainability and action context |
-| Preflight assistant | answer launch/traffic questions |
-| Incident review | summarize cause, evidence and next step |
-| Opportunity review | summarize upside hypothesis and value case |
+| Chat | primary conversational interface with navigation CTAs and change report awareness |
+| Actions page | data source for operational queue, change summary banner, category projections |
+| Workspace detail | data source for findings, change timeline, trust strength, preflight readiness |
+| Analysis / Findings | data source for finding projections with verification maturity |
+| Preflight assistant | answer launch/traffic questions via checklist rendering |
+| Maps | data source for map definitions (revenue_leakage, chargeback_risk, root_cause) |
+| Change monitoring | `get_change_report` tool for cycle-to-cycle comparisons |
 
 ## Open Questions
 

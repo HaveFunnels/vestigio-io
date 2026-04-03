@@ -190,6 +190,9 @@ openssl rand -hex 32
 ### 5.3. Variaveis opcionais
 
 ```bash
+# Redis (distributed rate limiting + job queue — Railway auto-injects when Redis added)
+REDIS_URL=redis://...
+
 # Stripe (fallback — se quiser manter como opcao)
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -249,10 +252,10 @@ O arquivo `nixpacks.toml` na raiz do projeto ja existe. Verifique que contem:
 
 ```toml
 [phases.setup]
-nixPkgs = ["nodejs_18", "npm-9_x"]
+nixPkgs = ["nodejs_20", "npm-10_x"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["npm ci --legacy-peer-deps"]
 
 [phases.build]
 cmds = ["npx prisma generate", "npm run build"]

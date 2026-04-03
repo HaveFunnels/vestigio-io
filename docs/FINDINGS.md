@@ -1,6 +1,6 @@
 # FINDINGS.md — Vestigio Finding Inventory
 
-> Last updated: 2026-03-29 (Phase 30 — Finding Standardization & Extension)
+> Last updated: 2026-04-02 (Documentation refresh)
 > Grounded in: current codebase inspection (packages/, workers/, apps/, tests/)
 
 ---
@@ -25,16 +25,19 @@ Findings are **not** technical checklist items. Every finding answers a business
 | **Incident** | Operational state for material downside (from decision) | Yes | Yes (via MCP) |
 | **Opportunity** | Operational state for plausible upside (from decision) | Yes | Yes (via MCP) |
 
-Findings are the primary unit of user-facing intelligence. They are surfaced in:
+**Note:** Findings are no longer the primary operational surface. **Actions** (`ActionProjection`) are the primary unit of operator attention, carrying decision status, verification maturity, change class, effort hints, and resolve paths. Findings remain the primary unit of analytical intelligence, surfacing detail behind actions.
+
+Findings are surfaced in:
 - MCP answer responses (via `get_finding_projections`)
 - Workspace projections (preflight, revenue, chargeback, SaaS)
 - Causal maps (as nodes)
 - Chat/discussion context (via `discuss_finding`)
 - Multi-finding analysis (via `analyze_findings`)
+- Action detail drawers (as supporting evidence for actions)
 
 ### Finding structure (`FindingProjection`)
 
-Each finding includes: id, title, severity, confidence, impact (monthly range + midpoint + percentage delta), pack, surface (page where issue manifests), polarity (negative/positive/neutral), truth_context (contradictions), suppression_context (visibility/reduction), inference_key back-reference, reasoning, cause, effect, basis_type, eligibility.
+Each finding includes: id, title, severity, confidence, impact (monthly range + midpoint + percentage delta), pack, surface (page where issue manifests), polarity (negative/positive/neutral), truth_context (contradictions), suppression_context (visibility/reduction), inference_key back-reference, reasoning, cause, effect, basis_type, eligibility, **verification_maturity** (unverified/pending/partially/verified/degraded/stale), **verification_method** (static_only/browser_verified/mixed/unknown), **change_class** (regression/improvement/new_issue/resolved/stable_risk), **evidence_quality** (source_reliability, completeness, recency, corroboration, composite scores).
 
 ---
 
@@ -192,14 +195,18 @@ Browser verification (Playwright) produces evidence types that the signal engine
 
 No integration-sourced findings exist.
 
-### 5. Change detection regressions not yet surfaced as findings
+### 5. Change detection regressions now surfaced
 
-The change detection engine classifies regressions but these are not projected as user-facing findings yet. Deferred to Phase 31.
+~~The change detection engine classifies regressions but these are not projected as user-facing findings yet.~~ **Resolved.** `FindingProjection.change_class` now carries `regression | improvement | new_issue | resolved | stable_risk` from cycle-to-cycle change detection. `ChangeReportProjection` provides aggregate trend data.
 
-### 6. Verification maturity not yet surfaced in finding context
+### 6. Verification maturity now surfaced in finding context
 
-Verification lifecycle tracks maturity per decision but this is not visible alongside findings. Deferred to Phase 31.
+~~Verification lifecycle tracks maturity per decision but this is not visible alongside findings.~~ **Resolved.** `FindingProjection.verification_maturity` (unverified/pending/partially/verified/degraded/stale) and `FindingProjection.verification_method` (static_only/browser_verified/mixed/unknown) are now projected per finding.
 
-### 7. Corroboration scoring not yet exposed to users
+### 7. Evidence quality scoring now exposed to users
 
-Evidence quality corroboration scores exist internally but are not surfaced in finding projections. Deferred to Phase 31.
+~~Evidence quality corroboration scores exist internally but are not surfaced in finding projections.~~ **Resolved.** `FindingProjection.evidence_quality` surfaces source_reliability, completeness, recency, corroboration, and composite scores.
+
+### 8. Suppression context rendered in UI
+
+Suppression context is now rendered in the UI. `FindingSuppressionContext` carries visibility (`hidden | dimmed | annotated | visible`), confidence reduction, and user-facing explanation. The analysis page and workspace detail pages render suppressed findings with appropriate visual treatment (dimmed, hidden, or annotated depending on suppression type).

@@ -45,16 +45,18 @@ Vestigio responde isso por:
 
 ## Product surfaces
 
+Actions e a superficie primaria de valor — o ponto de entrada padrao e a camada operacional do produto.
+
 | Surface | Primary question | Primary object |
 |---|---|---|
-| Chat | "o que importa agora?" | `decision` |
-| Dashboard | "qual e o estado do workspace?" | decision aggregates |
-| Findings table | "qual o detalhe tecnico?" | `finding` projection |
-| Incidents | "o que esta quebrando, vazando ou bloqueando?" | `incident` |
-| Opportunities | "onde ha upside plausivel?" | `opportunity` |
-| Preflight | "posso lancar ou escalar esta rota?" | readiness decisions |
-| Use-case maps | "como estou em cada pergunta de negocio?" | decision packs |
-| Workspace summary | "qual o estado geral dos ambientes?" | portfolio summary |
+| **Actions** (default landing) | "o que devo fazer agora?" | `incident`, `opportunity`, `verification` categorizados |
+| Workspaces | "qual o estado operacional deste contexto?" | instrumento persistente versionado por ciclo |
+| Chat | "o que importa agora? o que mudou?" | `decision` + change report awareness |
+| Analysis / Findings | "qual o detalhe tecnico?" | `finding` projection com verification maturity |
+| Maps | "como estou em cada pergunta de negocio?" | decision packs |
+| Preflight (workspace mode) | "posso lancar ou escalar esta rota?" | readiness checklist com pass/fail/warning |
+
+Actions nao e uma lista secundaria — e a camada operacional onde valor e comunicado. Workspaces sao instrumentos persistentes, nao views estaticas. O loop de monitoramento continuo e visivel no UX via change banners, trend arrows e ChangeTimeline.
 
 ## Decision packs
 
@@ -82,7 +84,9 @@ Packs iniciais:
 | "Quanto isso pode impactar?" | `value_case` with range and confidence |
 | "Por que voce esta dizendo isso?" | evidence refs + graph explanation + confidence |
 
-## Incidents vs opportunities
+## Incidents, opportunities, and verifications
+
+Na UX, Actions organiza esses tipos via tabs (All / Incidents / Opportunities / Verifications) com category badges coloridos.
 
 ### `incident`
 
@@ -95,9 +99,10 @@ Use para:
 
 Caracteristicas:
 
-- lifecycle operacional
+- lifecycle operacional com timeline visual (opened → acknowledged → mitigated → verified → closed)
 - prioridade e owner possiveis
 - foco em risco, perda ou bloqueio
+- category badge vermelho na tabela
 
 ### `opportunity`
 
@@ -112,6 +117,23 @@ Caracteristicas:
 - `value_case`
 - prioridade por upside x esforco
 - confidence de upside, nao apenas de risco
+- effort_hint (trivial / low / medium / high / very_high)
+- category badge emerald na tabela
+
+### `verification`
+
+Use para:
+
+- tarefas de verificacao pendentes ou concluidas
+- confirmacao de resolucao de incidents
+- re-verificacao de claims degradados
+
+Caracteristicas:
+
+- verification maturity (unverified / pending / partially / verified / degraded / stale)
+- method (static_only / browser_verified / mixed)
+- freshness tracking
+- category badge azul na tabela
 
 ## Opportunity engine
 
@@ -204,6 +226,7 @@ Chat deve operar como interface principal para:
 - solicitacao de verificacao adicional
 - resumo de incident/opportunity
 - explicacao de confidence e freshness
+- **perguntas sobre o que mudou entre ciclos** (change report awareness)
 
 Resposta ideal do chat:
 
@@ -212,6 +235,8 @@ Resposta ideal do chat:
 - impacto
 - proxima acao
 - opcionalmente: pedir verificacao adicional quando necessario
+- **navigation CTA blocks** direcionando o usuario para a superficie relevante (Actions, Maps, Workspaces)
+- **suggested prompts** incluindo prompts sobre mudancas ("What regressed?", "Show resolved issues")
 
 ## What the product is
 
@@ -240,6 +265,8 @@ Resposta ideal do chat:
 
 ### Incident lifecycle
 
+Visivel no UX como operational status timeline no side drawer:
+
 - opened
 - acknowledged
 - mitigated
@@ -255,8 +282,37 @@ Resposta ideal do chat:
 - verified
 - archived
 
+### Verification lifecycle
+
+Explicito no UX via VerificationPanel (stepped progress bar):
+
+1. **Unverified** — nenhuma verificacao realizada
+2. **Pending** — verificacao solicitada, aguardando execucao
+3. **Partially verified** — alguma verificacao realizada mas incompleta
+4. **Verified** — verificacao completa e fresca
+5. **Degraded** — verificacao anterior existe mas freshness expirou
+6. **Stale** — verificacao muito antiga, confidence reduzido
+
+VerificationBadge exibe o maturity state em todas as tabelas. VerificationSufficiencyWarning alerta quando itens de alto impacto nao tem verificacao suficiente.
+
+### Continuous monitoring loop
+
+O loop de monitoramento continuo agora e visivel no UX:
+
+- **Change summary banner** no topo da pagina Actions
+- **ChangeTimeline** nos detalhes de workspace (timeline vertical por criticidade)
+- **ChangeBadge** por finding/action (regression / improvement / new / resolved / stable)
+- **Workspace trend arrows** comparando ciclo atual vs anterior
+- Chat sugere prompts sobre mudancas automaticamente
+
+## Resolved Questions
+
+- **Opportunity como superficie de primeira classe**: Sim. Actions exibe incidents, opportunities e verifications como tabs de primeira classe desde o dia zero.
+- **Actions como landing page**: Sim. `/app/actions` e o default landing, nao `/app/analysis`. Actions e a camada operacional.
+- **Verificacao explicita**: Sim. VerificationPanel, VerificationBadge e VerificationSufficiencyWarning tornam o lifecycle de verificacao visivel no UX.
+- **Change visibility**: Sim. ChangeTimeline, ChangeBadge e change summary banners tornam o loop de monitoramento continuo visivel.
+
 ## Open Questions
 
-- O launch deve expor `opportunity` como superficie de primeira classe desde o dia zero, ou inicialmente como secao secundaria dentro de decision packs?
 - O `value_case` inicial sera exibido como impacto monetario, percentual ou ambos, dado o nivel de confianca esperado nos primeiros ciclos?
 - Quais decision packs precisam ser visiveis na navegacao principal do produto na fase 1, e quais podem permanecer apenas como agrupamentos internos?

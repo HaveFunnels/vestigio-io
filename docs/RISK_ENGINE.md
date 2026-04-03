@@ -1,5 +1,7 @@
 # Risk Engine
 
+> **Verified 2026-04-02:** This specification remains accurate. The canonical risk pipeline is implemented in `packages/risk/evaluator.ts` and `packages/decision/engine.ts`. Risk evaluation flows from evidence through signals, inferences, raw_risk_score, confidence, convergence, freshness penalties, suppression context, and business criticality to produce effective_severity and decision_impact. The separation between downside (risk) and upside (opportunity) models is maintained. Composite risks are first-class (`packages/decision/conflict-resolver.ts`). Subject model, business-context scaling, and false-positive governance are operational.
+
 ## Objective
 
 Unificar todos os sistemas atuais de risco em um modelo canonico sem perder:

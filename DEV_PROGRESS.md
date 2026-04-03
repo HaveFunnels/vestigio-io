@@ -1,8 +1,55 @@
-# DEV_PROGRESS.md — Vestigio V2
+# DEV_PROGRESS.md -- Vestigio V2
 
 ---
 
-## Phase 5 — 2026-03-31 — Claude LLM Chat Integration, Deploy Guide, Demo Seed
+## Summary -- UX Overhaul & Recent Changes (as of 2026-04-02)
+
+### What Changed
+
+The system has undergone a comprehensive evolution from a shell-only prototype to a production-grade intelligence platform. Key milestones:
+
+**Control Plane (Phases 4-5)**
+- Organization-centric multi-tenancy: `Organization`, `Membership`, `Environment`, `BusinessProfile`, `AuditCycle` models in Prisma
+- Onboarding activation flow: creates org + environment + business profile + checkout (Paddle-primary)
+- Auth-gated console with `hasOrganization` middleware check
+- Evidence persistence in PostgreSQL (`Evidence` model, `PrismaEvidenceStore`)
+- Redis-backed job queue and rate limiting with in-memory fallback
+- Admin pricing configuration (per-plan limits, Paddle/Stripe Price IDs)
+- Demo seed account (`demo@vestigio.io`) with realistic data
+
+**AI Chat (Phase 5 series: 5A-5H)**
+- Claude LLM integration: 3-layer security pipeline (sanitizer + fast guard/Haiku guard + output classifier)
+- 21 MCP tools with tiered summarization, 30 expert playbooks across 8 categories
+- SSE streaming with rich content blocks (11 types: finding cards, action cards, impact summaries, etc.)
+- Conversation persistence, cross-conversation memory, token cost ledger
+- File upload forwarding, voice input, semantic search (TF-IDF with vector upgrade path)
+- Redis rate limiting (sorted sets), abort signal propagation, feedback system
+
+**Engine Maturity (Phases 30-3E)**
+- 47 findings (37 negative + 10 positive) across 4 packs
+- FindingProjection now carries: `verification_maturity`, `change_class`, `evidence_quality`, `suppression_context`
+- ActionProjection now carries: `decision_status`, `verification_maturity`, `change_class`, `resolve_path`, `effort_hint`
+- ChangeReportProjection for cycle-to-cycle trend analysis
+- Shopify integration (Phase 4A), brand impersonation intelligence (Phase 3E), Playwright network analysis (Phase 2D)
+
+**UX (Phase 5E and Phase 0 UX)**
+- Chat: complete rewrite with conversation sidebar, model selector, playbooks drawer, budget indicator, streaming cursor, rich card rendering
+- Analysis: suppression context rendering (dimmed/hidden/annotated findings)
+- Actions: decision status, verification maturity, change class badges
+- Workspaces: change summary with trend indicators
+
+### What Remains
+
+- Ingestion trigger from onboarding (onboarding creates entities but does not yet call `runIngestion`)
+- `integration_pull` executor (scaffolded, not implemented)
+- Pixel event ingestion (management exists, no ingestion pipeline)
+- SPA resolution (Stage D of staged pipeline)
+- Conversation export, branching, multi-org analysis
+- Full migration from `prisma db push` to `prisma migrate` for production
+
+---
+
+## Phase 5 -- 2026-03-31 -- Claude LLM Chat Integration, Deploy Guide, Demo Seed
 
 ### Goal
 Integrate Claude API into the MCP chat to create a real conversational AI experience grounded in Vestigio's audit data. Three-layer security pipeline (input guard → core model → output classifier). Token cost tracking per org. Conversation persistence. Railway deploy documentation. Pre-populated demo account for onboarding.

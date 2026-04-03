@@ -274,6 +274,29 @@ Substituir:
 - relation summarizers locais
 - consultas ad hoc inconsistentes
 
+## Implementation Status (2026-04-02)
+
+### Evidence persistence in PostgreSQL
+
+Evidence is now persisted in PostgreSQL via the `Evidence` model in Prisma (`prisma/schema.prisma`). The schema includes:
+
+- `evidenceKey`, `evidenceType`, `subjectRef` — canonical identity
+- `workspaceRef`, `environmentRef`, `pathScope` — scoping
+- `cycleRef` — audit cycle binding (with FK to `AuditCycle`)
+- `observedAt`, `freshUntil`, `freshnessState`, `stalenessReason` — freshness metadata
+- `sourceKind`, `collectionMethod`, `qualityScore` — provenance
+- `payload` — typed JSON (text column)
+- Indexes on `[workspaceRef, environmentRef, createdAt]`, `[evidenceType, createdAt]`, `[cycleRef]`, `[subjectRef]`
+- Unique constraint on `[cycleRef, evidenceKey]`
+
+### PrismaEvidenceStore
+
+`PrismaEvidenceStore` (`packages/evidence/prisma-store.ts`) works alongside the in-memory `EvidenceStore`. The bootstrap process (`apps/mcp/bootstrap.ts`) initializes the Prisma store when a database is available, loading persisted evidence into the in-memory store for the engine computation cycle. The analysis streaming route (`src/app/api/analysis/stream/route.ts`) also uses the Prisma store directly.
+
+### Evidence quality scoring
+
+Evidence quality scoring (source reliability, completeness, recency, corroboration, composite) is now surfaced in `FindingProjection.evidence_quality` (`packages/projections/types.ts`). Each finding carries an aggregated quality assessment from its backing evidence, enabling the UI to communicate data confidence to the user.
+
 ## Open Questions
 
 - O launch precisa de armazenamento de graph materializado dedicado, ou uma projection relacional/indexada sobre evidence typed ja cobre os queries iniciais?

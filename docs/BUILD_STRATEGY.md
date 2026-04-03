@@ -73,7 +73,7 @@ Execução avançada entra depois.
 
 ---
 
-## Phase 0 — Foundations (contracts only)
+## Phase 0 — Foundations (contracts only) ✅ COMPLETE
 
 ### Goal
 
@@ -88,293 +88,250 @@ Criar o esqueleto do sistema sem execução real.
 
 ### Deliverables
 
-* `audit_cycle`
-* `evidence`
-* `signal`
-* `inference`
-* `decision`
-* `incident`
-* `opportunity`
-* `preflight_profile`
+* `audit_cycle` ✅
+* `evidence` ✅ (with ~30 typed payload variants)
+* `signal` ✅
+* `inference` ✅
+* `decision` ✅ (with conflict resolver)
+* `incident` ✅
+* `opportunity` ✅
+* `preflight_profile` ✅
+* `action` ✅ (new — primary UI entity)
+* `saas_access` ✅ (SaaS access configuration)
+* `business_profile_lifecycle` ✅ (versioning, drift detection)
 
-### Constraints
-
-* sem crawler
-* sem CLI tools
-* sem MCP
-* sem UI complexa
+All contracts live in `packages/domain/` with 27 exported entity types.
 
 ---
 
-## Phase 1 — Evidence ingestion (minimal viable dataset)
+## Phase 1 — Evidence ingestion (minimal viable dataset) ✅ COMPLETE
 
 ### Goal
 
 Ter dados reais mínimos para alimentar decisões.
 
-### Scope
-
-* HTTP fetch simples (guzzle-like, mas moderno)
-* parsing básico de páginas
-* descoberta inicial de:
-
-  * homepage
-  * checkout candidates
-  * login/contact
-* normalização em `evidence`
-
 ### Deliverables
 
-* ingestion pipeline básico
-* storage de evidence
-* audit_cycle funcional
-
-### Explicitly NOT included
-
-* nuclei
-* amass
-* katana
-* browser automation
+* ingestion pipeline (`workers/ingestion/pipeline.ts` + `staged-pipeline.ts`) ✅
+* HTTP client (`workers/ingestion/http-client.ts`) ✅
+* HTML parser (`workers/ingestion/parser.ts`) ✅
+* crawl constraints (`workers/ingestion/crawl-constraints.ts`) ✅
+* evidence store — in-memory + PrismaEvidenceStore (PostgreSQL) ✅
+* audit_cycle funcional (`AuditCycle` Prisma model) ✅
 
 ---
 
-## Phase 2 — Evidence graph (structural truth)
+## Phase 2 — Evidence graph (structural truth) ✅ COMPLETE
 
 ### Goal
 
 Conectar evidence em relações úteis.
 
-### Scope
-
-* nodes:
-
-  * page
-  * host
-  * path
-  * checkout_path
-* edges:
-
-  * links
-  * redirects
-  * domain transitions
-
 ### Deliverables
 
-* graph builder
-* graph query layer
-* path tracing básico
-
-### Outcome
-
-Agora você consegue responder:
-
-> "como o usuário chega ao checkout?"
+* graph builder (`packages/graph/`) ✅
+* graph query layer ✅
+* path tracing ✅
+* `Website`, `PageInventoryItem`, `SurfaceRelation` Prisma models ✅
+* technology registry (`packages/technology-registry/`) ✅
 
 ---
 
-## Phase 3 — Signals + Inferences
+## Phase 3 — Signals + Inferences ✅ COMPLETE
 
 ### Goal
 
 Transformar evidence em significado.
 
-### Scope
-
-* signals:
-
-  * missing policy
-  * external redirect
-  * checkout ambiguity
-  * weak trust surface
-* inferences:
-
-  * checkout_off_domain
-  * trust_gap_near_conversion
-  * broken flow possibility
-
 ### Deliverables
 
-* signal engine
-* inference engine
-* confidence básico
+* signal engine (`packages/signals/`) ✅
+* inference engine (`packages/inference/`) ✅
+* confidence framework ✅
+* 50+ inference categories covering: commerce context, trust boundary, policy gap, revenue path, measurement coverage, checkout integrity, conversion flow, friction path, SaaS-specific (activation, onboarding, upgrade), discoverability, brand integrity, behavioral ✅
 
 ---
 
-## Phase 4 — Decision Engine (first pack)
+## Phase 4 — Decision Engine (multi-pack) ✅ COMPLETE
 
 ### Goal
 
-Responder uma pergunta real de negócio.
-
-### Chosen pack
-
-👉 `scale_readiness_pack`
-
-### Scope
-
-* decision creation
-* risk evaluation
-* decision impact
-* linking evidence → decision
+Responder perguntas reais de negócio.
 
 ### Deliverables
 
-Exemplos:
+* decision engine with conflict resolver (`packages/decision/`) ✅
+* risk evaluation (`packages/risk/`) ✅
+* impact quantification (`packages/impact/`) ✅
+* multi-pack orchestration (`packages/workspace/`) ✅
 
-* `unsafe_to_scale_traffic`
-* `fix_before_scale`
-* `ready_with_risks`
+### Implemented packs
 
-### Outcome
+* `scale_readiness` ✅
+* `revenue_integrity` ✅
+* `chargeback_resilience` ✅
+* `saas_growth_readiness` ✅
 
-Você já responde:
+### Supporting infrastructure
 
-> "posso subir tráfego?"
+* confidence audit (`packages/workspace/confidence-audit.ts`) ✅
+* behavioral validation (`packages/workspace/behavioral-validation.ts`) ✅
+* truth resolution with contradiction detection (`packages/truth/`) ✅
+* suppression governance (`packages/suppression/`) ✅
 
 ---
 
-## Phase 5 — Preflight (first product surface)
+## Phase 5 — Projections + Actions (primary product surface) ✅ COMPLETE
 
 ### Goal
 
-Criar a primeira experiência clara pro usuário.
-
-### Scope
-
-* `preflight_profile`
-* avaliação por ciclo
-* readiness status
-* blockers + risks
+Criar a experiência operacional principal pro usuário.
 
 ### Deliverables
 
-* preflight result
-* readiness scoring
-* linkage com decisions
+* projection engine (`packages/projections/engine.ts`) ✅
+* findings projection (with verification maturity, change class, evidence quality) ✅
+* actions projection (primary surface, with category, resolve path) ✅
+* workspace summary projection (with coherence, confidence narrative) ✅
+* change report projection ✅
+* system health indicators ✅
+* preflight result (readiness scoring) ✅
 
 ---
 
-## Phase 6 — MCP (read-only intelligence)
+## Phase 6 — MCP / Chat (intelligence interface) ✅ COMPLETE
 
 ### Goal
 
 Permitir interação natural com o sistema.
 
-### Scope
+### Deliverables
 
-* tools:
-
-  * get_decision_pack
-  * get_preflight
-  * list_incidents
-* resposta estruturada:
-
-  * answer
-  * confidence
-  * why
-  * next step
-
-### Constraints
-
-* sem execução ativa
-* sem browser
-* sem integrations
+* MCP server with tools and resources (`apps/mcp/`) ✅
+* 3-layer LLM pipeline (input guard, core chat, output classifier) ✅
+* playbooks and context chaining ✅
+* suggestion engine v2 ✅
+* conversation persistence (`Conversation`, `ConversationMessage`, `TokenCostLedger` models) ✅
+* conversation memory and context management ✅
+* rate limiting (Redis-backed) ✅
+* session management ✅
+* SaaS awareness for intelligent suggestions ✅
+* verification request bridge ✅
+* chat feedback collection (`ChatFeedback` model) ✅
 
 ---
 
-## Phase 7 — Incidents & Opportunities
+## Phase 7 — Incidents & Opportunities ✅ COMPLETE
 
 ### Goal
 
 Transformar decisões em ação.
 
-### Scope
-
-* incident creation rules
-* opportunity engine básico
-* value estimation (heuristic-based)
-
 ### Deliverables
 
-* incident board
-* opportunity board
-* prioritização simples
+* incident model (`packages/domain/incident.ts`) with status lifecycle ✅
+* opportunity model (`packages/domain/opportunity.ts`) with status lifecycle ✅
+* value case with quantified ranges (`packages/impact/`) ✅
+* action derivation from decisions (`packages/actions/`) ✅
+* actions page as primary operational surface (`src/app/app/actions/`) ✅
 
 ---
 
-## Phase 8 — Value Engine
+## Phase 8 — Value Engine ✅ COMPLETE
 
 ### Goal
 
-Responder:
+Responder: "quanto isso impacta?"
 
-> "quanto isso impacta?"
+### Deliverables
 
-### Scope
-
-* value ranges
-* confidence bands
-* scaling via business profile
+* quantified value cases with ranges (`packages/impact/`) ✅
+* confidence bands ✅
+* scaling via business profile ✅
+* profile confidence penalty based on staleness and drift ✅
+* impact types: revenue_uplift, chargeback_reduction, churn_reduction, trust_conversion_uplift, traffic_waste_avoidance ✅
 
 ---
 
-## Phase 9 — Verification Layer (controlled execution)
+## Phase 9 — Verification Layer (controlled execution) ✅ COMPLETE
 
 ### Goal
 
 Adicionar precisão sem explodir custo.
 
-### Scope
+### Deliverables
 
-* verification_request
-* light probes
-* (opcional) browser verification
+* verification lifecycle (`packages/verification-lifecycle/`) ✅
+* verification economics (`packages/verification-economics/`) ✅
+* browser verification with Playwright (`workers/verification/`) ✅
+* authenticated SaaS runtime (`workers/verification/authenticated-runtime.ts`) ✅
+* verification types: reuse_only, light_probe, browser_verification, integration_pull, authenticated_journey_verification ✅
 
-### Constraints
+### Constraints (preserved)
 
 * sempre via policy
 * nunca direto do MCP
 
 ---
 
-## Phase 10 — Advanced ingestion (only now)
+## Phase 10 — Advanced ingestion ✅ COMPLETE
 
 ### Goal
 
 Aumentar cobertura.
 
-### Scope
+### Deliverables
 
-* nuclei
-* amass
-* katana
-* wp-scan
-* platform detection avançado
+* nuclei integration (`workers/nuclei/`, `packages/nuclei-adapter/`) ✅
+* katana deep discovery (`workers/katana/`, `packages/katana-adapter/`) ✅
+* brand intelligence (`workers/brand-intel/`, `packages/brand-adapter/`) ✅
+* technology registry (`packages/technology-registry/`) ✅
+* behavioral intelligence (`packages/behavioral/`) ✅
+* inline script analysis, structured data, network analysis ✅
+* mobile verification ✅
+* change detection with versioned snapshots (`packages/change-detection/`) ✅
 
 ---
 
-## Phase 11 — Integrations (optional)
+## Phase 11 — Integrations ✅ PARTIALLY COMPLETE
 
 ### Goal
 
 Melhorar precisão econômica.
 
-### Scope
+### Deliverables
 
-* Stripe
-* Shopify
-* Ads platforms
+* Shopify integration (`workers/shopify/`, `packages/shopify-adapter/`) ✅
+* Shopify store metrics evidence type ✅
+
+### Pending
+
+* Ads platform integrations
+* Additional commerce platform integrations
 
 ---
 
-## Phase 12 — UX & surfaces expansion
+## Phase 12 — UX & surfaces expansion ✅ PARTIALLY COMPLETE
 
-### Scope
+### Deliverables
 
-* dashboards realtime
-* use-case maps (react flow)
-* advanced filters
-* workspace segmentation UI
+* Actions page (primary surface) ✅
+* Workspace list + detail views (`app/workspaces/[id]/`) ✅
+* Chat interface ✅
+* Analysis page ✅
+* Inventory page ✅
+* Use-case maps (`app/maps/`, `packages/maps/`) ✅
+* Onboarding flow ✅
+* Billing (Paddle primary, Stripe fallback) ✅
+* Admin panel (organizations, environments, pricing, errors, usage, system health) ✅
+* Settings (data sources, SaaS access) ✅
+* Members management ✅
+* Dual domain (vestigio.io marketing + app.vestigio.io app) ✅
+
+### Pending
+
+* Dashboards realtime
+* Advanced filters
 
 ---
 
@@ -415,47 +372,59 @@ Se isso funcionar → o sistema está correto.
 
 ---
 
-## Suggested repo structure (high-level)
+## Actual repo structure
 
 ```text
 /apps
-  /web          (control plane UI)
-  /mcp          (cognitive layer)
+  /platform      (control plane services)
+  /mcp           (cognitive layer)
 
 /packages
-  /domain
-  /evidence
-  /graph
-  /signals
-  /inference
-  /decision
-  /risk
-  /preflight
-  /value
+  /domain        /evidence       /graph          /signals
+  /inference     /decision       /risk           /intelligence
+  /classification /projections   /workspace      /impact
+  /plans         /maps           /suppression    /truth
+  /change-detection              /verification-lifecycle
+  /verification-economics        /behavioral
+  /technology-registry           /brand-adapter
+  /nuclei-adapter                /katana-adapter
+  /shopify-adapter               /actions
 
 /workers
-  /ingestion
-  /verification
+  /ingestion     /verification   /brand-intel
+  /nuclei        /katana         /shopify
+
+/src
+  /app/(site)    — marketing (vestigio.io)
+  /app/app       — authenticated app (app.vestigio.io)
+  /app/api       — API routes
+  /libs          — Redis, rate limiter, plan config
+  /paddle        — Paddle billing (primary)
+  /stripe        — Stripe billing (fallback)
 ```
 
 ---
 
-## Build order (strict)
+## Build order (actual — all complete unless noted)
 
-1. contracts
-2. ingestion (basic)
-3. evidence store
-4. graph
-5. signals
-6. inference
-7. decision (1 pack)
-8. preflight
-9. MCP (read-only)
-10. incidents/opportunities
-11. value engine
-12. verification
-13. advanced ingestion
-14. integrations
+1. contracts ✅
+2. ingestion (basic) ✅
+3. evidence store (in-memory + PostgreSQL) ✅
+4. graph ✅
+5. signals ✅
+6. inference ✅
+7. decision (multi-pack: scale_readiness, revenue_integrity, chargeback_resilience, saas_growth_readiness) ✅
+8. projections (findings, actions, workspaces, change reports) ✅
+9. MCP / Chat (3-layer pipeline, playbooks, conversation memory) ✅
+10. incidents/opportunities ✅
+11. value engine ✅
+12. verification (browser, authenticated SaaS) ✅
+13. advanced ingestion (nuclei, katana, brand intel, behavioral) ✅
+14. integrations (Shopify done, others pending)
+15. Redis integration (job queue, rate limiting) ✅
+16. change detection ✅
+17. dual domain routing ✅
+18. billing (Paddle primary, Stripe fallback) ✅
 
 ---
 

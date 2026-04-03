@@ -4,13 +4,14 @@
 
 Vestigio is not a dashboard.
 
-It is a **decision system**.
+It is a **decision system** with an **operating layer**.
 
 The UI must:
 
-- prioritize decisions over raw data
-- expose risk and revenue clearly
+- prioritize operational decisions over raw data
+- expose risk and revenue clearly through categorized actions
 - allow deep inspection without friction
+- surface change between cycles and verification lifecycle explicitly
 - scale to multiple analysis types without navigation explosion
 
 ---
@@ -19,25 +20,29 @@ The UI must:
 
 All surfaces follow the same pattern:
 
-1. Table (or list)
+1. Table (or list) with category tabs and filters
 2. Row click
-3. Side drawer with full context
+3. Side drawer with full context, verification state, and change badges
 
 This pattern must be consistent across:
 
+- Actions (primary surface)
 - Analysis
-- Actions
 - Workspaces
 
 ---
 
 ## Navigation Structure
-Onboard
-Chat
-Actions
-Workspaces
-Analysis
-Settings
+
+Sidebar order (top to bottom):
+
+1. **Actions** → `/app/actions` (default landing page)
+2. **Workspaces** → `/app/workspaces`
+3. **Chat** → `/app/chat`
+4. **Analysis** (expandable) → Findings (`/app/analysis`) + Inventory (`/app/inventory`)
+5. **Maps** → `/app/maps`
+
+**Default landing**: `/app/actions` (not `/app/analysis`)
 
 
 ---
@@ -111,26 +116,51 @@ scope: full domain + Inferred Journey
 
 ### Purpose
 
-Cognitive interface for decision-making.
+Cognitive interface for decision-making with change awareness.
 
 ---
 
 ### Layout
 
-#### Left Panel
-- conversation history
+#### Left Panel (ConversationSidebar)
+- conversation history with date grouping
+- hover delete, active highlight
+- collapsible on desktop
 
 #### Main Panel
-- chat stream
+- chat stream with rich content blocks
+- navigation CTA blocks (buttons linking to Actions, Maps, Analysis, Workspaces)
+- change report awareness: chat can surface what changed between cycles
 
-#### Right Panel (Context)
+#### Model Selector
+- compact pill dropdown: Default (Sonnet) / Ultra (Opus)
+- plan gating and cost badge (Default = 1 unit, Ultra = 3 units)
 
-- active workspace
-- related decisions
-- quick actions:
-  - create workspace
-  - verify claim
-  - show evidence
+---
+
+### Content Blocks
+
+Chat responses are composed of typed content blocks:
+
+- `markdown` — formatted text
+- `tool_call` — spinner/checkmark with label and expandable result
+- `finding_card` — inline finding with severity, impact, pack
+- `action_card` — inline action with priority, savings estimate
+- `impact_summary` — revenue impact visualization
+- `confidence` — confidence badge
+- `navigation_cta` — buttons to navigate to other surfaces (Actions, Maps, etc.)
+- `suggested_prompts` — clickable follow-up question pills, including change-related prompts
+- `quote` — blockquote with source
+- `data_rows` — key-value table with severity badges
+- `create_action` — editable form to save as action
+
+### Suggested Prompts for Changes
+
+When a change report is available, chat surfaces prompts like:
+
+- "What regressed since last cycle?"
+- "Show me resolved issues"
+- "What new incidents appeared?"
 
 ---
 
@@ -139,21 +169,50 @@ Cognitive interface for decision-making.
 - answer business questions:
   - "can I scale traffic?"
   - "where am I losing money?"
+  - "what changed since last cycle?"
 
 - explain decisions
 - trigger verification
 - create workspaces
+- surface change reports between cycles
+- navigate user to relevant surfaces via CTA blocks
 
 ---
 
-## 3. Actions
+## 3. Actions (Primary Surface)
 
 ### Purpose
 
-Unified list of:
+**The primary value surface and default landing page.**
 
-- Incidents (risk / downside)
-- Opportunities (revenue / upside)
+Operational queue of categorized items:
+
+- **Incidents** (risk / downside)
+- **Opportunities** (revenue / upside)
+- **Verifications** (pending or completed verification tasks)
+
+---
+
+### Category Tabs
+
+Top-level tab bar for filtering:
+
+| Tab | Shows |
+|---|---|
+| All | Everything |
+| Incidents | Risk, downside, regressions, blockers |
+| Opportunities | Revenue upside, uplift hypotheses |
+| Verifications | Pending and completed verification tasks |
+
+---
+
+### Change Summary Banner
+
+When a change report is available, the Actions page displays a summary banner at the top showing:
+
+- counts of regressions, improvements, new issues, resolved items
+- overall trend indicator
+- links to the ChangeTimeline component for details
 
 ---
 
@@ -161,14 +220,16 @@ Unified list of:
 
 Columns:
 
-- Title
-- Type (Incident | Opportunity)
-- Impact
-- Confidence
-- Scope
-- Source (decision/workspace)
-- Status
-- Priority
+- Priority (#)
+- Title + root cause subtitle
+- Category badge (Incident / Opportunity / Verification / Observation) with colored dot
+- Severity badge (Critical / High / Medium / Low)
+- Est. Impact (range badge with min-max)
+- Confidence (monospace percentage)
+- Effort hint (Trivial / Low / Medium / High / Very High)
+- Verification maturity badge (VerificationBadge component)
+- Change badge (ChangeBadge — regression / improvement / new / resolved / stable)
+- Operational status (timeline of status transitions)
 
 ---
 
@@ -181,28 +242,39 @@ Clicking a row opens a **side drawer**
 ### Side Drawer Structure
 
 #### 1. Summary
-- description
-- impact
+- description + impact
+- category badge, severity badge, verification maturity badge, change badge
 
-#### 2. Why it matters
-- business explanation
+#### 2. Operational Status Timeline
+- visual timeline of status transitions (opened, acknowledged, mitigated, verified, closed)
 
-#### 3. Evidence
+#### 3. VerificationPanel
+- stepped progress bar showing verification lifecycle
+- method label (static_only, browser_verified, mixed)
+- freshness indicator with time since last verification
+- degradation warnings when evidence is stale
+- sufficiency warnings (VerificationSufficiencyWarning) when verification is incomplete
+
+#### 4. Evidence
 - supporting data
+- evidence quality bars
 - requests/responses
 - graph links
+- suppression transparency (shows if and why any evidence was suppressed)
 
-#### 4. Recommendation
+#### 5. Recommendation
 - what to do
 - priority
+- effort hint
 
-#### 5. Context
+#### 6. Context
 - related workspace(s)
 - related decision
 
-#### 6. Actions
-- create workspace
-- mark resolved
+#### 7. Resolve Paths
+- mark resolved (with verification confirmation)
+- request verification (triggers browser or probe verification)
+- suppress (with transparency logging)
 - ignore
 
 ---
@@ -211,24 +283,37 @@ Clicking a row opens a **side drawer**
 
 ### Definition
 
-A Workspace is a **persistent analysis context**.
+A Workspace is a **persistent operational instrument**.
+
+Workspaces are not views — they are living, versioned contexts that track state across cycles.
 
 Examples:
 
-- Preflight
-- Revenue Leak
-- Trust Risk
-- Journey: mobile/desktop
+- Preflight (Scale Readiness)
+- Revenue Integrity
+- Chargeback Resilience
 
 ---
 
-### Workspace Types (Icons)
+### Workspace Types
 
-Only 3 types:
+| Type | Label | Purpose |
+|---|---|---|
+| `preflight` | Scale Readiness | Launch/traffic readiness assessment |
+| `revenue` | Revenue Integrity | Revenue leakage detection |
+| `chargeback` | Chargeback Resilience | Chargeback risk management |
 
-- Analysis
-- Saved View
-- Map
+---
+
+### Detail Route
+
+Each workspace has a detail page at `/workspaces/[id]` showing:
+
+- full findings table scoped to the workspace
+- cycle-to-cycle comparison via ChangeTimeline
+- trust strength panels
+- coherence summary
+- verification sufficiency warnings
 
 ---
 
@@ -237,7 +322,9 @@ Only 3 types:
 All workspaces follow a composable model:
 Header
 Context Blocks (dynamic)
-Primary Table
+Cycle Comparison (ChangeTimeline)
+Trust Strength Panels
+Primary Table (with VerificationBadge, ChangeBadge per finding)
 Optional Panels
 
 
@@ -246,10 +333,11 @@ Optional Panels
 ## Header (Standard)
 
 - name
-- type
+- type badge (colored by workspace type)
 - scope
 - status
 - last updated
+- trend arrows (improvement/regression vs previous cycle)
 
 Actions:
 
@@ -271,10 +359,12 @@ Each workspace defines its own blocks.
 
 Examples:
 
-- readiness
+- readiness (with overall readiness badge for preflight)
 - blockers
 - confidence
 - measurement coverage
+- total monthly loss
+- highest impact finding
 
 ---
 
@@ -282,6 +372,7 @@ Examples:
 
 - key issues
 - warnings
+- verification sufficiency warnings (VerificationSufficiencyWarning component)
 
 ---
 
@@ -307,6 +398,24 @@ Examples:
 
 ---
 
+#### Trust Strength Panels
+
+- per-category trust assessment
+- strength indicators (strong / moderate / weak)
+- supporting evidence references
+
+---
+
+## Cycle Comparison
+
+When multiple audit cycles exist, workspaces show:
+
+- **ChangeTimeline** — vertical timeline of changes ordered by criticality
+- **ChangeBadge** per finding — regression / improvement / new / resolved / stable
+- **Trend arrows** on workspace cards and headers
+
+---
+
 ## Primary Table
 
 Always present.
@@ -314,6 +423,8 @@ Always present.
 - Based on Analysis table
 - Scoped to workspace
 - Can customize visible columns
+- Includes VerificationBadge and ChangeBadge per row
+- Evidence quality bars per finding
 
 ---
 
@@ -337,20 +448,30 @@ Depending on workspace:
 
 ---
 
-## Workspace Example: Preflight
+## Workspace Example: Preflight (Checklist Mode)
+
+Preflight workspaces render in **checklist mode** when readiness data is available.
+
+### Checklist Rendering (PreflightChecklist)
+
+- list of items with **pass / fail / warning** status icons
+- each item shows: title, status, severity, and related finding reference
+- **overall readiness badge** at the top: READY / READY WITH RISKS / NOT READY / N/A
+- items grouped by blocker / risk / opportunity
 
 ### Context Blocks
 
-- readiness: NOT READY
+- readiness: NOT READY (or READY / READY WITH RISKS)
 - blockers: 3
 - confidence: 82%
 - measurement coverage: 45%
 
 ---
 
-### Table
+### Table (below checklist)
 
 - filtered findings relevant to readiness
+- VerificationBadge and ChangeBadge per row
 
 ---
 
@@ -360,11 +481,11 @@ Depending on workspace:
 
 ---
 
-## 5. Analysis
+## 5. Analysis (Findings)
 
 ### Purpose
 
-Global exploration layer.
+Global exploration layer for all findings with financial impact.
 
 ---
 
@@ -374,12 +495,11 @@ Global exploration layer.
 
 - search
 - filters:
-  - type
-  - journey stage
-  - domain
+  - polarity
   - severity
-  - confidence
-  - impact
+  - pack (decision pack)
+  - hide positive signals toggle
+  - clear filters
 
 ---
 
@@ -387,14 +507,18 @@ Global exploration layer.
 
 Columns:
 
-- Finding
-- Type
-- Surface (domain/path)
-- Journey Stage
-- Status
-- Confidence
-- Freshness
-- Impact
+- Checkbox (multi-select)
+- Polarity icon (negative / positive / neutral)
+- Finding title + root cause subtitle
+- Severity badge (Critical / High / Medium / Low)
+- Confidence (monospace %)
+- Est. Impact (range badge)
+- Impact type (Revenue Loss, Conversion Loss, etc.)
+- Pack label (Scale, Revenue, Chargeback, SaaS)
+- **Verification maturity badge** (VerificationBadge — unverified / pending / partially / verified / degraded / stale)
+- **Change badge** (ChangeBadge — regression / improvement / new / resolved / stable)
+- **Evidence quality bar** (visual indicator of evidence completeness)
+- "Discuss" button
 
 ---
 
@@ -406,14 +530,16 @@ Click → opens side drawer
 
 ### Side Drawer
 
-Same structure as Actions:
-
-- summary
-- technical details
-- why it matters
-- evidence
-- remediation
-- actions
+- Summary with cause + badges (severity, confidence, pack, surface, verification maturity, change)
+- Effect description
+- Root Cause in monospace container
+- Impact Breakdown (Monthly Range, Midpoint, Impact Type)
+- Reasoning
+- Evidence Contradictions (amber alert if applicable)
+- **VerificationPanel** (stepped progress, freshness, degradation warnings)
+- **VerificationSufficiencyWarning** (when verification is incomplete for high-impact findings)
+- **Suppression transparency** (if any evidence is suppressed, reason is shown)
+- "Discuss" button (navigates to Chat with context)
 
 ---
 
@@ -460,40 +586,45 @@ Same structure as Actions:
 
 ---
 
-### 1. Findings are NOT the product
+### 1. Actions are the primary surface
 
-They support:
-
-- decisions
-- actions
-- workspaces
+Users land on Actions first. The product communicates value through operational items — incidents, opportunities, verifications — not raw findings.
 
 ---
 
-### 2. Workspaces are the core unit
+### 2. Findings support decisions
 
-All meaningful analysis happens inside workspaces.
+Findings exist to back up actions and workspace conclusions. They are not the product surface users interact with first.
 
 ---
 
-### 3. Actions expose value
+### 3. Workspaces are persistent operational instruments
+
+All meaningful deep analysis happens inside workspaces. They track state across cycles and expose change over time.
+
+---
+
+### 4. Actions expose value
 
 Users must clearly see:
 
 - risk (incidents)
 - money (opportunities)
+- verification needs
+
+categorized and tracked through tabs (All / Incidents / Opportunities / Verifications).
 
 ---
 
-### 4. Consistency is mandatory
+### 5. Consistency is mandatory
 
 - every table uses row → drawer
-- every drawer has same structure
+- every drawer has same structure (with VerificationPanel and change badges)
 - no special-case interactions
 
 ---
 
-### 5. Minimal visual noise
+### 6. Minimal visual noise
 
 - limited colors
 - low roundness
@@ -502,7 +633,30 @@ Users must clearly see:
 
 ---
 
-### 6. MCP Integration
+### 7. Monitoring and Change Visibility
+
+The continuous monitoring loop is now visible in the UX:
+
+- **Change summary banner** on Actions page
+- **ChangeTimeline** component in workspace details
+- **ChangeBadge** per finding/action row (regression / improvement / new / resolved / stable)
+- **Workspace trend arrows** showing direction vs previous cycle
+- Chat surfaces change report awareness with suggested prompts
+
+---
+
+### 8. Verification Lifecycle is Explicit
+
+Every finding and action exposes its verification state:
+
+- **VerificationBadge** — maturity indicator (unverified / pending / partially / verified / degraded / stale)
+- **VerificationPanel** — stepped progress bar with method, freshness, degradation warnings
+- **VerificationSufficiencyWarning** — alert when high-impact items lack sufficient verification
+- **Suppression transparency** — when evidence is suppressed, the reason is visible
+
+---
+
+### 9. MCP Integration
 
 MCP can:
 
@@ -511,13 +665,17 @@ MCP can:
 - suggest actions
 - attach evidence
 - generate insights
+- fetch change reports (`get_change_report` tool)
+- emit navigation CTA blocks directing users to relevant surfaces
 
 ---
 
 ## Final Principle
 
 > The UI is not a dashboard.
-> It is a system to answer:
+> It is an operating system to answer:
 > - What is broken?
+> - What changed?
 > - Where am I losing money?
 > - What should I do next?
+> - Can I trust this conclusion?

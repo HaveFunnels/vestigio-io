@@ -70,6 +70,17 @@ export default withAuth(
 			return NextResponse.next();
 		}
 
+		// ── App domain root ─────────────────────────
+		// app.vestigio.io/ (root) → redirect to /app (auth required)
+		// or /auth/signin if not authenticated
+		if (isAppDomain(host) && (pathname === "/" || pathname === "")) {
+			const token = req.nextauth.token;
+			if (!token) {
+				return NextResponse.redirect(new URL("/auth/signin", req.url));
+			}
+			return NextResponse.redirect(new URL("/app", req.url));
+		}
+
 		// ── Legacy redirects (app domain) ───────────
 
 		// /user root → /app
@@ -151,11 +162,10 @@ export default withAuth(
 				const { token } = params;
 				const pathname = req.nextUrl?.pathname;
 
-				// Marketing pages don't require auth
 				const host = req.headers.get("host") || "";
+
+				// Marketing domain pages don't require auth
 				if (isMarketingDomain(host)) {
-					// Only require auth for /app and /admin routes on marketing domain
-					// (they'll be redirected to app domain anyway)
 					if (!pathname.startsWith("/app") && !pathname.startsWith("/admin") && !pathname.startsWith("/user")) {
 						return true;
 					}
@@ -163,6 +173,10 @@ export default withAuth(
 
 				// Auth pages are public
 				if (pathname.startsWith("/auth/")) return true;
+
+				// App domain root — allow through so middleware function can handle redirect
+				// (withAuth requires returning true to let the middleware function run)
+				if (pathname === "/" || pathname === "") return true;
 
 				// Everything else requires a token
 				return !!token;
@@ -173,6 +187,8 @@ export default withAuth(
 
 export const config = {
 	matcher: [
+		// Root path (app domain redirect)
+		"/",
 		// Unified app shell
 		"/app/:path*",
 		// Auth pages (need middleware for domain routing)

@@ -1,4 +1,3 @@
-import Loader from "@/components/Common/PreLoader";
 import FooterWrapper from "@/components/Footer/FooterWrapper";
 import { HeaderWrapper } from "@/components/Header/HeaderWrapper";
 import NextTopLoader from "nextjs-toploader";
@@ -14,23 +13,20 @@ export default function RootLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<>
-			<Loader />
-			<div className='isolate'>
-				<ToastContext />
-				<Providers>
-					<NextTopLoader
-						color='#635BFF'
-						crawlSpeed={300}
-						showSpinner={false}
-						shadow='none'
-					/>
-					<HeaderWrapper />
-					<div className='isolate'>{children}</div>
+		<div className='isolate'>
+			<ToastContext />
+			<Providers>
+				<NextTopLoader
+					color='#635BFF'
+					crawlSpeed={300}
+					showSpinner={false}
+					shadow='none'
+				/>
+				<HeaderWrapper />
+				<div className='isolate'>{children}</div>
 
-					<FooterWrapper />
-				</Providers>
-			</div>
-		</>
+				<FooterWrapper />
+			</Providers>
+		</div>
 	);
 }

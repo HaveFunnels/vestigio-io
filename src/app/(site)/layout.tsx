@@ -1,5 +1,6 @@
 import FooterWrapper from "@/components/Footer/FooterWrapper";
 import { HeaderWrapper } from "@/components/Header/HeaderWrapper";
+import TrackingScript from "@/components/analytics/TrackingScript";
 import NextTopLoader from "nextjs-toploader";
 import "react-quill-new/dist/quill.snow.css";
 import ToastContext from "../context/ToastContext";
@@ -13,6 +14,7 @@ export default function RootLayout({
 	return (
 		<div className='isolate'>
 			<ToastContext />
+			<TrackingScript />
 			<Providers>
 				<NextTopLoader
 					color='#635BFF'

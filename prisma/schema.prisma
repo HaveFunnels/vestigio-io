@@ -588,3 +588,100 @@ model Evidence {
   @@index([cycleRef])
   @@index([subjectRef])
 }
+
+// ──────────────────────────────────────────────
+// Newsletter Management
+// ──────────────────────────────────────────────
+
+model Newsletter {
+  id             String    @id @default(cuid())
+  subject        String
+  content        String    @db.Text
+  audience       String    @default("all") // all | free | pro | max
+  status         String    @default("draft") // draft | sending | sent | failed
+  recipientCount Int?
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// ──────────────────────────────────────────────
+// Marketing & Analytics
+// ──────────────────────────────────────────────
+
+model PageView {
+  id          String   @id @default(cuid())
+  sessionId   String
+  path        String
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  country     String?
+  city        String?
+  device      String?  // desktop | mobile | tablet
+  browser     String?
+  os          String?
+  duration    Int?     // seconds on page
+  scrollDepth Float?   // 0-1 percentage
+  abVariant   String?  // A/B test variant ID
+  createdAt   DateTime @default(now())
+
+  @@index([path, createdAt])
+  @@index([sessionId])
+  @@index([utmSource, createdAt])
+  @@index([abVariant, createdAt])
+}
+
+model MarketingEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  eventType String   // click, scroll_depth, cta_click, form_start, form_complete, signup, drop_off
+  path      String
+  target    String?  // element identifier
+  metadata  String?  @db.Text // JSON
+  createdAt DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([sessionId])
+  @@index([path, eventType])
+}
+
+model ABTest {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("draft") // draft | running | paused | completed
+  startDate   DateTime?
+  endDate     DateTime?
+  variants    String   @db.Text // JSON array: [{id, name, weight, homepageId?}]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model HomepageVariant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  heroTitle   String?  @db.Text
+  heroSubtitle String? @db.Text
+  ctaText     String?
+  ctaUrl      String?
+  isDefault   Boolean  @default(false)
+  status      String   @default("draft") // draft | active | archived
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrackingPixel {
+  id        String   @id @default(cuid())
+  name      String   // Facebook, Google, Taboola, etc.
+  type      String   // facebook | google_analytics | google_ads | taboola | custom
+  pixelId   String
+  enabled   Boolean  @default(true)
+  config    String?  @db.Text // JSON for extra config
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

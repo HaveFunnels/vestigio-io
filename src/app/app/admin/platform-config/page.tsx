@@ -1,6 +1,39 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Component, type ErrorInfo, type ReactNode } from "react";
+
+/* ---------- Error Boundary ---------- */
+
+class SectionErrorBoundary extends Component<
+  { name: string; children: ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: { name: string; children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: "" };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`[PlatformConfig:${this.props.name}]`, error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-5">
+          <p className="text-sm text-amber-300">
+            Failed to render &quot;{this.props.name}&quot; section. Error: {this.state.error}
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ──────────────────────────────────────────────
 // Platform Config — manage integrations, feature
@@ -297,8 +330,8 @@ function SectionCard({
   data: Record<string, unknown>;
   onUpdate: (sectionKey: SectionKey, data: Record<string, unknown>) => void;
 }) {
-  const meta = SECTION_META[sectionKey] ?? null;
-  const fields = meta?.fields ?? [];
+  const meta = sectionKey ? SECTION_META[sectionKey] : null;
+  const fields = (meta && Array.isArray(meta.fields)) ? meta.fields : [];
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -364,11 +397,11 @@ function SectionCard({
       >
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-inset text-content-muted">
-            {meta.icon}
+            {meta?.icon}
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-content">{meta.title}</h2>
-            <p className="text-xs text-content-faint">{meta.description}</p>
+            <h2 className="text-sm font-semibold text-content">{meta?.title ?? sectionKey}</h2>
+            <p className="text-xs text-content-faint">{meta?.description ?? ""}</p>
           </div>
         </div>
         <svg
@@ -552,12 +585,13 @@ export default function PlatformConfigPage() {
       {loading
         ? Array.from({ length: 5 }).map((_, i) => <SectionSkeleton key={i} />)
         : SECTION_ORDER.map((key) => (
-            <SectionCard
-              key={key}
-              sectionKey={key}
-              data={(config[key] ?? DEFAULTS[key]) as Record<string, unknown>}
-              onUpdate={handleUpdate}
-            />
+            <SectionErrorBoundary key={key} name={key}>
+              <SectionCard
+                sectionKey={key}
+                data={(config[key] ?? DEFAULTS[key]) as Record<string, unknown>}
+                onUpdate={handleUpdate}
+              />
+            </SectionErrorBoundary>
           ))}
     </div>
   );

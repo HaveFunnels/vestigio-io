@@ -376,13 +376,13 @@ function SectionCard({
 
   // Group fields by their group property
   const groups: { name: string | null; fields: FieldDef[] }[] = [];
-  let currentGroup: string | null = null;
+  let currentGroup: string | undefined = undefined; // sentinel: never matches null
   for (const field of fields) {
     const g = field.group ?? null;
     if (g !== currentGroup) {
       groups.push({ name: g, fields: [field] });
-      currentGroup = g;
-    } else {
+      currentGroup = g as any;
+    } else if (groups.length > 0) {
       groups[groups.length - 1].fields.push(field);
     }
   }

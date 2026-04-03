@@ -1,4 +1,11 @@
 import { Blog } from "@/types/blog";
+import {
+	postQuery,
+	postQueryBySlug,
+	postQueryByTag,
+	postQueryByAuthor,
+	postQueryByCategory,
+} from "./sanity-query";
 
 const SANITY_ENABLED = !!(
 	typeof process !== "undefined" &&

@@ -314,7 +314,6 @@ export default function AdminOrganizationDetailPage() {
 
   async function handleImpersonate() {
     if (!org) return;
-    if (
     const adminPassword = prompt(`Enter your admin password to impersonate "${org.name}" owner.\n\nYou will be signed out.`);
     if (!adminPassword) return;
 

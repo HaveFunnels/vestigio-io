@@ -5,7 +5,7 @@ nixPkgs = ["nodejs_20", "npm-10_x"]
 cmds = ["npm ci --legacy-peer-deps"]
 
 [phases.build]
-cmds = ["npx prisma generate", "NEXT_PUBLIC_SANITY_PROJECT_ID=a1b2c3d4 npm run build"]
+cmds = ["npx prisma generate", "npm run build"]
 
 [start]
 cmd = "npx prisma db push --skip-generate && npm run start"

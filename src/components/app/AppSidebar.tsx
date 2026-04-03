@@ -1,5 +1,6 @@
 "use client";
 
+import { useBranding } from "@/components/BrandingProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -31,6 +32,7 @@ export default function AppSidebar({
 	setMobileOpen,
 }: AppSidebarProps) {
 	const pathname = usePathname();
+	const branding = useBranding();
 	const [hovered, setHovered] = useState(false);
 	const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -210,16 +212,31 @@ export default function AppSidebar({
 				"flex h-14 shrink-0 items-center px-3 transition-all duration-300",
 				isExpanded ? "justify-start gap-2.5 px-4" : "justify-center"
 			)}>
-				{/* Icon always visible */}
-				<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20">
-					<span className="text-xs font-bold text-emerald-400">V</span>
-				</div>
-				<span className={cn(
-					"text-sm font-semibold tracking-wider text-content transition-all duration-300",
-					isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-				)}>
-					VESTIGIO
-				</span>
+				{branding.logo_dark?.dataUrl ? (
+					<>
+						<img
+							src={branding.logo_dark.dataUrl}
+							alt="Vestigio"
+							className={cn(
+								"shrink-0 object-contain transition-all duration-300",
+								isExpanded ? "h-6 w-auto" : "h-7 w-7"
+							)}
+						/>
+						{!isExpanded && null}
+					</>
+				) : (
+					<>
+						<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20">
+							<span className="text-xs font-bold text-emerald-400">V</span>
+						</div>
+						<span className={cn(
+							"text-sm font-semibold tracking-wider text-content transition-all duration-300",
+							isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+						)}>
+							VESTIGIO
+						</span>
+					</>
+				)}
 			</div>
 
 			{/* Nav */}

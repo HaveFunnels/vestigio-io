@@ -1,5 +1,6 @@
 "use client";
-import logoLight from "@/../public/images/logo/logo-light.svg";
+import logoLightStatic from "@/../public/images/logo/logo-light.svg";
+import { useBranding } from "@/components/BrandingProvider";
 import { onScroll } from "@/libs/scrollActive";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -12,6 +13,8 @@ import { menuData } from "./menuData";
 const Header = () => {
 	const [stickyMenu, setStickyMenu] = useState(false);
 	const { data: session } = useSession();
+	const branding = useBranding();
+	const logoSrc = branding.logo_light?.dataUrl || logoLightStatic;
 
 	const pathUrl = usePathname();
 
@@ -61,11 +64,11 @@ const Header = () => {
 			<div className='relative mx-auto max-w-[1170px] items-center justify-between px-4 sm:px-8 xl:flex xl:px-0'>
 				<div className='flex shrink-0 items-center justify-between'>
 					<Link href='/' className='shrink-0'>
-						<Image
-							src={logoLight}
-							alt='Vestigio'
-							className='w-full'
-						/>
+						{typeof logoSrc === "string" ? (
+							<img src={logoSrc} alt="Vestigio" className="h-8 w-auto" />
+						) : (
+							<Image src={logoSrc} alt="Vestigio" className="h-8 w-auto" />
+						)}
 					</Link>
 
 					{/* Hamburger Toggle */}

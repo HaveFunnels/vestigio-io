@@ -56,29 +56,33 @@ model Invitation {
   expiresAt DateTime
   accepted  Boolean  @default(false)
   userId    String?
-  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id                    String       @id @default(cuid())
+  id                    String          @id @default(cuid())
   name                  String?
-  email                 String?      @unique
+  email                 String?         @unique
   emailVerified         DateTime?
   image                 String?
   password              String?
-  passwordResetToken    String?      @unique
+  passwordResetToken    String?         @unique
   passwordResetTokenExp DateTime?
-  role                  String?      @default("USER")
-  customerId            String?      @unique @map(name: "customer_id")
-  subscriptionId        String?      @unique @map(name: "subscription_id")
-  priceId               String?      @map(name: "price_id")
-  currentPeriodEnd      DateTime?    @map(name: "current_period_end")
-  createdAt             DateTime     @default(now())
+  role                  String?         @default("USER")
+  adminRole             String? // super_admin, support, marketing, viewer, billing
+  customerId            String?         @unique @map(name: "customer_id")
+  subscriptionId        String?         @unique @map(name: "subscription_id")
+  priceId               String?         @map(name: "price_id")
+  currentPeriodEnd      DateTime?       @map(name: "current_period_end")
+  createdAt             DateTime        @default(now())
   accounts              Account[]
   sessions              Session[]
   apiKeys               ApiKey[]
   invitation            Invitation[]
   memberships           Membership[]
+  supportTickets        SupportTicket[]
+  ticketReplies         TicketReply[]
+  feedbacks             Feedback[]
 }
 
 model VerificationToken {
@@ -99,7 +103,7 @@ model Organization {
   name      String
   ownerId   String
   plan      String   @default("vestigio") // vestigio | pro | max
-  status    String   @default("pending")  // pending | active | suspended
+  status    String   @default("pending") // pending | active | suspended
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -135,33 +139,33 @@ model Environment {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  auditCycles    AuditCycle[]
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  auditCycles      AuditCycle[]
   saasAccessConfig SaasAccessConfig?
 }
 
 model BusinessProfile {
-  id             String  @id @default(cuid())
-  organizationId String  @unique
-  businessModel  String  @default("ecommerce") // ecommerce | lead_gen | saas | hybrid
-  monthlyRevenue Float?
-  averageOrderValue Float?
+  id                  String @id @default(cuid())
+  organizationId      String @unique
+  businessModel       String @default("ecommerce") // ecommerce | lead_gen | saas | hybrid
+  monthlyRevenue      Float?
+  averageOrderValue   Float?
   monthlyTransactions Int?
-  conversionRate Float?
-  chargebackRate Float?
-  churnRate      Float?
-  conversionModel String @default("checkout") // checkout | whatsapp | form | external
+  conversionRate      Float?
+  chargebackRate      Float?
+  churnRate           Float?
+  conversionModel     String @default("checkout") // checkout | whatsapp | form | external
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model AuditCycle {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   environmentId  String
-  status         String   @default("pending") // pending | running | complete | failed
-  cycleType      String   @default("full")    // full | incremental | verification
-  createdAt      DateTime @default(now())
+  status         String    @default("pending") // pending | running | complete | failed
+  cycleType      String    @default("full") // full | incremental | verification
+  createdAt      DateTime  @default(now())
   completedAt    DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -172,9 +176,9 @@ model AuditCycle {
 model Usage {
   id             String   @id @default(cuid())
   organizationId String
-  usageType      String              // mcp_chat | mcp_tool | credits
+  usageType      String // mcp_chat | mcp_tool | credits
   amount         Int      @default(1)
-  period         String              // YYYY-MM format
+  period         String // YYYY-MM format
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -187,13 +191,13 @@ model Usage {
 // ──────────────────────────────────────────────
 
 model SaasAccessConfig {
-  id                   String   @id @default(cuid())
-  environmentId        String   @unique
-  loginUrl             String   @default("")
+  id                   String    @id @default(cuid())
+  environmentId        String    @unique
+  loginUrl             String    @default("")
   email                String?
-  passwordEncrypted    String?  @db.Text
-  authMethod           String   @default("unknown") // password | oauth | magic_link | unknown
-  mfaMode              String   @default("unknown") // none | optional | required | unknown
+  passwordEncrypted    String?   @db.Text
+  authMethod           String    @default("unknown") // password | oauth | magic_link | unknown
+  mfaMode              String    @default("unknown") // none | optional | required | unknown
   hasTrial             Boolean?
   requiresSeedData     Boolean?
   testAccountAvailable Boolean?
@@ -201,9 +205,9 @@ model SaasAccessConfig {
   primaryUpgradePath   String?
   lastVerifiedAt       DateTime?
   lastFailureReason    String?
-  status               String   @default("unconfigured") // unconfigured | configured | verified | failed | expired | awaiting_manual_mfa
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  status               String    @default("unconfigured") // unconfigured | configured | verified | failed | expired | awaiting_manual_mfa
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 }
@@ -225,18 +229,18 @@ model PlatformConfig {
 
 model PlatformError {
   id             String   @id @default(cuid())
-  errorType      String                        // e.g. "TypeError", "PrismaClientKnownRequestError"
+  errorType      String // e.g. "TypeError", "PrismaClientKnownRequestError"
   message        String   @db.Text
   stackTrace     String?  @db.Text
-  endpoint       String?                       // API route that threw
-  method         String?                       // GET, POST, etc.
+  endpoint       String? // API route that threw
+  method         String? // GET, POST, etc.
   statusCode     Int?
   userId         String?
   userEmail      String?
   organizationId String?
-  requestBody    String?  @db.Text             // sanitized payload
+  requestBody    String?  @db.Text // sanitized payload
   correlationId  String?
-  severity       String   @default("error")    // error | warning | critical
+  severity       String   @default("error") // error | warning | critical
   resolved       Boolean  @default(false)
   createdAt      DateTime @default(now())
 
@@ -250,15 +254,15 @@ model PlatformError {
 // ──────────────────────────────────────────────
 
 model AuthEvent {
-  id             String   @id @default(cuid())
-  environmentId  String
-  correlationId  String?
-  eventType      String   // auth_attempt_started | auth_attempt_success | auth_attempt_failed | auth_mfa_detected | auth_config_saved | auth_config_deleted
-  level          String   @default("info") // info | warn | error
-  outcome        String?
-  durationMs     Int?
-  message        String   @db.Text
-  createdAt      DateTime @default(now())
+  id            String   @id @default(cuid())
+  environmentId String
+  correlationId String?
+  eventType     String // auth_attempt_started | auth_attempt_success | auth_attempt_failed | auth_mfa_detected | auth_config_saved | auth_config_deleted
+  level         String   @default("info") // info | warn | error
+  outcome       String?
+  durationMs    Int?
+  message       String   @db.Text
+  createdAt     DateTime @default(now())
 
   @@index([environmentId, createdAt])
   @@index([correlationId])
@@ -273,7 +277,7 @@ model McpPromptEvent {
   id              String   @id @default(cuid())
   orgId           String
   inputHash       String
-  quality         String   // good | weak | misfire
+  quality         String // good | weak | misfire
   rewriteOffered  Boolean  @default(false)
   rewriteAccepted Boolean?
   inputLength     Int      @default(0)
@@ -300,7 +304,7 @@ model McpSession {
 model McpSuggestionClick {
   id             String   @id @default(cuid())
   orgId          String
-  suggestionType String   // question | action | navigation | chain | playbook
+  suggestionType String // question | action | navigation | chain | playbook
   suggestionText String   @db.Text
   createdAt      DateTime @default(now())
 
@@ -342,19 +346,19 @@ model AnalysisJob {
 // ──────────────────────────────────────────────
 
 model VersionedSnapshot {
-  id              String   @id @default(cuid())
-  cycleRef        String
-  workspaceRef    String
-  environmentRef  String
-  schemaVersion   Int      @default(1)
-  snapshot        String   @db.Text  // JSON — CycleSnapshot
-  isBaseline      Boolean  @default(false)
-  decisionCount   Int      @default(0)
-  signalCount     Int      @default(0)
-  auditMode       String   @default("full") // full | incremental
-  recomputeMs     Int?
-  contentHash     String?
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  cycleRef       String
+  workspaceRef   String
+  environmentRef String
+  schemaVersion  Int      @default(1)
+  snapshot       String   @db.Text // JSON — CycleSnapshot
+  isBaseline     Boolean  @default(false)
+  decisionCount  Int      @default(0)
+  signalCount    Int      @default(0)
+  auditMode      String   @default("full") // full | incremental
+  recomputeMs    Int?
+  contentHash    String?
+  createdAt      DateTime @default(now())
 
   @@index([workspaceRef, environmentRef, createdAt])
   @@index([workspaceRef, environmentRef, isBaseline])
@@ -366,16 +370,16 @@ model VersionedSnapshot {
 // ──────────────────────────────────────────────
 
 model SuppressionRule {
-  id             String    @id @default(cuid())
-  scopeRef       String
-  matchKey       String
-  reason         String    @db.Text
-  createdBy      String
-  expiresAt      DateTime?
-  reviewPolicy   String    @default("manual") // manual | auto_expire | permanent
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  scopeRef     String
+  matchKey     String
+  reason       String    @db.Text
+  createdBy    String
+  expiresAt    DateTime?
+  reviewPolicy String    @default("manual") // manual | auto_expire | permanent
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([scopeRef, isActive])
   @@index([matchKey, isActive])
@@ -387,15 +391,15 @@ model SuppressionRule {
 // ──────────────────────────────────────────────
 
 model Website {
-  id              String   @id @default(cuid())
-  environmentRef  String
-  domain          String
-  rootUrl         String
-  isPrimary       Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  environmentRef String
+  domain         String
+  rootUrl        String
+  isPrimary      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  pages           PageInventoryItem[]
+  pages            PageInventoryItem[]
   surfaceRelations SurfaceRelation[]
 
   @@unique([environmentRef, domain])
@@ -403,22 +407,22 @@ model Website {
 }
 
 model PageInventoryItem {
-  id              String   @id @default(cuid())
-  websiteRef      String
-  environmentRef  String
-  normalizedUrl   String
-  path            String
-  pathScope       String?
-  pageType        String   // landing | product | category | checkout | cart | policy | support | blog | account | app | other
-  tier            String   @default("secondary") // primary | secondary | tertiary | excluded
-  priority        Int      @default(0)
-  criticality     Int      @default(0)
-  title           String?
-  statusCode      Int?
-  freshnessState  String   @default("unknown") // fresh | stale | expired | unknown
-  freshnessAge    Int?     // seconds since last check
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  websiteRef     String
+  environmentRef String
+  normalizedUrl  String
+  path           String
+  pathScope      String?
+  pageType       String // landing | product | category | checkout | cart | policy | support | blog | account | app | other
+  tier           String   @default("secondary") // primary | secondary | tertiary | excluded
+  priority       Int      @default(0)
+  criticality    Int      @default(0)
+  title          String?
+  statusCode     Int?
+  freshnessState String   @default("unknown") // fresh | stale | expired | unknown
+  freshnessAge   Int? // seconds since last check
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   website Website @relation(fields: [websiteRef], references: [id], onDelete: Cascade)
 
@@ -429,18 +433,18 @@ model PageInventoryItem {
 }
 
 model SurfaceRelation {
-  id             String   @id @default(cuid())
-  websiteRef     String
-  sourceUrl      String
-  targetUrl      String
-  relationType   String   // anchor | form_action | iframe_src | script_src | stylesheet_src | redirect | canonical_external | intent_target | runtime_navigation
-  sourceHost     String
-  targetHost     String
-  isSameDomain   Boolean  @default(true)
-  confidence     Float    @default(1.0)
-  cycleRef       String
-  metadata       String   @default("{}") @db.Text // JSON
-  createdAt      DateTime @default(now())
+  id           String   @id @default(cuid())
+  websiteRef   String
+  sourceUrl    String
+  targetUrl    String
+  relationType String // anchor | form_action | iframe_src | script_src | stylesheet_src | redirect | canonical_external | intent_target | runtime_navigation
+  sourceHost   String
+  targetHost   String
+  isSameDomain Boolean  @default(true)
+  confidence   Float    @default(1.0)
+  cycleRef     String
+  metadata     String   @default("{}") @db.Text // JSON
+  createdAt    DateTime @default(now())
 
   website Website @relation(fields: [websiteRef], references: [id], onDelete: Cascade)
 
@@ -455,13 +459,13 @@ model SurfaceRelation {
 // ──────────────────────────────────────────────
 
 model BusinessProfileVersion {
-  id              String   @id @default(cuid())
-  organizationId  String
-  version         Int
-  profile         String   @db.Text  // JSON — full BusinessProfile snapshot
-  source          String   // manual | inferred | system_default | migration
-  changeSummary   String?  @db.Text
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  version        Int
+  profile        String   @db.Text // JSON — full BusinessProfile snapshot
+  source         String // manual | inferred | system_default | migration
+  changeSummary  String?  @db.Text
+  createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -479,7 +483,7 @@ model Conversation {
   userId            String
   environmentId     String?
   title             String?
-  status            String    @default("active")   // active | archived | deleted
+  status            String    @default("active") // active | archived | deleted
   messageCount      Int       @default(0)
   totalCostCents    Float     @default(0)
   totalInputTokens  Int       @default(0)
@@ -499,14 +503,14 @@ model Conversation {
 model ConversationMessage {
   id             String   @id @default(cuid())
   conversationId String
-  role           String                          // user | assistant
-  content        String   @db.Text              // plain text (user) or JSON ContentBlock[] (assistant)
-  model          String?                         // haiku_4_5 | sonnet_4_6 | opus_4_6
+  role           String // user | assistant
+  content        String   @db.Text // plain text (user) or JSON ContentBlock[] (assistant)
+  model          String? // haiku_4_5 | sonnet_4_6 | opus_4_6
   inputTokens    Int?
   outputTokens   Int?
   costCents      Float?
-  toolCalls      String?  @db.Text              // JSON ToolCallRecord[]
-  purpose        String?                         // core_chat | context_summary
+  toolCalls      String?  @db.Text // JSON ToolCallRecord[]
+  purpose        String? // core_chat | context_summary
   createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -519,8 +523,8 @@ model TokenCostLedger {
   organizationId           String
   userId                   String
   conversationId           String?
-  model                    String                 // haiku_4_5 | sonnet_4_6 | opus_4_6
-  purpose                  String                 // input_guard | core_chat | output_classifier | context_summary
+  model                    String // haiku_4_5 | sonnet_4_6 | opus_4_6
+  purpose                  String // input_guard | core_chat | output_classifier | context_summary
   inputTokens              Int      @default(0)
   outputTokens             Int      @default(0)
   cacheCreationInputTokens Int      @default(0)
@@ -540,16 +544,16 @@ model TokenCostLedger {
 }
 
 model ChatFeedback {
-  id              String   @id @default(cuid())
-  organizationId  String
-  userId          String
-  conversationId  String?
-  messageId       String?
-  rating          String                         // positive | negative
-  comment         String?  @db.Text              // sanitized user comment
-  messagePreview  String?  @db.Text              // first 200 chars of the rated message
-  model           String?                        // which model generated the response
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  conversationId String?
+  messageId      String?
+  rating         String // positive | negative
+  comment        String?  @db.Text // sanitized user comment
+  messagePreview String?  @db.Text // first 200 chars of the rated message
+  model          String? // which model generated the response
+  createdAt      DateTime @default(now())
 
   @@index([organizationId, createdAt])
   @@index([rating, createdAt])
@@ -560,27 +564,27 @@ model ChatFeedback {
 // ──────────────────────────────────────────────
 
 model Evidence {
-  id              String   @id @default(cuid())
-  evidenceKey     String
-  evidenceType    String
-  subjectRef      String
-  workspaceRef    String
-  environmentRef  String
-  pathScope       String?
-  cycleRef        String
-  observedAt      DateTime @default(now())
-  freshUntil      DateTime?
-  freshnessState  String   @default("unknown")
-  stalenessReason String?
-  sourceKind      String
+  id               String    @id @default(cuid())
+  evidenceKey      String
+  evidenceType     String
+  subjectRef       String
+  workspaceRef     String
+  environmentRef   String
+  pathScope        String?
+  cycleRef         String
+  observedAt       DateTime  @default(now())
+  freshUntil       DateTime?
+  freshnessState   String    @default("unknown")
+  stalenessReason  String?
+  sourceKind       String
   collectionMethod String
-  qualityScore    Int      @default(50)
-  payload         String   @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  qualityScore     Int       @default(50)
+  payload          String    @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  auditCycleId    String?
-  auditCycle      AuditCycle? @relation(fields: [auditCycleId], references: [id], onDelete: Cascade)
+  auditCycleId String?
+  auditCycle   AuditCycle? @relation(fields: [auditCycleId], references: [id], onDelete: Cascade)
 
   @@unique([cycleRef, evidenceKey])
   @@index([workspaceRef, environmentRef, createdAt])
@@ -620,12 +624,12 @@ model PageView {
   utmContent  String?
   country     String?
   city        String?
-  device      String?  // desktop | mobile | tablet
+  device      String? // desktop | mobile | tablet
   browser     String?
   os          String?
-  duration    Int?     // seconds on page
-  scrollDepth Float?   // 0-1 percentage
-  abVariant   String?  // A/B test variant ID
+  duration    Int? // seconds on page
+  scrollDepth Float? // 0-1 percentage
+  abVariant   String? // A/B test variant ID
   createdAt   DateTime @default(now())
 
   @@index([path, createdAt])
@@ -637,9 +641,9 @@ model PageView {
 model MarketingEvent {
   id        String   @id @default(cuid())
   sessionId String
-  eventType String   // click, scroll_depth, cta_click, form_start, form_complete, signup, drop_off
+  eventType String // click, scroll_depth, cta_click, form_start, form_complete, signup, drop_off
   path      String
-  target    String?  // element identifier
+  target    String? // element identifier
   metadata  String?  @db.Text // JSON
   createdAt DateTime @default(now())
 
@@ -649,36 +653,36 @@ model MarketingEvent {
 }
 
 model ABTest {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
-  status      String   @default("draft") // draft | running | paused | completed
+  status      String    @default("draft") // draft | running | paused | completed
   startDate   DateTime?
   endDate     DateTime?
-  variants    String   @db.Text // JSON array: [{id, name, weight, homepageId?}]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  variants    String    @db.Text // JSON array: [{id, name, weight, homepageId?}]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model HomepageVariant {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  heroTitle   String?  @db.Text
-  heroSubtitle String? @db.Text
-  ctaText     String?
-  ctaUrl      String?
-  isDefault   Boolean  @default(false)
-  status      String   @default("draft") // draft | active | archived
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  heroTitle    String?  @db.Text
+  heroSubtitle String?  @db.Text
+  ctaText      String?
+  ctaUrl       String?
+  isDefault    Boolean  @default(false)
+  status       String   @default("draft") // draft | active | archived
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model TrackingPixel {
   id        String   @id @default(cuid())
-  name      String   // Facebook, Google, Taboola, etc.
-  type      String   // facebook | google_analytics | google_ads | taboola | custom
+  name      String // Facebook, Google, Taboola, etc.
+  type      String // facebook | google_analytics | google_ads | taboola | custom
   pixelId   String
   enabled   Boolean  @default(true)
   config    String?  @db.Text // JSON for extra config
@@ -691,16 +695,16 @@ model TrackingPixel {
 // ──────────────────────────────────────────────
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  actorId     String
-  actorEmail  String
-  action      String   // org.suspend, org.reactivate, org.impersonate, pricing.update, config.update, user.delete, user.role_change, newsletter.send, alert.create, etc.
-  targetType  String?  // organization, user, config, newsletter, alert
-  targetId    String?
-  targetName  String?
-  metadata    String?  @db.Text // JSON extra context
-  ipAddress   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  actorId    String
+  actorEmail String
+  action     String // org.suspend, org.reactivate, org.impersonate, pricing.update, config.update, user.delete, user.role_change, newsletter.send, alert.create, etc.
+  targetType String? // organization, user, config, newsletter, alert
+  targetId   String?
+  targetName String?
+  metadata   String?  @db.Text // JSON extra context
+  ipAddress  String?
+  createdAt  DateTime @default(now())
 
   @@index([actorId, createdAt])
   @@index([action, createdAt])
@@ -712,29 +716,29 @@ model AuditLog {
 // ──────────────────────────────────────────────
 
 model AlertRule {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  metric      String   // error_rate, mcp_usage, health_check, org_over_limit, new_signup
-  condition   String   // gt, lt, eq (greater than, less than, equal)
-  threshold   Float
-  window      Int      @default(10) // minutes
-  channel     String   @default("email") // email, whatsapp, both
-  enabled     Boolean  @default(true)
+  id            String       @id @default(cuid())
+  name          String
+  description   String?
+  metric        String // error_rate, mcp_usage, health_check, org_over_limit, new_signup
+  condition     String // gt, lt, eq (greater than, less than, equal)
+  threshold     Float
+  window        Int          @default(10) // minutes
+  channel       String       @default("email") // email, whatsapp, both
+  enabled       Boolean      @default(true)
   lastTriggered DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  events      AlertEvent[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  events        AlertEvent[]
 }
 
 model AlertEvent {
-  id          String    @id @default(cuid())
-  ruleId      String
-  rule        AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-  value       Float     // the actual metric value that triggered the alert
-  message     String
-  acknowledged Boolean  @default(false)
-  createdAt   DateTime  @default(now())
+  id           String    @id @default(cuid())
+  ruleId       String
+  rule         AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  value        Float // the actual metric value that triggered the alert
+  message      String
+  acknowledged Boolean   @default(false)
+  createdAt    DateTime  @default(now())
 
   @@index([ruleId, createdAt])
   @@index([acknowledged, createdAt])
@@ -742,11 +746,77 @@ model AlertEvent {
 
 model UptimeCheck {
   id        String   @id @default(cuid())
-  service   String   // database, redis, mcp, api
-  status    String   // ok, degraded, down
+  service   String // database, redis, mcp, api
+  status    String // ok, degraded, down
   latencyMs Int?
   message   String?
   createdAt DateTime @default(now())
 
   @@index([service, createdAt])
+}
+
+// ──────────────────────────────────────────────
+// Support Tickets
+// ──────────────────────────────────────────────
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  name      String // submitter name
+  email     String // submitter email
+  userId    String? // null for anonymous / public form submissions
+  subject   String
+  message   String   @db.Text
+  status    String   @default("open") // open, in_progress, resolved, closed, spam
+  priority  String   @default("normal") // low, normal, high, urgent
+  category  String   @default("general") // general, bug, feature, billing, security
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User?         @relation(fields: [userId], references: [id])
+  replies TicketReply[]
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@index([email])
+}
+
+model TicketReply {
+  id          String   @id @default(cuid())
+  ticketId    String
+  authorId    String? // null for system messages
+  authorName  String
+  authorEmail String
+  content     String   @db.Text
+  isStaff     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User?         @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId, createdAt])
+}
+
+// ──────────────────────────────────────────────
+// Feedback (for admin consolidation)
+// ──────────────────────────────────────────────
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String?
+  userEmail String?
+  userName  String?
+  type      String   @default("general") // general, bug, feature, ux, performance
+  category  String? // groupable category set by admin
+  title     String?
+  content   String   @db.Text
+  rating    Int? // 1-5
+  page      String? // which route the feedback is about
+  status    String   @default("new") // new, reviewed, acknowledged, actioned, dismissed
+  metadata  String?  @db.Text // JSON
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([type, status, createdAt])
+  @@index([userId])
 }

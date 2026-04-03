@@ -1,8 +1,60 @@
 "use client";
+import { useState, FormEvent } from "react";
 import { useTranslations } from "next-intl";
 
 const Support = () => {
 	const t = useTranslations("support_page");
+
+	const [name, setName] = useState("");
+	const [email, setEmail] = useState("");
+	const [subject, setSubject] = useState("");
+	const [message, setMessage] = useState("");
+	const [website, setWebsite] = useState(""); // honeypot
+	const [loading, setLoading] = useState(false);
+	const [success, setSuccess] = useState(false);
+	const [error, setError] = useState("");
+
+	const handleSubmit = async (e: FormEvent) => {
+		e.preventDefault();
+		setError("");
+		setSuccess(false);
+
+		// Honeypot: if filled, silently "succeed" without submitting
+		if (website) {
+			setSuccess(true);
+			return;
+		}
+
+		setLoading(true);
+
+		try {
+			const res = await fetch("/api/support-tickets", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					name,
+					email,
+					subject: subject || "Support Request",
+					message,
+				}),
+			});
+
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				throw new Error(data.message || "Something went wrong");
+			}
+
+			setSuccess(true);
+			setName("");
+			setEmail("");
+			setSubject("");
+			setMessage("");
+		} catch (err: any) {
+			setError(err.message || "Failed to send message. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	return (
 		<section className='min-h-screen bg-[#090911] px-4 pb-20 pt-32 sm:px-8'>
@@ -24,64 +76,135 @@ const Support = () => {
 						<h2 className='mb-6 text-lg font-semibold text-white'>
 							Send us a message
 						</h2>
-						<form className='space-y-5'>
-							<div>
-								<label
-									htmlFor='fullName'
-									className='mb-2 block text-sm font-medium text-gray-300'
-								>
-									{t("form.full_name.label")}
-								</label>
-								<input
-									type='text'
-									name='fullName'
-									id='fullName'
-									autoComplete='name'
-									placeholder={t("form.full_name.placeholder")}
-									className='w-full rounded-[1rem] border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20'
-								/>
-							</div>
 
-							<div>
-								<label
-									htmlFor='email'
-									className='mb-2 block text-sm font-medium text-gray-300'
+						{success ? (
+							<div className='rounded-[1rem] border border-emerald-500/20 bg-emerald-500/10 px-4 py-6 text-center'>
+								<svg
+									className='mx-auto mb-3 h-10 w-10 text-emerald-400'
+									fill='none'
+									viewBox='0 0 24 24'
+									strokeWidth={1.5}
+									stroke='currentColor'
 								>
-									{t("form.email.label")}
-								</label>
-								<input
-									type='email'
-									name='email'
-									id='email'
-									autoComplete='email'
-									placeholder={t("form.email.placeholder")}
-									className='w-full rounded-[1rem] border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20'
-								/>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										d='M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+									/>
+								</svg>
+								<p className='text-sm font-medium text-emerald-300'>
+									Your message has been sent! We&apos;ll get back to you within 24 hours.
+								</p>
 							</div>
+						) : (
+							<form onSubmit={handleSubmit} className='space-y-5'>
+								{/* Honeypot field — hidden from real users */}
+								<div style={{ display: "none" }} aria-hidden='true'>
+									<label htmlFor='website'>Website</label>
+									<input
+										type='text'
+										name='website'
+										id='website'
+										tabIndex={-1}
+										autoComplete='off'
+										value={website}
+										onChange={(e) => setWebsite(e.target.value)}
+									/>
+								</div>
 
-							<div>
-								<label
-									htmlFor='message'
-									className='mb-2 block text-sm font-medium text-gray-300'
+								{error && (
+									<div className='rounded-[1rem] border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300'>
+										{error}
+									</div>
+								)}
+
+								<div>
+									<label
+										htmlFor='fullName'
+										className='mb-2 block text-sm font-medium text-gray-300'
+									>
+										{t("form.full_name.label")}
+									</label>
+									<input
+										type='text'
+										name='fullName'
+										id='fullName'
+										autoComplete='name'
+										required
+										placeholder={t("form.full_name.placeholder")}
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+										className='w-full rounded-[1rem] border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20'
+									/>
+								</div>
+
+								<div>
+									<label
+										htmlFor='email'
+										className='mb-2 block text-sm font-medium text-gray-300'
+									>
+										{t("form.email.label")}
+									</label>
+									<input
+										type='email'
+										name='email'
+										id='email'
+										autoComplete='email'
+										required
+										placeholder={t("form.email.placeholder")}
+										value={email}
+										onChange={(e) => setEmail(e.target.value)}
+										className='w-full rounded-[1rem] border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20'
+									/>
+								</div>
+
+								<div>
+									<label
+										htmlFor='subject'
+										className='mb-2 block text-sm font-medium text-gray-300'
+									>
+										{t("form.subject.label")}
+									</label>
+									<input
+										type='text'
+										name='subject'
+										id='subject'
+										required
+										placeholder={t("form.subject.placeholder")}
+										value={subject}
+										onChange={(e) => setSubject(e.target.value)}
+										className='w-full rounded-[1rem] border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20'
+									/>
+								</div>
+
+								<div>
+									<label
+										htmlFor='message'
+										className='mb-2 block text-sm font-medium text-gray-300'
+									>
+										{t("form.message.label")}
+									</label>
+									<textarea
+										name='message'
+										id='message'
+										rows={5}
+										required
+										placeholder={t("form.message.placeholder")}
+										value={message}
+										onChange={(e) => setMessage(e.target.value)}
+										className='w-full rounded-[1rem] border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20'
+									/>
+								</div>
+
+								<button
+									type='submit'
+									disabled={loading}
+									className='w-full rounded-[1rem] bg-white px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50'
 								>
-									{t("form.message.label")}
-								</label>
-								<textarea
-									name='message'
-									id='message'
-									rows={5}
-									placeholder={t("form.message.placeholder")}
-									className='w-full rounded-[1rem] border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20'
-								/>
-							</div>
-
-							<button
-								type='submit'
-								className='w-full rounded-[1rem] bg-white px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-gray-100'
-							>
-								{t("form.submit")}
-							</button>
-						</form>
+									{loading ? "Sending..." : t("form.submit")}
+								</button>
+							</form>
+						)}
 					</div>
 
 					{/* Info card */}

@@ -326,6 +326,10 @@
 				"label": "E-Mail",
 				"placeholder": "Geben Sie Ihre E-Mail-Adresse ein"
 			},
+			"subject": {
+				"label": "Betreff",
+				"placeholder": "Geben Sie einen Betreff ein"
+			},
 			"message": {
 				"label": "Nachricht",
 				"placeholder": "Geben Sie Ihre Nachricht ein"
@@ -437,6 +441,7 @@
 		"api": "API",
 		"billing": "Abrechnung",
 		"invoice": "Rechnung",
+		"support": "Support",
 		"dashboard": "Dashboard",
 		"users": "Benutzer",
 		"ai_integration": "KI-Integration",

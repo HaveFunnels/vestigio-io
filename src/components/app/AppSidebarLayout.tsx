@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -120,6 +121,53 @@ function PageFade({ children }: { children: React.ReactNode }) {
 	);
 }
 
+// ── User menu with logout ──
+function UserMenu() {
+	const { data: session } = useSession();
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		function handleClick(e: MouseEvent) {
+			if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+		}
+		document.addEventListener("mousedown", handleClick);
+		return () => document.removeEventListener("mousedown", handleClick);
+	}, []);
+
+	const email = session?.user?.email || "";
+	const initials = (session?.user?.name || email || "U").slice(0, 2).toUpperCase();
+
+	return (
+		<div className="relative" ref={ref}>
+			<button
+				onClick={() => setOpen(!open)}
+				className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/20 text-[10px] font-bold text-accent-text transition-colors hover:bg-accent/30"
+				title={email}
+			>
+				{initials}
+			</button>
+			{open && (
+				<div className="absolute right-0 top-full z-50 mt-1.5 w-56 rounded-lg border border-edge bg-surface-card p-1 shadow-xl">
+					<div className="border-b border-edge px-3 py-2">
+						<p className="truncate text-xs font-medium text-content">{session?.user?.name || "Admin"}</p>
+						<p className="truncate text-[10px] text-content-faint">{email}</p>
+					</div>
+					<button
+						onClick={() => signOut({ callbackUrl: "/" })}
+						className="mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content"
+					>
+						<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+						</svg>
+						Sign out
+					</button>
+				</div>
+			)}
+		</div>
+	);
+}
+
 export default function AppSidebarLayout({
 	isAdmin,
 	orgCtx,
@@ -186,6 +234,7 @@ export default function AppSidebarLayout({
 						<span className="rounded border border-edge px-2 py-0.5 text-[10px] font-medium uppercase text-content-faint">
 							{plan}
 						</span>
+						<UserMenu />
 					</div>
 				</header>
 

@@ -150,45 +150,47 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 						<MobileArrow />
 
 						{/* 2. Agentic Chat hub with orbiting tools */}
-						<div className="relative shrink-0 py-8 lg:py-0">
-							{/* Orbit ring (decorative) */}
-							<div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-								<div className="h-44 w-44 rounded-full border border-dashed border-white/[0.06]" />
-							</div>
+						<div className="relative mx-auto flex h-52 w-52 shrink-0 items-center justify-center">
+							<style>{`
+								@keyframes orbitCW{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+								@keyframes orbitCCW{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+							`}</style>
+							{/* Orbit ring */}
+							<div className="absolute inset-0 m-auto h-44 w-44 rounded-full border border-dashed border-white/[0.06]" />
 							{/* Glow */}
-							<div className="absolute left-1/2 top-1/2 -z-10 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/10 blur-2xl" />
+							<div className="absolute inset-0 m-auto -z-10 h-32 w-32 rounded-full bg-violet-500/10 blur-2xl" />
 
-							{/* Center icon — grid place-items-center guarantees centering */}
-							<div className="relative mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-emerald-500/15 shadow-[0_0_50px_-10px_rgba(139,92,246,0.3)]">
+							{/* Center icon */}
+							<div className="relative z-10 grid h-16 w-16 place-items-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-emerald-500/15 shadow-[0_0_50px_-10px_rgba(139,92,246,0.3)]">
 								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 									<path d="M12 3L13.5 8.5L19 10L13.5 11.5L12 17L10.5 11.5L5 10L10.5 8.5L12 3Z" />
 									<path d="M19 15L19.75 17.25L22 18L19.75 18.75L19 21L18.25 18.75L16 18L18.25 17.25L19 15Z" />
 								</svg>
 							</div>
-							<div className="mt-2 text-center text-[9px] font-bold uppercase tracking-widest text-violet-400">{t.label}</div>
+							{/* Label below center */}
+							<div className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest text-violet-400">{t.label}</div>
 
-							{/* Satellite nodes positioned around the orbit */}
-							{/* Top: Findings */}
-							<div className="absolute left-1/2 -translate-x-1/2" style={{ top: -8 }}>
-								<div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-[#0c0c14] px-3 py-1">
-									<div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-									<span className="text-[10px] font-semibold text-emerald-400">Findings</span>
+							{/* Orbiting satellites — each offset by 1/3 of the period */}
+							{[
+								{ label: "Findings", border: "border-emerald-500/20", dot: "bg-emerald-400", text: "text-emerald-400" },
+								{ label: "Actions", border: "border-violet-500/20", dot: "bg-violet-400", text: "text-violet-400" },
+								{ label: "Verification", border: "border-amber-500/20", dot: "bg-amber-400", text: "text-amber-400" },
+							].map((sat, i) => (
+								<div
+									key={sat.label}
+									className="absolute left-1/2 top-1/2"
+									style={{ animation: 'orbitCW 40s linear infinite', animationDelay: `${-i * 40 / 3}s` }}
+								>
+									<div style={{ transform: 'translateY(-88px)' }}>
+										<div style={{ animation: 'orbitCCW 40s linear infinite', animationDelay: `${-i * 40 / 3}s` }}>
+											<div className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border ${sat.border} bg-[#0c0c14] px-3 py-1`}>
+												<div className={`h-1.5 w-1.5 rounded-full ${sat.dot}`} />
+												<span className={`text-[10px] font-semibold ${sat.text}`}>{sat.label}</span>
+											</div>
+										</div>
+									</div>
 								</div>
-							</div>
-							{/* Bottom-left: Actions */}
-							<div className="absolute" style={{ bottom: -8, left: -24 }}>
-								<div className="flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-[#0c0c14] px-3 py-1">
-									<div className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-									<span className="text-[10px] font-semibold text-violet-400">Actions</span>
-								</div>
-							</div>
-							{/* Bottom-right: Verification */}
-							<div className="absolute" style={{ bottom: -8, right: -36 }}>
-								<div className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-[#0c0c14] px-3 py-1">
-									<div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-									<span className="text-[10px] font-semibold text-amber-400">Verification</span>
-								</div>
-							</div>
+							))}
 						</div>
 
 						{/* → line */}

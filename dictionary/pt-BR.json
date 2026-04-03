@@ -326,6 +326,10 @@
 				"label": "E-mail",
 				"placeholder": "Digite seu e-mail"
 			},
+			"subject": {
+				"label": "Assunto",
+				"placeholder": "Digite um assunto"
+			},
 			"message": {
 				"label": "Mensagem",
 				"placeholder": "Digite sua mensagem"
@@ -437,6 +441,7 @@
 		"api": "API",
 		"billing": "Cobrança",
 		"invoice": "Fatura",
+		"support": "Suporte",
 		"dashboard": "Dashboard",
 		"users": "Usuários",
 		"ai_integration": "Integração com IA",

@@ -1,3 +1,4 @@
+import { BrandingProvider } from "@/components/BrandingProvider";
 import { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -38,7 +39,9 @@ export default async function RootLayout({
 		<html lang={locale} className="dark" suppressHydrationWarning={true}>
 			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
 				<NextIntlClientProvider messages={messages}>
-					{children}
+					<BrandingProvider>
+						{children}
+					</BrandingProvider>
 				</NextIntlClientProvider>
 			</body>
 		</html>

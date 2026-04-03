@@ -1,7 +1,12 @@
+"use client";
+import { useBranding } from "@/components/BrandingProvider";
 import Image from "next/image";
 import Link from "next/link";
 
 const Footer = () => {
+	const branding = useBranding();
+	const logoSrc = branding.logo_light?.dataUrl || "/images/logo/logo-light.svg";
+
 	return (
 		<footer className='relative z-1 mt-auto overflow-hidden border-t border-white/5 bg-[#090911] py-16 lg:py-20'>
 			<div className='mx-auto max-w-[1170px] px-4 sm:px-8 xl:px-0'>
@@ -9,12 +14,11 @@ const Footer = () => {
 					{/* Logo & description */}
 					<div className='w-full max-w-[300px]'>
 						<Link href='/'>
-							<Image
-								src='/images/logo/logo-light.svg'
-								alt='Vestigio'
-								width={214}
-								height={40}
-							/>
+							{branding.logo_light?.dataUrl ? (
+								<img src={logoSrc} alt="Vestigio" className="h-10 w-auto" />
+							) : (
+								<Image src="/images/logo/logo-light.svg" alt="Vestigio" width={214} height={40} />
+							)}
 						</Link>
 						<p className='mt-5 text-sm text-gray-500'>
 							The intelligence layer that audits, monitors, and optimizes your SaaS platform.

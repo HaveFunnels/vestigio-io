@@ -1,5 +1,7 @@
 "use client";
+import { useBranding } from "@/components/BrandingProvider";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import GithubSigninButton from "../GithubSigninButton";
@@ -11,6 +13,8 @@ import DemoSignin from "./DemoSignin";
 export default function Signin() {
 	const [signinOption, setSigninOption] = useState("magic-link");
 	const t = useTranslations("signInPage");
+	const branding = useBranding();
+	const logoSrc = branding.logo_dark?.dataUrl; // dark bg → dark variant
 
 	return (
 		<div className='flex min-h-screen items-center justify-center bg-[#090911] px-4 py-16'>
@@ -20,8 +24,12 @@ export default function Signin() {
 			<div className='relative w-full max-w-[420px]'>
 				{/* Logo */}
 				<div className='mb-8 text-center'>
-					<Link href='/' className='inline-block text-lg font-bold tracking-wider text-white'>
-						VESTIGIO
+					<Link href='/' className='inline-block'>
+						{logoSrc ? (
+							<img src={logoSrc} alt="Vestigio" className="mx-auto h-8 w-auto" />
+						) : (
+							<span className='text-lg font-bold tracking-wider text-white'>VESTIGIO</span>
+						)}
 					</Link>
 					<p className='mt-2 text-sm text-gray-500'>Sign in to your account</p>
 				</div>

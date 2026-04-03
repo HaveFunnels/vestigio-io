@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { signIn, useSession } from "next-auth/react";
 
 // ──────────────────────────────────────────────
 // Admin — Organizations
@@ -70,8 +71,48 @@ export default function AdminOrganizationsPage() {
     alert(`View organization: ${org.name} (${org.id})\n\nOrg detail page coming soon.`);
   }
 
-  function handleImpersonate(org: OrgRow) {
-    alert(`Impersonate organization: ${org.name}\n\nThis feature is not yet implemented.`);
+  async function handleImpersonate(org: OrgRow) {
+    if (!confirm(`Login as the owner of "${org.name}"?\n\nYou will be signed out of your admin session and logged in as the org owner.`)) return;
+
+    try {
+      // Get the org owner's email
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: org.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.message || "Failed to find org owner");
+        return;
+      }
+
+      // Get current admin email from session
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+      const adminEmail = session?.user?.email;
+
+      if (!adminEmail) {
+        alert("Could not determine admin email");
+        return;
+      }
+
+      // Sign in as the user via impersonate provider
+      const result = await signIn("impersonate", {
+        redirect: false,
+        adminEmail,
+        userEmail: data.email,
+      });
+
+      if (result?.error) {
+        alert(`Impersonation failed: ${result.error}`);
+      } else {
+        // Full page reload to pick up new session
+        window.location.href = "/app";
+      }
+    } catch {
+      alert("Impersonation failed. Check console for details.");
+    }
   }
 
   return (

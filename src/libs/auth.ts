@@ -188,7 +188,7 @@ export const authOptions: NextAuthOptions = {
 		},
 
 		jwt: async (payload: any) => {
-			const { token, trigger, session } = payload;
+			const { token, trigger, session, account } = payload;
 			const user: User = payload.user;
 
 			if (trigger === "update") {
@@ -220,10 +220,15 @@ export const authOptions: NextAuthOptions = {
 						organization: { status: "active" },
 					},
 				});
+
+				// Mark impersonated sessions so middleware allows admin-as-user access
+				const isImpersonating = account?.provider === "impersonate";
+
 				return {
 					...token,
 					uid: user.id,
 					hasOrganization: !!membership,
+					isImpersonating,
 					priceId: user.priceId,
 					currentPeriodEnd: user.currentPeriodEnd,
 					subscriptionId: user.subscriptionId,
@@ -242,7 +247,8 @@ export const authOptions: NextAuthOptions = {
 					user: {
 						...session.user,
 						id: token.sub,
-						hasOrganization: token.hasOrganization ?? true, // default true for pre-existing tokens
+						hasOrganization: token.hasOrganization ?? true,
+						isImpersonating: token.isImpersonating ?? false,
 						priceId: token.priceId,
 						currentPeriodEnd: token.currentPeriodEnd,
 						subscriptionId: token.subscriptionId,

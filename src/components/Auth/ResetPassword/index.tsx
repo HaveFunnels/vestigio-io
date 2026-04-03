@@ -23,7 +23,7 @@ const schema = z
 			.refine((val) => /\d/.test(val), {
 				message: "Password must contain at least one number.",
 			})
-			.refine((val) => /[@$!%*?&]/.test(val), {
+			.refine((val) => /[@$!%*?&_\-#^]/.test(val), {
 				message: "Password must contain at least one special character.",
 			}),
 
@@ -41,7 +41,7 @@ const schema = z
 			.refine((val) => /\d/.test(val), {
 				message: "Password must contain at least one number.",
 			})
-			.refine((val) => /[@$!%*?&]/.test(val), {
+			.refine((val) => /[@$!%*?&_\-#^]/.test(val), {
 				message: "Password must contain at least one special character.",
 			}),
 	})

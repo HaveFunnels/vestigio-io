@@ -297,18 +297,17 @@ function SectionCard({
   data: Record<string, unknown>;
   onUpdate: (sectionKey: SectionKey, data: Record<string, unknown>) => void;
 }) {
-  const meta = SECTION_META[sectionKey];
+  const meta = SECTION_META[sectionKey] ?? null;
+  const fields = meta?.fields ?? [];
+
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
   const [local, setLocal] = useState<Record<string, unknown>>(data ?? {});
 
-  // Guard: if meta is missing, skip rendering
-  if (!meta) return null;
-
   // Sync when parent data changes (e.g. after initial load)
   useEffect(() => {
-    setLocal(data);
+    setLocal(data ?? {});
   }, [data]);
 
   const setField = useCallback(
@@ -339,10 +338,13 @@ function SectionCard({
     }
   };
 
+  // Guard: if meta is missing, render nothing (all hooks above are safe)
+  if (!meta) return null;
+
   // Group fields by their group property
   const groups: { name: string | null; fields: FieldDef[] }[] = [];
   let currentGroup: string | null = null;
-  for (const field of meta.fields) {
+  for (const field of fields) {
     const g = field.group ?? null;
     if (g !== currentGroup) {
       groups.push({ name: g, fields: [field] });

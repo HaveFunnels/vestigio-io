@@ -1,5 +1,7 @@
 import { authOptions } from "@/libs/auth";
+import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -72,6 +74,19 @@ export const POST = withErrorTracking(async function POST(
         recipientCount,
         sentAt: new Date(),
       },
+    });
+
+    // Audit log
+    const ip = await getIp();
+    logAuditEvent({
+      actorId: (session.user as any).id,
+      actorEmail: (session.user as any).email ?? "unknown",
+      action: "newsletter.send",
+      targetType: "newsletter",
+      targetId: updated.id,
+      targetName: updated.subject,
+      metadata: { audience: updated.audience, recipientCount },
+      ipAddress: ip ?? undefined,
     });
 
     return NextResponse.json({

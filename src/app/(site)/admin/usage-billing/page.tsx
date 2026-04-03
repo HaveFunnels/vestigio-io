@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ExportButton from "@/components/app/ExportButton";
 
 // ──────────────────────────────────────────────
 // Admin — Usage Dashboard + Unit Economics
@@ -217,11 +218,29 @@ export default function AdminUsageBillingPage() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-content">Usage & Billing</h1>
-          <p className="mt-1 text-sm text-content-muted">
-            Daily capacity usage, cost estimates, and unit economics.
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-content">Usage & Billing</h1>
+            <p className="mt-1 text-sm text-content-muted">
+              Daily capacity usage, cost estimates, and unit economics.
+            </p>
+          </div>
+          <ExportButton
+            data={orgs.map((o) => ({
+              organization: o.org_name,
+              plan: o.plan,
+              mcp_queries: o.mcp_queries,
+              playwright_runs: o.playwright_runs,
+              estimated_tokens: o.estimated_tokens,
+              mcp_cost: o.cost.mcp_cost_cents / 100,
+              playwright_cost: o.cost.playwright_cost_cents / 100,
+              token_cost: o.cost.token_cost_cents / 100,
+              total_cost: o.cost.total_cost_cents / 100,
+              over_mcp_limit: o.is_over_mcp_limit,
+              over_playwright_limit: o.is_over_playwright_limit,
+            }))}
+            filename={`usage-${date}`}
+          />
         </div>
         <div className="flex items-center gap-3">
           {/* Tab switcher */}

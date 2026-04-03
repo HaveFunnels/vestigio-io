@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { signIn, useSession } from "next-auth/react";
+import Link from "next/link";
+import ExportButton from "@/components/app/ExportButton";
 
 // ──────────────────────────────────────────────
 // Admin — Organizations
@@ -321,11 +323,24 @@ export default function AdminOrganizationsPage() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-content">Organizations</h1>
-          <p className="mt-1 text-sm text-content-muted">
-            Manage tenant organizations, members, and environments.
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-content">Organizations</h1>
+            <p className="mt-1 text-sm text-content-muted">
+              Manage tenant organizations, members, and environments.
+            </p>
+          </div>
+          <ExportButton
+            data={orgs.map((o) => ({
+              name: o.name,
+              plan: o.plan,
+              status: o.status,
+              members: o.memberCount,
+              environments: o.envCount,
+              created: o.createdAt,
+            }))}
+            filename="organizations"
+          />
         </div>
         <input
           type="text"
@@ -422,6 +437,12 @@ export default function AdminOrganizationsPage() {
 
                     {/* Action buttons */}
                     <div className="flex shrink-0 items-center gap-2">
+                      <Link
+                        href={`/app/admin/organizations/${org.id}`}
+                        className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
+                      >
+                        Detail
+                      </Link>
                       <button
                         onClick={() => handleToggleDetail(org.id)}
                         className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"

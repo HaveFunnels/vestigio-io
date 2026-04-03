@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // ──────────────────────────────────────────────
-// Admin Newsletters — compose, list, send
+// Admin Newsletters — rich editor, templates, compose, list, send
 // ──────────────────────────────────────────────
 
 /* ---------- Types ---------- */
@@ -18,6 +18,87 @@ interface Newsletter {
   sentAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/* ---------- Templates ---------- */
+
+interface EmailTemplate {
+  id: string;
+  label: string;
+  subject: string;
+  content: string;
+}
+
+const TEMPLATES: EmailTemplate[] = [
+  {
+    id: "feature",
+    label: "Feature Announcement",
+    subject: "Introducing: [Feature Name]",
+    content: [
+      "<h2>We're excited to announce [Feature Name]</h2>",
+      "<p>We've been working hard on something we think you'll love.</p>",
+      "<h3>What's New</h3>",
+      "<p>[Describe the new feature and its key benefits.]</p>",
+      "<h3>How to Get Started</h3>",
+      "<p>[Step-by-step instructions or a link to documentation.]</p>",
+      "<h3>What's Next</h3>",
+      "<p>[Briefly mention upcoming improvements or related features.]</p>",
+      "<p>As always, we'd love to hear your feedback.</p>",
+      "<p>Best,<br>The Vestigio Team</p>",
+    ].join("\n"),
+  },
+  {
+    id: "changelog",
+    label: "Changelog Update",
+    subject: "Vestigio Changelog -- v[X.Y.Z]",
+    content: [
+      "<h2>Changelog -- v[X.Y.Z]</h2>",
+      "<p><i>Released [Month Day, Year]</i></p>",
+      "<h3>New Features</h3>",
+      "<p><b>[Feature 1]</b> -- [Brief description.]</p>",
+      "<p><b>[Feature 2]</b> -- [Brief description.]</p>",
+      "<h3>Improvements</h3>",
+      "<p><b>[Improvement 1]</b> -- [What changed and how it helps.]</p>",
+      "<h3>Bug Fixes</h3>",
+      "<p>[Fixed an issue where...]</p>",
+      "<p>View the full changelog at vestigio.io/changelog.</p>",
+      "<p>Best,<br>The Vestigio Team</p>",
+    ].join("\n"),
+  },
+  {
+    id: "welcome",
+    label: "Welcome Email",
+    subject: "Welcome to Vestigio!",
+    content: [
+      "<h2>Welcome to Vestigio!</h2>",
+      "<p>Thanks for joining us. We're thrilled to have you on board.</p>",
+      "<h3>Getting Started</h3>",
+      "<p>Here are a few things you can do right away:</p>",
+      "<p><b>1. Set up your first environment</b></p>",
+      "<p><b>2. Invite your team</b></p>",
+      "<p><b>3. Explore the dashboard</b></p>",
+      "<h3>Need Help?</h3>",
+      "<p>Check out our documentation or reply to this email.</p>",
+      "<p>Welcome aboard,<br>The Vestigio Team</p>",
+    ].join("\n"),
+  },
+  {
+    id: "custom",
+    label: "Custom",
+    subject: "",
+    content: "",
+  },
+];
+
+/* ---------- DOM helper for safe admin-authored HTML rendering ---------- */
+
+function setElementMarkup(el: HTMLElement, markup: string) {
+  // Admin-only content: parse and insert via DOM range for safe rendering
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.deleteContents();
+  const fragment = range.createContextualFragment(markup);
+  el.appendChild(fragment);
 }
 
 /* ---------- Helpers ---------- */
@@ -49,6 +130,111 @@ const AUDIENCE_LABELS: Record<string, string> = {
   pro: "Pro",
   max: "Max",
 };
+
+/* ---------- Safe HTML Content Renderer ---------- */
+
+function SafeHtmlContent({ html, className }: { html: string; className?: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setElementMarkup(containerRef.current, html);
+    }
+  }, [html]);
+
+  return <div ref={containerRef} className={className} />;
+}
+
+/* ---------- Rich Text Editor ---------- */
+
+function RichTextEditor({
+  initialContent,
+  onChange,
+}: {
+  initialContent: string;
+  onChange: (html: string) => void;
+}) {
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editorRef.current) {
+      setElementMarkup(editorRef.current, initialContent);
+    }
+  }, [initialContent]);
+
+  const execCommand = (cmd: string, value?: string) => {
+    document.execCommand(cmd, false, value);
+    editorRef.current?.focus();
+    handleInput();
+  };
+
+  const handleInput = () => {
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleInsertLink = () => {
+    const url = prompt("Enter URL:");
+    if (url) {
+      execCommand("createLink", url);
+    }
+  };
+
+  const handleHeading = () => {
+    execCommand("formatBlock", "h3");
+  };
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-edge">
+      {/* Toolbar */}
+      <div className="flex items-center gap-0.5 border-b border-edge bg-surface-inset px-2 py-1.5">
+        <button
+          type="button"
+          onClick={() => execCommand("bold")}
+          className="rounded p-1.5 text-content-muted transition-colors hover:bg-surface-card hover:text-content"
+          title="Bold"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M8 6v4h5.5a2 2 0 100-4H8zm0 6v4h6.5a2 2 0 100-4H8z" /></svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => execCommand("italic")}
+          className="rounded p-1.5 text-content-muted transition-colors hover:bg-surface-card hover:text-content"
+          title="Italic"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="19" y1="4" x2="10" y2="4" /><line x1="14" y1="20" x2="5" y2="20" /><line x1="15" y1="4" x2="9" y2="20" /></svg>
+        </button>
+        <button
+          type="button"
+          onClick={handleInsertLink}
+          className="rounded p-1.5 text-content-muted transition-colors hover:bg-surface-card hover:text-content"
+          title="Insert Link"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+        </button>
+        <div className="mx-1 h-4 w-px bg-edge" />
+        <button
+          type="button"
+          onClick={handleHeading}
+          className="rounded p-1.5 text-content-muted transition-colors hover:bg-surface-card hover:text-content"
+          title="Heading"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 4v16M18 4v16M6 12h12" /></svg>
+        </button>
+      </div>
+
+      {/* Editor area */}
+      <div
+        ref={editorRef}
+        contentEditable
+        onInput={handleInput}
+        className="min-h-[200px] bg-surface-inset px-4 py-3 text-sm text-content outline-none [&_a]:text-accent-text [&_a]:underline [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-content [&_h3]:mb-1.5 [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-content [&_p]:mb-2 [&_p]:leading-relaxed"
+        suppressContentEditableWarning
+      />
+    </div>
+  );
+}
 
 /* ---------- Skeletons ---------- */
 
@@ -155,6 +341,11 @@ export default function AdminNewslettersPage() {
   const [sending, setSending] = useState(false);
   const [composeError, setComposeError] = useState("");
 
+  // Template & editor mode
+  const [selectedTemplate, setSelectedTemplate] = useState("custom");
+  const [editorMode, setEditorMode] = useState<"edit" | "preview">("edit");
+  const [editorKey, setEditorKey] = useState(0);
+
   // Detail panel
   const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
 
@@ -183,6 +374,19 @@ export default function AdminNewslettersPage() {
     fetchNewsletters(1);
   }, [fetchNewsletters]);
 
+  /* ---------- Template handling ---------- */
+
+  function applyTemplate(templateId: string) {
+    setSelectedTemplate(templateId);
+    const tpl = TEMPLATES.find((t) => t.id === templateId);
+    if (tpl) {
+      setSubject(tpl.subject);
+      setContent(tpl.content);
+      setEditorKey((k) => k + 1);
+      setEditorMode("edit");
+    }
+  }
+
   /* ---------- Actions ---------- */
 
   async function handleSaveDraft() {
@@ -207,6 +411,8 @@ export default function AdminNewslettersPage() {
       setSubject("");
       setContent("");
       setAudience("all");
+      setSelectedTemplate("custom");
+      setEditorKey((k) => k + 1);
       setShowCompose(false);
       fetchNewsletters(1);
     } catch {
@@ -237,6 +443,8 @@ export default function AdminNewslettersPage() {
       setSubject("");
       setContent("");
       setAudience("all");
+      setSelectedTemplate("custom");
+      setEditorKey((k) => k + 1);
       setShowCompose(false);
       fetchNewsletters(1);
     } catch {
@@ -274,9 +482,17 @@ export default function AdminNewslettersPage() {
         </div>
         <button
           onClick={() => {
-            setShowCompose(!showCompose);
+            const opening = !showCompose;
+            setShowCompose(opening);
             setSelectedNewsletter(null);
             setComposeError("");
+            if (opening) {
+              setSelectedTemplate("custom");
+              setSubject("");
+              setContent("");
+              setEditorKey((k) => k + 1);
+              setEditorMode("edit");
+            }
           }}
           className="flex items-center gap-2 rounded-lg bg-accent-subtle-bg/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/30"
         >
@@ -294,6 +510,24 @@ export default function AdminNewslettersPage() {
             </h2>
           </div>
           <div className="space-y-4 p-5">
+            {/* Template selector */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
+                Template
+              </label>
+              <select
+                value={selectedTemplate}
+                onChange={(e) => applyTemplate(e.target.value)}
+                className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
+              >
+                {TEMPLATES.map((tpl) => (
+                  <option key={tpl.id} value={tpl.id}>
+                    {tpl.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Subject */}
             <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
@@ -325,18 +559,52 @@ export default function AdminNewslettersPage() {
               </select>
             </div>
 
-            {/* Content */}
+            {/* Content with Edit/Preview toggle */}
             <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Content
-              </label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your newsletter content here..."
-                rows={8}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
-              />
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-xs font-medium uppercase tracking-wider text-content-muted">
+                  Content
+                </label>
+                <div className="flex rounded-md border border-edge bg-surface-inset p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode("edit")}
+                    className={`rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      editorMode === "edit"
+                        ? "bg-accent-subtle-bg/20 text-accent-text"
+                        : "text-content-muted hover:text-content"
+                    }`}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode("preview")}
+                    className={`rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      editorMode === "preview"
+                        ? "bg-accent-subtle-bg/20 text-accent-text"
+                        : "text-content-muted hover:text-content"
+                    }`}
+                  >
+                    Preview
+                  </button>
+                </div>
+              </div>
+
+              {editorMode === "edit" ? (
+                <RichTextEditor
+                  key={editorKey}
+                  initialContent={content}
+                  onChange={setContent}
+                />
+              ) : (
+                <div className="min-h-[200px] rounded-lg border border-edge bg-surface-inset px-4 py-3">
+                  <SafeHtmlContent
+                    html={content}
+                    className="text-sm text-content [&_a]:text-accent-text [&_a]:underline [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-content [&_h3]:mb-1.5 [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-content [&_p]:mb-2 [&_p]:leading-relaxed"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Error */}
@@ -396,8 +664,11 @@ export default function AdminNewslettersPage() {
               )}
               <span>Created: {formatDate(selectedNewsletter.createdAt)}</span>
             </div>
-            <div className="whitespace-pre-wrap rounded-lg border border-edge bg-surface-inset p-4 text-sm text-content">
-              {selectedNewsletter.content}
+            <div className="rounded-lg border border-edge bg-surface-inset p-4">
+              <SafeHtmlContent
+                html={selectedNewsletter.content}
+                className="text-sm text-content [&_a]:text-accent-text [&_a]:underline [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-content [&_h3]:mb-1.5 [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-content [&_p]:mb-2 [&_p]:leading-relaxed"
+              />
             </div>
           </div>
         </div>

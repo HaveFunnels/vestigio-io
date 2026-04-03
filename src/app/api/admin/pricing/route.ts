@@ -1,5 +1,7 @@
 import { authOptions } from "@/libs/auth";
+import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { getIp } from "@/libs/get-ip";
 import {
   isPaddleConfigured,
   createProduct,
@@ -156,6 +158,18 @@ export const POST = withErrorTracking(async function POST(request: Request) {
       paddleSyncError = err.message || "Unknown Paddle sync error";
     }
   }
+
+  // Audit log
+  const ip = await getIp();
+  logAuditEvent({
+    actorId: (admin as any).id,
+    actorEmail: (admin as any).email ?? "unknown",
+    action: "pricing.update",
+    targetType: "config",
+    targetName: "pricing",
+    metadata: { planCount: plans.length, paddleSyncError },
+    ipAddress: ip ?? undefined,
+  });
 
   return NextResponse.json({
     message: "Saved",

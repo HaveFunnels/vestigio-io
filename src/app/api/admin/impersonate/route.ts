@@ -1,6 +1,8 @@
 import { authOptions } from "@/libs/auth";
-import { prisma } from "@/libs/prismaDb";
+import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { getIp } from "@/libs/get-ip";
+import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -39,6 +41,19 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   if (!membership?.user?.email) {
     return NextResponse.json({ message: "No owner found for this organization" }, { status: 404 });
   }
+
+  // Audit log
+  const ip = await getIp();
+  logAuditEvent({
+    actorId: (session.user as any).id,
+    actorEmail: (session.user as any).email ?? "unknown",
+    action: "org.impersonate",
+    targetType: "organization",
+    targetId: organizationId,
+    targetName: membership.user.name ?? membership.user.email,
+    metadata: { impersonatedEmail: membership.user.email },
+    ipAddress: ip ?? undefined,
+  });
 
   return NextResponse.json({
     email: membership.user.email,

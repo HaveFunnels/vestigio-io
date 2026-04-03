@@ -685,3 +685,68 @@ model TrackingPixel {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ──────────────────────────────────────────────
+// Audit Log
+// ──────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String
+  actorEmail  String
+  action      String   // org.suspend, org.reactivate, org.impersonate, pricing.update, config.update, user.delete, user.role_change, newsletter.send, alert.create, etc.
+  targetType  String?  // organization, user, config, newsletter, alert
+  targetId    String?
+  targetName  String?
+  metadata    String?  @db.Text // JSON extra context
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+}
+
+// ──────────────────────────────────────────────
+// Alerts & Thresholds
+// ──────────────────────────────────────────────
+
+model AlertRule {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  metric      String   // error_rate, mcp_usage, health_check, org_over_limit, new_signup
+  condition   String   // gt, lt, eq (greater than, less than, equal)
+  threshold   Float
+  window      Int      @default(10) // minutes
+  channel     String   @default("email") // email, whatsapp, both
+  enabled     Boolean  @default(true)
+  lastTriggered DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      AlertEvent[]
+}
+
+model AlertEvent {
+  id          String    @id @default(cuid())
+  ruleId      String
+  rule        AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  value       Float     // the actual metric value that triggered the alert
+  message     String
+  acknowledged Boolean  @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([ruleId, createdAt])
+  @@index([acknowledged, createdAt])
+}
+
+model UptimeCheck {
+  id        String   @id @default(cuid())
+  service   String   // database, redis, mcp, api
+  status    String   // ok, degraded, down
+  latencyMs Int?
+  message   String?
+  createdAt DateTime @default(now())
+
+  @@index([service, createdAt])
+}

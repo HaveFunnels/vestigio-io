@@ -1,5 +1,7 @@
 import { authOptions } from "@/libs/auth";
+import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -33,6 +35,18 @@ export const POST = withErrorTracking(async function POST(
       where: { id },
       data: { status: suspended ? "suspended" : "active" },
       select: { id: true, name: true, status: true },
+    });
+
+    // Audit log
+    const ip = await getIp();
+    logAuditEvent({
+      actorId: (session.user as any).id,
+      actorEmail: (session.user as any).email ?? "unknown",
+      action: suspended ? "org.suspend" : "org.reactivate",
+      targetType: "organization",
+      targetId: updated.id,
+      targetName: updated.name,
+      ipAddress: ip ?? undefined,
     });
 
     return NextResponse.json({

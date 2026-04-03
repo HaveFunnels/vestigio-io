@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 
 // ──────────────────────────────────────────────
-// Admin — System Health
-// MCP latency, error rate, health checks, recent activity.
-// Matches Overview visual identity.
+// Admin — System Health + Uptime History Grid
+// MCP latency, error rate, health checks, uptime history.
 // ──────────────────────────────────────────────
 
 interface HealthCheck {
@@ -30,6 +29,23 @@ interface UsageTotals {
   total_estimated_tokens: number;
 }
 
+interface UptimeDayData {
+  date: string;
+  status: "ok" | "degraded" | "down" | "no_data";
+  checkCount: number;
+}
+
+interface UptimeServiceData {
+  days: UptimeDayData[];
+  uptimePercent: number;
+}
+
+interface UptimeResponse {
+  services: Record<string, UptimeServiceData>;
+  empty: boolean;
+  message?: string;
+}
+
 /* ---------- Helpers ---------- */
 
 function timeAgo(iso: string): string {
@@ -47,6 +63,11 @@ function formatNum(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return n.toLocaleString();
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 /* ---------- Icons ---------- */
@@ -139,6 +160,180 @@ function StatCard({
   );
 }
 
+/* ---------- Uptime Grid Skeleton ---------- */
+
+function UptimeGridSkeleton() {
+  return (
+    <div className="rounded-lg border border-edge bg-surface-card">
+      <div className="border-b border-edge px-5 py-4">
+        <div className="flex items-center justify-between">
+          <div className="h-4 w-32 animate-pulse rounded bg-white/[0.06]" />
+          <div className="h-4 w-20 animate-pulse rounded bg-white/[0.06]" />
+        </div>
+      </div>
+      <div className="p-5 space-y-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-3 w-16 animate-pulse rounded bg-white/[0.06]" />
+            <div className="flex gap-[2px]">
+              {Array.from({ length: 30 }).map((_, j) => (
+                <div
+                  key={j}
+                  className="h-3 w-3 animate-pulse rounded-[2px] bg-white/[0.06]"
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Uptime Grid Cell ---------- */
+
+const STATUS_COLORS: Record<string, string> = {
+  ok: "bg-emerald-500",
+  degraded: "bg-amber-500",
+  down: "bg-red-500",
+  no_data: "bg-surface-inset",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  ok: "Operational",
+  degraded: "Degraded",
+  down: "Down",
+  no_data: "No data",
+};
+
+function UptimeCell({ day }: { day: UptimeDayData }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div className="relative">
+      <div
+        className={`h-3 w-3 rounded-[2px] transition-opacity ${STATUS_COLORS[day.status]} ${
+          day.status === "no_data" ? "opacity-40" : ""
+        }`}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      />
+      {showTooltip && (
+        <div className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-[11px] shadow-lg">
+          <p className="font-medium text-content">{formatDate(day.date)}</p>
+          <p className="text-content-faint">
+            {STATUS_LABELS[day.status]}
+            {day.checkCount > 0 && ` (${day.checkCount} checks)`}
+          </p>
+          <div
+            className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-edge"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Uptime Grid ---------- */
+
+function UptimeGrid({ uptimeData, loading }: { uptimeData: UptimeResponse | null; loading: boolean }) {
+  if (loading) return <UptimeGridSkeleton />;
+
+  const isEmpty = !uptimeData || uptimeData.empty || Object.keys(uptimeData.services).length === 0;
+
+  // Calculate overall uptime
+  const services = uptimeData?.services || {};
+  const serviceEntries = Object.entries(services);
+  const overallUptime =
+    serviceEntries.length > 0
+      ? Math.round(
+          (serviceEntries.reduce((sum, [, s]) => sum + s.uptimePercent, 0) /
+            serviceEntries.length) *
+            100
+        ) / 100
+      : 100;
+
+  return (
+    <div className="rounded-lg border border-edge bg-surface-card">
+      <div className="flex items-center justify-between border-b border-edge px-5 py-4">
+        <h2 className="text-sm font-semibold text-content">
+          Uptime History
+        </h2>
+        {!isEmpty && (
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-content-faint">Last 30 days</span>
+            <span
+              className={`rounded px-2 py-0.5 text-xs font-medium ${
+                overallUptime >= 99.5
+                  ? "bg-emerald-500/10 text-emerald-400"
+                  : overallUptime >= 95
+                    ? "bg-amber-500/10 text-amber-400"
+                    : "bg-red-500/10 text-red-400"
+              }`}
+            >
+              {overallUptime}% uptime
+            </span>
+          </div>
+        )}
+      </div>
+
+      {isEmpty ? (
+        <div className="px-5 py-12 text-center text-sm text-content-faint">
+          No uptime data yet. History will populate as health checks run.
+        </div>
+      ) : (
+        <div className="p-5 space-y-5">
+          {serviceEntries.map(([service, data]) => (
+            <div key={service}>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-medium capitalize text-content-secondary">
+                  {service.replace(/_/g, " ")}
+                </span>
+                <span
+                  className={`text-xs tabular-nums ${
+                    data.uptimePercent >= 99.5
+                      ? "text-emerald-400"
+                      : data.uptimePercent >= 95
+                        ? "text-amber-400"
+                        : "text-red-400"
+                  }`}
+                >
+                  {data.uptimePercent}%
+                </span>
+              </div>
+              <div className="flex gap-[2px]">
+                {data.days.map((day) => (
+                  <UptimeCell key={day.date} day={day} />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Legend */}
+          <div className="flex items-center gap-4 pt-2 text-[10px] text-content-faint">
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-[1px] bg-emerald-500" />
+              <span>Operational</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-[1px] bg-amber-500" />
+              <span>Degraded</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-[1px] bg-red-500" />
+              <span>Down</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-[1px] bg-surface-inset opacity-40" />
+              <span>No data</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Main Page ---------- */
 
 export default function AdminSystemHealthPage() {
@@ -146,6 +341,8 @@ export default function AdminSystemHealthPage() {
   const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [errorSummary, setErrorSummary] = useState<ErrorSummary | null>(null);
   const [usageTotals, setUsageTotals] = useState<UsageTotals | null>(null);
+  const [uptimeData, setUptimeData] = useState<UptimeResponse | null>(null);
+  const [uptimeLoading, setUptimeLoading] = useState(true);
 
   useEffect(() => {
     async function loadAll() {
@@ -153,9 +350,10 @@ export default function AdminSystemHealthPage() {
         fetch("/api/admin/usage?view=health").then((r) => r.ok ? r.json() : null),
         fetch("/api/admin/errors?limit=1&resolved=false").then((r) => r.ok ? r.json() : null),
         fetch("/api/admin/usage").then((r) => r.ok ? r.json() : null),
+        fetch("/api/admin/uptime").then((r) => r.ok ? r.json() : null),
       ]);
 
-      const [healthResult, errorResult, usageResult] = results;
+      const [healthResult, errorResult, usageResult, uptimeResult] = results;
 
       if (healthResult.status === "fulfilled" && healthResult.value) {
         setHealthData(healthResult.value.health || null);
@@ -169,8 +367,12 @@ export default function AdminSystemHealthPage() {
       if (usageResult.status === "fulfilled" && usageResult.value) {
         setUsageTotals(usageResult.value.totals || null);
       }
+      if (uptimeResult.status === "fulfilled" && uptimeResult.value) {
+        setUptimeData(uptimeResult.value);
+      }
 
       setLoading(false);
+      setUptimeLoading(false);
     }
     loadAll();
   }, []);
@@ -299,6 +501,9 @@ export default function AdminSystemHealthPage() {
           </div>
         )}
       </div>
+
+      {/* Uptime History Grid */}
+      <UptimeGrid uptimeData={uptimeData} loading={uptimeLoading} />
 
       {/* Error Types */}
       {!loading && errorSummary && errorSummary.groupedByType.length > 0 && (

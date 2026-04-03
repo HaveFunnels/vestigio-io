@@ -1,4 +1,6 @@
 import { authOptions } from "@/libs/auth";
+import { logAuditEvent } from "@/libs/audit-log";
+import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -202,6 +204,18 @@ export async function POST(request: Request) {
       where: { configKey: section },
       create: { configKey: section, value: JSON.stringify(data) },
       update: { value: JSON.stringify(data) },
+    });
+
+    // Audit log
+    const ip = await getIp();
+    logAuditEvent({
+      actorId: (admin as any).id,
+      actorEmail: (admin as any).email ?? "unknown",
+      action: "config.update",
+      targetType: "config",
+      targetName: section,
+      metadata: { section },
+      ipAddress: ip ?? undefined,
     });
 
     return NextResponse.json({ message: "Saved", section });

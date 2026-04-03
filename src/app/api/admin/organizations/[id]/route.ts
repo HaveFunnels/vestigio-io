@@ -5,7 +5,8 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * GET /api/admin/organizations/[id] — org detail with members + environments
+ * GET /api/admin/organizations/[id] — org detail with members, environments,
+ * last audit date, usage stats (MCP queries + Playwright runs), and plan/billing.
  */
 export const GET = withErrorTracking(async function GET(
   req: NextRequest,
@@ -51,6 +52,42 @@ export const GET = withErrorTracking(async function GET(
       return NextResponse.json({ message: "Organization not found" }, { status: 404 });
     }
 
+    // ── Last audit date ──
+    const lastAudit = await prisma.auditCycle.findFirst({
+      where: { organizationId: id },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true, completedAt: true, status: true },
+    });
+
+    // ── Usage stats: current period (YYYY-MM) ──
+    const currentPeriod = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
+    const usageAgg = await prisma.usage.groupBy({
+      by: ["usageType"],
+      where: { organizationId: id, period: currentPeriod },
+      _sum: { amount: true },
+    });
+
+    const mcpQueries =
+      usageAgg
+        .filter((u) => u.usageType === "mcp_chat" || u.usageType === "mcp_tool")
+        .reduce((s, u) => s + (u._sum.amount || 0), 0);
+    const playwrightRuns =
+      usageAgg
+        .filter((u) => u.usageType === "credits")
+        .reduce((s, u) => s + (u._sum.amount || 0), 0);
+
+    // ── Plan / billing info from the org owner's user record ──
+    const owner = await prisma.user.findUnique({
+      where: { id: org.ownerId },
+      select: {
+        customerId: true,
+        subscriptionId: true,
+        priceId: true,
+        currentPeriodEnd: true,
+      },
+    });
+
     return NextResponse.json({
       organization: {
         id: org.id,
@@ -81,6 +118,27 @@ export const GET = withErrorTracking(async function GET(
           ? {
               businessModel: org.businessProfile.businessModel,
               monthlyRevenue: org.businessProfile.monthlyRevenue,
+            }
+          : null,
+        lastAudit: lastAudit
+          ? {
+              date: (lastAudit.completedAt || lastAudit.createdAt).toISOString(),
+              status: lastAudit.status,
+            }
+          : null,
+        usageStats: {
+          period: currentPeriod,
+          mcpQueries,
+          playwrightRuns,
+        },
+        billing: owner
+          ? {
+              customerId: owner.customerId,
+              subscriptionId: owner.subscriptionId,
+              priceId: owner.priceId,
+              currentPeriodEnd: owner.currentPeriodEnd
+                ? owner.currentPeriodEnd.toISOString()
+                : null,
             }
           : null,
       },

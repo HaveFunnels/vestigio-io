@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 import AppSidebar from "./AppSidebar";
 import OrgSelector from "@/components/console/OrgSelector";
+import CommandPalette from "./CommandPalette";
 
 interface OrgCtx {
 	orgId: string;
@@ -63,6 +65,37 @@ function TopProgressBar() {
 	);
 }
 
+// ── Theme toggle ──
+function ThemeToggle() {
+	const { theme, setTheme } = useTheme();
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
+
+	if (!mounted) return <div className="h-7 w-7" />;
+
+	const isDark = theme === "dark";
+
+	return (
+		<button
+			onClick={() => setTheme(isDark ? "light" : "dark")}
+			className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+			aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+		>
+			{isDark ? (
+				/* Sun icon */
+				<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+					<path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+				</svg>
+			) : (
+				/* Moon icon */
+				<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+					<path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+				</svg>
+			)}
+		</button>
+	);
+}
+
 // ── Page fade wrapper ──
 function PageFade({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();
@@ -104,6 +137,7 @@ export default function AppSidebarLayout({
 	return (
 		<div className="flex h-screen bg-[#090911] text-white">
 			<TopProgressBar />
+			<CommandPalette />
 			<AppSidebar
 				isAdmin={isAdmin}
 				mobileOpen={mobileOpen}
@@ -125,6 +159,22 @@ export default function AppSidebarLayout({
 						<OrgSelector current={orgCtx} />
 					</div>
 					<div className="flex items-center gap-3">
+						{/* Cmd+K search hint */}
+						<button
+							onClick={() => {
+								window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+							}}
+							className="hidden items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-xs text-white/25 transition-colors hover:border-white/10 hover:text-white/40 sm:flex"
+						>
+							<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+							</svg>
+							Search...
+							<kbd className="rounded border border-white/10 px-1 py-0.5 text-[10px] font-medium">
+								&#8984;K
+							</kbd>
+						</button>
+						<ThemeToggle />
 						<span className="rounded border border-white/10 px-2 py-0.5 text-[10px] font-medium uppercase text-white/40">
 							{plan}
 						</span>

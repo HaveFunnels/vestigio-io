@@ -64,7 +64,19 @@ export async function register() {
     } catch (err) {
       console.error('✖ Production lock failed:', err);
       // Log but don't crash — allows dev deploys to staging
-      // For strict production: uncomment process.exit(1)
     }
+  }
+
+  // 5. Initialize Redis asynchronously (non-blocking)
+  if (process.env.REDIS_URL) {
+    import('@/libs/redis').then(({ initRedis }) => {
+      initRedis().then(() => {
+        console.log('✓ Redis initialized');
+      }).catch((err) => {
+        console.warn('⚠ Redis initialization failed (falling back to in-memory):', err);
+      });
+    }).catch(() => {
+      console.warn('⚠ Redis module not available');
+    });
   }
 }

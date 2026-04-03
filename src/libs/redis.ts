@@ -1,7 +1,9 @@
-import Redis from "ioredis";
-
 // ──────────────────────────────────────────────
 // Redis Client Singleton
+//
+// Uses dynamic import to avoid bundling ioredis
+// (which depends on Node.js builtins: stream, crypto, dns, net)
+// into the client-side webpack bundle.
 //
 // Graceful: returns null if REDIS_URL is not set
 // or if the connection fails. Callers must always
@@ -10,72 +12,98 @@ import Redis from "ioredis";
 // Never throws. Never crashes the app.
 // ──────────────────────────────────────────────
 
-let redis: Redis | null = null;
+let redis: any = null;
 let connectionFailed = false;
+let initPromise: Promise<any> | null = null;
 
-export function getRedis(): Redis | null {
-  if (redis) return redis;
-  if (connectionFailed) return null;
-
+async function createRedisClient(): Promise<any> {
   const url = process.env.REDIS_URL;
   if (!url) return null;
 
   try {
-    redis = new Redis(url, {
+    const { default: Redis } = await import("ioredis");
+    const client = new Redis(url, {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
-      retryStrategy(times) {
-        if (times > 5) {
-          // Stop retrying after 5 attempts
-          return null;
-        }
+      retryStrategy(times: number) {
+        if (times > 5) return null;
         return Math.min(times * 200, 2000);
       },
-      reconnectOnError(err) {
-        // Only reconnect on specific recoverable errors
+      reconnectOnError(err: Error) {
         const targetErrors = ["READONLY", "ECONNRESET", "ETIMEDOUT"];
         return targetErrors.some((e) => err.message.includes(e));
       },
     });
 
-    redis.on("error", (err) => {
+    client.on("error", (err: Error) => {
       console.warn(`[Redis] Connection error: ${err.message}`);
     });
 
-    redis.on("connect", () => {
+    client.on("connect", () => {
       console.log("[Redis] Connected");
       connectionFailed = false;
     });
 
-    redis.on("close", () => {
+    client.on("close", () => {
       console.warn("[Redis] Connection closed");
     });
 
-    redis.connect().catch((err) => {
+    await client.connect().catch((err: Error) => {
       console.warn(`[Redis] Failed to connect: ${err.message}`);
       connectionFailed = true;
-      redis?.disconnect();
-      redis = null;
+      client.disconnect();
+      return null;
     });
 
-    return redis;
+    if (connectionFailed) return null;
+    return client;
   } catch (err) {
     console.warn(
       `[Redis] Initialization error: ${err instanceof Error ? err.message : "unknown"}`,
     );
-    connectionFailed = false;
-    redis = null;
+    connectionFailed = true;
     return null;
   }
+}
+
+/**
+ * Get Redis client. Returns null if unavailable.
+ * First call initializes the connection asynchronously.
+ */
+export async function getRedisAsync(): Promise<any> {
+  if (redis) return redis;
+  if (connectionFailed) return null;
+
+  if (!initPromise) {
+    initPromise = createRedisClient().then((client) => {
+      redis = client;
+      return client;
+    });
+  }
+  return initPromise;
+}
+
+/**
+ * Get Redis client synchronously. Returns null if not yet connected.
+ * Use getRedisAsync() when possible.
+ */
+export function getRedis(): any {
+  return redis;
+}
+
+/**
+ * Initialize Redis (call once at startup).
+ */
+export async function initRedis(): Promise<void> {
+  await getRedisAsync();
 }
 
 /**
  * Check if Redis is available and connected.
  */
 export function isRedisAvailable(): boolean {
-  const client = getRedis();
-  if (!client) return false;
-  return client.status === "ready" || client.status === "connect";
+  if (!redis) return false;
+  return redis.status === "ready" || redis.status === "connect";
 }
 
 /**
@@ -87,12 +115,11 @@ export function isRedisConfigured(): boolean {
 
 /**
  * Safely execute a Redis command. Returns null on any error.
- * Use this for non-critical operations where failure is acceptable.
  */
 export async function safeRedisCall<T>(
-  fn: (client: Redis) => Promise<T>,
+  fn: (client: any) => Promise<T>,
 ): Promise<T | null> {
-  const client = getRedis();
+  const client = await getRedisAsync();
   if (!client) return null;
   try {
     return await fn(client);
@@ -105,18 +132,17 @@ export async function safeRedisCall<T>(
 }
 
 /**
- * Disconnect Redis client. Call during graceful shutdown.
+ * Disconnect Redis client.
  */
 export function disconnectRedis(): void {
   if (redis) {
     redis.disconnect();
     redis = null;
   }
+  initPromise = null;
   connectionFailed = false;
 }
 
-// For testing: reset all state
 export function resetRedisState(): void {
   disconnectRedis();
-  connectionFailed = false;
 }

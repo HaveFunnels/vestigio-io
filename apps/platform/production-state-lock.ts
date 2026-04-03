@@ -3,8 +3,14 @@ import { getDailyUsageStore, InMemoryDailyUsageStore, setDailyUsageStore, Prisma
 import { getActiveStore as getMcpUsageStore, InMemoryUsageStore, PrismaUsageStore, setUsageStore } from '../mcp/usage';
 import { getSaasAccessStore, InMemorySaasAccessStore, PrismaSaasAccessStore, setSaasAccessStore } from './saas-access-store';
 import { setAuthLogPrisma } from './auth-logging';
-import { isRedisConfigured } from '../../src/libs/redis';
-import { isRedisJobQueue } from './redis-job-queue';
+
+// Redis imports are lazy to avoid bundling ioredis (Node.js builtins) into client
+function isRedisConfigured(): boolean {
+  return !!process.env.REDIS_URL;
+}
+function isRedisJobQueue(): boolean {
+  return isRedisConfigured(); // If Redis is configured, the job queue will use it
+}
 
 // ──────────────────────────────────────────────
 // Production State Lock

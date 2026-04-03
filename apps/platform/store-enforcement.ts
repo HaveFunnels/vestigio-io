@@ -6,8 +6,13 @@ import { setAuthLogPrisma } from './auth-logging';
 import { setMcpPersistenceStore, InMemoryMcpPersistenceStore, PrismaMcpPersistenceStore } from './mcp-persistence';
 import { setTokenLedgerStore, InMemoryTokenLedgerStore, PrismaTokenLedgerStore } from './token-ledger';
 import { setConversationStore, InMemoryConversationStore, PrismaConversationStore } from './conversation-store';
-import { isRedisConfigured } from '../../src/libs/redis';
-import { isRedisJobQueue } from './redis-job-queue';
+// Redis imports are inline to avoid bundling ioredis (Node.js builtins) into client
+function isRedisConfigured(): boolean {
+  return !!process.env.REDIS_URL;
+}
+function isRedisJobQueue(): boolean {
+  return isRedisConfigured();
+}
 
 // ──────────────────────────────────────────────
 // Production Store Enforcement

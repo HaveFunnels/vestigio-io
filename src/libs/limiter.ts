@@ -1,7 +1,6 @@
 "use server";
 
 import { getIp } from "./get-ip";
-import { getRedis } from "./redis";
 
 // ──────────────────────────────────────────────
 // Rate Limiter — Redis-backed with in-memory fallback
@@ -62,7 +61,11 @@ function inMemoryRateLimit(identifier: string, limit: number, windowMs: number):
 // ──────────────────────────────────────────────
 
 async function redisRateLimit(identifier: string, limit: number, windowMs: number): Promise<boolean | null> {
-  const redis = getRedis();
+  let redis: any = null;
+  try {
+    const { getRedis } = await import("./redis");
+    redis = getRedis();
+  } catch { /* ioredis not available */ }
   if (!redis) return null; // signal to fall back
 
   try {

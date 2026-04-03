@@ -17,8 +17,9 @@ const nextConfig = {
 	//   "use client" page → console-data → mcp-client → McpServer → workers/verification → playwright
 	// These modules only execute server-side. Marking them as external prevents
 	// webpack from trying to bundle them for the browser.
-	// Externalize sanity packages to prevent createClient from running at import time
-	serverExternalPackages: ['sanity', 'next-sanity', '@sanity/client', '@sanity/image-url', '@sanity/asset-utils'],
+	// Externalize packages that depend on Node.js builtins (stream, crypto, dns, net)
+	// to prevent webpack from trying to bundle them for the client
+	serverExternalPackages: ['sanity', 'next-sanity', '@sanity/client', '@sanity/image-url', '@sanity/asset-utils', 'ioredis'],
 	webpack: (config, { isServer }) => {
 		if (!isServer) {
 			config.resolve.fallback = {

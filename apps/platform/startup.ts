@@ -1,6 +1,6 @@
 import { enforceEnv, isProduction, validateEnv } from './env-validation';
 import { initializeStores, validateStoreConfiguration, resetStoreEnforcement } from './store-enforcement';
-import { isRedisConfigured, getRedis } from '../../src/libs/redis';
+import { isRedisConfigured, initRedis, isRedisAvailable } from '../../src/libs/redis';
 
 // ──────────────────────────────────────────────
 // Platform Startup — single entry point
@@ -55,22 +55,13 @@ export function vestigioStartup(prisma?: any): StartupResult {
     }
   }
 
-  // 3. Initialize Redis (if configured)
+  // 3. Redis status (initialization is async, done in instrumentation.ts)
   if (isRedisConfigured()) {
-    try {
-      const redis = getRedis();
-      checks.push({
-        name: 'Redis',
-        passed: !!redis,
-        message: redis
-          ? 'Redis client initialized (job queue + rate limiting)'
-          : 'Redis configured but failed to connect — falling back to in-memory',
-      });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      checks.push({ name: 'Redis', passed: false, message: `Redis init failed: ${msg} — falling back to in-memory` });
-      // Never block startup for Redis — it's a graceful enhancement
-    }
+    checks.push({
+      name: 'Redis',
+      passed: true,
+      message: 'REDIS_URL configured — Redis will connect asynchronously',
+    });
   } else {
     checks.push({
       name: 'Redis',

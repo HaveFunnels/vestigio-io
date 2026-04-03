@@ -306,12 +306,12 @@ const icons = {
   ),
 };
 
-/* ========== Mini Sparkline Chart (pure SVG) ========== */
+/* ========== Area Chart (pure SVG, polished) ========== */
 
 function Sparkline({
   data,
   width = 600,
-  height = 160,
+  height = 200,
 }: {
   data: { date: string; count: number }[];
   width?: number;
@@ -320,7 +320,7 @@ function Sparkline({
   if (!data.length) {
     return (
       <div
-        className="flex items-center justify-center text-sm text-content-faint"
+        className="flex items-center justify-center rounded-lg border border-edge bg-surface-card text-sm text-content-faint"
         style={{ height }}
       >
         No data for this period
@@ -329,44 +329,74 @@ function Sparkline({
   }
 
   const max = Math.max(...data.map((d) => d.count), 1);
-  const padding = { top: 20, right: 20, bottom: 30, left: 50 };
-  const chartW = width - padding.left - padding.right;
-  const chartH = height - padding.top - padding.bottom;
+  const pad = { top: 24, right: 16, bottom: 36, left: 52 };
+  const cw = width - pad.left - pad.right;
+  const ch = height - pad.top - pad.bottom;
 
-  const points = data.map((d, i) => {
-    const x = padding.left + (i / Math.max(data.length - 1, 1)) * chartW;
-    const y = padding.top + chartH - (d.count / max) * chartH;
-    return { x, y, ...d };
-  });
+  const pts = data.map((d, i) => ({
+    x: pad.left + (i / Math.max(data.length - 1, 1)) * cw,
+    y: pad.top + ch - (d.count / max) * ch,
+    ...d,
+  }));
 
-  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const areaPath = `${linePath} L${points[points.length - 1].x},${padding.top + chartH} L${points[0].x},${padding.top + chartH} Z`;
+  // Smooth cubic bezier path
+  function smoothLine(points: typeof pts): string {
+    if (points.length < 2) return `M${points[0].x},${points[0].y}`;
+    let d = `M${points[0].x},${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const curr = points[i];
+      const next = points[i + 1];
+      const cpx = (curr.x + next.x) / 2;
+      d += ` C${cpx},${curr.y} ${cpx},${next.y} ${next.x},${next.y}`;
+    }
+    return d;
+  }
 
-  // Y-axis labels
-  const yTicks = [0, Math.round(max / 2), max];
+  const linePath = smoothLine(pts);
+  const areaPath = `${linePath} L${pts[pts.length - 1].x},${pad.top + ch} L${pts[0].x},${pad.top + ch} Z`;
+
+  const yTicks = [0, Math.round(max * 0.33), Math.round(max * 0.66), max];
+  const gradientId = `chart-gradient-${Math.random().toString(36).slice(2, 8)}`;
+
+  // Show ~5 x-axis labels max
+  const labelStep = Math.max(1, Math.floor(pts.length / 5));
+  const xLabels = pts.filter((_, i) => i === 0 || i === pts.length - 1 || i % labelStep === 0);
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="xMidYMid meet">
-      {/* Grid lines */}
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgb(52 211 153)" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="rgb(52 211 153)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Horizontal grid lines */}
       {yTicks.map((tick) => {
-        const y = padding.top + chartH - (tick / max) * chartH;
+        const y = pad.top + ch - (tick / max) * ch;
         return (
           <g key={tick}>
             <line
-              x1={padding.left}
+              x1={pad.left}
               y1={y}
-              x2={width - padding.right}
+              x2={width - pad.right}
               y2={y}
-              stroke="currentColor"
-              className="text-white/[0.06]"
-              strokeWidth={1}
+              stroke="rgb(var(--border-default))"
+              strokeWidth={0.5}
+              strokeDasharray={tick === 0 ? "0" : "4 4"}
+              opacity={0.4}
             />
             <text
-              x={padding.left - 8}
-              y={y + 4}
+              x={pad.left - 10}
+              y={y + 3.5}
               textAnchor="end"
-              className="fill-content-faint"
+              fill="rgb(var(--text-faint))"
               fontSize={10}
+              fontFamily="inherit"
             >
               {formatNum(tick)}
             </text>
@@ -374,38 +404,42 @@ function Sparkline({
         );
       })}
 
-      {/* Area fill */}
-      <path d={areaPath} className="fill-accent-text/10" />
+      {/* Gradient area fill */}
+      <path d={areaPath} fill={`url(#${gradientId})`} />
 
-      {/* Line */}
-      <path d={linePath} fill="none" className="stroke-accent-text" strokeWidth={2} strokeLinejoin="round" />
+      {/* Smooth line */}
+      <path
+        d={linePath}
+        fill="none"
+        stroke="rgb(52 211 153)"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
 
-      {/* Dots */}
-      {points.map((p, i) => (
-        <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r={3}
-          className="fill-accent-text"
-        />
-      ))}
-
-      {/* X-axis labels (show a few) */}
-      {points
-        .filter((_, i) => i === 0 || i === points.length - 1 || i === Math.floor(points.length / 2))
-        .map((p, i) => (
-          <text
-            key={i}
-            x={p.x}
-            y={height - 6}
-            textAnchor="middle"
-            className="fill-content-faint"
-            fontSize={10}
-          >
-            {p.date.slice(5)}
-          </text>
+      {/* Data points — only show if not too many */}
+      {pts.length <= 14 &&
+        pts.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r={4} fill="rgb(var(--bg-page))" />
+            <circle cx={p.x} cy={p.y} r={2.5} fill="rgb(52 211 153)" />
+          </g>
         ))}
+
+      {/* X-axis labels */}
+      {xLabels.map((p, i) => (
+        <text
+          key={i}
+          x={p.x}
+          y={height - 10}
+          textAnchor="middle"
+          fill="rgb(var(--text-faint))"
+          fontSize={10}
+          fontFamily="inherit"
+        >
+          {p.date.slice(5)}
+        </text>
+      ))}
     </svg>
   );
 }
@@ -970,11 +1004,18 @@ export default function AdminMarketingPage() {
 
           {/* Page Views Chart */}
           <div className="rounded-lg border border-edge bg-surface-card p-5">
-            <h2 className="mb-4 text-sm font-semibold text-content">
-              Page Views Over Time
-            </h2>
+            <div className="mb-1 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-content">
+                Page Views Over Time
+              </h2>
+              {!loading && stats?.pageViewsOverTime && (
+                <span className="text-xs text-content-faint">
+                  {stats.pageViewsOverTime.length} days
+                </span>
+              )}
+            </div>
             {loading ? (
-              <div className="h-40 animate-pulse rounded bg-white/[0.06]" />
+              <div className="h-[200px] animate-pulse rounded-lg bg-white/[0.04]" />
             ) : (
               <Sparkline data={stats?.pageViewsOverTime || []} />
             )}

@@ -112,7 +112,7 @@ function PageFade({ children }: { children: React.ReactNode }) {
 
 	return (
 		<div
-			className="flex-1 overflow-y-auto transition-opacity duration-200 ease-out"
+			className="min-h-0 flex-1 overflow-y-auto transition-opacity duration-200 ease-out"
 			style={{ opacity: fade ? 0.6 : 1 }}
 		>
 			{content}
@@ -190,7 +190,7 @@ export default function AppSidebarLayout({
 				</header>
 
 				{/* ── Content area: floats on top of the shell ── */}
-				<div className="relative mx-2 mb-2 flex-1 overflow-hidden rounded-xl bg-surface shadow-lg ring-1 ring-edge/50">
+				<div className="relative mx-2 mb-2 flex min-h-0 flex-1 flex-col rounded-xl bg-surface shadow-lg ring-1 ring-edge/50">
 					<PageFade>
 						{children}
 					</PageFade>

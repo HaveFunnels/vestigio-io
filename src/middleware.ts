@@ -98,29 +98,42 @@ export default withAuth(
 			}
 		}
 
-		// ── Authorization ────────────────────────────
+		// ── System Admin vs User routing ─────────────
+		// System Admin: manages the Vestigio platform. Not a customer.
+		//   No org, no onboarding, no analysis. Goes to /app/admin/*.
+		// User: customer of Vestigio. Has org, does onboarding, audits domains.
 
-		// /app/admin/* → platform ADMIN only
+		// System admin hitting /app (root) → send to admin dashboard
+		if (isAdmin && (pathname === "/app" || pathname === "/app/")) {
+			return NextResponse.redirect(new URL("/app/admin/overview", req.url));
+		}
+
+		// /app/admin/* → system admin only
 		if (pathname.startsWith("/app/admin")) {
 			if (!isAdmin) {
 				return NextResponse.redirect(new URL("/app", req.url));
 			}
+			// Admin accessing admin pages — always allowed, no org needed
+			return NextResponse.next();
 		}
 
-		// Legacy /admin/* pages (boilerplate) → ADMIN only
+		// System admin trying to access user pages (analysis, chat, etc.)
+		// → redirect to admin dashboard (admin is not a customer)
+		if (isAdmin && pathname.startsWith("/app") && !pathname.startsWith("/app/admin")) {
+			return NextResponse.redirect(new URL("/app/admin/overview", req.url));
+		}
+
+		// Legacy /admin/* pages (boilerplate) → system admin only
 		if (pathname.startsWith("/admin/") && !isAdmin) {
 			return NextResponse.redirect(new URL("/app", req.url));
 		}
 
-		// ── Onboarding gate ─────────────────────────
+		// ── Onboarding gate (users only) ────────────
 		// Users without an active org must complete onboarding first.
-		// Exceptions: /app/onboarding itself, admin pages, platform admins.
 		const hasOrganization = req.nextauth.token?.hasOrganization;
 		if (
 			pathname.startsWith("/app") &&
 			!pathname.startsWith("/app/onboarding") &&
-			!pathname.startsWith("/app/admin") &&
-			!isAdmin &&
 			hasOrganization === false
 		) {
 			return NextResponse.redirect(new URL("/app/onboarding", req.url));

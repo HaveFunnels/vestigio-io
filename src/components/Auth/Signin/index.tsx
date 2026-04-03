@@ -13,66 +13,84 @@ export default function Signin() {
 	const t = useTranslations("signInPage");
 
 	return (
-		<>
-			<div className='mx-auto w-full max-w-[400px] px-4 py-10'>
-				<div className='space-y-3 pb-7.5'>
-					<GoogleSigninButton text={t("socialSignIn")} />
+		<div className='flex min-h-screen items-center justify-center bg-[#090911] px-4 py-16'>
+			{/* Subtle glow */}
+			<div className='absolute left-1/2 top-1/3 h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-emerald-900/10 blur-[150px]' />
 
-					<GithubSigninButton text={t("socialSignIn")} />
+			<div className='relative w-full max-w-[420px]'>
+				{/* Logo */}
+				<div className='mb-8 text-center'>
+					<Link href='/' className='inline-block text-lg font-bold tracking-wider text-white'>
+						VESTIGIO
+					</Link>
+					<p className='mt-2 text-sm text-gray-500'>Sign in to your account</p>
 				</div>
-				<div className='mb-7.5 flex items-center justify-center'>
-					<span className='block h-px w-full bg-stroke dark:bg-stroke-dark'></span>
-					<div className='inline-block bg-white px-3 text-base text-body dark:bg-[#151F34] dark:text-gray-5'>
-						{t("or")}
+
+				{/* Card */}
+				<div className='rounded-[1rem] border border-white/[0.06] bg-white/[0.03] p-8 backdrop-blur-sm'>
+					{/* Social buttons */}
+					<div className='space-y-3 pb-6'>
+						<GoogleSigninButton text={t("socialSignIn")} />
+						<GithubSigninButton text={t("socialSignIn")} />
 					</div>
-					<span className='block h-px w-full bg-stroke dark:bg-stroke-dark'></span>
+
+					{/* Divider */}
+					<div className='mb-6 flex items-center gap-3'>
+						<span className='block h-px flex-1 bg-white/[0.06]' />
+						<span className='text-xs text-gray-500'>{t("or")}</span>
+						<span className='block h-px flex-1 bg-white/[0.06]' />
+					</div>
+
+					{/* Tab toggle */}
+					<div className='mb-5 flex w-full items-center gap-1 rounded-[0.75rem] border border-white/[0.06] bg-white/[0.02] p-1'>
+						<button
+							onClick={() => setSigninOption("magic-link")}
+							className={`h-9 w-full rounded-[0.5rem] text-sm font-medium transition-all ${
+								signinOption === "magic-link"
+									? "bg-white/10 text-white"
+									: "text-gray-500 hover:text-gray-300"
+							}`}
+						>
+							{t("magicLink")}
+						</button>
+						<button
+							onClick={() => setSigninOption("password")}
+							className={`h-9 w-full rounded-[0.5rem] text-sm font-medium transition-all ${
+								signinOption === "password"
+									? "bg-white/10 text-white"
+									: "text-gray-500 hover:text-gray-300"
+							}`}
+						>
+							{t("password")}
+						</button>
+					</div>
+
+					{/* Form */}
+					<div>
+						{signinOption === "magic-link" ? (
+							<SigninWithMagicLink />
+						) : (
+							<SigninWithPassword />
+						)}
+					</div>
 				</div>
 
-				<div className='mb-4.5 flex w-full items-center justify-between gap-1.5 rounded-10 border border-stroke p-1 dark:border-stroke-dark'>
-					<button
-						onClick={() => setSigninOption("magic-link")}
-						className={`h-[38px] w-full rounded-lg font-satoshi text-base font-medium tracking-[-.2px] ${
-							signinOption === "magic-link"
-								? "bg-primary/[.08] text-primary"
-								: "text-dark dark:text-white"
-						}`}
-					>
-						{t("magicLink")}
-					</button>
-					<button
-						onClick={() => setSigninOption("password")}
-						className={`h-[38px] w-full rounded-lg font-satoshi text-base font-medium tracking-[-.2px] ${
-							signinOption === "password"
-								? "bg-primary/[.08] text-primary"
-								: "text-dark dark:text-white"
-						}`}
-					>
-						{t("password")}
-					</button>
-				</div>
-
-				<div>
-					{signinOption === "magic-link" ? (
-						<SigninWithMagicLink />
-					) : (
-						<SigninWithPassword />
-					)}
-				</div>
-
-				<p className='text-center font-satoshi text-base font-medium text-dark dark:text-white'>
+				{/* Footer link */}
+				<p className='mt-6 text-center text-sm text-gray-500'>
 					{t.rich("noAccount", {
 						link: (chunks) => (
-							<Link href='/auth/signup' className='text-primary' key='link'>
+							<Link href='/auth/signup' className='text-emerald-400 hover:text-emerald-300' key='link'>
 								{chunks} →
 							</Link>
 						),
 					})}
 				</p>
 
-				<span className='my-10 block h-px w-full bg-stroke dark:bg-stroke-dark '></span>
-
-				<DemoSignin />
+				{/* Demo section */}
+				<div className='mt-8 border-t border-white/[0.06] pt-6'>
+					<DemoSignin />
+				</div>
 			</div>
-		</>
+		</div>
 	);
 }

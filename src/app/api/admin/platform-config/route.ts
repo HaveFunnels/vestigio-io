@@ -167,6 +167,34 @@ export async function GET() {
         }
       }
       const merged = { ...DEFAULTS[key], ...parsed };
+
+      // Merge env var fallbacks for integrations so admin sees what's configured
+      if (key === "integrations_config") {
+        if (!merged.paddle_api_key && process.env.PADDLE_API_KEY) merged.paddle_api_key = process.env.PADDLE_API_KEY;
+        if (!merged.paddle_client_token && process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN) merged.paddle_client_token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
+        if (!merged.paddle_webhook_secret && process.env.PADDLE_WEBHOOK_SECRET) merged.paddle_webhook_secret = process.env.PADDLE_WEBHOOK_SECRET;
+        if (!merged.sanity_project_id && process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) merged.sanity_project_id = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+        if (!merged.sanity_dataset) merged.sanity_dataset = "production";
+        if (!merged.mailchimp_api_key && process.env.MAILCHIMP_API_KEY) merged.mailchimp_api_key = process.env.MAILCHIMP_API_KEY;
+        if (!merged.mailchimp_server && process.env.MAILCHIMP_API_SERVER) merged.mailchimp_server = process.env.MAILCHIMP_API_SERVER;
+        if (!merged.mailchimp_audience_id && process.env.MAILCHIMP_AUDIENCE_ID) merged.mailchimp_audience_id = process.env.MAILCHIMP_AUDIENCE_ID;
+      }
+      if (key === "social_login_config") {
+        if (!merged.google_client_id && process.env.GOOGLE_CLIENT_ID) merged.google_client_id = process.env.GOOGLE_CLIENT_ID;
+        if (!merged.google_client_secret && process.env.GOOGLE_CLIENT_SECRET) merged.google_client_secret = process.env.GOOGLE_CLIENT_SECRET;
+        if (!merged.github_client_id && process.env.GITHUB_CLIENT_ID) merged.github_client_id = process.env.GITHUB_CLIENT_ID;
+        if (!merged.github_client_secret && process.env.GITHUB_CLIENT_SECRET) merged.github_client_secret = process.env.GITHUB_CLIENT_SECRET;
+        if (!merged.apple_client_id && process.env.APPLE_CLIENT_ID) merged.apple_client_id = process.env.APPLE_CLIENT_ID;
+        if (!merged.apple_client_secret && process.env.APPLE_CLIENT_SECRET) merged.apple_client_secret = process.env.APPLE_CLIENT_SECRET;
+      }
+      if (key === "smtp_config") {
+        if (!merged.host && process.env.EMAIL_SERVER_HOST) merged.host = process.env.EMAIL_SERVER_HOST;
+        if (!merged.port && process.env.EMAIL_SERVER_PORT) merged.port = Number(process.env.EMAIL_SERVER_PORT);
+        if (!merged.user && process.env.EMAIL_SERVER_USER) merged.user = process.env.EMAIL_SERVER_USER;
+        if (!merged.password && process.env.EMAIL_SERVER_PASSWORD) merged.password = process.env.EMAIL_SERVER_PASSWORD;
+        if (!merged.from_address && process.env.EMAIL_FROM) merged.from_address = process.env.EMAIL_FROM;
+      }
+
       config[key] = maskSecrets(key, merged);
     }
 

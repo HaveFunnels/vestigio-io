@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 const SigninPage = () => {
 	return (
-		<main className='pt-[150px]'>
+		<main>
 			<Signin />
 		</main>
 	);

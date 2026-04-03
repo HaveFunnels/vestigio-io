@@ -4,8 +4,8 @@ import { Metadata } from "next";
 import Notification from "@/components/Common/Notification";
 
 export const metadata: Metadata = {
-	title: `Notifications - ${process.env.SITE_NAME}`,
-	description: `Notifications Description`,
+	title: "Notifications",
+	description: "View your notifications",
 };
 
 const NotificationPage = () => {

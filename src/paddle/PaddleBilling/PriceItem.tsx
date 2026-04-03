@@ -82,8 +82,8 @@ const PriceItem = ({ plan, isBilling }: Props) => {
 
 	return (
 		<div
-			className={`relative  rounded-[20px] p-10 shadow-dropdown ${
-				active && !isBilling ? "bg-primary" : "bg-white dark:bg-gray-dark"
+			className={`relative rounded-[1rem] border border-white/5 p-10 ${
+				active && !isBilling ? "bg-primary" : "bg-white/[0.02]"
 			}`}
 		>
 			{active && (
@@ -211,7 +211,7 @@ const PriceItem = ({ plan, isBilling }: Props) => {
 
 			<button
 				onClick={handler}
-				className={`mt-9 flex w-full justify-center rounded-full  p-3.5 font-satoshi font-medium ${
+				className={`mt-9 flex w-full justify-center rounded-[1rem] p-3.5 font-satoshi font-medium ${
 					isSubscribed && isBilling
 						? "bg-gray-3 text-dark hover:bg-gray-4"
 						: activeStyle

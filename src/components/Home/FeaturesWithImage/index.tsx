@@ -1,67 +1,84 @@
-import SectionHeader from "@/components/Common/SectionHeader";
-import { FeatureWithImg } from "@/types/featureWithImg";
-import { useTranslations } from "next-intl";
-import Image from "next/image";
+import Link from "next/link";
 
 const FeaturesWithImage = () => {
-	const t = useTranslations("homepage.features_with_image_section");
-	const featureItemData: FeatureWithImg[] = t.raw("items");
-
 	return (
-		<section className='overflow-hidden py-17.5 lg:py-22.5 xl:py-27.5'>
-			{/* <!-- section title --> */}
-			<SectionHeader title={t("title")} description={t("subtitle")} />
+		<section id="solutions" className='overflow-hidden border-t border-white/5 bg-[#090911] py-20 lg:py-28 xl:py-32'>
+			<div className='mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>
+				{/* Section header */}
+				<div className='mx-auto mb-16 max-w-[600px] text-center'>
+					<h2 className='mb-4 text-3xl font-bold tracking-tight text-white lg:text-4xl'>
+						Build, launch, and scale with confidence
+					</h2>
+					<p className='text-base text-gray-400'>
+						From initial audit to continuous monitoring, Vestigio covers
+						your entire SaaS lifecycle.
+					</p>
+				</div>
 
-			<div className='mx-auto w-full max-w-[1040px] px-4 sm:px-8 xl:px-0'>
-				{featureItemData?.map((data, i) => (
-					<div
-						key={data.title}
-						className={`flex flex-col items-center justify-between gap-10 ${
-							i % 2 === 0
-								? "sm:flex-row"
-								: "pt-17.5 sm:flex-row-reverse lg:pt-22.5 xl:pt-27.5"
-						}`}
-					>
-						<div className='w-full max-w-[475px]'>
-							<h3 className='mb-4.5 font-satoshi text-2xl font-bold text-black dark:text-white lg:text-3xl xl:text-heading-4'>
-								{data?.title}
-							</h3>
-							<p className='dark:text-gray-5'>{data?.subtitle}</p>
-
-							<ul className='mt-7.5 flex flex-col gap-3'>
-								{data?.features?.map((feature) => (
-									<li key={feature} className='flex items-center gap-3'>
-										<svg
-											width='22'
-											height='22'
-											viewBox='0 0 22 22'
-											fill='none'
-											xmlns='http://www.w3.org/2000/svg'
-										>
-											<path
-												fillRule='evenodd'
-												clipRule='evenodd'
-												d='M20.1668 10.9999C20.1668 16.0625 16.0628 20.1666 11.0002 20.1666C5.93755 20.1666 1.8335 16.0625 1.8335 10.9999C1.8335 5.93731 5.93755 1.83325 11.0002 1.83325C16.0628 1.83325 20.1668 5.93731 20.1668 10.9999ZM14.6946 8.22212C14.9631 8.4906 14.9631 8.9259 14.6946 9.19439L10.1113 13.7777C9.84281 14.0462 9.40751 14.0462 9.13903 13.7777L7.30569 11.9444C7.03721 11.6759 7.03721 11.2406 7.30569 10.9721C7.57418 10.7036 8.00948 10.7036 8.27797 10.9721L9.62516 12.3193L11.6738 10.2707L13.7224 8.22212C13.9908 7.95363 14.4261 7.95363 14.6946 8.22212Z'
-												fill='#573CFF'
-											/>
-										</svg>
-
-										<span>{feature}</span>
-									</li>
-								))}
-							</ul>
+				{/* Feature blocks */}
+				<div className='grid gap-5 lg:grid-cols-2'>
+					{/* Block 1 */}
+					<div className='rounded-[1rem] border border-white/5 bg-white/[0.02] p-8 lg:p-10'>
+						<div className='mb-4 flex h-10 w-10 items-center justify-center rounded-[0.75rem] bg-emerald-500/10 text-emerald-400'>
+							<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+							</svg>
 						</div>
-
-						<div className='w-full max-w-[484px]'>
-							<Image
-								src={`/images/features/features-0${i + 1}.svg`}
-								alt={data?.title}
-								width={484}
-								height={400}
-							/>
-						</div>
+						<h3 className='mb-3 text-xl font-semibold text-white'>
+							Intelligence Dashboard
+						</h3>
+						<p className='mb-5 text-sm leading-relaxed text-gray-400'>
+							A unified view of your platform&apos;s health. Actions, workspaces, findings, and
+							maps — all connected through an intelligence layer that surfaces what matters.
+						</p>
+						<ul className='flex flex-col gap-2.5'>
+							{["Prioritized action items", "Workspace-level analysis", "Evidence-backed findings", "Interactive dependency maps"].map((feature) => (
+								<li key={feature} className='flex items-center gap-2.5 text-sm text-gray-300'>
+									<svg className="h-4 w-4 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+									</svg>
+									{feature}
+								</li>
+							))}
+						</ul>
 					</div>
-				))}
+
+					{/* Block 2 */}
+					<div className='rounded-[1rem] border border-white/5 bg-white/[0.02] p-8 lg:p-10'>
+						<div className='mb-4 flex h-10 w-10 items-center justify-center rounded-[0.75rem] bg-purple-500/10 text-purple-400'>
+							<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+							</svg>
+						</div>
+						<h3 className='mb-3 text-xl font-semibold text-white'>
+							AI-Powered Analysis
+						</h3>
+						<p className='mb-5 text-sm leading-relaxed text-gray-400'>
+							A Claude-powered intelligence engine that understands your platform context.
+							Ask questions, get structured answers, and receive proactive recommendations.
+						</p>
+						<ul className='flex flex-col gap-2.5'>
+							{["Natural language queries", "Evidence-cited responses", "Corroboration scoring", "Context-aware recommendations"].map((feature) => (
+								<li key={feature} className='flex items-center gap-2.5 text-sm text-gray-300'>
+									<svg className="h-4 w-4 shrink-0 text-purple-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+									</svg>
+									{feature}
+								</li>
+							))}
+						</ul>
+					</div>
+				</div>
+
+				{/* CTA */}
+				<div className='mt-12 text-center'>
+					<Link
+						href='/auth/signup'
+						className='inline-flex rounded-[1rem] bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-gray-100'
+					>
+						Start your first audit
+					</Link>
+				</div>
 			</div>
 		</section>
 	);

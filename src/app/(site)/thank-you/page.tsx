@@ -3,9 +3,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-	title: `Thank You - ${process.env.SITE_NAME}`,
-	description: `This is Thank You page for ${process.env.SITE_NAME}`,
-	// other discriptions
+	title: "Thank You",
 };
 
 const ThankYouPage = () => {

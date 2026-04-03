@@ -5,9 +5,8 @@ import TokenList from "@/components/User/Api/TokenList";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: `API - ${process.env.SITE_NAME}`,
-	description: `API Key page for ${process.env.SITE_NAME}`,
-	// other descriptions
+	title: "API",
+	description: "Manage your API keys",
 };
 
 export default async function UserApiPage() {

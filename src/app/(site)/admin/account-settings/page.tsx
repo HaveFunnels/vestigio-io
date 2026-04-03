@@ -4,8 +4,8 @@ import PasswordChange from "@/components/User/AccountSettings/PasswordChange";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: `Account Settings - ${process.env.SITE_NAME}`,
-	description: `Account Settings Description`,
+	title: "Account Settings",
+	description: "Manage your account settings",
 };
 
 export default function AccountSettingsPage() {

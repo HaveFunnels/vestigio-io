@@ -14,10 +14,17 @@ const Pricing = ({ isBilling }: { isBilling?: boolean }) => {
 			<PaddleLoader />
 			<section
 				id='pricing'
-				className='overflow-hidden rounded-10 bg-white py-15 dark:bg-[#131a2b] md:px-15'
+				className='overflow-hidden border-t border-white/5 bg-[#090911] py-20 lg:py-28 md:px-15'
 			>
 				{!isBilling && (
-					<SectionHeader title={t("title")} description={t("subtitle")} />
+					<div className='mx-auto mb-12 max-w-[600px] px-4 text-center'>
+						<h2 className='mb-4 text-3xl font-bold tracking-tight text-white lg:text-4xl'>
+							{t("title")}
+						</h2>
+						<p className='text-base text-gray-400'>
+							{t("subtitle")}
+						</p>
+					</div>
 				)}
 
 				<div className='mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>

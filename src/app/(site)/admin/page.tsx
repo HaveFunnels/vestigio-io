@@ -6,8 +6,8 @@ import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-	title: `Dashboard - ${process.env.SITE_NAME}`,
-	description: "Dashboard Description",
+	title: "Dashboard",
+	description: "Admin dashboard overview",
 };
 
 export default async function AdminDashboard() {

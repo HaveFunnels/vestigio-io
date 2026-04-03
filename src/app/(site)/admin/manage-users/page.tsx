@@ -4,8 +4,8 @@ import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-	title: `Users - ${process.env.SITE_NAME}`,
-	description: "Users Description",
+	title: "Users",
+	description: "Manage users and permissions",
 };
 
 export default async function UsersPage(props: {

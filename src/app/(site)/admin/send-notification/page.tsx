@@ -4,8 +4,8 @@ import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-	title: `Send Notification - ${process.env.SITE_NAME}`,
-	description: `Send Notification Description`,
+	title: "Send Notification",
+	description: "Send notifications to users",
 };
 
 export default async function SendNotificationPage() {

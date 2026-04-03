@@ -5,8 +5,8 @@ import { Metadata } from "next";
 import { getApiKeys } from "@/actions/api-key";
 
 export const metadata: Metadata = {
-	title: `API - ${process.env.SITE_NAME}`,
-	description: `API Description`,
+	title: "API",
+	description: "Manage API keys",
 };
 
 export default async function AdminApiPage() {

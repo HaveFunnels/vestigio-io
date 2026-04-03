@@ -3,8 +3,7 @@ import ForgotPassword from "@/components/Auth/ForgotPassword";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: `Forgot Password - ${process.env.SITE_NAME}`,
-	description: `This is Forgot Password page for ${process.env.SITE_NAME}`,
+	title: "Forgot Password",
 };
 
 const ForgotPasswordPage = () => {

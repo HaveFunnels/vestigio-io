@@ -1,10 +1,30 @@
+import { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { Inter } from "next/font/google";
 import "../styles/globals.css";
 import "../styles/satoshi.css";
 
-const inter = Inter({ subsets: ["latin"] });
+export const metadata: Metadata = {
+	title: {
+		default: "Vestigio — Intelligence & Decision Engine for SaaS",
+		template: "%s | Vestigio",
+	},
+	description:
+		"Vestigio is the intelligence layer that audits, monitors, and optimizes your SaaS platform.",
+	openGraph: {
+		type: "website",
+		siteName: "Vestigio",
+		title: "Vestigio — Intelligence & Decision Engine for SaaS",
+		description:
+			"Automated analysis, evidence-based decisions, and actionable insights for your SaaS platform.",
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Vestigio — Intelligence & Decision Engine for SaaS",
+		description:
+			"Automated analysis, evidence-based decisions, and actionable insights for your SaaS platform.",
+	},
+};
 
 export default async function RootLayout({
 	children,
@@ -15,10 +35,8 @@ export default async function RootLayout({
 	const messages = await getMessages();
 
 	return (
-		<html lang={locale} suppressHydrationWarning={true}>
-			<body
-				className={`${inter.className} flex min-h-screen flex-col dark:bg-[#151F34]`}
-			>
+		<html lang={locale} className="dark" suppressHydrationWarning={true}>
+			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
 				<NextIntlClientProvider messages={messages}>
 					{children}
 				</NextIntlClientProvider>

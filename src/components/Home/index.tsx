@@ -6,8 +6,6 @@ import CallToAction from "./CallToAction";
 import Testimonials from "./Testimonials";
 import Pricing from "./Pricing";
 import FAQ from "./FAQ";
-import Blog from "./Blog";
-import Newsletter from "./Newsletter";
 
 const Home = () => {
 	return (
@@ -16,12 +14,10 @@ const Home = () => {
 			<Features />
 			<FeaturesWithImage />
 			<Counter />
-			<CallToAction />
 			<Testimonials />
 			<Pricing />
 			<FAQ />
-			<Newsletter />
-			<Blog />
+			<CallToAction />
 		</>
 	);
 };

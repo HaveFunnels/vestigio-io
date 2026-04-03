@@ -1,58 +1,36 @@
-import { useTranslations } from "next-intl";
-import Image from "next/image";
+import Link from "next/link";
+
 const CallToAction = () => {
-	const t = useTranslations("homepage.cta_section");
-
 	return (
-		<section className='relative z-1 overflow-hidden bg-primary py-17.5 lg:py-22.5 xl:py-25'>
-			<div className='mx-auto w-full max-w-[585px] px-4 text-center sm:px-8 xl:px-0'>
-				<h2 className='mb-5 font-satoshi text-3xl font-bold -tracking-[1.6px] text-white lg:text-heading-4 xl:text-heading-2'>
-					{t("title")}
-				</h2>
+		<section className='relative z-1 overflow-hidden bg-[#090911] py-20 lg:py-28'>
+			<div className='mx-auto w-full max-w-[700px] px-4 text-center sm:px-8 xl:px-0'>
+				{/* Gradient glow */}
+				<div className='absolute left-1/2 top-1/2 h-[300px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-900/20 blur-[100px]' />
 
-				<p className='text-gray-2'>{t("subtitle")}</p>
+				<div className='relative'>
+					<h2 className='mb-5 text-3xl font-bold tracking-tight text-white lg:text-4xl xl:text-5xl'>
+						Ready to put your platform on autopilot?
+					</h2>
 
-				<a
-					href='/auth/signin'
-					className='mt-7.5 inline-flex rounded-full bg-white px-7 py-3 font-satoshi font-medium -tracking-[0.2px] text-black hover:bg-opacity-90'
-				>
-					{t("cta")}
-				</a>
-			</div>
+					<p className='mb-8 text-base text-gray-400'>
+						Join SaaS teams using Vestigio to automate auditing, detect regressions,
+						and make evidence-based decisions.
+					</p>
 
-			{/* <!-- bg shapes --> */}
-			<div className='hidden sm:block'>
-				<div className='absolute bottom-0 left-0 -z-1'>
-					<Image
-						src='/images/cta/cta-grid-01.svg'
-						alt='grid'
-						width={376}
-						height={376}
-					/>
-				</div>
-				<div className='absolute right-0 top-0 -z-1'>
-					<Image
-						src='/images/cta/cta-grid-02.svg'
-						alt='grid'
-						width={376}
-						height={376}
-					/>
-				</div>
-				<div className='absolute bottom-0 left-0 -z-1'>
-					<Image
-						src='/images/cta/cta-shape-01.svg'
-						alt='grid'
-						width={1010}
-						height={404}
-					/>
-				</div>
-				<div className='absolute bottom-0 right-0 -z-1'>
-					<Image
-						src='/images/cta/cta-shape-02.svg'
-						alt='grid'
-						width={935}
-						height={404}
-					/>
+					<div className='flex items-center justify-center gap-4'>
+						<Link
+							href='/auth/signup'
+							className='rounded-[1rem] bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-gray-100'
+						>
+							Get started free
+						</Link>
+						<Link
+							href='/auth/signin'
+							className='rounded-[1rem] border border-white/20 px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5'
+						>
+							Try live demo
+						</Link>
+					</div>
 				</div>
 			</div>
 		</section>

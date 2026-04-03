@@ -3,9 +3,8 @@ import Support from "@/components/Support";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: `Support - ${process.env.SITE_NAME}`,
-	description: `This is Support page for ${process.env.SITE_NAME}`,
-	// other discriptions
+	title: "Support",
+	description: "Get help and contact our support team",
 };
 
 const SupportPage = () => {

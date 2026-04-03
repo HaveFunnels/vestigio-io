@@ -1,50 +1,59 @@
 "use client";
 
-import SectionHeader from "@/components/Common/SectionHeader";
-import { Testimonial } from "@/types/testimonial";
-import { useTranslations } from "next-intl";
-import Image from "next/image";
+const testimonials = [
+	{
+		name: "Sarah Chen",
+		role: "CTO, FinTech Startup",
+		comment: "Vestigio caught compliance regressions our manual reviews kept missing. The evidence-based approach gives us confidence in every decision.",
+	},
+	{
+		name: "Marcus Rivera",
+		role: "VP Engineering, SaaS Platform",
+		comment: "The continuous monitoring alone justified the investment. We detect issues before they reach customers now.",
+	},
+	{
+		name: "Anna Kowalski",
+		role: "Head of Product, E-commerce",
+		comment: "The AI chat is incredible — I can ask questions about our platform health in plain English and get structured, cited answers.",
+	},
+];
 
 const Testimonials = () => {
-	const t = useTranslations("homepage.testimonials_section");
-	const testimonialData: Testimonial[] = t.raw("items");
-
 	return (
-		<section className='relative z-1 overflow-hidden bg-gray-1 py-17.5 dark:bg-black lg:py-22.5 xl:py-27.5'>
-			{/* <!-- section title --> */}
-			<SectionHeader title={t("title")} description={t("subtitle")} />
+		<section className='relative z-1 overflow-hidden border-t border-white/5 bg-[#0d0d15] py-20 lg:py-28'>
+			<div className='mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>
+				{/* Section header */}
+				<div className='mx-auto mb-16 max-w-[600px] text-center'>
+					<h2 className='mb-4 text-3xl font-bold tracking-tight text-white lg:text-4xl'>
+						Loved by engineering teams
+					</h2>
+					<p className='text-base text-gray-400'>
+						Teams trust Vestigio to keep their platforms healthy and their decisions evidence-based.
+					</p>
+				</div>
 
-			<div className='relative z-1 mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>
-				<div className='gap-7.5 space-y-7.5 sm:columns-2 lg:columns-3'>
-					{/* <!-- 1st Column --> */}
-					{testimonialData?.map((data, i) => (
+				<div className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'>
+					{testimonials.map((data, i) => (
 						<div
 							key={i}
-							className='rounded-2xl bg-white p-[35px] shadow-testimonial hover:shadow-testimonial-2 dark:bg-gray-dark'
+							className='rounded-[1rem] border border-white/5 bg-white/[0.02] p-8 transition-colors hover:border-white/10'
 						>
-							<div className='flex items-center gap-4'>
-								<div className='h-15 w-full max-w-[60px] overflow-hidden rounded-full'>
-									<Image
-										src={`/images/testimonial/author-0${i + 1}.png`}
-										alt='author'
-										width={60}
-										height={60}
-									/>
+							<div className='mb-6 flex items-center gap-3'>
+								<div className='flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-sm font-bold text-emerald-400'>
+									{data.name.charAt(0)}
 								</div>
-								<div className='w-full'>
-									<h3 className='font-satoshi text-lg font-medium -tracking-[0.2px] text-black dark:text-white'>
+								<div>
+									<h3 className='text-sm font-semibold text-white'>
 										{data.name}
 									</h3>
-
-									<p className='font-medium dark:text-gray-4'>
-										{data.designation}
+									<p className='text-xs text-gray-500'>
+										{data.role}
 									</p>
 								</div>
 							</div>
-
-							<div className='my-6 h-px w-full bg-stroke dark:bg-stroke-dark'></div>
-
-							<p className='dark:text-gray-5'>“{data.comment}</p>
+							<p className='text-sm leading-relaxed text-gray-400'>
+								&ldquo;{data.comment}&rdquo;
+							</p>
 						</div>
 					))}
 				</div>

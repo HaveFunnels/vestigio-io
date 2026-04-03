@@ -3,8 +3,7 @@ import Signin from "@/components/Auth/Signin";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: `Sign in - ${process.env.SITE_NAME}`,
-	description: `This is Sign in page for ${process.env.SITE_NAME}`,
+	title: "Sign In",
 };
 
 const SigninPage = () => {

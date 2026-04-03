@@ -4,8 +4,8 @@ import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-	title: `AI Integration - ${process.env.SITE_NAME}`,
-	description: `AI Integration Description`,
+	title: "AI Integration",
+	description: "Configure AI integration settings",
 };
 
 export default async function AiIntegrationPage() {

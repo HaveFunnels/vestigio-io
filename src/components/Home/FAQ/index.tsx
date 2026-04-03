@@ -1,45 +1,67 @@
 "use client";
 
-import SectionHeader from "@/components/Common/SectionHeader";
-import { useTranslations } from "next-intl";
 import { useState } from "react";
+
+const faqData = [
+	{
+		question: "What does Vestigio actually do?",
+		answer:
+			"Vestigio is an intelligence layer for SaaS platforms. It audits your site, detects regressions between cycles, verifies findings with browser evidence, and surfaces actionable insights — all powered by AI.",
+	},
+	{
+		question: "How does the verification system work?",
+		answer:
+			"Vestigio uses a multi-stage verification pipeline: static analysis, browser-based verification via Playwright, and corroboration scoring. Each finding carries a trust level — from unverified to fully verified — so you always know the confidence behind every decision.",
+	},
+	{
+		question: "Can I try it before committing?",
+		answer:
+			"Yes. You can sign up for a free trial and run your first audit immediately. No credit card required to get started.",
+	},
+	{
+		question: "What pricing plans are available?",
+		answer:
+			"We offer three plans: Vestigio (starter), Pro, and Max — each with increasing MCP query limits, Playwright runs, and features. Check our pricing section for detailed comparisons.",
+	},
+];
 
 const FAQ = () => {
 	const [activeFaq, setActiveFaq] = useState<number | null>(0);
-
-	const t = useTranslations("homepage.faq_section");
-	const faq: Record<string, string>[] = t.raw("items");
 
 	const handleFaqToggle = (id: number) => {
 		activeFaq === id ? setActiveFaq(null) : setActiveFaq(id);
 	};
 
 	return (
-		<section className='overflow-hidden bg-gray-1 py-17.5 dark:bg-black lg:py-22.5 xl:py-27.5'>
-			{/* <!-- section title --> */}
+		<section id="faq" className='overflow-hidden border-t border-white/5 bg-[#090911] py-20 lg:py-28'>
+			{/* Section header */}
+			<div className='mx-auto mb-12 max-w-[600px] px-4 text-center'>
+				<h2 className='mb-4 text-3xl font-bold tracking-tight text-white lg:text-4xl'>
+					Frequently asked questions
+				</h2>
+				<p className='text-base text-gray-400'>
+					Everything you need to know about Vestigio.
+				</p>
+			</div>
 
-			<SectionHeader title={t("title")} description={t("subtitle")} />
-
-			<div className='mx-auto w-full max-w-[662px] px-4 sm:px-8 xl:px-0'>
-				<div className='flex flex-col gap-4 '>
-					{/* <!-- Accordion Item --> */}
-					{faq?.map(({ question, answer }, i) => (
+			<div className='mx-auto w-full max-w-[700px] px-4 sm:px-8 xl:px-0'>
+				<div className='flex flex-col gap-3'>
+					{faqData.map(({ question, answer }, i) => (
 						<div
 							key={i}
-							className='rounded-lg bg-white shadow-1 dark:bg-gray-dark'
+							className='rounded-[1rem] border border-white/5 bg-white/[0.02] transition-colors hover:border-white/10'
 						>
 							<button
 								onClick={() => handleFaqToggle(i)}
-								className={`text-medium flex w-full items-center justify-between px-6 py-4 text-left text-lg text-dark dark:text-white md:text-xl`}
+								className='flex w-full items-center justify-between px-6 py-5 text-left text-sm font-medium text-white'
 							>
 								{question}
-
 								<span
-									className={`duration-300 ${activeFaq === i ? "rotate-180" : ""}`}
+									className={`shrink-0 text-gray-500 transition-transform duration-200 ${activeFaq === i ? "rotate-180" : ""}`}
 								>
 									<svg
-										width='24'
-										height='25'
+										width='20'
+										height='20'
 										viewBox='0 0 24 25'
 										fill='none'
 										xmlns='http://www.w3.org/2000/svg'
@@ -54,14 +76,14 @@ const FAQ = () => {
 								</span>
 							</button>
 							<div
-								className={`grid`}
+								className='grid'
 								style={{
 									gridTemplateRows: `${activeFaq === i ? "1fr" : "0fr"}`,
 									transition: "grid-template-rows 300ms",
 								}}
 							>
-								<div className='overflow-hidden transition-all duration-300'>
-									<p className='border-t border-stroke px-6 py-7 dark:border-stroke-dark'>
+								<div className='overflow-hidden'>
+									<p className='border-t border-white/5 px-6 py-5 text-sm leading-relaxed text-gray-400'>
 										{answer}
 									</p>
 								</div>

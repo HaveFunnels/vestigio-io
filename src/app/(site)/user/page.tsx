@@ -4,9 +4,8 @@ import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-	title: `User Dashboard - ${process.env.SITE_NAME}`,
-	description: `This is User Dashboard page for ${process.env.SITE_NAME}`,
-	// other descriptions
+	title: "User Dashboard",
+	description: "Manage your account settings and preferences",
 };
 
 export default async function Page() {

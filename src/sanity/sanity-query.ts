@@ -1,4 +1,6 @@
-import { groq } from "next-sanity";
+// groq is just a tagged template literal — no need to import next-sanity at module scope
+const groq = (strings: TemplateStringsArray, ...values: any[]) =>
+	String.raw(strings, ...values);
 const postData = `{
   title,
   metadata,

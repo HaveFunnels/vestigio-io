@@ -1,15 +1,20 @@
-import ImageUrlBuilder from "@sanity/image-url";
-import { createClient, type QueryParams } from "next-sanity";
-import clientConfig from "./config/client-config";
-import {
-	postQuery,
-	postQueryBySlug,
-	postQueryByTag,
-	postQueryByAuthor,
-	postQueryByCategory,
-} from "./sanity-query";
 import { Blog } from "@/types/blog";
-import { integrations } from "../../integrations.config";
+
+const SANITY_ENABLED = !!(
+	typeof process !== "undefined" &&
+	process.env.NEXT_PUBLIC_SANITY_PROJECT_ID &&
+	process.env.NEXT_PUBLIC_SANITY_PROJECT_ID !== "disabled"
+);
+
+function getClientConfig() {
+	return {
+		projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "",
+		dataset: "production",
+		apiVersion: "2023-03-09",
+		useCdn: false,
+		token: process.env.SANITY_API_KEY || "",
+	};
+}
 
 export async function sanityFetch<QueryResponse>({
 	query,
@@ -17,26 +22,25 @@ export async function sanityFetch<QueryResponse>({
 	tags,
 }: {
 	query: string;
-	qParams: QueryParams;
+	qParams: Record<string, any>;
 	tags: string[];
 }): Promise<QueryResponse> {
-	if (integrations?.isSanityEnabled) {
-		const client = createClient(clientConfig);
-		return client.fetch<QueryResponse>(query, qParams, {
-			cache: "force-cache",
-			next: { tags },
-		});
-	} else {
-		return {} as QueryResponse;
-	}
+	if (!SANITY_ENABLED) return {} as QueryResponse;
+
+	const { createClient } = await import("next-sanity");
+	const client = createClient(getClientConfig());
+	return client.fetch<QueryResponse>(query, qParams, {
+		cache: "force-cache",
+		next: { tags },
+	});
 }
 
 export function imageBuilder(source: string) {
-	if (!clientConfig.projectId) {
-		// Return a stub that won't crash when .url() is called
+	if (!SANITY_ENABLED) {
 		return { url: () => "/images/placeholder.svg" } as any;
 	}
-	return ImageUrlBuilder(clientConfig).image(source);
+	const ImageUrlBuilder = require("@sanity/image-url").default;
+	return ImageUrlBuilder(getClientConfig()).image(source);
 }
 
 export const getPosts = async () => {

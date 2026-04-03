@@ -1,9 +1,15 @@
-import config from "@/sanity/config/client-config";
 import { Blog } from "@/types/blog";
 import { PortableText } from "@portabletext/react";
 import { getImageDimensions } from "@sanity/asset-utils";
 import urlBuilder from "@sanity/image-url";
 import Image from "next/image";
+
+const config = {
+	projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "",
+	dataset: "production",
+	apiVersion: "2023-03-09",
+	useCdn: false,
+};
 
 // Barebones lazy-loaded image component
 const SampleImageComponent = ({ value, isInline }: any) => {

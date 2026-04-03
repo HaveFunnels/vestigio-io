@@ -13,6 +13,8 @@ import { NextResponse } from "next/server";
 // ──────────────────────────────────────────────
 
 const CONFIG_KEYS = [
+  "theme_config",
+  "branding_config",
   "smtp_config",
   "social_login_config",
   "notification_config",
@@ -25,6 +27,32 @@ type ConfigKey = (typeof CONFIG_KEYS)[number];
 // ── Defaults ─────────────────────────────────
 
 const DEFAULTS: Record<ConfigKey, Record<string, unknown>> = {
+  theme_config: {
+    bg_page: "#16161a",
+    bg_shell: "#101014",
+    bg_card: "#1e1e23",
+    bg_card_hover: "#26262c",
+    bg_inset: "#1a1a1e",
+    border_default: "#2a2a30",
+    border_subtle: "#34343c",
+    text_primary: "#f4f4f5",
+    text_secondary: "#e4e4e7",
+    text_muted: "#a1a1aa",
+    text_faint: "#71717a",
+    accent: "#10b981",
+    accent_text: "#34d399",
+    accent_cta: "#059669",
+    accent_cta_hover: "#10b981",
+    sidebar_bg: "#101014",
+    sidebar_active_bg: "#10b981",
+    sidebar_active_text: "#ffffff",
+  },
+  branding_config: {
+    logo_light: null,
+    logo_dark: null,
+    favicon: null,
+    og_image: null,
+  },
   smtp_config: {
     host: "",
     port: 587,

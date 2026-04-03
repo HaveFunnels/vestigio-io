@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Component, type ErrorInfo, type ReactNode } from "react";
+import React, { useState, useEffect, useCallback, useRef, Component, type ErrorInfo, type ReactNode } from "react";
 
 /* ---------- Error Boundary ---------- */
 
@@ -42,6 +42,40 @@ class SectionErrorBoundary extends Component<
 // ──────────────────────────────────────────────
 
 /* ---------- Types ---------- */
+
+interface ThemeConfig {
+  bg_page: string;
+  bg_shell: string;
+  bg_card: string;
+  bg_card_hover: string;
+  bg_inset: string;
+  border_default: string;
+  border_subtle: string;
+  text_primary: string;
+  text_secondary: string;
+  text_muted: string;
+  text_faint: string;
+  accent: string;
+  accent_text: string;
+  accent_cta: string;
+  accent_cta_hover: string;
+  sidebar_bg: string;
+  sidebar_active_bg: string;
+  sidebar_active_text: string;
+}
+
+interface ImageValue {
+  dataUrl: string;
+  filename: string;
+  size: number;
+}
+
+interface BrandingConfig {
+  logo_light: ImageValue | null;
+  logo_dark: ImageValue | null;
+  favicon: ImageValue | null;
+  og_image: ImageValue | null;
+}
 
 interface SmtpConfig {
   host: string;
@@ -86,6 +120,8 @@ interface FeatureFlags {
 }
 
 interface AllConfig {
+  theme_config: ThemeConfig;
+  branding_config: BrandingConfig;
   smtp_config: SmtpConfig;
   social_login_config: SocialLoginConfig;
   notification_config: NotificationConfig;
@@ -98,6 +134,32 @@ type SectionKey = keyof AllConfig;
 /* ---------- Defaults ---------- */
 
 const DEFAULTS: AllConfig = {
+  theme_config: {
+    bg_page: "#16161a",
+    bg_shell: "#101014",
+    bg_card: "#1e1e23",
+    bg_card_hover: "#26262c",
+    bg_inset: "#1a1a1e",
+    border_default: "#2a2a30",
+    border_subtle: "#34343c",
+    text_primary: "#f4f4f5",
+    text_secondary: "#e4e4e7",
+    text_muted: "#a1a1aa",
+    text_faint: "#71717a",
+    accent: "#10b981",
+    accent_text: "#34d399",
+    accent_cta: "#059669",
+    accent_cta_hover: "#10b981",
+    sidebar_bg: "#101014",
+    sidebar_active_bg: "#10b981",
+    sidebar_active_text: "#ffffff",
+  },
+  branding_config: {
+    logo_light: null,
+    logo_dark: null,
+    favicon: null,
+    og_image: null,
+  },
   smtp_config: { host: "", port: 587, user: "", password: "", from_address: "" },
   social_login_config: {
     google_client_id: "",
@@ -136,15 +198,67 @@ const DEFAULTS: AllConfig = {
 interface FieldDef {
   key: string;
   label: string;
-  type: "text" | "password" | "number" | "toggle";
+  type: "text" | "password" | "number" | "toggle" | "color" | "image";
   placeholder?: string;
   group?: string;
+  description?: string;
+  dimensions?: string;
+  accept?: string;
 }
 
 const SECTION_META: Record<
   SectionKey,
   { title: string; description: string; icon: React.ReactNode; fields: FieldDef[] }
 > = {
+  theme_config: {
+    title: "Theme / Colors",
+    description: "Customize the platform color scheme and design system.",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+      </svg>
+    ),
+    fields: [
+      // Background Colors
+      { key: "bg_page", label: "Page Background", type: "color", group: "Background Colors", description: "Main content area background" },
+      { key: "bg_shell", label: "Shell Background", type: "color", group: "Background Colors", description: "Sidebar + topbar behind content" },
+      { key: "bg_card", label: "Card Background", type: "color", group: "Background Colors", description: "All card containers, tables" },
+      { key: "bg_card_hover", label: "Card Hover", type: "color", group: "Background Colors", description: "Table row hover, card hover states" },
+      { key: "bg_inset", label: "Inset Background", type: "color", group: "Background Colors", description: "Nested elements, icon containers" },
+      // Border Colors
+      { key: "border_default", label: "Default Border", type: "color", group: "Border Colors", description: "Card borders, table dividers, separators" },
+      { key: "border_subtle", label: "Subtle Border", type: "color", group: "Border Colors", description: "Input borders, secondary dividers" },
+      // Text Colors
+      { key: "text_primary", label: "Primary Text", type: "color", group: "Text Colors", description: "Headings, important values, names" },
+      { key: "text_secondary", label: "Secondary Text", type: "color", group: "Text Colors", description: "Body text, descriptions" },
+      { key: "text_muted", label: "Muted Text", type: "color", group: "Text Colors", description: "Labels, timestamps, secondary info" },
+      { key: "text_faint", label: "Faint Text", type: "color", group: "Text Colors", description: "Placeholders, disabled text, hints" },
+      // Accent Colors
+      { key: "accent", label: "Accent", type: "color", group: "Accent Colors", description: "Active states, progress bars, highlights" },
+      { key: "accent_text", label: "Accent Text", type: "color", group: "Accent Colors", description: "Links, active nav items, badges" },
+      { key: "accent_cta", label: "CTA Button", type: "color", group: "Accent Colors", description: "Primary action buttons" },
+      { key: "accent_cta_hover", label: "CTA Hover", type: "color", group: "Accent Colors", description: "Primary button hover state" },
+      // Sidebar Colors
+      { key: "sidebar_bg", label: "Sidebar Background", type: "color", group: "Sidebar Colors", description: "Sidebar background" },
+      { key: "sidebar_active_bg", label: "Active Item Background", type: "color", group: "Sidebar Colors", description: "Active navigation item background" },
+      { key: "sidebar_active_text", label: "Active Item Text", type: "color", group: "Sidebar Colors", description: "Active navigation item text color" },
+    ],
+  },
+  branding_config: {
+    title: "Images / Branding",
+    description: "Upload logos, favicon, and social preview images.",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+      </svg>
+    ),
+    fields: [
+      { key: "logo_light", label: "Logo (Light Background)", type: "image", description: "PNG/SVG used in header on light mode, footer", dimensions: "Recommended: 200x60px", accept: "image/png,image/svg+xml" },
+      { key: "logo_dark", label: "Logo (Dark Background)", type: "image", description: "PNG/SVG used in header on dark mode, sidebar", dimensions: "Recommended: 200x60px", accept: "image/png,image/svg+xml" },
+      { key: "favicon", label: "Favicon", type: "image", description: "ICO/PNG used in browser tab", dimensions: "Recommended: 32x32px or 16x16px", accept: "image/x-icon,image/png,image/svg+xml" },
+      { key: "og_image", label: "OpenGraph Image", type: "image", description: "PNG/JPG used in social media link previews", dimensions: "Recommended: 1200x630px", accept: "image/png,image/jpeg,image/jpg" },
+    ],
+  },
   smtp_config: {
     title: "Email / SMTP Settings",
     description: "Configure outbound email delivery.",
@@ -230,6 +344,8 @@ const SECTION_META: Record<
 };
 
 const SECTION_ORDER: SectionKey[] = [
+  "theme_config",
+  "branding_config",
   "smtp_config",
   "social_login_config",
   "notification_config",
@@ -316,6 +432,292 @@ function Toggle({
       </button>
       <span className="text-sm text-content">{label}</span>
     </label>
+  );
+}
+
+/* ---------- Image Upload ---------- */
+
+function ImageUpload({
+  value,
+  onChange,
+  label,
+  description,
+  dimensions,
+  accept,
+}: {
+  value: { dataUrl: string; filename: string; size: number } | null;
+  onChange: (val: { dataUrl: string; filename: string; size: number } | null) => void;
+  label: string;
+  description: string;
+  dimensions?: string;
+  accept?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (file: File) => {
+    // Limit to 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File too large. Maximum size is 2MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      onChange({
+        dataUrl: reader.result as string,
+        filename: file.name,
+        size: file.size,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="mb-1.5 block text-xs font-medium text-content-muted">{label}</label>
+      {value?.dataUrl ? (
+        <div className="flex items-start gap-4 rounded-lg border border-edge bg-surface-inset p-4">
+          <div className="flex h-20 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-edge bg-surface-card">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={value.dataUrl}
+              alt={label}
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-medium text-content truncate">{value.filename}</p>
+            <p className="text-xs text-content-muted">{formatSize(value.size)}</p>
+            {dimensions && <p className="text-xs text-content-faint">{dimensions}</p>}
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="rounded-md bg-surface-card px-2.5 py-1 text-xs font-medium text-content-muted border border-edge hover:bg-surface-card-hover transition-colors"
+              >
+                Replace
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange(null)}
+                className="rounded-md px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-edge p-6 transition-colors hover:border-accent/40 hover:bg-surface-inset/50"
+        >
+          <svg className="h-8 w-8 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+          </svg>
+          <p className="text-xs text-content-muted">Click or drag to upload</p>
+          {dimensions && <p className="text-xs text-content-faint">{dimensions}</p>}
+          <p className="text-xs text-content-faint">{description}</p>
+        </div>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept || "image/*"}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+          // Reset so the same file can be re-selected
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
+/* ---------- Color Live Preview ---------- */
+
+function ColorLivePreview({ colors }: { colors: Record<string, unknown> }) {
+  const c = (key: string) => (typeof colors[key] === "string" ? (colors[key] as string) : "#000000");
+
+  return (
+    <div className="mt-6 rounded-lg border border-edge bg-surface-inset p-5">
+      <p className="mb-4 text-xs font-medium uppercase tracking-wider text-content-muted">Live Preview</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* Dark Preview */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-content-muted">Dark Preview</p>
+          <div
+            className="overflow-hidden rounded-lg border"
+            style={{ borderColor: c("border_default"), backgroundColor: c("bg_page") }}
+          >
+            {/* Mini sidebar */}
+            <div className="flex">
+              <div
+                className="w-14 shrink-0 space-y-2 p-2"
+                style={{ backgroundColor: c("sidebar_bg") }}
+              >
+                <div
+                  className="rounded px-1.5 py-1 text-center text-[9px] font-medium"
+                  style={{ backgroundColor: c("sidebar_active_bg"), color: c("sidebar_active_text") }}
+                >
+                  Nav
+                </div>
+                <div
+                  className="rounded px-1.5 py-1 text-center text-[9px]"
+                  style={{ color: c("text_muted") }}
+                >
+                  Item
+                </div>
+              </div>
+              {/* Content area */}
+              <div className="flex-1 p-3 space-y-2" style={{ backgroundColor: c("bg_page") }}>
+                <p className="text-xs font-semibold" style={{ color: c("text_primary") }}>
+                  Dashboard Title
+                </p>
+                <p className="text-[10px]" style={{ color: c("text_secondary") }}>
+                  This is body text with secondary color.
+                </p>
+                {/* Card */}
+                <div
+                  className="rounded-md p-2.5 space-y-1.5"
+                  style={{ backgroundColor: c("bg_card"), borderWidth: 1, borderStyle: "solid", borderColor: c("border_default") }}
+                >
+                  <p className="text-[10px] font-medium" style={{ color: c("text_primary") }}>
+                    Card Heading
+                  </p>
+                  <p className="text-[9px]" style={{ color: c("text_muted") }}>
+                    Muted label text here
+                  </p>
+                  <p className="text-[9px]" style={{ color: c("text_faint") }}>
+                    Faint / placeholder text
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      className="rounded px-2 py-0.5 text-[9px] font-medium text-white"
+                      style={{ backgroundColor: c("accent_cta") }}
+                    >
+                      Action
+                    </button>
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[8px] font-medium"
+                      style={{ backgroundColor: c("accent") + "22", color: c("accent_text") }}
+                    >
+                      Badge
+                    </span>
+                  </div>
+                </div>
+                {/* Hover card */}
+                <div
+                  className="rounded-md p-2"
+                  style={{ backgroundColor: c("bg_card_hover"), borderWidth: 1, borderStyle: "solid", borderColor: c("border_subtle") }}
+                >
+                  <p className="text-[9px]" style={{ color: c("text_secondary") }}>
+                    Hovered row
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Light preview (inverted conceptual — shows the same colors since admin controls them) */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-content-muted">Color Palette</p>
+          <div className="rounded-lg border border-edge bg-surface-card p-3 space-y-3">
+            {/* Background swatches */}
+            <div>
+              <p className="text-[9px] font-medium text-content-faint mb-1.5 uppercase tracking-wider">Backgrounds</p>
+              <div className="flex gap-1.5">
+                {["bg_page", "bg_shell", "bg_card", "bg_card_hover", "bg_inset"].map((k) => (
+                  <div key={k} className="text-center">
+                    <div
+                      className="h-6 w-6 rounded border border-edge"
+                      style={{ backgroundColor: c(k) }}
+                      title={k}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Border swatches */}
+            <div>
+              <p className="text-[9px] font-medium text-content-faint mb-1.5 uppercase tracking-wider">Borders</p>
+              <div className="flex gap-1.5">
+                {["border_default", "border_subtle"].map((k) => (
+                  <div key={k} className="text-center">
+                    <div
+                      className="h-6 w-6 rounded border border-edge"
+                      style={{ backgroundColor: c(k) }}
+                      title={k}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Text swatches */}
+            <div>
+              <p className="text-[9px] font-medium text-content-faint mb-1.5 uppercase tracking-wider">Text</p>
+              <div className="flex gap-1.5">
+                {["text_primary", "text_secondary", "text_muted", "text_faint"].map((k) => (
+                  <div key={k} className="text-center">
+                    <div
+                      className="h-6 w-6 rounded border border-edge"
+                      style={{ backgroundColor: c(k) }}
+                      title={k}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Accent swatches */}
+            <div>
+              <p className="text-[9px] font-medium text-content-faint mb-1.5 uppercase tracking-wider">Accent</p>
+              <div className="flex gap-1.5">
+                {["accent", "accent_text", "accent_cta", "accent_cta_hover"].map((k) => (
+                  <div key={k} className="text-center">
+                    <div
+                      className="h-6 w-6 rounded border border-edge"
+                      style={{ backgroundColor: c(k) }}
+                      title={k}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Sidebar swatches */}
+            <div>
+              <p className="text-[9px] font-medium text-content-faint mb-1.5 uppercase tracking-wider">Sidebar</p>
+              <div className="flex gap-1.5">
+                {["sidebar_bg", "sidebar_active_bg", "sidebar_active_text"].map((k) => (
+                  <div key={k} className="text-center">
+                    <div
+                      className="h-6 w-6 rounded border border-edge"
+                      style={{ backgroundColor: c(k) }}
+                      title={k}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -426,7 +828,7 @@ function SectionCard({
                     {group.name}
                   </p>
                 )}
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className={`grid gap-4 ${group.fields.some((f) => f.type === "image") ? "sm:grid-cols-1 lg:grid-cols-2" : "sm:grid-cols-2"}`}>
                   {group.fields.map((field) => {
                     const val = local[field.key];
 
@@ -437,6 +839,60 @@ function SectionCard({
                             checked={val === true}
                             onChange={(v) => setField(field.key, v)}
                             label={field.label}
+                          />
+                        </div>
+                      );
+                    }
+
+                    if (field.type === "color") {
+                      const colorVal = typeof val === "string" ? val : "#000000";
+                      return (
+                        <div key={field.key} className="sm:col-span-2">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="h-8 w-8 shrink-0 rounded-lg border border-edge"
+                              style={{ backgroundColor: colorVal }}
+                            />
+                            <input
+                              type="color"
+                              value={colorVal}
+                              onChange={(e) => setField(field.key, e.target.value)}
+                              className="h-8 w-8 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
+                            />
+                            <input
+                              type="text"
+                              value={colorVal}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setField(field.key, v);
+                              }}
+                              className={INPUT_CLS + " !w-28 font-mono text-xs"}
+                              placeholder="#000000"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <span className="text-xs font-medium text-content-muted">{field.label}</span>
+                              {field.description && (
+                                <span className="ml-1.5 text-xs text-content-faint">{field.description}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (field.type === "image") {
+                      const imgVal = val && typeof val === "object" && "dataUrl" in (val as any)
+                        ? (val as { dataUrl: string; filename: string; size: number })
+                        : null;
+                      return (
+                        <div key={field.key}>
+                          <ImageUpload
+                            value={imgVal}
+                            onChange={(v) => setField(field.key, v)}
+                            label={field.label}
+                            description={field.description ?? ""}
+                            dimensions={field.dimensions}
+                            accept={field.accept}
                           />
                         </div>
                       );
@@ -482,6 +938,9 @@ function SectionCard({
               </div>
             ))}
           </div>
+
+          {/* Live Preview for Theme */}
+          {sectionKey === "theme_config" && <ColorLivePreview colors={local} />}
 
           {/* Footer with Save */}
           <div className="mt-6 flex items-center gap-3 border-t border-edge pt-4">
@@ -565,7 +1024,7 @@ export default function PlatformConfigPage() {
       <div>
         <h1 className="text-xl font-semibold text-content">Platform Config</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Manage integrations, credentials, and feature flags. Changes take effect immediately.
+          Manage theme, branding, integrations, credentials, and feature flags. Changes take effect immediately.
         </p>
       </div>
 
@@ -583,12 +1042,12 @@ export default function PlatformConfigPage() {
 
       {/* Section Cards */}
       {loading
-        ? Array.from({ length: 5 }).map((_, i) => <SectionSkeleton key={i} />)
+        ? Array.from({ length: 7 }).map((_, i) => <SectionSkeleton key={i} />)
         : SECTION_ORDER.map((key) => (
             <SectionErrorBoundary key={key} name={key}>
               <SectionCard
                 sectionKey={key}
-                data={(config[key] ?? DEFAULTS[key]) as Record<string, unknown>}
+                data={(config[key] ?? DEFAULTS[key]) as unknown as Record<string, unknown>}
                 onUpdate={handleUpdate}
               />
             </SectionErrorBoundary>

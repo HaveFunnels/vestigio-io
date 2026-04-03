@@ -338,7 +338,7 @@ export const GET = withErrorTracking(
       }
 
       const blogConversions = new Map<string, number>();
-      for (const [sid, paths] of blogSessionPaths.entries()) {
+      for (const [, paths] of blogSessionPaths.entries()) {
         const blogPaths = paths.filter((p) => p.startsWith("/blog/"));
         const visitedSignup = paths.some(
           (p) =>
@@ -355,7 +355,7 @@ export const GET = withErrorTracking(
 
       // Bounce rate per blog post: sessions with only 1 page view that was this blog post
       const blogBounces = new Map<string, number>();
-      for (const [sid, paths] of blogSessionPaths.entries()) {
+      for (const [, paths] of blogSessionPaths.entries()) {
         if (paths.length === 1 && paths[0].startsWith("/blog/")) {
           blogBounces.set(paths[0], (blogBounces.get(paths[0]) || 0) + 1);
         }

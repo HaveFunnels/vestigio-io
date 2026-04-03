@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import AppSidebar from "./AppSidebar";
 import OrgSelector from "@/components/console/OrgSelector";
 
@@ -18,6 +20,79 @@ interface AppSidebarLayoutProps {
 	children: React.ReactNode;
 }
 
+// ── Top progress bar ──
+function TopProgressBar() {
+	const pathname = usePathname();
+	const [progress, setProgress] = useState(0);
+	const [visible, setVisible] = useState(false);
+	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		// Start progress on route change
+		setVisible(true);
+		setProgress(30);
+
+		const t1 = setTimeout(() => setProgress(60), 100);
+		const t2 = setTimeout(() => setProgress(85), 300);
+		const t3 = setTimeout(() => setProgress(100), 500);
+		const t4 = setTimeout(() => {
+			setVisible(false);
+			setProgress(0);
+		}, 700);
+
+		return () => {
+			clearTimeout(t1);
+			clearTimeout(t2);
+			clearTimeout(t3);
+			clearTimeout(t4);
+		};
+	}, [pathname]);
+
+	if (!visible && progress === 0) return null;
+
+	return (
+		<div className="fixed left-0 top-0 z-50 h-[2px] w-full">
+			<div
+				className="h-full bg-gradient-to-r from-emerald-400 via-white to-emerald-400 shadow-[0_0_8px_rgba(255,255,255,0.4)] transition-all duration-300 ease-out"
+				style={{
+					width: `${progress}%`,
+					opacity: visible ? 1 : 0,
+				}}
+			/>
+		</div>
+	);
+}
+
+// ── Page fade wrapper ──
+function PageFade({ children }: { children: React.ReactNode }) {
+	const pathname = usePathname();
+	const [fade, setFade] = useState(false);
+	const [content, setContent] = useState(children);
+
+	useEffect(() => {
+		setFade(true);
+		const t = setTimeout(() => {
+			setContent(children);
+			setFade(false);
+		}, 150);
+		return () => clearTimeout(t);
+	}, [pathname]);
+
+	// Always update content immediately on children change
+	useEffect(() => {
+		setContent(children);
+	}, [children]);
+
+	return (
+		<div
+			className="flex-1 overflow-y-auto transition-opacity duration-200 ease-out"
+			style={{ opacity: fade ? 0.6 : 1 }}
+		>
+			{content}
+		</div>
+	);
+}
+
 export default function AppSidebarLayout({
 	isAdmin,
 	orgCtx,
@@ -27,19 +102,20 @@ export default function AppSidebarLayout({
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	return (
-		<div className="flex h-screen bg-surface text-content">
+		<div className="flex h-screen bg-[#090911] text-white">
+			<TopProgressBar />
 			<AppSidebar
 				isAdmin={isAdmin}
 				mobileOpen={mobileOpen}
 				setMobileOpen={setMobileOpen}
 			/>
 			<div className="flex flex-1 flex-col overflow-hidden">
-				<header className="flex h-12 items-center justify-between border-b border-edge px-4">
+				<header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.06] px-4">
 					<div className="flex items-center gap-3">
 						{/* Mobile hamburger */}
 						<button
 							onClick={() => setMobileOpen(true)}
-							className="rounded p-1.5 text-content-muted hover:bg-surface-card-hover hover:text-content-secondary md:hidden"
+							className="rounded p-1.5 text-white/40 hover:bg-white/[0.06] hover:text-white/70 md:hidden"
 							aria-label="Open menu"
 						>
 							<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -49,14 +125,14 @@ export default function AppSidebarLayout({
 						<OrgSelector current={orgCtx} />
 					</div>
 					<div className="flex items-center gap-3">
-						<span className="rounded border border-edge-subtle px-2 py-0.5 text-[10px] font-medium uppercase text-content-faint">
+						<span className="rounded border border-white/10 px-2 py-0.5 text-[10px] font-medium uppercase text-white/40">
 							{plan}
 						</span>
 					</div>
 				</header>
-				<main className="flex-1 overflow-y-auto">
+				<PageFade>
 					{children}
-				</main>
+				</PageFade>
 			</div>
 		</div>
 	);

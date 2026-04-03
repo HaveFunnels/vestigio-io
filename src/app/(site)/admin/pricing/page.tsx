@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 // ──────────────────────────────────────────────
 // Admin Pricing Config
-// Persists to PlatformConfig via /api/admin/pricing
+// Matches Overview visual identity.
 // ──────────────────────────────────────────────
 
 interface PlanConfig {
@@ -78,7 +78,6 @@ export default function AdminPricingPage() {
         throw new Error(data.message || "Save failed");
       }
       const data = await res.json();
-      // Update plans with any new Paddle IDs from sync
       if (data.plans) {
         setPlans(data.plans.map((p: any) => ({
           ...p,
@@ -104,14 +103,9 @@ export default function AdminPricingPage() {
     setPaddleSyncError(null);
     setPaddleSyncStatus(null);
     try {
-      const res = await fetch("/api/admin/pricing/paddle-sync", {
-        method: "POST",
-      });
+      const res = await fetch("/api/admin/pricing/paddle-sync", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Paddle sync failed");
-      }
-      // Update plans with synced Paddle IDs
+      if (!res.ok) throw new Error(data.message || "Paddle sync failed");
       if (data.plans) {
         setPlans(data.plans.map((p: any) => ({
           ...p,
@@ -121,9 +115,7 @@ export default function AdminPricingPage() {
         })));
       }
       setPaddleSyncStatus(data.message);
-      if (data.errors) {
-        setPaddleSyncError(data.errors.join("; "));
-      }
+      if (data.errors) setPaddleSyncError(data.errors.join("; "));
       setTimeout(() => setPaddleSyncStatus(null), 5000);
     } catch (err: any) {
       setPaddleSyncError(err.message);
@@ -135,76 +127,86 @@ export default function AdminPricingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-600 border-t-emerald-500" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-emerald-500" />
       </div>
     );
   }
 
+  const inputClass = "w-full rounded-lg border border-edge bg-transparent px-3 py-1.5 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30";
+
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-dark dark:text-white">Pricing Configuration</h1>
-        <p className="mt-1 text-sm text-body-color">
-          Configure plan limits, price IDs for each payment provider, MCP quotas, and credit pricing.
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-semibold text-content">Pricing Configuration</h1>
+        <p className="mt-1 text-sm text-content-muted">
+          Configure plan limits, price IDs, MCP quotas, and credit pricing.
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md border border-red-800/50 bg-red-500/10 px-4 py-2 text-sm text-red-400">
-          {error}
+        <div className="flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/5 px-5 py-3">
+          <svg className="h-4 w-4 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
 
       {/* Plan configs */}
-      <div className="mb-8 space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-body-color">Plans</h2>
-        <div className="overflow-x-auto rounded-lg border border-stroke dark:border-stroke-dark">
+      <div className="rounded-lg border border-edge bg-surface-card">
+        <div className="border-b border-edge px-5 py-4">
+          <h2 className="text-sm font-semibold text-content">Plans</h2>
+        </div>
+        <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-stroke bg-gray-1 dark:border-stroke-dark dark:bg-gray-dark">
-                <th className="px-4 py-3 font-medium">Plan</th>
-                <th className="px-4 py-3 font-medium">Price ($/mo)</th>
-                <th className="px-4 py-3 font-medium">MCP Calls</th>
-                <th className="px-4 py-3 font-medium">Envs</th>
-                <th className="px-4 py-3 font-medium">Members</th>
-                <th className="px-4 py-3 font-medium">Continuous</th>
-                <th className="px-4 py-3 font-medium">Credits</th>
+              <tr className="border-b border-edge">
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Plan</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Price ($/mo)</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">MCP Calls</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Envs</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Members</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Continuous</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Credits</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-edge">
               {plans.map((plan, i) => (
-                <tr key={plan.key} className="border-b border-stroke dark:border-stroke-dark">
-                  <td className="px-4 py-3 font-medium">{plan.label}</td>
-                  <td className="px-4 py-3">
+                <tr key={plan.key} className="hover:bg-surface-card-hover">
+                  <td className="px-5 py-3 font-medium text-content">{plan.label}</td>
+                  <td className="px-5 py-3">
                     <input
                       type="number"
                       value={plan.monthlyPriceCents / 100}
                       onChange={(e) => updatePlan(i, "monthlyPriceCents", Math.round(parseFloat(e.target.value) * 100))}
-                      className="w-20 rounded border border-stroke bg-transparent px-2 py-1 text-sm dark:border-stroke-dark"
+                      className={`${inputClass} w-20`}
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <input type="number" value={plan.maxMcpCalls}
                       onChange={(e) => updatePlan(i, "maxMcpCalls", parseInt(e.target.value))}
-                      className="w-20 rounded border border-stroke bg-transparent px-2 py-1 text-sm dark:border-stroke-dark" />
+                      className={`${inputClass} w-20`} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <input type="number" value={plan.maxEnvironments}
                       onChange={(e) => updatePlan(i, "maxEnvironments", parseInt(e.target.value))}
-                      className="w-16 rounded border border-stroke bg-transparent px-2 py-1 text-sm dark:border-stroke-dark" />
+                      className={`${inputClass} w-16`} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <input type="number" value={plan.maxMembers}
                       onChange={(e) => updatePlan(i, "maxMembers", parseInt(e.target.value))}
-                      className="w-16 rounded border border-stroke bg-transparent px-2 py-1 text-sm dark:border-stroke-dark" />
+                      className={`${inputClass} w-16`} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <input type="checkbox" checked={plan.continuousAudits}
-                      onChange={(e) => updatePlan(i, "continuousAudits", e.target.checked)} />
+                      onChange={(e) => updatePlan(i, "continuousAudits", e.target.checked)}
+                      className="h-4 w-4 rounded border-white/20 bg-transparent text-emerald-500 focus:ring-emerald-500/30" />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <input type="checkbox" checked={plan.creditsEnabled}
-                      onChange={(e) => updatePlan(i, "creditsEnabled", e.target.checked)} />
+                      onChange={(e) => updatePlan(i, "creditsEnabled", e.target.checked)}
+                      className="h-4 w-4 rounded border-white/20 bg-transparent text-emerald-500 focus:ring-emerald-500/30" />
                   </td>
                 </tr>
               ))}
@@ -213,54 +215,56 @@ export default function AdminPricingPage() {
         </div>
       </div>
 
-      {/* Price IDs per provider */}
-      <div className="mb-8 space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-body-color">Payment Provider Price IDs</h2>
-        <p className="text-xs text-body-color">Configure the price IDs from each payment provider dashboard. Paddle IDs marked &quot;auto&quot; are managed via Sync.</p>
-        <div className="overflow-x-auto rounded-lg border border-stroke dark:border-stroke-dark">
+      {/* Payment Provider IDs */}
+      <div className="rounded-lg border border-edge bg-surface-card">
+        <div className="border-b border-edge px-5 py-4">
+          <h2 className="text-sm font-semibold text-content">Payment Provider Price IDs</h2>
+          <p className="mt-1 text-xs text-content-faint">Paddle IDs are auto-managed via Sync.</p>
+        </div>
+        <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-stroke bg-gray-1 dark:border-stroke-dark dark:bg-gray-dark">
-                <th className="px-4 py-3 font-medium">Plan</th>
-                <th className="px-4 py-3 font-medium">Stripe Price ID</th>
-                <th className="px-4 py-3 font-medium">Paddle Product ID</th>
-                <th className="px-4 py-3 font-medium">Paddle Price ID</th>
-                <th className="px-4 py-3 font-medium">Lemon Squeezy ID</th>
+              <tr className="border-b border-edge">
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Plan</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Stripe Price ID</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Product</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Price</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Lemon Squeezy</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-edge">
               {plans.map((plan, i) => (
-                <tr key={plan.key} className="border-b border-stroke dark:border-stroke-dark">
-                  <td className="px-4 py-3 font-medium">{plan.label}</td>
-                  <td className="px-4 py-3">
+                <tr key={plan.key} className="hover:bg-surface-card-hover">
+                  <td className="px-5 py-3 font-medium text-content">{plan.label}</td>
+                  <td className="px-5 py-3">
                     <input type="text" value={plan.priceId} placeholder="price_..."
                       onChange={(e) => updatePlan(i, "priceId", e.target.value)}
-                      className="w-64 rounded border border-stroke bg-transparent px-2 py-1 text-xs font-mono dark:border-stroke-dark" />
+                      className={`${inputClass} w-56 font-mono text-xs`} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     {plan.paddleProductId ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-mono text-emerald-400">
+                      <span className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-2.5 py-1 text-xs font-mono text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                         {plan.paddleProductId}
                       </span>
                     ) : (
-                      <span className="text-xs text-body-color/50 italic">Not synced</span>
+                      <span className="text-xs italic text-content-faint">Not synced</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     {plan.paddlePriceId ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-mono text-emerald-400">
+                      <span className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-2.5 py-1 text-xs font-mono text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                         {plan.paddlePriceId}
                       </span>
                     ) : (
-                      <span className="text-xs text-body-color/50 italic">Not synced</span>
+                      <span className="text-xs italic text-content-faint">Not synced</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <input type="text" value={plan.lemonSqueezyPriceId} placeholder="375601"
                       onChange={(e) => updatePlan(i, "lemonSqueezyPriceId", e.target.value)}
-                      className="w-40 rounded border border-stroke bg-transparent px-2 py-1 text-xs font-mono dark:border-stroke-dark" />
+                      className={`${inputClass} w-36 font-mono text-xs`} />
                   </td>
                 </tr>
               ))}
@@ -270,22 +274,23 @@ export default function AdminPricingPage() {
       </div>
 
       {/* Paddle Sync */}
-      <div className="mb-8 space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-body-color">Paddle Sync</h2>
-        <p className="text-xs text-body-color">
-          Automatically create products and prices in Paddle for plans that are missing IDs.
-          Paddle IDs are auto-generated when you save, or you can trigger a manual sync.
-        </p>
+      <div className="rounded-lg border border-edge bg-surface-card p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-content">Paddle Sync</h2>
+          <p className="mt-1 text-xs text-content-faint">
+            Create products and prices in Paddle for plans missing IDs.
+          </p>
+        </div>
 
         <div className="flex items-center gap-4">
           <button
             onClick={handlePaddleSync}
             disabled={paddleSyncing}
-            className="rounded-md border border-stroke bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-1 disabled:opacity-50 dark:border-stroke-dark dark:hover:bg-gray-dark"
+            className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover disabled:opacity-50"
           >
             {paddleSyncing ? (
               <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-zinc-600 border-t-emerald-500" />
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/10 border-t-emerald-500" />
                 Syncing...
               </span>
             ) : (
@@ -293,15 +298,13 @@ export default function AdminPricingPage() {
             )}
           </button>
 
-          {/* Sync status indicator */}
           {paddleSyncStatus && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
+            <span className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               {paddleSyncStatus}
             </span>
           )}
 
-          {/* Overall sync status based on plan data */}
           {!paddleSyncStatus && plans.length > 0 && (
             plans.every((p) => p.paddleProductId && p.paddlePriceId) ? (
               <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
@@ -318,40 +321,47 @@ export default function AdminPricingPage() {
         </div>
 
         {paddleSyncError && (
-          <div className="rounded-md border border-red-800/50 bg-red-500/10 px-4 py-2 text-sm text-red-400">
-            Paddle sync error: {paddleSyncError}
+          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm text-red-400">
+            {paddleSyncError}
           </div>
         )}
       </div>
 
       {/* Credit pricing */}
-      <div className="mb-8 space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-body-color">Credit Pricing</h2>
-        <div className="flex gap-4">
+      <div className="rounded-lg border border-edge bg-surface-card p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-content">Credit Pricing</h2>
+        </div>
+        <div className="flex items-end gap-5">
           <div>
-            <label className="mb-1 block text-xs text-body-color">Base cost per MCP call ($)</label>
+            <label className="mb-1.5 block text-xs font-medium text-content-muted">Base cost per MCP call ($)</label>
             <input type="number" step="0.01" value={credits.baseCostPerCall}
               onChange={(e) => { setCredits({ ...credits, baseCostPerCall: parseFloat(e.target.value) }); setSaved(false); }}
-              className="w-24 rounded border border-stroke bg-transparent px-2 py-1 text-sm dark:border-stroke-dark" />
+              className={`${inputClass} w-28`} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-body-color">Markup multiplier</label>
+            <label className="mb-1.5 block text-xs font-medium text-content-muted">Markup multiplier</label>
             <input type="number" step="0.1" value={credits.markupMultiplier}
               onChange={(e) => { setCredits({ ...credits, markupMultiplier: parseFloat(e.target.value) }); setSaved(false); }}
-              className="w-24 rounded border border-stroke bg-transparent px-2 py-1 text-sm dark:border-stroke-dark" />
+              className={`${inputClass} w-28`} />
           </div>
-          <div className="flex items-end">
-            <span className="text-xs text-body-color">
-              Effective: ${(credits.baseCostPerCall * credits.markupMultiplier).toFixed(2)} / call
+          <div className="pb-1.5">
+            <span className="text-sm text-content-faint">
+              Effective: <span className="font-semibold text-content">${(credits.baseCostPerCall * credits.markupMultiplier).toFixed(2)}</span> / call
             </span>
           </div>
         </div>
       </div>
 
+      {/* Save button */}
       <button
         onClick={handleSave}
         disabled={saving}
-        className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+        className={`rounded-lg px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+          saved
+            ? "bg-emerald-500/10 text-emerald-400"
+            : "bg-accent-text text-white hover:bg-accent-text/90"
+        }`}
       >
         {saving ? "Saving..." : saved ? "Saved!" : "Save Configuration"}
       </button>

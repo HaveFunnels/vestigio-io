@@ -36,7 +36,6 @@ export default function AppSidebar({
 
 	// Expandable submenus
 	const [expandedMenus, setExpandedMenus] = useState<Set<string>>(() => {
-		// Auto-expand parents whose children match the current route
 		const initial = new Set<string>();
 		for (const item of productNav) {
 			if (item.children?.some((c) => c.href && (pathname === c.href || pathname.startsWith(c.href + "/")))) {
@@ -62,7 +61,7 @@ export default function AppSidebar({
 	}, []);
 
 	const handleMouseLeave = useCallback(() => {
-		leaveTimer.current = setTimeout(() => setHovered(false), 80);
+		leaveTimer.current = setTimeout(() => setHovered(false), 120);
 	}, []);
 
 	const toggleMenu = (id: string) => {
@@ -84,7 +83,7 @@ export default function AppSidebar({
 		return false;
 	};
 
-	// ── Render a single nav item (leaf or expandable parent) ──
+	// ── Render a single nav item ──
 
 	const renderNavItem = (item: NavItem) => {
 		const active = isItemActive(item);
@@ -92,10 +91,10 @@ export default function AppSidebar({
 		const isMenuOpen = expandedMenus.has(item.id);
 
 		const itemClasses = cn(
-			"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+			"flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200",
 			active
-				? "bg-sidebar-active-bg text-sidebar-active-text"
-				: "text-content-muted hover:bg-surface-card-hover hover:text-content-secondary"
+				? "bg-white/10 text-white"
+				: "text-white/50 hover:bg-white/[0.06] hover:text-white/80"
 		);
 
 		if (hasChildren) {
@@ -108,18 +107,18 @@ export default function AppSidebar({
 						}}
 						className={cn(itemClasses, "w-full")}
 					>
-						<svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+						<svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 							<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
 						</svg>
 						<span className={cn(
-							"flex-1 whitespace-nowrap text-left transition-opacity duration-150",
-							isExpanded ? "opacity-100" : "w-0 opacity-0"
+							"flex-1 whitespace-nowrap text-left transition-all duration-300",
+							isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
 						)}>
 							{item.label}
 						</span>
 						{isExpanded && (
 							<svg
-								className={cn("h-4 w-4 shrink-0 transition-transform duration-200", isMenuOpen && "rotate-90")}
+								className={cn("h-3.5 w-3.5 shrink-0 transition-transform duration-200", isMenuOpen && "rotate-90")}
 								fill="none"
 								viewBox="0 0 24 24"
 								stroke="currentColor"
@@ -130,10 +129,10 @@ export default function AppSidebar({
 						)}
 					</button>
 
-					{/* Expandable children with grid animation */}
+					{/* Expandable children */}
 					<div
 						className={cn(
-							"grid transition-[grid-template-rows] duration-200",
+							"grid transition-[grid-template-rows] duration-300 ease-out",
 							isMenuOpen && isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
 						)}
 					>
@@ -147,10 +146,10 @@ export default function AppSidebar({
 										key={child.id}
 										href={child.href!}
 										className={cn(
-											"flex items-center gap-3 rounded-lg py-1.5 pl-10 pr-3 text-sm font-medium transition-colors",
+											"flex items-center gap-3 rounded-lg py-1.5 pl-10 pr-3 text-[13px] font-medium transition-all duration-200",
 											childActive
-												? "text-accent-text"
-												: "text-content-faint hover:text-content-secondary"
+												? "text-emerald-400"
+												: "text-white/40 hover:text-white/70"
 										)}
 									>
 										<svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -169,12 +168,12 @@ export default function AppSidebar({
 		// Leaf item
 		return (
 			<Link key={item.id} href={item.href!} className={itemClasses}>
-				<svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+				<svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 					<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
 				</svg>
 				<span className={cn(
-					"whitespace-nowrap transition-opacity duration-150",
-					isExpanded ? "opacity-100" : "w-0 opacity-0"
+					"whitespace-nowrap transition-all duration-300",
+					isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
 				)}>
 					{item.label}
 				</span>
@@ -182,37 +181,48 @@ export default function AppSidebar({
 		);
 	};
 
-	// ── Render a section (title + items) ──
+	// ── Render a section (items only — no visible title when collapsed) ──
 
 	const renderSection = (title: string, items: NavItem[]) => (
-		<div className="mb-2">
+		<div className="mb-1">
 			<div
 				className={cn(
-					"mb-1 px-3 pt-3 text-[10px] font-semibold uppercase tracking-widest text-content-faint transition-opacity duration-150",
-					isExpanded ? "opacity-100" : "opacity-0"
+					"overflow-hidden transition-all duration-300",
+					isExpanded ? "mb-1 h-5 px-3 pt-3 opacity-60" : "mb-0 h-0 opacity-0"
 				)}
 			>
-				{title}
+				<span className="text-[10px] font-semibold uppercase tracking-widest text-white/40">
+					{title}
+				</span>
 			</div>
-			{items.map(renderNavItem)}
+			<div className="flex flex-col gap-0.5">
+				{items.map(renderNavItem)}
+			</div>
 		</div>
 	);
 
-	// ── Sidebar content (shared between desktop and mobile) ──
+	// ── Sidebar content ──
 
 	const sidebarContent = (
 		<>
+			{/* Logo */}
 			<div className={cn(
-				"flex h-14 items-center border-b border-edge px-4",
-				isExpanded ? "justify-between" : "justify-center"
+				"flex h-14 shrink-0 items-center border-b border-white/[0.06] px-3 transition-all duration-300",
+				isExpanded ? "justify-start gap-2.5 px-4" : "justify-center"
 			)}>
+				{/* Icon always visible */}
+				<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20">
+					<span className="text-xs font-bold text-emerald-400">V</span>
+				</div>
 				<span className={cn(
-					"text-sm font-semibold tracking-wider text-accent-text transition-opacity duration-150",
-					isExpanded ? "opacity-100" : "w-0 opacity-0"
+					"text-sm font-semibold tracking-wider text-white transition-all duration-300",
+					isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
 				)}>
 					VESTIGIO
 				</span>
 			</div>
+
+			{/* Nav */}
 			<nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
 				{!isAdmin && renderSection("Product", productNav)}
 				{!isAdmin && renderSection("Control Plane", controlPlaneNav)}
@@ -223,37 +233,39 @@ export default function AppSidebar({
 
 	return (
 		<>
-			{/* ── Desktop sidebar (hover-expand) ── */}
+			{/* ── Desktop sidebar ── */}
 			<aside
 				onMouseEnter={handleMouseEnter}
 				onMouseLeave={handleMouseLeave}
 				className={cn(
-					"hidden flex-col border-r border-edge bg-sidebar-bg transition-[width] duration-200 ease-in-out md:flex",
+					"hidden flex-col border-r border-white/[0.06] md:flex",
+					"bg-gradient-to-b from-[#111318] via-[#0d0f13] to-[#0a0c0f]",
+					"transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
 					isExpanded ? "w-56" : "w-14"
 				)}
 			>
 				{sidebarContent}
 			</aside>
 
-			{/* ── Mobile sidebar (overlay) ── */}
+			{/* ── Mobile sidebar ── */}
 			<div
 				className={cn(
 					"fixed inset-0 z-40 md:hidden",
 					mobileOpen ? "visible" : "invisible pointer-events-none"
 				)}
 			>
-				{/* Backdrop */}
 				<div
 					className={cn(
-						"absolute inset-0 bg-surface-overlay/60 transition-opacity duration-200",
+						"absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
 						mobileOpen ? "opacity-100" : "opacity-0"
 					)}
 					onClick={() => setMobileOpen(false)}
 				/>
-				{/* Panel */}
 				<aside
 					className={cn(
-						"absolute left-0 top-0 flex h-full w-64 flex-col bg-sidebar-bg transition-transform duration-200",
+						"absolute left-0 top-0 flex h-full w-64 flex-col",
+						"bg-gradient-to-b from-[#111318] via-[#0d0f13] to-[#0a0c0f]",
+						"transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
 						mobileOpen ? "translate-x-0" : "-translate-x-full"
 					)}
 				>

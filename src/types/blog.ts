@@ -1,4 +1,11 @@
-import { PortableTextBlock } from "sanity";
+// Avoid importing from "sanity" package at module level — it triggers createClient
+// PortableTextBlock is just an array of blocks with _type and children
+type PortableTextBlock = {
+	_type: string;
+	_key?: string;
+	children?: any[];
+	[key: string]: any;
+};
 
 export type Author = {
 	name: string;

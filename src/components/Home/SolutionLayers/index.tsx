@@ -234,87 +234,119 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 					</h3>
 				</div>
 
-				{/* Flow: User Query → Agentic Chat ↔ [Findings, Actions, Verification] → Response */}
-				<div className="flex flex-col items-center gap-5 lg:flex-row lg:items-center lg:gap-0">
+				{/* Flow diagram */}
+				<div className="flex flex-col items-center gap-6 lg:gap-8">
 
-					{/* 1. User Query node */}
-					<div className="shrink-0 w-full max-w-[220px] rounded-xl border border-white/10 bg-white/[0.04] p-4">
-						<div className="mb-2 flex items-center gap-2">
-							<div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10">
-								<svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-									<path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
-								</svg>
-							</div>
-							<span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">User Query</span>
-						</div>
-						<p className="text-xs leading-relaxed text-gray-300 italic">
-							&ldquo;{t.userQuery}&rdquo;
-						</p>
-					</div>
+					{/* Row 1: User Query → Agentic Chat → Structured Response */}
+					<div className="flex w-full flex-col items-center gap-5 lg:flex-row lg:items-center lg:justify-center lg:gap-0">
 
-					{/* Connector → */}
-					<div className="flex items-center lg:px-2 lg:flex-1">
-						<div className="hidden h-px flex-1 bg-gradient-to-r from-white/10 to-violet-500/30 lg:block" />
-						<svg className="block h-5 w-5 text-white/15 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" />
-						</svg>
-					</div>
-
-					{/* 2. Agentic Chat center node + surrounding tool nodes */}
-					<div className="relative shrink-0">
-						{/* Tool nodes around the center */}
-						<div className="flex items-center gap-3 lg:flex-col lg:gap-2">
-							{/* Top tool: Findings */}
-							<div className={`flex items-center gap-1.5 rounded-lg border ${colors.emerald.border} ${colors.emerald.bg} px-3 py-1.5`}>
-								<div className={`h-1.5 w-1.5 rounded-full ${colors.emerald.dot}`} />
-								<span className={`text-[10px] font-semibold ${colors.emerald.text}`}>{nodeLabels[0]}</span>
-							</div>
-
-							{/* Center: Agentic Chat */}
-							<div className="flex flex-col items-center">
-								<div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-emerald-500/15 shadow-[0_0_50px_-12px_rgba(139,92,246,0.3)]">
-									<svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-										<path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+						{/* User Query node */}
+						<div className="shrink-0 w-full max-w-[260px] rounded-xl border border-white/10 bg-white/[0.04] p-5 shadow-[0_4px_40px_-10px_rgba(255,255,255,0.05)]">
+							<div className="mb-3 flex items-center gap-2.5">
+								<div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-white/10 to-white/5">
+									<svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
 									</svg>
 								</div>
-								<span className="mt-1.5 text-[9px] font-bold uppercase tracking-widest text-violet-400">{t.label}</span>
+								<span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">User Query</span>
 							</div>
-
-							{/* Side tools: Actions + Verification */}
-							<div className="flex flex-col gap-2 lg:flex-row">
-								<div className={`flex items-center gap-1.5 rounded-lg border ${colors.violet.border} ${colors.violet.bg} px-3 py-1.5`}>
-									<div className={`h-1.5 w-1.5 rounded-full ${colors.violet.dot}`} />
-									<span className={`text-[10px] font-semibold ${colors.violet.text}`}>{nodeLabels[1]}</span>
-								</div>
-								<div className={`flex items-center gap-1.5 rounded-lg border ${colors.amber.border} ${colors.amber.bg} px-3 py-1.5`}>
-									<div className={`h-1.5 w-1.5 rounded-full ${colors.amber.dot}`} />
-									<span className={`text-[10px] font-semibold ${colors.amber.text}`}>{nodeLabels[2]}</span>
-								</div>
-							</div>
+							<p className="text-xs leading-relaxed text-gray-300">
+								&ldquo;{t.userQuery}&rdquo;
+							</p>
+							<div className="mt-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 						</div>
-					</div>
 
-					{/* Connector → */}
-					<div className="flex items-center lg:px-2 lg:flex-1">
-						<div className="hidden h-px flex-1 bg-gradient-to-r from-violet-500/30 to-emerald-500/20 lg:block" />
-						<svg className="block h-5 w-5 text-white/15 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+						{/* Connector line */}
+						<div className="hidden lg:flex lg:items-center lg:px-1">
+							<svg width="60" height="2" className="overflow-visible">
+								<line x1="0" y1="1" x2="60" y2="1" stroke="url(#line-grad-1)" strokeWidth="1" strokeDasharray="4 3" />
+								<defs><linearGradient id="line-grad-1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="rgba(255,255,255,0.1)" /><stop offset="100%" stopColor="rgba(139,92,246,0.4)" /></linearGradient></defs>
+								<circle cx="60" cy="1" r="2" fill="rgb(139,92,246)" opacity="0.6" />
+							</svg>
+						</div>
+						<svg className="block h-6 w-6 text-white/15 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" />
 						</svg>
+
+						{/* Agentic Chat center node — the hub */}
+						<div className="relative shrink-0 flex flex-col items-center">
+							{/* Glow ring */}
+							<div className="absolute inset-0 flex items-center justify-center">
+								<div className="h-28 w-28 rounded-full bg-violet-500/5 blur-xl" />
+							</div>
+							<div className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-emerald-500/15 shadow-[0_0_60px_-12px_rgba(139,92,246,0.3)]">
+								<svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+								</svg>
+							</div>
+							<span className="relative mt-2 text-[9px] font-bold uppercase tracking-widest text-violet-400">{t.label}</span>
+						</div>
+
+						{/* Connector line */}
+						<div className="hidden lg:flex lg:items-center lg:px-1">
+							<svg width="60" height="2" className="overflow-visible">
+								<circle cx="0" cy="1" r="2" fill="rgb(139,92,246)" opacity="0.6" />
+								<line x1="0" y1="1" x2="60" y2="1" stroke="url(#line-grad-2)" strokeWidth="1" strokeDasharray="4 3" />
+								<defs><linearGradient id="line-grad-2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="rgba(139,92,246,0.4)" /><stop offset="100%" stopColor="rgba(52,211,153,0.3)" /></linearGradient></defs>
+							</svg>
+						</div>
+						<svg className="block h-6 w-6 text-white/15 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" />
+						</svg>
+
+						{/* Structured Response node */}
+						<div className="w-full max-w-[280px] shrink-0 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] p-5 shadow-[0_4px_40px_-10px_rgba(16,185,129,0.08)]">
+							<div className="mb-3 flex items-center gap-2.5">
+								<div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
+									<div className="h-2 w-2 rounded-full bg-emerald-400" />
+								</div>
+								<span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">{t.responseLabel}</span>
+							</div>
+							<p className="mb-4 text-xs leading-relaxed text-gray-300">
+								{t.responseBody}
+							</p>
+							<div className="flex flex-col gap-1.5">
+								<span className="rounded-md bg-emerald-500/10 px-2.5 py-1 text-[10px] font-medium text-emerald-400">{t.chipFindings}</span>
+								<span className="rounded-md bg-violet-500/10 px-2.5 py-1 text-[10px] font-medium text-violet-400">{t.chipActions}</span>
+								<span className="rounded-md bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium text-amber-400">{t.chipVerification}</span>
+							</div>
+							<div className="mt-3 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+						</div>
 					</div>
 
-					{/* 3. Response node */}
-					<div className="w-full max-w-[280px] shrink-0 rounded-xl border border-white/10 bg-white/[0.03] p-5">
-						<div className="mb-3 flex items-center gap-2">
-							<div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-							<span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">{t.responseLabel}</span>
-						</div>
-						<p className="mb-4 text-xs leading-relaxed text-gray-300">
-							{t.responseBody}
-						</p>
-						<div className="flex flex-col gap-1.5">
-							<span className="rounded bg-emerald-500/10 px-2.5 py-1 text-[10px] font-medium text-emerald-400">{t.chipFindings}</span>
-							<span className="rounded bg-violet-500/10 px-2.5 py-1 text-[10px] font-medium text-violet-400">{t.chipActions}</span>
-							<span className="rounded bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium text-amber-400">{t.chipVerification}</span>
+					{/* Row 2: Tool nodes connected to center via SVG lines */}
+					<div className="relative w-full">
+						{/* SVG connector lines from center hub to each tool */}
+						<svg className="absolute inset-0 hidden h-full w-full lg:block" preserveAspectRatio="none">
+							{/* Lines radiate from center top to each tool node */}
+							<line x1="50%" y1="0" x2="16.5%" y2="50%" stroke="rgb(52,211,153)" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+							<line x1="50%" y1="0" x2="50%"   y2="50%" stroke="rgb(139,92,246)" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+							<line x1="50%" y1="0" x2="83.5%" y2="50%" stroke="rgb(251,191,36)" strokeWidth="1" strokeDasharray="4 3" opacity="0.3" />
+							{/* Hub dot at top center */}
+							<circle cx="50%" cy="0" r="3" fill="rgb(139,92,246)" opacity="0.5" />
+						</svg>
+
+						<div className="flex flex-col items-center gap-3 lg:flex-row lg:justify-center lg:gap-6 lg:pt-6">
+							{(["emerald", "violet", "amber"] as const).map((accent, i) => {
+								const c = colors[accent];
+								const labels = ["Findings", "Actions", "Verification"];
+								const icons = [
+									<svg key="f" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
+									<svg key="a" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>,
+									<svg key="v" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+								];
+								return (
+									<div
+										key={accent}
+										className={`flex items-center gap-2.5 rounded-xl border ${c.border} ${c.bg} px-5 py-3 shadow-[0_2px_20px_-5px_${c.glow}]`}
+									>
+										<div className={`flex h-6 w-6 items-center justify-center rounded-md ${c.bg} ${c.text}`}>
+											{icons[i]}
+										</div>
+										<span className={`text-xs font-semibold ${c.text}`}>{labels[i]}</span>
+									</div>
+								);
+							})}
 						</div>
 					</div>
 				</div>

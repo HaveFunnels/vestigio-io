@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import AppSidebar from "./AppSidebar";
-import OrgSelector from "@/components/console/OrgSelector";
 import CommandPalette from "./CommandPalette";
 
 interface OrgCtx {
@@ -27,10 +26,8 @@ function TopProgressBar() {
 	const pathname = usePathname();
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(false);
-	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
-		// Start progress on route change
 		setVisible(true);
 		setProgress(30);
 
@@ -78,16 +75,14 @@ function ThemeToggle() {
 	return (
 		<button
 			onClick={() => setTheme(isDark ? "light" : "dark")}
-			className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+			className="flex h-7 w-7 items-center justify-center rounded-lg text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
 			aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
 		>
 			{isDark ? (
-				/* Sun icon */
 				<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
 					<path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
 				</svg>
 			) : (
-				/* Moon icon */
 				<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
 					<path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
 				</svg>
@@ -111,7 +106,6 @@ function PageFade({ children }: { children: React.ReactNode }) {
 		return () => clearTimeout(t);
 	}, [pathname]);
 
-	// Always update content immediately on children change
 	useEffect(() => {
 		setContent(children);
 	}, [children]);
@@ -135,54 +129,72 @@ export default function AppSidebarLayout({
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	return (
-		<div className="flex h-screen bg-[#090911] text-white">
+		<div className="flex h-screen bg-surface-shell text-content">
 			<TopProgressBar />
 			<CommandPalette />
+
+			{/* ── Shell layer: sidebar + topbar sit behind the content ── */}
 			<AppSidebar
 				isAdmin={isAdmin}
 				mobileOpen={mobileOpen}
 				setMobileOpen={setMobileOpen}
 			/>
+
 			<div className="flex flex-1 flex-col overflow-hidden">
-				<header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.06] px-4">
+				{/* ── Top bar (part of the shell) ── */}
+				<header className="flex h-12 shrink-0 items-center justify-between px-4">
 					<div className="flex items-center gap-3">
 						{/* Mobile hamburger */}
 						<button
 							onClick={() => setMobileOpen(true)}
-							className="rounded p-1.5 text-white/40 hover:bg-white/[0.06] hover:text-white/70 md:hidden"
+							className="rounded p-1.5 text-content-faint hover:bg-surface-card-hover hover:text-content-muted md:hidden"
 							aria-label="Open menu"
 						>
 							<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 								<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
 							</svg>
 						</button>
-						<OrgSelector current={orgCtx} />
+						{/* Only show org selector for non-admin users */}
+						{!isAdmin && (
+							<span className="text-sm font-medium text-content-secondary">
+								{orgCtx.orgName}
+							</span>
+						)}
+						{isAdmin && (
+							<span className="text-sm font-medium text-content-secondary">
+								Platform Admin
+							</span>
+						)}
 					</div>
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-2.5">
 						{/* Cmd+K search hint */}
 						<button
 							onClick={() => {
 								window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
 							}}
-							className="hidden items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-xs text-white/25 transition-colors hover:border-white/10 hover:text-white/40 sm:flex"
+							className="hidden items-center gap-2 rounded-lg border border-edge-subtle bg-surface-card/50 px-3 py-1 text-xs text-content-faint transition-colors hover:border-edge hover:text-content-muted sm:flex"
 						>
 							<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
 							</svg>
 							Search...
-							<kbd className="rounded border border-white/10 px-1 py-0.5 text-[10px] font-medium">
+							<kbd className="rounded border border-edge px-1 py-0.5 text-[10px] font-medium">
 								&#8984;K
 							</kbd>
 						</button>
 						<ThemeToggle />
-						<span className="rounded border border-white/10 px-2 py-0.5 text-[10px] font-medium uppercase text-white/40">
+						<span className="rounded border border-edge px-2 py-0.5 text-[10px] font-medium uppercase text-content-faint">
 							{plan}
 						</span>
 					</div>
 				</header>
-				<PageFade>
-					{children}
-				</PageFade>
+
+				{/* ── Content area: floats on top of the shell ── */}
+				<div className="relative mx-2 mb-2 flex-1 overflow-hidden rounded-xl bg-surface shadow-lg ring-1 ring-edge/50">
+					<PageFade>
+						{children}
+					</PageFade>
+				</div>
 			</div>
 		</div>
 	);

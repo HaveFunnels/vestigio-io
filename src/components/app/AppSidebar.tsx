@@ -93,8 +93,8 @@ export default function AppSidebar({
 		const itemClasses = cn(
 			"flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200",
 			active
-				? "bg-white/10 text-white"
-				: "text-white/50 hover:bg-white/[0.06] hover:text-white/80"
+				? "bg-sidebar-active-bg text-sidebar-active-text"
+				: "text-content-muted hover:bg-surface-card-hover hover:text-content-secondary"
 		);
 
 		if (hasChildren) {
@@ -148,8 +148,8 @@ export default function AppSidebar({
 										className={cn(
 											"flex items-center gap-3 rounded-lg py-1.5 pl-10 pr-3 text-[13px] font-medium transition-all duration-200",
 											childActive
-												? "text-emerald-400"
-												: "text-white/40 hover:text-white/70"
+												? "text-accent-text"
+												: "text-content-faint hover:text-content-muted"
 										)}
 									>
 										<svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -191,7 +191,7 @@ export default function AppSidebar({
 					isExpanded ? "mb-1 h-5 px-3 pt-3 opacity-60" : "mb-0 h-0 opacity-0"
 				)}
 			>
-				<span className="text-[10px] font-semibold uppercase tracking-widest text-white/40">
+				<span className="text-[10px] font-semibold uppercase tracking-widest text-content-faint">
 					{title}
 				</span>
 			</div>
@@ -207,7 +207,7 @@ export default function AppSidebar({
 		<>
 			{/* Logo */}
 			<div className={cn(
-				"flex h-14 shrink-0 items-center border-b border-white/[0.06] px-3 transition-all duration-300",
+				"flex h-14 shrink-0 items-center px-3 transition-all duration-300",
 				isExpanded ? "justify-start gap-2.5 px-4" : "justify-center"
 			)}>
 				{/* Icon always visible */}
@@ -215,7 +215,7 @@ export default function AppSidebar({
 					<span className="text-xs font-bold text-emerald-400">V</span>
 				</div>
 				<span className={cn(
-					"text-sm font-semibold tracking-wider text-white transition-all duration-300",
+					"text-sm font-semibold tracking-wider text-content transition-all duration-300",
 					isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
 				)}>
 					VESTIGIO
@@ -238,8 +238,8 @@ export default function AppSidebar({
 				onMouseEnter={handleMouseEnter}
 				onMouseLeave={handleMouseLeave}
 				className={cn(
-					"hidden flex-col border-r border-white/[0.06] md:flex",
-					"bg-gradient-to-b from-[#1a1d25] via-[#13151b] to-[#0e1014]",
+					"hidden flex-col md:flex",
+					"bg-surface-shell",
 					"transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
 					isExpanded ? "w-56" : "w-14"
 				)}
@@ -256,7 +256,7 @@ export default function AppSidebar({
 			>
 				<div
 					className={cn(
-						"absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+						"absolute inset-0 bg-surface-overlay/60 backdrop-blur-sm transition-opacity duration-300",
 						mobileOpen ? "opacity-100" : "opacity-0"
 					)}
 					onClick={() => setMobileOpen(false)}
@@ -264,7 +264,7 @@ export default function AppSidebar({
 				<aside
 					className={cn(
 						"absolute left-0 top-0 flex h-full w-64 flex-col",
-						"bg-gradient-to-b from-[#1a1d25] via-[#13151b] to-[#0e1014]",
+						"bg-surface-shell",
 						"transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
 						mobileOpen ? "translate-x-0" : "-translate-x-full"
 					)}

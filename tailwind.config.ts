@@ -108,6 +108,7 @@ const config: Config = {
 				/* ── Design System Tokens ── */
 				surface: {
 					DEFAULT: "rgb(var(--bg-page) / <alpha-value>)",
+					shell: "rgb(var(--bg-shell) / <alpha-value>)",
 					card: "rgb(var(--bg-card) / <alpha-value>)",
 					"card-hover": "rgb(var(--bg-card-hover) / <alpha-value>)",
 					inset: "rgb(var(--bg-inset) / <alpha-value>)",

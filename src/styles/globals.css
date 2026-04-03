@@ -7,9 +7,10 @@
 :root {
 	/* Backgrounds */
 	--bg-page: 255 255 255;
+	--bg-shell: 244 244 245;
 	--bg-card: 255 255 255;
-	--bg-card-hover: 244 244 245;
-	--bg-inset: 250 250 250;
+	--bg-card-hover: 249 249 249;
+	--bg-inset: 244 244 245;
 	--bg-input: 255 255 255;
 	--bg-overlay: 0 0 0;
 	--bg-tooltip: 24 24 27;
@@ -34,24 +35,25 @@
 	--accent-cta-hover: 4 120 87;
 
 	/* Sidebar */
-	--sidebar-bg: 250 250 250;
+	--sidebar-bg: 244 244 245;
 	--sidebar-active-bg: 5 150 105;
 	--sidebar-active-text: 255 255 255;
 }
 
 .dark {
 	/* Backgrounds */
-	--bg-page: 9 9 11;
-	--bg-card: 24 24 27;
-	--bg-card-hover: 39 39 42;
-	--bg-inset: 24 24 27;
-	--bg-input: 24 24 27;
+	--bg-page: 22 22 26;
+	--bg-shell: 16 16 20;
+	--bg-card: 30 30 35;
+	--bg-card-hover: 38 38 44;
+	--bg-inset: 26 26 30;
+	--bg-input: 30 30 35;
 	--bg-overlay: 0 0 0;
-	--bg-tooltip: 39 39 42;
+	--bg-tooltip: 38 38 44;
 
 	/* Borders */
-	--border-default: 39 39 42;
-	--border-subtle: 63 63 70;
+	--border-default: 42 42 48;
+	--border-subtle: 52 52 60;
 	--border-focus: 5 150 105;
 
 	/* Text */
@@ -69,7 +71,7 @@
 	--accent-cta-hover: 16 185 129;
 
 	/* Sidebar */
-	--sidebar-bg: 12 12 15;
+	--sidebar-bg: 16 16 20;
 	--sidebar-active-bg: 16 185 129;
 	--sidebar-active-text: 255 255 255;
 }

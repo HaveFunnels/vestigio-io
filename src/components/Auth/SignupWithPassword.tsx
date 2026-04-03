@@ -121,6 +121,7 @@ const SignupWithPassword = () => {
 					maxlength='10'
 					type='text'
 					name='name'
+					autoComplete='name'
 					required
 					height='50px'
 					handleChange={handleChange}
@@ -132,6 +133,7 @@ const SignupWithPassword = () => {
 					placeholder={t("email.placeholder")}
 					type='email'
 					name='email'
+					autoComplete='email'
 					required
 					height='50px'
 					handleChange={handleChange}
@@ -143,6 +145,7 @@ const SignupWithPassword = () => {
 					placeholder={t("password.placeholder")}
 					type='password'
 					name='password'
+					autoComplete='new-password'
 					required
 					height='50px'
 					handleChange={handleChange}

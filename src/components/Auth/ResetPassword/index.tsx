@@ -143,6 +143,7 @@ export default function ResetPassword({ token }: { token: string }) {
 							placeholder='Password'
 							type='password'
 							name='newPassword'
+							autoComplete='new-password'
 							height='50px'
 							handleChange={handleChange}
 							value={data.newPassword}
@@ -152,6 +153,7 @@ export default function ResetPassword({ token }: { token: string }) {
 							placeholder='Password'
 							type='password'
 							name='ReNewPassword'
+							autoComplete='new-password'
 							height='50px'
 							handleChange={handleChange}
 							value={data.ReNewPassword}

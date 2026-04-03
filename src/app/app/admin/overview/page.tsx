@@ -755,7 +755,7 @@ export default function AdminOverviewPage() {
                             : "bg-amber-500/10 text-amber-400"
                       }`}
                     >
-                      {org.status}
+                      {org.status.charAt(0).toUpperCase() + org.status.slice(1)}
                     </span>
                     <p className="mt-1 text-[11px] text-content-faint">
                       {timeAgo(org.createdAt)}

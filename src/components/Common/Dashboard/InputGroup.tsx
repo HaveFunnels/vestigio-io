@@ -12,6 +12,7 @@ export default function InputGroup(props: any) {
 		height = "52px",
 		required,
 		maxlength,
+		autoComplete,
 	} = props;
 	const [inputType, setInputType] = useState(type);
 	const id = useId();
@@ -33,6 +34,7 @@ export default function InputGroup(props: any) {
 					value={value}
 					onChange={handleChange}
 					name={name}
+					autoComplete={autoComplete}
 					className={`w-full rounded-lg border border-gray-3 px-5.5 py-3 text-dark outline-none duration-300 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-emerald-600`}
 					style={{ height }}
 					required={required}

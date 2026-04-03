@@ -11,6 +11,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
+import AppleProvider from "next-auth/providers/apple";
 
 declare module "next-auth" {
 	interface Session extends DefaultSession {
@@ -183,6 +184,13 @@ export const authOptions: NextAuthOptions = {
 			? [GoogleProvider({
 				clientId: process.env.GOOGLE_CLIENT_ID,
 				clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+			})]
+			: []),
+
+		...(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET
+			? [AppleProvider({
+				clientId: process.env.APPLE_CLIENT_ID,
+				clientSecret: process.env.APPLE_CLIENT_SECRET,
 			})]
 			: []),
 	],

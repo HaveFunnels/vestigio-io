@@ -92,6 +92,9 @@ interface SocialLoginConfig {
   github_client_id: string;
   github_client_secret: string;
   github_enabled: boolean;
+  apple_client_id: string;
+  apple_client_secret: string;
+  apple_enabled: boolean;
 }
 
 interface NotificationConfig {
@@ -168,6 +171,9 @@ const DEFAULTS: AllConfig = {
     github_client_id: "",
     github_client_secret: "",
     github_enabled: false,
+    apple_client_id: "",
+    apple_client_secret: "",
+    apple_enabled: false,
   },
   notification_config: {
     whatsapp_api_key: "",
@@ -290,6 +296,9 @@ const SECTION_META: Record<
       { key: "github_client_id", label: "GitHub Client ID", type: "text", group: "GitHub" },
       { key: "github_client_secret", label: "GitHub Client Secret", type: "password", group: "GitHub" },
       { key: "github_enabled", label: "GitHub Login Enabled", type: "toggle", group: "GitHub" },
+      { key: "apple_client_id", label: "Apple Client ID", type: "text", group: "Apple" },
+      { key: "apple_client_secret", label: "Apple Client Secret", type: "password", group: "Apple" },
+      { key: "apple_enabled", label: "Apple Login Enabled", type: "toggle", group: "Apple" },
     ],
   },
   notification_config: {

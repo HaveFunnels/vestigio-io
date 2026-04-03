@@ -89,6 +89,7 @@ const InvitedSignin = () => {
 						placeholder='Enter your password'
 						type='password'
 						name='password'
+						autoComplete='new-password'
 						required
 						height='50px'
 						value={password}

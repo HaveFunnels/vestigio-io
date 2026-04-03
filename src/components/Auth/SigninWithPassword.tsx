@@ -97,6 +97,7 @@ export default function SigninWithPassword() {
 				placeholder={t("email.placeholder")}
 				type='email'
 				name='email'
+				autoComplete='email'
 				required
 				height='50px'
 				handleChange={handleChange}
@@ -108,6 +109,7 @@ export default function SigninWithPassword() {
 				placeholder={t("password.placeholder")}
 				type='password'
 				name='password'
+				autoComplete='current-password'
 				required
 				height='50px'
 				handleChange={handleChange}

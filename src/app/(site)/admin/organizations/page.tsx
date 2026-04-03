@@ -285,7 +285,7 @@ export default function AdminOrganizationsPage() {
           ? "bg-red-500/10 text-red-400"
           : "bg-amber-500/10 text-amber-400";
     return (
-      <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${styles}`}>
+      <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium capitalize ${styles}`}>
         {status}
       </span>
     );

@@ -67,6 +67,9 @@ const DEFAULTS: Record<ConfigKey, Record<string, unknown>> = {
     github_client_id: "",
     github_client_secret: "",
     github_enabled: false,
+    apple_client_id: "",
+    apple_client_secret: "",
+    apple_enabled: false,
   },
   notification_config: {
     whatsapp_api_key: "",
@@ -96,7 +99,7 @@ const DEFAULTS: Record<ConfigKey, Record<string, unknown>> = {
 
 const SECRET_FIELDS: Record<string, Set<string>> = {
   smtp_config: new Set(["password"]),
-  social_login_config: new Set(["google_client_secret", "github_client_secret"]),
+  social_login_config: new Set(["google_client_secret", "github_client_secret", "apple_client_secret"]),
   notification_config: new Set(["whatsapp_api_key"]),
   integrations_config: new Set([
     "paddle_api_key",

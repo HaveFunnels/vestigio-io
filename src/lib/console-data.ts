@@ -149,6 +149,11 @@ export interface InventorySurface {
   session_count: number;
   finding_count: number;
   discovery_sources: string[];
+  http_status: number | null;
+  title: string | null;
+  description: string | null;
+  response_time_ms: number | null;
+  tier: string;
 }
 
 /**

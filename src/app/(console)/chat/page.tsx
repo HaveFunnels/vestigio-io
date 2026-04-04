@@ -330,7 +330,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="absolute inset-0 flex overflow-hidden">
+    <div className="flex overflow-hidden" style={{ height: "calc(100vh - 4rem)" }}>
       {/* Conversation Sidebar */}
       <ConversationSidebar
         conversations={conversations}

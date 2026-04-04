@@ -89,7 +89,7 @@ export function FileUploadZone({ onFilesAdded, children }: FileUploadZoneProps) 
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="relative flex-1"
+      className="relative flex flex-1 flex-col overflow-hidden"
     >
       {children}
 

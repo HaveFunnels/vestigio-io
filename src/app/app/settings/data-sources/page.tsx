@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // ──────────────────────────────────────────────
 // Data Sources Settings
@@ -90,6 +90,7 @@ export default function DataSourcesPage() {
 	const [saving, setSaving] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [surfaces_audit_active] = useState(false); // Active once first audit completes
 
 	const environmentId = getEnvironmentId();
 
@@ -174,7 +175,19 @@ export default function DataSourcesPage() {
 		}
 	};
 
+	const [pixelCopied, setPixelCopied] = useState(false);
+	const pixelSnippet = `<script async src="https://app.vestigio.io/snippet/vestigio.js" data-env="${environmentId}"></script>`;
+
 	const sources = [
+		{
+			id: "surface_audit",
+			title: "Surface Audit",
+			description: "Automated surface-level audit of your public pages. Runs once, stays active.",
+			icon: "M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z",
+			status: (surfaces_audit_active ? "verified" : "not_configured") as SourceStatus,
+			configurable: false,
+			unlocks: "Surface inventory, page health, SEO signals",
+		},
 		{
 			id: "saas_access",
 			title: "SaaS Authenticated Access",
@@ -187,18 +200,18 @@ export default function DataSourcesPage() {
 		{
 			id: "pixel",
 			title: "Vestigio Pixel",
-			description: "Passive data collection from your website via pixel snippet.",
+			description: "Install the tracking snippet to collect real user behavior data.",
 			icon: "M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5",
-			status: "not_configured" as SourceStatus,
-			configurable: false,
-			unlocks: "Real user behavior data, session recordings",
+			status: "configured" as SourceStatus,
+			configurable: true,
+			unlocks: "Real user behavior data, conversion tracking",
 		},
 		{
 			id: "stripe",
 			title: "Stripe",
-			description: "Connect Stripe for transaction data and chargeback metrics.",
+			description: "Transaction data, chargeback metrics, and revenue tracking via webhooks.",
 			icon: "M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z",
-			status: "coming_soon" as SourceStatus,
+			status: "configured" as SourceStatus,
 			configurable: false,
 			unlocks: "Revenue data, chargeback rates, transaction metrics",
 		},
@@ -309,6 +322,27 @@ export default function DataSourcesPage() {
 							</div>
 						</div>
 
+						{/* Pixel snippet */}
+						{source.id === "pixel" && expandedCard === "pixel" && (
+							<div style={{ padding: "0 20px 20px", borderTop: "1px solid #27272a" }}>
+								<div style={{ paddingTop: 16 }}>
+									<Field label="Tracking Snippet" hint="Add this before the closing </head> tag on every page">
+										<div style={{ display: "flex", gap: 8 }}>
+											<code style={{ flex: 1, fontSize: 12, padding: "8px 12px", borderRadius: 6, border: "1px solid #3f3f46", backgroundColor: "#09090b", color: "#a1a1aa", fontFamily: "monospace", wordBreak: "break-all", lineHeight: 1.5 }}>
+												{pixelSnippet}
+											</code>
+											<button
+												onClick={() => { navigator.clipboard.writeText(pixelSnippet); setPixelCopied(true); setTimeout(() => setPixelCopied(false), 2000); }}
+												style={{ ...buttonStyle, flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}
+											>
+												{pixelCopied ? "Copied!" : "Copy"}
+											</button>
+										</div>
+									</Field>
+								</div>
+							</div>
+						)}
+
 						{/* Expanded SaaS form */}
 						{source.id === "saas_access" && expandedCard === "saas_access" && (
 							<div style={{ padding: "0 20px 20px", borderTop: "1px solid #27272a" }}>
@@ -335,20 +369,20 @@ export default function DataSourcesPage() {
 										</div>
 										<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
 											<Field label="Auth Method">
-												<select value={saasForm.authMethod} onChange={(e) => updateSaas("authMethod", e.target.value)} style={inputStyle}>
-													<option value="unknown">Not sure</option>
-													<option value="password">Email + Password</option>
-													<option value="oauth">OAuth / SSO</option>
-													<option value="magic_link">Magic Link</option>
-												</select>
+												<StyledSelect value={saasForm.authMethod} onChange={(v) => updateSaas("authMethod", v)} options={[
+													{ value: "unknown", label: "Not sure" },
+													{ value: "password", label: "Email + Password" },
+													{ value: "oauth", label: "OAuth / SSO" },
+													{ value: "magic_link", label: "Magic Link" },
+												]} />
 											</Field>
 											<Field label="MFA / 2FA">
-												<select value={saasForm.mfaMode} onChange={(e) => updateSaas("mfaMode", e.target.value)} style={inputStyle}>
-													<option value="unknown">Not sure</option>
-													<option value="none">No MFA</option>
-													<option value="optional">Optional</option>
-													<option value="required">Required</option>
-												</select>
+												<StyledSelect value={saasForm.mfaMode} onChange={(v) => updateSaas("mfaMode", v)} options={[
+													{ value: "unknown", label: "Not sure" },
+													{ value: "none", label: "No MFA" },
+													{ value: "optional", label: "Optional" },
+													{ value: "required", label: "Required" },
+												]} />
 											</Field>
 										</div>
 										<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
@@ -405,17 +439,46 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 	);
 }
 
+function StyledSelect({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		if (!open) return;
+		function h(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }
+		document.addEventListener("mousedown", h);
+		return () => document.removeEventListener("mousedown", h);
+	}, [open]);
+	const activeLabel = options.find((o) => o.value === value)?.label ?? value;
+	return (
+		<div ref={ref} style={{ position: "relative" }}>
+			<button type="button" onClick={() => setOpen(!open)} style={{ ...inputStyle, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", textAlign: "left" }}>
+				<span>{activeLabel}</span>
+				<svg style={{ width: 12, height: 12, color: "#71717a", transform: open ? "rotate(180deg)" : "", transition: "transform 150ms" }} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+			</button>
+			{open && (
+				<div style={{ position: "absolute", left: 0, top: "100%", zIndex: 50, marginTop: 4, minWidth: "100%", borderRadius: 8, border: "1px solid #27272a", backgroundColor: "#18181b", padding: 4, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.5)" }}>
+					{options.map((opt) => (
+						<button key={opt.value} type="button" onClick={() => { onChange(opt.value); setOpen(false); }} style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 6, border: "none", background: "none", color: opt.value === value ? "#e4e4e7" : "#a1a1aa", fontSize: 13, cursor: "pointer", textAlign: "left" }}
+							onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#27272a")}
+							onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+						>
+							{opt.value === value ? <svg style={{ width: 14, height: 14, color: "#10b981" }} fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> : <span style={{ width: 14 }} />}
+							{opt.label}
+						</button>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
 function BoolSelect({ value, onChange }: { value: boolean | null; onChange: (v: boolean | null) => void }) {
 	return (
-		<select
+		<StyledSelect
 			value={value === null ? "null" : String(value)}
-			onChange={(e) => { const v = e.target.value; onChange(v === "null" ? null : v === "true"); }}
-			style={inputStyle}
-		>
-			<option value="null">Not sure</option>
-			<option value="true">Yes</option>
-			<option value="false">No</option>
-		</select>
+			onChange={(v) => onChange(v === "null" ? null : v === "true")}
+			options={[{ value: "null", label: "Not sure" }, { value: "true", label: "Yes" }, { value: "false", label: "No" }]}
+		/>
 	);
 }
 
@@ -431,7 +494,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 const buttonStyle: React.CSSProperties = {
-	padding: "8px 20px", borderRadius: 6, border: "none",
-	backgroundColor: "#2563eb", color: "#fff", fontWeight: 500,
+	padding: "8px 20px", borderRadius: 8, border: "none",
+	backgroundColor: "#059669", color: "#fff", fontWeight: 500,
 	fontSize: 13, cursor: "pointer",
 };

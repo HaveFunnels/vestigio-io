@@ -4,6 +4,7 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+	output: "standalone",
 	eslint: {
 		// Skip ESLint during builds — lint separately in CI
 		ignoreDuringBuilds: true,

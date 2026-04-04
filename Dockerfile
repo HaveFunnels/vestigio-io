@@ -42,7 +42,7 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --legacy-peer-deps
 # Install Playwright Chromium (cached in this layer)
 RUN npx playwright install chromium
 

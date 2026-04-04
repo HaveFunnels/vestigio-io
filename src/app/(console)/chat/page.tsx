@@ -304,32 +304,6 @@ export default function ChatPage() {
     : messages;
 
   const budgetExhausted = usage ? usage.mcp_remaining <= 0 : false;
-  const setupIncomplete = usage && !usage.domain;
-
-  // ── Setup required gate ──
-  if (setupIncomplete) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <div className="max-w-md text-center">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/10">
-            <svg className="h-7 w-7 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-          </div>
-          <h2 className="text-lg font-semibold text-content">Complete your setup</h2>
-          <p className="mt-2 text-sm leading-relaxed text-content-muted">
-            Add your domain to start using Agentic Chat. The chat needs analysis data from your site to provide actionable insights.
-          </p>
-          <button
-            onClick={() => router.push("/app/onboarding")}
-            className="mt-6 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-cta-hover"
-          >
-            Complete setup
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex overflow-hidden" style={{ height: "calc(100vh - 4rem)" }}>
@@ -359,6 +333,16 @@ export default function ChatPage() {
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Center column: messages + input */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {/* Setup banner (non-blocking) */}
+          {usage && !usage.domain && (
+            <div className="mx-4 mt-2 flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2 sm:mx-8">
+              <svg className="h-4 w-4 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <p className="flex-1 text-xs text-amber-400/80">Add your domain in <button onClick={() => router.push("/app/onboarding")} className="underline hover:text-amber-300">setup</button> to unlock analysis-grounded answers.</p>
+            </div>
+          )}
+
           {/* Top bar with playbooks toggle */}
           <div className="flex items-center justify-end px-4 py-1.5 sm:px-8">
             <button

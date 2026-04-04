@@ -86,7 +86,7 @@ function formatCurrency(val: number): string {
 }
 
 function pickRandomFindings(businessType: BusinessType): FindingDef[] {
-  const hasCheckout = businessType === "saas" || businessType === "ecommerce" || businessType === "app_download";
+  const hasCheckout = businessType === "saas" || businessType === "ecommerce";
   const eligible = FINDINGS_LIBRARY.filter(
     (f) => f.tags.includes("all") || (hasCheckout && f.tags.includes("checkout"))
   );

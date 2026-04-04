@@ -115,7 +115,7 @@ function PageFade({ children }: { children: React.ReactNode }) {
 
 	return (
 		<div
-			className="min-h-0 flex-1 overflow-y-auto transition-opacity duration-200 ease-out"
+			className="min-h-0 flex-1 overflow-auto transition-opacity duration-200 ease-out"
 			style={{ opacity: fade ? 0.6 : 1 }}
 		>
 			{content}

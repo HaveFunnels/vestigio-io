@@ -82,12 +82,13 @@ export function ConversationSidebar({
 
   if (collapsed) {
     return (
-      <div className="flex w-10 flex-col items-center border-r border-edge bg-surface-inset py-3">
-        <button onClick={onToggleCollapse} className="rounded p-1.5 text-content-muted hover:bg-surface-card-hover hover:text-content-secondary" title="Expand sidebar">
+      <div className="absolute left-3 top-3 z-20">
+        <button
+          onClick={onToggleCollapse}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-edge bg-surface-card/80 text-content-muted shadow-sm backdrop-blur-sm transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
+          title="Show conversations"
+        >
           <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none"><path d="M3 5h10M3 8h10M3 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-        </button>
-        <button onClick={onNew} className="mt-3 rounded p-1.5 text-content-muted hover:bg-emerald-500/10 hover:text-emerald-400" title="New conversation">
-          <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
         </button>
       </div>
     );

@@ -6,7 +6,7 @@ import { ChatMessageRenderer } from "@/components/console/chat/ChatMessageRender
 import { ConversationSidebar } from "@/components/console/chat/ConversationSidebar";
 import { ChatInputBar } from "@/components/console/chat/ChatInputBar";
 import { FileUploadZone, type UploadedFile } from "@/components/console/chat/FileUploadZone";
-import ChatBudgetBar from "@/components/console/ChatBudgetBar";
+// ChatBudgetBar removed — usage shown as radial indicator in ChatInputBar
 import { useChatStream } from "@/lib/use-chat-stream";
 import type { ChatMessage, ContentBlock, ModelId, Conversation } from "@/lib/chat-types";
 
@@ -36,9 +36,10 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selectedModel, setSelectedModel] = useState<ModelId>("sonnet_4_6");
   const [usage, setUsage] = useState<UsageState | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [questionQueue, setQuestionQueue] = useState<string[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
+  const [playbooksOpen, setPlaybooksOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -323,78 +324,142 @@ export default function ChatPage() {
 
       {/* Main Chat Area */}
       <FileUploadZone onFilesAdded={(files) => setAttachedFiles((prev) => [...prev, ...files].slice(0, 3))}>
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Budget bar */}
-        {usage && (
-          <ChatBudgetBar
-            mcpUsed={usage.mcp_used}
-            mcpLimit={usage.mcp_limit}
-            mcpRemaining={usage.mcp_remaining}
-            mcpPct={usage.mcp_pct}
-            plan={usage.plan}
-          />
-        )}
-
-        {/* Messages */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
-          <div className="mx-auto max-w-3xl space-y-4">
-            {allMessages.length === 0 && !isStreaming && (
-              <EmptyState onSuggest={handleSend} />
-            )}
-
-            {allMessages.map((msg) => (
-              <ChatMessageRenderer
-                key={msg.id}
-                message={msg}
-                onSuggestedPrompt={handleSuggestedPrompt}
-                onNavigate={handleNavigate}
-                onRetry={handleRetry}
-                onEdit={handleEdit}
-                onFeedback={handleFeedback}
-                onSaveAction={handleSaveAction}
-              />
-            ))}
-
-            {/* Error display */}
-            {error && !isStreaming && (
-              <div className="rounded-md border border-red-800/30 bg-red-500/5 px-4 py-3">
-                <p className="text-sm text-red-400">{error}</p>
-              </div>
-            )}
-
-            {/* Question queue indicator */}
-            {questionQueue.length > 0 && (
-              <div className="text-center">
-                <span className="text-[10px] text-zinc-600">
-                  {questionQueue.length} follow-up{questionQueue.length > 1 ? "s" : ""} queued
-                </span>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Center column: messages + input */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Top bar with playbooks toggle */}
+          <div className="flex items-center justify-end px-4 py-1.5 sm:px-8">
+            <button
+              onClick={() => setPlaybooksOpen(!playbooksOpen)}
+              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                playbooksOpen
+                  ? "bg-emerald-500/10 text-emerald-400"
+                  : "text-content-muted hover:bg-surface-card hover:text-content-secondary"
+              }`}
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+                <path d="M2 3h12M2 7h8M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Playbooks
+            </button>
           </div>
+
+          {/* Messages */}
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+            <div className="mx-auto max-w-3xl space-y-4">
+              {allMessages.length === 0 && !isStreaming && (
+                <EmptyState onSuggest={handleSend} />
+              )}
+
+              {allMessages.map((msg) => (
+                <ChatMessageRenderer
+                  key={msg.id}
+                  message={msg}
+                  onSuggestedPrompt={handleSuggestedPrompt}
+                  onNavigate={handleNavigate}
+                  onRetry={handleRetry}
+                  onEdit={handleEdit}
+                  onFeedback={handleFeedback}
+                  onSaveAction={handleSaveAction}
+                />
+              ))}
+
+              {/* Error display */}
+              {error && !isStreaming && (
+                <div className="rounded-md border border-red-800/30 bg-red-500/5 px-4 py-3">
+                  <p className="text-sm text-red-400">{error}</p>
+                </div>
+              )}
+
+              {/* Question queue indicator */}
+              {questionQueue.length > 0 && (
+                <div className="text-center">
+                  <span className="text-[10px] text-content-faint">
+                    {questionQueue.length} follow-up{questionQueue.length > 1 ? "s" : ""} queued
+                  </span>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Input */}
+          <ChatInputBar
+            onSend={(text) => {
+              handleSend(text);
+              setAttachedFiles([]); // Clear files after send
+            }}
+            disabled={budgetExhausted}
+            plan={usage?.plan || "vestigio"}
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+            attachedFiles={attachedFiles}
+            onRemoveFile={(idx) => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))}
+            mcpPct={usage?.mcp_pct ?? 0}
+            mcpUsed={usage?.mcp_used ?? 0}
+            mcpLimit={usage?.mcp_limit ?? 0}
+            placeholder={
+              budgetExhausted
+                ? "Daily budget exhausted. Try again tomorrow or upgrade your plan."
+                : isStreaming
+                  ? "Analyzing... (type to queue follow-up)"
+                  : undefined
+            }
+          />
         </div>
 
-        {/* Input */}
-        <ChatInputBar
-          onSend={(text) => {
-            handleSend(text);
-            setAttachedFiles([]); // Clear files after send
-          }}
-          disabled={budgetExhausted}
-          plan={usage?.plan || "vestigio"}
-          selectedModel={selectedModel}
-          onModelChange={setSelectedModel}
-          attachedFiles={attachedFiles}
-          onRemoveFile={(idx) => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))}
-          placeholder={
-            budgetExhausted
-              ? "Daily budget exhausted. Try again tomorrow or upgrade your plan."
-              : isStreaming
-                ? "Analyzing... (type to queue follow-up)"
-                : undefined
-          }
-        />
+        {/* Playbooks Right Drawer */}
+        <div
+          className={`shrink-0 overflow-hidden border-l border-edge bg-surface-inset transition-all duration-300 ${
+            playbooksOpen ? "w-80" : "w-0 border-l-0"
+          }`}
+        >
+          <div className="flex h-full w-80 flex-col">
+            {/* Drawer header */}
+            <div className="flex items-center justify-between border-b border-edge px-4 py-2.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-content-muted">Playbooks</span>
+              <button
+                onClick={() => setPlaybooksOpen(false)}
+                className="rounded p-1 text-content-muted hover:bg-surface-card-hover hover:text-content-secondary"
+                title="Close playbooks"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+                  <path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Drawer content */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {FEATURED_PLAYBOOKS.map((pb) => (
+                <button
+                  key={pb.id}
+                  onClick={() => { handleSend(pb.prompt); setPlaybooksOpen(false); }}
+                  className={`group flex w-full flex-col rounded-lg border bg-surface-card/30 p-3.5 text-left transition-all ${FEATURED_COLORS[pb.color] || FEATURED_COLORS.emerald}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${FEATURED_BADGE_COLORS[pb.color] || FEATURED_BADGE_COLORS.emerald}`}>
+                      {pb.category}
+                    </span>
+                    <span className="text-[10px] text-content-faint">~{pb.queries} queries</span>
+                  </div>
+                  <h3 className="mt-1.5 text-sm font-medium text-content-secondary group-hover:text-content">
+                    {pb.title}
+                  </h3>
+                  <p className="mt-0.5 text-xs leading-relaxed text-content-muted line-clamp-2">
+                    {pb.description}
+                  </p>
+                  <div className="mt-auto flex items-center justify-end pt-2">
+                    <span className="text-[10px] text-content-faint transition-colors group-hover:text-emerald-500">
+                      Use prompt &rarr;
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
       </FileUploadZone>
     </div>
@@ -487,7 +552,7 @@ const FEATURED_BADGE_COLORS: Record<string, string> = {
 
 function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12">
+    <div className="flex flex-col items-center justify-center py-16">
       {/* Logo mark */}
       <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-700/30 bg-emerald-500/10">
         <svg className="h-6 w-6 text-emerald-400" viewBox="0 0 24 24" fill="none">
@@ -495,68 +560,30 @@ function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
         </svg>
       </div>
 
-      <h2 className="text-lg font-semibold text-zinc-200">
+      <h2 className="text-lg font-semibold text-content-secondary">
         Vestigio Analysis
       </h2>
-      <p className="mt-1 max-w-sm text-center text-sm text-zinc-500">
+      <p className="mt-1 max-w-sm text-center text-sm text-content-muted">
         Ask about your revenue, risks, chargebacks, or what to fix first.
         Every answer is grounded in your audit data.
       </p>
 
-      {/* Quick questions */}
-      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {QUICK_PRESETS.map((p) => (
+      {/* Quick questions — only first 3 */}
+      <div className="mt-6 grid grid-cols-3 gap-2">
+        {QUICK_PRESETS.slice(0, 3).map((p) => (
           <button
             key={p.text}
             onClick={() => onSuggest(p.text)}
-            className="rounded-lg border border-zinc-700/60 px-3 py-2 text-left text-[13px] text-zinc-400 transition-colors hover:border-emerald-600/50 hover:text-emerald-400"
+            className="rounded-lg border border-edge px-3 py-2 text-center text-[13px] text-content-tertiary transition-colors hover:border-emerald-600/50 hover:text-emerald-400"
           >
             {p.label}
           </button>
         ))}
       </div>
 
-      {/* Playbook prompts */}
-      <div className="mt-8 w-full max-w-2xl">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-            Expert analysis prompts
-          </div>
-          <div className="flex-1 border-t border-zinc-800/60" />
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          {FEATURED_PLAYBOOKS.map((pb) => (
-            <button
-              key={pb.id}
-              onClick={() => onSuggest(pb.prompt)}
-              className={`group flex flex-col rounded-lg border bg-zinc-900/30 p-3.5 text-left transition-all ${FEATURED_COLORS[pb.color] || FEATURED_COLORS.emerald}`}
-            >
-              <div className="flex items-center gap-2">
-                <span className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${FEATURED_BADGE_COLORS[pb.color] || FEATURED_BADGE_COLORS.emerald}`}>
-                  {pb.category}
-                </span>
-                <span className="text-[10px] text-zinc-600">~{pb.queries} queries</span>
-              </div>
-              <h3 className="mt-1.5 text-sm font-medium text-zinc-200 group-hover:text-zinc-100">
-                {pb.title}
-              </h3>
-              <p className="mt-0.5 text-xs leading-relaxed text-zinc-500 line-clamp-2">
-                {pb.description}
-              </p>
-              <div className="mt-auto flex items-center justify-end pt-2">
-                <span className="text-[10px] text-zinc-600 transition-colors group-hover:text-emerald-500">
-                  Use prompt &rarr;
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <p className="mt-3 text-center text-[10px] text-zinc-600">
-          30+ expert prompts available in the Playbooks panel
-        </p>
-      </div>
+      <p className="mt-5 text-[10px] text-content-faint">
+        Open <span className="font-medium text-content-muted">Playbooks</span> for expert analysis prompts
+      </p>
     </div>
   );
 }

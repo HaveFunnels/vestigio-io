@@ -5,8 +5,10 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
+import Link from "next/link";
 import AppSidebar from "./AppSidebar";
 import CommandPalette from "./CommandPalette";
+import { orgDropdownNav } from "./sidebar-nav-data";
 
 interface OrgCtx {
 	orgId: string;
@@ -150,18 +152,35 @@ function UserMenu() {
 			{open && (
 				<div className="absolute right-0 top-full z-50 mt-1.5 w-56 rounded-lg border border-edge bg-surface-card p-1 shadow-xl">
 					<div className="border-b border-edge px-3 py-2">
-						<p className="truncate text-xs font-medium text-content">{session?.user?.name || "Admin"}</p>
+						<p className="truncate text-xs font-medium text-content">{session?.user?.name || "User"}</p>
 						<p className="truncate text-[10px] text-content-faint">{email}</p>
 					</div>
-					<button
-						onClick={() => signOut({ callbackUrl: "/" })}
-						className="mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content"
-					>
-						<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-							<path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-						</svg>
-						Sign out
-					</button>
+					<div className="py-1">
+						{orgDropdownNav.map((item) => (
+							<Link
+								key={item.id}
+								href={item.href!}
+								onClick={() => setOpen(false)}
+								className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content"
+							>
+								<svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+								</svg>
+								{item.label}
+							</Link>
+						))}
+					</div>
+					<div className="border-t border-edge pt-1">
+						<button
+							onClick={() => signOut({ callbackUrl: "/" })}
+							className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content"
+						>
+							<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+							</svg>
+							Sign out
+						</button>
+					</div>
 				</div>
 			)}
 		</div>

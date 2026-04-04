@@ -7,7 +7,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/libs/utils";
 import {
 	productNav,
-	controlPlaneNav,
+	bottomNav,
 	adminNav,
 	type NavItem,
 } from "./sidebar-nav-data";
@@ -247,9 +247,15 @@ export default function AppSidebar({
 					if (item.id === "chat" && !flags.ai_chat_enabled) return false;
 					return true;
 				}))}
-				{!isAdmin && renderSection("Control Plane", controlPlaneNav)}
 				{isAdmin && renderSection("Platform Admin", adminNav)}
 			</nav>
+
+			{/* Bottom-pinned nav (Data Sources) */}
+			{!isAdmin && (
+				<div className="shrink-0 border-t border-edge/30 p-2">
+					{bottomNav.map((item) => renderNavItem(item))}
+				</div>
+			)}
 		</>
 	);
 

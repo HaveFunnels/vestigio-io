@@ -20,6 +20,9 @@ interface ChatInputBarProps {
   attachedFiles?: UploadedFile[];
   onRemoveFile?: (index: number) => void;
   placeholder?: string;
+  mcpPct?: number;
+  mcpUsed?: number;
+  mcpLimit?: number;
 }
 
 export function ChatInputBar({
@@ -31,6 +34,9 @@ export function ChatInputBar({
   attachedFiles = [],
   onRemoveFile,
   placeholder = "Ask about your revenue, risks, or what to fix first...",
+  mcpPct = 0,
+  mcpUsed = 0,
+  mcpLimit = 0,
 }: ChatInputBarProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -63,8 +69,18 @@ export function ChatInputBar({
     textareaRef.current?.focus();
   }
 
+  // Radial usage bar helpers
+  const usagePct = Math.min(100, mcpPct);
+  const radius = 8;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference - (usagePct / 100) * circumference;
+  const usageColor =
+    usagePct >= 90 ? "stroke-red-500" :
+    usagePct >= 70 ? "stroke-amber-500" :
+    "stroke-emerald-500";
+
   return (
-    <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3 sm:px-6">
+    <div className="border-t border-edge bg-surface-inset px-4 py-3 sm:px-6">
       <div className="mx-auto max-w-3xl">
         {/* Attached files */}
         {attachedFiles.length > 0 && (
@@ -75,12 +91,12 @@ export function ChatInputBar({
           </div>
         )}
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-center gap-2">
           {/* File upload button */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg border border-zinc-700/50 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-400 disabled:opacity-30"
+            className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg border border-edge text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-tertiary disabled:opacity-30"
             title="Attach file"
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
@@ -108,13 +124,35 @@ export function ChatInputBar({
               disabled={disabled}
               placeholder={placeholder}
               rows={1}
-              className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-900 px-3.5 py-2.5 pr-24 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 disabled:opacity-50"
+              className="w-full resize-none rounded-lg border border-edge bg-surface-card px-3.5 py-2.5 pr-24 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-edge-focus focus:ring-1 focus:ring-emerald-600 disabled:opacity-50"
             />
             <div className="absolute bottom-2 right-2 flex items-center gap-1">
               <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
               <ModelSelector selected={selectedModel} onSelect={onModelChange} plan={plan} />
             </div>
           </div>
+
+          {/* Radial usage indicator */}
+          {mcpLimit > 0 && (
+            <div className="group relative flex h-[42px] shrink-0 items-center justify-center" title={`${mcpUsed}/${mcpLimit} queries used`}>
+              <svg width="20" height="20" viewBox="0 0 20 20" className="rotate-[-90deg]">
+                <circle cx="10" cy="10" r={radius} fill="none" className="stroke-surface-card" strokeWidth="2.5" />
+                <circle
+                  cx="10" cy="10" r={radius}
+                  fill="none"
+                  className={`${usageColor} transition-all duration-500`}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={dashOffset}
+                />
+              </svg>
+              {/* Tooltip */}
+              <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-surface-tooltip px-2 py-1 text-[10px] text-content-secondary opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                {mcpUsed}/{mcpLimit} queries used
+              </div>
+            </div>
+          )}
 
           {/* Send button */}
           <button
@@ -130,12 +168,12 @@ export function ChatInputBar({
 
         {/* Footer */}
         <div className="mt-1.5 flex items-center justify-between">
-          <p className="text-[10px] text-zinc-600">
-            <kbd className="rounded border border-zinc-800 px-1 py-0.5 font-mono text-[9px]">Enter</kbd>{" "}send,{" "}
-            <kbd className="rounded border border-zinc-800 px-1 py-0.5 font-mono text-[9px]">Shift+Enter</kbd>{" "}new line
+          <p className="text-[10px] text-content-faint">
+            <kbd className="rounded border border-edge px-1 py-0.5 font-mono text-[9px]">Enter</kbd>{" "}send,{" "}
+            <kbd className="rounded border border-edge px-1 py-0.5 font-mono text-[9px]">Shift+Enter</kbd>{" "}new line
           </p>
           {input.length > 1500 && (
-            <span className={`font-mono text-[10px] ${input.length > 1900 ? "text-red-400" : "text-zinc-600"}`}>
+            <span className={`font-mono text-[10px] ${input.length > 1900 ? "text-red-400" : "text-content-faint"}`}>
               {input.length}/2000
             </span>
           )}

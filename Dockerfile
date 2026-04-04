@@ -49,13 +49,15 @@ RUN npx playwright install chromium
 # ── Builder ──────────────────────────────────
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
+RUN npm ci --legacy-peer-deps
 COPY --from=deps /root/.cache/ms-playwright /root/.cache/ms-playwright
 COPY . .
 
 # Generate Prisma client and build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN ./node_modules/.bin/prisma generate
+RUN npx prisma generate
 RUN npm run build
 
 # ── Runner ───────────────────────────────────

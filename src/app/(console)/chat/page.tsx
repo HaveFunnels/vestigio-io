@@ -132,9 +132,11 @@ export default function ChatPage() {
     fetchConversations();
   }, []);
 
-  // ── Auto-scroll ────────────────────────────
+  // ── Auto-scroll (only when there are messages) ──
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0 || streamingMessage) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, streamingMessage]);
 
   // ── Create new conversation ────────────────
@@ -330,7 +332,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex overflow-hidden" style={{ height: "calc(100vh - 4rem)" }}>
+    <div className="flex h-full overflow-hidden">
       {/* Conversation Sidebar */}
       <ConversationSidebar
         conversations={conversations}

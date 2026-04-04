@@ -264,6 +264,8 @@
 			"business_ecommerce": "Online Store",
 			"business_saas": "SaaS",
 			"business_services": "Services",
+			"business_app_download": "App Download",
+			"business_blog": "Blog / News / Forum",
 			"business_institutional": "Institutional",
 			"findings_found": "findings found",
 			"showing_of": "Showing {shown} of {total} findings found — create an account to see all",

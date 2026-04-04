@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
 type State = "input" | "loading" | "results";
-type BusinessType = "saas" | "ecommerce" | "services" | "institutional";
+type BusinessType = "saas" | "ecommerce" | "services" | "institutional" | "app_download" | "blog";
 
 const STATUS_KEYS = [
   "status_discovering",
@@ -21,10 +21,12 @@ const STATUS_KEYS = [
 // ── Impact multipliers per business type ──
 // [min%, max%] of monthly revenue per finding
 const IMPACT_PROFILES: Record<BusinessType, { base: [number, number]; label: string }> = {
-  ecommerce:     { base: [0.06, 0.18], label: "business_ecommerce" },
-  saas:          { base: [0.04, 0.14], label: "business_saas" },
-  services:      { base: [0.02, 0.08], label: "business_services" },
-  institutional: { base: [0.01, 0.04], label: "business_institutional" },
+  ecommerce:     { base: [0.10, 0.28], label: "business_ecommerce" },
+  saas:          { base: [0.08, 0.22], label: "business_saas" },
+  app_download:  { base: [0.06, 0.18], label: "business_app_download" },
+  services:      { base: [0.05, 0.15], label: "business_services" },
+  blog:          { base: [0.04, 0.12], label: "business_blog" },
+  institutional: { base: [0.03, 0.09], label: "business_institutional" },
 };
 
 // ── Findings library (30 total) ──
@@ -84,7 +86,7 @@ function formatCurrency(val: number): string {
 }
 
 function pickRandomFindings(businessType: BusinessType): FindingDef[] {
-  const hasCheckout = businessType === "saas" || businessType === "ecommerce";
+  const hasCheckout = businessType === "saas" || businessType === "ecommerce" || businessType === "app_download";
   const eligible = FINDINGS_LIBRARY.filter(
     (f) => f.tags.includes("all") || (hasCheckout && f.tags.includes("checkout"))
   );

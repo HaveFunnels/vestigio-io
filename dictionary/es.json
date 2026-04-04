@@ -264,6 +264,8 @@
 			"business_ecommerce": "Tienda Online",
 			"business_saas": "SaaS",
 			"business_services": "Servicios",
+			"business_app_download": "App Download",
+			"business_blog": "Blog / Noticias / Foro",
 			"business_institutional": "Institucional",
 			"findings_found": "hallazgos encontrados",
 			"showing_of": "Mostrando {shown} de {total} hallazgos — crea una cuenta para ver todos",

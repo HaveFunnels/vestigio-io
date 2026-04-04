@@ -1,4 +1,4 @@
-import { getMcpServer } from './mcp-client';
+import { getMcpServer, initMcpServer } from './mcp-client';
 import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection } from '../../packages/projections';
 import type { MapDefinition } from '../../packages/maps';
 import type { McpAnswer } from '../../apps/mcp/types';
@@ -42,7 +42,10 @@ export async function ensureContext(orgCtx: {
   domain: string;
 }): Promise<void> {
   try {
-    const server = getMcpServer();
+    // initMcpServer uses `await import()` to handle the async McpServer module.
+    // A synchronous require() fails silently because webpack wraps McpServer
+    // in an async module (due to playwright deps), returning undefined exports.
+    const server = await initMcpServer();
     if (server.getContext()) return; // already loaded
 
     // Dynamic imports to keep Prisma out of client bundles

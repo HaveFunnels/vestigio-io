@@ -34,25 +34,40 @@ import type { McpSessionContext } from '../../apps/mcp/types';
 const GLOBAL_KEY = '__vestigio_mcp_server__' as const;
 const globalStore = globalThis as unknown as { [GLOBAL_KEY]?: any };
 
-export function getMcpServer(): any {
-  if (!globalStore[GLOBAL_KEY]) {
-    // Dynamic require to keep Playwright out of client bundles.
-    // This file is imported by "use client" components but McpServer
-    // only runs server-side. At build time, webpack skips the require.
-    try {
-      const { McpServer } = require('../../apps/mcp/server');
-      globalStore[GLOBAL_KEY] = new McpServer();
-    } catch {
-      // Client-side: return a stub that throws on use
-      return new Proxy({}, {
-        get: (_, prop) => {
-          if (prop === 'callTool') return () => ({ type: 'error', data: { message: 'MCP not available on client' } });
-          return () => null;
-        },
-      });
-    }
+// Null-safe proxy returned when the real MCP server isn't available (browser, init failure)
+const nullProxy = new Proxy({}, {
+  get: (_, prop) => {
+    if (prop === 'callTool') return () => ({ type: 'error', data: { message: 'MCP not available on client' } });
+    return () => null;
+  },
+});
+
+/**
+ * Async initialization — MUST be called from ensureContext() before any sync access.
+ *
+ * Uses `await import()` because the McpServer module is async (has async deps
+ * like playwright). A synchronous `require()` would get `undefined` exports
+ * from webpack's async module wrapper, causing a silent failure.
+ */
+export async function initMcpServer(): Promise<any> {
+  if (globalStore[GLOBAL_KEY]) return globalStore[GLOBAL_KEY];
+  try {
+    const { McpServer } = await import('../../apps/mcp/server');
+    globalStore[GLOBAL_KEY] = new McpServer();
+    console.log('[initMcpServer] McpServer created successfully');
+    return globalStore[GLOBAL_KEY];
+  } catch (err) {
+    console.error('[initMcpServer] Failed to create McpServer:', err instanceof Error ? err.message : err);
+    return nullProxy;
   }
-  return globalStore[GLOBAL_KEY];
+}
+
+/**
+ * Sync access — returns the singleton if already initialized, or the null proxy.
+ * Call initMcpServer() first (from the server layout via ensureContext).
+ */
+export function getMcpServer(): any {
+  return globalStore[GLOBAL_KEY] || nullProxy;
 }
 
 export function resetMcpServer(): void {

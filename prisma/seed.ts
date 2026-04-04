@@ -944,6 +944,208 @@ async function main() {
       qualityScore: 86,
       collectionMethod: 'api',
     },
+
+    // ── High-impact evidence for compelling demo findings ──
+
+    // Mobile checkout completely unreachable → 15-35% revenue impact
+    {
+      id: 'demo_evidence_13',
+      evidenceKey: 'ev_mobile_verification',
+      evidenceType: 'mobile_verification',
+      payload: JSON.stringify({
+        targetUrl: 'https://acme-store.com/',
+        device: { name: 'iPhone 14 Pro', viewport: { width: 393, height: 852 } },
+        commercialPathReachable: false,
+        checkoutReachable: false,
+        stepsSucceeded: 2,
+        stepsFailed: 4,
+        steps: [
+          { action: 'navigate_home', success: true, url: 'https://acme-store.com/' },
+          { action: 'tap_product', success: true, url: 'https://acme-store.com/products/wireless-headphones-pro' },
+          { action: 'tap_add_to_cart', success: false, reason: 'Button not tappable — overlapped by sticky chat widget' },
+          { action: 'navigate_cart', success: false, reason: 'Cart icon hidden behind hamburger menu; menu does not open on tap' },
+          { action: 'proceed_to_checkout', success: false, reason: 'Never reached cart page' },
+          { action: 'complete_payment', success: false, reason: 'Never reached checkout' },
+        ],
+        trustDegradedVsDesktop: true,
+        trustGaps: ['No trust badges visible in mobile viewport', 'Payment icons below fold and never seen'],
+        observation: 'Mobile visitors cannot add products to cart or reach checkout. The add-to-cart button is overlapped by the Intercom chat widget on screens narrower than 430px. The hamburger menu tap handler is broken, preventing navigation to cart. This blocks 100% of mobile conversions — approximately 55% of all traffic.',
+      }),
+      qualityScore: 94,
+      collectionMethod: 'browser',
+    },
+
+    // Cart page returning 500 intermittently → critical path broken
+    {
+      id: 'demo_evidence_14',
+      evidenceKey: 'ev_cart_http_errors',
+      evidenceType: 'http_monitoring',
+      payload: JSON.stringify({
+        url: 'https://acme-store.com/cart',
+        checks: [
+          { timestamp: '2026-04-03T02:00:00Z', statusCode: 200, responseTimeMs: 480 },
+          { timestamp: '2026-04-03T06:00:00Z', statusCode: 500, responseTimeMs: 12400 },
+          { timestamp: '2026-04-03T10:00:00Z', statusCode: 500, responseTimeMs: 15200 },
+          { timestamp: '2026-04-03T14:00:00Z', statusCode: 200, responseTimeMs: 520 },
+          { timestamp: '2026-04-03T18:00:00Z', statusCode: 500, responseTimeMs: 11800 },
+          { timestamp: '2026-04-03T22:00:00Z', statusCode: 200, responseTimeMs: 490 },
+        ],
+        errorRate: 0.5,
+        avgResponseTimeMs: 6815,
+        affectedPaths: ['/cart', '/cart/update'],
+        errorPattern: 'Intermittent 500 errors correlate with peak traffic hours (6AM-10AM, 6PM). Server returns "Internal Server Error" with no retry headers.',
+        observation: 'The cart page fails with HTTP 500 during approximately 50% of checks, primarily during peak traffic hours. Buyers who click "Add to Cart" during these windows see a blank error page with no recovery path. At $120k/mo revenue and 2.8% conversion rate, each hour of cart downtime during peak costs approximately $833 in lost sales.',
+      }),
+      qualityScore: 93,
+      collectionMethod: 'api',
+    },
+
+    // Hidden discount endpoint discoverable via parameter guessing
+    {
+      id: 'demo_evidence_15',
+      evidenceKey: 'ev_discount_endpoint_exposed',
+      evidenceType: 'deep_crawl',
+      payload: JSON.stringify({
+        discoveredUrls: [
+          {
+            url: 'https://acme-store.com/api/discount/apply?code=WELCOME50',
+            discoveryMethod: 'parameter_fuzzing',
+            statusCode: 200,
+            responseBody: '{"discount":50,"type":"percentage","applied":true}',
+            routeIntent: 'coupon_discount',
+            isNetNew: true,
+            appearsGuessable: true,
+            hasRateLimiting: false,
+            hasAuthentication: false,
+          },
+          {
+            url: 'https://acme-store.com/api/discount/apply?code=STAFF100',
+            discoveryMethod: 'parameter_fuzzing',
+            statusCode: 200,
+            responseBody: '{"discount":100,"type":"percentage","applied":true}',
+            routeIntent: 'coupon_discount',
+            isNetNew: true,
+            appearsGuessable: true,
+            hasRateLimiting: false,
+            hasAuthentication: false,
+          },
+          {
+            url: 'https://acme-store.com/admin/orders/export?format=csv',
+            discoveryMethod: 'path_enumeration',
+            statusCode: 200,
+            routeIntent: 'admin_data_export',
+            isNetNew: true,
+            appearsGuessable: true,
+            hasAuthentication: false,
+          },
+        ],
+        totalEndpointsTested: 340,
+        totalDiscovered: 3,
+        observation: 'Three unprotected endpoints discovered. Two discount codes (WELCOME50 for 50% off, STAFF100 for 100% off) can be applied by anyone without authentication or rate limiting. The STAFF100 code eliminates all revenue from any order. Additionally, an admin order export endpoint is publicly accessible without authentication, exposing customer data.',
+      }),
+      qualityScore: 97,
+      collectionMethod: 'automated_scan',
+    },
+
+    // Payment API failures during checkout
+    {
+      id: 'demo_evidence_16',
+      evidenceKey: 'ev_payment_api_failures',
+      evidenceType: 'network_analysis',
+      payload: JSON.stringify({
+        context: 'checkout_flow',
+        url: 'https://acme-store.com/checkout',
+        requests: [
+          { url: 'https://acme-store.com/api/create-payment-intent', method: 'POST', status: 200, durationMs: 1200, success: true },
+          { url: 'https://acme-store.com/api/create-payment-intent', method: 'POST', status: 502, durationMs: 30000, success: false, error: 'Bad Gateway — upstream Stripe timeout' },
+          { url: 'https://acme-store.com/api/create-payment-intent', method: 'POST', status: 502, durationMs: 30000, success: false, error: 'Bad Gateway — upstream Stripe timeout' },
+          { url: 'https://acme-store.com/api/verify-address', method: 'POST', status: 504, durationMs: 15000, success: false, error: 'Gateway Timeout' },
+        ],
+        failureRate: 0.5,
+        avgFailureDurationMs: 25000,
+        retryBehavior: 'none',
+        userFacingError: 'Buyers see "Something went wrong. Please try again." with no specific guidance. No automatic retry is attempted.',
+        observation: 'Payment API calls fail approximately 50% of the time due to upstream Stripe timeouts (30-second timeout with no retry). Address verification also times out. When payment creation fails, the buyer sees a generic error with no retry mechanism — most abandon. Combined with the cart intermittent 500s, the checkout funnel has a ~75% technical failure rate during peak hours.',
+      }),
+      qualityScore: 91,
+      collectionMethod: 'browser',
+    },
+
+    // Checkout analytics missing — measurement blind spot
+    {
+      id: 'demo_evidence_17',
+      evidenceKey: 'ev_checkout_analytics_gap',
+      evidenceType: 'script_audit',
+      payload: JSON.stringify({
+        comparison: [
+          { page: 'https://acme-store.com/', analyticsScripts: ['GA4', 'GTM', 'Facebook Pixel', 'Segment', 'Hotjar', 'Clarity'], count: 6 },
+          { page: 'https://acme-store.com/products/wireless-headphones-pro', analyticsScripts: ['GA4', 'GTM', 'Facebook Pixel', 'Segment', 'Hotjar'], count: 5 },
+          { page: 'https://acme-store.com/cart', analyticsScripts: ['GA4', 'GTM'], count: 2 },
+          { page: 'https://checkout.stripe.com/c/pay/cs_live_abc123', analyticsScripts: [], count: 0 },
+          { page: 'https://acme-store.com/thank-you', analyticsScripts: [], count: 0 },
+        ],
+        gapAnalysis: {
+          checkoutTracked: false,
+          thankYouTracked: false,
+          purchaseEventFiring: false,
+          revenueAttributionPossible: false,
+        },
+        observation: 'Analytics tracking drops from 6 scripts on the homepage to zero on checkout and thank-you pages. Because checkout is off-domain (Stripe hosted), no first-party analytics runs there. The thank-you page has no tracking scripts at all — purchase events never fire. This means: (1) ad platforms cannot attribute conversions, inflating CPA by 40-60%, (2) A/B tests cannot measure checkout impact, (3) retargeting audiences exclude all converters, and (4) revenue reporting in analytics is $0 regardless of actual sales.',
+      }),
+      qualityScore: 96,
+      collectionMethod: 'browser',
+    },
+
+    // Security vulnerabilities on payment flow
+    {
+      id: 'demo_evidence_18',
+      evidenceKey: 'ev_security_scan_results',
+      evidenceType: 'security_scan',
+      payload: JSON.stringify({
+        target: 'acme-store.com',
+        findings: [
+          {
+            id: 'vuln_1',
+            severity: 'high',
+            title: 'Credit card form served over mixed content',
+            description: 'The main checkout page at /checkout loads an iframe from an HTTP (non-HTTPS) source for the address autocomplete widget. This creates a mixed content warning and breaks the browser padlock indicator.',
+            cwe: 'CWE-319',
+            affectsPayment: true,
+          },
+          {
+            id: 'vuln_2',
+            severity: 'high',
+            title: 'Session token in URL parameter',
+            description: 'The checkout flow passes the session token as a URL query parameter (?session=cs_live_abc123). This token appears in browser history, server logs, and Referer headers sent to third parties.',
+            cwe: 'CWE-598',
+            affectsPayment: true,
+          },
+          {
+            id: 'vuln_3',
+            severity: 'medium',
+            title: 'Missing Content-Security-Policy on checkout',
+            description: 'The /checkout page has no Content-Security-Policy header. Any injected script could exfiltrate payment data.',
+            cwe: 'CWE-693',
+            affectsPayment: true,
+          },
+          {
+            id: 'vuln_4',
+            severity: 'critical',
+            title: 'Admin panel accessible without authentication',
+            description: 'The /admin/orders endpoint returns full order data (customer names, emails, addresses, last-4 card digits) without requiring authentication.',
+            cwe: 'CWE-306',
+            affectsPayment: false,
+          },
+        ],
+        totalVulnerabilities: 4,
+        criticalCount: 1,
+        highCount: 2,
+        mediumCount: 1,
+        observation: 'Four security issues affect the payment flow and customer data. The most critical is an unauthenticated admin endpoint exposing all order data. Two high-severity issues affect checkout trust: mixed content breaking the padlock and session tokens in URLs. These issues compound the trust erosion from the off-domain redirect chain — buyers who notice the broken padlock or URL token are significantly more likely to abandon.',
+      }),
+      qualityScore: 94,
+      collectionMethod: 'automated_scan',
+    },
   ];
 
   let evidenceCreated = 0;

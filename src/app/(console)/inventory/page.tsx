@@ -378,17 +378,13 @@ export default function InventoryPage() {
     down: 0,
   };
 
+  const liveCount = surfaces.filter((s) => s.is_live).length;
+
   const summaryCards: SummaryCard[] = [
     {
       label: "Total Surfaces",
       value: surfaces.length,
       subtext: mockDeltas.total !== 0 ? `${mockDeltas.total > 0 ? "+" : ""}${mockDeltas.total} from last period` : undefined,
-    },
-    {
-      label: "Live",
-      value: surfaces.filter((s) => s.is_live).length,
-      variant: "success",
-      subtext: mockDeltas.live !== 0 ? `${mockDeltas.live > 0 ? "+" : ""}${mockDeltas.live} from last period` : undefined,
     },
     {
       label: "Commercial",
@@ -401,12 +397,6 @@ export default function InventoryPage() {
       value: surfaces.filter((s) => s.finding_count > 0).length,
       variant: "warning",
       subtext: mockDeltas.findings !== 0 ? `${mockDeltas.findings > 0 ? "+" : ""}${mockDeltas.findings} from last period` : undefined,
-    },
-    {
-      label: "Down",
-      value: downCount,
-      variant: "danger",
-      subtext: mockDeltas.down !== 0 ? `${mockDeltas.down > 0 ? "+" : ""}${mockDeltas.down} from last period` : undefined,
     },
   ];
 
@@ -548,7 +538,38 @@ export default function InventoryPage() {
       >
         {() => (
           <>
-            <SummaryCards cards={summaryCards} />
+            <div className="flex items-stretch gap-4">
+              <div className="flex-1">
+                <SummaryCards cards={summaryCards} />
+              </div>
+
+              {/* Live / Down split card */}
+              <div className="flex w-48 shrink-0 overflow-hidden rounded-lg border border-edge bg-surface-card">
+                <button
+                  onClick={() => setLiveFilter(liveFilter === "live" ? "all" : "live")}
+                  className={`flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors ${
+                    liveFilter === "live"
+                      ? "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/30"
+                      : "hover:bg-surface-card-hover"
+                  }`}
+                >
+                  <span className="text-lg font-bold text-emerald-400">{liveCount}</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-emerald-400/70">Live</span>
+                </button>
+                <div className="w-px bg-edge" />
+                <button
+                  onClick={() => setLiveFilter(liveFilter === "not_live" ? "all" : "not_live")}
+                  className={`flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors ${
+                    liveFilter === "not_live"
+                      ? "bg-red-500/10 ring-1 ring-inset ring-red-500/30"
+                      : "hover:bg-surface-card-hover"
+                  }`}
+                >
+                  <span className="text-lg font-bold text-red-400">{downCount}</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-red-400/70">Down</span>
+                </button>
+              </div>
+            </div>
 
             <SelectionBar
               count={selectedIds.size}

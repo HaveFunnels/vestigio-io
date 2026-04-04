@@ -234,6 +234,38 @@
 		"latest_blog_section": {
 			"title": "Neueste Blogs & News",
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+		},
+		"mini_calculator": {
+			"title": "Sehen Sie, wie viel Geld Sie auf dem Tisch liegen lassen",
+			"subtitle": "Geben Sie die URL Ihrer Website ein, um eine kostenlose Analyse möglicher Umsatzverluste zu erhalten.",
+			"url_placeholder": "Website-URL eingeben...",
+			"revenue_placeholder": "Durchschnittlicher Monatsumsatz",
+			"cta_audit": "Kostenloses Audit starten",
+			"analyzing": "Analysiere",
+			"analyzing_sub": "Das dauert normalerweise nur wenige Sekunden...",
+			"status_discovering": "Website-Struktur wird erkundet...",
+			"status_checkout": "Checkout-Ablauf wird analysiert...",
+			"status_payment": "Zahlungsintegrität wird geprüft...",
+			"status_trust": "Vertrauensindikatoren werden bewertet...",
+			"status_friction": "Konversionsreibung wird gemessen...",
+			"status_impact": "Umsatzauswirkung wird berechnet...",
+			"status_report": "Bericht wird vorbereitet...",
+			"scan_complete": "Analyse abgeschlossen",
+			"results_for": "Ergebnisse für",
+			"col_severity": "Schweregrad",
+			"col_finding": "Ergebnis",
+			"col_impact": "Gesch. Auswirkung",
+			"total_impact": "Geschätzte monatliche Auswirkung",
+			"cta_question": "Möchten Sie die vollständige Analyse mit Beweisen und Aktionsplänen?",
+			"cta_signup": "Kostenloses Konto erstellen",
+			"cta_pricing": "Preise ansehen",
+			"disclaimer": "Dies ist eine vorläufige Schätzung. Die vollständige Analyse umfasst Verifizierung, Ursachenanalyse und priorisierte Aktionspläne.",
+			"scan_another": "Andere Website analysieren",
+			"finding_checkout_trust": "Vertrauensindikatoren im Checkout fehlen",
+			"finding_chargeback_exposure": "Erhöhtes Chargeback-Risiko erkannt",
+			"finding_analytics_gap": "Analytics-Lücke auf Konversionsseiten",
+			"finding_scripts_slow": "Drittanbieter-Skripte verlangsamen den Checkout",
+			"finding_mobile_friction": "Mobile Checkout-Reibung erkannt"
 		}
 	},
 	"footer": {

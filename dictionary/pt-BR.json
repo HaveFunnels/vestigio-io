@@ -234,6 +234,38 @@
 		"latest_blog_section": {
 			"title": "Últimos Blogs e Notícias",
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+		},
+		"mini_calculator": {
+			"title": "Veja quanto dinheiro você está deixando na mesa",
+			"subtitle": "Insira a URL do seu site para um diagnóstico gratuito de possíveis vazamentos de receita.",
+			"url_placeholder": "Digite a URL do seu site...",
+			"revenue_placeholder": "Receita mensal média",
+			"cta_audit": "Rodar Auditoria Grátis",
+			"analyzing": "Analisando",
+			"analyzing_sub": "Isso normalmente leva alguns segundos...",
+			"status_discovering": "Descobrindo a estrutura do seu site...",
+			"status_checkout": "Analisando fluxo de checkout...",
+			"status_payment": "Verificando integridade de pagamento...",
+			"status_trust": "Avaliando indicadores de confiança...",
+			"status_friction": "Medindo fricção de conversão...",
+			"status_impact": "Calculando impacto na receita...",
+			"status_report": "Preparando seu relatório...",
+			"scan_complete": "Análise concluída",
+			"results_for": "Resultados para",
+			"col_severity": "Severidade",
+			"col_finding": "Descoberta",
+			"col_impact": "Impacto Est.",
+			"total_impact": "Impacto Mensal Estimado",
+			"cta_question": "Quer a análise completa com evidências e planos de ação?",
+			"cta_signup": "Criar Conta Grátis",
+			"cta_pricing": "Ver Preços",
+			"disclaimer": "Esta é uma estimativa preliminar. A análise completa inclui verificação, análise de causa raiz e planos de ação priorizados.",
+			"scan_another": "Analisar outro site",
+			"finding_checkout_trust": "Indicadores de confiança no checkout ausentes",
+			"finding_chargeback_exposure": "Exposição elevada a chargebacks detectada",
+			"finding_analytics_gap": "Lacuna de analytics nas páginas de conversão",
+			"finding_scripts_slow": "Scripts de terceiros tornando o checkout lento",
+			"finding_mobile_friction": "Fricção no checkout mobile detectada"
 		}
 	},
 	"footer": {

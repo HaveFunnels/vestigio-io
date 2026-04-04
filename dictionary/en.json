@@ -234,6 +234,38 @@
 		"latest_blog_section": {
 			"title": "Latest Blogs & News",
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+		},
+		"mini_calculator": {
+			"title": "See what you're leaving on the table",
+			"subtitle": "Enter your website URL to get a free snapshot of potential revenue leaks.",
+			"url_placeholder": "Enter your website URL...",
+			"revenue_placeholder": "Average monthly revenue",
+			"cta_audit": "Run Free Audit",
+			"analyzing": "Analyzing",
+			"analyzing_sub": "This usually takes a few seconds...",
+			"status_discovering": "Discovering your website structure...",
+			"status_checkout": "Analyzing checkout flow...",
+			"status_payment": "Checking payment integrity...",
+			"status_trust": "Evaluating trust indicators...",
+			"status_friction": "Measuring conversion friction...",
+			"status_impact": "Calculating revenue impact...",
+			"status_report": "Preparing your report...",
+			"scan_complete": "Scan complete",
+			"results_for": "Results for",
+			"col_severity": "Severity",
+			"col_finding": "Finding",
+			"col_impact": "Est. Impact",
+			"total_impact": "Estimated Monthly Impact",
+			"cta_question": "Want the full analysis with evidence and action plans?",
+			"cta_signup": "Create Free Account",
+			"cta_pricing": "See Pricing",
+			"disclaimer": "This is a preliminary estimate. Full analysis includes verification, root cause analysis, and prioritized action plans.",
+			"scan_another": "Scan another site",
+			"finding_checkout_trust": "Checkout trust indicators missing",
+			"finding_chargeback_exposure": "Elevated chargeback exposure detected",
+			"finding_analytics_gap": "Analytics gap on conversion pages",
+			"finding_scripts_slow": "Third-party scripts slowing checkout",
+			"finding_mobile_friction": "Mobile checkout friction detected"
 		}
 	},
 	"footer": {

@@ -234,6 +234,38 @@
 		"latest_blog_section": {
 			"title": "Últimos Blogs y Noticias",
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+		},
+		"mini_calculator": {
+			"title": "Descubre cuánto dinero estás dejando sobre la mesa",
+			"subtitle": "Ingresa la URL de tu sitio web para obtener un diagnóstico gratuito de posibles fugas de ingresos.",
+			"url_placeholder": "Ingresa la URL de tu sitio web...",
+			"revenue_placeholder": "Ingreso mensual promedio",
+			"cta_audit": "Ejecutar Auditoría Gratis",
+			"analyzing": "Analizando",
+			"analyzing_sub": "Esto generalmente toma unos segundos...",
+			"status_discovering": "Descubriendo la estructura de tu sitio...",
+			"status_checkout": "Analizando flujo de checkout...",
+			"status_payment": "Verificando integridad de pagos...",
+			"status_trust": "Evaluando indicadores de confianza...",
+			"status_friction": "Midiendo fricción de conversión...",
+			"status_impact": "Calculando impacto en ingresos...",
+			"status_report": "Preparando tu reporte...",
+			"scan_complete": "Análisis completo",
+			"results_for": "Resultados para",
+			"col_severity": "Severidad",
+			"col_finding": "Hallazgo",
+			"col_impact": "Impacto Est.",
+			"total_impact": "Impacto Mensual Estimado",
+			"cta_question": "¿Quieres el análisis completo con evidencia y planes de acción?",
+			"cta_signup": "Crear Cuenta Gratis",
+			"cta_pricing": "Ver Precios",
+			"disclaimer": "Esta es una estimación preliminar. El análisis completo incluye verificación, análisis de causa raíz y planes de acción priorizados.",
+			"scan_another": "Analizar otro sitio",
+			"finding_checkout_trust": "Indicadores de confianza en checkout ausentes",
+			"finding_chargeback_exposure": "Exposición elevada a contracargos detectada",
+			"finding_analytics_gap": "Brecha de analytics en páginas de conversión",
+			"finding_scripts_slow": "Scripts de terceros ralentizando el checkout",
+			"finding_mobile_friction": "Fricción en checkout móvil detectada"
 		}
 	},
 	"footer": {

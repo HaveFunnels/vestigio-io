@@ -273,39 +273,39 @@ export default function DataSourcesPage() {
 				</div>
 			)}
 
-			<div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
 				{sources.map((source) => (
-					<div key={source.id} style={{ border: "1px solid #27272a", borderRadius: 10, backgroundColor: "#18181b", overflow: "hidden" }}>
-						{/* Card header */}
+					<div key={source.id} style={{ border: "1px solid #27272a", borderRadius: 12, backgroundColor: "#18181b", overflow: "hidden", gridColumn: expandedCard === source.id ? "1 / -1" : undefined, transition: "all 200ms ease" }}>
+						{/* Card */}
 						<div
-							style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", cursor: source.configurable ? "pointer" : "default" }}
+							style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "24px 20px 20px", cursor: source.configurable ? "pointer" : "default" }}
 							onClick={() => source.configurable && setExpandedCard(expandedCard === source.id ? null : source.id)}
 						>
-							<div style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-								<svg style={{ width: 20, height: 20, color: "#a1a1aa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+							<div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+								<svg style={{ width: 22, height: 22, color: "#a1a1aa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 									<path strokeLinecap="round" strokeLinejoin="round" d={source.icon} />
 								</svg>
 							</div>
-							<div style={{ flex: 1 }}>
-								<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-									<span style={{ fontWeight: 500, color: "#e4e4e7", fontSize: 15 }}>{source.title}</span>
-									<StatusBadge status={source.status} />
-								</div>
-								<p style={{ color: "#71717a", fontSize: 13, marginTop: 2 }}>{source.description}</p>
-								{source.status !== "verified" && source.status !== "coming_soon" && (
-									<p style={{ color: "#6366f1", fontSize: 11, marginTop: 3 }}>Unlocks: {source.unlocks}</p>
-								)}
-								{source.id === "saas_access" && lastVerified && saasStatus === "verified" && (
-									<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last verified: {new Date(lastVerified).toLocaleString()}</p>
-								)}
-								{source.id === "saas_access" && lastFailure && saasStatus === "failed" && (
-									<p style={{ color: "#ef4444", fontSize: 11, marginTop: 2 }}>Failure: {lastFailure}</p>
-								)}
+							<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+								<span style={{ fontWeight: 600, color: "#e4e4e7", fontSize: 15 }}>{source.title}</span>
+								<StatusBadge status={source.status} />
 							</div>
+							<p style={{ color: "#71717a", fontSize: 13, lineHeight: 1.5 }}>{source.description}</p>
+							{source.status !== "verified" && source.status !== "coming_soon" && (
+								<p style={{ color: "#6366f1", fontSize: 11, marginTop: 6 }}>Unlocks: {source.unlocks}</p>
+							)}
+							{source.id === "saas_access" && lastVerified && saasStatus === "verified" && (
+								<p style={{ color: "#52525b", fontSize: 11, marginTop: 4 }}>Last verified: {new Date(lastVerified).toLocaleString()}</p>
+							)}
+							{source.id === "saas_access" && lastFailure && saasStatus === "failed" && (
+								<p style={{ color: "#ef4444", fontSize: 11, marginTop: 4 }}>Failure: {lastFailure}</p>
+							)}
 							{source.configurable && (
-								<svg style={{ width: 16, height: 16, color: "#52525b", transform: expandedCard === source.id ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 150ms" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-									<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-								</svg>
+								<div style={{ marginTop: 10 }}>
+									<span style={{ fontSize: 12, color: "#52525b", transition: "color 150ms" }}>
+										{expandedCard === source.id ? "Close" : "Configure"} &rarr;
+									</span>
+								</div>
 							)}
 						</div>
 

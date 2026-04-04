@@ -47,7 +47,7 @@ function sparkOptions(color: string): ApexOptions {
 
 export default function SummaryCards({ cards }: { cards: SummaryCard[] }) {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div className={`grid grid-cols-2 gap-4 ${cards.length === 5 ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
       {cards.map((card) => {
         const variant = card.variant || "default";
         return (

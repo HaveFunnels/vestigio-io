@@ -80,7 +80,12 @@ export const GET = withErrorTracking(async function GET() {
       last_seen_at: item.updatedAt.toISOString(),
       session_count: 0,
       finding_count: 0,
-      discovery_sources: ["crawl"],
+      discovery_sources: ["surface"],
+      http_status: item.statusCode ?? null,
+      title: item.title ?? null,
+      description: null,
+      response_time_ms: null,
+      tier: item.tier,
     };
   });
 

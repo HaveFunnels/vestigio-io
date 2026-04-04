@@ -15,6 +15,7 @@ import ConsoleState from "@/components/console/ConsoleState";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { loadActions, loadChangeReport } from "@/lib/console-data";
+import { useMcpData } from "@/components/app/McpDataProvider";
 import type { ActionProjection, ChangeReportProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
@@ -83,8 +84,9 @@ function formatCurrency(value: number): string {
 // ──────────────────────────────────────────────
 
 export default function ActionsPage() {
-  const dataState = loadActions();
-  const changeState = loadChangeReport();
+  const mcpData = useMcpData();
+  const dataState = mcpData.actions.status !== "not_ready" ? mcpData.actions : loadActions();
+  const changeState = mcpData.changeReport.status !== "not_ready" ? mcpData.changeReport : loadChangeReport();
   const changeReport = changeState.status === 'ready' ? changeState.data : null;
 
   return (

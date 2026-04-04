@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ConsoleState from "@/components/console/ConsoleState";
 import { loadWorkspaces } from "@/lib/console-data";
+import { useMcpData } from "@/components/app/McpDataProvider";
 import type { WorkspaceProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
@@ -27,7 +28,8 @@ function formatCurrency(value: number): string {
 }
 
 export default function WorkspacesPage() {
-  const dataState = loadWorkspaces();
+  const mcpData = useMcpData();
+  const dataState = mcpData.workspaces.status !== "not_ready" ? mcpData.workspaces : loadWorkspaces();
 
   return (
     <div className="p-6">

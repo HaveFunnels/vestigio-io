@@ -16,6 +16,7 @@ import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import ChangeTimeline from "@/components/console/ChangeTimeline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
+import { useMcpData } from "@/components/app/McpDataProvider";
 import type {
   WorkspaceProjection,
   FindingProjection,
@@ -69,7 +70,8 @@ export default function WorkspaceDetailPage({
 }: {
   params: { id: string };
 }) {
-  const dataState = loadWorkspaces();
+  const mcpData = useMcpData();
+  const dataState = mcpData.workspaces.status !== "not_ready" ? mcpData.workspaces : loadWorkspaces();
 
   return (
     <div className="p-6">
@@ -115,7 +117,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
   const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
 
   // Load change report for timeline
-  const changeReportState = loadChangeReport();
+  const changeReportState = mcpData.changeReport.status !== "not_ready" ? mcpData.changeReport : loadChangeReport();
   const workspaceChanges: DecisionChangeProjection[] = useMemo(() => {
     if (changeReportState.status !== "ready") return [];
     const report = changeReportState.data;

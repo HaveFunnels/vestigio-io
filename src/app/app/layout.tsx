@@ -1,6 +1,7 @@
 import AppSidebarLayout from "@/components/app/AppSidebarLayout";
+import { McpDataProvider, type McpDataSnapshot } from "@/components/app/McpDataProvider";
 import { resolveOrgContext } from "@/libs/resolve-org";
-import { ensureContext } from "@/lib/console-data";
+import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps } from "@/lib/console-data";
 import { AppProviders } from "./providers";
 
 export const metadata = {
@@ -21,6 +22,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 		});
 	}
 
+	// Pre-load all MCP data server-side and pass to client via context.
+	// Client components ("use client") cannot access the MCP server directly
+	// because it only exists in the Node.js server process.
+	const mcpData: McpDataSnapshot = {
+		findings: loadFindings(),
+		actions: loadActions(),
+		changeReport: loadChangeReport(),
+		workspaces: loadWorkspaces(),
+		maps: loadAllMaps(),
+	};
+
 	const currentOrg = {
 		orgId: orgCtx.orgId,
 		orgName: orgCtx.orgName,
@@ -30,13 +42,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
 	return (
 		<AppProviders>
-			<AppSidebarLayout
-				isAdmin={orgCtx.isAdmin}
-				orgCtx={currentOrg}
-				plan={orgCtx.plan}
-			>
-				{children}
-			</AppSidebarLayout>
+			<McpDataProvider data={mcpData}>
+				<AppSidebarLayout
+					isAdmin={orgCtx.isAdmin}
+					orgCtx={currentOrg}
+					plan={orgCtx.plan}
+				>
+					{children}
+				</AppSidebarLayout>
+			</McpDataProvider>
 		</AppProviders>
 	);
 }

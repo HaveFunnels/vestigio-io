@@ -14,6 +14,7 @@ import ConsoleState from "@/components/console/ConsoleState";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { loadFindings } from "@/lib/console-data";
+import { useMcpData } from "@/components/app/McpDataProvider";
 import type { FindingProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
@@ -91,8 +92,9 @@ export default function AnalysisPage() {
   const [challengeInfo, setChallengeInfo] = useState<{ type: string; url: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Try loading existing findings first
-  const existingState = loadFindings();
+  // Try pre-loaded data from server layout, fall back to direct MCP call
+  const mcpData = useMcpData();
+  const existingState = mcpData.findings.status !== "not_ready" ? mcpData.findings : loadFindings();
   const hasExistingData = existingState.status === "ready" && existingState.data.length > 0;
 
   useEffect(() => {

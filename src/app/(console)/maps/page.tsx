@@ -12,6 +12,7 @@ import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import { loadAllMaps } from "@/lib/console-data";
+import { useMcpData } from "@/components/app/McpDataProvider";
 import type { MapDefinition, MapNode } from "../../../../packages/maps";
 
 // ──────────────────────────────────────────────
@@ -270,7 +271,8 @@ function RootCauseDrawerContent({ node }: { node: MapNode }) {
 // ──────────────────────────────────────────────
 
 export default function MapsPage() {
-  const dataState = loadAllMaps();
+  const mcpData = useMcpData();
+  const dataState = mcpData.maps.status !== "not_ready" ? mcpData.maps : loadAllMaps();
 
   return (
     <div className="flex h-full flex-col">

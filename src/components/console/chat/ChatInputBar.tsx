@@ -80,7 +80,7 @@ export function ChatInputBar({
     "stroke-emerald-500";
 
   return (
-    <div className="px-4 pb-4 pt-2 sm:px-8">
+    <div className="shrink-0 px-4 pb-4 pt-2 sm:px-8">
       <div className="mx-auto max-w-3xl rounded-2xl border border-edge bg-surface-card/80 px-4 py-3 shadow-sm backdrop-blur-sm transition-shadow focus-within:border-content-faint/30 focus-within:shadow-[0_0_20px_-4px_rgba(255,255,255,0.08)]">
         {/* Attached files */}
         {attachedFiles.length > 0 && (

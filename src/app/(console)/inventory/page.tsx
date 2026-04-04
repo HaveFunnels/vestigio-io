@@ -20,6 +20,10 @@ import { loadInventory, type InventorySurface, type DataState } from "@/lib/cons
 
 type LiveFilter = "all" | "live" | "not_live";
 type TypeFilter = "all" | "commercial" | "support" | "policy" | "other";
+type HttpStatusFilter = "all" | "2xx" | "3xx" | "4xx" | "5xx";
+type HasFindingsFilter = "all" | "with" | "without";
+type TierFilter = "all" | "critical" | "high" | "medium" | "low";
+type ResponseTimeFilter = "all" | "lt500" | "500_2000" | "gt2000";
 
 // ── Custom Dropdown ──────────────────────────
 
@@ -310,6 +314,12 @@ export default function InventoryPage() {
   const router = useRouter();
   const [liveFilter, setLiveFilter] = useState<LiveFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [httpStatusFilter, setHttpStatusFilter] = useState<HttpStatusFilter>("all");
+  const [hasFindingsFilter, setHasFindingsFilter] = useState<HasFindingsFilter>("all");
+  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [responseTimeFilter, setResponseTimeFilter] = useState<ResponseTimeFilter>("all");
+  const [discoverySourceFilter, setDiscoverySourceFilter] = useState<string>("all");
+  const [searchText, setSearchText] = useState("");
   const [dataState, setDataState] = useState<DataState<InventorySurface[]>>({ status: "loading" });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [drawerSurface, setDrawerSurface] = useState<InventorySurface | null>(null);
@@ -324,6 +334,14 @@ export default function InventoryPage() {
 
   const surfaces = dataState.status === "ready" ? dataState.data : [];
 
+  const discoverySourceOptions = useMemo(() => {
+    const unique = Array.from(new Set(surfaces.flatMap(s => s.discovery_sources))).sort();
+    return [
+      { value: "all" as const, label: "All Sources" },
+      ...unique.map(src => ({ value: src, label: titleCase(src) })),
+    ];
+  }, [surfaces]);
+
   const filtered = useMemo(() => {
     return surfaces.filter((s) => {
       if (liveFilter === "live" && !s.is_live) return false;
@@ -332,9 +350,30 @@ export default function InventoryPage() {
       if (typeFilter === "support" && s.page_type !== "support") return false;
       if (typeFilter === "policy" && s.page_type !== "policy") return false;
       if (typeFilter === "other" && s.is_commercial) return false;
+      if (httpStatusFilter !== "all") {
+        if (s.http_status === null) return false;
+        if (httpStatusFilter === "2xx" && (s.http_status < 200 || s.http_status >= 300)) return false;
+        if (httpStatusFilter === "3xx" && (s.http_status < 300 || s.http_status >= 400)) return false;
+        if (httpStatusFilter === "4xx" && (s.http_status < 400 || s.http_status >= 500)) return false;
+        if (httpStatusFilter === "5xx" && (s.http_status < 500 || s.http_status >= 600)) return false;
+      }
+      if (hasFindingsFilter === "with" && s.finding_count === 0) return false;
+      if (hasFindingsFilter === "without" && s.finding_count > 0) return false;
+      if (tierFilter !== "all" && s.tier !== tierFilter) return false;
+      if (responseTimeFilter !== "all") {
+        if (s.response_time_ms === null) return false;
+        if (responseTimeFilter === "lt500" && s.response_time_ms >= 500) return false;
+        if (responseTimeFilter === "500_2000" && (s.response_time_ms < 500 || s.response_time_ms >= 2000)) return false;
+        if (responseTimeFilter === "gt2000" && s.response_time_ms < 2000) return false;
+      }
+      if (discoverySourceFilter !== "all" && !s.discovery_sources.includes(discoverySourceFilter)) return false;
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        if (!(s.label.toLowerCase().includes(q) || s.normalized_path.toLowerCase().includes(q) || s.host.toLowerCase().includes(q))) return false;
+      }
       return true;
     });
-  }, [surfaces, liveFilter, typeFilter]);
+  }, [surfaces, liveFilter, typeFilter, httpStatusFilter, hasFindingsFilter, tierFilter, responseTimeFilter, discoverySourceFilter, searchText]);
 
   // ── Selection ──
 
@@ -598,12 +637,74 @@ export default function InventoryPage() {
                   { value: "other", label: "Other" },
                 ]}
               />
+              <FilterDropdown
+                value={httpStatusFilter}
+                onChange={setHttpStatusFilter}
+                options={[
+                  { value: "all", label: "All HTTP Status" },
+                  { value: "2xx", label: "2xx" },
+                  { value: "3xx", label: "3xx" },
+                  { value: "4xx", label: "4xx" },
+                  { value: "5xx", label: "5xx" },
+                ]}
+              />
+              <FilterDropdown
+                value={hasFindingsFilter}
+                onChange={setHasFindingsFilter}
+                options={[
+                  { value: "all", label: "All" },
+                  { value: "with", label: "With Findings" },
+                  { value: "without", label: "Without Findings" },
+                ]}
+              />
+              <FilterDropdown
+                value={tierFilter}
+                onChange={setTierFilter}
+                options={[
+                  { value: "all", label: "All Tiers" },
+                  { value: "critical", label: "Critical" },
+                  { value: "high", label: "High" },
+                  { value: "medium", label: "Medium" },
+                  { value: "low", label: "Low" },
+                ]}
+              />
+              <FilterDropdown
+                value={responseTimeFilter}
+                onChange={setResponseTimeFilter}
+                options={[
+                  { value: "all", label: "All Response Times" },
+                  { value: "lt500", label: "< 500ms" },
+                  { value: "500_2000", label: "500ms – 2s" },
+                  { value: "gt2000", label: "> 2s" },
+                ]}
+              />
+              <FilterDropdown
+                value={discoverySourceFilter}
+                onChange={setDiscoverySourceFilter}
+                options={discoverySourceOptions}
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary placeholder:text-content-faint transition-colors focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+              />
+              {(liveFilter !== "all" || typeFilter !== "all" || httpStatusFilter !== "all" || hasFindingsFilter !== "all" || tierFilter !== "all" || responseTimeFilter !== "all" || discoverySourceFilter !== "all" || searchText) && (
+                <button
+                  onClick={() => { setLiveFilter("all"); setTypeFilter("all"); setHttpStatusFilter("all"); setHasFindingsFilter("all"); setTierFilter("all"); setResponseTimeFilter("all"); setDiscoverySourceFilter("all"); setSearchText(""); }}
+                  className="rounded-lg px-3 py-1.5 text-xs text-content-faint transition-colors hover:text-content-secondary"
+                >
+                  Clear filters
+                </button>
+              )}
+              <span className="ml-auto text-xs text-content-faint">{filtered.length} of {surfaces.length} surfaces</span>
             </div>
 
             {filtered.length === 0 ? (
               <div className="text-center py-16 text-content-faint">
                 <p className="text-lg">No surfaces match the current filters</p>
-                <p className="text-sm mt-2">Try adjusting the status or type filters above.</p>
+                <p className="text-sm mt-2">Try adjusting the filters above.</p>
               </div>
             ) : (
               <div className="overflow-x-auto rounded-md border border-edge">

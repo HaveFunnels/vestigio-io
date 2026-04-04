@@ -30,6 +30,10 @@ type AnalysisState = "idle" | "ongoing" | "complete";
 type SeverityFilter = "all" | "critical" | "high" | "medium" | "low";
 type PackFilter = "all" | "scale_readiness" | "revenue_integrity" | "chargeback_resilience" | "saas_growth_readiness";
 type PolarityFilter = "all" | "negative" | "positive" | "neutral";
+type VerificationFilter = "all" | "unverified" | "verified" | "challenged";
+type ImpactRangeFilter = "all" | "lt1k" | "1k_10k" | "10k_50k" | "gt50k";
+type ChangeClassFilter = "all" | "new_issue" | "regression" | "improvement" | "stable_risk" | "resolved";
+type ConfidenceFilter = "all" | "gt80" | "50_80" | "lt50";
 
 const severityOptions: { label: string; value: SeverityFilter }[] = [
   { label: "All Severities", value: "all" },
@@ -52,6 +56,37 @@ const polarityOptions: { label: string; value: PolarityFilter }[] = [
   { label: "Issues", value: "negative" },
   { label: "Positive", value: "positive" },
   { label: "Neutral", value: "neutral" },
+];
+
+const verificationOptions: { label: string; value: VerificationFilter }[] = [
+  { label: "All Verification", value: "all" },
+  { label: "Unverified", value: "unverified" },
+  { label: "Verified", value: "verified" },
+  { label: "Challenged", value: "challenged" },
+];
+
+const impactRangeOptions: { label: string; value: ImpactRangeFilter }[] = [
+  { label: "All Impact", value: "all" },
+  { label: "< $1k", value: "lt1k" },
+  { label: "$1k – $10k", value: "1k_10k" },
+  { label: "$10k – $50k", value: "10k_50k" },
+  { label: "> $50k", value: "gt50k" },
+];
+
+const changeClassOptions: { label: string; value: ChangeClassFilter }[] = [
+  { label: "All Changes", value: "all" },
+  { label: "New", value: "new_issue" },
+  { label: "Worsened", value: "regression" },
+  { label: "Improved", value: "improvement" },
+  { label: "Stable", value: "stable_risk" },
+  { label: "Resolved", value: "resolved" },
+];
+
+const confidenceOptions: { label: string; value: ConfidenceFilter }[] = [
+  { label: "All Confidence", value: "all" },
+  { label: "> 80%", value: "gt80" },
+  { label: "50% – 80%", value: "50_80" },
+  { label: "< 50%", value: "lt50" },
 ];
 
 const packLabels: Record<string, string> = {
@@ -295,9 +330,20 @@ function AnalysisContent({
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
   const [packFilter, setPackFilter] = useState<PackFilter>("all");
   const [polarityFilter, setPolarityFilter] = useState<PolarityFilter>("all");
+  const [verificationFilter, setVerificationFilter] = useState<VerificationFilter>("all");
+  const [impactRangeFilter, setImpactRangeFilter] = useState<ImpactRangeFilter>("all");
+  const [surfaceFilter, setSurfaceFilter] = useState<string>("all");
+  const [changeClassFilter, setChangeClassFilter] = useState<ChangeClassFilter>("all");
+  const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("all");
+  const [searchText, setSearchText] = useState("");
   const [hidePositive, setHidePositive] = useState(false);
   const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const surfaceOptions = useMemo(() => {
+    const unique = Array.from(new Set(findings.map(f => f.surface).filter(Boolean))).sort();
+    return [{ label: "All Surfaces", value: "all" }, ...unique.map(s => ({ label: s!, value: s! }))];
+  }, [findings]);
 
   const filtered = useMemo(() => {
     return findings.filter((f) => {
@@ -307,9 +353,32 @@ function AnalysisContent({
       if (packFilter !== "all" && f.pack !== packFilter) return false;
       if (polarityFilter !== "all" && f.polarity !== polarityFilter) return false;
       if (hidePositive && f.polarity === "positive") return false;
+      if (verificationFilter !== "all") {
+        if (verificationFilter === "unverified" && f.verification_maturity !== "unverified" && f.verification_maturity !== null) return false;
+        if (verificationFilter === "verified" && f.verification_maturity !== "verified") return false;
+        if (verificationFilter === "challenged" && f.verification_maturity !== "degraded" && f.verification_maturity !== "stale") return false;
+      }
+      if (impactRangeFilter !== "all") {
+        const mid = f.impact.midpoint;
+        if (impactRangeFilter === "lt1k" && mid >= 1000) return false;
+        if (impactRangeFilter === "1k_10k" && (mid < 1000 || mid >= 10000)) return false;
+        if (impactRangeFilter === "10k_50k" && (mid < 10000 || mid >= 50000)) return false;
+        if (impactRangeFilter === "gt50k" && mid < 50000) return false;
+      }
+      if (surfaceFilter !== "all" && f.surface !== surfaceFilter) return false;
+      if (changeClassFilter !== "all" && f.change_class !== changeClassFilter) return false;
+      if (confidenceFilter !== "all") {
+        if (confidenceFilter === "gt80" && f.confidence <= 80) return false;
+        if (confidenceFilter === "50_80" && (f.confidence < 50 || f.confidence > 80)) return false;
+        if (confidenceFilter === "lt50" && f.confidence >= 50) return false;
+      }
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        if (!(f.title?.toLowerCase().includes(q) || f.root_cause?.toLowerCase().includes(q))) return false;
+      }
       return true;
     });
-  }, [findings, severityFilter, packFilter, polarityFilter, hidePositive]);
+  }, [findings, severityFilter, packFilter, polarityFilter, hidePositive, verificationFilter, impactRangeFilter, surfaceFilter, changeClassFilter, confidenceFilter, searchText]);
 
   const summaryCards: SummaryCard[] = useMemo(() => {
     const negativeFindings = findings.filter(f => f.polarity === "negative");
@@ -433,6 +502,28 @@ function AnalysisContent({
           className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {packOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
+        <select value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value as VerificationFilter)}
+          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          {verificationOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+        <select value={changeClassFilter} onChange={(e) => setChangeClassFilter(e.target.value as ChangeClassFilter)}
+          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          {changeClassOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+        <select value={impactRangeFilter} onChange={(e) => setImpactRangeFilter(e.target.value as ImpactRangeFilter)}
+          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          {impactRangeOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+        <select value={surfaceFilter} onChange={(e) => setSurfaceFilter(e.target.value)}
+          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          {surfaceOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+        <select value={confidenceFilter} onChange={(e) => setConfidenceFilter(e.target.value as ConfidenceFilter)}
+          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          {confidenceOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+        <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Search..."
+          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" />
 
         <label className="flex items-center gap-1.5 text-xs text-zinc-500 cursor-pointer">
           <input type="checkbox" checked={hidePositive} onChange={(e) => setHidePositive(e.target.checked)}
@@ -440,8 +531,8 @@ function AnalysisContent({
           Hide positive signals
         </label>
 
-        {(severityFilter !== "all" || packFilter !== "all" || polarityFilter !== "all") && (
-          <button onClick={() => { setSeverityFilter("all"); setPackFilter("all"); setPolarityFilter("all"); }}
+        {(severityFilter !== "all" || packFilter !== "all" || polarityFilter !== "all" || verificationFilter !== "all" || impactRangeFilter !== "all" || surfaceFilter !== "all" || changeClassFilter !== "all" || confidenceFilter !== "all" || searchText !== "") && (
+          <button onClick={() => { setSeverityFilter("all"); setPackFilter("all"); setPolarityFilter("all"); setVerificationFilter("all"); setImpactRangeFilter("all"); setSurfaceFilter("all"); setChangeClassFilter("all"); setConfidenceFilter("all"); setSearchText(""); }}
             className="rounded-md px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-300">Clear filters</button>
         )}
         {selectedIds.size >= 2 && (

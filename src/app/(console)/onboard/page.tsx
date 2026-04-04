@@ -182,10 +182,17 @@ export default function OnboardPage() {
     fetchPlans();
   }, []);
 
-  // If user already has an active org and this is not a payment callback, redirect to app
+  // If user already has an active org WITH a domain and this is not a payment callback, redirect to app.
+  // Users with an org but no domain (e.g. demo accounts) should be allowed to complete setup.
+  const [hasExistingDomain, setHasExistingDomain] = useState<boolean | null>(null);
   useEffect(() => {
-    if (!paymentSuccess && (session?.user as any)?.hasOrganization === true) {
-      router.replace("/app/analysis");
+    if ((session?.user as any)?.hasOrganization === true) {
+      fetch("/api/usage").then(r => r.ok ? r.json() : null).then(data => {
+        setHasExistingDomain(!!data?.domain);
+        if (!paymentSuccess && data?.domain) {
+          router.replace("/app/analysis");
+        }
+      }).catch(() => {});
     }
   }, [session, paymentSuccess, router]);
 

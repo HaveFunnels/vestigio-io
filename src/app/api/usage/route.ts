@@ -18,5 +18,9 @@ export const GET = withErrorTracking(async function GET() {
 	const orgCtx = await resolveOrgContext();
 	const summary = await getDailyUsageSummary(orgCtx.orgId, orgCtx.plan as PlanKey);
 
-	return NextResponse.json(summary);
+	return NextResponse.json({
+		...summary,
+		domain: orgCtx.domain || null,
+		envId: orgCtx.envId || null,
+	});
 }, { endpoint: "/api/usage", method: "GET" });

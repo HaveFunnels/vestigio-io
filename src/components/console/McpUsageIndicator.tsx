@@ -106,7 +106,7 @@ export default function McpUsageIndicator() {
 
         {/* Tooltip on hover */}
         <div className="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 rounded bg-surface-tooltip px-2 py-1 text-[10px] text-content-tertiary opacity-0 shadow-lg transition-opacity group-hover:opacity-100 whitespace-nowrap z-50">
-          MCP: {data.usage.mcp_queries}/{data.limits.daily_mcp_budget} today ({data.mcp_remaining} left)
+          {data.usage.mcp_queries}/{data.limits.daily_mcp_budget} insights today ({data.mcp_remaining} left)
           {pct >= 80 && " — budget is low"}
         </div>
       </div>

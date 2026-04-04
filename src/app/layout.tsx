@@ -6,6 +6,18 @@ import "../styles/globals.css";
 import "../styles/satoshi.css";
 
 export const metadata: Metadata = {
+	icons: [
+		{
+			rel: "icon",
+			url: "/images/favicon-light.ico",
+			media: "(prefers-color-scheme: light)",
+		},
+		{
+			rel: "icon",
+			url: "/images/favicon-dark.ico",
+			media: "(prefers-color-scheme: dark)",
+		},
+	],
 	title: {
 		default: "Vestigio — Intelligence & Decision Engine for SaaS",
 		template: "%s | Vestigio",

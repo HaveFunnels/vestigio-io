@@ -250,9 +250,12 @@ export default function AppSidebarLayout({
 							</kbd>
 						</button>
 						<ThemeToggle />
-						<span className="rounded border border-edge px-2 py-0.5 text-[10px] font-medium uppercase text-content-faint">
+						<Link
+							href="/app/billing"
+							className="rounded border border-edge px-2 py-0.5 text-[10px] font-medium uppercase text-content-faint transition-colors hover:border-emerald-600/50 hover:text-emerald-400"
+						>
 							{plan}
-						</span>
+						</Link>
 						<UserMenu />
 					</div>
 				</header>

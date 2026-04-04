@@ -1,5 +1,5 @@
 "use client";
-import logoLightStatic from "@/../public/images/logo/logo-light.png";
+import logoStatic from "@/../public/images/logo/logo.png";
 import { useBranding } from "@/components/BrandingProvider";
 import { onScroll } from "@/libs/scrollActive";
 import { useSession } from "next-auth/react";
@@ -14,7 +14,7 @@ const Header = () => {
 	const [stickyMenu, setStickyMenu] = useState(false);
 	const { data: session } = useSession();
 	const branding = useBranding();
-	const logoSrc = branding.logo_light?.dataUrl || logoLightStatic;
+	const logoSrc = branding.logo_light?.dataUrl || logoStatic;
 
 	const pathUrl = usePathname();
 

@@ -64,7 +64,7 @@ const DEFAULT_PLANS: Plan[] = [
     name: "Vestigio",
     price: "$99",
     paddlePriceId: "",
-    features: ["1 domain", "50 MCP calls/mo", "Full analysis", "Impact quantification"],
+    features: ["1 domain", "Agentic insights", "Full analysis", "Impact quantification"],
     recommended: false,
   },
   {
@@ -72,7 +72,7 @@ const DEFAULT_PLANS: Plan[] = [
     name: "Vestigio Pro",
     price: "$199",
     paddlePriceId: "",
-    features: ["3 domains", "250 MCP calls/mo", "Continuous audits", "Root cause maps"],
+    features: ["3 domains", "5x more agentic insights", "Continuous audits", "Root cause maps"],
     recommended: true,
   },
   {
@@ -80,7 +80,7 @@ const DEFAULT_PLANS: Plan[] = [
     name: "Vestigio Max",
     price: "$399",
     paddlePriceId: "",
-    features: ["10 domains", "1000 MCP calls/mo", "Continuous audits", "Credits system", "Priority support"],
+    features: ["10 domains", "20x more agentic insights", "Continuous audits", "Credits system", "Priority support"],
     recommended: false,
   },
 ];
@@ -156,14 +156,14 @@ export default function OnboardPage() {
         if (!res.ok) return;
         const data = await res.json();
         if (data.plans && data.plans.length > 0) {
-          const mapped: Plan[] = data.plans.map((p: any) => ({
+          const mapped: Plan[] = data.plans.map((p: any, idx: number) => ({
             key: p.key,
             name: p.label,
             price: `$${Math.round(p.monthlyPriceCents / 100)}`,
             paddlePriceId: p.paddlePriceId || "",
             features: [
               `${p.maxEnvironments} domain${p.maxEnvironments > 1 ? "s" : ""}`,
-              `${p.maxMcpCalls} MCP calls/mo`,
+              idx === 0 ? "Agentic insights" : idx === 1 ? "5x more agentic insights" : "20x more agentic insights",
               ...(p.continuousAudits ? ["Continuous audits"] : ["Full analysis"]),
               ...(p.creditsEnabled ? ["Credits system"] : []),
               ...(p.key === "max" ? ["Priority support"] : []),

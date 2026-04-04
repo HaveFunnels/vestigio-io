@@ -70,8 +70,8 @@ export async function ensureContext(orgCtx: {
       landing_url: landingUrl,
       is_production: process.env.NODE_ENV === 'production',
     }, evidence, store);
-  } catch {
-    // Best-effort — if DB is unavailable, pages fall back to not_ready state
+  } catch (err) {
+    console.error('[ensureContext] Failed to bootstrap MCP context:', err);
   }
 }
 

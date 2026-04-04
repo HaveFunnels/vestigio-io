@@ -26,19 +26,25 @@ import type { McpSessionContext } from '../../apps/mcp/types';
  * Future: replace with HTTP/stdio transport to MCP server.
  */
 
-let serverInstance: any = null;
+// Use globalThis to share the MCP server singleton across Next.js module scopes.
+// Server Components (RSC) and Client Components (SSR) run in separate webpack
+// bundles with separate module-level variables. Without globalThis, ensureContext()
+// in the layout populates one instance while loadFindings() in "use client" pages
+// accesses a different (empty) instance — causing perpetual "not_ready" state.
+const GLOBAL_KEY = '__vestigio_mcp_server__' as const;
+const globalStore = globalThis as unknown as { [GLOBAL_KEY]?: any };
 
 export function getMcpServer(): any {
-  if (!serverInstance) {
+  if (!globalStore[GLOBAL_KEY]) {
     // Dynamic require to keep Playwright out of client bundles.
     // This file is imported by "use client" components but McpServer
     // only runs server-side. At build time, webpack skips the require.
     try {
       const { McpServer } = require('../../apps/mcp/server');
-      serverInstance = new McpServer();
+      globalStore[GLOBAL_KEY] = new McpServer();
     } catch {
       // Client-side: return a stub that throws on use
-      serverInstance = new Proxy({}, {
+      return new Proxy({}, {
         get: (_, prop) => {
           if (prop === 'callTool') return () => ({ type: 'error', data: { message: 'MCP not available on client' } });
           return () => null;
@@ -46,11 +52,11 @@ export function getMcpServer(): any {
       });
     }
   }
-  return serverInstance;
+  return globalStore[GLOBAL_KEY];
 }
 
 export function resetMcpServer(): void {
-  serverInstance = null;
+  delete globalStore[GLOBAL_KEY];
 }
 
 // Typed wrappers around MCP tool calls

@@ -20,6 +20,7 @@ export const GET = withErrorTracking(async function GET() {
     continuousAudits: p.continuousAudits,
     creditsEnabled: p.creditsEnabled,
     maxEnvironments: p.maxEnvironments,
+    maxMembers: p.maxMembers,
   }));
 
   return NextResponse.json({ plans: publicPlans });

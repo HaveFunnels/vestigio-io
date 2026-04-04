@@ -140,6 +140,33 @@ const config: Config = {
 					"active-bg": "rgb(var(--sidebar-active-bg) / <alpha-value>)",
 					"active-text": "rgb(var(--sidebar-active-text) / <alpha-value>)",
 				},
+
+				/* ── shadcn/ui Token Layer ── */
+				background: "hsl(var(--background))",
+				foreground: "hsl(var(--foreground))",
+				card: {
+					DEFAULT: "hsl(var(--card))",
+					foreground: "hsl(var(--card-foreground))",
+				},
+				muted: {
+					DEFAULT: "hsl(var(--muted))",
+					foreground: "hsl(var(--muted-foreground))",
+				},
+				"primary-ui": {
+					DEFAULT: "hsl(var(--primary))",
+					foreground: "hsl(var(--primary-foreground))",
+				},
+				secondary: {
+					DEFAULT: "hsl(var(--secondary))",
+					foreground: "hsl(var(--secondary-foreground))",
+				},
+				destructive: {
+					DEFAULT: "hsl(var(--destructive))",
+					foreground: "hsl(var(--destructive-foreground))",
+				},
+				ring: "hsl(var(--ring))",
+				input: "hsl(var(--input))",
+				border: "hsl(var(--border))",
 			},
 			fontSize: {
 				"heading-1": ["60px", "72px"],

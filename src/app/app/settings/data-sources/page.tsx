@@ -275,38 +275,38 @@ export default function DataSourcesPage() {
 
 			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
 				{sources.map((source) => (
-					<div key={source.id} style={{ border: "1px solid #27272a", borderRadius: 12, backgroundColor: "#18181b", overflow: "hidden", gridColumn: expandedCard === source.id ? "1 / -1" : undefined, transition: "all 200ms ease" }}>
+					<div key={source.id} style={{ border: "1px solid #27272a", borderRadius: 12, backgroundColor: "#18181b", overflow: "hidden", gridColumn: expandedCard === source.id ? "1 / -1" : undefined, transition: "all 200ms ease", display: "flex", flexDirection: "column" }}>
 						{/* Card */}
 						<div
-							style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "24px 20px 20px", cursor: source.configurable ? "pointer" : "default" }}
+							style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "20px", cursor: source.configurable ? "pointer" : "default", flex: 1 }}
 							onClick={() => source.configurable && setExpandedCard(expandedCard === source.id ? null : source.id)}
 						>
-							<div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-								<svg style={{ width: 22, height: 22, color: "#a1a1aa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+							<div style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+								<svg style={{ width: 20, height: 20, color: "#a1a1aa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 									<path strokeLinecap="round" strokeLinejoin="round" d={source.icon} />
 								</svg>
 							</div>
-							<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-								<span style={{ fontWeight: 600, color: "#e4e4e7", fontSize: 15 }}>{source.title}</span>
-								<StatusBadge status={source.status} />
-							</div>
-							<p style={{ color: "#71717a", fontSize: 13, lineHeight: 1.5 }}>{source.description}</p>
-							{source.status !== "verified" && source.status !== "coming_soon" && (
-								<p style={{ color: "#6366f1", fontSize: 11, marginTop: 6 }}>Unlocks: {source.unlocks}</p>
-							)}
-							{source.id === "saas_access" && lastVerified && saasStatus === "verified" && (
-								<p style={{ color: "#52525b", fontSize: 11, marginTop: 4 }}>Last verified: {new Date(lastVerified).toLocaleString()}</p>
-							)}
-							{source.id === "saas_access" && lastFailure && saasStatus === "failed" && (
-								<p style={{ color: "#ef4444", fontSize: 11, marginTop: 4 }}>Failure: {lastFailure}</p>
-							)}
-							{source.configurable && (
-								<div style={{ marginTop: 10 }}>
-									<span style={{ fontSize: 12, color: "#52525b", transition: "color 150ms" }}>
-										{expandedCard === source.id ? "Close" : "Configure"} &rarr;
-									</span>
+							<div style={{ flex: 1, minWidth: 0 }}>
+								<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+									<span style={{ fontWeight: 600, color: "#e4e4e7", fontSize: 14 }}>{source.title}</span>
+									<StatusBadge status={source.status} />
 								</div>
-							)}
+								<p style={{ color: "#71717a", fontSize: 13, lineHeight: 1.5, marginBottom: 0 }}>{source.description}</p>
+								{source.status !== "verified" && source.status !== "coming_soon" && (
+									<p style={{ color: "#6366f1", fontSize: 11, marginTop: 6 }}>Unlocks: {source.unlocks}</p>
+								)}
+								{source.id === "saas_access" && lastVerified && saasStatus === "verified" && (
+									<p style={{ color: "#52525b", fontSize: 11, marginTop: 4 }}>Last verified: {new Date(lastVerified).toLocaleString()}</p>
+								)}
+								{source.id === "saas_access" && lastFailure && saasStatus === "failed" && (
+									<p style={{ color: "#ef4444", fontSize: 11, marginTop: 4 }}>Failure: {lastFailure}</p>
+								)}
+								{source.configurable && (
+									<p style={{ fontSize: 12, color: "#52525b", marginTop: 8 }}>
+										{expandedCard === source.id ? "Close" : "Configure"} &rarr;
+									</p>
+								)}
+							</div>
 						</div>
 
 						{/* Expanded SaaS form */}

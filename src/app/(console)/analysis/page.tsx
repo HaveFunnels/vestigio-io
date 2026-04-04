@@ -15,6 +15,7 @@ import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { loadFindings } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import { ShinyButton } from "@/components/ui/shiny-button";
 import type { FindingProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
@@ -536,10 +537,9 @@ function AnalysisContent({
             className="rounded-md px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-300">Clear filters</button>
         )}
         {selectedIds.size >= 2 && (
-          <button onClick={() => router.push(`/chat?findings=${[...selectedIds].join(",")}`)}
-            className="rounded-md border border-emerald-600/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20">
-            Analyze {selectedIds.size} Together
-          </button>
+          <ShinyButton onClick={() => router.push(`/chat?findings=${[...selectedIds].join(",")}`)}>
+            Use as Context ({selectedIds.size})
+          </ShinyButton>
         )}
         <span className="ml-auto text-xs text-zinc-500">{filtered.length} of {findings.length} findings</span>
       </div>

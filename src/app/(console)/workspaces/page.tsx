@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ConsoleState from "@/components/console/ConsoleState";
 import { loadWorkspaces } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import { ShinyButton } from "@/components/ui/shiny-button";
 import type { WorkspaceProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
@@ -56,15 +58,39 @@ function WorkspacesContent({
   workspaces: WorkspaceProjection[];
 }) {
   const router = useRouter();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = useCallback((id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <>
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 shadow-lg">
+          <span className="text-sm font-medium text-zinc-100">{selectedIds.size} selected</span>
+          <div className="flex-1" />
+          <ShinyButton onClick={() => router.push(`/chat?context=workspaces:${[...selectedIds].join(",")}`)}>
+            Use as Context
+          </ShinyButton>
+          <button onClick={() => setSelectedIds(new Set())} className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800">Clear</button>
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {workspaces.map((ws) => (
         <button
           key={ws.id}
           onClick={() => router.push(`/app/workspaces/${ws.id}`)}
-          className="group w-full rounded-lg border border-zinc-800 bg-zinc-900/50 text-left transition-colors hover:border-zinc-700 hover:bg-zinc-900/80"
+          className={`group relative w-full rounded-lg border text-left transition-colors hover:border-zinc-700 hover:bg-zinc-900/80 ${selectedIds.has(ws.id) ? "border-indigo-500/40 bg-indigo-500/5" : "border-zinc-800 bg-zinc-900/50"}`}
         >
+          <div className="absolute right-3 top-3 z-10" onClick={(e) => toggleSelect(ws.id, e)}>
+            <input type="checkbox" checked={selectedIds.has(ws.id)} readOnly className="h-3.5 w-3.5 cursor-pointer rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-0" />
+          </div>
           <div className="px-5 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -140,6 +166,7 @@ function WorkspacesContent({
         </button>
       ))}
     </div>
+    </>
   );
 }
 

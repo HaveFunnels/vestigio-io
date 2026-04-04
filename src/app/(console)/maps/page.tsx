@@ -13,6 +13,7 @@ import SeverityBadge from "@/components/console/SeverityBadge";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import { loadAllMaps } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import { ShinyButton } from "@/components/ui/shiny-button";
 import type { MapDefinition, MapNode } from "../../../../packages/maps";
 
 // ──────────────────────────────────────────────
@@ -276,9 +277,16 @@ export default function MapsPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-zinc-800 px-6 py-4">
-        <h1 className="text-xl font-semibold text-zinc-100">Maps</h1>
-        <p className="mt-1 text-sm text-zinc-500">Causal visualization — see relationships between issues, root causes, and actions.</p>
+      <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+        <div>
+          <h1 className="text-xl font-semibold text-zinc-100">Maps</h1>
+          <p className="mt-1 text-sm text-zinc-500">Causal visualization — see relationships between issues, root causes, and actions.</p>
+        </div>
+        {dataState.status === "ready" && (
+          <ShinyButton onClick={() => window.location.href = "/chat?context=maps"}>
+            Use as Context
+          </ShinyButton>
+        )}
       </div>
 
       <div className="flex-1">

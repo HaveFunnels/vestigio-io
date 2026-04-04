@@ -644,6 +644,897 @@ async function main() {
   });
   console.log('  ✓ MCP session: 1 completed session');
 
+  // ── 4. Evidence records ────────────────────
+  console.log('\n── Evidence records ──────────────\n');
+
+  const evidenceItems = [
+    {
+      id: 'demo_evidence_1',
+      evidenceKey: 'ev_checkout_screenshot',
+      evidenceType: 'screenshot',
+      payload: JSON.stringify({
+        url: 'https://acme-store.com/checkout',
+        screenshotUrl: '/evidence/checkout-page.png',
+        viewport: { width: 1440, height: 900 },
+        annotations: [
+          { label: 'Missing trust badges', region: { x: 820, y: 340, w: 200, h: 60 } },
+          { label: 'No security indicators', region: { x: 600, y: 520, w: 300, h: 40 } },
+        ],
+        observation: 'Checkout page lacks visible trust indicators (SSL badge, payment logos, security seals). The payment form is functional but offers no visual reassurance to buyers.',
+        capturedAt: ts(yesterday),
+      }),
+      qualityScore: 92,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_2',
+      evidenceKey: 'ev_payment_redirect_chain',
+      evidenceType: 'network_analysis',
+      payload: JSON.stringify({
+        url: 'https://acme-store.com/checkout',
+        redirectChain: [
+          { step: 1, url: 'https://acme-store.com/checkout', status: 200, latencyMs: 320 },
+          { step: 2, url: 'https://acme-store.com/api/create-session', status: 302, latencyMs: 890 },
+          { step: 3, url: 'https://pay.stripe.com/checkout/acme?session=cs_live_abc123', status: 302, latencyMs: 1240 },
+          { step: 4, url: 'https://checkout.stripe.com/c/pay/cs_live_abc123', status: 200, latencyMs: 2100 },
+        ],
+        totalHops: 3,
+        totalLatencyMs: 4550,
+        crossDomain: true,
+        domainChanges: ['acme-store.com -> pay.stripe.com', 'pay.stripe.com -> checkout.stripe.com'],
+        observation: 'Checkout requires 3 HTTP redirects across 2 domain changes before the buyer sees the payment form. Total redirect latency is 4.5 seconds, adding significant friction.',
+      }),
+      qualityScore: 88,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_3',
+      evidenceKey: 'ev_refund_policy_missing',
+      evidenceType: 'html_analysis',
+      payload: JSON.stringify({
+        crawledUrls: [
+          'https://acme-store.com/',
+          'https://acme-store.com/privacy-policy',
+          'https://acme-store.com/contact',
+          'https://acme-store.com/checkout',
+        ],
+        searchTerms: ['refund', 'return', 'exchange', 'money back', 'guarantee'],
+        matchesFound: 0,
+        footerLinks: ['Privacy Policy', 'Contact Us', 'About'],
+        missingPolicies: ['Refund Policy', 'Return Policy', 'Shipping Policy', 'Terms of Service'],
+        observation: 'No refund, return, or exchange policy detected anywhere on the site. The footer links to Privacy Policy and Contact but omits any purchase protection language. This is a top chargeback driver for ecommerce.',
+      }),
+      qualityScore: 95,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_4',
+      evidenceKey: 'ev_third_party_scripts',
+      evidenceType: 'script_audit',
+      payload: JSON.stringify({
+        url: 'https://acme-store.com/checkout',
+        scripts: [
+          { domain: 'www.googletagmanager.com', type: 'analytics', sizeKb: 82, blockingMs: 120 },
+          { domain: 'www.google-analytics.com', type: 'analytics', sizeKb: 45, blockingMs: 80 },
+          { domain: 'connect.facebook.net', type: 'advertising', sizeKb: 156, blockingMs: 340 },
+          { domain: 'snap.licdn.com', type: 'advertising', sizeKb: 67, blockingMs: 190 },
+          { domain: 'static.hotjar.com', type: 'analytics', sizeKb: 94, blockingMs: 210 },
+          { domain: 'cdn.shopify.com', type: 'platform', sizeKb: 280, blockingMs: 150 },
+          { domain: 'bat.bing.com', type: 'advertising', sizeKb: 34, blockingMs: 90 },
+          { domain: 'cdn.jsdelivr.net', type: 'utility', sizeKb: 42, blockingMs: 60 },
+          { domain: 'js.stripe.com', type: 'payment', sizeKb: 120, blockingMs: 180 },
+          { domain: 'widget.intercom.io', type: 'support', sizeKb: 198, blockingMs: 420 },
+          { domain: 'cdn.segment.com', type: 'analytics', sizeKb: 76, blockingMs: 140 },
+          { domain: 'ct.pinterest.com', type: 'advertising', sizeKb: 28, blockingMs: 70 },
+          { domain: 'www.clarity.ms', type: 'analytics', sizeKb: 56, blockingMs: 110 },
+          { domain: 'js.driftt.com', type: 'support', sizeKb: 134, blockingMs: 280 },
+        ],
+        totalScripts: 14,
+        totalSizeKb: 1412,
+        totalBlockingMs: 2440,
+        categories: { analytics: 5, advertising: 4, platform: 1, payment: 1, support: 2, utility: 1 },
+        observation: '14 third-party scripts on the checkout page add 2.4s of blocking time and 1.4MB of payload. Advertising scripts (Facebook, LinkedIn, Bing, Pinterest) account for 690ms of blocking on a page where they provide no conversion value since checkout is off-domain.',
+      }),
+      qualityScore: 90,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_5',
+      evidenceKey: 'ev_checkout_form_analysis',
+      evidenceType: 'form_analysis',
+      payload: JSON.stringify({
+        url: 'https://checkout.stripe.com/c/pay/cs_live_abc123',
+        formFields: [
+          { name: 'email', type: 'email', required: true, autocomplete: 'email' },
+          { name: 'card_number', type: 'text', required: true, autocomplete: 'cc-number' },
+          { name: 'card_expiry', type: 'text', required: true, autocomplete: 'cc-exp' },
+          { name: 'card_cvc', type: 'text', required: true, autocomplete: 'cc-csc' },
+          { name: 'billing_name', type: 'text', required: true, autocomplete: 'name' },
+          { name: 'billing_country', type: 'select', required: true, autocomplete: 'country' },
+          { name: 'billing_zip', type: 'text', required: true, autocomplete: 'postal-code' },
+        ],
+        totalFields: 7,
+        hasShippingAddress: false,
+        hasPhoneField: false,
+        hasGuestCheckout: true,
+        autocompleteSupport: 'full',
+        observation: 'Stripe-hosted checkout form is well-structured with proper autocomplete attributes. However, it collects no shipping address or phone number, which limits fraud verification and delivery communication.',
+      }),
+      qualityScore: 85,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_6',
+      evidenceKey: 'ev_ssl_certificate',
+      evidenceType: 'ssl_check',
+      payload: JSON.stringify({
+        domain: 'acme-store.com',
+        issuer: "Let's Encrypt Authority X3",
+        validFrom: '2026-02-15T00:00:00Z',
+        validTo: '2026-05-15T00:00:00Z',
+        daysRemaining: 41,
+        protocol: 'TLSv1.3',
+        cipherSuite: 'TLS_AES_256_GCM_SHA384',
+        certChainValid: true,
+        hstsEnabled: true,
+        hstsMaxAge: 31536000,
+        mixedContent: false,
+        checkoutDomain: {
+          domain: 'checkout.stripe.com',
+          issuer: 'DigiCert SHA2 Extended Validation Server CA',
+          validFrom: '2026-01-01T00:00:00Z',
+          validTo: '2027-01-01T00:00:00Z',
+          evCert: true,
+        },
+        observation: 'SSL certificates are valid on both the primary domain and checkout domain. The primary site uses TLS 1.3 with HSTS. Stripe checkout has an EV certificate. No mixed content detected.',
+      }),
+      qualityScore: 99,
+      collectionMethod: 'api',
+    },
+    {
+      id: 'demo_evidence_7',
+      evidenceKey: 'ev_accessibility_mobile',
+      evidenceType: 'accessibility_scan',
+      payload: JSON.stringify({
+        url: 'https://acme-store.com/',
+        viewportTested: { width: 375, height: 812, device: 'iPhone 14' },
+        viewportMeta: { present: true, content: 'width=device-width, initial-scale=1' },
+        touchTargets: { total: 24, tooSmall: 3, minimumSize: '44x44px' },
+        fontSizes: { bodyMin: 14, headingMin: 18, ctaMin: 16 },
+        tapTargetIssues: [
+          { element: '.footer-link', size: '32x32px', recommendation: 'Increase to 44x44px' },
+          { element: '.social-icon', size: '28x28px', recommendation: 'Increase to 44x44px' },
+          { element: '.breadcrumb a', size: '36x36px', recommendation: 'Increase to 44x44px' },
+        ],
+        scrollable: true,
+        horizontalOverflow: false,
+        observation: 'Mobile viewport is properly configured. Content is responsive and scrollable without horizontal overflow. However, 3 tap targets in footer and navigation are below the 44px minimum recommended size.',
+      }),
+      qualityScore: 78,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_8',
+      evidenceKey: 'ev_seo_meta_tags',
+      evidenceType: 'seo_analysis',
+      payload: JSON.stringify({
+        url: 'https://acme-store.com/',
+        title: 'Acme Store — Premium Electronics',
+        titleLength: 35,
+        metaDescription: 'Shop premium electronics at Acme Store. Free shipping on orders over $50.',
+        metaDescriptionLength: 72,
+        ogTags: {
+          'og:title': 'Acme Store — Premium Electronics',
+          'og:description': 'Shop premium electronics at Acme Store.',
+          'og:image': 'https://acme-store.com/og-image.jpg',
+          'og:type': 'website',
+        },
+        twitterCard: { card: 'summary_large_image', site: '@acmestore' },
+        canonicalUrl: 'https://acme-store.com/',
+        robots: 'index, follow',
+        structuredData: { '@type': 'WebSite', present: true },
+        h1Count: 1,
+        missingPages: [
+          { path: '/products/wireless-headphones-pro', missing: ['og:image'] },
+          { path: '/checkout', missing: ['meta description', 'og:title', 'og:description'] },
+        ],
+        observation: 'Homepage SEO is well-optimized with proper title, meta description, OG tags, and structured data. Product pages are partially optimized — some missing OG images. Checkout page has no SEO tags (expected for transactional pages but affects shared link previews).',
+      }),
+      qualityScore: 82,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_9',
+      evidenceKey: 'ev_page_performance',
+      evidenceType: 'performance',
+      payload: JSON.stringify({
+        pages: [
+          { url: 'https://acme-store.com/', lcp: 2.1, fid: 45, cls: 0.05, ttfb: 380, fcp: 1.2, totalSizeKb: 3200 },
+          { url: 'https://acme-store.com/products', lcp: 2.8, fid: 62, cls: 0.12, ttfb: 420, fcp: 1.5, totalSizeKb: 4100 },
+          { url: 'https://acme-store.com/products/wireless-headphones-pro', lcp: 3.4, fid: 78, cls: 0.08, ttfb: 510, fcp: 1.8, totalSizeKb: 5200 },
+          { url: 'https://acme-store.com/cart', lcp: 1.8, fid: 35, cls: 0.03, ttfb: 290, fcp: 0.9, totalSizeKb: 2100 },
+          { url: 'https://acme-store.com/checkout', lcp: 4.2, fid: 120, cls: 0.18, ttfb: 680, fcp: 2.4, totalSizeKb: 6800 },
+        ],
+        worstPage: { url: 'https://acme-store.com/checkout', reason: 'Heavy third-party scripts and redirect chain' },
+        coreWebVitals: { lcpPass: false, fidPass: false, clsPass: false },
+        observation: 'Homepage and cart perform well. The checkout page is the worst performer: 4.2s LCP, 120ms FID, 0.18 CLS — all failing Core Web Vitals thresholds. The 6.8MB total payload is driven by 14 third-party scripts. Product pages are borderline with 3.4s LCP.',
+      }),
+      qualityScore: 91,
+      collectionMethod: 'api',
+    },
+    {
+      id: 'demo_evidence_10',
+      evidenceKey: 'ev_cookie_audit',
+      evidenceType: 'cookie_audit',
+      payload: JSON.stringify({
+        url: 'https://acme-store.com/',
+        totalCookies: 18,
+        categories: {
+          essential: 3,
+          analytics: 6,
+          advertising: 7,
+          functional: 2,
+        },
+        cookies: [
+          { name: '_ga', domain: '.acme-store.com', category: 'analytics', expiry: '2 years', sameSite: 'Lax' },
+          { name: '_ga_XXXXX', domain: '.acme-store.com', category: 'analytics', expiry: '2 years', sameSite: 'Lax' },
+          { name: '_gid', domain: '.acme-store.com', category: 'analytics', expiry: '24 hours', sameSite: 'Lax' },
+          { name: '_fbp', domain: '.acme-store.com', category: 'advertising', expiry: '3 months', sameSite: 'Lax' },
+          { name: '_fbc', domain: '.acme-store.com', category: 'advertising', expiry: '2 years', sameSite: 'Lax' },
+          { name: 'li_fat_id', domain: '.acme-store.com', category: 'advertising', expiry: '30 days', sameSite: 'None' },
+          { name: '_uetsid', domain: '.acme-store.com', category: 'advertising', expiry: '1 day', sameSite: 'None' },
+          { name: '_uetvid', domain: '.acme-store.com', category: 'advertising', expiry: '13 months', sameSite: 'None' },
+          { name: '_pin_unauth', domain: '.acme-store.com', category: 'advertising', expiry: '1 year', sameSite: 'Lax' },
+          { name: '_clck', domain: '.acme-store.com', category: 'analytics', expiry: '1 year', sameSite: 'Lax' },
+        ],
+        consentBanner: { present: false, required: true },
+        observation: 'Site sets 18 cookies including 7 advertising cookies without a consent banner. This creates GDPR/ePrivacy compliance risk for European visitors. Advertising cookies from Facebook, LinkedIn, Bing, and Pinterest are set on first page load.',
+      }),
+      qualityScore: 87,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_11',
+      evidenceKey: 'ev_broken_links',
+      evidenceType: 'link_crawl',
+      payload: JSON.stringify({
+        totalLinksChecked: 142,
+        brokenLinks: [
+          { url: 'https://acme-store.com/returns', status: 404, linkedFrom: ['/', '/products'], anchorText: 'Returns' },
+          { url: 'https://acme-store.com/warranty', status: 404, linkedFrom: ['/products/wireless-headphones-pro'], anchorText: 'Warranty Info' },
+          { url: 'https://acme-store.com/shipping-info', status: 404, linkedFrom: ['/cart', '/checkout'], anchorText: 'Shipping Information' },
+        ],
+        brokenCount: 3,
+        redirects: [
+          { url: 'https://acme-store.com/shop', redirectsTo: 'https://acme-store.com/products', status: 301 },
+        ],
+        externalBrokenLinks: [
+          { url: 'https://support.acme-store.com/help', status: 503, linkedFrom: ['/contact'], anchorText: 'Help Center' },
+        ],
+        observation: '3 broken internal links detected: /returns, /warranty, and /shipping-info all return 404. These are critical ecommerce pages linked from product and checkout pages. The missing /returns page compounds the refund policy absence. External help center returns 503.',
+      }),
+      qualityScore: 93,
+      collectionMethod: 'browser',
+    },
+    {
+      id: 'demo_evidence_12',
+      evidenceKey: 'ev_conversion_funnel',
+      evidenceType: 'conversion_funnel',
+      payload: JSON.stringify({
+        period: 'last_30_days',
+        monthlyVisitors: 48000,
+        funnelSteps: [
+          { step: 'Landing Page', visitors: 48000, rate: 100, dropOff: 0 },
+          { step: 'Product View', visitors: 22800, rate: 47.5, dropOff: 52.5 },
+          { step: 'Add to Cart', visitors: 6840, rate: 30.0, dropOff: 70.0 },
+          { step: 'Checkout Start', visitors: 3420, rate: 50.0, dropOff: 50.0 },
+          { step: 'Payment Page (Stripe)', visitors: 1710, rate: 50.0, dropOff: 50.0 },
+          { step: 'Purchase Complete', visitors: 1350, rate: 78.9, dropOff: 21.1 },
+        ],
+        overallConversionRate: 2.81,
+        biggestDropOff: { step: 'Product View -> Add to Cart', rate: 70.0 },
+        checkoutDropOff: { step: 'Checkout Start -> Payment Page', rate: 50.0, estimatedLostRevenue: 3200 },
+        observation: 'The biggest revenue leak is between Checkout Start and Payment Page — 50% of buyers drop off during the redirect to Stripe. At $85 AOV, this represents ~$3,200/month in lost revenue. The product-to-cart drop-off (70%) is also high but typical for browse-heavy traffic.',
+        estimatedMonthlyImpact: {
+          checkoutDropOff: 3200,
+          productPageDropOff: 1800,
+          totalRecoverableRevenue: 5000,
+        },
+      }),
+      qualityScore: 86,
+      collectionMethod: 'api',
+    },
+  ];
+
+  let evidenceCreated = 0;
+  for (const ev of evidenceItems) {
+    try {
+      await prisma.evidence.upsert({
+        where: { cycleRef_evidenceKey: { cycleRef, evidenceKey: ev.evidenceKey } },
+        create: {
+          id: ev.id,
+          evidenceKey: ev.evidenceKey,
+          evidenceType: ev.evidenceType,
+          subjectRef: webRef,
+          workspaceRef: wsRef,
+          environmentRef: envRef,
+          cycleRef,
+          observedAt: yesterday,
+          freshUntil: freshUntil,
+          freshnessState: 'fresh',
+          sourceKind: 'automated',
+          collectionMethod: ev.collectionMethod,
+          qualityScore: ev.qualityScore,
+          payload: ev.payload,
+          auditCycleId: cycle.id,
+        },
+        update: {
+          payload: ev.payload,
+          qualityScore: ev.qualityScore,
+        },
+      });
+      evidenceCreated++;
+    } catch (e) {
+      console.log(`  ⚠ Evidence ${ev.evidenceKey}: skipped (${(e as Error).message?.slice(0, 60)})`);
+    }
+  }
+  console.log(`  ✓ Evidence: ${evidenceCreated} records created`);
+
+  // ── 5. Conversations + Messages ────────────
+  console.log('\n── Conversations ────────────────\n');
+
+  const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+
+  // --- Conversation 1: Revenue Leak Analysis ---
+  try {
+    const conv1 = await prisma.conversation.upsert({
+      where: { id: 'demo_conv_1' },
+      create: {
+        id: 'demo_conv_1',
+        organizationId: org.id,
+        userId: demoUser.id,
+        environmentId: env.id,
+        title: 'Revenue Leak Analysis',
+        status: 'active',
+        messageCount: 6,
+        totalCostCents: 1.24,
+        totalInputTokens: 8420,
+        totalOutputTokens: 4180,
+        createdAt: threeDaysAgo,
+      },
+      update: {
+        title: 'Revenue Leak Analysis',
+        messageCount: 6,
+      },
+    });
+
+    const conv1Messages = [
+      {
+        id: 'demo_msg_1_1',
+        role: 'user',
+        content: 'Where am I losing money?',
+        model: null,
+        inputTokens: null,
+        outputTokens: null,
+        costCents: null,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(threeDaysAgo.getTime()),
+      },
+      {
+        id: 'demo_msg_1_2',
+        role: 'assistant',
+        content: JSON.stringify([
+          {
+            type: 'markdown',
+            content: '## Revenue Leak Analysis\n\nBased on your latest audit of **acme-store.com**, I found **3 active revenue leaks** totaling an estimated **$5,000/month** in recoverable revenue. Here\'s the breakdown:',
+          },
+          {
+            type: 'finding_card',
+            finding_id: 'find_1',
+            title: 'Checkout redirect drops 50% of buyers',
+            severity: 'high',
+            monthly_impact: 3200,
+            description: 'Your checkout flow redirects through 3 hops to Stripe, causing a 50% drop-off between checkout start and payment page. At your $85 AOV, that\'s ~$3,200/month walking away.',
+          },
+          {
+            type: 'finding_card',
+            finding_id: 'find_2',
+            title: 'No conversion tracking on checkout',
+            severity: 'high',
+            monthly_impact: null,
+            description: 'GA4 is present on your main site but missing from the Stripe checkout and thank-you page. You\'re flying blind on your most critical funnel step — you can\'t optimize what you can\'t measure.',
+          },
+          {
+            type: 'finding_card',
+            finding_id: 'find_3',
+            title: 'Product page abandonment above benchmark',
+            severity: 'medium',
+            monthly_impact: 1800,
+            description: '70% of product page visitors leave without adding to cart. Industry benchmark is 55-60%. Slow product page load (3.4s LCP) and missing social proof are likely contributors.',
+          },
+          {
+            type: 'suggested_prompts',
+            prompts: [
+              'Can you explain the checkout redirect issue?',
+              'What\'s the fix priority?',
+              'Show me the evidence for the checkout drop-off',
+            ],
+          },
+        ]),
+        model: 'sonnet_4_6',
+        inputTokens: 2800,
+        outputTokens: 1200,
+        costCents: 0.38,
+        toolCalls: JSON.stringify([
+          { tool: 'get_audit_snapshot', input: { environmentId: 'demo_env' }, durationMs: 120 },
+          { tool: 'get_business_profile', input: { organizationId: 'demo_org' }, durationMs: 45 },
+        ]),
+        purpose: 'core_chat',
+        createdAt: new Date(threeDaysAgo.getTime() + 3000),
+      },
+      {
+        id: 'demo_msg_1_3',
+        role: 'user',
+        content: 'Can you explain the checkout redirect issue?',
+        model: null,
+        inputTokens: null,
+        outputTokens: null,
+        costCents: null,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(threeDaysAgo.getTime() + 60000),
+      },
+      {
+        id: 'demo_msg_1_4',
+        role: 'assistant',
+        content: JSON.stringify([
+          {
+            type: 'markdown',
+            content: '## Checkout Redirect Deep Dive\n\nHere\'s exactly what happens when a buyer clicks "Pay Now" on your checkout page:\n\n### The Redirect Chain\n1. **acme-store.com/checkout** — your checkout page (320ms)\n2. **acme-store.com/api/create-session** — your backend creates a Stripe session (890ms)\n3. **pay.stripe.com/checkout/acme** — Stripe\'s redirect endpoint (1,240ms)\n4. **checkout.stripe.com/c/pay/...** — the actual payment form (2,100ms)\n\n**Total time: 4.5 seconds** across 3 redirects and 2 domain changes.\n\n### Why This Kills Conversions\n- **Domain change breaks trust**: Buyers see the URL change from your brand to stripe.com. Less savvy shoppers think they\'re being redirected to a scam.\n- **4.5s of white screen**: Each redirect shows a blank page. Mobile users on 3G see even longer waits.\n- **No back button recovery**: If a buyer clicks back during redirects, they land in a broken state.\n\n### The Evidence\nI captured the full redirect chain via network analysis. Your checkout page also loads **14 third-party scripts** (2.4s of blocking time) before the redirect even starts, making the total checkout experience close to **7 seconds**.\n\n### Impact Math\n- 3,420 buyers reach checkout start per month\n- 1,710 make it to the Stripe payment page (50% survive)\n- 1,350 complete purchase (78.9% of those who see the form)\n- **1,710 lost buyers × $85 AOV × estimated 20% recoverable = ~$3,200/month**',
+          },
+          {
+            type: 'suggested_prompts',
+            prompts: [
+              'What\'s the fix priority?',
+              'How do I embed checkout on my domain?',
+              'What scripts should I remove from checkout?',
+            ],
+          },
+        ]),
+        model: 'sonnet_4_6',
+        inputTokens: 3200,
+        outputTokens: 1400,
+        costCents: 0.42,
+        toolCalls: JSON.stringify([
+          { tool: 'get_evidence', input: { evidenceKey: 'ev_payment_redirect_chain' }, durationMs: 80 },
+          { tool: 'get_evidence', input: { evidenceKey: 'ev_third_party_scripts' }, durationMs: 65 },
+        ]),
+        purpose: 'core_chat',
+        createdAt: new Date(threeDaysAgo.getTime() + 65000),
+      },
+      {
+        id: 'demo_msg_1_5',
+        role: 'user',
+        content: "What's the fix priority?",
+        model: null,
+        inputTokens: null,
+        outputTokens: null,
+        costCents: null,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(threeDaysAgo.getTime() + 120000),
+      },
+      {
+        id: 'demo_msg_1_6',
+        role: 'assistant',
+        content: JSON.stringify([
+          {
+            type: 'markdown',
+            content: '## Fix Priority Roadmap\n\nBased on impact, effort, and dependencies, here\'s your recommended order:\n\n### Week 1 — Quick Wins ($1,200/mo recovered)\n1. **Remove non-essential scripts from checkout** — Drop advertising pixels (Facebook, LinkedIn, Bing, Pinterest) from the checkout page. They can\'t track conversions on Stripe anyway. _Effort: 1 hour. Impact: ~15% faster checkout load._\n2. **Add refund policy page** — Publish a clear refund/return policy and link it from the footer and checkout. Reduces chargebacks and builds buyer confidence. _Effort: 2 hours. Impact: Reduces chargeback rate by ~0.2%._\n\n### Week 2 — High Impact ($3,200/mo recovered)\n3. **Switch to Stripe Embedded Checkout** — Replace the redirect flow with Stripe\'s embedded checkout component. Keeps buyers on your domain, eliminates 3 redirects, and cuts checkout time from 7s to under 2s. _Effort: 4-8 hours. Impact: ~$3,200/month in recovered revenue._\n\n### Week 3 — Measurement Foundation\n4. **Deploy cross-domain conversion tracking** — If you can\'t embed checkout yet, at minimum set up Stripe webhook → GA4 server-side tracking so you can measure purchases. _Effort: 3-4 hours. Impact: Unlocks optimization data._\n5. **Fix broken links** — /returns, /warranty, /shipping-info all return 404. Create these pages. _Effort: 3 hours. Impact: Supports buyer confidence._\n\n### Total Estimated Recovery: ~$5,000/month\n\nThe Stripe Embedded Checkout migration is the single highest-impact change. Everything else is supporting.',
+          },
+          {
+            type: 'suggested_prompts',
+            prompts: [
+              'How do I implement Stripe Embedded Checkout?',
+              'Draft a refund policy for my store',
+              'What should I track in GA4?',
+            ],
+          },
+        ]),
+        model: 'sonnet_4_6',
+        inputTokens: 2420,
+        outputTokens: 1580,
+        costCents: 0.44,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(threeDaysAgo.getTime() + 125000),
+      },
+    ];
+
+    for (const msg of conv1Messages) {
+      try {
+        await prisma.conversationMessage.upsert({
+          where: { id: msg.id },
+          create: {
+            id: msg.id,
+            conversationId: conv1.id,
+            role: msg.role,
+            content: msg.content,
+            model: msg.model,
+            inputTokens: msg.inputTokens,
+            outputTokens: msg.outputTokens,
+            costCents: msg.costCents,
+            toolCalls: msg.toolCalls,
+            purpose: msg.purpose,
+            createdAt: msg.createdAt,
+          },
+          update: {
+            content: msg.content,
+          },
+        });
+      } catch (e) {
+        console.log(`  ⚠ Message ${msg.id}: skipped (${(e as Error).message?.slice(0, 60)})`);
+      }
+    }
+    console.log('  ✓ Conversation 1: "Revenue Leak Analysis" (6 messages)');
+  } catch (e) {
+    console.log(`  ⚠ Conversation 1: skipped (${(e as Error).message?.slice(0, 60)})`);
+  }
+
+  // --- Conversation 2: Chargeback Risk Assessment ---
+  try {
+    const conv2 = await prisma.conversation.upsert({
+      where: { id: 'demo_conv_2' },
+      create: {
+        id: 'demo_conv_2',
+        organizationId: org.id,
+        userId: demoUser.id,
+        environmentId: env.id,
+        title: 'Chargeback Risk Assessment',
+        status: 'active',
+        messageCount: 4,
+        totalCostCents: 0.72,
+        totalInputTokens: 5200,
+        totalOutputTokens: 2800,
+        createdAt: twoDaysAgo,
+      },
+      update: {
+        title: 'Chargeback Risk Assessment',
+        messageCount: 4,
+      },
+    });
+
+    const conv2Messages = [
+      {
+        id: 'demo_msg_2_1',
+        role: 'user',
+        content: "What's my chargeback risk?",
+        model: null,
+        inputTokens: null,
+        outputTokens: null,
+        costCents: null,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(twoDaysAgo.getTime()),
+      },
+      {
+        id: 'demo_msg_2_2',
+        role: 'assistant',
+        content: JSON.stringify([
+          {
+            type: 'markdown',
+            content: '## Chargeback Risk Assessment\n\nYour current chargeback rate is **0.6%** — above the Visa threshold of 0.9% but trending in the wrong direction. Here\'s what I found:\n\n### Risk Score: **Medium-High** (confidence: 85%)\n\n### Risk Factors Detected\n\n| Factor | Status | Impact |\n|--------|--------|--------|\n| Refund policy | ❌ Missing | High — #1 chargeback driver |\n| Return policy | ❌ Missing | High — buyers dispute instead of returning |\n| Support link on checkout | ❌ Not linked | Medium — buyers can\'t find help |\n| Contact page | ✅ Exists | Low — but not accessible from checkout |\n| Delivery estimate | ❌ Not shown | Medium — "item not received" disputes |\n| SSL/security | ✅ Valid | Low — no fraud-type disputes |\n\n### Estimated Monthly Chargeback Cost\n- Current: **$720/month** (0.6% × $120,000 revenue)\n- If rate reaches 0.9%: **$1,080/month** + processor warning\n- If rate exceeds 1.0%: **Account review + $25/chargeback fee**\n\nThe missing refund policy is the single biggest risk. Buyers who want a refund but can\'t find your policy go straight to their bank.',
+          },
+          {
+            type: 'suggested_prompts',
+            prompts: [
+              'How do I reduce chargebacks?',
+              'Draft a refund policy for me',
+              'What does a Visa chargeback review look like?',
+            ],
+          },
+        ]),
+        model: 'sonnet_4_6',
+        inputTokens: 2600,
+        outputTokens: 1400,
+        costCents: 0.36,
+        toolCalls: JSON.stringify([
+          { tool: 'get_audit_snapshot', input: { environmentId: 'demo_env' }, durationMs: 110 },
+          { tool: 'get_business_profile', input: { organizationId: 'demo_org' }, durationMs: 50 },
+        ]),
+        purpose: 'core_chat',
+        createdAt: new Date(twoDaysAgo.getTime() + 4000),
+      },
+      {
+        id: 'demo_msg_2_3',
+        role: 'user',
+        content: 'How do I reduce chargebacks?',
+        model: null,
+        inputTokens: null,
+        outputTokens: null,
+        costCents: null,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(twoDaysAgo.getTime() + 90000),
+      },
+      {
+        id: 'demo_msg_2_4',
+        role: 'assistant',
+        content: JSON.stringify([
+          {
+            type: 'markdown',
+            content: '## Chargeback Reduction Action Plan\n\nHere\'s a prioritized plan to bring your chargeback rate from 0.6% down to under 0.3% within 60 days:\n\n### Immediate (This Week)\n1. **Publish a refund/return policy** — Create a dedicated page at `/returns` with clear timelines (e.g., "30-day no-questions-asked returns"). Link it from:\n   - Site footer (every page)\n   - Checkout page (near payment button)\n   - Order confirmation email\n   - _Expected impact: -0.15% chargeback rate_\n\n2. **Add support contact to checkout flow** — Put your email/phone number and a "Need help?" link in the checkout footer. Buyers who can reach you won\'t call their bank.\n   - _Expected impact: -0.05% chargeback rate_\n\n### Short-Term (Next 2 Weeks)\n3. **Show estimated delivery dates** — Display "Estimated delivery: [date]" on the cart and checkout pages. "Item not received" is the second most common dispute reason.\n   - _Expected impact: -0.08% chargeback rate_\n\n4. **Send shipping confirmation with tracking** — If you\'re not already doing this, automated shipping emails with tracking numbers prevent "where\'s my order" disputes.\n   - _Expected impact: -0.05% chargeback rate_\n\n### Verification Steps\n- [ ] Confirm refund policy is live and linked from checkout (re-run Vestigio audit)\n- [ ] Test the full purchase flow and verify support links are visible\n- [ ] Monitor chargeback rate weekly for 60 days via Stripe dashboard\n- [ ] Set up a Stripe Radar rule to flag orders over $200 for manual review\n\n### Target Outcome\n**0.6% → 0.27%** chargeback rate, saving approximately **$400/month** in dispute costs and keeping you well below processor thresholds.',
+          },
+          {
+            type: 'suggested_prompts',
+            prompts: [
+              'Draft the refund policy page content',
+              'What Stripe Radar rules should I set up?',
+              'How do I add delivery estimates?',
+            ],
+          },
+        ]),
+        model: 'sonnet_4_6',
+        inputTokens: 2600,
+        outputTokens: 1400,
+        costCents: 0.36,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(twoDaysAgo.getTime() + 95000),
+      },
+    ];
+
+    for (const msg of conv2Messages) {
+      try {
+        await prisma.conversationMessage.upsert({
+          where: { id: msg.id },
+          create: {
+            id: msg.id,
+            conversationId: conv2.id,
+            role: msg.role,
+            content: msg.content,
+            model: msg.model,
+            inputTokens: msg.inputTokens,
+            outputTokens: msg.outputTokens,
+            costCents: msg.costCents,
+            toolCalls: msg.toolCalls,
+            purpose: msg.purpose,
+            createdAt: msg.createdAt,
+          },
+          update: {
+            content: msg.content,
+          },
+        });
+      } catch (e) {
+        console.log(`  ⚠ Message ${msg.id}: skipped (${(e as Error).message?.slice(0, 60)})`);
+      }
+    }
+    console.log('  ✓ Conversation 2: "Chargeback Risk Assessment" (4 messages)');
+  } catch (e) {
+    console.log(`  ⚠ Conversation 2: skipped (${(e as Error).message?.slice(0, 60)})`);
+  }
+
+  // --- Conversation 3: Scale Readiness Check ---
+  try {
+    const conv3 = await prisma.conversation.upsert({
+      where: { id: 'demo_conv_3' },
+      create: {
+        id: 'demo_conv_3',
+        organizationId: org.id,
+        userId: demoUser.id,
+        environmentId: env.id,
+        title: 'Scale Readiness Check',
+        status: 'active',
+        messageCount: 4,
+        totalCostCents: 0.68,
+        totalInputTokens: 4800,
+        totalOutputTokens: 2600,
+        createdAt: yesterday,
+      },
+      update: {
+        title: 'Scale Readiness Check',
+        messageCount: 4,
+      },
+    });
+
+    const conv3Messages = [
+      {
+        id: 'demo_msg_3_1',
+        role: 'user',
+        content: 'Can I safely scale paid traffic?',
+        model: null,
+        inputTokens: null,
+        outputTokens: null,
+        costCents: null,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(yesterday.getTime()),
+      },
+      {
+        id: 'demo_msg_3_2',
+        role: 'assistant',
+        content: JSON.stringify([
+          {
+            type: 'markdown',
+            content: '## Scale Readiness: ❌ Not Yet Safe\n\n**Decision: Fix before scaling** (confidence: 82%)\n\nScaling paid traffic right now would amplify existing problems. Here\'s the signal breakdown:\n\n### 🔴 Blockers (must fix first)\n- **Checkout trust break**: Off-domain redirect through 3 hops loses 50% of checkout starters. Scaling traffic into a broken funnel just means paying more for the same drop-off.\n- **No conversion measurement**: Without tracking on checkout/thank-you pages, you can\'t measure ROAS. You\'d be scaling blind — no way to know which campaigns convert.\n\n### 🟡 Risks (fix soon)\n- **Chargeback rate at 0.6%**: More volume at this rate pushes you toward processor thresholds. At 2x traffic, you\'d be processing ~$240k/mo with 0.6% chargebacks = $1,440/mo in disputes.\n- **14 third-party scripts on checkout**: Page load is 7+ seconds. Paid traffic (especially mobile) has lower patience than organic.\n\n### 🟢 Strengths (ready to scale)\n- SSL and security infrastructure is solid\n- GA4 is tracking on main site pages\n- Mobile viewport is properly configured\n- Pricing page and CTAs are well-positioned\n- Core site performance (homepage, cart) is good\n\n### Bottom Line\nYour site infrastructure is **70% ready**. The checkout flow and measurement gaps are the two blockers. Fix those first, then you can scale with confidence.',
+          },
+          {
+            type: 'suggested_prompts',
+            prompts: [
+              'What should I fix first before scaling?',
+              'How long will the fixes take?',
+              'What ROAS should I expect after fixes?',
+            ],
+          },
+        ]),
+        model: 'sonnet_4_6',
+        inputTokens: 2400,
+        outputTokens: 1300,
+        costCents: 0.34,
+        toolCalls: JSON.stringify([
+          { tool: 'get_audit_snapshot', input: { environmentId: 'demo_env' }, durationMs: 105 },
+          { tool: 'get_business_profile', input: { organizationId: 'demo_org' }, durationMs: 48 },
+        ]),
+        purpose: 'core_chat',
+        createdAt: new Date(yesterday.getTime() + 5000),
+      },
+      {
+        id: 'demo_msg_3_3',
+        role: 'user',
+        content: 'What should I fix first before scaling?',
+        model: null,
+        inputTokens: null,
+        outputTokens: null,
+        costCents: null,
+        toolCalls: null,
+        purpose: 'core_chat',
+        createdAt: new Date(yesterday.getTime() + 120000),
+      },
+      {
+        id: 'demo_msg_3_4',
+        role: 'assistant',
+        content: JSON.stringify([
+          {
+            type: 'markdown',
+            content: '## Pre-Scale Roadmap\n\nHere\'s your 3-week path to being scale-ready:\n\n### Phase 1: Measurement (Days 1-3) — Unlock Data\n**Goal**: Be able to measure conversions end-to-end before changing anything else.\n\n1. **Set up Stripe webhooks → GA4 Measurement Protocol** — Server-side conversion tracking that works regardless of checkout hosting.\n   - Time: 3-4 hours (developer)\n   - Why first: You need baseline data before making checkout changes\n\n2. **Configure cross-domain GA4 tracking** — Add your Stripe checkout domain to GA4 referral exclusions and enable cross-domain measurement.\n   - Time: 30 minutes\n   - Why: Prevents Stripe from appearing as a referral source\n\n### Phase 2: Checkout Fix (Days 4-10) — Stop the Bleed\n**Goal**: Reduce checkout drop-off from 50% to under 20%.\n\n3. **Migrate to Stripe Embedded Checkout** — Stripe\'s `EmbeddedCheckout` component renders the payment form on your domain. No redirects, no domain changes.\n   - Time: 4-8 hours (developer)\n   - Expected impact: +$3,200/month revenue\n\n4. **Strip non-essential scripts from checkout** — Remove Facebook, LinkedIn, Bing, Pinterest, Hotjar, Clarity, Drift pixels from the checkout page.\n   - Time: 1 hour\n   - Expected impact: Checkout load time drops from 7s to ~2s\n\n### Phase 3: Trust & Policy (Days 11-17) — Build Confidence\n**Goal**: Reduce chargebacks and increase buyer confidence.\n\n5. **Publish refund + shipping policies** — Create `/returns` and `/shipping-info` pages.\n6. **Add support link to checkout** — Phone number or chat widget in checkout footer.\n7. **Fix broken links** — `/returns`, `/warranty`, `/shipping-info` all 404 currently.\n\n### Phase 4: Validate & Scale (Days 18-21)\n8. **Re-run Vestigio audit** — Verify all changes are detected\n9. **Monitor for 7 days** — Watch conversion rate, chargeback rate, page speed\n10. **Scale traffic** — Start with 25% budget increase, then ramp weekly\n\n### Expected Outcome After Fixes\n| Metric | Current | Target |\n|--------|---------|--------|\n| Checkout completion | 50% | 80%+ |\n| Chargeback rate | 0.6% | <0.3% |\n| Checkout load time | 7s | <2s |\n| Monthly revenue | $120k | $125k+ |\n| Recoverable at 2x traffic | — | +$10k/mo |',
+          },
+          {
+            type: 'suggested_prompts',
+            prompts: [
+              'Generate a technical spec for the Stripe migration',
+              'What should my GA4 conversion events look like?',
+              'Show me checkout performance benchmarks',
+            ],
+          },
+        ]),
+        model: 'sonnet_4_6',
+        inputTokens: 2400,
+        outputTokens: 1300,
+        costCents: 0.34,
+        toolCalls: JSON.stringify([
+          { tool: 'get_evidence', input: { evidenceKey: 'ev_page_performance' }, durationMs: 72 },
+          { tool: 'get_evidence', input: { evidenceKey: 'ev_conversion_funnel' }, durationMs: 68 },
+        ]),
+        purpose: 'core_chat',
+        createdAt: new Date(yesterday.getTime() + 128000),
+      },
+    ];
+
+    for (const msg of conv3Messages) {
+      try {
+        await prisma.conversationMessage.upsert({
+          where: { id: msg.id },
+          create: {
+            id: msg.id,
+            conversationId: conv3.id,
+            role: msg.role,
+            content: msg.content,
+            model: msg.model,
+            inputTokens: msg.inputTokens,
+            outputTokens: msg.outputTokens,
+            costCents: msg.costCents,
+            toolCalls: msg.toolCalls,
+            purpose: msg.purpose,
+            createdAt: msg.createdAt,
+          },
+          update: {
+            content: msg.content,
+          },
+        });
+      } catch (e) {
+        console.log(`  ⚠ Message ${msg.id}: skipped (${(e as Error).message?.slice(0, 60)})`);
+      }
+    }
+    console.log('  ✓ Conversation 3: "Scale Readiness Check" (4 messages)');
+  } catch (e) {
+    console.log(`  ⚠ Conversation 3: skipped (${(e as Error).message?.slice(0, 60)})`);
+  }
+
+  // ── 6. Token cost ledger entries ───────────
+  console.log('\n── Token cost ledger ─────────────\n');
+
+  const ledgerEntries = [
+    { id: 'demo_ledger_1', conversationId: 'demo_conv_1', model: 'sonnet_4_6', purpose: 'core_chat', inputTokens: 8420, outputTokens: 4180, costCents: 1.24, latencyMs: 2800 },
+    { id: 'demo_ledger_2', conversationId: 'demo_conv_2', model: 'sonnet_4_6', purpose: 'core_chat', inputTokens: 5200, outputTokens: 2800, costCents: 0.72, latencyMs: 2100 },
+    { id: 'demo_ledger_3', conversationId: 'demo_conv_3', model: 'sonnet_4_6', purpose: 'core_chat', inputTokens: 4800, outputTokens: 2600, costCents: 0.68, latencyMs: 1900 },
+    { id: 'demo_ledger_4', conversationId: 'demo_conv_1', model: 'haiku_4_5', purpose: 'input_guard', inputTokens: 320, outputTokens: 45, costCents: 0.003, latencyMs: 180 },
+    { id: 'demo_ledger_5', conversationId: 'demo_conv_2', model: 'haiku_4_5', purpose: 'input_guard', inputTokens: 280, outputTokens: 38, costCents: 0.002, latencyMs: 160 },
+  ];
+
+  for (const entry of ledgerEntries) {
+    try {
+      await prisma.tokenCostLedger.upsert({
+        where: { id: entry.id },
+        create: {
+          id: entry.id,
+          organizationId: org.id,
+          userId: demoUser.id,
+          conversationId: entry.conversationId,
+          model: entry.model,
+          purpose: entry.purpose,
+          inputTokens: entry.inputTokens,
+          outputTokens: entry.outputTokens,
+          costCents: entry.costCents,
+          latencyMs: entry.latencyMs,
+          isToolUse: false,
+        },
+        update: {},
+      });
+    } catch (e) {
+      console.log(`  ⚠ Ledger ${entry.id}: skipped (${(e as Error).message?.slice(0, 60)})`);
+    }
+  }
+  console.log(`  ✓ Token ledger: ${ledgerEntries.length} entries`);
+
+  // ── 7. Chat feedback ──────────────────────
+  console.log('\n── Chat feedback ────────────────\n');
+
+  const feedbackItems = [
+    {
+      id: 'demo_feedback_1',
+      conversationId: 'demo_conv_1',
+      messageId: 'demo_msg_1_2',
+      rating: 'positive' as const,
+      comment: 'Really helpful breakdown of where the revenue is leaking. The dollar amounts make it easy to prioritize.',
+      messagePreview: 'Based on your latest audit of acme-store.com, I found 3 active revenue leaks totaling an estimated $5,000/month in recoverable revenue.',
+      model: 'sonnet_4_6',
+    },
+    {
+      id: 'demo_feedback_2',
+      conversationId: 'demo_conv_3',
+      messageId: 'demo_msg_3_4',
+      rating: 'positive' as const,
+      comment: 'The phased roadmap with time estimates is exactly what I needed. Clear and actionable.',
+      messagePreview: 'Here\'s your 3-week path to being scale-ready: Phase 1: Measurement (Days 1-3) — Unlock Data...',
+      model: 'sonnet_4_6',
+    },
+  ];
+
+  for (const fb of feedbackItems) {
+    try {
+      await prisma.chatFeedback.upsert({
+        where: { id: fb.id },
+        create: {
+          id: fb.id,
+          organizationId: org.id,
+          userId: demoUser.id,
+          conversationId: fb.conversationId,
+          messageId: fb.messageId,
+          rating: fb.rating,
+          comment: fb.comment,
+          messagePreview: fb.messagePreview,
+          model: fb.model,
+        },
+        update: {},
+      });
+    } catch (e) {
+      console.log(`  ⚠ Feedback ${fb.id}: skipped (${(e as Error).message?.slice(0, 60)})`);
+    }
+  }
+  console.log(`  ✓ Chat feedback: ${feedbackItems.length} positive ratings`);
+
   console.log('\n══════════════════════════════════');
   console.log('✓ Seed complete.');
   console.log(`\n  Demo login: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);

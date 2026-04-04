@@ -165,19 +165,18 @@ export function ChatInputBar({
             </svg>
           </button>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="mt-1.5 flex items-center justify-between">
-          <p className="text-[10px] text-content-faint">
-            <kbd className="rounded border border-edge px-1 py-0.5 font-mono text-[9px]">Enter</kbd>{" "}send,{" "}
-            <kbd className="rounded border border-edge px-1 py-0.5 font-mono text-[9px]">Shift+Enter</kbd>{" "}new line
-          </p>
-          {input.length > 1500 && (
-            <span className={`font-mono text-[10px] ${input.length > 1900 ? "text-red-400" : "text-content-faint"}`}>
-              {input.length}/2000
-            </span>
-          )}
-        </div>
+      {/* Hints — outside the island */}
+      <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between px-1">
+        <p className="text-[9px] text-content-faint">
+          Enter send · Shift+Enter new line
+        </p>
+        {input.length > 1500 && (
+          <span className={`font-mono text-[9px] ${input.length > 1900 ? "text-red-400" : "text-content-faint"}`}>
+            {input.length}/2000
+          </span>
+        )}
       </div>
     </div>
   );

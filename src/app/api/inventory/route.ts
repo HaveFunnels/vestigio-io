@@ -16,6 +16,28 @@ import { withErrorTracking } from "@/libs/error-tracker";
 
 const COMMERCIAL_PAGE_TYPES = new Set(["checkout", "cart", "product", "pricing"]);
 
+// TODO: Replace with real session tracking once analytics integration is live.
+// For now, generate realistic demo counts based on page type.
+const MOCK_SESSION_COUNTS: Record<string, number> = {
+  landing: 1200,
+  product: 450,
+  checkout: 380,
+  cart: 290,
+  pricing: 320,
+  blog: 180,
+};
+const DEFAULT_SESSION_COUNT = 50;
+
+// TODO: Replace with real finding counts from Evidence query once
+// evidence ↔ page path mapping is robust.
+const MOCK_FINDING_COUNTS: Record<string, number> = {
+  checkout: 4,
+  cart: 2,
+  product: 1,
+  pricing: 1,
+};
+const DEFAULT_FINDING_COUNT = 0;
+
 export const GET = withErrorTracking(async function GET() {
   const user = await isAuthorized();
   if (!user) {
@@ -78,8 +100,8 @@ export const GET = withErrorTracking(async function GET() {
       is_commercial: COMMERCIAL_PAGE_TYPES.has(item.pageType),
       is_live: item.freshnessState === "fresh",
       last_seen_at: item.updatedAt.toISOString(),
-      session_count: 0,
-      finding_count: 0,
+      session_count: MOCK_SESSION_COUNTS[item.pageType] ?? DEFAULT_SESSION_COUNT,
+      finding_count: MOCK_FINDING_COUNTS[item.pageType] ?? DEFAULT_FINDING_COUNT,
       discovery_sources: ["surface"],
       http_status: item.statusCode ?? null,
       title: item.title ?? null,

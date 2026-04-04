@@ -10,6 +10,11 @@ import type { SaasSetupChecklist } from '../../apps/mcp/saas-awareness';
 // Returns DataState<T> — never fake data.
 // Possible states: loading, ready, empty, error, not_ready.
 // UI pages MUST handle all states explicitly.
+//
+// Auto-bootstrap: ensureContext() loads the latest
+// audit cycle evidence from PostgreSQL when the in-memory
+// MCP singleton has no context (server restart, first visit).
+// Must be called from a server component or API route.
 // ──────────────────────────────────────────────
 
 export type DataState<T> =
@@ -19,6 +24,56 @@ export type DataState<T> =
   | { status: 'error'; message: string }
   | { status: 'not_ready'; reason: string }
   | { status: 'saas_setup_required'; checklist: SaasSetupChecklist };
+
+/**
+ * Ensure the MCP server singleton has context loaded.
+ *
+ * On a fresh server start (or after singleton reset), the in-memory
+ * MCP server has no context. This function loads the latest audit
+ * cycle's evidence from PostgreSQL and bootstraps the engine.
+ *
+ * Call from server components / API routes BEFORE any synchronous
+ * MCP tool calls. No-ops if context is already loaded.
+ */
+export async function ensureContext(orgCtx: {
+  orgId: string;
+  orgName: string;
+  envId: string;
+  domain: string;
+}): Promise<void> {
+  try {
+    const server = getMcpServer();
+    if (server.getContext()) return; // already loaded
+
+    // Dynamic imports to keep Prisma out of client bundles
+    const { prisma } = await import('@/libs/prismaDb');
+    const { PrismaEvidenceStore } = await import('../../packages/evidence');
+    const { bootstrapMcpContextSync } = await import('../../apps/mcp/bootstrap');
+
+    const store = new PrismaEvidenceStore(prisma);
+    const workspaceRef = `workspace:${orgCtx.orgId}`;
+    const environmentRef = `environment:${orgCtx.envId}`;
+
+    const { evidence, cycleRef } = await store.loadLatestCycle(workspaceRef, environmentRef);
+    if (evidence.length === 0 || !cycleRef) return; // no persisted data yet
+
+    const domain = orgCtx.domain.replace(/^https?:\/\//, '').split('/')[0];
+    const landingUrl = orgCtx.domain.startsWith('http')
+      ? orgCtx.domain
+      : `https://${orgCtx.domain}`;
+
+    bootstrapMcpContextSync(server, {
+      organization_id: orgCtx.orgId,
+      organization_name: orgCtx.orgName,
+      environment_id: orgCtx.envId,
+      domain,
+      landing_url: landingUrl,
+      is_production: process.env.NODE_ENV === 'production',
+    }, evidence, store);
+  } catch {
+    // Best-effort — if DB is unavailable, pages fall back to not_ready state
+  }
+}
 
 export function loadFindings(): DataState<FindingProjection[]> {
   try {

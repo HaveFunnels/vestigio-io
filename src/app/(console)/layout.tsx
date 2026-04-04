@@ -2,6 +2,7 @@ import Sidebar from "@/components/console/Sidebar";
 import OrgSelector from "@/components/console/OrgSelector";
 import McpUsageIndicator from "@/components/console/McpUsageIndicator";
 import { resolveOrgContext } from "@/libs/resolve-org";
+import { ensureContext } from "@/lib/console-data";
 import { AppProviders } from "../app/providers";
 
 export const metadata = {
@@ -10,6 +11,17 @@ export const metadata = {
 
 export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
 	const orgCtx = await resolveOrgContext();
+
+	// Auto-bootstrap: load persisted evidence into MCP server singleton
+	// so Analysis / Actions / Maps pages render data on first visit
+	// (handles server restarts and returning users without re-running analysis).
+	await ensureContext({
+		orgId: orgCtx.orgId,
+		orgName: orgCtx.orgName,
+		envId: orgCtx.envId,
+		domain: orgCtx.domain,
+	});
+
 	const currentOrg = {
 		orgId: orgCtx.orgId,
 		orgName: orgCtx.orgName,

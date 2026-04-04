@@ -91,79 +91,61 @@ export function ChatInputBar({
           </div>
         )}
 
-        <div className="flex items-center gap-2">
-          {/* File upload button */}
+        <div className="flex items-end gap-2">
+          {/* File upload */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted disabled:opacity-30"
+            className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30"
             title="Attach file"
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
               <path d="M14 9.5V12a2 2 0 01-2 2H4a2 2 0 01-2-2V9.5M8 10V2m0 0L5 5m3-3l3 3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.json,.txt,.md,.pdf"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              // Handled by parent via FileUploadZone
-            }}
-          />
+          <input ref={fileInputRef} type="file" accept=".csv,.json,.txt,.md,.pdf" multiple className="hidden" onChange={() => {}} />
 
           {/* Textarea */}
-          <div className="relative flex-1">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={disabled}
-              placeholder={placeholder}
-              rows={1}
-              className="w-full resize-none bg-transparent px-1 py-1.5 pr-24 text-sm text-content placeholder-content-faint outline-none disabled:opacity-50"
-            />
-            <div className="absolute bottom-2 right-2 flex items-center gap-1">
-              <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
-              <ModelSelector selected={selectedModel} onSelect={onModelChange} plan={plan} />
-            </div>
-          </div>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            placeholder={placeholder}
+            rows={1}
+            className="min-h-[36px] flex-1 resize-none bg-transparent py-2 text-sm text-content placeholder-content-faint outline-none disabled:opacity-50"
+          />
 
-          {/* Radial usage indicator */}
-          {mcpLimit > 0 && (
-            <div className="group relative flex h-9 shrink-0 items-center justify-center" title={`${mcpUsed}/${mcpLimit} queries used`}>
-              <svg width="20" height="20" viewBox="0 0 20 20" className="rotate-[-90deg]">
-                <circle cx="10" cy="10" r={radius} fill="none" className="stroke-surface-card" strokeWidth="2.5" />
-                <circle
-                  cx="10" cy="10" r={radius}
-                  fill="none"
-                  className={`${usageColor} transition-all duration-500`}
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={dashOffset}
-                />
-              </svg>
-              {/* Tooltip */}
-              <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-surface-tooltip px-2 py-1 text-[10px] text-content-secondary opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                {mcpUsed}/{mcpLimit} queries used
+          {/* Right-side controls — all vertically centered */}
+          <div className="mb-0.5 flex shrink-0 items-center gap-1.5">
+            <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
+            <ModelSelector selected={selectedModel} onSelect={onModelChange} plan={plan} />
+
+            {/* Radial usage */}
+            {mcpLimit > 0 && (
+              <div className="group relative flex items-center justify-center" title={`${mcpUsed}/${mcpLimit} queries used`}>
+                <svg width="18" height="18" viewBox="0 0 20 20" className="rotate-[-90deg]">
+                  <circle cx="10" cy="10" r={radius} fill="none" className="stroke-surface-card" strokeWidth="2.5" />
+                  <circle cx="10" cy="10" r={radius} fill="none" className={`${usageColor} transition-all duration-500`} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset} />
+                </svg>
+                <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-surface-tooltip px-2 py-1 text-[10px] text-content-secondary opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  {mcpUsed}/{mcpLimit} used
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Send button */}
-          <button
-            onClick={handleSubmit}
-            disabled={disabled || !input.trim()}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30 disabled:hover:bg-emerald-600"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
-              <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+            {/* Send */}
+            <button
+              onClick={handleSubmit}
+              disabled={disabled || !input.trim()}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+                <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -126,7 +126,7 @@ export default function InventoryPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
         <h1 className="text-xl font-semibold text-zinc-100">Inventory</h1>
         <p className="text-sm text-zinc-500 mt-1">Normalized surfaces across your commercial environment</p>

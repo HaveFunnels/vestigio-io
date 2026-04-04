@@ -354,9 +354,9 @@ export default function ChatPage() {
 
       {/* Main Chat Area */}
       <FileUploadZone onFilesAdded={(files) => setAttachedFiles((prev) => [...prev, ...files].slice(0, 3))}>
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Center column: messages + input */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* Top bar with playbooks toggle */}
           <div className="flex items-center justify-end px-4 py-1.5 sm:px-8">
             <button
@@ -375,7 +375,7 @@ export default function ChatPage() {
           </div>
 
           {/* Messages */}
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+          <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-8">
             <div className="mx-auto max-w-3xl space-y-4">
               {allMessages.length === 0 && !isStreaming && (
                 <EmptyState onSuggest={handleSend} />

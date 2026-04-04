@@ -54,7 +54,7 @@ export default function DataSourcesPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-6">
       <div>
         <h1 className="text-xl font-semibold text-zinc-100">Data Sources</h1>
         <p className="text-sm text-zinc-500 mt-1">Connect behavioral intelligence and commerce data</p>

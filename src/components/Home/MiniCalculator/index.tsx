@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
 type State = "input" | "loading" | "results";
+type BusinessType = "saas" | "ecommerce" | "services" | "institutional";
 
 const STATUS_KEYS = [
   "status_discovering",
@@ -17,27 +18,60 @@ const STATUS_KEYS = [
   "status_report",
 ] as const;
 
-const STATUS_THRESHOLDS = [0, 15, 30, 45, 60, 75, 90];
+// ── Impact multipliers per business type ──
+// [min%, max%] of monthly revenue per finding
+const IMPACT_PROFILES: Record<BusinessType, { base: [number, number]; label: string }> = {
+  ecommerce:     { base: [0.06, 0.18], label: "business_ecommerce" },
+  saas:          { base: [0.04, 0.14], label: "business_saas" },
+  services:      { base: [0.02, 0.08], label: "business_services" },
+  institutional: { base: [0.01, 0.04], label: "business_institutional" },
+};
 
-interface Finding {
-  severity: "CRITICAL" | "HIGH" | "MEDIUM";
-  titleKey: string;
-  impactMultiplier: [number, number]; // % of monthly revenue [min, max]
+// ── Findings library (30 total) ──
+// Tags: "all" = any business, "checkout" = only saas/ecommerce
+
+interface FindingDef {
+  key: string;
+  tags: ("all" | "checkout")[];
 }
 
-const FINDINGS: Finding[] = [
-  { severity: "CRITICAL", titleKey: "finding_checkout_trust", impactMultiplier: [0.07, 0.18] },
-  { severity: "CRITICAL", titleKey: "finding_chargeback_exposure", impactMultiplier: [0.05, 0.14] },
-  { severity: "HIGH", titleKey: "finding_analytics_gap", impactMultiplier: [0.04, 0.12] },
-  { severity: "MEDIUM", titleKey: "finding_scripts_slow", impactMultiplier: [0.02, 0.07] },
-  { severity: "MEDIUM", titleKey: "finding_mobile_friction", impactMultiplier: [0.03, 0.10] },
+const FINDINGS_LIBRARY: FindingDef[] = [
+  // Checkout / payment specific (saas + ecommerce only)
+  { key: "f_checkout_trust", tags: ["checkout"] },
+  { key: "f_chargeback_exposure", tags: ["checkout"] },
+  { key: "f_payment_redirect_chain", tags: ["checkout"] },
+  { key: "f_checkout_ssl_mismatch", tags: ["checkout"] },
+  { key: "f_cart_abandonment_signals", tags: ["checkout"] },
+  { key: "f_payment_form_friction", tags: ["checkout"] },
+  { key: "f_pricing_page_weak", tags: ["checkout"] },
+  { key: "f_subscription_churn_signals", tags: ["checkout"] },
+  { key: "f_refund_abuse_surface", tags: ["checkout"] },
+  { key: "f_discount_endpoint_exposed", tags: ["checkout"] },
+
+  // Universal findings (all business types)
+  { key: "f_analytics_blind_spot", tags: ["all"] },
+  { key: "f_scripts_blocking", tags: ["all"] },
+  { key: "f_mobile_friction", tags: ["all"] },
+  { key: "f_broken_critical_links", tags: ["all"] },
+  { key: "f_slow_page_load", tags: ["all"] },
+  { key: "f_seo_metadata_gaps", tags: ["all"] },
+  { key: "f_cookie_consent_missing", tags: ["all"] },
+  { key: "f_security_headers_missing", tags: ["all"] },
+  { key: "f_mixed_content", tags: ["all"] },
+  { key: "f_form_data_leaving_domain", tags: ["all"] },
+  { key: "f_measurement_gap", tags: ["all"] },
+  { key: "f_trust_signals_absent", tags: ["all"] },
+  { key: "f_cta_below_fold", tags: ["all"] },
+  { key: "f_third_party_dependency", tags: ["all"] },
+  { key: "f_accessibility_barriers", tags: ["all"] },
+  { key: "f_redirect_chain_long", tags: ["all"] },
+  { key: "f_session_token_exposed", tags: ["all"] },
+  { key: "f_admin_panel_exposed", tags: ["all"] },
+  { key: "f_error_pages_unbranded", tags: ["all"] },
+  { key: "f_social_proof_missing", tags: ["all"] },
 ];
 
-const severityStyles: Record<string, string> = {
-  CRITICAL: "bg-red-500/15 text-red-400 border border-red-500/30",
-  HIGH: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
-  MEDIUM: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30",
-};
+const DISPLAY_COUNT = 5;
 
 function extractDomain(input: string): string {
   let cleaned = input.trim().replace(/^https?:\/\//, "");
@@ -49,40 +83,69 @@ function formatCurrency(val: number): string {
   return `$${Math.round(val)}`;
 }
 
+function pickRandomFindings(businessType: BusinessType): FindingDef[] {
+  const hasCheckout = businessType === "saas" || businessType === "ecommerce";
+  const eligible = FINDINGS_LIBRARY.filter(
+    (f) => f.tags.includes("all") || (hasCheckout && f.tags.includes("checkout"))
+  );
+  // Shuffle and pick DISPLAY_COUNT
+  const shuffled = [...eligible].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, DISPLAY_COUNT);
+}
+
+function randomFindingCount(): number {
+  return Math.floor(Math.random() * (110 - 45 + 1)) + 45;
+}
+
+function easeOut(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+// ── Component ──
+
 const MiniCalculator = () => {
   const t = useTranslations("homepage.mini_calculator");
   const [state, setState] = useState<State>("input");
   const [url, setUrl] = useState("");
   const [revenue, setRevenue] = useState("");
-  const [showRevenue, setShowRevenue] = useState(false);
+  const [businessType, setBusinessType] = useState<BusinessType>("ecommerce");
+  const [showExtra, setShowExtra] = useState(false);
   const [domain, setDomain] = useState("");
   const [progress, setProgress] = useState(0);
   const [statusIdx, setStatusIdx] = useState(0);
   const [statusFading, setStatusFading] = useState(false);
+  const [findingCounter, setFindingCounter] = useState(0);
+  const [totalFindings, setTotalFindings] = useState(0);
+  const [selectedFindings, setSelectedFindings] = useState<FindingDef[]>([]);
   const revenueRef = useRef<HTMLInputElement>(null);
 
   const monthlyRevenue = Math.max(parseInt(revenue) || 100000, 10000);
+  const profile = IMPACT_PROFILES[businessType];
 
   const handleSubmit = useCallback(() => {
     if (!url.trim()) return;
-    if (!showRevenue) {
+    if (!showExtra) {
       setDomain(extractDomain(url));
-      setShowRevenue(true);
+      setShowExtra(true);
       setTimeout(() => revenueRef.current?.focus(), 300);
       return;
     }
+    const count = randomFindingCount();
+    setTotalFindings(count);
+    setFindingCounter(0);
+    setSelectedFindings(pickRandomFindings(businessType));
     setProgress(0);
     setStatusIdx(0);
     setStatusFading(false);
     setState("loading");
-  }, [url, showRevenue]);
+  }, [url, showExtra, businessType]);
 
-  // Progress: chunked increments at each threshold
+  // Progress animation with finding counter
   useEffect(() => {
     if (state !== "loading") return;
 
     const CHUNKS = [15, 30, 45, 60, 75, 90, 100];
-    const CHUNK_DURATION = 1300; // ms per chunk
+    const CHUNK_DURATION = 1300;
     let chunkIndex = 0;
     let animFrame: number;
     let startTime = performance.now();
@@ -98,13 +161,15 @@ const MiniCalculator = () => {
 
       setProgress(current);
 
+      // Increment finding counter proportionally
+      const globalFrac = current / 100;
+      setFindingCounter(Math.floor(globalFrac * totalFindings));
+
       if (frac >= 1) {
-        // Move to next chunk
         chunkIndex++;
         startTime = now;
 
         if (chunkIndex < CHUNKS.length) {
-          // Update status message with fade
           setStatusFading(true);
           setTimeout(() => {
             setStatusIdx(chunkIndex);
@@ -116,13 +181,14 @@ const MiniCalculator = () => {
       if (chunkIndex < CHUNKS.length) {
         animFrame = requestAnimationFrame(tick);
       } else {
+        setFindingCounter(totalFindings);
         setTimeout(() => setState("results"), 500);
       }
     };
 
     animFrame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animFrame);
-  }, [state]);
+  }, [state, totalFindings]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSubmit();
@@ -132,14 +198,26 @@ const MiniCalculator = () => {
     setState("input");
     setUrl("");
     setRevenue("");
-    setShowRevenue(false);
+    setShowExtra(false);
     setDomain("");
     setProgress(0);
+    setFindingCounter(0);
   };
 
-  // Compute impact from revenue
-  const totalMin = FINDINGS.reduce((s, f) => s + f.impactMultiplier[0] * monthlyRevenue, 0);
-  const totalMax = FINDINGS.reduce((s, f) => s + f.impactMultiplier[1] * monthlyRevenue, 0);
+  // Compute impact for selected findings
+  const findingImpacts = useMemo(() => {
+    return selectedFindings.map(() => {
+      const spread = profile.base[1] - profile.base[0];
+      const min = profile.base[0] + Math.random() * spread * 0.3;
+      const max = profile.base[0] + spread * 0.5 + Math.random() * spread * 0.5;
+      return [min * monthlyRevenue, max * monthlyRevenue] as [number, number];
+    });
+  }, [selectedFindings, monthlyRevenue, profile]);
+
+  const totalMin = findingImpacts.reduce((s, [min]) => s + min, 0);
+  const totalMax = findingImpacts.reduce((s, [, max]) => s + max, 0);
+
+  const inputClass = "w-full rounded-xl border border-zinc-700 bg-zinc-900/50 px-5 py-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-colors focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30";
 
   return (
     <section className="relative z-1 overflow-hidden bg-[#090911] border-t border-zinc-800 py-20 lg:py-28">
@@ -164,34 +242,44 @@ const MiniCalculator = () => {
                   onChange={(e) => setUrl(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={t("url_placeholder")}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900/50 px-5 py-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-colors focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30"
+                  className={inputClass}
                 />
-                {!showRevenue && (
+                {!showExtra && (
                   <ShinyButton onClick={handleSubmit} className="shrink-0 w-full sm:w-auto" disabled={!url.trim()}>
                     {t("cta_audit")}
                   </ShinyButton>
                 )}
               </div>
 
-              {/* Revenue input — fades in from right */}
-              {showRevenue && (
-                <div
-                  className="flex w-full flex-col sm:flex-row items-center gap-3"
-                  style={{ animation: "fadeSlideRight 0.4s ease-out" }}
-                >
-                  <div className="relative w-full">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
-                    <input
-                      ref={revenueRef}
-                      type="number"
-                      value={revenue}
-                      onChange={(e) => setRevenue(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder={t("revenue_placeholder")}
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900/50 pl-8 pr-5 py-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-colors focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30"
-                    />
+              {/* Revenue + Business Type — fade in from right */}
+              {showExtra && (
+                <div className="w-full space-y-3" style={{ animation: "fadeSlideRight 0.4s ease-out" }}>
+                  <div className="flex w-full flex-col sm:flex-row items-center gap-3">
+                    <div className="relative w-full">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
+                      <input
+                        ref={revenueRef}
+                        type="number"
+                        value={revenue}
+                        onChange={(e) => setRevenue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={t("revenue_placeholder")}
+                        className={`${inputClass} pl-8`}
+                      />
+                    </div>
+                    <select
+                      value={businessType}
+                      onChange={(e) => setBusinessType(e.target.value as BusinessType)}
+                      className={`${inputClass} appearance-none cursor-pointer`}
+                    >
+                      {(Object.keys(IMPACT_PROFILES) as BusinessType[]).map((key) => (
+                        <option key={key} value={key} className="bg-zinc-900 text-white">
+                          {t(IMPACT_PROFILES[key].label)}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <ShinyButton onClick={handleSubmit} className="shrink-0 w-full sm:w-auto">
+                  <ShinyButton onClick={handleSubmit} className="w-full sm:w-auto">
                     {t("cta_audit")}
                   </ShinyButton>
                 </div>
@@ -209,7 +297,7 @@ const MiniCalculator = () => {
             <p className="mb-10 text-sm text-zinc-500">{t("analyzing_sub")}</p>
 
             {/* Progress bar */}
-            <div className="mx-auto max-w-[480px] mb-8">
+            <div className="mx-auto max-w-[480px] mb-6">
               <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-800">
                 <div
                   className="h-full rounded-full bg-emerald-500"
@@ -220,9 +308,10 @@ const MiniCalculator = () => {
                   }}
                 />
               </div>
-              <p className="mt-3 text-right text-xs font-mono text-zinc-500">
-                {Math.round(progress)}%
-              </p>
+              <div className="mt-3 flex items-center justify-between text-xs font-mono text-zinc-500">
+                <span>{findingCounter} {t("findings_found")}</span>
+                <span>{Math.round(progress)}%</span>
+              </div>
             </div>
 
             {/* Status message — fade down transition */}
@@ -255,30 +344,29 @@ const MiniCalculator = () => {
             </div>
 
             {/* Findings */}
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden mb-8">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden mb-4">
               <div className="hidden sm:grid grid-cols-[100px_1fr_200px] gap-4 px-5 py-3 border-b border-zinc-800 text-xs font-mono uppercase tracking-wider text-zinc-500">
                 <span>{t("col_severity")}</span>
                 <span>{t("col_finding")}</span>
                 <span className="text-right">{t("col_impact")}</span>
               </div>
 
-              {FINDINGS.map((finding, i) => {
-                const impMin = finding.impactMultiplier[0] * monthlyRevenue;
-                const impMax = finding.impactMultiplier[1] * monthlyRevenue;
+              {selectedFindings.map((finding, i) => {
+                const [impMin, impMax] = findingImpacts[i] || [0, 0];
                 return (
                   <div
-                    key={i}
+                    key={finding.key}
                     className={`sm:grid sm:grid-cols-[100px_1fr_200px] gap-4 px-5 py-4 items-center ${
-                      i < FINDINGS.length - 1 ? "border-b border-zinc-800/60" : ""
+                      i < selectedFindings.length - 1 ? "border-b border-zinc-800/60" : ""
                     }`}
                   >
                     <div className="mb-2 sm:mb-0">
-                      <span className={`inline-block rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${severityStyles[finding.severity]}`}>
-                        {finding.severity}
+                      <span className="inline-block rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide bg-red-500/15 text-red-400 border border-red-500/30">
+                        CRITICAL
                       </span>
                     </div>
                     <p className="text-sm text-zinc-200 mb-1 sm:mb-0">
-                      {t(finding.titleKey)}
+                      {t(finding.key)}
                     </p>
                     <p className="text-sm font-mono text-emerald-400 sm:text-right">
                       {formatCurrency(impMin)}–{formatCurrency(impMax)}/mo
@@ -287,6 +375,11 @@ const MiniCalculator = () => {
                 );
               })}
             </div>
+
+            {/* Showing X of Y */}
+            <p className="text-center text-xs text-zinc-500 mb-8">
+              {t("showing_of", { shown: DISPLAY_COUNT, total: totalFindings })}
+            </p>
 
             {/* Total */}
             <div className="text-center mb-12">
@@ -321,7 +414,6 @@ const MiniCalculator = () => {
         )}
       </div>
 
-      {/* Fade-slide animation for revenue input */}
       <style jsx>{`
         @keyframes fadeSlideRight {
           from { opacity: 0; transform: translateX(20px); }
@@ -331,9 +423,5 @@ const MiniCalculator = () => {
     </section>
   );
 };
-
-function easeOut(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
 
 export default MiniCalculator;

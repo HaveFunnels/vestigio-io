@@ -6,7 +6,7 @@ import Link from "next/link";
 const Footer = () => {
 	const branding = useBranding();
 	const flags = useFeatureFlags();
-	const logoSrc = branding.logo_light?.dataUrl || "/images/logo/logo-light.svg";
+	const logoSrc = branding.logo_light?.dataUrl || "/images/logo/logo-light.png";
 
 	return (
 		<footer className='relative z-1 mt-auto overflow-hidden border-t border-white/5 bg-[#090911] py-16 lg:py-20'>
@@ -18,7 +18,7 @@ const Footer = () => {
 							{branding.logo_light?.dataUrl ? (
 								<img src={logoSrc} alt="Vestigio" className="h-10 w-auto" />
 							) : (
-								<Image src="/images/logo/logo-light.svg" alt="Vestigio" width={214} height={40} />
+								<Image src="/images/logo/logo-light.png" alt="Vestigio" width={214} height={40} />
 							)}
 						</Link>
 						<p className='mt-5 text-sm text-gray-500'>

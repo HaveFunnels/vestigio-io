@@ -80,8 +80,8 @@ export function ChatInputBar({
     "stroke-emerald-500";
 
   return (
-    <div className="border-t border-edge bg-surface-inset px-4 py-3 sm:px-6">
-      <div className="mx-auto max-w-3xl">
+    <div className="px-4 pb-4 pt-2 sm:px-8">
+      <div className="mx-auto max-w-3xl rounded-2xl border border-edge bg-surface-card/80 px-4 py-3 shadow-sm backdrop-blur-sm transition-shadow focus-within:border-content-faint/30 focus-within:shadow-[0_0_20px_-4px_rgba(255,255,255,0.08)]">
         {/* Attached files */}
         {attachedFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
@@ -96,7 +96,7 @@ export function ChatInputBar({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg border border-edge text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-tertiary disabled:opacity-30"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted disabled:opacity-30"
             title="Attach file"
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
@@ -124,7 +124,7 @@ export function ChatInputBar({
               disabled={disabled}
               placeholder={placeholder}
               rows={1}
-              className="w-full resize-none rounded-lg border border-edge bg-surface-card px-3.5 py-2.5 pr-24 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-edge-focus focus:ring-1 focus:ring-emerald-600 disabled:opacity-50"
+              className="w-full resize-none bg-transparent px-1 py-1.5 pr-24 text-sm text-content placeholder-content-faint outline-none disabled:opacity-50"
             />
             <div className="absolute bottom-2 right-2 flex items-center gap-1">
               <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
@@ -134,7 +134,7 @@ export function ChatInputBar({
 
           {/* Radial usage indicator */}
           {mcpLimit > 0 && (
-            <div className="group relative flex h-[42px] shrink-0 items-center justify-center" title={`${mcpUsed}/${mcpLimit} queries used`}>
+            <div className="group relative flex h-9 shrink-0 items-center justify-center" title={`${mcpUsed}/${mcpLimit} queries used`}>
               <svg width="20" height="20" viewBox="0 0 20 20" className="rotate-[-90deg]">
                 <circle cx="10" cy="10" r={radius} fill="none" className="stroke-surface-card" strokeWidth="2.5" />
                 <circle
@@ -158,7 +158,7 @@ export function ChatInputBar({
           <button
             onClick={handleSubmit}
             disabled={disabled || !input.trim()}
-            className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30 disabled:hover:bg-emerald-600"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30 disabled:hover:bg-emerald-600"
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
               <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

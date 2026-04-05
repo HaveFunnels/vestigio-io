@@ -389,18 +389,18 @@ export default function ChatPage() {
           )}
 
           {/* Top bar with title + playbooks toggle */}
-          <div className="flex items-center justify-between px-4 py-2 sm:px-6">
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-semibold text-content">{t("title")}</h1>
+          <div className="relative z-10 flex items-center justify-between px-4 py-2 sm:px-6">
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-sm font-semibold text-content">{t("title")}</h1>
               <span className="relative inline-flex group">
                 <button
                   type="button"
-                  className="flex h-5 w-5 items-center justify-center rounded-full border border-edge text-[10px] font-bold text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
+                  className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-edge/60 text-[8px] font-semibold text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
                   aria-label="Page info"
                 >
                   ?
                 </button>
-                <div className="pointer-events-none absolute left-8 top-0 z-50 w-64 rounded-lg border border-edge bg-surface-card px-3.5 py-2.5 text-xs leading-relaxed text-content-secondary opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                <div className="pointer-events-none absolute left-6 top-0 z-50 w-56 rounded-lg border border-edge bg-surface-card px-3 py-2 text-[11px] leading-relaxed text-content-secondary opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
                   {tc("page_tooltips.chat")}
                 </div>
               </span>

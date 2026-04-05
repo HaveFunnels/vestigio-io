@@ -22,13 +22,13 @@ export default function PageHeader({ title, subtitle, tooltip }: PageHeaderProps
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
               onClick={() => setShowTooltip((v) => !v)}
-              className="flex h-5 w-5 items-center justify-center rounded-full border border-edge text-[10px] font-bold text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
+              className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-edge/60 text-[8px] font-semibold text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
               aria-label="Page info"
             >
               ?
             </button>
             {showTooltip && (
-              <div className="absolute left-8 top-0 z-50 w-72 rounded-lg border border-edge bg-surface-card px-3.5 py-2.5 text-xs leading-relaxed text-content-secondary shadow-xl">
+              <div className="absolute left-6 top-0 z-50 w-64 rounded-lg border border-edge bg-surface-card px-3 py-2 text-[11px] leading-relaxed text-content-secondary shadow-xl">
                 {tooltip}
               </div>
             )}

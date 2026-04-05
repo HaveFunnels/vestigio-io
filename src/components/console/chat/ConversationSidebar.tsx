@@ -81,17 +81,7 @@ export function ConversationSidebar({
   }
 
   if (collapsed) {
-    return (
-      <div className="absolute left-3 top-3 z-20">
-        <button
-          onClick={onToggleCollapse}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-edge bg-surface-card/80 text-content-muted shadow-sm backdrop-blur-sm transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
-          title="Show conversations"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none"><path d="M3 5h10M3 8h10M3 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-        </button>
-      </div>
-    );
+    return null;
   }
 
   return (

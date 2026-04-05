@@ -388,8 +388,19 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Top bar with title + playbooks toggle */}
-          <div className="relative z-10 flex items-center justify-between px-4 py-2 sm:px-6">
+          {/* Top bar with history toggle + title + playbooks toggle */}
+          <div className="flex items-center gap-3 px-4 py-2 sm:px-6">
+            {/* History toggle (visible when sidebar is collapsed) */}
+            {sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-edge text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
+                title="Show conversations"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none"><path d="M3 5h10M3 8h10M3 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              </button>
+            )}
+
             <div className="flex items-center gap-1.5">
               <h1 className="text-sm font-semibold text-content">{t("title")}</h1>
               <span className="relative inline-flex group">
@@ -405,6 +416,8 @@ export default function ChatPage() {
                 </div>
               </span>
             </div>
+
+            <div className="flex-1" />
             <button
               onClick={() => setPlaybooksOpen(!playbooksOpen)}
               className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${

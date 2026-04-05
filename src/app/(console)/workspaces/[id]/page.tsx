@@ -95,6 +95,7 @@ export default function WorkspaceDetailPage({
 
 function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
   const router = useRouter();
+  const mcpData = useMcpData();
   const t = useTranslations("console.workspaces");
   const tc = useTranslations("console.common");
   const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);

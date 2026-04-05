@@ -281,10 +281,12 @@ function SurfaceDrawer({
 function SelectionBar({
   count,
   onUseAsContext,
+  onAnalyzeTogether,
   onClear,
 }: {
   count: number;
   onUseAsContext: () => void;
+  onAnalyzeTogether?: () => void;
   onClear: () => void;
 }) {
   const t = useTranslations("console.inventory.selection");
@@ -296,6 +298,11 @@ function SelectionBar({
         {t("n_selected", { count })}
       </span>
       <div className="flex-1" />
+      {count >= 2 && onAnalyzeTogether && (
+        <ShinyButton onClick={onAnalyzeTogether}>
+          {t("analyze_together", { count })}
+        </ShinyButton>
+      )}
       <ShinyButton onClick={onUseAsContext}>
         {t("use_as_context")}
       </ShinyButton>
@@ -616,6 +623,7 @@ export default function InventoryPage() {
             <SelectionBar
               count={selectedIds.size}
               onUseAsContext={handleUseAsContext}
+              onAnalyzeTogether={() => router.push(`/chat?surfaces=${[...selectedIds].join(",")}`)}
               onClear={clearSelection}
             />
 

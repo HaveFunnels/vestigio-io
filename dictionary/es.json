@@ -729,6 +729,8 @@
 			},
 			"discuss": "Discutir",
 			"analyze_together": "Analizar {count} Juntos",
+			"selected": "seleccionado(s)",
+			"clear_selection": "Limpiar Selección",
 			"no_match": "Ningún hallazgo coincide con los filtros actuales.",
 			"suppressed": "Suprimido",
 			"search_placeholder": "Buscar hallazgos...",
@@ -1077,7 +1079,7 @@
 			"discovery_source_filter": { "all": "Todas las Fuentes" },
 			"empty": { "title": "No se descubrieron superficies aún", "description": "Instala el snippet de Vestigio para comenzar a recopilar datos de comportamiento e inventario de superficies." },
 			"no_results": { "title": "Ninguna superficie coincide con los filtros", "description": "Intenta ajustar los filtros de arriba." },
-			"selection": { "n_selected": "{count} seleccionado(s)", "use_as_context": "Usar como Contexto", "clear": "Limpiar Selección" },
+			"selection": { "n_selected": "{count} seleccionado(s)", "use_as_context": "Usar como Contexto", "analyze_together": "Analizar {count} Juntos", "clear": "Limpiar Selección" },
 			"drawer": { "title": "Detalles de Superficie", "url": "URL", "surface_title": "Título", "description": "Descripción", "type": "Tipo", "tier": "Nivel", "status": "Estado", "live": "Activa", "not_seen": "No Vista", "http_code": "Código HTTP", "sessions": "Sesiones", "findings": "Hallazgos", "response_time": "Tiempo de Respuesta", "last_checked": "Última Verificación", "never": "Nunca", "discovery_sources": "Fuentes de Descubrimiento" }
 		},
 		"maps": {

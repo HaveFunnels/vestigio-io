@@ -729,6 +729,8 @@
 			},
 			"discuss": "Discutir",
 			"analyze_together": "Analisar {count} Juntos",
+			"selected": "selecionado(s)",
+			"clear_selection": "Limpar Seleção",
 			"no_match": "Nenhuma descoberta corresponde aos filtros atuais.",
 			"suppressed": "Suprimido",
 			"search_placeholder": "Buscar descobertas...",
@@ -931,10 +933,10 @@
 				"pendingVerifications": "Verificações Pendentes",
 				"awaitingConfirmation": "aguardando confirmação",
 				"allVerified": "todas verificadas",
-				"totalAddressableImpact": "Impacto Total Endereçável",
+				"totalAddressableImpact": "Impacto Mensal Recuperável",
 				"perMonthMidpoint": "/mês (ponto médio)",
 				"total_actions": "Total de Ações",
-				"total_impact": "Impacto Total Endereçável",
+				"total_impact": "Impacto Mensal Recuperável",
 				"cross_pack": "Cross-Pack",
 				"high_severity": "Alta Severidade"
 			},
@@ -1077,7 +1079,7 @@
 			"discovery_source_filter": { "all": "Todas as Fontes" },
 			"empty": { "title": "Nenhuma superfície descoberta ainda", "description": "Instale o snippet da Vestigio para começar a coletar dados comportamentais e inventário de superfícies." },
 			"no_results": { "title": "Nenhuma superfície corresponde aos filtros", "description": "Tente ajustar os filtros acima." },
-			"selection": { "n_selected": "{count} selecionado(s)", "use_as_context": "Usar como Contexto", "clear": "Limpar Seleção" },
+			"selection": { "n_selected": "{count} selecionado(s)", "use_as_context": "Usar como Contexto", "analyze_together": "Analisar {count} Juntos", "clear": "Limpar Seleção" },
 			"drawer": { "title": "Detalhes da Superfície", "url": "URL", "surface_title": "Título", "description": "Descrição", "type": "Tipo", "tier": "Camada", "status": "Status", "live": "Ativa", "not_seen": "Não Vista", "http_code": "Código HTTP", "sessions": "Sessões", "findings": "Descobertas", "response_time": "Tempo de Resposta", "last_checked": "Última Verificação", "never": "Nunca", "discovery_sources": "Fontes de Descoberta" }
 		},
 		"maps": {

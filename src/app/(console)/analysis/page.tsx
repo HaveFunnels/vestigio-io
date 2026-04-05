@@ -548,18 +548,23 @@ function AnalysisContent({
           <button onClick={() => { setSeverityFilter("all"); setPackFilter("all"); setPolarityFilter("all"); setVerificationFilter("all"); setImpactRangeFilter("all"); setSurfaceFilter("all"); setChangeClassFilter("all"); setConfidenceFilter("all"); setSearchText(""); }}
             className="rounded-md px-3 py-1.5 text-xs text-content-muted transition-colors hover:text-content-secondary">{tc("clear_filters")}</button>
         )}
-        {selectedIds.size === 1 && (
-          <ShinyButton onClick={() => router.push(`/chat?finding=${[...selectedIds][0]}`)}>
-            {t("discuss")}
-          </ShinyButton>
-        )}
-        {selectedIds.size >= 2 && (
-          <ShinyButton onClick={() => router.push(`/chat?findings=${[...selectedIds].join(",")}`)}>
-            {t("analyze_together", { count: selectedIds.size })}
-          </ShinyButton>
-        )}
         <span className="ml-auto text-xs text-content-muted">{tc("n_of_total", { filtered: filtered.length, total: findings.length })}</span>
       </div>
+
+      {/* Selection bar — matches inventory pattern */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-0 z-30 mb-2 flex items-center gap-4 rounded-lg border border-edge bg-surface-card px-4 py-2.5 shadow-lg">
+          <span className="text-sm font-medium text-content">{selectedIds.size} {t("selected")}</span>
+          <div className="flex-1" />
+          <ShinyButton onClick={() => router.push(`/chat?findings=${[...selectedIds].join(",")}`)}>
+            {selectedIds.size === 1 ? t("discuss") : t("analyze_together", { count: selectedIds.size })}
+          </ShinyButton>
+          <button onClick={() => setSelectedIds(new Set())}
+            className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-card-hover">
+            {tc("clear_filters")}
+          </button>
+        </div>
+      )}
 
       <DataTable columns={columns} data={filtered} onRowClick={(row) => setSelectedFinding(row)} getRowKey={(row) => row.id}
         emptyMessage={t("no_match")} />

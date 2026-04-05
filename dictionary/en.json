@@ -732,6 +732,8 @@
 			},
 			"discuss": "Discuss",
 			"analyze_together": "Analyze {count} Together",
+			"selected": "selected",
+			"clear_selection": "Clear Selection",
 			"no_match": "No findings match the current filters.",
 			"suppressed": "Suppressed",
 			"search_placeholder": "Search findings...",
@@ -1096,7 +1098,7 @@
 			"discovery_source_filter": { "all": "All Sources" },
 			"empty": { "title": "No surfaces discovered yet", "description": "Install the Vestigio snippet to start collecting behavioral data and surface inventory." },
 			"no_results": { "title": "No surfaces match the current filters", "description": "Try adjusting the filters above." },
-			"selection": { "n_selected": "{count} selected", "use_as_context": "Use as Context", "clear": "Clear Selection" },
+			"selection": { "n_selected": "{count} selected", "use_as_context": "Use as Context", "analyze_together": "Analyze {count} Together", "clear": "Clear Selection" },
 			"drawer": { "title": "Surface Details", "url": "URL", "surface_title": "Title", "description": "Description", "type": "Type", "tier": "Tier", "status": "Status", "live": "Live", "not_seen": "Not Seen", "http_code": "HTTP Code", "sessions": "Sessions", "findings": "Findings", "response_time": "Response Time", "last_checked": "Last Checked", "never": "Never", "discovery_sources": "Discovery Sources" }
 		},
 		"maps": {

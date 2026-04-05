@@ -149,27 +149,27 @@ function AddEnvironmentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-6 shadow-xl">
-        <h3 className="mb-4 text-lg font-semibold text-zinc-100">Add Environment</h3>
+      <div className="w-full max-w-md rounded-lg border border-edge bg-surface-card p-6 shadow-xl">
+        <h3 className="mb-4 text-lg font-semibold text-content">Add Environment</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm text-zinc-400">Domain</label>
+            <label className="mb-1 block text-sm text-content-muted">Domain</label>
             <input
               type="text"
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
               placeholder="staging.example.com"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              className="w-full rounded-md border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder-content-faint outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               required
               minLength={3}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300">
+          <label className="flex items-center gap-2 text-sm text-content-secondary">
             <input
               type="checkbox"
               checked={isProduction}
               onChange={(e) => setIsProduction(e.target.checked)}
-              className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-emerald-500 focus:ring-emerald-500"
+              className="h-4 w-4 rounded border-edge bg-surface-inset text-emerald-500 focus:ring-emerald-500"
             />
             Production environment
           </label>
@@ -178,7 +178,7 @@ function AddEnvironmentModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800"
+              className="flex-1 rounded-md border border-edge px-4 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-card-hover"
             >
               Cancel
             </button>
@@ -366,7 +366,7 @@ export default function OrganizationPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center p-6">
-        <div className="flex items-center gap-3 text-zinc-400">
+        <div className="flex items-center gap-3 text-content-muted">
           <Spinner />
           <span className="text-sm">Loading organization...</span>
         </div>
@@ -379,13 +379,13 @@ export default function OrganizationPage() {
     return (
       <div className="p-6">
         <div className="mb-6">
-          <h1 className="text-xl font-semibold text-zinc-100">Organization</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-xl font-semibold text-content">Organization</h1>
+          <p className="mt-1 text-sm text-content-muted">
             Manage your organization, plan, and environments.
           </p>
         </div>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-6 py-12 text-center">
-          <p className="text-sm text-zinc-400">{error || "No organization data available."}</p>
+        <div className="rounded-lg border border-edge bg-surface-card px-6 py-12 text-center">
+          <p className="text-sm text-content-muted">{error || "No organization data available."}</p>
           <button
             onClick={() => { setLoading(true); fetchData(); }}
             className="mt-4 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
@@ -404,8 +404,8 @@ export default function OrganizationPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-100">Organization</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-xl font-semibold text-content">Organization</h1>
+          <p className="mt-1 text-sm text-content-muted">
             Manage your organization, plan, and environments.
           </p>
         </div>
@@ -429,29 +429,29 @@ export default function OrganizationPage() {
         {/* ─── Left Column ─── */}
         <div className="space-y-6">
           {/* Org Details */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+          <section className="rounded-lg border border-edge bg-surface-card p-5">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-content-muted">
               Details
             </h2>
             <div className="space-y-3">
               {/* Editable name */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-500">Organization</span>
+                <span className="text-sm text-content-muted">Organization</span>
                 {isOwnerOrAdmin ? (
                   <input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-48 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-right text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className="w-48 rounded-md border border-edge bg-surface-inset px-2 py-1 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 ) : (
-                  <span className="text-sm text-zinc-200">{organization.name}</span>
+                  <span className="text-sm text-content-secondary">{organization.name}</span>
                 )}
               </div>
 
               {/* Plan badge */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-500">Plan</span>
+                <span className="text-sm text-content-muted">Plan</span>
                 <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
                   {PLAN_LABELS[organization.plan] || organization.plan}
                 </span>
@@ -459,9 +459,9 @@ export default function OrganizationPage() {
 
               {/* Status badge */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-500">Status</span>
+                <span className="text-sm text-content-muted">Status</span>
                 <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[organization.status] || "bg-zinc-700 text-zinc-300"}`}
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[organization.status] || "bg-surface-card-hover text-content-secondary"}`}
                 >
                   {organization.status}
                 </span>
@@ -469,26 +469,26 @@ export default function OrganizationPage() {
 
               {/* Created */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-500">Created</span>
-                <span className="text-sm text-zinc-200">{formatDate(organization.createdAt)}</span>
+                <span className="text-sm text-content-muted">Created</span>
+                <span className="text-sm text-content-secondary">{formatDate(organization.createdAt)}</span>
               </div>
             </div>
           </section>
 
           {/* Business Profile */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+          <section className="rounded-lg border border-edge bg-surface-card p-5">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-content-muted">
               Business Profile
             </h2>
             {isOwnerOrAdmin ? (
               <div className="space-y-3">
                 {/* Business Model */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Business Model</span>
+                  <span className="text-sm text-content-muted">Business Model</span>
                   <select
                     value={editBusinessModel}
                     onChange={(e) => setEditBusinessModel(e.target.value)}
-                    className="w-48 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-right text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className="w-48 rounded-md border border-edge bg-surface-inset px-2 py-1 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   >
                     {Object.entries(BUSINESS_MODEL_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -498,49 +498,49 @@ export default function OrganizationPage() {
 
                 {/* Monthly Revenue */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Monthly Revenue</span>
+                  <span className="text-sm text-content-muted">Monthly Revenue</span>
                   <div className="relative w-48">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-content-muted">$</span>
                     <input
                       type="number"
                       value={editMonthlyRevenue}
                       onChange={(e) => setEditMonthlyRevenue(e.target.value)}
                       placeholder="0"
-                      className="w-full rounded-md border border-zinc-700 bg-zinc-800 py-1 pl-6 pr-2 text-right text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="w-full rounded-md border border-edge bg-surface-inset py-1 pl-6 pr-2 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
 
                 {/* Average Order Value */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Avg Order Value</span>
+                  <span className="text-sm text-content-muted">Avg Order Value</span>
                   <div className="relative w-48">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-zinc-500">$</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-content-muted">$</span>
                     <input
                       type="number"
                       value={editAov}
                       onChange={(e) => setEditAov(e.target.value)}
                       placeholder="0"
-                      className="w-full rounded-md border border-zinc-700 bg-zinc-800 py-1 pl-6 pr-2 text-right text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="w-full rounded-md border border-edge bg-surface-inset py-1 pl-6 pr-2 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
 
                 {/* Monthly Transactions */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Monthly Transactions</span>
+                  <span className="text-sm text-content-muted">Monthly Transactions</span>
                   <input
                     type="number"
                     value={editMonthlyTxns}
                     onChange={(e) => setEditMonthlyTxns(e.target.value)}
                     placeholder="0"
-                    className="w-48 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-right text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className="w-48 rounded-md border border-edge bg-surface-inset px-2 py-1 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
 
                 {/* Conversion Rate */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Conversion Rate</span>
+                  <span className="text-sm text-content-muted">Conversion Rate</span>
                   <div className="relative w-48">
                     <input
                       type="number"
@@ -548,19 +548,19 @@ export default function OrganizationPage() {
                       value={editConversionRate}
                       onChange={(e) => setEditConversionRate(e.target.value)}
                       placeholder="0"
-                      className="w-full rounded-md border border-zinc-700 bg-zinc-800 py-1 pl-2 pr-6 text-right text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      className="w-full rounded-md border border-edge bg-surface-inset py-1 pl-2 pr-6 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-500">%</span>
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-content-muted">%</span>
                   </div>
                 </div>
 
                 {/* Conversion Model */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Conversion Model</span>
+                  <span className="text-sm text-content-muted">Conversion Model</span>
                   <select
                     value={editConversionModel}
                     onChange={(e) => setEditConversionModel(e.target.value)}
-                    className="w-48 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-right text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    className="w-48 rounded-md border border-edge bg-surface-inset px-2 py-1 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   >
                     {Object.entries(CONVERSION_MODEL_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -571,30 +571,30 @@ export default function OrganizationPage() {
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Business Model</span>
-                  <span className="text-sm text-zinc-200">
+                  <span className="text-sm text-content-muted">Business Model</span>
+                  <span className="text-sm text-content-secondary">
                     {BUSINESS_MODEL_LABELS[businessProfile?.businessModel || ""] || "--"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Monthly Revenue</span>
-                  <span className="text-sm text-zinc-200">{formatCurrency(businessProfile?.monthlyRevenue)}</span>
+                  <span className="text-sm text-content-muted">Monthly Revenue</span>
+                  <span className="text-sm text-content-secondary">{formatCurrency(businessProfile?.monthlyRevenue)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Avg Order Value</span>
-                  <span className="text-sm text-zinc-200">{formatCurrency(businessProfile?.averageOrderValue)}</span>
+                  <span className="text-sm text-content-muted">Avg Order Value</span>
+                  <span className="text-sm text-content-secondary">{formatCurrency(businessProfile?.averageOrderValue)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Monthly Transactions</span>
-                  <span className="text-sm text-zinc-200">{formatNumber(businessProfile?.monthlyTransactions)}</span>
+                  <span className="text-sm text-content-muted">Monthly Transactions</span>
+                  <span className="text-sm text-content-secondary">{formatNumber(businessProfile?.monthlyTransactions)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Conversion Rate</span>
-                  <span className="text-sm text-zinc-200">{formatPercent(businessProfile?.conversionRate)}</span>
+                  <span className="text-sm text-content-muted">Conversion Rate</span>
+                  <span className="text-sm text-content-secondary">{formatPercent(businessProfile?.conversionRate)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-500">Conversion Model</span>
-                  <span className="text-sm text-zinc-200">
+                  <span className="text-sm text-content-muted">Conversion Model</span>
+                  <span className="text-sm text-content-secondary">
                     {CONVERSION_MODEL_LABELS[businessProfile?.conversionModel || ""] || "--"}
                   </span>
                 </div>
@@ -606,9 +606,9 @@ export default function OrganizationPage() {
         {/* ─── Right Column ─── */}
         <div className="space-y-6">
           {/* Environments */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
+          <section className="rounded-lg border border-edge bg-surface-card p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-content-muted">
                 Environments
               </h2>
               {isOwnerOrAdmin && (
@@ -622,32 +622,32 @@ export default function OrganizationPage() {
             </div>
 
             {environments.length === 0 ? (
-              <div className="rounded-md border border-zinc-800 px-4 py-6 text-center">
-                <p className="text-sm text-zinc-500">No environments configured yet.</p>
+              <div className="rounded-md border border-edge px-4 py-6 text-center">
+                <p className="text-sm text-content-muted">No environments configured yet.</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {environments.map((env) => (
                   <div
                     key={env.id}
-                    className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-800/40 px-4 py-3"
+                    className="flex items-center justify-between rounded-md border border-edge bg-surface-inset px-4 py-3"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-zinc-200">{env.domain}</span>
+                        <span className="truncate text-sm font-medium text-content-secondary">{env.domain}</span>
                         {env.isProduction && (
                           <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-400">
                             Production
                           </span>
                         )}
                       </div>
-                      <p className="mt-0.5 text-xs text-zinc-500">Added {formatDate(env.createdAt)}</p>
+                      <p className="mt-0.5 text-xs text-content-muted">Added {formatDate(env.createdAt)}</p>
                     </div>
                     {isOwner && (
                       <button
                         onClick={() => handleDeleteEnv(env.id)}
                         disabled={deletingEnv === env.id}
-                        className="ml-3 shrink-0 rounded-md px-2 py-1 text-xs text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                        className="ml-3 shrink-0 rounded-md px-2 py-1 text-xs text-content-muted transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                       >
                         {deletingEnv === env.id ? "..." : "Remove"}
                       </button>
@@ -659,34 +659,34 @@ export default function OrganizationPage() {
           </section>
 
           {/* Members */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
+          <section className="rounded-lg border border-edge bg-surface-card p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-content-muted">
                 Members
               </h2>
-              <span className="text-xs text-zinc-500">{members.length} member{members.length !== 1 ? "s" : ""}</span>
+              <span className="text-xs text-content-muted">{members.length} member{members.length !== 1 ? "s" : ""}</span>
             </div>
 
             {members.length === 0 ? (
-              <div className="rounded-md border border-zinc-800 px-4 py-6 text-center">
-                <p className="text-sm text-zinc-500">No members yet.</p>
+              <div className="rounded-md border border-edge px-4 py-6 text-center">
+                <p className="text-sm text-content-muted">No members yet.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-md border border-zinc-800">
+              <div className="overflow-x-auto rounded-md border border-edge">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-zinc-800 bg-zinc-900/60">
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <tr className="border-b border-edge bg-surface-card">
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
                         Member
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
                         Role
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
                         Joined
                       </th>
                       {isOwner && (
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
                           Actions
                         </th>
                       )}
@@ -694,13 +694,13 @@ export default function OrganizationPage() {
                   </thead>
                   <tbody>
                     {members.map((member) => (
-                      <tr key={member.id} className="border-b border-zinc-800/50 last:border-b-0">
+                      <tr key={member.id} className="border-b border-edge/50 last:border-b-0">
                         <td className="px-4 py-3">
                           <div>
-                            <div className="text-sm font-medium text-zinc-200">
+                            <div className="text-sm font-medium text-content-secondary">
                               {member.name || "Unnamed"}
                             </div>
-                            <div className="text-xs text-zinc-500">{member.email}</div>
+                            <div className="text-xs text-content-muted">{member.email}</div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -710,13 +710,13 @@ export default function OrganizationPage() {
                                 ? "bg-emerald-500/15 text-emerald-400"
                                 : member.role === "admin"
                                   ? "bg-blue-500/15 text-blue-400"
-                                  : "bg-zinc-700/50 text-zinc-400"
+                                  : "bg-surface-card-hover/50 text-content-muted"
                             }`}
                           >
                             {member.role}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-xs text-zinc-500">
+                        <td className="px-4 py-3 text-xs text-content-muted">
                           {formatDate(member.createdAt)}
                         </td>
                         {isOwner && (
@@ -725,12 +725,12 @@ export default function OrganizationPage() {
                               <button
                                 onClick={() => handleRemoveMember(member.id)}
                                 disabled={deletingMember === member.id}
-                                className="rounded-md px-2 py-1 text-xs text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                                className="rounded-md px-2 py-1 text-xs text-content-muted transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                               >
                                 {deletingMember === member.id ? "..." : "Remove"}
                               </button>
                             ) : (
-                              <span className="text-xs text-zinc-600">--</span>
+                              <span className="text-xs text-content-faint">--</span>
                             )}
                           </td>
                         )}

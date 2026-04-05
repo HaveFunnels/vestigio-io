@@ -69,6 +69,7 @@ function ActionNode({ data }: { data: any }) {
       <div className="text-xs text-emerald-600 dark:text-emerald-400">Action</div>
       <div className="mt-0.5 text-sm text-content-secondary">{data.label}</div>
       {data.impact && <div className="mt-1 text-xs font-mono text-emerald-600 dark:text-emerald-400">unlocks {formatCurrency(data.impact.midpoint)}/mo</div>}
+      <Handle type="source" position={Position.Right} className="!bg-emerald-500" />
     </div>
   );
 }
@@ -100,14 +101,15 @@ function toReactFlowNodes(mapDef: MapDefinition): Node[] {
     id: n.id, type: n.type,
     position: { x: n.position.x * 1.2, y: n.position.y * 1.6 },
     data: { label: n.label, severity: n.severity, impact: n.impact, pack: n.pack, ...n.metadata },
-    style: { opacity: 0, animation: `fadeInScale 0.5s ease-out ${index * 0.05}s forwards` },
+    className: "map-node-enter",
+    style: { animationDelay: `${index * 0.05}s` },
   }));
 }
 
 function toReactFlowEdges(mapDef: MapDefinition): Edge[] {
   return mapDef.edges.map((e) => ({
     id: e.id, source: e.source, target: e.target, label: e.label || undefined,
-    type: "bezier",
+    type: "default",
     style: edgeStyles[e.type] || edgeStyles.causal, animated: e.type === "causal",
   }));
 }
@@ -418,15 +420,13 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
     <div className="flex h-full flex-col">
       {/* Keyframes for node entrance animation */}
       <style>{`
-        @keyframes fadeInScale {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+        .map-node-enter {
+          opacity: 0;
+          animation: mapNodeFadeIn 0.4s ease-out forwards;
+        }
+        @keyframes mapNodeFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       `}</style>
 
@@ -457,7 +457,7 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
           onNodeMouseMove={onNodeMouseMove}
           onNodeMouseLeave={onNodeMouseLeave}
           proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{ type: "bezier" }}
+          defaultEdgeOptions={{ type: "default" }}
         >
           <Background color="var(--color-border-edge, #27272a)" gap={20} />
           <Controls className="!bg-surface-card !border-edge !shadow-lg [&>button]:!bg-surface-inset [&>button]:!border-edge [&>button]:!text-content-muted [&>button:hover]:!bg-surface-card-hover" />

@@ -709,7 +709,43 @@
 			},
 			"discuss": "Discutir",
 			"analyze_together": "Analizar {count} Juntos",
-			"no_match": "Ningún hallazgo coincide con los filtros actuales."
+			"no_match": "Ningún hallazgo coincide con los filtros actuales.",
+			"suppressed": "Suprimido",
+			"search_placeholder": "Buscar hallazgos...",
+			"filters": {
+				"verification": {
+					"label": "Verificación",
+					"all": "Toda Verificación",
+					"unverified": "No Verificado",
+					"verified": "Verificado",
+					"challenged": "Cuestionado"
+				},
+				"impact_range": {
+					"all": "Todo Impacto",
+					"lt1k": "< $1k",
+					"1k_10k": "$1k – $10k",
+					"10k_50k": "$10k – $50k",
+					"gt50k": "> $50k"
+				},
+				"change_class": {
+					"label": "Cambios",
+					"all": "Todos los Cambios",
+					"new_issue": "Nuevo",
+					"regression": "Empeorado",
+					"improvement": "Mejorado",
+					"stable_risk": "Estable",
+					"resolved": "Resuelto"
+				},
+				"confidence": {
+					"all": "Toda Confianza",
+					"gt80": "> 80%",
+					"50_80": "50% – 80%",
+					"lt50": "< 50%"
+				},
+				"surfaces": {
+					"all": "Todas las Superficies"
+				}
+			}
 		},
 		"finding_drawer": {
 			"summary": "Resumen",
@@ -723,7 +759,16 @@
 			"why_good": "Por Qué Esto Es Bueno",
 			"evidence_contradictions": "Contradicciones en la Evidencia",
 			"contradictions_detected": "{count} contradicción(es) detectada(s) en la evidencia de respaldo. Confianza ajustada en {delta}%.",
-			"discuss_finding": "Discutir Este Hallazgo"
+			"discuss_finding": "Discutir Este Hallazgo",
+			"suppressed": "Suprimido",
+			"confidence_reduced": "Confianza reducida en {value}%",
+			"evidence_quality": "Calidad de Evidencia",
+			"source_reliability": "Confiabilidad de Fuente",
+			"completeness": "Completitud",
+			"recency": "Recencia",
+			"corroboration": "Corroboración",
+			"verification": "Verificación",
+			"verification_requested": "Verificación Solicitada"
 		},
 		"workspaces": {
 			"title": "Workspaces",

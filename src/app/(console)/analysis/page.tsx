@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
@@ -36,75 +37,13 @@ type ImpactRangeFilter = "all" | "lt1k" | "1k_10k" | "10k_50k" | "gt50k";
 type ChangeClassFilter = "all" | "new_issue" | "regression" | "improvement" | "stable_risk" | "resolved";
 type ConfidenceFilter = "all" | "gt80" | "50_80" | "lt50";
 
-const severityOptions: { label: string; value: SeverityFilter }[] = [
-  { label: "All Severities", value: "all" },
-  { label: "Critical", value: "critical" },
-  { label: "High", value: "high" },
-  { label: "Medium", value: "medium" },
-  { label: "Low", value: "low" },
-];
-
-const packOptions: { label: string; value: PackFilter }[] = [
-  { label: "All Packs", value: "all" },
-  { label: "Scale Readiness", value: "scale_readiness" },
-  { label: "Revenue Integrity", value: "revenue_integrity" },
-  { label: "Chargeback", value: "chargeback_resilience" },
-  { label: "SaaS Growth", value: "saas_growth_readiness" },
-];
-
-const polarityOptions: { label: string; value: PolarityFilter }[] = [
-  { label: "All Findings", value: "all" },
-  { label: "Issues", value: "negative" },
-  { label: "Positive", value: "positive" },
-  { label: "Neutral", value: "neutral" },
-];
-
-const verificationOptions: { label: string; value: VerificationFilter }[] = [
-  { label: "All Verification", value: "all" },
-  { label: "Unverified", value: "unverified" },
-  { label: "Verified", value: "verified" },
-  { label: "Challenged", value: "challenged" },
-];
-
-const impactRangeOptions: { label: string; value: ImpactRangeFilter }[] = [
-  { label: "All Impact", value: "all" },
-  { label: "< $1k", value: "lt1k" },
-  { label: "$1k – $10k", value: "1k_10k" },
-  { label: "$10k – $50k", value: "10k_50k" },
-  { label: "> $50k", value: "gt50k" },
-];
-
-const changeClassOptions: { label: string; value: ChangeClassFilter }[] = [
-  { label: "All Changes", value: "all" },
-  { label: "New", value: "new_issue" },
-  { label: "Worsened", value: "regression" },
-  { label: "Improved", value: "improvement" },
-  { label: "Stable", value: "stable_risk" },
-  { label: "Resolved", value: "resolved" },
-];
-
-const confidenceOptions: { label: string; value: ConfidenceFilter }[] = [
-  { label: "All Confidence", value: "all" },
-  { label: "> 80%", value: "gt80" },
-  { label: "50% – 80%", value: "50_80" },
-  { label: "< 50%", value: "lt50" },
-];
-
-const packLabels: Record<string, string> = {
-  scale_readiness: "Scale",
-  revenue_integrity: "Revenue",
-  chargeback_resilience: "Chargeback",
-  saas_growth_readiness: "SaaS",
-};
-
-const impactTypeLabels: Record<string, string> = {
-  revenue_loss: "Revenue Loss",
-  conversion_loss: "Conversion Loss",
-  chargeback_risk: "Chargeback Risk",
-  traffic_waste: "Traffic Waste",
-  lifetime_value_loss: "LTV Loss",
-  none: "—",
-};
+const severityValues: SeverityFilter[] = ["all", "critical", "high", "medium", "low"];
+const packValues: PackFilter[] = ["all", "scale_readiness", "revenue_integrity", "chargeback_resilience", "saas_growth_readiness"];
+const polarityValues: PolarityFilter[] = ["all", "negative", "positive", "neutral"];
+const verificationValues: VerificationFilter[] = ["all", "unverified", "verified", "challenged"];
+const impactRangeValues: ImpactRangeFilter[] = ["all", "lt1k", "1k_10k", "10k_50k", "gt50k"];
+const changeClassValues: ChangeClassFilter[] = ["all", "new_issue", "regression", "improvement", "stable_risk", "resolved"];
+const confidenceValues: ConfidenceFilter[] = ["all", "gt80", "50_80", "lt50"];
 
 const polarityIcons: Record<string, string> = {
   negative: "!",
@@ -113,12 +52,13 @@ const polarityIcons: Record<string, string> = {
 };
 
 const polarityColors: Record<string, string> = {
-  negative: "text-red-400",
-  positive: "text-emerald-400",
+  negative: "dark:text-red-400 text-red-600",
+  positive: "dark:text-emerald-400 text-emerald-600",
   neutral: "text-content-muted",
 };
 
 export default function AnalysisPage() {
+  const t = useTranslations("console.analysis");
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [currentStep, setCurrentStep] = useState<string | null>(null);
   const [findings, setFindings] = useState<FindingProjection[]>([]);
@@ -186,7 +126,7 @@ export default function AnalysisPage() {
         const data = JSON.parse((e as any).data);
         setError(data.message);
       } catch {
-        setError("Connection lost");
+        setError(t("connection_lost"));
       }
       setAnalysisState("complete");
       evtSource.close();
@@ -196,7 +136,7 @@ export default function AnalysisPage() {
       setAnalysisState("complete");
       evtSource.close();
     };
-  }, []);
+  }, [t]);
 
   // If no existing data and idle, show prompt or auto-start
   if (analysisState === "idle" && !hasExistingData) {
@@ -212,7 +152,7 @@ export default function AnalysisPage() {
     // Show empty state with existing ConsoleState handling
     return (
       <div className="p-6">
-        <ConsoleState state={existingState} loadingLabel="Analyzing your domain..." emptyLabel="No findings detected yet.">
+        <ConsoleState state={existingState} loadingLabel={t("loading")} emptyLabel={t("empty")}>
           {(data) => <AnalysisContent findings={data} analysisState="complete" currentStep={null} stepHistory={[]} coverageScore={100} challengeInfo={null} />}
         </ConsoleState>
       </div>
@@ -222,11 +162,11 @@ export default function AnalysisPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-content">Analysis</h1>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
           {analysisState === "ongoing"
-            ? "Analysis in progress — findings appear as they're ready."
-            : "Global findings with quantified financial impact."}
+            ? t("subtitle_ongoing")
+            : t("subtitle_complete")}
         </p>
       </div>
 
@@ -241,7 +181,7 @@ export default function AnalysisPage() {
             <div className="mt-3 space-y-1">
               {stepHistory.slice(0, -1).map((step, i) => (
                 <div key={i} className="flex items-center gap-3 pl-1">
-                  <div className="h-1.5 w-1.5 rounded-full bg-content-faint" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-surface-inset" />
                   <span className="text-xs text-content-faint">{step}</span>
                 </div>
               ))}
@@ -252,7 +192,7 @@ export default function AnalysisPage() {
               <div className="h-1.5 flex-1 rounded-full bg-surface-inset">
                 <div className="h-1.5 rounded-full bg-emerald-600 transition-all duration-500" style={{ width: `${coverageScore}%` }} />
               </div>
-              <span className="text-xs text-content-muted">{coverageScore}% coverage</span>
+              <span className="text-xs text-content-muted">{t("coverage", { score: coverageScore })}</span>
             </div>
           )}
         </div>
@@ -263,16 +203,16 @@ export default function AnalysisPage() {
         <div className="mb-4 rounded-lg border border-amber-900/50 bg-amber-500/5 px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-amber-500">&#9888;</span>
-            <span className="text-sm font-medium text-amber-300">Protection detected: {challengeInfo.type}</span>
+            <span className="text-sm font-medium dark:text-amber-300 text-amber-600">{t("protection_detected", { type: challengeInfo.type })}</span>
           </div>
-          <p className="mt-1 text-xs text-amber-400/70">
-            Access to {challengeInfo.url} is restricted. Add Vestigio's IP to your allowlist for optimal results.
+          <p className="mt-1 text-xs dark:text-amber-400/70 text-amber-600/70">
+            {t("protection_description", { url: challengeInfo.url })}
           </p>
         </div>
       )}
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="mb-4 rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-3 text-sm dark:text-red-400 text-red-600">
           {error}
         </div>
       )}
@@ -328,6 +268,8 @@ function AnalysisContent({
   challengeInfo: { type: string; url: string } | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("console.analysis");
+  const tc = useTranslations("console.common");
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
   const [packFilter, setPackFilter] = useState<PackFilter>("all");
   const [polarityFilter, setPolarityFilter] = useState<PolarityFilter>("all");
@@ -341,10 +283,80 @@ function AnalysisContent({
   const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  const severityLabels: Record<SeverityFilter, string> = {
+    all: tc("severity.all"),
+    critical: tc("severity.critical"),
+    high: tc("severity.high"),
+    medium: tc("severity.medium"),
+    low: tc("severity.low"),
+  };
+
+  const packOptionLabels: Record<PackFilter, string> = {
+    all: tc("packs.all"),
+    scale_readiness: tc("packs.scale_readiness"),
+    revenue_integrity: tc("packs.revenue_integrity"),
+    chargeback_resilience: tc("packs.chargeback_resilience"),
+    saas_growth_readiness: tc("packs.saas_growth_readiness"),
+  };
+
+  const polarityLabels: Record<PolarityFilter, string> = {
+    all: tc("polarity.all"),
+    negative: tc("polarity.negative"),
+    positive: tc("polarity.positive"),
+    neutral: tc("polarity.neutral"),
+  };
+
+  const verificationLabels: Record<VerificationFilter, string> = {
+    all: t("filters.verification.all"),
+    unverified: t("filters.verification.unverified"),
+    verified: t("filters.verification.verified"),
+    challenged: t("filters.verification.challenged"),
+  };
+
+  const impactRangeLabels: Record<ImpactRangeFilter, string> = {
+    all: t("filters.impact_range.all"),
+    lt1k: t("filters.impact_range.lt1k"),
+    "1k_10k": t("filters.impact_range.1k_10k"),
+    "10k_50k": t("filters.impact_range.10k_50k"),
+    gt50k: t("filters.impact_range.gt50k"),
+  };
+
+  const changeClassLabels: Record<ChangeClassFilter, string> = {
+    all: t("filters.change_class.all"),
+    new_issue: t("filters.change_class.new_issue"),
+    regression: t("filters.change_class.regression"),
+    improvement: t("filters.change_class.improvement"),
+    stable_risk: t("filters.change_class.stable_risk"),
+    resolved: t("filters.change_class.resolved"),
+  };
+
+  const confidenceLabels: Record<ConfidenceFilter, string> = {
+    all: t("filters.confidence.all"),
+    gt80: t("filters.confidence.gt80"),
+    "50_80": t("filters.confidence.50_80"),
+    lt50: t("filters.confidence.lt50"),
+  };
+
+  const packLabels: Record<string, string> = {
+    scale_readiness: tc("pack_labels.scale_readiness"),
+    revenue_integrity: tc("pack_labels.revenue_integrity"),
+    chargeback_resilience: tc("pack_labels.chargeback_resilience"),
+    saas_growth_readiness: tc("pack_labels.saas_growth_readiness"),
+  };
+
+  const impactTypeLabels: Record<string, string> = {
+    revenue_loss: tc("impact_types.revenue_loss"),
+    conversion_loss: tc("impact_types.conversion_loss"),
+    chargeback_risk: tc("impact_types.chargeback_risk"),
+    traffic_waste: tc("impact_types.traffic_waste"),
+    lifetime_value_loss: tc("impact_types.lifetime_value_loss"),
+    none: tc("impact_types.none"),
+  };
+
   const surfaceOptions = useMemo(() => {
     const unique = Array.from(new Set(findings.map(f => f.surface).filter(Boolean))).sort();
-    return [{ label: "All Surfaces", value: "all" }, ...unique.map(s => ({ label: s!, value: s! }))];
-  }, [findings]);
+    return [{ label: t("filters.surfaces.all"), value: "all" }, ...unique.map(s => ({ label: s!, value: s! }))];
+  }, [findings, t]);
 
   const filtered = useMemo(() => {
     return findings.filter((f) => {
@@ -391,20 +403,20 @@ function AnalysisContent({
       : 0;
     return [
       {
-        label: "Findings",
-        value: `${negativeFindings.length} issues, ${positiveFindings.length} strengths`,
-        subtext: analysisState === "ongoing" ? "updating..." : undefined,
+        label: t("cards.findings"),
+        value: t("cards.findings_value", { issues: negativeFindings.length, strengths: positiveFindings.length }),
+        subtext: analysisState === "ongoing" ? t("updating") : undefined,
       },
       {
-        label: "Est. Monthly Impact",
+        label: t("cards.est_monthly_impact"),
         value: totalImpactMid >= 1000 ? `$${(totalImpactMid / 1000).toFixed(1)}k` : `$${totalImpactMid}`,
         variant: totalImpactMid >= 20000 ? "danger" : totalImpactMid >= 5000 ? "warning" : "success",
-        subtext: "/month (midpoint)",
+        subtext: t("cards.per_month_midpoint"),
       },
-      { label: "High Impact Issues", value: highImpact, variant: highImpact > 0 ? "danger" : "success", subtext: "> $10k/mo" },
-      { label: "Avg Confidence", value: `${avgConf}%`, variant: "default" },
+      { label: t("cards.high_impact_issues"), value: highImpact, variant: highImpact > 0 ? "danger" : "success", subtext: t("cards.high_impact_threshold") },
+      { label: t("cards.avg_confidence"), value: `${avgConf}%`, variant: "default" },
     ];
-  }, [findings, analysisState]);
+  }, [findings, analysisState, t]);
 
   const toggleSelect = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -433,17 +445,17 @@ function AnalysisContent({
       ),
     },
     {
-      key: "title", label: "Finding",
+      key: "title", label: tc("columns.finding"),
       render: (row) => {
         const isDimmed = row.suppression_context?.visibility === 'dimmed';
         const isAnnotated = row.suppression_context?.visibility === 'annotated';
         return (
           <div className={isDimmed ? 'opacity-50' : ''}>
             <div className="flex items-center gap-2">
-              <span className={`text-sm ${row.polarity === 'positive' ? 'text-emerald-300' : 'text-content-secondary'}`}>{row.title}</span>
+              <span className={`text-sm ${row.polarity === 'positive' ? 'dark:text-emerald-300 text-emerald-600' : 'text-content-secondary'}`}>{row.title}</span>
               {isAnnotated && (
-                <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                  Suppressed
+                <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium dark:text-amber-400 text-amber-600">
+                  {t("suppressed")}
                 </span>
               )}
             </div>
@@ -453,34 +465,34 @@ function AnalysisContent({
       },
     },
     {
-      key: "severity", label: "Severity", className: "w-24",
+      key: "severity", label: tc("columns.severity"), className: "w-24",
       render: (row) => row.polarity === 'positive'
-        ? <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">Healthy</span>
+        ? <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs dark:text-emerald-400 text-emerald-600">{tc("healthy")}</span>
         : <SeverityBadge value={row.severity} />,
     },
     {
-      key: "verification", label: "Verified", className: "w-24",
+      key: "verification", label: t("filters.verification.label"), className: "w-24",
       render: (row) => <VerificationBadge value={row.verification_maturity} />,
     },
     {
-      key: "change", label: "Change", className: "w-28",
+      key: "change", label: t("filters.change_class.label"), className: "w-28",
       render: (row) => <ChangeBadge value={row.change_class} />,
     },
-    { key: "confidence", label: "Conf", className: "w-16", render: (row) => <span className="font-mono text-xs text-content-muted">{row.confidence}%</span> },
+    { key: "confidence", label: tc("columns.confidence"), className: "w-16", render: (row) => <span className="font-mono text-xs text-content-muted">{row.confidence}%</span> },
     {
-      key: "impact", label: "Est. Impact", className: "w-44",
+      key: "impact", label: tc("columns.est_impact"), className: "w-44",
       render: (row) => row.polarity === 'positive'
-        ? <span className="text-xs text-content-muted">—</span>
+        ? <span className="text-xs text-content-muted">{"\u2014"}</span>
         : <ImpactBadge min={row.impact.monthly_range.min} max={row.impact.monthly_range.max} />,
     },
-    { key: "impact_type", label: "Type", className: "w-28", render: (row) => <span className="text-xs text-content-muted">{impactTypeLabels[row.impact.impact_type] || row.impact.impact_type}</span> },
-    { key: "pack", label: "Pack", className: "w-20", render: (row) => <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{packLabels[row.pack] || row.pack}</span> },
+    { key: "impact_type", label: tc("columns.type"), className: "w-28", render: (row) => <span className="text-xs text-content-muted">{impactTypeLabels[row.impact.impact_type] || row.impact.impact_type}</span> },
+    { key: "pack", label: tc("columns.pack"), className: "w-20", render: (row) => <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{packLabels[row.pack] || row.pack}</span> },
     {
       key: "discuss", label: "", className: "w-20",
       render: (row) => row.polarity !== 'positive' ? (
         <button onClick={(e) => { e.stopPropagation(); router.push(`/chat?finding=${row.id}`); }}
           className="rounded border border-edge px-2 py-1 text-xs text-content-muted transition-colors hover:border-emerald-600 hover:text-emerald-400">
-          Discuss
+          {t("discuss")}
         </button>
       ) : null,
     },
@@ -493,27 +505,27 @@ function AnalysisContent({
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <select value={polarityFilter} onChange={(e) => setPolarityFilter(e.target.value as PolarityFilter)}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-          {polarityOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {polarityValues.map((v) => <option key={v} value={v}>{polarityLabels[v]}</option>)}
         </select>
         <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-          {severityOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {severityValues.map((v) => <option key={v} value={v}>{severityLabels[v]}</option>)}
         </select>
         <select value={packFilter} onChange={(e) => setPackFilter(e.target.value as PackFilter)}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-          {packOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {packValues.map((v) => <option key={v} value={v}>{packOptionLabels[v]}</option>)}
         </select>
         <select value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value as VerificationFilter)}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-          {verificationOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {verificationValues.map((v) => <option key={v} value={v}>{verificationLabels[v]}</option>)}
         </select>
         <select value={changeClassFilter} onChange={(e) => setChangeClassFilter(e.target.value as ChangeClassFilter)}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-          {changeClassOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {changeClassValues.map((v) => <option key={v} value={v}>{changeClassLabels[v]}</option>)}
         </select>
         <select value={impactRangeFilter} onChange={(e) => setImpactRangeFilter(e.target.value as ImpactRangeFilter)}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-          {impactRangeOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {impactRangeValues.map((v) => <option key={v} value={v}>{impactRangeLabels[v]}</option>)}
         </select>
         <select value={surfaceFilter} onChange={(e) => setSurfaceFilter(e.target.value)}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
@@ -521,31 +533,31 @@ function AnalysisContent({
         </select>
         <select value={confidenceFilter} onChange={(e) => setConfidenceFilter(e.target.value as ConfidenceFilter)}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-          {confidenceOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {confidenceValues.map((v) => <option key={v} value={v}>{confidenceLabels[v]}</option>)}
         </select>
-        <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Search..."
+        <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder={t("search_placeholder")}
           className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" />
 
         <label className="flex items-center gap-1.5 text-xs text-content-muted cursor-pointer">
           <input type="checkbox" checked={hidePositive} onChange={(e) => setHidePositive(e.target.checked)}
             className="h-3 w-3 rounded border-edge bg-surface-inset text-emerald-500 focus:ring-0" />
-          Hide positive signals
+          {tc("hide_positive_signals")}
         </label>
 
         {(severityFilter !== "all" || packFilter !== "all" || polarityFilter !== "all" || verificationFilter !== "all" || impactRangeFilter !== "all" || surfaceFilter !== "all" || changeClassFilter !== "all" || confidenceFilter !== "all" || searchText !== "") && (
           <button onClick={() => { setSeverityFilter("all"); setPackFilter("all"); setPolarityFilter("all"); setVerificationFilter("all"); setImpactRangeFilter("all"); setSurfaceFilter("all"); setChangeClassFilter("all"); setConfidenceFilter("all"); setSearchText(""); }}
-            className="rounded-md px-3 py-1.5 text-xs text-content-muted transition-colors hover:text-content-secondary">Clear filters</button>
+            className="rounded-md px-3 py-1.5 text-xs text-content-muted transition-colors hover:text-content-secondary">{tc("clear_filters")}</button>
         )}
         {selectedIds.size >= 2 && (
           <ShinyButton onClick={() => router.push(`/chat?findings=${[...selectedIds].join(",")}`)}>
-            Use as Context ({selectedIds.size})
+            {t("analyze_together", { count: selectedIds.size })}
           </ShinyButton>
         )}
-        <span className="ml-auto text-xs text-content-muted">{filtered.length} of {findings.length} findings</span>
+        <span className="ml-auto text-xs text-content-muted">{tc("n_of_total", { filtered: filtered.length, total: findings.length })}</span>
       </div>
 
       <DataTable columns={columns} data={filtered} onRowClick={(row) => setSelectedFinding(row)} getRowKey={(row) => row.id}
-        emptyMessage="No findings match the current filters." />
+        emptyMessage={t("no_match")} />
 
       <SideDrawer open={selectedFinding !== null} onClose={() => setSelectedFinding(null)} title={selectedFinding?.title || ""}>
         {selectedFinding && <FindingDrawerContent finding={selectedFinding} onDiscuss={() => router.push(`/chat?finding=${selectedFinding.id}`)} />}
@@ -555,19 +567,38 @@ function AnalysisContent({
 }
 
 function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjection; onDiscuss: () => void }) {
+  const td = useTranslations("console.finding_drawer");
+  const tc = useTranslations("console.common");
+
+  const packLabels: Record<string, string> = {
+    scale_readiness: tc("pack_labels.scale_readiness"),
+    revenue_integrity: tc("pack_labels.revenue_integrity"),
+    chargeback_resilience: tc("pack_labels.chargeback_resilience"),
+    saas_growth_readiness: tc("pack_labels.saas_growth_readiness"),
+  };
+
+  const impactTypeLabels: Record<string, string> = {
+    revenue_loss: tc("impact_types.revenue_loss"),
+    conversion_loss: tc("impact_types.conversion_loss"),
+    chargeback_risk: tc("impact_types.chargeback_risk"),
+    traffic_waste: tc("impact_types.traffic_waste"),
+    lifetime_value_loss: tc("impact_types.lifetime_value_loss"),
+    none: tc("impact_types.none"),
+  };
+
   return (
     <div className="space-y-6">
       {/* Summary + badges */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Summary</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("summary")}</h3>
         <p className="text-sm text-content-secondary">{finding.cause}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {finding.polarity === 'positive'
-            ? <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">Healthy</span>
+            ? <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs dark:text-emerald-400 text-emerald-600">{tc("healthy")}</span>
             : <SeverityBadge value={finding.severity} />}
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
-          <span className="text-xs text-content-muted">Confidence {finding.confidence}%</span>
+          <span className="text-xs text-content-muted">{tc("confidence_label", { value: finding.confidence })}</span>
           <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{packLabels[finding.pack] || finding.pack}</span>
           {finding.surface && <code className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{finding.surface}</code>}
         </div>
@@ -578,15 +609,15 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
         <section>
           <div className="rounded-md border border-amber-900/50 bg-amber-500/5 px-4 py-3">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-amber-500 text-xs font-semibold">Suppressed</span>
-              <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-400">
+              <span className="dark:text-amber-500 text-amber-600 text-xs font-semibold">{td("suppressed")}</span>
+              <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] dark:text-amber-400 text-amber-600">
                 {finding.suppression_context.visibility}
               </span>
             </div>
-            <p className="text-xs text-amber-300/80">{finding.suppression_context.explanation}</p>
+            <p className="text-xs dark:text-amber-300/80 text-amber-600/80">{finding.suppression_context.explanation}</p>
             {finding.suppression_context.confidence_reduction > 0 && (
-              <p className="mt-1 text-xs text-amber-400/60">
-                Confidence reduced by {finding.suppression_context.confidence_reduction} points
+              <p className="mt-1 text-xs dark:text-amber-400/60 text-amber-600/60">
+                {td("confidence_reduced", { points: finding.suppression_context.confidence_reduction })}
               </p>
             )}
           </div>
@@ -596,7 +627,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Effect */}
       {finding.effect && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Effect</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("effect")}</h3>
           <p className="text-sm text-content-muted">{finding.effect}</p>
         </section>
       )}
@@ -604,7 +635,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Root Cause */}
       {finding.root_cause && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Root Cause</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("root_cause")}</h3>
           <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
             <span className="text-sm font-medium text-content-secondary">{finding.root_cause}</span>
           </div>
@@ -614,18 +645,18 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Impact Breakdown */}
       {finding.polarity !== 'positive' && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Impact Breakdown</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("impact_breakdown")}</h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
-              <span className="text-xs text-content-muted">Monthly Range</span>
+              <span className="text-xs text-content-muted">{td("monthly_range")}</span>
               <ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} />
             </div>
             <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
-              <span className="text-xs text-content-muted">Midpoint</span>
+              <span className="text-xs text-content-muted">{td("midpoint")}</span>
               <ImpactBadge min={finding.impact.midpoint} max={finding.impact.midpoint} compact />
             </div>
             <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
-              <span className="text-xs text-content-muted">Impact Type</span>
+              <span className="text-xs text-content-muted">{td("impact_type")}</span>
               <span className="text-xs text-content-secondary">{impactTypeLabels[finding.impact.impact_type] || finding.impact.impact_type}</span>
             </div>
           </div>
@@ -635,19 +666,19 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Evidence Quality */}
       {finding.evidence_quality && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Evidence Quality</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("evidence_quality")}</h3>
           <div className="space-y-2 rounded-md border border-edge bg-surface-card px-4 py-3">
-            <EvidenceQualityBar label="Source Reliability" value={finding.evidence_quality.source_reliability} />
-            <EvidenceQualityBar label="Completeness" value={finding.evidence_quality.completeness} />
-            <EvidenceQualityBar label="Recency" value={finding.evidence_quality.recency} />
-            <EvidenceQualityBar label="Corroboration" value={finding.evidence_quality.corroboration} />
+            <EvidenceQualityBar label={td("source_reliability")} value={finding.evidence_quality.source_reliability} />
+            <EvidenceQualityBar label={td("completeness")} value={finding.evidence_quality.completeness} />
+            <EvidenceQualityBar label={td("recency")} value={finding.evidence_quality.recency} />
+            <EvidenceQualityBar label={td("corroboration")} value={finding.evidence_quality.corroboration} />
           </div>
         </section>
       )}
 
       {/* Verification Lifecycle Panel */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Verification</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("verification")}</h3>
         <VerificationPanel
           maturity={finding.verification_maturity}
           method={finding.verification_method}
@@ -657,7 +688,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
           currentConfidence={null}
           reTriggerReason={null}
           decisionStatus={null}
-          onRequestVerification={() => toast.success("Verification requested")}
+          onRequestVerification={() => toast.success(td("verification_requested"))}
         />
       </section>
 
@@ -670,7 +701,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Reasoning */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          {finding.polarity === 'positive' ? 'Why This Is Good' : 'Reasoning'}
+          {finding.polarity === 'positive' ? td("why_good") : td("reasoning")}
         </h3>
         <p className="text-sm leading-relaxed text-content-muted">{finding.reasoning}</p>
       </section>
@@ -678,11 +709,13 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Truth Context */}
       {finding.truth_context && finding.truth_context.has_contradictions && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-500">Evidence Contradictions</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider dark:text-amber-500 text-amber-600">{td("evidence_contradictions")}</h3>
           <div className="rounded-md border border-amber-900/50 bg-amber-500/5 px-4 py-3">
-            <p className="text-xs text-amber-300">
-              {finding.truth_context.contradiction_count} contradiction{finding.truth_context.contradiction_count > 1 ? 's' : ''} detected in backing evidence.
-              Confidence adjusted by {finding.truth_context.truth_confidence_delta > 0 ? '+' : ''}{finding.truth_context.truth_confidence_delta}%.
+            <p className="text-xs dark:text-amber-300 text-amber-600">
+              {td("contradictions_detected", {
+                count: finding.truth_context.contradiction_count,
+                delta: `${finding.truth_context.truth_confidence_delta > 0 ? '+' : ''}${finding.truth_context.truth_confidence_delta}`,
+              })}
             </p>
           </div>
         </section>
@@ -692,8 +725,8 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {finding.polarity !== 'positive' && (
         <section>
           <button onClick={onDiscuss}
-            className="w-full rounded-md border border-emerald-800/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400 transition-colors hover:bg-emerald-500/20">
-            Discuss This Finding
+            className="w-full rounded-md border border-emerald-800/50 bg-emerald-500/10 px-4 py-2 text-sm dark:text-emerald-400 text-emerald-600 transition-colors hover:bg-emerald-500/20">
+            {td("discuss_finding")}
           </button>
         </section>
       )}

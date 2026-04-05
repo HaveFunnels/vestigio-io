@@ -709,7 +709,43 @@
 			},
 			"discuss": "Discutir",
 			"analyze_together": "Analisar {count} Juntos",
-			"no_match": "Nenhuma descoberta corresponde aos filtros atuais."
+			"no_match": "Nenhuma descoberta corresponde aos filtros atuais.",
+			"suppressed": "Suprimido",
+			"search_placeholder": "Buscar descobertas...",
+			"filters": {
+				"verification": {
+					"label": "Verificação",
+					"all": "Todas as Verificações",
+					"unverified": "Não Verificado",
+					"verified": "Verificado",
+					"challenged": "Contestado"
+				},
+				"impact_range": {
+					"all": "Todo Impacto",
+					"lt1k": "< $1k",
+					"1k_10k": "$1k – $10k",
+					"10k_50k": "$10k – $50k",
+					"gt50k": "> $50k"
+				},
+				"change_class": {
+					"label": "Mudan��as",
+					"all": "Todas as Mudanças",
+					"new_issue": "Novo",
+					"regression": "Piorou",
+					"improvement": "Melhorou",
+					"stable_risk": "Estável",
+					"resolved": "Resolvido"
+				},
+				"confidence": {
+					"all": "Toda Confiança",
+					"gt80": "> 80%",
+					"50_80": "50% – 80%",
+					"lt50": "< 50%"
+				},
+				"surfaces": {
+					"all": "Todas as Superfícies"
+				}
+			}
 		},
 		"finding_drawer": {
 			"summary": "Resumo",
@@ -723,7 +759,16 @@
 			"why_good": "Por Que Isso É Bom",
 			"evidence_contradictions": "Contradições de Evidência",
 			"contradictions_detected": "{count} contradição(ões) detectada(s) nas evidências de suporte. Confiança ajustada em {delta}%.",
-			"discuss_finding": "Discutir Esta Descoberta"
+			"discuss_finding": "Discutir Esta Descoberta",
+			"suppressed": "Suprimido",
+			"confidence_reduced": "Confiança reduzida em {value}%",
+			"evidence_quality": "Qualidade da Evidência",
+			"source_reliability": "Confiabilidade da Fonte",
+			"completeness": "Completude",
+			"recency": "Recência",
+			"corroboration": "Corroboração",
+			"verification": "Verificação",
+			"verification_requested": "Verificação Solicitada"
 		},
 		"workspaces": {
 			"title": "Workspaces",

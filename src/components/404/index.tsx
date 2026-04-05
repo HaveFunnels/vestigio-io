@@ -1,90 +1,51 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Image from "next/image";
 import Link from "next/link";
 
 const NotFound = () => {
 	const t = useTranslations("404_page");
 
 	return (
-		<section className='py-17.5 lg:py-22.5 xl:py-27.5 2xl:py-37.5'>
-			<div className='mx-auto w-full max-w-[575px] px-4 sm:px-8 xl:px-0'>
-				<div className='relative z-1 pt-[187px]'>
-					<div className='absolute left-0 top-0 -z-1'>
-						<Image
-							src='/images/support/grid-404.svg'
-							alt='grid'
-							width={575}
-							height={460}
-							className='dark:opacity-20'
-						/>
-					</div>
+		<section className="flex min-h-screen items-center justify-center bg-surface-shell px-4">
+			<div className="w-full max-w-md text-center">
+				{/* Large 404 */}
+				<div className="mb-6 select-none text-[120px] font-extrabold leading-none tracking-tighter text-content-faint/20 sm:text-[160px]">
+					404
+				</div>
 
-					<div className='text-center'>
-						<div className='mx-auto mb-10 flex h-22.5 w-full max-w-[90px] items-center justify-center rounded-full border border-stroke bg-white shadow-error'>
-							<svg
-								width='50'
-								height='51'
-								viewBox='0 0 50 51'
-								fill='none'
-								xmlns='http://www.w3.org/2000/svg'
-							>
-								<path
-									fillRule='evenodd'
-									clipRule='evenodd'
-									d='M24.9998 5.80566C14.3568 5.80566 5.729 14.4335 5.729 25.0765C5.729 35.7195 14.3568 44.3473 24.9998 44.3473C35.6428 44.3473 44.2707 35.7195 44.2707 25.0765C44.2707 14.4335 35.6428 5.80566 24.9998 5.80566ZM2.604 25.0765C2.604 12.7076 12.631 2.68066 24.9998 2.68066C37.3687 2.68066 47.3957 12.7076 47.3957 25.0765C47.3957 37.4454 37.3687 47.4723 24.9998 47.4723C12.631 47.4723 2.604 37.4454 2.604 25.0765ZM17.8194 34.2379C19.8452 32.7363 22.3228 31.8473 24.9998 31.8473C27.6769 31.8473 30.1544 32.7363 32.1803 34.2379C32.8735 34.7518 33.019 35.7303 32.5051 36.4236C31.9912 37.1169 31.0127 37.2623 30.3194 36.7484C28.802 35.6237 26.9705 34.9723 24.9998 34.9723C23.0292 34.9723 21.1977 35.6237 19.6803 36.7484C18.987 37.2623 18.0084 37.1169 17.4946 36.4236C16.9807 35.7303 17.1261 34.7518 17.8194 34.2379Z'
-									fill='#0E172B'
-								/>
-								<path
-									d='M33.3332 21.9515C33.3332 23.6774 32.4004 25.0765 31.2498 25.0765C30.0992 25.0765 29.1665 23.6774 29.1665 21.9515C29.1665 20.2256 30.0992 18.8265 31.2498 18.8265C32.4004 18.8265 33.3332 20.2256 33.3332 21.9515Z'
-									fill='#0E172B'
-								/>
-								<path
-									d='M20.8332 21.9515C20.8332 23.6774 19.9004 25.0765 18.7498 25.0765C17.5992 25.0765 16.6665 23.6774 16.6665 21.9515C16.6665 20.2256 17.5992 18.8265 18.7498 18.8265C19.9004 18.8265 20.8332 20.2256 20.8332 21.9515Z'
-									fill='#0E172B'
-								/>
-							</svg>
-						</div>
+				{/* Icon */}
+				<div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-edge bg-surface-card">
+					<svg className="h-7 w-7 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" d="M15.182 16.318A4.486 4.486 0 0012.016 15a4.486 4.486 0 00-3.198 1.318M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
+					</svg>
+				</div>
 
-						<h1 className='mb-5 font-satoshi text-heading-4 font-bold -tracking-[1.6px] text-black dark:text-white lg:text-heading-2'>
-							{t("title")}
-						</h1>
+				<h1 className="mb-3 text-2xl font-bold text-content sm:text-3xl">
+					{t("title")}
+				</h1>
 
-						<p className='mx-auto mb-10 w-full max-w-[355px]'>
-							{t("description")}
-						</p>
+				<p className="mx-auto mb-8 max-w-sm text-sm leading-relaxed text-content-muted">
+					{t("description")}
+				</p>
 
-						<div className='flex flex-wrap items-center justify-center gap-3'>
-							<Link
-								href='/'
-								className='inline-flex items-center gap-2 rounded-full border border-stroke bg-white px-6 py-3 font-satoshi font-medium text-black duration-200 ease-out hover:bg-gray'
-							>
-								<svg
-									className='fill-current'
-									width='21'
-									height='21'
-									viewBox='0 0 21 21'
-									fill='none'
-									xmlns='http://www.w3.org/2000/svg'
-								>
-									<path
-										fillRule='evenodd'
-										clipRule='evenodd'
-										d='M9.27544 4.63472C9.51952 4.8788 9.51952 5.27452 9.27544 5.5186L5.34238 9.45166H17.1668C17.512 9.45166 17.7918 9.73148 17.7918 10.0767C17.7918 10.4218 17.512 10.7017 17.1668 10.7017H5.34238L9.27544 14.6347C9.51952 14.8788 9.51952 15.2745 9.27544 15.5186C9.03136 15.7627 8.63563 15.7627 8.39155 15.5186L3.39155 10.5186C3.14748 10.2745 3.14748 9.8788 3.39155 9.63472L8.39155 4.63472C8.63563 4.39064 9.03136 4.39064 9.27544 4.63472Z'
-									/>
-								</svg>
-								{t("cta.go_back")}
-							</Link>
+				<div className="flex flex-wrap items-center justify-center gap-3">
+					<Link
+						href="/"
+						className="inline-flex items-center gap-2 rounded-lg border border-edge bg-surface-card px-5 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover"
+					>
+						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+						</svg>
+						{t("cta.go_back")}
+					</Link>
 
-							<Link
-								href='/'
-								className='inline-flex rounded-full bg-primary px-7 py-3 font-satoshi font-medium text-white hover:bg-primary-dark'
-							>
-								{t("cta.home")}
-							</Link>
-						</div>
-					</div>
+					<Link
+						href="/"
+						className="inline-flex rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent/90"
+					>
+						{t("cta.home")}
+					</Link>
 				</div>
 			</div>
 		</section>

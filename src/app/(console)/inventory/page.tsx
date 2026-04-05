@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Column } from "@/components/console/DataTable";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ConsoleState from "@/components/console/ConsoleState";
@@ -125,6 +126,7 @@ function SurfaceDrawer({
   surface: InventorySurface | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("console.inventory.drawer");
   const isOpen = surface !== null;
 
   useEffect(() => {
@@ -154,7 +156,7 @@ function SurfaceDrawer({
         {surface && (
           <>
             <div className="flex items-center justify-between border-b border-edge px-5 py-4">
-              <h2 className="text-sm font-semibold text-content">Surface Details</h2>
+              <h2 className="text-sm font-semibold text-content">{t("title")}</h2>
               <button
                 onClick={onClose}
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
@@ -168,20 +170,20 @@ function SurfaceDrawer({
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
               {/* URL */}
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">URL</div>
+                <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("url")}</div>
                 <div className="text-sm text-content font-mono break-all">{surface.host}{surface.normalized_path}</div>
               </div>
 
               {/* Title */}
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Title</div>
+                <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("surface_title")}</div>
                 <div className="text-sm text-content">{surface.title || surface.label}</div>
               </div>
 
               {/* Description */}
               {surface.description && (
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Description</div>
+                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("description")}</div>
                   <div className="text-sm text-content-secondary">{surface.description}</div>
                 </div>
               )}
@@ -189,13 +191,13 @@ function SurfaceDrawer({
               {/* Type & Tier */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Type</div>
+                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("type")}</div>
                   <span className={`inline-block text-xs px-2 py-0.5 rounded ${surface.is_commercial ? "bg-blue-900/30 text-blue-400" : "bg-surface-inset text-content-muted"}`}>
                     {titleCase(surface.page_type)}
                   </span>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Tier</div>
+                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("tier")}</div>
                   <span className="text-sm text-content-secondary">{titleCase(surface.tier)}</span>
                 </div>
               </div>
@@ -203,14 +205,14 @@ function SurfaceDrawer({
               {/* Status & HTTP Code */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Status</div>
+                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("status")}</div>
                   <span className={`inline-flex items-center gap-1.5 text-xs ${surface.is_live ? "text-emerald-400" : "text-content-faint"}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${surface.is_live ? "bg-emerald-400" : "bg-content-faint"}`} />
-                    {surface.is_live ? "Live" : "Not Seen"}
+                    {surface.is_live ? t("live") : t("not_seen")}
                   </span>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">HTTP Code</div>
+                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("http_code")}</div>
                   <span className={`text-sm font-mono ${
                     surface.http_status === null
                       ? "text-content-faint"
@@ -228,11 +230,11 @@ function SurfaceDrawer({
               {/* Sessions & Findings */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Sessions</div>
+                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("sessions")}</div>
                   <span className="text-sm font-mono text-content-secondary">{surface.session_count.toLocaleString()}</span>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Findings</div>
+                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("findings")}</div>
                   <span className={`text-sm font-mono ${surface.finding_count > 0 ? "text-amber-400" : "text-content-faint"}`}>
                     {surface.finding_count}
                   </span>
@@ -242,22 +244,22 @@ function SurfaceDrawer({
               {/* Response Time */}
               {surface.response_time_ms !== null && (
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Response Time</div>
+                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("response_time")}</div>
                   <span className="text-sm font-mono text-content-secondary">{surface.response_time_ms}ms</span>
                 </div>
               )}
 
               {/* Last Checked */}
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Last Checked</div>
+                <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("last_checked")}</div>
                 <span className="text-sm text-content-secondary">
-                  {surface.last_seen_at ? new Date(surface.last_seen_at).toLocaleString() : "Never"}
+                  {surface.last_seen_at ? new Date(surface.last_seen_at).toLocaleString() : t("never")}
                 </span>
               </div>
 
               {/* Discovery Sources */}
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">Discovery Sources</div>
+                <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("discovery_sources")}</div>
                 <div className="flex gap-1.5 flex-wrap">
                   {surface.discovery_sources.map((src) => (
                     <span key={src} className="text-[10px] px-1.5 py-0.5 bg-surface-inset text-content-faint rounded">
@@ -285,22 +287,23 @@ function SelectionBar({
   onUseAsContext: () => void;
   onClear: () => void;
 }) {
+  const t = useTranslations("console.inventory.selection");
   if (count === 0) return null;
 
   return (
     <div className="sticky top-0 z-30 flex items-center gap-4 rounded-lg border border-edge bg-surface-card px-4 py-2.5 shadow-lg">
       <span className="text-sm font-medium text-content">
-        {count} selected
+        {t("n_selected", { count })}
       </span>
       <div className="flex-1" />
       <ShinyButton onClick={onUseAsContext}>
-        Use as Context
+        {t("use_as_context")}
       </ShinyButton>
       <button
         onClick={onClear}
         className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-card-hover"
       >
-        Clear Selection
+        {t("clear")}
       </button>
     </div>
   );
@@ -310,6 +313,8 @@ function SelectionBar({
 
 export default function InventoryPage() {
   const router = useRouter();
+  const t = useTranslations("console.inventory");
+  const tc = useTranslations("console.common.columns");
   const [liveFilter, setLiveFilter] = useState<LiveFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [httpStatusFilter, setHttpStatusFilter] = useState<HttpStatusFilter>("all");
@@ -335,10 +340,10 @@ export default function InventoryPage() {
   const discoverySourceOptions = useMemo(() => {
     const unique = Array.from(new Set(surfaces.flatMap(s => s.discovery_sources))).sort();
     return [
-      { value: "all" as const, label: "All Sources" },
+      { value: "all" as const, label: t("discovery_source_filter.all") },
       ...unique.map(src => ({ value: src, label: titleCase(src) })),
     ];
-  }, [surfaces]);
+  }, [surfaces, t]);
 
   const filtered = useMemo(() => {
     return surfaces.filter((s) => {
@@ -419,21 +424,21 @@ export default function InventoryPage() {
 
   const summaryCards: SummaryCard[] = [
     {
-      label: "Total Surfaces",
+      label: t("cards.total_surfaces"),
       value: surfaces.length,
-      subtext: mockDeltas.total !== 0 ? `${mockDeltas.total > 0 ? "+" : ""}${mockDeltas.total} from last period` : undefined,
+      subtext: mockDeltas.total !== 0 ? `${mockDeltas.total > 0 ? "+" : ""}${mockDeltas.total} ${t("from_last_period")}` : undefined,
     },
     {
-      label: "Commercial",
+      label: t("cards.commercial"),
       value: surfaces.filter((s) => s.is_commercial).length,
       variant: "info",
-      subtext: mockDeltas.commercial !== 0 ? `${mockDeltas.commercial > 0 ? "+" : ""}${mockDeltas.commercial} from last period` : undefined,
+      subtext: mockDeltas.commercial !== 0 ? `${mockDeltas.commercial > 0 ? "+" : ""}${mockDeltas.commercial} ${t("from_last_period")}` : undefined,
     },
     {
-      label: "With Findings",
+      label: t("cards.with_findings"),
       value: surfaces.filter((s) => s.finding_count > 0).length,
       variant: "warning",
-      subtext: mockDeltas.findings !== 0 ? `${mockDeltas.findings > 0 ? "+" : ""}${mockDeltas.findings} from last period` : undefined,
+      subtext: mockDeltas.findings !== 0 ? `${mockDeltas.findings > 0 ? "+" : ""}${mockDeltas.findings} ${t("from_last_period")}` : undefined,
     },
   ];
 
@@ -461,7 +466,7 @@ export default function InventoryPage() {
     },
     {
       key: "label",
-      label: "Surface",
+      label: tc("surface"),
       render: (row: InventorySurface) => (
         <div>
           <div className="text-sm text-content-secondary">{row.label}</div>
@@ -471,7 +476,7 @@ export default function InventoryPage() {
     },
     {
       key: "page_type",
-      label: "Type",
+      label: tc("type"),
       render: (row: InventorySurface) => (
         <span className={`text-xs px-2 py-0.5 rounded ${row.is_commercial ? "bg-blue-900/30 text-blue-400" : "bg-surface-inset text-content-muted"}`}>
           {titleCase(row.page_type)}
@@ -480,7 +485,7 @@ export default function InventoryPage() {
     },
     {
       key: "is_live",
-      label: "Status",
+      label: tc("status"),
       render: (row: InventorySurface) => (
         <span className={`inline-flex items-center gap-1 text-xs ${
           !row.is_live
@@ -497,16 +502,16 @@ export default function InventoryPage() {
                 : "bg-emerald-400"
           }`} />
           {!row.is_live
-            ? "Not Seen"
+            ? t("status.not_seen")
             : row.http_status !== null && row.http_status >= 400
-              ? "Down"
-              : "Live"}
+              ? t("status.down")
+              : t("status.live")}
         </span>
       ),
     },
     {
       key: "http_status",
-      label: "HTTP",
+      label: t("columns.http"),
       render: (row: InventorySurface) => (
         <span className={`text-xs font-mono ${
           row.http_status === null
@@ -523,14 +528,14 @@ export default function InventoryPage() {
     },
     {
       key: "session_count",
-      label: "Sessions",
+      label: tc("sessions"),
       render: (row: InventorySurface) => (
         <span className="text-xs text-content-muted font-mono">{row.session_count.toLocaleString()}</span>
       ),
     },
     {
       key: "finding_count",
-      label: "Findings",
+      label: tc("findings"),
       render: (row: InventorySurface) => (
         <button
           onClick={(e) => {
@@ -548,7 +553,7 @@ export default function InventoryPage() {
     },
     {
       key: "discovery_sources",
-      label: "Sources",
+      label: tc("sources"),
       render: (row: InventorySurface) => (
         <div className="flex gap-1">
           {row.discovery_sources.map((src) => (
@@ -564,14 +569,14 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-xl font-semibold text-content">Inventory</h1>
-        <p className="text-sm text-content-faint mt-1">Normalized surfaces across your commercial environment</p>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
+        <p className="text-sm text-content-faint mt-1">{t("subtitle")}</p>
       </div>
 
       <ConsoleState
         state={dataState}
-        loadingLabel="Loading inventory..."
-        emptyLabel="No surfaces discovered yet. Install the Vestigio snippet to start collecting behavioral data and surface inventory."
+        loadingLabel={t("loading")}
+        emptyLabel={`${t("empty.title")}. ${t("empty.description")}`}
       >
         {() => (
           <>
@@ -591,7 +596,7 @@ export default function InventoryPage() {
                   }`}
                 >
                   <span className="text-lg font-bold text-emerald-400">{liveCount}</span>
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-emerald-400/70">Live</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-emerald-400/70">{t("cards.live")}</span>
                 </button>
                 <div className="w-px bg-edge" />
                 <button
@@ -603,7 +608,7 @@ export default function InventoryPage() {
                   }`}
                 >
                   <span className="text-lg font-bold text-red-400">{downCount}</span>
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-red-400/70">Down</span>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-red-400/70">{t("status.down")}</span>
                 </button>
               </div>
             </div>
@@ -619,27 +624,27 @@ export default function InventoryPage() {
                 value={liveFilter}
                 onChange={setLiveFilter}
                 options={[
-                  { value: "all", label: "All Status" },
-                  { value: "live", label: "Live" },
-                  { value: "not_live", label: "Not Seen" },
+                  { value: "all", label: t("status.all") },
+                  { value: "live", label: t("status.live") },
+                  { value: "not_live", label: t("status.not_seen") },
                 ]}
               />
               <FilterDropdown
                 value={typeFilter}
                 onChange={setTypeFilter}
                 options={[
-                  { value: "all", label: "All Types" },
-                  { value: "commercial", label: "Commercial" },
-                  { value: "support", label: "Support" },
-                  { value: "policy", label: "Policy" },
-                  { value: "other", label: "Other" },
+                  { value: "all", label: t("type_filter.all") },
+                  { value: "commercial", label: t("type_filter.commercial") },
+                  { value: "support", label: t("type_filter.support") },
+                  { value: "policy", label: t("type_filter.policy") },
+                  { value: "other", label: t("type_filter.other") },
                 ]}
               />
               <FilterDropdown
                 value={httpStatusFilter}
                 onChange={setHttpStatusFilter}
                 options={[
-                  { value: "all", label: "All HTTP Status" },
+                  { value: "all", label: t("http_status_filter.all") },
                   { value: "2xx", label: "2xx" },
                   { value: "3xx", label: "3xx" },
                   { value: "4xx", label: "4xx" },
@@ -650,30 +655,30 @@ export default function InventoryPage() {
                 value={hasFindingsFilter}
                 onChange={setHasFindingsFilter}
                 options={[
-                  { value: "all", label: "All" },
-                  { value: "with", label: "With Findings" },
-                  { value: "without", label: "Without Findings" },
+                  { value: "all", label: t("findings_filter.all") },
+                  { value: "with", label: t("findings_filter.with") },
+                  { value: "without", label: t("findings_filter.without") },
                 ]}
               />
               <FilterDropdown
                 value={tierFilter}
                 onChange={setTierFilter}
                 options={[
-                  { value: "all", label: "All Tiers" },
-                  { value: "critical", label: "Critical" },
-                  { value: "high", label: "High" },
-                  { value: "medium", label: "Medium" },
-                  { value: "low", label: "Low" },
+                  { value: "all", label: t("tier_filter.all") },
+                  { value: "critical", label: t("tier_filter.critical") },
+                  { value: "high", label: t("tier_filter.high") },
+                  { value: "medium", label: t("tier_filter.medium") },
+                  { value: "low", label: t("tier_filter.low") },
                 ]}
               />
               <FilterDropdown
                 value={responseTimeFilter}
                 onChange={setResponseTimeFilter}
                 options={[
-                  { value: "all", label: "All Response Times" },
-                  { value: "lt500", label: "< 500ms" },
-                  { value: "500_2000", label: "500ms – 2s" },
-                  { value: "gt2000", label: "> 2s" },
+                  { value: "all", label: t("response_time_filter.all") },
+                  { value: "lt500", label: t("response_time_filter.lt500") },
+                  { value: "500_2000", label: t("response_time_filter.500_2000") },
+                  { value: "gt2000", label: t("response_time_filter.gt2000") },
                 ]}
               />
               <FilterDropdown
@@ -683,7 +688,7 @@ export default function InventoryPage() {
               />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder={t("search_placeholder")}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary placeholder:text-content-faint transition-colors focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
@@ -693,16 +698,16 @@ export default function InventoryPage() {
                   onClick={() => { setLiveFilter("all"); setTypeFilter("all"); setHttpStatusFilter("all"); setHasFindingsFilter("all"); setTierFilter("all"); setResponseTimeFilter("all"); setDiscoverySourceFilter("all"); setSearchText(""); }}
                   className="rounded-lg px-3 py-1.5 text-xs text-content-faint transition-colors hover:text-content-secondary"
                 >
-                  Clear filters
+                  {t("clear_filters")}
                 </button>
               )}
-              <span className="ml-auto text-xs text-content-faint">{filtered.length} of {surfaces.length} surfaces</span>
+              <span className="ml-auto text-xs text-content-faint">{t("n_of_total", { filtered: filtered.length, total: surfaces.length })}</span>
             </div>
 
             {filtered.length === 0 ? (
               <div className="text-center py-16 text-content-faint">
-                <p className="text-lg">No surfaces match the current filters</p>
-                <p className="text-sm mt-2">Try adjusting the filters above.</p>
+                <p className="text-lg">{t("no_results.title")}</p>
+                <p className="text-sm mt-2">{t("no_results.description")}</p>
               </div>
             ) : (
               <div className="overflow-x-auto rounded-md border border-edge">

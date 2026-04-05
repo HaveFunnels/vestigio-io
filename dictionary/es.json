@@ -785,7 +785,32 @@
 				"issues_found": "Problemas Encontrados",
 				"confidence": "Confianza"
 			},
-			"findings_heading": "Hallazgos — {name}"
+			"findings_heading": "Hallazgos — {name}",
+			"detail": {
+				"loading": "Cargando workspace...",
+				"not_found": "Workspace No Encontrado",
+				"not_found_description": "Ningún workspace coincide con el ID \"{id}\".",
+				"back_to_workspaces": "Volver a Workspaces",
+				"change_summary": "Resumen de Cambios",
+				"no_changes": "Sin cambios desde el último ciclo",
+				"preflight_checklist": "Checklist de Preflight",
+				"findings": "Hallazgos",
+				"no_findings": "Sin hallazgos en este workspace.",
+				"trust_strength": "Fortaleza de Confianza",
+				"structural": "Estructural",
+				"economic": "Económico",
+				"uncertainty_factors": "Factores de Incertidumbre",
+				"coherence": "Coherencia",
+				"coherence_score": "Puntaje de Coherencia",
+				"suppressed_by_pack": "Suprimido por pack de mayor prioridad",
+				"quick_stats": "Estadísticas Rápidas",
+				"negative_findings": "Hallazgos Negativos",
+				"positive_findings": "Hallazgos Positivos",
+				"avg_confidence": "Confianza Promedio",
+				"top_severity": "Mayor Severidad",
+				"readiness": { "ready": "Listo", "ready_with_risks": "Listo con Riesgos", "blocker": "Bloqueador" },
+				"trend": { "regressions": "{count} regresión(es)", "improvements": "{count} mejora(s)", "resolved": "{count} resuelto(s)", "stable": "estable", "mixed": "cambios mixtos", "no_significant_changes": "Sin cambios significativos" }
+			}
 		},
 		"chat": {
 			"title": "Pregunta a Vestigio",
@@ -1016,28 +1041,24 @@
 		"inventory": {
 			"title": "Inventario",
 			"subtitle": "Superficies normalizadas a lo largo de tu entorno comercial",
-			"cards": {
-				"total_surfaces": "Superficies Totales",
-				"live": "Activas",
-				"commercial": "Comerciales",
-				"with_findings": "Con Hallazgos"
-			},
-			"status": {
-				"live": "Activa",
-				"not_seen": "No vista",
-				"all": "Todos los Estados"
-			},
-			"type_filter": {
-				"all": "Todos los Tipos",
-				"commercial": "Comercial",
-				"support": "Soporte",
-				"policy": "Política",
-				"other": "Otro"
-			},
-			"empty": {
-				"title": "No se descubrieron superficies aún",
-				"description": "Instala el snippet de Vestigio para comenzar a recopilar datos de comportamiento e inventario de superficies."
-			}
+			"loading": "Cargando inventario...",
+			"from_last_period": "del último período",
+			"search_placeholder": "Buscar...",
+			"clear_filters": "Limpiar filtros",
+			"n_of_total": "{filtered} de {total} superficies",
+			"cards": { "total_surfaces": "Superficies Totales", "live": "Activas", "commercial": "Comerciales", "with_findings": "Con Hallazgos" },
+			"columns": { "http": "HTTP" },
+			"status": { "live": "Activa", "not_seen": "No vista", "down": "Caída", "all": "Todos los Estados" },
+			"type_filter": { "all": "Todos los Tipos", "commercial": "Comercial", "support": "Soporte", "policy": "Política", "other": "Otro" },
+			"http_status_filter": { "all": "Todos los Códigos HTTP" },
+			"findings_filter": { "all": "Todos", "with": "Con Hallazgos", "without": "Sin Hallazgos" },
+			"tier_filter": { "all": "Todos los Niveles", "critical": "Crítico", "high": "Alto", "medium": "Medio", "low": "Bajo" },
+			"response_time_filter": { "all": "Todos los Tiempos", "lt500": "< 500ms", "500_2000": "500ms - 2s", "gt2000": "> 2s" },
+			"discovery_source_filter": { "all": "Todas las Fuentes" },
+			"empty": { "title": "No se descubrieron superficies aún", "description": "Instala el snippet de Vestigio para comenzar a recopilar datos de comportamiento e inventario de superficies." },
+			"no_results": { "title": "Ninguna superficie coincide con los filtros", "description": "Intenta ajustar los filtros de arriba." },
+			"selection": { "n_selected": "{count} seleccionado(s)", "use_as_context": "Usar como Contexto", "clear": "Limpiar Selección" },
+			"drawer": { "title": "Detalles de Superficie", "url": "URL", "surface_title": "Título", "description": "Descripción", "type": "Tipo", "tier": "Nivel", "status": "Estado", "live": "Activa", "not_seen": "No Vista", "http_code": "Código HTTP", "sessions": "Sesiones", "findings": "Hallazgos", "response_time": "Tiempo de Respuesta", "last_checked": "Última Verificación", "never": "Nunca", "discovery_sources": "Fuentes de Descubrimiento" }
 		},
 		"maps": {
 			"title": "Mapas",

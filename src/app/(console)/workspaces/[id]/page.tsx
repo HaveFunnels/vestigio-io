@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
@@ -32,31 +33,10 @@ import type {
 // preflight checklist mode.
 // ──────────────────────────────────────────────
 
-const workspaceTypeLabels: Record<string, string> = {
-  preflight: "Scale Readiness",
-  revenue: "Revenue Integrity",
-  chargeback: "Chargeback Resilience",
-};
-
 const workspaceTypeColors: Record<string, string> = {
   preflight: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   revenue: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   chargeback: "bg-red-500/10 text-red-400 border-red-500/20",
-};
-
-const impactTypeLabels: Record<string, string> = {
-  revenue_loss: "Revenue Loss",
-  conversion_loss: "Conversion Loss",
-  chargeback_risk: "Chargeback Risk",
-  traffic_waste: "Traffic Waste",
-  lifetime_value_loss: "LTV Loss",
-};
-
-const packLabels: Record<string, string> = {
-  scale_readiness: "Scale",
-  revenue_integrity: "Revenue",
-  chargeback_resilience: "Chargeback",
-  saas_growth_readiness: "SaaS",
 };
 
 function formatCurrency(value: number): string {
@@ -72,13 +52,14 @@ export default function WorkspaceDetailPage({
 }) {
   const mcpData = useMcpData();
   const dataState = mcpData.workspaces.status !== "not_ready" ? mcpData.workspaces : loadWorkspaces();
+  const t = useTranslations("console.workspaces");
 
   return (
     <div className="p-6">
       <ConsoleState
         state={dataState}
-        loadingLabel="Loading workspace..."
-        emptyLabel="No workspaces available."
+        loadingLabel={t("detail.loading")}
+        emptyLabel={t("empty")}
       >
         {(workspaces) => {
           const workspace = workspaces.find((w) => w.id === params.id);
@@ -87,16 +68,16 @@ export default function WorkspaceDetailPage({
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="mb-3 text-4xl text-content-faint">&#8709;</div>
                 <h2 className="text-lg font-semibold text-content-secondary">
-                  Workspace Not Found
+                  {t("detail.not_found")}
                 </h2>
                 <p className="mt-1 text-sm text-content-muted">
-                  No workspace matches the ID &quot;{params.id}&quot;.
+                  {t("detail.not_found_description", { id: params.id })}
                 </p>
                 <Link
                   href="/app/workspaces"
                   className="mt-4 rounded-md border border-edge px-4 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-inset"
                 >
-                  Back to Workspaces
+                  {t("detail.back_to_workspaces")}
                 </Link>
               </div>
             );
@@ -114,6 +95,8 @@ export default function WorkspaceDetailPage({
 
 function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
   const router = useRouter();
+  const t = useTranslations("console.workspaces");
+  const tc = useTranslations("console.common");
   const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
 
   // Load change report for timeline
@@ -151,7 +134,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
   const findingColumns: Column<FindingProjection>[] = [
     {
       key: "title",
-      label: "Finding",
+      label: tc("columns.finding"),
       render: (row) => (
         <div>
           <div className="text-sm text-content-secondary">{row.title}</div>
@@ -163,17 +146,17 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
     },
     {
       key: "severity",
-      label: "Severity",
+      label: tc("columns.severity"),
       className: "w-24",
       render: (row) => <SeverityBadge value={row.severity} />,
     },
     {
       key: "impact",
-      label: "Impact",
+      label: tc("columns.impact"),
       className: "w-44",
       render: (row) =>
         row.polarity === "positive" ? (
-          <span className="text-xs text-emerald-400">Healthy</span>
+          <span className="text-xs text-emerald-400">{tc("healthy")}</span>
         ) : (
           <ImpactBadge
             min={row.impact.monthly_range.min}
@@ -183,13 +166,13 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
     },
     {
       key: "verification",
-      label: "Verification",
+      label: tc("columns.verification"),
       className: "w-28",
       render: (row) => <VerificationBadge value={row.verification_maturity} />,
     },
     {
       key: "change",
-      label: "Change",
+      label: tc("columns.change"),
       className: "w-28",
       render: (row) => <ChangeBadge value={row.change_class} />,
     },
@@ -202,7 +185,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
         href="/app/workspaces"
         className="inline-flex items-center gap-1 text-sm text-content-muted transition-colors hover:text-content-secondary"
       >
-        <span>&larr;</span> Workspaces
+        <span>&larr;</span> {t("title")}
       </Link>
 
       {/* ── Status Header ── */}
@@ -216,7 +199,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                   workspaceTypeColors[workspace.type] || "bg-zinc-500/10 text-content-muted border-zinc-500/20"
                 }`}
               >
-                {workspaceTypeLabels[workspace.type] || workspace.type}
+                {tc(`workspace_types.${workspace.type}`)}
               </span>
               <SeverityBadge value={workspace.decision_impact} />
               <WorkspaceChangeTrend summary={workspace.change_summary} />
@@ -224,19 +207,19 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
           </div>
           <div className="flex items-center gap-6 text-right">
             <div>
-              <div className="text-xs text-content-muted">Issues</div>
+              <div className="text-xs text-content-muted">{t("issues")}</div>
               <div className="text-lg font-bold text-content-secondary">
                 {workspace.summary.issue_count}
               </div>
             </div>
             <div>
-              <div className="text-xs text-content-muted">Monthly Loss</div>
+              <div className="text-xs text-content-muted">{t("monthly_loss")}</div>
               <div className="text-lg font-bold text-red-400">
                 {formatCurrency(workspace.summary.total_loss_mid)}
               </div>
             </div>
             <div>
-              <div className="text-xs text-content-muted">Confidence</div>
+              <div className="text-xs text-content-muted">{t("confidence")}</div>
               <div className="text-lg font-bold text-content-secondary">
                 {workspace.summary.confidence}%
               </div>
@@ -252,7 +235,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
           {/* Change Summary */}
           <section className="rounded-lg border border-edge bg-surface-card p-5">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
-              Change Summary
+              {t("detail.change_summary")}
             </h2>
             {workspace.change_summary ? (
               <>
@@ -263,7 +246,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-content-muted">
-                    No changes since last cycle
+                    {t("detail.no_changes")}
                   </p>
                 )}
               </>
@@ -277,7 +260,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
           {/* Findings (Table or Preflight Checklist) */}
           <section className="rounded-lg border border-edge bg-surface-card p-5">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
-              {isPreflight ? "Preflight Checklist" : "Findings"}
+              {isPreflight ? t("detail.preflight_checklist") : t("detail.findings")}
             </h2>
 
             {isPreflight && preflightReadiness ? (
@@ -292,7 +275,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                 data={workspace.findings}
                 onRowClick={(row) => setSelectedFinding(row)}
                 getRowKey={(row) => row.id}
-                emptyMessage="No findings in this workspace."
+                emptyMessage={t("detail.no_findings")}
               />
             )}
           </section>
@@ -304,16 +287,16 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
           {workspace.confidence_narrative && (
             <section className="rounded-lg border border-edge bg-surface-card p-5">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
-                Trust Strength
+                {t("detail.trust_strength")}
               </h2>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <ConfidenceBar
-                    label="Structural"
+                    label={t("detail.structural")}
                     level={workspace.confidence_narrative.structural_confidence}
                   />
                   <ConfidenceBar
-                    label="Economic"
+                    label={t("detail.economic")}
                     level={workspace.confidence_narrative.economic_confidence}
                   />
                 </div>
@@ -323,7 +306,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                 {workspace.confidence_narrative.uncertainty_factors.length > 0 && (
                   <div className="border-t border-edge pt-3">
                     <h3 className="mb-1.5 text-xs font-medium text-content-muted">
-                      Uncertainty Factors
+                      {t("detail.uncertainty_factors")}
                     </h3>
                     <ul className="space-y-1">
                       {workspace.confidence_narrative.uncertainty_factors.map(
@@ -347,13 +330,13 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
           {workspace.coherence && (
             <section className="rounded-lg border border-edge bg-surface-card p-5">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
-                Coherence
+                {t("detail.coherence")}
               </h2>
               <div className="space-y-3">
                 {/* Score bar */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-content-muted">Coherence Score</span>
+                    <span className="text-xs text-content-muted">{t("detail.coherence_score")}</span>
                     <span
                       className={`text-xs font-medium ${
                         workspace.coherence.coherence_score >= 70
@@ -402,7 +385,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-red-400">&#9888;</span>
                       <p className="text-xs text-red-300/90">
-                        Suppressed by higher-priority pack
+                        {t("detail.suppressed_by_pack")}
                       </p>
                     </div>
                   </div>
@@ -414,26 +397,26 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
           {/* Quick Stats Cards */}
           <section className="rounded-lg border border-edge bg-surface-card p-5">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
-              Quick Stats
+              {t("detail.quick_stats")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <StatCard
-                label="Negative Findings"
+                label={t("detail.negative_findings")}
                 value={negativeFindings.length}
                 color="text-red-400"
               />
               <StatCard
-                label="Positive Findings"
+                label={t("detail.positive_findings")}
                 value={positiveFindings.length}
                 color="text-emerald-400"
               />
               <StatCard
-                label="Avg Confidence"
+                label={t("detail.avg_confidence")}
                 value={`${avgConfidence}%`}
                 color="text-content-secondary"
               />
               <StatCard
-                label="Top Severity"
+                label={t("detail.top_severity")}
                 value={topSeverity}
                 color={
                   topSeverity === "critical"
@@ -475,22 +458,10 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 
 type PreflightReadiness = "ready" | "ready_with_risks" | "blocker";
 
-const readinessConfig: Record<
-  PreflightReadiness,
-  { label: string; style: string }
-> = {
-  ready: {
-    label: "Ready",
-    style: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-  },
-  ready_with_risks: {
-    label: "Ready with Risks",
-    style: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-  },
-  blocker: {
-    label: "Blocker",
-    style: "bg-red-500/10 text-red-400 border-red-500/30",
-  },
+const readinessStyles: Record<PreflightReadiness, string> = {
+  ready: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  ready_with_risks: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  blocker: "bg-red-500/10 text-red-400 border-red-500/30",
 };
 
 function computePreflightReadiness(
@@ -522,18 +493,19 @@ function PreflightChecklist({
   readiness: PreflightReadiness;
   onFindingClick: (f: FindingProjection) => void;
 }) {
-  const cfg = readinessConfig[readiness];
+  const t = useTranslations("console.workspaces");
+  const style = readinessStyles[readiness];
 
   return (
     <div className="space-y-4">
       {/* Readiness badge */}
       <div
-        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-semibold ${cfg.style}`}
+        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-semibold ${style}`}
       >
         {readiness === "ready" && <span className="mr-1.5">&#10003;</span>}
         {readiness === "ready_with_risks" && <span className="mr-1.5">&#9888;</span>}
         {readiness === "blocker" && <span className="mr-1.5">&#10007;</span>}
-        {cfg.label}
+        {t(`detail.readiness.${readiness}`)}
       </div>
 
       {/* Check items */}
@@ -612,18 +584,21 @@ function FindingDrawerContent({
   finding: FindingProjection;
   onDiscuss: () => void;
 }) {
+  const td = useTranslations("console.finding_drawer");
+  const tc = useTranslations("console.common");
+
   return (
     <div className="space-y-6">
       {/* Summary + badges */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          Summary
+          {td("summary")}
         </h3>
         <p className="text-sm text-content-secondary">{finding.cause}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {finding.polarity === "positive" ? (
             <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
-              Healthy
+              {tc("healthy")}
             </span>
           ) : (
             <SeverityBadge value={finding.severity} />
@@ -631,10 +606,10 @@ function FindingDrawerContent({
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
           <span className="text-xs text-content-muted">
-            Confidence {finding.confidence}%
+            {tc("confidence_label", { value: finding.confidence })}
           </span>
           <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
-            {packLabels[finding.pack] || finding.pack}
+            {tc(`pack_labels.${finding.pack}`)}
           </span>
           {finding.surface && (
             <code className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
@@ -650,7 +625,7 @@ function FindingDrawerContent({
           <div className="rounded-md border border-amber-900/50 bg-amber-500/5 px-4 py-3">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-amber-500 text-xs font-semibold">
-                Suppressed
+                {td("suppressed")}
               </span>
               <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-400">
                 {finding.suppression_context.visibility}
@@ -661,8 +636,7 @@ function FindingDrawerContent({
             </p>
             {finding.suppression_context.confidence_reduction > 0 && (
               <p className="mt-1 text-xs text-amber-400/60">
-                Confidence reduced by{" "}
-                {finding.suppression_context.confidence_reduction} points
+                {td("confidence_reduced", { value: finding.suppression_context.confidence_reduction })}
               </p>
             )}
           </div>
@@ -673,7 +647,7 @@ function FindingDrawerContent({
       {finding.effect && (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-            Effect
+            {td("effect")}
           </h3>
           <p className="text-sm text-content-muted">{finding.effect}</p>
         </section>
@@ -683,7 +657,7 @@ function FindingDrawerContent({
       {finding.root_cause && (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-            Root Cause
+            {td("root_cause")}
           </h3>
           <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
             <span className="text-sm font-medium text-content-secondary">
@@ -697,18 +671,18 @@ function FindingDrawerContent({
       {finding.polarity !== "positive" && (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-            Impact Breakdown
+            {td("impact_breakdown")}
           </h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
-              <span className="text-xs text-content-muted">Monthly Range</span>
+              <span className="text-xs text-content-muted">{td("monthly_range")}</span>
               <ImpactBadge
                 min={finding.impact.monthly_range.min}
                 max={finding.impact.monthly_range.max}
               />
             </div>
             <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
-              <span className="text-xs text-content-muted">Midpoint</span>
+              <span className="text-xs text-content-muted">{td("midpoint")}</span>
               <ImpactBadge
                 min={finding.impact.midpoint}
                 max={finding.impact.midpoint}
@@ -716,10 +690,9 @@ function FindingDrawerContent({
               />
             </div>
             <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
-              <span className="text-xs text-content-muted">Impact Type</span>
+              <span className="text-xs text-content-muted">{td("impact_type")}</span>
               <span className="text-xs text-content-secondary">
-                {impactTypeLabels[finding.impact.impact_type] ||
-                  finding.impact.impact_type}
+                {tc(`impact_types.${finding.impact.impact_type}`)}
               </span>
             </div>
           </div>
@@ -730,23 +703,23 @@ function FindingDrawerContent({
       {finding.evidence_quality && (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-            Evidence Quality
+            {td("evidence_quality")}
           </h3>
           <div className="space-y-2 rounded-md border border-edge bg-surface-card px-4 py-3">
             <EvidenceQualityBar
-              label="Source Reliability"
+              label={td("source_reliability")}
               value={finding.evidence_quality.source_reliability}
             />
             <EvidenceQualityBar
-              label="Completeness"
+              label={td("completeness")}
               value={finding.evidence_quality.completeness}
             />
             <EvidenceQualityBar
-              label="Recency"
+              label={td("recency")}
               value={finding.evidence_quality.recency}
             />
             <EvidenceQualityBar
-              label="Corroboration"
+              label={td("corroboration")}
               value={finding.evidence_quality.corroboration}
             />
           </div>
@@ -756,7 +729,7 @@ function FindingDrawerContent({
       {/* Verification Lifecycle Panel */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          Verification
+          {td("verification")}
         </h3>
         <VerificationPanel
           maturity={finding.verification_maturity}
@@ -768,7 +741,7 @@ function FindingDrawerContent({
           reTriggerReason={null}
           decisionStatus={null}
           onRequestVerification={() =>
-            toast.success("Verification requested")
+            toast.success(td("verification_requested"))
           }
         />
       </section>
@@ -782,7 +755,7 @@ function FindingDrawerContent({
       {/* Reasoning */}
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          {finding.polarity === "positive" ? "Why This Is Good" : "Reasoning"}
+          {finding.polarity === "positive" ? td("why_good") : td("reasoning")}
         </h3>
         <p className="text-sm leading-relaxed text-content-muted">
           {finding.reasoning}
@@ -793,15 +766,14 @@ function FindingDrawerContent({
       {finding.truth_context && finding.truth_context.has_contradictions && (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-500">
-            Evidence Contradictions
+            {td("evidence_contradictions")}
           </h3>
           <div className="rounded-md border border-amber-900/50 bg-amber-500/5 px-4 py-3">
             <p className="text-xs text-amber-300">
-              {finding.truth_context.contradiction_count} contradiction
-              {finding.truth_context.contradiction_count > 1 ? "s" : ""}{" "}
-              detected in backing evidence. Confidence adjusted by{" "}
-              {finding.truth_context.truth_confidence_delta > 0 ? "+" : ""}
-              {finding.truth_context.truth_confidence_delta}%.
+              {td("contradictions_detected", {
+                count: finding.truth_context.contradiction_count,
+                delta: `${finding.truth_context.truth_confidence_delta > 0 ? "+" : ""}${finding.truth_context.truth_confidence_delta}`,
+              })}
             </p>
           </div>
         </section>
@@ -814,7 +786,7 @@ function FindingDrawerContent({
             onClick={onDiscuss}
             className="w-full rounded-md border border-emerald-800/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400 transition-colors hover:bg-emerald-500/20"
           >
-            Discuss This Finding
+            {td("discuss_finding")}
           </button>
         </section>
       )}
@@ -831,6 +803,8 @@ function WorkspaceChangeTrend({
 }: {
   summary: WorkspaceProjection["change_summary"];
 }) {
+  const t = useTranslations("console.workspaces");
+
   if (!summary) return null;
 
   const config: Record<string, { icon: string; color: string; label: string }> =
@@ -838,22 +812,18 @@ function WorkspaceChangeTrend({
       degrading: {
         icon: "\u2191",
         color: "text-red-400",
-        label: `${summary.regression_count} regression${
-          summary.regression_count !== 1 ? "s" : ""
-        }`,
+        label: t("detail.trend.regressions", { count: summary.regression_count }),
       },
       improving: {
         icon: "\u2193",
         color: "text-emerald-400",
-        label: `${summary.improvement_count} improvement${
-          summary.improvement_count !== 1 ? "s" : ""
-        }`,
+        label: t("detail.trend.improvements", { count: summary.improvement_count }),
       },
-      stable: { icon: "\u2014", color: "text-content-muted", label: "stable" },
+      stable: { icon: "\u2014", color: "text-content-muted", label: t("detail.trend.stable") },
       mixed: {
         icon: "\u2195",
         color: "text-amber-400",
-        label: "mixed changes",
+        label: t("detail.trend.mixed"),
       },
     };
 
@@ -874,29 +844,29 @@ function TrendHeadline({
 }: {
   summary: NonNullable<WorkspaceProjection["change_summary"]>;
 }) {
+  const t = useTranslations("console.workspaces");
+
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
       {summary.regression_count > 0 && (
         <span className="text-red-400">
-          {summary.regression_count} regression
-          {summary.regression_count !== 1 ? "s" : ""}
+          {t("detail.trend.regressions", { count: summary.regression_count })}
         </span>
       )}
       {summary.improvement_count > 0 && (
         <span className="text-emerald-400">
-          {summary.improvement_count} improvement
-          {summary.improvement_count !== 1 ? "s" : ""}
+          {t("detail.trend.improvements", { count: summary.improvement_count })}
         </span>
       )}
       {summary.resolved_count > 0 && (
         <span className="text-emerald-400">
-          {summary.resolved_count} resolved
+          {t("detail.trend.resolved", { count: summary.resolved_count })}
         </span>
       )}
       {summary.regression_count === 0 &&
         summary.improvement_count === 0 &&
         summary.resolved_count === 0 && (
-          <span className="text-content-muted">No significant changes</span>
+          <span className="text-content-muted">{t("detail.trend.no_significant_changes")}</span>
         )}
     </div>
   );

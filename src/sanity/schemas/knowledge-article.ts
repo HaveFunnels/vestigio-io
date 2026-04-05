@@ -29,13 +29,22 @@ const knowledgeArticle = {
 			type: "string",
 			options: {
 				list: [
+					{ title: "Get Started", value: "get_started" },
 					{ title: "Concept", value: "concept" },
 					{ title: "Pack", value: "pack" },
 					{ title: "Finding", value: "finding" },
+					{ title: "API Reference", value: "api" },
 					{ title: "Guide", value: "guide" },
 				],
 			},
 			validation: (Rule: any) => Rule.required(),
+		},
+		{
+			name: "order",
+			title: "Sort Order",
+			description: "Lower numbers appear first within the same category.",
+			type: "number",
+			initialValue: 100,
 		},
 		{
 			name: "finding_key",
@@ -70,17 +79,28 @@ const knowledgeArticle = {
 			type: "datetime",
 		},
 	],
+	orderings: [
+		{
+			title: "Category, then Order",
+			name: "categoryOrder",
+			by: [
+				{ field: "category", direction: "asc" },
+				{ field: "order", direction: "asc" },
+			],
+		},
+	],
 	preview: {
 		select: {
 			title: "title",
 			category: "category",
 			finding_key: "finding_key",
+			order: "order",
 		},
 		prepare(selection: any) {
-			const { title, category, finding_key } = selection;
+			const { title, category, finding_key, order } = selection;
 			const subtitle = finding_key
 				? `${category} — ${finding_key}`
-				: category;
+				: `${category} (${order || 100})`;
 			return { title, subtitle };
 		},
 	},

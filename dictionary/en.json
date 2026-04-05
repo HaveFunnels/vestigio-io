@@ -821,6 +821,7 @@
 				"search_placeholder": "Search articles...",
 				"read_more": "Read more",
 				"empty": "No articles published yet. Documentation will appear here as it's written.",
+				"search_results": "Search Results",
 				"no_results": "No articles match your search.",
 				"article_not_found": "Article not found.",
 				"back": "Knowledge Base",

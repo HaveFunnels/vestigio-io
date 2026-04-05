@@ -35,6 +35,7 @@ const kbData = `{
   title,
   slug,
   category,
+  "order": coalesce(order, 100),
   finding_key,
   root_cause_key,
   excerpt,
@@ -42,7 +43,7 @@ const kbData = `{
   publishedAt
 }`;
 
-export const kbAllQuery = groq`*[_type == "knowledgeArticle"] | order(category asc, title asc) ${kbData}`;
+export const kbAllQuery = groq`*[_type == "knowledgeArticle"] | order(category asc, order asc, title asc) ${kbData}`;
 
 export const kbBySlugQuery = groq`*[_type == "knowledgeArticle" && slug.current == $slug][0] ${kbData}`;
 

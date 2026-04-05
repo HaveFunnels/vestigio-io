@@ -11,11 +11,17 @@ import ConsoleState from "@/components/console/ConsoleState";
 import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ImpactBadge from "@/components/console/ImpactBadge";
-import { loadAllMaps } from "@/lib/console-data";
+import VerificationBadge from "@/components/console/VerificationBadge";
+import ChangeBadge from "@/components/console/ChangeBadge";
+import VerificationPanel from "@/components/console/VerificationPanel";
+import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
+import { loadAllMaps, loadFindings } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { useTranslations } from "next-intl";
+import toast from "react-hot-toast";
 import type { MapDefinition, MapNode } from "../../../../packages/maps";
+import type { FindingProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
 // Format + Style
@@ -160,54 +166,106 @@ function NodeTooltip({ tooltip }: { tooltip: TooltipState }) {
 // Drawer Contents
 // ──────────────────────────────────────────────
 
-function FindingDrawerContent({ node }: { node: MapNode }) {
-  const t = useTranslations("console.maps");
-  const reasoning = typeof node.metadata.reasoning === "string" ? node.metadata.reasoning : null;
-  const description = typeof node.metadata.description === "string" ? node.metadata.description : null;
+/** Rich finding drawer — uses full FindingProjection when available (same as /analysis) */
+function RichFindingDrawer({ node, finding }: { node: MapNode; finding?: FindingProjection | null }) {
+  const td = useTranslations("console.finding_drawer");
+  const tc = useTranslations("console.common");
+  const tm = useTranslations("console.maps");
+
+  if (!finding) {
+    // Fallback for nodes without matching finding projection
+    return (
+      <div className="space-y-6">
+        <section>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {node.severity && <SeverityBadge value={node.severity} />}
+            {node.pack && <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{node.pack}</span>}
+          </div>
+        </section>
+        {node.impact && (
+          <section>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{tm("drawer.impactBreakdown")}</h3>
+            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+              <ImpactBadge min={node.impact.min} max={node.impact.max} />
+            </div>
+          </section>
+        )}
+      </div>
+    );
+  }
+
+  const packLabels: Record<string, string> = {
+    scale_readiness: tc("pack_labels.scale_readiness"),
+    revenue_integrity: tc("pack_labels.revenue_integrity"),
+    chargeback_resilience: tc("pack_labels.chargeback_resilience"),
+    saas_growth_readiness: tc("pack_labels.saas_growth_readiness"),
+  };
+  const impactTypeLabels: Record<string, string> = {
+    revenue_loss: tc("impact_types.revenue_loss"),
+    conversion_loss: tc("impact_types.conversion_loss"),
+    chargeback_risk: tc("impact_types.chargeback_risk"),
+    traffic_waste: tc("impact_types.traffic_waste"),
+    lifetime_value_loss: tc("impact_types.lifetime_value_loss"),
+    none: tc("impact_types.none"),
+  };
 
   return (
     <div className="space-y-6">
+      {/* Summary */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.summary")}</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("summary")}</h3>
+        <p className="text-sm text-content-secondary">{finding.cause}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          {node.severity && <SeverityBadge value={node.severity} />}
-          {node.metadata.confidence != null && <span className="text-xs text-content-muted">{t("drawer.confidence", { value: String(node.metadata.confidence) })}</span>}
-          {node.pack && <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{node.pack}</span>}
-          {node.metadata.surface != null && <code className="rounded border border-edge px-2 py-0.5 text-xs text-content-faint">{String(node.metadata.surface)}</code>}
+          <SeverityBadge value={finding.severity} />
+          <VerificationBadge value={finding.verification_maturity} />
+          {finding.change_class && <ChangeBadge value={finding.change_class} />}
+          <span className="text-xs text-content-muted">{tc("confidence_label", { value: finding.confidence })}</span>
+          <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{packLabels[finding.pack] || finding.pack}</span>
         </div>
       </section>
 
-      {/* Reasoning — shown if available in metadata */}
-      {reasoning && (
+      {/* Root Cause */}
+      {finding.root_cause && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.reasoning")}</h3>
-          <p className="text-sm leading-relaxed text-content-muted">{reasoning}</p>
-        </section>
-      )}
-
-      {/* Description — shown if available in metadata */}
-      {description && (
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.description")}</h3>
-          <p className="text-sm leading-relaxed text-content-muted">{description}</p>
-        </section>
-      )}
-
-      {node.impact && (
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.impactBreakdown")}</h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
-              <span className="text-xs text-content-muted">{t("drawer.monthlyRange")}</span>
-              <ImpactBadge min={node.impact.min} max={node.impact.max} />
-            </div>
-            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
-              <span className="text-xs text-content-muted">{t("drawer.midpoint")}</span>
-              <ImpactBadge min={node.impact.midpoint} max={node.impact.midpoint} compact />
-            </div>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("root_cause")}</h3>
+          <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
+            <span className="text-sm font-medium text-content-secondary">{finding.root_cause}</span>
           </div>
         </section>
       )}
+
+      {/* Impact */}
+      <section>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("impact_breakdown")}</h3>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+            <span className="text-xs text-content-muted">{td("monthly_range")}</span>
+            <ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} />
+          </div>
+          <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+            <span className="text-xs text-content-muted">{td("impact_type")}</span>
+            <span className="text-xs text-content-secondary">{impactTypeLabels[finding.impact.impact_type] || finding.impact.impact_type}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Verification */}
+      <section>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("verification")}</h3>
+        <VerificationPanel
+          maturity={finding.verification_maturity} method={finding.verification_method}
+          verifiedAt={null} expiresAt={null} confidenceAtVerification={null}
+          currentConfidence={null} reTriggerReason={null} decisionStatus={null}
+          onRequestVerification={() => toast.success(td("verification_requested"))}
+        />
+      </section>
+      <VerificationSufficiencyWarning severity={finding.severity} maturity={finding.verification_maturity} />
+
+      {/* Reasoning */}
+      <section>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("reasoning")}</h3>
+        <p className="text-sm leading-relaxed text-content-muted">{finding.reasoning}</p>
+      </section>
     </div>
   );
 }
@@ -364,9 +422,20 @@ export default function MapsPage() {
 
 function MapsContent({ maps }: { maps: MapDefinition[] }) {
   const t = useTranslations("console.maps");
+  const mcpData = useMcpData();
   const [activeMap, setActiveMap] = useState<MapDefinition>(maps[0]);
   const [selectedNode, setSelectedNode] = useState<MapNode | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState>({ visible: false, x: 0, y: 0, node: null });
+
+  // Build finding lookup: node ID "finding_{inference_key}" → FindingProjection
+  const findingLookup = useMemo(() => {
+    const map = new Map<string, FindingProjection>();
+    const findingsState = mcpData.findings.status === "ready" ? mcpData.findings.data : [];
+    for (const f of findingsState) {
+      map.set(`finding_${f.inference_key}`, f);
+    }
+    return map;
+  }, [mcpData.findings]);
 
   const nodes = useMemo(() => toReactFlowNodes(activeMap), [activeMap]);
   const edges = useMemo(() => toReactFlowEdges(activeMap), [activeMap]);
@@ -410,7 +479,7 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
     : "";
 
   const drawerContent = selectedNode
-    ? selectedNode.type === "finding" ? <FindingDrawerContent node={selectedNode} />
+    ? selectedNode.type === "finding" ? <RichFindingDrawer node={selectedNode} finding={findingLookup.get(selectedNode.id)} />
     : selectedNode.type === "action" ? <ActionDrawerContent node={selectedNode} />
     : selectedNode.type === "root_cause" ? <RootCauseDrawerContent node={selectedNode} />
     : null
@@ -420,13 +489,32 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
     <div className="flex h-full flex-col">
       {/* Keyframes for node entrance animation */}
       <style>{`
+        /* Hide connection handle dots */
+        .react-flow__handle { opacity: 0 !important; width: 1px !important; height: 1px !important; }
+
+        /* Node entrance: staggered fade + slide from left */
         .map-node-enter {
           opacity: 0;
-          animation: mapNodeFadeIn 0.4s ease-out forwards;
+          animation: mapNodeEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        @keyframes mapNodeFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        @keyframes mapNodeEnter {
+          from { opacity: 0; transform: translateX(-12px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Edge drawing: stroke draws in progressively */
+        .react-flow__edge path {
+          stroke-dasharray: 800;
+          stroke-dashoffset: 800;
+          animation: edgeDraw 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+        }
+        .react-flow__edge.animated path {
+          stroke-dasharray: 5 5 !important;
+          stroke-dashoffset: 0 !important;
+          animation: none !important;
+        }
+        @keyframes edgeDraw {
+          to { stroke-dashoffset: 0; }
         }
       `}</style>
 

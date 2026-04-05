@@ -65,7 +65,7 @@ function FilterDropdown<T extends string>({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary transition-colors hover:bg-surface-card-hover"
+        className="flex items-center gap-2 rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap transition-colors hover:bg-surface-card-hover"
       >
         <span>{activeLabel}</span>
         <svg
@@ -89,7 +89,7 @@ function FilterDropdown<T extends string>({
                 onChange(opt.value);
                 setOpen(false);
               }}
-              className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-card-hover ${
+              className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs transition-colors hover:bg-surface-card-hover ${
                 opt.value === value ? "text-content" : "text-content-secondary"
               }`}
             >
@@ -627,7 +627,7 @@ export default function InventoryPage() {
               onClear={clearSelection}
             />
 
-            <div className="flex items-center gap-3">
+            <div className="mb-4 flex flex-wrap items-center gap-3">
               <FilterDropdown
                 value={liveFilter}
                 onChange={setLiveFilter}
@@ -699,7 +699,7 @@ export default function InventoryPage() {
                 placeholder={t("search_placeholder")}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary placeholder:text-content-faint transition-colors focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+                className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap placeholder:text-content-faint transition-colors focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
               />
               {(liveFilter !== "all" || typeFilter !== "all" || httpStatusFilter !== "all" || hasFindingsFilter !== "all" || tierFilter !== "all" || responseTimeFilter !== "all" || discoverySourceFilter !== "all" || searchText) && (
                 <button

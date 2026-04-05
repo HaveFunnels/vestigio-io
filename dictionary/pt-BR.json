@@ -748,7 +748,7 @@
 					"gt50k": "> $50k"
 				},
 				"change_class": {
-					"label": "Mudan��as",
+					"label": "Mudanças",
 					"all": "Todas as Mudanças",
 					"new_issue": "Novo",
 					"regression": "Piorou",

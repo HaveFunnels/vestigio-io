@@ -74,6 +74,7 @@ model User {
   subscriptionId        String?         @unique @map(name: "subscription_id")
   priceId               String?         @map(name: "price_id")
   currentPeriodEnd      DateTime?       @map(name: "current_period_end")
+  locale                String?         @default("en") // en | de | pt-BR | es
   createdAt             DateTime        @default(now())
   accounts              Account[]
   sessions              Session[]

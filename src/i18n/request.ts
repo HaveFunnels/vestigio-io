@@ -6,15 +6,17 @@ import { SUPPORTED_LOCALES } from "./supported-locales";
 
 export default getRequestConfig(async () => {
 	const cookieStore = await cookies();
-	const requestedLocale = cookieStore.get("locale")?.value || "";
+	const cookieLocale = cookieStore.get("locale")?.value || "";
 
-	let locale = "en"; // Default locale
+	// Priority: cookie (set by language selector) > default
+	// The cookie is kept in sync with the DB by the settings page.
+	let locale = "en";
 
 	if (
 		integrations.isI18nEnabled &&
-		SUPPORTED_LOCALES.includes(requestedLocale)
+		SUPPORTED_LOCALES.includes(cookieLocale)
 	) {
-		locale = requestedLocale;
+		locale = cookieLocale;
 	}
 
 	const defaultMessages = (await import(`../../dictionary/en.json`)).default;

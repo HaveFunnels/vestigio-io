@@ -222,6 +222,7 @@ export const authOptions: NextAuthOptions = {
 					hasOrganization: !!membership,
 					picture: session?.user?.image ?? token.picture,
 					image: session?.user?.image ?? token.image,
+					locale: session?.user?.locale ?? token.locale,
 				};
 			}
 
@@ -243,6 +244,7 @@ export const authOptions: NextAuthOptions = {
 					role: user.role,
 					picture: user.image,
 					image: user.image,
+					locale: user.locale || "en",
 					// Sensitive billing fields stripped from JWT
 					// Access via API when needed, not stored in client token
 				};
@@ -261,6 +263,7 @@ export const authOptions: NextAuthOptions = {
 						isImpersonating: token.isImpersonating ?? false,
 						role: token.role,
 						image: token.picture,
+						locale: token.locale ?? "en",
 						// Billing fields not exposed in session
 					},
 				};

@@ -27,6 +27,12 @@ export function LanguageSwitcher() {
 		setIsOpen(false);
 		setSelectedLangCode(code);
 		switchLanguage(code);
+		// Best-effort persist to user profile in DB
+		fetch("/api/user/update", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ locale: code }),
+		}).catch(() => {});
 		router.refresh();
 	}
 

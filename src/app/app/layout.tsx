@@ -3,6 +3,7 @@ import { McpDataProvider, type McpDataSnapshot } from "@/components/app/McpDataP
 import { resolveOrgContext } from "@/libs/resolve-org";
 import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps } from "@/lib/console-data";
 import { AppProviders } from "./providers";
+import { syncUserLocale } from "@/libs/sync-locale";
 
 export const metadata = {
 	title: "Vestigio",
@@ -10,6 +11,10 @@ export const metadata = {
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
 	const orgCtx = await resolveOrgContext();
+
+	// Sync the user's persisted locale preference from DB → cookie
+	// so the i18n middleware picks it up on subsequent requests.
+	await syncUserLocale();
 
 	// Auto-bootstrap: load persisted evidence into MCP server singleton
 	// so Analysis / Actions / Maps / Chat pages render data on first visit.

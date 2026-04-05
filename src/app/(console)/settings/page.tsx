@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
 import { SUPPORTED_LANGUAGES } from "@/i18n/supported-locales";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -71,6 +72,7 @@ export default function SettingsPage() {
 function LanguageSelector() {
   const t = useTranslations("console.settings.language");
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [selectedCode, setSelectedCode] = useState("en");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -84,10 +86,23 @@ function LanguageSelector() {
 
   const selectedLang = SUPPORTED_LANGUAGES.find((l) => l.code === selectedCode);
 
-  function handleSelect(code: string) {
+  async function handleSelect(code: string) {
     setSelectedCode(code);
     setIsOpen(false);
+    // 1. Persist cookie (immediate, used by i18n middleware)
     switchLanguage(code);
+    // 2. Persist to user profile in DB
+    try {
+      await fetch("/api/user/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale: code }),
+      });
+      // 3. Update NextAuth session so JWT carries the new locale
+      await updateSession({ user: { locale: code } });
+    } catch {
+      // Cookie is already set — DB save is best-effort
+    }
     router.refresh();
   }
 

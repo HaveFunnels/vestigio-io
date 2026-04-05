@@ -36,7 +36,12 @@ export default function ChatPage() {
 
   // ── State ──────────────────────────────────
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("vestigio_active_conv") || null;
+    }
+    return null;
+  });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selectedModel, setSelectedModel] = useState<ModelId>("sonnet_4_6");
   const [usage, setUsage] = useState<UsageState | null>(null);
@@ -130,10 +135,25 @@ export default function ChatPage() {
     return [{ type: "markdown", content }];
   }
 
+  // ── Persist active conversation ID ─────────
+  useEffect(() => {
+    if (activeConversationId) {
+      sessionStorage.setItem("vestigio_active_conv", activeConversationId);
+    } else {
+      sessionStorage.removeItem("vestigio_active_conv");
+    }
+  }, [activeConversationId]);
+
   // ── Init ───────────────────────────────────
   useEffect(() => {
     fetchUsage();
     fetchConversations();
+    // Restore active conversation if returning from another tab
+    const stored = sessionStorage.getItem("vestigio_active_conv");
+    if (stored && messages.length === 0) {
+      loadConversation(stored);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Read URL context params and auto-send ──

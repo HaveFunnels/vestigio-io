@@ -34,7 +34,7 @@ import { createLedgerEntry, type ClaudeUsageReport } from '../../platform/token-
 import { getOrgMemory, updateMemoryFromTurn, buildMemoryContext } from './conversation-memory';
 import { fastGuard } from './fast-guard';
 
-const MAX_TOOL_ROUNDS = 5;
+const MAX_TOOL_ROUNDS = 8;
 const MAX_VERIFICATION_CALLS = 1;
 const MAX_TOTAL_INPUT_CHARS = 30_000; // Hard cap: message + files + conversation context
 
@@ -244,7 +244,7 @@ export async function executePipeline(
 
     try {
       const result = await callModel(modelId, currentMessages, {
-        max_tokens: 2048,
+        max_tokens: 4096,
         temperature: 0.3,
         system: systemPrompt as any,
         tools,
@@ -325,6 +325,31 @@ export async function executePipeline(
     }
   }
 
+  // ── Safety: if tool rounds exhausted with no text, ask for final output ──
+  if (!finalText.trim() && allToolCalls.length > 0 && !options?.signal?.aborted) {
+    try {
+      const followUp = await callModel(modelId, [
+        ...currentMessages,
+        { role: 'user', content: 'Now produce the final response using all the data you gathered from the tools above.' },
+      ], {
+        max_tokens: 4096,
+        temperature: 0.3,
+        system: systemPrompt as any,
+      });
+      coreTokens.input += followUp.usage.input_tokens;
+      coreTokens.output += followUp.usage.output_tokens;
+      recordToLedger(modelId, 'core_chat', followUp.usage, request, requestId);
+      for (const block of followUp.content) {
+        if (block.type === 'text') {
+          finalText += block.text;
+          callbacks?.onTextDelta?.(block.text);
+        }
+      }
+    } catch {
+      // Best-effort — if this fails, the empty response will be returned
+    }
+  }
+
   // ── 7. Output Classifier (Haiku) — FAIL-CLOSED ──
   if (options?.signal?.aborted) {
     return buildErrorResponse('cancelled', 'Request cancelled.', request, pipelineStart, requestId, guardTokens);
@@ -375,17 +400,11 @@ export async function executePipeline(
   }
 
   if (!classifierResult.safe) {
-    // If all issues are minor (just "unparseable"), pass through with warning
-    const isCritical = classifierResult.issues.some((i) =>
-      i.includes('hallucination') || i.includes('leakage') || i.includes('off-topic'),
-    );
-    if (isCritical) {
-      responseText = 'I can only discuss your business audit data. Try asking about your revenue, risks, or what to fix first.';
-      console.warn(`[llm:classifier] ${requestId} flagged:`, classifierResult.issues);
-    } else if (classifierResult.sanitized_response) {
-      responseText = classifierResult.sanitized_response;
-    }
-    // Non-critical issues (unparseable, tone) — pass through the original
+    // Log classifier findings but do NOT replace the response text.
+    // The response was already streamed to the user — replacing it only
+    // corrupts the saved version while the user already saw the original.
+    // Only the canary check above (real prompt leakage) replaces text.
+    console.warn(`[llm:classifier] ${requestId} flagged (non-blocking):`, classifierResult.issues);
   }
 
   // ── 8. Update cross-conversation memory ─────

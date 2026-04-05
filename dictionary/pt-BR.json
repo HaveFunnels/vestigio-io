@@ -1266,7 +1266,9 @@
 			"business": "Negócios",
 			"growth": "Crescimento",
 			"support": "Suporte",
-			"observability": "Observabilidade"
+			"observability": "Observabilidade",
+			"add_new_domain": "Adicionar novo domínio",
+			"upgrade_to_add_domains": "Faça upgrade do plano para adicionar mais domínios"
 		},
 		"settings": {
 			"title": "Configurações",

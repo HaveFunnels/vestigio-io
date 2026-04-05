@@ -43,6 +43,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 		orgName: orgCtx.orgName,
 		envId: orgCtx.envId,
 		domain: orgCtx.domain,
+		environments: orgCtx.environments,
+		maxEnvironments: orgCtx.maxEnvironments,
 	};
 
 	return (

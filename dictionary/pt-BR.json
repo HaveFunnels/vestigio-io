@@ -808,6 +808,32 @@
 				"confidence": "Confiança"
 			},
 			"findings_heading": "Descobertas — {name}",
+			"selected": "{count} selecionado(s)",
+			"use_as_context": "Usar como Contexto",
+			"clear": "Limpar",
+			"view_details": "Ver detalhes",
+			"structural": "Estrutural",
+			"economic": "Econômico",
+			"types": {
+				"preflight": "Prontidão para Escalar",
+				"revenue": "Integridade de Receita",
+				"chargeback": "Resiliência de Chargeback",
+				"first_impression": "Receita de Primeira Impressão",
+				"action_value": "Mapa de Valor de Ações",
+				"acquisition_integrity": "Integridade de Aquisição",
+				"mobile_revenue": "Exposição de Receita Mobile",
+				"friction_tax": "Imposto de Fricção",
+				"trust_gap": "Gap de Confiança e Receita",
+				"path_efficiency": "Eficiência do Caminho"
+			},
+			"trends": {
+				"regressions": "{count} regressão",
+				"regressions_plural": "{count} regressões",
+				"improvements": "{count} melhoria",
+				"improvements_plural": "{count} melhorias",
+				"stable": "estável",
+				"mixed": "mudanças mistas"
+			},
 			"detail": {
 				"loading": "Carregando workspace...",
 				"not_found": "Workspace Não Encontrado",
@@ -916,6 +942,13 @@
 					"title": "Landing Page vs App Real",
 					"description": "Compare o que sua landing page promete com o que o app entrega."
 				}
+			},
+			"playbook_prompts": {
+				"revenue_leak_full_audit": "Faça uma análise completa de vazamento de receita. Mostre cada descoberta que causa perda de receita, ranqueada por impacto mensal em dólares do maior para o menor. Para as 5 principais, explique a causa raiz e quanto corrigir cada uma recuperaria. Depois mostre a perda mensal combinada total e a recuperação estimada se eu corrigir as 3 principais.",
+				"conversion_bottleneck": "Mapeie meu funil de conversão do landing até a compra/cadastro. Em cada etapa, mostre quais descobertas criam fricção. Onde está a maior queda? Qual é a causa raiz dessa queda? Se eu pudesse corrigir apenas uma coisa para melhorar a conversão, o que deveria ser e quanto impactaria?",
+				"trust_signal_audit": "Avalie os sinais de confiança do meu site nestas dimensões: SSL e selos de segurança, avaliações e depoimentos, informações da empresa (sobre, equipe, endereço), opções de contato (telefone, chat, email), políticas (devoluções, privacidade, termos), confiança no pagamento (logos, garantias), prova social (número de clientes, menções na mídia). Para cada dimensão, dê nota de 1-10 e explique o que falta. Qual é o score geral de confiança e o que melhoraria mais rápido?",
+				"executive_summary": "Crie um resumo executivo adequado para uma reunião de diretoria. Inclua: receita mensal total em risco (soma de todas as descobertas), top 3 problemas críticos com impacto em dólares, roadmap de prioridades para 90 dias (semana 1-2: quick wins, mês 1: correções críticas, mês 2-3: melhorias estratégicas), ROI esperado do plano completo de remediação e um score de saúde único de 0-100 para o negócio.",
+				"cross_pack_correlation": "Analise descobertas de TODOS os packs (integridade de receita, prontidão para escalar, resiliência de chargeback). Encontre correlações: Quais descobertas de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de receita também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando descobertas conectadas entre packs com impacto combinado."
 			}
 		},
 		"actions": {
@@ -1312,42 +1345,6 @@
 				"description": "Escolha o idioma de exibição da plataforma.",
 				"current": "Idioma atual",
 				"select": "Selecionar idioma"
-			}
-		},
-		"workspaces": {
-			"title": "Workspaces",
-			"subtitle": "Visões de análise contextual com impacto quantificado.",
-			"loading": "Carregando workspaces...",
-			"empty": "Nenhum workspace disponível.",
-			"selected": "{count} selecionado(s)",
-			"use_as_context": "Usar como Contexto",
-			"clear": "Limpar",
-			"view_details": "Ver detalhes",
-			"monthly_loss": "Perda Mensal",
-			"issues": "Problemas",
-			"confidence": "Confiança",
-			"top_issue": "Principal Problema",
-			"structural": "Estrutural",
-			"economic": "Econômico",
-			"types": {
-				"preflight": "Prontidão para Escalar",
-				"revenue": "Integridade de Receita",
-				"chargeback": "Resiliência de Chargeback",
-				"first_impression": "Receita de Primeira Impressão",
-				"action_value": "Mapa de Valor de Ações",
-				"acquisition_integrity": "Integridade de Aquisição",
-				"mobile_revenue": "Exposição de Receita Mobile",
-				"friction_tax": "Imposto de Fricção",
-				"trust_gap": "Gap de Confiança e Receita",
-				"path_efficiency": "Eficiência do Caminho"
-			},
-			"trends": {
-				"regressions": "{count} regressão",
-				"regressions_plural": "{count} regressões",
-				"improvements": "{count} melhoria",
-				"improvements_plural": "{count} melhorias",
-				"stable": "estável",
-				"mixed": "mudanças mistas"
 			}
 		}
 	},

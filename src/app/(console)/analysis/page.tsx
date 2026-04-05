@@ -482,7 +482,7 @@ function AnalysisContent({
     {
       key: "impact", label: tc("columns.est_impact"), className: "w-44",
       render: (row) => row.polarity === 'positive'
-        ? <span className="text-xs text-content-muted">{"\u2014"}</span>
+        ? <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">+{row.impact.midpoint >= 1000 ? `$${(row.impact.midpoint / 1000).toFixed(1)}k` : `$${row.impact.midpoint}`}/mo</span>
         : <ImpactBadge min={row.impact.monthly_range.min} max={row.impact.monthly_range.max} />,
     },
     { key: "impact_type", label: tc("columns.type"), className: "w-28", render: (row) => <span className="text-xs text-content-muted">{impactTypeLabels[row.impact.impact_type] || row.impact.impact_type}</span> },

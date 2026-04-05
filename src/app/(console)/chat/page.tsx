@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChatMessageRenderer } from "@/components/console/chat/ChatMessageRenderer";
 import { ConversationSidebar } from "@/components/console/chat/ConversationSidebar";
@@ -44,9 +44,11 @@ export default function ChatPage() {
   const [questionQueue, setQuestionQueue] = useState<string[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
   const [playbooksOpen, setPlaybooksOpen] = useState(false);
+  const [contextItems, setContextItems] = useState<string[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
 
   // ── Streaming hook ─────────────────────────
   const { sendMessage, isStreaming, streamingMessage, error, abort } = useChatStream({
@@ -132,6 +134,26 @@ export default function ChatPage() {
   useEffect(() => {
     fetchUsage();
     fetchConversations();
+  }, []);
+
+  // ── Read URL context params and auto-send ──
+  useEffect(() => {
+    const finding = searchParams.get("finding");
+    const findings = searchParams.get("findings");
+    const context = searchParams.get("context");
+    if (finding) {
+      setContextItems([finding]);
+      handleSend(`Discuss finding ${finding}. Explain the root cause, impact, and what to fix.`);
+    } else if (findings) {
+      const ids = findings.split(",").filter(Boolean);
+      setContextItems(ids);
+      handleSend(`Analyze these ${ids.length} findings together: ${ids.join(", ")}. What do they have in common? What's the combined impact and the single highest-leverage fix?`);
+    } else if (context) {
+      const ids = context.split(",").filter(Boolean);
+      setContextItems(ids);
+      handleSend(`Use these items as context for our conversation: ${ids.join(", ")}. Give me a summary of what you see.`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Auto-scroll (only when there are messages) ──
@@ -402,6 +424,21 @@ export default function ChatPage() {
             </div>
           </div>
 
+          {/* Context indicator */}
+          {contextItems.length > 0 && (
+            <div className="flex items-center gap-2 border-t border-edge bg-surface-card/50 px-4 py-1.5 sm:px-8">
+              <svg className="h-3.5 w-3.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+              </svg>
+              <span className="text-[11px] text-content-muted">
+                {contextItems.length === 1 ? "1 item as context" : `${contextItems.length} items as context`}
+              </span>
+              <button onClick={() => setContextItems([])} className="ml-auto text-[10px] text-content-faint hover:text-content-muted">
+                &times;
+              </button>
+            </div>
+          )}
+
           {/* Input */}
           <ChatInputBar
             onSend={(text) => {
@@ -453,7 +490,7 @@ export default function ChatPage() {
               {FEATURED_PLAYBOOKS.map((pb) => (
                 <button
                   key={pb.id}
-                  onClick={() => { handleSend(pb.prompt); setPlaybooksOpen(false); }}
+                  onClick={() => { handleSend(t.has(`playbook_prompts.${pb.id}`) ? t(`playbook_prompts.${pb.id}`) : pb.prompt); setPlaybooksOpen(false); }}
                   className={`group flex w-full flex-col rounded-lg border bg-surface-card/30 p-3.5 text-left transition-all ${FEATURED_COLORS[pb.color] || FEATURED_COLORS.emerald}`}
                 >
                   <div className="flex items-center gap-2">

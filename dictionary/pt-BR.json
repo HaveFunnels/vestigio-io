@@ -812,6 +812,20 @@
 			"playbook_step": "Passo {step}/{total}",
 			"no_context": "Nenhum contexto de análise carregado. Conclua o onboarding primeiro.",
 			"step_failed": "Não foi possível concluir o passo.",
+			"emptyState": {
+				"title": "Análise Vestigio",
+				"description": "Pergunte sobre receita, riscos, chargebacks ou o que corrigir primeiro. Cada resposta é baseada nos dados da sua auditoria.",
+				"playbooksHint": "Abra Playbooks para prompts de análise especializada"
+			},
+			"setupBanner": {
+				"prefix": "Nenhum contexto de análise carregado.",
+				"setupLink": "Conclua a configuração",
+				"suffix": "para começar a analisar."
+			},
+			"input": {
+				"budgetExhausted": "Limite diário esgotado. Tente novamente amanhã ou faça upgrade do plano.",
+				"analyzing": "Analisando... (digite para enfileirar pergunta)"
+			},
 			"preset_questions": {
 				"scale_traffic": "Posso escalar o tráfego?",
 				"losing_money": "Onde estou perdendo dinheiro?",
@@ -827,6 +841,10 @@
 				"asked_recently": "Você perguntou isso recentemente. Tente uma pergunta complementar."
 			},
 			"playbooks": {
+				"label": "Playbooks",
+				"close": "Fechar playbooks",
+				"usePrompt": "Usar prompt",
+				"queries": "~{count} consultas",
 				"revenue_leaks": {
 					"title": "Encontrar Vazamentos de Receita",
 					"description": "Identifique onde o dinheiro está sendo perdido no seu funil de conversão."
@@ -1025,12 +1043,41 @@
 			"title": "Mapas",
 			"subtitle": "Visualização causal — veja as relações entre problemas, causas raiz e ações.",
 			"loading": "Gerando mapas...",
-			"empty": "Nenhum mapa causal disponível ainda.",
+			"empty": "Execute uma análise para gerar mapas causais.",
+			"useAsContext": "Usar como Contexto",
+			"nodeTypes": {
+				"rootCause": "Causa Raiz",
+				"finding": "Descoberta",
+				"action": "Ação",
+				"category": "Categoria"
+			},
 			"node_types": {
 				"root_cause": "Causa Raiz",
 				"finding": "Descoberta",
 				"action": "Ação",
 				"category": "Categoria"
+			},
+			"legend": {
+				"rootCause": "Causa Raiz",
+				"finding": "Descoberta",
+				"action": "Ação",
+				"category": "Categoria",
+				"causal": "Causal",
+				"contributes": "Contribui",
+				"addresses": "Endereça"
+			},
+			"drawer": {
+				"summary": "Resumo",
+				"impactBreakdown": "Detalhamento do Impacto",
+				"monthlyRange": "Faixa Mensal",
+				"midpoint": "Ponto Médio",
+				"confidence": "Confiança {value}%",
+				"actionDetails": "Detalhes da Ação",
+				"crossPack": "cross-pack",
+				"impactUnlocked": "Impacto Desbloqueado",
+				"rootCauseDetails": "Detalhes da Causa Raiz",
+				"aggregateImpact": "Impacto Agregado",
+				"affectedPacks": "Packs Afetados"
 			},
 			"edge_types": {
 				"causal": "Causal",

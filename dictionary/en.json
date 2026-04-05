@@ -670,6 +670,9 @@
 				"severity": "Severity",
 				"confidence": "Conf",
 				"est_impact": "Est. Impact",
+				"impact": "Impact",
+				"verification": "Verification",
+				"change": "Change",
 				"type": "Type",
 				"pack": "Pack",
 				"surface": "Surface",
@@ -785,7 +788,43 @@
 				"issues_found": "Issues Found",
 				"confidence": "Confidence"
 			},
-			"findings_heading": "Findings — {name}"
+			"findings_heading": "Findings — {name}",
+			"detail": {
+				"loading": "Loading workspace...",
+				"not_found": "Workspace Not Found",
+				"not_found_description": "No workspace matches the ID \"{id}\".",
+				"back_to_workspaces": "Back to Workspaces",
+				"change_summary": "Change Summary",
+				"no_changes": "No changes since last cycle",
+				"preflight_checklist": "Preflight Checklist",
+				"findings": "Findings",
+				"no_findings": "No findings in this workspace.",
+				"trust_strength": "Trust Strength",
+				"structural": "Structural",
+				"economic": "Economic",
+				"uncertainty_factors": "Uncertainty Factors",
+				"coherence": "Coherence",
+				"coherence_score": "Coherence Score",
+				"suppressed_by_pack": "Suppressed by higher-priority pack",
+				"quick_stats": "Quick Stats",
+				"negative_findings": "Negative Findings",
+				"positive_findings": "Positive Findings",
+				"avg_confidence": "Avg Confidence",
+				"top_severity": "Top Severity",
+				"readiness": {
+					"ready": "Ready",
+					"ready_with_risks": "Ready with Risks",
+					"blocker": "Blocker"
+				},
+				"trend": {
+					"regressions": "{count} regression(s)",
+					"improvements": "{count} improvement(s)",
+					"resolved": "{count} resolved",
+					"stable": "stable",
+					"mixed": "mixed changes",
+					"no_significant_changes": "No significant changes"
+				}
+			}
 		},
 		"chat": {
 			"title": "Ask Vestigio",
@@ -812,6 +851,20 @@
 			"playbook_step": "Step {step}/{total}",
 			"no_context": "No analysis context loaded. Complete onboarding first.",
 			"step_failed": "Step could not be completed.",
+			"emptyState": {
+				"title": "Vestigio Analysis",
+				"description": "Ask about your revenue, risks, chargebacks, or what to fix first. Every answer is grounded in your audit data.",
+				"playbooksHint": "Open Playbooks for expert analysis prompts"
+			},
+			"setupBanner": {
+				"prefix": "No analysis context loaded.",
+				"setupLink": "Complete setup",
+				"suffix": "to start analyzing."
+			},
+			"input": {
+				"budgetExhausted": "Daily budget exhausted. Try again tomorrow or upgrade your plan.",
+				"analyzing": "Analyzing... (type to queue follow-up)"
+			},
 			"preset_questions": {
 				"scale_traffic": "Can I scale traffic?",
 				"losing_money": "Where am I losing money?",
@@ -827,6 +880,10 @@
 				"asked_recently": "You asked this recently. Try a follow-up instead."
 			},
 			"playbooks": {
+				"label": "Playbooks",
+				"close": "Close playbooks",
+				"usePrompt": "Use prompt",
+				"queries": "~{count} queries",
 				"revenue_leaks": {
 					"title": "Find Revenue Leaks",
 					"description": "Identify where money is being lost in your conversion funnel."
@@ -1025,17 +1082,46 @@
 			"title": "Maps",
 			"subtitle": "Causal visualization — see relationships between issues, root causes, and actions.",
 			"loading": "Generating maps...",
-			"empty": "No causal maps available yet.",
+			"empty": "Run an analysis to generate causal maps.",
+			"useAsContext": "Use as Context",
+			"nodeTypes": {
+				"rootCause": "Root Cause",
+				"finding": "Finding",
+				"action": "Action",
+				"category": "Category"
+			},
 			"node_types": {
 				"root_cause": "Root Cause",
 				"finding": "Finding",
 				"action": "Action",
 				"category": "Category"
 			},
+			"legend": {
+				"rootCause": "Root Cause",
+				"finding": "Finding",
+				"action": "Action",
+				"category": "Category",
+				"causal": "Causal",
+				"contributes": "Contributes",
+				"addresses": "Addresses"
+			},
 			"edge_types": {
 				"causal": "Causal",
 				"contributes": "Contributes",
 				"addresses": "Addresses"
+			},
+			"drawer": {
+				"summary": "Summary",
+				"impactBreakdown": "Impact Breakdown",
+				"monthlyRange": "Monthly Range",
+				"midpoint": "Midpoint",
+				"confidence": "Confidence {value}%",
+				"actionDetails": "Action Details",
+				"crossPack": "cross-pack",
+				"impactUnlocked": "Impact Unlocked",
+				"rootCauseDetails": "Root Cause Details",
+				"aggregateImpact": "Aggregate Impact",
+				"affectedPacks": "Affected Packs"
 			},
 			"impact_unlocks": "unlocks {amount}/mo"
 		},

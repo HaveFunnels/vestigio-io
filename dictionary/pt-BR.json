@@ -1153,7 +1153,9 @@
 				"impactUnlocked": "Impacto Desbloqueado",
 				"rootCauseDetails": "Detalhes da Causa Raiz",
 				"aggregateImpact": "Impacto Agregado",
-				"affectedPacks": "Packs Afetados"
+				"affectedPacks": "Packs Afetados",
+				"reasoning": "Raciocínio",
+				"description": "Descrição"
 			},
 			"edge_types": {
 				"causal": "Causal",

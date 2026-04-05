@@ -56,7 +56,7 @@ function FindingNode({ data }: { data: any }) {
       <Handle type="target" position={Position.Left} className="!bg-content-muted" />
       <div className="text-xs text-content-muted">Finding</div>
       <div className="mt-0.5 text-sm text-content-secondary">{data.label}</div>
-      {data.impact && <div className="mt-1 text-xs font-mono text-amber-600 dark:text-amber-400">{formatCurrency(data.impact.midpoint)}/mo</div>}
+      {data.impact && <div className="mt-1 text-xs font-mono text-red-600 dark:text-red-400">{formatCurrency(data.impact.midpoint)}/mo</div>}
       <Handle type="source" position={Position.Right} className="!bg-content-muted" />
     </div>
   );
@@ -96,15 +96,18 @@ const edgeStyles: Record<string, any> = {
 };
 
 function toReactFlowNodes(mapDef: MapDefinition): Node[] {
-  return mapDef.nodes.map((n) => ({
-    id: n.id, type: n.type, position: n.position,
+  return mapDef.nodes.map((n, index) => ({
+    id: n.id, type: n.type,
+    position: { x: n.position.x * 1.2, y: n.position.y * 1.6 },
     data: { label: n.label, severity: n.severity, impact: n.impact, pack: n.pack, ...n.metadata },
+    style: { opacity: 0, animation: `fadeInScale 0.5s ease-out ${index * 0.05}s forwards` },
   }));
 }
 
 function toReactFlowEdges(mapDef: MapDefinition): Edge[] {
   return mapDef.edges.map((e) => ({
     id: e.id, source: e.source, target: e.target, label: e.label || undefined,
+    type: "bezier",
     style: edgeStyles[e.type] || edgeStyles.causal, animated: e.type === "causal",
   }));
 }
@@ -157,6 +160,9 @@ function NodeTooltip({ tooltip }: { tooltip: TooltipState }) {
 
 function FindingDrawerContent({ node }: { node: MapNode }) {
   const t = useTranslations("console.maps");
+  const reasoning = typeof node.metadata.reasoning === "string" ? node.metadata.reasoning : null;
+  const description = typeof node.metadata.description === "string" ? node.metadata.description : null;
+
   return (
     <div className="space-y-6">
       <section>
@@ -168,6 +174,22 @@ function FindingDrawerContent({ node }: { node: MapNode }) {
           {node.metadata.surface != null && <code className="rounded border border-edge px-2 py-0.5 text-xs text-content-faint">{String(node.metadata.surface)}</code>}
         </div>
       </section>
+
+      {/* Reasoning — shown if available in metadata */}
+      {reasoning && (
+        <section>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.reasoning")}</h3>
+          <p className="text-sm leading-relaxed text-content-muted">{reasoning}</p>
+        </section>
+      )}
+
+      {/* Description — shown if available in metadata */}
+      {description && (
+        <section>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.description")}</h3>
+          <p className="text-sm leading-relaxed text-content-muted">{description}</p>
+        </section>
+      )}
 
       {node.impact && (
         <section>
@@ -190,20 +212,31 @@ function FindingDrawerContent({ node }: { node: MapNode }) {
 
 function ActionDrawerContent({ node }: { node: MapNode }) {
   const t = useTranslations("console.maps");
+  const actionType = typeof node.metadata.action_type === "string" ? node.metadata.action_type : null;
+  const description = typeof node.metadata.description === "string" ? node.metadata.description : null;
+
   return (
     <div className="space-y-6">
       <section>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.actionDetails")}</h3>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {node.severity && <SeverityBadge value={node.severity} />}
-          {node.metadata.action_type && (
-            <span className="text-xs text-content-muted">{String(node.metadata.action_type).replace(/_/g, " ")}</span>
+          {actionType && (
+            <span className="text-xs text-content-muted">{actionType.replace(/_/g, " ")}</span>
           )}
-          {node.metadata.cross_pack && (
+          {!!node.metadata.cross_pack && (
             <span className="inline-flex rounded border border-emerald-800/50 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400">{t("drawer.crossPack")}</span>
           )}
         </div>
       </section>
+
+      {/* Description — shown if available in metadata */}
+      {description && (
+        <section>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.description")}</h3>
+          <p className="text-sm leading-relaxed text-content-muted">{description}</p>
+        </section>
+      )}
 
       {node.impact && (
         <section>
@@ -226,6 +259,10 @@ function ActionDrawerContent({ node }: { node: MapNode }) {
 
 function RootCauseDrawerContent({ node }: { node: MapNode }) {
   const t = useTranslations("console.maps");
+  const category = typeof node.metadata.category === "string" ? node.metadata.category : null;
+  const reasoning = typeof node.metadata.reasoning === "string" ? node.metadata.reasoning : null;
+  const description = typeof node.metadata.description === "string" ? node.metadata.description : null;
+
   return (
     <div className="space-y-6">
       <section>
@@ -233,11 +270,27 @@ function RootCauseDrawerContent({ node }: { node: MapNode }) {
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {node.severity && <SeverityBadge value={node.severity} />}
           {node.metadata.confidence != null && <span className="text-xs text-content-muted">{t("drawer.confidence", { value: String(node.metadata.confidence) })}</span>}
-          {node.metadata.category && (
-            <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{String(node.metadata.category)}</span>
+          {category && (
+            <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{category}</span>
           )}
         </div>
       </section>
+
+      {/* Reasoning — shown if available in metadata */}
+      {reasoning && (
+        <section>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.reasoning")}</h3>
+          <p className="text-sm leading-relaxed text-content-muted">{reasoning}</p>
+        </section>
+      )}
+
+      {/* Description — shown if available in metadata */}
+      {description && (
+        <section>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.description")}</h3>
+          <p className="text-sm leading-relaxed text-content-muted">{description}</p>
+        </section>
+      )}
 
       {node.impact && (
         <section>
@@ -255,7 +308,7 @@ function RootCauseDrawerContent({ node }: { node: MapNode }) {
         </section>
       )}
 
-      {node.metadata.affected_packs && Array.isArray(node.metadata.affected_packs) && (
+      {Array.isArray(node.metadata.affected_packs) && (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.affectedPacks")}</h3>
           <div className="flex flex-wrap gap-2">
@@ -363,6 +416,20 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
 
   return (
     <div className="flex h-full flex-col">
+      {/* Keyframes for node entrance animation */}
+      <style>{`
+        @keyframes fadeInScale {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
+
       {/* Map selector */}
       <div className="border-b border-edge px-6 py-2">
         <div className="flex gap-2">
@@ -378,25 +445,33 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
       {/* Canvas */}
       <div className="relative flex-1" style={{ minHeight: 500 }}>
         <ReactFlow
+          key={activeMap.id}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
           fitView
+          nodesConnectable={false}
+          edgesReconnectable={false}
           onNodeClick={onNodeClick}
           onNodeMouseEnter={onNodeMouseEnter}
           onNodeMouseMove={onNodeMouseMove}
           onNodeMouseLeave={onNodeMouseLeave}
           proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{ type: "smoothstep" }}
+          defaultEdgeOptions={{ type: "bezier" }}
         >
-          <Background color="#27272a" gap={20} />
+          <Background color="var(--color-border-edge, #27272a)" gap={20} />
           <Controls className="!bg-surface-card !border-edge !shadow-lg [&>button]:!bg-surface-inset [&>button]:!border-edge [&>button]:!text-content-muted [&>button:hover]:!bg-surface-card-hover" />
-          <MiniMap nodeColor={(n) => {
-            if (n.type === "root_cause") return "#ef4444";
-            if (n.type === "action") return "#10b981";
-            if (n.type === "finding") return "#f59e0b";
-            return "#3b82f6";
-          }} className="!bg-surface-card !border-edge" />
+          <MiniMap
+            nodeColor={(n) => {
+              if (n.type === "root_cause") return "#ef4444";
+              if (n.type === "action") return "#10b981";
+              if (n.type === "finding") return "#f59e0b";
+              return "#3b82f6";
+            }}
+            nodeBorderRadius={4}
+            maskColor="rgba(0,0,0,0.7)"
+            className="!bg-surface-card !border-edge !rounded-lg !p-1"
+          />
         </ReactFlow>
 
         {/* Tooltip overlay */}

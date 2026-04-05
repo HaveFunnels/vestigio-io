@@ -1145,7 +1145,9 @@
 				"impactUnlocked": "Impact Unlocked",
 				"rootCauseDetails": "Root Cause Details",
 				"aggregateImpact": "Aggregate Impact",
-				"affectedPacks": "Affected Packs"
+				"affectedPacks": "Affected Packs",
+				"reasoning": "Reasoning",
+				"description": "Description"
 			},
 			"impact_unlocks": "unlocks {amount}/mo"
 		},

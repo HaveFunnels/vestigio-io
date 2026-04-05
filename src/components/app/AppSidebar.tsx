@@ -68,8 +68,22 @@ export default function AppSidebar({
 	}, []);
 
 	const handleMouseLeave = useCallback(() => {
-		leaveTimer.current = setTimeout(() => setHovered(false), 120);
-	}, []);
+		leaveTimer.current = setTimeout(() => {
+			setHovered(false);
+			// Collapse all submenus when sidebar collapses, except those
+			// containing the active route (they re-open via the initializer)
+			setExpandedMenus(() => {
+				const keep = new Set<string>();
+				const allNavs = [...productNav, ...adminNav];
+				for (const item of allNavs) {
+					if (item.children?.some((c) => c.href && (pathname === c.href || pathname.startsWith(c.href + "/")))) {
+						keep.add(item.id);
+					}
+				}
+				return keep;
+			});
+		}, 120);
+	}, [pathname]);
 
 	const toggleMenu = (id: string) => {
 		setExpandedMenus((prev) => {

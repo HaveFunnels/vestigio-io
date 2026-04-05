@@ -27,3 +27,27 @@ export const postQueryByTag = groq`*[_type == "post" && $slug in tags[]->slug.cu
 export const postQueryByAuthor = groq`*[_type == "post" && author->slug.current == $slug] ${postData}`;
 
 export const postQueryByCategory = groq`*[_type == "post" && category->slug.current == $slug] ${postData}`;
+
+// ── Knowledge Base queries ──
+
+const kbData = `{
+  _id,
+  title,
+  slug,
+  category,
+  finding_key,
+  root_cause_key,
+  excerpt,
+  body,
+  publishedAt
+}`;
+
+export const kbAllQuery = groq`*[_type == "knowledgeArticle"] | order(category asc, title asc) ${kbData}`;
+
+export const kbBySlugQuery = groq`*[_type == "knowledgeArticle" && slug.current == $slug][0] ${kbData}`;
+
+export const kbByCategoryQuery = groq`*[_type == "knowledgeArticle" && category == $category] | order(title asc) ${kbData}`;
+
+export const kbByFindingKeyQuery = groq`*[_type == "knowledgeArticle" && finding_key == $findingKey][0] ${kbData}`;
+
+export const kbByRootCauseKeyQuery = groq`*[_type == "knowledgeArticle" && root_cause_key == $rootCauseKey][0] ${kbData}`;

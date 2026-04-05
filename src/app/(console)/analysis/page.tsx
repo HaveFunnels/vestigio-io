@@ -12,6 +12,7 @@ import ChangeBadge from "@/components/console/ChangeBadge";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
+import PageHeader from "@/components/console/PageHeader";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { loadFindings } from "@/lib/console-data";
@@ -59,6 +60,7 @@ const polarityColors: Record<string, string> = {
 
 export default function AnalysisPage() {
   const t = useTranslations("console.analysis");
+  const tTooltip = useTranslations("console.common");
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [currentStep, setCurrentStep] = useState<string | null>(null);
   const [findings, setFindings] = useState<FindingProjection[]>([]);
@@ -161,14 +163,11 @@ export default function AnalysisPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
-        <p className="mt-1 text-sm text-content-muted">
-          {analysisState === "ongoing"
-            ? t("subtitle_ongoing")
-            : t("subtitle_complete")}
-        </p>
-      </div>
+      <PageHeader
+        title={t("title")}
+        subtitle={analysisState === "ongoing" ? t("subtitle_ongoing") : t("subtitle_complete")}
+        tooltip={tTooltip("page_tooltips.analysis")}
+      />
 
       {/* Step Timeline (during ongoing analysis) */}
       {analysisState === "ongoing" && currentStep && (
@@ -579,6 +578,15 @@ function AnalysisContent({
 function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjection; onDiscuss: () => void }) {
   const td = useTranslations("console.finding_drawer");
   const tc = useTranslations("console.common");
+  const [kbLink, setKbLink] = useState<{ slug: string; title: string } | null>(null);
+
+  useEffect(() => {
+    if (!finding.inference_key) return;
+    fetch(`/api/knowledge-base/by-finding-key?key=${encodeURIComponent(finding.inference_key)}`)
+      .then((r) => r.json())
+      .then((data) => { if (data.article) setKbLink(data.article); })
+      .catch(() => {});
+  }, [finding.inference_key]);
 
   const packLabels: Record<string, string> = {
     scale_readiness: tc("pack_labels.scale_readiness"),
@@ -609,7 +617,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
           <span className="text-xs text-content-muted">{tc("confidence_label", { value: finding.confidence })}</span>
-          <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{packLabels[finding.pack] || finding.pack}</span>
+          <PackBadge pack={finding.pack} label={packLabels[finding.pack] || finding.pack} />
           {finding.surface && <code className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{finding.surface}</code>}
         </div>
       </section>
@@ -688,7 +696,10 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
       {/* Verification Lifecycle Panel */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("verification")}</h3>
+        <div className="mb-2 flex items-center gap-1.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-content-muted">{td("verification")}</h3>
+          <InfoTooltip text={td("verification_tooltip")} />
+        </div>
         <VerificationPanel
           maturity={finding.verification_maturity}
           method={finding.verification_method}
@@ -713,7 +724,9 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
           {finding.polarity === 'positive' ? td("why_good") : td("reasoning")}
         </h3>
-        <p className="text-sm leading-relaxed text-content-muted">{finding.reasoning}</p>
+        <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
+          <p className="text-sm leading-relaxed text-content-secondary">{finding.reasoning}</p>
+        </div>
       </section>
 
       {/* Truth Context */}
@@ -731,6 +744,31 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
         </section>
       )}
 
+      {/* Knowledge Base Link */}
+      <section>
+        {kbLink ? (
+          <a
+            href={`/app/knowledge-base/${kbLink.slug}`}
+            className="flex items-center gap-2 rounded-md border border-edge bg-surface-card px-4 py-2.5 text-sm text-content-secondary transition-colors hover:border-accent/30 hover:bg-surface-card-hover"
+          >
+            <svg className="h-4 w-4 shrink-0 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+            <span>{td("learn_more")}: {kbLink.title}</span>
+            <svg className="ml-auto h-3.5 w-3.5 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </a>
+        ) : (
+          <div className="flex items-center gap-2 rounded-md border border-dashed border-edge px-4 py-2.5 text-xs text-content-faint">
+            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+            <span>{td("docs_coming_soon")}</span>
+          </div>
+        )}
+      </section>
+
       {/* Discuss CTA */}
       {finding.polarity !== 'positive' && (
         <section>
@@ -741,6 +779,48 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
         </section>
       )}
     </div>
+  );
+}
+
+// ── Pack Badge with distinct color per pack ──
+
+const packBadgeStyles: Record<string, string> = {
+  scale_readiness: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  revenue_integrity: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  chargeback_resilience: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  saas_growth_readiness: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20",
+};
+
+function PackBadge({ pack, label }: { pack: string; label: string }) {
+  const style = packBadgeStyles[pack] || "bg-surface-inset text-content-muted border-edge";
+  return (
+    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${style}`}>
+      {label}
+    </span>
+  );
+}
+
+// ── Info Tooltip ──
+
+function InfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-4 w-4 items-center justify-center rounded-full border border-edge text-[10px] font-bold text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
+      >
+        i
+      </button>
+      {open && (
+        <div className="absolute left-6 top-0 z-50 w-64 rounded-lg border border-edge bg-surface-card px-3 py-2 text-xs leading-relaxed text-content-secondary shadow-xl">
+          {text}
+        </div>
+      )}
+    </span>
   );
 }
 

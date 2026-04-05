@@ -5,6 +5,11 @@ import {
 	postQueryByTag,
 	postQueryByAuthor,
 	postQueryByCategory,
+	kbAllQuery,
+	kbBySlugQuery,
+	kbByCategoryQuery,
+	kbByFindingKeyQuery,
+	kbByRootCauseKeyQuery,
 } from "./sanity-query";
 
 const SANITY_ENABLED = !!(
@@ -107,4 +112,66 @@ export const getAuthorBySlug = async (slug: string) => {
 	});
 
 	return data;
+};
+
+// ── Knowledge Base ──
+
+export interface KnowledgeArticle {
+	_id: string;
+	title: string;
+	slug: { current: string };
+	category: "concept" | "pack" | "finding" | "guide";
+	finding_key?: string;
+	root_cause_key?: string;
+	excerpt?: string;
+	body: any[];
+	publishedAt?: string;
+}
+
+export const getKnowledgeArticles = async (): Promise<KnowledgeArticle[]> => {
+	return sanityFetch<KnowledgeArticle[]>({
+		query: kbAllQuery,
+		qParams: {},
+		tags: ["knowledgeArticle"],
+	});
+};
+
+export const getKnowledgeArticleBySlug = async (
+	slug: string,
+): Promise<KnowledgeArticle | null> => {
+	return sanityFetch<KnowledgeArticle | null>({
+		query: kbBySlugQuery,
+		qParams: { slug },
+		tags: ["knowledgeArticle"],
+	});
+};
+
+export const getKnowledgeArticlesByCategory = async (
+	category: string,
+): Promise<KnowledgeArticle[]> => {
+	return sanityFetch<KnowledgeArticle[]>({
+		query: kbByCategoryQuery,
+		qParams: { category },
+		tags: ["knowledgeArticle"],
+	});
+};
+
+export const getKnowledgeArticleByFindingKey = async (
+	findingKey: string,
+): Promise<KnowledgeArticle | null> => {
+	return sanityFetch<KnowledgeArticle | null>({
+		query: kbByFindingKeyQuery,
+		qParams: { findingKey },
+		tags: ["knowledgeArticle"],
+	});
+};
+
+export const getKnowledgeArticleByRootCauseKey = async (
+	rootCauseKey: string,
+): Promise<KnowledgeArticle | null> => {
+	return sanityFetch<KnowledgeArticle | null>({
+		query: kbByRootCauseKeyQuery,
+		qParams: { rootCauseKey },
+		tags: ["knowledgeArticle"],
+	});
 };

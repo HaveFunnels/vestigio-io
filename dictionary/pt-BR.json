@@ -705,7 +705,16 @@
 			"loading": "Carregando...",
 			"clear_filters": "Limpar filtros",
 			"hide_positive_signals": "Ocultar sinais positivos",
-			"n_of_total": "{filtered} de {total} descobertas"
+			"n_of_total": "{filtered} de {total} descobertas",
+			"page_tooltips": {
+				"actions": "Próximos passos priorizados para melhorar seu ambiente. Comece aqui.",
+				"workspaces": "Resumos de decisões agrupados por questão de negócio. Veja o panorama geral.",
+				"chat": "Faça perguntas sobre seu ambiente. Vestigio responde com evidências.",
+				"analysis": "Todos os findings com detalhe completo de evidências. Aprofunde-se.",
+				"inventory": "Todas as páginas e superfícies que o Vestigio descobriu no seu site.",
+				"maps": "Cadeias visuais de causa e efeito dos findings às ações.",
+				"knowledge_base": "Documentação sobre findings, packs e conceitos da plataforma."
+			}
 		},
 		"analysis": {
 			"title": "Análise",
@@ -790,7 +799,28 @@
 			"recency": "Recência",
 			"corroboration": "Corroboração",
 			"verification": "Verificação",
-			"verification_requested": "Verificação Solicitada"
+			"verification_requested": "Verificação Solicitada",
+			"verification_tooltip": "A maturidade de verificação mostra como as evidências deste finding foram validadas. Não verificado = apenas análise estática. Verificado = confirmado pelo navegador.",
+			"learn_more": "Saiba mais",
+			"docs_coming_soon": "A documentação para este finding está sendo escrita."
+		},
+		"knowledge_base": {
+			"title": "Base de Conhecimento",
+			"subtitle": "Documentação sobre findings, packs e conceitos da plataforma.",
+			"tabs": {
+				"all": "Todos",
+				"concepts": "Conceitos",
+				"packs": "Packs",
+				"findings": "Findings",
+				"guides": "Guias"
+			},
+			"search_placeholder": "Buscar artigos...",
+			"read_more": "Ler mais",
+			"empty": "Nenhum artigo publicado ainda. A documentação aparecerá aqui conforme for escrita.",
+			"no_results": "Nenhum artigo corresponde à busca.",
+			"article_not_found": "Artigo não encontrado.",
+			"back": "Base de Conhecimento",
+			"no_content": "O conteúdo do artigo está sendo escrito."
 		},
 		"workspaces": {
 			"title": "Workspaces",
@@ -944,11 +974,11 @@
 				}
 			},
 			"playbook_prompts": {
-				"revenue_leak_full_audit": "Faça uma análise completa de vazamento de receita. Mostre cada descoberta que causa perda de receita, ranqueada por impacto mensal em dólares do maior para o menor. Para as 5 principais, explique a causa raiz e quanto corrigir cada uma recuperaria. Depois mostre a perda mensal combinada total e a recuperação estimada se eu corrigir as 3 principais.",
-				"conversion_bottleneck": "Mapeie meu funil de conversão do landing até a compra/cadastro. Em cada etapa, mostre quais descobertas criam fricção. Onde está a maior queda? Qual é a causa raiz dessa queda? Se eu pudesse corrigir apenas uma coisa para melhorar a conversão, o que deveria ser e quanto impactaria?",
-				"trust_signal_audit": "Avalie os sinais de confiança do meu site nestas dimensões: SSL e selos de segurança, avaliações e depoimentos, informações da empresa (sobre, equipe, endereço), opções de contato (telefone, chat, email), políticas (devoluções, privacidade, termos), confiança no pagamento (logos, garantias), prova social (número de clientes, menções na mídia). Para cada dimensão, dê nota de 1-10 e explique o que falta. Qual é o score geral de confiança e o que melhoraria mais rápido?",
-				"executive_summary": "Crie um resumo executivo adequado para uma reunião de diretoria. Inclua: receita mensal total em risco (soma de todas as descobertas), top 3 problemas críticos com impacto em dólares, roadmap de prioridades para 90 dias (semana 1-2: quick wins, mês 1: correções críticas, mês 2-3: melhorias estratégicas), ROI esperado do plano completo de remediação e um score de saúde único de 0-100 para o negócio.",
-				"cross_pack_correlation": "Analise descobertas de TODOS os packs (integridade de receita, prontidão para escalar, resiliência de chargeback). Encontre correlações: Quais descobertas de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de receita também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando descobertas conectadas entre packs com impacto combinado."
+				"revenue_leak_full_audit": "Execute uma análise completa de vazamento de receita. Mostre cada finding que causa perda de receita, ranqueado por impacto mensal em dólares do maior para o menor. Para os 5 maiores, explique a causa raiz e o que corrigir cada um recuperaria. Depois mostre a perda mensal combinada total e a recuperação estimada se eu corrigir os 3 principais.",
+				"conversion_bottleneck": "Mapeie meu funil de conversão do landing até a compra/cadastro. Em cada etapa, mostre quais findings criam fricção. Onde está a maior queda? Qual é a causa raiz dessa queda? Se eu pudesse corrigir apenas uma coisa para melhorar a conversão, o que deveria ser e quanto moveria o ponteiro?",
+				"trust_signal_audit": "Avalie os sinais de confiança do meu site nestas dimensões: SSL e selos de segurança, avaliações e depoimentos, informações da empresa (sobre, equipe, endereço), opções de contato (telefone, chat, email), políticas (devoluções, privacidade, termos), confiança no pagamento (logos, garantias), prova social (número de clientes, menções na mídia). Para cada dimensão, avalie de 1-10 e explique o que está faltando. Qual é minha pontuação geral de confiança e o que melhoraria mais rápido?",
+				"executive_summary": "Crie um resumo executivo adequado para uma reunião de diretoria. Inclua: receita mensal total em risco (soma de todos os findings), 3 principais problemas críticos com impacto em dólares, roadmap de prioridades para 90 dias (semana 1-2: quick wins, mês 1: correções críticas, mês 2-3: melhorias estratégicas), ROI esperado do plano completo de remediação e uma pontuação de saúde de 0-100 para o negócio.",
+				"cross_pack_correlation": "Analise findings em TODOS os packs (integridade de receita, prontidão para escala, resiliência a chargebacks). Encontre correlações: Quais findings de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de receita também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando findings conectados entre packs com impacto combinado."
 			}
 		},
 		"actions": {
@@ -977,7 +1007,8 @@
 				"all": "Todos",
 				"incidents": "Incidentes",
 				"opportunities": "Oportunidades",
-				"verifications": "Verificações"
+				"verifications": "Verificações",
+				"observations": "Observações"
 			},
 			"columns": {
 				"priority": "#",
@@ -987,7 +1018,8 @@
 				"impact": "Impacto",
 				"severity": "Severidade",
 				"effort": "Esforço",
-				"resolve": "Resolver"
+				"resolve": "Resolver",
+				"nextStep": "Próximo Passo"
 			},
 			"categories": {
 				"incident": "Incidente",
@@ -1003,11 +1035,12 @@
 				"very_high": "Muito Alto"
 			},
 			"resolve": {
-				"fix": "Corrigir",
-				"verify": "Verificar",
-				"track": "Monitorar",
+				"fix": "Marcar Resolvido",
+				"verify": "Executar Verificação",
+				"track": "Acompanhar Progresso",
 				"dismiss": "Dispensar"
 			},
+			"explainer": "Ações são próximos passos priorizados derivados de decisões. Cada ação pode abordar múltiplos findings. Findings fornecem a evidência de suporte.",
 			"changeBanner": {
 				"firstAnalysis": "Primeira análise — sem histórico de mudanças",
 				"regression": "regressão(ões)",
@@ -1020,6 +1053,7 @@
 				"single": "único"
 			},
 			"drawer": {
+				"description": "Descrição",
 				"whatFixes": "O Que Isso Corrige",
 				"impactBreakdown": "Detalhamento do Impacto",
 				"impactUnlocked": "Impacto Desbloqueado",
@@ -1305,6 +1339,7 @@
 			"billing": "Faturamento",
 			"members": "Membros",
 			"settings": "Configurações",
+			"knowledge_base": "Base de Conhecimento",
 			"data_sources": "Fontes de Dados",
 			"overview": "Visão Geral",
 			"organizations": "Organizações",

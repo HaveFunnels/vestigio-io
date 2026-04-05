@@ -708,7 +708,16 @@
 			"loading": "Loading...",
 			"clear_filters": "Clear filters",
 			"hide_positive_signals": "Hide positive signals",
-			"n_of_total": "{filtered} of {total} findings"
+			"n_of_total": "{filtered} of {total} findings",
+			"page_tooltips": {
+				"actions": "Prioritized next steps to improve your environment. Start here.",
+				"workspaces": "Decision summaries grouped by business question. See the big picture.",
+				"chat": "Ask questions about your environment. Vestigio answers with evidence.",
+				"analysis": "All findings with full evidence detail. Dig deeper.",
+				"inventory": "Every page and surface Vestigio discovered on your site.",
+				"maps": "Visual cause-and-effect chains from findings to actions.",
+				"knowledge_base": "Documentation on findings, packs, and platform concepts."
+			}
 		},
 		"analysis": {
 			"title": "Analysis",
@@ -794,7 +803,28 @@
 			"recency": "Recency",
 			"corroboration": "Corroboration",
 			"verification": "Verification",
-			"verification_requested": "Verification Requested"
+			"verification_requested": "Verification Requested",
+				"verification_tooltip": "Verification maturity shows how this finding's evidence has been validated. Unverified = static analysis only. Verified = confirmed by browser.",
+				"learn_more": "Learn more",
+				"docs_coming_soon": "Documentation for this finding is being written."
+		},
+		"knowledge_base": {
+				"title": "Knowledge Base",
+				"subtitle": "Documentation on findings, packs, and platform concepts.",
+				"tabs": {
+					"all": "All",
+					"concepts": "Concepts",
+					"packs": "Packs",
+					"findings": "Findings",
+					"guides": "Guides"
+				},
+				"search_placeholder": "Search articles...",
+				"read_more": "Read more",
+				"empty": "No articles published yet. Documentation will appear here as it's written.",
+				"no_results": "No articles match your search.",
+				"article_not_found": "Article not found.",
+				"back": "Knowledge Base",
+				"no_content": "Article content is being written."
 		},
 		"workspaces": {
 			"title": "Workspaces",
@@ -931,6 +961,13 @@
 					"title": "Landing vs App Reality",
 					"description": "Compare what your landing page promises vs what the app delivers."
 				}
+			},
+			"playbook_prompts": {
+				"revenue_leak_full_audit": "Run a complete revenue leak analysis. Show me every finding that causes revenue loss, ranked by monthly dollar impact from highest to lowest. For the top 5, explain the root cause and what fixing each one would recover. Then show the total combined monthly loss and the estimated recovery if I fix the top 3.",
+				"conversion_bottleneck": "Map my conversion funnel from landing to purchase/signup. At each stage, show which findings create friction. Where is the biggest single drop-off? What's the root cause of that drop-off? If I could only fix one thing to improve conversion, what should it be and how much would it move the needle?",
+				"trust_signal_audit": "Score my site's trust signals across these dimensions: SSL & security badges, reviews & testimonials, company information (about, team, address), contact options (phone, chat, email), policies (returns, privacy, terms), payment trust (logos, guarantees), social proof (customer count, media mentions). For each dimension, rate 1-10 and explain what's missing. What's my overall trust score and what would improve it fastest?",
+				"executive_summary": "Create an executive summary suitable for a board meeting. Include: total monthly revenue at risk (sum of all findings), top 3 critical issues with dollar impact, 90-day priority roadmap (week 1-2: quick wins, month 1: critical fixes, month 2-3: strategic improvements), expected ROI of the full remediation plan, and a single health score from 0-100 for the business.",
+				"cross_pack_correlation": "Analyze findings across ALL packs (revenue integrity, scale readiness, chargeback resilience). Find correlations: Which findings from different packs share the same root cause? Where does fixing a revenue issue also reduce chargeback risk? Where does improving trust also help conversion? Build a correlation map showing connected findings across packs with combined impact."
 			}
 		},
 		"actions": {
@@ -959,7 +996,8 @@
 				"all": "All",
 				"incidents": "Incidents",
 				"opportunities": "Opportunities",
-				"verifications": "Verifications"
+				"verifications": "Verifications",
+				"observations": "Observations"
 			},
 			"columns": {
 				"priority": "#",
@@ -969,7 +1007,8 @@
 				"impact": "Impact",
 				"severity": "Severity",
 				"effort": "Effort",
-				"resolve": "Resolve"
+				"resolve": "Resolve",
+				"nextStep": "Next Step"
 			},
 			"categories": {
 				"incident": "Incident",
@@ -985,11 +1024,12 @@
 				"very_high": "Very High"
 			},
 			"resolve": {
-				"fix": "Fix",
-				"verify": "Verify",
-				"track": "Track",
+				"fix": "Mark Resolved",
+				"verify": "Run Verification",
+				"track": "Track Progress",
 				"dismiss": "Dismiss"
 			},
+			"explainer": "Actions are prioritized next steps derived from decisions. Each action may address multiple findings. Findings provide the supporting evidence.",
 			"changeBanner": {
 				"firstAnalysis": "First analysis — no change history yet",
 				"regression": "regression(s)",
@@ -1002,7 +1042,8 @@
 				"single": "single"
 			},
 			"drawer": {
-				"whatFixes": "What This Fixes",
+				"description": "Description",
+					"whatFixes": "What This Fixes",
 				"impactBreakdown": "Impact Breakdown",
 				"impactUnlocked": "Impact Unlocked",
 				"monthlyRange": "Monthly Range",
@@ -1292,7 +1333,8 @@
 			"billing": "Billing",
 			"members": "Members",
 			"settings": "Settings",
-			"data_sources": "Data Sources",
+			"knowledge_base": "Knowledge Base",
+				"data_sources": "Data Sources",
 			"overview": "Overview",
 			"organizations": "Organizations",
 			"usage_billing": "Usage & Billing",

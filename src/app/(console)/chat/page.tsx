@@ -33,6 +33,7 @@ interface UsageState {
 export default function ChatPage() {
   const router = useRouter();
   const t = useTranslations("console.chat");
+  const tc = useTranslations("console.common");
 
   // ── State ──────────────────────────────────
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -379,7 +380,7 @@ export default function ChatPage() {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* Setup banner (non-blocking) */}
           {usage && !usage.domain && (
-            <div className="mx-4 mt-2 flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2 sm:mx-8">
+            <div className="mx-4 mt-2 flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2 sm:mx-6">
               <svg className="h-4 w-4 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
               </svg>
@@ -387,8 +388,23 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Top bar with playbooks toggle */}
-          <div className="flex items-center justify-end px-4 py-1.5 sm:px-8">
+          {/* Top bar with title + playbooks toggle */}
+          <div className="flex items-center justify-between px-4 py-2 sm:px-6">
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold text-content">{t("title")}</h1>
+              <span className="relative inline-flex group">
+                <button
+                  type="button"
+                  className="flex h-5 w-5 items-center justify-center rounded-full border border-edge text-[10px] font-bold text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
+                  aria-label="Page info"
+                >
+                  ?
+                </button>
+                <div className="pointer-events-none absolute left-8 top-0 z-50 w-64 rounded-lg border border-edge bg-surface-card px-3.5 py-2.5 text-xs leading-relaxed text-content-secondary opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                  {tc("page_tooltips.chat")}
+                </div>
+              </span>
+            </div>
             <button
               onClick={() => setPlaybooksOpen(!playbooksOpen)}
               className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
@@ -405,7 +421,7 @@ export default function ChatPage() {
           </div>
 
           {/* Messages */}
-          <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-8">
+          <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
             <div className="mx-auto max-w-3xl space-y-4">
               {allMessages.length === 0 && !isStreaming && (
                 <EmptyState onSuggest={handleSend} />
@@ -446,7 +462,7 @@ export default function ChatPage() {
 
           {/* Context indicator */}
           {contextItems.length > 0 && (
-            <div className="flex items-center gap-2 border-t border-edge bg-surface-card/50 px-4 py-1.5 sm:px-8">
+            <div className="flex items-center gap-2 border-t border-edge bg-surface-card/50 px-4 py-1.5 sm:px-6">
               <svg className="h-3.5 w-3.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
               </svg>

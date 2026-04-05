@@ -28,6 +28,7 @@ This pattern must be consistent across:
 
 - Actions (primary surface)
 - Analysis
+- Inventory
 - Workspaces
 
 ---
@@ -41,9 +42,25 @@ Sidebar order (top to bottom):
 3. **Chat** → `/app/chat`
 4. **Analysis** (expandable) → Findings (`/app/analysis`) + Inventory (`/app/inventory`)
 5. **Maps** → `/app/maps`
+6. **Data Sources** → `/app/settings/data-sources` (bottom-pinned)
 
 **Default landing**: `/app/actions` (not `/app/analysis`)
 
+---
+
+## Surface-First Product Story
+
+When Vestigio is explained to non-technical audiences, the product should be described through the surfaces the user actually navigates:
+
+| Surface | What the user finds | Why it matters |
+|---|---|---|
+| **Actions** | prioritized incidents, opportunities, and verifications | turns analysis into an operational queue |
+| **Workspaces** | focused views for scale readiness, revenue integrity, and chargeback resilience | packages the product around business questions |
+| **Chat** | conversational answers, playbooks, and guided navigation | makes the product accessible beyond technical users |
+| **Analysis / Findings** | detailed findings with impact, confidence, verification, and change state | provides depth and explainability |
+| **Analysis / Inventory** | normalized pages, routes, surfaces, status, sessions, and findings counts | shows real coverage of the commercial environment |
+| **Maps** | causal relationships between root causes, findings, and actions | helps users see leverage and blast radius |
+| **Data Sources** | source configuration, enrichment status, and analysis unlocks | explains how the product deepens over time |
 
 ---
 
@@ -543,7 +560,149 @@ Click → opens side drawer
 
 ---
 
-## 6. Settings
+## 6. Inventory
+
+### Purpose
+
+Operational inventory of normalized surfaces across the monitored environment.
+
+This is where the user sees:
+
+- which pages and routes are known
+- which surfaces are live, down, or not observed
+- which surfaces are commercial, support, policy, or other
+- how many findings are attached to each surface
+- which discovery sources contributed to the inventory
+
+### Core Value
+
+Inventory answers:
+
+- "what exactly is in scope?"
+- "which critical pages are unhealthy?"
+- "where are findings concentrated?"
+- "which routes should I use as context in chat or analysis?"
+
+### Layout
+
+- summary cards for total surfaces, commercial surfaces, and surfaces with findings
+- live/down split card
+- filters for status, type, http class, findings presence, tier, response time, and discovery source
+- table with row click -> detail drawer
+- multi-select -> "Use as Context" flow into Chat
+
+### Table
+
+Columns:
+
+- surface label + normalized path
+- type
+- status
+- HTTP code
+- sessions
+- findings count
+- discovery sources
+
+### Drawer
+
+- URL and title
+- description
+- type and tier
+- status and HTTP code
+- sessions and findings count
+- response time
+- last checked
+- discovery sources
+
+---
+
+## 7. Maps
+
+### Purpose
+
+Causal visualization layer for understanding how root causes, findings, and actions connect.
+
+Maps are not decorative diagrams. They exist to show:
+
+- what is causing multiple downstream issues
+- where one fix can unlock multiple improvements
+- how problems connect across packs
+
+### Core Value
+
+Maps answer:
+
+- "what is the real cause behind these findings?"
+- "which issues are connected?"
+- "what action removes the most downside?"
+
+### Layout
+
+- map selector
+- react-flow canvas
+- hover tooltips for nodes
+- drawer for root cause, finding, and action nodes
+- "Use as Context" handoff into Chat
+
+### Node Types
+
+- root cause
+- finding
+- action
+- category / supporting nodes
+
+### Drawer
+
+- summary badges
+- confidence and pack context
+- impact breakdown
+- affected packs or action details when applicable
+
+---
+
+## 8. Data Sources
+
+### Purpose
+
+Configuration surface for how Vestigio gathers and enriches evidence.
+
+Data Sources should be understood as an expansion surface, not a prerequisite wall. Core value starts from surface audit and deepens with additional sources.
+
+### Core Value
+
+Data Sources answers:
+
+- "what can Vestigio already see?"
+- "what more can it learn if I connect more sources?"
+- "what capabilities are unlocked by each integration?"
+
+### Current Sources
+
+- Surface Audit
+- SaaS Authenticated Access
+- Vestigio Pixel
+- Stripe
+- Shopify (coming soon)
+
+### UX Model
+
+- card-based configuration
+- status badge per source
+- unlock messaging per source
+- expanded configuration forms where applicable
+- banners for missing SaaS setup, verification failure, or manual MFA requirements
+
+### Important Product Role
+
+This page communicates that:
+
+- initial value does not depend on heavy setup
+- richer sources improve confidence and depth
+- authenticated and behavioral inputs unlock more specific analyses
+
+---
+
+## 9. Settings
 
 ---
 

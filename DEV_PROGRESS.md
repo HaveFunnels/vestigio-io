@@ -49,6 +49,55 @@ The system has undergone a comprehensive evolution from a shell-only prototype t
 
 ---
 
+## Wave 1 Frontend Polish -- 2026-04-05 -- Core Experience UX Fixes
+
+### Goal
+Resolve all frontend-only items from ROADMAP.md Wave 1. Make the existing console feel complete, self-explanatory, and polished without backend changes.
+
+### Changes
+
+**1.2 Actions — UX Fixes (A-E)**
+- Added Observation tab to category filter (was missing despite data existing)
+- Renamed "Resolve" column to "Next Step" with clearer button labels: "Mark Resolved", "Run Verification", "Track Progress", "Dismiss"
+- Fixed circular "Verify this Verification" text — resolve button now shows only the action label
+- Added "Description" section header in action drawer for better context
+- Added explanatory text above tab bar explaining Actions ↔ Findings relationship
+- Files: `src/app/(console)/actions/page.tsx`, `dictionary/*.json`
+
+**1.3 Analysis — UX Fixes (A, B, D)**
+- Added `InfoTooltip` component with (i) button next to Verification header, explaining maturity levels
+- Fixed reasoning section — now in its own bordered card, visually separated from severity badges
+- Added `PackBadge` component with distinct pastel colors per pack (blue/amber/rose/violet)
+- 1.3C (verbose reasoning) deferred to Wave 3 (needs LLM enrichment)
+- Files: `src/app/(console)/analysis/page.tsx`, `dictionary/*.json`
+
+**1.4 Inventory — Style Fix**
+- Changed findings count from `underline` to `font-semibold` — no longer looks like a broken link
+- File: `src/app/(console)/inventory/page.tsx`
+
+**1.5 Chat — Layout Fix**
+- Standardized horizontal padding to `px-4 sm:px-6` across all chat areas (header, messages, setup banner, context indicator)
+- File: `src/app/(console)/chat/page.tsx`
+
+**1.7 Page Title Tooltips**
+- Created shared `PageHeader` component (`src/components/console/PageHeader.tsx`)
+- Hover tooltip (?) next to every page title with actionable description
+- Wired into: Actions, Workspaces, Analysis, Inventory, Maps
+- Tooltip text i18n'd in `console.common.page_tooltips` (en, pt-BR, es, de)
+
+**1.8 Billing — Compare Plans Animation**
+- Added `AnimatedPrice` component with ease-out cubic count animation on price change
+- Sliding highlight on Monthly/Annual toggle with spring transition
+- "Save X%" badge fades in on annual selection
+- Strikethrough price animates height/opacity
+- File: `src/components/ui/pricing-card.tsx`
+
+### Remaining Wave 1 Items (not frontend-only)
+- 1.1 Onboarding → Ingestion Wiring (`platform` + `engine`)
+- 1.6 Billing — Fix Broken Button (`platform` — needs Paddle/Stripe integration)
+
+---
+
 ## Phase 5 -- 2026-03-31 -- Claude LLM Chat Integration, Deploy Guide, Demo Seed
 
 ### Goal

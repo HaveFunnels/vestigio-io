@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ConsoleState from "@/components/console/ConsoleState";
+import PageHeader from "@/components/console/PageHeader";
 import { loadWorkspaces } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { ShinyButton } from "@/components/ui/shiny-button";
@@ -24,13 +25,11 @@ export default function WorkspacesPage() {
   const mcpData = useMcpData();
   const dataState = mcpData.workspaces.status !== "not_ready" ? mcpData.workspaces : loadWorkspaces();
   const t = useTranslations("console.workspaces");
+  const tc = useTranslations("console.common");
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
-        <p className="mt-1 text-sm text-content-muted">{t("subtitle")}</p>
-      </div>
+      <PageHeader title={t("title")} subtitle={t("subtitle")} tooltip={tc("page_tooltips.workspaces")} />
       <ConsoleState
         state={dataState}
         loadingLabel={t("loading")}

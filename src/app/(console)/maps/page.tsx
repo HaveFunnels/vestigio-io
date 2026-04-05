@@ -8,6 +8,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import ConsoleState from "@/components/console/ConsoleState";
+import PageHeader from "@/components/console/PageHeader";
 import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ImpactBadge from "@/components/console/ImpactBadge";
@@ -390,15 +391,15 @@ function RootCauseDrawerContent({ node }: { node: MapNode }) {
 
 export default function MapsPage() {
   const t = useTranslations("console.maps");
+  const tc = useTranslations("console.common");
   const mcpData = useMcpData();
   const dataState = mcpData.maps.status !== "not_ready" ? mcpData.maps : loadAllMaps();
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-edge px-6 py-4">
-        <div>
-          <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
-          <p className="mt-1 text-sm text-content-muted">{t("subtitle")}</p>
+        <div className="[&>div]:mb-0">
+          <PageHeader title={t("title")} subtitle={t("subtitle")} tooltip={tc("page_tooltips.maps")} />
         </div>
         {dataState.status === "ready" && (
           <ShinyButton onClick={() => window.location.href = "/chat?context=maps"}>

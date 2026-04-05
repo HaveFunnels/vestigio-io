@@ -1,14 +1,34 @@
-# Vestigio -- Intelligence & Decision Engine for Digital Commerce
+# Vestigio -- Decision Intelligence for Revenue, Trust, and Readiness
 
-Vestigio is a full-stack intelligence platform that helps commerce and SaaS companies identify revenue leakage, chargeback risks, conversion friction, and growth opportunities through automated evidence collection, a canonical decision engine, and AI-powered conversational analysis.
+Vestigio is a full-stack intelligence platform that helps digital businesses answer business-critical questions about their websites, funnels, and product experiences.
 
-## Key Features
+Instead of delivering long technical checklists, Vestigio turns collected evidence into:
 
-- **Decision Engine** -- Business-question-driven decisions (scale readiness, revenue integrity, chargeback resilience, SaaS growth) with risk scoring, confidence gating, and suppression governance
-- **Evidence Pipeline** -- Multi-method collection (HTTP fetch, HTML parsing, crawl discovery, indicator extraction, Playwright browser verification, authenticated SaaS journeys) with PostgreSQL persistence
-- **47 Findings** -- 37 negative + 10 positive findings across 4 packs, with verification maturity, change detection, and evidence quality scoring
+- prioritized actions
+- contextual workspaces
+- explainable findings
+- conversational answers
+- causal maps
+
+The product is designed to help teams understand where they are losing revenue, increasing risk, weakening trust, or blocking growth.
+
+## Product Surfaces
+
+- **Actions** -- the primary operating surface: prioritized incidents, opportunities, and verification tasks with impact, urgency, and next steps
+- **Workspaces** -- persistent views for questions like scale readiness, revenue integrity, and chargeback resilience
+- **Chat** -- a conversational interface for asking business questions such as "where am I losing money?" or "what changed since last cycle?"
+- **Analysis / Findings** -- the global exploration layer for findings, quantified impact, verification maturity, and change tracking
+- **Analysis / Inventory** -- normalized surfaces across the monitored environment, including page health, findings count, sessions, and discovery sources
+- **Maps** -- causal visualizations that connect root causes, findings, and recommended actions
+- **Data Sources** -- configuration surface for audit depth, authenticated SaaS access, pixel enrichment, and future integrations
+
+## Platform Capabilities
+
+- **Decision Engine** -- business-question-driven decisions (scale readiness, revenue integrity, chargeback resilience, SaaS growth) with risk scoring, confidence gating, and suppression governance
+- **Evidence Pipeline** -- multi-method collection (HTTP fetch, HTML parsing, crawl discovery, indicator extraction, Playwright browser verification, authenticated SaaS journeys) with PostgreSQL persistence
+- **Findings, Change, and Verification** -- 47 findings across 4 packs with verification maturity, change detection, and evidence quality scoring
 - **AI Chat** -- Claude LLM integration (Sonnet/Opus) with 21 MCP tools, 30 expert playbooks, 4-layer security pipeline, and SSE streaming
-- **Multi-tenancy** -- Organization-centric model with memberships (owner/admin/member), environments, business profiles, and plan-gated limits
+- **Multi-tenancy** -- organization-centric model with memberships (owner/admin/member), environments, business profiles, and plan-gated limits
 - **Billing** -- Paddle-primary with admin-configurable plans, Stripe as fallback
 
 ## Tech Stack

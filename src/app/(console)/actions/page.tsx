@@ -13,6 +13,7 @@ import ChangeTimeline from "@/components/console/ChangeTimeline";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
+import PageHeader from "@/components/console/PageHeader";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { loadActions, loadChangeReport } from "@/lib/console-data";
@@ -27,7 +28,7 @@ import type { ActionProjection, ChangeReportProjection } from "../../../../packa
 // resolve-path action buttons, and category badges.
 // ──────────────────────────────────────────────
 
-type CategoryTab = "all" | "incident" | "opportunity" | "verification";
+type CategoryTab = "all" | "incident" | "opportunity" | "verification" | "observation";
 
 const categoryConfig: Record<string, { label: string; dotColor: string; badgeStyle: string }> = {
   incident: {
@@ -61,9 +62,9 @@ const effortConfig: Record<string, { label: string; style: string }> = {
 };
 
 const resolveConfig: Record<string, { label: string; style: string }> = {
-  fix: { label: "Fix", style: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 hover:bg-red-500/20" },
-  verify: { label: "Verify", style: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/20" },
-  track: { label: "Track", style: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20" },
+  fix: { label: "Mark Resolved", style: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 hover:bg-red-500/20" },
+  verify: { label: "Run Verification", style: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/20" },
+  track: { label: "Track Progress", style: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20" },
   dismiss: { label: "Dismiss", style: "bg-zinc-500/10 text-content-muted border-zinc-500/30 hover:bg-zinc-500/20" },
 };
 
@@ -86,6 +87,7 @@ function formatCurrency(value: number): string {
 
 export default function ActionsPage() {
   const t = useTranslations("console.actions");
+  const tc = useTranslations("console.common");
   const mcpData = useMcpData();
   const dataState = mcpData.actions.status !== "not_ready" ? mcpData.actions : loadActions();
   const changeState = mcpData.changeReport.status !== "not_ready" ? mcpData.changeReport : loadChangeReport();
@@ -93,12 +95,7 @@ export default function ActionsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
-        <p className="mt-1 text-sm text-content-muted">
-          {t("subtitle")}
-        </p>
-      </div>
+      <PageHeader title={t("title")} subtitle={t("subtitle")} tooltip={tc("page_tooltips.actions")} />
 
       <ConsoleState
         state={dataState}
@@ -175,6 +172,7 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
     { key: "incident", label: t("tabs.incidents"), count: counts.incident, dotColor: "bg-red-500" },
     { key: "opportunity", label: t("tabs.opportunities"), count: counts.opportunity, dotColor: "bg-emerald-500" },
     { key: "verification", label: t("tabs.verifications"), count: counts.verification, dotColor: "bg-blue-500" },
+    { key: "observation", label: t("tabs.observations"), count: counts.observation, dotColor: "bg-zinc-500" },
   ];
 
   // Table columns
@@ -251,7 +249,7 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
     },
     {
       key: "resolve",
-      label: t("columns.resolve"),
+      label: t("columns.nextStep"),
       className: "w-24",
       render: (row) => {
         if (!row.resolve_path) return <span className="text-xs text-content-faint">--</span>;
@@ -281,6 +279,13 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
       {/* Change Summary Banner */}
       <div className="mb-4">
         <ChangeSummaryBanner report={changeReport} />
+      </div>
+
+      {/* Explainer */}
+      <div className="mb-4 rounded-lg border border-edge bg-surface-card/50 px-4 py-2.5">
+        <p className="text-xs leading-relaxed text-content-muted">
+          {t("explainer")}
+        </p>
       </div>
 
       {/* Tab Bar */}
@@ -459,10 +464,32 @@ function ActionDrawerContent({
 
   return (
     <div className="space-y-6">
-      {/* Title + Description */}
-      <section>
-        <p className="text-sm text-content-secondary">{action.description}</p>
-      </section>
+      {/* Description + Root Cause — visually connected */}
+      {(action.description || action.root_cause) && (
+        <section>
+          <div className="rounded-md border border-edge bg-surface-card overflow-hidden">
+            {action.description && (
+              <div className="px-4 py-3">
+                <h3 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-faint">
+                  {t("drawer.description")}
+                </h3>
+                <p className="text-sm leading-relaxed text-content-secondary">{action.description}</p>
+              </div>
+            )}
+            {action.description && action.root_cause && (
+              <div className="border-t border-edge/50" />
+            )}
+            {action.root_cause && (
+              <div className="px-4 py-3">
+                <h3 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-faint">
+                  {t("drawer.rootCause")}
+                </h3>
+                <span className="text-sm font-medium text-content-secondary">{action.root_cause}</span>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Badge Row */}
       <section>
@@ -502,18 +529,6 @@ function ActionDrawerContent({
               <span className="text-xs text-content-muted">{t("drawer.priorityScore")}</span>
               <span className="font-mono text-xs text-content-secondary">{action.priority_score}</span>
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* Root Cause */}
-      {action.root_cause && (
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-            {t("drawer.rootCause")}
-          </h3>
-          <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
-            <span className="text-sm font-medium text-content-secondary">{action.root_cause}</span>
           </div>
         </section>
       )}
@@ -584,7 +599,7 @@ function ActionDrawerContent({
           <button
             className={`w-full rounded-md border px-4 py-2 text-sm font-medium transition-colors ${resolveCfg.style}`}
           >
-            {resolveCfg.label} {t("drawer.this")} {cfg?.label || t("drawer.action")}
+            {resolveCfg.label}
           </button>
         )}
       </section>

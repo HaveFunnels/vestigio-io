@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/libs/utils";
 import { Check, X } from "lucide-react";
 
@@ -60,6 +60,39 @@ const FeatureItem: React.FC<{ feature: Feature }> = ({ feature }) => {
   );
 };
 
+// --- Animated Price ---
+
+function AnimatedPrice({ value }: { value: number }) {
+  const [display, setDisplay] = useState(value);
+  const frameRef = useRef<number | null>(null);
+  const startRef = useRef(display);
+  const startTimeRef = useRef(0);
+
+  useEffect(() => {
+    if (value === display) return;
+    startRef.current = display;
+    startTimeRef.current = performance.now();
+    const duration = 400;
+
+    function tick(now: number) {
+      const elapsed = now - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startRef.current + (value - startRef.current) * eased);
+      setDisplay(current);
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(tick);
+      }
+    }
+
+    frameRef.current = requestAnimationFrame(tick);
+    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
+  }, [value]);
+
+  return <>{display}</>;
+}
+
 // --- Main Component ---
 
 export default function PricingComponent({
@@ -88,13 +121,21 @@ export default function PricingComponent({
 
       {/* Cycle Toggle */}
       <div className="mb-12 flex justify-center">
-        <div className="inline-flex items-center rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+        <div className="relative inline-flex items-center rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+          {/* Sliding highlight */}
+          <div
+            className="absolute top-1 bottom-1 rounded-md bg-white/10 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            style={{
+              left: billingCycle === "monthly" ? "4px" : "50%",
+              width: "calc(50% - 4px)",
+            }}
+          />
           <button
             onClick={() => onCycleChange("monthly")}
             className={cn(
-              "rounded-md px-5 py-2 text-sm font-medium transition-all",
+              "relative z-10 rounded-md px-5 py-2 text-sm font-medium transition-colors duration-200",
               billingCycle === "monthly"
-                ? "bg-white/10 text-white shadow-sm"
+                ? "text-white"
                 : "text-zinc-400 hover:text-zinc-200"
             )}
           >
@@ -103,17 +144,23 @@ export default function PricingComponent({
           <button
             onClick={() => onCycleChange("annually")}
             className={cn(
-              "relative rounded-md px-5 py-2 text-sm font-medium transition-all",
+              "relative z-10 rounded-md px-5 py-2 text-sm font-medium transition-colors duration-200",
               billingCycle === "annually"
-                ? "bg-white/10 text-white shadow-sm"
+                ? "text-white"
                 : "text-zinc-400 hover:text-zinc-200"
             )}
           >
             Annually
-            <span className="absolute -right-2 -top-3 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
-              -{annualDiscountPercent}%
-            </span>
           </button>
+          {/* Save badge — fades in on annual */}
+          <span
+            className={cn(
+              "absolute -right-14 top-1/2 -translate-y-1/2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 transition-all duration-300",
+              billingCycle === "annually" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
+            )}
+          >
+            Save {annualDiscountPercent}%
+          </span>
         </div>
       </div>
 
@@ -157,14 +204,15 @@ export default function PricingComponent({
               {/* Price */}
               <div className="mt-5">
                 <span className="text-4xl font-extrabold text-white">
-                  ${price}
+                  $<AnimatedPrice value={price} />
                 </span>
                 <span className="ml-1 text-sm text-zinc-400">{suffix}</span>
-                {billingCycle === "annually" && (
-                  <p className="mt-1 text-xs text-zinc-500 line-through">
-                    ${plan.priceMonthly}/mo
-                  </p>
-                )}
+                <p className={cn(
+                  "mt-1 text-xs text-zinc-500 line-through transition-all duration-300",
+                  billingCycle === "annually" ? "h-4 opacity-100" : "h-0 opacity-0"
+                )}>
+                  ${plan.priceMonthly}/mo
+                </p>
               </div>
 
               {/* CTA */}

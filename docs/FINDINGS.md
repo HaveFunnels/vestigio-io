@@ -1,6 +1,6 @@
 # FINDINGS.md — Vestigio Finding Inventory
 
-> Last updated: 2026-04-02 (Documentation refresh)
+> Last updated: 2026-04-05 (root cause inventory added)
 > Grounded in: current codebase inspection (packages/, workers/, apps/, tests/)
 
 ---
@@ -210,3 +210,265 @@ No integration-sourced findings exist.
 ### 8. Suppression context rendered in UI
 
 Suppression context is now rendered in the UI. `FindingSuppressionContext` carries visibility (`hidden | dimmed | annotated | visible`), confidence reduction, and user-facing explanation. The analysis page and workspace detail pages render suppressed findings with appropriate visual treatment (dimmed, hidden, or annotated depending on suppression type).
+
+---
+
+## E. Root Cause Vocabulary Inventory
+
+### How it works
+
+170+ inference keys collapse into **32 root causes** via the mapping in [root-causes.ts](../packages/intelligence/root-causes.ts). Each root cause groups related inferences, aggregates severity and confidence, and links to affected decision packs.
+
+**System flow:**
+```
+Inferences → groupIntoRootCauses() → RootCause[]
+                                         ↓
+                                    linkDecisions() → DecisionLink[]
+                                         ↓
+                                    prioritizeActions() → GlobalAction[] (with root_cause_ref)
+                                         ↓
+                              MCP: get_root_causes, answer_underlying_cause
+                              Maps: findings → root causes → actions
+                              Projections: Finding.root_cause, Action.root_cause
+```
+
+**Key files:**
+| File | What it does |
+|------|-------------|
+| [packages/intelligence/root-causes.ts](../packages/intelligence/root-causes.ts) | `INFERENCE_TO_ROOT_CAUSE` mapping + `groupIntoRootCauses()` |
+| [packages/intelligence/types.ts](../packages/intelligence/types.ts) | `RootCause` interface, `RootCauseCategory`, `ImpactDimension` |
+| [packages/intelligence/linking.ts](../packages/intelligence/linking.ts) | `linkDecisions()`, `prioritizeActions()` — connects root causes to decisions and actions |
+| [packages/intelligence/engine.ts](../packages/intelligence/engine.ts) | `buildIntelligenceSummary()` — generates underlying_problems, fix_first, cross_pack_issues |
+| [packages/maps/engine.ts](../packages/maps/engine.ts) | `buildRootCauseMap()`, `buildRevenueLeakageMap()`, `buildChargebackRiskMap()` |
+| [apps/mcp/answers.ts](../apps/mcp/answers.ts) | `composeRootCauseAnswer()` — MCP narrative from root causes |
+| [apps/mcp/resources.ts](../apps/mcp/resources.ts) | `getRootCausesSummary()` → `RootCauseSummaryView[]` |
+
+### Impact dimensions
+
+| Dimension | Used by packs | Meaning |
+|-----------|--------------|---------|
+| `scale_risk` | scale_readiness | Risk increases under higher traffic |
+| `revenue_loss` | revenue_integrity | Money actively being lost |
+| `trust_erosion` | scale_readiness, revenue_integrity | Trust deteriorating, affects multiple surfaces |
+| `measurement_blind` | scale_readiness, revenue_integrity | Can't see what's happening |
+| `chargeback_risk` | chargeback_resilience | Dispute probability elevated |
+
+### Complete root cause inventory
+
+#### Commerce Core (7 root causes)
+
+These cover the primary checkout/conversion/trust surfaces. They fire on virtually every commerce audit.
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 1 | `trust_failure_at_checkout` | Trust failure at checkout | trust_failure | scale_risk, trust_erosion, revenue_loss | critical | Scale, Revenue |
+| 2 | `fragmented_conversion_path` | Fragmented conversion path | conversion_fragmentation | scale_risk, revenue_loss | high | Scale, Revenue |
+| 3 | `active_revenue_leakage` | Active revenue leakage | conversion_fragmentation | revenue_loss, scale_risk, trust_erosion, measurement_blind | critical | Scale, Revenue |
+| 4 | `friction_barrier_on_path` | Friction barrier on critical path | friction_barrier | revenue_loss, scale_risk | high | Scale, Revenue |
+| 5 | `measurement_blindspot` | Measurement blind spot | measurement_gap | scale_risk, measurement_blind, revenue_loss | high | Scale, Revenue |
+| 6 | `weak_conversion_signal` | Weak conversion signal | conversion_clarity | revenue_loss | medium | Revenue |
+| 7 | `policy_deficiency` | Policy and compliance deficiency | policy_deficiency | scale_risk, trust_erosion, chargeback_risk | high | Scale, Revenue, Chargeback |
+
+**Assessment:** This group is **strong**. `trust_failure_at_checkout` and `active_revenue_leakage` collapse well and explain the core Vestigio thesis. `weak_conversion_signal` is the weakest — it's vague and doesn't clearly point to a fix. Consider: does it add anything `friction_barrier_on_path` doesn't?
+
+**Contributing inferences (examples):**
+- `trust_failure_at_checkout` ← trust_boundary_crossed, checkout_integrity, trust_break_in_checkout, redirect_chain_erodes_checkout_trust, untrusted_embeds_near_purchase
+- `active_revenue_leakage` ← critical_path_broken, revenue_leakage, checkout_provider_fragmented
+- `fragmented_conversion_path` ← revenue_path_fragile, conversion_flow_fragmented
+
+---
+
+#### Chargeback & Support (3 root causes)
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 8 | `support_gap` | Support accessibility gap | support_gap | chargeback_risk, trust_erosion, revenue_loss | high | Chargeback, Scale, Revenue |
+| 9 | `expectation_failure` | Customer expectation misalignment | expectation_failure | chargeback_risk | high | Chargeback |
+| 10 | `elevated_dispute_risk` | Elevated dispute and chargeback risk | dispute_exposure | chargeback_risk, trust_erosion | critical | Chargeback, Scale |
+
+**Assessment:** Solid group but `elevated_dispute_risk` is a **catch-all**. It absorbs `dispute_risk_elevated` and `post_purchase_confirmation_absent` but its title is basically "chargebacks are high" — circular rather than explanatory. It should explain WHY chargebacks are elevated (compound gaps), not just restate the inference. Compare: `expectation_failure` is much better — it explains the mechanism.
+
+---
+
+#### Channel Integrity (6 root causes)
+
+Phase 3A — payment surface, commerce operations, abuse.
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 11 | `channel_integrity_compromise` | Channel integrity compromised | channel_integrity | revenue_loss, trust_erosion, scale_risk | critical | Scale, Revenue |
+| 12 | `commerce_continuity_exposure` | Commerce continuity threatened by operational exposure | commerce_continuity | revenue_loss, scale_risk | high | Scale, Revenue |
+| 13 | `weak_channel_posture` | Weak channel technical posture | channel_integrity | trust_erosion, revenue_loss | medium | Scale, Revenue |
+| 14 | `abuse_friendly_channel` | Abuse-friendly channel conditions | abuse_exposure | revenue_loss | high | Revenue |
+| 15 | `deep_commerce_abuse_surface` | Deep commerce surfaces exposed to systematic abuse | abuse_exposure | revenue_loss, scale_risk | high | Scale, Revenue |
+| 16 | `weak_commerce_governance` | Weak governance on discoverable commerce endpoints | abuse_exposure | revenue_loss, scale_risk | medium | Scale, Revenue |
+
+**Assessment:** This group has **naming problems**. Three root causes share the `abuse_exposure` category but the distinctions between them are subtle:
+- `abuse_friendly_channel` = conditions that attract abuse
+- `deep_commerce_abuse_surface` = surfaces exposed to systematic abuse
+- `weak_commerce_governance` = endpoints without safeguards
+
+In practice, these often fire together and a user wouldn't know why there are 3 "abuse" root causes instead of 1. **Candidate for consolidation.** Same issue with `channel_integrity_compromise` vs `weak_channel_posture` — one is "compromised", the other is "weak". The difference is severity, not mechanism.
+
+Also: `commerce_continuity_exposure` title is confusing — "operational exposure" is jargon. What does this mean in plain business language?
+
+---
+
+#### Runtime & Dependencies (2 root causes)
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 17 | `runtime_commerce_fragility` | Runtime fragility on commerce-critical surfaces | friction_barrier | revenue_loss, scale_risk | high | Scale, Revenue |
+| 18 | `third_party_dependency_risk` | Third-party dependency risk on trust and purchase surfaces | trust_failure, channel_integrity | trust_erosion, revenue_loss | high | Scale, Revenue |
+
+**Assessment:** `runtime_commerce_fragility` is **good** — maps to Phase 3A network analysis / JS error signals and clearly explains "your checkout breaks at runtime." `third_party_dependency_risk` is also good — maps to external script/CDN/provider dependency and clearly explains the risk.
+
+But: `runtime_commerce_fragility` uses category `friction_barrier` — same as `friction_barrier_on_path` (#4). These could overlap in the maps. A checkout that's slow (friction) AND has JS errors (runtime fragility) would generate 2 root causes that are hard to distinguish visually.
+
+---
+
+#### Uncontrolled Variants (1 root cause)
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 19 | `uncontrolled_commerce_variant` | Uncontrolled commerce variants escaping the safeguard model | conversion_fragmentation | revenue_loss, trust_erosion, measurement_blind | high | Scale, Revenue |
+
+**Assessment:** Title is **too abstract**. "Escaping the safeguard model" is internal Vestigio language that a customer wouldn't understand. This means "there are checkout/purchase paths that bypass your main flow and operate without the same trust/policy/measurement coverage." The description should lead with that.
+
+---
+
+#### SaaS (3 root causes)
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 20 | `saas_activation_barrier` | Activation barrier blocking trial-to-paid conversion | saas_activation_failure | revenue_loss, trust_erosion | critical | SaaS |
+| 21 | `saas_product_experience_gap` | Product experience gap eroding perceived value | saas_product_friction | revenue_loss | high | SaaS |
+| 22 | `saas_expansion_blocked` | Expansion revenue blocked by invisible upgrade path | saas_product_friction | revenue_loss | high | SaaS |
+
+**Assessment:** This group is **excellent**. Each root cause tells a clear story:
+- Activation: you can't get started → trial dies
+- Experience: you got in but the product feels broken → you churn
+- Expansion: you like it but can't upgrade → revenue capped
+
+Clear actions, clear progression, good workspace anchors. **Best-designed root cause group.**
+
+---
+
+#### Discoverability (4 root causes)
+
+Phase 3E — search, social, structured data.
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 23 | `weak_discoverability_signals` | Weak search and social representation on commercial pages | discoverability_gap | revenue_loss | medium | Revenue |
+| 24 | `inconsistent_surface_representation` | Inconsistent brand representation across discovery surfaces | discoverability_gap | trust_erosion, revenue_loss | medium | Revenue, Scale |
+| 25 | `commercial_pages_not_exposed` | Commercial pages not structurally exposed for crawling and discovery | discoverability_gap | revenue_loss | medium | Revenue |
+| 26 | `weak_semantic_intent_signaling` | Weak semantic signals preventing search and AI understanding | discoverability_gap | revenue_loss | medium | Revenue |
+
+**Assessment:** **Over-fragmented.** 4 root causes all in category `discoverability_gap`, all medium severity, all affecting revenue_loss. In practice, a user would see 4 "discoverability" root causes in the map and not understand the distinctions:
+- `weak_discoverability_signals` = search/social representation weak
+- `inconsistent_surface_representation` = brand representation inconsistent
+- `commercial_pages_not_exposed` = pages not crawlable
+- `weak_semantic_intent_signaling` = semantic signals weak
+
+These tell variants of the same story: **"search engines can't find or understand your commercial pages."** Strong candidate for consolidation into 1-2 root causes.
+
+---
+
+#### Brand Integrity (3 root causes)
+
+Phase 3E — lookalike domains, impersonation.
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 27 | `brand_impersonation_exposure` | Brand exposed to active impersonation and fraud | brand_impersonation | revenue_loss, trust_erosion | critical | Revenue, Scale |
+| 28 | `traffic_interception_risk` | Brand traffic exposed to interception by lookalike domains | brand_impersonation | revenue_loss | high | Revenue |
+| 29 | `brand_surface_fragmentation` | Brand presence fragmented across competing domain variants | brand_impersonation | trust_erosion, revenue_loss | medium | Revenue, Scale |
+
+**Assessment:** Similar fragmentation issue. `brand_impersonation_exposure` vs `traffic_interception_risk` vs `brand_surface_fragmentation` are three severity levels of the same underlying problem: **someone else is capturing your brand traffic.** Consolidation candidate: 1 root cause with severity driven by evidence.
+
+---
+
+#### Behavioral (4 root causes)
+
+Phase 4B — pixel-dependent, session analysis.
+
+| # | Key | Title | Category | Impacts | Severity | Packs |
+|---|-----|-------|----------|---------|----------|-------|
+| 30 | `behavioral_hesitation_at_commitment` | Behavioral hesitation at the moment of purchase commitment | behavioral_conversion_failure | revenue_loss, chargeback_risk | high | Revenue, Chargeback |
+| 31 | `behavioral_path_disconnection` | Commercial path disconnected from behavioral reality | behavioral_path_integrity | revenue_loss, scale_risk | high | Scale, Revenue |
+| 32 | `behavioral_value_justification_gap` | Value proposition fails to carry the price at the decision moment | behavioral_conversion_failure | revenue_loss | high | Revenue |
+| 33 | `behavioral_trust_failure_at_input` | Trust insufficient at sensitive data capture moment | behavioral_conversion_failure | revenue_loss | high | Revenue |
+
+**Assessment:** **Best narrative quality.** These root causes read like stories a product manager would tell:
+- "Users hesitate at the buy button"
+- "The path we designed doesn't match how people actually behave"
+- "The price feels too high for the perceived value"
+- "Users don't trust us enough to enter their card"
+
+However, 3 of 4 share category `behavioral_conversion_failure`. If a site has all 3, the map shows 3 nodes in the same category — visually cluttered. The distinctions ARE meaningful (hesitation vs value vs trust), but the map doesn't communicate them well.
+
+---
+
+### Vocabulary quality assessment
+
+#### What works well
+
+| Strength | Where | Example |
+|----------|-------|---------|
+| Business language | SaaS, Behavioral | "Activation barrier blocking trial-to-paid" tells a clear story |
+| Causal mechanism | Commerce Core | "Trust failure at checkout" explains WHY conversion drops |
+| Cross-pack linking | 7 root causes affect 2+ packs | `policy_deficiency` → Scale + Revenue + Chargeback |
+| Severity aggregation | groupIntoRootCauses() | 3+ converging inferences → severity bonus |
+| Action dedup | prioritizeActions() | Same fix across packs → merged, priority boosted |
+
+#### What needs improvement
+
+| Issue | Where | Impact | Suggested Direction |
+|-------|-------|--------|-------------------|
+| **Catch-all naming** | `elevated_dispute_risk` | Title restates the inference rather than explaining the cause. "Chargebacks are high because chargebacks are high." | Rename to reflect compound mechanism: "Multiple defenses absent at dispute-prone moments" |
+| **Over-fragmentation: abuse** | `abuse_friendly_channel` + `deep_commerce_abuse_surface` + `weak_commerce_governance` | 3 root causes that users can't distinguish. They often fire together. | Consolidate to 1-2: "Commerce surfaces exposed to abuse" (structural) + "Governance absent on exposed endpoints" (if genuinely different remediation) |
+| **Over-fragmentation: discoverability** | 4 root causes, all `discoverability_gap`, all medium | Map shows 4 indistinguishable nodes. User sees "discoverability problem × 4" not "4 different problems" | Consolidate to 2: "Commercial pages invisible to search" (structural) + "Brand signal inconsistent across surfaces" (content) |
+| **Over-fragmentation: brand** | 3 root causes, all `brand_impersonation` | Same pattern — 3 severity levels of one problem | Consolidate to 1: `brand_traffic_at_risk`, with severity driven by evidence (impersonation > interception > fragmentation) |
+| **Jargon titles** | `uncontrolled_commerce_variant`, `commerce_continuity_exposure` | "Escaping the safeguard model" and "operational exposure" are internal language | Rewrite in business terms: "Unmonitored purchase paths outside your main flow", "Commerce operations exposed to interruption" |
+| **Category collision** | `runtime_commerce_fragility` (friction_barrier) + `friction_barrier_on_path` (friction_barrier) | Two root causes in the same category with overlapping signals. Map doesn't distinguish them. | Different categories or merge: runtime fragility is a TYPE of friction barrier, not a separate root cause |
+| **Weak: `weak_conversion_signal`** | Commerce Core | Vague — "conversion signal is weak" doesn't explain what's wrong or what to fix. Overlaps with `friction_barrier_on_path`. | Consider removing or merging into `friction_barrier_on_path` |
+| **MCP narrative gap** | `composeRootCauseAnswer()` | Lists root cause titles but doesn't narrate the connections between them. "You have 4 problems" not "These 4 problems share a common fix" | Opportunity: use root cause → action links to generate "fix X → resolves A, B, C" narratives |
+
+#### Consolidation recommendation
+
+If you consolidated the fragmentation, the vocabulary would go from **32 → ~24 root causes**:
+
+| Group | Current | Proposed | Rationale |
+|-------|---------|----------|-----------|
+| Abuse | 3 | 1-2 | Users can't distinguish the 3. Merge unless remediation genuinely differs. |
+| Discoverability | 4 | 2 | "Invisible to search" + "Brand signal inconsistent" covers it. |
+| Brand | 3 | 1 | One problem with evidence-driven severity. |
+| Conversion clarity | 1 | 0 (merge into friction) | `weak_conversion_signal` adds nothing `friction_barrier_on_path` doesn't cover. |
+| Dispute | 1 | 1 (rename) | Keep but rename to explain the mechanism. |
+
+---
+
+## F. Realized Finding Opportunities
+
+The following opportunities from [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md) have been realized and are now part of the active finding inventory. They are listed here for traceability — the actual findings appear in the pack tables above.
+
+| FO# | Opportunity | How Realized | Phase |
+|-----|------------|--------------|-------|
+| FO-1 | Redirect chain trust degradation | `redirect_chain_erodes_checkout_trust` finding in Revenue Integrity | 30B |
+| FO-2 | Cross-domain form posting risk | `form_data_leaves_domain` finding in Scale Readiness | 30 |
+| FO-3 | Iframe trust boundary analysis | `untrusted_embeds_near_purchase` finding in Scale Readiness | 30B |
+| FO-4 | HTTP error page classification | `critical_path_broken` finding in Revenue Integrity | 30 |
+| FO-8 | Platform-specific risk profiling | `platform_checkout_risk_unaddressed` finding in Scale Readiness | 30B |
+| FO-9 | Provider-based checkout mode inference | `checkout_mode` signal with redirect/embedded detection in signals engine | Signals |
+| FO-10 | Graph-based orphan page detection | `commercial_pages_disconnected` finding in Revenue Integrity | 30B |
+| FO-11 | Evidence corroboration scoring | `FindingProjection.evidence_quality` with composite scores | Phase 0 UX |
+| FO-13 | Language consistency across journey | `commercial_journey_language_break` finding in Revenue Integrity | 30B |
+| FO-14 | Multiple payment provider fragmentation | `checkout_provider_fragmented` finding in Revenue Integrity | 30 |
+| FO-15 | Change detection regression findings | `revenue_path_regressed` finding + `ChangeReportProjection` | 30B |
+| FO-16 | Verification maturity as finding context | `FindingProjection.verification_maturity` + `verification_method` | Phase 0 UX |
+| FO-18 | Suppressed finding transparency | Suppression governance with blind spots, escalations, confidence audits | Suppression |
+| FO-19 | SaaS positive findings | `smooth_activation`, `navigation_clean`, `upgrade_path_visible`, `empty_states_guided` | 30 |
+| FO-20 | Behavioral event readiness | `BehavioralEvent`/`BehavioralSession` evidence types, pixel deployment eligibility checks | 4B |
+
+**15 of 20 original opportunities realized.** Remaining 5 opportunities plus 24 new proposals (12 AI-driven, 12 cybersecurity) are tracked in [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md).

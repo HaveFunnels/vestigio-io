@@ -1,6 +1,8 @@
 # Vestigio.io - Documento Descritivo do Frontend
 
 > Inventario completo de todas as telas, elementos visuais, navegacao, jornadas de usuario e identidade visual da aplicacao Vestigio.io.
+>
+> **Nota de posicionamento (2026-04-04):** as superfícies autenticadas em `/app` sao a fonte canonica de significado do produto. A landing publica atual ainda contem copy e estrutura herdadas de boilerplate SaaS e nao deve ser usada como source of truth para GTM, narrativa comercial ou arquitetura de uma futura landing.
 
 ---
 
@@ -22,9 +24,9 @@
 
 ### 1.1 Feeling Geral
 
-A UI da Vestigio transmite uma sensacao de **ferramenta profissional de inteligencia analitica**. O console do produto utiliza um tema **escuro predominante** (fundo quase preto, zinc-950) com acentos em **verde esmeralda** (emerald-400/500/600) que trazem a sensacao de um terminal de monitoramento sofisticado. As cores semanticas (vermelho para critico, ambar para alerta, azul para informativo) sao usadas com parcimonia, transmitindo confianca e precisao. O site marketing, por outro lado, usa fundo claro com acentos em **roxo** (#635BFF), trazendo uma identidade mais amigavel e moderna para a landing page.
+A UI da Vestigio transmite uma sensacao de **ferramenta profissional de inteligencia analitica**. O console do produto utiliza um tema **escuro predominante** (fundo quase preto, zinc-950) com acentos em **verde esmeralda** (emerald-400/500/600) que trazem a sensacao de um terminal de monitoramento sofisticado. As cores semanticas (vermelho para critico, ambar para alerta, azul para informativo) sao usadas com parcimonia, transmitindo confianca e precisao. O site marketing atual, por outro lado, ainda reflete um boilerplate mais generico e nao expressa integralmente a tese do produto.
 
-A impressao geral e de um **produto data-driven, serio e tecnico**, mas com uma camada de acessibilidade na landing page que convida usuarios nao-tecnicos.
+A impressao geral correta e a de um **produto de decisao para operacao digital**, serio e explicavel, com superficies que permitem a usuarios tecnicos e nao-tecnicos entender risco, receita, prontidao e prioridades.
 
 ### 1.2 Paleta de Cores
 
@@ -224,12 +226,39 @@ Barra horizontal no topo (12px de altura), com `border-b border-zinc-800`:
 
 ## 3. Telas Publicas (Marketing / Landing Page)
 
+### 3.0 Narrativa Canonica Para Marketing
+
+Antes de descrever a implementacao publica atual, e importante registrar a narrativa correta do produto para qualquer futura landing rewrite.
+
+Vestigio deve ser apresentada a partir das superficies do `/app`:
+
+| Superficie | O que o usuario encontra | Valor pratico |
+|---|---|---|
+| **Actions** | fila priorizada de incidentes, oportunidades e verificacoes | mostra o que fazer agora |
+| **Workspaces** | visoes contextualizadas por pergunta de negocio | organiza o produto por objetivo, nao por modulo tecnico |
+| **Chat** | interface conversacional com playbooks e respostas guiadas por contexto | democratiza o uso do produto |
+| **Analysis / Findings** | achados com impacto, confianca, verificacao e mudanca | oferece profundidade e explicabilidade |
+| **Analysis / Inventory** | surfaces, rotas, status e concentracao de achados | mostra cobertura real do ambiente |
+| **Maps** | relacoes causais entre causa-raiz, finding e acao | evidencia alavancas e blast radius |
+| **Data Sources** | configuracao de fontes e enriquecimento | comunica expansao de profundidade analitica |
+
+Em termos de mensagem, a landing futura deve explicar a Vestigio como um sistema para responder perguntas como:
+
+- posso escalar trafego com seguranca?
+- onde estou perdendo receita?
+- o que esta elevando risco ou enfraquecendo confianca?
+- o que eu devo corrigir primeiro?
+
+### 3.0.1 Estado Atual Da Landing Publica
+
+A landing atual existe e esta funcional, mas o seu conteudo textual e a estrutura de storytelling ainda refletem um boilerplate SaaS generico. Os componentes abaixo devem ser entendidos como **implementacao atual**, nao como narrativa canonica do produto.
+
 ### 3.1 Home Page
 
 **Rota**: `/`
 **Arquivo**: `src/app/(site)/page.tsx` → `src/components/Home/`
 
-A home page e composta por secoes empilhadas verticalmente, cada uma como componente independente:
+A home page atual e composta por secoes empilhadas verticalmente, cada uma como componente independente. A estrutura tecnica e reaproveitavel, mas a copy e parte do sequencing ainda precisam ser reconstruidos para refletir o produto real:
 
 #### 3.1.1 Hero Section
 **Arquivo**: `src/components/Home/Hero/index.tsx`

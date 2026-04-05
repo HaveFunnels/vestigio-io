@@ -685,7 +685,16 @@
 			"loading": "__TODO__",
 			"clear_filters": "__TODO__",
 			"hide_positive_signals": "__TODO__",
-			"n_of_total": "__TODO__"
+			"n_of_total": "__TODO__",
+			"page_tooltips": {
+				"actions": "Priorisierte nächste Schritte zur Verbesserung Ihrer Umgebung. Starten Sie hier.",
+				"workspaces": "Entscheidungszusammenfassungen nach Geschäftsfrage gruppiert. Das große Bild.",
+				"chat": "Stellen Sie Fragen zu Ihrer Umgebung. Vestigio antwortet mit Evidenz.",
+				"analysis": "Alle Befunde mit vollständigen Evidenzdetails. Tiefer eintauchen.",
+				"inventory": "Alle Seiten und Oberflächen, die Vestigio auf Ihrer Website entdeckt hat.",
+				"maps": "Visuelle Ursache-Wirkungs-Ketten von Befunden zu Aktionen.",
+				"knowledge_base": "Dokumentation zu Befunden, Packs und Plattformkonzepten."
+			}
 		},
 		"analysis": {
 			"title": "__TODO__",
@@ -723,7 +732,28 @@
 			"why_good": "__TODO__",
 			"evidence_contradictions": "__TODO__",
 			"contradictions_detected": "__TODO__",
-			"discuss_finding": "__TODO__"
+			"discuss_finding": "__TODO__",
+			"verification_tooltip": "Die Verifizierungsreife zeigt, wie die Evidenz dieses Befunds validiert wurde. Nicht verifiziert = nur statische Analyse. Verifiziert = durch Browser bestätigt.",
+			"learn_more": "Mehr erfahren",
+			"docs_coming_soon": "Die Dokumentation für diesen Befund wird gerade geschrieben."
+		},
+		"knowledge_base": {
+			"title": "Wissensdatenbank",
+			"subtitle": "Dokumentation zu Befunden, Packs und Plattformkonzepten.",
+			"tabs": {
+				"all": "Alle",
+				"concepts": "Konzepte",
+				"packs": "Packs",
+				"findings": "Befunde",
+				"guides": "Anleitungen"
+			},
+			"search_placeholder": "Artikel suchen...",
+			"read_more": "Mehr lesen",
+			"empty": "Noch keine Artikel veröffentlicht. Die Dokumentation wird hier erscheinen.",
+			"no_results": "Keine Artikel stimmen mit der Suche überein.",
+			"article_not_found": "Artikel nicht gefunden.",
+			"back": "Wissensdatenbank",
+			"no_content": "Der Artikelinhalt wird gerade geschrieben."
 		},
 		"workspaces": {
 			"title": "__TODO__",
@@ -805,6 +835,13 @@
 				"landing_vs_app": {
 					"title": "__TODO__",
 					"description": "__TODO__"
+				},
+				"playbook_prompts": {
+					"revenue_leak_full_audit": "Führe eine vollständige Analyse von Umsatzverlusten durch. Zeige jeden Befund, der Umsatzverlust verursacht, sortiert nach monatlichem Dollar-Impact von hoch nach niedrig. Für die Top 5 erkläre die Ursache und was die Behebung jeweils einbringen würde. Dann zeige den gesamten monatlichen kombinierten Verlust und die geschätzte Erholung, wenn ich die Top 3 behebe.",
+					"conversion_bottleneck": "Kartiere meinen Conversion-Funnel vom Landing bis zum Kauf/Anmeldung. Zeige in jeder Phase, welche Befunde Reibung erzeugen. Wo ist der größte Abfall? Was ist die Ursache dieses Abfalls? Wenn ich nur eine Sache zur Verbesserung der Conversion ändern könnte, was sollte es sein und wie viel würde es bewegen?",
+					"trust_signal_audit": "Bewerte die Vertrauenssignale meiner Website in diesen Dimensionen: SSL und Sicherheitssiegel, Bewertungen und Testimonials, Unternehmensinformationen (Über uns, Team, Adresse), Kontaktoptionen (Telefon, Chat, E-Mail), Richtlinien (Rückgabe, Datenschutz, AGB), Zahlungsvertrauen (Logos, Garantien), Social Proof (Kundenanzahl, Medienerwähnungen). Für jede Dimension bewerte 1-10 und erkläre was fehlt. Was ist mein Gesamtvertrauenswert und was würde ihn am schnellsten verbessern?",
+					"executive_summary": "Erstelle eine Zusammenfassung für eine Vorstandssitzung. Einschließen: monatlicher Gesamtumsatz in Gefahr (Summe aller Befunde), Top 3 kritische Probleme mit Dollar-Impact, 90-Tage-Prioritätsplan (Woche 1-2: Quick Wins, Monat 1: kritische Korrekturen, Monat 2-3: strategische Verbesserungen), erwarteter ROI des vollständigen Behebungsplans und ein Gesundheitswert von 0-100 für das Geschäft.",
+					"cross_pack_correlation": "Analysiere Befunde über ALLE Packs hinweg (Umsatzintegrität, Skalierungsbereitschaft, Chargeback-Resilienz). Finde Korrelationen: Welche Befunde aus verschiedenen Packs teilen dieselbe Ursache? Wo reduziert die Behebung eines Umsatzproblems auch das Chargeback-Risiko? Wo hilft die Verbesserung des Vertrauens auch der Conversion? Erstelle eine Korrelationskarte mit verbundenen Befunden über Packs hinweg mit kombiniertem Impact."
 				}
 			}
 		},
@@ -820,11 +857,24 @@
 				"cross_pack": "__TODO__",
 				"high_severity": "__TODO__"
 			},
+			"tabs": {
+				"observations": "Beobachtungen"
+			},
+			"columns": {
+				"nextStep": "Nächster Schritt"
+			},
+			"resolve": {
+				"fix": "Als Gelöst markieren",
+				"verify": "Verifizierung Starten",
+				"track": "Fortschritt verfolgen"
+			},
+			"explainer": "Aktionen sind priorisierte nächste Schritte, die aus Entscheidungen abgeleitet werden. Jede Aktion kann mehrere Befunde adressieren. Befunde liefern die unterstützende Evidenz.",
 			"scope": {
 				"cross_pack": "__TODO__",
 				"single": "__TODO__"
 			},
 			"drawer": {
+				"description": "Beschreibung",
 				"what_fixes": "__TODO__",
 				"impact_unlocked": "__TODO__",
 				"monthly_range": "__TODO__",
@@ -1072,6 +1122,7 @@
 			"billing": "Abrechnung",
 			"members": "Mitglieder",
 			"settings": "Einstellungen",
+			"knowledge_base": "Wissensdatenbank",
 			"data_sources": "Datenquellen",
 			"overview": "Übersicht",
 			"organizations": "Organisationen",

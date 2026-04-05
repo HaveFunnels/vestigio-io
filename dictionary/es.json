@@ -705,7 +705,16 @@
 			"loading": "Cargando...",
 			"clear_filters": "Limpiar filtros",
 			"hide_positive_signals": "Ocultar señales positivas",
-			"n_of_total": "{filtered} de {total} hallazgos"
+			"n_of_total": "{filtered} de {total} hallazgos",
+			"page_tooltips": {
+				"actions": "Pasos priorizados para mejorar tu entorno. Empieza aquí.",
+				"workspaces": "Resúmenes de decisiones agrupados por pregunta de negocio. Ve el panorama general.",
+				"chat": "Haz preguntas sobre tu entorno. Vestigio responde con evidencia.",
+				"analysis": "Todos los hallazgos con detalle completo de evidencia. Profundiza.",
+				"inventory": "Todas las páginas y superficies que Vestigio descubrió en tu sitio.",
+				"maps": "Cadenas visuales de causa y efecto de hallazgos a acciones.",
+				"knowledge_base": "Documentación sobre hallazgos, packs y conceptos de la plataforma."
+			}
 		},
 		"analysis": {
 			"title": "Análisis",
@@ -790,7 +799,28 @@
 			"recency": "Recencia",
 			"corroboration": "Corroboración",
 			"verification": "Verificación",
-			"verification_requested": "Verificación Solicitada"
+			"verification_requested": "Verificación Solicitada",
+			"verification_tooltip": "La madurez de verificación muestra cómo se ha validado la evidencia de este hallazgo. No verificado = solo análisis estático. Verificado = confirmado por navegador.",
+			"learn_more": "Saber más",
+			"docs_coming_soon": "La documentación para este hallazgo se está escribiendo."
+		},
+		"knowledge_base": {
+			"title": "Base de Conocimiento",
+			"subtitle": "Documentación sobre hallazgos, packs y conceptos de la plataforma.",
+			"tabs": {
+				"all": "Todos",
+				"concepts": "Conceptos",
+				"packs": "Packs",
+				"findings": "Hallazgos",
+				"guides": "Guías"
+			},
+			"search_placeholder": "Buscar artículos...",
+			"read_more": "Leer más",
+			"empty": "Aún no hay artículos publicados. La documentación aparecerá aquí a medida que se escriba.",
+			"no_results": "Ningún artículo coincide con la búsqueda.",
+			"article_not_found": "Artículo no encontrado.",
+			"back": "Base de Conocimiento",
+			"no_content": "El contenido del artículo se está escribiendo."
 		},
 		"workspaces": {
 			"title": "Workspaces",
@@ -916,6 +946,13 @@
 					"title": "Landing vs Realidad de la App",
 					"description": "Compara lo que tu landing page promete vs lo que la app realmente ofrece."
 				}
+			},
+			"playbook_prompts": {
+				"revenue_leak_full_audit": "Ejecuta un análisis completo de fugas de ingresos. Muestra cada hallazgo que causa pérdida de ingresos, clasificado por impacto mensual en dólares de mayor a menor. Para los 5 principales, explica la causa raíz y qué recuperaría corregir cada uno. Luego muestra la pérdida mensual combinada total y la recuperación estimada si corrijo los 3 principales.",
+				"conversion_bottleneck": "Mapea mi embudo de conversión desde el landing hasta la compra/registro. En cada etapa, muestra qué hallazgos crean fricción. ¿Dónde está la mayor caída? ¿Cuál es la causa raíz de esa caída? Si solo pudiera corregir una cosa para mejorar la conversión, ¿qué debería ser y cuánto movería la aguja?",
+				"trust_signal_audit": "Evalúa las señales de confianza de mi sitio en estas dimensiones: SSL y sellos de seguridad, reseñas y testimonios, información de la empresa (sobre, equipo, dirección), opciones de contacto (teléfono, chat, email), políticas (devoluciones, privacidad, términos), confianza en pagos (logos, garantías), prueba social (número de clientes, menciones en medios). Para cada dimensión, califica del 1 al 10 y explica qué falta. ¿Cuál es mi puntuación general de confianza y qué la mejoraría más rápido?",
+				"executive_summary": "Crea un resumen ejecutivo adecuado para una reunión de directorio. Incluye: ingresos mensuales totales en riesgo (suma de todos los hallazgos), 3 principales problemas críticos con impacto en dólares, hoja de ruta de prioridades para 90 días (semana 1-2: victorias rápidas, mes 1: correcciones críticas, mes 2-3: mejoras estratégicas), ROI esperado del plan completo de remediación y una puntuación de salud de 0-100 para el negocio.",
+				"cross_pack_correlation": "Analiza hallazgos en TODOS los packs (integridad de ingresos, preparación para escalar, resiliencia a contracargos). Encuentra correlaciones: ¿Qué hallazgos de diferentes packs comparten la misma causa raíz? ¿Dónde corregir un problema de ingresos también reduce el riesgo de contracargos? ¿Dónde mejorar la confianza también ayuda a la conversión? Construye un mapa de correlación mostrando hallazgos conectados entre packs con impacto combinado."
 			}
 		},
 		"actions": {
@@ -944,7 +981,8 @@
 				"all": "Todos",
 				"incidents": "Incidentes",
 				"opportunities": "Oportunidades",
-				"verifications": "Verificaciones"
+				"verifications": "Verificaciones",
+				"observations": "Observaciones"
 			},
 			"columns": {
 				"priority": "#",
@@ -954,7 +992,8 @@
 				"impact": "Impacto",
 				"severity": "Severidad",
 				"effort": "Esfuerzo",
-				"resolve": "Resolver"
+				"resolve": "Resolver",
+				"nextStep": "Siguiente Paso"
 			},
 			"categories": {
 				"incident": "Incidente",
@@ -970,11 +1009,12 @@
 				"very_high": "Muy Alto"
 			},
 			"resolve": {
-				"fix": "Arreglar",
-				"verify": "Verificar",
-				"track": "Monitorear",
+				"fix": "Marcar Resuelto",
+				"verify": "Ejecutar Verificación",
+				"track": "Seguir Progreso",
 				"dismiss": "Descartar"
 			},
+			"explainer": "Las acciones son pasos priorizados derivados de decisiones. Cada acción puede abordar múltiples hallazgos. Los hallazgos proporcionan la evidencia de soporte.",
 			"changeBanner": {
 				"firstAnalysis": "Primer análisis — sin historial de cambios",
 				"regression": "regresión(es)",
@@ -987,6 +1027,7 @@
 				"single": "individual"
 			},
 			"drawer": {
+				"description": "Descripción",
 				"whatFixes": "Qué Soluciona Esto",
 				"impactBreakdown": "Desglose de Impacto",
 				"impactUnlocked": "Impacto Desbloqueado",
@@ -1272,6 +1313,7 @@
 			"billing": "Facturación",
 			"members": "Miembros",
 			"settings": "Configuración",
+			"knowledge_base": "Base de Conocimiento",
 			"data_sources": "Fuentes de Datos",
 			"overview": "Resumen",
 			"organizations": "Organizaciones",

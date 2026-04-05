@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Column } from "@/components/console/DataTable";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ConsoleState from "@/components/console/ConsoleState";
+import PageHeader from "@/components/console/PageHeader";
 import { loadInventory, type InventorySurface, type DataState } from "@/lib/console-data";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
@@ -322,6 +323,7 @@ export default function InventoryPage() {
   const router = useRouter();
   const t = useTranslations("console.inventory");
   const tc = useTranslations("console.common.columns");
+  const tTooltip = useTranslations("console.common");
   const [liveFilter, setLiveFilter] = useState<LiveFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [httpStatusFilter, setHttpStatusFilter] = useState<HttpStatusFilter>("all");
@@ -551,7 +553,7 @@ export default function InventoryPage() {
               router.push(`/analysis?surface=${encodeURIComponent(row.normalized_path)}`);
             }
           }}
-          className={`text-xs font-mono ${row.finding_count > 0 ? "text-amber-400 hover:text-amber-300 cursor-pointer underline" : "text-content-faint"}`}
+          className={`text-xs font-mono ${row.finding_count > 0 ? "text-amber-400 hover:text-amber-300 cursor-pointer font-semibold" : "text-content-faint"}`}
           disabled={row.finding_count === 0}
         >
           {row.finding_count}
@@ -575,10 +577,7 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
-        <p className="text-sm text-content-faint mt-1">{t("subtitle")}</p>
-      </div>
+      <PageHeader title={t("title")} subtitle={t("subtitle")} tooltip={tTooltip("page_tooltips.inventory")} />
 
       <ConsoleState
         state={dataState}

@@ -40,6 +40,7 @@ export async function ensureContext(orgCtx: {
   orgName: string;
   envId: string;
   domain: string;
+  engineTranslations?: import('../../packages/projections/types').EngineTranslations;
 }): Promise<void> {
   try {
     // initMcpServer uses `await import()` to handle the async McpServer module.
@@ -65,10 +66,6 @@ export async function ensureContext(orgCtx: {
       ? orgCtx.domain
       : `https://${orgCtx.domain}`;
 
-    // Load engine translations for the user's locale
-    const { loadEngineTranslations } = await import('@/lib/engine-translations');
-    const translations = await loadEngineTranslations();
-
     bootstrapMcpContextSync(server, {
       organization_id: orgCtx.orgId,
       organization_name: orgCtx.orgName,
@@ -76,7 +73,7 @@ export async function ensureContext(orgCtx: {
       domain,
       landing_url: landingUrl,
       is_production: process.env.NODE_ENV === 'production',
-    }, evidence, store, translations);
+    }, evidence, store, orgCtx.engineTranslations);
   } catch (err) {
     console.error('[ensureContext] Failed to bootstrap MCP context:', err);
   }

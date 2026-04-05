@@ -4,6 +4,7 @@ import { resolveOrgContext } from "@/libs/resolve-org";
 import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps } from "@/lib/console-data";
 import { AppProviders } from "./providers";
 import { syncUserLocale } from "@/libs/sync-locale";
+import { loadEngineTranslations } from "@/lib/engine-translations";
 
 export const metadata = {
 	title: "Vestigio",
@@ -16,6 +17,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 	// so the i18n middleware picks it up on subsequent requests.
 	await syncUserLocale();
 
+	// Load engine translations for the user's locale (server-side only)
+	const engineTranslations = await loadEngineTranslations();
+
 	// Auto-bootstrap: load persisted evidence into MCP server singleton
 	// so Analysis / Actions / Maps / Chat pages render data on first visit.
 	if (!orgCtx.isAdmin) {
@@ -24,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 			orgName: orgCtx.orgName,
 			envId: orgCtx.envId,
 			domain: orgCtx.domain,
+			engineTranslations,
 		});
 	}
 

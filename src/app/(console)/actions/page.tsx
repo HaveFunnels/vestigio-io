@@ -291,7 +291,7 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? "bg-surface-inset text-content"
+                ? "bg-surface-inset text-content font-semibold"
                 : "text-content-muted hover:text-content-secondary"
             }`}
           >

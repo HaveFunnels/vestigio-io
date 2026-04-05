@@ -46,6 +46,7 @@ export function assembleContext(
   landing_url: string,
   conversion_proximity: number,
   is_production: boolean,
+  translations?: EngineTranslations,
 ): EngineContext {
   const scoping: Scoping = {
     workspace_ref: scope.workspace_ref,
@@ -62,9 +63,10 @@ export function assembleContext(
     landing_url,
     conversion_proximity,
     is_production,
+    translations,
   });
 
-  return { result, scope, cycle_ref, root_domain, landing_url };
+  return { result, scope, cycle_ref, root_domain, landing_url, translations };
 }
 
 // Accessors — typed getters over context, no business logic

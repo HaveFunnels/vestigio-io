@@ -56,6 +56,7 @@ export function bootstrapMcpContextSync(
   input: BootstrapInput,
   evidence: Evidence[],
   prismaEvidenceStore?: PrismaEvidenceStore,
+  translations?: import('../../packages/projections/types').EngineTranslations,
 ): BootstrapResult {
   if (!input.organization_id || !input.environment_id || !input.domain) {
     return { status: 'error', message: 'Invalid input: organization_id, environment_id, and domain are required.' };
@@ -68,7 +69,7 @@ export function bootstrapMcpContextSync(
   const scope = buildScope(input);
   const cycleRef = buildCycleRef(input);
 
-  server.loadContext(evidence, scope, cycleRef, input.domain, input.landing_url);
+  server.loadContext(evidence, scope, cycleRef, input.domain, input.landing_url, translations);
 
   // Persist evidence to DB (best-effort, fire-and-forget)
   if (prismaEvidenceStore) {

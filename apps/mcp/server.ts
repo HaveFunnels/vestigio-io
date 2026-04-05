@@ -78,6 +78,7 @@ export class McpServer {
     cycle_ref: string,
     root_domain: string,
     landing_url: string,
+    translations?: import('../../packages/projections/types').EngineTranslations,
   ): void {
     this.scope = scope;
     this.cycleRef = cycle_ref;
@@ -97,6 +98,7 @@ export class McpServer {
       landing_url,
       this.config.default_conversion_proximity,
       this.config.default_is_production,
+      translations,
     );
 
     // Initialize verification orchestrator

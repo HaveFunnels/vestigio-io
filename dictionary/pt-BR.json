@@ -631,7 +631,27 @@
 				"critical": "Crítica",
 				"high": "Alta",
 				"medium": "Média",
-				"low": "Baixa"
+				"low": "Baixa",
+				"none": "Nenhuma"
+			},
+			"badge_labels": {
+				"critical": "Crítico",
+				"high": "Alto",
+				"medium": "Médio",
+				"low": "Baixo",
+				"none": "Nenhum",
+				"healthy": "Saudável",
+				"at_risk": "Em Risco",
+				"unknown": "Desconhecido",
+				"incident": "Incidente",
+				"block_launch": "Bloquear Lançamento",
+				"fix_before_scale": "Corrigir Antes de Escalar",
+				"optimize": "Otimizar",
+				"observe": "Observar",
+				"ready": "Pronto",
+				"ready_with_risks": "Pronto com Riscos",
+				"blocker": "Bloqueador",
+				"na": "N/A"
 			},
 			"packs": {
 				"all": "Todos os Packs",

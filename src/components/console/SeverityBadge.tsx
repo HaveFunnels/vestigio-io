@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 const colors: Record<string, string> = {
   critical: "bg-red-500/10 text-red-400 border-red-500/20",
   high: "bg-orange-500/10 text-orange-400 border-orange-500/20",
@@ -27,10 +29,13 @@ const colors: Record<string, string> = {
 };
 
 export default function SeverityBadge({ value, className }: { value: string; className?: string }) {
+  const t = useTranslations("console.common.badge_labels");
   const style = colors[value] || colors.none;
+  const label = t.has(value) ? t(value) : value.replace(/_/g, " ");
+
   return (
     <span className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${style} ${className || ""}`}>
-      {value.replace(/_/g, " ")}
+      {label}
     </span>
   );
 }

@@ -631,7 +631,27 @@
 				"critical": "Critical",
 				"high": "High",
 				"medium": "Medium",
-				"low": "Low"
+				"low": "Low",
+				"none": "None"
+			},
+			"badge_labels": {
+				"critical": "Critical",
+				"high": "High",
+				"medium": "Medium",
+				"low": "Low",
+				"none": "None",
+				"healthy": "Healthy",
+				"at_risk": "At Risk",
+				"unknown": "Unknown",
+				"incident": "Incident",
+				"block_launch": "Block Launch",
+				"fix_before_scale": "Fix Before Scale",
+				"optimize": "Optimize",
+				"observe": "Observe",
+				"ready": "Ready",
+				"ready_with_risks": "Ready with Risks",
+				"blocker": "Blocker",
+				"na": "N/A"
 			},
 			"packs": {
 				"all": "All Packs",

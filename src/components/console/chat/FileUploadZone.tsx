@@ -101,7 +101,7 @@ export function FileUploadZone({ onFilesAdded, children }: FileUploadZoneProps) 
               <path d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <p className="mt-2 text-sm text-emerald-400">Drop files here</p>
-            <p className="mt-0.5 text-[10px] text-zinc-500">CSV, JSON, TXT, MD, PDF (max 2MB)</p>
+            <p className="mt-0.5 text-[10px] text-content-muted">CSV, JSON, TXT, MD, PDF (max 2MB)</p>
           </div>
         </div>
       )}
@@ -114,14 +114,14 @@ export function FileChip({ file, onRemove }: { file: UploadedFile; onRemove: () 
   const sizeLabel = file.size > 1024 ? `${(file.size / 1024).toFixed(0)}KB` : `${file.size}B`;
 
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1">
-      <svg className="h-3.5 w-3.5 text-zinc-500" viewBox="0 0 16 16" fill="none">
+    <div className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-inset px-2 py-1">
+      <svg className="h-3.5 w-3.5 text-content-muted" viewBox="0 0 16 16" fill="none">
         <path d="M9 1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V5L9 1z" stroke="currentColor" strokeWidth="1.25" />
         <path d="M9 1v4h4" stroke="currentColor" strokeWidth="1.25" />
       </svg>
-      <span className="text-xs text-zinc-300">{file.name}</span>
-      <span className="text-[10px] text-zinc-600">{sizeLabel}</span>
-      <button onClick={onRemove} className="ml-0.5 rounded p-0.5 text-zinc-600 hover:bg-zinc-700 hover:text-zinc-400">
+      <span className="text-xs text-content-secondary">{file.name}</span>
+      <span className="text-[10px] text-content-faint">{sizeLabel}</span>
+      <button onClick={onRemove} className="ml-0.5 rounded p-0.5 text-content-faint hover:bg-surface-card-hover hover:text-content-muted">
         <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none">
           <path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>

@@ -100,18 +100,18 @@ export default function PlaybooksDrawer({
       <div className="flex-1 bg-black/40" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="flex w-[420px] flex-col border-l border-zinc-800 bg-zinc-950">
+      <div className="flex w-[420px] flex-col border-l border-edge bg-surface">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-edge px-4 py-3">
           <div>
-            <h2 className="text-sm font-semibold text-zinc-100">Playbooks</h2>
-            <p className="text-[10px] text-zinc-500">
+            <h2 className="text-sm font-semibold text-content">Playbooks</h2>
+            <p className="text-[10px] text-content-muted">
               {playbooks.length} expert analysis prompts
             </p>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+            className="rounded p-1 text-content-muted hover:bg-surface-card-hover hover:text-content-secondary"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -120,34 +120,34 @@ export default function PlaybooksDrawer({
         </div>
 
         {/* Search */}
-        <div className="border-b border-zinc-800 px-4 py-2">
+        <div className="border-b border-edge px-4 py-2">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search playbooks..."
-            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 outline-none focus:border-zinc-700"
+            className="w-full rounded-md border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary placeholder-content-faint outline-none focus:border-edge"
           />
         </div>
 
         {/* Budget indicator */}
-        <div className="border-b border-zinc-800 px-4 py-2">
+        <div className="border-b border-edge px-4 py-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-500">Daily budget remaining</span>
-            <span className={mcpRemaining <= 3 ? "font-medium text-amber-400" : "text-zinc-400"}>
+            <span className="text-content-muted">Daily budget remaining</span>
+            <span className={mcpRemaining <= 3 ? "font-medium text-amber-400" : "text-content-muted"}>
               {mcpRemaining} queries
             </span>
           </div>
         </div>
 
         {/* Category tabs */}
-        <div className="flex flex-wrap gap-1 border-b border-zinc-800 px-4 py-2">
+        <div className="flex flex-wrap gap-1 border-b border-edge px-4 py-2">
           <button
             onClick={() => setSelectedCategory(null)}
             className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
               selectedCategory === null
-                ? "bg-zinc-700 text-zinc-200"
-                : "text-zinc-500 hover:text-zinc-300"
+                ? "bg-surface-card-hover text-content-secondary"
+                : "text-content-muted hover:text-content-secondary"
             }`}
           >
             All
@@ -162,7 +162,7 @@ export default function PlaybooksDrawer({
                 className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
                   cat === selectedCategory
                     ? `${colors.badge} border`
-                    : "text-zinc-500 hover:text-zinc-300"
+                    : "text-content-muted hover:text-content-secondary"
                 }`}
               >
                 {meta.label}
@@ -174,7 +174,7 @@ export default function PlaybooksDrawer({
         {/* Playbook list */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {filtered.length === 0 && (
-            <p className="py-8 text-center text-xs text-zinc-600">
+            <p className="py-8 text-center text-xs text-content-faint">
               No playbooks match your search.
             </p>
           )}
@@ -191,8 +191,8 @@ export default function PlaybooksDrawer({
                 key={pb.id}
                 className={`rounded-lg border transition-all ${
                   planLocked
-                    ? "cursor-not-allowed border-zinc-800 bg-zinc-900/20 opacity-50"
-                    : `${colors.border} bg-zinc-900/40 hover:bg-zinc-900/60`
+                    ? "cursor-not-allowed border-edge bg-surface-card/20 opacity-50"
+                    : `${colors.border} bg-surface-card/40 hover:bg-surface-card/60`
                 }`}
               >
                 {/* Header — always visible */}
@@ -209,7 +209,7 @@ export default function PlaybooksDrawer({
                       </svg>
                     </div>
 
-                    <h3 className="flex-1 text-sm font-medium text-zinc-200">{pb.title}</h3>
+                    <h3 className="flex-1 text-sm font-medium text-content-secondary">{pb.title}</h3>
 
                     {planLocked && (
                       <span className="shrink-0 rounded border border-amber-700/50 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-400">
@@ -220,7 +220,7 @@ export default function PlaybooksDrawer({
                     {/* Expand chevron */}
                     {!planLocked && (
                       <svg
-                        className={`h-3.5 w-3.5 text-zinc-600 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        className={`h-3.5 w-3.5 text-content-faint transition-transform ${isExpanded ? "rotate-180" : ""}`}
                         fill="none" viewBox="0 0 16 16"
                       >
                         <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -228,13 +228,13 @@ export default function PlaybooksDrawer({
                     )}
                   </div>
 
-                  <p className="mt-1 text-xs text-zinc-500 line-clamp-2">{pb.description}</p>
+                  <p className="mt-1 text-xs text-content-muted line-clamp-2">{pb.description}</p>
 
                   <div className="mt-1.5 flex items-center gap-2">
                     <span className={`rounded border px-1.5 py-0.5 text-[9px] font-medium ${colors.badge}`}>
                       {catMeta?.label || pb.category}
                     </span>
-                    <span className={`text-[10px] ${canAfford ? "text-zinc-600" : "text-red-400"}`}>
+                    <span className={`text-[10px] ${canAfford ? "text-content-faint" : "text-red-400"}`}>
                       ~{pb.estimated_queries} queries
                     </span>
                   </div>
@@ -242,9 +242,9 @@ export default function PlaybooksDrawer({
 
                 {/* Expanded: show prompt preview + use button */}
                 {isExpanded && !planLocked && (
-                  <div className="border-t border-zinc-800/50 px-3 pb-3 pt-2">
-                    <div className="rounded-md bg-zinc-900/80 p-2.5">
-                      <p className="text-[11px] leading-relaxed text-zinc-400 line-clamp-4">
+                  <div className="border-t border-edge/50 px-3 pb-3 pt-2">
+                    <div className="rounded-md bg-surface-card p-2.5">
+                      <p className="text-[11px] leading-relaxed text-content-muted line-clamp-4">
                         {pb.prompt}
                       </p>
                     </div>
@@ -257,7 +257,7 @@ export default function PlaybooksDrawer({
                       className={`mt-2 w-full rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                         canAfford
                           ? "bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30"
-                          : "cursor-not-allowed bg-zinc-800 text-zinc-600"
+                          : "cursor-not-allowed bg-surface-inset text-content-faint"
                       }`}
                     >
                       {canAfford ? "Use this prompt" : "Not enough budget"}
@@ -271,7 +271,7 @@ export default function PlaybooksDrawer({
 
         {/* Footer */}
         {mcpRemaining <= 5 && (
-          <div className="border-t border-zinc-800 px-4 py-2">
+          <div className="border-t border-edge px-4 py-2">
             <p className="text-[10px] text-amber-400/80">
               Budget is low. Choose a playbook carefully for maximum value.
             </p>

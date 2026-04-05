@@ -34,9 +34,9 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`flex flex-col border-r border-zinc-800 bg-zinc-950 transition-all duration-200 ${collapsed ? "w-16" : "w-56"}`}
+      className={`flex flex-col border-r border-edge bg-surface transition-all duration-200 ${collapsed ? "w-16" : "w-56"}`}
     >
-      <div className="flex h-14 items-center justify-between border-b border-zinc-800 px-4">
+      <div className="flex h-14 items-center justify-between border-b border-edge px-4">
         {!collapsed && (
           <span className="text-sm font-semibold tracking-wider text-emerald-400">
             VESTIGIO
@@ -44,7 +44,7 @@ export default function Sidebar() {
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+          className="rounded p-1 text-content-muted hover:bg-surface-card-hover hover:text-content-secondary"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d={collapsed ? "M13 5l7 7-7 7M5 5l7 7-7 7" : "M11 19l-7-7 7-7m8 14l-7-7 7-7"} />
@@ -61,7 +61,7 @@ export default function Sidebar() {
               className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 active
                   ? "bg-emerald-500/10 text-emerald-400"
-                  : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200"
+                  : "text-content-muted hover:bg-surface-inset hover:text-content-secondary"
               }`}
             >
               <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

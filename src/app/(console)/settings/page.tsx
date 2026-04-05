@@ -8,10 +8,10 @@ import { useEffect, useState } from "react";
 import { getSelectedLangCode, switchLanguage } from "@/components/Header/action";
 import Image from "next/image";
 
-// ──────────────────────────────────────────────
+// ──────────────���───────────────────────────────
 // Settings page — shows org/env configuration
 // Includes language selector for the platform.
-// ──────────────────────────────────────────────
+// ────────���─────────────────────���───────────────
 
 export default function SettingsPage() {
   const t = useTranslations("console.settings");
@@ -19,36 +19,36 @@ export default function SettingsPage() {
   return (
     <div className="p-6">
       <div className="mb-8">
-        <h1 className="text-xl font-semibold text-zinc-100">{t("title")}</h1>
-        <p className="mt-1 text-sm text-zinc-500">{t("subtitle")}</p>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
+        <p className="mt-1 text-sm text-content-muted">{t("subtitle")}</p>
       </div>
 
       {/* Language */}
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-semibold text-zinc-100">
+        <h2 className="mb-4 text-lg font-semibold text-content">
           {t("language.title")}
         </h2>
-        <p className="mb-4 text-sm text-zinc-500">{t("language.description")}</p>
+        <p className="mb-4 text-sm text-content-muted">{t("language.description")}</p>
         <LanguageSelector />
       </section>
 
       {/* Domains — empty state until DB connected */}
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-semibold text-zinc-100">
+        <h2 className="mb-4 text-lg font-semibold text-content">
           {t("domains.title")}
         </h2>
-        <div className="rounded-md border border-zinc-800 px-6 py-8 text-center">
-          <p className="text-sm text-zinc-500">{t("domains.description")}</p>
+        <div className="rounded-md border border-edge px-6 py-8 text-center">
+          <p className="text-sm text-content-muted">{t("domains.description")}</p>
         </div>
       </section>
 
       {/* Data Overview — populated after first audit */}
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-semibold text-zinc-100">
+        <h2 className="mb-4 text-lg font-semibold text-content">
           {t("data_overview.title")}
         </h2>
-        <div className="rounded-md border border-zinc-800 px-6 py-8 text-center">
-          <p className="text-sm text-zinc-500">
+        <div className="rounded-md border border-edge px-6 py-8 text-center">
+          <p className="text-sm text-content-muted">
             {t("data_overview.description")}
           </p>
         </div>
@@ -56,18 +56,18 @@ export default function SettingsPage() {
 
       {/* Account */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-zinc-100">
+        <h2 className="mb-4 text-lg font-semibold text-content">
           {t("account.title")}
         </h2>
-        <p className="text-sm text-zinc-500">{t("account.description")}</p>
+        <p className="text-sm text-content-muted">{t("account.description")}</p>
       </section>
     </div>
   );
 }
 
-// ──────────────────────────────────────────────
+// ────────────���──────────────────────��──────────
 // Language Selector — inline dropdown for /app/settings
-// ──────────────────────────────────────────────
+// ──────────────���──────────────────���────────────
 
 function LanguageSelector() {
   const t = useTranslations("console.settings.language");
@@ -89,16 +89,13 @@ function LanguageSelector() {
   async function handleSelect(code: string) {
     setSelectedCode(code);
     setIsOpen(false);
-    // 1. Persist cookie (immediate, used by i18n middleware)
     switchLanguage(code);
-    // 2. Persist to user profile in DB
     try {
       await fetch("/api/user/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locale: code }),
       });
-      // 3. Update NextAuth session so JWT carries the new locale
       await updateSession({ user: { locale: code } });
     } catch {
       // Cookie is already set — DB save is best-effort
@@ -110,7 +107,7 @@ function LanguageSelector() {
     <div className="relative inline-block w-full max-w-xs">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 transition-colors hover:border-zinc-600"
+        className="flex w-full items-center justify-between rounded-lg border border-edge bg-surface-input px-4 py-2.5 text-sm text-content transition-colors hover:border-accent/40"
       >
         <span className="flex items-center gap-3">
           <Image
@@ -123,7 +120,7 @@ function LanguageSelector() {
           {selectedLang?.name || selectedCode}
         </span>
         <svg
-          className={`h-4 w-4 text-zinc-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-content-faint transition-transform ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={2}
@@ -134,14 +131,14 @@ function LanguageSelector() {
       </button>
 
       {isOpen && (
-        <ul className="absolute z-20 mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 py-1 shadow-lg">
+        <ul className="absolute z-20 mt-1 w-full rounded-lg border border-edge bg-surface-card py-1 shadow-lg">
           {SUPPORTED_LANGUAGES.map((lang) => (
             <li key={lang.code}>
               <button
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-zinc-800 ${
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-surface-card-hover ${
                   lang.code === selectedCode
-                    ? "bg-zinc-800 text-zinc-100"
-                    : "text-zinc-400"
+                    ? "bg-surface-card-hover text-content"
+                    : "text-content-muted"
                 }`}
                 onClick={() => handleSelect(lang.code)}
               >
@@ -154,7 +151,7 @@ function LanguageSelector() {
                 />
                 <span>{lang.name}</span>
                 {lang.code === selectedCode && (
-                  <svg className="ml-auto h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <svg className="ml-auto h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 )}

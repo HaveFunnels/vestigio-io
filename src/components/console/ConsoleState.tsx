@@ -33,7 +33,7 @@ export default function ConsoleState<T>({
   if (state.status === "not_ready") {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="mb-3 text-4xl text-zinc-700">&#9683;</div>
+        <div className="mb-3 text-4xl text-content-faint">&#9683;</div>
         <h2 className="text-lg font-semibold text-content-secondary">Not Ready</h2>
         <p className="mt-1 max-w-md text-sm text-content-faint">{state.reason}</p>
         <Link
@@ -105,7 +105,7 @@ export default function ConsoleState<T>({
   if (state.status === "empty") {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="mb-3 text-4xl text-zinc-700">&#8709;</div>
+        <div className="mb-3 text-4xl text-content-faint">&#8709;</div>
         <h2 className="text-lg font-semibold text-content-secondary">No Data Yet</h2>
         <p className="mt-1 max-w-md text-sm text-content-faint">{emptyLabel}</p>
       </div>

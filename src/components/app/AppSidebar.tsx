@@ -217,48 +217,28 @@ export default function AppSidebar({
 				"flex h-14 shrink-0 items-center px-3 transition-all duration-300",
 				isExpanded ? "justify-start gap-2.5 px-4" : "justify-center"
 			)}>
-				{branding.logo_dark?.dataUrl ? (
-					<img
-						src={branding.logo_dark.dataUrl}
-						alt="Vestigio"
-						className={cn(
-							"shrink-0 object-contain transition-all duration-300",
-							isExpanded ? "h-6 w-auto" : "h-7 w-7"
-						)}
-					/>
-				) : isExpanded ? (
-					<>
-						<Image
-							src="/images/logo/logo.png"
-							alt="Vestigio"
-							width={140}
-							height={28}
-							className="block shrink-0 dark:hidden"
-						/>
-						<Image
-							src="/images/logo/logo-light.png"
-							alt="Vestigio"
-							width={140}
-							height={28}
-							className="hidden shrink-0 dark:block"
-						/>
-					</>
+				{isExpanded ? (
+					/* Expanded: show full logo with light/dark variants */
+					branding.logo_light?.dataUrl || branding.logo_dark?.dataUrl ? (
+						<>
+							{branding.logo_light?.dataUrl && (
+								<img src={branding.logo_light.dataUrl} alt="Vestigio" className="h-6 w-auto shrink-0 object-contain dark:hidden" />
+							)}
+							{branding.logo_dark?.dataUrl && (
+								<img src={branding.logo_dark.dataUrl} alt="Vestigio" className={cn("h-6 w-auto shrink-0 object-contain", branding.logo_light?.dataUrl ? "hidden dark:block" : "")} />
+							)}
+						</>
+					) : (
+						<>
+							<Image src="/images/logo/logo.png" alt="Vestigio" width={140} height={28} className="block shrink-0 dark:hidden" />
+							<Image src="/images/logo/logo-light.png" alt="Vestigio" width={140} height={28} className="hidden shrink-0 dark:block" />
+						</>
+					)
 				) : (
+					/* Collapsed: always show icon */
 					<>
-						<Image
-							src="/images/icon-light.svg"
-							alt="Vestigio"
-							width={28}
-							height={28}
-							className="block shrink-0 dark:hidden"
-						/>
-						<Image
-							src="/images/icon-dark.svg"
-							alt="Vestigio"
-							width={28}
-							height={28}
-							className="hidden shrink-0 dark:block"
-						/>
+						<Image src="/images/icon-light.svg" alt="Vestigio" width={28} height={28} className="block shrink-0 dark:hidden" />
+						<Image src="/images/icon-dark.svg" alt="Vestigio" width={28} height={28} className="hidden shrink-0 dark:block" />
 					</>
 				)}
 			</div>

@@ -38,7 +38,7 @@ export function ModelSelector({ selected, onSelect, plan }: ModelSelectorProps) 
         className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
           selected === "opus_4_6"
             ? "border-purple-700/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
-            : "border-zinc-700/50 text-zinc-500 hover:border-zinc-600 hover:text-zinc-400"
+            : "border-edge/50 text-content-muted hover:border-edge hover:text-content-muted"
         }`}
       >
         {model.label}
@@ -52,7 +52,7 @@ export function ModelSelector({ selected, onSelect, plan }: ModelSelectorProps) 
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-1.5 w-48 rounded-lg border border-zinc-700 bg-zinc-900 py-1 shadow-lg">
+        <div className="absolute bottom-full left-0 mb-1.5 w-48 rounded-lg border border-edge bg-surface-card py-1 shadow-lg">
           {(Object.values(MODELS) as Array<(typeof MODELS)[ModelId]>).map((m) => {
             const isDisabled = m.id === "opus_4_6" && !canUseUltra;
             const isSelected = selected === m.id;
@@ -71,13 +71,13 @@ export function ModelSelector({ selected, onSelect, plan }: ModelSelectorProps) 
                   isDisabled
                     ? "cursor-not-allowed opacity-40"
                     : isSelected
-                      ? "bg-zinc-800"
-                      : "hover:bg-zinc-800/50"
+                      ? "bg-surface-inset"
+                      : "hover:bg-surface-inset"
                 }`}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-zinc-200">
+                    <span className="text-xs font-medium text-content-secondary">
                       {m.label}
                     </span>
                     {m.queryCost > 1 && (
@@ -86,12 +86,12 @@ export function ModelSelector({ selected, onSelect, plan }: ModelSelectorProps) 
                       </span>
                     )}
                     {isDisabled && (
-                      <span className="rounded border border-zinc-700 px-1 py-0 text-[9px] text-zinc-500">
+                      <span className="rounded border border-edge px-1 py-0 text-[9px] text-content-muted">
                         Pro+
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-[10px] text-zinc-500">
+                  <p className="mt-0.5 text-[10px] text-content-muted">
                     {m.description}
                   </p>
                 </div>

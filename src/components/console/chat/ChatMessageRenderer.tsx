@@ -58,8 +58,8 @@ export function ChatMessageRenderer({
           messageId={message.id}
           onEdit={onEdit}
         />
-        <div className="max-w-xl rounded-xl rounded-br-sm border border-zinc-700/50 bg-zinc-800 px-4 py-2.5">
-          <p className="text-sm text-zinc-100">{text}</p>
+        <div className="max-w-xl rounded-xl rounded-br-sm border border-edge/50 bg-surface-inset px-4 py-2.5">
+          <p className="text-sm text-content">{text}</p>
         </div>
       </div>
     );
@@ -140,13 +140,13 @@ function BlockRenderer({
     case "impact_summary":
       return (
         <div className="my-2 rounded-md border border-red-800/30 bg-red-500/5 px-3.5 py-2.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Estimated monthly impact</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-content-muted">Estimated monthly impact</div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="font-mono text-lg font-bold text-red-400">{formatCurrency(block.summary.mid)}</span>
-            <span className="font-mono text-xs text-zinc-500">({formatCurrency(block.summary.min)} – {formatCurrency(block.summary.max)})</span>
-            <span className="text-[10px] text-zinc-600">/mo</span>
+            <span className="font-mono text-xs text-content-muted">({formatCurrency(block.summary.min)} – {formatCurrency(block.summary.max)})</span>
+            <span className="text-[10px] text-content-faint">/mo</span>
           </div>
-          <div className="mt-0.5 text-[10px] text-zinc-600">{block.summary.type.replace(/_/g, " ")}</div>
+          <div className="mt-0.5 text-[10px] text-content-faint">{block.summary.type.replace(/_/g, " ")}</div>
         </div>
       );
 
@@ -167,11 +167,11 @@ function BlockRenderer({
             const styles: Record<string, string> = {
               workspace: "border-blue-800/50 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20",
               map: "border-emerald-800/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20",
-              analysis: "border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300",
-              actions: "border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300",
+              analysis: "border-edge text-content-muted hover:bg-surface-card-hover hover:text-content-secondary",
+              actions: "border-edge text-content-muted hover:bg-surface-card-hover hover:text-content-secondary",
               changes: "border-amber-800/50 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20",
               primary: "border-emerald-600 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20",
-              secondary: "border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300",
+              secondary: "border-edge text-content-muted hover:bg-surface-card-hover hover:text-content-secondary",
             };
             return (
               <button key={idx} onClick={() => onNavigate?.(target.href)} className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${styles[target.variant] || styles.analysis}`}>
@@ -186,10 +186,10 @@ function BlockRenderer({
     case "suggested_prompts":
       return (
         <div className="mt-3 space-y-1.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Follow up</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">Follow up</div>
           <div className="flex flex-wrap gap-1.5">
             {block.prompts.map((prompt, idx) => (
-              <button key={idx} onClick={() => onSuggestedPrompt?.(prompt)} className="rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-emerald-600/50 hover:bg-emerald-500/5 hover:text-emerald-400">
+              <button key={idx} onClick={() => onSuggestedPrompt?.(prompt)} className="rounded-md border border-edge bg-surface-inset px-3 py-1.5 text-xs text-content-secondary transition-colors hover:border-emerald-600/50 hover:bg-emerald-500/5 hover:text-emerald-400">
                 {prompt}
               </button>
             ))}
@@ -199,25 +199,25 @@ function BlockRenderer({
 
     case "quote":
       return (
-        <div className="my-2 border-l-2 border-zinc-600 pl-3">
-          <p className="text-sm italic text-zinc-400">{block.text}</p>
-          {block.source && <p className="mt-0.5 text-[10px] text-zinc-600">{block.source}</p>}
+        <div className="my-2 border-l-2 border-edge pl-3">
+          <p className="text-sm italic text-content-muted">{block.text}</p>
+          {block.source && <p className="mt-0.5 text-[10px] text-content-faint">{block.source}</p>}
         </div>
       );
 
     case "data_rows":
       return (
-        <div className="my-2 rounded-md border border-zinc-800 bg-zinc-900/50">
-          <div className="border-b border-zinc-800 px-3 py-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{block.label}</span>
+        <div className="my-2 rounded-md border border-edge bg-surface-card">
+          <div className="border-b border-edge px-3 py-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-content-muted">{block.label}</span>
           </div>
-          <div className="divide-y divide-zinc-800/50">
+          <div className="divide-y divide-edge/50">
             {block.rows.map((row, idx) => (
               <div key={idx} className="flex items-center justify-between px-3 py-1.5">
-                <span className="text-xs text-zinc-400">{row.label}</span>
+                <span className="text-xs text-content-muted">{row.label}</span>
                 <div className="flex items-center gap-2">
                   {row.severity && <SeverityBadge value={row.severity} />}
-                  <span className="font-mono text-xs text-zinc-200">{row.value}</span>
+                  <span className="font-mono text-xs text-content-secondary">{row.value}</span>
                 </div>
               </div>
             ))}

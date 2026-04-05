@@ -42,7 +42,7 @@ export function ActionCard({ block, onNavigate }: ActionCardProps) {
               cross-pack
             </span>
           )}
-          <span className="text-[10px] text-zinc-500">
+          <span className="text-[10px] text-content-muted">
             saves {formatCurrency(action.impact_mid)}/mo
           </span>
         </div>

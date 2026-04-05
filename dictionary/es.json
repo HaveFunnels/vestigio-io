@@ -810,15 +810,67 @@
 		},
 		"actions": {
 			"title": "Acciones",
-			"subtitle": "Acciones priorizadas globalmente ordenadas por impacto financiero estimado. Arregla lo que más importa.",
+			"subtitle": "Cola priorizada de lo que necesita atención",
 			"loading": "Cargando acciones priorizadas...",
 			"empty": "No se requieren acciones. Tu sitio no tiene problemas significativos detectados.",
 			"cards": {
+				"active_incidents": "Incidentes Activos",
+				"require_remediation": "requieren remediación",
+				"none_detected": "ninguno detectado",
+				"open_opportunities": "Oportunidades Abiertas",
+				"actionable_improvements": "mejoras accionables",
+				"none_identified": "ninguna identificada",
+				"pending_verifications": "Verificaciones Pendientes",
+				"awaiting_confirmation": "esperando confirmación",
+				"all_verified": "todas verificadas",
+				"total_addressable_impact": "Impacto Total Abordable",
+				"per_month_midpoint": "/mes (punto medio)",
 				"total_actions": "Acciones Totales",
 				"total_impact": "Impacto Total Abordable",
-				"per_month_midpoint": "/mes (punto medio)",
 				"cross_pack": "Cross-Pack",
 				"high_severity": "Severidad Alta"
+			},
+			"tabs": {
+				"all": "Todos",
+				"incidents": "Incidentes",
+				"opportunities": "Oportunidades",
+				"verifications": "Verificaciones"
+			},
+			"columns": {
+				"priority": "#",
+				"action": "Acción",
+				"category": "Categoría",
+				"status": "Estado",
+				"impact": "Impacto",
+				"severity": "Severidad",
+				"effort": "Esfuerzo",
+				"resolve": "Resolver"
+			},
+			"categories": {
+				"incident": "Incidente",
+				"opportunity": "Oportunidad",
+				"verification": "Verificación",
+				"observation": "Observación"
+			},
+			"effort": {
+				"trivial": "Trivial",
+				"low": "Bajo",
+				"medium": "Medio",
+				"high": "Alto",
+				"very_high": "Muy Alto"
+			},
+			"resolve": {
+				"fix": "Arreglar",
+				"verify": "Verificar",
+				"track": "Monitorear",
+				"dismiss": "Descartar"
+			},
+			"change_summary": {
+				"first_analysis": "Primer análisis — sin historial de cambios",
+				"regressions": "{count} regresión(es)",
+				"improvements": "{count} mejora(s)",
+				"resolved": "resuelto(s)",
+				"new_issues": "nuevo(s)"
 			},
 			"scope": {
 				"cross_pack": "cross-pack",
@@ -826,13 +878,18 @@
 			},
 			"drawer": {
 				"what_fixes": "Qué Soluciona Esto",
+				"impact_breakdown": "Desglose de Impacto",
 				"impact_unlocked": "Impacto Desbloqueado",
 				"monthly_range": "Rango Mensual",
 				"midpoint": "Punto Medio",
+				"confidence": "Confianza",
+				"priority_score": "Puntaje de Prioridad",
 				"root_cause": "Causa Raíz",
+				"verification": "Verificación",
 				"scope": "Alcance",
 				"affects_multiple": "Afecta múltiples packs",
 				"single_pack": "Un solo pack",
+				"discuss_in_chat": "Discutir en Chat",
 				"request_verification": "Solicitar Verificación"
 			}
 		},

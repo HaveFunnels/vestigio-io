@@ -57,9 +57,9 @@ export function CreateActionCard({
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm text-zinc-200 outline-none focus:border-amber-600"
+            className="mt-1 w-full rounded border border-edge bg-surface-card px-2 py-1 text-sm text-content-secondary outline-none focus:border-amber-600"
           />
-          <p className="mt-1 text-xs text-zinc-400">{suggestedDescription}</p>
+          <p className="mt-1 text-xs text-content-muted">{suggestedDescription}</p>
           {estimatedImpact != null && (
             <p className="mt-0.5 font-mono text-xs text-amber-400">
               Est. impact: ${estimatedImpact.toLocaleString()}/mo

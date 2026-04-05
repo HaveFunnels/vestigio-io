@@ -27,12 +27,12 @@ export function FindingCard({ block, onNavigate }: FindingCardProps) {
       ? "text-red-400"
       : finding.impact_mid >= 1000
         ? "text-amber-400"
-        : "text-zinc-400";
+        : "text-content-muted";
 
   return (
     <button
       onClick={() => onNavigate?.(`/app/analysis?finding=${finding.id}`)}
-      className="my-1.5 flex w-full items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3.5 py-3 text-left transition-colors hover:border-zinc-700 hover:bg-zinc-800/60"
+      className="my-1.5 flex w-full items-start gap-3 rounded-lg border border-edge bg-surface-card/60 px-3.5 py-3 text-left transition-colors hover:border-edge hover:bg-surface-inset/60"
     >
       {/* Severity indicator bar */}
       <div
@@ -50,32 +50,32 @@ export function FindingCard({ block, onNavigate }: FindingCardProps) {
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-medium text-zinc-200">{finding.title}</p>
+          <p className="text-sm font-medium text-content-secondary">{finding.title}</p>
           <span className={`shrink-0 font-mono text-sm font-bold ${impactColor}`}>
             {formatCurrency(finding.impact_mid)}
-            <span className="text-[10px] font-normal text-zinc-600">/mo</span>
+            <span className="text-[10px] font-normal text-content-faint">/mo</span>
           </span>
         </div>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <SeverityBadge value={finding.severity} />
-          <span className="font-mono text-[10px] text-zinc-500">
+          <span className="font-mono text-[10px] text-content-muted">
             {finding.confidence}% conf
           </span>
-          <span className="text-[10px] text-zinc-600">
+          <span className="text-[10px] text-content-faint">
             {finding.pack.replace(/_/g, " ")}
           </span>
         </div>
 
         {finding.root_cause && (
-          <p className="mt-1.5 text-xs text-zinc-500">
+          <p className="mt-1.5 text-xs text-content-muted">
             Root cause: {finding.root_cause}
           </p>
         )}
       </div>
 
       {/* Arrow */}
-      <svg className="mt-1 h-3.5 w-3.5 shrink-0 text-zinc-600" viewBox="0 0 16 16" fill="none">
+      <svg className="mt-1 h-3.5 w-3.5 shrink-0 text-content-faint" viewBox="0 0 16 16" fill="none">
         <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </button>

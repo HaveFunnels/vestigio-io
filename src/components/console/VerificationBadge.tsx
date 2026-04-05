@@ -5,7 +5,7 @@ type VerificationMaturity = 'unverified' | 'pending' | 'partially' | 'verified' 
 const config: Record<VerificationMaturity, { label: string; style: string; icon: string }> = {
   unverified: {
     label: "Unverified",
-    style: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+    style: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20",
     icon: "\u25CB", // open circle
   },
   pending: {

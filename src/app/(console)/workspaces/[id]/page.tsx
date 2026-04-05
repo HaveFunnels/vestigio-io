@@ -85,16 +85,16 @@ export default function WorkspaceDetailPage({
           if (!workspace) {
             return (
               <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="mb-3 text-4xl text-zinc-700">&#8709;</div>
-                <h2 className="text-lg font-semibold text-zinc-200">
+                <div className="mb-3 text-4xl text-content-faint">&#8709;</div>
+                <h2 className="text-lg font-semibold text-content-secondary">
                   Workspace Not Found
                 </h2>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-content-muted">
                   No workspace matches the ID &quot;{params.id}&quot;.
                 </p>
                 <Link
                   href="/app/workspaces"
-                  className="mt-4 rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800"
+                  className="mt-4 rounded-md border border-edge px-4 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-inset"
                 >
                   Back to Workspaces
                 </Link>
@@ -154,9 +154,9 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
       label: "Finding",
       render: (row) => (
         <div>
-          <div className="text-sm text-zinc-200">{row.title}</div>
+          <div className="text-sm text-content-secondary">{row.title}</div>
           {row.root_cause && (
-            <div className="mt-0.5 text-xs text-zinc-500">{row.root_cause}</div>
+            <div className="mt-0.5 text-xs text-content-muted">{row.root_cause}</div>
           )}
         </div>
       ),
@@ -200,20 +200,20 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
       {/* ── Back Link ── */}
       <Link
         href="/app/workspaces"
-        className="inline-flex items-center gap-1 text-sm text-zinc-400 transition-colors hover:text-zinc-200"
+        className="inline-flex items-center gap-1 text-sm text-content-muted transition-colors hover:text-content-secondary"
       >
         <span>&larr;</span> Workspaces
       </Link>
 
       {/* ── Status Header ── */}
-      <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/50 px-6 py-5">
+      <div className="mt-4 rounded-lg border border-edge bg-surface-card px-6 py-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-100">{workspace.name}</h1>
+            <h1 className="text-2xl font-bold text-content">{workspace.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span
                 className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${
-                  workspaceTypeColors[workspace.type] || "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                  workspaceTypeColors[workspace.type] || "bg-zinc-500/10 text-content-muted border-zinc-500/20"
                 }`}
               >
                 {workspaceTypeLabels[workspace.type] || workspace.type}
@@ -224,20 +224,20 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
           </div>
           <div className="flex items-center gap-6 text-right">
             <div>
-              <div className="text-xs text-zinc-500">Issues</div>
-              <div className="text-lg font-bold text-zinc-200">
+              <div className="text-xs text-content-muted">Issues</div>
+              <div className="text-lg font-bold text-content-secondary">
                 {workspace.summary.issue_count}
               </div>
             </div>
             <div>
-              <div className="text-xs text-zinc-500">Monthly Loss</div>
+              <div className="text-xs text-content-muted">Monthly Loss</div>
               <div className="text-lg font-bold text-red-400">
                 {formatCurrency(workspace.summary.total_loss_mid)}
               </div>
             </div>
             <div>
-              <div className="text-xs text-zinc-500">Confidence</div>
-              <div className="text-lg font-bold text-zinc-200">
+              <div className="text-xs text-content-muted">Confidence</div>
+              <div className="text-lg font-bold text-content-secondary">
                 {workspace.summary.confidence}%
               </div>
             </div>
@@ -250,8 +250,8 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
         {/* ── Left Column ── */}
         <div className="space-y-6">
           {/* Change Summary */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+          <section className="rounded-lg border border-edge bg-surface-card p-5">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
               Change Summary
             </h2>
             {workspace.change_summary ? (
@@ -262,21 +262,21 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                     <ChangeTimeline changes={workspaceChanges} maxItems={8} />
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-zinc-500">
+                  <p className="mt-3 text-sm text-content-muted">
                     No changes since last cycle
                   </p>
                 )}
               </>
             ) : (
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-content-muted">
                 No changes since last cycle
               </p>
             )}
           </section>
 
           {/* Findings (Table or Preflight Checklist) */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+          <section className="rounded-lg border border-edge bg-surface-card p-5">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
               {isPreflight ? "Preflight Checklist" : "Findings"}
             </h2>
 
@@ -302,8 +302,8 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
         <div className="space-y-6">
           {/* Trust Strength */}
           {workspace.confidence_narrative && (
-            <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+            <section className="rounded-lg border border-edge bg-surface-card p-5">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
                 Trust Strength
               </h2>
               <div className="space-y-3">
@@ -317,12 +317,12 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                     level={workspace.confidence_narrative.economic_confidence}
                   />
                 </div>
-                <p className="text-sm text-zinc-400 leading-relaxed">
+                <p className="text-sm text-content-muted leading-relaxed">
                   {workspace.confidence_narrative.narrative}
                 </p>
                 {workspace.confidence_narrative.uncertainty_factors.length > 0 && (
-                  <div className="border-t border-zinc-800 pt-3">
-                    <h3 className="mb-1.5 text-xs font-medium text-zinc-500">
+                  <div className="border-t border-edge pt-3">
+                    <h3 className="mb-1.5 text-xs font-medium text-content-muted">
                       Uncertainty Factors
                     </h3>
                     <ul className="space-y-1">
@@ -330,7 +330,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                         (factor, i) => (
                           <li
                             key={i}
-                            className="text-xs text-zinc-500"
+                            className="text-xs text-content-muted"
                           >
                             &bull; {factor}
                           </li>
@@ -345,15 +345,15 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 
           {/* Coherence */}
           {workspace.coherence && (
-            <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+            <section className="rounded-lg border border-edge bg-surface-card p-5">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
                 Coherence
               </h2>
               <div className="space-y-3">
                 {/* Score bar */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-zinc-500">Coherence Score</span>
+                    <span className="text-xs text-content-muted">Coherence Score</span>
                     <span
                       className={`text-xs font-medium ${
                         workspace.coherence.coherence_score >= 70
@@ -366,7 +366,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                       {workspace.coherence.coherence_score}/100
                     </span>
                   </div>
-                  <div className="h-2 rounded-full bg-zinc-800">
+                  <div className="h-2 rounded-full bg-surface-inset">
                     <div
                       className={`h-2 rounded-full transition-all ${
                         workspace.coherence.coherence_score >= 70
@@ -412,8 +412,8 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
           )}
 
           {/* Quick Stats Cards */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+          <section className="rounded-lg border border-edge bg-surface-card p-5">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
               Quick Stats
             </h2>
             <div className="grid grid-cols-2 gap-3">
@@ -430,7 +430,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
               <StatCard
                 label="Avg Confidence"
                 value={`${avgConfidence}%`}
-                color="text-zinc-200"
+                color="text-content-secondary"
               />
               <StatCard
                 label="Top Severity"
@@ -442,7 +442,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                     ? "text-orange-400"
                     : topSeverity === "medium"
                     ? "text-amber-400"
-                    : "text-zinc-400"
+                    : "text-content-muted"
                 }
               />
             </div>
@@ -554,7 +554,7 @@ function PreflightChecklist({
           if (isPass) {
             icon = "\u2713";
             iconClass = "text-emerald-400";
-            textClass = "text-zinc-300";
+            textClass = "text-content-secondary";
           } else if (isWarning) {
             icon = "\u26A0";
             iconClass = "text-amber-400";
@@ -565,15 +565,15 @@ function PreflightChecklist({
             textClass = "text-red-300/90";
           } else {
             icon = "\u25CB";
-            iconClass = "text-zinc-500";
-            textClass = "text-zinc-400";
+            iconClass = "text-content-muted";
+            textClass = "text-content-muted";
           }
 
           return (
             <button
               key={f.id}
               onClick={() => onFindingClick(f)}
-              className="flex w-full items-start gap-3 rounded-md border border-zinc-800 bg-zinc-900/30 px-4 py-3 text-left transition-colors hover:border-zinc-700 hover:bg-zinc-900/60"
+              className="flex w-full items-start gap-3 rounded-md border border-edge bg-surface-card/30 px-4 py-3 text-left transition-colors hover:border-edge hover:bg-surface-card/60"
             >
               <span className={`mt-0.5 text-sm font-bold ${iconClass}`}>
                 {icon}
@@ -583,7 +583,7 @@ function PreflightChecklist({
                   {f.title}
                 </div>
                 {f.root_cause && (
-                  <div className="mt-0.5 text-xs text-zinc-500">
+                  <div className="mt-0.5 text-xs text-content-muted">
                     {f.root_cause}
                   </div>
                 )}
@@ -616,10 +616,10 @@ function FindingDrawerContent({
     <div className="space-y-6">
       {/* Summary + badges */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
           Summary
         </h3>
-        <p className="text-sm text-zinc-300">{finding.cause}</p>
+        <p className="text-sm text-content-secondary">{finding.cause}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {finding.polarity === "positive" ? (
             <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
@@ -630,14 +630,14 @@ function FindingDrawerContent({
           )}
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-content-muted">
             Confidence {finding.confidence}%
           </span>
-          <span className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">
+          <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
             {packLabels[finding.pack] || finding.pack}
           </span>
           {finding.surface && (
-            <code className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-500">
+            <code className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
               {finding.surface}
             </code>
           )}
@@ -672,21 +672,21 @@ function FindingDrawerContent({
       {/* Effect */}
       {finding.effect && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
             Effect
           </h3>
-          <p className="text-sm text-zinc-400">{finding.effect}</p>
+          <p className="text-sm text-content-muted">{finding.effect}</p>
         </section>
       )}
 
       {/* Root Cause */}
       {finding.root_cause && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
             Root Cause
           </h3>
-          <div className="rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-            <span className="text-sm font-medium text-zinc-200">
+          <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
+            <span className="text-sm font-medium text-content-secondary">
               {finding.root_cause}
             </span>
           </div>
@@ -696,28 +696,28 @@ function FindingDrawerContent({
       {/* Impact Breakdown */}
       {finding.polarity !== "positive" && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
             Impact Breakdown
           </h3>
           <div className="space-y-2">
-            <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2">
-              <span className="text-xs text-zinc-500">Monthly Range</span>
+            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+              <span className="text-xs text-content-muted">Monthly Range</span>
               <ImpactBadge
                 min={finding.impact.monthly_range.min}
                 max={finding.impact.monthly_range.max}
               />
             </div>
-            <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2">
-              <span className="text-xs text-zinc-500">Midpoint</span>
+            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+              <span className="text-xs text-content-muted">Midpoint</span>
               <ImpactBadge
                 min={finding.impact.midpoint}
                 max={finding.impact.midpoint}
                 compact
               />
             </div>
-            <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2">
-              <span className="text-xs text-zinc-500">Impact Type</span>
-              <span className="text-xs text-zinc-300">
+            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+              <span className="text-xs text-content-muted">Impact Type</span>
+              <span className="text-xs text-content-secondary">
                 {impactTypeLabels[finding.impact.impact_type] ||
                   finding.impact.impact_type}
               </span>
@@ -729,10 +729,10 @@ function FindingDrawerContent({
       {/* Evidence Quality */}
       {finding.evidence_quality && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
             Evidence Quality
           </h3>
-          <div className="space-y-2 rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+          <div className="space-y-2 rounded-md border border-edge bg-surface-card px-4 py-3">
             <EvidenceQualityBar
               label="Source Reliability"
               value={finding.evidence_quality.source_reliability}
@@ -755,7 +755,7 @@ function FindingDrawerContent({
 
       {/* Verification Lifecycle Panel */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
           Verification
         </h3>
         <VerificationPanel
@@ -781,10 +781,10 @@ function FindingDrawerContent({
 
       {/* Reasoning */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
           {finding.polarity === "positive" ? "Why This Is Good" : "Reasoning"}
         </h3>
-        <p className="text-sm leading-relaxed text-zinc-400">
+        <p className="text-sm leading-relaxed text-content-muted">
           {finding.reasoning}
         </p>
       </section>
@@ -849,7 +849,7 @@ function WorkspaceChangeTrend({
           summary.improvement_count !== 1 ? "s" : ""
         }`,
       },
-      stable: { icon: "\u2014", color: "text-zinc-500", label: "stable" },
+      stable: { icon: "\u2014", color: "text-content-muted", label: "stable" },
       mixed: {
         icon: "\u2195",
         color: "text-amber-400",
@@ -896,7 +896,7 @@ function TrendHeadline({
       {summary.regression_count === 0 &&
         summary.improvement_count === 0 &&
         summary.resolved_count === 0 && (
-          <span className="text-zinc-500">No significant changes</span>
+          <span className="text-content-muted">No significant changes</span>
         )}
     </div>
   );
@@ -926,10 +926,10 @@ function ConfidenceBar({
   return (
     <div className="flex-1">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-zinc-500">{label}</span>
+        <span className="text-xs text-content-muted">{label}</span>
         <span className={`text-xs font-medium ${textColor}`}>{level}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-zinc-800">
+      <div className="h-1.5 rounded-full bg-surface-inset">
         <div
           className={`h-1.5 rounded-full ${color}`}
           style={{ width: `${widthPct}%` }}
@@ -949,8 +949,8 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="rounded-md border border-zinc-800 bg-zinc-900/30 px-3 py-2.5">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+    <div className="rounded-md border border-edge bg-surface-card/30 px-3 py-2.5">
+      <div className="text-[10px] font-medium uppercase tracking-wider text-content-muted">
         {label}
       </div>
       <div className={`mt-1 text-lg font-bold ${color}`}>
@@ -978,14 +978,14 @@ function EvidenceQualityBar({
 
   return (
     <div className="flex items-center gap-3">
-      <span className="w-28 shrink-0 text-xs text-zinc-500">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-zinc-800">
+      <span className="w-28 shrink-0 text-xs text-content-muted">{label}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-surface-inset">
         <div
           className={`h-1.5 rounded-full transition-all ${barColor}`}
           style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         />
       </div>
-      <span className="w-8 text-right font-mono text-xs text-zinc-400">
+      <span className="w-8 text-right font-mono text-xs text-content-muted">
         {value}
       </span>
     </div>

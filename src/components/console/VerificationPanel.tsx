@@ -77,10 +77,10 @@ function freshnessProgress(verifiedAt: string, expiresAt: string): number {
 // ── Method label config ─────────────────────────
 
 const methodDisplay: Record<string, { label: string; textColor: string }> = {
-  static_only: { label: "Verified via static fetch", textColor: "text-zinc-400" },
+  static_only: { label: "Verified via static fetch", textColor: "text-content-muted" },
   browser_verified: { label: "Verified via browser verification", textColor: "text-emerald-400" },
   mixed: { label: "Mixed verification", textColor: "text-amber-400" },
-  unknown: { label: "Verification method unknown", textColor: "text-zinc-500" },
+  unknown: { label: "Verification method unknown", textColor: "text-content-muted" },
 };
 
 // ── Component ───────────────────────────────────
@@ -125,7 +125,7 @@ export default function VerificationPanel({
   return (
     <div className="space-y-3">
       {/* ── 1. Stepped Progress Bar ── */}
-      <div className="rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+      <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
         <div className="flex items-center">
           {steps.map((step, i) => {
             const isPast = i < currentStepIndex;
@@ -140,29 +140,29 @@ export default function VerificationPanel({
             if (step.key === "stale") {
               circleClass = isCurrent
                 ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/40"
-                : "bg-zinc-800/50 text-zinc-600";
-              labelClass = isCurrent ? "text-red-400 font-semibold" : "text-zinc-600";
+                : "bg-surface-inset text-content-faint";
+              labelClass = isCurrent ? "text-red-400 font-semibold" : "text-content-faint";
               lineClass = "bg-red-500/30";
             } else if (step.key === "degraded") {
               circleClass = isCurrent
                 ? "bg-orange-500/20 text-orange-400 ring-2 ring-orange-500/40"
                 : isPast
-                  ? "bg-zinc-700 text-zinc-300"
-                  : "bg-zinc-800/50 text-zinc-600";
-              labelClass = isCurrent ? "text-orange-400 font-semibold" : isPast ? "text-zinc-400" : "text-zinc-600";
-              lineClass = isPast ? "bg-orange-500/40" : "bg-zinc-800";
+                  ? "bg-surface-card-hover text-content-secondary"
+                  : "bg-surface-inset text-content-faint";
+              labelClass = isCurrent ? "text-orange-400 font-semibold" : isPast ? "text-content-muted" : "text-content-faint";
+              lineClass = isPast ? "bg-orange-500/40" : "bg-surface-inset";
             } else if (isCurrent) {
               circleClass = "bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/40";
               labelClass = "text-emerald-400 font-semibold";
-              lineClass = "bg-zinc-800";
+              lineClass = "bg-surface-inset";
             } else if (isPast) {
               circleClass = "bg-emerald-500/20 text-emerald-400";
-              labelClass = "text-zinc-400";
+              labelClass = "text-content-muted";
               lineClass = "bg-emerald-500/40";
             } else {
-              circleClass = "bg-zinc-800/50 text-zinc-600";
-              labelClass = "text-zinc-600";
-              lineClass = "bg-zinc-800";
+              circleClass = "bg-surface-inset text-content-faint";
+              labelClass = "text-content-faint";
+              lineClass = "bg-surface-inset";
             }
 
             return (
@@ -178,7 +178,7 @@ export default function VerificationPanel({
                   </span>
                 </div>
                 {i < steps.length - 1 && (
-                  <div className={`mx-1.5 h-0.5 w-6 ${isPast ? lineClass : "bg-zinc-800"}`} />
+                  <div className={`mx-1.5 h-0.5 w-6 ${isPast ? lineClass : "bg-surface-inset"}`} />
                 )}
               </div>
             );
@@ -186,26 +186,26 @@ export default function VerificationPanel({
         </div>
 
         {/* ── 2. Method Label ── */}
-        <div className="mt-3 border-t border-zinc-800 pt-2">
+        <div className="mt-3 border-t border-edge pt-2">
           <span className={`text-xs ${methodCfg.textColor}`}>{methodCfg.label}</span>
         </div>
       </div>
 
       {/* ── 3. Freshness Indicator ── */}
       {verifiedAt && (
-        <div className="rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+        <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-400">
+            <span className="text-xs text-content-muted">
               Verified {relativeTime(verifiedAt)}
             </span>
             {expiresAt && (
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-content-muted">
                 Expires {relativeTime(expiresAt)}
               </span>
             )}
           </div>
           {expiresAt && (
-            <div className="mt-2 h-1.5 w-full rounded-full bg-zinc-800">
+            <div className="mt-2 h-1.5 w-full rounded-full bg-surface-inset">
               <div
                 className="h-1.5 rounded-full bg-emerald-500 transition-all"
                 style={{ width: `${freshnessProgress(verifiedAt, expiresAt)}%` }}
@@ -233,7 +233,7 @@ export default function VerificationPanel({
             <p className={`text-xs ${mat === "stale" ? "text-red-300/80" : "text-orange-300/80"}`}>
               Confidence dropped {confidenceGap} points since verification
               {confidenceAtVerification != null && currentConfidence != null && (
-                <span className="text-zinc-500">
+                <span className="text-content-muted">
                   {" "}({confidenceAtVerification}% &rarr; {currentConfidence}%)
                 </span>
               )}
@@ -250,9 +250,9 @@ export default function VerificationPanel({
 
       {/* ── 5. Re-trigger CTA ── */}
       {showReTrigger && onRequestVerification && (
-        <div className="rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+        <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
           {reTriggerReason && (
-            <p className="mb-2 text-xs text-zinc-400">{reTriggerReason}</p>
+            <p className="mb-2 text-xs text-content-muted">{reTriggerReason}</p>
           )}
           <button
             onClick={onRequestVerification}

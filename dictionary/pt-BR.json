@@ -810,15 +810,67 @@
 		},
 		"actions": {
 			"title": "Ações",
-			"subtitle": "Ações priorizadas globalmente por impacto financeiro estimado. Corrija o que mais importa.",
+			"subtitle": "Fila priorizada do que precisa de atenção",
 			"loading": "Carregando ações priorizadas...",
 			"empty": "Nenhuma ação necessária. Seu site não apresenta problemas significativos.",
 			"cards": {
+				"active_incidents": "Incidentes Ativos",
+				"require_remediation": "requerem remediação",
+				"none_detected": "nenhum detectado",
+				"open_opportunities": "Oportunidades Abertas",
+				"actionable_improvements": "melhorias acionáveis",
+				"none_identified": "nenhuma identificada",
+				"pending_verifications": "Verificações Pendentes",
+				"awaiting_confirmation": "aguardando confirmação",
+				"all_verified": "todas verificadas",
+				"total_addressable_impact": "Impacto Total Endereçável",
+				"per_month_midpoint": "/mês (ponto médio)",
 				"total_actions": "Total de Ações",
 				"total_impact": "Impacto Total Endereçável",
-				"per_month_midpoint": "/mês (ponto médio)",
 				"cross_pack": "Cross-Pack",
 				"high_severity": "Alta Severidade"
+			},
+			"tabs": {
+				"all": "Todos",
+				"incidents": "Incidentes",
+				"opportunities": "Oportunidades",
+				"verifications": "Verificações"
+			},
+			"columns": {
+				"priority": "#",
+				"action": "Ação",
+				"category": "Categoria",
+				"status": "Status",
+				"impact": "Impacto",
+				"severity": "Severidade",
+				"effort": "Esforço",
+				"resolve": "Resolver"
+			},
+			"categories": {
+				"incident": "Incidente",
+				"opportunity": "Oportunidade",
+				"verification": "Verificação",
+				"observation": "Observação"
+			},
+			"effort": {
+				"trivial": "Trivial",
+				"low": "Baixo",
+				"medium": "Médio",
+				"high": "Alto",
+				"very_high": "Muito Alto"
+			},
+			"resolve": {
+				"fix": "Corrigir",
+				"verify": "Verificar",
+				"track": "Monitorar",
+				"dismiss": "Dispensar"
+			},
+			"change_summary": {
+				"first_analysis": "Primeira análise — sem histórico de mudanças",
+				"regressions": "{count} regressão(ões)",
+				"improvements": "{count} melhoria(s)",
+				"resolved": "resolvido(s)",
+				"new_issues": "novo(s)"
 			},
 			"scope": {
 				"cross_pack": "cross-pack",
@@ -826,13 +878,18 @@
 			},
 			"drawer": {
 				"what_fixes": "O Que Isso Corrige",
+				"impact_breakdown": "Detalhamento do Impacto",
 				"impact_unlocked": "Impacto Desbloqueado",
 				"monthly_range": "Faixa Mensal",
 				"midpoint": "Ponto Médio",
+				"confidence": "Confiança",
+				"priority_score": "Score de Prioridade",
 				"root_cause": "Causa Raiz",
+				"verification": "Verificação",
 				"scope": "Escopo",
 				"affects_multiple": "Afeta múltiplos packs",
 				"single_pack": "Pack único",
+				"discuss_in_chat": "Discutir no Chat",
 				"request_verification": "Solicitar Verificação"
 			}
 		},

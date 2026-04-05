@@ -38,11 +38,11 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
       elements.push(
         <div key={elements.length} className="my-2">
           {lang && (
-            <div className="rounded-t-md border border-b-0 border-zinc-800 bg-zinc-900 px-3 py-1">
-              <span className="font-mono text-[10px] text-zinc-500">{lang}</span>
+            <div className="rounded-t-md border border-b-0 border-edge bg-surface-card px-3 py-1">
+              <span className="font-mono text-[10px] text-content-muted">{lang}</span>
             </div>
           )}
-          <pre className={`overflow-x-auto ${lang ? "rounded-b-md border border-t-0" : "rounded-md border"} border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-xs leading-relaxed text-zinc-300`}>
+          <pre className={`overflow-x-auto ${lang ? "rounded-b-md border border-t-0" : "rounded-md border"} border-edge bg-surface px-3 py-2 font-mono text-xs leading-relaxed text-content-secondary`}>
             {codeLines.join("\n")}
           </pre>
         </div>,
@@ -52,7 +52,7 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
 
     // ── Horizontal rule (---/***) ─────────────
     if (/^(\s*[-*_]){3,}\s*$/.test(line)) {
-      elements.push(<hr key={elements.length} className="my-3 border-zinc-800" />);
+      elements.push(<hr key={elements.length} className="my-3 border-edge" />);
       i++;
       continue;
     }
@@ -83,9 +83,9 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
         i++;
       }
       elements.push(
-        <blockquote key={elements.length} className="my-2 border-l-2 border-zinc-600 pl-3">
+        <blockquote key={elements.length} className="my-2 border-l-2 border-edge pl-3">
           {quoteLines.map((ql, idx) => (
-            <p key={idx} className="text-sm italic text-zinc-400">
+            <p key={idx} className="text-sm italic text-content-muted">
               {renderInline(ql)}
             </p>
           ))}
@@ -96,19 +96,19 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
 
     // ── Heading ──────────────────────────────
     if (line.startsWith("#### ")) {
-      elements.push(<h5 key={elements.length} className="mb-1 mt-2 text-xs font-medium text-zinc-400">{renderInline(line.slice(5))}</h5>);
+      elements.push(<h5 key={elements.length} className="mb-1 mt-2 text-xs font-medium text-content-muted">{renderInline(line.slice(5))}</h5>);
       i++; continue;
     }
     if (line.startsWith("### ")) {
-      elements.push(<h4 key={elements.length} className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">{renderInline(line.slice(4))}</h4>);
+      elements.push(<h4 key={elements.length} className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wider text-content-muted">{renderInline(line.slice(4))}</h4>);
       i++; continue;
     }
     if (line.startsWith("## ")) {
-      elements.push(<h3 key={elements.length} className="mb-1.5 mt-3 text-sm font-semibold text-zinc-200">{renderInline(line.slice(3))}</h3>);
+      elements.push(<h3 key={elements.length} className="mb-1.5 mt-3 text-sm font-semibold text-content-secondary">{renderInline(line.slice(3))}</h3>);
       i++; continue;
     }
     if (line.startsWith("# ")) {
-      elements.push(<h2 key={elements.length} className="mb-2 mt-4 text-base font-bold text-zinc-100">{renderInline(line.slice(2))}</h2>);
+      elements.push(<h2 key={elements.length} className="mb-2 mt-4 text-base font-bold text-content">{renderInline(line.slice(2))}</h2>);
       i++; continue;
     }
 
@@ -130,7 +130,7 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
 
     // ── Paragraph ────────────────────────────
     elements.push(
-      <p key={elements.length} className="text-sm leading-relaxed text-zinc-300">
+      <p key={elements.length} className="text-sm leading-relaxed text-content-secondary">
         {renderInline(line)}
       </p>,
     );
@@ -180,7 +180,7 @@ function parseList(
     // Same level item
     const text = isOl ? trimmed.replace(/^\d+\.\s/, "") : trimmed.slice(2);
     items.push(
-      <li key={items.length} className="text-sm leading-relaxed text-zinc-300">
+      <li key={items.length} className="text-sm leading-relaxed text-content-secondary">
         {renderInline(text)}
       </li>,
     );
@@ -188,8 +188,8 @@ function parseList(
   }
 
   const listClass = type === "ul"
-    ? "my-1 list-disc space-y-0.5 pl-5 marker:text-zinc-600"
-    : "my-1 list-decimal space-y-0.5 pl-5 marker:text-zinc-500 marker:font-mono marker:text-xs";
+    ? "my-1 list-disc space-y-0.5 pl-5 marker:text-content-faint"
+    : "my-1 list-decimal space-y-0.5 pl-5 marker:text-content-muted marker:font-mono marker:text-xs";
 
   const node = type === "ul"
     ? <ul className={listClass}>{items}</ul>
@@ -211,22 +211,22 @@ function MarkdownTable({ lines }: { lines: string[] }) {
   const rows = lines.slice(2).map(parseRow);
 
   return (
-    <div className="my-2 overflow-x-auto rounded-md border border-zinc-800">
+    <div className="my-2 overflow-x-auto rounded-md border border-edge">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-zinc-800 bg-zinc-900/50">
+          <tr className="border-b border-edge bg-surface-card">
             {headers.map((h, idx) => (
-              <th key={idx} className="px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              <th key={idx} className="px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-content-muted">
                 {renderInline(h)}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-800/50">
+        <tbody className="divide-y divide-edge/50">
           {rows.map((row, rIdx) => (
             <tr key={rIdx}>
               {row.map((cell, cIdx) => (
-                <td key={cIdx} className="px-3 py-1.5 text-zinc-300">
+                <td key={cIdx} className="px-3 py-1.5 text-content-secondary">
                   {renderInline(cell)}
                 </td>
               ))}
@@ -281,16 +281,16 @@ function renderInline(text: string): React.ReactNode {
 
     switch (first.type) {
       case "bold":
-        parts.push(<strong key={key++} className="font-semibold text-zinc-100">{first.match[1]}</strong>);
+        parts.push(<strong key={key++} className="font-semibold text-content">{first.match[1]}</strong>);
         break;
       case "italic":
-        parts.push(<em key={key++} className="text-zinc-200">{first.match[1]}</em>);
+        parts.push(<em key={key++} className="text-content-secondary">{first.match[1]}</em>);
         break;
       case "code":
-        parts.push(<code key={key++} className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-xs text-emerald-400">{first.match[1]}</code>);
+        parts.push(<code key={key++} className="rounded bg-surface-inset px-1 py-0.5 font-mono text-xs text-emerald-400">{first.match[1]}</code>);
         break;
       case "strike":
-        parts.push(<s key={key++} className="text-zinc-500">{first.match[1]}</s>);
+        parts.push(<s key={key++} className="text-content-muted">{first.match[1]}</s>);
         break;
       case "link":
         parts.push(

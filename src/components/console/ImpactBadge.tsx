@@ -18,10 +18,10 @@ export default function ImpactBadge({ min, max, compact = false }: ImpactBadgePr
 
   const color =
     midpoint >= 5000
-      ? "text-red-400"
+      ? "text-red-600 dark:text-red-400"
       : midpoint >= 1000
-        ? "text-amber-400"
-        : "text-zinc-400";
+        ? "text-amber-600 dark:text-amber-400"
+        : "text-zinc-600 dark:text-zinc-400";
 
   if (compact) {
     return (
@@ -41,15 +41,15 @@ export default function ImpactBadge({ min, max, compact = false }: ImpactBadgePr
 export function ImpactValue({ value, label }: { value: number; label?: string }) {
   const color =
     value >= 5000
-      ? "text-red-400"
+      ? "text-red-600 dark:text-red-400"
       : value >= 1000
-        ? "text-amber-400"
-        : "text-zinc-400";
+        ? "text-amber-600 dark:text-amber-400"
+        : "text-zinc-600 dark:text-zinc-400";
 
   return (
     <div>
       <span className={`text-xl font-bold ${color}`}>{formatCurrency(value)}</span>
-      {label && <span className="ml-1 text-xs text-zinc-500">{label}</span>}
+      {label && <span className="ml-1 text-xs text-content-muted">{label}</span>}
     </div>
   );
 }

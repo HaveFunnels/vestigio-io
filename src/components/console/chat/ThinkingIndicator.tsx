@@ -30,7 +30,7 @@ export function ThinkingIndicator({ stage }: ThinkingIndicatorProps) {
 
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-2 rounded-lg bg-zinc-900/50 px-4 py-2.5">
+      <div className="flex items-center gap-2 rounded-lg bg-surface-card px-4 py-2.5">
         {/* Animated dots */}
         <div className="flex gap-0.5">
           <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: "0ms", animationDuration: "0.8s" }} />
@@ -39,7 +39,7 @@ export function ThinkingIndicator({ stage }: ThinkingIndicatorProps) {
         </div>
 
         {/* Stage label */}
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-content-muted">
           {stage || THINKING_STAGES[dotIndex]}
         </span>
       </div>

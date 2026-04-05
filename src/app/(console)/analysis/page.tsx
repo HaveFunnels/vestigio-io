@@ -115,7 +115,7 @@ const polarityIcons: Record<string, string> = {
 const polarityColors: Record<string, string> = {
   negative: "text-red-400",
   positive: "text-emerald-400",
-  neutral: "text-zinc-500",
+  neutral: "text-content-muted",
 };
 
 export default function AnalysisPage() {
@@ -222,8 +222,8 @@ export default function AnalysisPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-zinc-100">Analysis</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-xl font-semibold text-content">Analysis</h1>
+        <p className="mt-1 text-sm text-content-muted">
           {analysisState === "ongoing"
             ? "Analysis in progress — findings appear as they're ready."
             : "Global findings with quantified financial impact."}
@@ -232,27 +232,27 @@ export default function AnalysisPage() {
 
       {/* Step Timeline (during ongoing analysis) */}
       {analysisState === "ongoing" && currentStep && (
-        <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+        <div className="mb-6 rounded-lg border border-edge bg-surface-card p-4">
           <div className="flex items-center gap-3">
             <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
-            <span className="text-sm font-medium text-zinc-200">{currentStep}</span>
+            <span className="text-sm font-medium text-content-secondary">{currentStep}</span>
           </div>
           {stepHistory.length > 1 && (
             <div className="mt-3 space-y-1">
               {stepHistory.slice(0, -1).map((step, i) => (
                 <div key={i} className="flex items-center gap-3 pl-1">
-                  <div className="h-1.5 w-1.5 rounded-full bg-zinc-700" />
-                  <span className="text-xs text-zinc-600">{step}</span>
+                  <div className="h-1.5 w-1.5 rounded-full bg-content-faint" />
+                  <span className="text-xs text-content-faint">{step}</span>
                 </div>
               ))}
             </div>
           )}
           {coverageScore > 0 && (
             <div className="mt-3 flex items-center gap-2">
-              <div className="h-1.5 flex-1 rounded-full bg-zinc-800">
+              <div className="h-1.5 flex-1 rounded-full bg-surface-inset">
                 <div className="h-1.5 rounded-full bg-emerald-600 transition-all duration-500" style={{ width: `${coverageScore}%` }} />
               </div>
-              <span className="text-xs text-zinc-500">{coverageScore}% coverage</span>
+              <span className="text-xs text-content-muted">{coverageScore}% coverage</span>
             </div>
           )}
         </div>
@@ -281,13 +281,13 @@ export default function AnalysisPage() {
       {analysisState === "ongoing" && findings.length === 0 && (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-4 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
-              <div className="h-4 w-4 animate-pulse rounded bg-zinc-800" />
+            <div key={i} className="flex items-center gap-4 rounded-lg border border-edge bg-surface-card/30 p-4">
+              <div className="h-4 w-4 animate-pulse rounded bg-surface-inset" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 w-3/4 animate-pulse rounded bg-zinc-800" />
-                <div className="h-2 w-1/2 animate-pulse rounded bg-zinc-800" />
+                <div className="h-3 w-3/4 animate-pulse rounded bg-surface-inset" />
+                <div className="h-2 w-1/2 animate-pulse rounded bg-surface-inset" />
               </div>
-              <div className="h-6 w-16 animate-pulse rounded bg-zinc-800" />
+              <div className="h-6 w-16 animate-pulse rounded bg-surface-inset" />
             </div>
           ))}
         </div>
@@ -421,7 +421,7 @@ function AnalysisContent({
       render: (row) => (
         <input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => {}}
           onClick={(e) => toggleSelect(row.id, e)}
-          className="h-3.5 w-3.5 cursor-pointer rounded border-zinc-600 bg-zinc-800 text-emerald-500 focus:ring-0" />
+          className="h-3.5 w-3.5 cursor-pointer rounded border-edge bg-surface-inset text-emerald-500 focus:ring-0" />
       ),
     },
     {
@@ -440,14 +440,14 @@ function AnalysisContent({
         return (
           <div className={isDimmed ? 'opacity-50' : ''}>
             <div className="flex items-center gap-2">
-              <span className={`text-sm ${row.polarity === 'positive' ? 'text-emerald-300' : 'text-zinc-200'}`}>{row.title}</span>
+              <span className={`text-sm ${row.polarity === 'positive' ? 'text-emerald-300' : 'text-content-secondary'}`}>{row.title}</span>
               {isAnnotated && (
                 <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
                   Suppressed
                 </span>
               )}
             </div>
-            {row.root_cause && <div className="mt-0.5 text-xs text-zinc-500">{row.root_cause}</div>}
+            {row.root_cause && <div className="mt-0.5 text-xs text-content-muted">{row.root_cause}</div>}
           </div>
         );
       },
@@ -466,20 +466,20 @@ function AnalysisContent({
       key: "change", label: "Change", className: "w-28",
       render: (row) => <ChangeBadge value={row.change_class} />,
     },
-    { key: "confidence", label: "Conf", className: "w-16", render: (row) => <span className="font-mono text-xs text-zinc-400">{row.confidence}%</span> },
+    { key: "confidence", label: "Conf", className: "w-16", render: (row) => <span className="font-mono text-xs text-content-muted">{row.confidence}%</span> },
     {
       key: "impact", label: "Est. Impact", className: "w-44",
       render: (row) => row.polarity === 'positive'
-        ? <span className="text-xs text-zinc-500">—</span>
+        ? <span className="text-xs text-content-muted">—</span>
         : <ImpactBadge min={row.impact.monthly_range.min} max={row.impact.monthly_range.max} />,
     },
-    { key: "impact_type", label: "Type", className: "w-28", render: (row) => <span className="text-xs text-zinc-400">{impactTypeLabels[row.impact.impact_type] || row.impact.impact_type}</span> },
-    { key: "pack", label: "Pack", className: "w-20", render: (row) => <span className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">{packLabels[row.pack] || row.pack}</span> },
+    { key: "impact_type", label: "Type", className: "w-28", render: (row) => <span className="text-xs text-content-muted">{impactTypeLabels[row.impact.impact_type] || row.impact.impact_type}</span> },
+    { key: "pack", label: "Pack", className: "w-20", render: (row) => <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{packLabels[row.pack] || row.pack}</span> },
     {
       key: "discuss", label: "", className: "w-20",
       render: (row) => row.polarity !== 'positive' ? (
         <button onClick={(e) => { e.stopPropagation(); router.push(`/chat?finding=${row.id}`); }}
-          className="rounded border border-zinc-700 px-2 py-1 text-xs text-zinc-400 transition-colors hover:border-emerald-600 hover:text-emerald-400">
+          className="rounded border border-edge px-2 py-1 text-xs text-content-muted transition-colors hover:border-emerald-600 hover:text-emerald-400">
           Discuss
         </button>
       ) : null,
@@ -492,56 +492,56 @@ function AnalysisContent({
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <select value={polarityFilter} onChange={(e) => setPolarityFilter(e.target.value as PolarityFilter)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {polarityOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {severityOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <select value={packFilter} onChange={(e) => setPackFilter(e.target.value as PackFilter)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {packOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <select value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value as VerificationFilter)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {verificationOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <select value={changeClassFilter} onChange={(e) => setChangeClassFilter(e.target.value as ChangeClassFilter)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {changeClassOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <select value={impactRangeFilter} onChange={(e) => setImpactRangeFilter(e.target.value as ImpactRangeFilter)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {impactRangeOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <select value={surfaceFilter} onChange={(e) => setSurfaceFilter(e.target.value)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {surfaceOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <select value={confidenceFilter} onChange={(e) => setConfidenceFilter(e.target.value as ConfidenceFilter)}
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {confidenceOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Search..."
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" />
+          className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-sm text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" />
 
-        <label className="flex items-center gap-1.5 text-xs text-zinc-500 cursor-pointer">
+        <label className="flex items-center gap-1.5 text-xs text-content-muted cursor-pointer">
           <input type="checkbox" checked={hidePositive} onChange={(e) => setHidePositive(e.target.checked)}
-            className="h-3 w-3 rounded border-zinc-600 bg-zinc-800 text-emerald-500 focus:ring-0" />
+            className="h-3 w-3 rounded border-edge bg-surface-inset text-emerald-500 focus:ring-0" />
           Hide positive signals
         </label>
 
         {(severityFilter !== "all" || packFilter !== "all" || polarityFilter !== "all" || verificationFilter !== "all" || impactRangeFilter !== "all" || surfaceFilter !== "all" || changeClassFilter !== "all" || confidenceFilter !== "all" || searchText !== "") && (
           <button onClick={() => { setSeverityFilter("all"); setPackFilter("all"); setPolarityFilter("all"); setVerificationFilter("all"); setImpactRangeFilter("all"); setSurfaceFilter("all"); setChangeClassFilter("all"); setConfidenceFilter("all"); setSearchText(""); }}
-            className="rounded-md px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-300">Clear filters</button>
+            className="rounded-md px-3 py-1.5 text-xs text-content-muted transition-colors hover:text-content-secondary">Clear filters</button>
         )}
         {selectedIds.size >= 2 && (
           <ShinyButton onClick={() => router.push(`/chat?findings=${[...selectedIds].join(",")}`)}>
             Use as Context ({selectedIds.size})
           </ShinyButton>
         )}
-        <span className="ml-auto text-xs text-zinc-500">{filtered.length} of {findings.length} findings</span>
+        <span className="ml-auto text-xs text-content-muted">{filtered.length} of {findings.length} findings</span>
       </div>
 
       <DataTable columns={columns} data={filtered} onRowClick={(row) => setSelectedFinding(row)} getRowKey={(row) => row.id}
@@ -559,17 +559,17 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
     <div className="space-y-6">
       {/* Summary + badges */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Summary</h3>
-        <p className="text-sm text-zinc-300">{finding.cause}</p>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Summary</h3>
+        <p className="text-sm text-content-secondary">{finding.cause}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {finding.polarity === 'positive'
             ? <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">Healthy</span>
             : <SeverityBadge value={finding.severity} />}
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
-          <span className="text-xs text-zinc-500">Confidence {finding.confidence}%</span>
-          <span className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">{packLabels[finding.pack] || finding.pack}</span>
-          {finding.surface && <code className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-500">{finding.surface}</code>}
+          <span className="text-xs text-content-muted">Confidence {finding.confidence}%</span>
+          <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{packLabels[finding.pack] || finding.pack}</span>
+          {finding.surface && <code className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{finding.surface}</code>}
         </div>
       </section>
 
@@ -596,17 +596,17 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Effect */}
       {finding.effect && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Effect</h3>
-          <p className="text-sm text-zinc-400">{finding.effect}</p>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Effect</h3>
+          <p className="text-sm text-content-muted">{finding.effect}</p>
         </section>
       )}
 
       {/* Root Cause */}
       {finding.root_cause && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Root Cause</h3>
-          <div className="rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
-            <span className="text-sm font-medium text-zinc-200">{finding.root_cause}</span>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Root Cause</h3>
+          <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
+            <span className="text-sm font-medium text-content-secondary">{finding.root_cause}</span>
           </div>
         </section>
       )}
@@ -614,19 +614,19 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Impact Breakdown */}
       {finding.polarity !== 'positive' && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Impact Breakdown</h3>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Impact Breakdown</h3>
           <div className="space-y-2">
-            <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2">
-              <span className="text-xs text-zinc-500">Monthly Range</span>
+            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+              <span className="text-xs text-content-muted">Monthly Range</span>
               <ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} />
             </div>
-            <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2">
-              <span className="text-xs text-zinc-500">Midpoint</span>
+            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+              <span className="text-xs text-content-muted">Midpoint</span>
               <ImpactBadge min={finding.impact.midpoint} max={finding.impact.midpoint} compact />
             </div>
-            <div className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2">
-              <span className="text-xs text-zinc-500">Impact Type</span>
-              <span className="text-xs text-zinc-300">{impactTypeLabels[finding.impact.impact_type] || finding.impact.impact_type}</span>
+            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+              <span className="text-xs text-content-muted">Impact Type</span>
+              <span className="text-xs text-content-secondary">{impactTypeLabels[finding.impact.impact_type] || finding.impact.impact_type}</span>
             </div>
           </div>
         </section>
@@ -635,8 +635,8 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       {/* Evidence Quality */}
       {finding.evidence_quality && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Evidence Quality</h3>
-          <div className="space-y-2 rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Evidence Quality</h3>
+          <div className="space-y-2 rounded-md border border-edge bg-surface-card px-4 py-3">
             <EvidenceQualityBar label="Source Reliability" value={finding.evidence_quality.source_reliability} />
             <EvidenceQualityBar label="Completeness" value={finding.evidence_quality.completeness} />
             <EvidenceQualityBar label="Recency" value={finding.evidence_quality.recency} />
@@ -647,7 +647,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
       {/* Verification Lifecycle Panel */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Verification</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Verification</h3>
         <VerificationPanel
           maturity={finding.verification_maturity}
           method={finding.verification_method}
@@ -669,10 +669,10 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
       {/* Reasoning */}
       <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
           {finding.polarity === 'positive' ? 'Why This Is Good' : 'Reasoning'}
         </h3>
-        <p className="text-sm leading-relaxed text-zinc-400">{finding.reasoning}</p>
+        <p className="text-sm leading-relaxed text-content-muted">{finding.reasoning}</p>
       </section>
 
       {/* Truth Context */}
@@ -709,14 +709,14 @@ function EvidenceQualityBar({ label, value }: { label: string; value: number }) 
 
   return (
     <div className="flex items-center gap-3">
-      <span className="w-28 shrink-0 text-xs text-zinc-500">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-zinc-800">
+      <span className="w-28 shrink-0 text-xs text-content-muted">{label}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-surface-inset">
         <div
           className={`h-1.5 rounded-full transition-all ${barColor}`}
           style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         />
       </div>
-      <span className="w-8 text-right font-mono text-xs text-zinc-400">{value}</span>
+      <span className="w-8 text-right font-mono text-xs text-content-muted">{value}</span>
     </div>
   );
 }

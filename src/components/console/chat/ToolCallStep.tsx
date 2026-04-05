@@ -28,7 +28,7 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
             ? "bg-emerald-500/5"
             : isError
               ? "bg-red-500/5 hover:bg-red-500/10"
-              : "hover:bg-zinc-800/50"
+              : "hover:bg-surface-inset"
         } ${block.resultPreview ? "cursor-pointer" : "cursor-default"}`}
       >
         {/* Status icon */}
@@ -55,7 +55,7 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
               ? "text-emerald-400"
               : isError
                 ? "text-red-400"
-                : "text-zinc-500"
+                : "text-content-muted"
           }`}
         >
           {block.label}
@@ -63,7 +63,7 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
 
         {/* Duration */}
         {block.durationMs != null && (
-          <span className="font-mono text-[10px] text-zinc-600">
+          <span className="font-mono text-[10px] text-content-faint">
             {block.durationMs}ms
           </span>
         )}
@@ -71,7 +71,7 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
         {/* Chevron */}
         {block.resultPreview && (
           <svg
-            className={`h-3 w-3 text-zinc-600 transition-transform duration-150 ${
+            className={`h-3 w-3 text-content-faint transition-transform duration-150 ${
               expanded ? "rotate-90" : ""
             }`}
             viewBox="0 0 16 16"
@@ -84,8 +84,8 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
 
       {/* Expanded result preview */}
       {expanded && block.resultPreview && (
-        <div className="ml-6 mt-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2">
-          <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-zinc-500">
+        <div className="ml-6 mt-1 rounded-md border border-edge bg-surface px-3 py-2">
+          <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-content-muted">
             {block.resultPreview}
           </pre>
         </div>

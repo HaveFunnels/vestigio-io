@@ -12,13 +12,7 @@ import type { WorkspaceProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
 // Workspaces Page — Phase 4 UX Overhaul
-//
-// Card grid linking to workspace detail views.
-// Cards show summary stats, change trend, and
-// confidence narrative. No inline expansion.
-// ──────────────────────────────────────────────
-
-// Workspace type labels now resolved via i18n in the component
+// ──────────────────────────────────���───────────
 
 function formatCurrency(value: number): string {
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
@@ -34,8 +28,8 @@ export default function WorkspacesPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-zinc-100">{t("title")}</h1>
-        <p className="mt-1 text-sm text-zinc-500">{t("subtitle")}</p>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
+        <p className="mt-1 text-sm text-content-muted">{t("subtitle")}</p>
       </div>
       <ConsoleState
         state={dataState}
@@ -69,13 +63,13 @@ function WorkspacesContent({
   return (
     <>
       {selectedIds.size > 0 && (
-        <div className="mb-4 flex items-center gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 shadow-lg">
-          <span className="text-sm font-medium text-zinc-100">{t("selected", { count: selectedIds.size })}</span>
+        <div className="mb-4 flex items-center gap-4 rounded-lg border border-edge bg-surface-card px-4 py-2.5 shadow-lg">
+          <span className="text-sm font-medium text-content">{t("selected", { count: selectedIds.size })}</span>
           <div className="flex-1" />
           <ShinyButton onClick={() => router.push(`/chat?context=workspaces:${[...selectedIds].join(",")}`)}>
             {t("use_as_context")}
           </ShinyButton>
-          <button onClick={() => setSelectedIds(new Set())} className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800">{t("clear")}</button>
+          <button onClick={() => setSelectedIds(new Set())} className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-muted transition-colors hover:bg-surface-card-hover">{t("clear")}</button>
         </div>
       )}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -83,18 +77,18 @@ function WorkspacesContent({
         <button
           key={ws.id}
           onClick={() => router.push(`/app/workspaces/${ws.id}`)}
-          className={`group relative w-full rounded-lg border text-left transition-colors hover:border-zinc-700 hover:bg-zinc-900/80 ${selectedIds.has(ws.id) ? "border-indigo-500/40 bg-indigo-500/5" : "border-zinc-800 bg-zinc-900/50"}`}
+          className={`group relative w-full rounded-lg border text-left transition-colors hover:border-edge hover:bg-surface-card-hover ${selectedIds.has(ws.id) ? "border-indigo-500/40 bg-indigo-500/5" : "border-edge bg-surface-card"}`}
         >
           <div className="absolute right-3 top-3 z-10" onClick={(e) => toggleSelect(ws.id, e)}>
-            <input type="checkbox" checked={selectedIds.has(ws.id)} readOnly className="h-3.5 w-3.5 cursor-pointer rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-0" />
+            <input type="checkbox" checked={selectedIds.has(ws.id)} readOnly className="h-3.5 w-3.5 cursor-pointer rounded border-edge bg-surface-input text-indigo-500 focus:ring-0" />
           </div>
           <div className="px-5 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-base font-semibold text-zinc-100">
+                <span className="text-base font-semibold text-content">
                   {ws.name}
                 </span>
-                <span className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">
+                <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
                   {t.has(`types.${ws.type}`) ? t(`types.${ws.type}`) : ws.type}
                 </span>
                 <WorkspaceChangeTrend summary={ws.change_summary} />
@@ -103,32 +97,32 @@ function WorkspacesContent({
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div>
-                <div className="text-xs text-zinc-500">{t("monthly_loss")}</div>
-                <div className="text-sm font-bold text-red-400">
+                <div className="text-xs text-content-faint">{t("monthly_loss")}</div>
+                <div className="text-sm font-bold text-red-500 dark:text-red-400">
                   {formatCurrency(ws.summary.total_loss_mid)}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">{t("issues")}</div>
-                <div className="text-sm font-medium text-zinc-300">
+                <div className="text-xs text-content-faint">{t("issues")}</div>
+                <div className="text-sm font-medium text-content-secondary">
                   {ws.summary.issue_count}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">{t("confidence")}</div>
-                <div className="text-sm font-medium text-zinc-300">
+                <div className="text-xs text-content-faint">{t("confidence")}</div>
+                <div className="text-sm font-medium text-content-secondary">
                   {ws.summary.confidence}%
                 </div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">{t("top_issue")}</div>
-                <div className="truncate text-xs text-zinc-400">
+                <div className="text-xs text-content-faint">{t("top_issue")}</div>
+                <div className="truncate text-xs text-content-muted">
                   {ws.summary.top_issues[0] || "\u2014"}
                 </div>
               </div>
             </div>
             {ws.confidence_narrative && (
-              <div className="mt-3 border-t border-zinc-800 pt-3">
+              <div className="mt-3 border-t border-edge pt-3">
                 <div className="flex items-center gap-3 mb-2">
                   <ConfidenceBar
                     label={t("structural")}
@@ -139,14 +133,14 @@ function WorkspacesContent({
                     level={ws.confidence_narrative.economic_confidence}
                   />
                 </div>
-                <p className="text-xs text-zinc-400 leading-relaxed">
+                <p className="text-xs text-content-muted leading-relaxed">
                   {ws.confidence_narrative.narrative}
                 </p>
                 {ws.confidence_narrative.uncertainty_factors.length > 0 && (
                   <ul className="mt-1.5 space-y-0.5">
                     {ws.confidence_narrative.uncertainty_factors.map(
                       (factor, i) => (
-                        <li key={i} className="text-[11px] text-zinc-600">
+                        <li key={i} className="text-[11px] text-content-faint">
                           &bull; {factor}
                         </li>
                       )
@@ -155,8 +149,7 @@ function WorkspacesContent({
                 )}
               </div>
             )}
-            {/* View details link */}
-            <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-400 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="mt-3 flex items-center gap-1 text-xs font-medium text-accent opacity-0 transition-opacity group-hover:opacity-100">
               {t("view_details")} <span>&rarr;</span>
             </div>
           </div>
@@ -166,10 +159,6 @@ function WorkspacesContent({
     </>
   );
 }
-
-// ──────────────────────────────────────────────
-// Workspace Change Trend Indicator — Phase 2 UX
-// ──────────────────────────────────────────────
 
 function WorkspaceChangeTrend({
   summary,
@@ -182,22 +171,22 @@ function WorkspaceChangeTrend({
     {
       degrading: {
         icon: "\u2191",
-        color: "text-red-400",
+        color: "text-red-500 dark:text-red-400",
         label: `${summary.regression_count} regression${
           summary.regression_count !== 1 ? "s" : ""
         }`,
       },
       improving: {
         icon: "\u2193",
-        color: "text-emerald-400",
+        color: "text-emerald-600 dark:text-emerald-400",
         label: `${summary.improvement_count} improvement${
           summary.improvement_count !== 1 ? "s" : ""
         }`,
       },
-      stable: { icon: "\u2014", color: "text-zinc-500", label: "stable" },
+      stable: { icon: "\u2014", color: "text-content-faint", label: "stable" },
       mixed: {
         icon: "\u2195",
-        color: "text-amber-400",
+        color: "text-amber-600 dark:text-amber-400",
         label: "mixed changes",
       },
     };
@@ -229,19 +218,19 @@ function ConfidenceBar({
       : "bg-red-500";
   const textColor =
     level === "high"
-      ? "text-emerald-400"
+      ? "text-emerald-600 dark:text-emerald-400"
       : level === "medium"
-      ? "text-amber-400"
-      : "text-red-400";
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-red-600 dark:text-red-400";
   const widthPct = level === "high" ? 100 : level === "medium" ? 60 : 30;
 
   return (
     <div className="flex-1">
       <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] text-zinc-500">{label}</span>
+        <span className="text-[10px] text-content-faint">{label}</span>
         <span className={`text-[10px] font-medium ${textColor}`}>{level}</span>
       </div>
-      <div className="h-1 rounded-full bg-zinc-800">
+      <div className="h-1 rounded-full bg-surface-inset">
         <div
           className={`h-1 rounded-full ${color}`}
           style={{ width: `${widthPct}%` }}

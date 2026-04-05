@@ -44,8 +44,8 @@ export default function ChangeTimeline({
 }) {
   if (changes.length === 0) {
     return (
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-6 text-center">
-        <span className="text-sm text-zinc-500">No changes to display</span>
+      <div className="rounded-lg border border-edge bg-surface-card px-4 py-6 text-center">
+        <span className="text-sm text-content-muted">No changes to display</span>
       </div>
     );
   }
@@ -64,15 +64,15 @@ export default function ChangeTimeline({
     <div className="relative">
       {sorted.map((change, idx) => {
         const isLast = idx === sorted.length - 1;
-        const dot = dotColors[change.change_class] || "bg-zinc-500";
-        const line = lineColors[change.change_class] || "bg-zinc-700";
+        const dot = dotColors[change.change_class] || "bg-content-faint";
+        const line = lineColors[change.change_class] || "bg-edge";
 
         return (
           <div key={`${change.decision_key}-${idx}`} className="relative flex gap-4">
             {/* Left: dot + connecting line */}
             <div className="flex flex-col items-center">
               <div
-                className={`mt-1 h-3 w-3 shrink-0 rounded-full ${dot} ring-2 ring-zinc-900`}
+                className={`mt-1 h-3 w-3 shrink-0 rounded-full ${dot} ring-2 ring-surface`}
               />
               {!isLast && (
                 <div className={`w-0.5 flex-1 ${line}`} />
@@ -83,7 +83,7 @@ export default function ChangeTimeline({
             <div className={`pb-5 ${isLast ? "pb-0" : ""}`}>
               {/* Title */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-zinc-200">
+                <span className="text-sm font-medium text-content-secondary">
                   {change.title}
                 </span>
                 <ChangeBadge
@@ -98,14 +98,14 @@ export default function ChangeTimeline({
 
               {/* Severity change */}
               {change.previous_severity && change.current_severity && change.previous_severity !== change.current_severity && (
-                <div className="mt-1 text-xs text-zinc-500">
+                <div className="mt-1 text-xs text-content-muted">
                   Severity: {change.previous_severity} &rarr; {change.current_severity}
                 </div>
               )}
 
               {/* Contributing factors */}
               {change.contributing_factors.length > 0 && (
-                <div className="mt-1 text-xs text-zinc-500">
+                <div className="mt-1 text-xs text-content-muted">
                   {change.contributing_factors.join(", ")}
                 </div>
               )}
@@ -123,7 +123,7 @@ export default function ChangeTimeline({
 
 function RiskDelta({ delta }: { delta: number }) {
   if (delta === 0) {
-    return <span className="text-xs text-zinc-500">No change in risk score</span>;
+    return <span className="text-xs text-content-muted">No change in risk score</span>;
   }
 
   const isWorse = delta > 0;

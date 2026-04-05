@@ -60,7 +60,7 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
       className={`rounded-md p-1.5 transition-colors ${
         listening
           ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-          : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400"
+          : "text-content-muted hover:bg-surface-card-hover hover:text-content-muted"
       } disabled:opacity-30`}
       title={listening ? "Stop recording" : "Voice input"}
     >

@@ -810,15 +810,67 @@
 		},
 		"actions": {
 			"title": "Actions",
-			"subtitle": "Globally prioritized actions sorted by estimated financial impact. Fix what matters most.",
+			"subtitle": "Prioritized queue of what needs attention",
 			"loading": "Loading prioritized actions...",
 			"empty": "No actions required. Your site has no significant issues detected.",
 			"cards": {
+				"active_incidents": "Active Incidents",
+				"require_remediation": "require remediation",
+				"none_detected": "none detected",
+				"open_opportunities": "Open Opportunities",
+				"actionable_improvements": "actionable improvements",
+				"none_identified": "none identified",
+				"pending_verifications": "Pending Verifications",
+				"awaiting_confirmation": "awaiting confirmation",
+				"all_verified": "all verified",
+				"total_addressable_impact": "Total Addressable Impact",
+				"per_month_midpoint": "/month (midpoint)",
 				"total_actions": "Total Actions",
 				"total_impact": "Total Impact Addressable",
-				"per_month_midpoint": "/month (midpoint)",
 				"cross_pack": "Cross-Pack",
 				"high_severity": "High Severity"
+			},
+			"tabs": {
+				"all": "All",
+				"incidents": "Incidents",
+				"opportunities": "Opportunities",
+				"verifications": "Verifications"
+			},
+			"columns": {
+				"priority": "#",
+				"action": "Action",
+				"category": "Category",
+				"status": "Status",
+				"impact": "Impact",
+				"severity": "Severity",
+				"effort": "Effort",
+				"resolve": "Resolve"
+			},
+			"categories": {
+				"incident": "Incident",
+				"opportunity": "Opportunity",
+				"verification": "Verification",
+				"observation": "Observation"
+			},
+			"effort": {
+				"trivial": "Trivial",
+				"low": "Low",
+				"medium": "Medium",
+				"high": "High",
+				"very_high": "Very High"
+			},
+			"resolve": {
+				"fix": "Fix",
+				"verify": "Verify",
+				"track": "Track",
+				"dismiss": "Dismiss"
+			},
+			"change_summary": {
+				"first_analysis": "First analysis — no change history yet",
+				"regressions": "{count} regression(s)",
+				"improvements": "{count} improvement(s)",
+				"resolved": "resolved",
+				"new_issues": "new"
 			},
 			"scope": {
 				"cross_pack": "cross-pack",
@@ -826,13 +878,18 @@
 			},
 			"drawer": {
 				"what_fixes": "What This Fixes",
+				"impact_breakdown": "Impact Breakdown",
 				"impact_unlocked": "Impact Unlocked",
 				"monthly_range": "Monthly Range",
 				"midpoint": "Midpoint",
+				"confidence": "Confidence",
+				"priority_score": "Priority Score",
 				"root_cause": "Root Cause",
+				"verification": "Verification",
 				"scope": "Scope",
 				"affects_multiple": "Affects multiple packs",
 				"single_pack": "Single pack",
+				"discuss_in_chat": "Discuss in Chat",
 				"request_verification": "Request Verification"
 			}
 		},

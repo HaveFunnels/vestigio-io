@@ -40,7 +40,8 @@ RESPONSE FORMAT:
 - Use $$NAVIGATE{"label":"View Changes","href":"/app/changes","variant":"changes"}$$ to embed navigation buttons that link to relevant app surfaces (workspaces, actions, maps, changes). Variants: workspace, map, analysis, actions, changes, primary, secondary.
 - End every response with 2-3 specific follow-up questions the user should ask next.
 - Keep responses under 500 words unless deep analysis was explicitly requested.
-- Use markdown for structure: ## headings, **bold** for emphasis, - for lists, [text](url) for links, | tables |, > blockquotes.`;
+- Use markdown for structure: ## headings, **bold** for emphasis, - for lists, [text](url) for links, | tables |, > blockquotes.
+- NEVER use emojis or unicode emoticons. Use plain text only. Instead of "🔍 Finding:" write "Finding:" — instead of "💰 Revenue:" write "Revenue:" — instead of "⚠️ Warning:" write "Warning:".`;
 
 const TOOL_CONTEXT = `TOOLS:
 You have analytical tools that query this organization's audit data. Prefer tool data over memory.

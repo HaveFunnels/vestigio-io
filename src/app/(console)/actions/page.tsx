@@ -146,7 +146,7 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
     {
       label: t("cards.activeIncidents"),
       value: counts.incident,
-      variant: "danger",
+      variant: "warning",
       subtext: counts.incident > 0 ? t("cards.requireRemediation") : t("cards.noneDetected"),
     },
     {
@@ -164,7 +164,7 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
     {
       label: t("cards.totalAddressableImpact"),
       value: totalImpact >= 1000 ? `${formatCurrency(totalImpact)}` : `$${totalImpact}`,
-      variant: "warning",
+      variant: "danger",
       subtext: t("cards.perMonthMidpoint"),
     },
   ];

@@ -413,8 +413,8 @@ function AnalysisContent({
         variant: totalImpactMid >= 20000 ? "danger" : totalImpactMid >= 5000 ? "warning" : "success",
         subtext: t("cards.per_month_midpoint"),
       },
-      { label: t("cards.high_impact_issues"), value: highImpact, variant: highImpact > 0 ? "danger" : "success", subtext: t("cards.high_impact_threshold") },
-      { label: t("cards.avg_confidence"), value: `${avgConf}%`, variant: "default" },
+      { label: t("cards.high_impact_issues"), value: highImpact, variant: "danger", subtext: t("cards.high_impact_threshold") },
+      { label: t("cards.verified_findings"), value: `${findings.filter(f => f.verification_maturity === "verified").length}/${findings.filter(f => f.polarity === "negative").length}`, variant: "info" },
     ];
   }, [findings, analysisState, t]);
 
@@ -504,39 +504,39 @@ function AnalysisContent({
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <select value={polarityFilter} onChange={(e) => setPolarityFilter(e.target.value as PolarityFilter)}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {polarityValues.map((v) => <option key={v} value={v}>{polarityLabels[v]}</option>)}
         </select>
         <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {severityValues.map((v) => <option key={v} value={v}>{severityLabels[v]}</option>)}
         </select>
         <select value={packFilter} onChange={(e) => setPackFilter(e.target.value as PackFilter)}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {packValues.map((v) => <option key={v} value={v}>{packOptionLabels[v]}</option>)}
         </select>
         <select value={verificationFilter} onChange={(e) => setVerificationFilter(e.target.value as VerificationFilter)}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {verificationValues.map((v) => <option key={v} value={v}>{verificationLabels[v]}</option>)}
         </select>
         <select value={changeClassFilter} onChange={(e) => setChangeClassFilter(e.target.value as ChangeClassFilter)}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {changeClassValues.map((v) => <option key={v} value={v}>{changeClassLabels[v]}</option>)}
         </select>
         <select value={impactRangeFilter} onChange={(e) => setImpactRangeFilter(e.target.value as ImpactRangeFilter)}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {impactRangeValues.map((v) => <option key={v} value={v}>{impactRangeLabels[v]}</option>)}
         </select>
         <select value={surfaceFilter} onChange={(e) => setSurfaceFilter(e.target.value)}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {surfaceOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         <select value={confidenceFilter} onChange={(e) => setConfidenceFilter(e.target.value as ConfidenceFilter)}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {confidenceValues.map((v) => <option key={v} value={v}>{confidenceLabels[v]}</option>)}
         </select>
         <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder={t("search_placeholder")}
-          className="rounded-md border border-edge bg-surface-card px-2 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" />
+          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" />
 
         <label className="flex items-center gap-1.5 text-xs text-content-muted cursor-pointer">
           <input type="checkbox" checked={hidePositive} onChange={(e) => setHidePositive(e.target.checked)}

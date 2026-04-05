@@ -267,6 +267,9 @@ function renderInline(text: string): React.ReactNode {
     const link = remaining.match(/\[([^\]]{1,200})\]\(([^)]{1,500})\)/);
     if (link) candidates.push({ type: "link", match: link });
 
+    const impact = remaining.match(/\$\$IMPACT(\{[^}]{1,500}\})\$\$/);
+    if (impact) candidates.push({ type: "impact", match: impact });
+
     if (candidates.length === 0) {
       parts.push(remaining);
       break;
@@ -299,6 +302,23 @@ function renderInline(text: string): React.ReactNode {
           </a>,
         );
         break;
+      case "impact": {
+        try {
+          const data = JSON.parse(first.match[1]);
+          const fmt = (v: number) => v >= 1000 ? `$${(v / 1000).toFixed(1)}k` : `$${v}`;
+          parts.push(
+            <span key={key++} className="inline-flex items-center gap-1.5 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1 text-sm font-semibold text-red-600 dark:text-red-400">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+              </svg>
+              {fmt(data.min)} – {fmt(data.max)}/mo
+            </span>,
+          );
+        } catch {
+          parts.push(first.match[0]);
+        }
+        break;
+      }
     }
 
     remaining = remaining.slice(idx + first.match[0].length);

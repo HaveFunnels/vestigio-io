@@ -349,14 +349,14 @@ export default function ChatPage() {
           <div className="flex items-center justify-end px-4 py-1.5 sm:px-8">
             <button
               onClick={() => setPlaybooksOpen(!playbooksOpen)}
-              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
                 playbooksOpen
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "text-content-muted hover:bg-surface-card hover:text-content-secondary"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                  : "border-edge bg-surface-card text-content-secondary hover:border-emerald-500/30 hover:bg-emerald-500/5 hover:text-emerald-600 dark:hover:text-emerald-400"
               }`}
             >
-              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
-                <path d="M2 3h12M2 7h8M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
               </svg>
               {t("playbooks.label")}
             </button>

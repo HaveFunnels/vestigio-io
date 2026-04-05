@@ -728,7 +728,8 @@
 				"per_month_midpoint": "/month (midpoint)",
 				"high_impact_issues": "High Impact Issues",
 				"high_impact_threshold": "> $10k/mo",
-				"avg_confidence": "Avg Confidence"
+				"avg_confidence": "Avg Confidence",
+				"verified_findings": "Verified"
 			},
 			"discuss": "Discuss",
 			"analyze_together": "Analyze {count} Together",

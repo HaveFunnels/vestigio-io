@@ -15,7 +15,7 @@ import VerificationBadge from "@/components/console/VerificationBadge";
 import ChangeBadge from "@/components/console/ChangeBadge";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
-import { loadAllMaps, loadFindings } from "@/lib/console-data";
+import { loadAllMaps } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { useTranslations } from "next-intl";
@@ -489,29 +489,26 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
     <div className="flex h-full flex-col">
       {/* Keyframes for node entrance animation */}
       <style>{`
-        /* Hide connection handle dots */
-        .react-flow__handle { opacity: 0 !important; width: 1px !important; height: 1px !important; }
-
-        /* Node entrance: staggered fade + slide from left */
-        .map-node-enter {
-          opacity: 0;
-          animation: mapNodeEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        /* Hide connection handle dots but keep them functional for edge routing */
+        .react-flow__handle {
+          opacity: 0 !important;
+          pointer-events: none !important;
         }
-        @keyframes mapNodeEnter {
-          from { opacity: 0; transform: translateX(-12px); }
-          to   { opacity: 1; transform: translateX(0); }
+
+        /* Node entrance: staggered opacity fade only (no transform — conflicts with RF positioning) */
+        .map-node-enter {
+          animation: mapNodeFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes mapNodeFade {
+          0%   { opacity: 0; filter: blur(4px); }
+          100% { opacity: 1; filter: blur(0); }
         }
 
         /* Edge drawing: stroke draws in progressively */
-        .react-flow__edge path {
-          stroke-dasharray: 800;
-          stroke-dashoffset: 800;
-          animation: edgeDraw 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
-        }
-        .react-flow__edge.animated path {
-          stroke-dasharray: 5 5 !important;
-          stroke-dashoffset: 0 !important;
-          animation: none !important;
+        .react-flow__edge path:not([style*="dasharray: 5"]) {
+          stroke-dasharray: 1000;
+          stroke-dashoffset: 1000;
+          animation: edgeDraw 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
         }
         @keyframes edgeDraw {
           to { stroke-dashoffset: 0; }

@@ -1182,4 +1182,165 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
     base_metric: 'revenue',
   },
+
+  // ── First Impression Revenue (pixel-dependent) ──
+  first_session_milestone_stall: {
+    inference_key: 'first_session_milestone_stall', impact_category: 'conversion_loss',
+    cause: 'First-time visitors stall before expressing purchase intent',
+    effect: 'New visitors never reach commercial surfaces — acquisition spend wasted on sessions that stall at awareness',
+    high: { min: 0.10, max: 0.25 }, medium: { min: 0.05, max: 0.15 }, low: { min: 0.02, max: 0.06 },
+    base_metric: 'revenue',
+  },
+  first_session_trust_barrier: {
+    inference_key: 'first_session_trust_barrier', impact_category: 'conversion_loss',
+    cause: 'First-time visitors hesitate significantly more than returning visitors',
+    effect: 'Trust deficit for newcomers blocks conversion — brand familiarity gap not compensated by on-page trust signals',
+    high: { min: 0.08, max: 0.20 }, medium: { min: 0.04, max: 0.10 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  first_session_cta_timing_gap: {
+    inference_key: 'first_session_cta_timing_gap', impact_category: 'conversion_loss',
+    cause: 'First-time visitors take much longer to reach commercial actions',
+    effect: 'Commercial entry points optimized for returning visitors — newcomers wander before finding the conversion path',
+    high: { min: 0.06, max: 0.18 }, medium: { min: 0.03, max: 0.10 }, low: { min: 0.01, max: 0.04 },
+    base_metric: 'revenue',
+  },
+
+  // ── Action Value Map (pixel-dependent) ──
+  low_value_action_dominates: {
+    inference_key: 'low_value_action_dominates', impact_category: 'conversion_loss',
+    cause: 'Most visible user actions have very low conversion correlation',
+    effect: 'User attention directed toward non-revenue actions — high-value conversion paths are overshadowed',
+    high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  high_value_action_underexposed: {
+    inference_key: 'high_value_action_underexposed', impact_category: 'conversion_loss',
+    cause: 'Revenue-positive actions are not visible or compelling enough',
+    effect: 'Conversions happen despite UX, not because of it — increasing CTA visibility would amplify revenue',
+    high: { min: 0.06, max: 0.18 }, medium: { min: 0.03, max: 0.10 }, low: { min: 0.01, max: 0.04 },
+    base_metric: 'revenue',
+  },
+  dead_weight_surface_traffic: {
+    inference_key: 'dead_weight_surface_traffic', impact_category: 'traffic_waste',
+    cause: 'Surfaces receive traffic but never advance visitors toward conversion',
+    effect: 'Dead-weight pageviews consume resources and ad spend without contributing to revenue progression',
+    high: { min: 0.10, max: 0.30 }, medium: { min: 0.05, max: 0.15 }, low: { min: 0.02, max: 0.06 },
+    base_metric: 'revenue',
+  },
+
+  // ── Acquisition Integrity (pixel-dependent) ──
+  paid_traffic_friction_elevated: {
+    inference_key: 'paid_traffic_friction_elevated', impact_category: 'conversion_loss',
+    cause: 'Paid traffic encounters significantly more friction than organic',
+    effect: 'Ad spend directed toward visitors who face disproportionate obstacles — landing experience not aligned with ad promise',
+    high: { min: 0.12, max: 0.30 }, medium: { min: 0.06, max: 0.18 }, low: { min: 0.03, max: 0.08 },
+    base_metric: 'revenue',
+  },
+  paid_traffic_trust_gap: {
+    inference_key: 'paid_traffic_trust_gap', impact_category: 'conversion_loss',
+    cause: 'Paid visitors show more trust-seeking behavior than organic visitors',
+    effect: 'Paid visitors lack brand familiarity — site fails to compensate for the inherent trust deficit of ad-driven traffic',
+    high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  paid_mobile_compounding_waste: {
+    inference_key: 'paid_mobile_compounding_waste', impact_category: 'conversion_loss',
+    cause: 'Paid + mobile traffic compounds two friction sources simultaneously',
+    effect: 'The highest-waste segment — trust gap from paid traffic plus UX friction from mobile experience stack multiplicatively',
+    high: { min: 0.15, max: 0.35 }, medium: { min: 0.08, max: 0.20 }, low: { min: 0.04, max: 0.10 },
+    base_metric: 'revenue',
+  },
+
+  // ── Mobile Revenue Exposure (pixel-dependent) ──
+  mobile_conversion_gap: {
+    inference_key: 'mobile_conversion_gap', impact_category: 'conversion_loss',
+    cause: 'Mobile converts at a significantly lower rate than desktop',
+    effect: 'Trapped mobile revenue — visitors who would convert on desktop cannot on mobile due to form friction, CTA timing, or layout issues',
+    high: { min: 0.12, max: 0.30 }, medium: { min: 0.06, max: 0.18 }, low: { min: 0.03, max: 0.08 },
+    base_metric: 'revenue',
+  },
+  mobile_form_friction_elevated: {
+    inference_key: 'mobile_form_friction_elevated', impact_category: 'conversion_loss',
+    cause: 'Mobile users retry form submissions at a significantly higher rate',
+    effect: 'Forms that work on desktop create friction on mobile — each retry is a moment of potential abandonment',
+    high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  mobile_cta_timing_degraded: {
+    inference_key: 'mobile_cta_timing_degraded', impact_category: 'conversion_loss',
+    cause: 'Primary CTAs render significantly later on mobile than desktop',
+    effect: 'On mobile where attention spans are shorter, late-rendering CTAs may never be seen or appear after the user has already decided to leave',
+    high: { min: 0.06, max: 0.18 }, medium: { min: 0.03, max: 0.10 }, low: { min: 0.01, max: 0.04 },
+    base_metric: 'revenue',
+  },
+
+  // ── Friction Tax (pixel-dependent) ──
+  funnel_step_friction_cost: {
+    inference_key: 'funnel_step_friction_cost', impact_category: 'conversion_loss',
+    cause: 'Combined UX friction (hesitation, retries, oscillation) across funnel steps',
+    effect: 'The "friction tax" — measurable cost of behavioral obstacles at each step that block otherwise willing buyers',
+    high: { min: 0.10, max: 0.28 }, medium: { min: 0.05, max: 0.15 }, low: { min: 0.02, max: 0.06 },
+    base_metric: 'revenue',
+  },
+  oscillation_decision_cost: {
+    inference_key: 'oscillation_decision_cost', impact_category: 'conversion_loss',
+    cause: 'Users oscillate between surfaces unable to make purchase decisions',
+    effect: 'Back-and-forth navigation indicates unresolved questions — each oscillation loop increases abandonment probability',
+    high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  checkout_entry_friction: {
+    inference_key: 'checkout_entry_friction', impact_category: 'conversion_loss',
+    cause: 'Large gap between sessions expressing intent and reaching checkout',
+    effect: 'The conversion gate blocks intent — users want to buy but something between intent and checkout stops them',
+    high: { min: 0.10, max: 0.25 }, medium: { min: 0.05, max: 0.15 }, low: { min: 0.02, max: 0.06 },
+    base_metric: 'revenue',
+  },
+
+  // ── Trust Revenue Gap (pixel-dependent) ──
+  trust_deficit_conversion_drag: {
+    inference_key: 'trust_deficit_conversion_drag', impact_category: 'conversion_loss',
+    cause: 'Trust-deficit sessions have drastically lower conversion rates',
+    effect: 'Revenue gap between trust-confident and trust-deficit sessions represents recoverable revenue if trust barriers are addressed',
+    high: { min: 0.12, max: 0.30 }, medium: { min: 0.06, max: 0.18 }, low: { min: 0.03, max: 0.08 },
+    base_metric: 'revenue',
+  },
+  reassurance_seeking_elevated: {
+    inference_key: 'reassurance_seeking_elevated', impact_category: 'conversion_loss',
+    cause: 'High percentage of sessions actively seek reassurance before buying',
+    effect: 'Trust is not embedded in the commercial flow — users must leave the conversion path to find reassurance and many do not return',
+    high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  sensitive_input_trust_gap: {
+    inference_key: 'sensitive_input_trust_gap', impact_category: 'conversion_loss',
+    cause: 'Sessions abandon at sensitive form fields at an elevated rate',
+    effect: 'Users reach data entry and decide the risk exceeds the value — surrounding trust context insufficient for data sensitivity',
+    high: { min: 0.08, max: 0.20 }, medium: { min: 0.04, max: 0.10 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+
+  // ── Path to Purchase Efficiency (pixel-dependent) ──
+  path_length_exceeds_efficient: {
+    inference_key: 'path_length_exceeds_efficient', impact_category: 'conversion_loss',
+    cause: 'Visitors wander through too many surfaces before converting or abandoning',
+    effect: 'Every additional page between awareness and conversion is an opportunity for intent decay and distraction',
+    high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  intent_absorber_detected: {
+    inference_key: 'intent_absorber_detected', impact_category: 'conversion_loss',
+    cause: 'Specific surfaces absorb purchase intent rather than advancing it',
+    effect: 'Users visit these surfaces and lose momentum — intent gets diluted by information overload or missing CTAs',
+    high: { min: 0.08, max: 0.20 }, medium: { min: 0.04, max: 0.10 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  intent_decay_time_excessive: {
+    inference_key: 'intent_decay_time_excessive', impact_category: 'conversion_loss',
+    cause: 'Excessive time between intent expressed and conversion start',
+    effect: 'Purchase intent decays over time — long decision paths lose buyers who would otherwise convert',
+    high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
 };

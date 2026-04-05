@@ -12,6 +12,8 @@ import {
   SurfacePair,
   JourneyType,
   SurfacePageType,
+  BehavioralCohortSlice,
+  BehavioralCohortPayload,
 } from './types';
 import { normalizeSurface, classifyPageType } from './surface-normalizer';
 
@@ -443,5 +445,222 @@ export function analyzeFunnel(
     steps,
     total_sessions: totalSessions,
     completion_rate: Math.round(completionRate * 10000) / 10000,
+  };
+}
+
+// ──────────────────────────────────────────────
+// Cohort Aggregation
+//
+// Segments SessionAggregate[] into audience cohorts
+// and computes per-cohort behavioral metrics.
+// Powers pixel-dependent workspaces.
+// ──────────────────────────────────────────────
+
+function isPaidSession(s: SessionAggregate): boolean {
+  const ft = s.attribution.first_touch;
+  return !!(ft.gclid || ft.fbclid || ft.campaign);
+}
+
+function isMobileSession(s: SessionAggregate): boolean {
+  // Mobile detection: check for viewport/device hints in data
+  // For now, we rely on the session having mobile indicators from the pixel
+  // The pixel sends device_type in the heartbeat data; if not available,
+  // we use a heuristic: sessions with very short progression + high dead clicks
+  // This is a simplification — in production, the pixel should send device_type
+  return false; // placeholder — overridden in aggregateCohorts via deviceClassifier
+}
+
+function computeCohortSlice(sessions: SessionAggregate[]): BehavioralCohortSlice {
+  const count = sessions.length;
+  if (count === 0) {
+    return {
+      session_count: 0,
+      conversion_rate: 0,
+      checkout_reached_rate: 0,
+      avg_time_to_first_commercial_action_ms: null,
+      avg_time_intent_to_conversion_ms: null,
+      backtrack_rate: 0,
+      dead_click_rate: 0,
+      hesitation_pause_rate: 0,
+      form_retry_rate: 0,
+      input_focus_abandon_rate: 0,
+      cta_viewed_count: 0,
+      cta_clicked_count: 0,
+      cta_engagement_rate: 0,
+      cta_rendered_late_count: 0,
+      policy_opened_rate: 0,
+      policy_then_abandon_rate: 0,
+      support_opened_rate: 0,
+      sensitive_input_abandon_rate: 0,
+      sensitive_input_abandon_top_kinds: [],
+      surface_oscillation_rate: 0,
+      avg_surface_progression_length: 0,
+      milestone_awareness_count: 0,
+      milestone_consideration_count: 0,
+      milestone_intent_count: 0,
+      milestone_conversion_start_count: 0,
+      milestone_conversion_complete_count: 0,
+      handoff_without_return_rate: 0,
+      pricing_backtrack_rate: 0,
+      policy_detour_before_conversion_rate: 0,
+    };
+  }
+
+  const conversions = sessions.filter(s => s.reached_thank_you || s.confirmation_seen).length;
+  const checkoutReached = sessions.filter(s => s.checkout_reached).length;
+  const backtrackers = sessions.filter(s => s.backtrack_count > 0).length;
+  const deadClickers = sessions.filter(s => s.dead_click_count > 0).length;
+  const hesitators = sessions.filter(s => s.hesitation_pause_count > 0).length;
+  const formRetriers = sessions.filter(s => s.form_retry_count > 0).length;
+  const inputAbandon = sessions.filter(s => s.input_focus_abandon_count > 0).length;
+  const policyOpened = sessions.filter(s => s.policy_opened).length;
+  const policyThenAbandon = sessions.filter(s => s.policy_opened && !s.reached_thank_you && !s.confirmation_seen).length;
+  const supportOpened = sessions.filter(s => s.support_opened).length;
+  const sensitiveAbandon = sessions.filter(s => s.sensitive_input_abandon_kinds.length > 0).length;
+  const oscillators = sessions.filter(s => s.oscillation_pairs.length > 0).length;
+  const handoffWithout = sessions.filter(s => s.handoff_started && !s.handoff_returned).length;
+  const pricingBacktrack = sessions.filter(s => s.pricing_then_backtrack).length;
+  const policyDetour = sessions.filter(s => s.policy_before_conversion).length;
+
+  let totalCtaViewed = 0;
+  let totalCtaClicked = 0;
+  let totalCtaLate = 0;
+  let totalProgressionLen = 0;
+  let timeToFirstCommercialSum = 0;
+  let timeToFirstCommercialCount = 0;
+  let timeIntentToConvSum = 0;
+  let timeIntentToConvCount = 0;
+
+  const kindCounts = new Map<FieldKind, number>();
+  const milestoneCounts = { awareness: 0, consideration: 0, intent: 0, conversion_start: 0, conversion_complete: 0 };
+
+  for (const s of sessions) {
+    totalCtaViewed += s.cta_viewed_count;
+    totalCtaClicked += s.cta_clicked_count;
+    totalCtaLate += s.cta_rendered_late_count;
+    totalProgressionLen += s.surface_progression.length;
+
+    if (s.time_to_first_commercial_action_ms !== null) {
+      timeToFirstCommercialSum += s.time_to_first_commercial_action_ms;
+      timeToFirstCommercialCount++;
+    }
+    if (s.time_intent_to_conversion_ms !== null) {
+      timeIntentToConvSum += s.time_intent_to_conversion_ms;
+      timeIntentToConvCount++;
+    }
+
+    for (const kind of s.sensitive_input_abandon_kinds) {
+      kindCounts.set(kind, (kindCounts.get(kind) || 0) + 1);
+    }
+
+    const mi = s.highest_milestone;
+    if (mi) {
+      if (milestoneIndex(mi) >= 0) milestoneCounts.awareness++;
+      if (milestoneIndex(mi) >= 1) milestoneCounts.consideration++;
+      if (milestoneIndex(mi) >= 2) milestoneCounts.intent++;
+      if (milestoneIndex(mi) >= 3) milestoneCounts.conversion_start++;
+      if (milestoneIndex(mi) >= 4) milestoneCounts.conversion_complete++;
+    }
+  }
+
+  const topKinds = [...kindCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([k]) => k);
+
+  return {
+    session_count: count,
+    conversion_rate: round4(conversions / count),
+    checkout_reached_rate: round4(checkoutReached / count),
+    avg_time_to_first_commercial_action_ms: timeToFirstCommercialCount > 0
+      ? Math.round(timeToFirstCommercialSum / timeToFirstCommercialCount) : null,
+    avg_time_intent_to_conversion_ms: timeIntentToConvCount > 0
+      ? Math.round(timeIntentToConvSum / timeIntentToConvCount) : null,
+    backtrack_rate: round4(backtrackers / count),
+    dead_click_rate: round4(deadClickers / count),
+    hesitation_pause_rate: round4(hesitators / count),
+    form_retry_rate: round4(formRetriers / count),
+    input_focus_abandon_rate: round4(inputAbandon / count),
+    cta_viewed_count: totalCtaViewed,
+    cta_clicked_count: totalCtaClicked,
+    cta_engagement_rate: totalCtaViewed > 0 ? round4(totalCtaClicked / totalCtaViewed) : 0,
+    cta_rendered_late_count: totalCtaLate,
+    policy_opened_rate: round4(policyOpened / count),
+    policy_then_abandon_rate: round4(policyThenAbandon / count),
+    support_opened_rate: round4(supportOpened / count),
+    sensitive_input_abandon_rate: round4(sensitiveAbandon / count),
+    sensitive_input_abandon_top_kinds: topKinds,
+    surface_oscillation_rate: round4(oscillators / count),
+    avg_surface_progression_length: round4(totalProgressionLen / count),
+    milestone_awareness_count: milestoneCounts.awareness,
+    milestone_consideration_count: milestoneCounts.consideration,
+    milestone_intent_count: milestoneCounts.intent,
+    milestone_conversion_start_count: milestoneCounts.conversion_start,
+    milestone_conversion_complete_count: milestoneCounts.conversion_complete,
+    handoff_without_return_rate: sessions.filter(s => s.handoff_started).length > 0
+      ? round4(handoffWithout / sessions.filter(s => s.handoff_started).length) : 0,
+    pricing_backtrack_rate: round4(pricingBacktrack / count),
+    policy_detour_before_conversion_rate: round4(policyDetour / count),
+  };
+}
+
+function round4(n: number): number {
+  return Math.round(n * 10000) / 10000;
+}
+
+/**
+ * Aggregate sessions into cohort-level behavioral slices.
+ *
+ * @param sessions All session aggregates for the environment
+ * @param deviceClassifier Optional function to classify session as mobile/desktop.
+ *   Receives the session and returns 'mobile' | 'desktop' | null.
+ *   If not provided, all sessions are classified as desktop.
+ */
+export function aggregateCohorts(
+  sessions: SessionAggregate[],
+  deviceClassifier?: (s: SessionAggregate) => 'mobile' | 'desktop' | null,
+): BehavioralCohortPayload {
+  const firstSessions: SessionAggregate[] = [];
+  const returningSessions: SessionAggregate[] = [];
+  const paidSessions: SessionAggregate[] = [];
+  const organicSessions: SessionAggregate[] = [];
+  const mobileSessions: SessionAggregate[] = [];
+  const desktopSessions: SessionAggregate[] = [];
+
+  for (const s of sessions) {
+    // First vs returning
+    if (s.attribution.touch_count <= 1) {
+      firstSessions.push(s);
+    } else {
+      returningSessions.push(s);
+    }
+
+    // Paid vs organic
+    if (isPaidSession(s)) {
+      paidSessions.push(s);
+    } else {
+      organicSessions.push(s);
+    }
+
+    // Mobile vs desktop
+    const device = deviceClassifier ? deviceClassifier(s) : 'desktop';
+    if (device === 'mobile') {
+      mobileSessions.push(s);
+    } else {
+      desktopSessions.push(s);
+    }
+  }
+
+  return {
+    type: 'behavioral_cohort',
+    total_session_count: sessions.length,
+    cohorts: {
+      first_session: computeCohortSlice(firstSessions),
+      returning: computeCohortSlice(returningSessions),
+      paid_traffic: computeCohortSlice(paidSessions),
+      organic_traffic: computeCohortSlice(organicSessions),
+      mobile: computeCohortSlice(mobileSessions),
+      desktop: computeCohortSlice(desktopSessions),
+    },
   };
 }

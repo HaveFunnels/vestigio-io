@@ -5,6 +5,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import AppSidebar from "./AppSidebar";
 import CommandPalette from "./CommandPalette";
@@ -128,6 +129,7 @@ function UserMenu() {
 	const { data: session } = useSession();
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
+	const t = useTranslations("console.navigation");
 
 	useEffect(() => {
 		function handleClick(e: MouseEvent) {
@@ -166,7 +168,7 @@ function UserMenu() {
 								<svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
 									<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
 								</svg>
-								{item.label}
+								{t(item.labelKey)}
 							</Link>
 						))}
 					</div>

@@ -1060,6 +1060,38 @@
 				"network_error": "Erro de rede. Por favor, tente novamente."
 			}
 		},
+		"navigation": {
+			"actions": "Ações",
+			"workspaces": "Workspaces",
+			"chat": "Chat",
+			"analysis": "Análise",
+			"findings": "Descobertas",
+			"inventory": "Inventário",
+			"maps": "Mapas",
+			"organization": "Organização",
+			"billing": "Faturamento",
+			"members": "Membros",
+			"settings": "Configurações",
+			"data_sources": "Fontes de Dados",
+			"overview": "Visão Geral",
+			"organizations": "Organizações",
+			"usage_billing": "Uso e Faturamento",
+			"pricing": "Preços",
+			"marketing": "Marketing",
+			"newsletters": "Newsletters",
+			"support_tickets": "Tickets de Suporte",
+			"feedback": "Feedback",
+			"system_health": "Saúde do Sistema",
+			"error_tracking": "Rastreamento de Erros",
+			"audit_log": "Log de Auditoria",
+			"alerts": "Alertas",
+			"admin_users": "Usuários Admin",
+			"platform_config": "Configuração da Plataforma",
+			"business": "Negócios",
+			"growth": "Crescimento",
+			"support": "Suporte",
+			"observability": "Observabilidade"
+		},
 		"settings": {
 			"title": "Configurações",
 			"subtitle": "Gerencie domínios, revise a cobertura de dados e configure sua conta.",
@@ -1074,6 +1106,48 @@
 			"account": {
 				"title": "Conta",
 				"description": "Configurações da conta gerenciadas pelo painel de controle."
+			},
+			"language": {
+				"title": "Idioma",
+				"description": "Escolha o idioma de exibição da plataforma.",
+				"current": "Idioma atual",
+				"select": "Selecionar idioma"
+			}
+		},
+		"workspaces": {
+			"title": "Workspaces",
+			"subtitle": "Visões de análise contextual com impacto quantificado.",
+			"loading": "Carregando workspaces...",
+			"empty": "Nenhum workspace disponível.",
+			"selected": "{count} selecionado(s)",
+			"use_as_context": "Usar como Contexto",
+			"clear": "Limpar",
+			"view_details": "Ver detalhes",
+			"monthly_loss": "Perda Mensal",
+			"issues": "Problemas",
+			"confidence": "Confiança",
+			"top_issue": "Principal Problema",
+			"structural": "Estrutural",
+			"economic": "Econômico",
+			"types": {
+				"preflight": "Prontidão para Escalar",
+				"revenue": "Integridade de Receita",
+				"chargeback": "Resiliência de Chargeback",
+				"first_impression": "Receita de Primeira Impressão",
+				"action_value": "Mapa de Valor de Ações",
+				"acquisition_integrity": "Integridade de Aquisição",
+				"mobile_revenue": "Exposição de Receita Mobile",
+				"friction_tax": "Imposto de Fricção",
+				"trust_gap": "Gap de Confiança e Receita",
+				"path_efficiency": "Eficiência do Caminho"
+			},
+			"trends": {
+				"regressions": "{count} regressão",
+				"regressions_plural": "{count} regressões",
+				"improvements": "{count} melhoria",
+				"improvements_plural": "{count} melhorias",
+				"stable": "estável",
+				"mixed": "mudanças mistas"
 			}
 		}
 	},
@@ -1412,7 +1486,14 @@
 			"preflight": "Pré-lançamento",
 			"revenue": "Análise de Receita",
 			"chargeback": "Análise de Chargeback",
-			"saas": "Crescimento SaaS"
+			"saas": "Crescimento SaaS",
+			"first_impression": "Receita de Primeira Impressão",
+			"action_value": "Mapa de Valor de Ações",
+			"acquisition_integrity": "Integridade de Aquisição",
+			"mobile_revenue": "Exposição de Receita Mobile",
+			"friction_tax": "Imposto de Fricção",
+			"trust_gap": "Gap de Confiança e Receita",
+			"path_efficiency": "Eficiência do Caminho de Compra"
 		}
 	}
 }

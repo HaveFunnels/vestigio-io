@@ -176,6 +176,28 @@ export function computeInferences(
   inferences.push(...inferCtaLateAvailabilityDelaysAction(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferCheckoutAbandonNoFeedback(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferSensitiveInputPerceivedRiskDropoff(byKey, scoping, cycle_ref, ids));
+  // Behavioral cohort inferences (pixel-dependent workspaces)
+  inferences.push(...inferFirstSessionMilestoneStall(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFirstSessionTrustBarrier(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFirstSessionCtaTimingGap(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferLowValueActionDominates(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferHighValueActionUnderexposed(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferDeadWeightSurfaceTraffic(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPaidTrafficFrictionElevated(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPaidTrafficTrustGap(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPaidMobileCompoundingWaste(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMobileConversionGap(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMobileFormFrictionElevated(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMobileCtaTimingDegraded(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFunnelStepFrictionCost(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferOscillationDecisionCost(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCheckoutEntryFriction(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferTrustDeficitConversionDrag(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferReassuranceSeekingElevated(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSensitiveInputTrustGap(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPathLengthExceedsEfficient(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferIntentAbsorberDetected(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferIntentDecayTimeExcessive(byKey, scoping, cycle_ref, ids));
 
   return inferences;
 }
@@ -2462,6 +2484,107 @@ function inferSensitiveInputPerceivedRiskDropoff(byKey: Map<string, Signal>, sco
   }
 
   return [createInference({ inference_key: 'sensitive_input_perceived_risk_dropoff', category: InferenceCategory.SensitiveInputPerceivedRiskDropoff, conclusion: 'sensitive_input_perceived_risk_dropoff', conclusion_value: `${severity}:${fieldKind}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users drop off immediately after interacting with ${fieldLabel} fields. ${riskContext}` })];
+}
+
+// ──────────────────────────────────────────────
+// Behavioral Cohort Inferences (Pixel-Dependent Workspaces)
+// ──────────────────────────────────────────────
+
+function inferCohort(sig: Signal | undefined, key: string, cat: InferenceCategory, reasoning: string, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: key, category: cat, conclusion: key, conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning })];
+}
+
+// First Impression Revenue
+function inferFirstSessionMilestoneStall(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('first_session_milestone_stall'), 'first_session_milestone_stall', InferenceCategory.FirstSessionMilestoneStall, 'First-time visitors stall at early funnel stages at a significantly higher rate than returning visitors. New users are not finding enough reason to express purchase intent during their first visit. The root cause is typically insufficient value proposition, unclear navigation to commercial surfaces, or landing pages that fail to orient newcomers toward the conversion path.', scoping, cycle_ref, ids);
+}
+
+function inferFirstSessionTrustBarrier(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('first_session_trust_barrier'), 'first_session_trust_barrier', InferenceCategory.FirstSessionTrustBarrier, 'First-time visitors exhibit significantly more hesitation behavior than returning visitors. New users lack the brand familiarity that returning visitors have already built through prior sessions. Trust signals (reviews, guarantees, security badges, brand recognition) are not compensating for the trust deficit that new visitors inherently carry.', scoping, cycle_ref, ids);
+}
+
+function inferFirstSessionCtaTimingGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('first_session_cta_timing_gap'), 'first_session_cta_timing_gap', InferenceCategory.FirstSessionCtaTimingGap, 'First-time visitors take significantly longer to reach their first commercial action compared to returning visitors. The commercial entry point is optimized for users who already know the site, not for newcomers. CTAs, pricing links, or product browsing paths are not immediately discoverable for first-time visitors.', scoping, cycle_ref, ids);
+}
+
+// Action Value Map
+function inferLowValueActionDominates(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('low_value_action_dominates'), 'low_value_action_dominates', InferenceCategory.LowValueActionDominates, 'The most visible user actions (CTAs, interactive elements) have very low engagement rates and poor correlation with conversion. Users see these actions but do not interact — the actions are occupying attention without driving revenue. The root cause is typically misplaced CTAs, weak copy, or actions that do not match user intent at that stage of the journey.', scoping, cycle_ref, ids);
+}
+
+function inferHighValueActionUnderexposed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('high_value_action_underexposed'), 'high_value_action_underexposed', InferenceCategory.HighValueActionUnderexposed, 'Conversions are happening but CTA engagement across all cohorts is very low, suggesting the conversion path exists but is not easy to find. Revenue-positive actions are underexposed — users who do convert find their way despite the UX, not because of it. Increasing visibility of the proven conversion path would amplify revenue.', scoping, cycle_ref, ids);
+}
+
+function inferDeadWeightSurfaceTraffic(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('dead_weight_surface_traffic'), 'dead_weight_surface_traffic', InferenceCategory.DeadWeightSurfaceTraffic, 'The vast majority of sessions that reach the site never progress beyond awareness toward conversion. Surfaces are receiving traffic but not converting it into commercial progression. This represents dead-weight traffic — pageviews that consume server resources and ad spend without contributing to revenue.', scoping, cycle_ref, ids);
+}
+
+// Acquisition Integrity
+function inferPaidTrafficFrictionElevated(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('paid_traffic_friction_elevated'), 'paid_traffic_friction_elevated', InferenceCategory.PaidTrafficFrictionElevated, 'Paid traffic encounters significantly more behavioral friction than organic traffic. Visitors arriving from ads face more backtracks, hesitation, and obstacles. The landing experience for paid visitors is not aligned with the ad promise — the gap between expectation and experience creates friction that burns ad spend.', scoping, cycle_ref, ids);
+}
+
+function inferPaidTrafficTrustGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('paid_traffic_trust_gap'), 'paid_traffic_trust_gap', InferenceCategory.PaidTrafficTrustGap, 'Paid visitors show significantly more trust-seeking behavior (policy views, hesitation pauses) than organic visitors. Users arriving from ads lack the brand familiarity that organic visitors build through repeated exposure. The site does not compensate for this trust deficit with upfront reassurance on landing pages.', scoping, cycle_ref, ids);
+}
+
+function inferPaidMobileCompoundingWaste(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('paid_mobile_compounding_waste'), 'paid_mobile_compounding_waste', InferenceCategory.PaidMobileCompoundingWaste, 'Both paid traffic and mobile traffic independently convert at significantly lower rates than the overall average. When a visitor is both paid AND mobile, the friction compounds — the visitor faces both the trust gap of being a new paid visitor and the UX friction of the mobile experience. This is the highest-waste segment of your traffic.', scoping, cycle_ref, ids);
+}
+
+// Mobile Revenue Exposure
+function inferMobileConversionGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('mobile_conversion_gap'), 'mobile_conversion_gap', InferenceCategory.MobileConversionGap, 'Mobile sessions convert at a significantly lower rate than desktop sessions. Given that mobile typically represents the majority of traffic, this gap translates directly into trapped revenue — visitors who would convert on desktop but cannot on mobile. The root causes are typically form friction, CTA timing, layout issues, or payment flow degradation on smaller screens.', scoping, cycle_ref, ids);
+}
+
+function inferMobileFormFrictionElevated(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('mobile_form_friction_elevated'), 'mobile_form_friction_elevated', InferenceCategory.MobileFormFrictionElevated, 'Mobile users retry form submissions at a significantly higher rate than desktop users. Forms that work on desktop are creating friction on mobile — fields may be too small, autocomplete may not work, validation errors may be unclear, or the keyboard may obscure the input. Each retry is a moment where mobile users consider abandoning.', scoping, cycle_ref, ids);
+}
+
+function inferMobileCtaTimingDegraded(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('mobile_cta_timing_degraded'), 'mobile_cta_timing_degraded', InferenceCategory.MobileCtaTimingDegraded, 'Primary CTAs render significantly later on mobile than on desktop. On mobile, where attention spans are shorter and scroll depth is shallower, a late-rendering CTA may never be seen or may appear after the user has already decided to leave. The render-order prioritization needs to favor mobile CTA availability.', scoping, cycle_ref, ids);
+}
+
+// Friction Tax
+function inferFunnelStepFrictionCost(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('funnel_step_friction_cost'), 'funnel_step_friction_cost', InferenceCategory.FunnelStepFrictionCost, 'The conversion funnel carries a measurable friction tax — the combined cost of hesitation pauses, form retries, and surface oscillation across funnel steps. Each type of friction represents a moment where users want to proceed but encounter obstacles. This is not abandonment from lack of interest — it is abandonment from UX friction at the decision moments.', scoping, cycle_ref, ids);
+}
+
+function inferOscillationDecisionCost(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('oscillation_decision_cost'), 'oscillation_decision_cost', InferenceCategory.OscillationDecisionCost, 'A significant portion of sessions exhibit back-and-forth navigation between surfaces — typically between pricing and product pages, or between cart and product details. This oscillation pattern indicates unresolved decision uncertainty: one surface raises a question that the other cannot fully answer. Each oscillation loop increases the probability of abandonment.', scoping, cycle_ref, ids);
+}
+
+function inferCheckoutEntryFriction(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('checkout_entry_friction'), 'checkout_entry_friction', InferenceCategory.CheckoutEntryFriction, 'A large share of sessions that express purchase intent never reach the checkout step. The gap between intent-expressed and checkout-reached represents the conversion gate friction — users want to buy but something between intent and checkout blocks them. The barrier is often unclear next steps, hidden checkout buttons, forced account creation, or unexpected cart requirements.', scoping, cycle_ref, ids);
+}
+
+// Trust Revenue Gap
+function inferTrustDeficitConversionDrag(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('trust_deficit_conversion_drag'), 'trust_deficit_conversion_drag', InferenceCategory.TrustDeficitConversionDrag, 'Sessions with trust-deficit behaviors (policy views, hesitation pauses, sensitive input abandonment) have drastically lower conversion rates. The revenue gap between trust-confident sessions and trust-deficit sessions represents recoverable revenue — if trust barriers were addressed, a portion of these sessions would convert. The root cause is insufficient trust reinforcement throughout the commercial journey.', scoping, cycle_ref, ids);
+}
+
+function inferReassuranceSeekingElevated(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('reassurance_seeking_elevated'), 'reassurance_seeking_elevated', InferenceCategory.ReassuranceSeekingElevated, 'A high percentage of sessions actively seek reassurance — opening policy pages, contacting support, or searching for trust signals — before making purchase decisions. This behavior indicates that trust is not embedded in the commercial flow; users must leave the conversion path to find reassurance, and many do not return. Proactively placing trust signals (guarantees, badges, testimonials) on commercial surfaces would reduce the need for this detour.', scoping, cycle_ref, ids);
+}
+
+function inferSensitiveInputTrustGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('sensitive_input_trust_gap'), 'sensitive_input_trust_gap', InferenceCategory.SensitiveInputTrustGap, 'Sessions are abandoning at sensitive form fields at an elevated rate. Users reach the point of entering personal or payment data and decide the risk is not worth the value. The surrounding context (security indicators, trust badges, privacy reassurance) is not sufficient for the sensitivity of the data being requested.', scoping, cycle_ref, ids);
+}
+
+// Path to Purchase Efficiency
+function inferPathLengthExceedsEfficient(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('path_length_exceeds_efficient'), 'path_length_exceeds_efficient', InferenceCategory.PathLengthExceedsEfficient, 'The average session visits too many surfaces relative to the conversion rate. Visitors are wandering rather than progressing toward purchase. Every additional page between awareness and conversion is an opportunity for the user to lose interest, get distracted, or decide to leave. The site structure does not guide users toward conversion efficiently.', scoping, cycle_ref, ids);
+}
+
+function inferIntentAbsorberDetected(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('intent_absorber_detected'), 'intent_absorber_detected', InferenceCategory.IntentAbsorberDetected, 'High backtrack rates combined with surface oscillation indicate that specific surfaces in the path are absorbing purchase intent rather than advancing it. Users visit these surfaces and lose momentum — their intent to buy gets diluted by information overload, confusing options, or missing calls-to-action. These are "intent absorbers" that break the natural flow from consideration to purchase.', scoping, cycle_ref, ids);
+}
+
+function inferIntentDecayTimeExcessive(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  return inferCohort(byKey.get('intent_decay_time_excessive'), 'intent_decay_time_excessive', InferenceCategory.IntentDecayTimeExcessive, 'The average time from expressed intent to conversion start is excessively long. Purchase intent decays over time — the longer a user takes between deciding to buy and completing the purchase, the less likely they are to follow through. The path from pricing/cart to checkout needs to be shortened and streamlined to preserve intent momentum.', scoping, cycle_ref, ids);
 }
 
 function createInference(params: {

@@ -1060,6 +1060,38 @@
 				"network_error": "Network error. Please try again."
 			}
 		},
+		"navigation": {
+			"actions": "Actions",
+			"workspaces": "Workspaces",
+			"chat": "Chat",
+			"analysis": "Analysis",
+			"findings": "Findings",
+			"inventory": "Inventory",
+			"maps": "Maps",
+			"organization": "Organization",
+			"billing": "Billing",
+			"members": "Members",
+			"settings": "Settings",
+			"data_sources": "Data Sources",
+			"overview": "Overview",
+			"organizations": "Organizations",
+			"usage_billing": "Usage & Billing",
+			"pricing": "Pricing",
+			"marketing": "Marketing",
+			"newsletters": "Newsletters",
+			"support_tickets": "Support Tickets",
+			"feedback": "Feedback",
+			"system_health": "System Health",
+			"error_tracking": "Error Tracking",
+			"audit_log": "Audit Log",
+			"alerts": "Alerts",
+			"admin_users": "Admin Users",
+			"platform_config": "Platform Config",
+			"business": "Business",
+			"growth": "Growth",
+			"support": "Support",
+			"observability": "Observability"
+		},
 		"settings": {
 			"title": "Settings",
 			"subtitle": "Manage domains, review data coverage, and configure your account.",
@@ -1074,6 +1106,48 @@
 			"account": {
 				"title": "Account",
 				"description": "Account settings managed through the control plane."
+			},
+			"language": {
+				"title": "Language",
+				"description": "Choose the display language for the platform.",
+				"current": "Current language",
+				"select": "Select language"
+			}
+		},
+		"workspaces": {
+			"title": "Workspaces",
+			"subtitle": "Contextual analysis views with quantified impact.",
+			"loading": "Loading workspaces...",
+			"empty": "No workspaces available.",
+			"selected": "{count} selected",
+			"use_as_context": "Use as Context",
+			"clear": "Clear",
+			"view_details": "View details",
+			"monthly_loss": "Monthly Loss",
+			"issues": "Issues",
+			"confidence": "Confidence",
+			"top_issue": "Top Issue",
+			"structural": "Structural",
+			"economic": "Economic",
+			"types": {
+				"preflight": "Scale Readiness",
+				"revenue": "Revenue Integrity",
+				"chargeback": "Chargeback Resilience",
+				"first_impression": "First Impression Revenue",
+				"action_value": "Action Value Map",
+				"acquisition_integrity": "Acquisition Integrity",
+				"mobile_revenue": "Mobile Revenue Exposure",
+				"friction_tax": "Friction Tax",
+				"trust_gap": "Trust Revenue Gap",
+				"path_efficiency": "Path Efficiency"
+			},
+			"trends": {
+				"regressions": "{count} regression",
+				"regressions_plural": "{count} regressions",
+				"improvements": "{count} improvement",
+				"improvements_plural": "{count} improvements",
+				"stable": "stable",
+				"mixed": "mixed changes"
 			}
 		}
 	},
@@ -1412,7 +1486,14 @@
 			"preflight": "Preflight",
 			"revenue": "Revenue Analysis",
 			"chargeback": "Chargeback Analysis",
-			"saas": "SaaS Growth"
+			"saas": "SaaS Growth",
+			"first_impression": "First Impression Revenue",
+			"action_value": "Action Value Map",
+			"acquisition_integrity": "Acquisition Integrity",
+			"mobile_revenue": "Mobile Revenue Exposure",
+			"friction_tax": "Friction Tax",
+			"trust_gap": "Trust Revenue Gap",
+			"path_efficiency": "Path to Purchase Efficiency"
 		}
 	}
 }

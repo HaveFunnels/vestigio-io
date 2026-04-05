@@ -1060,20 +1060,94 @@
 				"network_error": "__TODO__"
 			}
 		},
+		"navigation": {
+			"actions": "Aktionen",
+			"workspaces": "Arbeitsbereiche",
+			"chat": "Chat",
+			"analysis": "Analyse",
+			"findings": "Erkenntnisse",
+			"inventory": "Inventar",
+			"maps": "Karten",
+			"organization": "Organisation",
+			"billing": "Abrechnung",
+			"members": "Mitglieder",
+			"settings": "Einstellungen",
+			"data_sources": "Datenquellen",
+			"overview": "Übersicht",
+			"organizations": "Organisationen",
+			"usage_billing": "Nutzung & Abrechnung",
+			"pricing": "Preise",
+			"marketing": "Marketing",
+			"newsletters": "Newsletter",
+			"support_tickets": "Support-Tickets",
+			"feedback": "Feedback",
+			"system_health": "Systemzustand",
+			"error_tracking": "Fehlerverfolgung",
+			"audit_log": "Audit-Protokoll",
+			"alerts": "Warnungen",
+			"admin_users": "Admin-Benutzer",
+			"platform_config": "Plattformkonfiguration",
+			"business": "Geschäft",
+			"growth": "Wachstum",
+			"support": "Support",
+			"observability": "Überwachung"
+		},
 		"settings": {
-			"title": "__TODO__",
-			"subtitle": "__TODO__",
+			"title": "Einstellungen",
+			"subtitle": "Domains verwalten, Datenabdeckung prüfen und Konto konfigurieren.",
 			"domains": {
-				"title": "__TODO__",
-				"description": "__TODO__"
+				"title": "Domains",
+				"description": "Domains werden beim Onboarding konfiguriert und pro Umgebung verwaltet."
 			},
 			"data_overview": {
-				"title": "__TODO__",
-				"description": "__TODO__"
+				"title": "Datenübersicht",
+				"description": "Die Datenübersicht ist nach Abschluss des ersten Audit-Zyklus verfügbar."
 			},
 			"account": {
-				"title": "__TODO__",
-				"description": "__TODO__"
+				"title": "Konto",
+				"description": "Kontoeinstellungen werden über die Steuerungsebene verwaltet."
+			},
+			"language": {
+				"title": "Sprache",
+				"description": "Wählen Sie die Anzeigesprache der Plattform.",
+				"current": "Aktuelle Sprache",
+				"select": "Sprache wählen"
+			}
+		},
+		"workspaces": {
+			"title": "Arbeitsbereiche",
+			"subtitle": "Kontextuelle Analyseansichten mit quantifizierter Auswirkung.",
+			"loading": "Arbeitsbereiche werden geladen...",
+			"empty": "Keine Arbeitsbereiche verfügbar.",
+			"selected": "{count} ausgewählt",
+			"use_as_context": "Als Kontext verwenden",
+			"clear": "Löschen",
+			"view_details": "Details anzeigen",
+			"monthly_loss": "Monatlicher Verlust",
+			"issues": "Probleme",
+			"confidence": "Vertrauen",
+			"top_issue": "Hauptproblem",
+			"structural": "Strukturell",
+			"economic": "Wirtschaftlich",
+			"types": {
+				"preflight": "Skalierungsbereitschaft",
+				"revenue": "Umsatzintegrität",
+				"chargeback": "Chargeback-Resilienz",
+				"first_impression": "Erster-Eindruck-Umsatz",
+				"action_value": "Aktionswert-Karte",
+				"acquisition_integrity": "Akquisitionsintegrität",
+				"mobile_revenue": "Mobile Umsatzexposition",
+				"friction_tax": "Reibungssteuer",
+				"trust_gap": "Vertrauenslücke",
+				"path_efficiency": "Pfadeffizienz"
+			},
+			"trends": {
+				"regressions": "{count} Regression",
+				"regressions_plural": "{count} Regressionen",
+				"improvements": "{count} Verbesserung",
+				"improvements_plural": "{count} Verbesserungen",
+				"stable": "stabil",
+				"mixed": "gemischte Änderungen"
 			}
 		}
 	}

@@ -10,3 +10,5 @@ export { buildConfidenceAudit } from './confidence-audit';
 export type { ConfidenceIntegrityResult, ConfidenceAdjustment, ConfidenceIssue, LayerImpactSummary, ConfidenceLayer } from './confidence-audit';
 export { validateBehavior } from './behavioral-validation';
 export type { BehavioralValidationResult, BehavioralValidation } from './behavioral-validation';
+export { createBehavioralWorkspace } from './behavioral-workspace';
+export type { BehavioralWorkspaceConfig, BehavioralWorkspaceResult, BehavioralWorkspaceContext, BehavioralIssue, BehavioralWorkspaceSummary, BehavioralWorkspaceType } from './behavioral-workspace';

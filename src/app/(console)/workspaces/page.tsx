@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ConsoleState from "@/components/console/ConsoleState";
 import { loadWorkspaces } from "@/lib/console-data";
@@ -17,11 +18,7 @@ import type { WorkspaceProjection } from "../../../../packages/projections";
 // confidence narrative. No inline expansion.
 // ──────────────────────────────────────────────
 
-const workspaceTypeLabels: Record<string, string> = {
-  preflight: "Scale Readiness",
-  revenue: "Revenue Integrity",
-  chargeback: "Chargeback Resilience",
-};
+// Workspace type labels now resolved via i18n in the component
 
 function formatCurrency(value: number): string {
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
@@ -32,19 +29,18 @@ function formatCurrency(value: number): string {
 export default function WorkspacesPage() {
   const mcpData = useMcpData();
   const dataState = mcpData.workspaces.status !== "not_ready" ? mcpData.workspaces : loadWorkspaces();
+  const t = useTranslations("console.workspaces");
 
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-zinc-100">Workspaces</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Contextual analysis views with quantified impact.
-        </p>
+        <h1 className="text-xl font-semibold text-zinc-100">{t("title")}</h1>
+        <p className="mt-1 text-sm text-zinc-500">{t("subtitle")}</p>
       </div>
       <ConsoleState
         state={dataState}
-        loadingLabel="Loading workspaces..."
-        emptyLabel="No workspaces available."
+        loadingLabel={t("loading")}
+        emptyLabel={t("empty")}
       >
         {(workspaces) => <WorkspacesContent workspaces={workspaces} />}
       </ConsoleState>
@@ -58,6 +54,7 @@ function WorkspacesContent({
   workspaces: WorkspaceProjection[];
 }) {
   const router = useRouter();
+  const t = useTranslations("console.workspaces");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleSelect = useCallback((id: string, e: React.MouseEvent) => {
@@ -73,12 +70,12 @@ function WorkspacesContent({
     <>
       {selectedIds.size > 0 && (
         <div className="mb-4 flex items-center gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 shadow-lg">
-          <span className="text-sm font-medium text-zinc-100">{selectedIds.size} selected</span>
+          <span className="text-sm font-medium text-zinc-100">{t("selected", { count: selectedIds.size })}</span>
           <div className="flex-1" />
           <ShinyButton onClick={() => router.push(`/chat?context=workspaces:${[...selectedIds].join(",")}`)}>
-            Use as Context
+            {t("use_as_context")}
           </ShinyButton>
-          <button onClick={() => setSelectedIds(new Set())} className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800">Clear</button>
+          <button onClick={() => setSelectedIds(new Set())} className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800">{t("clear")}</button>
         </div>
       )}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -98,7 +95,7 @@ function WorkspacesContent({
                   {ws.name}
                 </span>
                 <span className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400">
-                  {workspaceTypeLabels[ws.type] || ws.type}
+                  {t.has(`types.${ws.type}`) ? t(`types.${ws.type}`) : ws.type}
                 </span>
                 <WorkspaceChangeTrend summary={ws.change_summary} />
               </div>
@@ -106,25 +103,25 @@ function WorkspacesContent({
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div>
-                <div className="text-xs text-zinc-500">Monthly Loss</div>
+                <div className="text-xs text-zinc-500">{t("monthly_loss")}</div>
                 <div className="text-sm font-bold text-red-400">
                   {formatCurrency(ws.summary.total_loss_mid)}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Issues</div>
+                <div className="text-xs text-zinc-500">{t("issues")}</div>
                 <div className="text-sm font-medium text-zinc-300">
                   {ws.summary.issue_count}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Confidence</div>
+                <div className="text-xs text-zinc-500">{t("confidence")}</div>
                 <div className="text-sm font-medium text-zinc-300">
                   {ws.summary.confidence}%
                 </div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Top Issue</div>
+                <div className="text-xs text-zinc-500">{t("top_issue")}</div>
                 <div className="truncate text-xs text-zinc-400">
                   {ws.summary.top_issues[0] || "\u2014"}
                 </div>
@@ -134,11 +131,11 @@ function WorkspacesContent({
               <div className="mt-3 border-t border-zinc-800 pt-3">
                 <div className="flex items-center gap-3 mb-2">
                   <ConfidenceBar
-                    label="Structural"
+                    label={t("structural")}
                     level={ws.confidence_narrative.structural_confidence}
                   />
                   <ConfidenceBar
-                    label="Economic"
+                    label={t("economic")}
                     level={ws.confidence_narrative.economic_confidence}
                   />
                 </div>
@@ -160,7 +157,7 @@ function WorkspacesContent({
             )}
             {/* View details link */}
             <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-400 opacity-0 transition-opacity group-hover:opacity-100">
-              View details <span>&rarr;</span>
+              {t("view_details")} <span>&rarr;</span>
             </div>
           </div>
         </button>

@@ -321,3 +321,68 @@ export interface FunnelAnalysis {
   total_sessions: number;
   completion_rate: number;
 }
+
+// ── Behavioral Cohort Model ──
+
+/**
+ * Cohort-level behavioral slice — subset of BehavioralSessionPayload
+ * metrics computed for a specific audience segment.
+ *
+ * Used by pixel-dependent workspaces (First Impression Revenue,
+ * Acquisition Integrity, Mobile Revenue Exposure, etc.)
+ */
+export interface BehavioralCohortSlice {
+  session_count: number;
+  conversion_rate: number;
+  checkout_reached_rate: number;
+  avg_time_to_first_commercial_action_ms: number | null;
+  avg_time_intent_to_conversion_ms: number | null;
+  backtrack_rate: number;
+  dead_click_rate: number;
+  hesitation_pause_rate: number;
+  form_retry_rate: number;
+  input_focus_abandon_rate: number;
+  cta_viewed_count: number;
+  cta_clicked_count: number;
+  cta_engagement_rate: number;
+  cta_rendered_late_count: number;
+  policy_opened_rate: number;
+  policy_then_abandon_rate: number;
+  support_opened_rate: number;
+  sensitive_input_abandon_rate: number;
+  sensitive_input_abandon_top_kinds: FieldKind[];
+  surface_oscillation_rate: number;
+  avg_surface_progression_length: number;
+  milestone_awareness_count: number;
+  milestone_consideration_count: number;
+  milestone_intent_count: number;
+  milestone_conversion_start_count: number;
+  milestone_conversion_complete_count: number;
+  handoff_without_return_rate: number;
+  pricing_backtrack_rate: number;
+  policy_detour_before_conversion_rate: number;
+}
+
+/**
+ * Cohort-level behavioral breakdown — computed from SessionAggregate[].
+ * Each slice contains the same metrics for a specific audience segment.
+ */
+export interface BehavioralCohortPayload {
+  type: 'behavioral_cohort';
+  /** Total sessions used to compute cohorts */
+  total_session_count: number;
+  cohorts: {
+    /** First-time visitors (attribution.touch_count == 1) */
+    first_session: BehavioralCohortSlice;
+    /** Returning visitors (attribution.touch_count > 1) */
+    returning: BehavioralCohortSlice;
+    /** Paid traffic (has gclid, fbclid, or utm_campaign) */
+    paid_traffic: BehavioralCohortSlice;
+    /** Organic traffic (no paid markers) */
+    organic_traffic: BehavioralCohortSlice;
+    /** Mobile sessions */
+    mobile: BehavioralCohortSlice;
+    /** Desktop sessions */
+    desktop: BehavioralCohortSlice;
+  };
+}

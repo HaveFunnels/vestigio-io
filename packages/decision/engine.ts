@@ -198,6 +198,99 @@ function resolveDecisionOutcome(
     };
   }
 
+  // ── Behavioral workspace questions (pixel-dependent) ──
+
+  if (questionKey === 'is_first_session_conversion_leaking') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'first_session_conversion_critically_low', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'first_session_conversion_below_benchmark', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'first_session_conversion_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'first_session_conversion_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  if (questionKey === 'are_user_actions_driving_revenue') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'actions_disconnected_from_revenue', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'action_value_misaligned', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'action_value_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'action_value_aligned', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  if (questionKey === 'is_paid_traffic_reaching_conversion') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'paid_traffic_wasted', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'paid_traffic_friction_high', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'paid_traffic_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'acquisition_integrity_strong', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  if (questionKey === 'is_mobile_experience_costing_revenue') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'mobile_revenue_critically_exposed', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'mobile_revenue_gap_significant', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'mobile_revenue_gap_moderate', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'mobile_experience_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  if (questionKey === 'how_much_does_ux_friction_cost') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'friction_tax_critical', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'friction_tax_elevated', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'friction_tax_moderate', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'friction_tax_low', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  if (questionKey === 'is_trust_deficit_blocking_revenue') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'trust_gap_blocking_revenue', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'trust_gap_significant', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'trust_gap_moderate', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'trust_confidence_strong', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  if (questionKey === 'are_visitors_on_shortest_conversion_path') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'path_critically_inefficient', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'path_inefficiency_high', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'path_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'path_efficiency_good', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
   // Default fallback
   return {
     decision_key: `${questionKey}_result`,

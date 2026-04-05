@@ -108,10 +108,23 @@ export interface ActionProjection {
   resolve_path: 'fix' | 'verify' | 'track' | 'dismiss' | null;
 }
 
+export type WorkspaceProjectionType =
+  | 'preflight'
+  | 'revenue'
+  | 'chargeback'
+  // Behavioral workspaces (pixel-dependent)
+  | 'first_impression'
+  | 'action_value'
+  | 'acquisition_integrity'
+  | 'mobile_revenue'
+  | 'friction_tax'
+  | 'trust_gap'
+  | 'path_efficiency';
+
 export interface WorkspaceProjection {
   id: string;
   name: string;
-  type: 'preflight' | 'revenue' | 'chargeback';
+  type: WorkspaceProjectionType;
   pack_key: string;
   decision_key: string;
   decision_impact: string;

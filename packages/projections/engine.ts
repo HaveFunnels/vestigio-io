@@ -8,6 +8,7 @@ import {
   FindingProjection,
   ActionProjection,
   WorkspaceProjection,
+  WorkspaceProjectionType,
   WorkspaceCoherence,
   ConfidenceNarrative,
   ProjectionResult,
@@ -138,6 +139,28 @@ const INFERENCE_TO_PACK: Record<string, string> = {
   suspicious_domains_capturing_purchase_intent: 'brand_integrity',
   customers_exposed_to_phishing_surfaces: 'brand_integrity',
   brand_presence_diluted_across_variants: 'brand_integrity',
+  // Behavioral workspace findings (pixel-dependent)
+  first_session_milestone_stall: 'first_impression_revenue',
+  first_session_trust_barrier: 'first_impression_revenue',
+  first_session_cta_timing_gap: 'first_impression_revenue',
+  low_value_action_dominates: 'action_value_map',
+  high_value_action_underexposed: 'action_value_map',
+  dead_weight_surface_traffic: 'action_value_map',
+  paid_traffic_friction_elevated: 'acquisition_integrity',
+  paid_traffic_trust_gap: 'acquisition_integrity',
+  paid_mobile_compounding_waste: 'acquisition_integrity',
+  mobile_conversion_gap: 'mobile_revenue_exposure',
+  mobile_form_friction_elevated: 'mobile_revenue_exposure',
+  mobile_cta_timing_degraded: 'mobile_revenue_exposure',
+  funnel_step_friction_cost: 'friction_tax',
+  oscillation_decision_cost: 'friction_tax',
+  checkout_entry_friction: 'friction_tax',
+  trust_deficit_conversion_drag: 'trust_revenue_gap',
+  reassurance_seeking_elevated: 'trust_revenue_gap',
+  sensitive_input_trust_gap: 'trust_revenue_gap',
+  path_length_exceeds_efficient: 'path_efficiency',
+  intent_absorber_detected: 'path_efficiency',
+  intent_decay_time_excessive: 'path_efficiency',
   // Phase 4B: Behavioral intelligence findings
   policy_view_then_abandonment: 'chargeback_resilience',
   high_intent_detour_before_abandonment: 'revenue_integrity',
@@ -930,6 +953,53 @@ export function projectWorkspaces(
     );
   }
 
+  // Add behavioral workspaces (pixel-dependent) — only when pack has findings
+  const behavioralWorkspaceConfigs: { key: keyof typeof result.behavioral_packs; id: string; name: string; type: import('./types').WorkspaceProjectionType; packKey: string }[] = [
+    { key: 'first_impression', id: 'first_impression', name: 'First Impression Revenue', type: 'first_impression', packKey: 'first_impression_revenue_pack' },
+    { key: 'action_value', id: 'action_value', name: 'Action Value Map', type: 'action_value', packKey: 'action_value_map_pack' },
+    { key: 'acquisition_integrity', id: 'acquisition_integrity', name: 'Acquisition Integrity', type: 'acquisition_integrity', packKey: 'acquisition_integrity_pack' },
+    { key: 'mobile_revenue', id: 'mobile_revenue', name: 'Mobile Revenue Exposure', type: 'mobile_revenue', packKey: 'mobile_revenue_exposure_pack' },
+    { key: 'friction_tax', id: 'friction_tax', name: 'Friction Tax', type: 'friction_tax', packKey: 'friction_tax_pack' },
+    { key: 'trust_gap', id: 'trust_gap', name: 'Trust Revenue Gap', type: 'trust_gap', packKey: 'trust_revenue_gap_pack' },
+    { key: 'path_efficiency', id: 'path_efficiency', name: 'Path to Purchase Efficiency', type: 'path_efficiency', packKey: 'path_efficiency_pack' },
+  ];
+
+  const BEHAVIORAL_PACK_FILTER: Record<string, string> = {
+    first_impression_revenue_pack: 'first_impression_revenue',
+    action_value_map_pack: 'action_value_map',
+    acquisition_integrity_pack: 'acquisition_integrity',
+    mobile_revenue_exposure_pack: 'mobile_revenue_exposure',
+    friction_tax_pack: 'friction_tax',
+    trust_revenue_gap_pack: 'trust_revenue_gap',
+    path_efficiency_pack: 'path_efficiency',
+  };
+
+  if (result.behavioral_packs) {
+    for (const bwc of behavioralWorkspaceConfigs) {
+      const pack = result.behavioral_packs[bwc.key];
+      if (!pack) continue;
+      const packFilter = BEHAVIORAL_PACK_FILTER[bwc.packKey];
+      const packFindings = findings.filter(f => f.pack === packFilter);
+      if (packFindings.length === 0) continue;
+
+      const translatedName = wn?.[bwc.id] ?? bwc.name;
+      workspaces.push(
+        buildWorkspaceProjection(
+          bwc.id,
+          translatedName,
+          bwc.type,
+          bwc.packKey,
+          pack.decision.decision_key,
+          pack.decision.decision_impact,
+          packFindings,
+          coherenceByDecisionRef.get(makeRef('decision', pack.decision.id)) || null,
+          narrative,
+          changeSummaryMap.get(bwc.packKey) ?? null,
+        ),
+      );
+    }
+  }
+
   return workspaces;
 }
 
@@ -958,6 +1028,35 @@ const DECISION_KEY_TO_PACK: Record<string, string> = {
   is_saas_growth_ready_result: 'saas_growth_readiness_pack',
   // Channel Integrity
   is_channel_integrity_compromised_result: 'channel_integrity_pack',
+  // Behavioral workspaces (pixel-dependent)
+  first_session_conversion_critically_low: 'first_impression_revenue_pack',
+  first_session_conversion_below_benchmark: 'first_impression_revenue_pack',
+  first_session_conversion_improvable: 'first_impression_revenue_pack',
+  first_session_conversion_healthy: 'first_impression_revenue_pack',
+  actions_disconnected_from_revenue: 'action_value_map_pack',
+  action_value_misaligned: 'action_value_map_pack',
+  action_value_improvable: 'action_value_map_pack',
+  action_value_aligned: 'action_value_map_pack',
+  paid_traffic_wasted: 'acquisition_integrity_pack',
+  paid_traffic_friction_high: 'acquisition_integrity_pack',
+  paid_traffic_improvable: 'acquisition_integrity_pack',
+  acquisition_integrity_strong: 'acquisition_integrity_pack',
+  mobile_revenue_critically_exposed: 'mobile_revenue_exposure_pack',
+  mobile_revenue_gap_significant: 'mobile_revenue_exposure_pack',
+  mobile_revenue_gap_moderate: 'mobile_revenue_exposure_pack',
+  mobile_experience_healthy: 'mobile_revenue_exposure_pack',
+  friction_tax_critical: 'friction_tax_pack',
+  friction_tax_elevated: 'friction_tax_pack',
+  friction_tax_moderate: 'friction_tax_pack',
+  friction_tax_low: 'friction_tax_pack',
+  trust_gap_blocking_revenue: 'trust_revenue_gap_pack',
+  trust_gap_significant: 'trust_revenue_gap_pack',
+  trust_gap_moderate: 'trust_revenue_gap_pack',
+  trust_confidence_strong: 'trust_revenue_gap_pack',
+  path_critically_inefficient: 'path_efficiency_pack',
+  path_inefficiency_high: 'path_efficiency_pack',
+  path_improvable: 'path_efficiency_pack',
+  path_efficiency_good: 'path_efficiency_pack',
 };
 
 function resolvePackKeyForDecision(decisionKey: string): string | null {
@@ -1126,7 +1225,7 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
 function buildWorkspaceProjection(
   id: string,
   name: string,
-  type: 'preflight' | 'revenue' | 'chargeback',
+  type: WorkspaceProjectionType,
   packKey: string,
   decisionKey: string,
   decisionImpact: string,

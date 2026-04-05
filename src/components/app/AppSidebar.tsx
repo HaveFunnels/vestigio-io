@@ -1,6 +1,7 @@
 "use client";
 
 import { useBranding, useFeatureFlags } from "@/components/BrandingProvider";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,6 +36,7 @@ export default function AppSidebar({
 	const pathname = usePathname();
 	const branding = useBranding();
 	const flags = useFeatureFlags();
+	const t = useTranslations("console.navigation");
 	const [hovered, setHovered] = useState(false);
 	const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -119,7 +121,7 @@ export default function AppSidebar({
 							"flex-1 whitespace-nowrap text-left transition-all duration-300",
 							isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
 						)}>
-							{item.label}
+							{t(item.labelKey)}
 						</span>
 						{isExpanded && (
 							<svg
@@ -160,7 +162,7 @@ export default function AppSidebar({
 										<svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 											<path strokeLinecap="round" strokeLinejoin="round" d={child.icon} />
 										</svg>
-										<span>{child.label}</span>
+										<span>{t(child.labelKey)}</span>
 									</Link>
 								);
 							})}
@@ -180,7 +182,7 @@ export default function AppSidebar({
 					"whitespace-nowrap transition-all duration-300",
 					isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
 				)}>
-					{item.label}
+					{t(item.labelKey)}
 				</span>
 			</Link>
 		);

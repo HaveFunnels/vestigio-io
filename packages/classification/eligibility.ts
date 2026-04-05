@@ -148,6 +148,32 @@ export function isChargebackRelevant(
   };
 }
 
+// ── Behavioral Workspaces (pixel-dependent) ──
+
+export function isBehavioralPackEligible(
+  hasBehavioralEvidence: boolean,
+  behavioralSessionCount: number,
+): EligibilityResult {
+  const blockers: string[] = [];
+  const reasons: string[] = [];
+
+  if (!hasBehavioralEvidence) {
+    blockers.push('No behavioral evidence — pixel not installed or no data received');
+  } else if (behavioralSessionCount < 20) {
+    blockers.push(`Insufficient behavioral data: ${behavioralSessionCount} sessions (minimum 20 required)`);
+  }
+
+  if (blockers.length === 0) {
+    reasons.push(`Behavioral data available: ${behavioralSessionCount} sessions collected via pixel`);
+  }
+
+  const confidence = hasBehavioralEvidence
+    ? Math.min(1, behavioralSessionCount / 100) // confidence ramps up to 100 sessions
+    : 0;
+
+  return { eligible: blockers.length === 0, confidence, blockers, reasons };
+}
+
 // ── Pack Eligibility Summary ──────────────────
 
 export interface PackEligibility {
@@ -159,12 +185,15 @@ export interface PackEligibility {
   channel_integrity: EligibilityResult;
   discoverability: EligibilityResult;
   brand_integrity: EligibilityResult;
+  // Behavioral workspaces (pixel-dependent) — shared gate for all 7
+  behavioral_workspaces: EligibilityResult;
 }
 
 export function computePackEligibility(
   classification: ClassificationState,
   saasProfile: SaasProfile | null,
   accessConfig: SaasAccessConfig | null,
+  behavioralContext?: { hasBehavioralEvidence: boolean; sessionCount: number },
 ): PackEligibility {
   return {
     // Scale readiness is always eligible (applicable to all businesses)
@@ -179,5 +208,10 @@ export function computePackEligibility(
     discoverability: { eligible: true, confidence: 1, blockers: [], reasons: ['Always applicable — all sites need discoverability'] },
     // Brand integrity is always eligible (all brands have exposure risk)
     brand_integrity: { eligible: true, confidence: 1, blockers: [], reasons: ['Always applicable — all brands face impersonation risk'] },
+    // Behavioral workspaces — eligible when pixel data is available with sufficient sessions
+    behavioral_workspaces: isBehavioralPackEligible(
+      behavioralContext?.hasBehavioralEvidence ?? false,
+      behavioralContext?.sessionCount ?? 0,
+    ),
   };
 }

@@ -31,6 +31,7 @@ import {
   BehavioralSessionPayload,
   SurfaceVitalityPayload,
 } from '../domain';
+import type { BehavioralCohortPayload } from '../behavioral';
 import { BuiltGraph, GraphQuery } from '../graph';
 
 // ──────────────────────────────────────────────
@@ -150,6 +151,9 @@ export function extractSignals(
 
   // Phase 4B: Behavioral intelligence signals from snippet evidence
   extractBehavioralSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Behavioral cohort signals (pixel-dependent workspaces)
+  extractBehavioralCohortSignals(byType, scoping, cycle_ref, signals, ids);
 
   return signals;
 }
@@ -3887,5 +3891,438 @@ function createSignal(params: {
     description: params.description,
     created_at: now,
     updated_at: now,
+  };
+}
+
+// ──────────────────────────────────────────────
+// Behavioral Cohort Signals (Pixel-Dependent Workspaces)
+//
+// These signals compare cohort slices against each other
+// using relative thresholds rather than absolute ones.
+// ──────────────────────────────────────────────
+
+function extractBehavioralCohortSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  // Cohort data is stored as BehavioralCohortPayload in evidence with
+  // evidence_type still BehavioralSession but a cohorts sub-object.
+  // In practice, cohort data is computed at recompute time and passed
+  // via a special evidence entry. We look for it by checking payload.type.
+  const behavioralEvidence = byType.get(EvidenceType.BehavioralSession) || [];
+  let cohort: BehavioralCohortPayload | null = null;
+  let evidenceRef = '';
+
+  for (const ev of behavioralEvidence) {
+    const p = ev.payload as any;
+    if (p.type === 'behavioral_cohort') {
+      cohort = p as BehavioralCohortPayload;
+      evidenceRef = makeRef('evidence', ev.id);
+      break;
+    }
+  }
+
+  if (!cohort || cohort.total_session_count < 20) return;
+  const refs = [evidenceRef];
+  const c = cohort.cohorts;
+
+  // ── First Impression Revenue signals ──
+
+  // First-session milestone stall: first-timers stall before intent at a much higher rate
+  if (c.first_session.session_count >= 10 && c.returning.session_count >= 10) {
+    const firstIntentRate = c.first_session.milestone_intent_count / c.first_session.session_count;
+    const returnIntentRate = c.returning.milestone_intent_count / c.returning.session_count;
+    if (returnIntentRate > 0 && firstIntentRate < returnIntentRate * 0.6) {
+      const gap = returnIntentRate - firstIntentRate;
+      signals.push(createSignal({
+        signal_key: 'first_session_milestone_stall',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.first_session.milestone_stall',
+        value: firstIntentRate < returnIntentRate * 0.4 ? 'high' : 'medium',
+        numeric_value: Math.round(gap * 100),
+        confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `First-time visitors reach intent at ${Math.round(firstIntentRate * 100)}% vs ${Math.round(returnIntentRate * 100)}% for returning visitors. ${Math.round(gap * 100)}pp gap — first impressions stall before purchase intent forms.`,
+      }));
+    }
+  }
+
+  // First-session trust barrier: first-timers hesitate significantly more
+  if (c.first_session.session_count >= 10 && c.returning.session_count >= 10) {
+    const firstHesRate = c.first_session.hesitation_pause_rate;
+    const returnHesRate = c.returning.hesitation_pause_rate;
+    if (firstHesRate > returnHesRate * 1.5 && firstHesRate > 0.08) {
+      signals.push(createSignal({
+        signal_key: 'first_session_trust_barrier',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.first_session.trust_barrier',
+        value: firstHesRate > returnHesRate * 2.5 ? 'high' : 'medium',
+        numeric_value: Math.round(firstHesRate * 100),
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `First-time visitors show ${Math.round(firstHesRate * 100)}% hesitation rate vs ${Math.round(returnHesRate * 100)}% for returning visitors. New visitors lack the brand familiarity that returning visitors have.`,
+      }));
+    }
+  }
+
+  // First-session CTA timing gap
+  if (c.first_session.session_count >= 10) {
+    const firstTime = c.first_session.avg_time_to_first_commercial_action_ms;
+    const returnTime = c.returning.avg_time_to_first_commercial_action_ms;
+    if (firstTime !== null && returnTime !== null && returnTime > 0 && firstTime > returnTime * 1.8) {
+      signals.push(createSignal({
+        signal_key: 'first_session_cta_timing_gap',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.first_session.cta_timing',
+        value: firstTime > returnTime * 3 ? 'high' : 'medium',
+        numeric_value: Math.round(firstTime / 1000),
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `First-time visitors take ${Math.round(firstTime / 1000)}s to reach first commercial action vs ${Math.round(returnTime / 1000)}s for returning visitors. CTA or commercial entry is not optimized for newcomers.`,
+      }));
+    }
+  }
+
+  // ── Action Value Map signals ──
+
+  // Low-value action dominates: high CTA views but low engagement
+  if (c.first_session.cta_viewed_count > 0 || c.returning.cta_viewed_count > 0) {
+    const totalViews = c.first_session.cta_viewed_count + c.returning.cta_viewed_count;
+    const totalClicks = c.first_session.cta_clicked_count + c.returning.cta_clicked_count;
+    const engagementRate = totalViews > 0 ? totalClicks / totalViews : 0;
+    if (totalViews >= 50 && engagementRate < 0.05) {
+      signals.push(createSignal({
+        signal_key: 'low_value_action_dominates',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.action_value.low_engagement',
+        value: engagementRate < 0.02 ? 'high' : 'medium',
+        numeric_value: totalViews,
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `${totalViews} CTA views across sessions but only ${Math.round(engagementRate * 100)}% engagement rate. Most visible actions are not driving conversion.`,
+      }));
+    }
+  }
+
+  // Dead-weight surface traffic: surfaces with sessions but zero conversion progression
+  const allSlices = [c.first_session, c.returning];
+  let totalSessions = 0;
+  let totalAwareness = 0;
+  let totalConvComplete = 0;
+  for (const sl of allSlices) {
+    totalSessions += sl.session_count;
+    totalAwareness += sl.milestone_awareness_count;
+    totalConvComplete += sl.milestone_conversion_complete_count;
+  }
+  if (totalSessions >= 20 && totalAwareness > 0) {
+    const conversionFromAwareness = totalConvComplete / totalAwareness;
+    if (conversionFromAwareness < 0.02) {
+      signals.push(createSignal({
+        signal_key: 'dead_weight_surface_traffic',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.action_value.dead_weight',
+        value: conversionFromAwareness < 0.005 ? 'high' : 'medium',
+        numeric_value: totalAwareness - totalConvComplete,
+        confidence: 55, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `${totalAwareness} sessions reach awareness but only ${totalConvComplete} complete conversion (${Math.round(conversionFromAwareness * 10000) / 100}%). Most traffic does not progress toward revenue.`,
+      }));
+    }
+  }
+
+  // High-value action underexposed: conversion is happening but CTA engagement is low
+  if (totalConvComplete > 0 && c.first_session.cta_engagement_rate < 0.10 && c.returning.cta_engagement_rate < 0.10) {
+    signals.push(createSignal({
+      signal_key: 'high_value_action_underexposed',
+      category: SignalCategory.Behavioral,
+      attribute: 'cohort.action_value.underexposed',
+      value: 'medium',
+      numeric_value: totalConvComplete,
+      confidence: 55, scoping, cycle_ref, ids, evidence_refs: refs,
+      description: `Conversions happen (${totalConvComplete}) but CTA engagement is very low across cohorts. Revenue-positive actions are not visible or compelling enough.`,
+    }));
+  }
+
+  // ── Acquisition Integrity signals ──
+
+  if (c.paid_traffic.session_count >= 10 && c.organic_traffic.session_count >= 10) {
+    // Paid traffic friction elevated
+    const paidFriction = c.paid_traffic.backtrack_rate + c.paid_traffic.hesitation_pause_rate;
+    const organicFriction = c.organic_traffic.backtrack_rate + c.organic_traffic.hesitation_pause_rate;
+    if (paidFriction > organicFriction * 1.5 && paidFriction > 0.15) {
+      signals.push(createSignal({
+        signal_key: 'paid_traffic_friction_elevated',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.acquisition.paid_friction',
+        value: paidFriction > organicFriction * 2.5 ? 'high' : 'medium',
+        numeric_value: Math.round(paidFriction * 100),
+        confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Paid traffic shows ${Math.round(paidFriction * 100)}% combined friction rate vs ${Math.round(organicFriction * 100)}% for organic. Paid visitors encounter significantly more obstacles.`,
+      }));
+    }
+
+    // Paid traffic trust gap
+    const paidTrust = c.paid_traffic.hesitation_pause_rate + c.paid_traffic.policy_opened_rate;
+    const organicTrust = c.organic_traffic.hesitation_pause_rate + c.organic_traffic.policy_opened_rate;
+    if (paidTrust > organicTrust * 1.5 && paidTrust > 0.10) {
+      signals.push(createSignal({
+        signal_key: 'paid_traffic_trust_gap',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.acquisition.paid_trust',
+        value: paidTrust > organicTrust * 2 ? 'high' : 'medium',
+        numeric_value: Math.round(paidTrust * 100),
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Paid visitors show ${Math.round(paidTrust * 100)}% trust-seeking behavior vs ${Math.round(organicTrust * 100)}% for organic. Paid traffic lacks brand familiarity.`,
+      }));
+    }
+
+    // Paid + mobile compounding waste
+    if (c.mobile.session_count >= 10) {
+      const paidConv = c.paid_traffic.conversion_rate;
+      const mobileConv = c.mobile.conversion_rate;
+      const overallConv = (c.first_session.conversion_rate * c.first_session.session_count +
+        c.returning.conversion_rate * c.returning.session_count) / (c.first_session.session_count + c.returning.session_count || 1);
+      if (paidConv < overallConv * 0.5 && mobileConv < overallConv * 0.5) {
+        signals.push(createSignal({
+          signal_key: 'paid_mobile_compounding_waste',
+          category: SignalCategory.Behavioral,
+          attribute: 'cohort.acquisition.paid_mobile',
+          value: 'high',
+          numeric_value: Math.round((overallConv - Math.min(paidConv, mobileConv)) * 100),
+          confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `Paid traffic converts at ${Math.round(paidConv * 100)}% and mobile at ${Math.round(mobileConv * 100)}% vs overall ${Math.round(overallConv * 100)}%. Paid mobile visitors face compounded friction.`,
+        }));
+      }
+    }
+  }
+
+  // ── Mobile Revenue Exposure signals ──
+
+  if (c.mobile.session_count >= 10 && c.desktop.session_count >= 10) {
+    // Mobile conversion gap
+    if (c.desktop.conversion_rate > 0 && c.mobile.conversion_rate < c.desktop.conversion_rate * 0.6) {
+      const gap = c.desktop.conversion_rate - c.mobile.conversion_rate;
+      signals.push(createSignal({
+        signal_key: 'mobile_conversion_gap',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.mobile.conversion_gap',
+        value: c.mobile.conversion_rate < c.desktop.conversion_rate * 0.3 ? 'high' : 'medium',
+        numeric_value: Math.round(gap * 100),
+        confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Mobile converts at ${Math.round(c.mobile.conversion_rate * 100)}% vs desktop ${Math.round(c.desktop.conversion_rate * 100)}%. ${Math.round(gap * 100)}pp conversion gap represents trapped mobile revenue.`,
+      }));
+    }
+
+    // Mobile form friction elevated
+    if (c.mobile.form_retry_rate > c.desktop.form_retry_rate * 1.5 && c.mobile.form_retry_rate > 0.05) {
+      signals.push(createSignal({
+        signal_key: 'mobile_form_friction_elevated',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.mobile.form_friction',
+        value: c.mobile.form_retry_rate > c.desktop.form_retry_rate * 2.5 ? 'high' : 'medium',
+        numeric_value: Math.round(c.mobile.form_retry_rate * 100),
+        confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Mobile form retry rate is ${Math.round(c.mobile.form_retry_rate * 100)}% vs desktop ${Math.round(c.desktop.form_retry_rate * 100)}%. Mobile users struggle with form input.`,
+      }));
+    }
+
+    // Mobile CTA timing degraded
+    if (c.mobile.cta_rendered_late_count > c.desktop.cta_rendered_late_count * 2 && c.mobile.cta_rendered_late_count >= 3) {
+      signals.push(createSignal({
+        signal_key: 'mobile_cta_timing_degraded',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.mobile.cta_timing',
+        value: c.mobile.cta_rendered_late_count > c.desktop.cta_rendered_late_count * 4 ? 'high' : 'medium',
+        numeric_value: c.mobile.cta_rendered_late_count,
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Mobile has ${c.mobile.cta_rendered_late_count} late-rendered CTAs vs ${c.desktop.cta_rendered_late_count} on desktop. Primary actions load slower on mobile.`,
+      }));
+    }
+  }
+
+  // ── Friction Tax signals ──
+
+  // Funnel step friction cost: high overall friction with conversion impact
+  {
+    const overall = computeOverallSlice(c);
+    if (overall.session_count >= 20) {
+      const frictionScore = overall.hesitation_pause_rate + overall.form_retry_rate + overall.surface_oscillation_rate;
+      if (frictionScore > 0.15) {
+        signals.push(createSignal({
+          signal_key: 'funnel_step_friction_cost',
+          category: SignalCategory.Behavioral,
+          attribute: 'cohort.friction.step_cost',
+          value: frictionScore > 0.30 ? 'high' : 'medium',
+          numeric_value: Math.round(frictionScore * 100),
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `Combined friction score across funnel: ${Math.round(frictionScore * 100)}% (hesitation ${Math.round(overall.hesitation_pause_rate * 100)}% + form retries ${Math.round(overall.form_retry_rate * 100)}% + oscillation ${Math.round(overall.surface_oscillation_rate * 100)}%).`,
+        }));
+      }
+
+      // Oscillation decision cost
+      if (overall.surface_oscillation_rate > 0.05) {
+        signals.push(createSignal({
+          signal_key: 'oscillation_decision_cost',
+          category: SignalCategory.Behavioral,
+          attribute: 'cohort.friction.oscillation',
+          value: overall.surface_oscillation_rate > 0.12 ? 'high' : 'medium',
+          numeric_value: Math.round(overall.surface_oscillation_rate * 100),
+          confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${Math.round(overall.surface_oscillation_rate * 100)}% of sessions show back-and-forth navigation between surfaces. Users cannot make decisions and oscillate instead.`,
+        }));
+      }
+
+      // Checkout entry friction
+      const checkoutRate = overall.checkout_reached_rate;
+      const intentRate = overall.milestone_intent_count / (overall.session_count || 1);
+      if (intentRate > 0.1 && checkoutRate < intentRate * 0.4) {
+        signals.push(createSignal({
+          signal_key: 'checkout_entry_friction',
+          category: SignalCategory.Behavioral,
+          attribute: 'cohort.friction.checkout_entry',
+          value: checkoutRate < intentRate * 0.2 ? 'high' : 'medium',
+          numeric_value: Math.round((intentRate - checkoutRate) * 100),
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${Math.round(intentRate * 100)}% of sessions express intent but only ${Math.round(checkoutRate * 100)}% reach checkout. ${Math.round((intentRate - checkoutRate) * 100)}pp drop at the conversion gate.`,
+        }));
+      }
+    }
+  }
+
+  // ── Trust Revenue Gap signals ──
+
+  {
+    const overall = computeOverallSlice(c);
+    if (overall.session_count >= 20) {
+      // Trust deficit conversion drag
+      const trustIndicator = overall.policy_opened_rate + overall.hesitation_pause_rate + overall.sensitive_input_abandon_rate;
+      if (trustIndicator > 0.15 && overall.conversion_rate < 0.05) {
+        signals.push(createSignal({
+          signal_key: 'trust_deficit_conversion_drag',
+          category: SignalCategory.Behavioral,
+          attribute: 'cohort.trust.conversion_drag',
+          value: trustIndicator > 0.25 ? 'high' : 'medium',
+          numeric_value: Math.round(trustIndicator * 100),
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `Combined trust-deficit behavior at ${Math.round(trustIndicator * 100)}% (policy views ${Math.round(overall.policy_opened_rate * 100)}% + hesitation ${Math.round(overall.hesitation_pause_rate * 100)}% + sensitive abandonment ${Math.round(overall.sensitive_input_abandon_rate * 100)}%) with only ${Math.round(overall.conversion_rate * 100)}% conversion.`,
+        }));
+      }
+
+      // Reassurance seeking elevated
+      const reassuranceRate = overall.policy_opened_rate + overall.support_opened_rate;
+      if (reassuranceRate > 0.12) {
+        signals.push(createSignal({
+          signal_key: 'reassurance_seeking_elevated',
+          category: SignalCategory.Behavioral,
+          attribute: 'cohort.trust.reassurance',
+          value: reassuranceRate > 0.20 ? 'high' : 'medium',
+          numeric_value: Math.round(reassuranceRate * 100),
+          confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${Math.round(reassuranceRate * 100)}% of sessions seek reassurance (policy: ${Math.round(overall.policy_opened_rate * 100)}%, support: ${Math.round(overall.support_opened_rate * 100)}%). Users need trust verification before buying.`,
+        }));
+      }
+
+      // Sensitive input trust gap
+      if (overall.sensitive_input_abandon_rate > 0.04) {
+        signals.push(createSignal({
+          signal_key: 'sensitive_input_trust_gap',
+          category: SignalCategory.Behavioral,
+          attribute: 'cohort.trust.sensitive_input',
+          value: overall.sensitive_input_abandon_rate > 0.10 ? 'high' : 'medium',
+          numeric_value: Math.round(overall.sensitive_input_abandon_rate * 100),
+          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${Math.round(overall.sensitive_input_abandon_rate * 100)}% of sessions abandon at sensitive input fields. Top field types: ${overall.sensitive_input_abandon_top_kinds.join(', ') || 'unknown'}. Users perceive data privacy risk.`,
+        }));
+      }
+    }
+  }
+
+  // ── Path to Purchase Efficiency signals ──
+
+  if (c.first_session.session_count >= 10 || c.returning.session_count >= 10) {
+    const overall = computeOverallSlice(c);
+
+    // Path length exceeds efficient
+    if (overall.avg_surface_progression_length > 5 && overall.conversion_rate < 0.05) {
+      signals.push(createSignal({
+        signal_key: 'path_length_exceeds_efficient',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.path.length_excessive',
+        value: overall.avg_surface_progression_length > 8 ? 'high' : 'medium',
+        numeric_value: Math.round(overall.avg_surface_progression_length * 10) / 10,
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Average session visits ${Math.round(overall.avg_surface_progression_length * 10) / 10} surfaces with only ${Math.round(overall.conversion_rate * 100)}% conversion. Visitors wander rather than progressing toward purchase.`,
+      }));
+    }
+
+    // Intent decay time excessive
+    const avgIntentToConv = overall.avg_time_intent_to_conversion_ms;
+    if (avgIntentToConv !== null && avgIntentToConv > 120000) { // > 2 minutes
+      signals.push(createSignal({
+        signal_key: 'intent_decay_time_excessive',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.path.intent_decay',
+        value: avgIntentToConv > 300000 ? 'high' : 'medium', // > 5 minutes
+        numeric_value: Math.round(avgIntentToConv / 1000),
+        confidence: 60, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Average time from intent to conversion: ${Math.round(avgIntentToConv / 1000)}s. Purchase intent decays over time — long paths lose buyers.`,
+      }));
+    }
+
+    // Intent absorber detected: high backtrack + oscillation together
+    if (overall.backtrack_rate > 0.12 && overall.surface_oscillation_rate > 0.05) {
+      signals.push(createSignal({
+        signal_key: 'intent_absorber_detected',
+        category: SignalCategory.Behavioral,
+        attribute: 'cohort.path.intent_absorber',
+        value: overall.backtrack_rate > 0.20 ? 'high' : 'medium',
+        numeric_value: Math.round(overall.backtrack_rate * 100),
+        confidence: 55, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `${Math.round(overall.backtrack_rate * 100)}% backtrack rate combined with ${Math.round(overall.surface_oscillation_rate * 100)}% oscillation. Surfaces in the path absorb purchase intent rather than advancing it.`,
+      }));
+    }
+  }
+}
+
+/** Combine first_session + returning into a weighted overall slice */
+function computeOverallSlice(cohorts: BehavioralCohortPayload['cohorts']): import('../behavioral').BehavioralCohortSlice {
+  const a = cohorts.first_session;
+  const b = cohorts.returning;
+  const total = a.session_count + b.session_count;
+  if (total === 0) return a;
+
+  const w = (va: number, vb: number) => (va * a.session_count + vb * b.session_count) / total;
+
+  return {
+    session_count: total,
+    conversion_rate: w(a.conversion_rate, b.conversion_rate),
+    checkout_reached_rate: w(a.checkout_reached_rate, b.checkout_reached_rate),
+    avg_time_to_first_commercial_action_ms: a.avg_time_to_first_commercial_action_ms !== null && b.avg_time_to_first_commercial_action_ms !== null
+      ? Math.round(w(a.avg_time_to_first_commercial_action_ms, b.avg_time_to_first_commercial_action_ms)) : a.avg_time_to_first_commercial_action_ms ?? b.avg_time_to_first_commercial_action_ms,
+    avg_time_intent_to_conversion_ms: a.avg_time_intent_to_conversion_ms !== null && b.avg_time_intent_to_conversion_ms !== null
+      ? Math.round(w(a.avg_time_intent_to_conversion_ms, b.avg_time_intent_to_conversion_ms)) : a.avg_time_intent_to_conversion_ms ?? b.avg_time_intent_to_conversion_ms,
+    backtrack_rate: w(a.backtrack_rate, b.backtrack_rate),
+    dead_click_rate: w(a.dead_click_rate, b.dead_click_rate),
+    hesitation_pause_rate: w(a.hesitation_pause_rate, b.hesitation_pause_rate),
+    form_retry_rate: w(a.form_retry_rate, b.form_retry_rate),
+    input_focus_abandon_rate: w(a.input_focus_abandon_rate, b.input_focus_abandon_rate),
+    cta_viewed_count: a.cta_viewed_count + b.cta_viewed_count,
+    cta_clicked_count: a.cta_clicked_count + b.cta_clicked_count,
+    cta_engagement_rate: (a.cta_viewed_count + b.cta_viewed_count) > 0
+      ? (a.cta_clicked_count + b.cta_clicked_count) / (a.cta_viewed_count + b.cta_viewed_count) : 0,
+    cta_rendered_late_count: a.cta_rendered_late_count + b.cta_rendered_late_count,
+    policy_opened_rate: w(a.policy_opened_rate, b.policy_opened_rate),
+    policy_then_abandon_rate: w(a.policy_then_abandon_rate, b.policy_then_abandon_rate),
+    support_opened_rate: w(a.support_opened_rate, b.support_opened_rate),
+    sensitive_input_abandon_rate: w(a.sensitive_input_abandon_rate, b.sensitive_input_abandon_rate),
+    sensitive_input_abandon_top_kinds: [...new Set([...a.sensitive_input_abandon_top_kinds, ...b.sensitive_input_abandon_top_kinds])].slice(0, 3),
+    surface_oscillation_rate: w(a.surface_oscillation_rate, b.surface_oscillation_rate),
+    avg_surface_progression_length: w(a.avg_surface_progression_length, b.avg_surface_progression_length),
+    milestone_awareness_count: a.milestone_awareness_count + b.milestone_awareness_count,
+    milestone_consideration_count: a.milestone_consideration_count + b.milestone_consideration_count,
+    milestone_intent_count: a.milestone_intent_count + b.milestone_intent_count,
+    milestone_conversion_start_count: a.milestone_conversion_start_count + b.milestone_conversion_start_count,
+    milestone_conversion_complete_count: a.milestone_conversion_complete_count + b.milestone_conversion_complete_count,
+    handoff_without_return_rate: w(a.handoff_without_return_rate, b.handoff_without_return_rate),
+    pricing_backtrack_rate: w(a.pricing_backtrack_rate, b.pricing_backtrack_rate),
+    policy_detour_before_conversion_rate: w(a.policy_detour_before_conversion_rate, b.policy_detour_before_conversion_rate),
   };
 }

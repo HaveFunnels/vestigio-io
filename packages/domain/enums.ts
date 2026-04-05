@@ -384,4 +384,33 @@ export enum InferenceCategory {
   CtaLateAvailabilityDelaysAction = 'cta_late_availability_delays_action',
   CheckoutAbandonNoFeedback = 'checkout_abandon_no_feedback',
   SensitiveInputPerceivedRiskDropoff = 'sensitive_input_perceived_risk_dropoff',
+  // Behavioral workspace findings (pixel-dependent)
+  // First Impression Revenue
+  FirstSessionMilestoneStall = 'first_session_milestone_stall',
+  FirstSessionTrustBarrier = 'first_session_trust_barrier',
+  FirstSessionCtaTimingGap = 'first_session_cta_timing_gap',
+  // Action Value Map
+  LowValueActionDominates = 'low_value_action_dominates',
+  HighValueActionUnderexposed = 'high_value_action_underexposed',
+  DeadWeightSurfaceTraffic = 'dead_weight_surface_traffic',
+  // Acquisition Integrity
+  PaidTrafficFrictionElevated = 'paid_traffic_friction_elevated',
+  PaidTrafficTrustGap = 'paid_traffic_trust_gap',
+  PaidMobileCompoundingWaste = 'paid_mobile_compounding_waste',
+  // Mobile Revenue Exposure
+  MobileConversionGap = 'mobile_conversion_gap',
+  MobileFormFrictionElevated = 'mobile_form_friction_elevated',
+  MobileCtaTimingDegraded = 'mobile_cta_timing_degraded',
+  // Friction Tax
+  FunnelStepFrictionCost = 'funnel_step_friction_cost',
+  OscillationDecisionCost = 'oscillation_decision_cost',
+  CheckoutEntryFriction = 'checkout_entry_friction',
+  // Trust Revenue Gap
+  TrustDeficitConversionDrag = 'trust_deficit_conversion_drag',
+  ReassuranceSeekingElevated = 'reassurance_seeking_elevated',
+  SensitiveInputTrustGap = 'sensitive_input_trust_gap',
+  // Path to Purchase Efficiency
+  PathLengthExceedsEfficient = 'path_length_exceeds_efficient',
+  IntentAbsorberDetected = 'intent_absorber_detected',
+  IntentDecayTimeExcessive = 'intent_decay_time_excessive',
 }

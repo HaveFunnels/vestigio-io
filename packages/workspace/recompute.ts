@@ -52,6 +52,8 @@ const PENALTY_BUDGET_FLOOR = 0.40; // max 60% total reduction
 import { createPreflightWorkspace, WorkspaceResult } from './workspace';
 import { createRevenueWorkspace, RevenueWorkspaceResult } from './revenue-workspace';
 import { createChargebackWorkspace, ChargebackWorkspaceResult } from './chargeback-workspace';
+import { createBehavioralWorkspace, BehavioralWorkspaceResult, BehavioralWorkspaceType } from './behavioral-workspace';
+import { EvidenceType } from '../domain';
 
 export interface RecomputeInput {
   evidence: Evidence[];
@@ -201,6 +203,16 @@ export interface MultiPackResult {
   confidence_audit: ConfidenceIntegrityResult | null;
   /** Behavioral validation results */
   behavioral_validation: BehavioralValidationResult | null;
+  /** Behavioral workspaces (pixel-dependent) — null when no pixel data */
+  behavioral_packs: {
+    first_impression: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
+    action_value: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
+    acquisition_integrity: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
+    mobile_revenue: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
+    friction_tax: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
+    trust_gap: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
+    path_efficiency: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
+  };
 }
 
 export function recomputeAll(input: MultiPackInput): MultiPackResult {
@@ -306,6 +318,56 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     }
   }
 
+  // ─── Behavioral workspaces (pixel-dependent) ───
+  const BEHAVIORAL_QUESTIONS: { type: BehavioralWorkspaceType; question_key: string; name: string }[] = [
+    { type: 'first_impression', question_key: 'is_first_session_conversion_leaking', name: 'First Impression Revenue' },
+    { type: 'action_value', question_key: 'are_user_actions_driving_revenue', name: 'Action Value Map' },
+    { type: 'acquisition_integrity', question_key: 'is_paid_traffic_reaching_conversion', name: 'Acquisition Integrity' },
+    { type: 'mobile_revenue', question_key: 'is_mobile_experience_costing_revenue', name: 'Mobile Revenue Exposure' },
+    { type: 'friction_tax', question_key: 'how_much_does_ux_friction_cost', name: 'Friction Tax' },
+    { type: 'trust_gap', question_key: 'is_trust_deficit_blocking_revenue', name: 'Trust Revenue Gap' },
+    { type: 'path_efficiency', question_key: 'are_visitors_on_shortest_conversion_path', name: 'Path to Purchase Efficiency' },
+  ];
+
+  const behavioralPacks: MultiPackResult['behavioral_packs'] = {
+    first_impression: null,
+    action_value: null,
+    acquisition_integrity: null,
+    mobile_revenue: null,
+    friction_tax: null,
+    trust_gap: null,
+    path_efficiency: null,
+  };
+
+  // Check for behavioral evidence with sufficient sessions
+  const hasBehavioralData = evidence.some(e => {
+    if (e.evidence_type !== EvidenceType.BehavioralSession) return false;
+    const p = e.payload as any;
+    return (p.session_count >= 20) || (p.type === 'behavioral_cohort' && p.total_session_count >= 20);
+  });
+
+  if (hasBehavioralData) {
+    for (const bq of BEHAVIORAL_QUESTIONS) {
+      const bResult: DecisionResult = produceDecision({
+        question_key: bq.question_key,
+        scoping, cycle_ref, signals, inferences,
+        conversion_proximity, is_production, translations,
+      });
+      const bActions = deriveActions(bResult.decision);
+      const bWorkspace = createBehavioralWorkspace(
+        bq.type,
+        { name: bq.name, scoping, landing_url, cycle_ref },
+        bResult.decision, bActions, inferences,
+      );
+      (behavioralPacks as any)[bq.type] = {
+        decision: bResult.decision,
+        risk_evaluation: bResult.risk_evaluation,
+        actions: bActions,
+        workspace: bWorkspace,
+      };
+    }
+  }
+
   // Merge SaaS signals/inferences into main arrays
   const allSignals = [...signals, ...saasSignals];
   const allInferences = [...inferences, ...saasInferences];
@@ -316,6 +378,13 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   if (saasGrowthReadiness) {
     allDecisions.push(saasGrowthReadiness.decision);
     allRiskEvals.push(saasGrowthReadiness.risk_evaluation);
+  }
+  // Add behavioral workspace decisions
+  for (const bp of Object.values(behavioralPacks)) {
+    if (bp) {
+      allDecisions.push(bp.decision);
+      allRiskEvals.push(bp.risk_evaluation);
+    }
   }
 
   // ─── Phase 29: Instrumented confidence adjustment tracking ───
@@ -635,6 +704,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     // Phase 27: Confidence audit and behavioral validation (computed post-assembly)
     confidence_audit: null,       // set below
     behavioral_validation: null,  // set below
+    behavioral_packs: behavioralPacks,
   };
 
   // ─── Phase 29: Confidence audit — instrumented with real before/after values ───

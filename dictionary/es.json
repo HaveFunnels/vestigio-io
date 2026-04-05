@@ -1060,6 +1060,38 @@
 				"network_error": "Error de red. Por favor intenta de nuevo."
 			}
 		},
+		"navigation": {
+			"actions": "Acciones",
+			"workspaces": "Workspaces",
+			"chat": "Chat",
+			"analysis": "Análisis",
+			"findings": "Hallazgos",
+			"inventory": "Inventario",
+			"maps": "Mapas",
+			"organization": "Organización",
+			"billing": "Facturación",
+			"members": "Miembros",
+			"settings": "Configuración",
+			"data_sources": "Fuentes de Datos",
+			"overview": "Resumen",
+			"organizations": "Organizaciones",
+			"usage_billing": "Uso y Facturación",
+			"pricing": "Precios",
+			"marketing": "Marketing",
+			"newsletters": "Newsletters",
+			"support_tickets": "Tickets de Soporte",
+			"feedback": "Feedback",
+			"system_health": "Salud del Sistema",
+			"error_tracking": "Seguimiento de Errores",
+			"audit_log": "Registro de Auditoría",
+			"alerts": "Alertas",
+			"admin_users": "Usuarios Admin",
+			"platform_config": "Configuración de Plataforma",
+			"business": "Negocio",
+			"growth": "Crecimiento",
+			"support": "Soporte",
+			"observability": "Observabilidad"
+		},
 		"settings": {
 			"title": "Configuración",
 			"subtitle": "Administra dominios, revisa la cobertura de datos y configura tu cuenta.",
@@ -1074,6 +1106,48 @@
 			"account": {
 				"title": "Cuenta",
 				"description": "Configuración de cuenta administrada a través del panel de control."
+			},
+			"language": {
+				"title": "Idioma",
+				"description": "Elige el idioma de visualización de la plataforma.",
+				"current": "Idioma actual",
+				"select": "Seleccionar idioma"
+			}
+		},
+		"workspaces": {
+			"title": "Workspaces",
+			"subtitle": "Vistas de análisis contextual con impacto cuantificado.",
+			"loading": "Cargando workspaces...",
+			"empty": "No hay workspaces disponibles.",
+			"selected": "{count} seleccionado(s)",
+			"use_as_context": "Usar como Contexto",
+			"clear": "Limpiar",
+			"view_details": "Ver detalles",
+			"monthly_loss": "Pérdida Mensual",
+			"issues": "Problemas",
+			"confidence": "Confianza",
+			"top_issue": "Principal Problema",
+			"structural": "Estructural",
+			"economic": "Económico",
+			"types": {
+				"preflight": "Preparación para Escalar",
+				"revenue": "Integridad de Ingresos",
+				"chargeback": "Resiliencia de Chargeback",
+				"first_impression": "Ingresos de Primera Impresión",
+				"action_value": "Mapa de Valor de Acciones",
+				"acquisition_integrity": "Integridad de Adquisición",
+				"mobile_revenue": "Exposición de Ingresos Móvil",
+				"friction_tax": "Impuesto de Fricción",
+				"trust_gap": "Brecha de Confianza e Ingresos",
+				"path_efficiency": "Eficiencia de Ruta"
+			},
+			"trends": {
+				"regressions": "{count} regresión",
+				"regressions_plural": "{count} regresiones",
+				"improvements": "{count} mejora",
+				"improvements_plural": "{count} mejoras",
+				"stable": "estable",
+				"mixed": "cambios mixtos"
 			}
 		}
 	},
@@ -1412,7 +1486,14 @@
 			"preflight": "Preflight",
 			"revenue": "Análisis de Ingresos",
 			"chargeback": "Análisis de Chargeback",
-			"saas": "Crecimiento SaaS"
+			"saas": "Crecimiento SaaS",
+			"first_impression": "Ingresos de Primera Impresión",
+			"action_value": "Mapa de Valor de Acciones",
+			"acquisition_integrity": "Integridad de Adquisición",
+			"mobile_revenue": "Exposición de Ingresos Móvil",
+			"friction_tax": "Impuesto de Fricción",
+			"trust_gap": "Brecha de Confianza e Ingresos",
+			"path_efficiency": "Eficiencia de Ruta de Compra"
 		}
 	}
 }

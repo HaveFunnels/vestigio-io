@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getKnowledgeArticleByFindingKey } from "@/sanity/sanity-utils";
 
 export async function GET(request: Request) {
@@ -10,7 +11,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const article = await getKnowledgeArticleByFindingKey(key);
+    const cookieStore = await cookies();
+    const locale = cookieStore.get("locale")?.value || "en";
+    const article = await getKnowledgeArticleByFindingKey(key, locale);
     if (!article) {
       return NextResponse.json({ article: null });
     }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getKnowledgeArticleBySlug } from "@/sanity/sanity-utils";
 
 export async function GET(
@@ -6,7 +7,9 @@ export async function GET(
   { params }: { params: { slug: string } },
 ) {
   try {
-    const article = await getKnowledgeArticleBySlug(params.slug);
+    const cookieStore = await cookies();
+    const locale = cookieStore.get("locale")?.value || "en";
+    const article = await getKnowledgeArticleBySlug(params.slug, locale);
     if (!article) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }

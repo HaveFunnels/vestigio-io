@@ -74,6 +74,21 @@ const knowledgeArticle = {
 			validation: (Rule: any) => Rule.required(),
 		},
 		{
+			name: "locale",
+			title: "Locale",
+			description: "Language of this article. Defaults to English.",
+			type: "string",
+			options: {
+				list: [
+					{ title: "English", value: "en" },
+					{ title: "Portugues (BR)", value: "pt-BR" },
+					{ title: "Espanol", value: "es" },
+					{ title: "Deutsch", value: "de" },
+				],
+			},
+			initialValue: "en",
+		},
+		{
 			name: "publishedAt",
 			title: "Published At",
 			type: "datetime",

@@ -6,7 +6,9 @@ import {
 	postQueryByAuthor,
 	postQueryByCategory,
 	kbAllQuery,
+	kbAllByLocaleQuery,
 	kbBySlugQuery,
+	kbBySlugAndLocaleQuery,
 	kbByCategoryQuery,
 	kbByFindingKeyQuery,
 	kbByRootCauseKeyQuery,
@@ -120,7 +122,8 @@ export interface KnowledgeArticle {
 	_id: string;
 	title: string;
 	slug: { current: string };
-	category: "concept" | "pack" | "finding" | "guide";
+	category: "get_started" | "concept" | "pack" | "finding" | "api" | "guide";
+	locale?: string;
 	finding_key?: string;
 	root_cause_key?: string;
 	excerpt?: string;
@@ -128,20 +131,45 @@ export interface KnowledgeArticle {
 	publishedAt?: string;
 }
 
-export const getKnowledgeArticles = async (): Promise<KnowledgeArticle[]> => {
-	return sanityFetch<KnowledgeArticle[]>({
-		query: kbAllQuery,
-		qParams: {},
+/**
+ * Deduplicate articles by slug — prefer the user's locale over "en".
+ * If both pt-BR and en versions of "welcome" exist, keep only pt-BR.
+ */
+function dedupeBySlug(articles: KnowledgeArticle[], locale: string): KnowledgeArticle[] {
+	const bySlug = new Map<string, KnowledgeArticle>();
+	for (const a of articles) {
+		const slug = a.slug.current;
+		const existing = bySlug.get(slug);
+		if (!existing) {
+			bySlug.set(slug, a);
+		} else {
+			// Prefer the locale-specific version
+			const existingLocale = existing.locale || "en";
+			const newLocale = a.locale || "en";
+			if (newLocale === locale && existingLocale !== locale) {
+				bySlug.set(slug, a);
+			}
+		}
+	}
+	return Array.from(bySlug.values());
+}
+
+export const getKnowledgeArticles = async (locale = "en"): Promise<KnowledgeArticle[]> => {
+	const articles = await sanityFetch<KnowledgeArticle[]>({
+		query: kbAllByLocaleQuery,
+		qParams: { locale },
 		tags: ["knowledgeArticle"],
 	});
+	return dedupeBySlug(articles || [], locale);
 };
 
 export const getKnowledgeArticleBySlug = async (
 	slug: string,
+	locale = "en",
 ): Promise<KnowledgeArticle | null> => {
 	return sanityFetch<KnowledgeArticle | null>({
-		query: kbBySlugQuery,
-		qParams: { slug },
+		query: kbBySlugAndLocaleQuery,
+		qParams: { slug, locale },
 		tags: ["knowledgeArticle"],
 	});
 };
@@ -158,10 +186,11 @@ export const getKnowledgeArticlesByCategory = async (
 
 export const getKnowledgeArticleByFindingKey = async (
 	findingKey: string,
+	locale = "en",
 ): Promise<KnowledgeArticle | null> => {
 	return sanityFetch<KnowledgeArticle | null>({
 		query: kbByFindingKeyQuery,
-		qParams: { findingKey },
+		qParams: { findingKey, locale },
 		tags: ["knowledgeArticle"],
 	});
 };

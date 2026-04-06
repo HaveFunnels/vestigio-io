@@ -7,6 +7,11 @@ import { useState, useEffect } from "react";
 // Matches Overview visual identity.
 // ──────────────────────────────────────────────
 
+interface PlanFeature {
+  name: string;
+  included: boolean;
+}
+
 interface PlanConfig {
   key: string;
   label: string;
@@ -20,6 +25,7 @@ interface PlanConfig {
   creditsEnabled: boolean;
   maxEnvironments: number;
   maxMembers: number;
+  features?: PlanFeature[];
 }
 
 interface CreditConfig {
@@ -212,6 +218,94 @@ export default function AdminPricingPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Feature Table per Plan */}
+      <div className="rounded-lg border border-edge bg-surface-card">
+        <div className="border-b border-edge px-5 py-4">
+          <h2 className="text-sm font-semibold text-content">Features per Plan</h2>
+          <p className="mt-1 text-xs text-content-faint">Configure which features appear in the pricing comparison table. These are shown to customers.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-edge">
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Feature</th>
+                {plans.map((plan) => (
+                  <th key={plan.key} className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-content-muted">{plan.label}</th>
+                ))}
+                <th className="px-3 py-3 w-10" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-edge">
+              {(plans[0]?.features || []).map((_, featureIndex) => (
+                <tr key={featureIndex} className="hover:bg-surface-card-hover">
+                  <td className="px-5 py-2">
+                    <input
+                      type="text"
+                      value={plans[0]?.features?.[featureIndex]?.name || ""}
+                      onChange={(e) => {
+                        const name = e.target.value;
+                        setPlans((prev) => prev.map((p) => ({
+                          ...p,
+                          features: (p.features || []).map((f, fi) => fi === featureIndex ? { ...f, name } : f),
+                        })));
+                        setSaved(false);
+                      }}
+                      className={`${inputClass} w-full`}
+                      placeholder="Feature name"
+                    />
+                  </td>
+                  {plans.map((plan, planIndex) => (
+                    <td key={plan.key} className="px-5 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={plan.features?.[featureIndex]?.included ?? false}
+                        onChange={(e) => {
+                          updatePlan(planIndex, "features" as any, (plan.features || []).map((f, fi) =>
+                            fi === featureIndex ? { ...f, included: e.target.checked } : f
+                          ));
+                        }}
+                        className="h-4 w-4 rounded border-white/20 bg-transparent text-emerald-500 focus:ring-emerald-500/30"
+                      />
+                    </td>
+                  ))}
+                  <td className="px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPlans((prev) => prev.map((p) => ({
+                          ...p,
+                          features: (p.features || []).filter((_, fi) => fi !== featureIndex),
+                        })));
+                        setSaved(false);
+                      }}
+                      className="text-xs text-content-faint hover:text-red-400"
+                      title="Remove feature"
+                    >
+                      &times;
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-edge px-5 py-3">
+          <button
+            type="button"
+            onClick={() => {
+              setPlans((prev) => prev.map((p) => ({
+                ...p,
+                features: [...(p.features || []), { name: "", included: p.key !== "vestigio" }],
+              })));
+              setSaved(false);
+            }}
+            className="text-xs font-medium text-accent hover:text-accent/80"
+          >
+            + Add Feature
+          </button>
         </div>
       </div>
 

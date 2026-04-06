@@ -98,21 +98,30 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
       allOrgs.sort((a, b) => b.totalCostCents - a.totalCostCents);
 
       // Enrich with org names
-      const orgMap = new Map<string, string>();
-      const orgs = await prisma.organization.findMany({ select: { id: true, name: true, plan: true } });
-      for (const org of orgs) orgMap.set(org.id, org.name);
+      const orgMap = new Map<string, { name: string; orgType: string }>();
+      const orgs = await prisma.organization.findMany({ select: { id: true, name: true, plan: true, orgType: true } });
+      for (const org of orgs) orgMap.set(org.id, { name: org.name, orgType: org.orgType || "customer" });
 
-      const enriched = allOrgs.map((agg) => ({
-        ...agg,
-        orgName: orgMap.get(agg.organizationId) || "Unknown",
-      }));
+      const enriched = allOrgs.map((agg) => {
+        const info = orgMap.get(agg.organizationId);
+        return {
+          ...agg,
+          orgName: info?.name || "Unknown",
+          orgType: info?.orgType || "customer",
+        };
+      });
+
+      // Revenue totals exclude demo orgs
+      const billable = enriched.filter((o) => o.orgType !== "demo");
 
       const totals = {
         totalCostCents: enriched.reduce((s, o) => s + o.totalCostCents, 0),
+        billableCostCents: billable.reduce((s, o) => s + o.totalCostCents, 0),
         totalInputTokens: enriched.reduce((s, o) => s + o.totalInputTokens, 0),
         totalOutputTokens: enriched.reduce((s, o) => s + o.totalOutputTokens, 0),
         totalCalls: enriched.reduce((s, o) => s + o.callCount, 0),
         orgCount: enriched.length,
+        billableOrgCount: billable.length,
       };
 
       return NextResponse.json({ period, totals, organizations: enriched });
@@ -179,7 +188,7 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
   // Summary view — usage per org
   try {
     const organizations = await prisma.organization.findMany({
-      select: { id: true, name: true, plan: true, status: true },
+      select: { id: true, name: true, plan: true, status: true, orgType: true, trialEndsAt: true },
       where: { status: { not: "suspended" } },
       orderBy: { name: "asc" },
     });
@@ -196,12 +205,17 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
           org_name: org.name,
           plan,
           status: org.status,
+          org_type: org.orgType || "customer",
+          trial_ends_at: org.trialEndsAt?.toISOString() || null,
           ...stats,
           cost,
           limits,
         };
       })
     );
+
+    // Billable orgs exclude demo accounts
+    const billableOrgs = orgUsage.filter((o) => o.org_type !== "demo");
 
     // Aggregates
     const totals = {
@@ -210,6 +224,12 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
       total_playwright_runs: orgUsage.reduce((s, o) => s + o.playwright_runs, 0),
       total_estimated_tokens: orgUsage.reduce((s, o) => s + o.estimated_tokens, 0),
       total_cost_cents: orgUsage.reduce((s, o) => s + o.cost.total_cost_cents, 0),
+      // Revenue metrics exclude demo orgs
+      billable_cost_cents: billableOrgs.reduce((s, o) => s + o.cost.total_cost_cents, 0),
+      billable_orgs: billableOrgs.length,
+      demo_orgs: orgUsage.filter((o) => o.org_type === "demo").length,
+      trial_orgs: orgUsage.filter((o) => o.org_type === "trial").length,
+      customer_orgs: orgUsage.filter((o) => o.org_type === "customer").length,
       orgs_over_mcp_limit: orgUsage.filter((o) => o.is_over_mcp_limit).length,
       orgs_over_playwright_limit: orgUsage.filter((o) => o.is_over_playwright_limit).length,
     };

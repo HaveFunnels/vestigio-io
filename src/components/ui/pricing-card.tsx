@@ -341,8 +341,17 @@ const PLAN_CTA: Record<string, string> = {
   max: "Contact Sales",
 };
 
-/** Derive feature list from admin-configured plan limits */
+/** Derive feature list from admin-configured plan features, or fall back to legacy logic */
 function buildFeatures(plan: PublicPlanConfig, allPlans: PublicPlanConfig[]): Feature[] {
+  // If admin has configured features via platform config, use them directly
+  if ((plan as any).features && Array.isArray((plan as any).features)) {
+    return (plan as any).features.map((f: any) => ({
+      name: f.name,
+      isIncluded: f.included,
+    }));
+  }
+
+  // Legacy fallback: derive features from plan limits
   const tierIndex = allPlans.indexOf(plan);
   const isTop = tierIndex === allPlans.length - 1;
   const isMid = tierIndex === 1;

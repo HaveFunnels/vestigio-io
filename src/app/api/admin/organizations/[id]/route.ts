@@ -95,6 +95,8 @@ export const GET = withErrorTracking(async function GET(
         ownerId: org.ownerId,
         plan: org.plan || "vestigio",
         status: org.status || "active",
+        orgType: (org as any).orgType || "customer",
+        trialEndsAt: (org as any).trialEndsAt ? (org as any).trialEndsAt.toISOString() : null,
         createdAt: org.createdAt.toISOString(),
         updatedAt: org.updatedAt.toISOString(),
         members: org.memberships.map((m) => ({

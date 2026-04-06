@@ -24,6 +24,8 @@ interface OrgRow {
   name: string;
   plan: string;
   status: string;
+  orgType: "customer" | "demo" | "trial";
+  trialEndsAt: string | null;
   memberCount: number;
   envCount: number;
   createdAt: string;
@@ -101,6 +103,12 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   return `${days}d ago`;
+}
+
+function trialDaysRemaining(trialEndsAt: string | null): number | null {
+  if (!trialEndsAt) return null;
+  const diff = new Date(trialEndsAt).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / 86_400_000));
 }
 
 /* ---------- Animated Counter ---------- */
@@ -385,6 +393,11 @@ const icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
     </svg>
   ),
+  clock: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
 };
 
 /* ---------- Quick Link ---------- */
@@ -478,11 +491,13 @@ export default function AdminOverviewPage() {
 
   const totalOrgs = orgs.length;
   const activeOrgs = orgs.filter((o) => o.status === "active").length;
+  const trialOrgs = orgs.filter((o) => o.orgType === "trial").length;
+  const demoOrgs = orgs.filter((o) => o.orgType === "demo").length;
   const totalMembers = orgs.reduce((s, o) => s + o.memberCount, 0);
 
-  // MRR from active subscription plan prices
+  // MRR from active subscription plan prices (exclude demo orgs)
   const mrr = orgs
-    .filter((o) => o.status === "active")
+    .filter((o) => o.status === "active" && o.orgType !== "demo")
     .reduce((s, o) => s + (PLAN_PRICES_CENTS[o.plan] || 0), 0);
 
   const mcpToday = usageTotals?.total_mcp_queries ?? 0;
@@ -507,11 +522,15 @@ export default function AdminOverviewPage() {
   // Recent orgs (newest first, already sorted by createdAt desc from API)
   const recentOrgs = orgs.slice(0, 5);
 
-  // Plan distribution
+  // Plan distribution (exclude demo orgs from counts used for MRR)
   const planCounts: Record<string, number> = {};
+  const planCountsForMrr: Record<string, number> = {};
   for (const o of orgs) {
     const p = o.plan || "vestigio";
     planCounts[p] = (planCounts[p] || 0) + 1;
+    if (o.orgType !== "demo") {
+      planCountsForMrr[p] = (planCountsForMrr[p] || 0) + 1;
+    }
   }
 
   return (
@@ -534,7 +553,7 @@ export default function AdminOverviewPage() {
         <StatCard
           label="Total Organizations"
           value={String(totalOrgs)}
-          sub={`${activeOrgs} active, ${totalOrgs - activeOrgs} inactive`}
+          sub={`${activeOrgs} active${demoOrgs > 0 ? `, ${demoOrgs} demo` : ""}, ${totalOrgs - activeOrgs} inactive`}
           icon={icons.building}
           loading={loading}
         />
@@ -551,7 +570,7 @@ export default function AdminOverviewPage() {
         <StatCard
           label="Monthly Recurring Revenue"
           value={dollars(mrr)}
-          sub={`${cents(mrr)} / month`}
+          sub={`${cents(mrr)} / month${demoOrgs > 0 ? ` (excl. ${demoOrgs} demo)` : ""}`}
           icon={icons.currencyDollar}
           accent
           loading={loading}
@@ -567,7 +586,15 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* ── Row 2: Secondary KPIs ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard
+          label="Trial Accounts"
+          value={String(trialOrgs)}
+          sub={trialOrgs > 0 ? `${trialOrgs} active trial(s)` : "No active trials"}
+          icon={icons.clock}
+          warn={trialOrgs > 0}
+          loading={loading}
+        />
         <StatCard
           label="Total Users"
           value={formatNum(totalMembers)}
@@ -729,8 +756,22 @@ export default function AdminOverviewPage() {
                   className="flex items-center justify-between px-5 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-content">
+                    <p className="flex items-center gap-2 truncate text-sm font-medium text-content">
                       {org.name}
+                      {org.orgType === "demo" && (
+                        <span className="inline-block rounded bg-zinc-500/10 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
+                          Demo
+                        </span>
+                      )}
+                      {org.orgType === "trial" && (
+                        <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+                          Trial
+                          {(() => {
+                            const days = trialDaysRemaining(org.trialEndsAt);
+                            return days !== null ? ` (${days}d left)` : "";
+                          })()}
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-content-faint">
                       {org.memberCount} member{org.memberCount !== 1 ? "s" : ""} &middot;{" "}
@@ -801,7 +842,7 @@ export default function AdminOverviewPage() {
                   </div>
                   <p className="mt-1 text-[11px] text-content-faint">
                     {cents(PLAN_PRICES_CENTS[plan] || 0)}/mo &middot;{" "}
-                    {cents(count * (PLAN_PRICES_CENTS[plan] || 0))} MRR
+                    {cents((planCountsForMrr[plan] || 0) * (PLAN_PRICES_CENTS[plan] || 0))} MRR
                   </p>
                 </div>
               );

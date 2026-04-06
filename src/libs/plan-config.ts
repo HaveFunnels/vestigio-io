@@ -8,6 +8,11 @@ import { prisma } from "@/libs/prismaDb";
 // Falls back to defaults when no config exists.
 // ──────────────────────────────────────────────
 
+export interface PlanFeature {
+  name: string;
+  included: boolean;
+}
+
 export interface PlanConfig {
   key: string;
   label: string;
@@ -21,12 +26,55 @@ export interface PlanConfig {
   creditsEnabled: boolean;
   maxEnvironments: number;
   maxMembers: number;
+  features?: PlanFeature[]; // Admin-configurable feature list for pricing table
 }
 
+const DEFAULT_FEATURES: Record<string, PlanFeature[]> = {
+  vestigio: [
+    { name: "1 environment", included: true },
+    { name: "1 team member", included: true },
+    { name: "Weekly audit cycles", included: true },
+    { name: "Core findings & actions", included: true },
+    { name: "Agentic insights", included: true },
+    { name: "Email support", included: true },
+    { name: "AI Chat assistant", included: false },
+    { name: "Revenue integrity maps", included: false },
+    { name: "Custom integrations", included: false },
+    { name: "SSO / SAML", included: false },
+    { name: "SLA guarantee", included: false },
+  ],
+  pro: [
+    { name: "3 environments", included: true },
+    { name: "3 team members", included: true },
+    { name: "Daily audit cycles", included: true },
+    { name: "Advanced findings & actions", included: true },
+    { name: "5x more agentic insights", included: true },
+    { name: "Priority support", included: true },
+    { name: "AI Chat assistant", included: true },
+    { name: "Revenue integrity maps", included: true },
+    { name: "Custom integrations", included: true },
+    { name: "SSO / SAML", included: false },
+    { name: "SLA guarantee", included: false },
+  ],
+  max: [
+    { name: "10 environments", included: true },
+    { name: "10 team members", included: true },
+    { name: "Daily audit cycles", included: true },
+    { name: "Full analysis suite", included: true },
+    { name: "20x more agentic insights", included: true },
+    { name: "Dedicated account manager", included: true },
+    { name: "AI Chat assistant", included: true },
+    { name: "Revenue integrity maps", included: true },
+    { name: "Custom integrations", included: true },
+    { name: "SSO / SAML", included: true },
+    { name: "SLA guarantee", included: true },
+  ],
+};
+
 const DEFAULT_PLANS: PlanConfig[] = [
-  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
-  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
-  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
+  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1, features: DEFAULT_FEATURES.vestigio },
+  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3, features: DEFAULT_FEATURES.pro },
+  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10, features: DEFAULT_FEATURES.max },
 ];
 
 let cached: PlanConfig[] | null = null;

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/organizations — all organizations with member/env counts
- * Query params: search (string)
+ * Query params: search (string), type (customer|demo|trial)
  */
 export const GET = withErrorTracking(async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -17,17 +17,26 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
 
   const searchParams = req.nextUrl.searchParams;
   const search = searchParams.get("search") || "";
+  const typeFilter = searchParams.get("type") || ""; // "customer" | "demo" | "trial"
 
   try {
+    const where: any = {};
+    if (search) {
+      where.name = { contains: search, mode: "insensitive" };
+    }
+    if (typeFilter && ["customer", "demo", "trial"].includes(typeFilter)) {
+      where.orgType = typeFilter;
+    }
+
     const organizations = await prisma.organization.findMany({
-      where: search
-        ? { name: { contains: search, mode: "insensitive" } }
-        : {},
+      where,
       select: {
         id: true,
         name: true,
         plan: true,
         status: true,
+        orgType: true,
+        trialEndsAt: true,
         createdAt: true,
         _count: {
           select: {
@@ -44,6 +53,8 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
       name: org.name,
       plan: org.plan || "vestigio",
       status: org.status || "active",
+      orgType: org.orgType || "customer",
+      trialEndsAt: org.trialEndsAt ? org.trialEndsAt.toISOString() : null,
       memberCount: org._count.memberships,
       envCount: org._count.environments,
       createdAt: org.createdAt.toISOString(),

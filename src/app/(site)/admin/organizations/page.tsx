@@ -16,6 +16,8 @@ interface OrgRow {
   name: string;
   plan: string;
   status: string;
+  orgType: "customer" | "demo" | "trial";
+  trialEndsAt: string | null;
   envCount: number;
   memberCount: number;
   createdAt: string;
@@ -46,6 +48,8 @@ interface OrgDetail {
   ownerId: string;
   plan: string;
   status: string;
+  orgType: "customer" | "demo" | "trial";
+  trialEndsAt: string | null;
   createdAt: string;
   updatedAt: string;
   members: OrgMember[];
@@ -150,6 +154,7 @@ function StatCard({
 
 export default function AdminOrganizationsPage() {
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"" | "customer" | "demo" | "trial">("");
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrg, setExpandedOrg] = useState<string | null>(null);
@@ -158,11 +163,14 @@ export default function AdminOrganizationsPage() {
 
   const { data: session } = useSession();
 
-  const fetchOrgs = useCallback(async (query: string) => {
+  const fetchOrgs = useCallback(async (query: string, type: string) => {
     setLoading(true);
     try {
-      const params = query ? `?search=${encodeURIComponent(query)}` : "";
-      const res = await fetch(`/api/admin/organizations${params}`);
+      const sp = new URLSearchParams();
+      if (query) sp.set("search", query);
+      if (type) sp.set("type", type);
+      const qs = sp.toString();
+      const res = await fetch(`/api/admin/organizations${qs ? `?${qs}` : ""}`);
       if (res.ok) {
         const data = await res.json();
         setOrgs(data.organizations || []);
@@ -175,8 +183,8 @@ export default function AdminOrganizationsPage() {
   }, []);
 
   useEffect(() => {
-    fetchOrgs(search);
-  }, [fetchOrgs, search]);
+    fetchOrgs(search, typeFilter);
+  }, [fetchOrgs, search, typeFilter]);
 
   async function fetchOrgDetail(orgId: string) {
     setDetailLoading(true);
@@ -215,7 +223,7 @@ export default function AdminOrganizationsPage() {
         body: JSON.stringify({ suspended: !isSuspended }),
       });
       if (res.ok) {
-        fetchOrgs(search);
+        fetchOrgs(search, typeFilter);
         if (expandedOrg === org.id) {
           fetchOrgDetail(org.id);
         }
@@ -305,6 +313,30 @@ export default function AdminOrganizationsPage() {
     );
   }
 
+  function orgTypeBadge(org: OrgRow) {
+    if (org.orgType === "demo") {
+      return (
+        <span className="inline-block rounded border px-2 py-0.5 text-xs font-medium bg-zinc-500/10 text-content-muted border-zinc-500/20">
+          Demo
+        </span>
+      );
+    }
+    if (org.orgType === "trial") {
+      let daysLeft = "";
+      if (org.trialEndsAt) {
+        const diff = new Date(org.trialEndsAt).getTime() - Date.now();
+        const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+        daysLeft = ` (${days}d left)`;
+      }
+      return (
+        <span className="inline-block rounded border px-2 py-0.5 text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+          Trial{daysLeft}
+        </span>
+      );
+    }
+    return null; // customer — no badge
+  }
+
   function roleBadge(role: string) {
     const styles =
       role === "owner"
@@ -337,6 +369,8 @@ export default function AdminOrganizationsPage() {
               name: o.name,
               plan: o.plan,
               status: o.status,
+              type: o.orgType,
+              trialEndsAt: o.trialEndsAt || "",
               members: o.memberCount,
               environments: o.envCount,
               created: o.createdAt,
@@ -383,10 +417,34 @@ export default function AdminOrganizationsPage() {
         />
       </div>
 
+      {/* Org Type Filter Tabs */}
+      <div className="flex items-center gap-1 rounded-lg border border-edge bg-surface-card p-1">
+        {([
+          { value: "" as const, label: "All" },
+          { value: "customer" as const, label: "Customers" },
+          { value: "trial" as const, label: "Trial" },
+          { value: "demo" as const, label: "Demo" },
+        ] as const).map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setTypeFilter(tab.value)}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              typeFilter === tab.value
+                ? "bg-surface-inset text-content shadow-sm"
+                : "text-content-muted hover:text-content-secondary"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Org List */}
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="border-b border-edge px-5 py-4">
-          <h2 className="text-sm font-semibold text-content">All Organizations</h2>
+          <h2 className="text-sm font-semibold text-content">
+            {typeFilter ? `${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)} Organizations` : "All Organizations"}
+          </h2>
         </div>
 
         {loading ? (
@@ -429,6 +487,7 @@ export default function AdminOrganizationsPage() {
                         </p>
                         {planBadge(org.plan)}
                         {statusBadge(org.status)}
+                        {orgTypeBadge(org)}
                       </div>
                       <p className="mt-0.5 text-xs text-content-faint">
                         {org.memberCount} member{org.memberCount !== 1 ? "s" : ""} &middot;{" "}
@@ -570,6 +629,31 @@ export default function AdminOrganizationsPage() {
                               </div>
                             )}
                           </div>
+
+                          {/* Organization type */}
+                          {(orgDetail.orgType === "demo" || orgDetail.orgType === "trial") && (
+                            <div className="rounded-lg border border-edge bg-surface-card px-4 py-3 lg:col-span-2">
+                              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
+                                Organization Type
+                              </h3>
+                              <div className="flex gap-6 text-sm">
+                                <span className="text-content-faint">
+                                  Type:{" "}
+                                  <span className="font-medium capitalize text-content">
+                                    {orgDetail.orgType}
+                                  </span>
+                                </span>
+                                {orgDetail.orgType === "trial" && orgDetail.trialEndsAt && (
+                                  <span className="text-content-faint">
+                                    Trial Ends:{" "}
+                                    <span className="font-medium text-amber-600 dark:text-amber-400">
+                                      {new Date(orgDetail.trialEndsAt).toLocaleDateString()} ({Math.max(0, Math.ceil((new Date(orgDetail.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))}d remaining)
+                                    </span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Business profile (if available) */}
                           {orgDetail.businessProfile && (

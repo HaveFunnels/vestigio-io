@@ -8,10 +8,14 @@ import ExportButton from "@/components/app/ExportButton";
 // Matches Overview visual identity.
 // ──────────────────────────────────────────────
 
+type OrgTypeFilter = "all" | "customer" | "trial" | "demo";
+
 interface OrgUsageRow {
   org_id: string;
   org_name: string;
   plan: string;
+  org_type: "customer" | "demo" | "trial";
+  trial_ends_at: string | null;
   mcp_queries: number;
   playwright_runs: number;
   estimated_tokens: number;
@@ -34,6 +38,11 @@ interface UsageTotals {
   total_mcp_queries: number;
   total_playwright_runs: number;
   total_cost_cents: number;
+  billable_cost_cents: number;
+  billable_orgs: number;
+  demo_orgs: number;
+  trial_orgs: number;
+  customer_orgs: number;
   orgs_over_mcp_limit: number;
 }
 
@@ -61,6 +70,38 @@ function formatNum(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return n.toLocaleString();
+}
+
+function trialDaysRemaining(trialEndsAt: string | null): number | null {
+  if (!trialEndsAt) return null;
+  const diff = new Date(trialEndsAt).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+function OrgTypeBadge({ orgType, trialEndsAt }: { orgType: string; trialEndsAt?: string | null }) {
+  if (orgType === "demo") {
+    return (
+      <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-zinc-500/15 text-zinc-400">
+        Demo
+      </span>
+    );
+  }
+  if (orgType === "trial") {
+    const days = trialDaysRemaining(trialEndsAt ?? null);
+    const expired = days !== null && days <= 0;
+    return (
+      <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+        expired
+          ? "bg-red-500/15 text-red-400"
+          : days !== null && days <= 3
+            ? "bg-amber-500/15 text-amber-400"
+            : "bg-sky-500/15 text-sky-400"
+      }`}>
+        Trial{days !== null ? ` ${expired ? "(expired)" : `(${days}d left)`}` : ""}
+      </span>
+    );
+  }
+  return null; // customer — no extra badge needed
 }
 
 /* ---------- Icons ---------- */
@@ -165,6 +206,11 @@ export default function AdminUsageBillingPage() {
   const [economics, setEconomics] = useState<PlanEconomics[]>([]);
   const [tokenData, setTokenData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [orgTypeFilter, setOrgTypeFilter] = useState<OrgTypeFilter>("all");
+
+  const filteredOrgs = orgTypeFilter === "all"
+    ? orgs
+    : orgs.filter((o) => o.org_type === orgTypeFilter);
 
   useEffect(() => {
     if (tab === "usage") fetchUsage();
@@ -226,8 +272,9 @@ export default function AdminUsageBillingPage() {
             </p>
           </div>
           <ExportButton
-            data={orgs.map((o) => ({
+            data={filteredOrgs.map((o) => ({
               organization: o.org_name,
+              org_type: o.org_type,
               plan: o.plan,
               mcp_queries: o.mcp_queries,
               playwright_runs: o.playwright_runs,
@@ -282,11 +329,11 @@ export default function AdminUsageBillingPage() {
       {tab === "usage" && (
         <>
           {/* Summary cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <StatCard
               label="Organizations"
               value={totals ? String(totals.total_orgs) : placeholder}
-              sub="Active orgs with usage"
+              sub={totals ? `${totals.customer_orgs} customers, ${totals.trial_orgs} trial, ${totals.demo_orgs} demo` : "Active orgs with usage"}
               icon={icons.building}
             />
             <StatCard
@@ -303,11 +350,17 @@ export default function AdminUsageBillingPage() {
               icon={icons.playwright}
             />
             <StatCard
-              label="Est. Cost Today"
-              value={totals ? cents(totals.total_cost_cents) : placeholder}
-              sub={totals && totals.orgs_over_mcp_limit > 0 ? `${totals.orgs_over_mcp_limit} over limit` : "All within limits"}
+              label="Billable Cost"
+              value={totals ? cents(totals.billable_cost_cents) : placeholder}
+              sub={totals ? `${totals.billable_orgs} billable orgs (excl. demo)` : "Revenue cost only"}
               icon={icons.currencyDollar}
               accent
+            />
+            <StatCard
+              label="Total Cost (all)"
+              value={totals ? cents(totals.total_cost_cents) : placeholder}
+              sub={totals && totals.orgs_over_mcp_limit > 0 ? `${totals.orgs_over_mcp_limit} over limit` : "Includes demo usage"}
+              icon={icons.currencyDollar}
               warn={!!totals && totals.orgs_over_mcp_limit > 0}
             />
           </div>
@@ -322,6 +375,35 @@ export default function AdminUsageBillingPage() {
               </p>
             </div>
           )}
+
+          {/* Org type filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-content-muted">Filter:</span>
+            {(["all", "customer", "trial", "demo"] as OrgTypeFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setOrgTypeFilter(f)}
+                className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                  orgTypeFilter === f
+                    ? f === "demo"
+                      ? "bg-zinc-500/20 text-zinc-300"
+                      : f === "trial"
+                        ? "bg-sky-500/20 text-sky-300"
+                        : f === "customer"
+                          ? "bg-emerald-500/20 text-emerald-300"
+                          : "bg-accent-subtle-bg/10 text-accent-text"
+                    : "bg-surface-inset text-content-muted hover:text-content-secondary"
+                }`}
+              >
+                {f === "all" ? "All" : f}
+                {f !== "all" && totals && (
+                  <span className="ml-1 opacity-70">
+                    ({f === "customer" ? totals.customer_orgs : f === "trial" ? totals.trial_orgs : totals.demo_orgs})
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
 
           {/* Usage table */}
           <div className="rounded-lg border border-edge bg-surface-card">
@@ -346,14 +428,19 @@ export default function AdminUsageBillingPage() {
                     <tr>
                       <td colSpan={7} className="px-5 py-12 text-center text-sm text-content-faint">Loading...</td>
                     </tr>
-                  ) : orgs.length === 0 ? (
+                  ) : filteredOrgs.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-5 py-12 text-center text-sm text-content-faint">No usage data for this date.</td>
                     </tr>
                   ) : (
-                    orgs.map((row) => (
-                      <tr key={row.org_id} className="hover:bg-surface-card-hover">
-                        <td className="px-5 py-3 font-medium text-content">{row.org_name}</td>
+                    filteredOrgs.map((row) => (
+                      <tr key={row.org_id} className={`hover:bg-surface-card-hover ${row.org_type === "demo" ? "opacity-60" : ""}`}>
+                        <td className="px-5 py-3 font-medium text-content">
+                          <span className="inline-flex items-center">
+                            {row.org_name}
+                            <OrgTypeBadge orgType={row.org_type} trialEndsAt={row.trial_ends_at} />
+                          </span>
+                        </td>
                         <td className="px-5 py-3">
                           <span className={`rounded px-2 py-0.5 text-xs font-medium capitalize ${
                             row.plan === "max"
@@ -456,13 +543,19 @@ export default function AdminUsageBillingPage() {
         <>
           {/* Token summary cards */}
           {tokenData && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <StatCard
-                label="Total Cost"
-                value={cents(tokenData.totals?.totalCostCents || 0)}
-                sub="This period"
+                label="Billable Cost"
+                value={cents(tokenData.totals?.billableCostCents || 0)}
+                sub={`${tokenData.totals?.billableOrgCount || 0} billable orgs (excl. demo)`}
                 icon={icons.currencyDollar}
                 accent
+              />
+              <StatCard
+                label="Total Cost (all)"
+                value={cents(tokenData.totals?.totalCostCents || 0)}
+                sub="Includes demo usage"
+                icon={icons.currencyDollar}
               />
               <StatCard
                 label="Total Calls"
@@ -509,8 +602,13 @@ export default function AdminUsageBillingPage() {
                     </tr>
                   ) : tokenData?.organizations?.length > 0 ? (
                     tokenData.organizations.map((org: any) => (
-                      <tr key={org.organizationId} className="hover:bg-surface-card-hover">
-                        <td className="px-5 py-3 font-medium text-content">{org.orgName}</td>
+                      <tr key={org.organizationId} className={`hover:bg-surface-card-hover ${org.orgType === "demo" ? "opacity-60" : ""}`}>
+                        <td className="px-5 py-3 font-medium text-content">
+                          <span className="inline-flex items-center">
+                            {org.orgName}
+                            <OrgTypeBadge orgType={org.orgType || "customer"} />
+                          </span>
+                        </td>
                         <td className="px-5 py-3 font-mono text-content-secondary">{org.callCount}</td>
                         <td className="px-5 py-3 font-mono text-content-secondary">{formatTokens(org.totalInputTokens)}</td>
                         <td className="px-5 py-3 font-mono text-content-secondary">{formatTokens(org.totalOutputTokens)}</td>

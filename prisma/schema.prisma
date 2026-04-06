@@ -100,13 +100,15 @@ model VerificationToken {
 // ──────────────────────────────────────────────
 
 model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  ownerId   String
-  plan      String   @default("vestigio") // vestigio | pro | max
-  status    String   @default("pending") // pending | active | suspended
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  ownerId     String
+  plan        String    @default("vestigio") // vestigio | pro | max
+  status      String    @default("pending") // pending | active | suspended
+  orgType     String    @default("customer") // customer | demo | trial
+  trialEndsAt DateTime? // only set when orgType="trial"
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   memberships             Membership[]
   environments            Environment[]
@@ -116,6 +118,8 @@ model Organization {
   usage                   Usage[]
   conversations           Conversation[]
   tokenLedger             TokenCostLedger[]
+
+  @@index([orgType, status])
 }
 
 model Membership {
@@ -624,7 +628,11 @@ model PageView {
   utmCampaign String?
   utmContent  String?
   country     String?
+  region      String?  // state / province
   city        String?
+  lat         Float?   // latitude
+  lng         Float?   // longitude
+  ip          String?  // visitor IP (hashed or raw, for spam detection)
   device      String? // desktop | mobile | tablet
   browser     String?
   os          String?
@@ -637,6 +645,7 @@ model PageView {
   @@index([sessionId])
   @@index([utmSource, createdAt])
   @@index([abVariant, createdAt])
+  @@index([country, createdAt])
 }
 
 model MarketingEvent {

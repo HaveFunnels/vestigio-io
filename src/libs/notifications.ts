@@ -6,6 +6,14 @@ import {
 	sendBrevoWhatsApp,
 } from "@/libs/brevo";
 import { sendEmail as sendNodemailerEmail } from "@/libs/email";
+import {
+	isMetaWhatsAppConfigured,
+	sendWhatsAppTemplate,
+} from "@/libs/whatsapp-meta";
+import {
+	getTemplateForEvent,
+	localeToWhatsAppLanguage,
+} from "@/libs/whatsapp-templates";
 
 // ──────────────────────────────────────────────
 // Notifications service — channel-aware fan-out
@@ -33,7 +41,17 @@ interface BaseNotification {
 	subject: string; // used for email subject + log
 	bodyHtml: string; // for email
 	bodyText?: string; // short message for SMS / WhatsApp / email plaintext
-	whatsappTemplateId?: number; // if absent, WhatsApp is skipped
+	/**
+	 * Ordered values that fill {{1}}, {{2}}, {{3}} placeholders in the Meta
+	 * WhatsApp template for this event. If absent, WhatsApp is skipped.
+	 * The template name itself is resolved from NotificationEvent via
+	 * `whatsapp-templates.ts`.
+	 */
+	whatsappBodyParams?: string[];
+	/** Optional param for the template's URL button dynamic portion */
+	whatsappButtonParam?: string;
+	/** Legacy Brevo fields — only used if Meta WhatsApp is not configured */
+	whatsappTemplateId?: number;
 	whatsappParams?: Record<string, string>;
 	tag?: string;
 }
@@ -119,18 +137,19 @@ export async function notifyUser(payload: UserNotification): Promise<NotifyResul
 		result.sms = r;
 	}
 
-	// WhatsApp
-	if (
-		prefs.whatsappEnabled &&
-		user.phone &&
-		payload.whatsappTemplateId
-	) {
+	// WhatsApp — prefer Meta Cloud API (Coexistence), fall back to Brevo legacy
+	if (prefs.whatsappEnabled && user.phone) {
 		const r = await sendOneWhatsApp({
 			to: user.phone,
-			templateId: payload.whatsappTemplateId,
-			params: payload.whatsappParams,
+			userLocale: user.locale,
+			bodyParams: payload.whatsappBodyParams,
+			buttonParam: payload.whatsappButtonParam,
+			// Legacy Brevo fallback inputs
+			brevoTemplateId: payload.whatsappTemplateId,
+			brevoParams: payload.whatsappParams,
 			userId: user.id,
 			event: payload.event,
+			tag: payload.tag || payload.event,
 		});
 		result.whatsapp = r;
 	}
@@ -318,30 +337,71 @@ async function sendOneSms(args: {
 
 async function sendOneWhatsApp(args: {
 	to: string;
-	templateId: number;
-	params?: Record<string, string>;
+	userLocale?: string | null;
+	bodyParams?: string[];
+	buttonParam?: string;
+	brevoTemplateId?: number;
+	brevoParams?: Record<string, string>;
 	userId?: string;
 	event: NotificationEvent;
+	tag?: string;
 }): Promise<{ sent: boolean; error?: string }> {
-	if (!isBrevoConfigured()) {
-		return { sent: false, error: "Brevo not configured" };
+	// Prefer Meta Cloud API (Coexistence) if configured and a template exists
+	if (isMetaWhatsAppConfigured()) {
+		const language = localeToWhatsAppLanguage(args.userLocale);
+		const template = getTemplateForEvent(args.event, language);
+
+		if (!template) {
+			// No template registered for this event — skip silently rather than fail
+			return { sent: false, error: "no template for event" };
+		}
+		if (!args.bodyParams) {
+			return { sent: false, error: "missing whatsappBodyParams for template" };
+		}
+
+		const res = await sendWhatsAppTemplate({
+			to: args.to,
+			templateName: template.name,
+			language,
+			bodyParams: args.bodyParams,
+			buttonParam: args.buttonParam,
+		});
+
+		await logNotification({
+			userId: args.userId,
+			channel: "whatsapp",
+			event: args.event,
+			recipient: args.to,
+			subject: template.name,
+			status: res.ok ? "sent" : "failed",
+			provider: "meta_whatsapp",
+			providerId: res.wamid,
+			errorMsg: res.error,
+		});
+		return { sent: res.ok, error: res.error };
 	}
-	const res = await sendBrevoWhatsApp({
-		to: args.to,
-		templateId: args.templateId,
-		params: args.params,
-	});
-	await logNotification({
-		userId: args.userId,
-		channel: "whatsapp",
-		event: args.event,
-		recipient: args.to,
-		status: res.ok ? "sent" : "failed",
-		provider: "brevo",
-		providerId: res.messageId,
-		errorMsg: res.error,
-	});
-	return { sent: res.ok, error: res.error };
+
+	// Legacy Brevo fallback — only runs if Brevo WA is configured AND no Meta
+	if (isBrevoConfigured() && args.brevoTemplateId) {
+		const res = await sendBrevoWhatsApp({
+			to: args.to,
+			templateId: args.brevoTemplateId,
+			params: args.brevoParams,
+		});
+		await logNotification({
+			userId: args.userId,
+			channel: "whatsapp",
+			event: args.event,
+			recipient: args.to,
+			status: res.ok ? "sent" : "failed",
+			provider: "brevo",
+			providerId: res.messageId,
+			errorMsg: res.error,
+		});
+		return { sent: res.ok, error: res.error };
+	}
+
+	return { sent: false, error: "no whatsapp provider configured" };
 }
 
 async function logNotification(data: {

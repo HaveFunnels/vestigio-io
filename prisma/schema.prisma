@@ -124,14 +124,43 @@ model NotificationLog {
   event       String // page_down | incident | regression | newsletter | magic_link | etc.
   recipient   String // email or phone
   subject     String?
-  status      String // sent | failed | skipped
-  provider    String   @default("brevo") // brevo | nodemailer
-  providerId  String? // provider's message id
+  status      String // sent | failed | skipped | delivered | read
+  provider    String   @default("brevo") // brevo | nodemailer | meta_whatsapp
+  providerId  String? // provider's message id (wamid for meta)
   errorMsg    String?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@index([userId, createdAt])
   @@index([event, createdAt])
+  @@index([providerId])
+}
+
+// ──────────────────────────────────────────────
+// Inbound messages — WhatsApp/SMS/email replies received from users.
+// Used so customers can reply to alerts and the reply turns into a
+// support ticket or conversation in the admin.
+// ──────────────────────────────────────────────
+
+model InboundMessage {
+  id              String   @id @default(cuid())
+  channel         String // whatsapp | sms | email
+  provider        String // meta_whatsapp | brevo | ...
+  providerMsgId   String?  @unique // wamid / message-id (dedupe)
+  fromAddress     String // phone (E.164) or email
+  fromName        String?
+  userId          String? // matched user (by phone) if known
+  body            String   @db.Text
+  mediaUrl        String?
+  mediaMimeType   String?
+  repliedToTag    String? // the outbound notification tag this replies to
+  ticketId        String? // if a support ticket was auto-created
+  handled         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([fromAddress, createdAt])
+  @@index([userId, createdAt])
+  @@index([handled, createdAt])
 }
 
 model VerificationToken {

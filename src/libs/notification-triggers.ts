@@ -70,6 +70,13 @@ export async function triggerIncidentNotifications(args: {
 		bodyHtml: html,
 		bodyText: summary,
 		tag: dedupeKey,
+		// Meta WhatsApp template params for "vestigio_incident":
+		// {{1}} = domain, {{2}} = headline, {{3}} = root_cause_summary
+		whatsappBodyParams: [
+			args.domain,
+			truncate(headline.title, 60),
+			truncate(headline.root_cause || `${critical.length} issue${critical.length > 1 ? "s" : ""} detected`, 120),
+		],
 	});
 }
 
@@ -116,6 +123,13 @@ export async function triggerRegressionNotifications(args: {
 		bodyHtml: html,
 		bodyText: summary,
 		tag: dedupeKey,
+		// Meta WhatsApp template params for "vestigio_regression":
+		// {{1}} = domain, {{2}} = headline, {{3}} = count
+		whatsappBodyParams: [
+			args.domain,
+			truncate(headline.title, 60),
+			String(args.regressions.length),
+		],
 	});
 }
 
@@ -155,6 +169,12 @@ export async function triggerPageDownNotification(args: {
 		bodyHtml: html,
 		bodyText: summary,
 		tag: dedupeKey,
+		// Meta WhatsApp template params for "vestigio_page_down":
+		// {{1}} = page_url, {{2}} = status_code
+		whatsappBodyParams: [
+			truncate(args.pageUrl, 80),
+			args.statusCode ? String(args.statusCode) : "unknown",
+		],
 	});
 }
 
@@ -235,4 +255,15 @@ function escapeHtml(s: string): string {
 		.replace(/>/g, "&gt;")
 		.replace(/"/g, "&quot;")
 		.replace(/'/g, "&#39;");
+}
+
+/**
+ * Meta WhatsApp rejects template params that contain newlines or exceed
+ * the template's allowed length. Truncate + collapse whitespace to keep
+ * sends from failing with error 131008 (template param mismatch).
+ */
+function truncate(s: string, max: number): string {
+	const clean = s.replace(/\s+/g, " ").trim();
+	if (clean.length <= max) return clean;
+	return clean.slice(0, max - 1) + "…";
 }

@@ -35,11 +35,21 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 	}
 
 	try {
+		// Normalise phone: empty string clears it; otherwise ensure leading +
+		const data: any = { ...res.data };
+		if (data.phone !== undefined) {
+			if (data.phone === "") {
+				data.phone = null;
+			} else if (!data.phone.startsWith("+")) {
+				data.phone = `+${data.phone}`;
+			}
+		}
+
 		const user = await prisma.user.update({
 			where: {
 				email: session?.user?.email as string,
 			},
-			data: { ...res.data },
+			data,
 		});
 
 		revalidatePath("/user");

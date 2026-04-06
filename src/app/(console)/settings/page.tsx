@@ -32,6 +32,15 @@ export default function SettingsPage() {
         <LanguageSelector />
       </section>
 
+      {/* Notifications */}
+      <section className="mb-10">
+        <h2 className="mb-4 text-lg font-semibold text-content">
+          {t("notifications.title")}
+        </h2>
+        <p className="mb-4 text-sm text-content-muted">{t("notifications.description")}</p>
+        <NotificationSettings />
+      </section>
+
       {/* Domains — empty state until DB connected */}
       <section className="mb-10">
         <h2 className="mb-4 text-lg font-semibold text-content">
@@ -65,9 +74,243 @@ export default function SettingsPage() {
   );
 }
 
-// ────────────���──────────────────────��──────────
+// ──────────────────────────────────────────────
+// Notification Settings — phone + channel + per-event toggles
+// ──────────────────────────────────────────────
+
+interface NotifPrefs {
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  whatsappEnabled: boolean;
+  alertOnPageDown: boolean;
+  alertOnIncident: boolean;
+  alertOnRegression: boolean;
+  alertOnImprovement: boolean;
+  newsletterSubscribed: boolean;
+  productUpdates: boolean;
+}
+
+const DEFAULT_PREFS: NotifPrefs = {
+  emailEnabled: true,
+  smsEnabled: false,
+  whatsappEnabled: false,
+  alertOnPageDown: true,
+  alertOnIncident: true,
+  alertOnRegression: true,
+  alertOnImprovement: false,
+  newsletterSubscribed: true,
+  productUpdates: true,
+};
+
+function NotificationSettings() {
+  const t = useTranslations("console.settings.notifications");
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user/notification-prefs")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setPhone(data.phone || "");
+          setPrefs({ ...DEFAULT_PREFS, ...(data.prefs || {}) });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  function isValidPhone(p: string): boolean {
+    if (!p) return true;
+    const cleaned = p.replace(/[\s\-()]/g, "");
+    return /^\+?[1-9]\d{6,14}$/.test(cleaned);
+  }
+
+  async function handleSavePhone() {
+    setPhoneError(null);
+    if (phone && !isValidPhone(phone)) {
+      setPhoneError(t("phone_invalid"));
+      return;
+    }
+    setSaving(true);
+    const cleaned = phone.replace(/[\s\-()]/g, "");
+    try {
+      await fetch("/api/user/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleaned }),
+      });
+      setSavedAt(Date.now());
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function togglePref<K extends keyof NotifPrefs>(key: K, value: boolean) {
+    const next = { ...prefs, [key]: value };
+    setPrefs(next);
+    setSaving(true);
+    try {
+      await fetch("/api/user/notification-prefs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [key]: value }),
+      });
+      setSavedAt(Date.now());
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="text-sm text-content-muted">{t("loading")}</div>;
+  }
+
+  const channelDisabled = (channel: "sms" | "whatsapp") => !phone && (prefs as any)[`${channel}Enabled`] === false;
+
+  return (
+    <div className="space-y-6">
+      {/* Phone */}
+      <div className="rounded-md border border-edge bg-surface-card p-5">
+        <label htmlFor="settings-phone" className="mb-1.5 block text-sm font-medium text-content">
+          {t("phone_label")}
+        </label>
+        <p className="mb-3 text-xs text-content-muted">{t("phone_help")}</p>
+        <div className="flex gap-2">
+          <input
+            id="settings-phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => { setPhone(e.target.value); setPhoneError(null); }}
+            placeholder="+5511999999999"
+            className={`flex-1 rounded-md border bg-surface-input px-4 py-2 text-sm text-content placeholder-content-faint outline-none focus:ring-1 ${
+              phoneError ? "border-red-600 focus:border-red-600 focus:ring-red-600" : "border-edge focus:border-accent focus:ring-accent"
+            }`}
+          />
+          <button
+            onClick={handleSavePhone}
+            disabled={saving}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+          >
+            {saving ? t("saving") : t("save")}
+          </button>
+        </div>
+        {phoneError && <p className="mt-1.5 text-xs text-red-400">{phoneError}</p>}
+      </div>
+
+      {/* Channels */}
+      <div className="rounded-md border border-edge bg-surface-card p-5">
+        <h3 className="mb-1 text-sm font-semibold text-content">{t("channels_title")}</h3>
+        <p className="mb-4 text-xs text-content-muted">{t("channels_help")}</p>
+        <div className="space-y-2">
+          <ToggleRow
+            label={t("channel_email")}
+            description={t("channel_email_desc")}
+            enabled={prefs.emailEnabled}
+            onChange={(v) => togglePref("emailEnabled", v)}
+          />
+          <ToggleRow
+            label={t("channel_sms")}
+            description={!phone ? t("channel_needs_phone") : t("channel_sms_desc")}
+            enabled={prefs.smsEnabled && !!phone}
+            disabled={!phone}
+            onChange={(v) => togglePref("smsEnabled", v)}
+          />
+          <ToggleRow
+            label={t("channel_whatsapp")}
+            description={!phone ? t("channel_needs_phone") : t("channel_whatsapp_desc")}
+            enabled={prefs.whatsappEnabled && !!phone}
+            disabled={!phone}
+            onChange={(v) => togglePref("whatsappEnabled", v)}
+          />
+        </div>
+      </div>
+
+      {/* Events */}
+      <div className="rounded-md border border-edge bg-surface-card p-5">
+        <h3 className="mb-1 text-sm font-semibold text-content">{t("events_title")}</h3>
+        <p className="mb-4 text-xs text-content-muted">{t("events_help")}</p>
+        <div className="space-y-2">
+          <ToggleRow
+            label={t("event_page_down")}
+            description={t("event_page_down_desc")}
+            enabled={prefs.alertOnPageDown}
+            onChange={(v) => togglePref("alertOnPageDown", v)}
+          />
+          <ToggleRow
+            label={t("event_incident")}
+            description={t("event_incident_desc")}
+            enabled={prefs.alertOnIncident}
+            onChange={(v) => togglePref("alertOnIncident", v)}
+          />
+          <ToggleRow
+            label={t("event_regression")}
+            description={t("event_regression_desc")}
+            enabled={prefs.alertOnRegression}
+            onChange={(v) => togglePref("alertOnRegression", v)}
+          />
+          <ToggleRow
+            label={t("event_improvement")}
+            description={t("event_improvement_desc")}
+            enabled={prefs.alertOnImprovement}
+            onChange={(v) => togglePref("alertOnImprovement", v)}
+          />
+          <ToggleRow
+            label={t("event_newsletter")}
+            description={t("event_newsletter_desc")}
+            enabled={prefs.newsletterSubscribed}
+            onChange={(v) => togglePref("newsletterSubscribed", v)}
+          />
+          <ToggleRow
+            label={t("event_product_updates")}
+            description={t("event_product_updates_desc")}
+            enabled={prefs.productUpdates}
+            onChange={(v) => togglePref("productUpdates", v)}
+          />
+        </div>
+      </div>
+
+      {savedAt && (
+        <p className="text-xs text-content-faint">{t("saved")}</p>
+      )}
+    </div>
+  );
+}
+
+function ToggleRow(props: {
+  label: string;
+  description: string;
+  enabled: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={props.disabled}
+      onClick={() => props.onChange(!props.enabled)}
+      className={`flex w-full items-center justify-between rounded-md border border-edge bg-surface-input px-4 py-3 text-left transition-colors hover:border-accent/40 ${
+        props.disabled ? "opacity-50 cursor-not-allowed" : ""
+      }`}
+    >
+      <div>
+        <div className="text-sm font-medium text-content">{props.label}</div>
+        <div className="text-xs text-content-muted">{props.description}</div>
+      </div>
+      <div className={`h-5 w-9 rounded-full p-0.5 transition-colors ${props.enabled ? "bg-accent" : "bg-zinc-700"}`}>
+        <div className={`h-4 w-4 rounded-full bg-white transition-transform ${props.enabled ? "translate-x-4" : ""}`} />
+      </div>
+    </button>
+  );
+}
+
+// ──────────────────────────────────────────────
 // Language Selector — inline dropdown for /app/settings
-// ──────────────���──────────────────���────────────
+// ──────────────────────────────────────────────
 
 function LanguageSelector() {
   const t = useTranslations("console.settings.language");

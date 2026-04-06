@@ -29,6 +29,11 @@ interface OnboardState {
   saasAuthMethod: string;
   saasMfaMode: string;
   saasSkipped: boolean;
+  // Notifications
+  phone: string; // E.164 e.g. +5511999999999
+  notifyEmail: boolean;
+  notifySms: boolean;
+  notifyWhatsapp: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,14 +123,14 @@ function parseRevenue(value: string): number | null {
 // ---------------------------------------------------------------------------
 // Step definitions: dynamic based on business type
 // ---------------------------------------------------------------------------
-type StepId = "org" | "domain" | "business" | "saas_setup" | "review" | "plan";
+type StepId = "org" | "domain" | "business" | "saas_setup" | "notifications" | "review" | "plan";
 
 function getSteps(businessType: BusinessType): StepId[] {
   const base: StepId[] = ["org", "domain", "business"];
   if (businessType === "saas") {
     base.push("saas_setup");
   }
-  base.push("review", "plan");
+  base.push("notifications", "review", "plan");
   return base;
 }
 
@@ -237,7 +242,19 @@ export default function OnboardPage() {
     saasAuthMethod: "unknown",
     saasMfaMode: "unknown",
     saasSkipped: false,
+    phone: "",
+    notifyEmail: true,
+    notifySms: false,
+    notifyWhatsapp: false,
   });
+
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  function isValidPhone(p: string): boolean {
+    if (!p) return true; // optional
+    const cleaned = p.replace(/[\s\-()]/g, "");
+    return /^\+?[1-9]\d{6,14}$/.test(cleaned);
+  }
 
   const steps = useMemo(() => getSteps(form.businessType), [form.businessType]);
   const totalSteps = steps.length;
@@ -260,6 +277,37 @@ export default function OnboardPage() {
 
       if (!result.ok) {
         setDomainWarning(result.error || "Domain may not be reachable. You can continue, but the audit may fail.");
+      }
+    }
+
+    // Validate phone format on notifications step (allow empty)
+    if (currentStep === "notifications") {
+      setPhoneError(null);
+      if (form.phone && !isValidPhone(form.phone)) {
+        setPhoneError("Please enter a valid phone in international format (e.g. +5511999999999)");
+        return;
+      }
+      // Persist phone + prefs to user (best-effort, don't block)
+      const cleanedPhone = form.phone ? form.phone.replace(/[\s\-()]/g, "") : "";
+      try {
+        await Promise.all([
+          fetch("/api/user/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone: cleanedPhone }),
+          }),
+          fetch("/api/user/notification-prefs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              emailEnabled: form.notifyEmail,
+              smsEnabled: form.notifySms && !!cleanedPhone,
+              whatsappEnabled: form.notifyWhatsapp && !!cleanedPhone,
+            }),
+          }),
+        ]);
+      } catch {
+        // best-effort — user can configure later in Settings
       }
     }
     setStepIndex((s) => Math.min(s + 1, totalSteps - 1));
@@ -352,6 +400,7 @@ export default function OnboardPage() {
     (currentStep === "domain" && form.domain.length > 0) ||
     currentStep === "business" ||
     currentStep === "saas_setup" ||
+    currentStep === "notifications" ||
     currentStep === "review";
 
   // Show activation loading screen while waiting for webhook
@@ -585,6 +634,74 @@ export default function OnboardPage() {
           </section>
         )}
 
+        {/* ── Step: Notifications (phone + channel prefs) ── */}
+        {currentStep === "notifications" && (
+          <section className="space-y-6">
+            <div>
+              <h1 className="text-xl font-semibold text-zinc-100">Stay informed</h1>
+              <p className="mt-1 text-sm text-zinc-500">
+                Get alerted when one of your pages goes down, when an incident is detected,
+                or when a regression appears. You can change these anytime in Settings.
+              </p>
+            </div>
+            <div>
+              <label htmlFor="phone" className="mb-1.5 block text-sm font-medium text-zinc-300">
+                Phone number <span className="text-zinc-500">(optional)</span>
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => { update("phone", e.target.value); setPhoneError(null); }}
+                placeholder="+5511999999999"
+                className={`w-full rounded-md border bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:ring-1 ${
+                  phoneError ? "border-red-600 focus:border-red-600 focus:ring-red-600" : "border-zinc-700 focus:border-emerald-600 focus:ring-emerald-600"
+                }`}
+              />
+              {phoneError && (
+                <p className="mt-1.5 text-xs text-red-400">{phoneError}</p>
+              )}
+              <p className="mt-1.5 text-xs text-zinc-500">
+                International format. Required only if you enable SMS or WhatsApp.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-zinc-300">Notify me by</label>
+              <div className="space-y-2">
+                {[
+                  { key: "notifyEmail", label: "Email", desc: "Detailed alerts with context", needsPhone: false },
+                  { key: "notifySms", label: "SMS", desc: "Short critical alerts only", needsPhone: true },
+                  { key: "notifyWhatsapp", label: "WhatsApp", desc: "Conversational alerts", needsPhone: true },
+                ].map((channel) => {
+                  const enabled = form[channel.key as "notifyEmail"];
+                  const disabled = channel.needsPhone && !form.phone;
+                  return (
+                    <button
+                      key={channel.key}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => update(channel.key as "notifyEmail", !enabled)}
+                      className={`flex w-full items-center justify-between rounded-md border px-4 py-3 text-left transition-colors ${
+                        enabled && !disabled
+                          ? "border-emerald-600 bg-emerald-500/10"
+                          : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"
+                      } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                    >
+                      <div>
+                        <div className="text-sm font-medium text-zinc-100">{channel.label}</div>
+                        <div className="text-xs text-zinc-500">{channel.desc}{disabled ? " — add a phone number first" : ""}</div>
+                      </div>
+                      <div className={`h-5 w-9 rounded-full p-0.5 transition-colors ${enabled && !disabled ? "bg-emerald-500" : "bg-zinc-700"}`}>
+                        <div className={`h-4 w-4 rounded-full bg-white transition-transform ${enabled && !disabled ? "translate-x-4" : ""}`} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* ── Step: Review ── */}
         {currentStep === "review" && (
           <section className="space-y-6">
@@ -612,6 +729,14 @@ export default function OnboardPage() {
                           : "Not configured — configure later in Data Sources",
                     }]
                   : []),
+                {
+                  label: "Notifications",
+                  value: [
+                    form.notifyEmail && "Email",
+                    form.notifySms && form.phone && "SMS",
+                    form.notifyWhatsapp && form.phone && "WhatsApp",
+                  ].filter(Boolean).join(", ") || "Email only",
+                },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2">
                   <span className="text-xs text-zinc-500">{item.label}</span>

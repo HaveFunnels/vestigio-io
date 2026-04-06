@@ -1,8 +1,8 @@
 import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
-import { getSmtpTransport } from "@/libs/email";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { getIp } from "@/libs/get-ip";
+import { notifyUser } from "@/libs/notifications";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -62,21 +62,24 @@ export const POST = withErrorTracking(async function POST(
       ? { plan: planValue, status: "active" }
       : { status: "active" as const };
 
-    // Get unique user emails via memberships in matching organisations
+    // Get unique users via memberships in matching organisations.
+    // Deduplicate by user id (the same user may belong to multiple orgs).
     const memberships = await prisma.membership.findMany({
       where: { organization: orgWhere },
-      select: { user: { select: { email: true } } },
+      select: { user: { select: { id: true, email: true } } },
     });
 
-    const recipientEmails = [
-      ...new Set(
-        memberships
-          .map((m) => m.user.email)
-          .filter((e): e is string => Boolean(e)),
-      ),
-    ];
+    const seenUserIds = new Set<string>();
+    const recipientUsers = memberships
+      .map((m) => m.user)
+      .filter((u): u is { id: string; email: string } => {
+        if (!u?.email) return false;
+        if (seenUserIds.has(u.id)) return false;
+        seenUserIds.add(u.id);
+        return true;
+      });
 
-    const recipientCount = recipientEmails.length;
+    const recipientCount = recipientUsers.length;
 
     if (recipientCount === 0) {
       // Nothing to send — mark as sent with 0 recipients
@@ -88,25 +91,29 @@ export const POST = withErrorTracking(async function POST(
       return NextResponse.json({ newsletter: formatNewsletter(updated) });
     }
 
-    // ── Send emails in batches ──────────────────────────────────
+    // ── Send via unified notifications service (respects per-user opt-out) ──
+    let sent = 0;
+    let failed = 0;
     try {
-      const { transporter, from } = await getSmtpTransport();
-
-      for (let i = 0; i < recipientEmails.length; i += BATCH_SIZE) {
-        const batch = recipientEmails.slice(i, i + BATCH_SIZE);
-        await Promise.all(
-          batch.map((email) =>
-            transporter.sendMail({
-              from,
-              to: email,
+      for (let i = 0; i < recipientUsers.length; i += BATCH_SIZE) {
+        const batch = recipientUsers.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+          batch.map((u) =>
+            notifyUser({
+              userId: u.id,
+              event: "newsletter",
               subject: newsletter.subject,
-              html: newsletter.content,
+              bodyHtml: newsletter.content,
+              tag: `newsletter:${newsletter.id}`,
             }),
           ),
         );
+        for (const r of results) {
+          if (r.email.sent) sent++;
+          else if (r.email.error) failed++;
+        }
       }
     } catch (sendError: unknown) {
-      // Sending failed — mark newsletter as failed with error info
       const errorMessage =
         sendError instanceof Error ? sendError.message : String(sendError);
 
@@ -116,7 +123,7 @@ export const POST = withErrorTracking(async function POST(
       });
 
       return NextResponse.json(
-        { message: `Email delivery failed: ${errorMessage}` },
+        { message: `Newsletter delivery failed: ${errorMessage}` },
         { status: 502 },
       );
     }
@@ -126,7 +133,7 @@ export const POST = withErrorTracking(async function POST(
       where: { id },
       data: {
         status: "sent",
-        recipientCount,
+        recipientCount: sent,
         sentAt: new Date(),
       },
     });
@@ -140,7 +147,7 @@ export const POST = withErrorTracking(async function POST(
       targetType: "newsletter",
       targetId: updated.id,
       targetName: updated.subject,
-      metadata: { audience: updated.audience, recipientCount },
+      metadata: { audience: updated.audience, recipientCount: sent, failed },
       ipAddress: ip ?? undefined,
     });
 

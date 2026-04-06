@@ -12,6 +12,7 @@ import type { AnalysisJobRecord } from "../../../../../apps/platform/mcp-persist
 import { trackError } from "@/libs/error-tracker";
 import { PrismaEvidenceStore } from "../../../../../packages/evidence";
 import { prisma } from "@/libs/prismaDb";
+import { triggerIncidentNotifications, triggerRegressionNotifications } from "@/libs/notification-triggers";
 
 // ──────────────────────────────────────────────
 // Analysis Stream — SSE Endpoint (resilient)
@@ -186,6 +187,22 @@ export async function GET(request: Request) {
           actions: projections.actions,
           workspaces: projections.workspaces,
         });
+
+        // Fire-and-forget: notify org members of any critical findings or regressions
+        // (respects per-user notification preferences via Brevo)
+        const regressionFindings = projections.findings.filter(f => f.change_class === 'regression');
+        Promise.all([
+          triggerIncidentNotifications({
+            userId: user.id,
+            domain,
+            findings: projections.findings as any,
+          }),
+          triggerRegressionNotifications({
+            userId: user.id,
+            domain,
+            regressions: regressionFindings as any,
+          }),
+        ]).catch(() => {});
 
         send('score', {
           total_findings: projections.findings.length,

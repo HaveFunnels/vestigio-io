@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ReactFlow, Background, Controls, MiniMap,
   type Node, type Edge, type NodeTypes, Handle, Position,
@@ -90,10 +90,48 @@ function CategoryNode({ data }: { data: any }) {
   );
 }
 
+// ── User Journey node types ──
+
+const journeyPageTypeStyles: Record<string, { border: string; bg: string; text: string; icon: string }> = {
+  homepage: { border: "border-emerald-500/50", bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", icon: "Homepage" },
+  landing: { border: "border-emerald-500/50", bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", icon: "Landing" },
+  product: { border: "border-blue-500/50", bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", icon: "Product" },
+  category: { border: "border-blue-500/50", bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", icon: "Category" },
+  pricing: { border: "border-violet-500/50", bg: "bg-violet-500/10", text: "text-violet-600 dark:text-violet-400", icon: "Pricing" },
+  cart: { border: "border-amber-500/50", bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", icon: "Cart" },
+  checkout: { border: "border-red-500/50", bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", icon: "Checkout" },
+  thank_you: { border: "border-emerald-500/50", bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", icon: "Confirmation" },
+};
+
+function JourneyCommercialNode({ data }: { data: any }) {
+  const style = journeyPageTypeStyles[data.pageType] || { border: "border-edge", bg: "bg-surface-inset/50", text: "text-content-muted", icon: "Page" };
+  return (
+    <div className={`rounded-lg border-2 px-4 py-3 min-w-[180px] max-w-[220px] ${style.border} ${style.bg}`}>
+      <Handle type="target" position={Position.Left} className="!bg-content-muted" />
+      <div className={`text-[10px] font-semibold uppercase tracking-wider ${style.text}`}>{style.icon}</div>
+      <div className="mt-1 text-sm font-medium text-content truncate" title={data.label}>{data.label}</div>
+      {data.path && <div className="mt-0.5 text-[10px] font-mono text-content-faint truncate">{data.path}</div>}
+      <Handle type="source" position={Position.Right} className="!bg-content-muted" />
+    </div>
+  );
+}
+
+function JourneySupportNode({ data }: { data: any }) {
+  return (
+    <div className="rounded-md border border-dashed border-edge bg-surface-card/50 px-3 py-2 min-w-[160px] max-w-[200px]">
+      <Handle type="target" position={Position.Left} className="!bg-content-faint" />
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">{data.pageType || "Page"}</div>
+      <div className="mt-0.5 text-xs text-content-muted truncate" title={data.label}>{data.label}</div>
+      <Handle type="source" position={Position.Right} className="!bg-content-faint" />
+    </div>
+  );
+}
+
 const nodeTypes: NodeTypes = {
   root_cause: RootCauseNode, finding: FindingNode, action: ActionNode,
   policy: CategoryNode, support: CategoryNode, trust: CategoryNode,
   measurement: CategoryNode, checkout: CategoryNode,
+  journey_commercial: JourneyCommercialNode, journey_support: JourneySupportNode,
 };
 
 const edgeStyles: Record<string, any> = {
@@ -424,9 +462,34 @@ export default function MapsPage() {
 function MapsContent({ maps }: { maps: MapDefinition[] }) {
   const t = useTranslations("console.maps");
   const mcpData = useMcpData();
-  const [activeMap, setActiveMap] = useState<MapDefinition>(maps[0]);
+  const [journeyMap, setJourneyMap] = useState<MapDefinition | null>(null);
   const [selectedNode, setSelectedNode] = useState<MapNode | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState>({ visible: false, x: 0, y: 0, node: null });
+
+  // Fetch User Journey map on mount
+  useEffect(() => {
+    fetch("/api/maps/user-journey")
+      .then((r) => r.json())
+      .then((data) => { if (data.map) setJourneyMap(data.map as MapDefinition); })
+      .catch(() => {});
+  }, []);
+
+  // Combine: User Journey first, then engine maps
+  const allMaps = useMemo(() => {
+    const result: MapDefinition[] = [];
+    if (journeyMap) result.push(journeyMap);
+    result.push(...maps);
+    return result;
+  }, [journeyMap, maps]);
+
+  const [activeMap, setActiveMap] = useState<MapDefinition>(maps[0]);
+
+  // When journey loads, make it the default active
+  useEffect(() => {
+    if (journeyMap && activeMap === maps[0]) {
+      setActiveMap(journeyMap);
+    }
+  }, [journeyMap]);
 
   // Build finding lookup: node ID "finding_{inference_key}" → FindingProjection
   const findingLookup = useMemo(() => {
@@ -519,7 +582,7 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
       {/* Map selector */}
       <div className="border-b border-edge px-6 py-2">
         <div className="flex gap-2">
-          {maps.map((m) => (
+          {allMaps.map((m) => (
             <button key={m.id} onClick={() => { setActiveMap(m); setSelectedNode(null); }}
               className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${activeMap.id === m.id ? "border-emerald-600/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "border-edge text-content-muted hover:border-edge hover:text-content-secondary"}`}>
               {m.name}

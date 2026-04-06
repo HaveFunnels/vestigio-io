@@ -204,6 +204,22 @@ export async function notifyOrganization(
 // Internal sender helpers — handle provider fallback + logging
 // ──────────────────────────────────────────────
 
+/**
+ * Route event → sender profile.
+ * Transactional flows the user should not reply to go via no-reply@,
+ * everything else (alerts, newsletter, incidents) goes via notifications@.
+ */
+function senderProfileForEvent(event: NotificationEvent): "notifications" | "noreply" {
+	switch (event) {
+		case "magic_link":
+		case "password_reset":
+		case "billing":
+			return "noreply";
+		default:
+			return "notifications";
+	}
+}
+
 async function sendOneEmail(args: {
 	to: string;
 	toName?: string;
@@ -223,6 +239,7 @@ async function sendOneEmail(args: {
 			html: args.html,
 			text: args.text,
 			tags: args.tag ? [args.tag] : undefined,
+			senderProfile: senderProfileForEvent(args.event),
 		});
 		await logNotification({
 			userId: args.userId,

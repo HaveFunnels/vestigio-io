@@ -88,14 +88,34 @@ export interface BrevoEmailPayload {
 	text?: string;
 	replyTo?: string;
 	tags?: string[];
+	/**
+	 * Sender profile:
+	 * - "notifications" (default): notifications@vestigio.io — alerts, newsletters, incident reports
+	 * - "noreply": no-reply@vestigio.io — magic links, password resets, billing receipts
+	 *
+	 * The actual email address is read from BREVO_SENDER_EMAIL / BREVO_NOREPLY_EMAIL
+	 * so each can be changed independently without a code change.
+	 */
+	senderProfile?: "notifications" | "noreply";
+}
+
+function resolveSender(profile?: "notifications" | "noreply") {
+	const name = process.env.BREVO_SENDER_NAME || "Vestigio";
+	if (profile === "noreply") {
+		return {
+			name,
+			email: process.env.BREVO_NOREPLY_EMAIL || process.env.BREVO_SENDER_EMAIL || "no-reply@vestigio.io",
+		};
+	}
+	return {
+		name,
+		email: process.env.BREVO_SENDER_EMAIL || "notifications@vestigio.io",
+	};
 }
 
 export async function sendBrevoEmail(payload: BrevoEmailPayload): Promise<BrevoResponse> {
 	return brevoFetch("/smtp/email", {
-		sender: {
-			name: process.env.BREVO_SENDER_NAME || "Vestigio",
-			email: process.env.BREVO_SENDER_EMAIL || "notifications@vestigio.io",
-		},
+		sender: resolveSender(payload.senderProfile),
 		to: [{ email: payload.to, name: payload.toName }],
 		subject: payload.subject,
 		htmlContent: payload.html,

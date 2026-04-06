@@ -222,16 +222,16 @@ const MiniCalculator = () => {
   const inputClass = "w-full rounded-xl border border-zinc-700 bg-zinc-900/50 px-5 py-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-colors focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30";
 
   return (
-    <section className="relative z-1 overflow-hidden bg-[#090911] border-t border-zinc-800 py-20 lg:py-28">
+    <section className="relative z-1 overflow-hidden bg-[#090911] border-t border-zinc-800 py-16 sm:py-20 lg:py-28">
       <div className="mx-auto w-full max-w-[800px] px-4 sm:px-8 xl:px-0">
 
         {/* ===================== INPUT ===================== */}
         {state === "input" && (
           <div className="text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight text-white lg:text-4xl xl:text-5xl">
+            <h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl xl:text-5xl">
               {t("title")}
             </h2>
-            <p className="mb-10 text-base text-gray-400 max-w-[540px] mx-auto">
+            <p className="mb-8 text-sm text-gray-400 max-w-[540px] mx-auto sm:mb-10 sm:text-base">
               {t("subtitle")}
             </p>
 
@@ -293,13 +293,13 @@ const MiniCalculator = () => {
         {/* ===================== LOADING ===================== */}
         {state === "loading" && (
           <div className="text-center">
-            <h2 className="mb-2 text-2xl font-bold tracking-tight text-white lg:text-3xl">
-              {t("analyzing")} {domain}
+            <h2 className="mb-2 text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">
+              {t("analyzing")} <span className="block break-all sm:inline">{domain}</span>
             </h2>
-            <p className="mb-10 text-sm text-zinc-500">{t("analyzing_sub")}</p>
+            <p className="mb-8 text-sm text-zinc-500 sm:mb-10">{t("analyzing_sub")}</p>
 
             {/* Progress bar */}
-            <div className="mx-auto max-w-[480px] mb-6">
+            <div className="mx-auto w-full max-w-[480px] mb-6">
               <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-800">
                 <div
                   className="h-full rounded-full bg-emerald-500"
@@ -335,18 +335,19 @@ const MiniCalculator = () => {
         {/* ===================== RESULTS ===================== */}
         {state === "results" && (
           <div>
-            <div className="text-center mb-10">
+            <div className="text-center mb-8 sm:mb-10">
               <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 {t("scan_complete")}
               </p>
-              <h2 className="text-2xl font-bold tracking-tight text-white lg:text-3xl">
+              <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">
                 {t("results_for")}{" "}
-                <span className="text-emerald-400">{domain}</span>
+                <span className="break-all text-emerald-400">{domain}</span>
               </h2>
             </div>
 
             {/* Findings */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden mb-4">
+              {/* Desktop column headers */}
               <div className="hidden sm:grid grid-cols-[100px_1fr_200px] gap-4 px-5 py-3 border-b border-zinc-800 text-xs font-mono uppercase tracking-wider text-zinc-500">
                 <span>{t("col_severity")}</span>
                 <span>{t("col_finding")}</span>
@@ -358,19 +359,23 @@ const MiniCalculator = () => {
                 return (
                   <div
                     key={finding.key}
-                    className={`sm:grid sm:grid-cols-[100px_1fr_200px] gap-4 px-5 py-4 items-center ${
+                    className={`px-4 py-4 sm:grid sm:grid-cols-[100px_1fr_200px] sm:gap-4 sm:px-5 sm:items-center ${
                       i < selectedFindings.length - 1 ? "border-b border-zinc-800/60" : ""
                     }`}
                   >
-                    <div className="mb-2 sm:mb-0">
+                    {/* Mobile: severity badge + impact on same row */}
+                    <div className="mb-2 flex items-center justify-between sm:mb-0 sm:block">
                       <span className="inline-block rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide bg-red-500/15 text-red-400 border border-red-500/30">
                         CRITICAL
                       </span>
+                      <span className="text-sm font-mono text-emerald-400 sm:hidden">
+                        {formatCurrency(impMin)}–{formatCurrency(impMax)}/mo
+                      </span>
                     </div>
-                    <p className="text-sm text-zinc-200 mb-1 sm:mb-0">
+                    <p className="text-sm leading-snug text-zinc-200 sm:mb-0">
                       {t(finding.key)}
                     </p>
-                    <p className="text-sm font-mono text-emerald-400 sm:text-right">
+                    <p className="hidden text-sm font-mono text-emerald-400 sm:block sm:text-right">
                       {formatCurrency(impMin)}–{formatCurrency(impMax)}/mo
                     </p>
                   </div>
@@ -384,26 +389,26 @@ const MiniCalculator = () => {
             </p>
 
             {/* Total */}
-            <div className="text-center mb-12">
+            <div className="text-center mb-10 sm:mb-12">
               <p className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 {t("total_impact")}
               </p>
-              <p className="text-4xl font-bold text-white lg:text-5xl">
+              <p className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
                 <span className="text-emerald-400">
                   {formatCurrency(totalMin)}–{formatCurrency(totalMax)}
                 </span>
-                <span className="text-zinc-500 text-2xl lg:text-3xl">/mo</span>
+                <span className="text-zinc-500 text-xl sm:text-2xl lg:text-3xl">/mo</span>
               </p>
             </div>
 
             {/* CTA */}
             <div className="text-center">
-              <p className="mb-6 text-base text-zinc-300">{t("cta_question")}</p>
-              <div className="flex items-center justify-center gap-4 mb-6">
-                <Link href="/auth/signup" className="rounded-[1rem] bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-gray-100">
+              <p className="mb-6 text-sm text-zinc-300 sm:text-base">{t("cta_question")}</p>
+              <div className="flex flex-col items-stretch justify-center gap-3 mb-6 sm:flex-row sm:items-center sm:gap-4">
+                <Link href="/auth/signup" className="rounded-[1rem] bg-white px-7 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-emerald-400">
                   {t("cta_signup")}
                 </Link>
-                <Link href="/pricing" className="rounded-[1rem] border border-white/20 px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5">
+                <Link href="/pricing" className="rounded-[1rem] border border-white/20 px-7 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-white/30">
                   {t("cta_pricing")}
                 </Link>
               </div>

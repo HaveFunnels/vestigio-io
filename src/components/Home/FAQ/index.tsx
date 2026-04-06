@@ -33,13 +33,13 @@ const FAQ = () => {
 	};
 
 	return (
-		<section id="faq" className='overflow-hidden border-t border-white/5 bg-[#090911] py-20 lg:py-28'>
+		<section id="faq" className='overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28'>
 			{/* Section header */}
-			<div className='mx-auto mb-12 max-w-[600px] px-4 text-center'>
-				<h2 className='mb-4 text-3xl font-bold tracking-tight text-white lg:text-4xl'>
+			<div className='mx-auto mb-10 max-w-[600px] px-4 text-center sm:mb-12'>
+				<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl'>
 					Frequently asked questions
 				</h2>
-				<p className='text-base text-gray-400'>
+				<p className='text-sm text-gray-400 sm:text-base'>
 					Everything you need to know about Vestigio.
 				</p>
 			</div>
@@ -53,11 +53,11 @@ const FAQ = () => {
 						>
 							<button
 								onClick={() => handleFaqToggle(i)}
-								className='flex w-full items-center justify-between px-6 py-5 text-left text-sm font-medium text-white'
+								className='flex w-full items-center justify-between gap-4 px-4 py-4 text-left text-sm font-medium text-white sm:px-6 sm:py-5'
 							>
 								{question}
 								<span
-									className={`shrink-0 text-gray-500 transition-transform duration-200 ${activeFaq === i ? "rotate-180" : ""}`}
+									className={`ml-2 shrink-0 text-gray-500 transition-transform duration-200 ${activeFaq === i ? "rotate-180" : ""}`}
 								>
 									<svg
 										width='20'
@@ -83,7 +83,7 @@ const FAQ = () => {
 								}}
 							>
 								<div className='overflow-hidden'>
-									<p className='border-t border-white/5 px-6 py-5 text-sm leading-relaxed text-gray-400'>
+									<p className='border-t border-white/5 px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>
 										{answer}
 									</p>
 								</div>

@@ -20,23 +20,23 @@ const testimonials = [
 
 const Testimonials = () => {
 	return (
-		<section className='relative z-1 overflow-hidden border-t border-white/5 bg-[#0d0d15] py-20 lg:py-28'>
+		<section className='relative z-1 overflow-hidden border-t border-white/5 bg-[#0d0d15] py-16 sm:py-20 lg:py-28'>
 			<div className='mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>
 				{/* Section header */}
-				<div className='mx-auto mb-16 max-w-[600px] text-center'>
-					<h2 className='mb-4 text-3xl font-bold tracking-tight text-white lg:text-4xl'>
+				<div className='mx-auto mb-12 max-w-[600px] text-center sm:mb-16'>
+					<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl'>
 						Loved by engineering teams
 					</h2>
-					<p className='text-base text-gray-400'>
+					<p className='text-sm text-gray-400 sm:text-base'>
 						Teams trust Vestigio to keep their platforms healthy and their decisions evidence-based.
 					</p>
 				</div>
 
-				<div className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'>
+				<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3'>
 					{testimonials.map((data, i) => (
 						<div
 							key={i}
-							className='rounded-[1rem] border border-white/5 bg-white/[0.02] p-8 transition-colors hover:border-white/10'
+							className='rounded-[1rem] border border-white/5 bg-white/[0.02] p-6 transition-colors hover:border-white/10 sm:p-8'
 						>
 							<div className='mb-6 flex items-center gap-3'>
 								<div className='flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-sm font-bold text-emerald-400'>

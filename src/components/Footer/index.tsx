@@ -9,11 +9,11 @@ const Footer = () => {
 	const logoSrc = branding.logo_light?.dataUrl || "/images/logo/logo-light.png";
 
 	return (
-		<footer className='relative z-1 mt-auto overflow-hidden border-t border-white/5 bg-[#090911] py-16 lg:py-20'>
+		<footer className='relative z-1 mt-auto overflow-hidden border-t border-white/5 bg-[#090911] py-12 sm:py-16 lg:py-20'>
 			<div className='mx-auto max-w-[1170px] px-4 sm:px-8 xl:px-0'>
-				<div className='flex flex-wrap gap-10 lg:justify-between xl:flex-nowrap xl:gap-20'>
+				<div className='flex flex-wrap gap-8 sm:gap-10 lg:justify-between xl:flex-nowrap xl:gap-20'>
 					{/* Logo & description */}
-					<div className='w-full max-w-[300px]'>
+					<div className='w-full sm:max-w-[300px]'>
 						<Link href='/'>
 							{branding.logo_light?.dataUrl ? (
 								<img src={logoSrc} alt="Vestigio" className="h-10 w-auto" />
@@ -55,7 +55,7 @@ const Footer = () => {
 						</ul>
 					</div>
 
-					<div className='flex w-full flex-col justify-between gap-10 sm:w-auto sm:flex-row xl:gap-20'>
+					<div className='grid w-full grid-cols-2 gap-8 sm:w-auto sm:flex sm:flex-row sm:gap-10 xl:gap-20'>
 						{/* Product */}
 						<div className='w-full sm:w-auto'>
 							<h2 className='mb-5 text-sm font-semibold uppercase tracking-wider text-white'>
@@ -135,7 +135,7 @@ const Footer = () => {
 				</div>
 
 				{/* Bottom bar */}
-				<div className='mt-12 border-t border-white/5 pt-8'>
+				<div className='mt-10 border-t border-white/5 pt-6 sm:mt-12 sm:pt-8'>
 					<p className='text-center text-xs text-gray-600'>
 						&copy; {new Date().getFullYear()} Vestigio. All rights reserved.
 					</p>

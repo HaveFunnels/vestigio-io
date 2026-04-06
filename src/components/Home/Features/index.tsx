@@ -66,30 +66,30 @@ const Features = () => {
 	return (
 		<section
 			id='features'
-			className='relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-20 lg:py-28 xl:py-32'
+			className='relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28 xl:py-32'
 		>
 			<div className='mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>
 				{/* Section header */}
-				<div className='mx-auto mb-16 max-w-[600px] text-center'>
-					<h2 className='mb-4 text-3xl font-bold tracking-tight text-white lg:text-4xl'>
+				<div className='mx-auto mb-12 max-w-[600px] text-center sm:mb-16'>
+					<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl'>
 						Everything you need to operate your SaaS
 					</h2>
-					<p className='text-base text-gray-400'>
+					<p className='text-sm text-gray-400 sm:text-base'>
 						From automated auditing to AI-powered insights, Vestigio gives you the
 						tools to make evidence-based decisions.
 					</p>
 				</div>
 
-				<div className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'>
+				<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3'>
 					{featuresData.map((data, i) => (
 						<div
 							key={i}
-							className='rounded-[1rem] border border-white/5 bg-white/[0.02] p-8 transition-colors hover:border-white/10 hover:bg-white/[0.04]'
+							className='rounded-[1rem] border border-white/5 bg-white/[0.02] p-6 transition-colors hover:border-white/10 hover:bg-white/[0.04] sm:p-8'
 						>
-							<div className='mb-5 flex h-10 w-10 items-center justify-center rounded-[0.75rem] bg-emerald-500/10 text-emerald-400'>
+							<div className='mb-4 flex h-10 w-10 items-center justify-center rounded-[0.75rem] bg-emerald-500/10 text-emerald-400 sm:mb-5'>
 								{data.icon}
 							</div>
-							<h3 className='mb-3 text-lg font-semibold text-white'>
+							<h3 className='mb-2 text-base font-semibold text-white sm:mb-3 sm:text-lg'>
 								{data.title}
 							</h3>
 							<p className='text-sm leading-relaxed text-gray-400'>

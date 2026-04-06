@@ -114,7 +114,7 @@ const Header = () => {
 				<div
 					className={`invisible h-0 w-full items-center justify-between xl:visible xl:flex xl:h-auto ${
 						navbarOpen &&
-						"!visible relative mt-4 !h-auto max-h-[400px] overflow-y-scroll rounded-[1rem] bg-[#181822] p-7.5 shadow-lg"
+						"!visible relative mt-4 !h-auto max-h-[70vh] overflow-y-auto rounded-[1rem] bg-[#181822] p-5 shadow-lg sm:max-h-[60vh] sm:p-6"
 					}`}
 				>
 					<nav className='lg:mx-auto'>
@@ -135,7 +135,7 @@ const Header = () => {
 										}
 										target={item?.newTab ? "_blank" : ""}
 										rel={item?.newTab ? "noopener noreferrer" : ""}
-										className={`flex truncate rounded-[0.5rem] px-4 py-1.5 text-sm font-medium ${
+										className={`flex truncate rounded-[0.5rem] px-3 py-2.5 text-sm font-medium xl:px-4 xl:py-1.5 ${
 											pathUrl === item?.path
 												? "bg-white/10 text-white"
 												: "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -148,21 +148,21 @@ const Header = () => {
 						</ul>
 					</nav>
 
-					<div className='mt-7 flex items-center gap-3 max-lg:flex-wrap lg:mt-0'>
+					<div className='mt-6 flex flex-col items-stretch gap-3 max-xl:border-t max-xl:border-white/5 max-xl:pt-5 sm:mt-7 xl:mt-0 xl:flex-row xl:items-center xl:border-0 xl:pt-0'>
 						{session?.user ? (
 							<Account navbarOpen={navbarOpen} />
 						) : (
 							<>
 								<Link
 									href='/auth/signin'
-									className='px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:text-white'
+									className='rounded-[0.5rem] px-4 py-2.5 text-center text-sm font-medium text-gray-300 transition-colors hover:text-white xl:px-4 xl:py-2'
 								>
 									Login
 								</Link>
 
 								<Link
 									href='/auth/signup'
-									className='rounded-[1rem] border border-white/20 bg-white px-5 py-2 text-sm font-medium text-black transition-colors hover:bg-gray-100'
+									className='rounded-[1rem] border border-white/20 bg-white px-5 py-2.5 text-center text-sm font-medium text-black transition-colors hover:bg-gray-100 xl:py-2'
 								>
 									Get started
 								</Link>

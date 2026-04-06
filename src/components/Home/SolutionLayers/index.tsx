@@ -72,13 +72,23 @@ const colors = {
 };
 
 // ── Fade hook: observe a sentinel div BEFORE the sticky card ──
+//
+// Once a card becomes visible, keep it visible — otherwise on short
+// mobile viewports the card fades back out mid-scroll, which looks broken.
+// Also use a more permissive rootMargin so the fade-in triggers when the
+// element first touches the viewport, not 10% into it.
 function useFadeOnScroll() {
 	const sentinelRef = useRef<HTMLDivElement>(null);
 	const [visible, setVisible] = useState(false);
 	useEffect(() => {
 		const el = sentinelRef.current;
 		if (!el) return;
-		const obs = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.1, rootMargin: "-60px 0px -10% 0px" });
+		const obs = new IntersectionObserver(
+			([e]) => {
+				if (e.isIntersecting) setVisible(true);
+			},
+			{ threshold: 0, rootMargin: "0px 0px -10% 0px" },
+		);
 		obs.observe(el);
 		return () => obs.disconnect();
 	}, []);
@@ -97,16 +107,23 @@ function LayerCard({ layer, index, tools, accent }: {
 		<>
 			{/* Sentinel: a small invisible div that scrolls normally (not sticky) */}
 			<div ref={sentinelRef} className="h-1" />
-			<div className="sticky z-10 pb-6" style={{ top: 80 + index * 20 }}>
+			<div
+				className="sticky z-10 pb-6"
+				style={{
+					// Use CSS variable so mobile and desktop can have independent top offsets
+					// without relying on a JS viewport check.
+					top: `calc(var(--layer-sticky-top, 80px) + ${index * 20}px)`,
+				}}
+			>
 				<div className={`rounded-2xl border ${c.border} ${c.glow} bg-[#0c0c14] backdrop-blur-md transition-all duration-500 ease-out ${visible ? "opacity-100 scale-100" : "opacity-0 scale-[0.97] translate-y-3"}`}>
-					<div className="flex flex-col gap-6 p-7 sm:flex-row sm:items-start sm:p-10 lg:p-12">
+					<div className="flex flex-col gap-5 p-5 sm:gap-6 sm:p-10 md:flex-row md:items-start lg:p-12">
 						<div className="min-w-0 flex-1">
-							<span className={`mb-5 inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${c.pill}`}>{layer.eyebrow}</span>
-							<h3 className="mb-3 text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">{layer.title}</h3>
+							<span className={`mb-4 inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${c.pill} sm:mb-5`}>{layer.eyebrow}</span>
+							<h3 className="mb-3 text-lg font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">{layer.title}</h3>
 							<p className="mb-3 text-sm leading-relaxed text-gray-300 sm:text-base">{layer.body}</p>
 							<p className="text-xs leading-relaxed text-gray-500 sm:text-sm">{layer.support}</p>
 						</div>
-						<div className="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-end sm:pt-8">
+						<div className="flex shrink-0 flex-wrap gap-2 md:flex-col md:items-end md:pt-8">
 							{tools.map((t) => <span key={t} className={`rounded-lg border ${c.border} px-3 py-1.5 text-xs font-medium ${c.text}`}>{t}</span>)}
 						</div>
 					</div>
@@ -124,17 +141,17 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 		<>
 			<div ref={sentinelRef} className="h-1" />
 			<div className={`relative z-20 pt-8 pb-4 transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-				<div className="rounded-2xl border border-white/[0.06] bg-[#0c0c14] p-7 backdrop-blur-md sm:p-10 lg:p-12">
-					<div className="mb-10 text-center">
+				<div className="rounded-2xl border border-white/[0.06] bg-[#0c0c14] p-5 backdrop-blur-md sm:p-10 lg:p-12">
+					<div className="mb-8 text-center sm:mb-10">
 						<span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">{t.label}</span>
-						<h3 className="text-xl font-bold text-white sm:text-2xl">{t.heading}</h3>
+						<h3 className="text-lg font-bold text-white sm:text-2xl">{t.heading}</h3>
 					</div>
 
 					{/* Desktop: horizontal flow. Mobile: vertical. */}
 					<div className="flex flex-col items-center gap-5 lg:flex-row lg:items-center lg:justify-between">
 
 						{/* 1. User Query */}
-						<div className="w-full max-w-[240px] shrink-0 rounded-xl border border-white/10 bg-white/[0.04] p-5">
+						<div className="w-full max-w-[260px] shrink-0 rounded-xl border border-white/10 bg-white/[0.04] p-4 sm:max-w-[240px] sm:p-5">
 							<div className="mb-3 flex items-center gap-2">
 								<div className="grid h-7 w-7 place-items-center rounded-lg bg-white/10">
 									<svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
@@ -150,25 +167,27 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 						<MobileArrow />
 
 						{/* 2. Agentic Chat hub with orbiting tools */}
-						<div className="relative mx-auto flex h-52 w-52 shrink-0 items-center justify-center">
+						<div className="orbit-hub relative mx-auto flex h-44 w-44 shrink-0 items-center justify-center sm:h-52 sm:w-52">
 							<style>{`
 								@keyframes orbitCW{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 								@keyframes orbitCCW{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+								.orbit-hub{--orbit-radius:72px;}
+								@media(min-width:640px){.orbit-hub{--orbit-radius:88px;}}
 							`}</style>
 							{/* Orbit ring */}
-							<div className="absolute inset-0 m-auto h-44 w-44 rounded-full border border-dashed border-white/[0.06]" />
+							<div className="absolute inset-0 m-auto h-36 w-36 rounded-full border border-dashed border-white/[0.06] sm:h-44 sm:w-44" />
 							{/* Glow */}
-							<div className="absolute inset-0 m-auto -z-10 h-32 w-32 rounded-full bg-violet-500/10 blur-2xl" />
+							<div className="absolute inset-0 m-auto -z-10 h-28 w-28 rounded-full bg-violet-500/10 blur-2xl sm:h-32 sm:w-32" />
 
 							{/* Center icon */}
-							<div className="relative z-10 grid h-16 w-16 place-items-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-emerald-500/15 shadow-[0_0_50px_-10px_rgba(139,92,246,0.3)]">
+							<div className="relative z-10 grid h-14 w-14 place-items-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-emerald-500/15 shadow-[0_0_50px_-10px_rgba(139,92,246,0.3)] sm:h-16 sm:w-16">
 								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 									<path d="M12 3L13.5 8.5L19 10L13.5 11.5L12 17L10.5 11.5L5 10L10.5 8.5L12 3Z" />
 									<path d="M19 15L19.75 17.25L22 18L19.75 18.75L19 21L18.25 18.75L16 18L18.25 17.25L19 15Z" />
 								</svg>
 							</div>
 							{/* Label below center */}
-							<div className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest text-violet-400">{t.label}</div>
+							<div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest text-violet-400 sm:bottom-3">{t.label}</div>
 
 							{/* Orbiting satellites — each offset by 1/3 of the period */}
 							{[
@@ -181,11 +200,11 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 									className="absolute left-1/2 top-1/2"
 									style={{ animation: 'orbitCW 40s linear infinite', animationDelay: `${-i * 40 / 3}s` }}
 								>
-									<div style={{ transform: 'translateY(-88px)' }}>
+									<div style={{ transform: 'translateY(calc(-1 * var(--orbit-radius)))' }}>
 										<div style={{ animation: 'orbitCCW 40s linear infinite', animationDelay: `${-i * 40 / 3}s` }}>
-											<div className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border ${sat.border} bg-[#0c0c14] px-3 py-1`}>
+											<div className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border ${sat.border} bg-[#0c0c14] px-2.5 py-1 sm:px-3`}>
 												<div className={`h-1.5 w-1.5 rounded-full ${sat.dot}`} />
-												<span className={`text-[10px] font-semibold ${sat.text}`}>{sat.label}</span>
+												<span className={`text-[9px] font-semibold ${sat.text} sm:text-[10px]`}>{sat.label}</span>
 											</div>
 										</div>
 									</div>
@@ -198,7 +217,7 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 						<MobileArrow />
 
 						{/* 3. Structured Response */}
-						<div className="w-full max-w-[260px] shrink-0 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.02] p-5">
+						<div className="w-full max-w-[280px] shrink-0 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.02] p-4 sm:max-w-[260px] sm:p-5">
 							<div className="mb-3 flex items-center gap-2">
 								<div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10">
 									<div className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -234,15 +253,15 @@ export default function SolutionLayers() {
 	const t = i18n[locale] || i18n["en"];
 
 	return (
-		<section className="relative bg-[#090911] py-20 lg:py-28">
+		<section className="relative bg-[#090911] py-16 sm:py-20 lg:py-28">
 			<div className="pointer-events-none absolute inset-0 -z-10">
-				<div className="absolute left-1/2 top-[30%] h-[600px] w-[700px] -translate-x-1/2 rounded-full bg-violet-900/8 blur-[180px]" />
+				<div className="absolute left-1/2 top-[30%] h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-violet-900/8 blur-[120px] sm:h-[600px] sm:w-[700px] sm:blur-[180px]" />
 			</div>
 
-			<div className="mx-auto mb-16 max-w-[700px] px-4 text-center sm:px-8 lg:mb-20">
+			<div className="mx-auto mb-12 max-w-[700px] px-4 text-center sm:mb-16 sm:px-8 lg:mb-20">
 				<span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">{t.sectionLabel}</span>
-				<h2 className="mb-5 text-3xl font-bold leading-[1.12] tracking-tight text-white sm:text-4xl lg:text-5xl">{t.title}</h2>
-				<p className="text-base leading-relaxed text-gray-400 sm:text-lg">{t.subtitle}</p>
+				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">{t.title}</h2>
+				<p className="text-sm leading-relaxed text-gray-400 sm:text-base lg:text-lg">{t.subtitle}</p>
 			</div>
 
 			<div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">

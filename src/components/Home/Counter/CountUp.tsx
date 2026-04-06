@@ -37,7 +37,13 @@ const CountUp: React.FC<CountUpProps> = ({ targetNumber }) => {
 	};
 
 	useEffect(() => {
-		const observer = new IntersectionObserver(handleIntersection);
+		// threshold: 0.25 ensures the counter triggers once the element is
+		// meaningfully in view on both desktop and mobile, without waiting
+		// for the element to be fully centered.
+		const observer = new IntersectionObserver(handleIntersection, {
+			threshold: 0.25,
+			rootMargin: "0px 0px -10% 0px",
+		});
 		if (countRef.current) {
 			observer.observe(countRef.current);
 		}

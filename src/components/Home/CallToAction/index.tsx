@@ -2,31 +2,31 @@ import Link from "next/link";
 
 const CallToAction = () => {
 	return (
-		<section className='relative z-1 overflow-hidden bg-[#090911] py-20 lg:py-28'>
+		<section className='relative z-1 overflow-hidden bg-[#090911] py-16 sm:py-20 lg:py-28'>
 			<div className='mx-auto w-full max-w-[700px] px-4 text-center sm:px-8 xl:px-0'>
 				{/* Gradient glow */}
-				<div className='absolute left-1/2 top-1/2 h-[300px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-900/20 blur-[100px]' />
+				<div className='absolute left-1/2 top-1/2 h-[220px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-900/20 blur-[80px] sm:h-[300px] sm:w-[500px] sm:blur-[100px]' />
 
 				<div className='relative'>
-					<h2 className='mb-5 text-3xl font-bold tracking-tight text-white lg:text-4xl xl:text-5xl'>
+					<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-3xl lg:text-4xl xl:text-5xl'>
 						Ready to put your platform on autopilot?
 					</h2>
 
-					<p className='mb-8 text-base text-gray-400'>
+					<p className='mb-7 text-sm text-gray-400 sm:mb-8 sm:text-base'>
 						Join SaaS teams using Vestigio to automate auditing, detect regressions,
 						and make evidence-based decisions.
 					</p>
 
-					<div className='flex items-center justify-center gap-4'>
+					<div className='flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
 						<Link
 							href='/auth/signup'
-							className='rounded-[1rem] bg-white px-7 py-3 text-sm font-semibold text-black transition-colors hover:bg-gray-100'
+							className='rounded-[1rem] bg-white px-7 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-emerald-400'
 						>
 							Get started free
 						</Link>
 						<Link
 							href='/auth/signin'
-							className='rounded-[1rem] border border-white/20 px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5'
+							className='rounded-[1rem] border border-white/20 px-7 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-white/30'
 						>
 							Try live demo
 						</Link>

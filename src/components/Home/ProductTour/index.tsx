@@ -148,7 +148,7 @@ function AnalysisPanel() {
   return (
     <div>
       <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Analysis Summary</h4>
-      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
         {summaryCards.map((c) => (
           <div key={c.label} className="rounded-lg border border-zinc-800/60 bg-white/[0.02] p-3">
             <div className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">{c.label}</div>
@@ -180,7 +180,31 @@ function InventoryPanel() {
   return (
     <div>
       <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Surface Inventory</h4>
-      <div className="overflow-x-auto">
+
+      {/* Mobile: stacked cards */}
+      <div className="space-y-2 sm:hidden">
+        {surfaces.map((s) => (
+          <div key={s.path} className="rounded-lg border border-zinc-800/60 bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-sm font-medium text-zinc-200">{s.label}</span>
+              <span className={`inline-flex shrink-0 items-center gap-1.5 text-[10px] font-semibold ${s.status === "Live" ? "text-emerald-400" : "text-red-400"}`}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${s.status === "Live" ? "bg-emerald-400" : "bg-red-400"}`} />
+                {s.status}
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px]">
+              <span className="truncate font-mono text-zinc-500">{s.path}</span>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className={`font-mono ${s.code >= 500 ? "text-red-400" : "text-zinc-600"}`}>{s.code}</span>
+                <span className="text-zinc-400">{s.findings} {s.findings === 1 ? "finding" : "findings"}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b border-zinc-800/60 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
@@ -223,7 +247,7 @@ function WorkspacesPanel() {
   return (
     <div>
       <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Workspaces</h4>
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         {workspaces.map((w) => (
           <div key={w.name} className="rounded-lg border border-zinc-800/60 bg-white/[0.02] p-4">
             <div className="mb-2 flex items-center justify-between">
@@ -247,13 +271,13 @@ function ChatPanel() {
       <div className="space-y-3">
         {/* User message */}
         <div className="flex justify-end">
-          <div className="max-w-[80%] rounded-xl rounded-br-sm border border-zinc-800/60 bg-white/[0.04] px-4 py-2.5">
+          <div className="max-w-[92%] rounded-xl rounded-br-sm border border-zinc-800/60 bg-white/[0.04] px-3 py-2 sm:max-w-[80%] sm:px-4 sm:py-2.5">
             <p className="text-xs text-zinc-300">&ldquo;Where am I losing the most money?&rdquo;</p>
           </div>
         </div>
         {/* AI response */}
         <div className="flex justify-start">
-          <div className="max-w-[85%] rounded-xl rounded-bl-sm border border-violet-500/20 bg-violet-500/[0.04] px-4 py-3">
+          <div className="max-w-[95%] rounded-xl rounded-bl-sm border border-violet-500/20 bg-violet-500/[0.04] px-3 py-3 sm:max-w-[85%] sm:px-4">
             <div className="mb-1.5 flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-violet-400" />
               <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-400">Vestigio AI</span>
@@ -288,8 +312,8 @@ function MapsPanel() {
     <div>
       <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Journey Map</h4>
       <div className="relative flex min-h-[200px] items-center justify-center">
-        {/* Nodes */}
-        <div className="relative flex flex-wrap items-center justify-center gap-x-6 gap-y-8 sm:gap-x-10">
+        {/* Nodes — stacked vertically on mobile, horizontal flow on sm+ */}
+        <div className="relative flex flex-col items-center justify-center gap-y-3 sm:flex-row sm:flex-wrap sm:gap-x-10 sm:gap-y-8">
           {/* Homepage node */}
           <div className="relative z-10 flex flex-col items-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10">
@@ -298,10 +322,14 @@ function MapsPanel() {
             <span className="mt-1.5 text-[10px] text-zinc-500">Home</span>
           </div>
 
-          {/* Arrow */}
+          {/* Arrow — horizontal on sm+, downward on mobile */}
           <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="hidden text-zinc-700 sm:block">
             <path d="M0 6H28" stroke="currentColor" strokeWidth="1.2" />
             <path d="M24 2L28 6L24 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" className="block text-zinc-700 sm:hidden" aria-hidden>
+            <path d="M5 0V12" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M1.5 10L5 13.5L8.5 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
 
           {/* Products node */}
@@ -312,10 +340,14 @@ function MapsPanel() {
             <span className="mt-1.5 text-[10px] text-zinc-500">Products</span>
           </div>
 
-          {/* Arrow */}
+          {/* Arrow — horizontal on sm+, downward on mobile */}
           <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="hidden text-zinc-700 sm:block">
             <path d="M0 6H28" stroke="currentColor" strokeWidth="1.2" />
             <path d="M24 2L28 6L24 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" className="block text-zinc-700 sm:hidden" aria-hidden>
+            <path d="M5 0V12" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M1.5 10L5 13.5L8.5 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
 
           {/* Cart node */}
@@ -327,10 +359,14 @@ function MapsPanel() {
             <span className="mt-0.5 text-[9px] text-amber-400">4 findings</span>
           </div>
 
-          {/* Arrow */}
+          {/* Arrow — horizontal on sm+, downward on mobile */}
           <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="hidden text-zinc-700 sm:block">
             <path d="M0 6H28" stroke="currentColor" strokeWidth="1.2" />
             <path d="M24 2L28 6L24 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" className="block text-zinc-700 sm:hidden" aria-hidden>
+            <path d="M5 0V12" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M1.5 10L5 13.5L8.5 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
 
           {/* Checkout node - highlighted as critical */}
@@ -342,10 +378,14 @@ function MapsPanel() {
             <span className="mt-0.5 text-[9px] text-red-400">6 findings</span>
           </div>
 
-          {/* Arrow */}
+          {/* Arrow — horizontal on sm+, downward on mobile */}
           <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="hidden text-zinc-700 sm:block">
             <path d="M0 6H28" stroke="currentColor" strokeWidth="1.2" />
             <path d="M24 2L28 6L24 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" className="block text-zinc-700 sm:hidden" aria-hidden>
+            <path d="M5 0V12" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M1.5 10L5 13.5L8.5 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
 
           {/* Thank you node */}
@@ -377,61 +417,63 @@ export default function ProductTour() {
   const ActivePanel = panelComponents[activeTab];
 
   return (
-    <section className="relative bg-[#090911] py-20 lg:py-28">
+    <section className="relative bg-[#090911] py-16 sm:py-20 lg:py-28">
       {/* Background glow */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-[40%] h-[500px] w-[600px] -translate-x-1/2 rounded-full bg-violet-900/[0.06] blur-[160px]" />
+        <div className="absolute left-1/2 top-[40%] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-violet-900/[0.06] blur-[120px] sm:h-[500px] sm:w-[600px] sm:blur-[160px]" />
       </div>
 
       {/* Section header */}
-      <div className="mx-auto mb-14 max-w-[700px] px-4 text-center sm:px-8 lg:mb-18">
+      <div className="mx-auto mb-10 max-w-[700px] px-4 text-center sm:mb-14 sm:px-8 lg:mb-18">
         <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">Product Tour</span>
-        <h2 className="mb-5 text-3xl font-bold leading-[1.12] tracking-tight text-white sm:text-4xl lg:text-5xl">
+        <h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">
           See what Vestigio shows you
         </h2>
-        <p className="text-base leading-relaxed text-gray-400 sm:text-lg">
+        <p className="text-sm leading-relaxed text-gray-400 sm:text-base lg:text-lg">
           Explore the dashboard — every tab reveals actionable intelligence about your business.
         </p>
       </div>
 
       {/* Browser mockup frame */}
       <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">
-        <div className="overflow-hidden rounded-2xl border border-zinc-800/80 bg-[#0c0c14] shadow-[0_0_80px_-20px_rgba(139,92,246,0.12)]">
+        <div className="overflow-hidden rounded-xl border border-zinc-800/80 bg-[#0c0c14] shadow-[0_0_80px_-20px_rgba(139,92,246,0.12)] sm:rounded-2xl">
 
           {/* Browser title bar */}
-          <div className="flex items-center gap-2 border-b border-zinc-800/60 bg-[#0a0a12] px-4 py-3">
+          <div className="flex items-center gap-2 border-b border-zinc-800/60 bg-[#0a0a12] px-3 py-2.5 sm:px-4 sm:py-3">
             <div className="flex gap-1.5">
               <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
               <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
               <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
             </div>
-            <div className="ml-3 flex-1">
-              <div className="mx-auto max-w-[280px] rounded-md bg-white/[0.04] px-3 py-1 text-center text-[11px] text-zinc-600">
+            <div className="ml-2 flex min-w-0 flex-1 sm:ml-3">
+              <div className="mx-auto w-full max-w-[220px] truncate rounded-md bg-white/[0.04] px-3 py-1 text-center text-[10px] text-zinc-600 sm:max-w-[280px] sm:text-[11px]">
                 app.vestigio.io/dashboard
               </div>
             </div>
-            <div className="w-[52px]" />
+            <div className="hidden w-[52px] sm:block" />
           </div>
 
           {/* App body: sidebar + content */}
           <div className="flex flex-col md:flex-row">
 
-            {/* Mobile horizontal tabs */}
-            <div className="flex overflow-x-auto border-b border-zinc-800/60 bg-[#0a0a12]/50 md:hidden">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex shrink-0 items-center gap-1.5 px-4 py-3 text-[11px] font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? "border-b-2 border-violet-500 text-white"
-                      : "text-zinc-500 hover:text-zinc-300"
-                  }`}
-                >
-                  <span className={activeTab === tab.id ? "text-violet-400" : "text-zinc-600"}>{tab.icon}</span>
-                  {tab.label}
-                </button>
-              ))}
+            {/* Mobile horizontal tabs — with fade indicators for scroll discoverability */}
+            <div className="relative md:hidden">
+              <div className="flex overflow-x-auto border-b border-zinc-800/60 bg-[#0a0a12]/50 [mask-image:linear-gradient(to_right,transparent_0,black_12px,black_calc(100%-12px),transparent_100%)]">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex shrink-0 items-center gap-1.5 px-4 py-3 text-[11px] font-medium transition-colors ${
+                      activeTab === tab.id
+                        ? "border-b-2 border-violet-500 text-white"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    <span className={activeTab === tab.id ? "text-violet-400" : "text-zinc-600"}>{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Desktop sidebar */}
@@ -465,8 +507,8 @@ export default function ProductTour() {
               </div>
             </div>
 
-            {/* Content area */}
-            <div className="min-h-[380px] flex-1 p-5 sm:p-6">
+            {/* Content area — taller on desktop to match real browser proportions (was 380px, now 600-640px) */}
+            <div className="min-h-[360px] flex-1 p-4 sm:p-6 md:min-h-[600px] lg:min-h-[640px] lg:p-8">
               <div
                 key={activeTab}
                 className="animate-[fadeIn_0.25s_ease-out]"

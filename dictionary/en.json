@@ -808,6 +808,114 @@
 				"learn_more": "Learn more",
 				"docs_coming_soon": "Documentation for this finding is being written."
 		},
+		"customer_center": {
+				"title": "Customer Center",
+				"subtitle": "Documentation, support, and feedback in one place.",
+				"cards": {
+					"knowledge_base": {
+						"title": "Knowledge Base",
+						"description": "Guides, concepts, finding docs, and API reference.",
+						"cta": "Browse docs"
+					},
+					"support": {
+						"title": "Support",
+						"description": "Open a ticket, track progress, and get help from our team.",
+						"cta": "View tickets"
+					},
+					"feedback": {
+						"title": "Feedback",
+						"description": "Share ideas, report issues, or tell us what you love.",
+						"cta": "Send feedback"
+					}
+				},
+				"support": {
+					"title": "Support",
+					"subtitle": "We are here to help. Create a ticket and we will respond as soon as possible.",
+					"new_ticket": "New Ticket",
+					"cancel": "Cancel",
+					"empty": "No tickets yet. Create one if you need help.",
+					"error": "Something went wrong. Please try again.",
+					"ticket_created": "Ticket created! We will get back to you soon.",
+					"reply_sent": "Reply sent.",
+					"not_found": "Ticket not found.",
+					"back": "Back to Support",
+					"conversation": "Conversation",
+					"staff": "Vestigio Team",
+					"add_reply": "Your reply",
+					"reply_placeholder": "Type your reply...",
+					"send_reply": "Send Reply",
+					"ticket_closed": "This ticket has been resolved. Open a new ticket if you need further help.",
+					"reply": "reply",
+					"replies": "replies",
+					"stats": {
+						"total": "Total Tickets",
+						"open": "Open",
+						"resolved": "Resolved"
+					},
+					"statuses": {
+						"open": "Open",
+						"in_progress": "In Progress",
+						"resolved": "Resolved",
+						"closed": "Closed"
+					},
+					"categories": {
+						"general": "General",
+						"bug": "Bug Report",
+						"feature": "Feature Request",
+						"billing": "Billing",
+						"security": "Security"
+					},
+					"form": {
+						"title": "Create a New Ticket",
+						"subject": "Subject",
+						"subject_placeholder": "Brief description of your issue",
+						"category": "Category",
+						"message": "Message",
+						"message_placeholder": "Describe your issue in detail. The more context you provide, the faster we can help.",
+						"submit": "Submit Ticket",
+						"submitting": "Submitting..."
+					}
+				},
+				"feedback": {
+					"title": "Share Your Feedback",
+					"subtitle": "Your feedback shapes the product. Every piece is read by a real person on our team.",
+					"back": "Back to Customer Center",
+					"error": "Something went wrong. Please try again.",
+					"form": {
+						"type": "What type of feedback?",
+						"rating": "How would you rate your experience?",
+						"title": "Title",
+						"title_placeholder": "Give your feedback a short title",
+						"optional": "optional",
+						"content": "Your feedback",
+						"content_placeholder": "Tell us what is on your mind. Be as specific as you want \u2014 examples, screenshots, and details help us act faster.",
+						"privacy_note": "Your name and email are attached so we can follow up if needed.",
+						"submit": "Send Feedback",
+						"submitting": "Sending..."
+					},
+					"types": {
+						"general": "General",
+						"bug": "Bug",
+						"feature": "Feature Idea",
+						"ux": "UX/Design",
+						"performance": "Performance"
+					},
+					"ratings": {
+						"1": "Needs work",
+						"2": "Below expectations",
+						"3": "Okay",
+						"4": "Good",
+						"5": "Excellent"
+					},
+					"success": {
+						"title": "Thank you for your feedback!",
+						"message": "We genuinely appreciate you taking the time. Your feedback is reviewed by our product team and directly influences what we build next.",
+						"follow_up": "We may reach out to ask for more details or share updates on how your feedback was addressed.",
+						"send_another": "Send Another",
+						"back": "Back to Customer Center"
+					}
+				}
+		},
 		"knowledge_base": {
 				"title": "Knowledge Base",
 				"subtitle": "Documentation on findings, packs, and platform concepts.",
@@ -1334,7 +1442,8 @@
 			"billing": "Billing",
 			"members": "Members",
 			"settings": "Settings",
-			"knowledge_base": "Knowledge Base",
+			"customer_center": "Customer Center",
+				"knowledge_base": "Knowledge Base",
 				"data_sources": "Data Sources",
 			"overview": "Overview",
 			"organizations": "Organizations",

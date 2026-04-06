@@ -804,6 +804,49 @@
 			"learn_more": "Saiba mais",
 			"docs_coming_soon": "A documentação para este finding está sendo escrita."
 		},
+		"customer_center": {
+			"title": "Central do Cliente",
+			"subtitle": "Documentacao, suporte e feedback em um so lugar.",
+			"cards": {
+				"knowledge_base": { "title": "Base de Conhecimento", "description": "Guias, conceitos, documentacao de findings e referencia de API.", "cta": "Explorar docs" },
+				"support": { "title": "Suporte", "description": "Abra um ticket, acompanhe o progresso e receba ajuda da nossa equipe.", "cta": "Ver tickets" },
+				"feedback": { "title": "Feedback", "description": "Compartilhe ideias, reporte problemas ou nos diga o que voce ama.", "cta": "Enviar feedback" }
+			},
+			"support": {
+				"title": "Suporte",
+				"subtitle": "Estamos aqui para ajudar. Crie um ticket e responderemos o mais rapido possivel.",
+				"new_ticket": "Novo Ticket",
+				"cancel": "Cancelar",
+				"empty": "Nenhum ticket ainda. Crie um se precisar de ajuda.",
+				"error": "Algo deu errado. Tente novamente.",
+				"ticket_created": "Ticket criado! Retornaremos em breve.",
+				"reply_sent": "Resposta enviada.",
+				"not_found": "Ticket nao encontrado.",
+				"back": "Voltar ao Suporte",
+				"conversation": "Conversa",
+				"staff": "Equipe Vestigio",
+				"add_reply": "Sua resposta",
+				"reply_placeholder": "Digite sua resposta...",
+				"send_reply": "Enviar Resposta",
+				"ticket_closed": "Este ticket foi resolvido. Abra um novo ticket se precisar de mais ajuda.",
+				"reply": "resposta",
+				"replies": "respostas",
+				"stats": { "total": "Total de Tickets", "open": "Abertos", "resolved": "Resolvidos" },
+				"statuses": { "open": "Aberto", "in_progress": "Em Andamento", "resolved": "Resolvido", "closed": "Fechado" },
+				"categories": { "general": "Geral", "bug": "Relato de Bug", "feature": "Sugestao de Funcionalidade", "billing": "Cobranca", "security": "Seguranca" },
+				"form": { "title": "Criar Novo Ticket", "subject": "Assunto", "subject_placeholder": "Breve descricao do seu problema", "category": "Categoria", "message": "Mensagem", "message_placeholder": "Descreva seu problema em detalhes. Quanto mais contexto, mais rapido podemos ajudar.", "submit": "Enviar Ticket", "submitting": "Enviando..." }
+			},
+			"feedback": {
+				"title": "Compartilhe Seu Feedback",
+				"subtitle": "Seu feedback molda o produto. Cada mensagem e lida por uma pessoa real da nossa equipe.",
+				"back": "Voltar a Central do Cliente",
+				"error": "Algo deu errado. Tente novamente.",
+				"form": { "type": "Que tipo de feedback?", "rating": "Como voce avalia sua experiencia?", "title": "Titulo", "title_placeholder": "De um titulo curto ao seu feedback", "optional": "opcional", "content": "Seu feedback", "content_placeholder": "Nos diga o que esta pensando. Seja o mais especifico que quiser — exemplos, screenshots e detalhes nos ajudam a agir mais rapido.", "privacy_note": "Seu nome e email sao anexados para que possamos acompanhar se necessario.", "submit": "Enviar Feedback", "submitting": "Enviando..." },
+				"types": { "general": "Geral", "bug": "Bug", "feature": "Ideia de Funcionalidade", "ux": "UX/Design", "performance": "Performance" },
+				"ratings": { "1": "Precisa melhorar", "2": "Abaixo das expectativas", "3": "Ok", "4": "Bom", "5": "Excelente" },
+				"success": { "title": "Obrigado pelo seu feedback!", "message": "Agradecemos genuinamente por dedicar seu tempo. Seu feedback e revisado pela nossa equipe de produto e influencia diretamente o que construimos a seguir.", "follow_up": "Podemos entrar em contato para pedir mais detalhes ou compartilhar atualizacoes sobre como seu feedback foi utilizado.", "send_another": "Enviar Outro", "back": "Voltar a Central do Cliente" }
+			}
+		},
 		"knowledge_base": {
 			"title": "Base de Conhecimento",
 			"subtitle": "Documentação sobre findings, packs e conceitos da plataforma.",
@@ -1339,6 +1382,7 @@
 			"billing": "Faturamento",
 			"members": "Membros",
 			"settings": "Configurações",
+			"customer_center": "Central do Cliente",
 			"knowledge_base": "Base de Conhecimento",
 			"data_sources": "Fontes de Dados",
 			"overview": "Visão Geral",

@@ -804,6 +804,49 @@
 			"learn_more": "Saber más",
 			"docs_coming_soon": "La documentación para este hallazgo se está escribiendo."
 		},
+		"customer_center": {
+			"title": "Centro de Clientes",
+			"subtitle": "Documentacion, soporte y retroalimentacion en un solo lugar.",
+			"cards": {
+				"knowledge_base": { "title": "Base de Conocimiento", "description": "Guias, conceptos, documentacion de hallazgos y referencia de API.", "cta": "Explorar docs" },
+				"support": { "title": "Soporte", "description": "Abre un ticket, sigue el progreso y recibe ayuda de nuestro equipo.", "cta": "Ver tickets" },
+				"feedback": { "title": "Feedback", "description": "Comparte ideas, reporta problemas o dinos que te encanta.", "cta": "Enviar feedback" }
+			},
+			"support": {
+				"title": "Soporte",
+				"subtitle": "Estamos aqui para ayudar. Crea un ticket y responderemos lo antes posible.",
+				"new_ticket": "Nuevo Ticket",
+				"cancel": "Cancelar",
+				"empty": "No hay tickets aun. Crea uno si necesitas ayuda.",
+				"error": "Algo salio mal. Intentalo de nuevo.",
+				"ticket_created": "Ticket creado! Te responderemos pronto.",
+				"reply_sent": "Respuesta enviada.",
+				"not_found": "Ticket no encontrado.",
+				"back": "Volver a Soporte",
+				"conversation": "Conversacion",
+				"staff": "Equipo Vestigio",
+				"add_reply": "Tu respuesta",
+				"reply_placeholder": "Escribe tu respuesta...",
+				"send_reply": "Enviar Respuesta",
+				"ticket_closed": "Este ticket ha sido resuelto. Abre un nuevo ticket si necesitas mas ayuda.",
+				"reply": "respuesta",
+				"replies": "respuestas",
+				"stats": { "total": "Total de Tickets", "open": "Abiertos", "resolved": "Resueltos" },
+				"statuses": { "open": "Abierto", "in_progress": "En Progreso", "resolved": "Resuelto", "closed": "Cerrado" },
+				"categories": { "general": "General", "bug": "Reporte de Bug", "feature": "Solicitud de Funcionalidad", "billing": "Facturacion", "security": "Seguridad" },
+				"form": { "title": "Crear Nuevo Ticket", "subject": "Asunto", "subject_placeholder": "Breve descripcion de tu problema", "category": "Categoria", "message": "Mensaje", "message_placeholder": "Describe tu problema en detalle. Cuanto mas contexto proporciones, mas rapido podremos ayudar.", "submit": "Enviar Ticket", "submitting": "Enviando..." }
+			},
+			"feedback": {
+				"title": "Comparte Tu Feedback",
+				"subtitle": "Tu feedback moldea el producto. Cada mensaje es leido por una persona real de nuestro equipo.",
+				"back": "Volver al Centro de Clientes",
+				"error": "Algo salio mal. Intentalo de nuevo.",
+				"form": { "type": "Que tipo de feedback?", "rating": "Como calificarias tu experiencia?", "title": "Titulo", "title_placeholder": "Dale un titulo corto a tu feedback", "optional": "opcional", "content": "Tu feedback", "content_placeholder": "Cuentanos que piensas. Se tan especifico como quieras — ejemplos, capturas y detalles nos ayudan a actuar mas rapido.", "privacy_note": "Tu nombre y email se adjuntan para que podamos dar seguimiento si es necesario.", "submit": "Enviar Feedback", "submitting": "Enviando..." },
+				"types": { "general": "General", "bug": "Bug", "feature": "Idea de Funcionalidad", "ux": "UX/Diseno", "performance": "Rendimiento" },
+				"ratings": { "1": "Necesita mejorar", "2": "Por debajo de expectativas", "3": "Aceptable", "4": "Bueno", "5": "Excelente" },
+				"success": { "title": "Gracias por tu feedback!", "message": "Apreciamos genuinamente que dediques tu tiempo. Tu feedback es revisado por nuestro equipo de producto e influye directamente en lo que construimos.", "follow_up": "Podemos contactarte para pedir mas detalles o compartir actualizaciones sobre como se utilizo tu feedback.", "send_another": "Enviar Otro", "back": "Volver al Centro de Clientes" }
+			}
+		},
 		"knowledge_base": {
 			"title": "Base de Conocimiento",
 			"subtitle": "Documentación sobre hallazgos, packs y conceptos de la plataforma.",
@@ -1313,6 +1356,7 @@
 			"billing": "Facturación",
 			"members": "Miembros",
 			"settings": "Configuración",
+			"customer_center": "Centro de Clientes",
 			"knowledge_base": "Base de Conocimiento",
 			"data_sources": "Fuentes de Datos",
 			"overview": "Resumen",

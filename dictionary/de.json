@@ -737,6 +737,49 @@
 			"learn_more": "Mehr erfahren",
 			"docs_coming_soon": "Die Dokumentation für diesen Befund wird gerade geschrieben."
 		},
+		"customer_center": {
+			"title": "Kundencenter",
+			"subtitle": "Dokumentation, Support und Feedback an einem Ort.",
+			"cards": {
+				"knowledge_base": { "title": "Wissensdatenbank", "description": "Anleitungen, Konzepte, Befund-Dokumentation und API-Referenz.", "cta": "Docs durchsuchen" },
+				"support": { "title": "Support", "description": "Erstellen Sie ein Ticket, verfolgen Sie den Fortschritt und erhalten Sie Hilfe.", "cta": "Tickets ansehen" },
+				"feedback": { "title": "Feedback", "description": "Teilen Sie Ideen, melden Sie Probleme oder sagen Sie uns, was Ihnen gefallt.", "cta": "Feedback senden" }
+			},
+			"support": {
+				"title": "Support",
+				"subtitle": "Wir sind hier um zu helfen. Erstellen Sie ein Ticket und wir antworten so schnell wie moglich.",
+				"new_ticket": "Neues Ticket",
+				"cancel": "Abbrechen",
+				"empty": "Noch keine Tickets. Erstellen Sie eines, wenn Sie Hilfe benotigen.",
+				"error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+				"ticket_created": "Ticket erstellt! Wir melden uns bald.",
+				"reply_sent": "Antwort gesendet.",
+				"not_found": "Ticket nicht gefunden.",
+				"back": "Zuruck zum Support",
+				"conversation": "Konversation",
+				"staff": "Vestigio Team",
+				"add_reply": "Ihre Antwort",
+				"reply_placeholder": "Schreiben Sie Ihre Antwort...",
+				"send_reply": "Antwort Senden",
+				"ticket_closed": "Dieses Ticket wurde gelost. Erstellen Sie ein neues Ticket, wenn Sie weitere Hilfe benotigen.",
+				"reply": "Antwort",
+				"replies": "Antworten",
+				"stats": { "total": "Tickets Gesamt", "open": "Offen", "resolved": "Gelost" },
+				"statuses": { "open": "Offen", "in_progress": "In Bearbeitung", "resolved": "Gelost", "closed": "Geschlossen" },
+				"categories": { "general": "Allgemein", "bug": "Fehlerbericht", "feature": "Funktionsanfrage", "billing": "Abrechnung", "security": "Sicherheit" },
+				"form": { "title": "Neues Ticket Erstellen", "subject": "Betreff", "subject_placeholder": "Kurze Beschreibung Ihres Problems", "category": "Kategorie", "message": "Nachricht", "message_placeholder": "Beschreiben Sie Ihr Problem im Detail. Je mehr Kontext Sie angeben, desto schneller konnen wir helfen.", "submit": "Ticket Senden", "submitting": "Wird gesendet..." }
+			},
+			"feedback": {
+				"title": "Teilen Sie Ihr Feedback",
+				"subtitle": "Ihr Feedback formt das Produkt. Jede Nachricht wird von einer echten Person in unserem Team gelesen.",
+				"back": "Zuruck zum Kundencenter",
+				"error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+				"form": { "type": "Welche Art von Feedback?", "rating": "Wie bewerten Sie Ihre Erfahrung?", "title": "Titel", "title_placeholder": "Geben Sie Ihrem Feedback einen kurzen Titel", "optional": "optional", "content": "Ihr Feedback", "content_placeholder": "Sagen Sie uns, was Sie denken. Seien Sie so spezifisch wie Sie mochten \u2014 Beispiele, Screenshots und Details helfen uns schneller zu handeln.", "privacy_note": "Ihr Name und Ihre E-Mail werden angehangen, damit wir bei Bedarf nachfragen konnen.", "submit": "Feedback Senden", "submitting": "Wird gesendet..." },
+				"types": { "general": "Allgemein", "bug": "Fehler", "feature": "Funktionsidee", "ux": "UX/Design", "performance": "Leistung" },
+				"ratings": { "1": "Verbesserungsbedarf", "2": "Unter den Erwartungen", "3": "In Ordnung", "4": "Gut", "5": "Ausgezeichnet" },
+				"success": { "title": "Vielen Dank fur Ihr Feedback!", "message": "Wir schatzen es sehr, dass Sie sich die Zeit nehmen. Ihr Feedback wird von unserem Produktteam gepruft und beeinflusst direkt, was wir als nachstes bauen.", "follow_up": "Wir kontaktieren Sie moglicherweise, um weitere Details zu erfragen oder Updates zu teilen.", "send_another": "Weiteres Senden", "back": "Zuruck zum Kundencenter" }
+			}
+		},
 		"knowledge_base": {
 			"title": "Wissensdatenbank",
 			"subtitle": "Dokumentation zu Befunden, Packs und Plattformkonzepten.",
@@ -1122,6 +1165,7 @@
 			"billing": "Abrechnung",
 			"members": "Mitglieder",
 			"settings": "Einstellungen",
+			"customer_center": "Kundencenter",
 			"knowledge_base": "Wissensdatenbank",
 			"data_sources": "Datenquellen",
 			"overview": "Übersicht",

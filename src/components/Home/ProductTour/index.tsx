@@ -104,26 +104,31 @@ function PriorityTag({ p }: { p: string }) {
 
 function ActionsPanel() {
   const actions = [
-    { p: "P1", title: "Fix checkout redirect chain", impact: "$18k-42k/mo", severity: "critical" as const },
-    { p: "P2", title: "Add refund policy page", impact: "$3.6k-9k/mo", severity: "high" as const },
-    { p: "P3", title: "Enable mobile add-to-cart", impact: "$18k-42k/mo", severity: "critical" as const },
-    { p: "P4", title: "Add analytics to checkout", impact: "$9.6k-24k/mo", severity: "medium" as const },
+    { p: "P1", title: "Fix checkout redirect chain", impact: "$18k-42k/mo", severity: "critical" as const, desc: "3 redirects add 2.4s latency at payment step" },
+    { p: "P2", title: "Add refund policy page", impact: "$3.6k-9k/mo", severity: "high" as const, desc: "Missing policy drives chargeback rate 2.1x above market" },
+    { p: "P3", title: "Enable mobile add-to-cart", impact: "$18k-42k/mo", severity: "critical" as const, desc: "Button below fold on 68% of mobile sessions" },
+    { p: "P4", title: "Add analytics to checkout", impact: "$9.6k-24k/mo", severity: "medium" as const, desc: "No funnel visibility between cart and confirmation" },
+    { p: "P5", title: "Fix broken pricing filter", impact: "$5k-14k/mo", severity: "high" as const, desc: "State not persisting across page transitions" },
+    { p: "P6", title: "Add SSL on checkout subdomain", impact: "$8k-21k/mo", severity: "critical" as const, desc: "Browser warns users on 12% of payment starts" },
   ];
 
   return (
     <div className="space-y-2">
-      <div className="mb-3 flex items-center justify-between">
-        <h4 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Action Queue</h4>
-        <span className="text-[10px] text-zinc-600">4 actions</span>
+      <div className="mb-4 flex items-center justify-between lg:mb-5">
+        <h4 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 lg:text-[11px]">Action Queue</h4>
+        <span className="text-[10px] text-zinc-600 lg:text-xs">{actions.length} actions</span>
       </div>
       {actions.map((a) => (
         <div
           key={a.p}
-          className="flex items-center gap-3 rounded-lg border border-zinc-800/60 bg-white/[0.02] px-3 py-2.5 transition-colors hover:bg-white/[0.04]"
+          className="flex items-start gap-3 rounded-lg border border-zinc-800/60 bg-white/[0.02] px-3 py-3 transition-colors hover:bg-white/[0.04] lg:gap-4 lg:px-4 lg:py-4"
         >
           <PriorityTag p={a.p} />
-          <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">{a.title}</span>
-          <span className="hidden shrink-0 text-xs font-medium text-emerald-400 sm:inline">{a.impact}</span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm text-zinc-200 lg:text-[15px]">{a.title}</div>
+            <div className="mt-0.5 hidden truncate text-xs text-zinc-500 lg:block">{a.desc}</div>
+          </div>
+          <span className="hidden shrink-0 text-xs font-medium text-emerald-400 sm:inline lg:text-sm">{a.impact}</span>
           <SeverityBadge level={a.severity} />
         </div>
       ))}
@@ -133,33 +138,39 @@ function ActionsPanel() {
 
 function AnalysisPanel() {
   const summaryCards = [
-    { label: "Findings", value: "12 issues, 4 strengths" },
-    { label: "Est. Impact", value: "$67.2k" },
-    { label: "High Impact", value: "4" },
-    { label: "Avg Confidence", value: "82%" },
+    { label: "Findings", value: "12 issues", sub: "4 strengths" },
+    { label: "Est. Impact", value: "$67.2k", sub: "/month" },
+    { label: "High Impact", value: "4", sub: "critical + high" },
+    { label: "Avg Confidence", value: "82%", sub: "evidence-based" },
   ];
 
   const findings = [
-    { title: "Checkout redirect chain adds 2.4s latency", severity: "critical" as const },
-    { title: "Missing refund policy raises chargeback risk", severity: "high" as const },
-    { title: "Mobile add-to-cart button below fold", severity: "critical" as const },
+    { title: "Checkout redirect chain adds 2.4s latency", severity: "critical" as const, impact: "$18k-42k" },
+    { title: "Missing refund policy raises chargeback risk", severity: "high" as const, impact: "$3.6k-9k" },
+    { title: "Mobile add-to-cart button below fold", severity: "critical" as const, impact: "$18k-42k" },
+    { title: "No analytics between cart and confirmation", severity: "medium" as const, impact: "$9.6k-24k" },
+    { title: "Pricing filter loses state on navigation", severity: "high" as const, impact: "$5k-14k" },
+    { title: "Checkout subdomain missing SSL cert", severity: "critical" as const, impact: "$8k-21k" },
   ];
 
   return (
     <div>
-      <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Analysis Summary</h4>
-      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+      <h4 className="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-500 lg:mb-5 lg:text-[11px]">Analysis Summary</h4>
+      <div className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-4 lg:mb-6 lg:gap-3">
         {summaryCards.map((c) => (
-          <div key={c.label} className="rounded-lg border border-zinc-800/60 bg-white/[0.02] p-3">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">{c.label}</div>
-            <div className="mt-1 text-sm font-semibold text-white">{c.value}</div>
+          <div key={c.label} className="rounded-lg border border-zinc-800/60 bg-white/[0.02] p-3 lg:p-4">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 lg:text-xs">{c.label}</div>
+            <div className="mt-1 text-base font-semibold text-white lg:mt-1.5 lg:text-xl">{c.value}</div>
+            <div className="mt-0.5 text-[10px] text-zinc-500 lg:text-xs">{c.sub}</div>
           </div>
         ))}
       </div>
-      <div className="space-y-1.5">
+      <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500 lg:text-[11px]">Top Findings</h4>
+      <div className="space-y-2">
         {findings.map((f, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-lg border border-zinc-800/60 bg-white/[0.02] px-3 py-2">
-            <span className="min-w-0 flex-1 truncate text-xs text-zinc-400">{f.title}</span>
+          <div key={i} className="flex items-center gap-3 rounded-lg border border-zinc-800/60 bg-white/[0.02] px-3 py-2.5 lg:px-4 lg:py-3">
+            <span className="min-w-0 flex-1 truncate text-xs text-zinc-300 lg:text-sm">{f.title}</span>
+            <span className="hidden shrink-0 text-xs font-medium text-emerald-400 sm:inline lg:text-sm">{f.impact}</span>
             <SeverityBadge level={f.severity} />
           </div>
         ))}
@@ -435,8 +446,8 @@ export default function ProductTour() {
       </div>
 
       {/* Browser mockup frame */}
-      <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">
-        <div className="overflow-hidden rounded-xl border border-zinc-800/80 bg-[#0c0c14] shadow-[0_0_80px_-20px_rgba(139,92,246,0.12)] sm:rounded-2xl">
+      <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
+        <div className="overflow-hidden rounded-xl border border-zinc-800/80 bg-[#0c0c14] shadow-[0_20px_80px_-20px_rgba(139,92,246,0.18),0_0_0_1px_rgba(255,255,255,0.02)] sm:rounded-2xl">
 
           {/* Browser title bar */}
           <div className="flex items-center gap-2 border-b border-zinc-800/60 bg-[#0a0a12] px-3 py-2.5 sm:px-4 sm:py-3">
@@ -477,23 +488,23 @@ export default function ProductTour() {
             </div>
 
             {/* Desktop sidebar */}
-            <div className="hidden w-[180px] shrink-0 border-r border-zinc-800/60 bg-[#0a0a12]/50 md:block">
-              <div className="p-3">
+            <div className="hidden w-[220px] shrink-0 border-r border-zinc-800/60 bg-[#0a0a12]/60 md:block lg:w-[240px]">
+              <div className="p-4 lg:p-5">
                 {/* App logo area */}
-                <div className="mb-4 flex items-center gap-2 px-2 py-2">
-                  <div className="grid h-6 w-6 place-items-center rounded-md bg-violet-500/15">
-                    <div className="h-2 w-2 rounded-sm bg-violet-400" />
+                <div className="mb-5 flex items-center gap-2 px-2 py-2">
+                  <div className="grid h-7 w-7 place-items-center rounded-md bg-violet-500/15">
+                    <div className="h-2.5 w-2.5 rounded-sm bg-violet-400" />
                   </div>
-                  <span className="text-xs font-semibold text-zinc-400">Vestigio</span>
+                  <span className="text-sm font-semibold text-zinc-300">Vestigio</span>
                 </div>
 
                 {/* Nav items */}
-                <nav className="space-y-0.5">
+                <nav className="space-y-1">
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-all ${
+                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all ${
                         activeTab === tab.id
                           ? "bg-white/[0.06] text-white"
                           : "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
@@ -504,14 +515,26 @@ export default function ProductTour() {
                     </button>
                   ))}
                 </nav>
+
+                {/* Filler: user card at bottom of sidebar to make it feel populated */}
+                <div className="mt-8 rounded-lg border border-zinc-800/60 bg-white/[0.02] p-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-emerald-500/20 to-violet-500/20 text-xs font-bold text-zinc-300">L</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-semibold text-zinc-300">Luis Gall</div>
+                      <div className="truncate text-[10px] text-zinc-500">Vestigio Pro</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Content area — taller on desktop to match real browser proportions (was 380px, now 600-640px) */}
-            <div className="min-h-[360px] flex-1 p-4 sm:p-6 md:min-h-[600px] lg:min-h-[640px] lg:p-8">
+            {/* Content area — tall on desktop to match real browser proportions.
+                Mobile: 380px, md: 720px, lg: 760px, xl: 800px. */}
+            <div className="flex min-h-[380px] flex-1 flex-col p-4 sm:p-6 md:min-h-[720px] md:p-7 lg:min-h-[760px] lg:p-9 xl:min-h-[800px]">
               <div
                 key={activeTab}
-                className="animate-[fadeIn_0.25s_ease-out]"
+                className="flex-1 animate-[fadeIn_0.25s_ease-out]"
                 style={{ animationFillMode: "both" }}
               >
                 <ActivePanel />

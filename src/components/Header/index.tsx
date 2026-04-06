@@ -1,5 +1,5 @@
 "use client";
-import logoStatic from "@/../public/images/logo/logo.png";
+import logoStatic from "@/../public/images/logo/logo-light.png";
 import { useBranding } from "@/components/BrandingProvider";
 import { onScroll } from "@/libs/scrollActive";
 import { useSession } from "next-auth/react";

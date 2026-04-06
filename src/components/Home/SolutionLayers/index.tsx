@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 // ── i18n ──
 
@@ -71,29 +71,12 @@ const colors = {
 	amber:   { border: "border-amber-500/20",   text: "text-amber-400",   bg: "bg-amber-500/10",   glow: "shadow-[0_8px_60px_-15px_rgba(245,158,11,0.2)]", pill: "bg-amber-500/10 text-amber-400" },
 };
 
-// ── Fade hook: observe a sentinel div BEFORE the sticky card ──
+// ── Entrance animation: CSS-only, one-shot on mount ──
 //
-// Once a card becomes visible, keep it visible — otherwise on short
-// mobile viewports the card fades back out mid-scroll, which looks broken.
-// Also use a more permissive rootMargin so the fade-in triggers when the
-// element first touches the viewport, not 10% into it.
-function useFadeOnScroll() {
-	const sentinelRef = useRef<HTMLDivElement>(null);
-	const [visible, setVisible] = useState(false);
-	useEffect(() => {
-		const el = sentinelRef.current;
-		if (!el) return;
-		const obs = new IntersectionObserver(
-			([e]) => {
-				if (e.isIntersecting) setVisible(true);
-			},
-			{ threshold: 0, rootMargin: "0px 0px -10% 0px" },
-		);
-		obs.observe(el);
-		return () => obs.disconnect();
-	}, []);
-	return { sentinelRef, visible };
-}
+// Previously used IntersectionObserver + sentinel to fade cards in on scroll,
+// but on short mobile viewports it raced with the sticky layout and cards
+// flickered/faded mid-scroll. Now we just play a one-shot CSS fade on mount
+// (the cards are always "visible" after that, no scroll-dependent state).
 
 // ── Layer Card ──
 function LayerCard({ layer, index, tools, accent }: {
@@ -101,47 +84,38 @@ function LayerCard({ layer, index, tools, accent }: {
 	index: number; tools: string[]; accent: typeof accents[number];
 }) {
 	const c = colors[accent];
-	const { sentinelRef, visible } = useFadeOnScroll();
 
 	return (
-		<>
-			{/* Sentinel: a small invisible div that scrolls normally (not sticky) */}
-			<div ref={sentinelRef} className="h-1" />
-			<div
-				className="sticky z-10 pb-6"
-				style={{
-					// Use CSS variable so mobile and desktop can have independent top offsets
-					// without relying on a JS viewport check.
-					top: `calc(var(--layer-sticky-top, 80px) + ${index * 20}px)`,
-				}}
-			>
-				<div className={`rounded-2xl border ${c.border} ${c.glow} bg-[#0c0c14] backdrop-blur-md transition-all duration-500 ease-out ${visible ? "opacity-100 scale-100" : "opacity-0 scale-[0.97] translate-y-3"}`}>
-					<div className="flex flex-col gap-5 p-5 sm:gap-6 sm:p-10 md:flex-row md:items-start lg:p-12">
-						<div className="min-w-0 flex-1">
-							<span className={`mb-4 inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${c.pill} sm:mb-5`}>{layer.eyebrow}</span>
-							<h3 className="mb-3 text-lg font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">{layer.title}</h3>
-							<p className="mb-3 text-sm leading-relaxed text-gray-300 sm:text-base">{layer.body}</p>
-							<p className="text-xs leading-relaxed text-gray-500 sm:text-sm">{layer.support}</p>
-						</div>
-						<div className="flex shrink-0 flex-wrap gap-2 md:flex-col md:items-end md:pt-8">
-							{tools.map((t) => <span key={t} className={`rounded-lg border ${c.border} px-3 py-1.5 text-xs font-medium ${c.text}`}>{t}</span>)}
-						</div>
+		<div
+			className="sticky z-10 pb-6 layer-fade-in"
+			style={{
+				// CSS variable so mobile and desktop can have independent top offsets
+				top: `calc(var(--layer-sticky-top, 80px) + ${index * 20}px)`,
+				animationDelay: `${index * 120}ms`,
+			}}
+		>
+			<div className={`rounded-2xl border ${c.border} ${c.glow} bg-[#0c0c14] backdrop-blur-md`}>
+				<div className="flex flex-col gap-5 p-5 sm:gap-6 sm:p-10 md:flex-row md:items-start lg:p-12">
+					<div className="min-w-0 flex-1">
+						<span className={`mb-4 inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${c.pill} sm:mb-5`}>{layer.eyebrow}</span>
+						<h3 className="mb-3 text-lg font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">{layer.title}</h3>
+						<p className="mb-3 text-sm leading-relaxed text-gray-300 sm:text-base">{layer.body}</p>
+						<p className="text-xs leading-relaxed text-gray-500 sm:text-sm">{layer.support}</p>
+					</div>
+					<div className="flex shrink-0 flex-wrap gap-2 md:flex-col md:items-end md:pt-8">
+						{tools.map((t) => <span key={t} className={`rounded-lg border ${c.border} px-3 py-1.5 text-xs font-medium ${c.text}`}>{t}</span>)}
 					</div>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 
 // ── Agentic Chat Flow ──
 function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
-	const { sentinelRef, visible } = useFadeOnScroll();
-
 	return (
-		<>
-			<div ref={sentinelRef} className="h-1" />
-			<div className={`relative z-20 pt-8 pb-4 transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-				<div className="rounded-2xl border border-white/[0.06] bg-[#0c0c14] p-5 backdrop-blur-md sm:p-10 lg:p-12">
+		<div className="relative z-20 pt-8 pb-4 layer-fade-in">
+			<div className="rounded-2xl border border-white/[0.06] bg-[#0c0c14] p-5 backdrop-blur-md sm:p-10 lg:p-12">
 					<div className="mb-8 text-center sm:mb-10">
 						<span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">{t.label}</span>
 						<h3 className="text-lg font-bold text-white sm:text-2xl">{t.heading}</h3>
@@ -232,10 +206,9 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 							</div>
 							<div className="mt-3 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 						</div>
-					</div>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -254,6 +227,20 @@ export default function SolutionLayers() {
 
 	return (
 		<section className="relative bg-[#090911] py-16 sm:py-20 lg:py-28">
+			{/* One-shot entrance animation for layer cards + chat flow.
+			    Runs once on mount, no scroll dependency — fixes mobile fade race. */}
+			<style>{`
+				@keyframes layerFadeIn {
+					from { opacity: 0; transform: translateY(12px) scale(0.98); }
+					to   { opacity: 1; transform: translateY(0)    scale(1); }
+				}
+				.layer-fade-in {
+					animation: layerFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+				}
+				@media (prefers-reduced-motion: reduce) {
+					.layer-fade-in { animation: none; }
+				}
+			`}</style>
 			<div className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute left-1/2 top-[30%] h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-violet-900/8 blur-[120px] sm:h-[600px] sm:w-[700px] sm:blur-[180px]" />
 			</div>

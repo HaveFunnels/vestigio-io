@@ -12,6 +12,13 @@ interface HealthCheck {
   message?: string;
 }
 
+interface LiveCheck {
+  service: string;
+  status: "ok" | "degraded" | "down";
+  latencyMs: number;
+  message: string | null;
+}
+
 interface HealthData {
   status: string;
   checks: Record<string, HealthCheck>;
@@ -339,6 +346,8 @@ function UptimeGrid({ uptimeData, loading }: { uptimeData: UptimeResponse | null
 export default function AdminSystemHealthPage() {
   const [loading, setLoading] = useState(true);
   const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [liveChecks, setLiveChecks] = useState<LiveCheck[]>([]);
+  const [overallStatus, setOverallStatus] = useState<string>("unknown");
   const [errorSummary, setErrorSummary] = useState<ErrorSummary | null>(null);
   const [usageTotals, setUsageTotals] = useState<UsageTotals | null>(null);
   const [uptimeData, setUptimeData] = useState<UptimeResponse | null>(null);
@@ -357,6 +366,8 @@ export default function AdminSystemHealthPage() {
 
       if (healthResult.status === "fulfilled" && healthResult.value) {
         setHealthData(healthResult.value.health || null);
+        if (healthResult.value.checks) setLiveChecks(healthResult.value.checks);
+        if (healthResult.value.overall) setOverallStatus(healthResult.value.overall);
       }
       if (errorResult.status === "fulfilled" && errorResult.value) {
         setErrorSummary({
@@ -379,11 +390,17 @@ export default function AdminSystemHealthPage() {
 
   /* ---------- Derived stats ---------- */
 
-  const healthOk = healthData?.status === "ok";
+  const hasLiveChecks = liveChecks.length > 0;
+  const healthOk = hasLiveChecks ? overallStatus === "healthy" : healthData?.status === "ok";
   const checks = healthData?.checks || {};
   const checkEntries = Object.entries(checks);
-  const passedChecks = checkEntries.filter(([, v]) => v.ok).length;
-  const failedChecks = checkEntries.filter(([, v]) => !v.ok).length;
+  const passedChecks = hasLiveChecks
+    ? liveChecks.filter((c) => c.status === "ok").length
+    : checkEntries.filter(([, v]) => v.ok).length;
+  const failedChecks = hasLiveChecks
+    ? liveChecks.filter((c) => c.status !== "ok").length
+    : checkEntries.filter(([, v]) => !v.ok).length;
+  const totalChecks = hasLiveChecks ? liveChecks.length : checkEntries.length;
   const unresolvedErrors = errorSummary?.total ?? 0;
 
   const placeholder = loading ? "..." : "--";
@@ -405,13 +422,15 @@ export default function AdminSystemHealthPage() {
           value={
             loading
               ? placeholder
-              : healthData
+              : hasLiveChecks
                 ? healthOk
                   ? "Healthy"
-                  : `${failedChecks} Issue(s)`
+                  : overallStatus === "degraded"
+                    ? "Degraded"
+                    : `${failedChecks} Issue(s)`
                 : "Unknown"
           }
-          sub={healthData ? `${checkEntries.length} checks run` : "Health endpoint unavailable"}
+          sub={hasLiveChecks ? `${totalChecks} services checked` : "Waiting for first health check"}
           icon={icons.heart}
           accent={healthOk}
           warn={healthData != null && !healthOk}
@@ -451,27 +470,33 @@ export default function AdminSystemHealthPage() {
           <div className="px-5 py-12 text-center text-sm text-content-faint">
             Loading...
           </div>
-        ) : checkEntries.length === 0 ? (
+        ) : liveChecks.length === 0 && checkEntries.length === 0 ? (
           <div className="px-5 py-12 text-center text-sm text-content-faint">
-            No health check data available. Health checks will appear once the health endpoint is configured.
+            No health check data yet. Checks run automatically every 5 minutes.
           </div>
-        ) : (
+        ) : liveChecks.length > 0 ? (
           <div className="divide-y divide-edge">
-            {checkEntries.map(([name, check]) => (
+            {liveChecks.map((check) => (
               <div
-                key={name}
+                key={check.service}
                 className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-surface-card-hover"
               >
                 <div
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                    check.ok
+                    check.status === "ok"
                       ? "bg-emerald-500/10 text-emerald-400"
-                      : "bg-red-500/10 text-red-400"
+                      : check.status === "degraded"
+                        ? "bg-amber-500/10 text-amber-400"
+                        : "bg-red-500/10 text-red-400"
                   }`}
                 >
-                  {check.ok ? (
+                  {check.status === "ok" ? (
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  ) : check.status === "degraded" ? (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                     </svg>
                   ) : (
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -481,19 +506,43 @@ export default function AdminSystemHealthPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium capitalize text-content">
-                    {name.replace(/_/g, " ")}
+                    {check.service.replace(/_/g, " ")}
                   </p>
                   {check.message && (
                     <p className="mt-0.5 text-xs text-content-faint">{check.message}</p>
                   )}
                 </div>
+                {check.latencyMs > 0 && (
+                  <span className="text-xs font-mono text-content-faint">{check.latencyMs}ms</span>
+                )}
                 <span
                   className={`rounded px-2 py-0.5 text-xs font-medium ${
-                    check.ok
+                    check.status === "ok"
                       ? "bg-emerald-500/10 text-emerald-400"
-                      : "bg-red-500/10 text-red-400"
+                      : check.status === "degraded"
+                        ? "bg-amber-500/10 text-amber-400"
+                        : "bg-red-500/10 text-red-400"
                   }`}
                 >
+                  {check.status === "ok" ? "Healthy" : check.status === "degraded" ? "Degraded" : "Down"}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="divide-y divide-edge">
+            {checkEntries.map(([name, check]) => (
+              <div key={name} className="flex items-center gap-4 px-5 py-3.5">
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${check.ok ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d={check.ok ? "M4.5 12.75l6 6 9-13.5" : "M6 18L18 6M6 6l12 12"} />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium capitalize text-content">{name.replace(/_/g, " ")}</p>
+                  {check.message && <p className="mt-0.5 text-xs text-content-faint">{check.message}</p>}
+                </div>
+                <span className={`rounded px-2 py-0.5 text-xs font-medium ${check.ok ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
                   {check.ok ? "Pass" : "Fail"}
                 </span>
               </div>

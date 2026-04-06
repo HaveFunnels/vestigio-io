@@ -56,10 +56,22 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
     return NextResponse.json({ configs, economics, change_log: changeLog });
   }
 
-  // Production health check — Phase 20
+  // Production health check — Phase 20 (now with real pings)
   if (view === "health") {
-    const health = getProductionHealthCheck();
-    return NextResponse.json({ health });
+    const { runHealthChecks } = await import("@/libs/health-checker");
+    const legacyHealth = getProductionHealthCheck();
+    const liveChecks = await runHealthChecks();
+
+    // Merge: legacy config check + real service pings
+    return NextResponse.json({
+      health: legacyHealth,
+      checks: liveChecks,
+      overall: liveChecks.every((c) => c.status === "ok")
+        ? "healthy"
+        : liveChecks.some((c) => c.status === "down")
+          ? "unhealthy"
+          : "degraded",
+    });
   }
 
   // Chat feedback view — admin quality monitoring

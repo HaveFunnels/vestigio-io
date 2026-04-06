@@ -5,12 +5,16 @@ import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspa
 import { AppProviders } from "./providers";
 import { syncUserLocale } from "@/libs/sync-locale";
 import { loadEngineTranslations } from "@/lib/engine-translations";
+import { startHealthCheckTimer } from "@/libs/health-checker";
 
 export const metadata = {
 	title: "Vestigio",
 };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+	// Start background health checks (idempotent — only runs once per process)
+	startHealthCheckTimer();
+
 	const orgCtx = await resolveOrgContext();
 
 	// Sync the user's persisted locale preference from DB → cookie

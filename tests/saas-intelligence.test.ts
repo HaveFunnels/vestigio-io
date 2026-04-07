@@ -392,11 +392,16 @@ runSuite('Projections — SaaS Findings', () => {
     const saasFindings = projections.findings.filter(f => f.pack === 'saas_growth_readiness');
     assertGreater(saasFindings.length, 0, 'should have SaaS findings');
 
-    // Each should have impact, eligibility, surface
+    // Each NEGATIVE finding should have impact, eligibility, surface.
+    // Positive findings (e.g. navigation_clean — observation of healthy
+    // state) carry zero $ impact AND a generic surface (no specific
+    // negative location). Skip both checks for positives.
     for (const f of saasFindings) {
-      assertGreater(f.impact.midpoint, 0, `${f.inference_key} should have impact`);
       assert(f.eligibility.eligible, `${f.inference_key} should be eligible`);
-      assert(f.surface.includes('/app'), `${f.inference_key} should have SaaS surface`);
+      if (f.polarity !== 'positive') {
+        assertGreater(f.impact.midpoint, 0, `${f.inference_key} should have impact`);
+        assert(f.surface.includes('/app'), `${f.inference_key} should have SaaS surface`);
+      }
     }
   });
 

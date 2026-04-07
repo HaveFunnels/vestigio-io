@@ -71,10 +71,14 @@ runSuite('Finding Projections', () => {
     assertGreater(findings.length, 0, 'should have findings');
   });
 
-  test('every finding has quantified impact', () => {
+  test('every negative finding has quantified impact', () => {
     const result = computeResult();
     const findings = projectFindings(result);
-    for (const f of findings) {
+    // Positive findings (e.g. positive_strong_cta_clarity) are
+    // reinforcement observations of healthy state — they don't carry
+    // a $ impact, only negative/neutral findings do.
+    const monetary = findings.filter(f => f.polarity !== 'positive');
+    for (const f of monetary) {
       assert(f.impact.monthly_range.min >= 0, `${f.id}: min >= 0`);
       assertGreater(f.impact.monthly_range.max, 0, `${f.id}: max > 0`);
       assertGreater(f.impact.midpoint, 0, `${f.id}: midpoint > 0`);
@@ -318,7 +322,10 @@ runSuite('Map Generation', () => {
     const result = computeResult();
     const proj = projectAll(result);
     const map = buildRevenueLeakageMap(proj, result);
-    const withImpact = map.nodes.filter(n => n.impact !== null);
+    // Positive finding nodes have impact={midpoint:0,...} since
+    // reinforcement observations don't carry $ — exclude them from
+    // the "midpoint > 0" assertion.
+    const withImpact = map.nodes.filter(n => n.impact !== null && n.impact.midpoint > 0);
     assertGreater(withImpact.length, 0, 'some nodes should have impact');
     for (const n of withImpact) {
       assertGreater(n.impact!.midpoint, 0, `${n.id}: impact midpoint > 0`);

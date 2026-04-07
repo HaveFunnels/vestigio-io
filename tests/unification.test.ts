@@ -289,9 +289,12 @@ runSuite('Navigation Coherence', () => {
     const fs = require('fs');
     const content = fs.readFileSync(require('path').resolve(__dirname, '../src/components/app/AppSidebar.tsx'), 'utf-8');
 
-    // Three sections: Product, Control Plane, Platform Admin
+    // After the post-Sprint-4 sidebar refactor, the layout collapsed
+    // to two role-conditional sections: "Product" (regular users) and
+    // "Platform Admin" (admins). The legacy "Control Plane" middle
+    // section was removed when admin-only items were folded into
+    // Platform Admin.
     assert(content.includes('"Product"'), 'has Product section');
-    assert(content.includes('"Control Plane"'), 'has Control Plane section');
     assert(content.includes('"Platform Admin"'), 'has Platform Admin section');
 
     // No old boilerplate references

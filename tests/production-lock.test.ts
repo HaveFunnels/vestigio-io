@@ -61,6 +61,7 @@ runSuite('Environment Validation', () => {
       DATABASE_URL: 'postgres://localhost/test',
       SECRET: 'test-secret',
       NEXTAUTH_URL: 'http://localhost:3000',
+      SITE_URL: 'http://localhost:3000',
     });
     assertEqual(result.valid, true);
     assertEqual(result.missing.length, 0);
@@ -84,15 +85,19 @@ runSuite('Environment Validation', () => {
     assert(result.missing.some(m => m.includes('SECRET')), 'should report SECRET');
   });
 
-  test('production requires Stripe keys', () => {
+  test('production requires VESTIGIO_SECRET_KEY + ANTHROPIC_API_KEY', () => {
+    // Stripe was downgraded to PRODUCTION_RECOMMENDED — production now
+    // hard-requires VESTIGIO_SECRET_KEY (encryption) + ANTHROPIC_API_KEY (LLM).
     const result = validateEnv({
       NODE_ENV: 'production',
       DATABASE_URL: 'postgres://localhost/test',
       SECRET: 'secret',
       NEXTAUTH_URL: 'http://app.vestigio.io',
+      SITE_URL: 'http://app.vestigio.io',
     });
     assertEqual(result.valid, false);
-    assert(result.missing.some(m => m.includes('STRIPE_SECRET_KEY')), 'should require Stripe key');
+    assert(result.missing.some(m => m.includes('VESTIGIO_SECRET_KEY')), 'should require VESTIGIO_SECRET_KEY');
+    assert(result.missing.some(m => m.includes('ANTHROPIC_API_KEY')), 'should require ANTHROPIC_API_KEY');
   });
 
   test('production passes with all vars', () => {
@@ -101,8 +106,9 @@ runSuite('Environment Validation', () => {
       DATABASE_URL: 'postgres://prod/vestigio',
       SECRET: 'prod-secret',
       NEXTAUTH_URL: 'https://app.vestigio.io',
-      STRIPE_SECRET_KEY: 'sk_live_xxx',
-      STRIPE_WEBHOOK_SECRET: 'whsec_xxx',
+      SITE_URL: 'https://app.vestigio.io',
+      VESTIGIO_SECRET_KEY: 'aes-256-key-xxx',
+      ANTHROPIC_API_KEY: 'sk-ant-xxx',
     });
     assertEqual(result.valid, true);
   });
@@ -152,13 +158,16 @@ runSuite('Store Enforcement', () => {
 runSuite('Startup Sequence', () => {
   test('vestigioStartup succeeds with valid env', () => {
     resetStartup();
-    // Set env vars for validation
+    // Set env vars for validation — must include SITE_URL (added to
+    // REQUIRED_VARS after the original test was written).
     const origDb = process.env.DATABASE_URL;
     const origSecret = process.env.SECRET;
     const origUrl = process.env.NEXTAUTH_URL;
+    const origSiteUrl = process.env.SITE_URL;
     process.env.DATABASE_URL = 'postgres://test';
-    process.env.SECRET = 'test';
+    process.env.SECRET = 'test-secret-at-least-32-chars-long-xyz';
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
+    process.env.SITE_URL = 'http://localhost:3000';
 
     const result = vestigioStartup();
 
@@ -166,6 +175,7 @@ runSuite('Startup Sequence', () => {
     if (origDb) process.env.DATABASE_URL = origDb; else delete process.env.DATABASE_URL;
     if (origSecret) process.env.SECRET = origSecret; else delete process.env.SECRET;
     if (origUrl) process.env.NEXTAUTH_URL = origUrl; else delete process.env.NEXTAUTH_URL;
+    if (origSiteUrl) process.env.SITE_URL = origSiteUrl; else delete process.env.SITE_URL;
 
     assertEqual(result.success, true);
     assertGreater(result.checks.length, 0, 'should have checks');
@@ -174,8 +184,9 @@ runSuite('Startup Sequence', () => {
   test('startup returns environment name', () => {
     resetStartup();
     process.env.DATABASE_URL = 'postgres://test';
-    process.env.SECRET = 'test';
+    process.env.SECRET = 'test-secret-at-least-32-chars-long-xyz';
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
+    process.env.SITE_URL = 'http://localhost:3000';
 
     const result = vestigioStartup();
     assert(typeof result.environment === 'string', 'has environment');
@@ -183,6 +194,7 @@ runSuite('Startup Sequence', () => {
     delete process.env.DATABASE_URL;
     delete process.env.SECRET;
     delete process.env.NEXTAUTH_URL;
+    delete process.env.SITE_URL;
   });
 });
 
@@ -354,10 +366,11 @@ runSuite('End-to-End Smoke Path', () => {
     resetStartup();
     clearLogs();
 
-    // 2. Startup (dev mode)
+    // 2. Startup (dev mode) — must include SITE_URL since it's now in REQUIRED_VARS
     process.env.DATABASE_URL = 'postgres://test';
-    process.env.SECRET = 'test';
+    process.env.SECRET = 'test-secret-at-least-32-chars-long-xyz';
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
+    process.env.SITE_URL = 'http://localhost:3000';
     const startup = vestigioStartup();
     assertEqual(startup.success, true);
 

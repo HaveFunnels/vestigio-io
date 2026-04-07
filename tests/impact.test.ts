@@ -246,10 +246,16 @@ runSuite('Pipeline Integration', () => {
       conversion_proximity: 2, is_production: true,
     });
 
-    // Both should have impact — with inputs should show mixed basis
+    // Both should have impact. With inputs should classify as
+    // data_driven (since defaultBusiness has all 3 core fields set:
+    // monthly_revenue, average_order_value, monthly_transactions).
+    // Without inputs should be heuristic.
     assertGreater(withInputs.impact.value_cases.length, 0, 'with inputs: has cases');
     assertGreater(withoutInputs.impact.value_cases.length, 0, 'without inputs: has cases');
-    assert(withInputs.impact.value_cases.some(vc => vc.basis_type === 'mixed'), 'with inputs: should be mixed');
+    assert(
+      withInputs.impact.value_cases.some(vc => vc.basis_type === 'data_driven' || vc.basis_type === 'mixed'),
+      'with inputs: should be data_driven or mixed (not heuristic)',
+    );
     assert(withoutInputs.impact.value_cases.every(vc => vc.basis_type === 'heuristic'), 'without inputs: should be heuristic');
   });
 });

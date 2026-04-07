@@ -240,10 +240,19 @@ runSuite('No Demo Data in Engine', () => {
 
     const findings = server.callTool('get_finding_projections');
     assertEqual(findings.type, 'finding_projections');
-    // Findings should come from actual inference pipeline, not hardcoded
+    // Findings should come from actual inference pipeline, not hardcoded.
+    // IDs follow one of two conventions: `finding_<inference_key>` for
+    // negative/neutral findings (the conversion-loss ones with $ impact)
+    // and `positive_<check_key>` for reinforcement findings (positive
+    // observations of healthy state). Positives don't carry $ impact.
     for (const f of (findings.data as any[])) {
-      assert(f.id.startsWith('finding_'), 'finding id should follow convention');
-      assertGreater(f.impact.midpoint, 0, 'impact should be computed, not hardcoded');
+      assert(
+        f.id.startsWith('finding_') || f.id.startsWith('positive_'),
+        `${f.id} should match finding_* or positive_* convention`,
+      );
+      if (f.polarity !== 'positive') {
+        assertGreater(f.impact.midpoint, 0, `${f.id}: impact should be computed`);
+      }
     }
   });
 });

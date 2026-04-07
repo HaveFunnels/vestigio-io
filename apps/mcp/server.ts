@@ -63,6 +63,10 @@ export class McpServer {
   private session: McpSessionContext = createEmptySession();
   /** Phase 27: Global verification policy config */
   private verificationPolicy: VerificationPolicyConfig;
+  // Wave 0.6: Cached so executeVerification's recompute keeps i18n
+  // and change detection working after a verification result lands.
+  private translations: import('../../packages/projections/types').EngineTranslations | undefined;
+  private previousSnapshot: import('../../packages/change-detection').CycleSnapshot | null = null;
 
   constructor(config: Partial<McpServerConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -86,6 +90,8 @@ export class McpServer {
     this.cycleRef = cycle_ref;
     this.rootDomain = root_domain;
     this.landingUrl = landing_url;
+    this.translations = translations;
+    this.previousSnapshot = previousSnapshot ?? null;
 
     // Store evidence for verification access
     this.evidenceStore.clear();
@@ -186,7 +192,10 @@ export class McpServer {
     try {
       const { verification, recomputation } = await this.orchestrator.executeAndRecompute(requestId);
 
-      // Update engine context with recomputed results
+      // Update engine context with recomputed results.
+      // Wave 0.6: pass through cached translations + previousSnapshot so the
+      // post-verify projections retain i18n labels and change_class metadata
+      // (otherwise the UI would lose them after every "Re-verify" click).
       this.context = assembleContext(
         this.evidenceStore.query({ workspace_ref: this.scope.workspace_ref }),
         this.scope,
@@ -195,6 +204,8 @@ export class McpServer {
         this.landingUrl,
         this.config.default_conversion_proximity,
         this.config.default_is_production,
+        this.translations,
+        this.previousSnapshot,
       );
 
       const view: VerificationStatusView = {

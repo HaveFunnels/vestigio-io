@@ -117,6 +117,9 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
   const router = useRouter();
   const [selected, setSelected] = useState<ActionProjection | null>(null);
   const [activeTab, setActiveTab] = useState<CategoryTab>("all");
+  // Wave 0.6: Track which action is currently being verified so the
+  // drawer button shows a spinner instead of relying on a global state.
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   // Category counts
   const counts = useMemo(() => {
@@ -137,6 +140,54 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
   const totalImpact = useMemo(() => {
     return actions.reduce((sum, a) => sum + (a.impact?.midpoint || 0), 0);
   }, [actions]);
+
+  // Wave 0.6: POST /api/verification/run and refresh server data on success.
+  // Used by both "Re-verify" (intent='re_verify') and the post-resolution
+  // confirmation CTA (intent='confirm_resolution'). The API returns the
+  // updated action projection so we can short-circuit the spinner; the
+  // router.refresh() then propagates the change to the rest of the page.
+  async function runVerification(action: ActionProjection, intent: "re_verify" | "confirm_resolution") {
+    if (verifyingId) return; // one at a time
+    setVerifyingId(action.id);
+    const pendingToast = toast.loading(t("drawer.verificationRunning"));
+    try {
+      const res = await fetch("/api/verification/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action_id: action.id, intent }),
+      });
+      const json = await res.json().catch(() => ({}));
+      toast.dismiss(pendingToast);
+
+      if (!res.ok || !json.ok) {
+        toast.error(json.message || t("drawer.verificationFailed"));
+        return;
+      }
+
+      if (json.skipped) {
+        // Policy downgraded / denied — surface the reasoning so the user
+        // understands why nothing ran. This is success, not failure.
+        toast(json.reasoning || t("drawer.verificationSkipped"), { icon: "ℹ️" });
+        return;
+      }
+
+      toast.success(
+        intent === "confirm_resolution"
+          ? t("drawer.confirmationRequested")
+          : t("drawer.verificationRequested"),
+      );
+
+      // Refresh server-rendered data so the drawer shows updated maturity.
+      // We don't close the drawer — the user often wants to read the result.
+      router.refresh();
+    } catch (err) {
+      toast.dismiss(pendingToast);
+      const message = err instanceof Error ? err.message : t("drawer.verificationFailed");
+      toast.error(message);
+    } finally {
+      setVerifyingId(null);
+    }
+  }
 
   // Summary cards
   const cards: SummaryCard[] = [
@@ -327,7 +378,14 @@ function ActionsContent({ actions, changeReport }: { actions: ActionProjection[]
         onClose={() => setSelected(null)}
         title={selected?.title || ""}
       >
-        {selected && <ActionDrawerContent action={selected} onNavigateChat={(id) => router.push(`/chat?action=${id}`)} />}
+        {selected && (
+          <ActionDrawerContent
+            action={selected}
+            onNavigateChat={(id) => router.push(`/chat?action=${id}`)}
+            onRunVerification={(intent) => runVerification(selected, intent)}
+            isVerifying={verifyingId === selected.id}
+          />
+        )}
       </SideDrawer>
     </>
   );
@@ -454,9 +512,13 @@ function CategoryBadge({ category }: { category: string }) {
 function ActionDrawerContent({
   action,
   onNavigateChat,
+  onRunVerification,
+  isVerifying,
 }: {
   action: ActionProjection;
   onNavigateChat: (id: string) => void;
+  onRunVerification: (intent: "re_verify" | "confirm_resolution") => void;
+  isVerifying: boolean;
 }) {
   const t = useTranslations("console.actions");
   const cfg = categoryConfig[action.category];
@@ -560,9 +622,14 @@ function ActionDrawerContent({
           currentConfidence={null}
           reTriggerReason={null}
           decisionStatus={action.decision_status}
-          onRequestVerification={() => toast.success(t("drawer.verificationRequested"))}
-          onConfirmResolution={() => toast.success(t("drawer.confirmationRequested"))}
+          onRequestVerification={isVerifying ? undefined : () => onRunVerification("re_verify")}
+          onConfirmResolution={isVerifying ? undefined : () => onRunVerification("confirm_resolution")}
         />
+        {isVerifying && (
+          <p className="mt-2 text-xs text-content-muted">
+            {t("drawer.verificationRunning")}
+          </p>
+        )}
       </section>
 
       {/* Verification Sufficiency Warning */}
@@ -597,9 +664,19 @@ function ActionDrawerContent({
         </button>
         {resolveCfg && (
           <button
-            className={`w-full rounded-md border px-4 py-2 text-sm font-medium transition-colors ${resolveCfg.style}`}
+            disabled={action.resolve_path === "verify" && isVerifying}
+            onClick={() => {
+              // Only the "verify" resolve path has a wired backend handler today;
+              // fix/track/dismiss are placeholders awaiting their own pipelines.
+              if (action.resolve_path === "verify") {
+                onRunVerification("re_verify");
+              }
+            }}
+            className={`w-full rounded-md border px-4 py-2 text-sm font-medium transition-colors ${resolveCfg.style} disabled:opacity-50`}
           >
-            {resolveCfg.label}
+            {action.resolve_path === "verify" && isVerifying
+              ? t("drawer.verificationRunning")
+              : resolveCfg.label}
           </button>
         )}
       </section>

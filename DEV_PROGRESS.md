@@ -2,6 +2,89 @@
 
 ---
 
+## Wave 0.6 -- 2026-04-07 -- Verification Frontend Wiring
+
+### Goal
+
+The Actions drawer's `VerificationPanel` already had a "Re-verify" CTA and a post-resolution "Confirm Resolution" CTA, but both were `onRequestVerification={() => toast.success(...)}` toast-only stubs. Wire them to the real MCP verification orchestrator that already exists end-to-end (verify → policy gate → orchestrator → recompute → projections refresh) so the buttons actually do something. No new engine code — purely connecting an existing pipeline to its UI surface.
+
+### Key insight from investigation
+
+Almost everything was already in place:
+
+- `McpServer.verify()` already routes through the global verification policy, the orchestrator, evidence-store rehydration, and an `assembleContext()` recompute on success
+- The orchestrator's `executeAndRecompute()` returns updated evidence + recomputation result
+- The projection layer already maps `verification_maturity` from decision lifecycle state, so as soon as the engine context is rebuilt, `loadActions()` returns fresh maturity for the same action_key
+
+The only missing pieces were:
+
+1. A POST API route that bridges browser → MCP singleton (the singleton is server-only)
+2. The actions page replacing its toast stubs with a real `fetch()` + `router.refresh()`
+3. A latent bug fix: `McpServer.executeVerification()` was rebuilding the engine context **without** translations or `previousSnapshot`, so every verification erased i18n labels and `change_class` info from the post-verify projections
+
+### What changed
+
+**MCP server — preserve translations + previousSnapshot across recomputes** ([apps/mcp/server.ts](apps/mcp/server.ts))
+
+`McpServer.loadContext()` now caches the optional `translations` and `previousSnapshot` arguments on the instance. `executeVerification()` passes them through when it rebuilds the engine context after a verification result lands. Before this fix, clicking "Re-verify" would silently drop change_class badges and revert root-cause titles to English (or to internal keys when no translations were provided). Pre-existing latent bug — caught while tracing the verify pipeline as part of "olho comportamentos adjacentes".
+
+**New API route** ([src/app/api/verification/run/route.ts](src/app/api/verification/run/route.ts))
+
+`POST /api/verification/run` — `runtime: 'nodejs'`, `maxDuration: 60`. Body: `{ action_id: string, intent?: 're_verify' | 'confirm_resolution' }`. Flow:
+
+1. `isAuthorized()` → org → environment → website (mirrors `/api/inventory`)
+2. `loadEngineTranslations()` for the cookie locale + `ensureContext()` to bootstrap the MCP singleton if cold-started
+3. Look up the `GlobalAction` by `action_key` in `mcpServer.getContext().result.intelligence.global_actions` — returns 404 if the action no longer exists (e.g., the user re-ran the audit in another tab)
+4. Derive `decision_ref` from `action.source_decisions[0]`, `subject_ref` from `website:${website.domain}`, and a human-readable `reason` like `"Manual re-verification requested for: <action.title>"`
+5. `await mcpServer.verify({ verification_type: 'browser_verification', subject_ref, reason, decision_ref, requested_by: 'manual' })` — the global policy may downgrade the requested type
+6. After completion, call `get_action_projections` and return the **single updated action projection** alongside the verification status, so the client can refresh its drawer without an extra round trip
+
+Three response shapes:
+
+- `{ ok: true, skipped: false, verification, action }` — completed (or downgraded by policy and ran)
+- `{ ok: true, skipped: true, recommended_type, reasoning, alternatives }` — policy fully denied. Surfaced as an info toast with the policy's reasoning, not an error
+- `{ ok: false, code, message }` — actual failure (auth, no context, action not found, orchestrator threw)
+
+**Actions page wiring** ([src/app/(console)/actions/page.tsx](src/app/(console)/actions/page.tsx))
+
+- New `verifyingId` state in `ActionsContent` (one verification at a time per page)
+- New `runVerification(action, intent)` async handler: pending toast → POST → success/info/error toast → `router.refresh()` to re-fetch projections through the layout
+- `ActionDrawerContent` now accepts `onRunVerification` and `isVerifying` props
+- The two `VerificationPanel` callbacks (`onRequestVerification`, `onConfirmResolution`) now call `onRunVerification(intent)` with the right intent string instead of toast-only stubs
+- The bottom "Run Verification" resolve button (visible when `resolve_path === 'verify'`) is also wired to the same handler. The other resolve paths (`fix`, `track`, `dismiss`) remain placeholders awaiting their own pipelines — explicit comment in the code so future readers don't think it's a bug
+- New i18n keys: `verificationRunning`, `verificationFailed`, `verificationSkipped` added to en/pt-BR/es dictionaries
+
+### Adjacent flows verified
+
+- **Cold start**: After a server restart, `ensureContext()` rebuilds the MCP context from the latest persisted cycle (Wave 0.7) before the verify route runs. Tested by reading the console-data ensureContext path.
+- **Translations after verify**: With the latent bug fix above, post-verify projections now keep the user's locale labels.
+- **Change_class after verify**: With the same fix, the previous snapshot from Wave 0.7 still drives change classification on the recomputed result.
+- **Multiple verifications in sequence**: `verifyingId` state guards against double-clicks. The orchestrator's `active_count` policy is decremented on completion in `mcpServer.verify()` so subsequent calls aren't blocked.
+- **Action disappears mid-verify**: If the user re-runs the audit while a verification is in flight, the new audit produces a different `action_key` set; on completion the `get_action_projections` lookup may return undefined for the original id. The route still returns `ok: true` with `action: null` so the client doesn't crash.
+- **Singleton scope**: The verification result lives only in the in-memory MCP singleton on the process that handled the request. In multi-process production deployments, other processes won't see the new evidence until they hit DB-backed data again. Tracked as known limitation — full cross-process verification persistence is a separate concern.
+
+### Files touched
+
+- [apps/mcp/server.ts](apps/mcp/server.ts) — cache `translations` + `previousSnapshot`, pass through on verify-recompute
+- [src/app/api/verification/run/route.ts](src/app/api/verification/run/route.ts) — **new** POST route
+- [src/app/(console)/actions/page.tsx](src/app/(console)/actions/page.tsx) — replace toast stubs with real handler, add spinner state
+- [dictionary/en.json](dictionary/en.json), [dictionary/pt-BR.json](dictionary/pt-BR.json), [dictionary/es.json](dictionary/es.json) — `verificationRunning` / `verificationFailed` / `verificationSkipped` keys
+
+### Manual verification
+
+1. Run an audit on any environment so the actions table populates
+2. Open `/app/actions`, click any action with `resolve_path === "verify"`
+3. Click "Re-verify" inside the drawer's verification panel — should show a "Running verification…" toast, then either success or a policy-skipped info toast (with reasoning)
+4. After success, the drawer should reflect the updated maturity without a manual refresh
+5. Verify in browser devtools that `POST /api/verification/run` returned `200 { ok: true }` and that the response body's `action.verification_maturity` matches what's now shown in the table
+
+### Known follow-ups
+
+- Verifications don't persist across server restarts (in-memory only). Adding a `VerificationResult` Prisma model + `loadOnBootstrap()` is a future task
+- The "fix" / "track" / "dismiss" resolve paths are still stubs awaiting their own backend pipelines
+
+---
+
 ## Wave 0.7 -- 2026-04-07 -- Findings Persistence + Change Detection
 
 ### Goal

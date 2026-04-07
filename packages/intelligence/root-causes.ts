@@ -11,6 +11,17 @@ import type { EngineTranslations } from '../projections/types';
 // ──────────────────────────────────────────────
 
 // Mapping: inference_key → which root cause group it belongs to
+//
+// Wave 2.3 (2026-04-07) — vocabulary refinement:
+// - Consolidated 3 abuse keys → `commerce_abuse_exposure`
+// - Consolidated 4 discoverability keys → 2 (`brand_inconsistent_in_previews` + `commerce_pages_invisible_to_search`)
+// - Consolidated 3 brand keys → `brand_impersonation_exposure` (broadened scope)
+// - Renamed `elevated_dispute_risk` → `dispute_defenses_absent`
+// - Renamed `commerce_continuity_exposure` → `commerce_operations_exposed`
+// - Renamed `uncontrolled_commerce_variant` → `untracked_purchase_paths`
+// - Moved `runtime_commerce_fragility` from `friction_barrier` → new `runtime_fragility` category
+// - `weak_conversion_signal` retitled but kept as a distinct root cause
+// Net: 33 → 27 root causes.
 export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   root_cause_key: string;
   category: RootCauseCategory;
@@ -36,14 +47,14 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   // Revenue-specific leakage
   revenue_leakage:         { root_cause_key: 'active_revenue_leakage', category: 'conversion_fragmentation', impact_types: ['revenue_loss'] },
 
-  // Conversion clarity — revenue-specific
+  // Conversion clarity — kept distinct from friction; "no signal" is different from "obstacle on the path"
   unclear_conversion_intent: { root_cause_key: 'weak_conversion_signal', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
 
   // Chargeback resilience — policy, support, expectation
   refund_policy_gap:         { root_cause_key: 'policy_deficiency', category: 'policy_deficiency', impact_types: ['trust_erosion', 'chargeback_risk'] },
   support_unreachable:       { root_cause_key: 'support_gap', category: 'support_gap', impact_types: ['chargeback_risk', 'trust_erosion'] },
   expectation_misalignment:  { root_cause_key: 'expectation_failure', category: 'expectation_failure', impact_types: ['chargeback_risk'] },
-  dispute_risk_elevated:     { root_cause_key: 'elevated_dispute_risk', category: 'dispute_exposure', impact_types: ['chargeback_risk', 'trust_erosion'] },
+  dispute_risk_elevated:     { root_cause_key: 'dispute_defenses_absent', category: 'dispute_exposure', impact_types: ['chargeback_risk', 'trust_erosion'] },
 
   // Commerce context — informational, not a problem
   commerce_context:        { root_cause_key: '_skip_', category: 'conversion_clarity', impact_types: [] },
@@ -101,58 +112,60 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   checkout_provider_path_weak:          { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
   trust_and_measurement_both_absent:    { root_cause_key: 'active_revenue_leakage', category: 'conversion_fragmentation', impact_types: ['revenue_loss', 'trust_erosion', 'measurement_blind'] },
 
-  // Phase 3A: Channel integrity / abuse exposure
+  // Phase 3A: Channel integrity / abuse exposure (Wave 2.3 consolidated abuse keys)
   payment_surface_compromised:          { root_cause_key: 'channel_integrity_compromise', category: 'channel_integrity', impact_types: ['revenue_loss', 'trust_erosion'] },
   channel_traffic_divertible:           { root_cause_key: 'channel_integrity_compromise', category: 'channel_integrity', impact_types: ['trust_erosion', 'revenue_loss'] },
-  commerce_operations_exposed:          { root_cause_key: 'commerce_continuity_exposure', category: 'commerce_continuity', impact_types: ['revenue_loss', 'scale_risk'] },
+  commerce_operations_exposed:          { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss', 'scale_risk'] },
   traffic_landing_low_trust_posture:    { root_cause_key: 'weak_channel_posture', category: 'channel_integrity', impact_types: ['trust_erosion', 'revenue_loss'] },
   channel_compromise_visible:           { root_cause_key: 'channel_integrity_compromise', category: 'channel_integrity', impact_types: ['trust_erosion', 'revenue_loss'] },
-  commercial_path_abuse_friendly:       { root_cause_key: 'abuse_friendly_channel', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
-  economic_exploitation_active:         { root_cause_key: 'abuse_friendly_channel', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  commercial_path_abuse_friendly:       { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  economic_exploitation_active:         { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
   checkout_trust_brittle_infrastructure:{ root_cause_key: 'channel_integrity_compromise', category: 'channel_integrity', impact_types: ['trust_erosion', 'revenue_loss', 'scale_risk'] },
 
-  // Phase 3B: Deep discovery findings
-  promotion_logic_exposed:              { root_cause_key: 'deep_commerce_abuse_surface', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
-  cart_variant_weak_control:            { root_cause_key: 'deep_commerce_abuse_surface', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
-  hidden_discount_refund_route:         { root_cause_key: 'deep_commerce_abuse_surface', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
-  guessable_business_endpoint:          { root_cause_key: 'weak_commerce_governance', category: 'abuse_exposure', impact_types: ['revenue_loss', 'scale_risk'] },
-  alternate_pricing_safeguard_bypass:   { root_cause_key: 'weak_commerce_governance', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
-  js_discovered_purchase_variant:       { root_cause_key: 'uncontrolled_commerce_variant', category: 'conversion_fragmentation', impact_types: ['revenue_loss', 'trust_erosion'] },
-  dynamic_route_weak_control:           { root_cause_key: 'weak_commerce_governance', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  // Phase 3B: Deep discovery findings (Wave 2.3 consolidated into commerce_abuse_exposure)
+  promotion_logic_exposed:              { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  cart_variant_weak_control:            { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  hidden_discount_refund_route:         { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  guessable_business_endpoint:          { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss', 'scale_risk'] },
+  alternate_pricing_safeguard_bypass:   { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  js_discovered_purchase_variant:       { root_cause_key: 'untracked_purchase_paths', category: 'conversion_fragmentation', impact_types: ['revenue_loss', 'trust_erosion'] },
+  dynamic_route_weak_control:           { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
   hidden_support_burden:                { root_cause_key: 'support_gap', category: 'support_gap', impact_types: ['chargeback_risk'] },
-  alternate_variant_control_breakdown:  { root_cause_key: 'uncontrolled_commerce_variant', category: 'conversion_fragmentation', impact_types: ['revenue_loss', 'trust_erosion', 'measurement_blind'] },
-  deep_commerce_exploitation_risk:      { root_cause_key: 'deep_commerce_abuse_surface', category: 'abuse_exposure', impact_types: ['revenue_loss', 'scale_risk'] },
+  alternate_variant_control_breakdown:  { root_cause_key: 'untracked_purchase_paths', category: 'conversion_fragmentation', impact_types: ['revenue_loss', 'trust_erosion', 'measurement_blind'] },
+  deep_commerce_exploitation_risk:      { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss', 'scale_risk'] },
 
-  // Phase 2D: Network analysis findings
-  checkout_api_latency_degraded:        { root_cause_key: 'runtime_commerce_fragility', category: 'friction_barrier', impact_types: ['revenue_loss'] },
-  commercial_pages_slow:                { root_cause_key: 'runtime_commerce_fragility', category: 'friction_barrier', impact_types: ['revenue_loss', 'scale_risk'] },
-  paid_landing_overloaded:              { root_cause_key: 'runtime_commerce_fragility', category: 'friction_barrier', impact_types: ['revenue_loss', 'scale_risk'] },
+  // Phase 2D: Network analysis findings (Wave 2.3 moved runtime_commerce_fragility to runtime_fragility category)
+  checkout_api_latency_degraded:        { root_cause_key: 'runtime_commerce_fragility', category: 'runtime_fragility', impact_types: ['revenue_loss'] },
+  commercial_pages_slow:                { root_cause_key: 'runtime_commerce_fragility', category: 'runtime_fragility', impact_types: ['revenue_loss', 'scale_risk'] },
+  paid_landing_overloaded:              { root_cause_key: 'runtime_commerce_fragility', category: 'runtime_fragility', impact_types: ['revenue_loss', 'scale_risk'] },
   third_party_weight_delays_trust:      { root_cause_key: 'third_party_dependency_risk', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
   checkout_brittle_third_party:         { root_cause_key: 'third_party_dependency_risk', category: 'channel_integrity', impact_types: ['revenue_loss'] },
   purchase_blocked_failing_requests:    { root_cause_key: 'active_revenue_leakage', category: 'conversion_fragmentation', impact_types: ['revenue_loss'] },
   measurement_breaks_revenue_path:      { root_cause_key: 'measurement_blindspot', category: 'measurement_gap', impact_types: ['measurement_blind', 'revenue_loss'] },
-  purchase_before_deps_ready:           { root_cause_key: 'runtime_commerce_fragility', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+  purchase_before_deps_ready:           { root_cause_key: 'runtime_commerce_fragility', category: 'runtime_fragility', impact_types: ['revenue_loss'] },
   trust_assets_late_load:               { root_cause_key: 'third_party_dependency_risk', category: 'trust_failure', impact_types: ['trust_erosion'] },
-  mobile_heavy_runtime_chain:           { root_cause_key: 'runtime_commerce_fragility', category: 'friction_barrier', impact_types: ['revenue_loss', 'scale_risk'] },
+  mobile_heavy_runtime_chain:           { root_cause_key: 'runtime_commerce_fragility', category: 'runtime_fragility', impact_types: ['revenue_loss', 'scale_risk'] },
   mobile_trust_payment_deps_failing:    { root_cause_key: 'third_party_dependency_risk', category: 'trust_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
   trust_surfaces_unstable_deps:         { root_cause_key: 'third_party_dependency_risk', category: 'channel_integrity', impact_types: ['trust_erosion'] },
 
-  // Phase 3E: Discoverability findings
-  commercial_pages_weak_search_representation: { root_cause_key: 'weak_discoverability_signals', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
-  social_previews_fail_commercial_value:       { root_cause_key: 'weak_discoverability_signals', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
-  brand_inconsistent_across_surfaces:          { root_cause_key: 'inconsistent_surface_representation', category: 'discoverability_gap', impact_types: ['trust_erosion', 'revenue_loss'] },
-  commercial_pages_unlikely_indexed:           { root_cause_key: 'commercial_pages_not_exposed', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
-  weak_semantic_intent_signals:                { root_cause_key: 'weak_semantic_intent_signaling', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
-  previews_disconnected_from_conversion:       { root_cause_key: 'inconsistent_surface_representation', category: 'discoverability_gap', impact_types: ['revenue_loss', 'trust_erosion'] },
-  commercial_pages_not_exposed_for_discovery:  { root_cause_key: 'commercial_pages_not_exposed', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
+  // Phase 3E: Discoverability findings (Wave 2.3 consolidated 4 → 2)
+  // - brand/content layer (representation, previews, semantic) → brand_inconsistent_in_previews
+  // - structural layer (indexing, exposure) → commerce_pages_invisible_to_search
+  commercial_pages_weak_search_representation: { root_cause_key: 'brand_inconsistent_in_previews', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
+  social_previews_fail_commercial_value:       { root_cause_key: 'brand_inconsistent_in_previews', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
+  brand_inconsistent_across_surfaces:          { root_cause_key: 'brand_inconsistent_in_previews', category: 'discoverability_gap', impact_types: ['trust_erosion', 'revenue_loss'] },
+  commercial_pages_unlikely_indexed:           { root_cause_key: 'commerce_pages_invisible_to_search', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
+  weak_semantic_intent_signals:                { root_cause_key: 'commerce_pages_invisible_to_search', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
+  previews_disconnected_from_conversion:       { root_cause_key: 'brand_inconsistent_in_previews', category: 'discoverability_gap', impact_types: ['revenue_loss', 'trust_erosion'] },
+  commercial_pages_not_exposed_for_discovery:  { root_cause_key: 'commerce_pages_invisible_to_search', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
 
-  // Phase 3E: Brand integrity findings
+  // Phase 3E: Brand integrity findings (Wave 2.3 consolidated 3 → 1, broadened brand_impersonation_exposure)
   lookalike_domain_competing_for_traffic:      { root_cause_key: 'brand_impersonation_exposure', category: 'brand_impersonation', impact_types: ['revenue_loss'] },
   external_sites_mimicking_brand:              { root_cause_key: 'brand_impersonation_exposure', category: 'brand_impersonation', impact_types: ['revenue_loss', 'trust_erosion'] },
-  brand_traffic_exposed_to_deceptive_surfaces: { root_cause_key: 'traffic_interception_risk', category: 'brand_impersonation', impact_types: ['revenue_loss'] },
-  suspicious_domains_capturing_purchase_intent:{ root_cause_key: 'traffic_interception_risk', category: 'brand_impersonation', impact_types: ['revenue_loss'] },
+  brand_traffic_exposed_to_deceptive_surfaces: { root_cause_key: 'brand_impersonation_exposure', category: 'brand_impersonation', impact_types: ['revenue_loss'] },
+  suspicious_domains_capturing_purchase_intent:{ root_cause_key: 'brand_impersonation_exposure', category: 'brand_impersonation', impact_types: ['revenue_loss'] },
   customers_exposed_to_phishing_surfaces:      { root_cause_key: 'brand_impersonation_exposure', category: 'brand_impersonation', impact_types: ['revenue_loss', 'trust_erosion'] },
-  brand_presence_diluted_across_variants:      { root_cause_key: 'brand_surface_fragmentation', category: 'brand_impersonation', impact_types: ['trust_erosion', 'revenue_loss'] },
+  brand_presence_diluted_across_variants:      { root_cause_key: 'brand_impersonation_exposure', category: 'brand_impersonation', impact_types: ['trust_erosion', 'revenue_loss'] },
 
   // Phase 4B: Behavioral intelligence findings
   policy_view_then_abandonment:               { root_cause_key: 'behavioral_hesitation_at_commitment', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss', 'chargeback_risk'] },
@@ -178,92 +191,121 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   sensitive_input_perceived_risk_dropoff:      { root_cause_key: 'behavioral_trust_failure_at_input', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss'] },
 };
 
+// Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a
+// business outcome the buyer would recognize, not engine-internal jargon.
+// 27 root causes total (down from 33 in Wave 2.2).
 export const ROOT_CAUSE_TITLES: Record<string, string> = {
-  trust_failure_at_checkout: 'Trust failure at checkout',
-  fragmented_conversion_path: 'Fragmented conversion path',
-  friction_barrier_on_path: 'Friction barrier on critical path',
-  measurement_blindspot: 'Measurement blind spot',
-  policy_deficiency: 'Policy and compliance deficiency',
-  active_revenue_leakage: 'Active revenue leakage',
-  weak_conversion_signal: 'Weak conversion signal',
-  support_gap: 'Support accessibility gap',
-  expectation_failure: 'Customer expectation misalignment',
-  elevated_dispute_risk: 'Elevated dispute and chargeback risk',
+  trust_failure_at_checkout: 'Buyers lose trust at the checkout moment',
+  fragmented_conversion_path: 'Your purchase flow is split across too many places',
+  friction_barrier_on_path: 'Friction blocking buyers on the path to purchase',
+  measurement_blindspot: "You can't measure what's happening on your purchase pages",
+  policy_deficiency: 'Required policies are missing or hard to find',
+  active_revenue_leakage: 'Revenue is leaking out of your purchase flow',
+  weak_conversion_signal: "Visitors can't see how to buy from you",
+  support_gap: "Customers can't reach support when they need it most",
+  expectation_failure: "Buyers don't know what they're paying for",
+  // Wave 2.3 rename: was elevated_dispute_risk
+  dispute_defenses_absent: 'Nothing protects you from chargeback disputes',
   // Phase 3A
-  channel_integrity_compromise: 'Channel integrity compromised',
-  commerce_continuity_exposure: 'Commerce continuity threatened by operational exposure',
-  weak_channel_posture: 'Weak channel technical posture',
-  abuse_friendly_channel: 'Abuse-friendly channel conditions',
-  // Phase 3B
-  deep_commerce_abuse_surface: 'Deep commerce surfaces exposed to systematic abuse',
-  weak_commerce_governance: 'Weak governance on discoverable commerce endpoints',
-  uncontrolled_commerce_variant: 'Uncontrolled commerce variants escaping the safeguard model',
+  channel_integrity_compromise: 'Your store is exposed to fraud and tampering',
+  // Wave 2.3 rename: was commerce_continuity_exposure
+  commerce_operations_exposed: "Your store's admin tools are publicly visible",
+  weak_channel_posture: 'Your site signals weakness to cautious buyers',
+  // Wave 2.3 consolidation: was abuse_friendly_channel + deep_commerce_abuse_surface + weak_commerce_governance
+  commerce_abuse_exposure: 'Discount, refund, and pricing logic exposed to abuse',
+  // Wave 2.3 rename: was uncontrolled_commerce_variant
+  untracked_purchase_paths: 'Hidden purchase paths bypass your main safeguards',
   // Phase 2D
-  runtime_commerce_fragility: 'Runtime fragility on commerce-critical surfaces',
-  third_party_dependency_risk: 'Third-party dependency risk on trust and purchase surfaces',
+  runtime_commerce_fragility: 'Your store breaks for real users in real browsers',
+  third_party_dependency_risk: 'Critical buyer experience depends on flaky third parties',
   // Phase 3D: SaaS
-  saas_activation_barrier: 'Activation barrier blocking trial-to-paid conversion',
-  saas_product_experience_gap: 'Product experience gap eroding perceived value',
-  saas_expansion_blocked: 'Expansion revenue blocked by invisible upgrade path',
-  // Phase 3E: Discoverability
-  weak_discoverability_signals: 'Weak search and social representation on commercial pages',
-  inconsistent_surface_representation: 'Inconsistent brand representation across discovery surfaces',
-  commercial_pages_not_exposed: 'Commercial pages not structurally exposed for crawling and discovery',
-  weak_semantic_intent_signaling: 'Weak semantic signals preventing search and AI understanding',
-  // Phase 3E: Brand integrity
-  brand_impersonation_exposure: 'Brand exposed to active impersonation and fraud',
-  traffic_interception_risk: 'Brand traffic exposed to interception by lookalike domains',
-  brand_surface_fragmentation: 'Brand presence fragmented across competing domain variants',
+  saas_activation_barrier: "Trial users can't reach product value",
+  saas_product_experience_gap: 'Your product fails to demonstrate value to new users',
+  saas_expansion_blocked: "Users who would pay can't find or evaluate the upgrade",
+  // Wave 2.3 consolidations (4 discoverability keys → 2)
+  brand_inconsistent_in_previews: 'Your brand looks inconsistent or weak in search and social previews',
+  commerce_pages_invisible_to_search: "Search engines can't find or understand your product pages",
+  // Wave 2.3 consolidation: was brand_impersonation_exposure + traffic_interception_risk + brand_surface_fragmentation
+  brand_impersonation_exposure: 'Your brand is being impersonated or hijacked',
   // Phase 4B
-  behavioral_hesitation_at_commitment: 'Behavioral hesitation at the moment of purchase commitment',
-  behavioral_path_disconnection: 'Commercial path disconnected from behavioral reality',
+  behavioral_hesitation_at_commitment: 'Real buyers hesitate at the moment of purchase',
+  behavioral_path_disconnection: 'Your purchase flow looks fine in code but fails for real users',
   // Phase 4B Hardening
-  behavioral_value_justification_gap: 'Value proposition fails to carry the price at the decision moment',
-  behavioral_trust_failure_at_input: 'Trust insufficient at sensitive data capture moment',
+  behavioral_value_justification_gap: "Buyers see your price but can't see the value",
+  behavioral_trust_failure_at_input: "Buyers don't trust your forms with sensitive data",
 };
 
+// Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
+// WHAT the problem looks like and WHY it matters in plain business language,
+// without engine jargon. Remediation guidance lives in the foundation
+// articles ([packages/knowledge/foundation-articles.ts]) — descriptions
+// here stay diagnostic.
 export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
-  trust_failure_at_checkout: 'Users encounter trust breaks during the checkout flow — off-domain handoffs, unknown providers, or missing trust signals reduce conversion and increase chargeback risk.',
-  fragmented_conversion_path: 'The conversion path is structurally fragmented across multiple domains or requires excessive steps, causing drop-off at each transition.',
-  friction_barrier_on_path: 'Technical obstacles on the revenue path — slow pages, broken forms, excessive redirects — create friction that directly reduces conversion rate.',
-  measurement_blindspot: 'Analytics coverage is insufficient to measure conversion performance. Revenue leakage cannot be quantified or optimized.',
-  policy_deficiency: 'Required consumer protection policies (privacy, terms, refund) are missing or incomplete, creating legal and trust risk.',
-  active_revenue_leakage: 'Revenue is actively being lost through broken forms, missing conversion paths, or fragmented checkout flows.',
-  weak_conversion_signal: 'Users cannot find or understand the primary conversion path. Competing CTAs or missing calls-to-action reduce purchase intent.',
-  support_gap: 'Customers cannot reach support effectively. Missing or low-visibility contact methods force dissatisfied customers toward chargeback as their only recourse.',
+  trust_failure_at_checkout: "Buyers reach the moment of payment but trust signals around them weaken instead of strengthen. Off-domain handoffs, unrecognized payment providers, and missing security cues at the wrong moment cause buyers to back out — exactly when conversion is closest. The buyer wanted to pay; the experience scared them off.",
+
+  fragmented_conversion_path: "Your purchase flow is split across multiple domains or requires too many steps. Every transition between surfaces is a fresh chance for the buyer to drop. The path that should feel like one continuous experience feels like a relay race with handoffs at every step.",
+
+  friction_barrier_on_path: "Technical obstacles on the path from intent to purchase — slow pages, broken or excessively long forms, redundant redirects — directly suppress conversion. Buyers don't push through friction; they bounce. Every step that asks too much is a step that loses revenue.",
+
+  measurement_blindspot: "The pages that generate revenue aren't being measured. Without analytics on the commerce path, every other improvement is guesswork — you can't optimize what you can't see. Decisions get made on intuition instead of data, and the leaks stay invisible.",
+
+  policy_deficiency: "Required consumer policies (privacy, terms, returns) are missing, incomplete, or buried where buyers can't find them. This creates legal risk, breaks trust at the purchase moment, and blocks paid traffic acceptance on platforms that require policy presence before serving ads.",
+
+  active_revenue_leakage: "Revenue is escaping right now through specific broken paths — dead checkout flows, broken forms, missing conversion routes. This isn't a hypothetical risk; it's money leaving today. Every cycle this remains is direct revenue loss with a quantifiable dollar tag.",
+
+  weak_conversion_signal: "Visitors land on your commercial pages but cannot see how to buy from you. The primary call-to-action is missing, unclear, or competing with louder secondary actions. Even buyers who arrived ready to convert can't find the path — and they leave.",
+
+  support_gap: "Customers can't reach you when something goes wrong. Hidden contact methods, missing chat, no phone or email near the purchase moment — buyers who can't reach support file disputes instead. Every chargeback is a failed conversation that should have been a support ticket.",
+
+  expectation_failure: "Buyers complete the purchase without knowing exactly what they bought, when it ships, or how to return it. The mismatch between expectation and reality is the precondition for chargebacks. Confirmation, transparency, and brand continuity at checkout aren't optional — they're the contract that prevents disputes.",
+
+  // Wave 2.3 rename
+  dispute_defenses_absent: "The structural defenses that prevent chargebacks — clear policies, reachable support, transparent expectations, brand continuity at payment — are missing in combination. Each defense alone reduces dispute rate; their simultaneous absence compounds risk into elevated chargeback exposure.",
+
   // Phase 3A
-  channel_integrity_compromise: 'The commercial channel is exposed to compromise through script injection, traffic diversion, or weakly governed infrastructure — creating active fraud exposure and trust collapse on purchase surfaces.',
-  commerce_continuity_exposure: 'Operational surfaces (admin panels, debug endpoints, configuration files) are publicly accessible near the commercial footprint — enabling pricing manipulation, checkout disruption, or data extraction.',
-  weak_channel_posture: 'The public technical posture of the commercial domain signals weakness to browsers and cautious buyers — missing security indicators, mixed content, or certificate issues suppress conversion before the offer is read.',
-  abuse_friendly_channel: 'Exposed APIs, schema introspection, or unprotected business-logic endpoints enable automated fraud, pricing abuse, and inventory manipulation at scale.',
-  // Phase 3B
-  deep_commerce_abuse_surface: 'Deep-discovered discount, cart, and refund routes expose pricing controls and commercial safeguards to systematic abuse — automated tools exploit discoverable endpoints to manipulate margins, enumerate coupons, and initiate fraudulent refunds.',
-  weak_commerce_governance: 'Business-critical commerce endpoints follow predictable patterns and lack safeguards proportional to their importance — guessable billing, order, and account actions are reachable outside the intended protection model.',
-  uncontrolled_commerce_variant: 'JavaScript-discovered and dynamically rendered commerce variants operate outside the main trust, measurement, and pricing safeguard model — revenue through these paths is simultaneously unprotected and invisible to analytics.',
+  channel_integrity_compromise: "Your store is exposed to script tampering, traffic diversion, or weakly governed infrastructure. Third-party scripts running on payment pages, unrecognized form targets, or unprotected endpoints turn your commercial channel into an attack surface. The buyer experience is at the mercy of code you don't fully control.",
+
+  // Wave 2.3 rename: was commerce_continuity_exposure
+  commerce_operations_exposed: "Admin panels, debug endpoints, configuration files, and operational tools meant for internal use are publicly accessible from your commerce domain. These surfaces enable pricing manipulation, checkout disruption, and data extraction by anyone who finds them. Your internal tools are part of your public attack surface whether you realize it or not.",
+
+  weak_channel_posture: "Your site's public technical posture signals weakness to cautious buyers and to browsers. Missing security indicators, mixed content warnings, or certificate issues suppress conversion before the offer is even read. The buyer's browser tells them something is wrong — they trust the browser more than they trust you.",
+
+  // Wave 2.3 consolidation (3 → 1)
+  commerce_abuse_exposure: "Discount codes, refund flows, cart logic, and pricing endpoints are exposed to automated abuse. Bots and scripts exploit predictable URLs, missing rate limits, or weak governance to drain margins, enumerate coupons, or trigger fraudulent refunds at scale. The abuse compounds silently — by the time you notice the loss, you've already paid for it.",
+
+  // Wave 2.3 rename: was uncontrolled_commerce_variant
+  untracked_purchase_paths: "JavaScript-discovered or dynamically-rendered commerce variants operate outside your main trust, measurement, and pricing safeguard model. Revenue flowing through these paths is simultaneously unprotected and invisible to your analytics — you can't measure them, can't trust them, and may not even know they exist.",
+
   // Phase 2D
-  runtime_commerce_fragility: 'The commerce-critical runtime — checkout APIs, payment processing, cart operations — suffers from latency, overloaded dependencies, and sequencing problems that degrade purchase completion under real browser conditions.',
-  third_party_dependency_risk: 'Trust, payment, and measurement layers depend on external services that fail, load late, or add excessive weight — making conversion and trust formation fragile to third-party reliability.',
+  runtime_commerce_fragility: "Your commerce pages fail or stall when real users open them in real browsers. Slow checkout APIs, overloaded landing pages, sequencing problems where buyers reach the purchase step before critical scripts are ready — the technical reality of the page degrades the conversion that static analysis can't see. The page works for you in dev. It breaks for them in production.",
+
+  third_party_dependency_risk: "Critical buyer experience — payment, trust badges, support widgets, measurement — depends on external services that fail, load late, or add too much weight. When a third party hiccups, your conversion path breaks with it. Reliability you don't control is reliability you can't promise to your buyer.",
+
   // Phase 3D: SaaS
-  saas_activation_barrier: 'The activation path blocks or frustrates trial users before they reach product value — high-complexity onboarding, missing next steps, or landing-to-app disconnect cause trial-to-paid conversion loss.',
-  saas_product_experience_gap: 'The in-product experience fails to demonstrate value — empty states without guidance, buried features, and complex navigation prevent users from discovering what the product can do for them.',
-  saas_expansion_blocked: 'Users who would pay cannot find or evaluate the upgrade path — hidden pricing, absent upgrade CTAs, or poorly timed prompts cap revenue at the current tier.',
-  // Phase 3E: Discoverability
-  weak_discoverability_signals: 'Commercial pages have missing or thin titles, descriptions, and social preview tags — search engines and social platforms cannot properly represent the brand offering, reducing click-through on every discoverable query.',
-  inconsistent_surface_representation: 'The brand appears differently across search results, social previews, and AI summaries — inconsistency reduces recognition and trust before buyers reach the site.',
-  commercial_pages_not_exposed: 'Revenue-generating pages have indexing problems or no internal links — search crawlers cannot discover them and organic demand for these products is invisible.',
-  weak_semantic_intent_signaling: 'Without structured data, search engines and AI assistants cannot understand page purpose — resulting in lower ranking for commercial queries and inaccurate AI-generated summaries.',
-  // Phase 3E: Brand integrity
-  brand_impersonation_exposure: 'Active lookalike domains with brand similarity and commerce patterns — positioned to intercept traffic, process fraudulent transactions, and damage brand trust through confusion.',
-  traffic_interception_risk: 'Typosquat and brand-keyword domains capture mistyped or search-diverted traffic — every intercepted visitor is a direct loss of brand-earned demand.',
-  brand_surface_fragmentation: 'The brand presence is split across many domain variants — diluting search authority, splitting ranking signals, and creating buyer confusion about which surface is legitimate.',
+  saas_activation_barrier: "New trial users can't reach the moment where the product proves its value. High-complexity onboarding, missing next-step guidance, or a disconnect between landing promise and in-app reality kills trial-to-paid conversion before users see what they're paying for. They sign up curious and leave unconvinced.",
+
+  saas_product_experience_gap: "Once inside the product, users can't discover what it does for them. Empty states without guidance, buried features, and complex navigation prevent the activation moment. The product is capable; the experience hides that capability. Users churn for products that aren't actually better — just better at showing their value.",
+
+  saas_expansion_blocked: "Users who would happily pay for more cannot find the upgrade path or evaluate it. Hidden pricing, missing upgrade CTAs, or prompts shown without value context cap revenue at the current tier even when willingness-to-pay is higher. Money is leaving on the table because the path to give it to you isn't visible.",
+
+  // Wave 2.3 consolidation (2 → 1, content/brand layer)
+  brand_inconsistent_in_previews: "Your brand appears inconsistently — or weakly — in search results, social previews, and AI assistant summaries. The first impression of your business is being shaped by missing titles, thin descriptions, and conflicting metadata across surfaces. Recognition and trust erode before buyers ever reach the site.",
+
+  // Wave 2.3 consolidation (2 → 1, structural layer)
+  commerce_pages_invisible_to_search: "Search engines and AI assistants cannot find or properly understand your product and pricing pages. Missing indexing signals, no internal links, and absent structured data make your commercial inventory invisible to organic and AI-driven discovery. Every uncaptured query is direct demand you'll never see.",
+
+  // Wave 2.3 consolidation (3 → 1, broadened)
+  brand_impersonation_exposure: "Your brand is being actively impersonated. Lookalike domains, typosquats, phishing surfaces, or fragmented brand variants intercept traffic, run fraudulent transactions, or capture mistyped visits. Every intercepted buyer is direct revenue you earned but never saw — and every fraudulent transaction damages the brand trust you spent years building.",
+
   // Phase 4B
-  behavioral_hesitation_at_commitment: 'Real user sessions reveal hesitation at the moment of purchase — buyers reach the commercial step, seek reassurance elsewhere, and abandon. The gap between intent and confidence is behaviorally observable and recoverable.',
-  behavioral_path_disconnection: 'The commercial path exists structurally but fails behaviorally — funnel steps do not advance sessions, CTAs do not generate engagement, mobile entry points are broken, and critical steps trigger retries instead of progression.',
+  behavioral_hesitation_at_commitment: "Real session data shows buyers reaching the moment of purchase, hesitating, seeking reassurance elsewhere on the site, and abandoning. The gap between intent and confidence is observable in their behavior — and recoverable. They wanted to buy. Something stopped them, and it shows up in the session replay.",
+
+  behavioral_path_disconnection: "Your purchase flow looks fine in the code but fails for real users. Funnel steps show traffic but never advance. CTAs are visible but never engaged. Mobile entry points are broken. Critical steps trigger silent retries instead of progression. The path exists structurally and fails behaviorally — and only the pixel sees it.",
+
   // Phase 4B Hardening
-  behavioral_value_justification_gap: 'Users view pricing and evaluate the offer but the surrounding context fails to justify the price — they backtrack to product pages, oscillate between surfaces, or abandon. The value proposition is structurally present but behaviorally insufficient to close the gap between price awareness and purchase confidence.',
-  behavioral_trust_failure_at_input: 'Forms on conversion-proximate surfaces request sensitive data without adequate trust context — users encounter email, payment, or identity fields but the trust signals (security indicators, privacy reassurance, provider recognition) are insufficient for the sensitivity level. The mismatch between what is asked and what is promised causes immediate dropoff.',
-  expectation_failure: 'Customer expectations are not properly set — missing pricing visibility, no order confirmation, or brand disconnect at checkout create confusion about what was purchased.',
-  elevated_dispute_risk: 'Multiple structural factors — missing policies, unreachable support, unclear expectations — compound to create elevated chargeback and dispute exposure.',
+  behavioral_value_justification_gap: "Buyers see your price but cannot see the value that justifies it. They view the pricing page, backtrack to features, oscillate between surfaces, and abandon. The value proposition is structurally present but behaviorally insufficient to close the gap between price awareness and purchase confidence. They left not because the price was too high, but because nothing told them it was worth it.",
+
+  behavioral_trust_failure_at_input: "Forms on conversion-proximate pages ask for sensitive data — payment, identity, contact — without enough trust context around them. The mismatch between what's being asked and what's being promised causes immediate dropoff. The buyer doesn't know enough to feel safe handing over their information, and they back out at the field.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

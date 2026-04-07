@@ -125,11 +125,12 @@ export function buildChargebackRiskMap(
   };
 
   // Map root causes to category
+  // Wave 2.3: elevated_dispute_risk renamed to dispute_defenses_absent
   const rcToCategory: Record<string, string> = {
     policy_deficiency: 'policy',
     support_gap: 'support',
     expectation_failure: 'trust',
-    elevated_dispute_risk: 'trust',
+    dispute_defenses_absent: 'trust',
   };
 
   for (const [catKey, catInfo] of Object.entries(categoryNodes)) {

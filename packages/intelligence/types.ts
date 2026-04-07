@@ -48,7 +48,9 @@ export type RootCauseCategory =
   | 'brand_impersonation'
   // Phase 4B: Behavioral
   | 'behavioral_conversion_failure'
-  | 'behavioral_path_integrity';
+  | 'behavioral_path_integrity'
+  // Wave 2.3: Runtime fragility (separated from friction_barrier so maps treat them distinctly)
+  | 'runtime_fragility';
 
 export type RootCauseSeverity = 'critical' | 'high' | 'medium' | 'low';
 

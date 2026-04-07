@@ -121,6 +121,26 @@ export type WorkspaceProjectionType =
   | 'trust_gap'
   | 'path_efficiency';
 
+/**
+ * Workspace category — drives the UI grouping into "Core" and "Behavioral"
+ * sections. Core workspaces are always shown; behavioral workspaces are
+ * always emitted (even as placeholders) and the UI greys them out when
+ * pixel_status !== 'active'.
+ */
+export type WorkspaceCategory = 'core' | 'behavioral';
+
+/**
+ * Pixel data status for behavioral workspaces. Drives the UI's greyed-out
+ * vs. active rendering and the "configure your pixel" banner.
+ *
+ * Always null for core workspaces (preflight, revenue, chargeback, saas).
+ *
+ * - 'unconfigured': no behavioral evidence at all → snippet not installed
+ * - 'collecting':   snippet installed but < 20 sessions in the window
+ * - 'active':       eligibility passed; the workspace can produce findings
+ */
+export type PixelStatus = 'unconfigured' | 'collecting' | 'active';
+
 export interface WorkspaceProjection {
   id: string;
   name: string;
@@ -128,6 +148,17 @@ export interface WorkspaceProjection {
   pack_key: string;
   decision_key: string;
   decision_impact: string;
+
+  /** UI grouping bucket — 'core' or 'behavioral' */
+  category: WorkspaceCategory;
+  /** Pixel data status — null for core workspaces */
+  pixel_status: PixelStatus | null;
+  /**
+   * Current/required session count progression for the "collecting" state.
+   * Lets the UI render "12 / 20 sessions". Null for unconfigured + active
+   * states and for core workspaces.
+   */
+  pixel_progress: { current: number; required: number } | null;
 
   summary: {
     total_loss_range: { min: number; max: number };

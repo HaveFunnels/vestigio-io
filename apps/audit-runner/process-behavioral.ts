@@ -1,5 +1,5 @@
 import { prisma } from "@/libs/prismaDb";
-import { aggregateSession } from "../../packages/behavioral";
+import { aggregateSession, aggregateCohorts } from "../../packages/behavioral";
 import type {
   RawBehavioralEvent as RawEventShape,
   RawBehavioralBatch,
@@ -8,6 +8,7 @@ import type {
   MultiTouchAttribution,
   SurfacePair,
   FieldKind,
+  BehavioralCohortPayload,
 } from "../../packages/behavioral/types";
 import {
   Evidence,
@@ -98,8 +99,10 @@ export async function processBehavioralEventsForEnv(
   // ── Group rows by sessionId ──
   // Rows are already sorted by (sessionId, occurredAt) so a single linear
   // pass produces ordered batches. We also collect the chronologically
-  // first attribution row per session for first-touch semantics.
+  // first attribution row per session for first-touch semantics, and the
+  // first non-null user-agent for the device classifier (Wave 0.3 cohorts).
   const sessionMap = new Map<string, { events: RawEventShape[]; attribution: AttributionContext | null }>();
+  const sessionUserAgent = new Map<string, string>();
   const touchedRowIds: string[] = [];
 
   for (const row of rows) {
@@ -112,6 +115,13 @@ export async function processBehavioralEventsForEnv(
     if (!bucket) {
       bucket = { events: [], attribution: null };
       sessionMap.set(row.sessionId, bucket);
+    }
+
+    // Capture user-agent once per session for the device classifier.
+    // Mobile/desktop split powers acquisition_integrity + mobile_revenue
+    // workspaces. Without this, every session would land in 'desktop'.
+    if (!sessionUserAgent.has(row.sessionId) && row.userAgent) {
+      sessionUserAgent.set(row.sessionId, row.userAgent);
     }
 
     // Decode the stored payload — Wave 0.2's sanitizer wrote it
@@ -164,8 +174,22 @@ export async function processBehavioralEventsForEnv(
     return { evidence: [], sessionCount: 0, eventCount: rows.length };
   }
 
-  // ── Reduce to BehavioralSessionPayload ──
-  const payload = sessionsToBehavioralPayload(aggregates);
+  // ── Reduce to BehavioralSessionPayload (env-level metrics) ──
+  const sessionPayload = sessionsToBehavioralPayload(aggregates);
+
+  // ── Reduce to BehavioralCohortPayload (cohort-level metrics) ──
+  // Powers the 7 pixel-dependent workspaces (first_impression, action_value,
+  // acquisition_integrity, mobile_revenue, friction_tax, trust_gap,
+  // path_efficiency). The signal extractor in packages/signals/engine.ts
+  // looks for `payload.type === 'behavioral_cohort'` and bails out if it
+  // doesn't find one — without this second evidence entry the cohort
+  // signals never fire and the 7 workspaces stay empty.
+  const deviceClassifier = (s: SessionAggregate): "mobile" | "desktop" | null => {
+    const ua = sessionUserAgent.get(s.session_id);
+    if (!ua) return "desktop"; // unknown UA → conservative default
+    return MOBILE_UA_REGEX.test(ua) ? "mobile" : "desktop";
+  };
+  const cohortPayload = aggregateCohorts(aggregates, deviceClassifier);
 
   // ── Mark rows as processed (informational; retention uses receivedAt) ──
   if (touchedRowIds.length > 0) {
@@ -180,10 +204,26 @@ export async function processBehavioralEventsForEnv(
     }
   }
 
-  // ── Wrap as Evidence ──
-  const evidence = wrapAsEvidence(payload, scoping, cycleRef);
-  return { evidence: [evidence], sessionCount: aggregates.length, eventCount: rows.length };
+  // ── Wrap both as Evidence ──
+  // Both evidences share evidence_type=BehavioralSession but differ in
+  // payload.type. The signal extractors discriminate on payload.type:
+  // the env-level extractor reads 'behavioral_session', the cohort
+  // extractor reads 'behavioral_cohort'.
+  const sessionEvidence = wrapAsEvidence(sessionPayload, scoping, cycleRef);
+  const cohortEvidence = wrapAsEvidence(cohortPayload, scoping, cycleRef);
+  return {
+    evidence: [sessionEvidence, cohortEvidence],
+    sessionCount: aggregates.length,
+    eventCount: rows.length,
+  };
 }
+
+// Conservative mobile UA detection. Doesn't try to be exhaustive — covers
+// the major mobile browsers and lets everything else fall through to
+// desktop. The cohort signals only fire when both mobile and desktop
+// cohorts have >= 10 sessions, so a few miss-classifications don't poison
+// the inference.
+const MOBILE_UA_REGEX = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i;
 
 const EMPTY_ATTRIBUTION: AttributionContext = {
   source: null,
@@ -517,7 +557,7 @@ function canonicalPairKey(pair: SurfacePair): string {
 }
 
 function wrapAsEvidence(
-  payload: BehavioralSessionPayload,
+  payload: BehavioralSessionPayload | BehavioralCohortPayload,
   scoping: Scoping,
   cycleRef: string,
 ): Evidence {
@@ -529,9 +569,12 @@ function wrapAsEvidence(
     freshness_state: FreshnessState.Fresh,
     staleness_reason: null,
   };
+  // Both payloads ride on evidence_type=BehavioralSession; the cohort
+  // payload is technically not in the EvidencePayload union, but the
+  // signal extractor reads it via `payload as any`. Cast at the boundary.
   return {
     id,
-    evidence_key: `behavioral_session_${id}`,
+    evidence_key: `${payload.type}_${id}`,
     evidence_type: EvidenceType.BehavioralSession,
     subject_ref: scoping.subject_ref || `environment:${scoping.environment_ref}`,
     scoping,
@@ -539,7 +582,7 @@ function wrapAsEvidence(
     freshness: fresh,
     source_kind: SourceKind.BehavioralSnippet,
     collection_method: CollectionMethod.PassiveCollection,
-    payload,
+    payload: payload as BehavioralSessionPayload,
     quality_score: QUALITY_SCORE,
     created_at: now,
     updated_at: now,

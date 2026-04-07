@@ -287,7 +287,31 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     input.onboarding_conversion_model || null,
   );
   const classification = computeClassification(classInput);
-  const packEligibility = computePackEligibility(classification, null, null);
+
+  // Detect behavioral evidence + session count for the eligibility gate.
+  // The pack-eligibility result drives both the projection layer's
+  // "is this pack greyed out?" path and the UI's pixel_status badge.
+  // We accept either flavor of behavioral evidence (env-level
+  // BehavioralSessionPayload or cohort-level BehavioralCohortPayload)
+  // because Wave 0.3 emits both — see apps/audit-runner/process-behavioral.ts.
+  let behavioralSessionCount = 0;
+  let hasBehavioralEvidence = false;
+  for (const e of evidence) {
+    if (e.evidence_type !== EvidenceType.BehavioralSession) continue;
+    const p = e.payload as { type?: string; session_count?: number; total_session_count?: number };
+    if (p.type === 'behavioral_cohort' && typeof p.total_session_count === 'number') {
+      behavioralSessionCount = Math.max(behavioralSessionCount, p.total_session_count);
+      hasBehavioralEvidence = true;
+    } else if (typeof p.session_count === 'number') {
+      behavioralSessionCount = Math.max(behavioralSessionCount, p.session_count);
+      hasBehavioralEvidence = true;
+    }
+  }
+
+  const packEligibility = computePackEligibility(classification, null, null, {
+    hasBehavioralEvidence,
+    sessionCount: behavioralSessionCount,
+  });
 
   // SaaS growth readiness (only if eligible)
   let saasGrowthReadiness: MultiPackResult['saas_growth_readiness'] = null;

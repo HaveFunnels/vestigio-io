@@ -555,6 +555,22 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
     } else if (packKey === 'brand_integrity') {
       findingEligible = packElig.brand_integrity.eligible;
       findingEligConf = packElig.brand_integrity.confidence;
+    } else if (
+      // Behavioral packs share a single pixel-data eligibility gate.
+      // When pack_eligibility.behavioral_workspaces is false, every
+      // behavioral finding is marked ineligible so the UI knows the
+      // result is not load-bearing. The pack key strings come from
+      // INFERENCE_TO_PACK in this same file.
+      packKey === 'first_impression_revenue' ||
+      packKey === 'action_value_map' ||
+      packKey === 'acquisition_integrity' ||
+      packKey === 'mobile_revenue_exposure' ||
+      packKey === 'friction_tax' ||
+      packKey === 'trust_revenue_gap' ||
+      packKey === 'path_efficiency'
+    ) {
+      findingEligible = packElig.behavioral_workspaces.eligible;
+      findingEligConf = packElig.behavioral_workspaces.confidence;
     }
     // scale_readiness, channel_integrity, discoverability, brand_integrity are always eligible
 
@@ -953,7 +969,15 @@ export function projectWorkspaces(
     );
   }
 
-  // Add behavioral workspaces (pixel-dependent) — only when pack has findings
+  // ── Behavioral workspaces (pixel-dependent) ──
+  //
+  // Phase B: emit ALL 7 cards always, even when there's no pixel data.
+  // The UI uses `pixel_status` to render greyed-out placeholders that
+  // direct the user to install the snippet, plus a yellow banner above
+  // the Behavioral category. This intentionally goes against the
+  // "core" workspaces' filter-when-empty behavior because the missing
+  // pixel data is a configuration step the user can act on, not a
+  // genuinely empty state.
   const behavioralWorkspaceConfigs: { key: keyof typeof result.behavioral_packs; id: string; name: string; type: import('./types').WorkspaceProjectionType; packKey: string }[] = [
     { key: 'first_impression', id: 'first_impression', name: 'First Impression Revenue', type: 'first_impression', packKey: 'first_impression_revenue_pack' },
     { key: 'action_value', id: 'action_value', name: 'Action Value Map', type: 'action_value', packKey: 'action_value_map_pack' },
@@ -974,30 +998,63 @@ export function projectWorkspaces(
     path_efficiency_pack: 'path_efficiency',
   };
 
-  if (result.behavioral_packs) {
-    for (const bwc of behavioralWorkspaceConfigs) {
-      const pack = result.behavioral_packs[bwc.key];
-      if (!pack) continue;
-      const packFilter = BEHAVIORAL_PACK_FILTER[bwc.packKey];
-      const packFindings = findings.filter(f => f.pack === packFilter);
-      if (packFindings.length === 0) continue;
+  // Derive pixel status from the pack-eligibility result. computePackEligibility
+  // is called with the real behavioralContext from recompute.ts (Phase A.2),
+  // so this is authoritative. The required threshold is hard-coded at 20
+  // sessions to match isBehavioralPackEligible — if that constant ever
+  // moves we should expose it from the eligibility module.
+  const REQUIRED_SESSIONS = 20;
+  const behavioralElig = result.pack_eligibility.behavioral_workspaces;
+  // Reverse-engineer the current session count from the eligibility's
+  // confidence (which is min(1, sessionCount/100)). Capped at 100 by the
+  // eligibility helper, so we can't recover the exact number above 100,
+  // but we can show "100+" via the "active" state which doesn't need it.
+  const inferredSessionCount = Math.round(behavioralElig.confidence * 100);
+  let pixelStatus: import('./types').PixelStatus;
+  let pixelProgress: { current: number; required: number } | null = null;
+  if (behavioralElig.eligible) {
+    pixelStatus = 'active';
+  } else if (behavioralElig.confidence > 0) {
+    // confidence > 0 means hasBehavioralEvidence === true → snippet is
+    // installed but the session count is below threshold.
+    pixelStatus = 'collecting';
+    pixelProgress = { current: inferredSessionCount, required: REQUIRED_SESSIONS };
+  } else {
+    pixelStatus = 'unconfigured';
+  }
 
-      const translatedName = wn?.[bwc.id] ?? bwc.name;
-      workspaces.push(
-        buildWorkspaceProjection(
-          bwc.id,
-          translatedName,
-          bwc.type,
-          bwc.packKey,
-          pack.decision.decision_key,
-          pack.decision.decision_impact,
-          packFindings,
-          coherenceByDecisionRef.get(makeRef('decision', pack.decision.id)) || null,
-          narrative,
-          changeSummaryMap.get(bwc.packKey) ?? null,
-        ),
-      );
-    }
+  for (const bwc of behavioralWorkspaceConfigs) {
+    const pack = result.behavioral_packs?.[bwc.key] ?? null;
+    const packFilter = BEHAVIORAL_PACK_FILTER[bwc.packKey];
+    const packFindings = pack ? findings.filter(f => f.pack === packFilter) : [];
+
+    // Resolve display strings — use the engine's decision when available,
+    // fall back to neutral placeholders so the card renders cleanly even
+    // when the pack didn't run (no pixel data → no decision).
+    const translatedName = wn?.[bwc.id] ?? bwc.name;
+    const decisionKey = pack?.decision.decision_key ?? `${bwc.id}_no_data`;
+    const decisionImpact = pack?.decision.decision_impact ?? 'observe';
+    const coherence = pack
+      ? coherenceByDecisionRef.get(makeRef('decision', pack.decision.id)) || null
+      : null;
+
+    workspaces.push(
+      buildWorkspaceProjection(
+        bwc.id,
+        translatedName,
+        bwc.type,
+        bwc.packKey,
+        decisionKey,
+        decisionImpact,
+        packFindings,
+        coherence,
+        narrative,
+        changeSummaryMap.get(bwc.packKey) ?? null,
+        'behavioral',
+        pixelStatus,
+        pixelProgress,
+      ),
+    );
   }
 
   return workspaces;
@@ -1233,6 +1290,11 @@ function buildWorkspaceProjection(
   coherence: WorkspaceCoherence | null = null,
   confidenceNarrative: ConfidenceNarrative | null = null,
   changeSummary: WorkspaceProjection['change_summary'] = null,
+  // Phase B: category + pixel_status drive the UI grouping (Core / Behavioral)
+  // and the greyed-out vs active rendering of behavioral cards.
+  category: import('./types').WorkspaceCategory = 'core',
+  pixelStatus: import('./types').PixelStatus | null = null,
+  pixelProgress: { current: number; required: number } | null = null,
 ): WorkspaceProjection {
   let totalMin = 0;
   let totalMax = 0;
@@ -1255,6 +1317,9 @@ function buildWorkspaceProjection(
     pack_key: packKey,
     decision_key: decisionKey,
     decision_impact: decisionImpact,
+    category,
+    pixel_status: pixelStatus,
+    pixel_progress: pixelProgress,
     summary: {
       total_loss_range: { min: Math.round(totalMin), max: Math.round(totalMax) },
       total_loss_mid: Math.round((totalMin + totalMax) / 2),

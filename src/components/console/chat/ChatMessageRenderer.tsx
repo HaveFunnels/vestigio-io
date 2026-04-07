@@ -154,16 +154,6 @@ function BlockRenderer({
         </div>
       );
 
-    case "confidence":
-      return (
-        <div className="my-1 inline-flex items-center gap-1.5">
-          <div className={`h-1.5 w-1.5 rounded-full ${block.value >= 70 ? "bg-emerald-500" : block.value >= 50 ? "bg-amber-500" : "bg-red-500"}`} />
-          <span className={`font-mono text-xs ${block.value >= 70 ? "text-emerald-400" : block.value >= 50 ? "text-amber-400" : "text-red-400"}`}>
-            {block.value}% confidence
-          </span>
-        </div>
-      );
-
     case "navigation_cta":
       return (
         <div className="my-2 flex flex-wrap gap-2">

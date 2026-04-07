@@ -701,7 +701,6 @@
         "sources": "Fontes"
       },
       "healthy": "Saudável",
-      "confidence_label": "Confiança {value}%",
       "loading": "Carregando...",
       "clear_filters": "Limpar filtros",
       "hide_positive_signals": "Ocultar sinais positivos",
@@ -822,7 +821,7 @@
       "reasoning": "Raciocínio",
       "why_good": "Por Que Isso É Bom",
       "evidence_contradictions": "Contradições de Evidência",
-      "contradictions_detected": "{count} contradição(ões) detectada(s) nas evidências de suporte. Confiança ajustada em {delta}%.",
+      "contradictions_detected": "{count} contradição(ões) detectada(s) nas evidências de suporte.",
       "discuss_finding": "Discutir Esta Descoberta",
       "suppressed": "Suprimido",
       "confidence_reduced": "Confiança reduzida em {value}%",

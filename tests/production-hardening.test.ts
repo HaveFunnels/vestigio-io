@@ -85,6 +85,7 @@ import {
 } from '../apps/platform/billing-safety';
 
 import type { FindingProjection } from '../packages/projections';
+import { deriveConfidenceTier } from '../packages/projections/types';
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -97,6 +98,7 @@ function mockFinding(key: string, polarity: 'negative' | 'positive' | 'neutral' 
     root_cause: null,
     severity: 'medium',
     confidence,
+    confidence_tier: deriveConfidenceTier(confidence),
     impact: { monthly_range: { min: 50, max: 150 }, midpoint, impact_type: 'revenue_loss', percentage_delta: null, currency: 'USD' },
     pack: 'scale_readiness',
     surface: '/',

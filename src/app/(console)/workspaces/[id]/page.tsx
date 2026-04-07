@@ -121,13 +121,6 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
   // Compute stats for quick cards
   const negativeFindings = workspace.findings.filter((f) => f.polarity === "negative");
   const positiveFindings = workspace.findings.filter((f) => f.polarity === "positive");
-  const avgConfidence =
-    workspace.findings.length > 0
-      ? Math.round(
-          workspace.findings.reduce((sum, f) => sum + f.confidence, 0) /
-            workspace.findings.length
-        )
-      : 0;
   const topSeverity = getTopSeverity(workspace.findings);
 
   // Preflight readiness computation
@@ -222,12 +215,6 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                 {formatCurrency(workspace.summary.total_loss_mid)}
               </div>
             </div>
-            <div>
-              <div className="text-xs text-content-muted">{t("confidence")}</div>
-              <div className="text-lg font-bold text-content-secondary">
-                {workspace.summary.confidence}%
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -287,48 +274,10 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 
         {/* ── Right Column ── */}
         <div className="space-y-6">
-          {/* Trust Strength */}
-          {workspace.confidence_narrative && (
-            <section className="rounded-lg border border-edge bg-surface-card p-5">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
-                {t("detail.trust_strength")}
-              </h2>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <ConfidenceBar
-                    label={t("detail.structural")}
-                    level={workspace.confidence_narrative.structural_confidence}
-                  />
-                  <ConfidenceBar
-                    label={t("detail.economic")}
-                    level={workspace.confidence_narrative.economic_confidence}
-                  />
-                </div>
-                <p className="text-sm text-content-muted leading-relaxed">
-                  {workspace.confidence_narrative.narrative}
-                </p>
-                {workspace.confidence_narrative.uncertainty_factors.length > 0 && (
-                  <div className="border-t border-edge pt-3">
-                    <h3 className="mb-1.5 text-xs font-medium text-content-muted">
-                      {t("detail.uncertainty_factors")}
-                    </h3>
-                    <ul className="space-y-1">
-                      {workspace.confidence_narrative.uncertainty_factors.map(
-                        (factor, i) => (
-                          <li
-                            key={i}
-                            className="text-xs text-content-muted"
-                          >
-                            &bull; {factor}
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
+          {/* Wave 2.4: removed the "Trust Strength" / confidence_narrative
+              section entirely. Confidence axes (structural / economic /
+              uncertainty factors) are engine-internal signals, not
+              operator-facing decisions. */}
 
           {/* Coherence */}
           {workspace.coherence && (
@@ -413,11 +362,6 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
                 label={t("detail.positive_findings")}
                 value={positiveFindings.length}
                 color="text-emerald-400"
-              />
-              <StatCard
-                label={t("detail.avg_confidence")}
-                value={`${avgConfidence}%`}
-                color="text-content-secondary"
               />
               <StatCard
                 label={t("detail.top_severity")}
@@ -609,9 +553,6 @@ function FindingDrawerContent({
           )}
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
-          <span className="text-xs text-content-muted">
-            {tc("confidence_label", { value: finding.confidence })}
-          </span>
           <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
             {tc(`pack_labels.${finding.pack}`)}
           </span>
@@ -638,11 +579,6 @@ function FindingDrawerContent({
             <p className="text-xs text-amber-300/80">
               {finding.suppression_context.explanation}
             </p>
-            {finding.suppression_context.confidence_reduction > 0 && (
-              <p className="mt-1 text-xs text-amber-400/60">
-                {td("confidence_reduced", { value: finding.suppression_context.confidence_reduction })}
-              </p>
-            )}
           </div>
         </section>
       )}
@@ -764,7 +700,7 @@ function FindingDrawerContent({
         </p>
       </section>
 
-      {/* Truth Context */}
+      {/* Truth Context — Wave 2.4: no longer surfaces the numeric delta. */}
       {finding.truth_context && finding.truth_context.has_contradictions && (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-500">
@@ -774,7 +710,6 @@ function FindingDrawerContent({
             <p className="text-xs text-amber-300">
               {td("contradictions_detected", {
                 count: finding.truth_context.contradiction_count,
-                delta: `${finding.truth_context.truth_confidence_delta > 0 ? "+" : ""}${finding.truth_context.truth_confidence_delta}`,
               })}
             </p>
           </div>
@@ -870,43 +805,6 @@ function TrendHeadline({
         summary.resolved_count === 0 && (
           <span className="text-content-muted">{t("detail.trend.no_significant_changes")}</span>
         )}
-    </div>
-  );
-}
-
-function ConfidenceBar({
-  label,
-  level,
-}: {
-  label: string;
-  level: "high" | "medium" | "low";
-}) {
-  const color =
-    level === "high"
-      ? "bg-emerald-500"
-      : level === "medium"
-      ? "bg-amber-500"
-      : "bg-red-500";
-  const textColor =
-    level === "high"
-      ? "text-emerald-400"
-      : level === "medium"
-      ? "text-amber-400"
-      : "text-red-400";
-  const widthPct = level === "high" ? 100 : level === "medium" ? 60 : 30;
-
-  return (
-    <div className="flex-1">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-content-muted">{label}</span>
-        <span className={`text-xs font-medium ${textColor}`}>{level}</span>
-      </div>
-      <div className="h-1.5 rounded-full bg-surface-inset">
-        <div
-          className={`h-1.5 rounded-full ${color}`}
-          style={{ width: `${widthPct}%` }}
-        />
-      </div>
     </div>
   );
 }

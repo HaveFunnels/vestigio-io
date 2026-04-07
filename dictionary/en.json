@@ -688,7 +688,6 @@
       "columns": {
         "finding": "Finding",
         "severity": "Severity",
-        "confidence": "Conf",
         "est_impact": "Est. Impact",
         "impact": "Impact",
         "verification": "Verification",
@@ -704,7 +703,6 @@
         "sources": "Sources"
       },
       "healthy": "Healthy",
-      "confidence_label": "Confidence {value}%",
       "loading": "Loading...",
       "clear_filters": "Clear filters",
       "hide_positive_signals": "Hide positive signals",
@@ -770,7 +768,6 @@
         "per_month_midpoint": "/month (midpoint)",
         "high_impact_issues": "High Impact Issues",
         "high_impact_threshold": "> $10k/mo",
-        "avg_confidence": "Avg Confidence",
         "verified_findings": "Verified"
       },
       "discuss": "Discuss",
@@ -804,12 +801,6 @@
           "stable_risk": "Stable",
           "resolved": "Resolved"
         },
-        "confidence": {
-          "all": "All Confidence",
-          "gt80": "> 80%",
-          "50_80": "50% – 80%",
-          "lt50": "< 50%"
-        },
         "surfaces": {
           "all": "All Surfaces"
         }
@@ -826,10 +817,9 @@
       "reasoning": "Reasoning",
       "why_good": "Why This Is Good",
       "evidence_contradictions": "Evidence Contradictions",
-      "contradictions_detected": "{count} contradiction(s) detected in backing evidence. Confidence adjusted by {delta}%.",
+      "contradictions_detected": "{count} contradiction(s) detected in backing evidence.",
       "discuss_finding": "Discuss This Finding",
       "suppressed": "Suppressed",
-      "confidence_reduced": "Confidence reduced by {value}%",
       "evidence_quality": "Evidence Quality",
       "source_reliability": "Source Reliability",
       "completeness": "Completeness",
@@ -980,10 +970,7 @@
       "view_details": "View details",
       "monthly_loss": "Monthly Loss",
       "issues": "Issues",
-      "confidence": "Confidence",
       "top_issue": "Top Issue",
-      "structural": "Structural",
-      "economic": "Economic",
       "types": {
         "preflight": "Scale Readiness",
         "revenue": "Revenue Integrity",

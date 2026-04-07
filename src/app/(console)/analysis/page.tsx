@@ -36,7 +36,6 @@ type PolarityFilter = "all" | "negative" | "positive" | "neutral";
 type VerificationFilter = "all" | "unverified" | "verified" | "challenged";
 type ImpactRangeFilter = "all" | "lt1k" | "1k_10k" | "10k_50k" | "gt50k";
 type ChangeClassFilter = "all" | "new_issue" | "regression" | "improvement" | "stable_risk" | "resolved";
-type ConfidenceFilter = "all" | "gt80" | "50_80" | "lt50";
 
 const severityValues: SeverityFilter[] = ["all", "critical", "high", "medium", "low"];
 const packValues: PackFilter[] = ["all", "scale_readiness", "revenue_integrity", "chargeback_resilience", "saas_growth_readiness"];
@@ -44,7 +43,6 @@ const polarityValues: PolarityFilter[] = ["all", "negative", "positive", "neutra
 const verificationValues: VerificationFilter[] = ["all", "unverified", "verified", "challenged"];
 const impactRangeValues: ImpactRangeFilter[] = ["all", "lt1k", "1k_10k", "10k_50k", "gt50k"];
 const changeClassValues: ChangeClassFilter[] = ["all", "new_issue", "regression", "improvement", "stable_risk", "resolved"];
-const confidenceValues: ConfidenceFilter[] = ["all", "gt80", "50_80", "lt50"];
 
 const polarityIcons: Record<string, string> = {
   negative: "!",
@@ -276,7 +274,6 @@ function AnalysisContent({
   const [impactRangeFilter, setImpactRangeFilter] = useState<ImpactRangeFilter>("all");
   const [surfaceFilter, setSurfaceFilter] = useState<string>("all");
   const [changeClassFilter, setChangeClassFilter] = useState<ChangeClassFilter>("all");
-  const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("all");
   const [searchText, setSearchText] = useState("");
   const [hidePositive, setHidePositive] = useState(false);
   const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
@@ -329,13 +326,6 @@ function AnalysisContent({
     resolved: t("filters.change_class.resolved"),
   };
 
-  const confidenceLabels: Record<ConfidenceFilter, string> = {
-    all: t("filters.confidence.all"),
-    gt80: t("filters.confidence.gt80"),
-    "50_80": t("filters.confidence.50_80"),
-    lt50: t("filters.confidence.lt50"),
-  };
-
   const packLabels: Record<string, string> = {
     scale_readiness: tc("pack_labels.scale_readiness"),
     revenue_integrity: tc("pack_labels.revenue_integrity"),
@@ -382,27 +372,19 @@ function AnalysisContent({
       }
       if (surfaceFilter !== "all" && f.surface !== surfaceFilter) return false;
       if (changeClassFilter !== "all" && f.change_class !== changeClassFilter) return false;
-      if (confidenceFilter !== "all") {
-        if (confidenceFilter === "gt80" && f.confidence <= 80) return false;
-        if (confidenceFilter === "50_80" && (f.confidence < 50 || f.confidence > 80)) return false;
-        if (confidenceFilter === "lt50" && f.confidence >= 50) return false;
-      }
       if (searchText) {
         const q = searchText.toLowerCase();
         if (!(f.title?.toLowerCase().includes(q) || f.root_cause?.toLowerCase().includes(q))) return false;
       }
       return true;
     });
-  }, [findings, severityFilter, packFilter, polarityFilter, hidePositive, verificationFilter, impactRangeFilter, surfaceFilter, changeClassFilter, confidenceFilter, searchText]);
+  }, [findings, severityFilter, packFilter, polarityFilter, hidePositive, verificationFilter, impactRangeFilter, surfaceFilter, changeClassFilter, searchText]);
 
   const summaryCards: SummaryCard[] = useMemo(() => {
     const negativeFindings = findings.filter(f => f.polarity === "negative");
     const positiveFindings = findings.filter(f => f.polarity === "positive");
     const totalImpactMid = negativeFindings.reduce((sum, f) => sum + f.impact.midpoint, 0);
     const highImpact = negativeFindings.filter(f => f.impact.midpoint >= 10000).length;
-    const avgConf = negativeFindings.length
-      ? Math.round(negativeFindings.reduce((sum, f) => sum + f.confidence, 0) / negativeFindings.length)
-      : 0;
     return [
       {
         label: t("cards.findings"),
@@ -480,7 +462,6 @@ function AnalysisContent({
       key: "change", label: t("filters.change_class.label"), className: "w-28",
       render: (row) => <ChangeBadge value={row.change_class} />,
     },
-    { key: "confidence", label: tc("columns.confidence"), className: "w-16", render: (row) => <span className="font-mono text-xs text-content-muted">{row.confidence}%</span> },
     {
       key: "impact", label: tc("columns.est_impact"), className: "w-44",
       render: (row) => row.polarity === 'positive'
@@ -533,10 +514,6 @@ function AnalysisContent({
           className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
           {surfaceOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
-        <select value={confidenceFilter} onChange={(e) => setConfidenceFilter(e.target.value as ConfidenceFilter)}
-          className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600">
-          {confidenceValues.map((v) => <option key={v} value={v}>{confidenceLabels[v]}</option>)}
-        </select>
         <input type="text" value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder={t("search_placeholder")}
           className="rounded-md border border-edge bg-surface-card pl-2.5 pr-6 py-1.5 text-xs text-content-secondary whitespace-nowrap focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600" />
 
@@ -546,8 +523,8 @@ function AnalysisContent({
           {tc("hide_positive_signals")}
         </label>
 
-        {(severityFilter !== "all" || packFilter !== "all" || polarityFilter !== "all" || verificationFilter !== "all" || impactRangeFilter !== "all" || surfaceFilter !== "all" || changeClassFilter !== "all" || confidenceFilter !== "all" || searchText !== "") && (
-          <button onClick={() => { setSeverityFilter("all"); setPackFilter("all"); setPolarityFilter("all"); setVerificationFilter("all"); setImpactRangeFilter("all"); setSurfaceFilter("all"); setChangeClassFilter("all"); setConfidenceFilter("all"); setSearchText(""); }}
+        {(severityFilter !== "all" || packFilter !== "all" || polarityFilter !== "all" || verificationFilter !== "all" || impactRangeFilter !== "all" || surfaceFilter !== "all" || changeClassFilter !== "all" || searchText !== "") && (
+          <button onClick={() => { setSeverityFilter("all"); setPackFilter("all"); setPolarityFilter("all"); setVerificationFilter("all"); setImpactRangeFilter("all"); setSurfaceFilter("all"); setChangeClassFilter("all"); setSearchText(""); }}
             className="rounded-md px-3 py-1.5 text-xs text-content-muted transition-colors hover:text-content-secondary">{tc("clear_filters")}</button>
         )}
         <span className="ml-auto text-xs text-content-muted">{tc("n_of_total", { filtered: filtered.length, total: findings.length })}</span>
@@ -619,7 +596,6 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
             : <SeverityBadge value={finding.severity} />}
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
-          <span className="text-xs text-content-muted">{tc("confidence_label", { value: finding.confidence })}</span>
           <PackBadge pack={finding.pack} label={packLabels[finding.pack] || finding.pack} />
           {finding.surface && <code className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{finding.surface}</code>}
         </div>
@@ -636,11 +612,6 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
               </span>
             </div>
             <p className="text-xs dark:text-amber-300/80 text-amber-600/80">{finding.suppression_context.explanation}</p>
-            {finding.suppression_context.confidence_reduction > 0 && (
-              <p className="mt-1 text-xs dark:text-amber-400/60 text-amber-600/60">
-                {td("confidence_reduced", { points: finding.suppression_context.confidence_reduction })}
-              </p>
-            )}
           </div>
         </section>
       )}
@@ -730,7 +701,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
         </div>
       </section>
 
-      {/* Truth Context */}
+      {/* Truth Context — Wave 2.4: no longer surfaces the numeric delta. */}
       {finding.truth_context && finding.truth_context.has_contradictions && (
         <section>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider dark:text-amber-500 text-amber-600">{td("evidence_contradictions")}</h3>
@@ -738,7 +709,6 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
             <p className="text-xs dark:text-amber-300 text-amber-600">
               {td("contradictions_detected", {
                 count: finding.truth_context.contradiction_count,
-                delta: `${finding.truth_context.truth_confidence_delta > 0 ? '+' : ''}${finding.truth_context.truth_confidence_delta}`,
               })}
             </p>
           </div>

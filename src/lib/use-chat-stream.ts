@@ -302,7 +302,6 @@ function parseBlockMarkers(text: string): ContentBlock[] {
             id: markerContent,
             title: `Finding ${markerContent}`,
             severity: "medium",
-            confidence: 0,
             impact_mid: 0,
             impact_min: 0,
             impact_max: 0,

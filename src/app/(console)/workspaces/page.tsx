@@ -294,44 +294,14 @@ function ActiveCardContent({ workspace: ws }: { workspace: WorkspaceProjection }
           </div>
         </div>
         <div>
-          <div className="text-xs text-content-faint">{t("confidence")}</div>
-          <div className="text-sm font-medium text-content-secondary">
-            {ws.summary.confidence}%
-          </div>
-        </div>
-        <div>
           <div className="text-xs text-content-faint">{t("top_issue")}</div>
           <div className="truncate text-xs text-content-muted">
             {ws.summary.top_issues[0] || "\u2014"}
           </div>
         </div>
       </div>
-      {ws.confidence_narrative && (
-        <div className="mt-3 border-t border-edge pt-3">
-          <div className="flex items-center gap-3 mb-2">
-            <ConfidenceBar
-              label={t("structural")}
-              level={ws.confidence_narrative.structural_confidence}
-            />
-            <ConfidenceBar
-              label={t("economic")}
-              level={ws.confidence_narrative.economic_confidence}
-            />
-          </div>
-          <p className="text-xs text-content-muted leading-relaxed">
-            {ws.confidence_narrative.narrative}
-          </p>
-          {ws.confidence_narrative.uncertainty_factors.length > 0 && (
-            <ul className="mt-1.5 space-y-0.5">
-              {ws.confidence_narrative.uncertainty_factors.map((factor, i) => (
-                <li key={i} className="text-[11px] text-content-faint">
-                  &bull; {factor}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      {/* Wave 2.4: removed confidence_narrative + ConfidenceBar — those are
+          engine-internal signals that don't help an operator decide. */}
       <div className="mt-3 flex items-center gap-1 text-xs font-medium text-accent opacity-0 transition-opacity group-hover:opacity-100">
         {t("view_details")} <span>&rarr;</span>
       </div>
@@ -414,39 +384,3 @@ function WorkspaceChangeTrend({
   );
 }
 
-function ConfidenceBar({
-  label,
-  level,
-}: {
-  label: string;
-  level: "high" | "medium" | "low";
-}) {
-  const color =
-    level === "high"
-      ? "bg-emerald-500"
-      : level === "medium"
-      ? "bg-amber-500"
-      : "bg-red-500";
-  const textColor =
-    level === "high"
-      ? "text-emerald-600 dark:text-emerald-400"
-      : level === "medium"
-      ? "text-amber-600 dark:text-amber-400"
-      : "text-red-600 dark:text-red-400";
-  const widthPct = level === "high" ? 100 : level === "medium" ? 60 : 30;
-
-  return (
-    <div className="flex-1">
-      <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] text-content-faint">{label}</span>
-        <span className={`text-[10px] font-medium ${textColor}`}>{level}</span>
-      </div>
-      <div className="h-1 rounded-full bg-surface-inset">
-        <div
-          className={`h-1 rounded-full ${color}`}
-          style={{ width: `${widthPct}%` }}
-        />
-      </div>
-    </div>
-  );
-}

@@ -175,7 +175,7 @@ function buildFoundationArticleForFinding(inferenceKey: string): FoundationArtic
     body.push(p(rootCauseDescription));
   } else {
     body.push(p(
-      `This finding flags a structural condition that affects ${pack.lens}. The detector fired against your collected evidence; the impact range and confidence shown alongside the finding are computed from your specific data.`,
+      `This finding flags a structural condition that affects ${pack.lens}. The detector fired against your collected evidence; the impact range shown alongside the finding is computed from your specific data.`,
     ));
   }
 
@@ -183,7 +183,7 @@ function buildFoundationArticleForFinding(inferenceKey: string): FoundationArtic
   body.push(h2('Why it matters'));
   if (isPositive) {
     body.push(p(
-      `Positive findings are not noise — they confirm that a critical structural assumption holds for your site. They reduce uncertainty in adjacent decisions and lower the confidence cost of moving fast in this area.`,
+      `Positive findings are not noise — they confirm that a critical structural assumption holds for your site. They reduce uncertainty in adjacent decisions and let you move fast in this area without second-guessing the basics.`,
     ));
   } else {
     body.push(p(
@@ -191,13 +191,14 @@ function buildFoundationArticleForFinding(inferenceKey: string): FoundationArtic
     ));
   }
 
-  // How we detect it
+  // How we detect it — Wave 2.4: framed around severity + verification stage
+  // (the two qualitative signals the user actually sees), not numeric confidence.
   body.push(h2('How we detect it'));
   body.push(p(
     `Vestigio combines static evidence (HTTP responses, page content, policy presence, third-party scripts), dynamic browser verification (when run), and — when the pixel is configured — behavioral session signals. This finding was produced by combining one or more of these sources with the inference rules of the ${pack.name} pack.`,
   ));
   body.push(p(
-    `Confidence reflects the strength and freshness of the evidence behind this finding. When confidence is low, the recommended action is usually to run a verification or enable richer data collection rather than to act immediately.`,
+    `Two things shape how seriously to take this finding right now: severity and verification stage. Severity reflects how much damage the underlying problem can do at your scale. Verification stage tells you how the supporting evidence was collected — static evidence is real but not yet corroborated by a real browser run, while a confirmed finding has been re-checked end-to-end. High severity findings that are still at the static evidence stage are a good candidate for running a verification before you act.`,
   ));
 
   // Linked root cause
@@ -216,7 +217,7 @@ function buildFoundationArticleForFinding(inferenceKey: string): FoundationArtic
   body.push(h2('What to do about it'));
   body.push(p(
     isPositive
-      ? `No remediation is required for a positive finding. Use it as a confidence anchor when discussing related risks, and re-check it on the next audit cycle to make sure it stays healthy.`
+      ? `No remediation is required for a positive finding. Use it as a structural anchor when discussing related risks, and re-check it on the next audit cycle to make sure it stays healthy.`
       : `The Actions tab will surface a concrete remediation derived from the same evidence as this finding, ranked by priority across all packs. Open the action drawer to see the suggested resolution path (fix, verify, track, or dismiss). For finding-specific reasoning tied to your data, use the chat — it can interpret the detector against your actual evidence and walk through the trade-offs.`,
   ));
 

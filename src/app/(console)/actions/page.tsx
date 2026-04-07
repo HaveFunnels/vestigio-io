@@ -593,10 +593,6 @@ function ActionDrawerContent({
               <ImpactBadge min={action.impact.midpoint} max={action.impact.midpoint} compact />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-content-muted">{t("drawer.confidence")}</span>
-              <span className="font-mono text-xs text-content-muted">{action.confidence}%</span>
-            </div>
-            <div className="flex items-center justify-between">
               <span className="text-xs text-content-muted">{t("drawer.priorityScore")}</span>
               <span className="font-mono text-xs text-content-secondary">{action.priority_score}</span>
             </div>

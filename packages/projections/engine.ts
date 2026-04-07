@@ -18,6 +18,7 @@ import {
   EngineTranslations,
   ChangeReportProjection,
   DecisionChangeProjection,
+  deriveConfidenceTier,
 } from './types';
 import type { DecisionChange } from '../change-detection/types';
 
@@ -602,6 +603,7 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       root_cause: rootCauseTitle,
       severity: mapSeverityFromInference(inf),
       confidence: vc.confidence,
+      confidence_tier: deriveConfidenceTier(vc.confidence),
       impact: {
         monthly_range: vc.estimated_impact.range,
         midpoint,
@@ -642,7 +644,12 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
     return b.impact.midpoint - a.impact.midpoint;
   });
 
-  return findings;
+  // Wave 2.4: filter `low` confidence_tier findings out of the projection.
+  // The engine still processes them (they participate in maps, change
+  // detection, calibration, etc.) — they just don't reach the UI. Showing
+  // a finding the engine itself isn't sure about is worse than not showing
+  // it at all. Threshold lives in deriveConfidenceTier (currently <50).
+  return findings.filter((f) => f.confidence_tier !== 'low');
 }
 
 export function projectActions(result: MultiPackResult, translations?: EngineTranslations): ActionProjection[] {
@@ -739,6 +746,7 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       root_cause_key: rc?.root_cause_key ?? null,
       impact: impact ? { monthly_range: impact.range, midpoint: impact.midpoint } : null,
       confidence: action.confidence,
+      confidence_tier: deriveConfidenceTier(action.confidence),
       cross_pack: action.cross_pack_impact > 1,
       priority_score: priorityScore,
       severity: action.severity,
@@ -1262,6 +1270,7 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         root_cause: null,
         severity: 'none',
         confidence: 60,
+        confidence_tier: 'medium',
         impact: { monthly_range: { min: 0, max: 0 }, midpoint: 0, impact_type: 'none', percentage_delta: null, currency: 'USD' },
         pack: check.pack,
         surface: '/',

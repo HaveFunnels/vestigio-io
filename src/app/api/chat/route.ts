@@ -354,8 +354,10 @@ export async function POST(request: Request) {
           const findingsResult = mcpServer.callTool("get_finding_projections");
           if (findingsResult.type === "finding_projections" && Array.isArray(findingsResult.data)) {
             for (const f of findingsResult.data) {
+              // Wave 2.4: confidence is no longer surfaced to the chat UI.
+              // Severity carries the qualitative signal the user needs.
               findingsMap[f.id] = {
-                id: f.id, title: f.title, severity: f.severity, confidence: f.confidence,
+                id: f.id, title: f.title, severity: f.severity,
                 impact_mid: f.impact?.midpoint || 0, impact_min: f.impact?.monthly_range?.min || 0,
                 impact_max: f.impact?.monthly_range?.max || 0, pack: f.pack, root_cause: f.root_cause || null,
               };

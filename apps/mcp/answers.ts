@@ -329,8 +329,10 @@ function composeWhy(
 ): string[] {
   const reasons: string[] = [];
   reasons.push(decision.why.summary);
+  // Wave 2.4: confidence is no longer narrated. Severity carries the
+  // qualitative signal the user needs.
   for (const rc of rootCauses.filter(r => r.severity === 'high' || r.severity === 'critical').slice(0, 3)) {
-    reasons.push(`Root cause: ${rc.title} (${rc.severity}, confidence: ${rc.confidence}%)`);
+    reasons.push(`Root cause: ${rc.title} (${rc.severity})`);
   }
   return reasons;
 }

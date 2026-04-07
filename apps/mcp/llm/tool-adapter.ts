@@ -188,9 +188,11 @@ function summarizeToolResult(toolName: string, result: any): string {
 
 function summarizeAnswer(data: any): string {
   if (!data) return 'No answer available.';
+  // Wave 2.4: confidence is no longer narrated. The LLM still has access
+  // to it via raw projections internally, but should not echo percentages
+  // back to the user.
   const parts = [
     data.direct_answer,
-    data.confidence != null ? `Confidence: ${data.confidence}%` : null,
     data.freshness ? `Freshness: ${data.freshness}` : null,
     data.recommended_next_step ? `Next step: ${data.recommended_next_step}` : null,
   ];
@@ -218,7 +220,7 @@ function summarizeFindings(data: any[]): string {
     '',
     'TOP 5 (full detail — use $$FINDING{id}$$ to show cards):',
     ...tier1.map((f, i) =>
-      `${i + 1}. [${f.severity?.toUpperCase()}] "${f.title}" — $${f.impact?.midpoint?.toLocaleString() || '?'}/mo, ${f.impact?.monthly_range ? `range $${f.impact.monthly_range.min}–$${f.impact.monthly_range.max}` : ''}, ${f.confidence}% conf, pack: ${f.pack}${f.root_cause ? `, root cause: ${f.root_cause}` : ''} [id: ${f.id}]`
+      `${i + 1}. [${f.severity?.toUpperCase()}] "${f.title}" — $${f.impact?.midpoint?.toLocaleString() || '?'}/mo, ${f.impact?.monthly_range ? `range $${f.impact.monthly_range.min}–$${f.impact.monthly_range.max}` : ''}, pack: ${f.pack}${f.root_cause ? `, root cause: ${f.root_cause}` : ''} [id: ${f.id}]`
     ),
   ];
 
@@ -268,7 +270,7 @@ function summarizeActions(data: any[]): string {
 function summarizeWorkspaces(data: any[]): string {
   if (!Array.isArray(data) || data.length === 0) return 'No workspaces.';
   return data.map((w) =>
-    `${w.name}: ${w.summary?.issue_count || 0} issues, $${w.summary?.total_loss_mid?.toLocaleString() || '0'}/mo loss, ${w.summary?.confidence || 0}% confidence`
+    `${w.name}: ${w.summary?.issue_count || 0} issues, $${w.summary?.total_loss_mid?.toLocaleString() || '0'}/mo loss`
   ).join('\n');
 }
 
@@ -276,7 +278,6 @@ function summarizeWorkspaceSummary(data: any): string {
   if (!data) return 'No workspace summary.';
   const parts = [
     `Health: ${data.overall_health || '?'}`,
-    data.confidence != null ? `Confidence: ${data.confidence}%` : null,
     Array.isArray(data.packs) ? `Packs: ${data.packs.length}` : null,
     Array.isArray(data.root_causes) ? `Root causes: ${data.root_causes.length}` : null,
     Array.isArray(data.prioritized_actions) ? `Actions: ${data.prioritized_actions.length}` : null,
@@ -325,7 +326,6 @@ function summarizeDecisionExplainability(data: any): string {
   return [
     `Pack: ${data.pack_key || '?'}`,
     `Decision: ${data.decision_key || '?'} (${data.effective_severity || '?'})`,
-    `Confidence: ${data.confidence_score ?? '?'}%`,
     data.summary || null,
   ].filter(Boolean).join('\n');
 }

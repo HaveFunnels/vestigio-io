@@ -70,12 +70,49 @@ export function migrateLegacyVerificationMaturity(
   }
 }
 
+/**
+ * Wave 2.4: confidence is bucketed into 3 tiers at the projection layer.
+ * The numeric `confidence` field stays for backend consumers (engine,
+ * change detection, calibration, MCP internal context, sorting), but the
+ * UI consumes only `confidence_tier`. Low-tier findings are filtered
+ * out of the projection entirely so users only see findings the engine
+ * actually has reasonable evidence for.
+ *
+ * Thresholds (aligned with the engine's existing internal floor of 40
+ * used in `packages/intelligence/root-causes.ts` and `packages/impact/engine.ts`):
+ *   confidence >= 70   → 'high'    (strong signal — multiple converging inferences)
+ *   confidence >= 40   → 'medium'  (standard signal — visible to user)
+ *   confidence < 40    → 'low'     (filtered out before reaching the UI)
+ *
+ * 40 is the same threshold the engine already uses to skip low-quality
+ * inferences in root-cause grouping, so a `low` confidence_tier finding
+ * is already a finding the engine itself decided not to roll up.
+ */
+export type ConfidenceTier = 'low' | 'medium' | 'high';
+
+/**
+ * Derive the confidence tier from a numeric confidence score. Single
+ * source of truth so projection, MCP, and any backend consumer that
+ * needs the tier all agree.
+ */
+export function deriveConfidenceTier(confidence: number): ConfidenceTier {
+  if (confidence >= 70) return 'high';
+  if (confidence >= 40) return 'medium';
+  return 'low';
+}
+
 export interface FindingProjection {
   id: string;
   title: string;
   root_cause: string | null;
   severity: string;
+  /** Numeric confidence score from the engine (0-100). NOT exposed to the UI
+   * directly anymore — use `confidence_tier` for any user-facing logic. */
   confidence: number;
+  /** Bucketed confidence tier — `low` findings are filtered out of the
+   * projection entirely, so any FindingProjection that reaches the UI is
+   * either `medium` or `high`. */
+  confidence_tier: ConfidenceTier;
 
   impact: {
     monthly_range: { min: number; max: number };
@@ -157,7 +194,11 @@ export interface ActionProjection {
     midpoint: number;
   } | null;
 
+  /** Numeric confidence — kept for priority_score calculation and backend
+   * consumers. NOT exposed to the UI; use `confidence_tier` instead. */
   confidence: number;
+  /** Bucketed confidence tier for the UI. See FindingProjection.confidence_tier. */
+  confidence_tier: ConfidenceTier;
   cross_pack: boolean;
   priority_score: number;
   severity: string;

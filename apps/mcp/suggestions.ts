@@ -235,7 +235,8 @@ export function composeFindingAnswer(
   if (finding.root_cause) {
     why.push(`Root cause: ${finding.root_cause}`);
   }
-  why.push(`Severity: ${finding.severity} | Confidence: ${f?.confidence || 0}% | Pack: ${finding.pack.replace(/_/g, ' ')}`);
+  // Wave 2.4: confidence is no longer narrated to the user.
+  why.push(`Severity: ${finding.severity} | Pack: ${finding.pack.replace(/_/g, ' ')}`);
 
   // Find related actions
   const relatedActions = projections.actions.filter(a => a.root_cause === finding.root_cause);

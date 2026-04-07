@@ -258,7 +258,6 @@ function RichFindingDrawer({ node, finding }: { node: MapNode; finding?: Finding
           <SeverityBadge value={finding.severity} />
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
-          <span className="text-xs text-content-muted">{tc("confidence_label", { value: finding.confidence })}</span>
           <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{packLabels[finding.pack] || finding.pack}</span>
         </div>
       </section>
@@ -368,7 +367,6 @@ function RootCauseDrawerContent({ node }: { node: MapNode }) {
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("drawer.rootCauseDetails")}</h3>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {node.severity && <SeverityBadge value={node.severity} />}
-          {node.metadata.confidence != null && <span className="text-xs text-content-muted">{t("drawer.confidence", { value: String(node.metadata.confidence) })}</span>}
           {category && (
             <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">{category}</span>
           )}

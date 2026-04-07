@@ -45,7 +45,6 @@ export type ContentBlock =
   | FindingCardBlock
   | ActionCardBlock
   | ImpactSummaryBlock
-  | ConfidenceBlock
   | NavigationCtaBlock
   | ToolCallBlock
   | SuggestedPromptsBlock
@@ -65,7 +64,6 @@ export interface FindingCardBlock {
     id: string;
     title: string;
     severity: string;
-    confidence: number;
     impact_mid: number;
     impact_min: number;
     impact_max: number;
@@ -95,12 +93,6 @@ export interface ImpactSummaryBlock {
     type: string;
     currency: string;
   };
-}
-
-export interface ConfidenceBlock {
-  type: 'confidence';
-  value: number;
-  label?: string;
 }
 
 export interface NavigationCtaBlock {

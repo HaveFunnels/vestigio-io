@@ -11,6 +11,8 @@ import { getMcpPersistenceStore } from "../../../../../apps/platform/mcp-persist
 import type { AnalysisJobRecord } from "../../../../../apps/platform/mcp-persistence";
 import { trackError } from "@/libs/error-tracker";
 import { PrismaEvidenceStore } from "../../../../../packages/evidence";
+import { PrismaSnapshotStore } from "../../../../../packages/change-detection";
+import { PrismaFindingStore } from "../../../../../packages/projections";
 import { prisma } from "@/libs/prismaDb";
 import { triggerIncidentNotifications, triggerRegressionNotifications } from "@/libs/notification-triggers";
 
@@ -161,6 +163,22 @@ export async function GET(request: Request) {
         // Load engine translations for user's locale
         const engineTranslations = await loadEngineTranslations();
 
+        // Wave 0.7: Look up previous snapshot for change detection.
+        // The legacy stream route doesn't know which AuditCycle row it
+        // belongs to (this path is the manual "run analysis" pre-Wave 0.1
+        // flow), so we scope by workspace+environment_ref alone.
+        const snapshotStore = new PrismaSnapshotStore(prisma);
+        let previousSnapshot = null;
+        try {
+          const prev = await snapshotStore.asyncGetLatest(
+            pipelineInput.workspace_ref,
+            pipelineInput.environment_ref,
+          );
+          previousSnapshot = prev?.snapshot ?? null;
+        } catch (err) {
+          console.warn('[analysis-stream] previous snapshot lookup failed:', err);
+        }
+
         // Final recompute with all evidence
         const multiPackResult = recomputeAll({
           evidence: result.evidence,
@@ -177,8 +195,28 @@ export async function GET(request: Request) {
           is_production: false,
           onboarding_business_model: businessModel,
           onboarding_conversion_model: conversionModel,
+          previous_snapshot: previousSnapshot,
           translations: engineTranslations,
         });
+
+        // Wave 0.7: Save the new snapshot so the next request to this
+        // env can compare against it. Fire-and-forget — failure here
+        // doesn't break the user-visible flow.
+        //
+        // Note: this legacy stream route doesn't create an AuditCycle DB
+        // row (it uses a synthetic `audit_cycle:live_${ts}` ref), so we
+        // can't persist Finding rows here — they need a real cycleId for
+        // FK. The audit-runner worker is the canonical path that persists
+        // both snapshot AND findings. This route only needs the snapshot
+        // for change detection continuity if someone uses the manual
+        // "Run analysis" button twice on the same env.
+        if (multiPackResult.current_snapshot) {
+          snapshotStore
+            .asyncSave(multiPackResult.current_snapshot)
+            .catch((err) => {
+              console.error('[analysis-stream] snapshot save failed:', err);
+            });
+        }
 
         const projections = projectAll(multiPackResult, engineTranslations);
 

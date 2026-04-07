@@ -50,6 +50,11 @@ export type BootstrapResult =
  *
  * Also persists evidence to PostgreSQL (best-effort, async fire-and-forget)
  * so it survives server restarts.
+ *
+ * Wave 0.7: callers can pass `previousSnapshot` (pre-loaded from
+ * PrismaSnapshotStore) so the rehydrated MCP context has change_class
+ * populated on findings without anyone hitting Prisma from inside
+ * the synchronous engine assembly path.
  */
 export function bootstrapMcpContextSync(
   server: McpServer,
@@ -57,6 +62,7 @@ export function bootstrapMcpContextSync(
   evidence: Evidence[],
   prismaEvidenceStore?: PrismaEvidenceStore,
   translations?: import('../../packages/projections/types').EngineTranslations,
+  previousSnapshot?: import('../../packages/change-detection').CycleSnapshot | null,
 ): BootstrapResult {
   if (!input.organization_id || !input.environment_id || !input.domain) {
     return { status: 'error', message: 'Invalid input: organization_id, environment_id, and domain are required.' };
@@ -69,7 +75,7 @@ export function bootstrapMcpContextSync(
   const scope = buildScope(input);
   const cycleRef = buildCycleRef(input);
 
-  server.loadContext(evidence, scope, cycleRef, input.domain, input.landing_url, translations);
+  server.loadContext(evidence, scope, cycleRef, input.domain, input.landing_url, translations, previousSnapshot);
 
   // Persist evidence to DB (best-effort, fire-and-forget)
   if (prismaEvidenceStore) {

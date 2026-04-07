@@ -9,6 +9,7 @@ import {
   makeRef,
 } from '../../packages/domain';
 import { recomputeAll, MultiPackResult } from '../../packages/workspace';
+import type { CycleSnapshot } from '../../packages/change-detection';
 import { GraphQuery } from '../../packages/graph';
 import { buildGraph } from '../../packages/graph';
 import type {
@@ -47,6 +48,12 @@ export function assembleContext(
   conversion_proximity: number,
   is_production: boolean,
   translations?: EngineTranslations,
+  // Wave 0.7: Optional previous snapshot for change detection. When the
+  // caller pre-loads it from PrismaSnapshotStore (in ensureContext or
+  // bootstrapMcpContextSync), the engine output gets a populated
+  // change_report and FindingProjections gain real change_class values.
+  // Stays optional to keep all existing test callers compatible.
+  previousSnapshot?: CycleSnapshot | null,
 ): EngineContext {
   const scoping: Scoping = {
     workspace_ref: scope.workspace_ref,
@@ -63,6 +70,7 @@ export function assembleContext(
     landing_url,
     conversion_proximity,
     is_production,
+    previous_snapshot: previousSnapshot ?? null,
     translations,
   });
 

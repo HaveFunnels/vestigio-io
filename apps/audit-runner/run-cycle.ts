@@ -24,6 +24,10 @@
 import { prisma } from "@/libs/prismaDb";
 import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/staged-pipeline";
 import { PrismaEvidenceStore } from "../../packages/evidence";
+import { PrismaSnapshotStore } from "../../packages/change-detection";
+import { PrismaFindingStore, projectAll } from "../../packages/projections";
+import { recomputeAll } from "../../packages/workspace";
+import { loadEngineTranslations } from "@/lib/engine-translations";
 import type { Evidence } from "../../packages/domain";
 
 export interface RunAuditCycleResult {
@@ -215,7 +219,123 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 		}
 
-		// 7. Mark complete
+		// 7. Run the engine + project findings + persist snapshot & findings.
+		// This is the part that makes change detection actually work and
+		// what populates the real `finding_count` per surface in /api/inventory.
+		//
+		// Order:
+		//   a. Load the previous snapshot for this workspace+env (if any)
+		//   b. Run recomputeAll() with previous_snapshot → engine produces
+		//      change_report when there's a previous to compare against
+		//   c. projectAll() turns the engine output into FindingProjections
+		//      (each carries change_class derived from change_report)
+		//   d. Save the new snapshot to PrismaSnapshotStore so the NEXT
+		//      cycle can see it as previous
+		//   e. Save findings to PrismaFindingStore so the inventory + cold
+		//      start path can read them without recomputing
+		//   f. Prune old snapshots beyond retention cap
+		//
+		// Per-step failures are caught individually so a single store
+		// hiccup can't fail the whole cycle (audit results in DB are
+		// still useful even if the projection cache is stale).
+		try {
+			const workspaceRef = `workspace:${cycle.organizationId}`;
+			const environmentRef = `environment:${env.id}`;
+			const cycleRefStr = `audit_cycle:${cycleId}`;
+
+			const snapshotStore = new PrismaSnapshotStore(prisma);
+			const findingStore = new PrismaFindingStore(prisma);
+
+			// (a) Previous snapshot
+			let previousSnapshot = null;
+			try {
+				const prev = await snapshotStore.asyncGetLatest(workspaceRef, environmentRef);
+				previousSnapshot = prev?.snapshot ?? null;
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] previous snapshot lookup failed (treating as first cycle):`, err);
+			}
+
+			// Resolve business inputs from BusinessProfile if present
+			const businessProfile = await prisma.businessProfile
+				.findUnique({ where: { organizationId: cycle.organizationId } })
+				.catch(() => null);
+
+			// Engine translations (locale-aware finding titles, root cause titles, etc.)
+			let translations;
+			try {
+				translations = await loadEngineTranslations();
+			} catch {
+				translations = undefined;
+			}
+
+			// (b) Engine
+			const recomputeStartMs = Date.now();
+			const multiPackResult = recomputeAll({
+				evidence: result.evidence,
+				scoping: {
+					workspace_ref: workspaceRef,
+					environment_ref: environmentRef,
+					subject_ref: `website:${website.id}`,
+					path_scope: null,
+				},
+				cycle_ref: cycleRefStr,
+				root_domain: domain,
+				landing_url: landingUrl,
+				conversion_proximity: 0.5,
+				is_production: env.isProduction,
+				onboarding_business_model: businessProfile?.businessModel ?? null,
+				onboarding_conversion_model: businessProfile?.conversionModel ?? null,
+				previous_snapshot: previousSnapshot,
+				translations,
+			});
+			const recomputeMs = Date.now() - recomputeStartMs;
+
+			// (c) Project for the UI
+			const projections = projectAll(multiPackResult, translations);
+
+			// (d) Save snapshot — must be awaited so prune in step (f) sees it
+			if (multiPackResult.current_snapshot) {
+				try {
+					await snapshotStore.asyncSave(multiPackResult.current_snapshot, cycleId);
+					console.log(
+						`[audit-runner ${cycleId}] snapshot saved (${multiPackResult.current_snapshot.metadata.decision_count} decisions, ${multiPackResult.current_snapshot.metadata.signal_count} signals, recompute ${recomputeMs}ms)`,
+					);
+				} catch (err) {
+					console.error(`[audit-runner ${cycleId}] snapshot save failed:`, err);
+				}
+			}
+
+			// (e) Save findings
+			try {
+				const written = await findingStore.saveForCycle({
+					cycleId,
+					environmentId: env.id,
+					cycleRef: cycleRefStr,
+					findings: projections.findings,
+				});
+				console.log(
+					`[audit-runner ${cycleId}] persisted ${written}/${projections.findings.length} findings`,
+				);
+			} catch (err) {
+				console.error(`[audit-runner ${cycleId}] findings save failed:`, err);
+			}
+
+			// (f) Retention prune — keep last 10 snapshots per env
+			try {
+				await snapshotStore.asyncPrune(workspaceRef, environmentRef);
+			} catch (err) {
+				// Pruning is best-effort
+				console.warn(`[audit-runner ${cycleId}] snapshot prune failed:`, err);
+			}
+		} catch (err) {
+			// Recompute/persist failure is non-fatal — the cycle still
+			// completes because evidence + inventory are already in DB.
+			// On next request, ensureContext() will run a fresh recompute
+			// from the persisted evidence.
+			console.error(`[audit-runner ${cycleId}] recompute/persist block failed (non-fatal):`, err);
+		}
+
+		// 8. Mark complete
 		await prisma.auditCycle.update({
 			where: { id: cycleId },
 			data: { status: "complete", completedAt: new Date() },

@@ -15,3 +15,4 @@ export type {
   ComparisonMode,
   ComparisonRequest,
 } from './snapshot-store';
+export { PrismaSnapshotStore } from './prisma-snapshot-store';

@@ -52,6 +52,7 @@ export async function ensureContext(orgCtx: {
     // Dynamic imports to keep Prisma out of client bundles
     const { prisma } = await import('@/libs/prismaDb');
     const { PrismaEvidenceStore } = await import('../../packages/evidence');
+    const { PrismaSnapshotStore } = await import('../../packages/change-detection');
     const { bootstrapMcpContextSync } = await import('../../apps/mcp/bootstrap');
 
     const store = new PrismaEvidenceStore(prisma);
@@ -60,6 +61,20 @@ export async function ensureContext(orgCtx: {
 
     const { evidence, cycleRef } = await store.loadLatestCycle(workspaceRef, environmentRef);
     if (evidence.length === 0 || !cycleRef) return; // no persisted data yet
+
+    // Wave 0.7: load the previous snapshot so the rehydrated MCP context
+    // produces a change_report and findings carry change_class. The
+    // PrismaSnapshotStore returns null cleanly if no snapshot exists yet
+    // (e.g. legacy cycles from before Wave 0.7) — in that case the engine
+    // still works, just without change detection.
+    let previousSnapshot = null;
+    try {
+      const snapshotStore = new PrismaSnapshotStore(prisma);
+      const prev = await snapshotStore.asyncGetLatest(workspaceRef, environmentRef);
+      previousSnapshot = prev?.snapshot ?? null;
+    } catch (err) {
+      console.warn('[ensureContext] previous snapshot lookup failed:', err);
+    }
 
     const domain = orgCtx.domain.replace(/^https?:\/\//, '').split('/')[0];
     const landingUrl = orgCtx.domain.startsWith('http')
@@ -73,7 +88,7 @@ export async function ensureContext(orgCtx: {
       domain,
       landing_url: landingUrl,
       is_production: process.env.NODE_ENV === 'production',
-    }, evidence, store, orgCtx.engineTranslations);
+    }, evidence, store, orgCtx.engineTranslations, previousSnapshot);
   } catch (err) {
     console.error('[ensureContext] Failed to bootstrap MCP context:', err);
   }

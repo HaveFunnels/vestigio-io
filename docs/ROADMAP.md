@@ -3,6 +3,8 @@
 > Last updated: 2026-04-07
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
+> **2026-04-07 Wave 0.7 update (after Sprint 4):** Findings persistence + change detection shipped end-to-end. Two new Prisma models (`CycleSnapshot`, `Finding`), two new stores (`PrismaSnapshotStore`, `PrismaFindingStore`). The audit-runner now runs `recomputeAll()` with `previous_snapshot` lookup → `projectAll()` → dual persist (snapshot + findings). `/api/inventory` shows real finding counts per surface. Cold-start `ensureContext()` rehydrates with change_class populated. The frontend `/app/(console)/analysis/page.tsx` already had `change_class` filters/badges wired — they now light up with real data automatically. Wave 0 status: 0.1, 0.4, 0.7 done; 0.5 partial (mocks gone, finding_count is real now, sessions still null until pixel pipeline). Remaining Wave 0: 0.2 + 0.3 (pixel) + 0.6 (verify UI). See [DEV_PROGRESS.md § Wave 0.7](../DEV_PROGRESS.md) for the full diff.
+>
 > **2026-04-07 Sprint 2-4 update (later same day):** Dual funnel shipped. The `/lp` anonymous lead funnel is live end-to-end: visitor → 4-step form → mini-audit (Stage A only, 5s, cached 14d by domain) → animated result page with 5 visible + 10 blurred findings → Paddle Checkout → webhook promotes lead to a real User+Org+Env+AuditCycle → magic link sent. The crawler pipeline gained a `mode: 'full' | 'shallow_plus' | 'shallow'` field so it can serve all three funnels (signup, /lp, admin outreach) from one codebase. The admin gained a Surface Scans tab under Growth that lets sales/marketing run shallow_plus prospect audits with shareable public links. See [DEV_PROGRESS.md § Sprint 2-4](../DEV_PROGRESS.md) for the full diff. None of this is part of Wave 0 — Sprint 2-4 is independent commercial work that runs in parallel.
 >
 > **2026-04-07 Sprint 1 update:** Wave 0.1 + 0.4 shipped, Wave 0.5 partial. See entries below for details and [DEV_PROGRESS.md § Sprint 1](../DEV_PROGRESS.md) for the full diff. Onboarding → audit auto-trigger now works end-to-end: payment → worker fire-and-forget → live banner-row in inventory.
@@ -39,6 +41,21 @@ Priority markers:
 
 ---
 
+## Manual configuration steps (humans only)
+
+These are env vars or external setups that the codebase can't ship for you. Each item links to the feature it unlocks. Do these in Railway (or wherever you keep secrets) before the corresponding flow goes live.
+
+| Step | Env var / setup | Unlocks | Notes |
+|---|---|---|---|
+| Paddle price ID for /lp checkout | `NEXT_PUBLIC_PADDLE_LP_PRICE_ID=pri_xxx` | The "Unlock the full audit" CTA on `/lp/audit/result/[leadId]`. Without it the button shows "Pricing isn't configured yet" instead of opening Paddle Checkout. | Use the same `priceId` as your $99/mo Vestigio base plan in Paddle. The Surface Scans admin tab works without this. |
+| Paddle client token | `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=live_xxx` | Paddle.js Initialize on `/lp/audit/result/[leadId]` and the existing `/onboard` checkout flow. | Already set in production for /onboard — verify same value works for /lp. |
+| Paddle environment | `NEXT_PUBLIC_PADDLE_ENV=production` | Tells Paddle.js to hit live (not sandbox). Default falls to sandbox if unset. | Production-only. Don't set in staging. |
+| Brevo API + senders | `BREVO_API_KEY`, `BREVO_SENDER_NOREPLY=no-reply@vestigio.io`, `BREVO_SENDER_NOTIFICATIONS=notifications@vestigio.io` | Magic links for `promoteLeadToOrg` (post-checkout) + transactional notifications. | Verified working in production via 3 live test sends. |
+| Lead form HMAC secret (optional) | `LEAD_FORM_SECRET=<openssl rand -hex 32>` | Cryptographic form session token on `/lp/audit`. Falls back to `SECRET` env if unset. | Optional but recommended for prod hardening. |
+| Meta WhatsApp Cloud API (optional) | `META_*` cluster (see [docs/WHATSAPP_SETUP.md](WHATSAPP_SETUP.md)) | Real WhatsApp delivery for incident/regression alerts. Falls back to Brevo WhatsApp (which requires Brevo paid plan) or skips. | Step-by-step in WHATSAPP_SETUP.md. Complete Coexistence flow. |
+
+---
+
 ## What's already done
 
 See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milestones:
@@ -62,7 +79,7 @@ See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milest
 | Pixel ingest endpoint `/api/behavioral/ingest` | Open. Snippet POSTs to dead URL | Wave 0.2 | snippet/vestigio.js:20 |
 | Pixel event processing worker | Open. session-aggregator never called | Wave 0.3 | depends on 0.2 |
 | Verification UI → backend wiring | Open. Drawer button still `toast.success(...)` stub | Wave 0.6 | actions/page.tsx:563 — backend `verify()` works |
-| Findings persistence to PostgreSQL | Open. Findings live only in MCP memory | Wave 0.7 | no `Finding` Prisma model exists |
+| Findings persistence to PostgreSQL | ✅ **Done — Wave 0.7 (2026-04-07)** | Wave 0.7 | CycleSnapshot + Finding Prisma models, change detection wired |
 | Behavioral findings dormant | Require ≥20 sessions of pixel data → 0 today | Wave 1 | recompute.ts:343-369, blocked by Wave 0.2/0.3 |
 | Stage D selective headless | Declared, skipped to "complete" | Wave 1 | staged-pipeline.ts:346-348 |
 | Katana / Nuclei runners | Built, not invoked from main pipeline | Wave 2 | runners ready, no caller in pipeline |
@@ -157,16 +174,15 @@ These are ordered by dependency: 0.1 unblocks 0.4-0.5, which unblock 0.7, which 
 
 ---
 
-### 0.7 Findings Persistence to PostgreSQL
+### 0.7 Findings Persistence to PostgreSQL ✅
 
 | | |
 |---|---|
 | **Tag** | `engine` `platform` |
 | **Priority** | P0 |
-| **Status** | Open. After `recomputeAll()` produces findings in [packages/projections/engine.ts](../packages/projections/engine.ts), they're held only in the in-memory MCP server singleton. Server restart triggers a recompute from persisted evidence — works, but expensive on every cold start, and **change detection is broken** because there's no persisted "previous cycle" snapshot to compare against. |
-| **What** | Add `Finding` Prisma model with `id`, `cycleRef`, `inferenceKey`, `pack`, `severity`, `confidence`, `impactMin`, `impactMax`, `rootCause`, `verificationMaturity`, `evidenceIds[]`, `createdAt`, plus a snapshot of the projection JSON for cheap rehydration. Persist after `recomputeAll()` in `analysis/stream/route.ts`. Change detection then queries the previous cycle for the same `inferenceKey` and computes `regression`/`improvement`/`new_issue`/`stable_risk`/`resolved`. |
-| **Where** | Schema. Persist hook. Modify [packages/change-detection/engine.ts](../packages/change-detection/engine.ts) to read from DB instead of in-memory cycle history. |
-| **Acceptance** | Run audit twice → second run shows real `change_class` on findings → server restart preserves both cycles. |
+| **Status** | **Done — Wave 0.7 (2026-04-07).** Two new Prisma models pushed to production: `CycleSnapshot` (decisions+signals JSON for change detection input) and `Finding` (denormalized projection rows for fast queries + cold-start rehydration). The audit-runner worker now: (a) loads previous snapshot from `PrismaSnapshotStore.asyncGetLatest`, (b) calls `recomputeAll({previous_snapshot})` so the engine produces a real `change_report`, (c) `projectAll()` turns it into FindingProjections with populated `change_class`, (d) saves both the new snapshot and the findings via `PrismaSnapshotStore.asyncSave` + `PrismaFindingStore.saveForCycle`, (e) prunes snapshots beyond the 10-cycle retention cap. The legacy `/api/analysis/stream` route also looks up + saves snapshots (skips findings persistence since it has no real cycleId). `assembleContext` + `bootstrapMcpContextSync` + `loadContext` all gained an optional `previousSnapshot` parameter so cold-start MCP rehydration via `ensureContext()` also produces change_class. `/api/inventory` reads real per-surface finding counts via `PrismaFindingStore.countBySurfaceForLatestCycle` (matches by exact path, exact url, or substring fallback so a finding declared at surface "/checkout" still matches an inventory row at "/en/checkout/step-2"). |
+| **What** | ✅ CycleSnapshot + Finding Prisma models. PrismaSnapshotStore (implements SnapshotStore interface from packages/change-detection). PrismaFindingStore (saveForCycle, loadLatestForEnvironment, countBySurfaceForLatestCycle, pruneOlderThan). Wired into audit-runner, stream route, MCP context assembly, ensureContext, and /api/inventory. Lead promotion auto-inherits via `runAuditCycle()`. Admin prospect scans use static heuristics so they correctly skip engine persistence. |
+| **Acceptance** | ✅ Met. Run audit twice → second run shows real `change_class`. Server restart rehydrates findings from DB without recomputing the engine. `/api/inventory` returns real `finding_count` per surface (or `0` if surface had no findings, or `null` only when no audit has ever completed for the env). The frontend `/app/(console)/analysis/page.tsx` already had filters + badges for `change_class` wired up — they now light up automatically with real data. |
 
 ---
 

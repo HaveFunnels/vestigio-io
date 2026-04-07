@@ -2,6 +2,123 @@
 
 ---
 
+## Wave 0.7 -- 2026-04-07 -- Findings Persistence + Change Detection
+
+### Goal
+
+Close the last load-bearing pipeline gap from the audit: findings live only in the MCP server's in-memory singleton, change detection never runs (because nobody persists previous-cycle snapshots), and `/api/inventory` returns `finding_count: null` because there's no DB-backed source. Make finding persistence a default platform capability so:
+
+1. Server restart doesn't lose findings (no expensive recompute on every cold start)
+2. Running an audit twice on the same env shows real `change_class` (regression / improvement / new_issue / resolved / stable_risk) on each finding
+3. `/api/inventory` shows real `finding_count` per surface
+4. The frontend `change_class` badges in `/app/(console)/analysis/page.tsx` (already wired to filter + render) light up with real data without any UI work
+
+### Key insight from investigation
+
+Almost all of the change detection plumbing already existed:
+- `recomputeAll()` already accepts `previous_snapshot` as input AND already produces `current_snapshot: VersionedSnapshot` as output
+- `detectChanges()` is pure — just compares two snapshots
+- `SnapshotStore` interface + `InMemorySnapshotStore` reference impl already exist in `packages/change-detection/snapshot-store.ts`
+- `FindingProjection.change_class` field already exists, frontend already filters/renders it
+- The frontend `/app/(console)/analysis/page.tsx` already has change_class filters and `<ChangeBadge>` rendering wired
+
+The only missing pieces were: (a) a persistent SnapshotStore, (b) a FindingStore, (c) wiring the lookup→recompute→save loop into the audit-runner and the legacy stream route, and (d) a real source for `/api/inventory` finding_count.
+
+### What changed
+
+**Two new Prisma models pushed to production**
+
+- `CycleSnapshot` ([prisma/schema.prisma](prisma/schema.prisma)) — one row per `recomputeAll()` call. Stores JSON-serialized `decisions[]` + `signals[]` + metadata (decision_count, signal_count, audit_mode, recompute_ms, content_hash, isBaseline). FK to `AuditCycle` when known. Indexed by `(workspaceRef, environmentRef, createdAt)` for fast latest-snapshot lookups. Retention: keep latest 10 per env (matches `DEFAULT_RETENTION_COUNT`), pruned by audit-runner at the end of each cycle.
+
+- `Finding` ([prisma/schema.prisma](prisma/schema.prisma)) — one row per `FindingProjection` produced by `projectAll()`. Stores denormalized columns for fast queries (`environmentId`, `surface`, `pack`, `severity`, `polarity`, `inferenceKey`, `changeClass`, `verificationMaturity`, `impactMin/Max/Midpoint`) plus the full projection JSON in a `projection` text column for cheap rehydration on cold start. Unique `(cycleId, inferenceKey)` constraint so re-running the same cycle upserts cleanly. Indexed by `(environmentId, cycleId)`, `(environmentId, surface)`, `(environmentId, severity)`, `(cycleRef, inferenceKey)`. Cascading delete from `AuditCycle`.
+
+Back-relations added on `AuditCycle.findings[]`, `AuditCycle.snapshots[]`, `Environment.findings[]`.
+
+**Two new stores**
+
+- [packages/change-detection/prisma-snapshot-store.ts](packages/change-detection/prisma-snapshot-store.ts) — `PrismaSnapshotStore` implements the `SnapshotStore` interface from `snapshot-store.ts`. The legacy interface is sync (in-memory contract), so each method has both a sync version (fire-and-forget) and an `asyncXxx` variant for callers that need to await durability. The audit-runner always uses async variants. Includes `asyncSave`, `asyncGetLatest`, `asyncGetById`, `asyncGetBaseline`, `asyncSetBaseline` (with transactional baseline-clear), `asyncGetNthRecent`, `asyncList`, `asyncPrune` (preserves baselines). Exported from `packages/change-detection/index.ts`.
+
+- [packages/projections/prisma-finding-store.ts](packages/projections/prisma-finding-store.ts) — `PrismaFindingStore` with three main methods: `saveForCycle({cycleId, environmentId, cycleRef, findings})` upserts findings by `(cycleId, inferenceKey)` so re-runs don't leave dangling rows; `loadLatestForEnvironment(environmentId)` returns the most recent cycle's findings for cold-start rehydration; `countBySurfaceForLatestCycle(environmentId)` returns a `Map<surface, count>` filtered to negative + neutral polarity findings only (positives are reinforcement messages, not problems). Also `pruneOlderThan(environmentId, keepCount)`. Exported from `packages/projections/index.ts`.
+
+**Audit-runner wiring** ([apps/audit-runner/run-cycle.ts](apps/audit-runner/run-cycle.ts))
+
+The worker now runs the full engine + persistence chain after the existing evidence + PageInventoryItem persistence. Order:
+
+1. Load previous snapshot via `snapshotStore.asyncGetLatest(workspaceRef, environmentRef)` — returns null cleanly on first cycle
+2. Load `BusinessProfile` for the org so the engine sees real `businessModel` + `conversionModel` priors
+3. Load engine translations for i18n
+4. Call `recomputeAll({...input, previous_snapshot, translations, business_inputs})` — engine produces `change_report` when previous exists
+5. `projectAll(multiPackResult, translations)` → FindingProjections with populated `change_class`
+6. `snapshotStore.asyncSave(multiPackResult.current_snapshot, cycleId)` (awaited so the prune in step 9 sees it)
+7. `findingStore.saveForCycle({cycleId, environmentId, cycleRef, findings})` (awaited)
+8. `snapshotStore.asyncPrune(workspaceRef, environmentRef)` (best-effort)
+9. Mark cycle complete
+
+Per-step failures are caught individually in a non-fatal try/catch so a single store hiccup can't fail the whole audit (evidence + inventory are already in DB by the time we get here, those are still useful even if findings persist breaks).
+
+**Stream route wiring** ([src/app/api/analysis/stream/route.ts](src/app/api/analysis/stream/route.ts))
+
+The legacy "manual run analysis" SSE route now also looks up + saves snapshots via `PrismaSnapshotStore`. It does NOT persist findings because it doesn't create a real `AuditCycle` row (uses synthetic `audit_cycle:live_${ts}` ref that has no FK target). Snapshot save is fire-and-forget. Findings consumed by the stream itself are still computed in-memory and emitted via SSE — that part works as before.
+
+**MCP context propagation** ([apps/mcp/context.ts](apps/mcp/context.ts), [apps/mcp/server.ts](apps/mcp/server.ts), [apps/mcp/bootstrap.ts](apps/mcp/bootstrap.ts))
+
+Added optional `previousSnapshot?: CycleSnapshot | null` parameter to `assembleContext()`, `loadContext()`, and `bootstrapMcpContextSync()`. Defaults to undefined so all existing test callers stay compatible. When provided, the engine emits `change_report` and the resulting `FindingProjection.change_class` gets the real classification on cold-start rehydration too.
+
+**Cold start optimization** ([src/lib/console-data.ts](src/lib/console-data.ts))
+
+`ensureContext()` now also pre-loads the previous snapshot from `PrismaSnapshotStore` and passes it through to `bootstrapMcpContextSync()`. So when a user visits `/app/analysis` after a server restart, the rehydrated MCP context has change_class populated without needing a fresh recompute pass.
+
+**`/api/inventory` real finding counts** ([src/app/api/inventory/route.ts](src/app/api/inventory/route.ts))
+
+Replaced the Wave 0.5 `null` placeholder. The route now calls `findingStore.countBySurfaceForLatestCycle(environmentId)` and returns a `Map<surface, count>`. A new `buildPathMatcher()` helper joins finding surfaces (e.g. `/checkout`) to inventory items (e.g. `/en/checkout/step-2`) via a 3-tier match: exact path equality, exact normalizedUrl equality, then substring fallback. Surface `/` only counts toward the landing item, not every page. `finding_count` returns:
+- A real count (could be `0`) when an audit has completed for the env
+- `null` only when NO audit has ever completed (so the UI hides the column for fresh accounts, not for accounts where audits ran but had 0 findings)
+
+`hasFindingData` is true if either `surfaceCounts.size > 0` OR the latest cycle is `complete` with `completedAt !== null`.
+
+### Adjacent flow verification
+
+- **Lead promotion** ([apps/audit-runner/promote-lead.ts](apps/audit-runner/promote-lead.ts)) — calls `runAuditCycle()` at step 7 of `promoteLeadToOrg()`. Auto-inherits the new behavior with zero changes. ✅
+- **Admin prospect scans** ([apps/audit-runner/run-prospect-scan.ts](apps/audit-runner/run-prospect-scan.ts)) — uses `deriveMiniAuditFindings()` (static heuristics, not the engine). Correctly skips Finding row persistence — these are outreach assets, not real customer audits. ✅
+- **Frontend filters** ([src/app/(console)/analysis/page.tsx](src/app/(console)/analysis/page.tsx#L323)) — already had `change_class` dropdown filters, `<ChangeBadge>` row rendering, and finding-detail badge display. They now light up automatically with no UI changes needed. ✅
+
+### What's still null in /api/inventory
+
+- `session_count` — still null until Wave 0.2 + 0.3 (pixel ingest + worker) ship. Surfaces show no Sessions column when 100% null, which is correct behavior.
+
+### Files touched
+
+```
+NEW
+  packages/change-detection/prisma-snapshot-store.ts
+  packages/projections/prisma-finding-store.ts
+
+EDITED
+  prisma/schema.prisma                                    (CycleSnapshot + Finding models, back-relations on AuditCycle/Environment)
+  packages/change-detection/index.ts                      (export PrismaSnapshotStore)
+  packages/projections/index.ts                           (export PrismaFindingStore)
+  apps/audit-runner/run-cycle.ts                          (recompute + project + dual persist + previous snapshot lookup + retention prune)
+  apps/mcp/context.ts                                     (assembleContext: previousSnapshot prop)
+  apps/mcp/server.ts                                      (loadContext: previousSnapshot prop)
+  apps/mcp/bootstrap.ts                                   (bootstrapMcpContextSync: previousSnapshot prop)
+  src/lib/console-data.ts                                 (ensureContext: pre-load snapshot for cold start)
+  src/app/api/inventory/route.ts                          (real finding_count via PrismaFindingStore + buildPathMatcher)
+  src/app/api/analysis/stream/route.ts                    (snapshot save in legacy SSE path)
+  docs/ROADMAP.md                                         (mark 0.7 done)
+  DEV_PROGRESS.md                                         (this entry)
+```
+
+### Manual verification (post-deploy)
+
+1. Run an audit on a test env (sign up or trigger via webhook)
+2. Visit `/app/inventory` → finding_count column visible (not hidden) with real numbers per surface
+3. Visit `/app/analysis` → findings list rendered, no `change_class` badges yet (this is the first cycle)
+4. Trigger a second audit on the same env (manual or scheduled)
+5. Visit `/app/analysis` → findings now show `change_class` badges (regression / improvement / stable_risk / new_issue / resolved)
+6. Restart the Next.js process → revisit `/app/analysis` → context rehydrates from DB without recomputing the engine, change_class badges still populated
+
+---
+
 ## Sprint 2-4 -- 2026-04-07 -- Dual Funnel: /lp Lead Funnel + Admin Surface Scans
 
 ### Goal

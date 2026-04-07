@@ -79,6 +79,8 @@ export class McpServer {
     root_domain: string,
     landing_url: string,
     translations?: import('../../packages/projections/types').EngineTranslations,
+    // Wave 0.7: Optional previous snapshot for change detection.
+    previousSnapshot?: import('../../packages/change-detection').CycleSnapshot | null,
   ): void {
     this.scope = scope;
     this.cycleRef = cycle_ref;
@@ -99,6 +101,7 @@ export class McpServer {
       this.config.default_conversion_proximity,
       this.config.default_is_production,
       translations,
+      previousSnapshot,
     );
 
     // Initialize verification orchestrator

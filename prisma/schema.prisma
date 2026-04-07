@@ -224,6 +224,7 @@ model Environment {
 
   organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   auditCycles      AuditCycle[]
+  findings         Finding[]
   saasAccessConfig SaasAccessConfig?
 }
 
@@ -251,9 +252,102 @@ model AuditCycle {
   createdAt      DateTime  @default(now())
   completedAt    DateTime?
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  environment  Environment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  environment  Environment     @relation(fields: [environmentId], references: [id], onDelete: Cascade)
   evidence     Evidence[]
+  findings     Finding[]
+  snapshots    CycleSnapshot[]
+}
+
+// ──────────────────────────────────────────────
+// CycleSnapshot — change detection input
+//
+// One row per call to recomputeAll(). Stores the JSON-serialized
+// `decisions[]` and `signals[]` from the engine output, plus metadata
+// (decision count, signal count, recompute duration). The next cycle
+// loads the most recent snapshot for the same workspace+environment
+// to feed `previous_snapshot` into recomputeAll(), which produces
+// the `change_report` consumed by FindingProjection.change_class.
+//
+// PrismaSnapshotStore implements the SnapshotStore interface from
+// packages/change-detection/snapshot-store.ts so legacy callers
+// (in-memory) can be swapped one-for-one.
+//
+// Retention: keep the latest 10 snapshots per env (matches
+// DEFAULT_RETENTION_COUNT). Older snapshots are pruned by cron.
+// ──────────────────────────────────────────────
+
+model CycleSnapshot {
+  id             String   @id @default(cuid())
+  cycleRef       String // matches AuditCycle.id-derived ref string
+  cycleId        String? // FK to AuditCycle when known
+  workspaceRef   String
+  environmentRef String
+  schemaVersion  Int      @default(1)
+  // JSON: { cycle_ref, decisions: Decision[], signals: Signal[] }
+  // Stored as text instead of Json column to keep cross-DB compat.
+  snapshot       String   @db.Text
+  decisionCount  Int
+  signalCount    Int
+  auditMode      String   @default("full") // full | incremental
+  recomputeMs    Int? // duration of the recompute that produced this snapshot
+  contentHash    String? // optional integrity check
+  isBaseline     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  cycle AuditCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceRef, environmentRef, createdAt])
+  @@index([cycleId])
+  @@index([isBaseline])
+}
+
+// ──────────────────────────────────────────────
+// Finding — denormalized projection for query + cold-start rehydrate
+//
+// One row per FindingProjection produced by projectAll(). Stores the
+// full projection JSON for cheap rehydration on cold start, plus a
+// few denormalized columns for query patterns we need fast:
+//
+//   - inferenceKey + cycleId for change_class lookups
+//   - environmentId + surface for /api/inventory finding_count per surface
+//   - severity + polarity for filter/aggregation
+//
+// On cold start, ensureContext() can SKIP the full recompute pipeline
+// and just rehydrate findings from the most recent cycle's rows.
+// On audit completion, rows are upserted within the cycle scope.
+// On cycle delete (cascade), findings are removed.
+// ──────────────────────────────────────────────
+
+model Finding {
+  id                   String   @id @default(cuid())
+  cycleId              String
+  environmentId        String
+  cycleRef             String // engine cycle_ref string for cross-cycle matching
+  inferenceKey         String // stable key — used for change detection matching
+  pack                 String // scale | revenue | chargeback | saas | behavioral
+  severity             String // critical | high | medium | low | none
+  polarity             String // negative | positive | neutral
+  confidence           Int
+  impactMin            Float
+  impactMax            Float
+  impactMidpoint       Float
+  surface              String // e.g. /checkout — used by inventory join
+  rootCause            String?
+  changeClass          String? // regression | improvement | new_issue | resolved | stable_risk | null
+  verificationMaturity String? // unverified | pending | partially | verified | degraded | stale | null
+  // Full FindingProjection JSON for cheap rehydration on cold start
+  projection           String   @db.Text
+  createdAt            DateTime @default(now())
+
+  cycle       AuditCycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([cycleId, inferenceKey])
+  @@index([environmentId, cycleId])
+  @@index([environmentId, surface])
+  @@index([environmentId, severity])
+  @@index([cycleRef, inferenceKey])
 }
 
 model Usage {

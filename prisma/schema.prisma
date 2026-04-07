@@ -60,24 +60,24 @@ model Invitation {
 }
 
 model User {
-  id                    String          @id @default(cuid())
+  id                    String                  @id @default(cuid())
   name                  String?
-  email                 String?         @unique
+  email                 String?                 @unique
   emailVerified         DateTime?
   image                 String?
   password              String?
-  passwordResetToken    String?         @unique
+  passwordResetToken    String?                 @unique
   passwordResetTokenExp DateTime?
-  role                  String?         @default("USER")
+  role                  String?                 @default("USER")
   adminRole             String? // super_admin, support, marketing, viewer, billing
-  customerId            String?         @unique @map(name: "customer_id")
-  subscriptionId        String?         @unique @map(name: "subscription_id")
-  priceId               String?         @map(name: "price_id")
-  currentPeriodEnd      DateTime?       @map(name: "current_period_end")
-  locale                String?         @default("en") // en | de | pt-BR | es
+  customerId            String?                 @unique @map(name: "customer_id")
+  subscriptionId        String?                 @unique @map(name: "subscription_id")
+  priceId               String?                 @map(name: "price_id")
+  currentPeriodEnd      DateTime?               @map(name: "current_period_end")
+  locale                String?                 @default("en") // en | de | pt-BR | es
   phone                 String? // E.164 format e.g. +5511999999999
   phoneVerified         DateTime?
-  createdAt             DateTime        @default(now())
+  createdAt             DateTime                @default(now())
   accounts              Account[]
   sessions              Session[]
   apiKeys               ApiKey[]
@@ -94,21 +94,21 @@ model User {
 // ──────────────────────────────────────────────
 
 model NotificationPreference {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
+  id                   String   @id @default(cuid())
+  userId               String   @unique
   // Channel toggles
-  emailEnabled          Boolean  @default(true)
-  smsEnabled            Boolean  @default(false)
-  whatsappEnabled       Boolean  @default(false)
+  emailEnabled         Boolean  @default(true)
+  smsEnabled           Boolean  @default(false)
+  whatsappEnabled      Boolean  @default(false)
   // Event toggles
-  alertOnPageDown       Boolean  @default(true)
-  alertOnIncident       Boolean  @default(true)
-  alertOnRegression     Boolean  @default(true)
-  alertOnImprovement    Boolean  @default(false)
-  newsletterSubscribed  Boolean  @default(true)
-  productUpdates        Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  alertOnPageDown      Boolean  @default(true)
+  alertOnIncident      Boolean  @default(true)
+  alertOnRegression    Boolean  @default(true)
+  alertOnImprovement   Boolean  @default(false)
+  newsletterSubscribed Boolean  @default(true)
+  productUpdates       Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -118,18 +118,18 @@ model NotificationPreference {
 // ──────────────────────────────────────────────
 
 model NotificationLog {
-  id          String   @id @default(cuid())
-  userId      String?
-  channel     String // email | sms | whatsapp
-  event       String // page_down | incident | regression | newsletter | magic_link | etc.
-  recipient   String // email or phone
-  subject     String?
-  status      String // sent | failed | skipped | delivered | read
-  provider    String   @default("brevo") // brevo | nodemailer | meta_whatsapp
-  providerId  String? // provider's message id (wamid for meta)
-  errorMsg    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id         String   @id @default(cuid())
+  userId     String?
+  channel    String // email | sms | whatsapp
+  event      String // page_down | incident | regression | newsletter | magic_link | etc.
+  recipient  String // email or phone
+  subject    String?
+  status     String // sent | failed | skipped | delivered | read
+  provider   String   @default("brevo") // brevo | nodemailer | meta_whatsapp
+  providerId String? // provider's message id (wamid for meta)
+  errorMsg   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
   @@index([userId, createdAt])
   @@index([event, createdAt])
@@ -143,20 +143,20 @@ model NotificationLog {
 // ──────────────────────────────────────────────
 
 model InboundMessage {
-  id              String   @id @default(cuid())
-  channel         String // whatsapp | sms | email
-  provider        String // meta_whatsapp | brevo | ...
-  providerMsgId   String?  @unique // wamid / message-id (dedupe)
-  fromAddress     String // phone (E.164) or email
-  fromName        String?
-  userId          String? // matched user (by phone) if known
-  body            String   @db.Text
-  mediaUrl        String?
-  mediaMimeType   String?
-  repliedToTag    String? // the outbound notification tag this replies to
-  ticketId        String? // if a support ticket was auto-created
-  handled         Boolean  @default(false)
-  createdAt       DateTime @default(now())
+  id            String   @id @default(cuid())
+  channel       String // whatsapp | sms | email
+  provider      String // meta_whatsapp | brevo | ...
+  providerMsgId String?  @unique // wamid / message-id (dedupe)
+  fromAddress   String // phone (E.164) or email
+  fromName      String?
+  userId        String? // matched user (by phone) if known
+  body          String   @db.Text
+  mediaUrl      String?
+  mediaMimeType String?
+  repliedToTag  String? // the outbound notification tag this replies to
+  ticketId      String? // if a support ticket was auto-created
+  handled       Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
   @@index([fromAddress, createdAt])
   @@index([userId, createdAt])
@@ -705,11 +705,11 @@ model PageView {
   utmCampaign String?
   utmContent  String?
   country     String?
-  region      String?  // state / province
+  region      String? // state / province
   city        String?
-  lat         Float?   // latitude
-  lng         Float?   // longitude
-  ip          String?  // visitor IP (hashed or raw, for spam detection)
+  lat         Float? // latitude
+  lng         Float? // longitude
+  ip          String? // visitor IP (hashed or raw, for spam detection)
   device      String? // desktop | mobile | tablet
   browser     String?
   os          String?
@@ -906,4 +906,86 @@ model Feedback {
 
   @@index([type, status, createdAt])
   @@index([userId])
+}
+
+// ──────────────────────────────────────────────
+// AnonymousLead — /lp/audit funnel state
+//
+// One row per visitor that starts the multi-step lead form on /lp/audit.
+// Persists across the funnel so we can:
+//   - Resume mid-step (refresh-tolerant)
+//   - Cache the mini-audit result by domain (no double-crawl)
+//   - Promote to a real User+Org+Env on checkout completion
+//   - Cleanup expired drafts (cron, daily)
+//
+// Lifecycle: draft → auditing → audit_complete → checkout_started → converted
+//                                                                  → expired (cron)
+// ──────────────────────────────────────────────
+
+model AnonymousLead {
+  id               String  @id @default(cuid())
+  email            String?
+  domain           String? // normalized (no protocol, no trailing slash)
+  organizationName String?
+  businessModel    String? // ecommerce | lead_gen | saas | hybrid
+  monthlyRevenue   Float? // parsed from "$50k" → 50000
+  averageTicket    Float?
+  conversionModel  String? // checkout | whatsapp | form | external
+  phone            String?
+  formData         String? @db.Text // JSON dump of remaining state for debug
+
+  // Funnel state
+  status           String  @default("draft") // draft | auditing | audit_complete | checkout_started | converted | expired | spam
+  currentStep      Int     @default(1)
+  miniAuditId      String? // FK to MiniAuditResult
+  stripeSessionId  String?
+  stripeCustomerId String?
+  promotedToUserId String? // User created on checkout
+  promotedToOrgId  String? // Organization created on checkout
+
+  // Anti-abuse signals (collected for the heuristic stack — no captcha)
+  ipAddress       String?
+  userAgent       String?   @db.Text
+  formStartedAt   DateTime? // for time-on-form check
+  behavioralScore Int? // 0-100, computed at submit
+  honeypotTripped Boolean   @default(false)
+
+  // Expiry — cleanup cron deletes rows older than expiresAt
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  miniAudit MiniAuditResult? @relation(fields: [miniAuditId], references: [id])
+
+  @@index([email])
+  @@index([domain])
+  @@index([status, createdAt])
+  @@index([expiresAt]) // cleanup cron
+  @@index([ipAddress, createdAt]) // rate limiting
+}
+
+// ──────────────────────────────────────────────
+// MiniAuditResult — cached mini-audit per domain
+//
+// Cached for 14 days. If a second lead comes in for the same domain
+// within the cache window, we link it to the existing result instead
+// of re-running the crawler. This kills 90% of the cost of spam attempts
+// at the same domain.
+// ──────────────────────────────────────────────
+
+model MiniAuditResult {
+  id              String   @id @default(cuid())
+  domainHash      String   @unique // sha256(normalized_domain) for cache lookup
+  domain          String // human-readable for admin/debug
+  preview         String   @db.Text // JSON of LandingPreview
+  visibleFindings String   @db.Text // JSON array of MiniFinding[5]
+  blurredFindings String   @db.Text // JSON array of BlurredFinding[10]
+  durationMs      Int
+  computedAt      DateTime @default(now())
+  expiresAt       DateTime // computedAt + 14d
+
+  leads AnonymousLead[]
+
+  @@index([domainHash])
+  @@index([expiresAt])
 }

@@ -2,6 +2,122 @@
 
 ---
 
+## Behavioral Workspaces Wire-Up -- 2026-04-07
+
+### Goal
+
+Light up the 7 pixel-dependent workspaces (First Impression Revenue, Action Value Map, Acquisition Integrity, Mobile Revenue Exposure, Friction Tax, Trust Revenue Gap, Path to Purchase Efficiency) and present them under a new **Behavioral** category in the workspaces page, with greyed-out placeholders + a yellow "Configure Vestigio pixel" banner when pixel data isn't available yet.
+
+### Key insight from the audit
+
+Before writing any code I audited the 11 engine layers from the original plan in `~/.claude/plans/ticklish-discovering-nova.md`. **11 of the 12 layers were already implemented** in some prior sprint:
+
+- ✅ `BehavioralCohortPayload` types ([packages/behavioral/types.ts:370](packages/behavioral/types.ts#L370))
+- ✅ `aggregateCohorts()` reducer ([packages/behavioral/session-aggregator.ts:619](packages/behavioral/session-aggregator.ts#L619))
+- ✅ 21 inference functions wired into the main pipeline ([packages/inference/engine.ts:180-200](packages/inference/engine.ts#L180))
+- ✅ Cohort signal extractor with 21 signals + division-by-zero guards ([packages/signals/engine.ts:3904](packages/signals/engine.ts#L3904))
+- ✅ 7 decision question keys × 4 tiers = 28 decision keys ([packages/decision/engine.ts:201-292](packages/decision/engine.ts#L201))
+- ✅ `createBehavioralWorkspace()` factory with all 7 mappings ([packages/workspace/behavioral-workspace.ts:62](packages/workspace/behavioral-workspace.ts#L62))
+- ✅ Impact baselines for all 21 inferences with high/medium/low ranges
+- ✅ `isBehavioralPackEligible()` + `PackEligibility.behavioral_workspaces` field
+- ✅ `recomputeAll()` loop producing the 7 behavioral packs ([recompute.ts:321-369](packages/workspace/recompute.ts#L321))
+- ✅ `projectWorkspaces` mapping the 7 packs to projections ([projections/engine.ts:957](packages/projections/engine.ts#L957))
+- ✅ i18n: workspace names in en/pt-BR/es
+
+The whole edifice was just sitting dormant because of **3 small wiring gaps** that the original plan didn't account for. Found them by reading the signal extractor's bail-out condition and following the data flow backwards.
+
+### What was actually missing
+
+**Gap 1**: `extractBehavioralCohortSignals` looks for evidence with `payload.type === 'behavioral_cohort'`, but Wave 0.3 only emitted `'behavioral_session'`. Without the cohort payload, all 21 cohort signals silently skipped → 21 inferences silently skipped → 7 workspaces silently empty.
+
+**Gap 2**: `recompute.ts:290` called `computePackEligibility(classification, null, null)` — `behavioralContext` was hard-coded to `null`. Result: `pack_eligibility.behavioral_workspaces.eligible` was always false, so the projection layer's eligibility check would have fought against the data even after Gap 1 was fixed.
+
+**Gap 3**: `projectFindings`'s pack-eligibility if-else chain didn't have cases for the 7 behavioral pack keys. Cosmetic with the existing empty-pack filter, but a load-bearing invariant once placeholder workspaces ship (because then findings DO exist for behavioral packs even when not eligible).
+
+Plus the user's UX requirement added gaps **4-7**: workspaces page is flat with no categories, `WorkspaceProjection` has no `category` field, `projectWorkspaces` filters out empty packs (so placeholders never make it to the UI), and there's no banner system.
+
+### What changed
+
+**Phase A — engine fixes**
+
+[apps/audit-runner/process-behavioral.ts](apps/audit-runner/process-behavioral.ts) — emit a second Evidence entry carrying `BehavioralCohortPayload` alongside the env-level `BehavioralSessionPayload`. Both ride on `evidence_type=BehavioralSession`; the signal extractors discriminate on `payload.type`. New: User-Agent regex device classifier (`/Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i`) so mobile vs desktop cohorts split meaningfully without snippet changes. The classifier reads from a `Map<sessionId, userAgent>` populated during the row grouping pass.
+
+[packages/workspace/recompute.ts](packages/workspace/recompute.ts) — detect behavioral evidence in the `evidence` array (both flavors: env-level via `session_count` and cohort-level via `total_session_count`), then pass `{ hasBehavioralEvidence, sessionCount }` as the `behavioralContext` argument to `computePackEligibility`. Now `pack_eligibility.behavioral_workspaces` reflects reality.
+
+[packages/projections/engine.ts](packages/projections/engine.ts) — added 7 new cases to the `projectFindings` if-else for the behavioral pack keys (`first_impression_revenue`, `action_value_map`, `acquisition_integrity`, `mobile_revenue_exposure`, `friction_tax`, `trust_revenue_gap`, `path_efficiency`). Findings under these packs now respect `pack_eligibility.behavioral_workspaces.eligible`.
+
+**Phase B — projection placeholders**
+
+[packages/projections/types.ts](packages/projections/types.ts) — added three new fields to `WorkspaceProjection`:
+
+- `category: 'core' | 'behavioral'` — UI grouping bucket
+- `pixel_status: 'unconfigured' | 'collecting' | 'active' | null` — null for core, drives the greyed/active rendering for behavioral
+- `pixel_progress: { current; required } | null` — lets the UI show "12/20 sessions"
+
+[packages/projections/engine.ts projectWorkspaces](packages/projections/engine.ts#L957) — refactored the behavioral loop to **always emit all 7 cards**, even when the pack is null or has zero findings. Pixel status is derived from `result.pack_eligibility.behavioral_workspaces`:
+
+- `eligible: true` → `pixel_status = 'active'` (real findings flowing)
+- `eligible: false` AND `confidence > 0` → `pixel_status = 'collecting'` (snippet installed but < 20 sessions); `pixel_progress` is reverse-engineered from the eligibility's confidence (which is `min(1, sessionCount/100)`)
+- `eligible: false` AND `confidence === 0` → `pixel_status = 'unconfigured'` (snippet not installed)
+
+Cards without an active pack get neutral fallback decision text (`${type}_no_data`) and zero findings — the UI handles the rest.
+
+**Phase C — UI categories + banner + greyed cards**
+
+[src/app/(console)/workspaces/page.tsx](src/app/(console)/workspaces/page.tsx) — refactored from a flat grid into two `<CategorySection>`s:
+
+- **Core** (preflight, revenue, chargeback, saas) — unchanged behavior
+- **Behavioral** (the 7 new cards) — yellow banner above when all 7 are `unconfigured`, blue informational banner when at least one is `collecting`, no banner when at least one is `active`
+
+The original card rendering was extracted into a `<WorkspaceCard>` component with two variants:
+
+- **Active**: original 4-stat grid (monthly loss, issues, confidence, top issue) + optional confidence narrative + checkbox
+- **Locked**: dashed border, muted opacity, no checkbox, pixel status badge instead of stats. Click goes to `/app/settings/data-sources` instead of the workspace detail page
+
+The other workspaces route (`src/app/app/workspaces/page.tsx`) is a re-export of `(console)/workspaces/page` so the refactor covers both.
+
+[dictionary/en.json](dictionary/en.json), [dictionary/pt-BR.json](dictionary/pt-BR.json), [dictionary/es.json](dictionary/es.json) — new keys:
+
+- `console.workspaces.categories.core` / `.behavioral`
+- `console.workspaces.categories.behavioral_locked_banner`
+- `console.workspaces.categories.behavioral_collecting_banner`
+- `console.workspaces.categories.configure_pixel_cta`
+- `console.workspaces.pixel_status.unconfigured` / `.collecting` / `.active`
+
+### Adjacent flows verified
+
+- **Cold start without pixel data**: behavioral workspaces still render as the 7 greyed-out cards under the Behavioral category. The UI now has a path to direct users to set up the snippet — previously they'd see nothing for these workspaces at all.
+- **First audit cycle, snippet just installed, no events yet**: cohort emission produces an empty payload, eligibility says `eligible: false, confidence: 0`, all 7 cards render as `unconfigured`. Banner = locked yellow.
+- **Snippet installed, < 20 sessions**: eligibility says `eligible: false, confidence: 0.X`, all 7 cards render as `collecting` with progress badge. Banner = collecting blue.
+- **Snippet installed, ≥ 20 sessions**: eligibility says `eligible: true`. Cards render normally (but still all 7 — even those with 0 findings, since the placeholder loop always emits them). No banner.
+- **Mobile classifier**: regex on User-Agent stored in `RawBehavioralEvent.userAgent` (Wave 0.2 already captures it). Imperfect but covers the major mobile browsers, and the cohort signals only fire when mobile + desktop both have ≥ 10 sessions, so a few miss-classifications don't poison the inference.
+- **Cycle-to-cycle change detection**: behavioral findings flow through the same Wave 0.7 snapshot/finding persistence path as everything else, so `change_class` lights up automatically.
+- **Verification**: behavioral findings can be verified via the Wave 0.6 endpoint (no additional wiring needed — the verify route operates on `action_id` regardless of pack).
+
+### Files touched
+
+- [apps/audit-runner/process-behavioral.ts](apps/audit-runner/process-behavioral.ts) — cohort emission + device classifier
+- [packages/workspace/recompute.ts](packages/workspace/recompute.ts) — pass behavioralContext to computePackEligibility
+- [packages/projections/engine.ts](packages/projections/engine.ts) — 7 if-else cases + always-emit behavioral cards
+- [packages/projections/types.ts](packages/projections/types.ts) — `category` + `pixel_status` + `pixel_progress` fields
+- [src/app/(console)/workspaces/page.tsx](src/app/(console)/workspaces/page.tsx) — Core/Behavioral sections, banner, locked card variant
+- [dictionary/en.json](dictionary/en.json), [dictionary/pt-BR.json](dictionary/pt-BR.json), [dictionary/es.json](dictionary/es.json) — categories + pixel_status keys
+
+### Manual verification
+
+1. Open `/app/workspaces` on an env that has no pixel data → see 4 Core cards rendering normally + a Behavioral section with 7 dashed/greyed cards + the yellow "Configure Vestigio pixel" banner above them
+2. Click any greyed card → navigates to `/app/settings/data-sources` (the snippet install page)
+3. Install the snippet on a test site, generate < 20 sessions → reload `/app/workspaces` → banner switches to blue "collecting", cards show progress badge "X / 20 sessions"
+4. Generate 20+ sessions → cards activate, banner disappears, real findings start appearing on the cards that have them, the rest stay visible but with 0 findings (placeholder still emitted)
+
+### Limitations / known follow-ups
+
+- **Mobile classifier is approximate**: regex on User-Agent. A snippet upgrade that emits `device_type` directly would be more reliable (would also let us detect tablets and bots). Documented inline.
+- **Active workspaces with 0 findings**: pacing mechanism kicks in — a card can be "active" (eligible) but show 0 findings if the cohort signals didn't fire (e.g., insufficient paid traffic for acquisition_integrity even though total sessions is 100+). The UI still renders these as active cards with `0 issues`. Not a bug — it's the engine correctly saying "monitoring, no problems detected" — but the UX could be improved by showing a "monitoring" badge for that case. Out of scope for this commit.
+- **Inferred session count from confidence**: the eligibility's confidence is `min(1, sessionCount/100)`, so above 100 sessions we lose precision. The UI reads `pixel_progress` to show "X/20" but only when status is `collecting`, which by definition means sessionCount < 20 ≪ 100, so this lossy reverse-engineering is fine in practice.
+
+---
+
 ## Wave 0.3 + 0.5 closure -- 2026-04-07 -- Pixel Event Processing Worker
 
 ### Goal

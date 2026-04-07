@@ -972,6 +972,18 @@
         "stable": "estável",
         "mixed": "mudanças mistas"
       },
+      "categories": {
+        "core": "Principais",
+        "behavioral": "Comportamentais",
+        "behavioral_locked_banner": "Configure o pixel Vestigio nas suas páginas para desbloquear análises comportamentais dos usuários e melhorar sua experiência.",
+        "behavioral_collecting_banner": "Pixel Vestigio instalado e coletando dados. As análises comportamentais ativam após sessões suficientes serem registradas.",
+        "configure_pixel_cta": "Configurar pixel"
+      },
+      "pixel_status": {
+        "unconfigured": "Pixel não configurado",
+        "collecting": "Coletando dados ({current} / {required} sessões)",
+        "active": "Ativo"
+      },
       "detail": {
         "loading": "Carregando workspace...",
         "not_found": "Workspace Não Encontrado",

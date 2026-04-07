@@ -964,6 +964,18 @@
         "improvements_plural": "{count} mejoras",
         "stable": "estable",
         "mixed": "cambios mixtos"
+      },
+      "categories": {
+        "core": "Principales",
+        "behavioral": "Comportamentales",
+        "behavioral_locked_banner": "Configura el pixel de Vestigio en tus páginas para desbloquear análisis comportamentales y mejorar la experiencia del usuario.",
+        "behavioral_collecting_banner": "El pixel de Vestigio está instalado y recopilando datos. Los análisis comportamentales se activarán cuando se registren suficientes sesiones.",
+        "configure_pixel_cta": "Configurar pixel"
+      },
+      "pixel_status": {
+        "unconfigured": "Pixel no configurado",
+        "collecting": "Recopilando datos ({current} / {required} sesiones)",
+        "active": "Activo"
       }
     },
     "chat": {

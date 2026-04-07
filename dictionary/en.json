@@ -969,6 +969,18 @@
         "improvements_plural": "{count} improvements",
         "stable": "stable",
         "mixed": "mixed changes"
+      },
+      "categories": {
+        "core": "Core",
+        "behavioral": "Behavioral",
+        "behavioral_locked_banner": "Configure the Vestigio pixel on your pages to unlock behavioral analytics and improve your user experience.",
+        "behavioral_collecting_banner": "Vestigio pixel is installed and collecting data. Behavioral analytics will activate after enough sessions are recorded.",
+        "configure_pixel_cta": "Configure pixel"
+      },
+      "pixel_status": {
+        "unconfigured": "Pixel not configured",
+        "collecting": "Collecting data ({current} / {required} sessions)",
+        "active": "Active"
       }
     },
     "chat": {

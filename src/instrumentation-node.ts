@@ -16,10 +16,14 @@
  *   - AnonymousLead cleanup cron (1h) — deletes /lp/audit lead drafts
  *     that have passed their expiresAt timestamp. Keeps the lead table
  *     bounded and respects the data retention promise on /lp/audit.
+ *   - Behavioral rate-limit prune (5m) — Wave 0.2 in-memory rate
+ *     buckets for /api/behavioral/ingest. Just stops the Map from
+ *     growing forever; doesn't touch DB.
  */
 
 const HEAL_INTERVAL_MS = 60_000;
 const LEAD_CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const RATE_PRUNE_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 
 export async function registerNodeInstrumentation(): Promise<void> {
 	const { healStuckCycles, redispatchOrphanedPending } = await import(
@@ -93,4 +97,16 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	setInterval(runLeadCleanup, LEAD_CLEANUP_INTERVAL_MS);
 
 	console.log("✓ Lead cleanup cron registered (1h interval)");
+
+	// ── Behavioral ingest rate-limit prune (Wave 0.2) ──
+	const { pruneRateBuckets } = await import("@/libs/behavioral-ingest");
+	setInterval(() => {
+		try {
+			pruneRateBuckets();
+		} catch (err) {
+			console.error("[behavioral-ingest] rate prune failed:", err);
+		}
+	}, RATE_PRUNE_INTERVAL_MS);
+
+	console.log("✓ Behavioral rate-limit prune cron registered (5m interval)");
 }

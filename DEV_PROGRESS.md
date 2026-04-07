@@ -2,6 +2,135 @@
 
 ---
 
+## Wave 0.2 -- 2026-04-07 -- Pixel Ingest Endpoint
+
+### Goal
+
+The first-party snippet at [public/snippet/vestigio.js](public/snippet/vestigio.js) has been live for months but its `POST /api/behavioral/ingest` target didn't exist. Every behavioral event sent from a customer site was hitting a 404 and being silently dropped on the snippet's `.catch(() => {})`. Wave 0.2 makes the endpoint real so events actually persist. Wave 0.3 will then read them back and feed `aggregateSession()` so the 7 behavioral workspaces can finally activate.
+
+### Design decisions
+
+**One row per event, not per batch.** The Wave 0.3 worker consumes via `aggregateSession(batch)` from [packages/behavioral/session-aggregator.ts](packages/behavioral/session-aggregator.ts), which takes a `RawBehavioralBatch` (events array) per session. The cleanest reconstruction path is `WHERE envId=? AND sessionId=? AND processedAt IS NULL`. One row per event also gives us:
+
+- Cheap retention pruning by `receivedAt`
+- Per-event filtering for debugging
+- Idempotent batch inserts via `createMany({ skipDuplicates: true })`
+
+The downside (more rows) is acceptable: even a busy customer at 100 events/session × 10k sessions/day = 1M rows/day is well within Postgres throughput, and Wave 0.3's worker will mark `processedAt` as it consumes them so the active working set stays small.
+
+**Silent 204 always.** A useful 4xx response would teach bots which inputs the validator rejects. The route returns 204 No Content for both successful writes and silent drops, so the only thing observable from outside is "request accepted". Internal `console.warn` for DB failures means we still have visibility.
+
+**Daily-rotating IP hash, not raw IP.** `sha256(ip + day + LEAD_FORM_SECRET)` means the same visitor on the same NAT yields a different hash tomorrow. This prevents the table from being a long-term tracking record while still allowing same-day rate limiting. Raw IPs never persist.
+
+**In-memory rate limiter, not DB-backed.** Rate limiting protects against cost (compute + DB writes), not against precise abuse correlation. A per-process in-memory `Map<ipHash, bucket>` is faster, requires no extra round trip, and the daily prune via the existing instrumentation cron keeps it bounded. The downside (per-process state) is fine because we run on a single Railway instance for now.
+
+### Schema
+
+[prisma/schema.prisma](prisma/schema.prisma) — new `RawBehavioralEvent` model:
+
+```prisma
+model RawBehavioralEvent {
+  id          String    @id @default(cuid())
+  envId       String                                  // matches Environment.id (data-env attribute)
+  sessionId   String                                  // snippet-generated session id
+  eventType   String                                  // page_view | route_change | cta_click | ...
+  url         String                                  // canonical URL
+  occurredAt  DateTime                                // event timestamp from snippet
+  receivedAt  DateTime  @default(now())               // server clock — authoritative for retention
+  payload     String    @db.Text                      // JSON: full RawBehavioralEvent
+  attribution String?   @db.Text                      // JSON: AttributionContext (first event of batch only)
+  ipHash      String?                                 // sha256(ip + daily_salt + secret)
+  userAgent   String?                                 // truncated to 200 chars
+  processedAt DateTime?                               // set by Wave 0.3 worker after aggregation
+
+  environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+
+  @@index([envId, sessionId, processedAt])           // primary worker query
+  @@index([envId, sessionId, occurredAt])            // chronological reconstruction
+  @@index([receivedAt])                              // retention pruning
+}
+```
+
+Back-relation added on `Environment.behavioralEvents`.
+
+### Defense layers
+
+[src/libs/behavioral-ingest.ts](src/libs/behavioral-ingest.ts) — utility module so the route stays focused on the happy path:
+
+- `KNOWN_EVENT_TYPES` — set of all 28 event types the snippet currently emits, used to drop unknown types silently. Older / newer snippet versions coexist without 4xx noise
+- `MAX_EVENT_BYTES = 8 KB` per event payload (the snippet is well below this; cap exists to bound table growth against bugs / hostile clients)
+- `MAX_BATCH_SIZE = 100` events per request (snippet flushes at 50; we accept double that for in-flight retries)
+- `RATE_LIMIT_EVENTS_PER_MINUTE = 600` per IP (generous — a real user spamming a SPA can't realistically hit this)
+- `hashClientIp()` — daily-rotating SHA-256
+- `extractClientIp()` — handles `x-forwarded-for`, `x-real-ip`, `cf-connecting-ip`
+- `isKnownEnvironment()` — Prisma `findUnique` with positive cache TTL of 5min and negative cache TTL of 1min (so a freshly-created env doesn't get blocked too long); on Prisma failure returns `true` so a DB hiccup doesn't black-hole legitimate traffic
+- `isWithinRateLimit()` — fixed-window 1-minute bucket per IP hash
+- `pruneRateBuckets()` — exposed for the instrumentation cron
+- `sanitizeEvent()` — drops events with unknown types, non-numeric timestamps, clock skew >24h, or oversized payloads. Re-serializes the event to drop unknown top-level keys and bound size
+
+### The route
+
+[src/app/api/behavioral/ingest/route.ts](src/app/api/behavioral/ingest/route.ts) — `runtime: 'nodejs'`. Three handlers:
+
+- `OPTIONS` — CORS preflight with `Access-Control-Allow-Origin: *` (the snippet runs on customer origins)
+- `POST` — the ingest path, wrapped in `withErrorTracking` so any throws still show up in our error tracker
+- `parseBody()` helper — calls `req.text()` + `JSON.parse` instead of `req.json()` so we transparently accept both `text/plain;charset=UTF-8` (sendBeacon, used on page unload — sendBeacon **forces** that content-type and you can't override it) and `application/json` (the snippet's normal fetch flush path). Both bodies contain JSON
+
+POST flow (all silent drops use `silentOk()`):
+
+1. Parse body → silent drop on bad JSON
+2. Validate batch shape (`env_id`, `session_id`, `events[]`) → silent drop
+3. Truncate at `MAX_BATCH_SIZE` rather than reject (snippet may legitimately send a backlog after reconnect)
+4. `isKnownEnvironment(envId)` → silent drop on unknown env
+5. Extract IP → hash → rate-limit check → silent drop on overage
+6. Sanitize each event → drop the bad ones, keep the good ones → silent drop if zero remain
+7. Build rows: denormalize `attribution` only on the first row of the batch (Wave 0.3's loader uses first-touch semantics)
+8. `prisma.rawBehavioralEvent.createMany({ data: rows, skipDuplicates: true })` → on failure, log internally but still return silent OK
+9. Return 204 with CORS headers
+
+### Adjacent flows verified
+
+- **Snippet sendBeacon path**: The snippet calls `navigator.sendBeacon(ENDPOINT, payload)` on page unload. This sends `Content-Type: text/plain;charset=UTF-8` (forced by the browser, no override). The route's `req.text() + JSON.parse` works regardless of header. Tested by reading the snippet at [public/snippet/vestigio.js:807](public/snippet/vestigio.js#L807).
+- **Snippet fetch path**: Normal flush uses `fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true })`. This triggers a CORS preflight (`OPTIONS`) because of the custom Content-Type header. The new `OPTIONS` handler returns 204 with the necessary headers.
+- **Cross-origin from customer site**: The snippet is loaded with `<script src="https://app.vestigio.io/snippet/vestigio.js" data-env="...">` on customer.com. CORS headers (`Allow-Origin: *`) make the cross-origin POST work. No credentials are sent (snippet doesn't include them).
+- **Rate-limit memory leak**: New 5-min cron in [src/instrumentation-node.ts](src/instrumentation-node.ts) calls `pruneRateBuckets()`. Leak bounded.
+- **Env-id cache invalidation**: 5-min positive TTL means a deleted environment keeps accepting events for up to 5min. Acceptable — Wave 0.3 will simply skip events whose env no longer resolves.
+- **DB write failure**: Wrapped in try/catch with `console.warn`. The snippet has `.catch(() => {})` so the user experience is unaffected. Wave 0.3 will retry naturally because failed writes never set `processedAt`.
+
+### Files touched
+
+- [prisma/schema.prisma](prisma/schema.prisma) — new `RawBehavioralEvent` model + `Environment.behavioralEvents` back-relation
+- [src/libs/behavioral-ingest.ts](src/libs/behavioral-ingest.ts) — **new** defense / hygiene helpers
+- [src/app/api/behavioral/ingest/route.ts](src/app/api/behavioral/ingest/route.ts) — **new** POST + OPTIONS handlers
+- [src/instrumentation-node.ts](src/instrumentation-node.ts) — wired `pruneRateBuckets` into the existing cron registry
+
+### Manual configuration step
+
+The Prisma model is in source control but the table doesn't exist in production yet. Run once (same pattern as Wave 0.7):
+
+```bash
+DATABASE_URL=$DATABASE_PUBLIC_URL npx prisma db push
+```
+
+The Next.js build is fine without the table — Prisma client generation succeeds because the model is in the schema. But the first POST that reaches the live route will fail with `relation "RawBehavioralEvent" does not exist` (logged internally, silent 204 to caller) until the table is created.
+
+### Manual verification
+
+1. Push the schema (above)
+2. Confirm the snippet on a test site is configured with `data-env="<real-environment-id>"` (the data-sources page generates the snippet template)
+3. Visit a page on the test site, click around, scroll, navigate
+4. Open browser DevTools → Network → filter `behavioral/ingest` — should show 204 responses
+5. Query the table: `SELECT envId, sessionId, eventType, occurredAt FROM "RawBehavioralEvent" ORDER BY "receivedAt" DESC LIMIT 50;` — should show real events
+6. Wave 0.3 (next) will pick these up via `aggregateSession` and produce `BehavioralSessionPayload` evidence
+
+### What this unlocks
+
+- **Wave 0.3** can immediately start consuming the persisted events
+- **Wave 0.5** flips from "partial" to "fully complete" once 0.3 ships (sessions column will have real values)
+- **The 7 behavioral workspaces plan** at `~/.claude/plans/ticklish-discovering-nova.md` becomes eligible to ship — they require ≥20 sessions of pixel data, and now there's a path for that data to exist
+
+---
+
 ## Wave 0.6 -- 2026-04-07 -- Verification Frontend Wiring
 
 ### Goal

@@ -222,10 +222,12 @@ model Environment {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   auditCycles      AuditCycle[]
   findings         Finding[]
   saasAccessConfig SaasAccessConfig?
+  // Wave 0.2: Raw behavioral events from the snippet for this env
+  behavioralEvents RawBehavioralEvent[]
 }
 
 model BusinessProfile {
@@ -348,6 +350,41 @@ model Finding {
   @@index([environmentId, surface])
   @@index([environmentId, severity])
   @@index([cycleRef, inferenceKey])
+}
+
+// ──────────────────────────────────────────────
+// Wave 0.2 — Behavioral Pixel Ingest
+//
+// Raw events from the first-party snippet (public/snippet/vestigio.js).
+// One row per event. The Wave 0.3 worker queries by
+// (envId, sessionId, processedAt IS NULL), reconstructs a
+// RawBehavioralBatch[], and runs aggregateSession() per session.
+//
+// Privacy: the snippet promises no PII in payloads, but we also hash
+// the IP (sha256(ip + day_salt)) so cross-day correlation isn't possible
+// from this table alone. Retention: pruned by receivedAt after the
+// Wave 0.3 worker has aggregated the session.
+// ──────────────────────────────────────────────
+
+model RawBehavioralEvent {
+  id          String    @id @default(cuid())
+  envId       String // matches Environment.id (data-env attribute)
+  sessionId   String // snippet-generated session id
+  eventType   String // page_view | route_change | cta_click | scroll_depth | ...
+  url         String // canonical URL the event happened on
+  occurredAt  DateTime // event timestamp from the snippet (client clock)
+  receivedAt  DateTime  @default(now()) // server clock — authoritative for retention
+  payload     String    @db.Text // JSON: full RawBehavioralEvent (type, ts, url, data)
+  attribution String?   @db.Text // JSON: AttributionContext — only set on the first event of a batch
+  ipHash      String? // sha256(ip + daily_salt) — daily-rotating, non-reversible
+  userAgent   String? // truncated to 200 chars, no PII
+  processedAt DateTime? // set by Wave 0.3 worker once aggregated into a SessionAggregate
+
+  environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+
+  @@index([envId, sessionId, processedAt])
+  @@index([envId, sessionId, occurredAt])
+  @@index([receivedAt])
 }
 
 model Usage {

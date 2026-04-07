@@ -6,14 +6,23 @@
  *   - vestigioStartup() → env validation + store initialization
  *   - enforceProductionLock() → persistent store checks in production
  *   - MCP persistence store → Prisma-backed in production
+ *   - Audit-runner heal cron (Node runtime only, pulls in Node builtins
+ *     transitively via http-client → https/http modules)
  *
  * In development: in-memory stores are acceptable.
  * In production: fails fast if Prisma stores are not wired.
+ *
+ * NOTE on the NEXT_RUNTIME guard: this file is bundled BOTH for the Node
+ * runtime and the Edge runtime by Next.js 15. We use the canonical
+ * `process.env.NEXT_RUNTIME === 'nodejs'` check (not a runtime EdgeRuntime
+ * sniff) because the webpack DefinePlugin substitutes that literal at
+ * build time, allowing the entire Node-only branch to be tree-shaken out
+ * of the Edge bundle. Without this, webpack tries to resolve `https`/
+ * `http` for the Edge target and the build fails.
  */
 
 export async function register() {
-  // Only run on server side (not edge runtime)
-  if (typeof (globalThis as any).EdgeRuntime !== 'undefined') return;
+  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
   const { vestigioStartup } = await import('../apps/platform/startup');
   const { enforceProductionLock, initializeProductionStores } = await import('../apps/platform/production-state-lock');
@@ -73,33 +82,15 @@ export async function register() {
     console.log('✓ Redis configured — will connect on first use');
   }
 
-  // 6. Audit-runner heal cron — recovers cycles whose webhook fired but
-  //    whose worker died (process restart, crash, etc).
-  //    Runs every 60s. Only registered when prisma is available.
-  if (prisma) {
+  // 6. Audit-runner heal cron — extracted to instrumentation-node.ts so
+  //    that webpack can statically tree-shake the entire chain (which
+  //    transitively imports Node builtins http/https) out of the Edge
+  //    runtime bundle. The DefinePlugin substitutes process.env.NEXT_RUNTIME
+  //    at build time, eliminating this import from the Edge bundle.
+  if (prisma && process.env.NEXT_RUNTIME === 'nodejs') {
     try {
-      const { healStuckCycles, redispatchOrphanedPending } = await import('../apps/audit-runner/run-cycle');
-      const HEAL_INTERVAL_MS = 60_000;
-
-      // Run once on boot (catches any orphans from a previous incarnation),
-      // then on a recurring timer.
-      const runHealPass = async () => {
-        try {
-          const healed = await healStuckCycles();
-          const redispatched = await redispatchOrphanedPending();
-          if (healed > 0 || redispatched > 0) {
-            console.log(`[heal] cycles healed=${healed} redispatched=${redispatched}`);
-          }
-        } catch (err) {
-          console.error('[heal] pass failed:', err);
-        }
-      };
-
-      // Boot pass — non-blocking
-      runHealPass();
-      // Recurring pass
-      setInterval(runHealPass, HEAL_INTERVAL_MS);
-      console.log('✓ Audit-runner heal cron registered (60s interval)');
+      const { registerNodeInstrumentation } = await import('./instrumentation-node');
+      await registerNodeInstrumentation();
     } catch (err) {
       console.warn('⚠ Audit-runner heal cron registration failed:', err);
     }

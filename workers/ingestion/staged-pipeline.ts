@@ -57,6 +57,21 @@ export interface CoverageSummary {
   challenge_type: string | null;
 }
 
+// Crawl modes — controls which stages run and how aggressively.
+//
+// 'full'         — Stage A + B + C. Up to 30 pages, 60s budget. Default.
+//                  Used by post-payment audit-runner.
+// 'shallow_plus' — Stage A + truncated C. ~5 critical pages, 15s budget.
+//                  Used by Growth admin prospect audits.
+// 'shallow'      — Stage A only. 1 fetch (landing), 5s budget.
+//                  Used by /lp/audit anonymous mini-audit.
+//
+// All modes share the same parser, same evidence shape, same coverage
+// structure — only the stage gating + constraints differ. This means
+// downstream consumers (mini-audit findings, full inferences) see
+// uniform data and can be composed freely.
+export type PipelineMode = 'full' | 'shallow_plus' | 'shallow';
+
 export interface StagedPipelineInput {
   domain: string;
   workspace_ref: string;
@@ -66,7 +81,28 @@ export interface StagedPipelineInput {
   onboarding_business_model?: string;
   onboarding_conversion_model?: string;
   crawl_constraints?: Partial<CrawlConstraints>;
+  mode?: PipelineMode;
 }
+
+// Constraint overrides per mode. Anything not set falls back to
+// DEFAULT_CONSTRAINTS. The user-supplied crawl_constraints still wins
+// over the mode preset (gives the audit-runner an escape hatch).
+const MODE_CONSTRAINTS: Record<PipelineMode, Partial<CrawlConstraints>> = {
+  full: {
+    max_pages_per_domain: 30,
+    global_timeout_ms: 60_000,
+  },
+  shallow_plus: {
+    max_pages_per_domain: 6,
+    global_timeout_ms: 15_000,
+    per_request_timeout_ms: 5_000,
+  },
+  shallow: {
+    max_pages_per_domain: 1,
+    global_timeout_ms: 5_000,
+    per_request_timeout_ms: 5_000,
+  },
+};
 
 export interface StagedPipelineResult {
   evidence: Evidence[];
@@ -164,7 +200,15 @@ export async function runStagedPipeline(
   const rootUrl = normalizeUrl(input.domain);
   const rootDomain = getRootDomain(new URL(rootUrl).hostname);
   const scoping = buildScoping(input);
-  const crawlSession = new CrawlSession(rootDomain, { ...DEFAULT_CONSTRAINTS, ...input.crawl_constraints });
+  // Resolve mode + merge constraints. Order: defaults → mode preset →
+  // explicit user override (so callers can still tighten per-call).
+  const mode: PipelineMode = input.mode || 'full';
+  const modeConstraints = MODE_CONSTRAINTS[mode] || {};
+  const crawlSession = new CrawlSession(rootDomain, {
+    ...DEFAULT_CONSTRAINTS,
+    ...modeConstraints,
+    ...input.crawl_constraints,
+  });
   let stepIndex = 0;
 
   const emitStep = (message?: string) => {
@@ -207,6 +251,23 @@ export async function runStagedPipeline(
 
   stagesCompleted.push('bootstrap');
   emit({ type: 'stage_complete', stage: 'bootstrap', data: { evidence_count: evidence.length, routes: 1 }, timestamp: new Date() });
+
+  // Shallow mode short-circuit — landing-only mini-audit. Skip stages B,
+  // C, D entirely and return what we have. This is the /lp/audit path:
+  // we want preview data + ~5 derived findings from a single fetch.
+  if (mode === 'shallow') {
+    detectPlatforms(evidence, homepageResponse!, homepageParsed!, scoping, input.cycle_ref);
+    extractIndicators(homepageParsed!, homepageResponse!.final_url, scoping, input.cycle_ref, evidence);
+    stagesCompleted.push('complete');
+    emit({ type: 'complete', stage: 'complete', data: {
+      total_evidence: evidence.length,
+      total_pages: 1,
+      duration_ms: Date.now() - startTime,
+      coverage: buildCoverageSummary(coverage),
+    }, timestamp: new Date() });
+    return buildResult(evidence, input, coverage, stagesCompleted, errors, startTime);
+  }
+
   emitStep('Mapping your website structure');
 
   // ══════════════════════════════════════════════
@@ -216,9 +277,12 @@ export async function runStagedPipeline(
   // Extract checkout, policy, provider indicators from homepage
   extractIndicators(homepageParsed!, homepageResponse!.final_url, scoping, input.cycle_ref, evidence);
 
-  // Try sitemap.xml and robots.txt (non-blocking, fast)
-  emitStep('Understanding how users enter your funnel');
-  await tryFetchMeta(rootUrl, scoping, input.cycle_ref, evidence, errors, coverage);
+  // Try sitemap.xml and robots.txt (non-blocking, fast).
+  // Skipped in shallow_plus mode to keep the budget tight.
+  if (mode === 'full') {
+    emitStep('Understanding how users enter your funnel');
+    await tryFetchMeta(rootUrl, scoping, input.cycle_ref, evidence, errors, coverage);
+  }
 
   // Compute initial classification
   const classInput = extractClassificationInput(
@@ -250,7 +314,15 @@ export async function runStagedPipeline(
   const criticalPaths = ['/checkout', '/cart', '/login', '/contact', '/pricing',
     '/privacy', '/terms', '/refund-policy', '/return-policy', '/shipping', '/about'];
 
-  const candidates = discoverHighValueCandidates(homepageParsed!, rootDomain, rootUrl, criticalPaths);
+  let candidates = discoverHighValueCandidates(homepageParsed!, rootDomain, rootUrl, criticalPaths);
+
+  // shallow_plus mode: only fetch the top 5 candidates (already prioritized
+  // by discoverHighValueCandidates, so the most critical commercial paths
+  // get picked). Combined with max_pages_per_domain=6 in MODE_CONSTRAINTS
+  // this caps the run at 1 + 5 = 6 fetches max.
+  if (mode === 'shallow_plus') {
+    candidates = candidates.slice(0, 5);
+  }
 
   // Mark all candidates in coverage
   for (const url of candidates) {

@@ -1,7 +1,13 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-05
+> Last updated: 2026-04-06
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
+>
+> **2026-04-06 deep pipeline audit added a new Wave 0** — see below. The audit
+> revealed that several P0 gaps were absent from the previous roadmap, so the
+> "Known open items" table has been rebuilt against ground truth (the actual
+> code, not assumptions). See [DEV_PROGRESS.md § Pipeline Audit 2026-04-06](../DEV_PROGRESS.md#pipeline-audit--2026-04-06--ground-truth-vs-roadmap)
+> for the full per-phase report with file:line references.
 
 ---
 
@@ -42,16 +48,124 @@ See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milest
 - **Phase 5**: Claude LLM chat (3-layer pipeline, 21 MCP tools, 30 playbooks, SSE streaming, conversation persistence)
 - **Phase 0 UX**: Actions page, workspaces, analysis, maps, chat rewrite
 
-### Known open items from DEV_PROGRESS.md
+### Known open items (rebuilt from 2026-04-06 audit)
 
-| Item | Status | Wave |
-|------|--------|------|
-| Ingestion trigger from onboarding | Not wired | Wave 1 |
-| `integration_pull` executor | Scaffolded only | Wave 3 |
-| Pixel event ingestion | Management exists, no pipeline | Wave 3 |
-| SPA resolution (Stage D) | Reserved | Wave 3 |
-| Conversation export/branching | Not started | Wave 3 |
-| `prisma db push` → `prisma migrate` | Pending | Wave 2 |
+| Item | Status | Wave | Source |
+|------|--------|------|--------|
+| Onboarding → ingestion auto-trigger | AuditCycle created on payment, never read | **Wave 0** | confirmed: paddle/webhook:435, no consumer found |
+| Pixel ingest endpoint `/api/behavioral/ingest` | Snippet POSTs to dead URL | **Wave 0** | snippet/vestigio.js:20, no route found |
+| Pixel event processing worker | No raw-events queue, no aggregator job | **Wave 0** | session-aggregator never called from any worker |
+| Inventory auto-build from parser | `pageInventoryItem` written only by seed.ts | **Wave 0** | parser.ts produces evidence, never inventory rows |
+| Inventory mock data | API returns hardcoded `MOCK_FINDING_COUNTS` | **Wave 0** | api/inventory/route.ts:33-39 |
+| Verification UI → backend wiring | Drawer button is `() => toast.success(...)` | **Wave 0** | actions/page.tsx:563 — backend `verify()` works |
+| Findings persistence to PostgreSQL | Findings live only in MCP memory | Wave 1 | no `Finding` Prisma model exists |
+| Behavioral findings dormant | Require ≥20 sessions of pixel data → 0 today | Wave 1 | recompute.ts:343-369, blocked by Wave 0 pixel work |
+| Stage D selective headless | Declared, skipped to "complete" | Wave 1 | staged-pipeline.ts:346-348 |
+| Katana / Nuclei runners | Built, not invoked from main pipeline | Wave 2 | runners ready, no caller in pipeline |
+| `integration_pull` executor | Scaffolded only | Wave 3 | executors.ts:197-212 returns "not implemented" |
+| Root cause consolidation 32 → 24 | Still 54+ active keys | Wave 2 | root-causes.ts unchanged since claim |
+| `body_text_snippet` 500 → 2000 chars | Still 500 | Wave 3 | parser.ts:105 hardcoded |
+| Conversation export/branching | Not started | Wave 4 | unchanged |
+| `prisma db push` → `prisma migrate` | Pending | Wave 2 | unchanged |
+
+---
+
+## Wave 0 — Critical Pipeline Gaps
+
+**Goal:** Close the load-bearing breaks in the data pipeline that the 2026-04-06 audit surfaced. Each item below is a step where the user-visible product is broken or where the architecture promises something the code doesn't deliver. **Nothing else in the roadmap matters if these don't ship first** — Wave 1 polish on top of a broken pipeline is wasted effort.
+
+These are ordered by dependency: 0.1 unblocks 0.4-0.5, which unblock 0.7, which strengthens 0.6.
+
+---
+
+### 0.1 Onboarding → Ingestion Auto-Trigger
+
+| | |
+|---|---|
+| **Tag** | `platform` `engine` |
+| **Priority** | P0 |
+| **Status** | Open. Audit confirmed: AuditCycle created with `status=pending` in [src/app/api/paddle/webhook/route.ts:435](../src/app/api/paddle/webhook/route.ts#L435) and [src/app/api/stripe/webhook/route.ts:113](../src/app/api/stripe/webhook/route.ts#L113), but **no code reads pending cycles**. |
+| **What** | After Paddle/Stripe `subscription.created` webhook fires and the AuditCycle row is written, automatically kick off `runStagedPipeline` for the org's environment. Currently the user lands on `/app/analysis` with `MCP context: not_ready` and no clear "Run analysis" CTA. |
+| **Where** | Two viable patterns: (a) call ingestion fire-and-forget directly from the webhook handler after setting `org.status='active'`; (b) write a poller job that scans `AuditCycle.status='pending'` every minute. (a) is simpler, (b) is more resilient. |
+| **Acceptance** | New user signs up → completes payment → next page load of `/app/analysis` shows findings without manual action. |
+
+---
+
+### 0.2 Pixel Ingest Endpoint
+
+| | |
+|---|---|
+| **Tag** | `collection` `platform` |
+| **Priority** | P0 |
+| **Status** | Open. The behavioral snippet at [public/snippet/vestigio.js:20](../public/snippet/vestigio.js#L20) POSTs batches to `/api/behavioral/ingest`, **which does not exist**. Search confirmed: only `/api/admin/marketing/pixels` (3rd-party pixel admin) is present. |
+| **What** | Create `src/app/api/behavioral/ingest/route.ts` that: (a) reads JSON batch of events, (b) validates `data-env` against the org's environment id (resolve via API key or signed env id), (c) writes to a new `RawBehavioralEvent` Prisma table, (d) returns 204. Rate-limited per env id. |
+| **Where** | New file. New Prisma model. New env-id signing helper (HMAC of `environmentId + secret` so customers can't fake other people's traffic). |
+| **Acceptance** | Install snippet on a test page → events arrive → rows visible in `RawBehavioralEvent` table. |
+
+---
+
+### 0.3 Pixel Event Processing Worker
+
+| | |
+|---|---|
+| **Tag** | `collection` |
+| **Priority** | P0 (depends on 0.2) |
+| **Status** | Open. [packages/behavioral/session-aggregator.ts](../packages/behavioral/session-aggregator.ts) `aggregateSession()` exists and works, but **nothing calls it**. Behavioral findings + 7 behavioral workspaces in `recompute.ts:343-369` are gated on `BehavioralSessionPayload` evidence — which never gets created without this worker. |
+| **What** | Background job that polls `RawBehavioralEvent` for unaggregated batches, groups by `(envId, sessionId)`, calls `aggregateSession()`, writes the result as `BehavioralSessionPayload` evidence into `PrismaEvidenceStore`. Schedule: every 60s, batch size ~100 sessions. |
+| **Where** | New worker file under `workers/behavioral/aggregator.ts`. Triggered from `src/app/app/layout.tsx` boot timer (same pattern as `health-checker.ts`). |
+| **Acceptance** | Snippet installed → user browses for 1 minute → within 2 minutes the org's behavioral findings + workspaces start populating. |
+
+---
+
+### 0.4 Inventory Auto-Build from Parser Output
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` |
+| **Priority** | P0 |
+| **Status** | Open. `prisma.pageInventoryItem` is queried by [src/app/api/inventory/route.ts:78](../src/app/api/inventory/route.ts#L78) but **only written by `prisma/seed.ts`**. The crawl pipeline produces parsed pages but never persists them as inventory rows. |
+| **What** | After Stage C of the staged pipeline (post-crawl, post-parse), upsert one `PageInventoryItem` per crawled URL with: `path`, `normalizedUrl`, `title`, `pageType` (from existing classifier), `freshnessState`, `statusCode`, `tier`, `websiteRef`. Also populate `SurfaceRelation` for parent→child link relationships. |
+| **Where** | New step in [workers/ingestion/staged-pipeline.ts](../workers/ingestion/staged-pipeline.ts) — after coverage tracking, before `complete` event. Or a post-pipeline projection step in `analysis/stream/route.ts`. |
+| **Acceptance** | Run an audit → navigate to `/app/inventory` → see real pages from the crawl, not seed/empty. |
+
+---
+
+### 0.5 Inventory: Replace Mock Counts with Real Data
+
+| | |
+|---|---|
+| **Tag** | `engine` `frontend` |
+| **Priority** | P0 |
+| **Status** | Open. [src/app/api/inventory/route.ts:21-39](../src/app/api/inventory/route.ts#L21) defines `MOCK_SESSION_COUNTS` and `MOCK_FINDING_COUNTS` (e.g. `checkout: 4, cart: 2`) and uses them at lines 103-104 for **every response**. The TODO comments admit this is fake. |
+| **What** | After 0.3 (pixel worker) and 0.4 (inventory auto-build) ship, `session_count` should come from `BehavioralSessionPayload` aggregates per page url and `finding_count` from a join against the projection state per page. Until then: return `null` and have the UI hide the column rather than show fake numbers. |
+| **Where** | Same file. Optional: cache page→finding map in MCP context to avoid recomputing on every request. |
+| **Acceptance** | Inventory rows show real session counts (or null) and real finding counts (or null), no hardcoded values. |
+
+---
+
+### 0.6 Verification: Frontend → Backend Wiring
+
+| | |
+|---|---|
+| **Tag** | `frontend` `engine` |
+| **Priority** | P0 |
+| **Status** | Open. The backend chain works: [apps/mcp/server.ts:217 `verify()`](../apps/mcp/server.ts#L217) → orchestrator → executor → recompute → new evidence. But the frontend handler at [src/app/(console)/actions/page.tsx:563](../src/app/(console)/actions/page.tsx#L563) is `onRequestVerification={() => toast.success(t("drawer.verificationRequested"))}` — a fake toast that never calls anything. |
+| **What** | (1) Create `POST /api/verification/run` that takes `{ subject_ref, verification_type, reason }`, looks up the user's org, calls `mcpServer.verify(...)`, returns the new verification status. (2) Replace the toast handler with a real fetch + optimistic UI update + error handling. (3) After verification completes, refresh the action drawer's `verification_maturity` and impact figures from the recomputed projections. |
+| **Where** | New API route. Update [src/lib/mcp-client.ts](../src/lib/mcp-client.ts). Update Actions/Analysis drawers. |
+| **Acceptance** | Click "Run Verification" → real Playwright run executes → drawer updates to `verified` with new evidence → impact recomputed. |
+
+---
+
+### 0.7 Findings Persistence to PostgreSQL
+
+| | |
+|---|---|
+| **Tag** | `engine` `platform` |
+| **Priority** | P0 |
+| **Status** | Open. After `recomputeAll()` produces findings in [packages/projections/engine.ts](../packages/projections/engine.ts), they're held only in the in-memory MCP server singleton. Server restart triggers a recompute from persisted evidence — works, but expensive on every cold start, and **change detection is broken** because there's no persisted "previous cycle" snapshot to compare against. |
+| **What** | Add `Finding` Prisma model with `id`, `cycleRef`, `inferenceKey`, `pack`, `severity`, `confidence`, `impactMin`, `impactMax`, `rootCause`, `verificationMaturity`, `evidenceIds[]`, `createdAt`, plus a snapshot of the projection JSON for cheap rehydration. Persist after `recomputeAll()` in `analysis/stream/route.ts`. Change detection then queries the previous cycle for the same `inferenceKey` and computes `regression`/`improvement`/`new_issue`/`stable_risk`/`resolved`. |
+| **Where** | Schema. Persist hook. Modify [packages/change-detection/engine.ts](../packages/change-detection/engine.ts) to read from DB instead of in-memory cycle history. |
+| **Acceptance** | Run audit twice → second run shows real `change_class` on findings → server restart preserves both cycles. |
 
 ---
 
@@ -59,19 +173,19 @@ See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milest
 
 **Goal:** Make what exists feel complete, trustworthy, and self-explanatory. Fix broken flows, close UX gaps that create confusion, and wire the final missing connection (onboarding → ingestion).
 
+> **Audit note (2026-04-06):** Items 1.2 through 1.8 in this Wave were verified as actually shipped in code. Item 1.1 (Onboarding → Ingestion) was promoted to **Wave 0.1** because it's the load-bearing P0 break. Item 1.6 (Billing — Manage Subscription) was already shipped via the Paddle integration in commit `4aa7ce7` but the roadmap entry was never updated.
+
 Everything in Wave 1 either fixes a P0 (broken) or makes the value delivery loop more obvious.
 
 ---
 
-### 1.1 Onboarding → Ingestion Wiring
+### 1.1 Onboarding → Ingestion Wiring **→ promoted to [Wave 0.1](#01-onboarding--ingestion-auto-trigger)**
 
 | | |
 |---|---|
 | **Tag** | `platform` `engine` |
 | **Priority** | P0 |
-| **What** | Onboarding creates org + environment + business profile + audit cycle, but never calls `runIngestion`. The user completes onboarding and lands on an empty console. |
-| **Why** | Without this, zero first-value. The entire product is invisible after signup. |
-| **Where** | Onboarding completion handler → trigger staged pipeline for the configured domain. Wire `AuditCycle.status` transitions. |
+| **Status** | Moved to Wave 0 after the 2026-04-06 audit confirmed it's a load-bearing break and added more dependent work around it. See Wave 0.1 above for the full spec. |
 
 ---
 
@@ -134,14 +248,13 @@ Everything in Wave 1 either fixes a P0 (broken) or makes the value delivery loop
 
 ---
 
-### 1.6 Billing — Fix Broken Button
+### 1.6 Billing — Fix Broken Button ✅
 
 | | |
 |---|---|
 | **Tag** | `platform` |
 | **Priority** | P0 |
-| **What** | "Manage Subscription" button on billing page has no working onClick handler. Clicking does nothing. |
-| **Fix** | Wire to Paddle customer portal URL (or Stripe billing portal as fallback). Use `paddle.Checkout.open()` for Paddle, or redirect to Stripe billing portal session. |
+| **Status** | **Done** (commit `14b77ee`, "Brevo notifications…" series). Billing page now has real Paddle checkout for new subs, change-plan flow, cancel modal, and uses the live Paddle webhook for state. Verified in [src/app/app/billing/page.tsx](../src/app/app/billing/page.tsx). |
 
 ---
 
@@ -433,12 +546,13 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 ## Summary View
 
-| Wave | Theme | Key Outcomes | Estimated Items |
-|------|-------|-------------|-----------------|
-| **1** | Core Experience Polish | Onboarding→ingestion wired, Actions/Analysis/Inventory UX fixed, billing working, page tooltips | 8 groups, ~20 fixes. **6 of 8 done** (1.1, 1.6 remain) |
-| **2** | Knowledge, Members & Confidence | Knowledge base + finding docs, invite flow, root cause refinement (32→24), confidence gap surfacing, prisma migrate | 5 groups |
-| **3** | Semantic Enrichment & New Lenses | LLM on policy pages, CTA/trust language, cybersecurity Phase 1, composite findings, journey narrative, remaining rule-based | 6 groups |
-| **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | 5 groups |
+| Wave | Theme | Key Outcomes | Status |
+|------|-------|-------------|--------|
+| **0** | Critical Pipeline Gaps | Onboarding auto-trigger, pixel ingest + worker, inventory auto-build, real inventory counts, verification UI wiring, finding persistence | **0 of 7 shipped** — added 2026-04-06 |
+| **1** | Core Experience Polish | Actions/Analysis/Inventory UX, billing, page tooltips, mobile polish, Brevo notifications | **8 of 8 done** (1.1 promoted to 0.1, 1.6 done in `14b77ee`) |
+| **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (32→24), confidence gap surfacing, prisma migrate | KB done (commit `8eb3278`), members + root cause + prisma still open |
+| **3** | Semantic Enrichment & New Lenses | LLM on policy pages, CTA/trust language, cybersecurity Phase 1, composite findings, journey narrative | All open |
+| **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 
 ---
 

@@ -2,6 +2,104 @@
 
 ---
 
+## Pipeline Audit -- 2026-04-06 -- Ground Truth vs Roadmap
+
+### Goal
+
+Walk every step of the user-visible pipeline (1. onboarding → 2. domain registration → 3. audit → 4. parsing/inventory → 5. findings → 6. frontend → 7. workspaces/maps → 8. pixel → 9. verification) and verify what actually works in code versus what the roadmap claims. Use the findings to rebuild [docs/ROADMAP.md](docs/ROADMAP.md).
+
+### Method
+
+Four parallel exploration agents, each with non-overlapping phases. Every claim was verified against source files (no assumptions): inventory mock counts confirmed at [src/app/api/inventory/route.ts:21-39](src/app/api/inventory/route.ts#L21), pixel endpoint absence confirmed by `find src/app/api -type d` (only `/api/admin/marketing/pixels` exists, no `/api/behavioral/`), verification UI handler confirmed at [src/app/(console)/actions/page.tsx:563](src/app/(console)/actions/page.tsx#L563) (`onRequestVerification={() => toast.success(...)}`), MCP `verify()` chain confirmed working at [apps/mcp/server.ts:217-275](apps/mcp/server.ts#L217).
+
+### Per-phase status
+
+| # | Phase | State | Key file:line | Notes |
+|---|-------|-------|---------------|-------|
+| 1 | Onboarding form + payment + DB seeding | ✅ Works | onboard/page.tsx, paddle/webhook:435 | Org, Environment, BusinessProfile, Membership, AuditCycle all created. Notifications step persists phone + prefs correctly. |
+| 2 | First-audit auto-trigger after payment | ❌ Broken | paddle/webhook:435 (creates row), no consumer | AuditCycle row created with `status='pending'` but **nothing reads it**. Pipeline only starts when user manually navigates to `/app/analysis`. |
+| 3a | Staged pipeline Stages A/B/C (bootstrap, first value, crawl) | ✅ Works | workers/ingestion/staged-pipeline.ts:174-342 | Coverage tracking, challenge detection, content dedup, SPA detection — all live. |
+| 3b | Stage D (selective headless / Playwright resolution) | ❌ Reserved | staged-pipeline.ts:346-348 | Detects SPA patterns, emits warning, then jumps directly to `complete`. |
+| 3c | Katana / Nuclei runners | ⚠️ Built, never invoked | workers/katana/runner.ts, workers/nuclei/runner.ts | Subprocess CLI adapters work standalone. No caller in main pipeline. |
+| 3d | Browser verification + authenticated journey executors | ✅ Works (on-demand only) | workers/verification/executors.ts | Used by MCP verification path (Phase 9), not by main collection. |
+| 3e | `integration_pull` executor (Shopify, GA, etc.) | ❌ Stub | executors.ts:197-212 | Returns "not yet implemented". |
+| 4a | HTML parsing → evidence | ✅ Works | workers/ingestion/parser.ts:80-381 | Inline scripts, structured data, policy content all extracted. |
+| 4b | Evidence persistence to PostgreSQL | ✅ Works | analysis/stream/route.ts:219, packages/evidence/prisma-store.ts | Survives server restart via `loadLatestCycle()`. |
+| 4c | Inventory auto-build (`PageInventoryItem`) | ❌ Broken | api/inventory/route.ts:78 reads only | Table is queried but **only written by `prisma/seed.ts`**. After a real audit, inventory page shows empty (or seed data if you ran the seeder). |
+| 4d | `SurfaceRelation` writes | ❌ Missing | schema exists, no writer | Forms/links/iframes parsed but not stored as relations. |
+| 4e | Inventory mock counts | ❌ Mock data | api/inventory/route.ts:21-39 | `MOCK_FINDING_COUNTS` (`checkout: 4, cart: 2, ...`) hardcoded. TODO comments admit it's fake. Even after a real audit you see the same numbers. |
+| 4f | `body_text_snippet` 500 → 2000 chars | ❌ Not done | parser.ts:105 | ROADMAP 3.2A still pending. Limits semantic enrichment. |
+| 5a | Multi-pack `recomputeAll()` | ✅ Works | packages/workspace/recompute.ts:218-717 | All 4 packs (Scale, Revenue, Chargeback, SaaS) + behavioral wired. Truth resolution + suppression + confidence audit all live. |
+| 5b | Findings projection | ✅ Works | packages/projections/engine.ts | **187 inferences** mapped to findings (the "47 across 4 packs" roadmap claim was outdated — count is much higher). |
+| 5c | Findings persistence to PostgreSQL | ❌ Missing | no `Finding` Prisma model | Findings live only in MCP server memory. Recomputed from evidence on cold start. **Change detection broken** because there's no persisted previous-cycle snapshot. |
+| 5d | Evidence ↔ finding linkage | ❌ Missing | FindingProjection has no `evidence_ids` array | Cannot trace a finding back to the HTTP response or DOM element that produced it. |
+| 5e | Behavioral findings (12 hardened + 20 cohort) | ⚠️ Dormant | recompute.ts:343-369 gated on ≥20 sessions | Require pixel data which never arrives (see Phase 8). Not callable in production today. |
+| 5f | Root cause consolidation 32 → 24 | ❌ Not done | packages/intelligence/root-causes.ts | Still 54+ active keys. ROADMAP 2.3 still pending. |
+| 5g | Confidence audit, truth context, suppression context | ⚠️ Implemented but invisible | packages/projections/types.ts | Fields populated, never rendered in UI. |
+| 6 | Frontend pages → MCP/API data | ✅ Works | src/lib/console-data.ts | All 7 console pages use the explicit DataState pattern (`loading`/`ready`/`empty`/`error`/`not_ready`). **No hardcoded/hallucinated data** anywhere except the inventory mock counts above. |
+| 7a | Workspaces (4 foundational + SaaS conditional) | ✅ Works | recompute.ts:248-319 | Always created, deterministic. |
+| 7b | Behavioral workspaces (7 types) | ⚠️ Dormant | recompute.ts:343-369 | Same gate as 5e. |
+| 7c | User Journey map | ✅ Works | api/maps/user-journey/route.ts | Built from PageInventoryItem + SurfaceRelation. **Affected by 4c/4d**: empty inventory → empty map. |
+| 7d | Root Cause / Decision maps | ✅ Works | apps/mcp/tools.ts get_map | Computed from inferences + intelligence layer. |
+| 8a | Behavioral snippet (`vestigio.js`) | ✅ Production-ready | public/snippet/vestigio.js | 25 event types, privacy-hardened, batched. |
+| 8b | Pixel ingest endpoint `/api/behavioral/ingest` | ❌ **Does not exist** | snippet/vestigio.js:20 POSTs here | Snippet posts to a dead URL. Verified: no `src/app/api/behavioral/` directory. **Pixel data never enters the system.** |
+| 8c | Pixel processing worker (raw events → SessionAggregate → evidence) | ❌ Missing | packages/behavioral/session-aggregator.ts has no caller | `aggregateSession()` exists, no worker invokes it. |
+| 8d | Raw event Prisma tables | ❌ Missing | schema.prisma has no `RawBehavioralEvent` | Only `TrackingPixel` (3rd-party Facebook/Google admin) exists. |
+| 8e | Data Sources page environment id provisioning | ⚠️ Fake | data-sources/page.tsx:40 | `ENV_ID = "ENV_" + Math.random()` — generated client-side, no DB binding, no signing. |
+| 9a | MCP `verify()` execution chain (orchestrator → executor → recompute) | ✅ Works | apps/mcp/server.ts:217-275 | Submits request, runs Playwright/light probe/etc., recomputes context, returns status. |
+| 9b | Frontend "Run Verification" button | ❌ Fake | actions/page.tsx:563 | `onRequestVerification={() => toast.success(...)}` — shows a toast, never calls the backend. |
+| 9c | Verification result → Evidence flow | ✅ Works (when invoked) | orchestrator.executeAndRecompute | New evidence is added to the store and projections are recomputed. |
+| 9d | `verification_maturity` rendering | ⚠️ Component exists, mostly disconnected | components/console/VerificationBadge.tsx | Badge component exists but is fed `action.verification_maturity` which is rarely populated end-to-end. |
+| 9e | `integration_pull` executor (Shopify/GA verify) | ❌ Stub | executors.ts:197-212 | Same gap as 3e. |
+
+### Critical-path findings (the "Wave 0" set)
+
+The audit found **7 P0 gaps** that block the core value loop. They are not just deferred features — they are places where the code makes a promise (e.g. snippet POSTs to an endpoint, button labelled "Run Verification") that the rest of the system doesn't honour. None of the existing waves cover them, so the roadmap was rebuilt with a new **Wave 0**:
+
+1. **0.1** — Onboarding → ingestion auto-trigger (was ROADMAP 1.1, now richer)
+2. **0.2** — Pixel ingest endpoint `/api/behavioral/ingest`
+3. **0.3** — Pixel event processing worker (depends on 0.2)
+4. **0.4** — Inventory auto-build from parser output
+5. **0.5** — Replace inventory mock counts with real data (depends on 0.3 + 0.4)
+6. **0.6** — Verification: frontend → backend wiring (frontend toast → real API call)
+7. **0.7** — Findings persistence to PostgreSQL (unblocks change detection)
+
+See [docs/ROADMAP.md § Wave 0](docs/ROADMAP.md#wave-0--critical-pipeline-gaps) for full specs of each item with file:line refs and acceptance criteria.
+
+### What was over-claimed in the previous roadmap
+
+| Previous claim | Actual state |
+|---|---|
+| "47 findings across 4 packs" | 187 inferences mapped to findings (count was outdated — much higher) |
+| "Pixel event ingestion: management exists, no pipeline" | Management is also broken (ENV_ID is `Math.random()`); pipeline doesn't just lack a worker, it lacks the receiving endpoint entirely |
+| "Onboarding creates org but never calls runIngestion" | True, plus the fix is more involved than wiring one call: the AuditCycle row already exists, so the architecturally-cleaner fix is a poller/worker rather than an inline call from the webhook handler |
+| "Phase 0 UX done" | True for the visible pages, but several drawer CTAs are toast no-ops (`onRequestVerification`, `onConfirmResolution`) |
+| "Phase 4B behavioral findings shipped" | Code is shipped, but findings are dormant for 100% of orgs because the pixel pipeline is broken — they never have the prerequisite `BehavioralSession` evidence |
+| Root cause consolidation 32 → 24 | Not done. Still 54+ active root cause keys. |
+| `body_text_snippet` 2000 chars | Still 500 chars. |
+
+### What was correctly described
+
+- Phases 1, 6, 7a, 7c are accurately documented
+- Wave 1 UX fixes (1.2-1.5, 1.7-1.8) are all really shipped in code
+- Brevo notifications, mobile homepage polish, landing fixes (commits `14b77ee`, `8e71b3c`, `b842d32`) are real and verified
+- WhatsApp Coexistence integration (commit `4aa7ce7`) is wired and dormant pending env vars
+
+### Recommended sequence
+
+After the audit and the new ROADMAP Wave 0:
+
+1. **Ship 0.1 first** (smallest fix, highest impact on conversion). This makes the entire onboarding → console flow work for net-new orgs without manual intervention.
+2. **Ship 0.4 alongside 0.1** (inventory auto-build is also a quick fix and independent of 0.2/0.3).
+3. **0.2 + 0.3 together** (pixel ingest + worker) — these unlock all 12+20 behavioral findings + 7 behavioral workspaces that already exist in code but are dormant.
+4. **0.6** (verification UI wiring) — small frontend change, the backend is ready.
+5. **0.5** (replace mock counts) becomes trivial once 0.3 and 0.4 are in.
+6. **0.7** (finding persistence) — the most invasive of the seven; do last and use it to unlock real change detection.
+
+After Wave 0, the existing Waves 1-4 become meaningful again because the platform actually delivers data through them.
+
+---
+
 ## Summary -- UX Overhaul & Recent Changes (as of 2026-04-02)
 
 ### What Changed

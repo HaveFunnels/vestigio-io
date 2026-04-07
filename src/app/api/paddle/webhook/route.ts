@@ -432,7 +432,7 @@ async function handleOnboardingActivation(
 		where: { organizationId: orgId },
 	});
 	if (env) {
-		await prisma.auditCycle.create({
+		const cycle = await prisma.auditCycle.create({
 			data: {
 				organizationId: orgId,
 				environmentId: env.id,
@@ -440,6 +440,13 @@ async function handleOnboardingActivation(
 				cycleType: "full",
 			},
 		});
+		// Fire-and-forget — do NOT await. Webhook must return fast.
+		// Heal cron in instrumentation.ts re-dispatches orphans on restart.
+		import("../../../../../apps/audit-runner/run-cycle")
+			.then((m) => m.runAuditCycle(cycle.id))
+			.catch((err) => {
+				console.error(`[paddle-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
+			});
 	}
 
 	logEvent("onboarding", `Org ${orgId} activated with plan ${plan}`);

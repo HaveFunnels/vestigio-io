@@ -6,37 +6,19 @@ import { withErrorTracking } from "@/libs/error-tracker";
 // ──────────────────────────────────────────────
 // Inventory API — Page Inventory Items
 //
-// GET → returns all PageInventoryItem rows for the
-//       user's first active environment's website,
-//       mapped to InventorySurface shape.
+// GET → returns all PageInventoryItem rows for the user's first active
+//       environment's website, plus the audit_status of the most recent
+//       AuditCycle so the UI can show the "audit ongoing" banner.
 //
 // Auth: requires authenticated user with org membership.
 // Scoping: user → membership → org → environment → website → pages
+//
+// session_count and finding_count are returned as `null` until the
+// behavioral pipeline (Wave 0.2/0.3) and findings persistence (Wave 0.7)
+// ship. The UI hides the column when 100% of rows are null.
 // ──────────────────────────────────────────────
 
 const COMMERCIAL_PAGE_TYPES = new Set(["checkout", "cart", "product", "pricing"]);
-
-// TODO: Replace with real session tracking once analytics integration is live.
-// For now, generate realistic demo counts based on page type.
-const MOCK_SESSION_COUNTS: Record<string, number> = {
-  landing: 1200,
-  product: 450,
-  checkout: 380,
-  cart: 290,
-  pricing: 320,
-  blog: 180,
-};
-const DEFAULT_SESSION_COUNT = 50;
-
-// TODO: Replace with real finding counts from Evidence query once
-// evidence ↔ page path mapping is robust.
-const MOCK_FINDING_COUNTS: Record<string, number> = {
-  checkout: 4,
-  cart: 2,
-  product: 1,
-  pricing: 1,
-};
-const DEFAULT_FINDING_COUNT = 0;
 
 export const GET = withErrorTracking(async function GET() {
   const user = await isAuthorized();
@@ -51,7 +33,11 @@ export const GET = withErrorTracking(async function GET() {
   });
 
   if (!membership) {
-    return NextResponse.json({ data: [], message: "No organization found" });
+    return NextResponse.json({
+      data: [],
+      audit_status: null,
+      message: "No organization found",
+    });
   }
 
   // Find the first environment for this org
@@ -61,8 +47,28 @@ export const GET = withErrorTracking(async function GET() {
   });
 
   if (!environment) {
-    return NextResponse.json({ data: [], message: "No environment found" });
+    return NextResponse.json({
+      data: [],
+      audit_status: null,
+      message: "No environment found",
+    });
   }
+
+  // Pull the latest audit cycle so the UI can show the live status banner.
+  const latestCycle = await prisma.auditCycle.findFirst({
+    where: { environmentId: environment.id },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, status: true, createdAt: true, completedAt: true },
+  });
+
+  const auditStatus = latestCycle
+    ? {
+        cycle_id: latestCycle.id,
+        status: latestCycle.status, // pending | running | complete | failed
+        started_at: latestCycle.createdAt.toISOString(),
+        completed_at: latestCycle.completedAt?.toISOString() ?? null,
+      }
+    : null;
 
   // Find the website for this environment
   const website = await prisma.website.findFirst({
@@ -71,7 +77,14 @@ export const GET = withErrorTracking(async function GET() {
   });
 
   if (!website) {
-    return NextResponse.json({ data: [], message: "No website found" });
+    // Website is created lazily by the audit-runner worker. If it doesn't
+    // exist yet, return an empty inventory but keep the audit_status so
+    // the UI can show "audit pending..." instead of an empty state.
+    return NextResponse.json({
+      data: [],
+      audit_status: auditStatus,
+      message: "No website yet — first audit hasn't completed",
+    });
   }
 
   // Query all PageInventoryItem rows for this website
@@ -100,8 +113,10 @@ export const GET = withErrorTracking(async function GET() {
       is_commercial: COMMERCIAL_PAGE_TYPES.has(item.pageType),
       is_live: item.freshnessState === "fresh",
       last_seen_at: item.updatedAt.toISOString(),
-      session_count: MOCK_SESSION_COUNTS[item.pageType] ?? DEFAULT_SESSION_COUNT,
-      finding_count: MOCK_FINDING_COUNTS[item.pageType] ?? DEFAULT_FINDING_COUNT,
+      // Real numbers will arrive once Wave 0.2/0.3 (pixel) and Wave 0.7
+      // (findings persistence) ship. The UI hides the column when null.
+      session_count: null,
+      finding_count: null,
       discovery_sources: ["surface"],
       http_status: item.statusCode ?? null,
       title: item.title ?? null,
@@ -111,5 +126,5 @@ export const GET = withErrorTracking(async function GET() {
     };
   });
 
-  return NextResponse.json({ data: surfaces });
+  return NextResponse.json({ data: surfaces, audit_status: auditStatus });
 }, { endpoint: "/api/inventory", method: "GET" });

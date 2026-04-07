@@ -105,12 +105,16 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 				});
 			}
 
-			// Create initial audit cycle
+			// Create initial audit cycle and dispatch the worker fire-and-forget.
+			// The worker (apps/audit-runner) will run staged-pipeline + persist
+			// PageInventoryItem rows. Webhook returns 200 immediately; if this
+			// process dies mid-crawl, the heal cron in instrumentation.ts
+			// re-dispatches orphaned `pending` cycles.
 			const env = await prisma.environment.findFirst({
 				where: { organizationId: orgId },
 			});
 			if (env) {
-				await prisma.auditCycle.create({
+				const cycle = await prisma.auditCycle.create({
 					data: {
 						organizationId: orgId,
 						environmentId: env.id,
@@ -118,6 +122,12 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 						cycleType: "full",
 					},
 				});
+				// Fire-and-forget — do NOT await. Webhook must return fast.
+				import("../../../../../apps/audit-runner/run-cycle")
+					.then((m) => m.runAuditCycle(cycle.id))
+					.catch((err) => {
+						console.error(`[stripe-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
+					});
 			}
 		}
 	}

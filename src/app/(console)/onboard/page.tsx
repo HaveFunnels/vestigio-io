@@ -19,6 +19,7 @@ type ConversionModel = "checkout" | "whatsapp" | "form" | "external";
 interface OnboardState {
   organizationName: string;
   domain: string;
+  ownershipConfirmed: boolean;
   businessType: BusinessType;
   monthlyRevenue: string;
   averageTicket: string;
@@ -227,12 +228,16 @@ export default function OnboardPage() {
   useEffect(() => {
     if (paymentSuccess && (session?.user as any)?.hasOrganization === true) {
       setActivating(false);
-      router.replace("/app/analysis");
+      // Hand off to the thank-you bridge page, which will then redirect
+      // to /app/inventory where the audit progress banner is visible.
+      const orgId = searchParams.get("org") || "";
+      router.replace(`/app/onboarding/thank-you${orgId ? `?org=${encodeURIComponent(orgId)}` : ""}`);
     }
-  }, [session, paymentSuccess, router]);
+  }, [session, paymentSuccess, router, searchParams]);
   const [form, setForm] = useState<OnboardState>({
     organizationName: "",
     domain: "",
+    ownershipConfirmed: false,
     businessType: "ecommerce",
     monthlyRevenue: "",
     averageTicket: "",
@@ -397,7 +402,7 @@ export default function OnboardPage() {
 
   const canAdvance =
     (currentStep === "org" && form.organizationName.length > 0) ||
-    (currentStep === "domain" && form.domain.length > 0) ||
+    (currentStep === "domain" && form.domain.length > 0 && form.ownershipConfirmed) ||
     currentStep === "business" ||
     currentStep === "saas_setup" ||
     currentStep === "notifications" ||
@@ -495,6 +500,26 @@ export default function OnboardPage() {
                   {domainWarning} — you can still proceed.
                 </div>
               )}
+            </div>
+
+            {/* Ownership confirmation — required before audit can run */}
+            <div>
+              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 transition-colors hover:border-zinc-600">
+                <input
+                  type="checkbox"
+                  checked={form.ownershipConfirmed}
+                  onChange={(e) => update("ownershipConfirmed", e.target.checked)}
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-zinc-600 bg-zinc-800 accent-emerald-500"
+                />
+                <div className="text-xs leading-relaxed text-zinc-400">
+                  <span className="block font-medium text-zinc-200">
+                    I own this domain or have authorization to audit it
+                  </span>
+                  <span className="mt-0.5 block text-zinc-500">
+                    Vestigio will only crawl public pages. By checking this you confirm you have the right to analyze this site.
+                  </span>
+                </div>
+              </label>
             </div>
           </section>
         )}

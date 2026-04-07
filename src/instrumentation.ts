@@ -72,4 +72,36 @@ export async function register() {
   if (process.env.REDIS_URL) {
     console.log('✓ Redis configured — will connect on first use');
   }
+
+  // 6. Audit-runner heal cron — recovers cycles whose webhook fired but
+  //    whose worker died (process restart, crash, etc).
+  //    Runs every 60s. Only registered when prisma is available.
+  if (prisma) {
+    try {
+      const { healStuckCycles, redispatchOrphanedPending } = await import('../apps/audit-runner/run-cycle');
+      const HEAL_INTERVAL_MS = 60_000;
+
+      // Run once on boot (catches any orphans from a previous incarnation),
+      // then on a recurring timer.
+      const runHealPass = async () => {
+        try {
+          const healed = await healStuckCycles();
+          const redispatched = await redispatchOrphanedPending();
+          if (healed > 0 || redispatched > 0) {
+            console.log(`[heal] cycles healed=${healed} redispatched=${redispatched}`);
+          }
+        } catch (err) {
+          console.error('[heal] pass failed:', err);
+        }
+      };
+
+      // Boot pass — non-blocking
+      runHealPass();
+      // Recurring pass
+      setInterval(runHealPass, HEAL_INTERVAL_MS);
+      console.log('✓ Audit-runner heal cron registered (60s interval)');
+    } catch (err) {
+      console.warn('⚠ Audit-runner heal cron registration failed:', err);
+    }
+  }
 }

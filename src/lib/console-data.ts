@@ -205,8 +205,10 @@ export interface InventorySurface {
   is_commercial: boolean;
   is_live: boolean;
   last_seen_at: string | null;
-  session_count: number;
-  finding_count: number;
+  // Null until pixel pipeline (Wave 0.2/0.3) and findings persistence (0.7) ship.
+  // The UI hides the column when 100% of rows have a null value.
+  session_count: number | null;
+  finding_count: number | null;
   discovery_sources: string[];
   http_status: number | null;
   title: string | null;
@@ -215,11 +217,25 @@ export interface InventorySurface {
   tier: string;
 }
 
+export interface InventoryAuditStatus {
+  cycle_id: string;
+  status: 'pending' | 'running' | 'complete' | 'failed';
+  started_at: string;
+  completed_at: string | null;
+}
+
+export interface InventoryPayload {
+  surfaces: InventorySurface[];
+  audit_status: InventoryAuditStatus | null;
+}
+
 /**
- * Fetch inventory surfaces from the API endpoint.
- * Returns a promise-based DataState (unlike MCP-based loaders which are synchronous).
+ * Fetch inventory surfaces + the latest audit_status for the live banner.
+ * Returns a promise-based DataState. Even when `surfaces` is empty, the
+ * caller can still inspect `audit_status` to know whether the audit is
+ * in progress (data will arrive shortly) or there genuinely isn't any.
  */
-export async function loadInventory(): Promise<DataState<InventorySurface[]>> {
+export async function loadInventory(): Promise<DataState<InventoryPayload>> {
   try {
     const res = await fetch('/api/inventory');
     if (!res.ok) {
@@ -230,9 +246,16 @@ export async function loadInventory(): Promise<DataState<InventorySurface[]>> {
       return { status: 'error', message: body.message || `HTTP ${res.status}` };
     }
     const json = await res.json();
-    const data: InventorySurface[] = json.data ?? [];
-    if (data.length === 0) return { status: 'empty' };
-    return { status: 'ready', data };
+    const surfaces: InventorySurface[] = json.data ?? [];
+    const audit_status: InventoryAuditStatus | null = json.audit_status ?? null;
+
+    // If there are no surfaces AND no audit is in progress, show the empty
+    // state. If an audit IS in progress, return ready with the empty list
+    // so the page can render the banner with a "discovering pages…" message.
+    if (surfaces.length === 0 && (!audit_status || audit_status.status === 'complete' || audit_status.status === 'failed')) {
+      return { status: 'empty' };
+    }
+    return { status: 'ready', data: { surfaces, audit_status } };
   } catch (err) {
     return { status: 'error', message: err instanceof Error ? err.message : 'Unknown error loading inventory' };
   }

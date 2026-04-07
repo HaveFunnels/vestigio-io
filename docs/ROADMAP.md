@@ -1,9 +1,11 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-06
+> Last updated: 2026-04-07
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **2026-04-06 deep pipeline audit added a new Wave 0** — see below. The audit
+> **2026-04-07 Sprint 1 update:** Wave 0.1 + 0.4 shipped, Wave 0.5 partial. See entries below for details and [DEV_PROGRESS.md § Sprint 1](../DEV_PROGRESS.md) for the full diff. Onboarding → audit auto-trigger now works end-to-end: payment → worker fire-and-forget → live banner-row in inventory.
+>
+> **2026-04-06 deep pipeline audit added Wave 0** — see below. The audit
 > revealed that several P0 gaps were absent from the previous roadmap, so the
 > "Known open items" table has been rebuilt against ground truth (the actual
 > code, not assumptions). See [DEV_PROGRESS.md § Pipeline Audit 2026-04-06](../DEV_PROGRESS.md#pipeline-audit--2026-04-06--ground-truth-vs-roadmap)
@@ -48,18 +50,18 @@ See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milest
 - **Phase 5**: Claude LLM chat (3-layer pipeline, 21 MCP tools, 30 playbooks, SSE streaming, conversation persistence)
 - **Phase 0 UX**: Actions page, workspaces, analysis, maps, chat rewrite
 
-### Known open items (rebuilt from 2026-04-06 audit)
+### Known open items (rebuilt from 2026-04-06 audit, updated 2026-04-07)
 
 | Item | Status | Wave | Source |
 |------|--------|------|--------|
-| Onboarding → ingestion auto-trigger | AuditCycle created on payment, never read | **Wave 0** | confirmed: paddle/webhook:435, no consumer found |
-| Pixel ingest endpoint `/api/behavioral/ingest` | Snippet POSTs to dead URL | **Wave 0** | snippet/vestigio.js:20, no route found |
-| Pixel event processing worker | No raw-events queue, no aggregator job | **Wave 0** | session-aggregator never called from any worker |
-| Inventory auto-build from parser | `pageInventoryItem` written only by seed.ts | **Wave 0** | parser.ts produces evidence, never inventory rows |
-| Inventory mock data | API returns hardcoded `MOCK_FINDING_COUNTS` | **Wave 0** | api/inventory/route.ts:33-39 |
-| Verification UI → backend wiring | Drawer button is `() => toast.success(...)` | **Wave 0** | actions/page.tsx:563 — backend `verify()` works |
-| Findings persistence to PostgreSQL | Findings live only in MCP memory | Wave 1 | no `Finding` Prisma model exists |
-| Behavioral findings dormant | Require ≥20 sessions of pixel data → 0 today | Wave 1 | recompute.ts:343-369, blocked by Wave 0 pixel work |
+| Onboarding → ingestion auto-trigger | ✅ **Done — Sprint 1 (2026-04-07)** | Wave 0.1 | apps/audit-runner/run-cycle.ts |
+| Inventory auto-build from parser | ✅ **Done — Sprint 1 (2026-04-07)** | Wave 0.4 | persisted inside audit-runner worker |
+| Inventory mock data removed | ⚠️ **Partial — Sprint 1.** Mocks gone, returns null, UI hides cols. Real numbers blocked on 0.2/0.3/0.7 | Wave 0.5 | api/inventory/route.ts |
+| Pixel ingest endpoint `/api/behavioral/ingest` | Open. Snippet POSTs to dead URL | Wave 0.2 | snippet/vestigio.js:20 |
+| Pixel event processing worker | Open. session-aggregator never called | Wave 0.3 | depends on 0.2 |
+| Verification UI → backend wiring | Open. Drawer button still `toast.success(...)` stub | Wave 0.6 | actions/page.tsx:563 — backend `verify()` works |
+| Findings persistence to PostgreSQL | Open. Findings live only in MCP memory | Wave 0.7 | no `Finding` Prisma model exists |
+| Behavioral findings dormant | Require ≥20 sessions of pixel data → 0 today | Wave 1 | recompute.ts:343-369, blocked by Wave 0.2/0.3 |
 | Stage D selective headless | Declared, skipped to "complete" | Wave 1 | staged-pipeline.ts:346-348 |
 | Katana / Nuclei runners | Built, not invoked from main pipeline | Wave 2 | runners ready, no caller in pipeline |
 | `integration_pull` executor | Scaffolded only | Wave 3 | executors.ts:197-212 returns "not implemented" |
@@ -78,16 +80,15 @@ These are ordered by dependency: 0.1 unblocks 0.4-0.5, which unblock 0.7, which 
 
 ---
 
-### 0.1 Onboarding → Ingestion Auto-Trigger
+### 0.1 Onboarding → Ingestion Auto-Trigger ✅
 
 | | |
 |---|---|
 | **Tag** | `platform` `engine` |
 | **Priority** | P0 |
-| **Status** | Open. Audit confirmed: AuditCycle created with `status=pending` in [src/app/api/paddle/webhook/route.ts:435](../src/app/api/paddle/webhook/route.ts#L435) and [src/app/api/stripe/webhook/route.ts:113](../src/app/api/stripe/webhook/route.ts#L113), but **no code reads pending cycles**. |
-| **What** | After Paddle/Stripe `subscription.created` webhook fires and the AuditCycle row is written, automatically kick off `runStagedPipeline` for the org's environment. Currently the user lands on `/app/analysis` with `MCP context: not_ready` and no clear "Run analysis" CTA. |
-| **Where** | Two viable patterns: (a) call ingestion fire-and-forget directly from the webhook handler after setting `org.status='active'`; (b) write a poller job that scans `AuditCycle.status='pending'` every minute. (a) is simpler, (b) is more resilient. |
-| **Acceptance** | New user signs up → completes payment → next page load of `/app/analysis` shows findings without manual action. |
+| **Status** | **Done — Sprint 1 (2026-04-07).** New worker [apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) `runAuditCycle()` is dispatched fire-and-forget from both [stripe/webhook/route.ts](../src/app/api/stripe/webhook/route.ts) and [paddle/webhook/route.ts](../src/app/api/paddle/webhook/route.ts) right after `prisma.auditCycle.create({status:'pending'})`. The worker marks the cycle `running`, calls `runStagedPipeline()`, persists Evidence + PageInventoryItem, marks `complete`/`failed`. A heal cron in [src/instrumentation.ts](../src/instrumentation.ts) runs every 60s to (a) auto-fail cycles stuck in `running` >10min and (b) re-dispatch orphaned `pending` cycles >5min old (recovers from process restart). |
+| **What** | ✅ Webhook → fire-and-forget worker → staged pipeline → DB persistence → status transition. No manual action required. |
+| **Acceptance** | ✅ Met. New user signs up → completes payment → lands on `/app/onboarding/thank-you` → auto-redirect to `/app/inventory` where the live banner-row shows audit progress and rows appear as the crawler discovers pages. |
 
 ---
 
@@ -117,29 +118,27 @@ These are ordered by dependency: 0.1 unblocks 0.4-0.5, which unblock 0.7, which 
 
 ---
 
-### 0.4 Inventory Auto-Build from Parser Output
+### 0.4 Inventory Auto-Build from Parser Output ✅
 
 | | |
 |---|---|
 | **Tag** | `engine` `collection` |
 | **Priority** | P0 |
-| **Status** | Open. `prisma.pageInventoryItem` is queried by [src/app/api/inventory/route.ts:78](../src/app/api/inventory/route.ts#L78) but **only written by `prisma/seed.ts`**. The crawl pipeline produces parsed pages but never persists them as inventory rows. |
-| **What** | After Stage C of the staged pipeline (post-crawl, post-parse), upsert one `PageInventoryItem` per crawled URL with: `path`, `normalizedUrl`, `title`, `pageType` (from existing classifier), `freshnessState`, `statusCode`, `tier`, `websiteRef`. Also populate `SurfaceRelation` for parent→child link relationships. |
-| **Where** | New step in [workers/ingestion/staged-pipeline.ts](../workers/ingestion/staged-pipeline.ts) — after coverage tracking, before `complete` event. Or a post-pipeline projection step in `analysis/stream/route.ts`. |
-| **Acceptance** | Run an audit → navigate to `/app/inventory` → see real pages from the crawl, not seed/empty. |
+| **Status** | **Done — Sprint 1 (2026-04-07).** Persistence happens inside `runAuditCycle()` ([apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts)), not inside the pipeline itself — keeps `staged-pipeline.ts` pure. After the pipeline returns, the worker upserts a `Website` row (also previously missing — silent gap), then iterates `coverage_entries` (newly exposed in `StagedPipelineResult`) and upserts one `PageInventoryItem` per discovered URL with `pageType` inferred from URL pattern, `tier`, `criticality`, `title` (from PageContent evidence), `statusCode` (from HttpResponse evidence), and `freshnessState`. Per-row failures are non-fatal. `SurfaceRelation` is left for a follow-up — not needed for the wow effect. |
+| **What** | ✅ Worker upserts Website + PageInventoryItem rows from `coverage_entries`. |
+| **Acceptance** | ✅ Met. After audit completes, `/app/inventory` lists the real crawled pages. |
 
 ---
 
-### 0.5 Inventory: Replace Mock Counts with Real Data
+### 0.5 Inventory: Replace Mock Counts with Real Data ⚠️ Partial
 
 | | |
 |---|---|
 | **Tag** | `engine` `frontend` |
 | **Priority** | P0 |
-| **Status** | Open. [src/app/api/inventory/route.ts:21-39](../src/app/api/inventory/route.ts#L21) defines `MOCK_SESSION_COUNTS` and `MOCK_FINDING_COUNTS` (e.g. `checkout: 4, cart: 2`) and uses them at lines 103-104 for **every response**. The TODO comments admit this is fake. |
-| **What** | After 0.3 (pixel worker) and 0.4 (inventory auto-build) ship, `session_count` should come from `BehavioralSessionPayload` aggregates per page url and `finding_count` from a join against the projection state per page. Until then: return `null` and have the UI hide the column rather than show fake numbers. |
-| **Where** | Same file. Optional: cache page→finding map in MCP context to avoid recomputing on every request. |
-| **Acceptance** | Inventory rows show real session counts (or null) and real finding counts (or null), no hardcoded values. |
+| **Status** | **Partial — Sprint 1 (2026-04-07).** The mocks (`MOCK_SESSION_COUNTS`, `MOCK_FINDING_COUNTS`) are gone from [src/app/api/inventory/route.ts](../src/app/api/inventory/route.ts). Both fields now return `null` in the API response. The frontend [src/app/(console)/inventory/page.tsx](../src/app/(console)/inventory/page.tsx) detects `null`-only columns and hides them entirely (no fake numbers, no empty columns). Also drops null-safe handling in filters, summary cards, and the side drawer. The "real numbers" half (sessions from behavioral pipeline, findings from a per-surface join) still depends on **0.2 + 0.3 + 0.7** to ship. |
+| **What** | ✅ No more fake numbers anywhere. ⏳ Real numbers waiting on Wave 0.2/0.3 (sessions) + Wave 0.7 (findings). |
+| **Acceptance** | ✅ No hardcoded values. Once 0.2/0.3/0.7 land, the API just stops returning `null` and the UI columns reappear automatically. |
 
 ---
 

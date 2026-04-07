@@ -72,6 +72,9 @@ export interface StagedPipelineResult {
   evidence: Evidence[];
   classification: ClassificationState;
   coverage: CoverageSummary;
+  // Per-URL coverage data — exposed so the audit-runner worker can persist
+  // PageInventoryItem rows. Existing callers (the SSE stream route) can ignore this.
+  coverage_entries: CoverageEntry[];
   stages_completed: PipelineStage[];
   errors: { url: string; error: string }[];
   duration_ms: number;
@@ -548,6 +551,7 @@ function buildResult(evidence: Evidence[], input: StagedPipelineInput, coverage:
     evidence,
     classification: computeClassification(classInput),
     coverage: buildCoverageSummary(coverage),
+    coverage_entries: Array.from(coverage.values()),
     stages_completed: stages,
     errors,
     duration_ms: Date.now() - startTime,

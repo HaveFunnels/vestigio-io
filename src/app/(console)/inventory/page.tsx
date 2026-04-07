@@ -7,7 +7,7 @@ import { Column } from "@/components/console/DataTable";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
-import { loadInventory, type InventorySurface, type DataState } from "@/lib/console-data";
+import { loadInventory, type InventorySurface, type InventoryAuditStatus, type InventoryPayload, type DataState } from "@/lib/console-data";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
 // ──────────────────────────────────────────────
@@ -228,19 +228,26 @@ function SurfaceDrawer({
                 </div>
               </div>
 
-              {/* Sessions & Findings */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("sessions")}</div>
-                  <span className="text-sm font-mono text-content-secondary">{surface.session_count.toLocaleString()}</span>
+              {/* Sessions & Findings — only render when data is available
+                  (null = pixel/findings pipeline not yet shipped). */}
+              {(surface.session_count !== null || surface.finding_count !== null) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {surface.session_count !== null && (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("sessions")}</div>
+                      <span className="text-sm font-mono text-content-secondary">{surface.session_count.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {surface.finding_count !== null && (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("findings")}</div>
+                      <span className={`text-sm font-mono ${surface.finding_count > 0 ? "text-amber-400" : "text-content-faint"}`}>
+                        {surface.finding_count}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-content-faint font-medium mb-1">{t("findings")}</div>
-                  <span className={`text-sm font-mono ${surface.finding_count > 0 ? "text-amber-400" : "text-content-faint"}`}>
-                    {surface.finding_count}
-                  </span>
-                </div>
-              </div>
+              )}
 
               {/* Response Time */}
               {surface.response_time_ms !== null && (
@@ -332,19 +339,44 @@ export default function InventoryPage() {
   const [responseTimeFilter, setResponseTimeFilter] = useState<ResponseTimeFilter>("all");
   const [discoverySourceFilter, setDiscoverySourceFilter] = useState<string>("all");
   const [searchText, setSearchText] = useState("");
-  const [dataState, setDataState] = useState<DataState<InventorySurface[]>>({ status: "loading" });
+  const [dataState, setDataState] = useState<DataState<InventoryPayload>>({ status: "loading" });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [drawerSurface, setDrawerSurface] = useState<InventorySurface | null>(null);
 
+  // Initial load + polling while audit is pending/running.
+  // Polls every 3s; stops once status is `complete` or `failed` (or page unmounts).
   useEffect(() => {
     let cancelled = false;
-    loadInventory().then((result) => {
-      if (!cancelled) setDataState(result);
-    });
-    return () => { cancelled = true; };
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function tick() {
+      const result = await loadInventory();
+      if (cancelled) return;
+      setDataState(result);
+
+      const status = result.status === "ready" ? result.data.audit_status?.status : null;
+      const isOngoing = status === "pending" || status === "running";
+      if (isOngoing) {
+        timer = setTimeout(tick, 3000);
+      }
+    }
+
+    tick();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
-  const surfaces = dataState.status === "ready" ? dataState.data : [];
+  const surfaces = dataState.status === "ready" ? dataState.data.surfaces : [];
+  const auditStatus: InventoryAuditStatus | null = dataState.status === "ready" ? dataState.data.audit_status : null;
+  const isAuditOngoing = auditStatus?.status === "pending" || auditStatus?.status === "running";
+
+  // Hide session/finding columns when 100% of rows have null (the data isn't
+  // available yet — pixel pipeline / findings persistence not shipped).
+  // This prevents showing fake numbers and an empty column at the same time.
+  const hasAnySessionData = surfaces.some((s) => s.session_count !== null);
+  const hasAnyFindingData = surfaces.some((s) => s.finding_count !== null);
 
   const discoverySourceOptions = useMemo(() => {
     const unique = Array.from(new Set(surfaces.flatMap(s => s.discovery_sources))).sort();
@@ -369,8 +401,8 @@ export default function InventoryPage() {
         if (httpStatusFilter === "4xx" && (s.http_status < 400 || s.http_status >= 500)) return false;
         if (httpStatusFilter === "5xx" && (s.http_status < 500 || s.http_status >= 600)) return false;
       }
-      if (hasFindingsFilter === "with" && s.finding_count === 0) return false;
-      if (hasFindingsFilter === "without" && s.finding_count > 0) return false;
+      if (hasFindingsFilter === "with" && (s.finding_count ?? 0) === 0) return false;
+      if (hasFindingsFilter === "without" && (s.finding_count ?? 0) > 0) return false;
       if (tierFilter !== "all" && s.tier !== tierFilter) return false;
       if (responseTimeFilter !== "all") {
         if (s.response_time_ms === null) return false;
@@ -445,7 +477,7 @@ export default function InventoryPage() {
     },
     {
       label: t("cards.with_findings"),
-      value: surfaces.filter((s) => s.finding_count > 0).length,
+      value: surfaces.filter((s) => (s.finding_count ?? 0) > 0).length,
       variant: "warning",
       subtext: mockDeltas.findings !== 0 ? `${mockDeltas.findings > 0 ? "+" : ""}${mockDeltas.findings} ${t("from_last_period")}` : undefined,
     },
@@ -535,31 +567,45 @@ export default function InventoryPage() {
         </span>
       ),
     },
-    {
-      key: "session_count",
-      label: tc("sessions"),
-      render: (row: InventorySurface) => (
-        <span className="text-xs text-content-muted font-mono">{row.session_count.toLocaleString()}</span>
-      ),
-    },
-    {
-      key: "finding_count",
-      label: tc("findings"),
-      render: (row: InventorySurface) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (row.finding_count > 0) {
-              router.push(`/analysis?surface=${encodeURIComponent(row.normalized_path)}`);
-            }
-          }}
-          className={`text-xs font-mono ${row.finding_count > 0 ? "text-amber-400 hover:text-amber-300 cursor-pointer font-semibold" : "text-content-faint"}`}
-          disabled={row.finding_count === 0}
-        >
-          {row.finding_count}
-        </button>
-      ),
-    },
+    // session_count and finding_count columns are conditionally included
+    // below based on hasAnySessionData / hasAnyFindingData. Until the
+    // pixel + findings persistence Waves ship, all rows are null and the
+    // columns get hidden entirely (we don't want to render an empty col).
+    ...(hasAnySessionData
+      ? [
+          {
+            key: "session_count",
+            label: tc("sessions"),
+            render: (row: InventorySurface) => (
+              <span className="text-xs text-content-muted font-mono">
+                {row.session_count?.toLocaleString() ?? "—"}
+              </span>
+            ),
+          } as Column<InventorySurface>,
+        ]
+      : []),
+    ...(hasAnyFindingData
+      ? [
+          {
+            key: "finding_count",
+            label: tc("findings"),
+            render: (row: InventorySurface) => (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if ((row.finding_count ?? 0) > 0) {
+                    router.push(`/analysis?surface=${encodeURIComponent(row.normalized_path)}`);
+                  }
+                }}
+                className={`text-xs font-mono ${(row.finding_count ?? 0) > 0 ? "text-amber-400 hover:text-amber-300 cursor-pointer font-semibold" : "text-content-faint"}`}
+                disabled={(row.finding_count ?? 0) === 0}
+              >
+                {row.finding_count ?? "—"}
+              </button>
+            ),
+          } as Column<InventorySurface>,
+        ]
+      : []),
     {
       key: "discovery_sources",
       label: tc("sources"),
@@ -711,7 +757,7 @@ export default function InventoryPage() {
               <span className="ml-auto text-xs text-content-faint">{t("n_of_total", { filtered: filtered.length, total: surfaces.length })}</span>
             </div>
 
-            {filtered.length === 0 ? (
+            {filtered.length === 0 && !isAuditOngoing ? (
               <div className="text-center py-16 text-content-faint">
                 <p className="text-lg">{t("no_results.title")}</p>
                 <p className="text-sm mt-2">{t("no_results.description")}</p>
@@ -740,6 +786,30 @@ export default function InventoryPage() {
                     </tr>
                   </thead>
                   <tbody>
+                    {/* Live audit banner-row — appears between header and the
+                        first data row while the latest AuditCycle is pending
+                        or running. Disappears once the cycle completes (the
+                        polling effect re-fetches and stops the banner). */}
+                    {isAuditOngoing && (
+                      <tr className="border-b border-edge bg-emerald-500/5">
+                        <td colSpan={columns.length} className="px-4 py-2.5">
+                          <div className="flex items-center gap-2.5 text-xs">
+                            <span className="relative flex h-2 w-2">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                            </span>
+                            <span className="font-medium text-emerald-300">
+                              {auditStatus?.status === "pending"
+                                ? "Audit queued — starting in a moment…"
+                                : "Audit in progress — discovering pages live"}
+                            </span>
+                            <span className="text-emerald-500/60">
+                              · new pages will appear here automatically
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     {filtered.map((row) => (
                       <tr
                         key={row.surface_id}

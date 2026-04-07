@@ -2,6 +2,67 @@
 
 ---
 
+## Sprint 1 -- 2026-04-07 -- Onboarding → Auto-Audit → Live Inventory (Wave 0.1, 0.4, 0.5 partial)
+
+### Goal
+
+Close the load-bearing gap surfaced by the 2026-04-06 audit: a paying user finishes checkout and **nothing happens**. The `AuditCycle pending` row was orphaned (no consumer), `PageInventoryItem` was only ever written by `prisma/seed.ts`, and `/api/inventory` returned hardcoded `MOCK_*` numbers. Goal of Sprint 1 is the "wow effect" first session: payment → live inventory page where rows appear in real time as the crawler discovers them.
+
+### What changed
+
+**New worker:** [apps/audit-runner/run-cycle.ts](apps/audit-runner/run-cycle.ts) exports `runAuditCycle(cycleId)`. Picks up an `AuditCycle` in `pending`, marks it `running`, calls the existing `runStagedPipeline()` from [workers/ingestion/staged-pipeline.ts](workers/ingestion/staged-pipeline.ts) (no rewrites — that pipeline already worked, it just had no caller), persists Evidence via `PrismaEvidenceStore.addMany()`, then loops `coverage_entries` and upserts `Website` (also previously missing — silent gap that would have made `/api/inventory` return `"No website found"` even after a successful crawl) and one `PageInventoryItem` per discovered URL with `pageType` inferred from path patterns. Marks `complete` on success or `failed` on error. Per-row failures are non-fatal.
+
+**Staged pipeline expose change:** [workers/ingestion/staged-pipeline.ts](workers/ingestion/staged-pipeline.ts) `StagedPipelineResult` now also returns `coverage_entries: CoverageEntry[]` (array form of the internal `coverage` map). The existing SSE stream route ignores it; the new worker uses it for inventory persistence. Zero behavior change for existing callers.
+
+**Webhook wiring:** Both [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) and [src/app/api/paddle/webhook/route.ts](src/app/api/paddle/webhook/route.ts) now do `prisma.auditCycle.create({...pending}) → import('apps/audit-runner/run-cycle').runAuditCycle(cycle.id).catch(logErr)`. Fire-and-forget — webhook returns 200 immediately, the worker keeps running in the Next.js process background. Errors are logged but never crash the webhook handler.
+
+**Heal cron:** [src/instrumentation.ts](src/instrumentation.ts) registers a 60s `setInterval` after Prisma is initialized that calls two helpers from the worker module:
+- `healStuckCycles()` — auto-fails cycles stuck in `running` >10 minutes (process crashed mid-crawl)
+- `redispatchOrphanedPending()` — re-fires cycles still `pending` >5 minutes (process restarted between webhook and dispatch)
+
+A boot pass also runs immediately on startup, so any orphans from a previous incarnation get healed within seconds.
+
+**`/api/inventory` rewrite:** [src/app/api/inventory/route.ts](src/app/api/inventory/route.ts) drops the `MOCK_SESSION_COUNTS` and `MOCK_FINDING_COUNTS` constants entirely. Both fields now return `null`. The response shape gains an `audit_status: { cycle_id, status, started_at, completed_at } | null` block read from the latest `AuditCycle` for the env, so the UI can show the live banner. Empty inventory + ongoing audit returns `data: []` with the audit_status populated (not the empty state).
+
+**Frontend live banner + polling:** [src/app/(console)/inventory/page.tsx](src/app/(console)/inventory/page.tsx) now polls `loadInventory()` every 3 seconds while `audit_status.status === 'pending' | 'running'`, stops once it goes to `complete` or `failed`. New banner-row sits between the table header and the first data row with a pulsing emerald dot and "Audit in progress — discovering pages live · new pages will appear here automatically". Disappears the moment the cycle completes.
+
+**Mock-free UI:** The same page now hides the `sessions` and `findings` columns entirely when 100% of the rows have `null` values (waiting on Wave 0.2/0.3/0.7). Filter logic, summary cards, and the side drawer are all null-safe. No fake numbers anywhere.
+
+**Ownership confirmation:** [src/app/(console)/onboard/page.tsx](src/app/(console)/onboard/page.tsx) `domain` step now requires a checkbox: "I own this domain or have authorization to audit it." Form can't advance without it. Pre-empts legal/abuse risk before the worker actually crawls.
+
+**Thank-you bridge page:** New [src/app/app/onboarding/thank-you/page.tsx](src/app/app/onboarding/thank-you/page.tsx) shows a 4-stage progress flicker ("Payment confirmed → Spinning up workspace → Queueing first audit → Opening inventory") and auto-redirects to `/app/inventory` after 4 seconds. Manual "skip" link for impatient users. Onboarding now hands off to it after the post-payment session polling instead of going straight to `/app/analysis`.
+
+### What this unlocks
+
+- **Wave 0.1** ✅ Onboarding → Ingestion auto-trigger
+- **Wave 0.4** ✅ Inventory auto-build from parser
+- **Wave 0.5** ⚠️ Partial — mocks gone, real numbers blocked on 0.2/0.3/0.7
+
+### What's still broken (next up)
+
+- **Wave 0.2 + 0.3** Pixel ingest + worker (sessions still null in inventory)
+- **Wave 0.7** Findings persistence (findings still null in inventory, change detection still mocked)
+- **Wave 0.6** Verification frontend wiring (drawer button still a `toast.success(...)` stub)
+
+### Files touched
+
+```
+apps/audit-runner/run-cycle.ts                          (new, 219 lines)
+src/app/app/onboarding/thank-you/page.tsx               (new, 124 lines)
+src/instrumentation.ts                                  (heal cron registration)
+src/app/api/stripe/webhook/route.ts                     (worker dispatch)
+src/app/api/paddle/webhook/route.ts                     (worker dispatch)
+src/app/api/inventory/route.ts                          (drop mocks, add audit_status)
+src/lib/console-data.ts                                 (new InventoryPayload + types)
+src/app/(console)/inventory/page.tsx                    (polling, banner, null-safe UI)
+src/app/(console)/onboard/page.tsx                      (ownership checkbox + thank-you redirect)
+workers/ingestion/staged-pipeline.ts                    (expose coverage_entries on result)
+docs/ROADMAP.md                                         (mark 0.1/0.4 done, 0.5 partial)
+DEV_PROGRESS.md                                         (this entry)
+```
+
+---
+
 ## Pipeline Audit -- 2026-04-06 -- Ground Truth vs Roadmap
 
 ### Goal

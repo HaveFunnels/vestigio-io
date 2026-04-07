@@ -2,6 +2,157 @@
 
 ---
 
+## Sprint 2-4 -- 2026-04-07 -- Dual Funnel: /lp Lead Funnel + Admin Surface Scans
+
+### Goal
+
+Build the second commercial funnel discussed with the sales team: an anonymous lead funnel at `/lp` that lets visitors run a free mini-audit on their domain, see ~5 findings, and pay via Paddle without ever signing up first. Pair it with an admin tool ("Surface Scans") for outbound prospect audits with shareable result links. Both reuse the existing crawler pipeline via a new mode system.
+
+### What changed
+
+**Sprint 2 — Pipeline modes refactor**
+
+[workers/ingestion/staged-pipeline.ts](workers/ingestion/staged-pipeline.ts) now accepts `mode: 'full' | 'shallow_plus' | 'shallow'` on `StagedPipelineInput`. Default is `full` (existing behavior, all callers unchanged). New modes:
+- `shallow_plus` — Stage A + truncated C, ~6 fetches, 15s budget. Used by admin Surface Scans.
+- `shallow` — Stage A only, 1 fetch, 5s budget. Used by /lp/audit anonymous mini-audit.
+
+`MODE_CONSTRAINTS` preset is layered with `DEFAULT_CONSTRAINTS` and the caller's explicit `crawl_constraints` (caller wins). All three modes share the same parser, evidence shape, and `coverage_entries` — only stage gating + crawl constraints differ.
+
+Two helper modules added:
+- [workers/ingestion/landing-preview.ts](workers/ingestion/landing-preview.ts) — `extractLandingPreview()` pulls title, meta description, og:image, favicon (with `/favicon.ico` convention fallback), h1, response time from a Stage A homepage fetch. Returns a JSON-serializable `LandingPreview` for the result page.
+- [workers/ingestion/mini-audit-findings.ts](workers/ingestion/mini-audit-findings.ts) — `deriveMiniAuditFindings()` always returns 5 visible findings + 10 blurred placeholders. Five heuristic detectors (no SEO per product brief): trust signal gap, multiple primary CTAs competing, vague CTA copy, form friction overload, CTA below the fold. Less than 5 negatives → fallback positives. Less than 5 total → padding finding. Sort by severity (critical → positive). Confidence intentionally not exposed.
+
+**Sprint 3 — /lp anonymous lead funnel end-to-end**
+
+Two new Prisma models pushed to production via `prisma db push`:
+- `AnonymousLead` — one row per /lp/audit visitor that starts the form. Tracks email, domain, business model, monthly revenue, ticket, conversion model, phone. Lifecycle: `draft → auditing → audit_complete → checkout_started → converted → expired/spam`. Carries anti-abuse signals (ipAddress, userAgent, formStartedAt, behavioralScore, honeypotTripped). Indexed for cleanup cron + IP rate limiting.
+- `MiniAuditResult` — cached mini-audit per domain (14d TTL). Keyed by `sha256(normalized_domain)`. Multiple leads on the same domain reuse the cached crawl + findings — kills the cost of spam at known domains.
+
+Shared form fields ([src/components/form-fields/](src/components/form-fields/)) — single source of truth for fields used by both `/onboard` and `/lp/audit`:
+- `types.ts` — `BUSINESS_TYPE_OPTIONS`, `CONVERSION_MODEL_OPTIONS`, `parseRevenue()`, `isValidPhone()`, `isValidDomainFormat()`
+- `StyledDropdown.tsx` — custom dropdown replacing the platform `<select>` (per brief: "use our styled dropdown, not system")
+- `SharedFields.tsx` — `DomainField` (input + ownership checkbox bundle), `TextField`, `BusinessTypeField`, `ConversionModelField`, `RevenueField`, `AverageTicketField`, `PhoneField`, `EmailField`, `OwnershipCheckbox`
+
+Anti-bot defense stack ([src/libs/lead-defense.ts](src/libs/lead-defense.ts)) — five layers, **zero captchas** (per brief: must not kill the funnel):
+1. Cryptographic form session token (HMAC-SHA256, 30min TTL, constant-time verify)
+2. JS-only header check (`X-Vestigio-Form-Session`)
+3. Honeypot field (`<input name="website" hidden>`) — tripped → silent spam + fake 200
+4. Time-on-form check (min 8s dwell)
+5. Behavioral score (0-100) computed from frontend-reported event counts (mousemove, keydown, focus, scroll). <30 → reject
+
+Input validation ([src/libs/lead-validation.ts](src/libs/lead-validation.ts)) — rejects test/teste/johndoe local parts, example.com domains, 30 disposable email providers, all-same-digit / sequential phone numbers, $500-$5M/mo realistic revenue range, IP addresses / localhost / vestigio.io self-audit / top-100 site blocklist (FAANG, Brazilian incumbents, test domains).
+
+Pages built:
+- [src/app/(site)/lp/page.tsx](src/app/(site)/lp/page.tsx) + [src/components/HomeLp/](src/components/HomeLp/) — landing page variant. Reuses Hero/CallToAction/MiniCalculator from main Home with new optional `primaryCtaHref`/`primaryCtaLabel` props. Default unchanged. `noindex` so it doesn't compete with `/` in search.
+- [src/app/(site)/lp/audit/page.tsx](src/app/(site)/lp/audit/page.tsx) — 4-step form using shared field components. Step indicator, error display, navigation. Honeypot, behavioral counters, form token, JS-only header all wired.
+- [src/app/(site)/lp/audit/result/[leadId]/page.tsx](src/app/(site)/lp/audit/result/[leadId]/page.tsx) — animated reveal of preview card + 5 visible findings (stagger 200ms) + 10 blurred grid + Paddle Checkout CTA. Polls `/api/lead/[id]` every 3s while audit in progress. Three render branches: AuditingState (6-stage progress flicker), LoadingState, ErrorState. Share button copies URL to clipboard.
+- [src/app/(site)/lp/audit/result/[leadId]/opengraph-image.tsx](src/app/(site)/lp/audit/result/[leadId]/opengraph-image.tsx) — edge runtime, 1200x630 PNG. Fetches lead data, composes a dark zinc share preview with domain + finding count + headline finding. Cached 60s.
+- [src/app/(site)/lp/audit/thank-you/[leadId]/page.tsx](src/app/(site)/lp/audit/thank-you/[leadId]/page.tsx) — post-checkout bridge. Polls until `lead.status === 'converted'`, shows masked email, "Setting up your workspace…" → "Workspace ready · magic link sent". 90s slow-path message offering support.
+
+API routes (new):
+- `POST /api/lead/start` — creates `AnonymousLead{status:'draft'}`, issues HMAC token, per-IP rate limit (5/hour) reading from the lead table directly (no Redis dep)
+- `PATCH /api/lead/[id]/step/[n]` — runs `evaluateDefenses()` + per-step validation. Honeypot tripped → silent spam + fake 200
+- `POST /api/lead/[id]/run-audit` — fire-and-forget the worker, idempotent
+- `GET /api/lead/[id]` — public read for polling + OG image. Email is masked
+
+Workers (new):
+- [apps/audit-runner/run-mini-audit.ts](apps/audit-runner/run-mini-audit.ts) — `runMiniAudit(leadId)`. Cache lookup by `sha256(domain)`, cache hit → reuse, cache miss → direct fetch + parse + shallow pipeline + persist `MiniAuditResult`. Failure rolls lead status back to `draft` so user can retry.
+- [apps/audit-runner/promote-lead.ts](apps/audit-runner/promote-lead.ts) — `promoteLeadToOrg(leadId, plan, customerId)`. Called from Paddle webhook on `transaction.completed` when `custom_data.leadId` is present. Resolves/creates User by email (reuses existing on collision per product policy), creates Org+Membership+Environment+BusinessProfile+AuditCycle, persists phone+notification prefs, mints NextAuth-compatible magic link token (`sha256(token+SECRET)`), sends via Brevo, marks `status='converted'`, fire-and-forget `runAuditCycle()` for the real audit. Idempotent.
+
+Paddle webhook ([src/app/api/paddle/webhook/route.ts](src/app/api/paddle/webhook/route.ts)) — `handleOnboardingActivation()` now forks based on `custom_data`:
+- `{ organizationId, userId, onboarding: 'true' }` → existing /onboard activation path (unchanged)
+- `{ leadId, lpFunnel: 'true' }` → calls `promoteLeadToOrg()`
+
+Both `subscription.created` and `transaction.completed` events forward `leadId` and now also pass `customer_id` through to be persisted on the User row.
+
+Cleanup cron ([src/instrumentation-node.ts](src/instrumentation-node.ts)) — extended with a 1h interval:
+- Deletes `AnonymousLead` where `expiresAt < now AND status != 'converted'`
+- Purges `MiniAuditResult` where `expiresAt` is more than 7d in the past (cache TTL is 14d, +7d grace for admin inspection)
+
+**Sprint 4 — Admin Surface Scans (Growth → Surface Scans tab)**
+
+New Prisma model `ProspectScan` pushed to production:
+- One row per admin-initiated outbound scan
+- `shareToken` is 32-char random hex (128 bits entropy) used in the public `/scans/[token]` URL
+- Tracks domain, label, internal notes, status (pending/running/complete/failed), pagesScanned, durationMs, errorMsg, createdByUserId
+- `preview`, `visibleFindings`, `blurredFindings` stored as JSON blobs
+
+New worker [apps/audit-runner/run-prospect-scan.ts](apps/audit-runner/run-prospect-scan.ts) — sister to `run-mini-audit.ts` but uses `mode='shallow_plus'` (deeper crawl: 1 home + 5 critical pages, 15s budget). No cache (admin trusted, no abuse mitigation needed). Persists everything to `ProspectScan`. Heal helper `healStuckProspectScans()` fails scans stuck >10min in `running`.
+
+Admin APIs:
+- `GET /api/admin/surface-scans` → list with optional `?search` and `?status` filters, summary counts
+- `POST /api/admin/surface-scans` → creates scan, dispatches worker fire-and-forget. Goes through `validateLeadDomain()` (same blocklist as /lp)
+- `GET /api/admin/surface-scans/[id]` → full scan detail (used by polling + row expander)
+- `DELETE /api/admin/surface-scans/[id]` → permanent delete
+
+Public scan API + page:
+- `GET /api/scans/[token]` → public, no auth. Returns scan data (no internal notes, no createdBy). Failed scans return 410. Token must be exactly 32 chars
+- [src/app/(site)/scans/[token]/page.tsx](src/app/(site)/scans/[token]/page.tsx) — public shareable result page. Same visual treatment as `/lp/audit/result/[leadId]` but **no** "Unlock" CTA — instead has a soft "Want this for your own site? → /lp/audit" outreach CTA. Goal: visitor sees their site, gets curious, runs their own free audit
+
+Admin page ([src/app/app/admin/surface-scans/page.tsx](src/app/app/admin/surface-scans/page.tsx)) modeled on the Organizations admin page:
+- Stat cards (total, in progress, complete, failed)
+- Status filter chips (all/pending/running/complete/failed)
+- Searchable list with expandable rows
+- Click a row → expands inline with preview card + 5 findings + share link
+- "+ New scan" button opens a modal (domain + label + internal notes)
+- "Copy link" button per row (when complete) with feedback toast
+- Polls every 5s while any row is pending/running
+
+Sidebar nav ([src/components/app/sidebar-nav-data.ts](src/components/app/sidebar-nav-data.ts)) — added `surface_scans` as third child of `admin-growth` (between marketing and newsletters).
+
+**Bonus fix — admin "Settings" inalcançável**: The admin sidebar `admin-settings` group only had `admin-users` + `admin-config`. There was no link to `/app/settings` (where the language selector lives), so an admin browsing `/app/admin` couldn't change their language without typing the URL or using the top-bar org dropdown. Added `admin-account-settings` item under the same group pointing to `/app/settings`. New i18n key `account_settings` added to all 4 dictionaries (en, pt-BR, es, de) along with `surface_scans`.
+
+### Files touched
+
+```
+NEW
+  workers/ingestion/landing-preview.ts                          (Sprint 2.1)
+  workers/ingestion/mini-audit-findings.ts                      (Sprint 2.2)
+  src/components/form-fields/{types,StyledDropdown,SharedFields,index}.{ts,tsx}  (Sprint 3.1)
+  src/libs/lead-defense.ts                                      (Sprint 3.3)
+  src/libs/lead-validation.ts                                   (Sprint 3.4)
+  src/components/HomeLp/index.tsx                               (Sprint 3.5)
+  src/app/(site)/lp/page.tsx                                    (Sprint 3.5)
+  src/app/(site)/lp/audit/page.tsx                              (Sprint 3.6)
+  src/app/(site)/lp/audit/result/[leadId]/page.tsx              (Sprint 3.7)
+  src/app/(site)/lp/audit/result/[leadId]/opengraph-image.tsx   (Sprint 3.8)
+  src/app/(site)/lp/audit/thank-you/[leadId]/page.tsx           (Sprint 3.9)
+  src/app/api/lead/start/route.ts                               (Sprint 3.6)
+  src/app/api/lead/[id]/route.ts                                (Sprint 3.6)
+  src/app/api/lead/[id]/step/[n]/route.ts                       (Sprint 3.6)
+  src/app/api/lead/[id]/run-audit/route.ts                      (Sprint 3.6)
+  apps/audit-runner/run-mini-audit.ts                           (Sprint 3.6)
+  apps/audit-runner/promote-lead.ts                             (Sprint 3.11)
+  apps/audit-runner/run-prospect-scan.ts                        (Sprint 4.3)
+  src/app/api/admin/surface-scans/route.ts                      (Sprint 4.4)
+  src/app/api/admin/surface-scans/[id]/route.ts                 (Sprint 4.4)
+  src/app/app/admin/surface-scans/page.tsx                      (Sprint 4.5)
+  src/app/api/scans/[token]/route.ts                            (Sprint 4.6)
+  src/app/(site)/scans/[token]/page.tsx                         (Sprint 4.6)
+
+EDITED
+  prisma/schema.prisma                                          (AnonymousLead, MiniAuditResult, ProspectScan + User backref)
+  workers/ingestion/staged-pipeline.ts                          (mode field + MODE_CONSTRAINTS)
+  src/components/Home/Hero/index.tsx                            (primaryCtaHref/primaryCtaLabel props)
+  src/components/Home/CallToAction/index.tsx                    (primaryCtaHref/primaryCtaLabel props)
+  src/components/Home/MiniCalculator/index.tsx                  (primaryCtaHref prop)
+  src/app/api/paddle/webhook/route.ts                           (lead promotion fork in handleOnboardingActivation)
+  src/instrumentation-node.ts                                   (cleanup cron + prospect scan heal)
+  src/components/app/sidebar-nav-data.ts                        (surface-scans + account-settings nav entries)
+  dictionary/{en,pt-BR,es,de}.json                              (surface_scans + account_settings keys)
+```
+
+### Required env vars (set in Railway before /lp goes live)
+
+```
+NEXT_PUBLIC_PADDLE_LP_PRICE_ID=<your $99/mo Vestigio price ID>
+LEAD_FORM_SECRET=<openssl rand -hex 32>     # optional, falls back to SECRET
+```
+
+If `NEXT_PUBLIC_PADDLE_LP_PRICE_ID` isn't set, the "Unlock the full audit" CTA on the result page shows "Pricing isn't configured yet" instead of opening checkout.
+
+---
+
 ## Sprint 1 -- 2026-04-07 -- Onboarding → Auto-Audit → Live Inventory (Wave 0.1, 0.4, 0.5 partial)
 
 ### Goal

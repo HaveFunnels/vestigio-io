@@ -87,6 +87,7 @@ model User {
   ticketReplies         TicketReply[]
   feedbacks             Feedback[]
   notificationPrefs     NotificationPreference?
+  prospectScans         ProspectScan[]
 }
 
 // ──────────────────────────────────────────────
@@ -972,6 +973,55 @@ model AnonymousLead {
 // of re-running the crawler. This kills 90% of the cost of spam attempts
 // at the same domain.
 // ──────────────────────────────────────────────
+
+// ──────────────────────────────────────────────
+// ProspectScan — admin-initiated shallow_plus audits
+//
+// Used by the Growth → Surface Scans admin tab. Sales/marketing run
+// these against prospect domains to generate "look what we found about
+// your site" outreach material. Each scan:
+//
+//   - Belongs to no organization (it's pre-customer outreach)
+//   - Is identified by a random non-guessable shareToken so admins
+//     can paste a public link in cold emails / LinkedIn DMs
+//   - Runs the staged pipeline in shallow_plus mode (1 home + 5
+//     critical pages, 15s budget — deeper than the /lp/audit shallow
+//     but cheaper than a full audit)
+//   - Stores 5 visible findings (deriveMiniAuditFindings extended to
+//     handle the additional pages eventually) + landing preview
+//   - Tracks who in the admin team initiated it (createdByUserId)
+//
+// Status lifecycle: pending → running → complete | failed
+// ──────────────────────────────────────────────
+
+model ProspectScan {
+  id              String  @id @default(cuid())
+  shareToken      String  @unique // random 32-char hex, used in /scans/[token]
+  domain          String // normalized
+  label           String? // optional display name (e.g. "Acme Corp")
+  notes           String? @db.Text // private admin notes
+  status          String  @default("pending") // pending | running | complete | failed
+  createdByUserId String? // admin who initiated the scan
+
+  // Result data (populated when status='complete')
+  preview         String? @db.Text // JSON of LandingPreview
+  visibleFindings String? @db.Text // JSON array of MiniFinding[5]
+  blurredFindings String? @db.Text // JSON array of BlurredFinding[10]
+  pagesScanned    Int     @default(0)
+  durationMs      Int?
+  errorMsg        String? @db.Text
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  createdBy User? @relation(fields: [createdByUserId], references: [id])
+
+  @@index([domain])
+  @@index([shareToken])
+  @@index([status, createdAt])
+  @@index([createdByUserId, createdAt])
+}
 
 model MiniAuditResult {
   id              String   @id @default(cuid())

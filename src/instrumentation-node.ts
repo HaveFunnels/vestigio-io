@@ -25,16 +25,22 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	const { healStuckCycles, redispatchOrphanedPending } = await import(
 		"../apps/audit-runner/run-cycle"
 	);
+	const { healStuckProspectScans } = await import(
+		"../apps/audit-runner/run-prospect-scan"
+	);
 	const { prisma } = await import("@/libs/prismaDb");
 
 	// ── Audit-runner heal cron ──
+	// Covers both customer audit cycles AND admin prospect scans (which
+	// share the same staleness pattern: stuck >10min in 'running').
 	const runHealPass = async () => {
 		try {
 			const healed = await healStuckCycles();
 			const redispatched = await redispatchOrphanedPending();
-			if (healed > 0 || redispatched > 0) {
+			const prospectsHealed = await healStuckProspectScans();
+			if (healed > 0 || redispatched > 0 || prospectsHealed > 0) {
 				console.log(
-					`[heal] cycles healed=${healed} redispatched=${redispatched}`,
+					`[heal] cycles healed=${healed} redispatched=${redispatched} prospects=${prospectsHealed}`,
 				);
 			}
 		} catch (err) {

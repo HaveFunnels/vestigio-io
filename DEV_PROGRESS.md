@@ -2,6 +2,163 @@
 
 ---
 
+## Wave 2.1 — Knowledge Base wired end-to-end + 160 foundation articles -- 2026-04-07
+
+### Goal
+
+Close the "Learn more" loop on findings, actions, and chat. Wave 2.1 was the only Wave 2 item where the user-visible scaffolding was already in place but the loop was broken: the finding drawer rendered "Documentation for this finding is being written" 100% of the time because Sanity had no articles published, the action drawer had no Learn-more affordance at all, and the LLM chat had no way to embed knowledge base references inline. The user's directive: **every finding must have at least a foundation article in the KB so the Learn-more link always lands somewhere minimally useful** — without writing 160 articles by hand.
+
+### Architecture: programmatic foundation + Sanity override
+
+The breakthrough is that the engine **already** had everything needed to generate substantive foundation articles — `INFERENCE_TITLES` (127 finding titles, all rewritten for commercial sharpness in Phase 30), `ROOT_CAUSE_TITLES` (33 root causes), `ROOT_CAUSE_DESCRIPTIONS` (full 1-paragraph structural explanations for each root cause, written by hand over the course of building the engine), `INFERENCE_TO_PACK`, `INFERENCE_TO_ROOT_CAUSE`, and `POSITIVE_CHECKS`. None of this content was wasted — it just hadn't been surfaced as documentation yet.
+
+New module [packages/knowledge/foundation-articles.ts](packages/knowledge/foundation-articles.ts) derives one foundation article per inference_key and per root_cause_key from this metadata. Each article is rendered as **Sanity Portable Text** so the existing `/knowledge-base/[slug]` page renders foundation and authored content identically — no separate code path. Each foundation article has 16 structured blocks:
+
+1. Title (h1 implied from page chrome)
+2. **What this finding means** (h2) → echoes the finding title + the linked root cause description
+3. **Why it matters** (h2) → tied to the pack's strategic lens
+4. **How we detect it** (h2) → explains the evidence sources (static + browser + behavioral)
+5. **Underlying root cause** (h2) → links structurally to the root cause article (with a blockquote noting that multiple findings can share one root cause)
+6. **What to do about it** (h2) → points to the Actions tab + chat
+7. **Discuss this finding** (h2) → CTA to open chat
+
+Sanity acts as a **pure override layer**. The 4 lookups in `sanity-utils.ts` (`getKnowledgeArticles`, `getKnowledgeArticleBySlug`, `getKnowledgeArticleByFindingKey`, `getKnowledgeArticleByRootCauseKey`) all check Sanity first and fall back to the foundation article. When you (or anyone on the team) eventually authors a richer article in Sanity Studio with a matching `finding_key` / `root_cause_key` / slug, it automatically replaces the foundation — **no code changes**.
+
+### Coverage
+
+| Category | Count |
+|---|---|
+| Foundation articles for findings (inference_key) | 127 |
+| Foundation articles for root causes (root_cause_key) | 33 |
+| **Total foundation articles always available** | **160** |
+
+A new test [tests/foundation-articles.test.ts](tests/foundation-articles.test.ts) asserts every `inference_key` in `INFERENCE_TITLES` has a foundation article. **The build fails if anyone adds a new finding without coverage** — but since the generator is programmatic, any new finding automatically gets an article. The test only exists as a safety net against the generator drifting from the engine source of truth.
+
+### Slug convention
+
+| Kind | Slug | Example |
+|---|---|---|
+| Finding | `finding-${inference_key}` | `finding-trust_boundary_crossed` |
+| Root cause | `root-cause-${root_cause_key}` | `root-cause-trust_failure_at_checkout` |
+
+The chat KB card and the drawer Learn-more link both route to these slugs via `/app/knowledge-base/[slug]`.
+
+### Drawer Learn-more (Parts D + E)
+
+**Finding drawer** ([src/app/(console)/analysis/page.tsx](src/app/(console)/analysis/page.tsx)) — replaced the conditional "docs coming soon" placeholder with a single styled card that **always** renders. When the API returns an article (which it now always does, since foundation fallback is wired), the card shows the article title + excerpt and links to `/app/knowledge-base/${slug}`. Visual: 8×8 icon button + uppercase "Learn more" label + title + 2-line excerpt + chevron, with hover state matching the rest of the drawer.
+
+**Action drawer** ([src/app/(console)/actions/page.tsx](src/app/(console)/actions/page.tsx)) — added the same card pattern. To make this work, `ActionProjection` gained a new `root_cause_key: string \| null` field ([packages/projections/types.ts:84](packages/projections/types.ts)) populated from `rc.root_cause_key` in the projection engine ([packages/projections/engine.ts:739](packages/projections/engine.ts)). New API endpoint [/api/knowledge-base/by-root-cause-key](src/app/api/knowledge-base/by-root-cause-key/route.ts) mirrors the `by-finding-key` endpoint.
+
+### Chat KB cards (bonus part F)
+
+The original Wave 2.1 spec only called for drawer links, but the chat needed inline KB references too — and the user specifically asked for them to be styled cards, not bare URL strings. New `KbArticleCardBlock` content block ([src/lib/chat-types.ts:54](src/lib/chat-types.ts)) joins the discriminated union alongside `FindingCardBlock`, `ActionCardBlock`, etc.
+
+**LLM marker convention** — `$$KB{finding:KEY}$$` or `$$KB{root_cause:KEY}$$`. Same pattern as the existing `$$FINDING{...}$$`, `$$ACTION{...}$$`, `$$IMPACT{...}$$`, `$$CREATEACTION{...}$$`, `$$NAVIGATE{...}$$` markers. The marker parser at [src/lib/use-chat-stream.ts:368](src/lib/use-chat-stream.ts) recognizes the new shape and creates a placeholder block with just the key + kind.
+
+**Server-side resolution** ([src/app/api/chat/route.ts:391](src/app/api/chat/route.ts)) — after the LLM completes, the chat route scans `result.response_text` for `$$KB{kind:key}$$` markers, dedupes them, and fetches each one in parallel via the same `getKnowledgeArticleByFindingKey` / `getKnowledgeArticleByRootCauseKey` helpers (locale-aware). Bundles results as `kb_articles_data: Record<"<kind>:<key>", { title, slug, excerpt }>` in the SSE `done` event. The client's `resolveCardData` ([src/lib/use-chat-stream.ts:415](src/lib/use-chat-stream.ts)) fills in the card from this map. Same pattern as how finding/action cards are resolved from `findings_data` / `actions_data`.
+
+**Styled card component** ([src/components/console/chat/KbArticleCard.tsx](src/components/console/chat/KbArticleCard.tsx)) — visual matches the drawer cards: book icon, uppercase "Learn more" eyebrow, title, 2-line excerpt, chevron, hover state. Wired into the chat renderer at [src/components/console/chat/ChatMessageRenderer.tsx:130](src/components/console/chat/ChatMessageRenderer.tsx).
+
+**System prompt instruction** ([apps/mcp/llm/system-prompt.ts:41](apps/mcp/llm/system-prompt.ts)) — teaches the LLM when to emit the marker, with the explicit guarantee that "it always resolves, even when the article hasn't been authored yet (it falls back to a catalog browse)" so the LLM doesn't avoid using it out of caution.
+
+### Sanity Portable Text generator
+
+The foundation generator emits proper Portable Text blocks (`{ _type: 'block', _key, style, children: [{ _type: 'span', _key, text, marks }] }`) so the existing slug page's `<PortableText components={portableTextComponents}>` renders foundation and Sanity content with zero conditional logic. Block types used: `h2`, `h3`, `normal`, `blockquote`. Lazy-built map cached after first call so the 160-article generation cost is paid once per process.
+
+### Adjacent fixes / detected gaps
+
+**1. Three pre-existing TypeScript errors blocking the typecheck** — none related to this work, but blocking `npx tsc --noEmit`:
+
+- [src/components/app/ExportButton.tsx:21](src/components/app/ExportButton.tsx) — reduce accumulator was inferred as `Record<string, any>` instead of `Set<string>` because the implicit generic widened to the row type. Fix: explicit `data.reduce<Set<string>>(...)`.
+- [src/components/ui/pricing-card.tsx:480](src/components/ui/pricing-card.tsx) — `PublicPlanConfig` was both declared as `export interface` on line 321 AND re-exported in `export type { ..., PublicPlanConfig }` on line 480. Fix: remove from the re-export list (already exported via the interface declaration).
+- [tests/stage-d-enrichment.test.ts:80](tests/stage-d-enrichment.test.ts) — orphaned `@ts-expect-error` directive. The function under test accepts `string | null`, so passing `"nonprofit_b2g"` was a valid string, not a type error. Fix: remove the directive.
+
+These are now fixed for the same reason the foundation articles work was important: a clean typecheck means future refactors can trust the build signal.
+
+**2. Engine-internal data was private — needed to be exported** for the foundation generator to consume. Changed three `const` declarations to `export const` in [packages/projections/engine.ts](packages/projections/engine.ts) (`INFERENCE_TITLES`, `INFERENCE_TO_PACK`, `POSITIVE_CHECKS`) and three more in [packages/intelligence/root-causes.ts](packages/intelligence/root-causes.ts) (`INFERENCE_TO_ROOT_CAUSE`, `ROOT_CAUSE_TITLES`, `ROOT_CAUSE_DESCRIPTIONS`). No behavioral change — the maps were already there and consumed locally; they're now also reachable from the knowledge package.
+
+**3. The audit said the finding drawer Learn-more was already implemented**, but the user reported it as missing. The audit was technically correct — the code path existed — but it always took the "docs coming soon" branch because Sanity had no articles published with matching `finding_key` values. The fix was to make the link **always** resolve, by adding the foundation fallback layer. Lesson: a code path that exists but never triggers is functionally equivalent to a missing feature from the user's perspective.
+
+### Files touched
+
+**New files:**
+
+- [packages/knowledge/foundation-articles.ts](packages/knowledge/foundation-articles.ts) — programmatic generator (~340 LoC)
+- [src/app/api/knowledge-base/by-root-cause-key/route.ts](src/app/api/knowledge-base/by-root-cause-key/route.ts) — root-cause lookup endpoint
+- [src/components/console/chat/KbArticleCard.tsx](src/components/console/chat/KbArticleCard.tsx) — styled chat card
+- [tests/foundation-articles.test.ts](tests/foundation-articles.test.ts) — coverage + structure + slug routing tests (12 sub-tests in 3 suites)
+
+**Modified files:**
+
+- [src/sanity/sanity-utils.ts](src/sanity/sanity-utils.ts) — added `foundationToKnowledgeArticle` adapter + foundation fallback in 4 lookups + merge in `getKnowledgeArticles`
+- [src/app/(console)/analysis/page.tsx](src/app/(console)/analysis/page.tsx) — finding drawer always-render styled card
+- [src/app/(console)/actions/page.tsx](src/app/(console)/actions/page.tsx) — action drawer Learn-more card section + `useEffect` fetch
+- [src/app/api/chat/route.ts](src/app/api/chat/route.ts) — `$$KB{...}$$` marker resolution + `kb_articles_data` in SSE done
+- [src/lib/chat-types.ts](src/lib/chat-types.ts) — `KbArticleCardBlock` interface + union member
+- [src/lib/use-chat-stream.ts](src/lib/use-chat-stream.ts) — marker parser + `resolveCardData` extension
+- [src/components/console/chat/ChatMessageRenderer.tsx](src/components/console/chat/ChatMessageRenderer.tsx) — render branch for `kb_article_card`
+- [apps/mcp/llm/system-prompt.ts](apps/mcp/llm/system-prompt.ts) — `$$KB{...}$$` instruction
+- [packages/projections/types.ts](packages/projections/types.ts) — `ActionProjection.root_cause_key`
+- [packages/projections/engine.ts](packages/projections/engine.ts) — populate `root_cause_key` + export `INFERENCE_TITLES` / `INFERENCE_TO_PACK` / `POSITIVE_CHECKS`
+- [packages/intelligence/root-causes.ts](packages/intelligence/root-causes.ts) — export `INFERENCE_TO_ROOT_CAUSE` / `ROOT_CAUSE_TITLES` / `ROOT_CAUSE_DESCRIPTIONS`
+- [dictionary/en.json](dictionary/en.json), [dictionary/pt-BR.json](dictionary/pt-BR.json), [dictionary/es.json](dictionary/es.json), [dictionary/de.json](dictionary/de.json) — i18n keys for `browse_related_docs`, action drawer `learnMore` / `browseRelatedDocs` / `docsComingSoon`
+- [src/components/app/ExportButton.tsx](src/components/app/ExportButton.tsx), [src/components/ui/pricing-card.tsx](src/components/ui/pricing-card.tsx), [tests/stage-d-enrichment.test.ts](tests/stage-d-enrichment.test.ts) — pre-existing TS error fixes
+
+### Tests
+
+12 new sub-tests across 3 suites in [tests/foundation-articles.test.ts](tests/foundation-articles.test.ts):
+
+**Foundation Article Coverage (4)**
+- every inference_key in INFERENCE_TITLES has a foundation article
+- every positive check has a foundation article
+- every root_cause_key in ROOT_CAUSE_TITLES has a foundation article
+- coverage report shows non-zero counts (127 / 33 / 160)
+
+**Foundation Article Structure (4)**
+- finding article has all required fields (title, slug, category, finding_key, excerpt, body length, is_foundation marker)
+- root cause article has all required fields
+- article body uses Sanity portable text format (every block has _type, _key, style, children)
+- finding article links structurally to its root cause description
+
+**Foundation Slug Routing (4)**
+- finding article reachable by slug (`finding-${key}`)
+- root cause article reachable by slug (`root-cause-${key}`)
+- unknown slug returns null
+- listFoundationArticles returns all articles, no duplicate slugs
+
+All 12 pass. Full suite: **65/65 tests pass, 0 failures**.
+
+### Adjacent flows verified
+
+- **Catalog page (`/app/knowledge-base`)**: now returns merged Sanity + foundation articles via the modified `getKnowledgeArticles`. Foundation articles are excluded when a Sanity article with the same slug exists, so authoring a richer version automatically suppresses the foundation.
+- **Slug page (`/app/knowledge-base/[slug]`)**: existing PortableText renderer needs no changes — foundation articles use the same block format.
+- **Chat KB card resolution**: the LLM may or may not emit `$$KB{...}$$` markers depending on whether the conversation is finding-specific. When it doesn't, no extra fetch happens. When it does, the resolution is parallel and locale-aware.
+- **Cold-start MCP rehydration**: no impact — the foundation articles are static, computed at runtime from data that's always available.
+- **Build cost**: zero — the foundation generator is lazy and runs in-process the first time it's called. Cached after that. The 160-article construction takes ~10ms.
+
+### Manual verification
+
+1. Open the analysis page in the console
+2. Click any finding to open the side drawer
+3. Confirm the "Learn more" card at the bottom of the drawer is rendered with a real title (not "docs coming soon") and links to `/app/knowledge-base/finding-${inference_key}`
+4. Click the card → confirm the foundation article renders with all 16 blocks (title, what/why/how/root-cause/action/discuss sections)
+5. Same flow for action drawer → confirm Learn-more card uses the root_cause article path
+6. In chat, ask "explain trust_boundary_crossed" → confirm the LLM (after the system prompt update) emits a `$$KB{finding:trust_boundary_crossed}$$` marker that renders as a styled card inline, not a bare URL
+
+### Known limitations
+
+- **Foundation articles are English-only.** The generator emits `locale: "en"` and pulls from English-only metadata maps. The existing `EngineTranslations` system could plug into this generator to produce locale-aware foundation articles in pt-BR / es / de, but that's a follow-up. Sanity-authored articles remain locale-aware via the existing `dedupeBySlug` logic.
+- **The de.json action drawer translations** were already incomplete in the project (the entire `actions.drawer` section was full of `__TODO__` placeholders before this change). I added the new `learnMore` / `browseRelatedDocs` / `docsComingSoon` keys with German translations to be consistent, but the surrounding section is still placeholder.
+- **The `_id` field of foundation articles** uses the format `foundation:finding:KEY` / `foundation:root_cause:KEY`. This is purely internal and never exposed to URLs (those use the slug). It exists so consumers downstream can distinguish foundation from authored articles when needed, which is rare.
+
+### What changed for the user
+
+Before: clicking "Learn more" on any finding showed "Documentation for this finding is being written" 100% of the time, because the project's Sanity dataset had no published articles with matching `finding_key` values.
+
+After: every finding and every root cause has a real article with structured commercial guidance, the chat can embed inline KB references that render as styled cards (not bare URLs), and the moment someone authors a richer article in Sanity Studio with a matching key, it automatically replaces the foundation across the drawer, the chat card, the catalog page, and the slug page — no code changes required.
+
+---
+
 ## Wave 1 — Stage D Selective Headless -- 2026-04-07
 
 ### Goal

@@ -2,6 +2,175 @@
 
 ---
 
+## Wave 1 — Stage D Selective Headless -- 2026-04-07
+
+### Goal
+
+Implement Stage D (the placeholder slot at `staged-pipeline.ts:420-424` that's been "not yet implemented" since the original architecture). But more importantly: build it as the **first implementation of a generalizable enrichment pass framework** so Wave 3 LLM Semantic Enrichment can plug in later as another pass without refactoring the staged pipeline.
+
+The user's directive was explicit: "garanta que a fundação vai permitir a análise com LLM que vamos implementar no futuro do roadmap". Stage D and Wave 3 LLM enrichment are conceptually the same thing — selective post-Stage-C passes that add evidence to the cycle. Inlining Stage D as a one-off block would have meant tearing it apart in 2 waves to accommodate the second pass. Building it as a pluggable pass means Wave 3 ships as a single new file.
+
+### Architecture: enrichment passes
+
+New folder [workers/ingestion/enrichment/](workers/ingestion/enrichment/) containing:
+
+| File | Purpose |
+|---|---|
+| [`types.ts`](workers/ingestion/enrichment/types.ts) | The framework contract — `EnrichmentPass`, `EnrichmentContext`, `EnrichmentResult`, `ShouldRunDecision` |
+| [`runner.ts`](workers/ingestion/enrichment/runner.ts) | Iterates `PASS_REGISTRY`, calls `shouldRun` then `run`, defensive try/catch around every pass so a single failure can never crash the cycle |
+| [`scenarios.ts`](workers/ingestion/enrichment/scenarios.ts) | Stage D's business-aware scenario builders + shared support-reach probe |
+| [`selective-headless.ts`](workers/ingestion/enrichment/selective-headless.ts) | Stage D pass implementation — retry logic, cost gating, BrowserWorker invocation |
+| [`index.ts`](workers/ingestion/enrichment/index.ts) | Public exports |
+| [`README.md`](workers/ingestion/enrichment/README.md) | Architecture rationale + how-to-add-a-new-pass guide |
+
+The contract is intentionally narrow:
+
+```typescript
+interface EnrichmentPass {
+  name: string;
+  label: string;
+  shouldRun(ctx: EnrichmentContext): { run: boolean; reason: string };
+  run(ctx: EnrichmentContext): Promise<EnrichmentResult>;
+}
+```
+
+`shouldRun()` is a cheap synchronous gate (no I/O — just inspect the context). `run()` is the expensive bit. Every failure must be caught inside `run()` and translated into a `'failed'` EnrichmentResult; the runner has a defensive try/catch as a safety net but passes shouldn't rely on it.
+
+### Wave 3 readiness — what the framework guarantees for LLM Enrichment
+
+The Wave 3 plan in [docs/ROADMAP.md § 3.1](docs/ROADMAP.md) calls for `runSemanticEnrichment()` that does Haiku calls per policy page and emits `ContentEnrichmentPayload` evidence. With this framework in place, Wave 3 is a **drop-in addition**:
+
+| Wave 3 requirement | How the framework already covers it |
+|---|---|
+| "Enrichment step in pipeline" | `runEnrichmentPasses` is called from staged-pipeline.ts after Stage C |
+| "After Phase 2B content enrichment, pre-signals" | Stage D / future passes run AFTER Stage C completes, BEFORE the cycle's `complete` event |
+| "Per-page Haiku call" | The LLM pass filters `ctx.evidence` for `policy_page` payloads and iterates |
+| "New evidence type ContentEnrichmentPayload" | `EnrichmentResult.evidence_added` accepts any Evidence type — just add the type to the domain union |
+| "Cached results" | Each pass owns its own cache (Wave 3 will hash policy page content) |
+| "Cost protection" | `shouldRun()` is the budget gate; `EnrichmentResult.cost_units` already exists for tracking |
+| "Structured output schema" | Each pass returns typed `Evidence[]` |
+| "Later passes see earlier evidence" | The LLM pass will sit AFTER Stage D in the registry, so it can read browser-rendered DOM as input to the prompt |
+
+### Stage D specifics
+
+**Cost gating** ([selective-headless.ts](workers/ingestion/enrichment/selective-headless.ts)):
+
+- Gate 1: `mode === 'full'` only (skips mini-audit + prospect scans)
+- Gate 2: `spa_detected === true` (skips static-only sites where Playwright wouldn't reveal more)
+- Gate 3: valid landing URL
+- Cap: 1 SUCCESSFUL execution per cycle. **Retries don't count against the cap.**
+
+**Retry classification** — transient failures retry, logic failures don't:
+
+| Pattern | Retryable? | Examples |
+|---|---|---|
+| Bot challenge | ✅ Yes | Cloudflare Turnstile, hCaptcha, reCAPTCHA, "just a moment" |
+| Browser launch | ✅ Yes | ENOENT spawn, executable missing, Playwright launch fail |
+| Network transient | ✅ Yes | ECONNREFUSED, ETIMEDOUT, ENOTFOUND, net::err_* |
+| Navigation timeout | ✅ Yes | Navigation timeout, target closed |
+| Selector not found | ❌ No | "Selector 'a[href*=cart]' not found" — actual content gap |
+| Step assertion failure | ❌ No | Real signal that the page is missing what we expected |
+
+Retry policy: max 3 attempts (initial + 2 retries), exponential backoff (2s → 4s → 8s).
+
+**Business-aware scenarios** — picked by `business_model`:
+
+| Model | Commercial path scenario |
+|---|---|
+| `ecommerce` | landing → assert product/category link → assert cart/checkout link |
+| `lead_gen` | landing → assert primary CTA (demo / quote / trial / form) → assert form |
+| `saas` | landing → assert signup CTA → assert pricing link |
+| `hybrid` / null | landing → assert any commercial-looking CTA (broad fallback) |
+
+Plus a **shared support-reach probe** (runs for every business model) that checks chargeback resilience signals: phone link, email link, contact page link, return/refund policy link. Each `assert_visible` step's success/failure becomes a per-step result in the BrowserNavigationTrace evidence — failed steps mean the indicator is missing, which is exactly what the chargeback pack's signal extractor wants.
+
+**Selectors are language-agnostic** (EN + PT-BR + ES patterns) since the LATAM customer base needs all three.
+
+### Adjacent fixes / detected gaps
+
+**1. Audit-runner wasn't passing `mode` or `business_model` to the pipeline** ([apps/audit-runner/run-cycle.ts](apps/audit-runner/run-cycle.ts)).
+
+The pipeline's `runStagedPipeline()` already accepted both via `StagedPipelineInput`, but the audit-runner's call site only supplied 5 of the 7 fields. So in production:
+- Mode defaulted to `undefined` → `'full'` in the pipeline (worked by accident, but Stage D's mode gate would have failed if the default ever changed)
+- `business_model` was undefined → Stage D would have always picked the hybrid scenario fallback
+
+Fix: load BusinessProfile early in the cycle, pass `mode: 'full'` explicitly, pass `onboarding_business_model` and `onboarding_conversion_model`. The same BusinessProfile lookup is now reused later in the cycle (was duplicated before — DRY pass).
+
+**2. BrowserWorker's hardcoded default scenario in `parseBrowserRequest()`** ([workers/verification/browser-worker.ts](workers/verification/browser-worker.ts)).
+
+The existing `BrowserWorker.execute(input)` reads `parseBrowserRequest()` which **ignores** any custom scenarios in the request and rebuilds a hardcoded default 4-step probe. Fine for the manual verification flow (Wave 0.6) but incompatible with Stage D's business-aware scenarios.
+
+Fix: added a new public `BrowserWorker.executeRequest(req, scoping, cycleRef, subjectUrl)` method that takes a pre-built `BrowserVerificationRequest` directly. The classic `execute()` stays unchanged so manual verifications keep working with their default. Stage D uses `executeRequest()` exclusively.
+
+**3. Wave 0.6 / behavioral workspaces phase B introduced 3 projections.test.ts regressions**.
+
+Verified via `git stash + git checkout 97e3044 + npm run test:all + diff` that the session started with 11 sub-failures across 7 test files, and after my work there were 14 sub-failures across the same 7 files. The 3 NEW sub-failures were all in `projections.test.ts` and all matched "expected 3 workspaces, got 10" — direct consequence of my behavioral workspaces Phase B change that always emits 7 placeholder cards.
+
+Fix: updated the 3 assertions to filter `category !== 'behavioral'` so they assert on **3 core workspaces** instead of total count. This is more semantically correct than hardcoding 10 (resilient to future behavioral workspace count changes). The other 11 pre-existing failures are not from this session and remain documented as tech debt for a future cleanup pass.
+
+### Files touched
+
+- [workers/ingestion/enrichment/types.ts](workers/ingestion/enrichment/types.ts) — **new** framework contract
+- [workers/ingestion/enrichment/runner.ts](workers/ingestion/enrichment/runner.ts) — **new** orchestrator
+- [workers/ingestion/enrichment/scenarios.ts](workers/ingestion/enrichment/scenarios.ts) — **new** business-aware scenario builders
+- [workers/ingestion/enrichment/selective-headless.ts](workers/ingestion/enrichment/selective-headless.ts) — **new** Stage D pass
+- [workers/ingestion/enrichment/index.ts](workers/ingestion/enrichment/index.ts) — **new** public exports
+- [workers/ingestion/enrichment/README.md](workers/ingestion/enrichment/README.md) — **new** architecture doc
+- [workers/verification/browser-worker.ts](workers/verification/browser-worker.ts) — added `executeRequest()` method
+- [workers/ingestion/staged-pipeline.ts](workers/ingestion/staged-pipeline.ts) — replaced placeholder with `runEnrichmentPasses` call + emit stage_complete events for observability
+- [apps/audit-runner/run-cycle.ts](apps/audit-runner/run-cycle.ts) — pass `mode: 'full'` + business profile to pipeline; deduplicate BusinessProfile lookup
+- [tests/stage-d-enrichment.test.ts](tests/stage-d-enrichment.test.ts) — **new** 24 tests covering scenarios + shouldRun + retry classifier + backoff + registry
+- [tests/projections.test.ts](tests/projections.test.ts) — fix 3 sub-failures from behavioral workspaces Phase B regression
+
+### Adjacent flows verified
+
+- **Mini-audit (`/lp/audit`)**: uses `mode: 'shallow'` → Stage D's gate fails → skipped cleanly. No impact on lead funnel.
+- **Prospect scan (admin growth)**: uses `mode: 'shallow_plus'` → same skip path. No impact on outbound prospecting.
+- **Stream route (`/api/analysis/stream`)**: passes `mode = undefined → 'full'` and `business_model` → Stage D fires for SPAs. The legacy manual analysis route now gets richer evidence on JS-heavy sites for free.
+- **Cold start path** (`ensureContext` + `loadLatestCycle`): browser evidence emitted by Stage D is persisted via the existing `PrismaEvidenceStore.addMany` in run-cycle.ts (Wave 0.7's plumbing). Cold-start rehydration sees Stage D evidence after a server restart.
+- **Wave 0.6 manual verification**: untouched. Still uses `BrowserWorker.execute()` with the hardcoded default scenario via `parseBrowserRequest()`. Stage D's `executeRequest()` is a separate code path.
+- **Cost ceiling**: max 3 attempts × 60s + 6s backoff = ~186s worst case per cycle. Real expected case is one ~30-60s execution. Total cycle time impact: +30-60s for SPA-detected full-mode audits.
+
+### Tests
+
+24 new tests in [tests/stage-d-enrichment.test.ts](tests/stage-d-enrichment.test.ts):
+
+- Scenario builder tests (8) — picker chooses correct template per business model, fallback works, support reach has all 4 indicators, full set returns 2 scenarios
+- Browser limits compliance test (1) — every business model's full set fits within `BROWSER_LIMITS`
+- shouldRun gate tests (6) — mode, SPA detection, landing URL validity
+- Retry classifier tests (7) — turnstile, recaptcha, browser launch, network, timeout, non-transient, empty
+- Backoff timing test (1) — exponential progression
+- Registry test (1) — selective_headless is registered
+
+All 24 pass. The actual browser execution is NOT exercised here (no Playwright in CI without extra setup); the BrowserWorker has its own simulated-mode coverage.
+
+### Manual verification
+
+1. Take an audit cycle that crawls a JS-heavy site (any modern SPA — Stripe.com, Linear.app, etc. as test targets)
+2. Confirm the staged pipeline emits `stage_complete` for `selective_headless` with `status: 'completed'` and `evidence_added > 0`
+3. Inspect the cycle's evidence for new rows of types `BrowserNavigationTrace`, `BrowserCheckoutConfirmation` (if checkout was reached), `BrowserFailureEvent` (if errors detected)
+4. Confirm that downstream signals/inferences read this evidence (the engine layer was already wired for these types — no changes needed here)
+5. For non-SPA sites, confirm Stage D logs "skipped: no JavaScript-heavy pages detected" and the audit cycle still completes normally
+
+### Known limitations
+
+- **`BROWSER_LIMITS.max_retries` constant is unused now** — Wave 1 implements retry inside the Stage D pass with its own constants. The legacy verification orchestrator still has its own retry path that uses `BROWSER_LIMITS.max_retries`. Worth aligning in a future cleanup, not blocking.
+- **Bot challenge detection is regex on error messages** — works for Cloudflare/Turnstile/reCAPTCHA which have predictable error patterns, but could miss exotic challenges. Real-world tuning will inform whether we need DOM-based detection.
+- **Mobile viewport not exercised** — Stage D runs at the desktop viewport only. Mobile-specific signals (mobile_form_friction_elevated etc.) come from the pixel pipeline (Wave 0.3), not Stage D.
+- **No screenshot delivery to UI yet** — screenshots are captured by PlaywrightRuntime to a temp folder but no longer surfaced to the UI. Feature for a later wave.
+
+### Wave status after Stage D
+
+| Wave | Status |
+|---|---|
+| 0.1-0.7 | ✅ All done |
+| **1** | ✅ **Fully complete** (Stage D was the last open item; all earlier 1.x items were already shipped) |
+| 2 | ⏳ Knowledge Base, Members, Root Cause vocab refinement, Confidence Gap, Prisma Migrate |
+| 3 | ⏳ LLM enrichment (foundation now in place via enrichment pass framework) |
+| 4 | ⏳ Conversation export/branching |
+
+---
+
 ## Wave 1 Prep / Starting State -- 2026-04-07
 
 > **Read this first when resuming.** Snapshot of the repo immediately before Wave 1 work begins. Captures what's done, what's loose, and exactly where Wave 1 picks up.

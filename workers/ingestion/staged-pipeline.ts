@@ -15,6 +15,7 @@ import {
   CrawlSession, DEFAULT_CONSTRAINTS, hashContent, shouldTriggerPlaywright,
   type CrawlConstraints,
 } from './crawl-constraints';
+import { runEnrichmentPasses } from './enrichment/runner';
 
 // ──────────────────────────────────────────────
 // Staged Pipeline — Progressive Analysis
@@ -418,9 +419,61 @@ export async function runStagedPipeline(
   emitStep('Putting everything together');
 
   // ══════════════════════════════════════════════
-  // STAGE D — Selective Headless (not yet implemented)
-  // Reserved for: SPA resolution, CTA ambiguity, thin content
+  // ENRICHMENT PASSES — Stage D + future passes
   // ══════════════════════════════════════════════
+  //
+  // Pluggable post-Stage-C passes that add evidence to the cycle.
+  // First implementation is Stage D Selective Headless (Wave 1).
+  // Wave 3 LLM Semantic Enrichment will plug in here without
+  // touching this file — see workers/ingestion/enrichment/README.md.
+  //
+  // Each pass decides for itself if it should run via shouldRun(); the
+  // runner is a simple defensive iterator. Pass failures are logged
+  // but never crash the cycle — the audit completes with whatever
+  // evidence the earlier stages produced.
+
+  const enrichmentResults = await runEnrichmentPasses({
+    evidence,
+    coverage,
+    scoping,
+    cycle_ref: input.cycle_ref,
+    root_domain: rootDomain,
+    landing_url: rootUrl,
+    mode,
+    spa_detected: spaDetected,
+    business_model: input.onboarding_business_model || null,
+    conversion_model: input.onboarding_conversion_model || null,
+    emit,
+  });
+
+  for (const result of enrichmentResults) {
+    if (result.status === 'completed') {
+      evidence.push(...result.evidence_added);
+      // Stage D maps to the existing 'headless' PipelineStage marker.
+      // Future enrichment passes that don't have a pre-existing stage
+      // label can either reuse 'headless' or extend the PipelineStage
+      // union — we keep this loose for now since the stage label is
+      // mostly for SSE progress display, not load-bearing logic.
+      if (result.pass_name === 'selective_headless') {
+        stagesCompleted.push('headless');
+      }
+    }
+    // Always emit a stage_complete event for observability — even on
+    // skipped/failed so the SSE stream can show "Stage D: skipped (no SPA)"
+    emit({
+      type: 'stage_complete',
+      stage: 'headless',
+      data: {
+        pass: result.pass_name,
+        status: result.status,
+        reason: result.reason,
+        evidence_added: result.evidence_added.length,
+        duration_ms: result.duration_ms,
+        attempts: result.attempts,
+      },
+      timestamp: new Date(),
+    });
+  }
 
   stagesCompleted.push('complete');
   emit({ type: 'complete', stage: 'complete', data: {

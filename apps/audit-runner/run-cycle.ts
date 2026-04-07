@@ -153,6 +153,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			// Background worker — drop events. Could log to a JobLog table later.
 		};
 
+		// Look up the business profile early so we can pass business_model
+		// into the pipeline. Stage D (Wave 1) uses this to pick the right
+		// commercial-path scenario for the audit. Wave 0.7's recompute
+		// also reads businessProfile but does its own lookup later — both
+		// callers tolerate it being null.
+		const businessProfileForPipeline = await prisma.businessProfile
+			.findUnique({ where: { organizationId: cycle.organizationId } })
+			.catch(() => null);
+
 		const result = await runStagedPipeline(
 			{
 				domain,
@@ -160,6 +169,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				environment_ref: `environment:${env.id}`,
 				website_ref: `website:${website.id}`,
 				cycle_ref: `audit_cycle:${cycleId}`,
+				// Wave 1: explicit mode = full so Stage D's gate (mode === 'full')
+				// passes. The default is 'full' anyway, but being explicit makes
+				// the intent obvious to readers.
+				mode: 'full',
+				// Stage D's business-aware scenario picker reads this. Falls back
+				// to 'hybrid' scenarios when null (e.g. orgs that haven't completed
+				// onboarding yet — those still get a useful generic probe).
+				onboarding_business_model: businessProfileForPipeline?.businessModel ?? undefined,
+				onboarding_conversion_model: businessProfileForPipeline?.conversionModel ?? undefined,
 			},
 			noopEmit,
 		);
@@ -256,10 +274,9 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				console.warn(`[audit-runner ${cycleId}] previous snapshot lookup failed (treating as first cycle):`, err);
 			}
 
-			// Resolve business inputs from BusinessProfile if present
-			const businessProfile = await prisma.businessProfile
-				.findUnique({ where: { organizationId: cycle.organizationId } })
-				.catch(() => null);
+			// Reuse the BusinessProfile we already loaded for the pipeline
+			// inputs above — same data, no second roundtrip.
+			const businessProfile = businessProfileForPipeline;
 
 			// Engine translations (locale-aware finding titles, root cause titles, etc.)
 			let translations;

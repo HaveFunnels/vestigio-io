@@ -56,6 +56,63 @@ export function setPlaywrightMode(mode: 'real' | 'simulated' | 'auto'): void {
 export class BrowserWorker implements VerificationExecutor {
   type = VerificationType.BrowserVerification;
 
+  /**
+   * Wave 1 / Stage D — execute a pre-built BrowserVerificationRequest
+   * directly, bypassing the parseBrowserRequest hardcoded scenario.
+   *
+   * This is the entry point for callers (Stage D enrichment pass, future
+   * pipeline-driven browser runs) that want to control the scenarios
+   * themselves rather than getting the default 4-step verification probe.
+   *
+   * The classic execute() method stays unchanged so the manual
+   * verification flow (Wave 0.6) keeps working with its hardcoded
+   * default scenario.
+   *
+   * Returns the SAME ExecutorOutput shape as execute() so callers can
+   * unify their handling.
+   */
+  async executeRequest(
+    req: BrowserVerificationRequest,
+    scoping: Scoping,
+    cycleRef: string,
+    subjectUrl: string,
+  ): Promise<ExecutorOutput> {
+    const logs: VerificationLog[] = [];
+    logs.push({
+      timestamp: new Date(),
+      level: 'info',
+      message: `Direct browser request: ${req.scenarios.length} scenario(s) for ${subjectUrl}`,
+    });
+
+    try {
+      const useReal = await checkPlaywrightAvailable();
+      const mode = useReal ? 'playwright' : 'simulated';
+      logs.push({ timestamp: new Date(), level: 'info', message: `Execution mode: ${mode}` });
+
+      const result = useReal
+        ? await this.executeWithPlaywright(req)
+        : await this.executeSimulated(req);
+
+      const evidence = this.resultToEvidence(result, scoping, cycleRef, subjectUrl);
+      logs.push({
+        timestamp: new Date(),
+        level: 'info',
+        message: `Complete: ${result.status}. ${evidence.length} evidence. ${result.steps.length} steps. Mode: ${mode}`,
+      });
+
+      return {
+        status: result.status === 'success' ? 'completed' : 'failed',
+        evidence,
+        logs,
+        errors: result.steps.filter(s => !s.success).map(s => s.error || 'Step failed'),
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logs.push({ timestamp: new Date(), level: 'error', message: `Failed: ${msg}` });
+      return { status: 'failed', evidence: [], logs, errors: [msg] };
+    }
+  }
+
   async execute(input: ExecutorInput): Promise<ExecutorOutput> {
     const logs: VerificationLog[] = [];
     logs.push({ timestamp: new Date(), level: 'info', message: `Browser verification for ${input.subject_url}` });

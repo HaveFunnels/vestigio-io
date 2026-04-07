@@ -178,10 +178,15 @@ runSuite('Action Projections', () => {
 // ══════════════════════════════════════════════════
 
 runSuite('Workspace Projections', () => {
-  test('projectWorkspaces produces 3 workspaces', () => {
+  test('projectWorkspaces produces 3 core workspaces', () => {
     const result = computeResult();
     const workspaces = projectWorkspaces(result);
-    assertEqual(workspaces.length, 3);
+    // Filter out behavioral placeholder workspaces — they always emit
+    // (category='behavioral') even when there's no pixel data, so they
+    // would otherwise inflate the count. The 3 core packs (preflight,
+    // revenue, chargeback) are the load-bearing assertion here.
+    const coreWorkspaces = workspaces.filter(w => w.category !== 'behavioral');
+    assertEqual(coreWorkspaces.length, 3);
   });
 
   test('each workspace has correct type', () => {
@@ -252,7 +257,9 @@ runSuite('projectAll Integration', () => {
     const proj = projectAll(result);
     assertGreater(proj.findings.length, 0, 'has findings');
     assertGreater(proj.actions.length, 0, 'has actions');
-    assertEqual(proj.workspaces.length, 3, 'has 3 workspaces');
+    // Filter behavioral placeholders — see "produces 3 core workspaces" above
+    const coreWorkspaces = proj.workspaces.filter(w => w.category !== 'behavioral');
+    assertEqual(coreWorkspaces.length, 3, 'has 3 core workspaces');
   });
 
   test('workspace findings sum equals total findings', () => {
@@ -372,12 +379,14 @@ runSuite('MCP Projection Tools', () => {
     assertGreater((result.data as any).length, 0, 'has actions');
   });
 
-  test('get_workspace_projections returns 3 workspaces', () => {
+  test('get_workspace_projections returns 3 core workspaces', () => {
     const server = new McpServer();
     server.loadContext(standardEvidence(), scope, cycleRef, 'shop.com', 'https://shop.com/');
     const result = server.callTool('get_workspace_projections');
     assertEqual(result.type, 'workspace_projections');
-    assertEqual((result.data as any).length, 3);
+    // Filter behavioral placeholders — see "produces 3 core workspaces" above
+    const coreCount = (result.data as any[]).filter(w => w.category !== 'behavioral').length;
+    assertEqual(coreCount, 3);
   });
 
   test('get_map returns map definition', () => {

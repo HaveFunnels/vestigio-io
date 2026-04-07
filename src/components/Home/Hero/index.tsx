@@ -1,6 +1,17 @@
 import Link from "next/link";
 
-const Hero = () => {
+interface HeroProps {
+	// Optional CTA destination override. Default = signup flow.
+	// /lp variant passes "/lp/audit" so the primary CTA jumps directly
+	// into the anonymous lead funnel instead of asking for signup.
+	primaryCtaHref?: string;
+	primaryCtaLabel?: string;
+}
+
+const Hero = ({
+	primaryCtaHref = "/auth/signup",
+	primaryCtaLabel = "Get started",
+}: HeroProps = {}) => {
 	return (
 		<section className='relative z-1 overflow-hidden pb-16 pt-24 sm:pb-20 sm:pt-28 lg:pb-28 lg:pt-44 xl:pb-32 xl:pt-52'>
 			{/* Gradient background */}
@@ -24,10 +35,10 @@ const Hero = () => {
 
 				<div className='flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
 					<Link
-						href='/auth/signup'
+						href={primaryCtaHref}
 						className='rounded-[1rem] bg-white px-7 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-emerald-400'
 					>
-						Get started
+						{primaryCtaLabel}
 					</Link>
 					<Link
 						href='/auth/signin'

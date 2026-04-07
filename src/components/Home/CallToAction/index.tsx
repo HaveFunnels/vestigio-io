@@ -1,6 +1,14 @@
 import Link from "next/link";
 
-const CallToAction = () => {
+interface CallToActionProps {
+	primaryCtaHref?: string;
+	primaryCtaLabel?: string;
+}
+
+const CallToAction = ({
+	primaryCtaHref = "/auth/signup",
+	primaryCtaLabel = "Get started free",
+}: CallToActionProps = {}) => {
 	return (
 		<section className='relative z-1 overflow-hidden bg-[#090911] py-16 sm:py-20 lg:py-28'>
 			<div className='mx-auto w-full max-w-[700px] px-4 text-center sm:px-8 xl:px-0'>
@@ -19,10 +27,10 @@ const CallToAction = () => {
 
 					<div className='flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
 						<Link
-							href='/auth/signup'
+							href={primaryCtaHref}
 							className='rounded-[1rem] bg-white px-7 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-emerald-400'
 						>
-							Get started free
+							{primaryCtaLabel}
 						</Link>
 						<Link
 							href='/auth/signin'

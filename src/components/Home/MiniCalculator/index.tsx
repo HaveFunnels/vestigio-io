@@ -105,7 +105,16 @@ function easeOut(t: number): number {
 
 // ── Component ──
 
-const MiniCalculator = () => {
+interface MiniCalculatorProps {
+  // Optional CTA destination override. Default = signup flow.
+  // /lp variant passes "/lp/audit" so the result-state CTA jumps
+  // straight into the anonymous lead funnel.
+  primaryCtaHref?: string;
+}
+
+const MiniCalculator = ({
+  primaryCtaHref = "/auth/signup",
+}: MiniCalculatorProps = {}) => {
   const t = useTranslations("homepage.mini_calculator");
   const [state, setState] = useState<State>("input");
   const [url, setUrl] = useState("");
@@ -405,7 +414,7 @@ const MiniCalculator = () => {
             <div className="text-center">
               <p className="mb-6 text-sm text-zinc-300 sm:text-base">{t("cta_question")}</p>
               <div className="flex flex-col items-stretch justify-center gap-3 mb-6 sm:flex-row sm:items-center sm:gap-4">
-                <Link href="/auth/signup" className="rounded-[1rem] bg-white px-7 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-emerald-400">
+                <Link href={primaryCtaHref} className="rounded-[1rem] bg-white px-7 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-emerald-400">
                   {t("cta_signup")}
                 </Link>
                 <Link href="/pricing" className="rounded-[1rem] border border-white/20 px-7 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-white/30">

@@ -6,16 +6,17 @@ import { prisma } from "@/libs/prismaDb";
 /** GET /api/support-tickets/[id] — get a single ticket (must belong to user) */
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params;
   const ticket = await prisma.supportTicket.findFirst({
     where: {
-      id: params.id,
+      id,
       OR: [
         { userId: (session.user as any).id },
         { email: session.user.email },

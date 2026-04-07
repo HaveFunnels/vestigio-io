@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -48,8 +48,11 @@ function formatCurrency(value: number): string {
 export default function WorkspaceDetailPage({
   params,
 }: {
-  params: { id: string };
+  // Next.js 15: params is now a Promise in both server and client components.
+  // For client components we unwrap with React's use() hook.
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = use(params);
   const mcpData = useMcpData();
   const dataState = mcpData.workspaces.status !== "not_ready" ? mcpData.workspaces : loadWorkspaces();
   const t = useTranslations("console.workspaces");
@@ -62,7 +65,7 @@ export default function WorkspaceDetailPage({
         emptyLabel={t("empty")}
       >
         {(workspaces) => {
-          const workspace = workspaces.find((w) => w.id === params.id);
+          const workspace = workspaces.find((w) => w.id === id);
           if (!workspace) {
             return (
               <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -71,7 +74,7 @@ export default function WorkspaceDetailPage({
                   {t("detail.not_found")}
                 </h2>
                 <p className="mt-1 text-sm text-content-muted">
-                  {t("detail.not_found_description", { id: params.id })}
+                  {t("detail.not_found_description", { id })}
                 </p>
                 <Link
                   href="/app/workspaces"

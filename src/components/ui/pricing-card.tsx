@@ -477,4 +477,4 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
   },
 ];
 
-export type { PriceTier, BillingCycle, Feature, PricingComponentProps, PublicPlanConfig };
+export type { PriceTier, BillingCycle, Feature, PricingComponentProps };

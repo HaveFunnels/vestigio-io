@@ -80,6 +80,8 @@ export interface ActionProjection {
   title: string;
   description: string;
   root_cause: string | null;
+  /** Stable key for linking to knowledge base / external systems. */
+  root_cause_key: string | null;
 
   impact: {
     monthly_range: { min: number; max: number };

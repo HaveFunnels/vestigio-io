@@ -51,7 +51,8 @@ export type ContentBlock =
   | SuggestedPromptsBlock
   | QuoteBlock
   | CreateActionBlock
-  | DataRowsBlock;
+  | DataRowsBlock
+  | KbArticleCardBlock;
 
 export interface MarkdownBlock {
   type: 'markdown';
@@ -147,6 +148,27 @@ export interface CreateActionBlock {
   description: string;
   severity: string;
   estimatedImpact?: number;
+}
+
+/**
+ * Inline knowledge base article reference. Emitted by the LLM via
+ * $$KB{finding:<inference_key>}$$ or $$KB{root_cause:<root_cause_key>}$$
+ * markers and resolved server-side. Renders as a styled card linking
+ * to the matching article (or to the catalog filtered by key when
+ * no Sanity article exists yet).
+ */
+export interface KbArticleCardBlock {
+  type: 'kb_article_card';
+  /** Stable lookup key — either a finding inference_key or a root_cause_key */
+  key: string;
+  /** What kind of key — disambiguates the lookup endpoint */
+  key_kind: 'finding' | 'root_cause';
+  /** Resolved title — falls back to a generic browse label if missing */
+  title: string | null;
+  /** Resolved slug for routing — null when no Sanity article exists */
+  slug: string | null;
+  /** Optional excerpt for the card preview */
+  excerpt: string | null;
 }
 
 // ── Messages ─────────────────────────────────

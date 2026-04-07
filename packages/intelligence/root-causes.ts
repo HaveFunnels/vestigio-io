@@ -11,7 +11,7 @@ import type { EngineTranslations } from '../projections/types';
 // ──────────────────────────────────────────────
 
 // Mapping: inference_key → which root cause group it belongs to
-const INFERENCE_TO_ROOT_CAUSE: Record<string, {
+export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   root_cause_key: string;
   category: RootCauseCategory;
   impact_types: ImpactDimension[];
@@ -178,7 +178,7 @@ const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   sensitive_input_perceived_risk_dropoff:      { root_cause_key: 'behavioral_trust_failure_at_input', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss'] },
 };
 
-const ROOT_CAUSE_TITLES: Record<string, string> = {
+export const ROOT_CAUSE_TITLES: Record<string, string> = {
   trust_failure_at_checkout: 'Trust failure at checkout',
   fragmented_conversion_path: 'Fragmented conversion path',
   friction_barrier_on_path: 'Friction barrier on critical path',
@@ -222,7 +222,7 @@ const ROOT_CAUSE_TITLES: Record<string, string> = {
   behavioral_trust_failure_at_input: 'Trust insufficient at sensitive data capture moment',
 };
 
-const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
+export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   trust_failure_at_checkout: 'Users encounter trust breaks during the checkout flow — off-domain handoffs, unknown providers, or missing trust signals reduce conversion and increase chargeback risk.',
   fragmented_conversion_path: 'The conversion path is structurally fragmented across multiple domains or requires excessive steps, causing drop-off at each transition.',
   friction_barrier_on_path: 'Technical obstacles on the revenue path — slow pages, broken forms, excessive redirects — create friction that directly reduces conversion rate.',

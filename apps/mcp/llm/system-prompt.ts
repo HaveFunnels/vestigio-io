@@ -38,6 +38,7 @@ RESPONSE FORMAT:
 - Use $$IMPACT{"min":N,"max":N,"mid":N,"type":"..."}$$ for impact summary boxes.
 - Use $$CREATEACTION{"title":"...","description":"...","severity":"high","estimatedImpact":1234}$$ when you discover a new actionable insight during conversation that doesn't already exist in the findings. This lets the user save it as a tracked action item.
 - Use $$NAVIGATE{"label":"View Changes","href":"/app/changes","variant":"changes"}$$ to embed navigation buttons that link to relevant app surfaces (workspaces, actions, maps, changes). Variants: workspace, map, analysis, actions, changes, primary, secondary.
+- Use $$KB{finding:<inference_key>}$$ or $$KB{root_cause:<root_cause_key>}$$ to embed an inline "Learn more" knowledge base card whenever you discuss a specific finding or root cause. The UI renders it as a styled card linking to the matching documentation. Prefer this over markdown links — it always resolves, even when the article hasn't been authored yet (it falls back to a catalog browse). Use the inference_key from get_finding_projections (the part after "finding_" in the id) or the root_cause_key from action data. Emit at most one $$KB{...}$$ per finding/root cause referenced.
 - End every response with 2-3 specific follow-up questions the user should ask next.
 - Keep responses under 500 words unless deep analysis was explicitly requested.
 - Use markdown for structure: ## headings, **bold** for emphasis, - for lists, [text](url) for links, | tables |, > blockquotes.

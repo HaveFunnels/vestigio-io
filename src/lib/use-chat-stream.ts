@@ -206,11 +206,12 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
 
                   case "done":
                     flushText();
-                    // Resolve finding/action cards with real data from MCP
+                    // Resolve finding/action/kb cards with real data from MCP
                     const resolvedBlocks = resolveCardData(
                       currentBlocks,
                       data.findings_data || {},
                       data.actions_data || {},
+                      data.kb_articles_data || {},
                     );
                     currentBlocks = resolvedBlocks;
                     // Finalize message
@@ -273,7 +274,7 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
 // Parses $$FINDING{...}$$, $$ACTION{...}$$, $$IMPACT{...}$$ from Claude's text
 // and converts them into typed ContentBlocks.
 
-const BLOCK_MARKER_REGEX = /\$\$(FINDING|ACTION|IMPACT|CREATEACTION|NAVIGATE)\{([^}]+)\}\$\$/g;
+const BLOCK_MARKER_REGEX = /\$\$(FINDING|ACTION|IMPACT|CREATEACTION|NAVIGATE|KB)\{([^}]+)\}\$\$/g;
 
 function parseBlockMarkers(text: string): ContentBlock[] {
   const blocks: ContentBlock[] = [];
@@ -354,6 +355,25 @@ function parseBlockMarkers(text: string): ContentBlock[] {
           type: "navigation_cta",
           targets,
         });
+      } else if (markerType === "KB") {
+        // $$KB{finding:<inference_key>}$$ or $$KB{root_cause:<root_cause_key>}$$
+        const colonIdx = markerContent.indexOf(":");
+        if (colonIdx > 0) {
+          const kindRaw = markerContent.slice(0, colonIdx).trim();
+          const key = markerContent.slice(colonIdx + 1).trim();
+          const kind: "finding" | "root_cause" =
+            kindRaw === "root_cause" ? "root_cause" : "finding";
+          if (key) {
+            blocks.push({
+              type: "kb_article_card",
+              key,
+              key_kind: kind,
+              title: null,
+              slug: null,
+              excerpt: null,
+            });
+          }
+        }
       }
     } catch {
       // If parsing fails, keep as text
@@ -379,11 +399,12 @@ function parseBlockMarkers(text: string): ContentBlock[] {
   return blocks;
 }
 
-/** Resolve finding/action card blocks with real MCP data */
+/** Resolve finding/action/kb card blocks with real MCP/Sanity data */
 function resolveCardData(
   blocks: ContentBlock[],
   findingsData: Record<string, any>,
   actionsData: Record<string, any>,
+  kbArticlesData: Record<string, any>,
 ): ContentBlock[] {
   return blocks.map((block) => {
     if (block.type === "finding_card" && block.finding.id) {
@@ -396,6 +417,19 @@ function resolveCardData(
       const real = actionsData[block.action.id];
       if (real) {
         return { ...block, action: { ...block.action, ...real } };
+      }
+    }
+    if (block.type === "kb_article_card" && block.key) {
+      // Lookup format: "<kind>:<key>" — matches the server-side payload key
+      const lookup = `${block.key_kind}:${block.key}`;
+      const real = kbArticlesData[lookup];
+      if (real) {
+        return {
+          ...block,
+          title: real.title ?? null,
+          slug: real.slug ?? null,
+          excerpt: real.excerpt ?? null,
+        };
       }
     }
     return block;

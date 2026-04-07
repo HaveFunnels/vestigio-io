@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
@@ -524,6 +524,15 @@ function ActionDrawerContent({
   const cfg = categoryConfig[action.category];
   const resolveCfg = action.resolve_path ? resolveConfig[action.resolve_path] : null;
 
+  const [kbLink, setKbLink] = useState<{ slug: string; title: string; excerpt?: string } | null>(null);
+  useEffect(() => {
+    if (!action.root_cause_key) { setKbLink(null); return; }
+    fetch(`/api/knowledge-base/by-root-cause-key?key=${encodeURIComponent(action.root_cause_key)}`)
+      .then((r) => r.json())
+      .then((data) => { if (data.article) setKbLink(data.article); })
+      .catch(() => {});
+  }, [action.root_cause_key]);
+
   return (
     <div className="space-y-6">
       {/* Description + Root Cause — visually connected */}
@@ -653,6 +662,36 @@ function ActionDrawerContent({
           {action.cross_pack ? t("drawer.affectsMultiplePacks") : t("drawer.singlePack")}
         </span>
       </section>
+
+      {/* Knowledge Base Link — always render */}
+      {action.root_cause_key && (
+        <section>
+          <a
+            href={kbLink ? `/app/knowledge-base/${kbLink.slug}` : `/app/knowledge-base?root_cause=${encodeURIComponent(action.root_cause_key)}`}
+            className="group flex items-start gap-3 rounded-md border border-edge bg-surface-card px-4 py-3 text-sm text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover"
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-inset text-content-faint group-hover:text-accent">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">
+                {t("drawer.learnMore")}
+              </div>
+              <div className="mt-0.5 truncate text-sm font-medium text-content">
+                {kbLink ? kbLink.title : t("drawer.browseRelatedDocs")}
+              </div>
+              <div className="mt-0.5 text-xs text-content-muted line-clamp-2">
+                {kbLink?.excerpt || t("drawer.docsComingSoon")}
+              </div>
+            </div>
+            <svg className="mt-1 h-3.5 w-3.5 shrink-0 text-content-faint group-hover:text-accent" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </a>
+        </section>
+      )}
 
       {/* Action Buttons */}
       <section className="space-y-2">

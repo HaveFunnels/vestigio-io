@@ -735,6 +735,7 @@
       "discuss_finding": "__TODO__",
       "verification_tooltip": "Die Verifizierungsreife zeigt, wie die Evidenz dieses Befunds validiert wurde. Nicht verifiziert = nur statische Analyse. Verifiziert = durch Browser bestätigt.",
       "learn_more": "Mehr erfahren",
+      "browse_related_docs": "Verwandte Dokumente durchsuchen",
       "docs_coming_soon": "Die Dokumentation für diesen Befund wird gerade geschrieben."
     },
     "customer_center": {
@@ -1010,7 +1011,10 @@
         "scope": "__TODO__",
         "affects_multiple": "__TODO__",
         "single_pack": "__TODO__",
-        "request_verification": "__TODO__"
+        "request_verification": "__TODO__",
+        "learnMore": "Mehr erfahren",
+        "browseRelatedDocs": "Verwandte Dokumente durchsuchen",
+        "docsComingSoon": "Die Dokumentation für diese Ursache wird gerade geschrieben."
       }
     },
     "data_sources": {

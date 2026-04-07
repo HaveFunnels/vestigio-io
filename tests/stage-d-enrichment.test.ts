@@ -77,7 +77,6 @@ test("scenarios — picker falls back to hybrid for null business model", () => 
 });
 
 test("scenarios — picker falls back to hybrid for unknown business model", () => {
-  // @ts-expect-error — testing fallback for invalid input
   const s = pickCommercialPathScenario("nonprofit_b2g", LANDING);
   assertEqual(s.name, "hybrid_commercial_path", "unknown falls back to hybrid");
 });

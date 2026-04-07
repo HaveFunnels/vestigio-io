@@ -18,11 +18,11 @@ export default function ExportButton({
 
     // Collect all keys from all rows to handle sparse data
     const keys = Array.from(
-      data.reduce((set, row) => {
+      data.reduce<Set<string>>((set, row) => {
         Object.keys(row).forEach((k) => set.add(k));
         return set;
       }, new Set<string>())
-    ) as string[];
+    );
 
     // Escape a CSV cell value
     function escapeCell(value: any): string {

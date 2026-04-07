@@ -806,6 +806,7 @@
       "verification_requested": "Verification Requested",
       "verification_tooltip": "Verification maturity shows how this finding's evidence has been validated. Unverified = static analysis only. Verified = confirmed by browser.",
       "learn_more": "Learn more",
+      "browse_related_docs": "Browse related docs",
       "docs_coming_soon": "Documentation for this finding is being written."
     },
     "customer_center": {
@@ -1169,7 +1170,10 @@
         "discussInChat": "Discuss in Chat",
         "this": "this",
         "action": "action",
-        "requestVerification": "Request Verification"
+        "requestVerification": "Request Verification",
+        "learnMore": "Learn more",
+        "browseRelatedDocs": "Browse related docs",
+        "docsComingSoon": "Documentation for this root cause is being written."
       }
     },
     "data_sources": {

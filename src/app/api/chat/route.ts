@@ -373,6 +373,50 @@ export async function POST(request: Request) {
           }
         } catch { /* MCP data not available — cards will show IDs only */ }
 
+        // ── Resolve $$KB{kind:key}$$ markers from the response into Sanity articles ──
+        // Keys are bundled in kbArticlesMap as "<kind>:<key>" → { title, slug, excerpt }
+        // so the client can match each block deterministically. Articles that don't
+        // exist in Sanity yet are simply omitted — the client falls back to a
+        // styled "Browse related docs" card linking to the catalog filtered by key.
+        const kbArticlesMap: Record<string, { title: string; slug: string; excerpt: string | null }> = {};
+        try {
+          const kbMarkerRegex = /\$\$KB\{(finding|root_cause):([^}]+)\}\$\$/g;
+          const seenLookups = new Set<string>();
+          const kbLookups: Array<{ kind: "finding" | "root_cause"; key: string }> = [];
+          for (const match of result.response_text.matchAll(kbMarkerRegex)) {
+            const kind = match[1] as "finding" | "root_cause";
+            const key = match[2].trim();
+            const lookup = `${kind}:${key}`;
+            if (!key || seenLookups.has(lookup)) continue;
+            seenLookups.add(lookup);
+            kbLookups.push({ kind, key });
+          }
+
+          if (kbLookups.length > 0) {
+            const [{ getKnowledgeArticleByFindingKey, getKnowledgeArticleByRootCauseKey }] = await Promise.all([
+              import("@/sanity/sanity-utils"),
+            ]);
+            const fetched = await Promise.all(
+              kbLookups.map(async ({ kind, key }) => {
+                try {
+                  const article = kind === "finding"
+                    ? await getKnowledgeArticleByFindingKey(key, llmOrgContext.locale || "en")
+                    : await getKnowledgeArticleByRootCauseKey(key);
+                  return article ? { kind, key, article } : null;
+                } catch { return null; }
+              }),
+            );
+            for (const entry of fetched) {
+              if (!entry) continue;
+              kbArticlesMap[`${entry.kind}:${entry.key}`] = {
+                title: entry.article.title,
+                slug: entry.article.slug.current,
+                excerpt: entry.article.excerpt ?? null,
+              };
+            }
+          }
+        } catch { /* Sanity unavailable — client will render fallback cards */ }
+
         sendEvent("done", {
           request_id: result.request_id,
           response: result.response_text,
@@ -381,6 +425,7 @@ export async function POST(request: Request) {
           mcp_remaining: mcpRemaining,
           findings_data: findingsMap,
           actions_data: actionsMap,
+          kb_articles_data: kbArticlesMap,
           tokens: result.tokens,
           guard_tokens: result.guard_tokens,
           classifier_tokens: result.classifier_tokens,

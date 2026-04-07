@@ -802,6 +802,7 @@
       "verification_requested": "Verificación Solicitada",
       "verification_tooltip": "La madurez de verificación muestra cómo se ha validado la evidencia de este hallazgo. No verificado = solo análisis estático. Verificado = confirmado por navegador.",
       "learn_more": "Saber más",
+      "browse_related_docs": "Ver artículos relacionados",
       "docs_coming_soon": "La documentación para este hallazgo se está escribiendo."
     },
     "customer_center": {
@@ -1164,7 +1165,10 @@
         "discussInChat": "Discutir en Chat",
         "this": "esta",
         "action": "acción",
-        "requestVerification": "Solicitar Verificación"
+        "requestVerification": "Solicitar Verificación",
+        "learnMore": "Saber más",
+        "browseRelatedDocs": "Ver artículos relacionados",
+        "docsComingSoon": "La documentación para esta causa raíz se está escribiendo."
       }
     },
     "data_sources": {

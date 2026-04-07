@@ -13,6 +13,13 @@ import {
 	kbByFindingKeyQuery,
 	kbByRootCauseKeyQuery,
 } from "./sanity-query";
+import {
+	getFoundationArticleByFindingKey,
+	getFoundationArticleByRootCauseKey,
+	getFoundationArticleBySlug,
+	listFoundationArticles,
+	type FoundationArticle,
+} from "../../packages/knowledge/foundation-articles";
 
 const SANITY_ENABLED = !!(
 	typeof process !== "undefined" &&
@@ -132,6 +139,28 @@ export interface KnowledgeArticle {
 }
 
 /**
+ * Adapt a programmatically generated foundation article to the
+ * KnowledgeArticle shape so it can be returned alongside Sanity-authored
+ * content. Foundation articles are bilingual-neutral (English) and
+ * always carry the `is_foundation` marker so the consumer can tell.
+ */
+function foundationToKnowledgeArticle(article: FoundationArticle): KnowledgeArticle & { is_foundation: true } {
+	return {
+		_id: article._id,
+		title: article.title,
+		slug: article.slug,
+		category: article.category,
+		locale: "en",
+		finding_key: article.finding_key,
+		root_cause_key: article.root_cause_key,
+		excerpt: article.excerpt,
+		body: article.body,
+		publishedAt: undefined,
+		is_foundation: true,
+	};
+}
+
+/**
  * Deduplicate articles by slug — prefer the user's locale over "en".
  * If both pt-BR and en versions of "welcome" exist, keep only pt-BR.
  */
@@ -160,18 +189,33 @@ export const getKnowledgeArticles = async (locale = "en"): Promise<KnowledgeArti
 		qParams: { locale },
 		tags: ["knowledgeArticle"],
 	});
-	return dedupeBySlug(articles || [], locale);
+	const sanityArticles = dedupeBySlug(articles || [], locale);
+
+	// Merge in foundation articles. Sanity-authored articles take
+	// precedence on slug conflict so writers can override the
+	// programmatic foundation with richer hand-authored content.
+	const sanitySlugs = new Set(sanityArticles.map((a) => a.slug.current));
+	const foundationArticles = listFoundationArticles()
+		.map(foundationToKnowledgeArticle)
+		.filter((a) => !sanitySlugs.has(a.slug.current));
+
+	return [...sanityArticles, ...foundationArticles];
 };
 
 export const getKnowledgeArticleBySlug = async (
 	slug: string,
 	locale = "en",
 ): Promise<KnowledgeArticle | null> => {
-	return sanityFetch<KnowledgeArticle | null>({
+	const article = await sanityFetch<KnowledgeArticle | null>({
 		query: kbBySlugAndLocaleQuery,
 		qParams: { slug, locale },
 		tags: ["knowledgeArticle"],
 	});
+	if (article) return article;
+
+	// Fall back to foundation article if Sanity has no match
+	const foundation = getFoundationArticleBySlug(slug);
+	return foundation ? foundationToKnowledgeArticle(foundation) : null;
 };
 
 export const getKnowledgeArticlesByCategory = async (
@@ -188,19 +232,29 @@ export const getKnowledgeArticleByFindingKey = async (
 	findingKey: string,
 	locale = "en",
 ): Promise<KnowledgeArticle | null> => {
-	return sanityFetch<KnowledgeArticle | null>({
+	const article = await sanityFetch<KnowledgeArticle | null>({
 		query: kbByFindingKeyQuery,
 		qParams: { findingKey, locale },
 		tags: ["knowledgeArticle"],
 	});
+	if (article) return article;
+
+	// Fall back to foundation article — every inference_key has one
+	const foundation = getFoundationArticleByFindingKey(findingKey);
+	return foundation ? foundationToKnowledgeArticle(foundation) : null;
 };
 
 export const getKnowledgeArticleByRootCauseKey = async (
 	rootCauseKey: string,
 ): Promise<KnowledgeArticle | null> => {
-	return sanityFetch<KnowledgeArticle | null>({
+	const article = await sanityFetch<KnowledgeArticle | null>({
 		query: kbByRootCauseKeyQuery,
 		qParams: { rootCauseKey },
 		tags: ["knowledgeArticle"],
 	});
+	if (article) return article;
+
+	// Fall back to foundation article — every root_cause_key has one
+	const foundation = getFoundationArticleByRootCauseKey(rootCauseKey);
+	return foundation ? foundationToKnowledgeArticle(foundation) : null;
 };

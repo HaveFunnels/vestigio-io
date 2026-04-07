@@ -802,6 +802,7 @@
       "verification_requested": "Verificação Solicitada",
       "verification_tooltip": "A maturidade de verificação mostra como as evidências deste finding foram validadas. Não verificado = apenas análise estática. Verificado = confirmado pelo navegador.",
       "learn_more": "Saiba mais",
+      "browse_related_docs": "Ver artigos relacionados",
       "docs_coming_soon": "A documentação para este finding está sendo escrita."
     },
     "customer_center": {
@@ -1207,7 +1208,10 @@
         "discussInChat": "Discutir no Chat",
         "this": "este",
         "action": "ação",
-        "requestVerification": "Solicitar Verificação"
+        "requestVerification": "Solicitar Verificação",
+        "learnMore": "Saiba mais",
+        "browseRelatedDocs": "Ver artigos relacionados",
+        "docsComingSoon": "A documentação para esta causa raiz está sendo escrita."
       }
     },
     "data_sources": {

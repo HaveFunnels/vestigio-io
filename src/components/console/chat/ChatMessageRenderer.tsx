@@ -10,6 +10,7 @@ import { ChatMarkdown } from "./ChatMarkdown";
 import { ToolCallStep } from "./ToolCallStep";
 import { FindingCard } from "./FindingCard";
 import { ActionCard } from "./ActionCard";
+import { KbArticleCard } from "./KbArticleCard";
 import { StreamingCursor } from "./StreamingCursor";
 import { MessageActions } from "./MessageActions";
 import { ThinkingIndicator } from "./ThinkingIndicator";
@@ -125,6 +126,9 @@ function BlockRenderer({
 
     case "action_card":
       return <ActionCard block={block} onNavigate={onNavigate} />;
+
+    case "kb_article_card":
+      return <KbArticleCard block={block} onNavigate={onNavigate} />;
 
     case "create_action":
       return (

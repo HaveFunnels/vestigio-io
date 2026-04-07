@@ -29,7 +29,7 @@ import type { DecisionChange } from '../change-detection/types';
 // ──────────────────────────────────────────────
 
 // Inference → primary pack mapping
-const INFERENCE_TO_PACK: Record<string, string> = {
+export const INFERENCE_TO_PACK: Record<string, string> = {
   commerce_context: 'scale_readiness',
   trust_boundary_crossed: 'scale_readiness',
   policy_gap: 'scale_readiness',
@@ -321,7 +321,7 @@ const INFERENCE_SURFACES: Record<string, string> = {
 
 // Human-readable titles for inference findings
 // Phase 30: Every title rewritten for commercial sharpness
-const INFERENCE_TITLES: Record<string, string> = {
+export const INFERENCE_TITLES: Record<string, string> = {
   // ── Scale Readiness ─────────────────────────────
   trust_boundary_crossed: 'Checkout trust continuity broken',
   policy_gap: 'Consumer protection policies missing or incomplete',
@@ -736,6 +736,7 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       title: action.title,
       description: action.description,
       root_cause: actionRcTitle,
+      root_cause_key: rc?.root_cause_key ?? null,
       impact: impact ? { monthly_range: impact.range, midpoint: impact.midpoint } : null,
       confidence: action.confidence,
       cross_pack: action.cross_pack_impact > 1,
@@ -1197,7 +1198,7 @@ function computePolarity(inf: Inference, vc: import('../impact').QuantifiedValue
 
 // ── Positive Findings ─────────────────────────
 
-const POSITIVE_CHECKS: { key: string; title: string; description: string; pack: string; check: (infs: Inference[], result: MultiPackResult) => boolean }[] = [
+export const POSITIVE_CHECKS: { key: string; title: string; description: string; pack: string; check: (infs: Inference[], result: MultiPackResult) => boolean }[] = [
   // ── Commerce positive findings ──────────────────
   { key: 'strong_cta_clarity', title: 'Conversion intent is clear and unambiguous', pack: 'scale_readiness',
     description: 'The primary conversion path is identifiable and free of competing calls-to-action. Visitors can find how to purchase.',

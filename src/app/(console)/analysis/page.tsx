@@ -578,7 +578,7 @@ function AnalysisContent({
 function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjection; onDiscuss: () => void }) {
   const td = useTranslations("console.finding_drawer");
   const tc = useTranslations("console.common");
-  const [kbLink, setKbLink] = useState<{ slug: string; title: string } | null>(null);
+  const [kbLink, setKbLink] = useState<{ slug: string; title: string; excerpt?: string } | null>(null);
 
   useEffect(() => {
     if (!finding.inference_key) return;
@@ -744,29 +744,32 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
         </section>
       )}
 
-      {/* Knowledge Base Link */}
+      {/* Knowledge Base Link — always render as a styled link */}
       <section>
-        {kbLink ? (
-          <a
-            href={`/app/knowledge-base/${kbLink.slug}`}
-            className="flex items-center gap-2 rounded-md border border-edge bg-surface-card px-4 py-2.5 text-sm text-content-secondary transition-colors hover:border-accent/30 hover:bg-surface-card-hover"
-          >
-            <svg className="h-4 w-4 shrink-0 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <a
+          href={kbLink ? `/app/knowledge-base/${kbLink.slug}` : `/app/knowledge-base?finding=${encodeURIComponent(finding.inference_key)}`}
+          className="group flex items-start gap-3 rounded-md border border-edge bg-surface-card px-4 py-3 text-sm text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-inset text-content-faint group-hover:text-accent">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
             </svg>
-            <span>{td("learn_more")}: {kbLink.title}</span>
-            <svg className="ml-auto h-3.5 w-3.5 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </a>
-        ) : (
-          <div className="flex items-center gap-2 rounded-md border border-dashed border-edge px-4 py-2.5 text-xs text-content-faint">
-            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-            </svg>
-            <span>{td("docs_coming_soon")}</span>
           </div>
-        )}
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">
+              {td("learn_more")}
+            </div>
+            <div className="mt-0.5 truncate text-sm font-medium text-content">
+              {kbLink ? kbLink.title : td("browse_related_docs")}
+            </div>
+            <div className="mt-0.5 text-xs text-content-muted line-clamp-2">
+              {kbLink?.excerpt || td("docs_coming_soon")}
+            </div>
+          </div>
+          <svg className="mt-1 h-3.5 w-3.5 shrink-0 text-content-faint group-hover:text-accent" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </a>
       </section>
 
       {/* Discuss CTA */}

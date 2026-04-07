@@ -2,6 +2,99 @@
 
 ---
 
+## Wave 1 Prep / Starting State -- 2026-04-07
+
+> **Read this first when resuming.** Snapshot of the repo immediately before Wave 1 work begins. Captures what's done, what's loose, and exactly where Wave 1 picks up.
+
+### Repo state
+
+- **Working tree**: clean
+- **Branch**: `main`, in sync with `origin/main`
+- **Last 8 commits** (newest first):
+  - `97d372b` Behavioral workspaces: UI categories + greyed cards
+  - `e034d94` Behavioral workspaces: engine wiring
+  - `e737bef` Wave 0.3: pixel event processing worker + Wave 0.5 closure
+  - `ab8666f` Wave 0.2: pixel ingest endpoint
+  - `b222839` Wave 0.6: verification frontend wiring
+  - `71ba3f7` Wave 0.7: findings persistence + change detection
+  - `97e3044` Sprint 4: Admin Surface Scans + admin nav settings fix
+  - `7a127a3` Sprint 3.7-3.11: /lp/audit result page + checkout + lead promotion
+- **Schema state**: `prisma db push` against production confirms "in sync". No drift.
+- **Test suite**: 14/14 suites pass (`npm test`)
+- **Build**: clean (`npx next build`)
+
+### Wave 0 — fully complete
+
+| Wave | Status | Commit |
+|---|---|---|
+| 0.1 Onboarding → audit auto-trigger | ✅ | Sprint 1 |
+| 0.2 Pixel ingest endpoint | ✅ | `ab8666f` |
+| 0.3 Pixel event processing worker | ✅ | `e737bef` + `e034d94` (cohort emission) |
+| 0.4 Inventory auto-build from parser | ✅ | Sprint 1 |
+| 0.5 Inventory mock data removed | ✅ | Sprint 1 + Wave 0.7 + Wave 0.3 |
+| 0.6 Verification UI → backend wiring | ✅ | `b222839` |
+| 0.7 Findings persistence + change detection | ✅ | `71ba3f7` |
+
+### Wave 1 — what's actually left
+
+The audit confirmed Wave 1 was 90% done before today:
+- 1.1 — promoted to Wave 0.1 (done)
+- 1.2-1.8 — frontend polish series, all done 2026-04-05
+- Behavioral workspaces (7) — wired today end-to-end (engine + UI category + banner + greyed cards)
+
+**Only one thing remains in Wave 1:**
+
+### 1.9 Stage D — Selective Headless
+
+**Spec**: see [docs/ROADMAP.md § 1.9](docs/ROADMAP.md). Short version:
+
+- [workers/ingestion/staged-pipeline.ts:420-424](workers/ingestion/staged-pipeline.ts#L420) is a placeholder comment block. The pipeline jumps from Stage C (`crawl`) directly to `complete` even when `spaDetected === true`.
+- All building blocks already exist:
+  - SPA detection ([line 386](workers/ingestion/staged-pipeline.ts#L386))
+  - `BrowserWorker` ([workers/verification/browser-worker.ts](workers/verification/browser-worker.ts)) — has both real Playwright execution and a simulated CI fallback, returns `Evidence[]`, implements `VerificationExecutor`
+  - `PlaywrightRuntime` is the canonical browser layer
+  - Verification policy gating (Wave 0.6) — Stage D should reuse it for cost protection
+- The wiring task is small (~50-100 lines): when `spaDetected`, build a minimal `BrowserVerificationRequest`, execute via `BrowserWorker.execute()`, append the resulting `Evidence[]` to the cycle. Stage D should be **selective** (cost protection) — only run for SPA-detected sites or other ambiguity triggers.
+
+**Estimated effort**: ~3-4 hours including:
+- The wiring itself
+- Plumbing the verification policy through Stage D so a budget-exhausted cycle doesn't blow up
+- Test coverage (the simulated mode of BrowserWorker makes this easy)
+- Manual verification on a known SPA test site
+- Adjacent flow check: confirm the new evidence flows through to findings + workspaces correctly
+
+### Loose ends parked / deferred
+
+| Item | Why deferred | When to revisit |
+|---|---|---|
+| Sprint 3.12 — Refactor onboard form to use shared form fields | 872 lines, "cosmetic" but the surface area is large enough that it could regress the onboard flow at exactly the wrong time. Risk-to-value ratio is bad pre-Wave-1. | After Wave 1 ships and we have a bit of slack |
+| Mobile classifier in Wave 0.3 | Currently uses User-Agent regex (good enough). Snippet emitting `device_type` directly would be cleaner. | Wave 2 or 3, when we touch the snippet for other reasons |
+| `/api/inventory` mocked deltas (`page.tsx:454`) | Shows a TODO comment. Period-over-period stat needs new API support. Not blocking. | Wave 2 along with the other inventory polish |
+| `integration_pull` executor placeholder ([executors.ts:207](workers/verification/executors.ts#L207)) | Wave 3 scope per ROADMAP. Returns "not yet implemented" cleanly today. | Wave 3 |
+
+### Known limitations to keep in mind
+
+- **Behavioral workspaces "active with 0 findings"**: a card can be eligible (≥20 sessions) but show 0 issues if specific cohort signals didn't fire (e.g. all-organic traffic → no `paid_traffic_*` signals). Renders as `0 issues`. Could improve with a "monitoring" badge — out of Wave 1 scope.
+- **Eligibility confidence reverse-engineering**: the `pixel_progress` shown in `collecting` cards is reverse-engineered from `eligibility.confidence` (`min(1, sessionCount/100)`). Above 100 sessions we lose precision. Not a problem in practice because `collecting` only triggers below 20 sessions.
+- **In-memory verification state** (Wave 0.6): verification results live only in the in-memory MCP singleton. On a multi-process deployment, other processes won't see new evidence until next cycle. We're single-instance on Railway today so this doesn't bite, but worth knowing.
+
+### Manual configuration that's now in place (no action needed)
+
+- ✅ `RawBehavioralEvent` table in production (Wave 0.2)
+- ✅ `CycleSnapshot` + `Finding` tables in production (Wave 0.7)
+- ✅ All cron jobs registered in `instrumentation-node.ts`: heal cron (60s), lead cleanup + behavioral prune (1h), behavioral rate-limit prune (5min)
+- ⚠️ **Postgres password rotation**: the `DATABASE_PUBLIC_URL` was pasted into chat history during Wave 0.2 push. Recommended to rotate in Railway when convenient.
+
+### How to start Wave 1 in the next session
+
+1. Read this section + the ROADMAP § 1.9 spec
+2. Review [workers/ingestion/staged-pipeline.ts:420-424](workers/ingestion/staged-pipeline.ts#L420) to confirm the slot is still where I described
+3. Review [workers/verification/browser-worker.ts](workers/verification/browser-worker.ts) execute interface — that's what Stage D will call
+4. Decide on the minimal scenario shape (visit homepage + scroll + capture) and the cost-gating policy
+5. Implement, test, manually verify on a known SPA test site
+
+---
+
 ## Behavioral Workspaces Wire-Up -- 2026-04-07
 
 ### Goal

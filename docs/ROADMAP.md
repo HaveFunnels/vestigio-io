@@ -3,6 +3,8 @@
 > Last updated: 2026-04-07
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
+> **2026-04-07 Wave 1 prep:** Wave 0 is fully complete (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ✅). The 7 behavioral workspaces are wired end-to-end. Stale "Open" status rows in Wave 0.2/0.3/0.5/0.6 detail blocks have been corrected. New Wave 1.9 spec added for Stage D (selective headless) — the only remaining Wave 1 item. Snapshot state and hand-off notes for the next session live in [DEV_PROGRESS.md § Wave 1 Prep](../DEV_PROGRESS.md#wave-1-prep--starting-state----2026-04-07). Sprint 3.12 (onboard form refactor) intentionally deferred to post-Wave 1 because the surface area is too large to risk before Stage D.
+>
 > **2026-04-07 Behavioral workspaces wired up (after Wave 0.3):** The 7 pixel-dependent workspaces (First Impression Revenue, Action Value Map, Acquisition Integrity, Mobile Revenue Exposure, Friction Tax, Trust Revenue Gap, Path to Purchase Efficiency) are now live end-to-end. The engine layer was largely already implemented (signals, inferences, decisions, factory, baselines, eligibility, projection plumbing) — only 3 wiring gaps were stopping it: (1) the Wave 0.3 worker now emits a second `BehavioralCohortPayload` evidence so the cohort signal extractor fires; (2) `recomputeAll()` now passes `behavioralContext` to `computePackEligibility()` so the eligibility result is real; (3) the `projectFindings` if-else got 7 new cases for the behavioral pack keys. Phase B added `category` + `pixel_status` fields to `WorkspaceProjection` and refactored `projectWorkspaces` to ALWAYS emit the 7 cards (even with no findings) so the UI can show placeholder/greyed states. Phase C grouped the workspaces page into Core/Behavioral sections, added a yellow "Configure Vestigio pixel" banner, and built a locked card variant that routes the user to /app/settings/data-sources. New i18n keys in en/pt-BR/es. All 14 test suites pass, build clean. See [DEV_PROGRESS.md § Behavioral Workspaces](../DEV_PROGRESS.md) for the full diff.
 >
 > **2026-04-07 Wave 0.3 update (after Wave 0.2):** Wave 0 is **fully complete**. The pixel event processing worker reads `RawBehavioralEvent` rows persisted by Wave 0.2, runs `aggregateSession()` per session, reduces N session aggregates into one `BehavioralSessionPayload`, and emits it as Evidence inline in the audit-runner before `recomputeAll()`. As a small bonus, `/api/inventory` now does a `COUNT(DISTINCT sessionId)` query per surface so the inventory page shows real `session_count` instead of `null` — that closes Wave 0.5 properly. The 30-day window is enforced by a prune in the existing instrumentation cron. 10 new reducer tests, all 14 project test suites pass, build clean. Wave 0 status: **0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 — all done.** The 7 behavioral workspaces plan at `~/.claude/plans/ticklish-discovering-nova.md` is now unblocked. See [DEV_PROGRESS.md § Wave 0.3](../DEV_PROGRESS.md) for the full diff.
@@ -120,29 +122,27 @@ These are ordered by dependency: 0.1 unblocks 0.4-0.5, which unblock 0.7, which 
 
 ---
 
-### 0.2 Pixel Ingest Endpoint
+### 0.2 Pixel Ingest Endpoint ✅
 
 | | |
 |---|---|
 | **Tag** | `collection` `platform` |
 | **Priority** | P0 |
-| **Status** | Open. The behavioral snippet at [public/snippet/vestigio.js:20](../public/snippet/vestigio.js#L20) POSTs batches to `/api/behavioral/ingest`, **which does not exist**. Search confirmed: only `/api/admin/marketing/pixels` (3rd-party pixel admin) is present. |
-| **What** | Create `src/app/api/behavioral/ingest/route.ts` that: (a) reads JSON batch of events, (b) validates `data-env` against the org's environment id (resolve via API key or signed env id), (c) writes to a new `RawBehavioralEvent` Prisma table, (d) returns 204. Rate-limited per env id. |
-| **Where** | New file. New Prisma model. New env-id signing helper (HMAC of `environmentId + secret` so customers can't fake other people's traffic). |
-| **Acceptance** | Install snippet on a test page → events arrive → rows visible in `RawBehavioralEvent` table. |
+| **Status** | **Done — Wave 0.2 (2026-04-07).** New Prisma model `RawBehavioralEvent` (one row per event, indexed by `(envId, sessionId, processedAt)` for the Wave 0.3 worker). New `POST /api/behavioral/ingest` route in [src/app/api/behavioral/ingest/route.ts](../src/app/api/behavioral/ingest/route.ts) with CORS preflight, dual content-type support (sendBeacon `text/plain` + fetch `application/json`), env-id existence cache, IP-hashed in-memory rate limit (600 events/min, daily-rotating salt), per-event sanitizer (drops unknown types / oversized payloads / clock-skewed events). Always returns silent 204 so bots can't differentiate accept vs reject. Persistence schema is deployed in production. |
+| **What** | ✅ Route + model + defense layers + 30-day prune cron. |
+| **Acceptance** | ✅ Met. Snippet → endpoint → DB. See [DEV_PROGRESS.md § Wave 0.2](../DEV_PROGRESS.md). |
 
 ---
 
-### 0.3 Pixel Event Processing Worker
+### 0.3 Pixel Event Processing Worker ✅
 
 | | |
 |---|---|
 | **Tag** | `collection` |
 | **Priority** | P0 (depends on 0.2) |
-| **Status** | Open. [packages/behavioral/session-aggregator.ts](../packages/behavioral/session-aggregator.ts) `aggregateSession()` exists and works, but **nothing calls it**. Behavioral findings + 7 behavioral workspaces in `recompute.ts:343-369` are gated on `BehavioralSessionPayload` evidence — which never gets created without this worker. |
-| **What** | Background job that polls `RawBehavioralEvent` for unaggregated batches, groups by `(envId, sessionId)`, calls `aggregateSession()`, writes the result as `BehavioralSessionPayload` evidence into `PrismaEvidenceStore`. Schedule: every 60s, batch size ~100 sessions. |
-| **Where** | New worker file under `workers/behavioral/aggregator.ts`. Triggered from `src/app/app/layout.tsx` boot timer (same pattern as `health-checker.ts`). |
-| **Acceptance** | Snippet installed → user browses for 1 minute → within 2 minutes the org's behavioral findings + workspaces start populating. |
+| **Status** | **Done — Wave 0.3 (2026-04-07).** New worker [apps/audit-runner/process-behavioral.ts](../apps/audit-runner/process-behavioral.ts) reads the last 30 days of `RawBehavioralEvent` for the env, groups by `(envId, sessionId)`, calls `aggregateSession()` per session, reduces N session aggregates into one `BehavioralSessionPayload` AND one `BehavioralCohortPayload` (the latter added 2026-04-07 to power the 7 behavioral workspaces). Architecture is **inline** in `runAuditCycle()` right before `recomputeAll()` — no separate cron, the cycle_ref is already known, no race conditions with snapshot/findings persistence. Window-based not delta-based: each cycle re-aggregates the full 30-day window. Persists the new evidence via `PrismaEvidenceStore.addMany` for cold-start rehydration. 30-day prune cron in `instrumentation-node.ts`. 10 reducer tests cover the math. |
+| **What** | ✅ Worker + reducer + cohort emission + device classifier (UA regex) + cron prune. |
+| **Acceptance** | ✅ Met. Snippet → ingest → audit cycle → behavioral findings + 7 workspaces light up. See [DEV_PROGRESS.md § Wave 0.3](../DEV_PROGRESS.md). |
 
 ---
 
@@ -158,28 +158,27 @@ These are ordered by dependency: 0.1 unblocks 0.4-0.5, which unblock 0.7, which 
 
 ---
 
-### 0.5 Inventory: Replace Mock Counts with Real Data ⚠️ Partial
+### 0.5 Inventory: Replace Mock Counts with Real Data ✅
 
 | | |
 |---|---|
 | **Tag** | `engine` `frontend` |
 | **Priority** | P0 |
-| **Status** | **Partial — Sprint 1 (2026-04-07).** The mocks (`MOCK_SESSION_COUNTS`, `MOCK_FINDING_COUNTS`) are gone from [src/app/api/inventory/route.ts](../src/app/api/inventory/route.ts). Both fields now return `null` in the API response. The frontend [src/app/(console)/inventory/page.tsx](../src/app/(console)/inventory/page.tsx) detects `null`-only columns and hides them entirely (no fake numbers, no empty columns). Also drops null-safe handling in filters, summary cards, and the side drawer. The "real numbers" half (sessions from behavioral pipeline, findings from a per-surface join) still depends on **0.2 + 0.3 + 0.7** to ship. |
-| **What** | ✅ No more fake numbers anywhere. ⏳ Real numbers waiting on Wave 0.2/0.3 (sessions) + Wave 0.7 (findings). |
-| **Acceptance** | ✅ No hardcoded values. Once 0.2/0.3/0.7 land, the API just stops returning `null` and the UI columns reappear automatically. |
+| **Status** | **Done — Sprint 1 + Wave 0.7 + Wave 0.3 (2026-04-07).** Sprint 1 removed the mock counts and made both columns null-safe in the UI. Wave 0.7 wired `finding_count` from `PrismaFindingStore.countBySurfaceForLatestCycle` (3-tier path matcher: exact path / exact url / substring fallback). Wave 0.3 wired `session_count` from `RawBehavioralEvent` via `COUNT(DISTINCT sessionId)` per surface over the last 30 days, using the same 3-tier matcher. Both columns now show real numbers when data exists, return `0` when audit/snippet are installed but the surface has no findings/sessions, and return `null` only when there's no data at all (frontend hides null-only columns). |
+| **What** | ✅ Real `finding_count` + real `session_count` + null-safe UI. |
+| **Acceptance** | ✅ Met. After audit + snippet install, `/app/inventory` shows live numbers per surface. |
 
 ---
 
-### 0.6 Verification: Frontend → Backend Wiring
+### 0.6 Verification: Frontend → Backend Wiring ✅
 
 | | |
 |---|---|
 | **Tag** | `frontend` `engine` |
 | **Priority** | P0 |
-| **Status** | Open. The backend chain works: [apps/mcp/server.ts:217 `verify()`](../apps/mcp/server.ts#L217) → orchestrator → executor → recompute → new evidence. But the frontend handler at [src/app/(console)/actions/page.tsx:563](../src/app/(console)/actions/page.tsx#L563) is `onRequestVerification={() => toast.success(t("drawer.verificationRequested"))}` — a fake toast that never calls anything. |
-| **What** | (1) Create `POST /api/verification/run` that takes `{ subject_ref, verification_type, reason }`, looks up the user's org, calls `mcpServer.verify(...)`, returns the new verification status. (2) Replace the toast handler with a real fetch + optimistic UI update + error handling. (3) After verification completes, refresh the action drawer's `verification_maturity` and impact figures from the recomputed projections. |
-| **Where** | New API route. Update [src/lib/mcp-client.ts](../src/lib/mcp-client.ts). Update Actions/Analysis drawers. |
-| **Acceptance** | Click "Run Verification" → real Playwright run executes → drawer updates to `verified` with new evidence → impact recomputed. |
+| **Status** | **Done — Wave 0.6 (2026-04-07).** New `POST /api/verification/run` route in [src/app/api/verification/run/route.ts](../src/app/api/verification/run/route.ts). Body: `{ action_id, intent: 're_verify' \| 'confirm_resolution' }`. Resolves user → org → env, calls `ensureContext()`, looks up the action by `action_key`, derives `subject_ref` + `decision_ref`, calls `mcpServer.verify()`. Response includes the **updated action projection** so the client refreshes inline without an extra round-trip. Three response shapes: `ok+verification`, `ok+skipped` (policy denied — UI shows reasoning toast), `ok=false`. Actions page replaced its toast stubs with a real handler + spinner state + `router.refresh()`. Latent bug fix: `McpServer.executeVerification()` was rebuilding the engine context without translations or `previousSnapshot`, silently erasing i18n labels and `change_class` after each verification — fixed by caching both on the instance. |
+| **What** | ✅ POST route + actions page handler + latent bug fix. |
+| **Acceptance** | ✅ Met. Click "Re-verify" → real verification runs → drawer updates inline. See [DEV_PROGRESS.md § Wave 0.6](../DEV_PROGRESS.md). |
 
 ---
 
@@ -305,6 +304,20 @@ Everything in Wave 1 either fixes a P0 (broken) or makes the value delivery loop
 | **Status** | **Done** (2026-04-05) |
 | **What** | Monthly ↔ Annual toggle had no transition. |
 | **Fix** | Added `AnimatedPrice` component (ease-out cubic count animation), sliding highlight on toggle, and "Save X%" badge that fades in on annual selection. Strikethrough price animates height/opacity. |
+
+---
+
+### 1.9 Stage D — Selective Headless
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` |
+| **Priority** | P1 |
+| **Status** | **Open.** [workers/ingestion/staged-pipeline.ts:420-424](../workers/ingestion/staged-pipeline.ts#L420) is a placeholder comment block (`STAGE D — Selective Headless (not yet implemented)`). The pipeline jumps from Stage C (`crawl`) directly to `complete` without exercising the headless path, even when SPA detection at line 386 sets `spaDetected = true`. The building blocks already exist:<br>• ✅ SPA detection via `shouldTriggerPlaywright()` ([line 386](../workers/ingestion/staged-pipeline.ts#L386))<br>• ✅ `BrowserWorker` ([workers/verification/browser-worker.ts](../workers/verification/browser-worker.ts)) — implements `VerificationExecutor`, has both real Playwright execution and a simulated CI fallback, returns `Evidence[]`<br>• ✅ `PlaywrightRuntime` is the canonical browser layer<br>• ✅ Stage D slot reserved in the pipeline order |
+| **What** | Wire the existing browser worker into Stage D when `spaDetected === true`. Build a minimal `BrowserVerificationRequest` (visit homepage, scroll, capture title + checkout indicators), execute via `BrowserWorker.execute()`, append the resulting `Evidence[]` to the cycle. Stage D should be **selective** — only run for SPA-detected sites or other ambiguity triggers, not every cycle (cost protection). |
+| **Where** | [workers/ingestion/staged-pipeline.ts:420-424](../workers/ingestion/staged-pipeline.ts#L420). May also need a small util to build the minimal `BrowserVerificationRequest` from the cycle scoping. |
+| **Acceptance** | Audit a JS-heavy SPA → Stage D fires → browser evidence appears in the cycle → engine produces findings that the static-only crawl would have missed (e.g. CTA visible only after JS render, dynamic price loading, post-mount form fields). For non-SPA sites, Stage D stays skipped to keep cost down. |
+| **Cost considerations** | Browser execution is the most expensive verification type. Wave 0.6 already routes verifications through the global verification policy (`packages/verification-economics/policy.ts`); Stage D should reuse the same gating so a cycle with budget exhaustion doesn't blow up. Default budget tier should allow 1 Stage D execution per cycle for SPA-detected sites. |
 
 ---
 

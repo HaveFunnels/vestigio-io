@@ -5,6 +5,71 @@
 // No business logic. No inference. Pure data shaping.
 // ──────────────────────────────────────────────
 
+/**
+ * Verification lifecycle stage — projection-layer string union.
+ *
+ * Wave 2.4 renamed these from `unverified/pending/partially/verified/degraded/stale`
+ * to language that does NOT suggest the finding might be fake. The previous
+ * vocabulary framed browser verification as a check on whether the finding
+ * was real. The new vocabulary frames it as **corroboration** layered on top
+ * of static evidence that is already real.
+ *
+ * Mapping from the engine's internal `VerificationMaturity` enum
+ * (in packages/verification-lifecycle) is done in the projection engine —
+ * the engine's enum stays unchanged; only the projection-layer string the
+ * UI consumes was renamed.
+ *
+ * | New key                  | What it means                                                |
+ * |--------------------------|--------------------------------------------------------------|
+ * | `static_evidence`        | Real evidence collected from HTTP, HTML, scripts, policies. |
+ * |                          | Browser verification has not been run yet (and may not be   |
+ * |                          | needed for low-severity findings).                          |
+ * | `confirming`             | Browser verification is currently running.                  |
+ * | `partial_confirmation`   | Browser corroborated some but not all of the signals.       |
+ * | `confirmed`              | Browser verification corroborated the finding in runtime.   |
+ * | `evidence_weakened`      | Was confirmed once, but a re-check shows the supporting    |
+ * |                          | evidence has weakened since then.                           |
+ * | `confirmation_expired`   | Was confirmed once, but the confirmation is now too old to |
+ * |                          | be trusted without re-checking.                             |
+ */
+export type VerificationStage =
+  | 'static_evidence'
+  | 'confirming'
+  | 'partial_confirmation'
+  | 'confirmed'
+  | 'evidence_weakened'
+  | 'confirmation_expired';
+
+/**
+ * Translate a legacy verification maturity string to the new Wave 2.4 vocabulary.
+ * Used at deserialization boundaries (e.g. PrismaFindingStore.loadLatestForEnvironment)
+ * so persisted projections from cycles run before Wave 2.4 still render correctly.
+ * Returns null when input is null/unknown.
+ */
+export function migrateLegacyVerificationMaturity(
+  raw: string | null | undefined,
+): VerificationStage | null {
+  if (!raw) return null;
+  switch (raw) {
+    // New keys — pass through unchanged
+    case 'static_evidence':
+    case 'confirming':
+    case 'partial_confirmation':
+    case 'confirmed':
+    case 'evidence_weakened':
+    case 'confirmation_expired':
+      return raw;
+    // Legacy keys — translate
+    case 'unverified': return 'static_evidence';
+    case 'pending': return 'confirming';
+    case 'partially': return 'partial_confirmation';
+    case 'verified': return 'confirmed';
+    case 'degraded': return 'evidence_weakened';
+    case 'stale': return 'confirmation_expired';
+    default: return null;
+  }
+}
+
 export interface FindingProjection {
   id: string;
   title: string;
@@ -39,8 +104,12 @@ export interface FindingProjection {
   /** Phase 27: Suppression context — is this finding affected by suppression? */
   suppression_context: FindingSuppressionContext | null;
 
-  /** Phase 0 UX: Verification lifecycle maturity */
-  verification_maturity: 'unverified' | 'pending' | 'partially' | 'verified' | 'degraded' | 'stale' | null;
+  /** Verification lifecycle stage. Wave 2.4: renamed from "unverified/pending/..."
+   * to operator-facing language that frames browser verification as an
+   * additive enrichment layer on top of static evidence — not as a
+   * "this finding might not be real" check. Static evidence is real
+   * collected data; verification is corroboration. */
+  verification_maturity: VerificationStage | null;
   /** Phase 0 UX: How this finding was verified */
   verification_method: 'static_only' | 'browser_verified' | 'mixed' | 'unknown';
   /** Phase 0 UX: Change class from cycle-to-cycle change detection */
@@ -104,8 +173,8 @@ export interface ActionProjection {
   effort_hint: string | null;
   /** Phase 1B UX: Change class from cycle-to-cycle change detection */
   change_class: 'regression' | 'improvement' | 'new_issue' | 'resolved' | 'stable_risk' | null;
-  /** Phase 1B UX: Verification lifecycle maturity */
-  verification_maturity: 'unverified' | 'pending' | 'partially' | 'verified' | 'degraded' | 'stale' | null;
+  /** Verification lifecycle stage — see FindingProjection.verification_maturity. */
+  verification_maturity: VerificationStage | null;
   /** Phase 1B UX: Suggested resolution path */
   resolve_path: 'fix' | 'verify' | 'track' | 'dismiss' | null;
 }

@@ -1,4 +1,4 @@
-import type { FindingProjection } from "./types";
+import { migrateLegacyVerificationMaturity, type FindingProjection } from "./types";
 
 // ──────────────────────────────────────────────
 // PrismaFindingStore — DB-backed projection persistence
@@ -136,7 +136,15 @@ export class PrismaFindingStore {
 		const findings: FindingProjection[] = [];
 		for (const row of rows) {
 			try {
-				findings.push(JSON.parse(row.projection));
+				const parsed = JSON.parse(row.projection) as FindingProjection;
+				// Wave 2.4: translate legacy verification_maturity strings on
+				// load so projections persisted before the rename still render
+				// with the new vocabulary. Inferences re-emitted on the next
+				// audit cycle will overwrite the row with the new format.
+				parsed.verification_maturity = migrateLegacyVerificationMaturity(
+					parsed.verification_maturity as string | null,
+				);
+				findings.push(parsed);
 			} catch (err) {
 				console.warn(
 					`[prisma-finding-store] failed to parse projection ${row.id}:`,

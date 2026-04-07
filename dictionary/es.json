@@ -716,6 +716,39 @@
         "knowledge_base": "Documentación sobre hallazgos, packs y conceptos de la plataforma."
       }
     },
+    "verification_badge": {
+      "static_evidence": "Evidencia estática",
+      "confirming": "Confirmando",
+      "partial_confirmation": "Parcialmente confirmado",
+      "confirmed": "Confirmado",
+      "evidence_weakened": "Evidencia debilitada",
+      "confirmation_expired": "Confirmación expirada"
+    },
+    "verification_panel": {
+      "method": {
+        "static_only": "Recogido por análisis estático",
+        "browser_verified": "Corroborado por verificación en el navegador",
+        "mixed": "Análisis estático + corroboración en el navegador",
+        "unknown": "Origen no especificado"
+      },
+      "confirmed_at": "Confirmado {time}",
+      "expires_at": "Expira {time}",
+      "recheck": {
+        "weakened_title": "La evidencia de respaldo se ha debilitado",
+        "weakened_body": "Este hallazgo fue confirmado una vez, pero una nueva revisión muestra que la evidencia de respaldo ya no es tan sólida. Volver a ejecutar la verificación actualiza el panorama.",
+        "expired_title": "Confirmación expirada",
+        "expired_body": "La última confirmación de este hallazgo es demasiado antigua para confiar sin una nueva revisión. Ejecuta la verificación nuevamente para ponerla al día.",
+        "button": "Volver a verificar"
+      },
+      "resolution": {
+        "title": "Issue marcada como resuelta",
+        "button": "Confirmar resolución"
+      }
+    },
+    "verification_sufficiency": {
+      "high": "Este hallazgo de severidad alta provino del análisis estático. Ejecutar una verificación lo corrobora con una ejecución real del navegador antes de actuar.",
+      "critical": "Este hallazgo crítico provino del análisis estático. Ejecutar una verificación lo corrobora con una ejecución real del navegador antes de actuar."
+    },
     "analysis": {
       "title": "Análisis",
       "subtitle_ongoing": "Análisis en progreso — los hallazgos aparecen a medida que están listos.",

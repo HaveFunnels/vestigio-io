@@ -627,8 +627,6 @@ function ActionDrawerContent({
           method="unknown"
           verifiedAt={null}
           expiresAt={null}
-          confidenceAtVerification={null}
-          currentConfidence={null}
           reTriggerReason={null}
           decisionStatus={action.decision_status}
           onRequestVerification={isVerifying ? undefined : () => onRunVerification("re_verify")}

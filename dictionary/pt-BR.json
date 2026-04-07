@@ -716,6 +716,39 @@
         "knowledge_base": "Documentação sobre findings, packs e conceitos da plataforma."
       }
     },
+    "verification_badge": {
+      "static_evidence": "Evidência estática",
+      "confirming": "Confirmando",
+      "partial_confirmation": "Parcialmente confirmado",
+      "confirmed": "Confirmado",
+      "evidence_weakened": "Evidência enfraquecida",
+      "confirmation_expired": "Confirmação expirada"
+    },
+    "verification_panel": {
+      "method": {
+        "static_only": "Coletado por análise estática",
+        "browser_verified": "Corroborado por verificação no navegador",
+        "mixed": "Análise estática + corroboração no navegador",
+        "unknown": "Origem não especificada"
+      },
+      "confirmed_at": "Confirmado {time}",
+      "expires_at": "Expira {time}",
+      "recheck": {
+        "weakened_title": "Evidência de apoio enfraqueceu",
+        "weakened_body": "Este finding foi confirmado uma vez, mas uma nova checagem mostra que a evidência de apoio não está mais tão forte. Rodar a verificação novamente atualiza o quadro.",
+        "expired_title": "Confirmação expirada",
+        "expired_body": "A última confirmação deste finding está antiga demais para confiar sem uma nova checagem. Rode a verificação novamente para atualizar.",
+        "button": "Verificar de novo"
+      },
+      "resolution": {
+        "title": "Issue marcada como resolvida",
+        "button": "Confirmar resolução"
+      }
+    },
+    "verification_sufficiency": {
+      "high": "Este finding de severidade alta veio de análise estática. Rodar uma verificação corrobora ele com uma execução real no navegador antes de você agir.",
+      "critical": "Este finding crítico veio de análise estática. Rodar uma verificação corrobora ele com uma execução real no navegador antes de você agir."
+    },
     "analysis": {
       "title": "Análise",
       "subtitle_ongoing": "Análise em andamento — as descobertas aparecem conforme ficam prontas.",

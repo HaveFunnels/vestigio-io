@@ -862,18 +862,22 @@ function buildActionVerificationMaturity(
   action: { source_decisions: string[] },
   decisionsByRef: Map<string, { status: string; decision_key: string }>,
 ): ActionProjection['verification_maturity'] {
-  // Map decision status to a verification maturity analog:
-  // 'created' → unverified, 'confirmed' → pending, 'resolved' → verified,
-  // 'stale' → stale, 'regressed' → degraded
+  // Map the engine's decision status to the projection-layer
+  // VerificationStage union (Wave 2.4 renamed for operator-facing clarity).
+  //   'created'   → static_evidence       (real but not yet corroborated)
+  //   'confirmed' → confirming            (browser run in progress)
+  //   'resolved'  → confirmed             (browser corroborated in runtime)
+  //   'stale'     → confirmation_expired  (was confirmed, now too old)
+  //   'regressed' → evidence_weakened     (was confirmed, now weaker)
   for (const ref of action.source_decisions) {
     const d = decisionsByRef.get(ref);
     if (!d) continue;
     switch (d.status) {
-      case 'created': return 'unverified';
-      case 'confirmed': return 'pending';
-      case 'resolved': return 'verified';
-      case 'stale': return 'stale';
-      case 'regressed': return 'degraded';
+      case 'created': return 'static_evidence';
+      case 'confirmed': return 'confirming';
+      case 'resolved': return 'confirmed';
+      case 'stale': return 'confirmation_expired';
+      case 'regressed': return 'evidence_weakened';
       default: return null;
     }
   }
@@ -886,7 +890,7 @@ function deriveResolvePath(
   decisionStatus: string | null,
 ): ActionProjection['resolve_path'] {
   if (category === 'incident') {
-    if (verificationMaturity === 'verified' && decisionStatus === 'resolved') {
+    if (verificationMaturity === 'confirmed' && decisionStatus === 'resolved') {
       return 'track';
     }
     return 'fix';

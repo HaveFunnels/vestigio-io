@@ -293,8 +293,8 @@ function RichFindingDrawer({ node, finding }: { node: MapNode; finding?: Finding
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{td("verification")}</h3>
         <VerificationPanel
           maturity={finding.verification_maturity} method={finding.verification_method}
-          verifiedAt={null} expiresAt={null} confidenceAtVerification={null}
-          currentConfidence={null} reTriggerReason={null} decisionStatus={null}
+          verifiedAt={null} expiresAt={null}
+          reTriggerReason={null} decisionStatus={null}
           onRequestVerification={() => toast.success(td("verification_requested"))}
         />
       </section>

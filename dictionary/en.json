@@ -719,6 +719,39 @@
         "knowledge_base": "Documentation on findings, packs, and platform concepts."
       }
     },
+    "verification_badge": {
+      "static_evidence": "Static evidence",
+      "confirming": "Confirming",
+      "partial_confirmation": "Partially confirmed",
+      "confirmed": "Confirmed",
+      "evidence_weakened": "Evidence weakened",
+      "confirmation_expired": "Confirmation expired"
+    },
+    "verification_panel": {
+      "method": {
+        "static_only": "Collected from static analysis",
+        "browser_verified": "Corroborated by browser verification",
+        "mixed": "Static analysis + browser corroboration",
+        "unknown": "Source not specified"
+      },
+      "confirmed_at": "Confirmed {time}",
+      "expires_at": "Expires {time}",
+      "recheck": {
+        "weakened_title": "Supporting evidence has weakened",
+        "weakened_body": "This finding was confirmed once, but a re-check shows the supporting evidence is no longer as strong. Re-running verification will refresh the picture.",
+        "expired_title": "Confirmation expired",
+        "expired_body": "This finding's last confirmation is too old to trust without a fresh check. Re-run verification to bring it up to date.",
+        "button": "Re-verify"
+      },
+      "resolution": {
+        "title": "Issue marked as resolved",
+        "button": "Confirm Resolution"
+      }
+    },
+    "verification_sufficiency": {
+      "high": "This high-severity finding came from static analysis. Running a verification will corroborate it with a real browser run before you act on it.",
+      "critical": "This critical-severity finding came from static analysis. Running a verification will corroborate it with a real browser run before you act on it."
+    },
     "analysis": {
       "title": "Analysis",
       "subtitle_ongoing": "Analysis in progress — findings appear as they're ready.",

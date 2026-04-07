@@ -366,9 +366,12 @@ function AnalysisContent({
       if (polarityFilter !== "all" && f.polarity !== polarityFilter) return false;
       if (hidePositive && f.polarity === "positive") return false;
       if (verificationFilter !== "all") {
-        if (verificationFilter === "unverified" && f.verification_maturity !== "unverified" && f.verification_maturity !== null) return false;
-        if (verificationFilter === "verified" && f.verification_maturity !== "verified") return false;
-        if (verificationFilter === "challenged" && f.verification_maturity !== "degraded" && f.verification_maturity !== "stale") return false;
+        // Wave 2.4 vocabulary: static_evidence is the new "no browser
+        // corroboration yet"; confirmed is the new "verified"; the
+        // re-check bucket combines evidence_weakened + confirmation_expired.
+        if (verificationFilter === "unverified" && f.verification_maturity !== "static_evidence" && f.verification_maturity !== null) return false;
+        if (verificationFilter === "verified" && f.verification_maturity !== "confirmed") return false;
+        if (verificationFilter === "challenged" && f.verification_maturity !== "evidence_weakened" && f.verification_maturity !== "confirmation_expired") return false;
       }
       if (impactRangeFilter !== "all") {
         const mid = f.impact.midpoint;
@@ -413,7 +416,7 @@ function AnalysisContent({
         subtext: t("cards.per_month_midpoint"),
       },
       { label: t("cards.high_impact_issues"), value: highImpact, variant: "danger", subtext: t("cards.high_impact_threshold") },
-      { label: t("cards.verified_findings"), value: `${findings.filter(f => f.verification_maturity === "verified").length}/${findings.filter(f => f.polarity === "negative").length}`, variant: "info" },
+      { label: t("cards.verified_findings"), value: `${findings.filter(f => f.verification_maturity === "confirmed").length}/${findings.filter(f => f.polarity === "negative").length}`, variant: "info" },
     ];
   }, [findings, analysisState, t]);
 
@@ -705,8 +708,6 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
           method={finding.verification_method}
           verifiedAt={null}
           expiresAt={null}
-          confidenceAtVerification={null}
-          currentConfidence={null}
           reTriggerReason={null}
           decisionStatus={null}
           onRequestVerification={() => toast.success(td("verification_requested"))}

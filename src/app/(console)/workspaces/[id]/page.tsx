@@ -740,8 +740,6 @@ function FindingDrawerContent({
           method={finding.verification_method}
           verifiedAt={null}
           expiresAt={null}
-          confidenceAtVerification={null}
-          currentConfidence={null}
           reTriggerReason={null}
           decisionStatus={null}
           onRequestVerification={() =>

@@ -1,23 +1,37 @@
 "use client";
 
 // ──────────────────────────────────────────────
-// VerificationPanel — Phase 3 UX Overhaul
+// VerificationPanel
 //
-// Rich panel showing verification lifecycle:
-// stepped progress bar, method label, freshness,
-// degradation warning, re-trigger CTA, and
-// post-correction confirmation.
+// Rich panel showing where a finding sits in the verification lifecycle:
+// stepped progress bar, method label, freshness indicator, re-trigger
+// CTA, and post-correction confirmation.
+//
+// Wave 2.4 reframe — the lifecycle now reads as an enrichment progression
+// (static_evidence → confirming → confirmed) instead of a "is this real?"
+// check. Numeric confidence is no longer rendered anywhere on the panel
+// because it leaked engine-internal state into a customer-facing surface.
+// Verification stage IS the qualitative signal the user needs.
 // ──────────────────────────────────────────────
 
-type VerificationMaturity = "unverified" | "pending" | "partially" | "verified" | "degraded" | "stale";
+import { useTranslations } from "next-intl";
+
+type VerificationStage =
+  | "static_evidence"
+  | "confirming"
+  | "partial_confirmation"
+  | "confirmed"
+  | "evidence_weakened"
+  | "confirmation_expired";
 
 export interface VerificationPanelProps {
+  /** Verification stage from the projection layer. Null = not applicable. */
   maturity: string | null;
-  method: string; // 'static_only' | 'browser_verified' | 'mixed' | 'unknown'
+  /** How the supporting evidence was collected.
+   *  'static_only' | 'browser_verified' | 'mixed' | 'unknown' */
+  method: string;
   verifiedAt?: string | null;
   expiresAt?: string | null;
-  confidenceAtVerification?: number | null;
-  currentConfidence?: number | null;
   reTriggerReason?: string | null;
   decisionStatus?: string | null;
   onRequestVerification?: () => void;
@@ -27,19 +41,22 @@ export interface VerificationPanelProps {
 // ── Step definitions ────────────────────────────
 
 interface StepDef {
-  key: VerificationMaturity;
-  label: string;
+  key: VerificationStage;
+  i18nKey: string;
 }
 
+// The "happy path" the lifecycle progresses through. Off-path stages
+// (evidence_weakened, confirmation_expired) are appended only when the
+// finding is currently in one of them.
 const LIFECYCLE_STEPS: StepDef[] = [
-  { key: "unverified", label: "Unverified" },
-  { key: "pending", label: "Pending" },
-  { key: "partially", label: "Partial" },
-  { key: "verified", label: "Verified" },
+  { key: "static_evidence", i18nKey: "static_evidence" },
+  { key: "confirming", i18nKey: "confirming" },
+  { key: "partial_confirmation", i18nKey: "partial_confirmation" },
+  { key: "confirmed", i18nKey: "confirmed" },
 ];
 
-const DEGRADED_STEP: StepDef = { key: "degraded", label: "Degraded" };
-const STALE_STEP: StepDef = { key: "stale", label: "Stale" };
+const EVIDENCE_WEAKENED_STEP: StepDef = { key: "evidence_weakened", i18nKey: "evidence_weakened" };
+const CONFIRMATION_EXPIRED_STEP: StepDef = { key: "confirmation_expired", i18nKey: "confirmation_expired" };
 
 // ── Helpers ─────────────────────────────────────
 
@@ -74,15 +91,6 @@ function freshnessProgress(verifiedAt: string, expiresAt: string): number {
   return Math.round(remaining * 100);
 }
 
-// ── Method label config ─────────────────────────
-
-const methodDisplay: Record<string, { label: string; textColor: string }> = {
-  static_only: { label: "Verified via static fetch", textColor: "text-content-muted" },
-  browser_verified: { label: "Verified via browser verification", textColor: "text-emerald-400" },
-  mixed: { label: "Mixed verification", textColor: "text-amber-400" },
-  unknown: { label: "Verification method unknown", textColor: "text-content-muted" },
-};
-
 // ── Component ───────────────────────────────────
 
 export default function VerificationPanel({
@@ -90,37 +98,31 @@ export default function VerificationPanel({
   method,
   verifiedAt,
   expiresAt,
-  confidenceAtVerification,
-  currentConfidence,
   reTriggerReason,
   decisionStatus,
   onRequestVerification,
   onConfirmResolution,
 }: VerificationPanelProps) {
-  const mat = (maturity || "unverified") as VerificationMaturity;
+  const t = useTranslations("console.verification_panel");
+  const tb = useTranslations("console.verification_badge");
 
-  // Build step list: always show the 4 core steps.
-  // If degraded or stale, append those steps.
+  const mat = (maturity || "static_evidence") as VerificationStage;
+
+  // Build step list: always show the 4 happy-path steps. Append off-path
+  // steps only when the finding is in one of them.
   const steps: StepDef[] = [...LIFECYCLE_STEPS];
-  if (mat === "degraded" || mat === "stale") {
-    steps.push(DEGRADED_STEP);
+  if (mat === "evidence_weakened" || mat === "confirmation_expired") {
+    steps.push(EVIDENCE_WEAKENED_STEP);
   }
-  if (mat === "stale") {
-    steps.push(STALE_STEP);
+  if (mat === "confirmation_expired") {
+    steps.push(CONFIRMATION_EXPIRED_STEP);
   }
 
   const currentStepIndex = steps.findIndex((s) => s.key === mat);
 
-  const confidenceGap =
-    confidenceAtVerification != null && currentConfidence != null
-      ? confidenceAtVerification - currentConfidence
-      : null;
-
-  const showDegradationWarning = mat === "degraded" || mat === "stale";
-  const showReTrigger = showDegradationWarning || !!reTriggerReason;
+  const showRecheckPrompt = mat === "evidence_weakened" || mat === "confirmation_expired";
+  const showReTrigger = showRecheckPrompt || !!reTriggerReason;
   const showPostCorrection = decisionStatus === "resolved";
-
-  const methodCfg = methodDisplay[method] || methodDisplay.unknown;
 
   return (
     <div className="space-y-3">
@@ -130,33 +132,39 @@ export default function VerificationPanel({
           {steps.map((step, i) => {
             const isPast = i < currentStepIndex;
             const isCurrent = i === currentStepIndex;
-            const isFuture = i > currentStepIndex;
 
-            // Color logic
+            // Color logic — semantically:
+            //  static_evidence is a NEUTRAL starting state, not a problem
+            //  confirmed is the GOOD end state
+            //  evidence_weakened / confirmation_expired are side-channel concerns
             let circleClass: string;
             let labelClass: string;
             let lineClass: string;
 
-            if (step.key === "stale") {
+            if (step.key === "confirmation_expired") {
               circleClass = isCurrent
-                ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/40"
+                ? "bg-zinc-500/20 text-zinc-500 dark:text-zinc-400 ring-2 ring-zinc-500/40"
                 : "bg-surface-inset text-content-faint";
-              labelClass = isCurrent ? "text-red-400 font-semibold" : "text-content-faint";
-              lineClass = "bg-red-500/30";
-            } else if (step.key === "degraded") {
+              labelClass = isCurrent ? "text-zinc-500 dark:text-zinc-400 font-semibold" : "text-content-faint";
+              lineClass = "bg-zinc-500/30";
+            } else if (step.key === "evidence_weakened") {
               circleClass = isCurrent
-                ? "bg-orange-500/20 text-orange-400 ring-2 ring-orange-500/40"
+                ? "bg-orange-500/20 text-orange-500 dark:text-orange-400 ring-2 ring-orange-500/40"
                 : isPast
                   ? "bg-surface-card-hover text-content-secondary"
                   : "bg-surface-inset text-content-faint";
-              labelClass = isCurrent ? "text-orange-400 font-semibold" : isPast ? "text-content-muted" : "text-content-faint";
+              labelClass = isCurrent
+                ? "text-orange-500 dark:text-orange-400 font-semibold"
+                : isPast
+                  ? "text-content-muted"
+                  : "text-content-faint";
               lineClass = isPast ? "bg-orange-500/40" : "bg-surface-inset";
             } else if (isCurrent) {
-              circleClass = "bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/40";
-              labelClass = "text-emerald-400 font-semibold";
+              circleClass = "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/40";
+              labelClass = "text-emerald-600 dark:text-emerald-400 font-semibold";
               lineClass = "bg-surface-inset";
             } else if (isPast) {
-              circleClass = "bg-emerald-500/20 text-emerald-400";
+              circleClass = "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400";
               labelClass = "text-content-muted";
               lineClass = "bg-emerald-500/40";
             } else {
@@ -174,7 +182,7 @@ export default function VerificationPanel({
                     {isPast ? "\u2713" : isCurrent ? "\u25CF" : i + 1}
                   </div>
                   <span className={`mt-1.5 whitespace-nowrap text-[10px] leading-tight ${labelClass}`}>
-                    {step.label}
+                    {tb(step.i18nKey)}
                   </span>
                 </div>
                 {i < steps.length - 1 && (
@@ -185,22 +193,24 @@ export default function VerificationPanel({
           })}
         </div>
 
-        {/* ── 2. Method Label ── */}
+        {/* ── 2. Method label ── */}
         <div className="mt-3 border-t border-edge pt-2">
-          <span className={`text-xs ${methodCfg.textColor}`}>{methodCfg.label}</span>
+          <span className={`text-xs ${method === "browser_verified" ? "text-emerald-600 dark:text-emerald-400" : method === "mixed" ? "text-amber-600 dark:text-amber-400" : "text-content-muted"}`}>
+            {t(`method.${method}`)}
+          </span>
         </div>
       </div>
 
-      {/* ── 3. Freshness Indicator ── */}
+      {/* ── 3. Freshness indicator ── */}
       {verifiedAt && (
         <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-content-muted">
-              Verified {relativeTime(verifiedAt)}
+              {t("confirmed_at", { time: relativeTime(verifiedAt) })}
             </span>
             {expiresAt && (
               <span className="text-xs text-content-muted">
-                Expires {relativeTime(expiresAt)}
+                {t("expires_at", { time: relativeTime(expiresAt) })}
               </span>
             )}
           </div>
@@ -215,36 +225,39 @@ export default function VerificationPanel({
         </div>
       )}
 
-      {/* ── 4. Degradation Warning ── */}
-      {showDegradationWarning && (
+      {/* ── 4. Re-check prompt (no confidence number — purely qualitative) ── */}
+      {showRecheckPrompt && (
         <div
           className={`rounded-md border px-4 py-3 ${
-            mat === "stale"
-              ? "border-red-900/50 bg-red-500/5"
-              : "border-orange-900/50 bg-orange-500/5"
+            mat === "confirmation_expired"
+              ? "border-zinc-500/30 bg-zinc-500/5"
+              : "border-orange-500/30 bg-orange-500/5"
           }`}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`text-xs font-semibold ${mat === "stale" ? "text-red-400" : "text-orange-400"}`}>
-              {mat === "stale" ? "Verification Stale" : "Verification Degraded"}
+          <div className="mb-1 flex items-center gap-2">
+            <span
+              className={`text-xs font-semibold ${
+                mat === "confirmation_expired"
+                  ? "text-zinc-600 dark:text-zinc-400"
+                  : "text-orange-600 dark:text-orange-400"
+              }`}
+            >
+              {mat === "confirmation_expired"
+                ? t("recheck.expired_title")
+                : t("recheck.weakened_title")}
             </span>
           </div>
-          {confidenceGap != null && confidenceGap > 0 ? (
-            <p className={`text-xs ${mat === "stale" ? "text-red-300/80" : "text-orange-300/80"}`}>
-              Confidence dropped {confidenceGap} points since verification
-              {confidenceAtVerification != null && currentConfidence != null && (
-                <span className="text-content-muted">
-                  {" "}({confidenceAtVerification}% &rarr; {currentConfidence}%)
-                </span>
-              )}
-            </p>
-          ) : (
-            <p className={`text-xs ${mat === "stale" ? "text-red-300/80" : "text-orange-300/80"}`}>
-              {mat === "stale"
-                ? "Verification data has expired and needs to be refreshed."
-                : "Verification is aging and may no longer reflect current state."}
-            </p>
-          )}
+          <p
+            className={`text-xs ${
+              mat === "confirmation_expired"
+                ? "text-zinc-600/80 dark:text-zinc-400/80"
+                : "text-orange-600/80 dark:text-orange-400/80"
+            }`}
+          >
+            {mat === "confirmation_expired"
+              ? t("recheck.expired_body")
+              : t("recheck.weakened_body")}
+          </p>
         </div>
       )}
 
@@ -256,9 +269,9 @@ export default function VerificationPanel({
           )}
           <button
             onClick={onRequestVerification}
-            className="w-full rounded-md border border-amber-800/50 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-400 transition-colors hover:bg-amber-500/20"
+            className="w-full rounded-md border border-amber-800/50 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-600 dark:text-amber-400 transition-colors hover:bg-amber-500/20"
           >
-            Re-verify
+            {t("recheck.button")}
           </button>
         </div>
       )}
@@ -266,15 +279,17 @@ export default function VerificationPanel({
       {/* ── 6. Post-Correction Confirmation ── */}
       {showPostCorrection && (
         <div className="rounded-md border border-emerald-900/50 bg-emerald-500/5 px-4 py-3">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold text-emerald-400">Issue marked as resolved</span>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              {t("resolution.title")}
+            </span>
           </div>
           {onConfirmResolution && (
             <button
               onClick={onConfirmResolution}
-              className="w-full rounded-md border border-emerald-800/50 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
+              className="w-full rounded-md border border-emerald-800/50 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 transition-colors hover:bg-emerald-500/20"
             >
-              Confirm Resolution
+              {t("resolution.button")}
             </button>
           )}
         </div>

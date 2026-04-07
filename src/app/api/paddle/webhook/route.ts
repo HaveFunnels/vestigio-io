@@ -153,8 +153,12 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 			}
 
 			// Handle onboarding activation (same as transaction.completed)
-			if (custom_data?.onboarding === "true" && custom_data?.organizationId) {
-				await handleOnboardingActivation(custom_data, priceId);
+			// Two funnels: legacy /onboard (organizationId) + /lp lead (leadId)
+			if (
+				(custom_data?.onboarding === "true" && custom_data?.organizationId) ||
+				custom_data?.leadId
+			) {
+				await handleOnboardingActivation(custom_data, priceId, customer_id);
 			}
 		}
 
@@ -333,8 +337,12 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 			}
 
 			// Handle onboarding activation
-			if (custom_data?.onboarding === "true" && custom_data?.organizationId) {
-				await handleOnboardingActivation(custom_data, priceId);
+			// Two funnels: legacy /onboard (organizationId) + /lp lead (leadId)
+			if (
+				(custom_data?.onboarding === "true" && custom_data?.organizationId) ||
+				custom_data?.leadId
+			) {
+				await handleOnboardingActivation(custom_data, priceId, customer_id);
 			}
 		}
 
@@ -403,15 +411,61 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 
 // ──────────────────────────────────────────────
 // Onboarding Activation Helper
+//
+// Two distinct funnels feed into this helper:
+//   (a) Standard signup funnel — visitor signs up → /onboard form
+//       creates Org+Env+BusinessProfile BEFORE the checkout → Paddle
+//       checkout opens with custom_data { organizationId, userId,
+//       onboarding: 'true' }. We just activate the existing rows.
+//   (b) /lp anonymous funnel — visitor fills 4-step form on /lp/audit
+//       → mini-audit → result page → Paddle checkout opens with
+//       custom_data { leadId, lpFunnel: 'true' }. NO Org/Env exist
+//       yet. We have to create them from the AnonymousLead row.
+//
+// The fork is decided here based on which key is present in custom_data.
 // ──────────────────────────────────────────────
 
 async function handleOnboardingActivation(
 	customData: Record<string, string>,
-	priceId: string
+	priceId: string,
+	stripeCustomerId?: string | null
 ) {
+	const plan = await resolvePlan(priceId);
+
+	// ── Funnel B: /lp lead conversion ──
+	if (customData.leadId) {
+		try {
+			const { promoteLeadToOrg } = await import("../../../../../apps/audit-runner/promote-lead");
+			const result = await promoteLeadToOrg({
+				leadId: customData.leadId,
+				plan,
+				stripeCustomerId,
+			});
+			if (result) {
+				logEvent(
+					"lp-conversion",
+					`Lead ${customData.leadId} → user ${result.userId} / org ${result.organizationId} (newUser=${result.wasNewUser})`,
+				);
+			} else {
+				logEvent("lp-conversion", `Lead ${customData.leadId} promotion returned null`);
+			}
+		} catch (err) {
+			console.error(
+				`[paddle-webhook] lead promotion failed for ${customData.leadId}:`,
+				err,
+			);
+		}
+		return;
+	}
+
+	// ── Funnel A: standard signup activation ──
 	const orgId = customData.organizationId;
 	const userId = customData.userId;
-	const plan = await resolvePlan(priceId);
+
+	if (!orgId) {
+		logEvent("onboarding", "no organizationId in custom_data — skipping");
+		return;
+	}
 
 	await prisma.organization.update({
 		where: { id: orgId },

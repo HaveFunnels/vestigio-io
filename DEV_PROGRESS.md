@@ -2,6 +2,149 @@
 
 ---
 
+## Wave 0.3 + 0.5 closure -- 2026-04-07 -- Pixel Event Processing Worker
+
+### Goal
+
+Wave 0.2 made the snippet's events stick to disk in `RawBehavioralEvent`. Wave 0.3 closes the loop: read those events back, run the existing `aggregateSession()` per session, reduce N session aggregates into one `BehavioralSessionPayload`, and emit it as `Evidence` so the engine sees behavioral data on the very next recompute. Then — as a small bonus closing Wave 0.5 properly — wire `/api/inventory` to read distinct sessionId-per-URL counts so the inventory page finally shows real `session_count` instead of `null`.
+
+This is the moment all 7 behavioral workspaces from `~/.claude/plans/ticklish-discovering-nova.md` become eligible to ship: the eligibility gate is `session_count >= 20` and now there's a real path for that to be true.
+
+### Architecture decision: inline in audit-runner
+
+I considered three architectures and went with the simplest:
+
+- **Option A (chosen)**: process pixel events inline in `apps/audit-runner/run-cycle.ts` right before `recomputeAll()`. The cycle's evidence pool gains a `BehavioralSessionPayload` and the engine pass picks it up immediately.
+- **Option B**: standalone cron that processes events every N minutes and persists evidence to a synthetic "live" cycle. Rejected because it requires inventing a fake cycle ref and creates race conditions with the audit-runner.
+- **Option C**: process events on-demand from the API layer. Rejected because the engine context is built once per cycle, so on-demand processing wouldn't actually help anyone.
+
+Option A wins because:
+
+1. The `cycle_ref` is already known and natural to attribute the evidence to
+2. The new evidence flows straight into the same recompute → projection → snapshot → finding chain that already exists
+3. No race conditions with snapshot/findings persistence
+4. No extra cron, no extra moving parts
+5. Pixel data refreshes whenever an audit runs (which is when the user is actively looking at the data anyway)
+
+The downside (pixel data only "lights up" when an audit runs) is acceptable for V1 — audits run at least daily for active envs. If we later want continuous behavioral updates we can add an out-of-band cron without disturbing this path.
+
+### Time window
+
+Every cycle re-aggregates the **last 30 days** of events for the env. `processedAt` is set on touched rows but is informational only — it does not gate the read query. Old events are deleted by the receivedAt-based prune in [src/instrumentation-node.ts](src/instrumentation-node.ts).
+
+This windowed-not-incremental approach means each cycle's behavioral payload is a fresh, complete picture of the last 30 days, not a delta since the previous cycle. Simpler to reason about, simpler to test, and the engine's existing eligibility gate (`session_count >= 20`) handles low-data envs gracefully.
+
+### The reducer
+
+[apps/audit-runner/process-behavioral.ts](apps/audit-runner/process-behavioral.ts) — pure function `sessionsToBehavioralPayload(sessions: SessionAggregate[]): BehavioralSessionPayload`.
+
+This is the only place that translates the per-session vocabulary into the env-level payload the engine expects. ~50 fields covering counts, rates, milestone propagation, average durations (skipping null contributors), CTA engagement, oscillation pairs (order-independent collapse), top-N kinds, handoff continuity, stalled step heuristic, and checkout immediate-abandon detection.
+
+Notable details:
+
+- **Milestone cascade via switch fallthrough**: a session at `conversion_completed` also counts toward every prior milestone (awareness → consideration → intent → conversion_started). This matches funnel semantics.
+- **Oscillation pair canonicalization**: `[a, b]` and `[b, a]` collapse to one bucket via `[a, b].sort().join("||")`.
+- **Top-N selection**: top 5 oscillation pairs by count, top 3 sensitive abandon kinds. Avoids unbounded growth.
+- **Stalled step heuristic**: a surface that ends ≥3 non-converting sessions counts as 1 stalled. Fast, deterministic, no per-pair calibration.
+- **Checkout immediate abandon**: `checkout_reached AND duration < 30s AND !reached_thank_you`. Crude but useful as a "hot leave" signal.
+- **Mobile metrics stay zero for now** because the snippet doesn't yet emit `device_type`. Documented inline. The engine handles 0 gracefully and will not penalize the env for missing data — eligibility gates the metric.
+
+### Tests
+
+[tests/process-behavioral.test.ts](tests/process-behavioral.test.ts) — 10 focused tests on the pure reducer:
+
+- empty input returns zero payload (no NaN, no nulls in wrong places)
+- counts and rates correct
+- milestone cascade through funnel taxonomy
+- avg time skips null contributors
+- oscillation pairs collapse order-independent and aggregate
+- top-N kind selection
+- checkout immediate abandon heuristic
+- stalled step heuristic
+- CTA engagement rate + dead CTA detection
+- handoff continuity counters
+
+All 10 pass. Full project suite (14 suites) still passes.
+
+### Wiring into the audit-runner
+
+[apps/audit-runner/run-cycle.ts](apps/audit-runner/run-cycle.ts) — inserted between "Resolve business inputs" and "(b) Engine":
+
+```ts
+const behavioral = await processBehavioralEventsForEnv(
+  env.id,
+  { workspace_ref, environment_ref, subject_ref, path_scope: null },
+  cycleRefStr,
+);
+if (behavioral.evidence.length > 0) {
+  result.evidence.push(...behavioral.evidence);
+  // Also persist to PrismaEvidenceStore so cold-start rehydration sees it
+  await new PrismaEvidenceStore(prisma).addMany(behavioral.evidence);
+}
+```
+
+Critical detail: the original `store.addMany(result.evidence)` happens earlier in step 5, BEFORE behavioral processing. So I added a second targeted `addMany` call right after behavioral processing to ensure the new evidence is persisted. Without this, a server restart between cycles would lose all behavioral data. Caught while tracing the cold-start path as part of "olho comportamentos adjacentes".
+
+### Wave 0.5 closure: real session_count in /api/inventory
+
+[src/app/api/inventory/route.ts](src/app/api/inventory/route.ts) — added a per-surface session count query:
+
+```sql
+SELECT url, COUNT(DISTINCT "sessionId")::int AS session_count
+FROM "RawBehavioralEvent"
+WHERE "envId" = $1 AND "occurredAt" >= NOW() - INTERVAL '30 days'
+GROUP BY url
+```
+
+Reuses the same `buildPathMatcher()` 3-tier matcher as `finding_count` (exact path / exact url / substring fallback). Returns `null` only when there are zero events for the env (snippet not installed); returns `0` when snippet IS installed but a particular surface had no traffic — meaningful signal not "missing data".
+
+### Cleanup cron extension
+
+[src/instrumentation-node.ts](src/instrumentation-node.ts) — the existing 1-hour `runLeadCleanup` pass now also prunes `RawBehavioralEvent` rows older than 30 days. The processor re-aggregates the last 30 days every cycle, so older events are dead weight.
+
+### Adjacent flows verified
+
+- **Cold start**: behavioral evidence is persisted via `PrismaEvidenceStore.addMany()`, so `ensureContext()` rebuilds the engine context with behavioral data after a server restart. This is the same path that already worked for HTTP/page evidence.
+- **First-time env (no events)**: `processBehavioralEventsForEnv` returns `{ evidence: [], sessionCount: 0 }`. The engine handles the empty case gracefully — no behavioral inferences fire, eligibility gate keeps them dormant.
+- **Below 20-session threshold**: events get aggregated, evidence gets emitted, but the engine's `isBehavioralPackEligible()` gates the inferences. The payload still flows through change detection so future cycles can detect "we now have enough sessions".
+- **Aggregation fails for one session**: per-session try/catch in the loop means one bad session doesn't poison the batch. Logged as `console.warn`.
+- **DB read fails**: outer try/catch returns empty result, audit cycle continues with other evidence.
+- **DB write fails on processedAt update**: non-fatal; the next cycle re-aggregates the same window anyway.
+- **Surface matcher**: same 3-tier path matcher used for findings, so `/checkout` matches inventory item `/en/checkout/step-2`. Verified via existing Wave 0.7 flow.
+- **30-day prune**: events older than 30 days deleted via cron, cascade-protected by `Environment` FK so deleting an env wipes its events too.
+
+### Files touched
+
+- [apps/audit-runner/process-behavioral.ts](apps/audit-runner/process-behavioral.ts) — **new** worker + reducer
+- [apps/audit-runner/run-cycle.ts](apps/audit-runner/run-cycle.ts) — wire processor inline before recompute, persist behavioral evidence
+- [src/app/api/inventory/route.ts](src/app/api/inventory/route.ts) — real `session_count` from raw events
+- [src/instrumentation-node.ts](src/instrumentation-node.ts) — 30-day prune for `RawBehavioralEvent`
+- [tests/process-behavioral.test.ts](tests/process-behavioral.test.ts) — **new** 10 reducer tests
+
+### Manual verification
+
+1. Confirm the snippet on a test site is loading and emitting (Wave 0.2)
+2. Trigger an audit cycle (or wait for the next scheduled one)
+3. Watch logs for `[audit-runner ...] behavioral evidence added (sessions=N, events=M)`
+4. Open `/app/inventory` — the `Sessions` column should now show real numbers per row (or 0 for surfaces with no traffic)
+5. Open `/app/workspaces` — if `session_count >= 20`, the 7 behavioral workspaces should become non-empty (assuming the workspaces are wired in `recompute.ts` — see below)
+
+### Wave 0 status
+
+| Wave | Status |
+|---|---|
+| 0.1 | ✅ |
+| 0.2 | ✅ |
+| **0.3** | ✅ **just shipped** |
+| 0.4 | ✅ |
+| **0.5** | ✅ **closed by 0.3 + 0.7** |
+| 0.6 | ✅ |
+| 0.7 | ✅ |
+
+**Wave 0 is now fully complete.** The 7 behavioral workspaces plan at `~/.claude/plans/ticklish-discovering-nova.md` is unblocked and can ship as soon as we want.
+
+---
+
 ## Wave 0.2 -- 2026-04-07 -- Pixel Ingest Endpoint
 
 ### Goal

@@ -61,7 +61,7 @@ export async function registerNodeInstrumentation(): Promise<void> {
 
 	console.log("✓ Audit-runner heal cron registered (60s interval)");
 
-	// ── AnonymousLead cleanup cron ──
+	// ── AnonymousLead + behavioral pixel cleanup cron ──
 	const runLeadCleanup = async () => {
 		try {
 			const result = await prisma.anonymousLead.deleteMany({
@@ -86,6 +86,18 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			});
 			if (purged.count > 0) {
 				console.log(`[lead-cleanup] purged ${purged.count} stale mini-audits`);
+			}
+
+			// Wave 0.3: prune behavioral pixel events older than the
+			// 30-day aggregation window. The processor re-aggregates the
+			// last 30 days every cycle, so older events are dead weight.
+			// Indexed by receivedAt for fast deleteMany.
+			const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+			const prunedEvents = await prisma.rawBehavioralEvent.deleteMany({
+				where: { receivedAt: { lt: thirtyDaysAgo } },
+			});
+			if (prunedEvents.count > 0) {
+				console.log(`[lead-cleanup] pruned ${prunedEvents.count} stale behavioral events`);
 			}
 		} catch (err) {
 			console.error("[lead-cleanup] pass failed:", err);

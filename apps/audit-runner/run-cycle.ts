@@ -28,6 +28,7 @@ import { PrismaSnapshotStore } from "../../packages/change-detection";
 import { PrismaFindingStore, projectAll } from "../../packages/projections";
 import { recomputeAll } from "../../packages/workspace";
 import { loadEngineTranslations } from "@/lib/engine-translations";
+import { processBehavioralEventsForEnv } from "./process-behavioral";
 import type { Evidence } from "../../packages/domain";
 
 export interface RunAuditCycleResult {
@@ -266,6 +267,47 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				translations = await loadEngineTranslations();
 			} catch {
 				translations = undefined;
+			}
+
+			// Wave 0.3: Process behavioral pixel events for this env and
+			// append the resulting BehavioralSessionPayload as evidence so
+			// the engine sees it in the same recompute pass. Returns an
+			// empty result when there are no events in the 30-day window —
+			// the engine handles the empty case gracefully (behavioral
+			// inferences gated by session_count >= 20 in eligibility.ts).
+			try {
+				const behavioral = await processBehavioralEventsForEnv(
+					env.id,
+					{
+						workspace_ref: workspaceRef,
+						environment_ref: environmentRef,
+						subject_ref: `website:${website.id}`,
+						path_scope: null,
+					},
+					cycleRefStr,
+				);
+				if (behavioral.evidence.length > 0) {
+					result.evidence.push(...behavioral.evidence);
+					// Also persist to PrismaEvidenceStore so the cold-start
+					// rehydration path (ensureContext → loadLatestCycle) sees
+					// behavioral evidence after a server restart. The earlier
+					// addMany() at step 5 ran before this evidence existed.
+					try {
+						const evidenceStore = new PrismaEvidenceStore(prisma);
+						await evidenceStore.addMany(behavioral.evidence);
+					} catch (err) {
+						console.warn(
+							`[audit-runner ${cycleId}] behavioral evidence persistence failed (in-cycle still works):`,
+							err,
+						);
+					}
+					console.log(
+						`[audit-runner ${cycleId}] behavioral evidence added (sessions=${behavioral.sessionCount}, events=${behavioral.eventCount})`,
+					);
+				}
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] behavioral processing failed:`, err);
+				// Non-fatal — the cycle still produces non-behavioral findings.
 			}
 
 			// (b) Engine

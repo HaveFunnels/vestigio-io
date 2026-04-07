@@ -14,15 +14,14 @@ import { PrismaFindingStore } from "../../../../packages/projections";
 // Auth: requires authenticated user with org membership.
 // Scoping: user → membership → org → environment → website → pages
 //
-// Wave 0.7: finding_count is now real (computed from the Finding table
-// for the most recent cycle of this env, joined per-surface). Returns
-// 0 (not null) when an env has a complete audit but a particular
-// surface has no findings — that's distinct from the Wave 0.5 placeholder
-// behavior where the entire column was null because findings didn't
-// exist anywhere yet.
+// Wave 0.7: finding_count is real (computed from the Finding table for
+// the most recent cycle of this env, joined per-surface).
 //
-// session_count is still null until Wave 0.2/0.3 (pixel pipeline)
-// ships. The UI hides any column that's 100% null.
+// Wave 0.3: session_count is real now too — counted from
+// RawBehavioralEvent over the last 30 days, distinct sessionId per
+// URL. Null only when no behavioral events exist at all for the env
+// (snippet not installed yet). 0 means snippet IS installed but this
+// particular surface had no traffic, which is signal not absence.
 // ──────────────────────────────────────────────
 
 const COMMERCIAL_PAGE_TYPES = new Set(["checkout", "cart", "product", "pricing"]);
@@ -155,6 +154,33 @@ export const GET = withErrorTracking(async function GET() {
   }
   const matchSurface = buildPathMatcher(surfaceCounts);
 
+  // Wave 0.3: per-surface session count from behavioral pixel events.
+  // Distinct sessionId grouped by url over the last 30 days. Stored
+  // urls are full canonical URLs (https://host/path) so the matcher
+  // below also handles substring path matches like /checkout matching
+  // /en/checkout/step-2 (same logic as findings).
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  let sessionCounts = new Map<string, number>();
+  let hasSessionData = false;
+  try {
+    const rows = await prisma.$queryRaw<Array<{ url: string; session_count: number }>>`
+      SELECT url, COUNT(DISTINCT "sessionId")::int AS session_count
+      FROM "RawBehavioralEvent"
+      WHERE "envId" = ${environment.id}
+        AND "occurredAt" >= ${thirtyDaysAgo}
+      GROUP BY url
+    `;
+    for (const row of rows) {
+      sessionCounts.set(row.url, Number(row.session_count));
+    }
+    hasSessionData = rows.length > 0;
+  } catch (err) {
+    // RawBehavioralEvent table missing or query failed — drop to null
+    // gracefully so the UI hides the column instead of showing 0s.
+    console.warn("[api/inventory] session_count lookup failed:", err);
+  }
+  const matchSessions = buildPathMatcher(sessionCounts);
+
   // Map to InventorySurface shape
   const surfaces = items.map((item) => {
     let host = "";
@@ -175,8 +201,11 @@ export const GET = withErrorTracking(async function GET() {
       is_commercial: COMMERCIAL_PAGE_TYPES.has(item.pageType),
       is_live: item.freshnessState === "fresh",
       last_seen_at: item.updatedAt.toISOString(),
-      // session_count still null until pixel pipeline (Wave 0.2/0.3)
-      session_count: null,
+      // Wave 0.3: real session count from pixel events. Null only when
+      // no behavioral data exists for the env at all (snippet not
+      // installed yet). 0 means snippet IS installed but this surface
+      // had no traffic in the last 30 days — distinct from null.
+      session_count: hasSessionData ? matchSessions(item.normalizedUrl, item.path) : null,
       // Wave 0.7: real finding count per surface from the latest cycle.
       // Null only when there's NO finding data at all (first audit
       // hasn't completed). 0 means audit ran and this surface had no

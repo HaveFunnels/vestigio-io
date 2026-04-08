@@ -129,7 +129,7 @@ export function CatalogDrawer({
 			    (440px) on desktop and full-screen on mobile so the
 			    catalog stays readable on every viewport. */}
 			<aside
-				className={`bg-surface-page fixed inset-y-0 right-0 z-50 flex w-full max-w-[440px] flex-col border-l border-edge shadow-2xl transition-transform ${
+				className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-[440px] flex-col border-l border-edge bg-surface shadow-2xl transition-transform ${
 					open ? "translate-x-0" : "translate-x-full"
 				}`}
 				aria-label='Widget catalog'
@@ -145,7 +145,7 @@ export function CatalogDrawer({
 					<button
 						type='button'
 						onClick={onClose}
-						className='flex h-8 w-8 items-center justify-center rounded-lg border border-edge text-content-muted transition-colors hover:border-emerald-600/50 hover:text-emerald-400'
+						className='flex h-8 w-8 items-center justify-center rounded-lg border border-edge text-content-muted transition-colors hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-emerald-500'
 						aria-label='Close catalog'
 					>
 						<X size={14} weight='bold' />
@@ -222,15 +222,15 @@ function CatalogTile({ def, disabled, onAdd }: CatalogTileProps) {
 			disabled={disabled}
 			className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
 				disabled
-					? "cursor-not-allowed border-edge/40 bg-surface-card/30 opacity-50"
-					: "border-edge bg-surface-card hover:border-emerald-600/50 hover:bg-emerald-950/20"
+					? "cursor-not-allowed border-edge/40 bg-surface-card/40 opacity-50"
+					: "border-edge bg-surface-card hover:border-emerald-500/60 hover:bg-emerald-500/[0.06]"
 			}`}
 		>
 			<div
 				className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border ${
 					disabled
 						? "border-edge/40 text-content-faint"
-						: "border-emerald-700/40 bg-emerald-950/40 text-emerald-300"
+						: "border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
 				}`}
 			>
 				<Plus size={14} weight='bold' />

@@ -204,9 +204,9 @@ export function DashboardGrid({
 						return (
 							<div
 								key={inst.instanceId}
-								className={`dashboard-widget group relative overflow-hidden rounded-2xl border bg-surface-card shadow-[0_20px_40px_-15px_rgba(0,0,0,0.35)] transition-colors ${
+								className={`dashboard-widget group relative overflow-hidden rounded-2xl border bg-surface-card shadow-lg transition-all ${
 									editing
-										? "border-emerald-700/40 hover:border-emerald-500/60"
+										? "editing-mode border-emerald-500/50 ring-1 ring-emerald-500/10 hover:border-emerald-500/80 hover:ring-emerald-500/20"
 										: "border-edge"
 								}`}
 							>
@@ -215,11 +215,15 @@ export function DashboardGrid({
 								    card stays clean. The drag handle uses the class
 								    `widget-drag-handle` which matches dragConfig.handle
 								    above — clicking anywhere else on the widget does
-								    NOT initiate a drag, so widgets remain interactive. */}
+								    NOT initiate a drag, so widgets remain interactive.
+
+								    Tints use emerald-500 with low opacity so they read
+								    correctly in BOTH light and dark themes (vs the
+								    older emerald-950 variants which only worked dark). */}
 								{editing && (
 									<>
 										<div
-											className='widget-drag-handle absolute inset-x-0 top-0 z-10 flex cursor-grab items-center justify-center gap-1 border-b border-emerald-700/30 bg-emerald-950/40 py-1 text-[10px] text-emerald-300/70 backdrop-blur-sm active:cursor-grabbing'
+											className='widget-drag-handle absolute inset-x-0 top-0 z-10 flex cursor-grab items-center justify-center gap-1 border-b border-emerald-500/20 bg-emerald-500/[0.08] py-1 text-[10px] text-emerald-600 backdrop-blur-sm active:cursor-grabbing dark:text-emerald-300'
 											title='Drag to rearrange'
 										>
 											<DotsSixVertical size={12} weight='bold' />
@@ -231,7 +235,7 @@ export function DashboardGrid({
 											<button
 												type='button'
 												onClick={() => onRemove(inst.instanceId)}
-												className='absolute right-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-red-700/40 bg-red-950/60 text-red-300 opacity-0 transition-opacity hover:bg-red-900/80 hover:text-red-100 group-hover:opacity-100'
+												className='absolute right-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-red-500/40 bg-red-500/15 text-red-500 opacity-0 backdrop-blur-sm transition-opacity hover:bg-red-500/25 hover:text-red-600 group-hover:opacity-100 dark:text-red-300 dark:hover:text-red-100'
 												title='Remove widget'
 												aria-label='Remove widget'
 											>

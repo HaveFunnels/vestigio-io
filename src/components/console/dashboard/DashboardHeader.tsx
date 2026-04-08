@@ -58,7 +58,7 @@ export function DashboardHeader({
 					<button
 						type='button'
 						onClick={onOpenCatalog}
-						className='flex items-center gap-2 rounded-lg border border-emerald-700/40 bg-emerald-950/30 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:border-emerald-500 hover:bg-emerald-900/40'
+						className='flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:border-emerald-500 hover:bg-emerald-500/15 dark:text-emerald-300'
 					>
 						<Plus size={14} weight='bold' />
 						<span>Add widget</span>
@@ -70,8 +70,8 @@ export function DashboardHeader({
 					disabled={!onToggleEdit}
 					className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
 						editing
-							? "border-emerald-500 bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
-							: "border-edge text-content-muted hover:border-emerald-600/50 hover:text-emerald-400"
+							? "border-emerald-500 bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 dark:text-emerald-950 dark:hover:bg-emerald-400"
+							: "border-edge text-content-muted hover:border-emerald-500/60 hover:bg-emerald-500/5 hover:text-emerald-600 dark:hover:text-emerald-400"
 					}`}
 				>
 					<Sliders size={14} weight='bold' />
@@ -94,14 +94,14 @@ function SaveStatusPip({ status }: { status: SaveStatus }) {
 	}
 	if (status === "saved") {
 		return (
-			<span className='flex items-center gap-1.5 text-[10px] text-emerald-400'>
+			<span className='flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400'>
 				<CheckCircle size={11} weight='fill' />
 				Saved
 			</span>
 		);
 	}
 	return (
-		<span className='flex items-center gap-1.5 text-[10px] text-amber-400'>
+		<span className='flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400'>
 			<Warning size={11} weight='fill' />
 			Save failed
 		</span>

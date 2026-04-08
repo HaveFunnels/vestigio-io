@@ -199,16 +199,18 @@
 		background:
 			linear-gradient(var(--shiny-cta-bg), var(--shiny-cta-bg)) padding-box,
 			conic-gradient(
-				from calc(var(--gradient-angle) - var(--gradient-angle-offset)),
-				transparent,
-				var(--shiny-cta-highlight) var(--gradient-percent),
-				var(--gradient-shine) calc(var(--gradient-percent) * 2),
-				var(--shiny-cta-highlight) calc(var(--gradient-percent) * 3),
-				transparent calc(var(--gradient-percent) * 4)
-			) border-box;
+					from calc(var(--gradient-angle) - var(--gradient-angle-offset)),
+					transparent,
+					var(--shiny-cta-highlight) var(--gradient-percent),
+					var(--gradient-shine) calc(var(--gradient-percent) * 2),
+					var(--shiny-cta-highlight) calc(var(--gradient-percent) * 3),
+					transparent calc(var(--gradient-percent) * 4)
+				)
+				border-box;
 		box-shadow: inset 0 0 0 1px var(--shiny-cta-bg-subtle);
 		transition: var(--transition);
-		transition-property: --gradient-angle-offset, --gradient-percent, --gradient-shine;
+		transition-property:
+			--gradient-angle-offset, --gradient-percent, --gradient-shine;
 	}
 
 	.shiny-cta:disabled {
@@ -240,10 +242,11 @@
 		width: var(--size);
 		height: var(--size);
 		background: radial-gradient(
-			circle at var(--position) var(--position),
-			white calc(var(--position) / 4),
-			transparent 0
-		) padding-box;
+				circle at var(--position) var(--position),
+				white calc(var(--position) / 4),
+				transparent 0
+			)
+			padding-box;
 		background-size: var(--space) var(--space);
 		background-repeat: space;
 		mask-image: conic-gradient(
@@ -290,7 +293,8 @@
 	.shiny-cta,
 	.shiny-cta::before,
 	.shiny-cta::after {
-		animation: var(--animation) var(--duration),
+		animation:
+			var(--animation) var(--duration),
 			var(--animation) calc(var(--duration) / 0.4) reverse paused;
 		animation-composition: add;
 	}
@@ -312,16 +316,25 @@
 	}
 
 	@keyframes gradient-angle {
-		to { --gradient-angle: 360deg; }
+		to {
+			--gradient-angle: 360deg;
+		}
 	}
 
 	@keyframes shimmer {
-		to { rotate: 360deg; }
+		to {
+			rotate: 360deg;
+		}
 	}
 
 	@keyframes shiny-breathe {
-		from, to { scale: 1; }
-		50% { scale: 1.2; }
+		from,
+		to {
+			scale: 1;
+		}
+		50% {
+			scale: 1.2;
+		}
 	}
 
 	/* Chrome, Safari and Opera */
@@ -457,7 +470,7 @@
 }
 
 /* select {
-	appearance: none; 
+	appearance: none;
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	background: url("/images/icon/arrow.svg") no-repeat;
@@ -465,3 +478,52 @@
 	background-size: 16px 16px;
 	padding-right: 20px;
 } */
+
+/* ──────────────────────────────────────────────
+   Dashboard edit-mode polish
+   ──────────────────────────────────────────────
+   Overrides for react-grid-layout's default placeholder (which ships
+   as a bright red 20% block — ugly), plus the drag/resize handle
+   styling. We want the drop target to read as an elegant outline
+   with a subtle emerald glow, NOT a red box. Both themes share the
+   same accent so the rules below apply to .dark and :root alike.
+   ────────────────────────────────────────────── */
+
+.react-grid-item.react-grid-placeholder {
+	background: rgb(16 185 129 / 0.08) !important;
+	border: 1.5px dashed rgb(16 185 129 / 0.6) !important;
+	border-radius: 16px !important;
+	opacity: 1 !important;
+	box-shadow:
+		0 0 0 4px rgb(16 185 129 / 0.06),
+		0 20px 40px -20px rgb(16 185 129 / 0.25) !important;
+	transition: all 120ms ease-out !important;
+}
+
+/* The widget being actively dragged — slight tilt + glow so the
+   user always knows which one is in their hand. */
+.react-grid-item.react-draggable-dragging {
+	z-index: 30 !important;
+	cursor: grabbing !important;
+	box-shadow:
+		0 30px 60px -20px rgb(0 0 0 / 0.4),
+		0 0 0 2px rgb(16 185 129 / 0.4) !important;
+	transition: none !important;
+}
+
+/* Resize handle — south-east corner. Default is invisible; in edit
+   mode we surface a subtle emerald grip so users discover it. The
+   `.editing-mode` class lives on the inner widget wrapper so we
+   target react-grid-item items that contain an editing widget. */
+.dashboard-grid .react-grid-item:has(.editing-mode) > .react-resizable-handle {
+	opacity: 0.6;
+	transition: opacity 120ms;
+}
+.dashboard-grid
+	.react-grid-item:has(.editing-mode)
+	> .react-resizable-handle:hover {
+	opacity: 1;
+}
+.dashboard-grid .react-resizable-handle::after {
+	border-color: rgb(16 185 129 / 0.7) !important;
+}

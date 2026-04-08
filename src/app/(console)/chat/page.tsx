@@ -484,7 +484,7 @@ export default function ChatPage() {
           id: r.id,
           title: r.id,
         } as ChatContextItem));
-        handleSend(buildContextPrompt(items));
+        handleSend(buildContextPrompt(items, t));
       } catch {
         // Hydration unavailable — fall back to the legacy behaviour
         // so the user still gets a response. The indicator just stays
@@ -496,7 +496,7 @@ export default function ChatPage() {
           title: r.id,
         }));
         setContextItems(placeholders);
-        handleSend(buildContextPrompt(placeholders));
+        handleSend(buildContextPrompt(placeholders, t));
       }
     })();
 
@@ -1100,13 +1100,6 @@ const FEATURED_BADGE_COLORS: Record<string, string> = {
 // for attached files in ChatInputBar) so the bar feels native to the
 // island below it instead of a separate banner.
 
-const CONTEXT_KIND_LABELS: Record<ChatContextKind, string> = {
-  finding: "Finding",
-  action: "Action",
-  workspace: "Workspace",
-  surface: "Surface",
-};
-
 const CONTEXT_KIND_STYLES: Record<ChatContextKind, { chip: string; icon: string }> = {
   finding: {
     chip: "border-red-700/40 bg-red-500/10 text-red-300 hover:border-red-600/60",
@@ -1164,18 +1157,26 @@ function ContextIndicator({
   onRemove: (id: string, kind: ChatContextKind) => void;
   onClearAll: () => void;
 }) {
+  const t = useTranslations("console.chat.context");
+  const labels: Record<ChatContextKind, string> = {
+    finding: t("kinds.finding"),
+    action: t("kinds.action"),
+    workspace: t("kinds.workspace"),
+    surface: t("kinds.surface"),
+  };
+
   return (
     <div className="flex items-start gap-2 border-t border-edge bg-surface-card/40 px-4 py-2 sm:px-6">
       <div className="flex shrink-0 items-center gap-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-content-muted">
         <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
         </svg>
-        Context
+        {t("title")}
       </div>
       <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
         {items.map((item) => {
           const styles = CONTEXT_KIND_STYLES[item.kind];
-          const label = CONTEXT_KIND_LABELS[item.kind];
+          const label = labels[item.kind];
           return (
             <div
               key={`${item.kind}:${item.id}`}
@@ -1188,7 +1189,7 @@ function ContextIndicator({
                 type="button"
                 onClick={() => onRemove(item.id, item.kind)}
                 className="ml-0.5 -mr-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded text-current opacity-60 transition-opacity hover:opacity-100"
-                aria-label={`Remove ${label.toLowerCase()} from context`}
+                aria-label={t("remove_aria_label", { kind: label.toLowerCase() })}
               >
                 <svg className="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none">
                   <path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -1204,7 +1205,7 @@ function ContextIndicator({
           onClick={onClearAll}
           className="shrink-0 self-start rounded px-1.5 py-1 text-[10px] text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
         >
-          Clear all
+          {t("clear_all")}
         </button>
       )}
     </div>
@@ -1218,22 +1219,25 @@ function ContextIndicator({
 // deterministically. The prompt shape mirrors the legacy phrasings
 // so the LLM playbooks that key off "discuss finding" / "analyze
 // these N findings" / "use these items as context" still trigger.
-function buildContextPrompt(items: ChatContextItem[]): string {
+function buildContextPrompt(items: ChatContextItem[], t: any): string {
+  const prompt = (key: string, values?: Record<string, string | number>) =>
+    t(`context.prompts.${key}`, values);
+
   if (items.length === 0) {
-    return "Give me a summary of what you see.";
+    return prompt("empty");
   }
   if (items.length === 1) {
     const it = items[0];
     if (it.kind === "finding") {
-      return `Discuss finding "${it.title}" (${it.id}). Explain the root cause, impact, and what to fix.`;
+      return prompt("single_finding", { title: it.title, id: it.id });
     }
     if (it.kind === "action") {
-      return `Discuss action "${it.title}" (${it.id}). Why does it matter, what's the expected lift, and how should I sequence it?`;
+      return prompt("single_action", { title: it.title, id: it.id });
     }
     if (it.kind === "workspace") {
-      return `Discuss the "${it.title}" workspace. Walk me through what's happening there and what to do about it.`;
+      return prompt("single_workspace", { title: it.title, id: it.id });
     }
-    return `Discuss surface ${it.title}. What findings touch it and what should I prioritise?`;
+    return prompt("single_surface", { title: it.title, id: it.id });
   }
 
   const findings = items.filter((i) => i.kind === "finding");
@@ -1244,26 +1248,26 @@ function buildContextPrompt(items: ChatContextItem[]): string {
   const parts: string[] = [];
   if (findings.length > 0) {
     parts.push(
-      `${findings.length} findings (${findings.map((f) => `"${f.title}"`).join(", ")})`,
+      prompt("group_findings", { count: findings.length, titles: findings.map((f) => `"${f.title}"`).join(", ") }),
     );
   }
   if (actions.length > 0) {
     parts.push(
-      `${actions.length} actions (${actions.map((a) => `"${a.title}"`).join(", ")})`,
+      prompt("group_actions", { count: actions.length, titles: actions.map((a) => `"${a.title}"`).join(", ") }),
     );
   }
   if (workspaces.length > 0) {
     parts.push(
-      `${workspaces.length} workspaces (${workspaces.map((w) => `"${w.title}"`).join(", ")})`,
+      prompt("group_workspaces", { count: workspaces.length, titles: workspaces.map((w) => `"${w.title}"`).join(", ") }),
     );
   }
   if (surfaces.length > 0) {
     parts.push(
-      `${surfaces.length} surfaces (${surfaces.map((s) => s.title).join(", ")})`,
+      prompt("group_surfaces", { count: surfaces.length, titles: surfaces.map((s) => s.title).join(", ") }),
     );
   }
 
-  return `Analyze these together: ${parts.join(", ")}. What do they have in common? What's the combined impact and the single highest-leverage fix?`;
+  return prompt("combined", { parts: parts.join(", ") });
 }
 
 function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {

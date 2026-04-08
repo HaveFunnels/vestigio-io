@@ -6,6 +6,7 @@
  */
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { ChatMessage, ContentBlock, ToolCallBlock } from "@/lib/chat-types";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { ToolCallStep } from "./ToolCallStep";
@@ -171,6 +172,8 @@ function BlockRenderer({
   onNavigate?: (href: string) => void;
   onSaveAction?: (action: { title: string; description: string; severity: string; estimatedImpact?: number }) => void;
 }) {
+  const t = useTranslations("console.chat");
+  const tc = useTranslations("console.common");
   switch (block.type) {
     case "markdown":
       return <ChatMarkdown content={block.content} />;
@@ -201,13 +204,13 @@ function BlockRenderer({
     case "impact_summary":
       return (
         <div className="my-2 rounded-md border border-red-800/30 bg-red-500/5 px-3.5 py-2.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-content-muted">Estimated monthly impact</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-content-muted">{t("est_monthly_loss")}</div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="font-mono text-lg font-bold text-red-400">{formatCurrency(block.summary.mid)}</span>
             <span className="font-mono text-xs text-content-muted">({formatCurrency(block.summary.min)} – {formatCurrency(block.summary.max)})</span>
-            <span className="text-[10px] text-content-faint">/mo</span>
+            <span className="text-[10px] text-content-faint">{tc("per_month_short")}</span>
           </div>
-          <div className="mt-0.5 text-[10px] text-content-faint">{block.summary.type.replace(/_/g, " ")}</div>
+          <div className="mt-0.5 text-[10px] text-content-faint">{tc(`impact_types.${block.summary.type}` as never)}</div>
         </div>
       );
 

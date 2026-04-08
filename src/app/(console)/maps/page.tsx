@@ -46,45 +46,51 @@ const severityColors: Record<string, string> = {
 // ──────────────────────────────────────────────
 
 function RootCauseNode({ data }: { data: any }) {
+  const t = useTranslations("console.maps");
+  const tc = useTranslations("console.common");
   return (
     <div className={`rounded-lg border-2 px-4 py-3 min-w-[200px] cursor-pointer transition-shadow hover:shadow-lg hover:shadow-red-500/10 ${severityColors[data.severity] || "border-edge bg-surface-inset/50"}`}>
       <Handle type="target" position={Position.Left} className="!bg-content-muted" />
-      <div className="text-xs font-semibold uppercase tracking-wider text-content-muted">Root Cause</div>
+      <div className="text-xs font-semibold uppercase tracking-wider text-content-muted">{t("nodeTypes.rootCause")}</div>
       <div className="mt-1 text-sm font-medium text-content">{data.label}</div>
-      {data.impact && <div className="mt-1 text-xs font-mono text-red-600 dark:text-red-400">{formatCurrency(data.impact.min)} – {formatCurrency(data.impact.max)}/mo</div>}
+      {data.impact && <div className="mt-1 text-xs font-mono text-red-600 dark:text-red-400">{formatCurrency(data.impact.min)} – {formatCurrency(data.impact.max)}{tc("per_month_short")}</div>}
       <Handle type="source" position={Position.Right} className="!bg-content-muted" />
     </div>
   );
 }
 
 function FindingNode({ data }: { data: any }) {
+  const t = useTranslations("console.maps");
+  const tc = useTranslations("console.common");
   return (
     <div className={`rounded-md border px-3 py-2 min-w-[180px] cursor-pointer transition-shadow hover:shadow-lg hover:shadow-amber-500/10 ${severityColors[data.severity] || "border-edge bg-surface-inset/50"}`}>
       <Handle type="target" position={Position.Left} className="!bg-content-muted" />
-      <div className="text-xs text-content-muted">Finding</div>
+      <div className="text-xs text-content-muted">{t("nodeTypes.finding")}</div>
       <div className="mt-0.5 text-sm text-content-secondary">{data.label}</div>
-      {data.impact && <div className="mt-1 text-xs font-mono text-red-600 dark:text-red-400">{formatCurrency(data.impact.midpoint)}/mo</div>}
+      {data.impact && <div className="mt-1 text-xs font-mono text-red-600 dark:text-red-400">{formatCurrency(data.impact.midpoint)}{tc("per_month_short")}</div>}
       <Handle type="source" position={Position.Right} className="!bg-content-muted" />
     </div>
   );
 }
 
 function ActionNode({ data }: { data: any }) {
+  const t = useTranslations("console.maps");
   return (
     <div className="rounded-md border border-emerald-600/50 bg-emerald-500/10 px-3 py-2 min-w-[180px] cursor-pointer transition-shadow hover:shadow-lg hover:shadow-emerald-500/10">
       <Handle type="target" position={Position.Left} className="!bg-emerald-500" />
-      <div className="text-xs text-emerald-600 dark:text-emerald-400">Action</div>
+      <div className="text-xs text-emerald-600 dark:text-emerald-400">{t("nodeTypes.action")}</div>
       <div className="mt-0.5 text-sm text-content-secondary">{data.label}</div>
-      {data.impact && <div className="mt-1 text-xs font-mono text-emerald-600 dark:text-emerald-400">unlocks {formatCurrency(data.impact.midpoint)}/mo</div>}
+      {data.impact && <div className="mt-1 text-xs font-mono text-emerald-600 dark:text-emerald-400">{t("impact_unlocks", { amount: formatCurrency(data.impact.midpoint) })}</div>}
       <Handle type="source" position={Position.Right} className="!bg-emerald-500" />
     </div>
   );
 }
 
 function CategoryNode({ data }: { data: any }) {
+  const t = useTranslations("console.maps");
   return (
     <div className="rounded-md border border-blue-600/50 bg-blue-500/10 px-4 py-3 min-w-[160px]">
-      <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">{data.label}</div>
+      <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">{data.label || t("nodeTypes.category")}</div>
       <Handle type="source" position={Position.Right} className="!bg-blue-500" />
     </div>
   );
@@ -104,11 +110,13 @@ const journeyPageTypeStyles: Record<string, { border: string; bg: string; text: 
 };
 
 function JourneyCommercialNode({ data }: { data: any }) {
+  const t = useTranslations("console.maps");
   const style = journeyPageTypeStyles[data.pageType] || { border: "border-edge", bg: "bg-surface-inset/50", text: "text-content-muted", icon: "Page" };
+  const pageTypeLabel = t(`page_types.${data.pageType || "page"}` as never);
   return (
     <div className={`rounded-lg border-2 px-4 py-3 min-w-[180px] max-w-[220px] ${style.border} ${style.bg}`}>
       <Handle type="target" position={Position.Left} className="!bg-content-muted" />
-      <div className={`text-[10px] font-semibold uppercase tracking-wider ${style.text}`}>{style.icon}</div>
+      <div className={`text-[10px] font-semibold uppercase tracking-wider ${style.text}`}>{pageTypeLabel}</div>
       <div className="mt-1 text-sm font-medium text-content truncate" title={data.label}>{data.label}</div>
       {data.path && <div className="mt-0.5 text-[10px] font-mono text-content-faint truncate">{data.path}</div>}
       <Handle type="source" position={Position.Right} className="!bg-content-muted" />
@@ -117,10 +125,11 @@ function JourneyCommercialNode({ data }: { data: any }) {
 }
 
 function JourneySupportNode({ data }: { data: any }) {
+  const t = useTranslations("console.maps");
   return (
     <div className="rounded-md border border-dashed border-edge bg-surface-card/50 px-3 py-2 min-w-[160px] max-w-[200px]">
       <Handle type="target" position={Position.Left} className="!bg-content-faint" />
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">{data.pageType || "Page"}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">{t(`page_types.${data.pageType || "page"}` as never)}</div>
       <div className="mt-0.5 text-xs text-content-muted truncate" title={data.label}>{data.label}</div>
       <Handle type="source" position={Position.Right} className="!bg-content-faint" />
     </div>
@@ -171,6 +180,7 @@ interface TooltipState {
 }
 
 function NodeTooltip({ tooltip }: { tooltip: TooltipState }) {
+  const tc = useTranslations("console.common");
   if (!tooltip.visible || !tooltip.node) return null;
   const { node } = tooltip;
 
@@ -193,7 +203,8 @@ function NodeTooltip({ tooltip }: { tooltip: TooltipState }) {
         )}
         {node.impact && (
           <span className="text-xs font-mono text-content-muted">
-            {formatCurrency(node.impact.midpoint)}/mo
+            {formatCurrency(node.impact.midpoint)}
+            {tc("per_month_short")}
           </span>
         )}
       </div>

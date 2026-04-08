@@ -267,8 +267,8 @@
       "business_app_download": "App Download",
       "business_blog": "Blog / Notícias / Fórum",
       "business_institutional": "Institucional",
-      "findings_found": "findings encontrados",
-      "showing_of": "Mostrando {shown} de {total} findings encontrados — crie uma conta para ver todos",
+      "findings_found": "descobertas encontradas",
+      "showing_of": "Mostrando {shown} de {total} descobertas encontradas — crie uma conta para ver todas",
       "f_checkout_trust": "Indicadores de confiança no checkout ausentes",
       "f_chargeback_exposure": "Exposição elevada a chargebacks detectada",
       "f_payment_redirect_chain": "Cadeia de redirecionamentos no pagamento muito longa",
@@ -690,17 +690,21 @@
         "severity": "Severidade",
         "confidence": "Conf",
         "est_impact": "Impacto Est.",
+        "impact": "Impacto",
         "type": "Tipo",
         "pack": "Pack",
         "surface": "Superfície",
         "action": "Ação",
         "scope": "Escopo",
         "status": "Status",
+        "verification": "Verificação",
+        "change": "Mudança",
         "sessions": "Sessões",
         "findings": "Descobertas",
         "sources": "Fontes"
       },
       "healthy": "Saudável",
+      "per_month_short": "/mês",
       "loading": "Carregando...",
       "clear_filters": "Limpar filtros",
       "hide_positive_signals": "Ocultar sinais positivos",
@@ -709,10 +713,10 @@
         "actions": "Próximos passos priorizados para melhorar seu ambiente. Comece aqui.",
         "workspaces": "Resumos de decisões agrupados por questão de negócio. Veja o panorama geral.",
         "chat": "Faça perguntas sobre seu ambiente. Vestigio responde com evidências.",
-        "analysis": "Todos os findings com detalhe completo de evidências. Aprofunde-se.",
+        "analysis": "Todas as descobertas com detalhe completo de evidências. Aprofunde-se.",
         "inventory": "Todas as páginas e superfícies que o Vestigio descobriu no seu site.",
-        "maps": "Cadeias visuais de causa e efeito dos findings às ações.",
-        "knowledge_base": "Documentação sobre findings, packs e conceitos da plataforma."
+        "maps": "Cadeias visuais de causa e efeito das descobertas às ações.",
+        "knowledge_base": "Documentação sobre descobertas, packs e conceitos da plataforma."
       }
     },
     "verification_badge": {
@@ -732,21 +736,31 @@
       },
       "confirmed_at": "Confirmado {time}",
       "expires_at": "Expira {time}",
+      "time": {
+        "in_less_than_one_minute": "em <1 min",
+        "less_than_one_minute_ago": "há <1 min",
+        "in_minutes": "em {count} min",
+        "minutes_ago": "há {count} min",
+        "in_hours": "em {count} h",
+        "hours_ago": "há {count} h",
+        "in_days": "em {count} d",
+        "days_ago": "há {count} d"
+      },
       "recheck": {
         "weakened_title": "Evidência de apoio enfraqueceu",
-        "weakened_body": "Este finding foi confirmado uma vez, mas uma nova checagem mostra que a evidência de apoio não está mais tão forte. Rodar a verificação novamente atualiza o quadro.",
+        "weakened_body": "Esta descoberta foi confirmada uma vez, mas uma nova checagem mostra que a evidência de apoio não está mais tão forte. Rodar a verificação novamente atualiza o quadro.",
         "expired_title": "Confirmação expirada",
-        "expired_body": "A última confirmação deste finding está antiga demais para confiar sem uma nova checagem. Rode a verificação novamente para atualizar.",
+        "expired_body": "A última confirmação desta descoberta está antiga demais para confiar sem uma nova checagem. Rode a verificação novamente para atualizar.",
         "button": "Verificar de novo"
       },
       "resolution": {
-        "title": "Issue marcada como resolvida",
+        "title": "Descoberta marcada como resolvida",
         "button": "Confirmar resolução"
       }
     },
     "verification_sufficiency": {
-      "high": "Este finding de severidade alta veio de análise estática. Rodar uma verificação corrobora ele com uma execução real no navegador antes de você agir.",
-      "critical": "Este finding crítico veio de análise estática. Rodar uma verificação corrobora ele com uma execução real no navegador antes de você agir."
+      "high": "Esta descoberta de severidade alta veio de análise estática. Rodar uma verificação a corrobora com uma execução real no navegador antes de você agir.",
+      "critical": "Esta descoberta crítica veio de análise estática. Rodar uma verificação a corrobora com uma execução real no navegador antes de você agir."
     },
     "analysis": {
       "title": "Análise",
@@ -766,7 +780,8 @@
         "per_month_midpoint": "/mês (ponto médio)",
         "high_impact_issues": "Problemas de Alto Impacto",
         "high_impact_threshold": "> $10k/mês",
-        "avg_confidence": "Confiança Média"
+        "avg_confidence": "Confiança Média",
+        "verified_findings": "Verificadas"
       },
       "discuss": "Discutir",
       "analyze_together": "Analisar {count} Juntos",
@@ -832,10 +847,10 @@
       "corroboration": "Corroboração",
       "verification": "Verificação",
       "verification_requested": "Verificação Solicitada",
-      "verification_tooltip": "A maturidade de verificação mostra como as evidências deste finding foram validadas. Não verificado = apenas análise estática. Verificado = confirmado pelo navegador.",
+      "verification_tooltip": "A maturidade de verificação mostra como as evidências desta descoberta foram validadas. Não verificado = apenas análise estática. Verificado = confirmado pelo navegador.",
       "learn_more": "Saiba mais",
       "browse_related_docs": "Ver artigos relacionados",
-      "docs_coming_soon": "A documentação para este finding está sendo escrita."
+      "docs_coming_soon": "A documentação para esta descoberta está sendo escrita."
     },
     "customer_center": {
       "title": "Central do Cliente",
@@ -843,7 +858,7 @@
       "cards": {
         "knowledge_base": {
           "title": "Base de Conhecimento",
-          "description": "Guias, conceitos, documentacao de findings e referencia de API.",
+          "description": "Guias, conceitos, documentacao de descobertas e referencia de API.",
           "cta": "Explorar docs"
         },
         "support": {
@@ -947,17 +962,35 @@
     },
     "knowledge_base": {
       "title": "Base de Conhecimento",
-      "subtitle": "Documentação sobre findings, packs e conceitos da plataforma.",
+      "subtitle": "Documentação sobre descobertas, packs e conceitos da plataforma.",
       "tabs": {
         "all": "Todos",
         "concepts": "Conceitos",
         "packs": "Packs",
-        "findings": "Findings",
+        "findings": "Descobertas",
         "guides": "Guias"
+      },
+      "sections": {
+        "get_started": "Primeiros Passos",
+        "concept": "Conceitos Centrais",
+        "pack": "Packs de Decisão",
+        "finding": "Catálogo de Descobertas",
+        "api": "Referência de API",
+        "guide": "Guias"
+      },
+      "category_labels": {
+        "get_started": "Primeiros passos",
+        "concept": "Conceito",
+        "pack": "Pack",
+        "finding": "Descoberta",
+        "api": "API",
+        "guide": "Guia"
       },
       "search_placeholder": "Buscar artigos...",
       "read_more": "Ler mais",
       "empty": "Nenhum artigo publicado ainda. A documentação aparecerá aqui conforme for escrita.",
+      "search_results": "Resultados da busca",
+      "search_results_count": "{count, plural, one {# resultado} other {# resultados}} para “{query}”",
       "no_results": "Nenhum artigo corresponde à busca.",
       "article_not_found": "Artigo não encontrado.",
       "back": "Base de Conhecimento",
@@ -1070,11 +1103,11 @@
         },
         "exposure": {
           "name": "Exposição Mensal",
-          "description": "Total $/mês em risco entre findings abertos, dividido por pack."
+          "description": "Total $/mês em risco entre descobertas abertas, dividido por pack."
         },
         "what_changed": {
           "name": "O Que Mudou",
-          "description": "Novos findings, regressões, resoluções e verificações desde o último ciclo."
+          "description": "Novas descobertas, regressões, resoluções e verificações desde o último ciclo."
         },
         "activity_heatmap": {
           "name": "Mapa de Atividade",
@@ -1082,11 +1115,11 @@
         },
         "open_critical": {
           "name": "Críticos Abertos",
-          "description": "Contagem ao vivo de findings críticos abertos com delta de ciclo."
+          "description": "Contagem ao vivo de descobertas críticas abertas com delta de ciclo."
         },
         "verification_rate": {
           "name": "Taxa de Verificação",
-          "description": "% de findings do último ciclo que foram verificados."
+          "description": "% das descobertas do último ciclo que foram verificadas."
         },
         "streak": {
           "name": "Sequência de Atividade",
@@ -1095,6 +1128,44 @@
         "top_pack": {
           "name": "Pack Mais Exposto",
           "description": "Qual pack concentra mais exposição mensal agora."
+        },
+        "top_pack_card": {
+          "label": "Pack no topo",
+          "empty_caption": "Ainda não há exposição registrada",
+          "caption": "{amount}{perMonth} concentrados neste pack"
+        },
+        "verification_rate_card": {
+          "label": "Verificado",
+          "caption_strong": "Evidência forte — a maioria das descobertas está confirmada",
+          "caption_healthy": "A fila de confirmação está saudável",
+          "caption_waiting": "Algumas descobertas ainda aguardam verificação",
+          "caption_backing_up": "A fila de verificação está acumulando"
+        },
+        "open_critical_card": {
+          "label": "Críticos abertos",
+          "cycle_delta": "{count, plural, one {# ciclo} other {# ciclos}}",
+          "caption_clear": "Tudo limpo — nenhuma descoberta crítica aberta",
+          "caption_added": "{count, plural, one {# entrou neste ciclo — exige atenção imediata} other {# entraram neste ciclo — exigem atenção imediata}}",
+          "caption_cleared": "{count, plural, one {# saiu neste ciclo — mantenha a pressão} other {# saíram neste ciclo — mantenha a pressão}}",
+          "caption_open": "{count, plural, one {# crítico aberto desde o último ciclo} other {# críticos abertos desde o último ciclo}}"
+        },
+        "streak_card": {
+          "label": "Sequência",
+          "day_singular": "dia",
+          "day_plural": "dias",
+          "caption_no_activity": "Sem atividade na última semana — suas auditorias vão preencher isso aqui",
+          "caption_broken": "A sequência foi quebrada — retome amanhã",
+          "caption_long": "Sequência de {count} dias — sua melhor fase em um bom tempo",
+          "caption_building": "{count} dias seguidos — o ritmo está crescendo",
+          "caption_keep_going": "Sequência de {count} dias — continue assim"
+        },
+        "what_changed_card": {
+          "title": "O que mudou desde o último ciclo",
+          "period": "últimas 24h",
+          "new_findings": "novas descobertas",
+          "regressions": "regressões",
+          "resolved": "resolvidas",
+          "verifications_confirmed": "verificações confirmadas"
         }
       },
       "editing_subtitle": "Arraste widgets para reorganizar. Redimensione pelo canto. Adicione ou remova pelo catálogo.",
@@ -1109,7 +1180,10 @@
       "catalog": {
         "title": "Adicionar um widget",
         "subtitle": "Escolha o que destacar no seu dashboard",
+        "aria_label": "Catálogo de widgets",
+        "close_aria": "Fechar catálogo",
         "added_label": "Adicionado",
+        "widget_fallback": "Widget do dashboard",
         "reset": "Redefinir layout padrão",
         "confirm_reset": "Redefinir dashboard para o layout padrão?",
         "categories": {
@@ -1117,7 +1191,7 @@
           "trends": "Tendências",
           "activity": "Atividade",
           "milestones": "Marcos",
-          "workspaces": "Workspaces",
+          "workspaces": "Espaços de trabalho",
           "actions": "Ações"
         }
       }
@@ -1153,8 +1227,8 @@
         "playbooksHint": "Abra Playbooks para prompts de análise especializada",
         "tips_toggle": "Como aproveitar melhor o chat do Vestigio",
         "tips": {
-          "natural": "Pergunte em linguagem natural — sem formatação especial. Cite findings, ações, surfaces ou workspaces pelo nome.",
-          "context": "Clique em \"Discutir\" ou \"Usar como contexto\" em qualquer finding/ação para começar um chat com o item já anexado.",
+          "natural": "Pergunte em linguagem natural — sem formatação especial. Cite descobertas, ações, superfícies ou workspaces pelo nome.",
+          "context": "Clique em \"Discutir\" ou \"Usar como contexto\" em qualquer descoberta/ação para começar um chat com o item já anexado.",
           "playbooks": "Use Playbooks (canto superior direito) para análises curadas multi-step como auditorias completas de receita ou trust scores.",
           "files": "Arraste um CSV / JSON / TXT / PDF para o chat para anexá-lo como contexto da próxima mensagem.",
           "voice": "Clique no microfone para ditar sua pergunta em vez de digitar."
@@ -1183,10 +1257,26 @@
         "try_specific": "Tente uma pergunta mais específica para melhores resultados.",
         "asked_recently": "Você perguntou isso recentemente. Tente uma pergunta complementar."
       },
+      "prompt_gate": {
+        "misfire_title": "Você quis mesmo enviar isso?",
+        "weak_title": "Esta pergunta pode ser mais útil",
+        "suggested": "Sugestão",
+        "send_suggested": "Enviar sugestão",
+        "send_original": "Enviar original mesmo assim"
+      },
       "playbooks": {
         "label": "Playbooks",
         "close": "Fechar playbooks",
         "usePrompt": "Usar prompt",
+        "subtitle": "{count} prompts de análise especializada",
+        "search_placeholder": "Buscar playbooks...",
+        "daily_budget_remaining": "Orçamento diário restante",
+        "budget_queries": "{count} consultas",
+        "all": "Todos",
+        "no_results": "Nenhum playbook corresponde à sua busca.",
+        "use_this_prompt": "Usar este prompt",
+        "not_enough_budget": "Orçamento insuficiente",
+        "low_budget_warning": "O orçamento está baixo. Escolha o playbook com cuidado para extrair o máximo valor.",
         "queries": "~{count} consultas",
         "revenue_leaks": {
           "title": "Encontrar Vazamentos de Receita",
@@ -1214,11 +1304,11 @@
         }
       },
       "playbook_prompts": {
-        "revenue_leak_full_audit": "Execute uma análise completa de vazamento de receita. Mostre cada finding que causa perda de receita, ranqueado por impacto mensal em dólares do maior para o menor. Para os 5 maiores, explique a causa raiz e o que corrigir cada um recuperaria. Depois mostre a perda mensal combinada total e a recuperação estimada se eu corrigir os 3 principais.",
-        "conversion_bottleneck": "Mapeie meu funil de conversão do landing até a compra/cadastro. Em cada etapa, mostre quais findings criam fricção. Onde está a maior queda? Qual é a causa raiz dessa queda? Se eu pudesse corrigir apenas uma coisa para melhorar a conversão, o que deveria ser e quanto moveria o ponteiro?",
+        "revenue_leak_full_audit": "Execute uma análise completa de vazamento de receita. Mostre cada descoberta que causa perda de receita, ranqueada por impacto mensal em dólares do maior para o menor. Para as 5 maiores, explique a causa raiz e o que corrigir cada uma recuperaria. Depois mostre a perda mensal combinada total e a recuperação estimada se eu corrigir as 3 principais.",
+        "conversion_bottleneck": "Mapeie meu funil de conversão da landing até a compra/cadastro. Em cada etapa, mostre quais descobertas criam fricção. Onde está a maior queda? Qual é a causa raiz dessa queda? Se eu pudesse corrigir apenas uma coisa para melhorar a conversão, o que deveria ser e quanto moveria o ponteiro?",
         "trust_signal_audit": "Avalie os sinais de confiança do meu site nestas dimensões: SSL e selos de segurança, avaliações e depoimentos, informações da empresa (sobre, equipe, endereço), opções de contato (telefone, chat, email), políticas (devoluções, privacidade, termos), confiança no pagamento (logos, garantias), prova social (número de clientes, menções na mídia). Para cada dimensão, avalie de 1-10 e explique o que está faltando. Qual é minha pontuação geral de confiança e o que melhoraria mais rápido?",
-        "executive_summary": "Crie um resumo executivo adequado para uma reunião de diretoria. Inclua: receita mensal total em risco (soma de todos os findings), 3 principais problemas críticos com impacto em dólares, roadmap de prioridades para 90 dias (semana 1-2: quick wins, mês 1: correções críticas, mês 2-3: melhorias estratégicas), ROI esperado do plano completo de remediação e uma pontuação de saúde de 0-100 para o negócio.",
-        "cross_pack_correlation": "Analise findings em TODOS os packs (integridade de receita, prontidão para escala, resiliência a chargebacks). Encontre correlações: Quais findings de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de receita também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando findings conectados entre packs com impacto combinado."
+        "executive_summary": "Crie um resumo executivo adequado para uma reunião de diretoria. Inclua: receita mensal total em risco (soma de todas as descobertas), 3 principais problemas críticos com impacto em dólares, roadmap de prioridades para 90 dias (semana 1-2: quick wins, mês 1: correções críticas, mês 2-3: melhorias estratégicas), ROI esperado do plano completo de remediação e uma pontuação de saúde de 0-100 para o negócio.",
+        "cross_pack_correlation": "Analise descobertas em TODOS os packs (integridade de receita, prontidão para escala, resiliência a chargebacks). Encontre correlações: Quais descobertas de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de receita também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando descobertas conectadas entre packs com impacto combinado."
       },
       "quick_presets": {
         "losing_money": {
@@ -1269,12 +1359,44 @@
         },
         "cross_pack_correlation": {
           "title": "Correlação Entre Packs",
-          "description": "Conexões ocultas entre findings de packs de análise diferentes.",
+          "description": "Conexões ocultas entre descobertas de packs de análise diferentes.",
           "category": "Insights"
         }
       },
+      "context": {
+        "title": "Contexto",
+        "clear_all": "Limpar tudo",
+        "kinds": {
+          "finding": "Descoberta",
+          "action": "Ação",
+          "workspace": "Espaço de trabalho",
+          "surface": "Superfície"
+        },
+        "remove_aria_label": "Remover {kind} do contexto",
+        "prompts": {
+          "empty": "Me dê um resumo do que você está vendo.",
+          "single_finding": "Discuta a descoberta \"{title}\" ({id}). Explique a causa raiz, o impacto e o que corrigir.",
+          "single_action": "Discuta a ação \"{title}\" ({id}). Por que ela importa, qual é o ganho esperado e como devo priorizá-la?",
+          "single_workspace": "Discuta o espaço de trabalho \"{title}\" ({id}). Me explique o que está acontecendo ali e o que fazer a respeito.",
+          "single_surface": "Discuta a superfície {title} ({id}). Quais descobertas a afetam e o que devo priorizar?",
+          "group_findings": "{count} descobertas ({titles})",
+          "group_actions": "{count} ações ({titles})",
+          "group_workspaces": "{count} espaços de trabalho ({titles})",
+          "group_surfaces": "{count} superfícies ({titles})",
+          "combined": "Analise estes itens em conjunto: {parts}. O que eles têm em comum? Qual é o impacto combinado e qual é a correção de maior alavancagem?"
+        }
+      },
+      "create_action": {
+        "saved": "Ação salva: {title}",
+        "suggested": "Ação sugerida",
+        "estimated_impact": "Impacto estimado: {amount}{perMonth}",
+        "save": "Salvar como ação"
+      },
       "stop_generating": "Parar geração",
       "jump_to_latest": "Ir para a última"
+    },
+    "organization_selector": {
+      "no_organization": "Nenhuma organização"
     },
     "actions": {
       "title": "Ações",
@@ -1295,7 +1417,7 @@
         "perMonthMidpoint": "/mês (ponto médio)",
         "total_actions": "Total de Ações",
         "total_impact": "Impacto Mensal Recuperável",
-        "cross_pack": "Cross-Pack",
+        "cross_pack": "Entre packs",
         "high_severity": "Alta Severidade"
       },
       "tabs": {
@@ -1335,7 +1457,7 @@
         "track": "Acompanhar Progresso",
         "dismiss": "Dispensar"
       },
-      "explainer": "Ações são próximos passos priorizados derivados de decisões. Cada ação pode abordar múltiplos findings. Findings fornecem a evidência de suporte.",
+      "explainer": "Ações são próximos passos priorizados derivados de decisões. Cada ação pode abordar múltiplas descobertas. As descobertas fornecem a evidência de suporte.",
       "changeBanner": {
         "firstAnalysis": "Primeira análise — sem histórico de mudanças",
         "regression": "regressão(ões)",
@@ -1344,7 +1466,7 @@
         "new": "novo(s)"
       },
       "scope": {
-        "cross_pack": "cross-pack",
+        "cross_pack": "entre packs",
         "single": "único"
       },
       "drawer": {
@@ -1549,13 +1671,24 @@
         "midpoint": "Ponto Médio",
         "confidence": "Confiança {value}%",
         "actionDetails": "Detalhes da Ação",
-        "crossPack": "cross-pack",
+        "crossPack": "entre packs",
         "impactUnlocked": "Impacto Desbloqueado",
         "rootCauseDetails": "Detalhes da Causa Raiz",
         "aggregateImpact": "Impacto Agregado",
         "affectedPacks": "Packs Afetados",
         "reasoning": "Raciocínio",
         "description": "Descrição"
+      },
+      "page_types": {
+        "homepage": "Página inicial",
+        "landing": "Landing page",
+        "product": "Produto",
+        "category": "Categoria",
+        "pricing": "Preços",
+        "cart": "Carrinho",
+        "checkout": "Checkout",
+        "thank_you": "Confirmação",
+        "page": "Página"
       },
       "edge_types": {
         "causal": "Causal",
@@ -1568,7 +1701,12 @@
       "step_indicator": "Passo {current}/{total}",
       "nav": {
         "previous": "Anterior",
-        "next": "Próximo"
+        "next": "Próximo",
+        "checking_domain": "Verificando domínio..."
+      },
+      "activation": {
+        "title": "Configurando seu espaço de trabalho...",
+        "subtitle": "Isso normalmente leva alguns segundos."
       },
       "org_name": {
         "title": "Nomeie sua organização",
@@ -1580,7 +1718,12 @@
         "title": "Qual domínio você quer auditar?",
         "subtitle": "Insira a URL do seu site para que o Vestigio inicie a análise.",
         "label": "Domínio",
-        "placeholder": "https://exemplo.com"
+        "placeholder": "https://exemplo.com",
+        "validation_error": "Digite um domínio válido (ex.: exemplo.com ou https://exemplo.com)",
+        "warning_unreachable": "O domínio pode não estar acessível. Você pode continuar, mas a auditoria pode falhar.",
+        "warning_continue": "você ainda pode continuar",
+        "ownership_title": "Eu sou dono deste domínio ou tenho autorização para auditá-lo",
+        "ownership_description": "O Vestigio irá rastrear apenas páginas públicas. Ao marcar isso, você confirma que tem o direito de analisar este site."
       },
       "business_context": {
         "title": "Contexto do negócio",
@@ -1633,6 +1776,30 @@
         "skip_note": "Você pode completar isso depois em Configurações → Fontes de Dados. Pular não afetará seu onboarding.",
         "skip": "Pular por enquanto"
       },
+      "notifications": {
+        "title": "Fique por dentro",
+        "subtitle": "Receba alertas quando uma de suas páginas sair do ar, quando um incidente for detectado ou quando surgir uma regressão. Você pode alterar isso a qualquer momento em Configurações.",
+        "phone": "Número de telefone",
+        "phone_placeholder": "+5511999999999",
+        "phone_help": "Use o formato internacional. Obrigatório apenas se você ativar SMS ou WhatsApp.",
+        "invalid_phone": "Digite um telefone válido no formato internacional (ex.: +5511999999999)",
+        "notify_me_by": "Quero ser avisado por",
+        "add_phone_first": "adicione um número de telefone primeiro",
+        "channels": {
+          "email": {
+            "label": "E-mail",
+            "description": "Alertas detalhados com contexto"
+          },
+          "sms": {
+            "label": "SMS",
+            "description": "Apenas alertas críticos curtos"
+          },
+          "whatsapp": {
+            "label": "WhatsApp",
+            "description": "Alertas em formato conversacional"
+          }
+        }
+      },
       "review": {
         "title": "Revise sua configuração",
         "subtitle": "Confirme seus dados antes de escolher um plano.",
@@ -1643,18 +1810,36 @@
         "avg_order_value": "Ticket Médio",
         "conversion_model": "Modelo de Conversão",
         "saas_access": "Acesso SaaS",
+        "notifications": "Notificações",
         "not_provided": "Não informado",
         "saas_skipped": "Pulado — configure depois em Fontes de Dados",
-        "saas_not_configured": "Não configurado — configure depois em Fontes de Dados"
+        "saas_not_configured": "Não configurado — configure depois em Fontes de Dados",
+        "no_email_yet": "sem e-mail ainda",
+        "email_only": "Somente e-mail"
       },
       "plan": {
         "title": "Escolha seu plano",
         "subtitle": "Um plano é necessário para ativar o Vestigio. Você pode fazer upgrade a qualquer momento.",
         "recommended": "Recomendado",
         "per_month": "/mês",
+        "opening_checkout": "Abrindo checkout...",
         "redirecting": "Redirecionando para o checkout...",
         "activate": "Ativar {plan} — {price}/mês",
+        "secure_payment": "Pagamento seguro via Paddle.",
         "stripe_note": "Você será redirecionado ao Stripe para pagamento seguro.",
+        "features": {
+          "domain_singular": "1 domínio",
+          "domain_plural": "{count} domínios",
+          "agentic_insights": "Insights agentic",
+          "agentic_insights_5x": "5x mais insights agentic",
+          "agentic_insights_20x": "20x mais insights agentic",
+          "continuous_audits": "Auditorias contínuas",
+          "full_analysis": "Análise completa",
+          "credits_system": "Sistema de créditos",
+          "priority_support": "Suporte prioritário",
+          "impact_quantification": "Quantificação de impacto",
+          "root_cause_maps": "Mapas de causa raiz"
+        },
         "plans": {
           "vestigio": {
             "name": "Vestigio",
@@ -1690,13 +1875,16 @@
       },
       "errors": {
         "something_wrong": "Algo deu errado",
-        "network_error": "Erro de rede. Por favor, tente novamente."
+        "network_error": "Erro de rede. Por favor, tente novamente.",
+        "activation_delayed": "A ativação está demorando mais do que o esperado. Atualize a página.",
+        "payment_loading": "O sistema de pagamento ainda está carregando. Tente novamente em instantes."
       }
     },
     "navigation": {
       "dashboard": "Dashboard",
+      "onboard": "Configuração inicial",
       "actions": "Ações",
-      "workspaces": "Workspaces",
+      "workspaces": "Espaços de trabalho",
       "chat": "Chat",
       "analysis": "Análise",
       "findings": "Descobertas",
@@ -2010,7 +2198,7 @@
       }
     },
     "field_kind_labels": {
-      "email": "email",
+      "email": "e-mail",
       "phone": "número de telefone",
       "card_like": "cartão de pagamento",
       "cpf_cnpj_like": "documento de identidade",

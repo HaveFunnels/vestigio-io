@@ -6,6 +6,7 @@
  */
 
 import type { ActionCardBlock } from "@/lib/chat-types";
+import { useTranslations } from "next-intl";
 
 interface ActionCardProps {
   block: ActionCardBlock;
@@ -19,6 +20,8 @@ function formatCurrency(value: number): string {
 }
 
 export function ActionCard({ block, onNavigate }: ActionCardProps) {
+  const tc = useTranslations("console.common");
+  const ta = useTranslations("console.actions");
   const { action } = block;
 
   return (
@@ -39,11 +42,12 @@ export function ActionCard({ block, onNavigate }: ActionCardProps) {
         <div className="mt-1 flex items-center gap-2">
           {action.cross_pack && (
             <span className="rounded border border-emerald-700/30 bg-emerald-500/10 px-1.5 py-0 text-[10px] font-medium text-emerald-500">
-              cross-pack
+              {ta("cards.cross_pack")}
             </span>
           )}
           <span className="text-[10px] text-content-muted">
-            saves {formatCurrency(action.impact_mid)}/mo
+            {ta("columns.impact")}: {formatCurrency(action.impact_mid)}
+            {tc("per_month_short")}
           </span>
         </div>
       </div>

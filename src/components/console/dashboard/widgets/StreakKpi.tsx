@@ -16,15 +16,28 @@
 // ──────────────────────────────────────────────
 
 import { FlameIcon as Flame } from "@phosphor-icons/react/dist/ssr";
-import { captionForActivityHeatmap } from "@/lib/dashboard/captions";
+import { useTranslations } from "next-intl";
 import {
 	registerWidget,
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
 
 function StreakKpiComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.streak_card");
 	const { currentStreak } = data.activityHeatmap;
-	const caption = captionForActivityHeatmap(data.activityHeatmap);
+	const recentActivity = data.activityHeatmap.days
+		.slice(-7)
+		.reduce((acc, day) => acc + day.count, 0);
+	const caption =
+		currentStreak === 0
+			? recentActivity === 0
+				? t("caption_no_activity")
+				: t("caption_broken")
+			: currentStreak >= 14
+				? t("caption_long", { count: currentStreak })
+				: currentStreak >= 7
+					? t("caption_building", { count: currentStreak })
+					: t("caption_keep_going", { count: currentStreak });
 	const isActive = currentStreak > 0;
 	const numberClass = isActive ? "text-amber-400" : "text-content-faint";
 
@@ -42,7 +55,7 @@ function StreakKpiComponent({ data }: WidgetProps) {
 
 			<div className='relative flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<Flame size={11} weight='bold' className='text-amber-400' />
-				<span>Streak</span>
+				<span>{t("label")}</span>
 			</div>
 
 			<div className='relative mt-2 flex items-baseline gap-1'>
@@ -52,7 +65,7 @@ function StreakKpiComponent({ data }: WidgetProps) {
 					{currentStreak}
 				</span>
 				<span className='text-[10px] uppercase tracking-wider text-content-faint'>
-					{currentStreak === 1 ? "day" : "days"}
+					{currentStreak === 1 ? t("day_singular") : t("day_plural")}
 				</span>
 			</div>
 

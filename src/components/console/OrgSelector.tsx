@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Organization + Environment Selector
@@ -22,11 +23,12 @@ interface OrgSelectorProps {
 
 export default function OrgSelector({ current, organizations = [] }: OrgSelectorProps) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("console.organization_selector");
 
   if (!current) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5">
-        <span className="text-xs text-content-faint">No organization</span>
+        <span className="text-xs text-content-faint">{t("no_organization")}</span>
       </div>
     );
   }

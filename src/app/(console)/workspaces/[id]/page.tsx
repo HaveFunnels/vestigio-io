@@ -243,7 +243,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
               </>
             ) : (
               <p className="text-sm text-content-muted">
-                No changes since last cycle
+                {t("detail.no_changes")}
               </p>
             )}
           </section>

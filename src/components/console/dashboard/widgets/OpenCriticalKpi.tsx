@@ -20,18 +20,23 @@
 // ──────────────────────────────────────────────
 
 import { SkullIcon as Skull } from "@phosphor-icons/react/dist/ssr";
-import { captionForOpenCritical } from "@/lib/dashboard/captions";
+import { useTranslations } from "next-intl";
 import {
 	registerWidget,
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
 
 function OpenCriticalKpiComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.open_critical_card");
 	const { criticalOpenCount, criticalDeltaVsLastCycle } = data.exposure;
-	const caption = captionForOpenCritical(
-		criticalOpenCount,
-		criticalDeltaVsLastCycle
-	);
+	const caption =
+		criticalOpenCount === 0
+			? t("caption_clear")
+			: criticalDeltaVsLastCycle > 0
+				? t("caption_added", { count: criticalDeltaVsLastCycle })
+				: criticalDeltaVsLastCycle < 0
+					? t("caption_cleared", { count: Math.abs(criticalDeltaVsLastCycle) })
+					: t("caption_open", { count: criticalOpenCount });
 	const isClean = criticalOpenCount === 0;
 	const numberClass = isClean ? "text-emerald-400" : "text-red-400";
 	const deltaPositive = criticalDeltaVsLastCycle > 0;
@@ -56,7 +61,7 @@ function OpenCriticalKpiComponent({ data }: WidgetProps) {
 					weight='bold'
 					className={isClean ? "text-emerald-400" : "text-red-400"}
 				/>
-				<span>Open critical</span>
+				<span>{t("label")}</span>
 			</div>
 
 			{/* Hero number + delta */}
@@ -77,7 +82,7 @@ function OpenCriticalKpiComponent({ data }: WidgetProps) {
 						}`}
 					>
 						{deltaPositive ? "+" : ""}
-						{criticalDeltaVsLastCycle} cycle
+						{t("cycle_delta", { count: criticalDeltaVsLastCycle })}
 					</span>
 				)}
 			</div>

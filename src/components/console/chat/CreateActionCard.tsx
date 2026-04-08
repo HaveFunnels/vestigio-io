@@ -7,6 +7,7 @@
  */
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface CreateActionCardProps {
   suggestedTitle: string;
@@ -23,6 +24,8 @@ export function CreateActionCard({
   estimatedImpact,
   onSave,
 }: CreateActionCardProps) {
+  const t = useTranslations("console.chat.create_action");
+  const tc = useTranslations("console.common");
   const [saved, setSaved] = useState(false);
   const [title, setTitle] = useState(suggestedTitle);
 
@@ -37,7 +40,7 @@ export function CreateActionCard({
         <svg className="h-4 w-4 text-emerald-500" viewBox="0 0 16 16" fill="none">
           <path d="M13.25 4.75L6 12 2.75 8.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span className="text-sm text-emerald-400">Action saved: {title}</span>
+        <span className="text-sm text-emerald-400">{t("saved", { title })}</span>
       </div>
     );
   }
@@ -52,7 +55,7 @@ export function CreateActionCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-500">
-            Suggested action
+            {t("suggested")}
           </div>
           <input
             value={title}
@@ -62,7 +65,10 @@ export function CreateActionCard({
           <p className="mt-1 text-xs text-content-muted">{suggestedDescription}</p>
           {estimatedImpact != null && (
             <p className="mt-0.5 font-mono text-xs text-amber-400">
-              Est. impact: ${estimatedImpact.toLocaleString()}/mo
+              {t("estimated_impact", {
+                amount: `$${estimatedImpact.toLocaleString()}`,
+                perMonth: tc("per_month_short"),
+              })}
             </p>
           )}
         </div>
@@ -72,7 +78,7 @@ export function CreateActionCard({
           onClick={handleSave}
           className="rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-500"
         >
-          Save as action
+          {t("save")}
         </button>
       </div>
     </div>

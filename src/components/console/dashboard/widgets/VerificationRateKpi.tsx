@@ -15,7 +15,7 @@
 // ──────────────────────────────────────────────
 
 import { SealCheckIcon as SealCheck } from "@phosphor-icons/react/dist/ssr";
-import { captionForVerificationRate } from "@/lib/dashboard/captions";
+import { useTranslations } from "next-intl";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -28,8 +28,16 @@ function rateColor(rate: number): string {
 }
 
 function VerificationRateKpiComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.verification_rate_card");
 	const rate = data.healthScore.components.verification;
-	const caption = captionForVerificationRate(rate);
+	const caption =
+		rate >= 80
+			? t("caption_strong")
+			: rate >= 60
+				? t("caption_healthy")
+				: rate >= 40
+					? t("caption_waiting")
+					: t("caption_backing_up");
 	const numberClass = rateColor(rate);
 
 	return (
@@ -46,7 +54,7 @@ function VerificationRateKpiComponent({ data }: WidgetProps) {
 
 			<div className='relative flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<SealCheck size={11} weight='bold' className='text-blue-400' />
-				<span>Verified</span>
+				<span>{t("label")}</span>
 			</div>
 
 			<div className='relative mt-2 flex items-baseline gap-1'>

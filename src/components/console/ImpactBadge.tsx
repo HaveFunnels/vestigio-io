@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 interface ImpactBadgeProps {
   min: number;
   max: number;
@@ -14,6 +16,7 @@ function formatCurrency(value: number): string {
 }
 
 export default function ImpactBadge({ min, max, compact = false }: ImpactBadgeProps) {
+  const t = useTranslations("console.common");
   const midpoint = (min + max) / 2;
 
   const color =
@@ -26,14 +29,16 @@ export default function ImpactBadge({ min, max, compact = false }: ImpactBadgePr
   if (compact) {
     return (
       <span className={`font-mono text-xs ${color}`}>
-        {formatCurrency(midpoint)}/mo
+        {formatCurrency(midpoint)}
+        {t("per_month_short")}
       </span>
     );
   }
 
   return (
     <span className={`font-mono text-xs ${color}`}>
-      {formatCurrency(min)} – {formatCurrency(max)}/mo
+      {formatCurrency(min)} – {formatCurrency(max)}
+      {t("per_month_short")}
     </span>
   );
 }

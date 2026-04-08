@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 // ──────────────────────────────────────────────
 // Prompt Gate Card — inline prompt quality card
 //
@@ -26,6 +28,7 @@ export default function PromptGateCard({
   onDismiss,
 }: PromptGateCardProps) {
   const isMisfire = quality === 'misfire';
+  const t = useTranslations("console.chat.prompt_gate");
 
   return (
     <div className="mx-auto max-w-3xl animate-in slide-in-from-bottom-2 duration-200">
@@ -41,7 +44,7 @@ export default function PromptGateCard({
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
             <span className={`text-xs font-medium ${isMisfire ? "text-content-muted" : "text-amber-400"}`}>
-              {isMisfire ? "Did you mean to send this?" : "This question could be more useful"}
+              {isMisfire ? t("misfire_title") : t("weak_title")}
             </span>
           </div>
           <button
@@ -60,7 +63,7 @@ export default function PromptGateCard({
         {/* Suggested rewrite */}
         {suggestedRewrite && (
           <div className="mt-2 rounded-md border border-emerald-800/30 bg-emerald-500/5 px-3 py-2">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-500">Suggested</div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-500">{t("suggested")}</div>
             <p className="mt-0.5 text-sm text-emerald-300">{suggestedRewrite}</p>
           </div>
         )}
@@ -72,14 +75,14 @@ export default function PromptGateCard({
               onClick={onSendSuggested}
               className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-500"
             >
-              Send suggested
+              {t("send_suggested")}
             </button>
           )}
           <button
             onClick={onSendOriginal}
             className="rounded-md border border-edge px-3 py-1.5 text-xs text-content-muted transition-colors hover:border-edge hover:text-content-secondary"
           >
-            Send original anyway
+            {t("send_original")}
           </button>
         </div>
       </div>

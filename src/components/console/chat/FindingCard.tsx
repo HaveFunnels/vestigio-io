@@ -7,6 +7,7 @@
  */
 
 import type { FindingCardBlock } from "@/lib/chat-types";
+import { useTranslations } from "next-intl";
 import SeverityBadge from "../SeverityBadge";
 
 interface FindingCardProps {
@@ -21,6 +22,8 @@ function formatCurrency(value: number): string {
 }
 
 export function FindingCard({ block, onNavigate }: FindingCardProps) {
+  const tc = useTranslations("console.common");
+  const td = useTranslations("console.finding_drawer");
   const { finding } = block;
   const impactColor =
     finding.impact_mid >= 5000
@@ -53,7 +56,7 @@ export function FindingCard({ block, onNavigate }: FindingCardProps) {
           <p className="text-sm font-medium text-content-secondary">{finding.title}</p>
           <span className={`shrink-0 font-mono text-sm font-bold ${impactColor}`}>
             {formatCurrency(finding.impact_mid)}
-            <span className="text-[10px] font-normal text-content-faint">/mo</span>
+            <span className="text-[10px] font-normal text-content-faint">{tc("per_month_short")}</span>
           </span>
         </div>
 
@@ -66,7 +69,7 @@ export function FindingCard({ block, onNavigate }: FindingCardProps) {
 
         {finding.root_cause && (
           <p className="mt-1.5 text-xs text-content-muted">
-            Root cause: {finding.root_cause}
+            {td("root_cause")}: {finding.root_cause}
           </p>
         )}
       </div>

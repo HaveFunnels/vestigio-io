@@ -670,6 +670,9 @@
         "severity": "__TODO__",
         "confidence": "__TODO__",
         "est_impact": "__TODO__",
+        "impact": "Impact",
+        "verification": "Verifizierung",
+        "change": "Änderung",
         "type": "__TODO__",
         "pack": "__TODO__",
         "surface": "__TODO__",
@@ -681,6 +684,7 @@
         "sources": "__TODO__"
       },
       "healthy": "__TODO__",
+      "per_month_short": "/Monat",
       "confidence_label": "__TODO__",
       "loading": "__TODO__",
       "clear_filters": "__TODO__",
@@ -714,7 +718,8 @@
         "per_month_midpoint": "__TODO__",
         "high_impact_issues": "__TODO__",
         "high_impact_threshold": "__TODO__",
-        "avg_confidence": "__TODO__"
+        "avg_confidence": "__TODO__",
+        "verified_findings": "__TODO__"
       },
       "discuss": "__TODO__",
       "analyze_together": "__TODO__",
@@ -856,9 +861,27 @@
         "findings": "Befunde",
         "guides": "Anleitungen"
       },
+      "sections": {
+        "get_started": "Erste Schritte",
+        "concept": "Kernkonzepte",
+        "pack": "Entscheidungs-Packs",
+        "finding": "Befundkatalog",
+        "api": "API-Referenz",
+        "guide": "Anleitungen"
+      },
+      "category_labels": {
+        "get_started": "Erste Schritte",
+        "concept": "Konzept",
+        "pack": "Pack",
+        "finding": "Befund",
+        "api": "API",
+        "guide": "Anleitung"
+      },
       "search_placeholder": "Artikel suchen...",
       "read_more": "Mehr lesen",
       "empty": "Noch keine Artikel veröffentlicht. Die Dokumentation wird hier erscheinen.",
+      "search_results": "Suchergebnisse",
+      "search_results_count": "{count, plural, one {# Ergebnis} other {# Ergebnisse}} für „{query}“",
       "no_results": "Keine Artikel stimmen mit der Suche überein.",
       "article_not_found": "Artikel nicht gefunden.",
       "back": "Wissensdatenbank",
@@ -971,6 +994,36 @@
           "executive_summary": "Erstelle eine Zusammenfassung für eine Vorstandssitzung. Einschließen: monatlicher Gesamtumsatz in Gefahr (Summe aller Befunde), Top 3 kritische Probleme mit Dollar-Impact, 90-Tage-Prioritätsplan (Woche 1-2: Quick Wins, Monat 1: kritische Korrekturen, Monat 2-3: strategische Verbesserungen), erwarteter ROI des vollständigen Behebungsplans und ein Gesundheitswert von 0-100 für das Geschäft.",
           "cross_pack_correlation": "Analysiere Befunde über ALLE Packs hinweg (Umsatzintegrität, Skalierungsbereitschaft, Chargeback-Resilienz). Finde Korrelationen: Welche Befunde aus verschiedenen Packs teilen dieselbe Ursache? Wo reduziert die Behebung eines Umsatzproblems auch das Chargeback-Risiko? Wo hilft die Verbesserung des Vertrauens auch der Conversion? Erstelle eine Korrelationskarte mit verbundenen Befunden über Packs hinweg mit kombiniertem Impact."
         }
+      }
+      ,
+      "context": {
+        "title": "Kontext",
+        "clear_all": "Alles entfernen",
+        "kinds": {
+          "finding": "Befund",
+          "action": "Aktion",
+          "workspace": "Arbeitsbereich",
+          "surface": "Oberfläche"
+        },
+        "remove_aria_label": "{kind} aus dem Kontext entfernen",
+        "prompts": {
+          "empty": "Gib mir eine Zusammenfassung dessen, was du siehst.",
+          "single_finding": "Besprich den Befund „{title}“ ({id}). Erkläre die Ursache, den Impact und was behoben werden sollte.",
+          "single_action": "Besprich die Aktion „{title}“ ({id}). Warum ist sie wichtig, welcher Nutzen ist zu erwarten und wie sollte ich sie priorisieren?",
+          "single_workspace": "Besprich den Arbeitsbereich „{title}“ ({id}). Erkläre mir, was dort passiert und was ich tun sollte.",
+          "single_surface": "Besprich die Oberfläche {title} ({id}). Welche Befunde betreffen sie und was sollte ich priorisieren?",
+          "group_findings": "{count} Befunde ({titles})",
+          "group_actions": "{count} Aktionen ({titles})",
+          "group_workspaces": "{count} Arbeitsbereiche ({titles})",
+          "group_surfaces": "{count} Oberflächen ({titles})",
+          "combined": "Analysiere diese gemeinsam: {parts}. Was haben sie gemeinsam? Was ist der kombinierte Impact und welche Maßnahme hat den größten Hebel?"
+        }
+      },
+      "create_action": {
+        "saved": "Aktion gespeichert: {title}",
+        "suggested": "Vorgeschlagene Aktion",
+        "estimated_impact": "Geschätzter Impact: {amount}{perMonth}",
+        "save": "Als Aktion speichern"
       }
     },
     "actions": {
@@ -1095,22 +1148,63 @@
       }
     },
     "maps": {
-      "title": "__TODO__",
-      "subtitle": "__TODO__",
-      "loading": "__TODO__",
-      "empty": "__TODO__",
+      "title": "Karten",
+      "subtitle": "Kausale Visualisierung — Beziehungen zwischen Problemen, Ursachen und Aktionen.",
+      "loading": "Karten werden erstellt...",
+      "empty": "Führen Sie eine Analyse aus, um Kausalkarten zu erzeugen.",
+      "nodeTypes": {
+        "rootCause": "Ursache",
+        "finding": "Befund",
+        "action": "Aktion",
+        "category": "Kategorie"
+      },
       "node_types": {
-        "root_cause": "__TODO__",
-        "finding": "__TODO__",
-        "action": "__TODO__",
-        "category": "__TODO__"
+        "root_cause": "Ursache",
+        "finding": "Befund",
+        "action": "Aktion",
+        "category": "Kategorie"
+      },
+      "legend": {
+        "rootCause": "Ursache",
+        "finding": "Befund",
+        "action": "Aktion",
+        "category": "Kategorie",
+        "causal": "Kausal",
+        "contributes": "Trägt bei",
+        "addresses": "Behebt"
+      },
+      "drawer": {
+        "summary": "Zusammenfassung",
+        "impactBreakdown": "Impact-Aufschlüsselung",
+        "monthlyRange": "Monatliche Spanne",
+        "midpoint": "Mittelwert",
+        "confidence": "Vertrauen {value}%",
+        "actionDetails": "Aktionsdetails",
+        "crossPack": "packübergreifend",
+        "impactUnlocked": "Freigeschalteter Impact",
+        "rootCauseDetails": "Ursachendetails",
+        "aggregateImpact": "Gesamtimpact",
+        "affectedPacks": "Betroffene Packs",
+        "reasoning": "Begründung",
+        "description": "Beschreibung"
+      },
+      "page_types": {
+        "homepage": "Startseite",
+        "landing": "Landingpage",
+        "product": "Produkt",
+        "category": "Kategorie",
+        "pricing": "Preise",
+        "cart": "Warenkorb",
+        "checkout": "Checkout",
+        "thank_you": "Bestätigung",
+        "page": "Seite"
       },
       "edge_types": {
-        "causal": "__TODO__",
-        "contributes": "__TODO__",
-        "addresses": "__TODO__"
+        "causal": "Kausal",
+        "contributes": "Trägt bei",
+        "addresses": "Behebt"
       },
-      "impact_unlocks": "__TODO__"
+      "impact_unlocks": "schaltet {amount}/Monat frei"
     },
     "onboard": {
       "step_indicator": "__TODO__",
@@ -1243,6 +1337,7 @@
     },
     "navigation": {
       "dashboard": "Dashboard",
+      "onboard": "Ersteinrichtung",
       "actions": "Aktionen",
       "workspaces": "Arbeitsbereiche",
       "chat": "Chat",
@@ -1277,6 +1372,9 @@
       "growth": "Wachstum",
       "support": "Support",
       "observability": "Überwachung"
+    },
+    "organization_selector": {
+      "no_organization": "Keine Organisation"
     },
     "settings": {
       "title": "Einstellungen",

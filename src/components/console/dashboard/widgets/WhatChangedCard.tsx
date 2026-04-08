@@ -22,6 +22,7 @@ import {
 	PlusIcon as Plus,
 	SealCheckIcon as ShieldCheck,
 } from "@phosphor-icons/react/dist/ssr";
+import { useTranslations } from "next-intl";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -109,6 +110,7 @@ function Section({ icon, label, count, tone, entries }: SectionProps) {
 }
 
 function WhatChangedCardComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.what_changed_card");
 	const {
 		newFindings,
 		regressions,
@@ -121,36 +123,36 @@ function WhatChangedCardComponent({ data }: WidgetProps) {
 		<div className='flex h-full flex-col p-5'>
 			{/* Eyebrow */}
 			<div className='flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
-				<span>What changed since last cycle</span>
-				<span className='text-content-faint'>last 24h</span>
+				<span>{t("title")}</span>
+				<span className='text-content-faint'>{t("period")}</span>
 			</div>
 
 			{/* Four sections in a 2x2 grid */}
 			<div className='mt-3 grid flex-1 grid-cols-1 gap-3 md:grid-cols-2'>
 				<Section
 					icon={<Plus size={12} weight='bold' />}
-					label='new findings'
+					label={t("new_findings")}
 					count={newFindings.length}
 					tone='added'
 					entries={newFindings}
 				/>
 				<Section
 					icon={<ArrowsClockwise size={12} weight='bold' />}
-					label='regressions'
+					label={t("regressions")}
 					count={regressions.length}
 					tone='regressed'
 					entries={regressions}
 				/>
 				<Section
 					icon={<CheckCircle size={12} weight='bold' />}
-					label='resolved'
+					label={t("resolved")}
 					count={resolved.length}
 					tone='resolved'
 					entries={resolved}
 				/>
 				<Section
 					icon={<ShieldCheck size={12} weight='bold' />}
-					label='verifications confirmed'
+					label={t("verifications_confirmed")}
 					count={verificationsConfirmed}
 					tone='verified'
 				/>

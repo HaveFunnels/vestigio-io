@@ -60,24 +60,27 @@ const CONFIRMATION_EXPIRED_STEP: StepDef = { key: "confirmation_expired", i18nKe
 
 // ── Helpers ─────────────────────────────────────
 
-function relativeTime(dateStr: string): string {
+function relativeTime(
+  dateStr: string,
+  t: ReturnType<typeof useTranslations<"console.verification_panel">>,
+): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const diffMs = now - then;
   const absDiff = Math.abs(diffMs);
   const isFuture = diffMs < 0;
 
-  if (absDiff < 60_000) return isFuture ? "in <1m" : "<1m ago";
+  if (absDiff < 60_000) return isFuture ? t("time.in_less_than_one_minute") : t("time.less_than_one_minute_ago");
   if (absDiff < 3_600_000) {
     const mins = Math.round(absDiff / 60_000);
-    return isFuture ? `in ${mins}m` : `${mins}m ago`;
+    return isFuture ? t("time.in_minutes", { count: mins }) : t("time.minutes_ago", { count: mins });
   }
   if (absDiff < 86_400_000) {
     const hrs = Math.round(absDiff / 3_600_000);
-    return isFuture ? `in ${hrs}h` : `${hrs}h ago`;
+    return isFuture ? t("time.in_hours", { count: hrs }) : t("time.hours_ago", { count: hrs });
   }
   const days = Math.round(absDiff / 86_400_000);
-  return isFuture ? `in ${days}d` : `${days}d ago`;
+  return isFuture ? t("time.in_days", { count: days }) : t("time.days_ago", { count: days });
 }
 
 function freshnessProgress(verifiedAt: string, expiresAt: string): number {
@@ -206,11 +209,11 @@ export default function VerificationPanel({
         <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-content-muted">
-              {t("confirmed_at", { time: relativeTime(verifiedAt) })}
+              {t("confirmed_at", { time: relativeTime(verifiedAt, t) })}
             </span>
             {expiresAt && (
               <span className="text-xs text-content-muted">
-                {t("expires_at", { time: relativeTime(expiresAt) })}
+                {t("expires_at", { time: relativeTime(expiresAt, t) })}
               </span>
             )}
           </div>

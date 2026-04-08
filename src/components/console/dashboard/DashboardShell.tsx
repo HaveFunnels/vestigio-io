@@ -31,6 +31,7 @@
 // ──────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { DashboardGrid } from "./DashboardGrid";
 import { DashboardHeader, type SaveStatus } from "./DashboardHeader";
 import { CatalogDrawer } from "./CatalogDrawer";
@@ -55,6 +56,7 @@ export function DashboardShell({
 	data,
 	persistEnabled = true,
 }: DashboardShellProps) {
+	const t = useTranslations("console.dashboard");
 	const [instances, setInstances] =
 		useState<WidgetInstance[]>(initialInstances);
 	const [editing, setEditing] = useState(false);
@@ -170,7 +172,7 @@ export function DashboardShell({
 		// can replace it with a styled modal if the friction matters.
 		if (
 			typeof window !== "undefined" &&
-			!window.confirm("Reset dashboard to default layout?")
+			!window.confirm(t("catalog.confirm_reset"))
 		) {
 			return;
 		}

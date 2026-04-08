@@ -26,6 +26,7 @@
 // ──────────────────────────────────────────────
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
 	PlusIcon as Plus,
 	XIcon as X,
@@ -55,13 +56,13 @@ interface CatalogDrawerProps {
 	onReset?: () => void;
 }
 
-const CATEGORY_LABELS: Record<WidgetCategory, string> = {
-	kpi: "KPIs",
-	trends: "Trends",
-	activity: "Activity",
-	milestones: "Milestones",
-	workspaces: "Workspaces",
-	actions: "Actions",
+const CATEGORY_LABEL_KEYS: Record<WidgetCategory, string> = {
+	kpi: "kpi",
+	trends: "trends",
+	activity: "activity",
+	milestones: "milestones",
+	workspaces: "workspaces",
+	actions: "actions",
 };
 
 const CATEGORY_ORDER: WidgetCategory[] = [
@@ -92,6 +93,8 @@ export function CatalogDrawer({
 	existingDefIds,
 	onReset,
 }: CatalogDrawerProps) {
+	const t = useTranslations("console.dashboard");
+	const tRoot = useTranslations();
 	// Close on Escape so the drawer behaves like every other modal/drawer
 	// in the app.
 	useEffect(() => {
@@ -132,21 +135,21 @@ export function CatalogDrawer({
 				className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-[440px] flex-col border-l border-edge bg-surface shadow-2xl transition-transform ${
 					open ? "translate-x-0" : "translate-x-full"
 				}`}
-				aria-label='Widget catalog'
+				aria-label={t("catalog.aria_label")}
 			>
 				{/* Header */}
 				<div className='flex items-center justify-between border-b border-edge px-5 py-4'>
 					<div>
-						<h2 className='text-sm font-semibold text-content'>Add a widget</h2>
+						<h2 className='text-sm font-semibold text-content'>{t("catalog.title")}</h2>
 						<p className='text-[11px] text-content-muted'>
-							Pick what to surface on your dashboard
+							{t("catalog.subtitle")}
 						</p>
 					</div>
 					<button
 						type='button'
 						onClick={onClose}
 						className='flex h-8 w-8 items-center justify-center rounded-lg border border-edge text-content-muted transition-colors hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-emerald-500'
-						aria-label='Close catalog'
+						aria-label={t("catalog.close_aria")}
 					>
 						<X size={14} weight='bold' />
 					</button>
@@ -162,7 +165,7 @@ export function CatalogDrawer({
 							<section key={cat} className='mb-6 last:mb-0'>
 								<header className='mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
 									<Icon size={12} weight='bold' />
-									<span>{CATEGORY_LABELS[cat]}</span>
+									<span>{t(`catalog.categories.${CATEGORY_LABEL_KEYS[cat]}` as "catalog.categories.kpi")}</span>
 								</header>
 								<div className='flex flex-col gap-2'>
 									{list.map((def) => {
@@ -173,6 +176,9 @@ export function CatalogDrawer({
 												def={def}
 												disabled={alreadyAdded}
 												onAdd={() => onAdd(def.id, def.defaultSize)}
+												addedLabel={t("catalog.added_label")}
+												fallbackDescription={t("catalog.widget_fallback")}
+												tRoot={tRoot}
 											/>
 										);
 									})}
@@ -191,7 +197,7 @@ export function CatalogDrawer({
 							className='flex items-center gap-2 text-[11px] text-content-muted transition-colors hover:text-amber-400'
 						>
 							<ArrowCounterClockwise size={12} weight='bold' />
-							Reset layout to default
+							{t("catalog.reset")}
 						</button>
 					</div>
 				)}
@@ -204,16 +210,38 @@ interface CatalogTileProps {
 	def: WidgetDefinition;
 	disabled: boolean;
 	onAdd: () => void;
+	addedLabel: string;
+	fallbackDescription: string;
+	tRoot: ReturnType<typeof useTranslations>;
 }
 
-function CatalogTile({ def, disabled, onAdd }: CatalogTileProps) {
-	// Convert "/dashboard/widgets/money_recovered.name" → "Money recovered"
-	// for the Phase 3 placeholder display. Phase 3.7 swaps this for real
-	// i18n lookups but for now the registry id is human-readable enough.
-	const displayName = def.id
-		.replaceAll("_", " ")
-		.replace(/\b\w/g, (c) => c.toUpperCase());
-	const description = describeWidget(def.id);
+const WIDGET_TRANSLATION_IDS: Record<string, string> = {
+	money_recovered_ticker: "money_recovered",
+	exposure_kpi: "exposure",
+	health_trend: "health_trend",
+	activity_heatmap: "activity_heatmap",
+	what_changed: "what_changed",
+	open_critical_kpi: "open_critical",
+	verification_rate_kpi: "verification_rate",
+	streak_kpi: "streak",
+	top_pack_kpi: "top_pack",
+};
+
+function CatalogTile({
+	def,
+	disabled,
+	onAdd,
+	addedLabel,
+	fallbackDescription,
+	tRoot,
+}: CatalogTileProps) {
+	const translationId = WIDGET_TRANSLATION_IDS[def.id];
+	const displayName = translationId
+		? tRoot(`console.dashboard.widgets.${translationId}.name` as any)
+		: def.id.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+	const description = translationId
+		? tRoot(`console.dashboard.widgets.${translationId}.description` as any)
+		: fallbackDescription;
 
 	return (
 		<button
@@ -243,39 +271,9 @@ function CatalogTile({ def, disabled, onAdd }: CatalogTileProps) {
 			</div>
 			{disabled && (
 				<span className='flex-shrink-0 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
-					Added
+					{addedLabel}
 				</span>
 			)}
 		</button>
 	);
-}
-
-// Phase 3 placeholder descriptions — replaced by real i18n in a
-// future polish pass once next-intl wiring lands here. The strings
-// below mirror what's already in dictionary/*.json under
-// `console.dashboard.widgets.<id>.description` so swapping is a
-// search-and-replace later.
-function describeWidget(id: string): string {
-	switch (id) {
-		case "money_recovered_ticker":
-			return "Running total of revenue clawed back";
-		case "exposure_kpi":
-			return "Open monthly exposure with per-pack split";
-		case "health_trend":
-			return "Composite health score and 30-day trend";
-		case "activity_heatmap":
-			return "90-day activity grid with current streak";
-		case "what_changed":
-			return "New, regressed, and resolved findings";
-		case "open_critical_kpi":
-			return "Live count of open critical findings";
-		case "verification_rate_kpi":
-			return "% of findings independently verified";
-		case "streak_kpi":
-			return "Current activity streak";
-		case "top_pack_kpi":
-			return "Pack carrying the most exposure";
-		default:
-			return "Dashboard widget";
-	}
 }

@@ -23,13 +23,13 @@ interface KBArticle {
   publishedAt?: string;
 }
 
-const SECTIONS: { key: string; label: string; icon: string }[] = [
-  { key: "get_started", label: "Get Started", icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" },
-  { key: "concept", label: "Core Concepts", icon: "M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" },
-  { key: "pack", label: "Decision Packs", icon: "M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" },
-  { key: "finding", label: "Findings Catalog", icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" },
-  { key: "api", label: "API Reference", icon: "M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" },
-  { key: "guide", label: "Guides", icon: "M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" },
+const SECTION_DEFS: { key: string; icon: string }[] = [
+  { key: "get_started", icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" },
+  { key: "concept", icon: "M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" },
+  { key: "pack", icon: "M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" },
+  { key: "finding", icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" },
+  { key: "api", icon: "M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" },
+  { key: "guide", icon: "M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" },
 ];
 
 const sectionColors: Record<string, string> = {
@@ -61,6 +61,10 @@ const badgeStyles: Record<string, string> = {
 
 export default function KnowledgeBasePage() {
   const t = useTranslations("console.knowledge_base");
+  const sections = SECTION_DEFS.map((section) => ({
+    ...section,
+    label: t(`sections.${section.key}` as never),
+  }));
   const [articles, setArticles] = useState<KBArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -73,7 +77,7 @@ export default function KnowledgeBasePage() {
         const items = data.articles || [];
         setArticles(items);
         // Default to first section that has articles, or "get_started"
-        const firstWithContent = SECTIONS.find((s) =>
+        const firstWithContent = SECTION_DEFS.find((s) =>
           items.some((a: KBArticle) => a.category === s.key)
         );
         setActiveSection(firstWithContent?.key || "get_started");
@@ -109,7 +113,7 @@ export default function KnowledgeBasePage() {
     return c;
   }, [articles]);
 
-  const activeSectionMeta = SECTIONS.find((s) => s.key === activeSection);
+  const activeSectionMeta = sections.find((s) => s.key === activeSection);
 
   return (
     <div className="flex h-full">
@@ -139,7 +143,7 @@ export default function KnowledgeBasePage() {
 
         {/* Sections nav */}
         <nav className="flex-1 overflow-y-auto px-2 pb-4">
-          {SECTIONS.map((section) => {
+          {sections.map((section) => {
             const isActive = activeSection === section.key && !searchText;
             const count = counts[section.key] || 0;
             return (
@@ -170,7 +174,7 @@ export default function KnowledgeBasePage() {
       {/* ── Mobile top nav ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex items-center gap-2 overflow-x-auto border-b border-edge px-4 py-2 md:hidden">
-          {SECTIONS.map((section) => (
+          {sections.map((section) => (
             <button
               key={section.key}
               onClick={() => { setActiveSection(section.key); setSearchText(""); }}
@@ -196,7 +200,7 @@ export default function KnowledgeBasePage() {
                 {t("search_results")}
               </h2>
               <p className="mb-6 text-xs text-content-muted">
-                {searchResults.length} {searchResults.length === 1 ? "result" : "results"} for &ldquo;{searchText}&rdquo;
+                {t("search_results_count", { count: searchResults.length, query: searchText })}
               </p>
               {searchResults.length === 0 ? (
                 <EmptyState message={t("no_results")} />
@@ -252,9 +256,10 @@ function SectionHeader({ section }: { section?: { key: string; label: string; ic
 // ── Article Card ──
 
 function ArticleCard({ article }: { article: KBArticle }) {
+  const t = useTranslations("console.knowledge_base");
   const badge = badgeStyles[article.category] || "border-edge text-content-muted";
   const border = cardBorders[article.category] || "hover:border-edge";
-  const sectionLabel = SECTIONS.find((s) => s.key === article.category)?.label || article.category;
+  const sectionLabel = t(`sections.${article.category}` as never);
 
   return (
     <Link

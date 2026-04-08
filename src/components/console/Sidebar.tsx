@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 const navItems = [
-  { href: "/onboard", label: "Onboard", icon: "rocket" },
-  { href: "/actions", label: "Actions", icon: "bolt" },
-  { href: "/workspaces", label: "Workspaces", icon: "grid" },
-  { href: "/chat", label: "Chat", icon: "chat" },
-  { href: "/analysis", label: "Findings", icon: "search" },
-  { href: "/inventory", label: "Inventory", icon: "layers" },
-  { href: "/data-sources", label: "Data Sources", icon: "plug" },
-  { href: "/maps", label: "Maps", icon: "map" },
-  { href: "/settings", label: "Settings", icon: "gear" },
+  { href: "/onboard", labelKey: "onboard", icon: "rocket" },
+  { href: "/actions", labelKey: "actions", icon: "bolt" },
+  { href: "/workspaces", labelKey: "workspaces", icon: "grid" },
+  { href: "/chat", labelKey: "chat", icon: "chat" },
+  { href: "/analysis", labelKey: "findings", icon: "search" },
+  { href: "/inventory", labelKey: "inventory", icon: "layers" },
+  { href: "/data-sources", labelKey: "data_sources", icon: "plug" },
+  { href: "/maps", labelKey: "maps", icon: "map" },
+  { href: "/settings", labelKey: "settings", icon: "gear" },
 ];
 
 const icons: Record<string, string> = {
@@ -31,6 +32,7 @@ const icons: Record<string, string> = {
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const t = useTranslations("console.navigation");
 
   return (
     <aside
@@ -67,7 +69,7 @@ export default function Sidebar() {
               <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={icons[item.icon]} />
               </svg>
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && <span>{t(item.labelKey as "actions")}</span>}
             </Link>
           );
         })}

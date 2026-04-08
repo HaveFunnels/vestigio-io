@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Playbooks Drawer — Expert Analysis Prompts
@@ -73,6 +74,7 @@ export default function PlaybooksDrawer({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const t = useTranslations("console.chat.playbooks");
 
   if (!open) return null;
 
@@ -104,9 +106,9 @@ export default function PlaybooksDrawer({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-edge px-4 py-3">
           <div>
-            <h2 className="text-sm font-semibold text-content">Playbooks</h2>
+            <h2 className="text-sm font-semibold text-content">{t("label")}</h2>
             <p className="text-[10px] text-content-muted">
-              {playbooks.length} expert analysis prompts
+              {t("subtitle", { count: playbooks.length })}
             </p>
           </div>
           <button
@@ -125,7 +127,7 @@ export default function PlaybooksDrawer({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search playbooks..."
+            placeholder={t("search_placeholder")}
             className="w-full rounded-md border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary placeholder-content-faint outline-none focus:border-edge"
           />
         </div>
@@ -133,9 +135,9 @@ export default function PlaybooksDrawer({
         {/* Budget indicator */}
         <div className="border-b border-edge px-4 py-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-content-muted">Daily budget remaining</span>
+            <span className="text-content-muted">{t("daily_budget_remaining")}</span>
             <span className={mcpRemaining <= 3 ? "font-medium text-amber-400" : "text-content-muted"}>
-              {mcpRemaining} queries
+              {t("budget_queries", { count: mcpRemaining })}
             </span>
           </div>
         </div>
@@ -150,7 +152,7 @@ export default function PlaybooksDrawer({
                 : "text-content-muted hover:text-content-secondary"
             }`}
           >
-            All
+            {t("all")}
           </button>
           {categoryKeys.map((cat) => {
             const meta = categories[cat];
@@ -175,7 +177,7 @@ export default function PlaybooksDrawer({
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {filtered.length === 0 && (
             <p className="py-8 text-center text-xs text-content-faint">
-              No playbooks match your search.
+              {t("no_results")}
             </p>
           )}
 
@@ -235,7 +237,7 @@ export default function PlaybooksDrawer({
                       {catMeta?.label || pb.category}
                     </span>
                     <span className={`text-[10px] ${canAfford ? "text-content-faint" : "text-red-400"}`}>
-                      ~{pb.estimated_queries} queries
+                      {t("queries", { count: pb.estimated_queries })}
                     </span>
                   </div>
                 </button>
@@ -260,7 +262,7 @@ export default function PlaybooksDrawer({
                           : "cursor-not-allowed bg-surface-inset text-content-faint"
                       }`}
                     >
-                      {canAfford ? "Use this prompt" : "Not enough budget"}
+                      {canAfford ? t("use_this_prompt") : t("not_enough_budget")}
                     </button>
                   </div>
                 )}
@@ -273,7 +275,7 @@ export default function PlaybooksDrawer({
         {mcpRemaining <= 5 && (
           <div className="border-t border-edge px-4 py-2">
             <p className="text-[10px] text-amber-400/80">
-              Budget is low. Choose a playbook carefully for maximum value.
+              {t("low_budget_warning")}
             </p>
           </div>
         )}

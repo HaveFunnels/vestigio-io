@@ -21,13 +21,6 @@ interface KBArticle {
   publishedAt?: string;
 }
 
-const categoryLabels: Record<string, string> = {
-  concept: "Concept",
-  pack: "Pack",
-  finding: "Finding",
-  guide: "Guide",
-};
-
 const categoryColors: Record<string, string> = {
   concept: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
   pack: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20",
@@ -123,6 +116,7 @@ export default function KnowledgeArticlePage() {
   }
 
   const catColor = categoryColors[article.category] || "border-edge text-content-muted";
+  const categoryLabel = t(`category_labels.${article.category}` as never);
 
   return (
     <div className="p-6">
@@ -139,7 +133,7 @@ export default function KnowledgeArticlePage() {
             {t("back")}
           </button>
           <span className={`rounded border px-2 py-0.5 text-[10px] font-semibold ${catColor}`}>
-            {categoryLabels[article.category] || article.category}
+            {categoryLabel}
           </span>
           {article.finding_key && (
             <code className="rounded border border-edge px-2 py-0.5 text-[10px] text-content-faint">

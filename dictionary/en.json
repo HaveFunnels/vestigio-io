@@ -703,6 +703,7 @@
         "sources": "Sources"
       },
       "healthy": "Healthy",
+      "per_month_short": "/mo",
       "loading": "Loading...",
       "clear_filters": "Clear filters",
       "hide_positive_signals": "Hide positive signals",
@@ -734,6 +735,16 @@
       },
       "confirmed_at": "Confirmed {time}",
       "expires_at": "Expires {time}",
+      "time": {
+        "in_less_than_one_minute": "in <1m",
+        "less_than_one_minute_ago": "<1m ago",
+        "in_minutes": "in {count}m",
+        "minutes_ago": "{count}m ago",
+        "in_hours": "in {count}h",
+        "hours_ago": "{count}h ago",
+        "in_days": "in {count}d",
+        "days_ago": "{count}d ago"
+      },
       "recheck": {
         "weakened_title": "Supporting evidence has weakened",
         "weakened_body": "This finding was confirmed once, but a re-check shows the supporting evidence is no longer as strong. Re-running verification will refresh the picture.",
@@ -950,10 +961,27 @@
         "findings": "Findings",
         "guides": "Guides"
       },
+      "sections": {
+        "get_started": "Get Started",
+        "concept": "Core Concepts",
+        "pack": "Decision Packs",
+        "finding": "Findings Catalog",
+        "api": "API Reference",
+        "guide": "Guides"
+      },
+      "category_labels": {
+        "get_started": "Get Started",
+        "concept": "Concept",
+        "pack": "Pack",
+        "finding": "Finding",
+        "api": "API",
+        "guide": "Guide"
+      },
       "search_placeholder": "Search articles...",
       "read_more": "Read more",
       "empty": "No articles published yet. Documentation will appear here as it's written.",
       "search_results": "Search Results",
+      "search_results_count": "{count, plural, one {# result} other {# results}} for “{query}”",
       "no_results": "No articles match your search.",
       "article_not_found": "Article not found.",
       "back": "Knowledge Base",
@@ -1045,6 +1073,44 @@
         "top_pack": {
           "name": "Top Exposure Pack",
           "description": "Which pack carries the most monthly exposure right now."
+        },
+        "top_pack_card": {
+          "label": "Top pack",
+          "empty_caption": "No exposure recorded yet",
+          "caption": "{amount}{perMonth} concentrated in this pack"
+        },
+        "verification_rate_card": {
+          "label": "Verified",
+          "caption_strong": "Strong evidence — most findings are confirmed",
+          "caption_healthy": "Confirmation queue is healthy",
+          "caption_waiting": "Some findings still waiting on verification",
+          "caption_backing_up": "Verification queue is backing up"
+        },
+        "open_critical_card": {
+          "label": "Open critical",
+          "cycle_delta": "{count, plural, one {# cycle} other {# cycles}}",
+          "caption_clear": "All clear — no open critical findings",
+          "caption_added": "{count, plural, one {# added this cycle — needs immediate attention} other {# added this cycle — needs immediate attention}}",
+          "caption_cleared": "{count, plural, one {# cleared this cycle — keep the pressure on} other {# cleared this cycle — keep the pressure on}}",
+          "caption_open": "{count, plural, one {# critical open since last cycle} other {# criticals open since last cycle}}"
+        },
+        "streak_card": {
+          "label": "Streak",
+          "day_singular": "day",
+          "day_plural": "days",
+          "caption_no_activity": "No activity in the last week — your audits will fill this in",
+          "caption_broken": "Streak broken — pick it back up tomorrow",
+          "caption_long": "{count}-day streak — your longest stretch in a while",
+          "caption_building": "{count} days in a row — momentum is building",
+          "caption_keep_going": "{count}-day streak — keep it going"
+        },
+        "what_changed_card": {
+          "title": "What changed since last cycle",
+          "period": "last 24h",
+          "new_findings": "new findings",
+          "regressions": "regressions",
+          "resolved": "resolved",
+          "verifications_confirmed": "verifications confirmed"
         }
       },
       "editing_subtitle": "Drag widgets to rearrange. Resize from the corner. Add or remove from the catalog.",
@@ -1059,7 +1125,10 @@
       "catalog": {
         "title": "Add a widget",
         "subtitle": "Pick what to surface on your dashboard",
+        "aria_label": "Widget catalog",
+        "close_aria": "Close catalog",
         "added_label": "Added",
+        "widget_fallback": "Dashboard widget",
         "reset": "Reset layout to default",
         "confirm_reset": "Reset dashboard to default layout?",
         "categories": {
@@ -1133,10 +1202,26 @@
         "try_specific": "Try a more specific question for better results.",
         "asked_recently": "You asked this recently. Try a follow-up instead."
       },
+      "prompt_gate": {
+        "misfire_title": "Did you mean to send this?",
+        "weak_title": "This question could be more useful",
+        "suggested": "Suggested",
+        "send_suggested": "Send suggested",
+        "send_original": "Send original anyway"
+      },
       "playbooks": {
         "label": "Playbooks",
         "close": "Close playbooks",
         "usePrompt": "Use prompt",
+        "subtitle": "{count} expert analysis prompts",
+        "search_placeholder": "Search playbooks...",
+        "daily_budget_remaining": "Daily budget remaining",
+        "budget_queries": "{count} queries",
+        "all": "All",
+        "no_results": "No playbooks match your search.",
+        "use_this_prompt": "Use this prompt",
+        "not_enough_budget": "Not enough budget",
+        "low_budget_warning": "Budget is low. Choose a playbook carefully for maximum value.",
         "queries": "~{count} queries",
         "revenue_leaks": {
           "title": "Find Revenue Leaks",
@@ -1223,8 +1308,40 @@
           "category": "Insights"
         }
       },
+      "context": {
+        "title": "Context",
+        "clear_all": "Clear all",
+        "kinds": {
+          "finding": "Finding",
+          "action": "Action",
+          "workspace": "Workspace",
+          "surface": "Surface"
+        },
+        "remove_aria_label": "Remove {kind} from context",
+        "prompts": {
+          "empty": "Give me a summary of what you see.",
+          "single_finding": "Discuss finding \"{title}\" ({id}). Explain the root cause, impact, and what to fix.",
+          "single_action": "Discuss action \"{title}\" ({id}). Why does it matter, what's the expected lift, and how should I sequence it?",
+          "single_workspace": "Discuss the \"{title}\" workspace. Walk me through what's happening there and what to do about it.",
+          "single_surface": "Discuss surface {title}. What findings touch it and what should I prioritise?",
+          "group_findings": "{count} findings ({titles})",
+          "group_actions": "{count} actions ({titles})",
+          "group_workspaces": "{count} workspaces ({titles})",
+          "group_surfaces": "{count} surfaces ({titles})",
+          "combined": "Analyze these together: {parts}. What do they have in common? What's the combined impact and the single highest-leverage fix?"
+        }
+      },
+      "create_action": {
+        "saved": "Action saved: {title}",
+        "suggested": "Suggested action",
+        "estimated_impact": "Est. impact: {amount}{perMonth}",
+        "save": "Save as action"
+      },
       "stop_generating": "Stop generating",
       "jump_to_latest": "Jump to latest"
+    },
+    "organization_selector": {
+      "no_organization": "No organization"
     },
     "actions": {
       "title": "Actions",
@@ -1512,13 +1629,29 @@
         "reasoning": "Reasoning",
         "description": "Description"
       },
+      "page_types": {
+        "homepage": "Homepage",
+        "landing": "Landing",
+        "product": "Product",
+        "category": "Category",
+        "pricing": "Pricing",
+        "cart": "Cart",
+        "checkout": "Checkout",
+        "thank_you": "Confirmation",
+        "page": "Page"
+      },
       "impact_unlocks": "unlocks {amount}/mo"
     },
     "onboard": {
       "step_indicator": "Step {current}/{total}",
       "nav": {
         "previous": "Previous",
-        "next": "Next"
+        "next": "Next",
+        "checking_domain": "Checking domain..."
+      },
+      "activation": {
+        "title": "Setting up your workspace...",
+        "subtitle": "This usually takes a few seconds."
       },
       "org_name": {
         "title": "Name your organization",
@@ -1530,7 +1663,12 @@
         "title": "What domain do you want to audit?",
         "subtitle": "Enter your website URL so Vestigio can start the analysis.",
         "label": "Domain",
-        "placeholder": "https://example.com"
+        "placeholder": "https://example.com",
+        "validation_error": "Please enter a valid domain (e.g. example.com or https://example.com)",
+        "warning_unreachable": "Domain may not be reachable. You can continue, but the audit may fail.",
+        "warning_continue": "you can still proceed",
+        "ownership_title": "I own this domain or have authorization to audit it",
+        "ownership_description": "Vestigio will only crawl public pages. By checking this you confirm you have the right to analyze this site."
       },
       "business_context": {
         "title": "Business context",
@@ -1583,6 +1721,30 @@
         "skip_note": "You can complete this later in Settings → Data Sources. Skipping will not affect your onboarding.",
         "skip": "Skip for now"
       },
+      "notifications": {
+        "title": "Stay informed",
+        "subtitle": "Get alerted when one of your pages goes down, when an incident is detected, or when a regression appears. You can change these anytime in Settings.",
+        "phone": "Phone number",
+        "phone_placeholder": "+5511999999999",
+        "phone_help": "International format. Required only if you enable SMS or WhatsApp.",
+        "invalid_phone": "Please enter a valid phone in international format (e.g. +5511999999999)",
+        "notify_me_by": "Notify me by",
+        "add_phone_first": "add a phone number first",
+        "channels": {
+          "email": {
+            "label": "Email",
+            "description": "Detailed alerts with context"
+          },
+          "sms": {
+            "label": "SMS",
+            "description": "Short critical alerts only"
+          },
+          "whatsapp": {
+            "label": "WhatsApp",
+            "description": "Conversational alerts"
+          }
+        }
+      },
       "review": {
         "title": "Review your setup",
         "subtitle": "Confirm your details before choosing a plan.",
@@ -1593,18 +1755,36 @@
         "avg_order_value": "Avg. Order Value",
         "conversion_model": "Conversion Model",
         "saas_access": "SaaS Access",
+        "notifications": "Notifications",
         "not_provided": "Not provided",
         "saas_skipped": "Skipped — configure later in Data Sources",
-        "saas_not_configured": "Not configured — configure later in Data Sources"
+        "saas_not_configured": "Not configured — configure later in Data Sources",
+        "no_email_yet": "no email yet",
+        "email_only": "Email only"
       },
       "plan": {
         "title": "Choose your plan",
         "subtitle": "A plan is required to activate Vestigio. You can upgrade anytime.",
         "recommended": "Recommended",
         "per_month": "/mo",
+        "opening_checkout": "Opening checkout...",
         "redirecting": "Redirecting to checkout...",
         "activate": "Activate {plan} — {price}/mo",
+        "secure_payment": "Secure payment via Paddle.",
         "stripe_note": "You will be redirected to Stripe for secure payment.",
+        "features": {
+          "domain_singular": "1 domain",
+          "domain_plural": "{count} domains",
+          "agentic_insights": "Agentic insights",
+          "agentic_insights_5x": "5x more agentic insights",
+          "agentic_insights_20x": "20x more agentic insights",
+          "continuous_audits": "Continuous audits",
+          "full_analysis": "Full analysis",
+          "credits_system": "Credits system",
+          "priority_support": "Priority support",
+          "impact_quantification": "Impact quantification",
+          "root_cause_maps": "Root cause maps"
+        },
         "plans": {
           "vestigio": {
             "name": "Vestigio",
@@ -1640,11 +1820,14 @@
       },
       "errors": {
         "something_wrong": "Something went wrong",
-        "network_error": "Network error. Please try again."
+        "network_error": "Network error. Please try again.",
+        "activation_delayed": "Activation is taking longer than expected. Please refresh the page.",
+        "payment_loading": "Payment system is loading. Please try again in a moment."
       }
     },
     "navigation": {
       "dashboard": "Dashboard",
+      "onboard": "Onboarding",
       "actions": "Actions",
       "workspaces": "Workspaces",
       "chat": "Chat",

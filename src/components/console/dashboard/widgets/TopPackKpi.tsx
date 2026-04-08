@@ -16,7 +16,7 @@
 // ──────────────────────────────────────────────
 
 import { CrosshairIcon as Crosshair } from "@phosphor-icons/react/dist/ssr";
-import { captionForTopPack } from "@/lib/dashboard/captions";
+import { useTranslations } from "next-intl";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -28,10 +28,16 @@ function packLabel(pack: string): string {
 }
 
 function TopPackKpiComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.top_pack_card");
+	const tc = useTranslations("console.common");
 	const top = data.exposure.byPack[0];
-	const caption = top
-		? captionForTopPack(top.pack, top.cents)
-		: captionForTopPack("", 0);
+	const caption =
+		top && top.cents > 0
+			? t("caption", {
+					amount: `$${(top.cents / 100_000).toFixed(1)}k`,
+					perMonth: tc("per_month_short"),
+				})
+			: t("empty_caption");
 
 	return (
 		<div className='relative flex h-full flex-col p-4'>
@@ -47,7 +53,7 @@ function TopPackKpiComponent({ data }: WidgetProps) {
 
 			<div className='relative flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<Crosshair size={11} weight='bold' className='text-emerald-400' />
-				<span>Top pack</span>
+				<span>{t("label")}</span>
 			</div>
 
 			<div className='relative mt-2 flex flex-col gap-0.5'>
@@ -56,7 +62,7 @@ function TopPackKpiComponent({ data }: WidgetProps) {
 				</span>
 				{top && top.cents > 0 && (
 					<span className='font-mono text-[11px] tabular-nums text-red-400'>
-						−${(top.cents / 100_000).toFixed(1)}k/mo
+						−${(top.cents / 100_000).toFixed(1)}k{tc("per_month_short")}
 					</span>
 				)}
 			</div>

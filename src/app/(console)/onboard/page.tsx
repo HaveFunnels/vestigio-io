@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 declare global {
   interface Window {
@@ -37,23 +38,6 @@ interface OnboardState {
   notifyWhatsapp: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-const businessOptions: { value: BusinessType; label: string; description: string }[] = [
-  { value: "ecommerce", label: "Ecommerce", description: "Direct online sales" },
-  { value: "lead_gen", label: "Lead Gen", description: "Lead capture and nurture" },
-  { value: "saas", label: "SaaS", description: "Subscription software" },
-  { value: "hybrid", label: "Hybrid", description: "Mixed business model" },
-];
-
-const conversionOptions: { value: ConversionModel; label: string }[] = [
-  { value: "checkout", label: "Checkout (on-site purchase)" },
-  { value: "whatsapp", label: "WhatsApp / Messaging" },
-  { value: "form", label: "Form Submission" },
-  { value: "external", label: "External Redirect" },
-];
-
 interface Plan {
   key: string;
   name: string;
@@ -62,34 +46,6 @@ interface Plan {
   features: string[];
   recommended: boolean;
 }
-
-// Default plans (fallback while fetching from API)
-const DEFAULT_PLANS: Plan[] = [
-  {
-    key: "vestigio",
-    name: "Vestigio",
-    price: "$99",
-    paddlePriceId: "",
-    features: ["1 domain", "Agentic insights", "Full analysis", "Impact quantification"],
-    recommended: false,
-  },
-  {
-    key: "pro",
-    name: "Vestigio Pro",
-    price: "$199",
-    paddlePriceId: "",
-    features: ["3 domains", "5x more agentic insights", "Continuous audits", "Root cause maps"],
-    recommended: true,
-  },
-  {
-    key: "max",
-    name: "Vestigio Max",
-    price: "$399",
-    paddlePriceId: "",
-    features: ["10 domains", "20x more agentic insights", "Continuous audits", "Credits system", "Priority support"],
-    recommended: false,
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Domain validation
@@ -142,13 +98,55 @@ export default function OnboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, update: updateSession } = useSession();
+  const t = useTranslations("console.onboard");
   const paymentSuccess = searchParams.get("payment_success") === "true";
+
+  const businessOptions = useMemo<{ value: BusinessType; label: string; description: string }[]>(
+    () => [
+      { value: "ecommerce", label: t("business_context.types.ecommerce"), description: t("business_context.types.ecommerce_desc") },
+      { value: "lead_gen", label: t("business_context.types.lead_gen"), description: t("business_context.types.lead_gen_desc") },
+      { value: "saas", label: t("business_context.types.saas"), description: t("business_context.types.saas_desc") },
+      { value: "hybrid", label: t("business_context.types.hybrid"), description: t("business_context.types.hybrid_desc") },
+    ],
+    [t],
+  );
+
+  const conversionOptions = useMemo<{ value: ConversionModel; label: string }[]>(
+    () => [
+      { value: "checkout", label: t("business_context.conversion_models.checkout") },
+      { value: "whatsapp", label: t("business_context.conversion_models.whatsapp") },
+      { value: "form", label: t("business_context.conversion_models.form") },
+      { value: "external", label: t("business_context.conversion_models.external") },
+    ],
+    [t],
+  );
+
+  const notificationChannels = useMemo(
+    () => [
+      { key: "notifyEmail" as const, label: t("notifications.channels.email.label"), desc: t("notifications.channels.email.description"), needsPhone: false },
+      { key: "notifySms" as const, label: t("notifications.channels.sms.label"), desc: t("notifications.channels.sms.description"), needsPhone: true },
+      { key: "notifyWhatsapp" as const, label: t("notifications.channels.whatsapp.label"), desc: t("notifications.channels.whatsapp.description"), needsPhone: true },
+    ],
+    [t],
+  );
+
+  const defaultPlans = useMemo<Plan[]>(
+    () => (["vestigio", "pro", "max"] as const).map((key) => ({
+      key,
+      name: t(`plan.plans.${key}.name`),
+      price: t(`plan.plans.${key}.price`),
+      paddlePriceId: "",
+      features: t.raw(`plan.plans.${key}.features`) as string[],
+      recommended: key === "pro",
+    })),
+    [t],
+  );
 
   const [stepIndex, setStepIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS);
-  const [selectedPlan, setSelectedPlan] = useState<Plan>(DEFAULT_PLANS[0]);
+  const [plans, setPlans] = useState<Plan[]>(defaultPlans);
+  const [selectedPlan, setSelectedPlan] = useState<Plan>(defaultPlans[0]);
   const [activating, setActivating] = useState(paymentSuccess);
   const [domainError, setDomainError] = useState<string | null>(null);
   const [domainChecking, setDomainChecking] = useState(false);
@@ -164,17 +162,23 @@ export default function OnboardPage() {
         if (data.plans && data.plans.length > 0) {
           const mapped: Plan[] = data.plans.map((p: any, idx: number) => ({
             key: p.key,
-            name: p.label,
+            name: t.has(`plan.plans.${p.key}.name`) ? t(`plan.plans.${p.key}.name`) : p.label,
             price: `$${Math.round(p.monthlyPriceCents / 100)}`,
             paddlePriceId: p.paddlePriceId || "",
             features: [
-              `${p.maxEnvironments} domain${p.maxEnvironments > 1 ? "s" : ""}`,
-              idx === 0 ? "Agentic insights" : idx === 1 ? "5x more agentic insights" : "20x more agentic insights",
-              ...(p.continuousAudits ? ["Continuous audits"] : ["Full analysis"]),
-              ...(p.creditsEnabled ? ["Credits system"] : []),
-              ...(p.key === "max" ? ["Priority support"] : []),
-              ...(p.key === "vestigio" ? ["Impact quantification"] : []),
-              ...(p.key === "pro" ? ["Root cause maps"] : []),
+              p.maxEnvironments === 1
+                ? t("plan.features.domain_singular")
+                : t("plan.features.domain_plural", { count: p.maxEnvironments }),
+              idx === 0
+                ? t("plan.features.agentic_insights")
+                : idx === 1
+                  ? t("plan.features.agentic_insights_5x")
+                  : t("plan.features.agentic_insights_20x"),
+              ...(p.continuousAudits ? [t("plan.features.continuous_audits")] : [t("plan.features.full_analysis")]),
+              ...(p.creditsEnabled ? [t("plan.features.credits_system")] : []),
+              ...(p.key === "max" ? [t("plan.features.priority_support")] : []),
+              ...(p.key === "vestigio" ? [t("plan.features.impact_quantification")] : []),
+              ...(p.key === "pro" ? [t("plan.features.root_cause_maps")] : []),
             ],
             recommended: p.key === "pro",
           }));
@@ -186,7 +190,7 @@ export default function OnboardPage() {
       }
     }
     fetchPlans();
-  }, []);
+  }, [t]);
 
   // If user already has an active org WITH a domain and this is not a payment callback, redirect to app.
   // Users with an org but no domain (e.g. demo accounts) should be allowed to complete setup.
@@ -217,12 +221,12 @@ export default function OnboardPage() {
       if (attempts >= maxAttempts) {
         clearInterval(interval);
         setActivating(false);
-        setError("Activation is taking longer than expected. Please refresh the page.");
+        setError(t("errors.activation_delayed"));
       }
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [paymentSuccess, updateSession]);
+  }, [paymentSuccess, t, updateSession]);
 
   // React to session change after polling
   useEffect(() => {
@@ -272,7 +276,7 @@ export default function OnboardPage() {
       setDomainWarning(null);
 
       if (!isValidDomainFormat(form.domain)) {
-        setDomainError("Please enter a valid domain (e.g. example.com or https://example.com)");
+        setDomainError(t("domain.validation_error"));
         return;
       }
 
@@ -281,7 +285,7 @@ export default function OnboardPage() {
       setDomainChecking(false);
 
       if (!result.ok) {
-        setDomainWarning(result.error || "Domain may not be reachable. You can continue, but the audit may fail.");
+        setDomainWarning(result.error || t("domain.warning_unreachable"));
       }
     }
 
@@ -289,7 +293,7 @@ export default function OnboardPage() {
     if (currentStep === "notifications") {
       setPhoneError(null);
       if (form.phone && !isValidPhone(form.phone)) {
-        setPhoneError("Please enter a valid phone in international format (e.g. +5511999999999)");
+        setPhoneError(t("notifications.invalid_phone"));
         return;
       }
       // Persist phone + prefs to user (best-effort, don't block)
@@ -361,7 +365,7 @@ export default function OnboardPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || "Something went wrong");
+        setError(data.message || t("errors.something_wrong"));
         setLoading(false);
         return;
       }
@@ -370,7 +374,7 @@ export default function OnboardPage() {
 
       // Step 2: Open Paddle checkout on client-side
       if (!window.Paddle) {
-        setError("Payment system is loading. Please try again in a moment.");
+        setError(t("errors.payment_loading"));
         setLoading(false);
         return;
       }
@@ -395,7 +399,7 @@ export default function OnboardPage() {
 
       setLoading(false);
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(t("errors.network_error"));
       setLoading(false);
     }
   };
@@ -414,8 +418,8 @@ export default function OnboardPage() {
       <div className="flex min-h-full items-center justify-center px-4 py-20">
         <div className="text-center space-y-4">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-zinc-600 border-t-emerald-500" />
-          <h2 className="text-lg font-semibold text-zinc-100">Setting up your workspace...</h2>
-          <p className="text-sm text-zinc-500">This usually takes a few seconds.</p>
+          <h2 className="text-lg font-semibold text-zinc-100">{t("activation.title")}</h2>
+          <p className="text-sm text-zinc-500">{t("activation.subtitle")}</p>
           {error && (
             <div className="rounded-md border border-red-800/50 bg-red-500/10 px-4 py-2 text-sm text-red-400">
               {error}
@@ -432,7 +436,7 @@ export default function OnboardPage() {
         {/* Step indicator */}
         <div className="mb-8 text-center">
           <span className="text-sm font-medium text-zinc-500">
-            Step {stepIndex + 1}/{totalSteps}
+            {t("step_indicator", { current: stepIndex + 1, total: totalSteps })}
           </span>
           <div className="mt-2 flex gap-1">
             {Array.from({ length: totalSteps }).map((_, i) => (
@@ -450,21 +454,21 @@ export default function OnboardPage() {
         {currentStep === "org" && (
           <section className="space-y-6">
             <div>
-              <h1 className="text-xl font-semibold text-zinc-100">Name your organization</h1>
+              <h1 className="text-xl font-semibold text-zinc-100">{t("org_name.title")}</h1>
               <p className="mt-1 text-sm text-zinc-500">
-                This is your team or company name in Vestigio.
+                {t("org_name.subtitle")}
               </p>
             </div>
             <div>
               <label htmlFor="orgName" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                Organization name
+                {t("org_name.label")}
               </label>
               <input
                 id="orgName"
                 type="text"
                 value={form.organizationName}
                 onChange={(e) => update("organizationName", e.target.value)}
-                placeholder="Acme Corp"
+                placeholder={t("org_name.placeholder")}
                 className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
             </div>
@@ -475,19 +479,19 @@ export default function OnboardPage() {
         {currentStep === "domain" && (
           <section className="space-y-6">
             <div>
-              <h1 className="text-xl font-semibold text-zinc-100">What domain do you want to audit?</h1>
+              <h1 className="text-xl font-semibold text-zinc-100">{t("domain.title")}</h1>
               <p className="mt-1 text-sm text-zinc-500">
-                Enter your website URL so Vestigio can start the analysis.
+                {t("domain.subtitle")}
               </p>
             </div>
             <div>
-              <label htmlFor="domain" className="mb-1.5 block text-sm font-medium text-zinc-300">Domain</label>
+              <label htmlFor="domain" className="mb-1.5 block text-sm font-medium text-zinc-300">{t("domain.label")}</label>
               <input
                 id="domain"
                 type="url"
                 value={form.domain}
                 onChange={(e) => { update("domain", e.target.value); setDomainError(null); setDomainWarning(null); }}
-                placeholder="https://example.com"
+                placeholder={t("domain.placeholder")}
                 className={`w-full rounded-md border bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:ring-1 ${
                   domainError ? "border-red-600 focus:border-red-600 focus:ring-red-600" : "border-zinc-700 focus:border-emerald-600 focus:ring-emerald-600"
                 }`}
@@ -497,7 +501,7 @@ export default function OnboardPage() {
               )}
               {domainWarning && (
                 <div className="mt-2 rounded-md border border-amber-800/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
-                  {domainWarning} — you can still proceed.
+                  {domainWarning} — {t("domain.warning_continue")}
                 </div>
               )}
             </div>
@@ -513,10 +517,10 @@ export default function OnboardPage() {
                 />
                 <div className="text-xs leading-relaxed text-zinc-400">
                   <span className="block font-medium text-zinc-200">
-                    I own this domain or have authorization to audit it
+                    {t("domain.ownership_title")}
                   </span>
                   <span className="mt-0.5 block text-zinc-500">
-                    Vestigio will only crawl public pages. By checking this you confirm you have the right to analyze this site.
+                    {t("domain.ownership_description")}
                   </span>
                 </div>
               </label>
@@ -528,13 +532,13 @@ export default function OnboardPage() {
         {currentStep === "business" && (
           <section className="space-y-6">
             <div>
-              <h1 className="text-xl font-semibold text-zinc-100">Business context</h1>
+              <h1 className="text-xl font-semibold text-zinc-100">{t("business_context.title")}</h1>
               <p className="mt-1 text-sm text-zinc-500">
-                Help Vestigio tailor its analysis to your business model.
+                {t("business_context.subtitle")}
               </p>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-zinc-300">Business type</label>
+              <label className="mb-1.5 block text-sm font-medium text-zinc-300">{t("business_context.business_type")}</label>
               <div className="grid grid-cols-2 gap-2">
                 {businessOptions.map((o) => (
                   <button
@@ -554,32 +558,32 @@ export default function OnboardPage() {
             </div>
             <div>
               <label htmlFor="monthlyRevenue" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                Monthly revenue <span className="text-zinc-500">(optional)</span>
+                {t("business_context.monthly_revenue")} <span className="text-zinc-500">{t("business_context.optional")}</span>
               </label>
               <input
                 id="monthlyRevenue"
                 type="text"
                 value={form.monthlyRevenue}
                 onChange={(e) => update("monthlyRevenue", e.target.value)}
-                placeholder="e.g. $50k"
+                placeholder={t("business_context.monthly_revenue_placeholder")}
                 className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
             </div>
             <div>
               <label htmlFor="averageTicket" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                Average order value <span className="text-zinc-500">(optional)</span>
+                {t("business_context.avg_order_value")} <span className="text-zinc-500">{t("business_context.optional")}</span>
               </label>
               <input
                 id="averageTicket"
                 type="text"
                 value={form.averageTicket}
                 onChange={(e) => update("averageTicket", e.target.value)}
-                placeholder="e.g. $120"
+                placeholder={t("business_context.avg_order_value_placeholder")}
                 className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-zinc-300">Conversion model</label>
+              <label className="mb-1.5 block text-sm font-medium text-zinc-300">{t("business_context.conversion_model")}</label>
               <select
                 value={form.conversionModel}
                 onChange={(e) => update("conversionModel", e.target.value as ConversionModel)}
@@ -597,64 +601,63 @@ export default function OnboardPage() {
         {currentStep === "saas_setup" && (
           <section className="space-y-6">
             <div>
-              <h1 className="text-xl font-semibold text-zinc-100">Authenticated app access</h1>
-              <p className="mt-1 text-sm text-zinc-500">
-                Since you're running a SaaS, Vestigio can analyze your app behind the login wall.
-                This is <strong className="text-zinc-300">optional</strong> — you can configure it later in Settings.
+              <h1 className="text-xl font-semibold text-zinc-100">{t("saas_access.title")}</h1>
+              <p className="mt-1 whitespace-pre-line text-sm text-zinc-500">
+                {t("saas_access.subtitle")}
               </p>
             </div>
             <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4 space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-zinc-300">App login URL</label>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-300">{t("saas_access.login_url")}</label>
                 <input
                   type="url"
                   value={form.saasLoginUrl}
                   onChange={(e) => update("saasLoginUrl", e.target.value)}
-                  placeholder="https://app.example.com/login"
+                  placeholder={t("saas_access.login_url_placeholder")}
                   className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-zinc-300">Test account email</label>
+                <label className="mb-1.5 block text-sm font-medium text-zinc-300">{t("saas_access.email")}</label>
                 <input
                   type="email"
                   value={form.saasEmail}
                   onChange={(e) => update("saasEmail", e.target.value)}
-                  placeholder="test@example.com"
+                  placeholder={t("saas_access.email_placeholder")}
                   className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-zinc-300">Auth method</label>
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-300">{t("saas_access.auth_method")}</label>
                   <select
                     value={form.saasAuthMethod}
                     onChange={(e) => update("saasAuthMethod", e.target.value)}
                     className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                   >
-                    <option value="unknown">Not sure</option>
-                    <option value="password">Email + Password</option>
-                    <option value="oauth">OAuth / SSO</option>
-                    <option value="magic_link">Magic Link</option>
+                    <option value="unknown">{t("saas_access.auth_methods.unknown")}</option>
+                    <option value="password">{t("saas_access.auth_methods.password")}</option>
+                    <option value="oauth">{t("saas_access.auth_methods.oauth")}</option>
+                    <option value="magic_link">{t("saas_access.auth_methods.magic_link")}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-zinc-300">MFA / 2FA</label>
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-300">{t("saas_access.mfa")}</label>
                   <select
                     value={form.saasMfaMode}
                     onChange={(e) => update("saasMfaMode", e.target.value)}
                     className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                   >
-                    <option value="unknown">Not sure</option>
-                    <option value="none">No MFA</option>
-                    <option value="optional">Optional</option>
-                    <option value="required">Required</option>
+                    <option value="unknown">{t("saas_access.mfa_options.unknown")}</option>
+                    <option value="none">{t("saas_access.mfa_options.none")}</option>
+                    <option value="optional">{t("saas_access.mfa_options.optional")}</option>
+                    <option value="required">{t("saas_access.mfa_options.required")}</option>
                   </select>
                 </div>
               </div>
             </div>
             <p className="text-xs text-zinc-500">
-              You can complete this later in Settings → Data Sources. Skipping will not affect your onboarding.
+              {t("saas_access.skip_note")}
             </p>
           </section>
         )}
@@ -663,22 +666,21 @@ export default function OnboardPage() {
         {currentStep === "notifications" && (
           <section className="space-y-6">
             <div>
-              <h1 className="text-xl font-semibold text-zinc-100">Stay informed</h1>
+              <h1 className="text-xl font-semibold text-zinc-100">{t("notifications.title")}</h1>
               <p className="mt-1 text-sm text-zinc-500">
-                Get alerted when one of your pages goes down, when an incident is detected,
-                or when a regression appears. You can change these anytime in Settings.
+                {t("notifications.subtitle")}
               </p>
             </div>
             <div>
               <label htmlFor="phone" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                Phone number <span className="text-zinc-500">(optional)</span>
+                {t("notifications.phone")} <span className="text-zinc-500">{t("business_context.optional")}</span>
               </label>
               <input
                 id="phone"
                 type="tel"
                 value={form.phone}
                 onChange={(e) => { update("phone", e.target.value); setPhoneError(null); }}
-                placeholder="+5511999999999"
+                placeholder={t("notifications.phone_placeholder")}
                 className={`w-full rounded-md border bg-zinc-900 px-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none focus:ring-1 ${
                   phoneError ? "border-red-600 focus:border-red-600 focus:ring-red-600" : "border-zinc-700 focus:border-emerald-600 focus:ring-emerald-600"
                 }`}
@@ -687,18 +689,14 @@ export default function OnboardPage() {
                 <p className="mt-1.5 text-xs text-red-400">{phoneError}</p>
               )}
               <p className="mt-1.5 text-xs text-zinc-500">
-                International format. Required only if you enable SMS or WhatsApp.
+                {t("notifications.phone_help")}
               </p>
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-zinc-300">Notify me by</label>
+              <label className="block text-sm font-medium text-zinc-300">{t("notifications.notify_me_by")}</label>
               <div className="space-y-2">
-                {[
-                  { key: "notifyEmail", label: "Email", desc: "Detailed alerts with context", needsPhone: false },
-                  { key: "notifySms", label: "SMS", desc: "Short critical alerts only", needsPhone: true },
-                  { key: "notifyWhatsapp", label: "WhatsApp", desc: "Conversational alerts", needsPhone: true },
-                ].map((channel) => {
-                  const enabled = form[channel.key as "notifyEmail"];
+                {notificationChannels.map((channel) => {
+                  const enabled = form[channel.key];
                   const disabled = channel.needsPhone && !form.phone;
                   return (
                     <button
@@ -714,7 +712,7 @@ export default function OnboardPage() {
                     >
                       <div>
                         <div className="text-sm font-medium text-zinc-100">{channel.label}</div>
-                        <div className="text-xs text-zinc-500">{channel.desc}{disabled ? " — add a phone number first" : ""}</div>
+                        <div className="text-xs text-zinc-500">{channel.desc}{disabled ? ` — ${t("notifications.add_phone_first")}` : ""}</div>
                       </div>
                       <div className={`h-5 w-9 rounded-full p-0.5 transition-colors ${enabled && !disabled ? "bg-emerald-500" : "bg-zinc-700"}`}>
                         <div className={`h-4 w-4 rounded-full bg-white transition-transform ${enabled && !disabled ? "translate-x-4" : ""}`} />
@@ -731,36 +729,36 @@ export default function OnboardPage() {
         {currentStep === "review" && (
           <section className="space-y-6">
             <div>
-              <h1 className="text-xl font-semibold text-zinc-100">Review your setup</h1>
+              <h1 className="text-xl font-semibold text-zinc-100">{t("review.title")}</h1>
               <p className="mt-1 text-sm text-zinc-500">
-                Confirm your details before choosing a plan.
+                {t("review.subtitle")}
               </p>
             </div>
             <div className="space-y-2">
               {[
-                { label: "Organization", value: form.organizationName || "—" },
-                { label: "Domain", value: form.domain || "—" },
-                { label: "Business Type", value: form.businessType },
-                { label: "Monthly Revenue", value: form.monthlyRevenue || "Not provided" },
-                { label: "Avg. Order Value", value: form.averageTicket || "Not provided" },
-                { label: "Conversion Model", value: form.conversionModel },
+                { label: t("review.organization"), value: form.organizationName || "—" },
+                { label: t("review.domain"), value: form.domain || "—" },
+                { label: t("review.business_type"), value: businessOptions.find((option) => option.value === form.businessType)?.label ?? form.businessType },
+                { label: t("review.monthly_revenue"), value: form.monthlyRevenue || t("review.not_provided") },
+                { label: t("review.avg_order_value"), value: form.averageTicket || t("review.not_provided") },
+                { label: t("review.conversion_model"), value: conversionOptions.find((option) => option.value === form.conversionModel)?.label ?? form.conversionModel },
                 ...(form.businessType === "saas"
                   ? [{
-                      label: "SaaS Access",
+                      label: t("review.saas_access"),
                       value: form.saasSkipped
-                        ? "Skipped — configure later in Data Sources"
+                        ? t("review.saas_skipped")
                         : form.saasLoginUrl
-                          ? `${form.saasLoginUrl} (${form.saasEmail || "no email yet"})`
-                          : "Not configured — configure later in Data Sources",
+                          ? `${form.saasLoginUrl} (${form.saasEmail || t("review.no_email_yet")})`
+                          : t("review.saas_not_configured"),
                     }]
                   : []),
                 {
-                  label: "Notifications",
+                  label: t("review.notifications"),
                   value: [
-                    form.notifyEmail && "Email",
-                    form.notifySms && form.phone && "SMS",
-                    form.notifyWhatsapp && form.phone && "WhatsApp",
-                  ].filter(Boolean).join(", ") || "Email only",
+                    form.notifyEmail && t("notifications.channels.email.label"),
+                    form.notifySms && form.phone && t("notifications.channels.sms.label"),
+                    form.notifyWhatsapp && form.phone && t("notifications.channels.whatsapp.label"),
+                  ].filter(Boolean).join(", ") || t("review.email_only"),
                 },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-2">
@@ -776,9 +774,9 @@ export default function OnboardPage() {
         {currentStep === "plan" && (
           <section className="space-y-6">
             <div>
-              <h1 className="text-xl font-semibold text-zinc-100">Choose your plan</h1>
+              <h1 className="text-xl font-semibold text-zinc-100">{t("plan.title")}</h1>
               <p className="mt-1 text-sm text-zinc-500">
-                A plan is required to activate Vestigio. You can upgrade anytime.
+                {t("plan.subtitle")}
               </p>
             </div>
 
@@ -799,11 +797,11 @@ export default function OnboardPage() {
                         <span className="text-sm font-semibold text-zinc-100">{plan.name}</span>
                         {plan.recommended && (
                           <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-400">
-                            Recommended
+                            {t("plan.recommended")}
                           </span>
                         )}
                       </div>
-                      <span className="text-sm font-bold text-zinc-100">{plan.price}<span className="text-xs text-zinc-500">/mo</span></span>
+                      <span className="text-sm font-bold text-zinc-100">{plan.price}<span className="text-xs text-zinc-500">{t("plan.per_month")}</span></span>
                     </div>
                     <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                       {plan.features.map((f) => (
@@ -828,11 +826,11 @@ export default function OnboardPage() {
               disabled={loading}
               className="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
             >
-              {loading ? "Opening checkout..." : `Activate ${selectedPlan.name} — ${selectedPlan.price}/mo`}
+              {loading ? t("plan.opening_checkout") : t("plan.activate", { plan: selectedPlan.name, price: selectedPlan.price })}
             </button>
 
             <p className="text-center text-xs text-zinc-600">
-              Secure payment via Paddle.
+              {t("plan.secure_payment")}
             </p>
           </section>
         )}
@@ -845,7 +843,7 @@ export default function OnboardPage() {
               disabled={stepIndex === 0}
               className="rounded-md border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-30 disabled:hover:bg-transparent"
             >
-              Previous
+              {t("nav.previous")}
             </button>
             <div className="flex gap-2">
               {currentStep === "saas_setup" && (
@@ -853,7 +851,7 @@ export default function OnboardPage() {
                   onClick={handleSkipSaas}
                   className="rounded-md border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800"
                 >
-                  Skip for now
+                  {t("saas_access.skip")}
                 </button>
               )}
               <button
@@ -861,7 +859,7 @@ export default function OnboardPage() {
                 disabled={!canAdvance || domainChecking}
                 className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
               >
-                {domainChecking ? "Checking domain..." : "Next"}
+                {domainChecking ? t("nav.checking_domain") : t("nav.next")}
               </button>
             </div>
           </div>

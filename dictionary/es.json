@@ -690,17 +690,21 @@
         "severity": "Severidad",
         "confidence": "Conf",
         "est_impact": "Impacto Est.",
+        "impact": "Impacto",
         "type": "Tipo",
         "pack": "Pack",
         "surface": "Superficie",
         "action": "Acción",
         "scope": "Alcance",
         "status": "Estado",
+        "verification": "Verificación",
+        "change": "Cambio",
         "sessions": "Sesiones",
         "findings": "Hallazgos",
         "sources": "Fuentes"
       },
       "healthy": "Saludable",
+      "per_month_short": "/mes",
       "loading": "Cargando...",
       "clear_filters": "Limpiar filtros",
       "hide_positive_signals": "Ocultar señales positivas",
@@ -732,6 +736,16 @@
       },
       "confirmed_at": "Confirmado {time}",
       "expires_at": "Expira {time}",
+      "time": {
+        "in_less_than_one_minute": "en <1 min",
+        "less_than_one_minute_ago": "hace <1 min",
+        "in_minutes": "en {count} min",
+        "minutes_ago": "hace {count} min",
+        "in_hours": "en {count} h",
+        "hours_ago": "hace {count} h",
+        "in_days": "en {count} d",
+        "days_ago": "hace {count} d"
+      },
       "recheck": {
         "weakened_title": "La evidencia de respaldo se ha debilitado",
         "weakened_body": "Este hallazgo fue confirmado una vez, pero una nueva revisión muestra que la evidencia de respaldo ya no es tan sólida. Volver a ejecutar la verificación actualiza el panorama.",
@@ -740,7 +754,7 @@
         "button": "Volver a verificar"
       },
       "resolution": {
-        "title": "Issue marcada como resuelta",
+        "title": "Hallazgo marcado como resuelto",
         "button": "Confirmar resolución"
       }
     },
@@ -766,7 +780,8 @@
         "per_month_midpoint": "/mes (punto medio)",
         "high_impact_issues": "Problemas de Alto Impacto",
         "high_impact_threshold": "> $10k/mes",
-        "avg_confidence": "Confianza Promedio"
+        "avg_confidence": "Confianza Promedio",
+        "verified_findings": "Verificados"
       },
       "discuss": "Discutir",
       "analyze_together": "Analizar {count} Juntos",
@@ -955,9 +970,27 @@
         "findings": "Hallazgos",
         "guides": "Guías"
       },
+      "sections": {
+        "get_started": "Primeros pasos",
+        "concept": "Conceptos clave",
+        "pack": "Packs de decisión",
+        "finding": "Catálogo de hallazgos",
+        "api": "Referencia de API",
+        "guide": "Guías"
+      },
+      "category_labels": {
+        "get_started": "Primeros pasos",
+        "concept": "Concepto",
+        "pack": "Pack",
+        "finding": "Hallazgo",
+        "api": "API",
+        "guide": "Guía"
+      },
       "search_placeholder": "Buscar artículos...",
       "read_more": "Leer más",
       "empty": "Aún no hay artículos publicados. La documentación aparecerá aquí a medida que se escriba.",
+      "search_results": "Resultados de búsqueda",
+      "search_results_count": "{count, plural, one {# resultado} other {# resultados}} para “{query}”",
       "no_results": "Ningún artículo coincide con la búsqueda.",
       "article_not_found": "Artículo no encontrado.",
       "back": "Base de Conocimiento",
@@ -1052,6 +1085,44 @@
         "top_pack": {
           "name": "Pack Más Expuesto",
           "description": "Qué pack concentra la mayor exposición mensual ahora mismo."
+        },
+        "top_pack_card": {
+          "label": "Pack principal",
+          "empty_caption": "Todavía no hay exposición registrada",
+          "caption": "{amount}{perMonth} concentrados en este pack"
+        },
+        "verification_rate_card": {
+          "label": "Verificado",
+          "caption_strong": "Evidencia sólida — la mayoría de los hallazgos está confirmada",
+          "caption_healthy": "La cola de confirmación está saludable",
+          "caption_waiting": "Algunos hallazgos siguen esperando verificación",
+          "caption_backing_up": "La cola de verificación se está acumulando"
+        },
+        "open_critical_card": {
+          "label": "Críticos abiertos",
+          "cycle_delta": "{count, plural, one {# ciclo} other {# ciclos}}",
+          "caption_clear": "Todo despejado — no hay hallazgos críticos abiertos",
+          "caption_added": "{count, plural, one {# agregado en este ciclo — requiere atención inmediata} other {# agregados en este ciclo — requieren atención inmediata}}",
+          "caption_cleared": "{count, plural, one {# resuelto en este ciclo — mantén la presión} other {# resueltos en este ciclo — mantén la presión}}",
+          "caption_open": "{count, plural, one {# crítico abierto desde el último ciclo} other {# críticos abiertos desde el último ciclo}}"
+        },
+        "streak_card": {
+          "label": "Racha",
+          "day_singular": "día",
+          "day_plural": "días",
+          "caption_no_activity": "Sin actividad en la última semana — tus auditorías llenarán esto",
+          "caption_broken": "La racha se rompió — retómala mañana",
+          "caption_long": "Racha de {count} días — tu mejor tramo en bastante tiempo",
+          "caption_building": "{count} días seguidos — el impulso está creciendo",
+          "caption_keep_going": "Racha de {count} días — sigue así"
+        },
+        "what_changed_card": {
+          "title": "Qué cambió desde el último ciclo",
+          "period": "últimas 24h",
+          "new_findings": "nuevos hallazgos",
+          "regressions": "regresiones",
+          "resolved": "resueltos",
+          "verifications_confirmed": "verificaciones confirmadas"
         }
       },
       "editing_subtitle": "Arrastra widgets para reorganizar. Redimensiona desde la esquina. Añade o elimina desde el catálogo.",
@@ -1066,7 +1137,10 @@
       "catalog": {
         "title": "Añadir un widget",
         "subtitle": "Elige qué destacar en tu dashboard",
+        "aria_label": "Catálogo de widgets",
+        "close_aria": "Cerrar catálogo",
         "added_label": "Añadido",
+        "widget_fallback": "Widget del dashboard",
         "reset": "Restablecer layout predeterminado",
         "confirm_reset": "¿Restablecer dashboard al layout predeterminado?",
         "categories": {
@@ -1074,7 +1148,7 @@
           "trends": "Tendencias",
           "activity": "Actividad",
           "milestones": "Hitos",
-          "workspaces": "Workspaces",
+          "workspaces": "Espacios de trabajo",
           "actions": "Acciones"
         }
       }
@@ -1140,10 +1214,26 @@
         "try_specific": "Intenta una pregunta más específica para mejores resultados.",
         "asked_recently": "Ya preguntaste esto recientemente. Intenta una pregunta de seguimiento."
       },
+      "prompt_gate": {
+        "misfire_title": "¿Seguro que querías enviar esto?",
+        "weak_title": "Esta pregunta podría ser más útil",
+        "suggested": "Sugerido",
+        "send_suggested": "Enviar sugerencia",
+        "send_original": "Enviar original de todos modos"
+      },
       "playbooks": {
         "label": "Playbooks",
         "close": "Cerrar playbooks",
         "usePrompt": "Usar prompt",
+        "subtitle": "{count} prompts de análisis experto",
+        "search_placeholder": "Buscar playbooks...",
+        "daily_budget_remaining": "Presupuesto diario restante",
+        "budget_queries": "{count} consultas",
+        "all": "Todos",
+        "no_results": "Ningún playbook coincide con tu búsqueda.",
+        "use_this_prompt": "Usar este prompt",
+        "not_enough_budget": "Presupuesto insuficiente",
+        "low_budget_warning": "El presupuesto está bajo. Elige el playbook con cuidado para obtener el máximo valor.",
         "queries": "~{count} consultas",
         "revenue_leaks": {
           "title": "Encontrar Fugas de Ingresos",
@@ -1230,8 +1320,40 @@
           "category": "Insights"
         }
       },
+      "context": {
+        "title": "Contexto",
+        "clear_all": "Limpiar todo",
+        "kinds": {
+          "finding": "Hallazgo",
+          "action": "Acción",
+          "workspace": "Workspace",
+          "surface": "Superficie"
+        },
+        "remove_aria_label": "Quitar {kind} del contexto",
+        "prompts": {
+          "empty": "Dame un resumen de lo que ves.",
+          "single_finding": "Analiza el hallazgo \"{title}\" ({id}). Explica la causa raíz, el impacto y qué corregir.",
+          "single_action": "Analiza la acción \"{title}\" ({id}). ¿Por qué importa, cuál es el impacto esperado y cómo debería priorizarla?",
+          "single_workspace": "Analiza el workspace \"{title}\" ({id}). Explícame qué está pasando allí y qué debería hacer.",
+          "single_surface": "Analiza la superficie {title} ({id}). ¿Qué hallazgos la afectan y qué debería priorizar?",
+          "group_findings": "{count} hallazgos ({titles})",
+          "group_actions": "{count} acciones ({titles})",
+          "group_workspaces": "{count} workspaces ({titles})",
+          "group_surfaces": "{count} superficies ({titles})",
+          "combined": "Analiza estos elementos en conjunto: {parts}. ¿Qué tienen en común? ¿Cuál es el impacto combinado y cuál es la corrección de mayor palanca?"
+        }
+      },
+      "create_action": {
+        "saved": "Acción guardada: {title}",
+        "suggested": "Acción sugerida",
+        "estimated_impact": "Impacto estimado: {amount}{perMonth}",
+        "save": "Guardar como acción"
+      },
       "stop_generating": "Detener generación",
       "jump_to_latest": "Ir al último"
+    },
+    "organization_selector": {
+      "no_organization": "Sin organización"
     },
     "actions": {
       "title": "Acciones",
@@ -1514,6 +1636,17 @@
         "reasoning": "Razonamiento",
         "description": "Descripción"
       },
+      "page_types": {
+        "homepage": "Inicio",
+        "landing": "Landing",
+        "product": "Producto",
+        "category": "Categoría",
+        "pricing": "Precios",
+        "cart": "Carrito",
+        "checkout": "Checkout",
+        "thank_you": "Confirmación",
+        "page": "Página"
+      },
       "edge_types": {
         "causal": "Causal",
         "contributes": "Contribuye",
@@ -1525,7 +1658,12 @@
       "step_indicator": "Paso {current}/{total}",
       "nav": {
         "previous": "Anterior",
-        "next": "Siguiente"
+        "next": "Siguiente",
+        "checking_domain": "Verificando dominio..."
+      },
+      "activation": {
+        "title": "Configurando tu espacio de trabajo...",
+        "subtitle": "Esto suele tardar unos segundos."
       },
       "org_name": {
         "title": "Nombra tu organización",
@@ -1537,7 +1675,12 @@
         "title": "¿Qué dominio quieres auditar?",
         "subtitle": "Ingresa la URL de tu sitio web para que Vestigio pueda iniciar el análisis.",
         "label": "Dominio",
-        "placeholder": "https://example.com"
+        "placeholder": "https://example.com",
+        "validation_error": "Ingresa un dominio válido (ej.: example.com o https://example.com)",
+        "warning_unreachable": "Es posible que el dominio no sea accesible. Puedes continuar, pero la auditoría puede fallar.",
+        "warning_continue": "aun así puedes continuar",
+        "ownership_title": "Soy propietario de este dominio o tengo autorización para auditarlo",
+        "ownership_description": "Vestigio solo rastreará páginas públicas. Al marcar esto confirmas que tienes derecho a analizar este sitio."
       },
       "business_context": {
         "title": "Contexto del negocio",
@@ -1590,6 +1733,30 @@
         "skip_note": "Puedes completar esto después en Configuración → Fuentes de Datos. Omitir esto no afectará tu onboarding.",
         "skip": "Omitir por ahora"
       },
+      "notifications": {
+        "title": "Mantente informado",
+        "subtitle": "Recibe alertas cuando una de tus páginas deje de estar disponible, cuando se detecte un incidente o cuando aparezca una regresión. Puedes cambiar esto en cualquier momento en Configuración.",
+        "phone": "Número de teléfono",
+        "phone_placeholder": "+5511999999999",
+        "phone_help": "Formato internacional. Solo es obligatorio si activas SMS o WhatsApp.",
+        "invalid_phone": "Ingresa un teléfono válido en formato internacional (ej.: +5511999999999)",
+        "notify_me_by": "Notifícame por",
+        "add_phone_first": "agrega primero un número de teléfono",
+        "channels": {
+          "email": {
+            "label": "Email",
+            "description": "Alertas detalladas con contexto"
+          },
+          "sms": {
+            "label": "SMS",
+            "description": "Solo alertas críticas breves"
+          },
+          "whatsapp": {
+            "label": "WhatsApp",
+            "description": "Alertas conversacionales"
+          }
+        }
+      },
       "review": {
         "title": "Revisa tu configuración",
         "subtitle": "Confirma tus datos antes de elegir un plan.",
@@ -1600,18 +1767,36 @@
         "avg_order_value": "Valor Promedio de Orden",
         "conversion_model": "Modelo de Conversión",
         "saas_access": "Acceso SaaS",
+        "notifications": "Notificaciones",
         "not_provided": "No proporcionado",
         "saas_skipped": "Omitido — configura después en Fuentes de Datos",
-        "saas_not_configured": "No configurado — configura después en Fuentes de Datos"
+        "saas_not_configured": "No configurado — configura después en Fuentes de Datos",
+        "no_email_yet": "sin email todavía",
+        "email_only": "Solo email"
       },
       "plan": {
         "title": "Elige tu plan",
         "subtitle": "Se requiere un plan para activar Vestigio. Puedes mejorar en cualquier momento.",
         "recommended": "Recomendado",
         "per_month": "/mes",
+        "opening_checkout": "Abriendo checkout...",
         "redirecting": "Redirigiendo al checkout...",
         "activate": "Activar {plan} — {price}/mes",
+        "secure_payment": "Pago seguro mediante Paddle.",
         "stripe_note": "Serás redirigido a Stripe para un pago seguro.",
+        "features": {
+          "domain_singular": "1 dominio",
+          "domain_plural": "{count} dominios",
+          "agentic_insights": "Insights agentic",
+          "agentic_insights_5x": "5x más insights agentic",
+          "agentic_insights_20x": "20x más insights agentic",
+          "continuous_audits": "Auditorías continuas",
+          "full_analysis": "Análisis completo",
+          "credits_system": "Sistema de créditos",
+          "priority_support": "Soporte prioritario",
+          "impact_quantification": "Cuantificación de impacto",
+          "root_cause_maps": "Mapas de causa raíz"
+        },
         "plans": {
           "vestigio": {
             "name": "Vestigio",
@@ -1647,13 +1832,16 @@
       },
       "errors": {
         "something_wrong": "Algo salió mal",
-        "network_error": "Error de red. Por favor intenta de nuevo."
+        "network_error": "Error de red. Por favor intenta de nuevo.",
+        "activation_delayed": "La activación está tardando más de lo esperado. Recarga la página.",
+        "payment_loading": "El sistema de pago todavía se está cargando. Inténtalo de nuevo en un momento."
       }
     },
     "navigation": {
       "dashboard": "Dashboard",
+      "onboard": "Configuración inicial",
       "actions": "Acciones",
-      "workspaces": "Workspaces",
+      "workspaces": "Espacios de trabajo",
       "chat": "Chat",
       "analysis": "Análisis",
       "findings": "Hallazgos",

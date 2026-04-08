@@ -88,6 +88,7 @@ model User {
   feedbacks             Feedback[]
   notificationPrefs     NotificationPreference?
   prospectScans         ProspectScan[]
+  dashboardLayouts      DashboardLayout[]
 }
 
 // ──────────────────────────────────────────────
@@ -1169,4 +1170,43 @@ model MiniAuditResult {
 
   @@index([domainHash])
   @@index([expiresAt])
+}
+
+// ──────────────────────────────────────────────
+// DashboardLayout — per-user customizable bento layout
+//
+// Wave Dashboard Phase 2: persists each user's customized widget
+// arrangement so the bento layout survives reloads and devices.
+//
+// **Why per-user, not per-org:** the dashboard is the user's
+// personal landing page. Two members of the same org can have
+// completely different widgets and arrangements, the same way
+// two people on the same team configure their VS Code differently.
+// If a future version wants to support shared "team dashboards"
+// they can be added as a separate model.
+//
+// **Why JSON, not normalized rows:** layout is opaque structured
+// data — react-grid-layout coordinates plus widget instance ids.
+// We never query inside it (there's no "find me users with widget
+// X enabled" use case). JSON keeps the schema flat and lets us
+// evolve the WidgetInstance shape without migrations.
+//
+// schemaVersion lets future migrations rewrite old layouts in
+// place when widget ids are renamed or removed.
+// ──────────────────────────────────────────────
+
+model DashboardLayout {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  schemaVersion  Int      @default(1)
+  // JSON: WidgetInstance[] from src/lib/dashboard/default-layout.ts
+  layout         String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
 }

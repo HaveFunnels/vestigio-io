@@ -1036,6 +1036,46 @@
         "activity_heatmap": {
           "name": "Mapa de Actividad",
           "description": "Cuadrícula estilo GitHub con 90 días de ciclos y resoluciones."
+        },
+        "open_critical": {
+          "name": "Críticos Abiertos",
+          "description": "Contador en vivo de hallazgos críticos abiertos con delta de ciclo."
+        },
+        "verification_rate": {
+          "name": "Tasa de Verificación",
+          "description": "% de hallazgos del último ciclo que han sido verificados."
+        },
+        "streak": {
+          "name": "Racha de Actividad",
+          "description": "Racha actual de días consecutivos de auditoría/acciones."
+        },
+        "top_pack": {
+          "name": "Pack Más Expuesto",
+          "description": "Qué pack concentra la mayor exposición mensual ahora mismo."
+        }
+      },
+      "editing_subtitle": "Arrastra widgets para reorganizar. Redimensiona desde la esquina. Añade o elimina desde el catálogo.",
+      "add_widget": "Añadir widget",
+      "remove_widget": "Eliminar widget",
+      "drag_to_rearrange": "Arrastra para reorganizar",
+      "save_status": {
+        "saving": "Guardando…",
+        "saved": "Guardado",
+        "error": "Error al guardar"
+      },
+      "catalog": {
+        "title": "Añadir un widget",
+        "subtitle": "Elige qué destacar en tu dashboard",
+        "added_label": "Añadido",
+        "reset": "Restablecer layout predeterminado",
+        "confirm_reset": "¿Restablecer dashboard al layout predeterminado?",
+        "categories": {
+          "kpi": "KPIs",
+          "trends": "Tendencias",
+          "activity": "Actividad",
+          "milestones": "Hitos",
+          "workspaces": "Workspaces",
+          "actions": "Acciones"
         }
       }
     },
@@ -1138,12 +1178,30 @@
         "cross_pack_correlation": "Analiza hallazgos en TODOS los packs (integridad de ingresos, preparación para escalar, resiliencia a contracargos). Encuentra correlaciones: ¿Qué hallazgos de diferentes packs comparten la misma causa raíz? ¿Dónde corregir un problema de ingresos también reduce el riesgo de contracargos? ¿Dónde mejorar la confianza también ayuda a la conversión? Construye un mapa de correlación mostrando hallazgos conectados entre packs con impacto combinado."
       },
       "quick_presets": {
-        "losing_money": { "text": "¿Dónde estoy perdiendo dinero?", "label": "Fugas de ingresos" },
-        "scale_traffic": { "text": "¿Puedo escalar tráfico pago de forma segura?", "label": "Listo para escalar" },
-        "fix_first": { "text": "¿Qué debería corregir primero?", "label": "Acciones prioritarias" },
-        "chargeback_risk": { "text": "¿Cuál es mi riesgo de contracargos?", "label": "Exposición a contracargos" },
-        "recent_changes": { "text": "¿Qué cambió desde el último análisis?", "label": "Cambios recientes" },
-        "regressions": { "text": "¿Hay alguna regresión?", "label": "Regresiones" }
+        "losing_money": {
+          "text": "¿Dónde estoy perdiendo dinero?",
+          "label": "Fugas de ingresos"
+        },
+        "scale_traffic": {
+          "text": "¿Puedo escalar tráfico pago de forma segura?",
+          "label": "Listo para escalar"
+        },
+        "fix_first": {
+          "text": "¿Qué debería corregir primero?",
+          "label": "Acciones prioritarias"
+        },
+        "chargeback_risk": {
+          "text": "¿Cuál es mi riesgo de contracargos?",
+          "label": "Exposición a contracargos"
+        },
+        "recent_changes": {
+          "text": "¿Qué cambió desde el último análisis?",
+          "label": "Cambios recientes"
+        },
+        "regressions": {
+          "text": "¿Hay alguna regresión?",
+          "label": "Regresiones"
+        }
       },
       "featured_playbooks": {
         "revenue_leak_full_audit": {

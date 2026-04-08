@@ -19,7 +19,10 @@
 // ──────────────────────────────────────────────
 
 import { TrendUp } from "@phosphor-icons/react/dist/ssr";
-import { registerWidget, type WidgetProps } from "@/lib/dashboard/widget-registry";
+import {
+	registerWidget,
+	type WidgetProps,
+} from "@/lib/dashboard/widget-registry";
 
 function formatCurrency(cents: number, currency: string): string {
 	const dollars = cents / 100;
@@ -38,28 +41,36 @@ function formatSignedCents(cents: number, currency: string): string {
 }
 
 function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
-	const { totalCents, last7dCents, last30dCents, currency } = data.moneyRecovered;
+	const { totalCents, last7dCents, last30dCents, currency, caption } =
+		data.moneyRecovered;
 	const sevenDayPositive = last7dCents > 0;
 
 	return (
-		<div className="flex h-full flex-col justify-between p-6">
+		<div className='relative flex h-full flex-col p-7'>
+			{/* Subtle liquid glass highlight in the corner — just enough to
+			    catch light but not overpower the solid card surface. */}
+			<div
+				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-transparent'
+				aria-hidden
+			/>
+
 			{/* Eyebrow */}
-			<div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
-				<TrendUp size={12} weight="bold" className="text-emerald-400" />
+			<div className='relative flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
+				<TrendUp size={12} weight='bold' className='text-emerald-400' />
 				<span>Total recovered with Vestigio</span>
 			</div>
 
 			{/* Hero number */}
-			<div className="flex items-end gap-3">
-				<span className="font-mono text-5xl font-medium leading-none tracking-tight text-content tabular-nums">
+			<div className='relative mt-4 flex items-end gap-3'>
+				<span className='font-mono text-6xl font-medium tabular-nums leading-none tracking-tight text-content'>
 					{formatCurrency(totalCents, currency)}
 				</span>
 			</div>
 
 			{/* Deltas — twin rows under the hero */}
-			<div className="flex items-baseline gap-6 border-t border-edge/40 pt-3">
-				<div className="flex flex-col gap-0.5">
-					<span className="text-[10px] uppercase tracking-wider text-content-faint">
+			<div className='relative mt-5 flex items-baseline gap-6'>
+				<div className='flex flex-col gap-0.5'>
+					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
 						Last 7 days
 					</span>
 					<span
@@ -70,8 +81,8 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 						{formatSignedCents(last7dCents, currency)}
 					</span>
 				</div>
-				<div className="flex flex-col gap-0.5">
-					<span className="text-[10px] uppercase tracking-wider text-content-faint">
+				<div className='flex flex-col gap-0.5'>
+					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
 						Last 30 days
 					</span>
 					<span
@@ -82,6 +93,14 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 						{formatSignedCents(last30dCents, currency)}
 					</span>
 				</div>
+			</div>
+
+			{/* Caption strip at the bottom — pushes everything else up so
+			    the narrative is the resting place of the eye. */}
+			<div className='relative mt-auto border-t border-edge/40 pt-3'>
+				<p className='line-clamp-2 text-xs leading-snug text-content-secondary'>
+					{caption}
+				</p>
 			</div>
 		</div>
 	);

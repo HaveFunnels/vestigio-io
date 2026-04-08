@@ -16,8 +16,16 @@
 // with new content.
 // ──────────────────────────────────────────────
 
-import { ArrowsClockwise, CheckCircle, Plus, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
-import { registerWidget, type WidgetProps } from "@/lib/dashboard/widget-registry";
+import {
+	ArrowsClockwise,
+	CheckCircle,
+	Plus,
+	ShieldCheck,
+} from "@phosphor-icons/react/dist/ssr";
+import {
+	registerWidget,
+	type WidgetProps,
+} from "@/lib/dashboard/widget-registry";
 import type { ChangeReportEntry } from "@/lib/dashboard/types";
 
 function formatCurrency(cents?: number): string {
@@ -46,13 +54,15 @@ function severityClass(severity?: ChangeReportEntry["severity"]): string {
 
 function EntryRow({ entry }: { entry: ChangeReportEntry }) {
 	return (
-		<li className="group flex items-center gap-3 py-1.5">
-			<div className={`h-1 w-1 shrink-0 rounded-full ${severityClass(entry.severity)}`} />
-			<span className="flex-1 truncate text-xs text-content-secondary group-hover:text-content">
+		<li className='group flex items-center gap-3 py-1.5'>
+			<div
+				className={`h-1 w-1 shrink-0 rounded-full ${severityClass(entry.severity)}`}
+			/>
+			<span className='flex-1 truncate text-xs text-content-secondary group-hover:text-content'>
 				{entry.title}
 			</span>
 			{entry.impactCents != null && (
-				<span className="font-mono text-[11px] tabular-nums text-content-faint">
+				<span className='font-mono text-[11px] tabular-nums text-content-faint'>
 					{formatCurrency(entry.impactCents)}
 				</span>
 			)}
@@ -77,16 +87,18 @@ const TONE_CLASSES: Record<SectionProps["tone"], string> = {
 
 function Section({ icon, label, count, tone, entries }: SectionProps) {
 	return (
-		<div className="flex flex-col gap-1">
+		<div className='flex flex-col gap-1'>
 			<div className={`flex items-baseline gap-2 ${TONE_CLASSES[tone]}`}>
-				<span className="flex h-4 w-4 items-center justify-center">{icon}</span>
-				<span className="font-mono text-base font-medium tabular-nums">{count}</span>
-				<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
+				<span className='flex h-4 w-4 items-center justify-center'>{icon}</span>
+				<span className='font-mono text-base font-medium tabular-nums'>
+					{count}
+				</span>
+				<span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 					{label}
 				</span>
 			</div>
 			{entries && entries.length > 0 && (
-				<ul className="ml-6 divide-y divide-edge/30">
+				<ul className='ml-6 divide-y divide-edge/30'>
 					{entries.slice(0, 3).map((e) => (
 						<EntryRow key={e.id} entry={e} />
 					))}
@@ -97,48 +109,57 @@ function Section({ icon, label, count, tone, entries }: SectionProps) {
 }
 
 function WhatChangedCardComponent({ data }: WidgetProps) {
-	const { newFindings, regressions, resolved, verificationsConfirmed } = data.changeReport;
+	const {
+		newFindings,
+		regressions,
+		resolved,
+		verificationsConfirmed,
+		caption,
+	} = data.changeReport;
 
 	return (
-		<div className="flex h-full flex-col p-6">
+		<div className='flex h-full flex-col p-7'>
 			{/* Eyebrow */}
-			<div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
+			<div className='flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<span>What changed since last cycle</span>
-				<span className="text-content-faint">last 24h</span>
+				<span className='text-content-faint'>last 24h</span>
 			</div>
 
-			{/* Four sections in a grid — each section has its own lane.
-			    Sections with entries show the top 3 items as a small
-			    bullet list directly below the count. */}
-			<div className="mt-4 grid flex-1 grid-cols-1 gap-5 md:grid-cols-2">
+			{/* Four sections in a grid */}
+			<div className='mt-4 grid flex-1 grid-cols-1 gap-5 md:grid-cols-2'>
 				<Section
-					icon={<Plus size={14} weight="bold" />}
-					label="new findings"
+					icon={<Plus size={14} weight='bold' />}
+					label='new findings'
 					count={newFindings.length}
-					tone="added"
+					tone='added'
 					entries={newFindings}
 				/>
 				<Section
-					icon={<ArrowsClockwise size={14} weight="bold" />}
-					label="regressions"
+					icon={<ArrowsClockwise size={14} weight='bold' />}
+					label='regressions'
 					count={regressions.length}
-					tone="regressed"
+					tone='regressed'
 					entries={regressions}
 				/>
 				<Section
-					icon={<CheckCircle size={14} weight="bold" />}
-					label="resolved"
+					icon={<CheckCircle size={14} weight='bold' />}
+					label='resolved'
 					count={resolved.length}
-					tone="resolved"
+					tone='resolved'
 					entries={resolved}
 				/>
 				<Section
-					icon={<ShieldCheck size={14} weight="bold" />}
-					label="verifications confirmed"
+					icon={<ShieldCheck size={14} weight='bold' />}
+					label='verifications confirmed'
 					count={verificationsConfirmed}
-					tone="verified"
+					tone='verified'
 				/>
 			</div>
+
+			{/* Caption strip */}
+			<p className='mt-4 line-clamp-2 border-t border-edge/40 pt-3 text-xs leading-snug text-content-secondary'>
+				{caption}
+			</p>
 		</div>
 	);
 }

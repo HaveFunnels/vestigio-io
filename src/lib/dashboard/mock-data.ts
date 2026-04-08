@@ -15,7 +15,21 @@
 // AI slop. Trends include realistic noise.
 // ──────────────────────────────────────────────
 
-import type { DashboardData } from "./types";
+import type {
+	ActivityHeatmapData,
+	ChangeReportData,
+	DashboardData,
+	ExposureData,
+	HealthScoreData,
+	MoneyRecoveredData,
+} from "./types";
+import {
+	captionForActivityHeatmap,
+	captionForChangeReport,
+	captionForExposure,
+	captionForHealthScore,
+	captionForMoneyRecovered,
+} from "./captions";
 
 function isoDay(daysAgo: number): string {
 	const d = new Date();
@@ -29,9 +43,8 @@ function isoDay(daysAgo: number): string {
 // chart looks the same on every render and Storybook screenshots
 // stay deterministic.
 const HEALTH_TREND_30D = [
-	71, 72, 70, 73, 74, 72, 75, 76, 75, 77,
-	78, 76, 79, 80, 78, 81, 82, 80, 83, 81,
-	84, 83, 82, 84, 85, 84, 85, 86, 85, 82,
+	71, 72, 70, 73, 74, 72, 75, 76, 75, 77, 78, 76, 79, 80, 78, 81, 82, 80, 83,
+	81, 84, 83, 82, 84, 85, 84, 85, 86, 85, 82,
 ];
 
 // 90-day activity heatmap — biased toward weekdays, occasional
@@ -71,79 +84,104 @@ function generateHeatmap() {
 	return days;
 }
 
-export const MOCK_DASHBOARD_DATA: DashboardData = {
-	moneyRecovered: {
-		totalCents: 4_728_310, // $47,283.10
-		last7dCents: 142_300, // $1,423.00
-		last30dCents: 340_290, // $3,402.90
-		currency: "USD",
-		lastUpdatedAt: new Date().toISOString(),
-	},
-	healthScore: {
-		current: 82,
-		deltaVsLastCycle: 5,
-		trend30d: HEALTH_TREND_30D,
-		components: {
-			structural: 86,
-			actionQuality: 78,
-			verification: 81,
+// Build the mock by populating the slices then injecting captions
+// from the same helpers the real aggregator uses — so the mock and
+// the prod path always agree on wording rules.
+const moneyRecovered: MoneyRecoveredData = {
+	totalCents: 4_728_310, // $47,283.10
+	last7dCents: 142_300, // $1,423.00
+	last30dCents: 340_290, // $3,402.90
+	currency: "USD",
+	lastUpdatedAt: new Date().toISOString(),
+	caption: "",
+};
+moneyRecovered.caption = captionForMoneyRecovered(moneyRecovered);
+
+const healthScore: HealthScoreData = {
+	current: 82,
+	deltaVsLastCycle: 5,
+	trend30d: HEALTH_TREND_30D,
+	components: { structural: 86, actionQuality: 78, verification: 81 },
+	caption: "",
+};
+healthScore.caption = captionForHealthScore(healthScore);
+
+const exposure: ExposureData = {
+	monthlyCents: 4_724_000, // $47,240/mo
+	deltaVsLastCycleCents: -320_000, // exposure DECREASED by $3.2k — good
+	currency: "USD",
+	byPack: [
+		{
+			pack: "revenue_integrity",
+			cents: 2_140_000,
+			colorClass: "bg-emerald-500",
 		},
-	},
-	exposure: {
-		monthlyCents: 4_724_000, // $47,240/mo
-		deltaVsLastCycleCents: -320_000, // exposure DECREASED by $3.2k — good
-		currency: "USD",
-		byPack: [
-			{ pack: "revenue_integrity", cents: 2_140_000, colorClass: "bg-emerald-500" },
-			{ pack: "scale_readiness", cents: 1_180_000, colorClass: "bg-amber-500" },
-			{ pack: "chargeback_resilience", cents: 880_000, colorClass: "bg-red-500" },
-			{ pack: "behavioral", cents: 524_000, colorClass: "bg-blue-500" },
-		],
-	},
-	changeReport: {
-		newFindings: [
-			{
-				id: "f_trust_boundary_crossed",
-				title: "Trust boundary crossed at checkout",
-				impactCents: 420_000,
-				severity: "high",
-			},
-			{
-				id: "f_mobile_checkout_drag",
-				title: "Mobile checkout takes 4.8s to first interaction",
-				impactCents: 210_000,
-				severity: "medium",
-			},
-			{
-				id: "f_pricing_page_outdated",
-				title: "Pricing page references retired tier",
-				impactCents: 85_000,
-				severity: "medium",
-			},
-		],
-		regressions: [
-			{
-				id: "f_refund_policy_reverted",
-				title: "Refund policy missing again on checkout",
-				severity: "high",
-			},
-		],
-		resolved: [
-			{
-				id: "f_og_image_stale",
-				title: "Stale OG image on homepage",
-				impactCents: 60_000,
-			},
-			{
-				id: "f_trust_seals_missing",
-				title: "Missing trust seals at payment step",
-				impactCents: 180_000,
-			},
-		],
-		verificationsConfirmed: 4,
-	},
-	activityHeatmap: {
-		days: generateHeatmap(),
-		currentStreak: 14,
-	},
+		{ pack: "scale_readiness", cents: 1_180_000, colorClass: "bg-amber-500" },
+		{ pack: "chargeback_resilience", cents: 880_000, colorClass: "bg-red-500" },
+		{ pack: "behavioral", cents: 524_000, colorClass: "bg-blue-500" },
+	],
+	criticalOpenCount: 3,
+	criticalDeltaVsLastCycle: -1,
+	caption: "",
+};
+exposure.caption = captionForExposure(exposure);
+
+const changeReport: ChangeReportData = {
+	newFindings: [
+		{
+			id: "f_trust_boundary_crossed",
+			title: "Trust boundary crossed at checkout",
+			impactCents: 420_000,
+			severity: "high",
+		},
+		{
+			id: "f_mobile_checkout_drag",
+			title: "Mobile checkout takes 4.8s to first interaction",
+			impactCents: 210_000,
+			severity: "medium",
+		},
+		{
+			id: "f_pricing_page_outdated",
+			title: "Pricing page references retired tier",
+			impactCents: 85_000,
+			severity: "medium",
+		},
+	],
+	regressions: [
+		{
+			id: "f_refund_policy_reverted",
+			title: "Refund policy missing again on checkout",
+			severity: "high",
+		},
+	],
+	resolved: [
+		{
+			id: "f_og_image_stale",
+			title: "Stale OG image on homepage",
+			impactCents: 60_000,
+		},
+		{
+			id: "f_trust_seals_missing",
+			title: "Missing trust seals at payment step",
+			impactCents: 180_000,
+		},
+	],
+	verificationsConfirmed: 4,
+	caption: "",
+};
+changeReport.caption = captionForChangeReport(changeReport);
+
+const activityHeatmap: ActivityHeatmapData = {
+	days: generateHeatmap(),
+	currentStreak: 14,
+	caption: "",
+};
+activityHeatmap.caption = captionForActivityHeatmap(activityHeatmap);
+
+export const MOCK_DASHBOARD_DATA: DashboardData = {
+	moneyRecovered,
+	healthScore,
+	exposure,
+	changeReport,
+	activityHeatmap,
 };

@@ -16,7 +16,10 @@
 // ──────────────────────────────────────────────
 
 import { Pulse } from "@phosphor-icons/react/dist/ssr";
-import { registerWidget, type WidgetProps } from "@/lib/dashboard/widget-registry";
+import {
+	registerWidget,
+	type WidgetProps,
+} from "@/lib/dashboard/widget-registry";
 
 function scoreToColorClass(score: number): string {
 	if (score >= 80) return "text-emerald-400";
@@ -33,7 +36,13 @@ function scoreToStrokeClass(score: number): string {
 // Sparkline as inline SVG — no chart lib needed for a 30-point line
 // (and one less dependency to load on a hero card). Path data is
 // computed from the trend array, scaled to fit the viewBox.
-function Sparkline({ data, colorClass }: { data: number[]; colorClass: string }) {
+function Sparkline({
+	data,
+	colorClass,
+}: {
+	data: number[];
+	colorClass: string;
+}) {
 	const w = 240;
 	const h = 60;
 	const padding = 4;
@@ -50,21 +59,42 @@ function Sparkline({ data, colorClass }: { data: number[]; colorClass: string })
 	const areaD = `${pathD} L ${w - padding},${h - padding} L ${padding},${h - padding} Z`;
 	const gradId = `spark-grad-${colorClass}`;
 	return (
-		<svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+		<svg
+			width='100%'
+			height={h}
+			viewBox={`0 0 ${w} ${h}`}
+			preserveAspectRatio='none'
+		>
 			<defs>
-				<linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-					<stop offset="0%" className={colorClass.replace("stroke", "stop")} stopOpacity="0.25" />
-					<stop offset="100%" className={colorClass.replace("stroke", "stop")} stopOpacity="0" />
+				<linearGradient id={gradId} x1='0' y1='0' x2='0' y2='1'>
+					<stop
+						offset='0%'
+						className={colorClass.replace("stroke", "stop")}
+						stopOpacity='0.25'
+					/>
+					<stop
+						offset='100%'
+						className={colorClass.replace("stroke", "stop")}
+						stopOpacity='0'
+					/>
 				</linearGradient>
 			</defs>
 			<path d={areaD} fill={`url(#${gradId})`} />
-			<path d={pathD} fill="none" className={colorClass} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+			<path
+				d={pathD}
+				fill='none'
+				className={colorClass}
+				strokeWidth={1.5}
+				strokeLinecap='round'
+				strokeLinejoin='round'
+			/>
 		</svg>
 	);
 }
 
 function HealthTrendCardComponent({ data }: WidgetProps) {
-	const { current, deltaVsLastCycle, trend30d, components } = data.healthScore;
+	const { current, deltaVsLastCycle, trend30d, components, caption } =
+		data.healthScore;
 	const colorClass = scoreToColorClass(current);
 	const strokeClass = scoreToStrokeClass(current);
 	const deltaPositive = deltaVsLastCycle > 0;
@@ -72,66 +102,77 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 	const deltaAbs = Math.abs(deltaVsLastCycle);
 
 	return (
-		<div className="flex h-full flex-col p-6">
+		<div className='flex h-full flex-col p-7'>
 			{/* Eyebrow */}
-			<div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
-				<Pulse size={12} weight="bold" className="text-emerald-400" />
+			<div className='flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
+				<Pulse size={12} weight='bold' className='text-emerald-400' />
 				<span>Health score</span>
 			</div>
 
-			{/* Hero row: big number + delta + sparkline */}
-			<div className="mt-3 flex items-end justify-between gap-6">
-				<div className="flex items-baseline gap-3">
-					<span className={`font-mono text-6xl font-medium leading-none tracking-tight tabular-nums ${colorClass}`}>
+			{/* Hero row: big number + delta */}
+			<div className='mt-4 flex items-end justify-between gap-6'>
+				<div className='flex items-baseline gap-3'>
+					<span
+						className={`font-mono text-6xl font-medium tabular-nums leading-none tracking-tight ${colorClass}`}
+					>
 						{current}
 					</span>
-					<span className="font-mono text-xs text-content-faint">/ 100</span>
+					<span className='font-mono text-xs text-content-faint'>/ 100</span>
 				</div>
-				<div className="flex flex-col items-end gap-1">
+				<div className='flex flex-col items-end gap-1'>
 					<span
 						className={`font-mono text-sm tabular-nums ${
-							deltaPositive ? "text-emerald-400" : deltaVsLastCycle < 0 ? "text-red-400" : "text-content-muted"
+							deltaPositive
+								? "text-emerald-400"
+								: deltaVsLastCycle < 0
+									? "text-red-400"
+									: "text-content-muted"
 						}`}
 					>
 						{deltaSign}
 						{deltaAbs} vs last cycle
 					</span>
-					<span className="text-[10px] text-content-faint">last 30 days</span>
+					<span className='text-[10px] text-content-faint'>last 30 days</span>
 				</div>
 			</div>
 
 			{/* Sparkline — fills the available width */}
-			<div className="mt-3 flex-1">
+			<div className='mt-4 flex-1'>
 				<Sparkline data={trend30d} colorClass={strokeClass} />
 			</div>
 
-			{/* Sub-score strip — three components feeding the composite */}
-			<div className="mt-3 grid grid-cols-3 divide-x divide-edge/40 border-t border-edge/40 pt-3">
-				<div className="flex flex-col gap-0.5 pr-3">
-					<span className="text-[10px] uppercase tracking-wider text-content-faint">
+			{/* Sub-score strip */}
+			<div className='mt-4 grid grid-cols-3 divide-x divide-edge/40 border-t border-edge/40 pt-3'>
+				<div className='flex flex-col gap-0.5 pr-3'>
+					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
 						Structural
 					</span>
-					<span className="font-mono text-sm tabular-nums text-content-secondary">
+					<span className='font-mono text-sm tabular-nums text-content-secondary'>
 						{components.structural}
 					</span>
 				</div>
-				<div className="flex flex-col gap-0.5 px-3">
-					<span className="text-[10px] uppercase tracking-wider text-content-faint">
+				<div className='flex flex-col gap-0.5 px-3'>
+					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
 						Action quality
 					</span>
-					<span className="font-mono text-sm tabular-nums text-content-secondary">
+					<span className='font-mono text-sm tabular-nums text-content-secondary'>
 						{components.actionQuality}
 					</span>
 				</div>
-				<div className="flex flex-col gap-0.5 pl-3">
-					<span className="text-[10px] uppercase tracking-wider text-content-faint">
+				<div className='flex flex-col gap-0.5 pl-3'>
+					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
 						Verification
 					</span>
-					<span className="font-mono text-sm tabular-nums text-content-secondary">
+					<span className='font-mono text-sm tabular-nums text-content-secondary'>
 						{components.verification}
 					</span>
 				</div>
 			</div>
+
+			{/* Caption strip */}
+			<p className='mt-3 line-clamp-2 text-xs leading-snug text-content-secondary'>
+				{caption}
+			</p>
 		</div>
 	);
 }

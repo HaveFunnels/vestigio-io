@@ -1029,6 +1029,46 @@
         "activity_heatmap": {
           "name": "Activity Heatmap",
           "description": "GitHub-style 90-day grid of cycles and resolutions."
+        },
+        "open_critical": {
+          "name": "Open Critical",
+          "description": "Live count of open critical findings with cycle delta."
+        },
+        "verification_rate": {
+          "name": "Verification Rate",
+          "description": "% of latest-cycle findings that are independently verified."
+        },
+        "streak": {
+          "name": "Activity Streak",
+          "description": "Current consecutive-day audit/action streak."
+        },
+        "top_pack": {
+          "name": "Top Exposure Pack",
+          "description": "Which pack carries the most monthly exposure right now."
+        }
+      },
+      "editing_subtitle": "Drag widgets to rearrange. Resize from the corner. Add or remove from the catalog.",
+      "add_widget": "Add widget",
+      "remove_widget": "Remove widget",
+      "drag_to_rearrange": "Drag to rearrange",
+      "save_status": {
+        "saving": "Saving…",
+        "saved": "Saved",
+        "error": "Save failed"
+      },
+      "catalog": {
+        "title": "Add a widget",
+        "subtitle": "Pick what to surface on your dashboard",
+        "added_label": "Added",
+        "reset": "Reset layout to default",
+        "confirm_reset": "Reset dashboard to default layout?",
+        "categories": {
+          "kpi": "KPIs",
+          "trends": "Trends",
+          "activity": "Activity",
+          "milestones": "Milestones",
+          "workspaces": "Workspaces",
+          "actions": "Actions"
         }
       }
     },
@@ -1131,12 +1171,30 @@
         "cross_pack_correlation": "Analyze findings across ALL packs (revenue integrity, scale readiness, chargeback resilience). Find correlations: Which findings from different packs share the same root cause? Where does fixing a revenue issue also reduce chargeback risk? Where does improving trust also help conversion? Build a correlation map showing connected findings across packs with combined impact."
       },
       "quick_presets": {
-        "losing_money": { "text": "Where am I losing money?", "label": "Revenue leaks" },
-        "scale_traffic": { "text": "Can I safely scale paid traffic?", "label": "Scale readiness" },
-        "fix_first": { "text": "What should I fix first?", "label": "Priority actions" },
-        "chargeback_risk": { "text": "What's my chargeback risk?", "label": "Chargeback exposure" },
-        "recent_changes": { "text": "What changed since last analysis?", "label": "Recent changes" },
-        "regressions": { "text": "Are there any regressions?", "label": "Regressions" }
+        "losing_money": {
+          "text": "Where am I losing money?",
+          "label": "Revenue leaks"
+        },
+        "scale_traffic": {
+          "text": "Can I safely scale paid traffic?",
+          "label": "Scale readiness"
+        },
+        "fix_first": {
+          "text": "What should I fix first?",
+          "label": "Priority actions"
+        },
+        "chargeback_risk": {
+          "text": "What's my chargeback risk?",
+          "label": "Chargeback exposure"
+        },
+        "recent_changes": {
+          "text": "What changed since last analysis?",
+          "label": "Recent changes"
+        },
+        "regressions": {
+          "text": "Are there any regressions?",
+          "label": "Regressions"
+        }
       },
       "featured_playbooks": {
         "revenue_leak_full_audit": {

@@ -17,7 +17,10 @@
 // ──────────────────────────────────────────────
 
 import { Calendar } from "@phosphor-icons/react/dist/ssr";
-import { registerWidget, type WidgetProps } from "@/lib/dashboard/widget-registry";
+import {
+	registerWidget,
+	type WidgetProps,
+} from "@/lib/dashboard/widget-registry";
 import type { ActivityHeatmapDay } from "@/lib/dashboard/types";
 
 // Map a count to a 5-step intensity scale. Tuned so a single cycle
@@ -42,7 +45,7 @@ function DayCell({ day }: { day: ActivityHeatmapDay }) {
 }
 
 function ActivityHeatmapComponent({ data }: WidgetProps) {
-	const { days, currentStreak } = data.activityHeatmap;
+	const { days, currentStreak, caption } = data.activityHeatmap;
 
 	// Group days into weeks (columns of 7) so the grid renders
 	// week-by-week left to right, oldest to newest. The first
@@ -58,27 +61,27 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 	}
 
 	return (
-		<div className="flex h-full flex-col p-6">
+		<div className='flex h-full flex-col p-7'>
 			{/* Eyebrow */}
-			<div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
-				<Calendar size={12} weight="bold" className="text-emerald-400" />
+			<div className='flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
+				<Calendar size={12} weight='bold' className='text-emerald-400' />
 				<span>Activity</span>
 			</div>
 
-			{/* Streak readout — sits subtly below the eyebrow, no exclamation */}
-			<div className="mt-2 flex items-baseline gap-2">
-				<span className="font-mono text-3xl font-medium leading-none tracking-tight text-content tabular-nums">
+			{/* Streak readout */}
+			<div className='mt-3 flex items-baseline gap-2'>
+				<span className='font-mono text-3xl font-medium tabular-nums leading-none tracking-tight text-content'>
 					{currentStreak}
 				</span>
-				<span className="text-[11px] uppercase tracking-wider text-content-muted">
+				<span className='text-[11px] uppercase tracking-wider text-content-muted'>
 					day streak
 				</span>
 			</div>
 
-			{/* The grid itself — flex of vertical week columns */}
-			<div className="mt-4 flex flex-1 items-end gap-1 overflow-hidden">
+			{/* The grid itself */}
+			<div className='mt-4 flex flex-1 items-end gap-1 overflow-hidden'>
 				{weeks.map((week, wi) => (
-					<div key={wi} className="flex flex-col gap-1">
+					<div key={wi} className='flex flex-col gap-1'>
 						{week.map((day) => (
 							<DayCell key={day.date} day={day} />
 						))}
@@ -86,19 +89,24 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 				))}
 			</div>
 
-			{/* Legend — minimal, three swatches showing the intensity scale */}
-			<div className="mt-3 flex items-center gap-2 border-t border-edge/40 pt-2 text-[10px] text-content-faint">
+			{/* Legend */}
+			<div className='mt-3 flex items-center gap-2 border-t border-edge/40 pt-2 text-[10px] text-content-faint'>
 				<span>less</span>
-				<div className="flex gap-1">
-					<div className="h-2 w-2 rounded-[2px] bg-surface-inset" />
-					<div className="h-2 w-2 rounded-[2px] bg-emerald-900/60" />
-					<div className="h-2 w-2 rounded-[2px] bg-emerald-700/70" />
-					<div className="h-2 w-2 rounded-[2px] bg-emerald-600/80" />
-					<div className="h-2 w-2 rounded-[2px] bg-emerald-500" />
+				<div className='flex gap-1'>
+					<div className='h-2 w-2 rounded-[2px] bg-surface-inset' />
+					<div className='h-2 w-2 rounded-[2px] bg-emerald-900/60' />
+					<div className='h-2 w-2 rounded-[2px] bg-emerald-700/70' />
+					<div className='h-2 w-2 rounded-[2px] bg-emerald-600/80' />
+					<div className='h-2 w-2 rounded-[2px] bg-emerald-500' />
 				</div>
 				<span>more</span>
-				<span className="ml-auto">90 days</span>
+				<span className='ml-auto'>90 days</span>
 			</div>
+
+			{/* Caption strip */}
+			<p className='mt-3 line-clamp-2 text-xs leading-snug text-content-secondary'>
+				{caption}
+			</p>
 		</div>
 	);
 }

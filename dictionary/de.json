@@ -1333,6 +1333,74 @@
         "event_product_updates": "Release Notes",
         "event_product_updates_desc": "Erfahre als Erstes von neuen Funktionen."
       }
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Übersicht über Umsatzgesundheit, Risiken und aktuelle Aktivität.",
+      "customize": "Anpassen",
+      "done": "Fertig",
+      "editing_subtitle": "Widgets per Drag & Drop neu anordnen. In der Ecke ziehen, um die Größe zu ändern. Über den Katalog hinzufügen oder entfernen.",
+      "add_widget": "Widget hinzufügen",
+      "remove_widget": "Widget entfernen",
+      "drag_to_rearrange": "Ziehen zum Neuordnen",
+      "save_status": {
+        "saving": "Speichert…",
+        "saved": "Gespeichert",
+        "error": "Speichern fehlgeschlagen"
+      },
+      "catalog": {
+        "title": "Widget hinzufügen",
+        "subtitle": "Wähle, was auf deinem Dashboard erscheinen soll",
+        "added_label": "Hinzugefügt",
+        "reset": "Layout zurücksetzen",
+        "confirm_reset": "Dashboard auf Standardlayout zurücksetzen?",
+        "categories": {
+          "kpi": "KPIs",
+          "trends": "Trends",
+          "activity": "Aktivität",
+          "milestones": "Meilensteine",
+          "workspaces": "Workspaces",
+          "actions": "Aktionen"
+        }
+      },
+      "widgets": {
+        "money_recovered": {
+          "name": "Wiederhergestelltes Geld",
+          "description": "Laufende Summe der mit Vestigio zurückgewonnenen Umsätze."
+        },
+        "health_trend": {
+          "name": "Gesundheitstrend",
+          "description": "Zusammengesetzter Gesundheitswert mit 30-Tage-Trendkurve."
+        },
+        "exposure": {
+          "name": "Monatliches Risiko",
+          "description": "Gesamt-$/Monat im Risiko über offene Findings, nach Pack aufgeteilt."
+        },
+        "what_changed": {
+          "name": "Was sich geändert hat",
+          "description": "Neue Findings, Regressionen, Lösungen und Verifizierungen seit dem letzten Zyklus."
+        },
+        "activity_heatmap": {
+          "name": "Aktivitäts-Heatmap",
+          "description": "90-Tage-Raster im GitHub-Stil mit Zyklen und Lösungen."
+        },
+        "open_critical": {
+          "name": "Offene kritische Findings",
+          "description": "Live-Zähler offener kritischer Findings mit Zyklus-Delta."
+        },
+        "verification_rate": {
+          "name": "Verifizierungsrate",
+          "description": "% der Findings des letzten Zyklus, die verifiziert wurden."
+        },
+        "streak": {
+          "name": "Aktivitäts-Streak",
+          "description": "Aktuelle Folge aufeinanderfolgender Audit-/Aktionstage."
+        },
+        "top_pack": {
+          "name": "Top-Risiko-Pack",
+          "description": "Welches Pack derzeit das größte monatliche Risiko trägt."
+        }
+      }
     }
   }
 }

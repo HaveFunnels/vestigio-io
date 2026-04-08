@@ -1079,6 +1079,46 @@
         "activity_heatmap": {
           "name": "Mapa de Atividade",
           "description": "Grade no estilo GitHub com 90 dias de ciclos e resoluções."
+        },
+        "open_critical": {
+          "name": "Críticos Abertos",
+          "description": "Contagem ao vivo de findings críticos abertos com delta de ciclo."
+        },
+        "verification_rate": {
+          "name": "Taxa de Verificação",
+          "description": "% de findings do último ciclo que foram verificados."
+        },
+        "streak": {
+          "name": "Sequência de Atividade",
+          "description": "Sequência atual de dias consecutivos de auditoria/ações."
+        },
+        "top_pack": {
+          "name": "Pack Mais Exposto",
+          "description": "Qual pack concentra mais exposição mensal agora."
+        }
+      },
+      "editing_subtitle": "Arraste widgets para reorganizar. Redimensione pelo canto. Adicione ou remova pelo catálogo.",
+      "add_widget": "Adicionar widget",
+      "remove_widget": "Remover widget",
+      "drag_to_rearrange": "Arraste para reorganizar",
+      "save_status": {
+        "saving": "Salvando…",
+        "saved": "Salvo",
+        "error": "Falha ao salvar"
+      },
+      "catalog": {
+        "title": "Adicionar um widget",
+        "subtitle": "Escolha o que destacar no seu dashboard",
+        "added_label": "Adicionado",
+        "reset": "Redefinir layout padrão",
+        "confirm_reset": "Redefinir dashboard para o layout padrão?",
+        "categories": {
+          "kpi": "KPIs",
+          "trends": "Tendências",
+          "activity": "Atividade",
+          "milestones": "Marcos",
+          "workspaces": "Workspaces",
+          "actions": "Ações"
         }
       }
     },
@@ -1181,12 +1221,30 @@
         "cross_pack_correlation": "Analise findings em TODOS os packs (integridade de receita, prontidão para escala, resiliência a chargebacks). Encontre correlações: Quais findings de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de receita também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando findings conectados entre packs com impacto combinado."
       },
       "quick_presets": {
-        "losing_money": { "text": "Onde estou perdendo dinheiro?", "label": "Vazamentos de receita" },
-        "scale_traffic": { "text": "Posso escalar tráfego pago com segurança?", "label": "Prontidão para escalar" },
-        "fix_first": { "text": "O que devo corrigir primeiro?", "label": "Ações prioritárias" },
-        "chargeback_risk": { "text": "Qual é meu risco de chargeback?", "label": "Exposição a chargebacks" },
-        "recent_changes": { "text": "O que mudou desde a última análise?", "label": "Mudanças recentes" },
-        "regressions": { "text": "Há alguma regressão?", "label": "Regressões" }
+        "losing_money": {
+          "text": "Onde estou perdendo dinheiro?",
+          "label": "Vazamentos de receita"
+        },
+        "scale_traffic": {
+          "text": "Posso escalar tráfego pago com segurança?",
+          "label": "Prontidão para escalar"
+        },
+        "fix_first": {
+          "text": "O que devo corrigir primeiro?",
+          "label": "Ações prioritárias"
+        },
+        "chargeback_risk": {
+          "text": "Qual é meu risco de chargeback?",
+          "label": "Exposição a chargebacks"
+        },
+        "recent_changes": {
+          "text": "O que mudou desde a última análise?",
+          "label": "Mudanças recentes"
+        },
+        "regressions": {
+          "text": "Há alguma regressão?",
+          "label": "Regressões"
+        }
       },
       "featured_playbooks": {
         "revenue_leak_full_audit": {

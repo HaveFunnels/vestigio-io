@@ -174,6 +174,101 @@ export function parseBlockMarkers(text: string): ContentBlock[] {
 }
 
 /**
+ * Inverse of `parseBlockMarkers`. Walks a `ContentBlock[]` and
+ * reconstructs the marker-laden text the LLM would have emitted to
+ * produce it.
+ *
+ * **Why this exists:** when the chat page builds the conversation
+ * history that gets sent back to the LLM on a follow-up message, it
+ * used to filter out every block except `markdown` — meaning the
+ * LLM only saw the prose portions of its previous responses and
+ * silently lost track of every finding card, action card, KB
+ * article, impact summary, navigation CTA and create-action it had
+ * generated. The user would ask "tell me more about that finding
+ * you mentioned" and the LLM would have no way to know which
+ * finding because the `$$FINDING{abc123}$$` marker was gone. This
+ * function rebuilds those markers so the LLM sees a faithful
+ * transcript of its own prior output and can reference its earlier
+ * cards by id in follow-up turns.
+ *
+ * Skipped on purpose:
+ *   - tool_call: the LLM doesn't need its own execution log replayed
+ *   - suggested_prompts: pure UI affordance, not LLM-emitted content
+ *
+ * Notes on serialization:
+ *   - finding_card / action_card serialize to the bare-id form the
+ *     marker grammar uses (`$$FINDING{abc123}$$`).
+ *   - impact_summary, create_action, navigation_cta serialize their
+ *     full inline JSON payload because the marker grammar carries it.
+ *   - kb_article_card uses `kind:key` shape (e.g.
+ *     `$$KB{finding:trust_boundary_crossed}$$`).
+ *   - quote becomes a Markdown blockquote line so the LLM still sees
+ *     it as a quote in the conversation context.
+ *   - data_rows becomes a labelled bullet list — it's the closest
+ *     plain-text representation the LLM can reference back later.
+ */
+export function serializeBlocksToText(blocks: ContentBlock[]): string {
+  const parts: string[] = [];
+  for (const block of blocks) {
+    switch (block.type) {
+      case "markdown":
+        parts.push(block.content);
+        break;
+      case "finding_card":
+        parts.push(`$$FINDING{${block.finding.id}}$$`);
+        break;
+      case "action_card":
+        parts.push(`$$ACTION{${block.action.id}}$$`);
+        break;
+      case "impact_summary":
+        parts.push(
+          `$$IMPACT{${JSON.stringify({
+            min: block.summary.min,
+            max: block.summary.max,
+            mid: block.summary.mid,
+            type: block.summary.type,
+            currency: block.summary.currency,
+          })}}$$`,
+        );
+        break;
+      case "create_action":
+        parts.push(
+          `$$CREATEACTION{${JSON.stringify({
+            title: block.title,
+            description: block.description,
+            severity: block.severity,
+            estimatedImpact: block.estimatedImpact,
+          })}}$$`,
+        );
+        break;
+      case "navigation_cta":
+        // Single target → object shorthand; multiple → array form.
+        if (block.targets.length === 1) {
+          parts.push(`$$NAVIGATE{${JSON.stringify(block.targets[0])}}$$`);
+        } else if (block.targets.length > 1) {
+          parts.push(`$$NAVIGATE{${JSON.stringify(block.targets)}}$$`);
+        }
+        break;
+      case "kb_article_card":
+        parts.push(`$$KB{${block.key_kind}:${block.key}}$$`);
+        break;
+      case "quote":
+        parts.push(`> ${block.text}${block.source ? ` — ${block.source}` : ""}`);
+        break;
+      case "data_rows": {
+        const rows = block.rows
+          .map((r) => `- ${r.label}: ${r.value}${r.severity ? ` [${r.severity}]` : ""}`)
+          .join("\n");
+        parts.push(`**${block.label}**\n${rows}`);
+        break;
+      }
+      // tool_call + suggested_prompts intentionally skipped (see jsdoc)
+    }
+  }
+  return parts.join("\n").trim();
+}
+
+/**
  * Replace the placeholder data on `finding_card`, `action_card`, and
  * `kb_article_card` blocks with the real titles / impact / severity /
  * KB metadata pulled from MCP and Sanity. After this runs, the blocks

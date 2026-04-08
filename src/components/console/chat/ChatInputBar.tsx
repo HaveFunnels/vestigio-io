@@ -2,14 +2,14 @@
 
 /**
  * ChatInputBar — Input area with model selector, voice input, file chips,
- * send button, and Shift+Enter support.
+ * send button, stop-generating button, and Shift+Enter support.
  */
 
 import { useState, useRef, useEffect } from "react";
 import type { ModelId } from "@/lib/chat-types";
 import { ModelSelector } from "./ModelSelector";
 import { VoiceInput } from "./VoiceInput";
-import { FileChip, type UploadedFile } from "./FileUploadZone";
+import { FileChip, processFileList, type UploadedFile } from "./FileUploadZone";
 
 interface ChatInputBarProps {
   onSend: (message: string, attachedFiles?: UploadedFile[]) => void;
@@ -18,11 +18,18 @@ interface ChatInputBarProps {
   selectedModel: ModelId;
   onModelChange: (model: ModelId) => void;
   attachedFiles?: UploadedFile[];
+  onAttachFiles?: (files: UploadedFile[]) => void;
   onRemoveFile?: (index: number) => void;
   placeholder?: string;
   mcpPct?: number;
   mcpUsed?: number;
   mcpLimit?: number;
+  /** True while a stream is in flight — swaps the send button for a Stop button. */
+  isStreaming?: boolean;
+  /** Called when the user clicks the Stop button to abort the in-flight stream. */
+  onStop?: () => void;
+  /** Localized label for the stop button — defaults to English. */
+  stopLabel?: string;
 }
 
 export function ChatInputBar({
@@ -32,11 +39,15 @@ export function ChatInputBar({
   selectedModel,
   onModelChange,
   attachedFiles = [],
+  onAttachFiles,
   onRemoveFile,
   placeholder = "Ask about your revenue, risks, or what to fix first...",
   mcpPct = 0,
   mcpUsed = 0,
   mcpLimit = 0,
+  isStreaming = false,
+  onStop,
+  stopLabel = "Stop",
 }: ChatInputBarProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -67,6 +78,24 @@ export function ChatInputBar({
   function handleVoiceTranscript(text: string) {
     setInput((prev) => (prev ? prev + " " + text : text));
     textareaRef.current?.focus();
+  }
+
+  // Click-to-attach file picker. The native <input type="file"> element
+  // had `onChange={() => {}}` (literally a no-op) before this fix —
+  // clicking the paperclip opened the picker but selected files were
+  // silently dropped. We now route them through the same `processFileList`
+  // pipeline that drag-and-drop uses (whitelist, size cap, content
+  // slice) and lift them up via `onAttachFiles` so the parent state
+  // owns the attached files set.
+  async function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const processed = await processFileList(files);
+    if (processed.length > 0) {
+      onAttachFiles?.(processed);
+    }
+    // Reset so selecting the same file twice still triggers onChange.
+    e.target.value = "";
   }
 
   // Radial usage bar helpers
@@ -103,7 +132,14 @@ export function ChatInputBar({
               <path d="M14 9.5V12a2 2 0 01-2 2H4a2 2 0 01-2-2V9.5M8 10V2m0 0L5 5m3-3l3 3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <input ref={fileInputRef} type="file" accept=".csv,.json,.txt,.md,.pdf" multiple className="hidden" onChange={() => {}} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.json,.txt,.md,.pdf"
+            multiple
+            className="hidden"
+            onChange={handleFileInputChange}
+          />
 
           {/* Textarea */}
           <textarea
@@ -135,16 +171,33 @@ export function ChatInputBar({
               </div>
             )}
 
-            {/* Send */}
-            <button
-              onClick={handleSubmit}
-              disabled={disabled || !input.trim()}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
-            >
-              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
-                <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+            {/* Send / Stop — swap based on stream state.
+                During streaming the user needs an out: prior to this
+                fix `useChatStream.abort()` existed but wasn't wired
+                to any visible affordance, so a runaway response
+                could only be cancelled by reloading the page. */}
+            {isStreaming && onStop ? (
+              <button
+                onClick={onStop}
+                title={stopLabel}
+                aria-label={stopLabel}
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white transition-colors hover:bg-red-500"
+              >
+                <svg className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
+                  <rect x="3" y="3" width="10" height="10" rx="1" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={disabled || !input.trim()}
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+                  <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       </div>

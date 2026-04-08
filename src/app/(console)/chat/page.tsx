@@ -8,7 +8,7 @@ import { ConversationSidebar } from "@/components/console/chat/ConversationSideb
 import { ChatInputBar } from "@/components/console/chat/ChatInputBar";
 import { FileUploadZone, type UploadedFile } from "@/components/console/chat/FileUploadZone";
 // ChatBudgetBar removed — usage shown as radial indicator in ChatInputBar
-import { parseBlockMarkers } from "@/lib/chat-block-parser";
+import { parseBlockMarkers, serializeBlocksToText } from "@/lib/chat-block-parser";
 import { useChatStream } from "@/lib/use-chat-stream";
 import type { ChatMessage, ContentBlock, ModelId, Conversation } from "@/lib/chat-types";
 
@@ -76,6 +76,15 @@ export default function ChatPage() {
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
   const [playbooksOpen, setPlaybooksOpen] = useState(false);
   const [contextItems, setContextItems] = useState<ChatContextItem[]>([]);
+  // Smart auto-scroll: only follow the bottom when the user is
+  // already near the bottom. The pre-fix behaviour was an
+  // unconditional `scrollIntoView({ behavior: "smooth" })` on every
+  // streaming delta, which yanked the viewport away from the user
+  // every time they tried to scroll up to re-read an earlier
+  // message during a long-running response. We now track whether
+  // the user is "pinned" to the latest message and pause auto-scroll
+  // the moment they scroll up by more than ~120px.
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -495,12 +504,33 @@ export default function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Auto-scroll (only when there are messages) ──
+  // ── Smart auto-scroll ──────────────────────
+  // Auto-scroll only when the user is "pinned" to the bottom of the
+  // scroll container. As soon as they scroll up by more than ~120px
+  // we stop following the stream so they can read older content
+  // without the viewport getting yanked. A floating "Jump to latest"
+  // button (rendered below) brings them back when they're ready.
   useEffect(() => {
+    if (!isAtBottom) return;
     if (messages.length > 0 || streamingMessage) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, streamingMessage]);
+  }, [messages, streamingMessage, isAtBottom]);
+
+  function handleScroll() {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    // 120px threshold gives the user a comfortable "near the bottom"
+    // zone — small enough that one accidental scroll-down re-pins,
+    // big enough that intentional reading detaches.
+    setIsAtBottom(distanceFromBottom < 120);
+  }
+
+  function jumpToLatest() {
+    setIsAtBottom(true);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
 
   // ── Create new conversation ────────────────
   async function createConversation(): Promise<string | null> {
@@ -561,18 +591,37 @@ export default function ChatPage() {
     };
     setMessages((prev) => [...prev, userMessage]);
 
-    // Build conversation history for context
+    // Build conversation history for context.
+    //
+    // **History serialization fidelity:** earlier this filtered out
+    // every block except `markdown`, which meant the LLM only saw
+    // the prose portions of its previous responses and silently
+    // lost track of every finding/action/KB/impact card it had
+    // generated. Follow-up questions like "tell me more about that
+    // finding" became impossible to answer correctly. We now use
+    // `serializeBlocksToText` (the inverse of the marker parser) so
+    // the LLM gets a faithful transcript of its own prior output —
+    // including the exact `$$FINDING{abc123}$$` markers it can
+    // reference back by id.
     const history = messages.map((m) => ({
       role: m.role,
-      content: m.blocks
-        .filter((b): b is { type: "markdown"; content: string } => b.type === "markdown")
-        .map((b) => b.content)
-        .join("\n") || "",
+      content: serializeBlocksToText(m.blocks),
       timestamp: m.createdAt.getTime(),
     }));
 
-    // Send to streaming API
-    sendMessage(text, selectedModel, convId, history, attachedFiles.length > 0 ? attachedFiles : undefined);
+    // Send to streaming API. The `+ 1` on totalMessageCount accounts
+    // for the user message we just appended to local state but that
+    // hasn't been pushed into `messages` yet on this render pass.
+    // Without this the server's window-truncation logic underreports
+    // and the LLM thinks the conversation is shorter than it is.
+    sendMessage(
+      text,
+      selectedModel,
+      convId,
+      history,
+      attachedFiles.length > 0 ? attachedFiles : undefined,
+      messages.length + 1,
+    );
   }, [isStreaming, activeConversationId, messages, selectedModel, sendMessage]);
 
   // ── Merge streaming message into messages ──
@@ -760,43 +809,66 @@ export default function ChatPage() {
           </div>
 
           {/* Messages */}
-          <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
-            <div className="mx-auto max-w-3xl space-y-4">
-              {allMessages.length === 0 && !isStreaming && (
-                <EmptyState onSuggest={handleSend} />
-              )}
+          <div className="relative min-h-0 flex-1">
+            <div
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              className="absolute inset-0 overflow-y-auto px-4 py-4 sm:px-6"
+            >
+              <div className="mx-auto max-w-3xl space-y-4">
+                {allMessages.length === 0 && !isStreaming && (
+                  <EmptyState onSuggest={handleSend} />
+                )}
 
-              {allMessages.map((msg) => (
-                <ChatMessageRenderer
-                  key={msg.id}
-                  message={msg}
-                  onSuggestedPrompt={handleSuggestedPrompt}
-                  onNavigate={handleNavigate}
-                  onRetry={handleRetry}
-                  onEdit={handleEdit}
-                  onFeedback={handleFeedback}
-                  onSaveAction={handleSaveAction}
-                />
-              ))}
+                {allMessages.map((msg) => (
+                  <ChatMessageRenderer
+                    key={msg.id}
+                    message={msg}
+                    onSuggestedPrompt={handleSuggestedPrompt}
+                    onNavigate={handleNavigate}
+                    onRetry={handleRetry}
+                    onEdit={handleEdit}
+                    onFeedback={handleFeedback}
+                    onSaveAction={handleSaveAction}
+                  />
+                ))}
 
-              {/* Error display */}
-              {error && !isStreaming && (
-                <div className="rounded-md border border-red-800/30 bg-red-500/5 px-4 py-3">
-                  <p className="text-sm text-red-400">{error}</p>
-                </div>
-              )}
+                {/* Error display */}
+                {error && !isStreaming && (
+                  <div className="rounded-md border border-red-800/30 bg-red-500/5 px-4 py-3">
+                    <p className="text-sm text-red-400">{error}</p>
+                  </div>
+                )}
 
-              {/* Question queue indicator */}
-              {questionQueue.length > 0 && (
-                <div className="text-center">
-                  <span className="text-[10px] text-content-faint">
-                    {t("queue.followUps", { count: questionQueue.length })}
-                  </span>
-                </div>
-              )}
+                {/* Question queue indicator */}
+                {questionQueue.length > 0 && (
+                  <div className="text-center">
+                    <span className="text-[10px] text-content-faint">
+                      {t("queue.followUps", { count: questionQueue.length })}
+                    </span>
+                  </div>
+                )}
 
-              <div ref={messagesEndRef} />
+                <div ref={messagesEndRef} />
+              </div>
             </div>
+
+            {/* Jump-to-latest pill — only visible when the user has
+                scrolled up away from the latest message. Floats above
+                the scroll container at the bottom-center so it never
+                competes with the chat island below. */}
+            {!isAtBottom && allMessages.length > 0 && (
+              <button
+                onClick={jumpToLatest}
+                className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-edge bg-surface-card px-3 py-1.5 text-[11px] font-medium text-content-secondary shadow-lg backdrop-blur transition-all hover:border-emerald-600/50 hover:text-emerald-400"
+                aria-label={t("jump_to_latest")}
+              >
+                {t("jump_to_latest")}
+                <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Context indicator — rich chip bar attached to the editor */}
@@ -819,10 +891,16 @@ export default function ChatPage() {
             selectedModel={selectedModel}
             onModelChange={setSelectedModel}
             attachedFiles={attachedFiles}
+            onAttachFiles={(files) =>
+              setAttachedFiles((prev) => [...prev, ...files].slice(0, 3))
+            }
             onRemoveFile={(idx) => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))}
             mcpPct={usage?.mcp_pct ?? 0}
             mcpUsed={usage?.mcp_used ?? 0}
             mcpLimit={usage?.mcp_limit ?? 0}
+            isStreaming={isStreaming}
+            onStop={abort}
+            stopLabel={t("stop_generating")}
             placeholder={
               budgetExhausted
                 ? t("input.budgetExhausted")
@@ -854,25 +932,27 @@ export default function ChatPage() {
               </button>
             </div>
 
-            {/* Drawer content */}
+            {/* Drawer content — playbook strings (title, description,
+                category) all come from translations now. The long-form
+                prompt was already i18n'd via `playbook_prompts.<id>`. */}
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {FEATURED_PLAYBOOKS.map((pb) => (
                 <button
                   key={pb.id}
-                  onClick={() => { handleSend(t.has(`playbook_prompts.${pb.id}`) ? t(`playbook_prompts.${pb.id}`) : pb.prompt); setPlaybooksOpen(false); }}
+                  onClick={() => { handleSend(t(`playbook_prompts.${pb.id}`)); setPlaybooksOpen(false); }}
                   className={`group flex w-full flex-col rounded-lg border bg-surface-card/30 p-3.5 text-left transition-all ${FEATURED_COLORS[pb.color] || FEATURED_COLORS.emerald}`}
                 >
                   <div className="flex items-center gap-2">
                     <span className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${FEATURED_BADGE_COLORS[pb.color] || FEATURED_BADGE_COLORS.emerald}`}>
-                      {pb.category}
+                      {t(`featured_playbooks.${pb.id}.category`)}
                     </span>
                     <span className="text-[10px] text-content-faint">{t("playbooks.queries", { count: pb.queries })}</span>
                   </div>
                   <h3 className="mt-1.5 text-sm font-medium text-content-secondary group-hover:text-content">
-                    {pb.title}
+                    {t(`featured_playbooks.${pb.id}.title`)}
                   </h3>
                   <p className="mt-0.5 text-xs leading-relaxed text-content-muted line-clamp-2">
-                    {pb.description}
+                    {t(`featured_playbooks.${pb.id}.description`)}
                   </p>
                   <div className="mt-auto flex items-center justify-end pt-2">
                     <span className="text-[10px] text-content-faint transition-colors group-hover:text-emerald-500">
@@ -891,71 +971,39 @@ export default function ChatPage() {
 }
 
 // ── Empty State ──────────────────────────────
+//
+// Quick-question presets and featured playbooks used to be hardcoded
+// English literals, which meant operators on pt-BR / es accounts saw
+// English buttons in the empty state and English playbook titles in
+// the right drawer despite using a fully translated chat. Now both
+// lists are id-only — the human-readable strings come from
+// `console.chat.quick_presets.<id>.{text,label}` and
+// `console.chat.featured_playbooks.<id>.{title,description,category}`
+// in the dictionary, with the long-form prompts already living under
+// `console.chat.playbook_prompts.<id>` (that namespace pre-existed).
 
-const QUICK_PRESETS = [
-  { text: "Where am I losing money?", label: "Revenue leaks" },
-  { text: "Can I safely scale paid traffic?", label: "Scale readiness" },
-  { text: "What should I fix first?", label: "Priority actions" },
-  { text: "What's my chargeback risk?", label: "Chargeback exposure" },
-  { text: "What changed since last analysis?", label: "Recent changes" },
-  { text: "Are there any regressions?", label: "Regressions" },
-];
+const QUICK_PRESET_IDS = [
+  "losing_money",
+  "scale_traffic",
+  "fix_first",
+  "chargeback_risk",
+  "recent_changes",
+  "regressions",
+] as const;
 
-// Curated playbooks for empty state — 1 per category, most accessible
-const FEATURED_PLAYBOOKS: Array<{
+interface FeaturedPlaybook {
   id: string;
-  title: string;
-  description: string;
-  prompt: string;
-  category: string;
   color: string;
   queries: number;
-}> = [
-  {
-    id: 'revenue_leak_full_audit',
-    title: 'Full Revenue Leak Audit',
-    description: 'Complete analysis of where money exits your funnel, ranked by $ impact.',
-    prompt: 'Run a complete revenue leak analysis. Show me every finding that causes revenue loss, ranked by monthly dollar impact from highest to lowest. For the top 5, explain the root cause and what fixing each one would recover. Then show the total combined monthly loss and the estimated recovery if I fix the top 3.',
-    category: 'Revenue',
-    color: 'red',
-    queries: 2,
-  },
-  {
-    id: 'conversion_bottleneck',
-    title: 'Conversion Bottleneck Map',
-    description: 'Where visitors drop off and why — with the single highest-leverage fix.',
-    prompt: 'Map my conversion funnel from landing to purchase/signup. At each stage, show which findings create friction. Where is the biggest single drop-off? What\'s the root cause of that drop-off? If I could only fix one thing to improve conversion, what should it be and how much would it move the needle?',
-    category: 'Conversion',
-    color: 'emerald',
-    queries: 3,
-  },
-  {
-    id: 'trust_signal_audit',
-    title: 'Trust Signal Audit',
-    description: 'Score your credibility across 7 dimensions with actionable gaps.',
-    prompt: 'Score my site\'s trust signals across these dimensions: SSL & security badges, reviews & testimonials, company information (about, team, address), contact options (phone, chat, email), policies (returns, privacy, terms), payment trust (logos, guarantees), social proof (customer count, media mentions). For each dimension, rate 1-10 and explain what\'s missing. What\'s my overall trust score and what would improve it fastest?',
-    category: 'Trust',
-    color: 'violet',
-    queries: 2,
-  },
-  {
-    id: 'executive_summary',
-    title: 'Executive Summary',
-    description: 'Board-ready overview: total risk, top priorities, 90-day roadmap.',
-    prompt: 'Create an executive summary suitable for a board meeting. Include: total monthly revenue at risk (sum of all findings), top 3 critical issues with dollar impact, 90-day priority roadmap (week 1-2: quick wins, month 1: critical fixes, month 2-3: strategic improvements), expected ROI of the full remediation plan, and a single "health score" from 0-100 for the business.',
-    category: 'Strategy',
-    color: 'amber',
-    queries: 3,
-  },
-  {
-    id: 'cross_pack_correlation',
-    title: 'Cross-Pack Correlation',
-    description: 'Hidden connections between findings from different analysis packs.',
-    prompt: 'Analyze findings across ALL packs (revenue integrity, scale readiness, chargeback resilience). Find correlations: Which findings from different packs share the same root cause? Where does fixing a revenue issue also reduce chargeback risk? Where does improving trust also help conversion? Build a correlation map showing connected findings across packs with combined impact.',
-    category: 'Insights',
-    color: 'cyan',
-    queries: 3,
-  },
+}
+
+// Visual metadata only — text comes from translations.
+const FEATURED_PLAYBOOKS: FeaturedPlaybook[] = [
+  { id: "revenue_leak_full_audit", color: "red", queries: 2 },
+  { id: "conversion_bottleneck", color: "emerald", queries: 3 },
+  { id: "trust_signal_audit", color: "violet", queries: 2 },
+  { id: "executive_summary", color: "amber", queries: 3 },
+  { id: "cross_pack_correlation", color: "cyan", queries: 3 },
 ];
 
 const FEATURED_COLORS: Record<string, string> = {
@@ -1171,15 +1219,16 @@ function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
         {t("emptyState.description")}
       </p>
 
-      {/* Quick questions — only first 3 */}
+      {/* Quick questions — first 3 presets, fully localized via the
+          dictionary so pt-BR / es operators see translated buttons. */}
       <div className="mt-6 grid grid-cols-3 gap-2">
-        {QUICK_PRESETS.slice(0, 3).map((p) => (
+        {QUICK_PRESET_IDS.slice(0, 3).map((id) => (
           <button
-            key={p.text}
-            onClick={() => onSuggest(p.text)}
+            key={id}
+            onClick={() => onSuggest(t(`quick_presets.${id}.text`))}
             className="rounded-lg border border-edge px-3 py-2 text-center text-[13px] text-content-tertiary transition-colors hover:border-emerald-600/50 hover:text-emerald-400"
           >
-            {p.label}
+            {t(`quick_presets.${id}.label`)}
           </button>
         ))}
       </div>

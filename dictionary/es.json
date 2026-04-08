@@ -1100,7 +1100,44 @@
         "trust_signal_audit": "Evalúa las señales de confianza de mi sitio en estas dimensiones: SSL y sellos de seguridad, reseñas y testimonios, información de la empresa (sobre, equipo, dirección), opciones de contacto (teléfono, chat, email), políticas (devoluciones, privacidad, términos), confianza en pagos (logos, garantías), prueba social (número de clientes, menciones en medios). Para cada dimensión, califica del 1 al 10 y explica qué falta. ¿Cuál es mi puntuación general de confianza y qué la mejoraría más rápido?",
         "executive_summary": "Crea un resumen ejecutivo adecuado para una reunión de directorio. Incluye: ingresos mensuales totales en riesgo (suma de todos los hallazgos), 3 principales problemas críticos con impacto en dólares, hoja de ruta de prioridades para 90 días (semana 1-2: victorias rápidas, mes 1: correcciones críticas, mes 2-3: mejoras estratégicas), ROI esperado del plan completo de remediación y una puntuación de salud de 0-100 para el negocio.",
         "cross_pack_correlation": "Analiza hallazgos en TODOS los packs (integridad de ingresos, preparación para escalar, resiliencia a contracargos). Encuentra correlaciones: ¿Qué hallazgos de diferentes packs comparten la misma causa raíz? ¿Dónde corregir un problema de ingresos también reduce el riesgo de contracargos? ¿Dónde mejorar la confianza también ayuda a la conversión? Construye un mapa de correlación mostrando hallazgos conectados entre packs con impacto combinado."
-      }
+      },
+      "quick_presets": {
+        "losing_money": { "text": "¿Dónde estoy perdiendo dinero?", "label": "Fugas de ingresos" },
+        "scale_traffic": { "text": "¿Puedo escalar tráfico pago de forma segura?", "label": "Listo para escalar" },
+        "fix_first": { "text": "¿Qué debería corregir primero?", "label": "Acciones prioritarias" },
+        "chargeback_risk": { "text": "¿Cuál es mi riesgo de contracargos?", "label": "Exposición a contracargos" },
+        "recent_changes": { "text": "¿Qué cambió desde el último análisis?", "label": "Cambios recientes" },
+        "regressions": { "text": "¿Hay alguna regresión?", "label": "Regresiones" }
+      },
+      "featured_playbooks": {
+        "revenue_leak_full_audit": {
+          "title": "Auditoría Completa de Fugas de Ingresos",
+          "description": "Análisis completo de dónde el dinero escapa de tu embudo, clasificado por impacto en $.",
+          "category": "Ingresos"
+        },
+        "conversion_bottleneck": {
+          "title": "Mapa de Cuellos de Botella de Conversión",
+          "description": "Dónde abandonan los visitantes y por qué — con la corrección de mayor palanca.",
+          "category": "Conversión"
+        },
+        "trust_signal_audit": {
+          "title": "Auditoría de Señales de Confianza",
+          "description": "Evalúa tu credibilidad en 7 dimensiones con brechas accionables.",
+          "category": "Confianza"
+        },
+        "executive_summary": {
+          "title": "Resumen Ejecutivo",
+          "description": "Visión para el directorio: riesgo total, prioridades, hoja de ruta de 90 días.",
+          "category": "Estrategia"
+        },
+        "cross_pack_correlation": {
+          "title": "Correlación Entre Packs",
+          "description": "Conexiones ocultas entre hallazgos de diferentes packs de análisis.",
+          "category": "Insights"
+        }
+      },
+      "stop_generating": "Detener generación",
+      "jump_to_latest": "Ir al último"
     },
     "actions": {
       "title": "Acciones",

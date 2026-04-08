@@ -53,6 +53,11 @@ export async function POST(request: Request) {
     model_tier?: string;
     conversation_id?: string;
     conversation_messages?: Array<{ role: string; content: string; timestamp: number }>;
+    /** Real conversation length as the client sees it — distinct
+     *  from `conversation_messages.length`, which is capped at the
+     *  50-message window we send to the LLM. Used so the LLM can
+     *  reason about how much history was truncated. */
+    total_message_count?: number;
     attached_files?: Array<{ name: string; type: string; content: string }>;
   };
 
@@ -186,6 +191,12 @@ export async function POST(request: Request) {
   }
 
   // ── Build conversation state ───────────────
+  // total_message_count comes from the client's separate field
+  // (real conversation length) when provided, falling back to the
+  // window length for older callers. The previous behaviour used
+  // `body.conversation_messages.length` even for long threads, which
+  // capped at 50 and made the LLM think the conversation was much
+  // shorter than reality.
   const conversationState = body.conversation_messages?.length
     ? {
         messages: body.conversation_messages.slice(-MAX_CONVERSATION_MESSAGES).map((m) => ({
@@ -194,7 +205,10 @@ export async function POST(request: Request) {
           timestamp: m.timestamp || Date.now(),
         })),
         summary_of_older: null,
-        total_message_count: body.conversation_messages.length,
+        total_message_count:
+          typeof body.total_message_count === "number" && body.total_message_count >= body.conversation_messages.length
+            ? body.total_message_count
+            : body.conversation_messages.length,
       }
     : createEmptyConversation();
 

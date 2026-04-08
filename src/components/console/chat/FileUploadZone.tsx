@@ -31,6 +31,36 @@ const ALLOWED_EXTENSIONS = [".csv", ".json", ".txt", ".md", ".pdf"];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const MAX_FILES = 3;
 
+/**
+ * Validate + read a FileList into UploadedFile objects. Exported so
+ * the click-to-attach button in ChatInputBar can reuse the exact same
+ * pipeline (whitelist, size cap, content slice) as drag-and-drop —
+ * before this lived inside FileUploadZone as a closure and the
+ * button's onChange was a no-op.
+ */
+export async function processFileList(fileList: FileList): Promise<UploadedFile[]> {
+  const files = Array.from(fileList).slice(0, MAX_FILES);
+  const results: UploadedFile[] = [];
+
+  for (const file of files) {
+    const ext = "." + file.name.split(".").pop()?.toLowerCase();
+    if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) continue;
+    if (file.size > MAX_FILE_SIZE) continue;
+
+    try {
+      const content = await readFileAsText(file);
+      results.push({
+        name: file.name,
+        size: file.size,
+        type: file.type || ext,
+        content: content.slice(0, 50_000), // Cap content at 50KB
+      });
+    } catch { /* skip unreadable files */ }
+  }
+
+  return results;
+}
+
 export function FileUploadZone({ onFilesAdded, children }: FileUploadZoneProps) {
   const [dragging, setDragging] = useState(false);
   const dragCounter = useRef(0);
@@ -52,25 +82,7 @@ export function FileUploadZone({ onFilesAdded, children }: FileUploadZoneProps) 
   }, []);
 
   const processFiles = useCallback(async (fileList: FileList) => {
-    const files = Array.from(fileList).slice(0, MAX_FILES);
-    const results: UploadedFile[] = [];
-
-    for (const file of files) {
-      const ext = "." + file.name.split(".").pop()?.toLowerCase();
-      if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) continue;
-      if (file.size > MAX_FILE_SIZE) continue;
-
-      try {
-        const content = await readFileAsText(file);
-        results.push({
-          name: file.name,
-          size: file.size,
-          type: file.type || ext,
-          content: content.slice(0, 50_000), // Cap content at 50KB
-        });
-      } catch { /* skip unreadable files */ }
-    }
-
+    const results = await processFileList(fileList);
     if (results.length > 0) onFilesAdded(results);
   }, [onFilesAdded]);
 

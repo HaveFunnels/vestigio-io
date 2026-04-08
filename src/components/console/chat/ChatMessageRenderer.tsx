@@ -5,7 +5,8 @@
  * Includes: message actions (copy/retry/edit/feedback), thinking indicator.
  */
 
-import type { ChatMessage, ContentBlock } from "@/lib/chat-types";
+import { useState } from "react";
+import type { ChatMessage, ContentBlock, ToolCallBlock } from "@/lib/chat-types";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { ToolCallStep } from "./ToolCallStep";
 import { FindingCard } from "./FindingCard";
@@ -72,18 +73,30 @@ export function ChatMessageRenderer({
     .map((b) => b.content)
     .join("\n");
 
+  // Once streaming is done, fold consecutive tool_call blocks into
+  // a single collapsible group so the message body isn't dominated
+  // by the tool execution log. While streaming, leave them inline
+  // so the user sees per-tool spinners + completion ticks live.
+  const renderableBlocks = message.streaming
+    ? message.blocks.map((block, idx) => ({ kind: "single" as const, block, idx }))
+    : foldToolCallRuns(message.blocks);
+
   return (
     <div className="group flex justify-start gap-2">
       <div className="max-w-2xl space-y-0.5">
-        {message.blocks.map((block, idx) => (
-          <BlockRenderer
-            key={idx}
-            block={block}
-            onSuggestedPrompt={onSuggestedPrompt}
-            onNavigate={onNavigate}
-            onSaveAction={onSaveAction}
-          />
-        ))}
+        {renderableBlocks.map((entry) =>
+          entry.kind === "single" ? (
+            <BlockRenderer
+              key={entry.idx}
+              block={entry.block}
+              onSuggestedPrompt={onSuggestedPrompt}
+              onNavigate={onNavigate}
+              onSaveAction={onSaveAction}
+            />
+          ) : (
+            <ToolCallGroup key={entry.idx} blocks={entry.blocks} />
+          ),
+        )}
         {message.streaming && <StreamingCursor />}
 
         {/* Actions bar — visible on hover */}
@@ -222,4 +235,96 @@ function BlockRenderer({
     default:
       return null;
   }
+}
+
+// ── Tool call grouping ──────────────────────
+//
+// Walk a message's blocks and fold consecutive `tool_call` blocks
+// into a single grouped entry. Non-tool blocks pass through as
+// individual entries. The grouping is purely visual — the underlying
+// blocks aren't mutated and the LLM history (which already skips
+// tool_call serialization) is unaffected. Only runs after streaming
+// is complete; during streaming the inline per-tool spinners are
+// the more useful feedback.
+type RenderEntry =
+  | { kind: "single"; block: ContentBlock; idx: number }
+  | { kind: "group"; blocks: ToolCallBlock[]; idx: number };
+
+function foldToolCallRuns(blocks: ContentBlock[]): RenderEntry[] {
+  const entries: RenderEntry[] = [];
+  let i = 0;
+  while (i < blocks.length) {
+    const block = blocks[i];
+    if (block.type === "tool_call") {
+      const run: ToolCallBlock[] = [];
+      let j = i;
+      while (j < blocks.length && blocks[j].type === "tool_call") {
+        run.push(blocks[j] as ToolCallBlock);
+        j++;
+      }
+      entries.push({ kind: "group", blocks: run, idx: i });
+      i = j;
+    } else {
+      entries.push({ kind: "single", block, idx: i });
+      i++;
+    }
+  }
+  return entries;
+}
+
+function ToolCallGroup({ blocks }: { blocks: ToolCallBlock[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Single tool call → render as-is, grouping adds no value.
+  if (blocks.length === 1) {
+    return <ToolCallStep block={blocks[0]} />;
+  }
+
+  const totalMs = blocks.reduce((sum, b) => sum + (b.durationMs || 0), 0);
+  const allComplete = blocks.every((b) => b.status === "complete");
+  const anyError = blocks.some((b) => b.status === "error");
+
+  return (
+    <div className="my-1">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="group flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-surface-inset"
+      >
+        <div className="flex h-4 w-4 shrink-0 items-center justify-center">
+          {anyError ? (
+            <svg className="h-3.5 w-3.5 text-red-400" viewBox="0 0 16 16" fill="none">
+              <path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          ) : allComplete ? (
+            <svg className="h-3.5 w-3.5 text-emerald-500" viewBox="0 0 16 16" fill="none">
+              <path d="M13.25 4.75L6 12 2.75 8.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : null}
+        </div>
+        <span className="flex-1 text-xs text-content-muted">
+          Used {blocks.length} tools
+        </span>
+        {totalMs > 0 && (
+          <span className="font-mono text-[10px] text-content-faint">
+            {totalMs}ms
+          </span>
+        )}
+        <svg
+          className={`h-3 w-3 text-content-faint transition-transform duration-150 ${expanded ? "rotate-90" : ""}`}
+          viewBox="0 0 16 16"
+          fill="none"
+        >
+          <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className="ml-6 mt-1 space-y-0.5">
+          {blocks.map((block, idx) => (
+            <ToolCallStep key={idx} block={block} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

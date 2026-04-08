@@ -24,6 +24,16 @@ interface UseChatStreamReturn {
     conversationId: string | null,
     conversationMessages: Array<{ role: string; content: string; timestamp: number }>,
     attachedFiles?: Array<{ name: string; type: string; content: string }>,
+    /**
+     * Total number of messages in the conversation as the client sees
+     * it — distinct from `conversationMessages.length`, which is the
+     * window of (up to) the last 50 messages sent to the LLM. The
+     * server uses this to know how much history was truncated when
+     * the conversation is longer than the window. Without it the
+     * route silently underreports for long threads and the LLM
+     * thinks the conversation is shorter than it actually is.
+     */
+    totalMessageCount?: number,
   ) => void;
   isStreaming: boolean;
   streamingMessage: ChatMessage | null;
@@ -50,6 +60,7 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
       conversationId: string | null,
       conversationMessages: Array<{ role: string; content: string; timestamp: number }>,
       attachedFiles?: Array<{ name: string; type: string; content: string }>,
+      totalMessageCount?: number,
     ) => {
       // Abort any existing stream
       abortRef.current?.abort();
@@ -125,6 +136,11 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
             model_tier: modelTier,
             conversation_id: conversationId,
             conversation_messages: conversationMessages.slice(-50),
+            // Pass-through so the server knows the real conversation
+            // length even after the 50-message window truncation.
+            // Falls back to the slice length when undefined for
+            // backwards compat with older callers.
+            total_message_count: totalMessageCount ?? conversationMessages.length,
             ...(attachedFiles?.length ? { attached_files: attachedFiles } : {}),
           }),
           signal: controller.signal,

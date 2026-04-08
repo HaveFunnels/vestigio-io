@@ -1093,7 +1093,44 @@
         "trust_signal_audit": "Score my site's trust signals across these dimensions: SSL & security badges, reviews & testimonials, company information (about, team, address), contact options (phone, chat, email), policies (returns, privacy, terms), payment trust (logos, guarantees), social proof (customer count, media mentions). For each dimension, rate 1-10 and explain what's missing. What's my overall trust score and what would improve it fastest?",
         "executive_summary": "Create an executive summary suitable for a board meeting. Include: total monthly revenue at risk (sum of all findings), top 3 critical issues with dollar impact, 90-day priority roadmap (week 1-2: quick wins, month 1: critical fixes, month 2-3: strategic improvements), expected ROI of the full remediation plan, and a single health score from 0-100 for the business.",
         "cross_pack_correlation": "Analyze findings across ALL packs (revenue integrity, scale readiness, chargeback resilience). Find correlations: Which findings from different packs share the same root cause? Where does fixing a revenue issue also reduce chargeback risk? Where does improving trust also help conversion? Build a correlation map showing connected findings across packs with combined impact."
-      }
+      },
+      "quick_presets": {
+        "losing_money": { "text": "Where am I losing money?", "label": "Revenue leaks" },
+        "scale_traffic": { "text": "Can I safely scale paid traffic?", "label": "Scale readiness" },
+        "fix_first": { "text": "What should I fix first?", "label": "Priority actions" },
+        "chargeback_risk": { "text": "What's my chargeback risk?", "label": "Chargeback exposure" },
+        "recent_changes": { "text": "What changed since last analysis?", "label": "Recent changes" },
+        "regressions": { "text": "Are there any regressions?", "label": "Regressions" }
+      },
+      "featured_playbooks": {
+        "revenue_leak_full_audit": {
+          "title": "Full Revenue Leak Audit",
+          "description": "Complete analysis of where money exits your funnel, ranked by $ impact.",
+          "category": "Revenue"
+        },
+        "conversion_bottleneck": {
+          "title": "Conversion Bottleneck Map",
+          "description": "Where visitors drop off and why — with the single highest-leverage fix.",
+          "category": "Conversion"
+        },
+        "trust_signal_audit": {
+          "title": "Trust Signal Audit",
+          "description": "Score your credibility across 7 dimensions with actionable gaps.",
+          "category": "Trust"
+        },
+        "executive_summary": {
+          "title": "Executive Summary",
+          "description": "Board-ready overview: total risk, top priorities, 90-day roadmap.",
+          "category": "Strategy"
+        },
+        "cross_pack_correlation": {
+          "title": "Cross-Pack Correlation",
+          "description": "Hidden connections between findings from different analysis packs.",
+          "category": "Insights"
+        }
+      },
+      "stop_generating": "Stop generating",
+      "jump_to_latest": "Jump to latest"
     },
     "actions": {
       "title": "Actions",

@@ -1143,7 +1143,44 @@
         "trust_signal_audit": "Avalie os sinais de confiança do meu site nestas dimensões: SSL e selos de segurança, avaliações e depoimentos, informações da empresa (sobre, equipe, endereço), opções de contato (telefone, chat, email), políticas (devoluções, privacidade, termos), confiança no pagamento (logos, garantias), prova social (número de clientes, menções na mídia). Para cada dimensão, avalie de 1-10 e explique o que está faltando. Qual é minha pontuação geral de confiança e o que melhoraria mais rápido?",
         "executive_summary": "Crie um resumo executivo adequado para uma reunião de diretoria. Inclua: receita mensal total em risco (soma de todos os findings), 3 principais problemas críticos com impacto em dólares, roadmap de prioridades para 90 dias (semana 1-2: quick wins, mês 1: correções críticas, mês 2-3: melhorias estratégicas), ROI esperado do plano completo de remediação e uma pontuação de saúde de 0-100 para o negócio.",
         "cross_pack_correlation": "Analise findings em TODOS os packs (integridade de receita, prontidão para escala, resiliência a chargebacks). Encontre correlações: Quais findings de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de receita também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando findings conectados entre packs com impacto combinado."
-      }
+      },
+      "quick_presets": {
+        "losing_money": { "text": "Onde estou perdendo dinheiro?", "label": "Vazamentos de receita" },
+        "scale_traffic": { "text": "Posso escalar tráfego pago com segurança?", "label": "Prontidão para escalar" },
+        "fix_first": { "text": "O que devo corrigir primeiro?", "label": "Ações prioritárias" },
+        "chargeback_risk": { "text": "Qual é meu risco de chargeback?", "label": "Exposição a chargebacks" },
+        "recent_changes": { "text": "O que mudou desde a última análise?", "label": "Mudanças recentes" },
+        "regressions": { "text": "Há alguma regressão?", "label": "Regressões" }
+      },
+      "featured_playbooks": {
+        "revenue_leak_full_audit": {
+          "title": "Auditoria Completa de Vazamento de Receita",
+          "description": "Análise completa de onde o dinheiro escapa do funil, ranqueada por impacto em $.",
+          "category": "Receita"
+        },
+        "conversion_bottleneck": {
+          "title": "Mapa de Gargalos de Conversão",
+          "description": "Onde os visitantes desistem e por quê — com a única correção de maior alavancagem.",
+          "category": "Conversão"
+        },
+        "trust_signal_audit": {
+          "title": "Auditoria de Sinais de Confiança",
+          "description": "Avalie sua credibilidade em 7 dimensões com lacunas acionáveis.",
+          "category": "Confiança"
+        },
+        "executive_summary": {
+          "title": "Resumo Executivo",
+          "description": "Visão para o board: risco total, prioridades, roadmap de 90 dias.",
+          "category": "Estratégia"
+        },
+        "cross_pack_correlation": {
+          "title": "Correlação Entre Packs",
+          "description": "Conexões ocultas entre findings de packs de análise diferentes.",
+          "category": "Insights"
+        }
+      },
+      "stop_generating": "Parar geração",
+      "jump_to_latest": "Ir para a última"
     },
     "actions": {
       "title": "Ações",

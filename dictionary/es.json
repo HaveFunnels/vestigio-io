@@ -1011,6 +1011,34 @@
         "active": "Activo"
       }
     },
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Tu visión general de salud de ingresos, exposición y actividad reciente.",
+      "customize": "Personalizar",
+      "done": "Listo",
+      "widgets": {
+        "money_recovered": {
+          "name": "Dinero Recuperado",
+          "description": "Total acumulado de impacto $ recuperado con Vestigio."
+        },
+        "health_trend": {
+          "name": "Tendencia de Salud",
+          "description": "Puntuación compuesta de salud con curva de tendencia de 30 días."
+        },
+        "exposure": {
+          "name": "Exposición Mensual",
+          "description": "Total $/mes en riesgo entre hallazgos abiertos, dividido por pack."
+        },
+        "what_changed": {
+          "name": "Qué Cambió",
+          "description": "Nuevos hallazgos, regresiones, resoluciones y verificaciones desde el último ciclo."
+        },
+        "activity_heatmap": {
+          "name": "Mapa de Actividad",
+          "description": "Cuadrícula estilo GitHub con 90 días de ciclos y resoluciones."
+        }
+      }
+    },
     "chat": {
       "title": "Pregunta a Vestigio",
       "subtitle": "Elige una pregunta, ejecuta un playbook o escribe la tuya.",
@@ -1565,6 +1593,7 @@
       }
     },
     "navigation": {
+      "dashboard": "Dashboard",
       "actions": "Acciones",
       "workspaces": "Workspaces",
       "chat": "Chat",

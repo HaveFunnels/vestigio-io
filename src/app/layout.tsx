@@ -1,9 +1,23 @@
 import { BrandingProvider } from "@/components/BrandingProvider";
 import { Metadata } from "next";
+import { JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "../styles/globals.css";
 import "../styles/satoshi.css";
+
+// JetBrains Mono — used exclusively for numbers across the dashboard
+// (counters, deltas, percentages, durations). Loaded via next/font so
+// the file lives on the same domain as the app, FOIT is suppressed
+// during swap, and the resulting CSS variable hooks straight into the
+// Tailwind `font-mono` family. Adding a Google font here intentionally
+// — Satoshi (loaded via the satoshi.css file above) stays the default
+// sans for prose; this is the second face for tabular numbers.
+const jetbrainsMono = JetBrains_Mono({
+	subsets: ["latin"],
+	variable: "--font-jetbrains-mono",
+	display: "swap",
+});
 
 export const metadata: Metadata = {
 	icons: [
@@ -48,7 +62,7 @@ export default async function RootLayout({
 	const messages = await getMessages();
 
 	return (
-		<html lang={locale} className="dark" suppressHydrationWarning={true}>
+		<html lang={locale} className={`dark ${jetbrainsMono.variable}`} suppressHydrationWarning={true}>
 			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
 				<NextIntlClientProvider messages={messages}>
 					<BrandingProvider>

@@ -1,0 +1,111 @@
+// ──────────────────────────────────────────────
+// Dashboard data types — shared across widgets
+//
+// `DashboardData` is the shape returned by the (future) batched
+// fetch endpoint `/api/dashboard/overview`. Phase 1 ships with mock
+// data conforming to this same shape so wiring real data in Phase 2
+// is a search-and-replace, not a refactor of the widgets.
+//
+// Each top-level key here is a `dataKey` that a widget can declare
+// in its registry definition. The grid engine collects all active
+// widgets' dataKeys and uses them to build the actual server query
+// (so a dashboard with no health widgets never pays for the health
+// trend computation).
+// ──────────────────────────────────────────────
+
+export type DeltaDirection = "up" | "down" | "flat";
+
+export interface MoneyRecoveredData {
+	/** Total cents recovered since the user joined Vestigio */
+	totalCents: number;
+	/** Cents recovered in the last 7 days — used for the headline delta */
+	last7dCents: number;
+	/** Cents recovered in the last 30 days — used for the secondary delta */
+	last30dCents: number;
+	/** ISO currency code for formatting */
+	currency: string;
+	/** ISO timestamp of the last action that increased the counter */
+	lastUpdatedAt: string;
+}
+
+export interface HealthScoreData {
+	/** Composite health score from 0 to 100 */
+	current: number;
+	/** Delta vs the previous cycle */
+	deltaVsLastCycle: number;
+	/** 30-day trend — one entry per day, oldest first */
+	trend30d: number[];
+	/** Sub-scores that compose the composite, for the breakdown strip */
+	components: {
+		structural: number;
+		actionQuality: number;
+		verification: number;
+	};
+}
+
+export interface ExposureData {
+	/** Sum of monthly impact across all open findings (cents) */
+	monthlyCents: number;
+	/** Delta vs the previous cycle (cents). Negative = exposure DECREASED = good. */
+	deltaVsLastCycleCents: number;
+	/** ISO currency code */
+	currency: string;
+	/** Per-pack split for the segmented bar at the bottom of the card */
+	byPack: Array<{
+		pack: string;
+		cents: number;
+		colorClass: string;
+	}>;
+}
+
+export interface ChangeReportEntry {
+	id: string;
+	title: string;
+	impactCents?: number;
+	severity?: "critical" | "high" | "medium" | "low";
+}
+
+export interface ChangeReportData {
+	/** Brand new findings since the previous cycle */
+	newFindings: ChangeReportEntry[];
+	/** Findings that re-opened after being resolved */
+	regressions: ChangeReportEntry[];
+	/** Findings that moved from open to resolved */
+	resolved: ChangeReportEntry[];
+	/** Auto-verifications that completed during the last cycle */
+	verificationsConfirmed: number;
+}
+
+export interface ActivityHeatmapDay {
+	/** ISO date YYYY-MM-DD */
+	date: string;
+	/** Combined activity count for the day (cycles run + actions resolved) */
+	count: number;
+	/** Optional breakdown so the tooltip can show details */
+	cycles: number;
+	actionsResolved: number;
+}
+
+export interface ActivityHeatmapData {
+	/** 90 days of activity — newest entries last so the heatmap renders left-to-right oldest-to-newest */
+	days: ActivityHeatmapDay[];
+	/** Current consecutive-day streak (light touch — not a Duolingo alarm) */
+	currentStreak: number;
+}
+
+/**
+ * The full payload — every widget reads from a slice of this. Real
+ * implementation will lazy-fill keys based on which widgets are
+ * active in the user's layout (so the server only computes what's
+ * displayed). Phase 1 ships with all keys filled from mock data.
+ */
+export interface DashboardData {
+	moneyRecovered: MoneyRecoveredData;
+	healthScore: HealthScoreData;
+	exposure: ExposureData;
+	changeReport: ChangeReportData;
+	activityHeatmap: ActivityHeatmapData;
+}
+
+/** Type-safe key list — used by the registry to declare data dependencies */
+export type DashboardDataKey = keyof DashboardData;

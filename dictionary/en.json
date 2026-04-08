@@ -1004,6 +1004,34 @@
         "active": "Active"
       }
     },
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Your overview of revenue health, exposure, and recent activity.",
+      "customize": "Customize",
+      "done": "Done",
+      "widgets": {
+        "money_recovered": {
+          "name": "Money Recovered",
+          "description": "Running total of $ impact you've recovered with Vestigio."
+        },
+        "health_trend": {
+          "name": "Health Trend",
+          "description": "Composite health score with the 30-day trend curve."
+        },
+        "exposure": {
+          "name": "Monthly Exposure",
+          "description": "Total $/mo at risk across open findings, split by pack."
+        },
+        "what_changed": {
+          "name": "What Changed",
+          "description": "New findings, regressions, resolutions and verifications since the last cycle."
+        },
+        "activity_heatmap": {
+          "name": "Activity Heatmap",
+          "description": "GitHub-style 90-day grid of cycles and resolutions."
+        }
+      }
+    },
     "chat": {
       "title": "Ask Vestigio",
       "subtitle": "Choose a question, run a playbook, or type your own.",
@@ -1558,6 +1586,7 @@
       }
     },
     "navigation": {
+      "dashboard": "Dashboard",
       "actions": "Actions",
       "workspaces": "Workspaces",
       "chat": "Chat",

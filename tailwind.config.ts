@@ -15,6 +15,10 @@ const config: Config = {
 			satoshi: ["Satoshi", "sans-serif"],
 			inter: ["Inter", "sans-serif"],
 			sans: ['"Satoshi"', ...defaultTheme.fontFamily.sans],
+			// JetBrains Mono CSS var injected by next/font in src/app/layout.tsx.
+			// Used exclusively for numerics on the dashboard so financial data
+			// reads as financial data instead of UI prose.
+			mono: ["var(--font-jetbrains-mono)", ...defaultTheme.fontFamily.mono],
 		},
 		container: {
 			center: true,

@@ -1242,6 +1242,7 @@
       }
     },
     "navigation": {
+      "dashboard": "Dashboard",
       "actions": "Aktionen",
       "workspaces": "Arbeitsbereiche",
       "chat": "Chat",

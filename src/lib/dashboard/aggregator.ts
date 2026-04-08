@@ -350,6 +350,7 @@ async function computeExposure(
 				byPack: [],
 				criticalOpenCount: 0,
 				criticalDeltaVsLastCycle: 0,
+				criticalOpenItems: [],
 				caption: "",
 			};
 			empty.caption = captionForExposure(empty);
@@ -362,14 +363,31 @@ async function computeExposure(
 		// Fetch each cycle's open findings ONCE and reuse the rows for
 		// both the impact aggregation and the critical-severity count,
 		// instead of issuing two separate queries per cycle.
-		const fetchOpenRows = async (cycleId: string) =>
-			prisma.finding.findMany({
-				where: {
-					cycleId,
-					NOT: { changeClass: "resolved" },
-				},
-				select: { impactMidpoint: true, pack: true, severity: true },
-			});
+		// We pull projection JSON only for the LATEST cycle (used to
+		// extract titles for the criticalOpenItems list); previous-cycle
+		// rows skip projection to keep the query light.
+		const latestRows = await prisma.finding.findMany({
+			where: { cycleId: latestCycleId, NOT: { changeClass: "resolved" } },
+			select: {
+				id: true,
+				impactMidpoint: true,
+				pack: true,
+				severity: true,
+				surface: true,
+				inferenceKey: true,
+				projection: true,
+			},
+		});
+
+		const previousRows = previousCycleId
+			? await prisma.finding.findMany({
+					where: {
+						cycleId: previousCycleId,
+						NOT: { changeClass: "resolved" },
+					},
+					select: { impactMidpoint: true, pack: true, severity: true },
+				})
+			: null;
 
 		const sumOpenFromRows = (
 			rows: Array<{ impactMidpoint: number; pack: string; severity: string }>
@@ -386,10 +404,6 @@ async function computeExposure(
 			return { total, byPack, critical };
 		};
 
-		const latestRows = await fetchOpenRows(latestCycleId);
-		const previousRows = previousCycleId
-			? await fetchOpenRows(previousCycleId)
-			: null;
 		const latest = sumOpenFromRows(latestRows);
 		const previous = previousRows ? sumOpenFromRows(previousRows) : null;
 
@@ -401,6 +415,32 @@ async function computeExposure(
 				colorClass: colorForPack(pack),
 			}));
 
+		// Top-3 critical items by impact for the inline list display
+		// in OpenCriticalKpi. Title comes from the projection JSON
+		// (already fetched above), with a defensive fallback so a
+		// corrupt projection row never blows up the dashboard.
+		const criticalOpenItems = latestRows
+			.filter((r) => r.severity === "critical")
+			.sort((a, b) => b.impactMidpoint - a.impactMidpoint)
+			.slice(0, 3)
+			.map((r) => {
+				let title = "Critical finding";
+				try {
+					const parsed = JSON.parse(r.projection);
+					title =
+						parsed?.title ?? parsed?.title_short ?? parsed?.headline ?? title;
+				} catch {
+					/* projection JSON corrupt — keep fallback */
+				}
+				return {
+					id: r.id,
+					inferenceKey: r.inferenceKey,
+					title,
+					surface: r.surface,
+					impactCents: dollarsToCents(r.impactMidpoint),
+				};
+			});
+
 		const result: ExposureData = {
 			monthlyCents: latest.total,
 			deltaVsLastCycleCents: previous ? latest.total - previous.total : 0,
@@ -410,6 +450,7 @@ async function computeExposure(
 			criticalDeltaVsLastCycle: previous
 				? latest.critical - previous.critical
 				: 0,
+			criticalOpenItems,
 			caption: "",
 		};
 		result.caption = captionForExposure(result);
@@ -423,6 +464,7 @@ async function computeExposure(
 			byPack: [],
 			criticalOpenCount: 0,
 			criticalDeltaVsLastCycle: 0,
+			criticalOpenItems: [],
 			caption: "",
 		};
 		fallback.caption = captionForExposure(fallback);
@@ -696,6 +738,7 @@ export function emptyDashboardData(): DashboardData {
 		byPack: [],
 		criticalOpenCount: 0,
 		criticalDeltaVsLastCycle: 0,
+		criticalOpenItems: [],
 		caption: "",
 	};
 	exposure.caption = captionForExposure(exposure);

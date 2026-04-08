@@ -45,7 +45,12 @@ export default function AppSidebar({
 		const initial = new Set<string>();
 		const allNavs = [...productNav, ...adminNav];
 		for (const item of allNavs) {
-			if (item.children?.some((c) => c.href && (pathname === c.href || pathname.startsWith(c.href + "/")))) {
+			if (
+				item.children?.some(
+					(c) =>
+						c.href && (pathname === c.href || pathname.startsWith(c.href + "/"))
+				)
+			) {
 				initial.add(item.id);
 			}
 		}
@@ -76,7 +81,13 @@ export default function AppSidebar({
 				const keep = new Set<string>();
 				const allNavs = [...productNav, ...adminNav];
 				for (const item of allNavs) {
-					if (item.children?.some((c) => c.href && (pathname === c.href || pathname.startsWith(c.href + "/")))) {
+					if (
+						item.children?.some(
+							(c) =>
+								c.href &&
+								(pathname === c.href || pathname.startsWith(c.href + "/"))
+						)
+					) {
 						keep.add(item.id);
 					}
 				}
@@ -99,7 +110,10 @@ export default function AppSidebar({
 			return pathname === item.href || pathname.startsWith(item.href + "/");
 		}
 		if (item.children) {
-			return item.children.some((c) => c.href && (pathname === c.href || pathname.startsWith(c.href + "/")));
+			return item.children.some(
+				(c) =>
+					c.href && (pathname === c.href || pathname.startsWith(c.href + "/"))
+			);
 		}
 		return false;
 	};
@@ -128,24 +142,43 @@ export default function AppSidebar({
 						}}
 						className={cn(itemClasses, "w-full")}
 					>
-						<svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-							<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+						<svg
+							className='h-[18px] w-[18px] shrink-0'
+							fill='none'
+							viewBox='0 0 24 24'
+							stroke='currentColor'
+							strokeWidth={1.5}
+						>
+							<path
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								d={item.icon}
+							/>
 						</svg>
-						<span className={cn(
-							"flex-1 whitespace-nowrap text-left transition-all duration-300",
-							isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-						)}>
+						<span
+							className={cn(
+								"flex-1 whitespace-nowrap text-left transition-all duration-300",
+								isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+							)}
+						>
 							{t(item.labelKey)}
 						</span>
 						{isExpanded && (
 							<svg
-								className={cn("h-3.5 w-3.5 shrink-0 transition-transform duration-200", isMenuOpen && "rotate-90")}
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
+								className={cn(
+									"h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+									isMenuOpen && "rotate-90"
+								)}
+								fill='none'
+								viewBox='0 0 24 24'
+								stroke='currentColor'
 								strokeWidth={2}
 							>
-								<path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+								<path
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									d='M8.25 4.5l7.5 7.5-7.5 7.5'
+								/>
 							</svg>
 						)}
 					</button>
@@ -157,10 +190,11 @@ export default function AppSidebar({
 							isMenuOpen && isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
 						)}
 					>
-						<div className="overflow-hidden">
+						<div className='overflow-hidden'>
 							{item.children!.map((child) => {
 								const childActive = child.href
-									? pathname === child.href || pathname.startsWith(child.href + "/")
+									? pathname === child.href ||
+										pathname.startsWith(child.href + "/")
 									: false;
 								return (
 									<Link
@@ -169,12 +203,22 @@ export default function AppSidebar({
 										className={cn(
 											"flex items-center gap-3 rounded-lg py-1.5 pl-10 pr-3 text-[13px] font-medium transition-all duration-200",
 											childActive
-												? "text-accent-text font-semibold"
+												? "font-semibold text-accent-text"
 												: "text-content-faint hover:text-content-muted"
 										)}
 									>
-										<svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-											<path strokeLinecap="round" strokeLinejoin="round" d={child.icon} />
+										<svg
+											className='h-4 w-4 shrink-0'
+											fill='none'
+											viewBox='0 0 24 24'
+											stroke='currentColor'
+											strokeWidth={1.5}
+										>
+											<path
+												strokeLinecap='round'
+												strokeLinejoin='round'
+												d={child.icon}
+											/>
 										</svg>
 										<span>{t(child.labelKey)}</span>
 									</Link>
@@ -189,13 +233,21 @@ export default function AppSidebar({
 		// Leaf item
 		return (
 			<Link key={item.id} href={item.href!} className={itemClasses}>
-				<svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-					<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+				<svg
+					className='h-[18px] w-[18px] shrink-0'
+					fill='none'
+					viewBox='0 0 24 24'
+					stroke='currentColor'
+					strokeWidth={1.5}
+				>
+					<path strokeLinecap='round' strokeLinejoin='round' d={item.icon} />
 				</svg>
-				<span className={cn(
-					"whitespace-nowrap transition-all duration-300",
-					isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
-				)}>
+				<span
+					className={cn(
+						"whitespace-nowrap transition-all duration-300",
+						isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+					)}
+				>
 					{t(item.labelKey)}
 				</span>
 			</Link>
@@ -205,20 +257,18 @@ export default function AppSidebar({
 	// ── Render a section (items only — no visible title when collapsed) ──
 
 	const renderSection = (title: string, items: NavItem[]) => (
-		<div className="mb-1">
+		<div className='mb-1'>
 			<div
 				className={cn(
 					"overflow-hidden transition-all duration-300",
 					isExpanded ? "mb-1 h-5 px-3 pt-3 opacity-60" : "mb-0 h-0 opacity-0"
 				)}
 			>
-				<span className="text-[10px] font-semibold uppercase tracking-widest text-content-faint">
+				<span className='text-[10px] font-semibold uppercase tracking-widest text-content-faint'>
 					{title}
 				</span>
 			</div>
-			<div className="flex flex-col gap-0.5">
-				{items.map(renderNavItem)}
-			</div>
+			<div className='flex flex-col gap-0.5'>{items.map(renderNavItem)}</div>
 		</div>
 	);
 
@@ -226,49 +276,103 @@ export default function AppSidebar({
 
 	const sidebarContent = (
 		<>
-			{/* Logo */}
-			<div className={cn(
-				"flex h-14 shrink-0 items-center px-3 transition-all duration-300",
-				isExpanded ? "justify-start gap-2.5 px-4" : "justify-center"
-			)}>
-				{isExpanded ? (
-					/* Expanded: show full logo with light/dark variants */
-					branding.logo_light?.dataUrl || branding.logo_dark?.dataUrl ? (
+			{/* Logo — both icon and full wordmark are rendered at all
+			    times, layered absolutely so we can crossfade between
+			    them on expand/collapse. The icon stays anchored to the
+			    left edge so it morphs in place into the wordmark instead
+			    of teleporting between two layouts. */}
+			<div className='relative flex h-14 shrink-0 items-center pl-[14px]'>
+				{/* Icon — visible when collapsed */}
+				<div
+					className={cn(
+						"absolute left-[14px] top-1/2 -translate-y-1/2 transition-opacity duration-200 ease-out",
+						isExpanded ? "pointer-events-none opacity-0" : "opacity-100"
+					)}
+					aria-hidden={isExpanded}
+				>
+					<Image
+						src='/images/icon-light.svg'
+						alt='Vestigio'
+						width={28}
+						height={28}
+						className='block shrink-0 dark:hidden'
+					/>
+					<Image
+						src='/images/icon-dark.svg'
+						alt='Vestigio'
+						width={28}
+						height={28}
+						className='hidden shrink-0 dark:block'
+					/>
+				</div>
+
+				{/* Full wordmark — visible when expanded */}
+				<div
+					className={cn(
+						"absolute left-[14px] top-1/2 -translate-y-1/2 transition-opacity duration-300 ease-out",
+						isExpanded
+							? "opacity-100 delay-100"
+							: "pointer-events-none opacity-0"
+					)}
+					aria-hidden={!isExpanded}
+				>
+					{branding.logo_light?.dataUrl || branding.logo_dark?.dataUrl ? (
 						<>
 							{branding.logo_light?.dataUrl && (
-								<img src={branding.logo_light.dataUrl} alt="Vestigio" className="h-6 w-auto shrink-0 object-contain dark:hidden" />
+								<img
+									src={branding.logo_light.dataUrl}
+									alt='Vestigio'
+									className='h-6 w-auto shrink-0 object-contain dark:hidden'
+								/>
 							)}
 							{branding.logo_dark?.dataUrl && (
-								<img src={branding.logo_dark.dataUrl} alt="Vestigio" className={cn("h-6 w-auto shrink-0 object-contain", branding.logo_light?.dataUrl ? "hidden dark:block" : "")} />
+								<img
+									src={branding.logo_dark.dataUrl}
+									alt='Vestigio'
+									className={cn(
+										"h-6 w-auto shrink-0 object-contain",
+										branding.logo_light?.dataUrl ? "hidden dark:block" : ""
+									)}
+								/>
 							)}
 						</>
 					) : (
 						<>
-							<Image src="/images/logo/logo.png" alt="Vestigio" width={140} height={28} className="block shrink-0 dark:hidden" />
-							<Image src="/images/logo/logo-light.png" alt="Vestigio" width={140} height={28} className="hidden shrink-0 dark:block" />
+							<Image
+								src='/images/logo/logo.png'
+								alt='Vestigio'
+								width={140}
+								height={28}
+								className='block shrink-0 dark:hidden'
+							/>
+							<Image
+								src='/images/logo/logo-light.png'
+								alt='Vestigio'
+								width={140}
+								height={28}
+								className='hidden shrink-0 dark:block'
+							/>
 						</>
-					)
-				) : (
-					/* Collapsed: always show icon */
-					<>
-						<Image src="/images/icon-light.svg" alt="Vestigio" width={28} height={28} className="block shrink-0 dark:hidden" />
-						<Image src="/images/icon-dark.svg" alt="Vestigio" width={28} height={28} className="hidden shrink-0 dark:block" />
-					</>
-				)}
+					)}
+				</div>
 			</div>
 
 			{/* Nav */}
-			<nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-				{!isAdmin && renderSection("Product", productNav.filter((item) => {
-					if (item.id === "chat" && !flags.ai_chat_enabled) return false;
-					return true;
-				}))}
+			<nav className='flex flex-1 flex-col gap-0.5 overflow-y-auto p-2'>
+				{!isAdmin &&
+					renderSection(
+						"Product",
+						productNav.filter((item) => {
+							if (item.id === "chat" && !flags.ai_chat_enabled) return false;
+							return true;
+						})
+					)}
 				{isAdmin && renderSection("Platform Admin", adminNav)}
 			</nav>
 
 			{/* Bottom-pinned nav (Data Sources) */}
 			{!isAdmin && (
-				<div className="shrink-0 border-t border-edge/30 p-2">
+				<div className='shrink-0 border-t border-edge/30 p-2'>
 					{bottomNav.map((item) => renderNavItem(item))}
 				</div>
 			)}
@@ -277,25 +381,34 @@ export default function AppSidebar({
 
 	return (
 		<>
-			{/* ── Desktop sidebar ── */}
-			<aside
-				onMouseEnter={handleMouseEnter}
-				onMouseLeave={handleMouseLeave}
-				className={cn(
-					"hidden flex-col md:flex",
-					"bg-surface-shell",
-					"transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-					isExpanded ? "w-56" : "w-14"
-				)}
-			>
-				{sidebarContent}
-			</aside>
+			{/* ── Desktop sidebar ──
+			    Two layers:
+			      1. A static `w-14` spacer that ALWAYS occupies the
+			         shell column so the rest of the layout never shifts.
+			      2. The actual aside, absolutely positioned over the
+			         spacer, expanding from w-14 → w-56 on hover. When
+			         expanded it OVERLAYS the page content (z-30 + shadow),
+			         it does NOT push it. */}
+			<div className='relative hidden w-14 shrink-0 md:block'>
+				<aside
+					onMouseEnter={handleMouseEnter}
+					onMouseLeave={handleMouseLeave}
+					className={cn(
+						"absolute left-0 top-0 z-30 flex h-full flex-col",
+						"bg-surface-shell",
+						"transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+						isExpanded ? "w-56 shadow-2xl ring-1 ring-edge/40" : "w-14"
+					)}
+				>
+					{sidebarContent}
+				</aside>
+			</div>
 
 			{/* ── Mobile sidebar ── */}
 			<div
 				className={cn(
 					"fixed inset-0 z-40 md:hidden",
-					mobileOpen ? "visible" : "invisible pointer-events-none"
+					mobileOpen ? "visible" : "pointer-events-none invisible"
 				)}
 			>
 				<div

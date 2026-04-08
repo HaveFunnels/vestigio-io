@@ -65,6 +65,19 @@ export interface ExposureData {
 	criticalOpenCount: number;
 	/** Delta of open criticals vs the previous cycle. Negative = good. */
 	criticalDeltaVsLastCycle: number;
+	/** Top-N OPEN critical items for inline list display in the
+	 *  OpenCriticalKpi card. Each entry carries the inferenceKey so
+	 *  the dashboard can deep-link to the matching action drawer on
+	 *  the actions page (`/app/actions?selected=<key>`). */
+	criticalOpenItems: Array<{
+		/** Finding row id (db cuid) */
+		id: string;
+		/** Stable cross-cycle key — used for action drawer deep linking */
+		inferenceKey: string;
+		title: string;
+		surface: string;
+		impactCents: number;
+	}>;
 	caption: string;
 }
 

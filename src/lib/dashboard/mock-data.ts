@@ -122,6 +122,29 @@ const exposure: ExposureData = {
 	],
 	criticalOpenCount: 3,
 	criticalDeltaVsLastCycle: -1,
+	criticalOpenItems: [
+		{
+			id: "f_demo_payment_intent_loss",
+			inferenceKey: "payment_intent_loss",
+			title: "Payment intents dropping at 3DS challenge",
+			surface: "/checkout/3ds",
+			impactCents: 880_000,
+		},
+		{
+			id: "f_demo_chargeback_proof_gap",
+			inferenceKey: "chargeback_proof_gap",
+			title: "Chargeback evidence missing on disputed orders",
+			surface: "/admin/orders",
+			impactCents: 540_000,
+		},
+		{
+			id: "f_demo_refund_loop",
+			inferenceKey: "refund_recursive_trigger",
+			title: "Refund webhook re-firing on retried captures",
+			surface: "/api/webhooks/payment",
+			impactCents: 410_000,
+		},
+	],
 	caption: "",
 };
 exposure.caption = captionForExposure(exposure);

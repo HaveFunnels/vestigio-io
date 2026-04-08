@@ -2,7 +2,18 @@
 
 /**
  * ConversationSidebar — Left panel with conversation history.
- * Features: search, date grouping, inline rename, hover delete.
+ * Features: server-side search by title OR message content, date
+ * grouping, inline rename, hover delete.
+ *
+ * **Search behaviour:** the search input used to filter the
+ * already-loaded conversation list by title only. That meant
+ * searching for content like "chargeback" found nothing unless one
+ * of the titles literally contained that word — even when half the
+ * messages in a conversation were about chargebacks. Now the input
+ * debounces, hits `/api/conversations?q=...` (which the server
+ * resolves via Postgres ILIKE on titles AND message bodies) and
+ * replaces the displayed list with the matched conversations.
+ * Empty query falls back to the locally-loaded list.
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -54,19 +65,45 @@ export function ConversationSidebar({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameText, setRenameText] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Conversation[] | null>(null);
+  const [searching, setSearching] = useState(false);
   const renameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (renamingId && renameRef.current) renameRef.current.focus();
   }, [renamingId]);
 
-  const filtered = search.trim()
-    ? conversations.filter((c) =>
-        (c.title || "").toLowerCase().includes(search.toLowerCase()),
-      )
-    : conversations;
+  // Debounced server-side search. The query hits the
+  // `/api/conversations?q=...` endpoint which matches titles AND
+  // message contents on the server. 250ms debounce keeps the
+  // request rate low while keeping the UI feeling responsive on
+  // every keystroke. Empty query clears the override so the
+  // sidebar falls back to the parent-supplied conversation list.
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) {
+      setSearchResults(null);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const handle = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/conversations?q=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(Array.isArray(data.conversations) ? data.conversations : []);
+        }
+      } catch { /* network failures fall through to empty results */ }
+      setSearching(false);
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [search]);
 
-  const groups = groupByDate(filtered);
+  // When search is active, prefer the server results; otherwise use
+  // the locally-loaded list passed in via props.
+  const displayConversations = searchResults ?? conversations;
+  const groups = groupByDate(displayConversations);
 
   function startRename(conv: Conversation) {
     setRenamingId(conv.id);
@@ -120,9 +157,9 @@ export function ConversationSidebar({
 
       {/* List */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">
-        {filtered.length === 0 && (
+        {displayConversations.length === 0 && (
           <div className="px-2 py-6 text-center text-xs text-content-faint">
-            {search ? "No matches" : "No conversations yet"}
+            {searching ? "Searching..." : search ? "No matches" : "No conversations yet"}
           </div>
         )}
 

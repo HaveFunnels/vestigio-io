@@ -66,8 +66,22 @@ export interface ConversationStore {
   create(input: CreateConversationInput): Promise<ConversationRecord>;
   getById(id: string): Promise<ConversationRecord | null>;
   listByUser(orgId: string, userId: string, options?: ListOptions): Promise<ConversationRecord[]>;
+  /**
+   * Search conversations belonging to (orgId, userId) where the title
+   * OR any message content matches the query string. Case-insensitive
+   * substring match. Returns the conversations ordered by `updatedAt
+   * desc` so the sidebar can replace its local list directly.
+   *
+   * Used by the sidebar's search box: the pre-Wave-3 version
+   * filtered the local conversation list by title only, which meant
+   * that searching for content like "chargeback" found nothing
+   * unless one of the conversation titles contained that word.
+   */
+  searchByContent(orgId: string, userId: string, query: string, limit?: number): Promise<ConversationRecord[]>;
   addMessage(conversationId: string, msg: CreateMessageInput): Promise<MessageRecord>;
   getMessages(conversationId: string, limit?: number): Promise<MessageRecord[]>;
+  /** All messages from a conversation, ordered by createdAt asc, no limit. Used by fork. */
+  getAllMessages(conversationId: string): Promise<MessageRecord[]>;
   updateTitle(id: string, title: string): Promise<void>;
   softDelete(id: string): Promise<void>;
   updateTotals(id: string, costDelta: number, inputDelta: number, outputDelta: number): Promise<void>;
@@ -115,6 +129,22 @@ export class InMemoryConversationStore implements ConversationStore {
       .slice(0, limit);
   }
 
+  async searchByContent(orgId: string, userId: string, query: string, limit = 30): Promise<ConversationRecord[]> {
+    const q = query.toLowerCase();
+    if (!q) return [];
+    const matches: ConversationRecord[] = [];
+    for (const conv of this.conversations.values()) {
+      if (conv.organizationId !== orgId || conv.userId !== userId || conv.status !== 'active') continue;
+      const titleMatch = (conv.title || '').toLowerCase().includes(q);
+      const msgs = this.messages.get(conv.id) || [];
+      const contentMatch = msgs.some((m) => m.content.toLowerCase().includes(q));
+      if (titleMatch || contentMatch) matches.push(conv);
+    }
+    return matches
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      .slice(0, limit);
+  }
+
   async addMessage(conversationId: string, msg: CreateMessageInput): Promise<MessageRecord> {
     const id = `msg_${++this.idCounter}`;
     const record: MessageRecord = {
@@ -146,6 +176,10 @@ export class InMemoryConversationStore implements ConversationStore {
   async getMessages(conversationId: string, limit = 50): Promise<MessageRecord[]> {
     const list = this.messages.get(conversationId) || [];
     return list.slice(-limit);
+  }
+
+  async getAllMessages(conversationId: string): Promise<MessageRecord[]> {
+    return this.messages.get(conversationId) || [];
   }
 
   async updateTitle(id: string, title: string): Promise<void> {
@@ -208,6 +242,32 @@ export class PrismaConversationStore implements ConversationStore {
     return rows.map(toConversation);
   }
 
+  async searchByContent(orgId: string, userId: string, query: string, limit = 30): Promise<ConversationRecord[]> {
+    const q = query.trim();
+    if (!q) return [];
+    // Title-or-content match via Prisma OR + nested relation. The
+    // `messages.some` filter compiles to a Postgres `EXISTS` subquery
+    // — efficient enough for current scale (< 10k messages per user).
+    // If this becomes a hotspot, the right next step is a Postgres
+    // GIN index on `to_tsvector('simple', content)` and switching the
+    // contains filter to a full-text-search predicate. For now ILIKE
+    // is fine; it's the same complexity as the title fallback.
+    const rows = await this.prisma.conversation.findMany({
+      where: {
+        organizationId: orgId,
+        userId,
+        status: 'active',
+        OR: [
+          { title: { contains: q, mode: 'insensitive' } },
+          { messages: { some: { content: { contains: q, mode: 'insensitive' } } } },
+        ],
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: limit,
+    });
+    return rows.map(toConversation);
+  }
+
   async addMessage(conversationId: string, msg: CreateMessageInput): Promise<MessageRecord> {
     const [row] = await this.prisma.$transaction([
       this.prisma.conversationMessage.create({
@@ -236,6 +296,14 @@ export class PrismaConversationStore implements ConversationStore {
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
       take: limit,
+    });
+    return rows.map(toMessage);
+  }
+
+  async getAllMessages(conversationId: string): Promise<MessageRecord[]> {
+    const rows = await this.prisma.conversationMessage.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'asc' },
     });
     return rows.map(toMessage);
   }

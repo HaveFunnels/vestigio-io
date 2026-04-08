@@ -1039,7 +1039,15 @@
       "emptyState": {
         "title": "Análisis Vestigio",
         "description": "Pregunta sobre ingresos, riesgos, chargebacks o qué arreglar primero. Cada respuesta se basa en los datos de tu auditoría.",
-        "playbooksHint": "Abre Playbooks para prompts de análisis experto"
+        "playbooksHint": "Abre Playbooks para prompts de análisis experto",
+        "tips_toggle": "Cómo aprovechar al máximo el chat de Vestigio",
+        "tips": {
+          "natural": "Pregunta en lenguaje natural — sin formato especial. Menciona hallazgos, acciones, surfaces o workspaces por nombre.",
+          "context": "Haz clic en \"Discutir\" o \"Usar como contexto\" en cualquier hallazgo/acción para iniciar un chat con el ítem ya adjunto.",
+          "playbooks": "Usa Playbooks (esquina superior derecha) para análisis curados multi-step como auditorías completas de ingresos o puntajes de confianza.",
+          "files": "Arrastra un CSV / JSON / TXT / PDF al chat para adjuntarlo como contexto del siguiente mensaje.",
+          "voice": "Haz clic en el micrófono para dictar tu pregunta en lugar de escribirla."
+        }
       },
       "setupBanner": {
         "prefix": "Sin contexto de análisis cargado.",

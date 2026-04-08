@@ -2,7 +2,8 @@
 
 /**
  * MessageActions — Hover actions on chat messages.
- * Copy, retry, edit (user only), thumbs up/down with comment field.
+ * Copy, retry, regenerate, fork, edit (user only),
+ * thumbs up/down with comment field.
  */
 
 import { useState } from "react";
@@ -14,6 +15,16 @@ interface MessageActionsProps {
   onRetry?: () => void;
   onEdit?: (newContent: string) => void;
   onFeedback?: (messageId: string, rating: "positive" | "negative", comment?: string) => void;
+  /** Regenerate this specific assistant response (vs `onRetry` which
+   *  always re-runs the LATEST user message). Lets the user re-roll
+   *  any assistant turn in the conversation, not just the most
+   *  recent one. */
+  onRegenerate?: (messageId: string) => void;
+  /** Fork the conversation from this message — creates a new
+   *  conversation that copies everything up to and including this
+   *  message, then navigates the user to the fork so they can
+   *  continue along a different path without losing the prefix. */
+  onFork?: (messageId: string) => void;
 }
 
 export function MessageActions({
@@ -23,6 +34,8 @@ export function MessageActions({
   onRetry,
   onEdit,
   onFeedback,
+  onRegenerate,
+  onFork,
 }: MessageActionsProps) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -100,10 +113,45 @@ export function MessageActions({
           </button>
         )}
 
-        {/* Retry (assistant only) */}
+        {/* Retry (assistant only) — re-runs the LAST user message */}
         {role === "assistant" && onRetry && (
-          <button onClick={onRetry} className="rounded p-1 text-content-faint hover:bg-surface-card-hover hover:text-content-muted" title="Retry">
+          <button onClick={onRetry} className="rounded p-1 text-content-faint hover:bg-surface-card-hover hover:text-content-muted" title="Retry last">
             <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0110.47-4M14 8a6 6 0 01-10.47 4" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" /><path d="M12 1v3h-3M4 15v-3h3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+        )}
+
+        {/* Regenerate (assistant only) — re-runs the user message
+            that produced THIS specific response. Different from
+            Retry: works on any assistant turn in the conversation,
+            not just the most recent one. */}
+        {role === "assistant" && onRegenerate && (
+          <button
+            onClick={() => onRegenerate(messageId)}
+            className="rounded p-1 text-content-faint hover:bg-surface-card-hover hover:text-content-muted"
+            title="Regenerate this response"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+              <path d="M14 8a6 6 0 11-2-4.5M14 1v3.5h-3.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
+
+        {/* Fork (any role) — creates a new conversation cloning
+            messages up to and including this point. Lets the user
+            try alternate questions from any turn without losing
+            the shared prefix. */}
+        {onFork && (
+          <button
+            onClick={() => onFork(messageId)}
+            className="rounded p-1 text-content-faint hover:bg-surface-card-hover hover:text-content-muted"
+            title="Fork from this message"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+              <circle cx="4" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.25" />
+              <circle cx="4" cy="13" r="1.5" stroke="currentColor" strokeWidth="1.25" />
+              <circle cx="12" cy="8" r="1.5" stroke="currentColor" strokeWidth="1.25" />
+              <path d="M4 4.5v7M5.5 8.5C7 8 9 8 10.5 8" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+            </svg>
           </button>
         )}
 

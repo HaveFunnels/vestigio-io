@@ -26,12 +26,41 @@ interface ChatMessageRendererProps {
   onEdit?: (newContent: string) => void;
   onFeedback?: (messageId: string, rating: "positive" | "negative") => void;
   onSaveAction?: (action: { title: string; description: string; severity: string; estimatedImpact?: number }) => void;
+  onRegenerate?: (messageId: string) => void;
+  onFork?: (messageId: string) => void;
 }
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
   return `$${value.toFixed(0)}`;
+}
+
+// Smart timestamp formatter — short and contextual:
+//   - same day  → "2:34 PM"
+//   - yesterday → "Yesterday 2:34 PM"
+//   - older     → "Apr 5, 2:34 PM"
+// Pre-fix the chat showed no timestamps at all on messages (only
+// the per-conversation date grouping in the sidebar), so a long
+// thread had no anchor for "when did I ask this" / "is this
+// recent". This shows a small subtle line under each bubble.
+function formatMessageTime(d: Date): string {
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    d.getFullYear() === yesterday.getFullYear() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getDate() === yesterday.getDate();
+
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return time;
+  if (isYesterday) return `Yesterday ${time}`;
+  return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} ${time}`;
 }
 
 export function ChatMessageRenderer({
@@ -42,11 +71,15 @@ export function ChatMessageRenderer({
   onEdit,
   onFeedback,
   onSaveAction,
+  onRegenerate,
+  onFork,
 }: ChatMessageRendererProps) {
   // Thinking state: streaming with no blocks yet
   if (message.streaming && message.blocks.length === 0) {
     return <ThinkingIndicator />;
   }
+
+  const timestamp = formatMessageTime(message.createdAt);
 
   if (message.role === "user") {
     const text = message.blocks[0]?.type === "markdown"
@@ -59,9 +92,15 @@ export function ChatMessageRenderer({
           content={text}
           messageId={message.id}
           onEdit={onEdit}
+          onFork={onFork}
         />
-        <div className="max-w-xl rounded-xl rounded-br-sm border border-edge/50 bg-surface-inset px-4 py-2.5">
-          <p className="text-sm text-content">{text}</p>
+        <div className="flex max-w-xl flex-col items-end">
+          <div className="rounded-xl rounded-br-sm border border-edge/50 bg-surface-inset px-4 py-2.5">
+            <p className="text-sm text-content">{text}</p>
+          </div>
+          <span className="mt-1 text-[10px] text-content-faint opacity-0 transition-opacity group-hover:opacity-100">
+            {timestamp}
+          </span>
         </div>
       </div>
     );
@@ -101,14 +140,19 @@ export function ChatMessageRenderer({
 
         {/* Actions bar — visible on hover */}
         {!message.streaming && (
-          <div className="pt-1">
+          <div className="flex items-center gap-2 pt-1">
             <MessageActions
               role="assistant"
               content={plainText}
               messageId={message.id}
               onRetry={onRetry}
               onFeedback={onFeedback}
+              onRegenerate={onRegenerate}
+              onFork={onFork}
             />
+            <span className="text-[10px] text-content-faint opacity-0 transition-opacity group-hover:opacity-100">
+              {timestamp}
+            </span>
           </div>
         )}
       </div>

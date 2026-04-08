@@ -40,9 +40,17 @@ export async function GET(request: Request) {
   const status = searchParams.get("status") || "active";
   const limit = Math.min(parseInt(searchParams.get("limit") || "30", 10), 100);
   const cursor = searchParams.get("cursor") || undefined;
+  // Optional full-text query — when present, the store searches both
+  // titles AND message content via Postgres ILIKE. Empty query falls
+  // through to the regular listByUser path. The 80-char cap mirrors
+  // realistic search box usage and stops a malicious query from
+  // hammering the DB with a long pattern.
+  const q = (searchParams.get("q") || "").trim().slice(0, 80);
 
   const store = getConversationStore();
-  const conversations = await store.listByUser(orgId, userId, { status, limit, cursor });
+  const conversations = q
+    ? await store.searchByContent(orgId, userId, q, limit)
+    : await store.listByUser(orgId, userId, { status, limit, cursor });
 
   return NextResponse.json({ conversations });
 }

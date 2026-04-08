@@ -673,6 +673,69 @@ export default function ChatPage() {
     }
   }
 
+  // Regenerate this specific assistant response: find the user
+  // message that preceded it, drop everything from that assistant
+  // message onwards, and resend the user message. Different from
+  // handleRetry which always regenerates the LAST assistant message
+  // — this works on any turn in the conversation, so you can
+  // re-roll an answer from the middle without losing the trailing
+  // history (it gets dropped because the new response will replace
+  // it on the next stream).
+  function handleRegenerate(assistantMessageId: string) {
+    const idx = messages.findIndex((m) => m.id === assistantMessageId);
+    if (idx === -1) return;
+    // Walk backwards from the assistant message to find the user
+    // message that triggered it. Usually it's the immediately
+    // preceding turn, but multi-tool conversations might have other
+    // assistant intermediates — the contract is "the last user
+    // message before this assistant response".
+    let userIdx = -1;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        userIdx = i;
+        break;
+      }
+    }
+    if (userIdx === -1) return;
+    const userMsg = messages[userIdx];
+    const text = userMsg.blocks
+      .filter((b): b is { type: "markdown"; content: string } => b.type === "markdown")
+      .map((b) => b.content)
+      .join("\n");
+    if (!text) return;
+    // Truncate state to just before the user message — handleSend
+    // will re-append the user message and stream a new assistant
+    // response after it.
+    setMessages((prev) => prev.slice(0, userIdx));
+    handleSend(text);
+  }
+
+  // Fork the conversation from this message: hits POST
+  // /api/conversations/[id]/fork which clones messages [0..idx]
+  // into a brand new conversation, then loads the fork so the user
+  // can continue along a different path. The original conversation
+  // is untouched and stays in the sidebar — they can switch back
+  // any time.
+  async function handleFork(messageId: string) {
+    if (!activeConversationId) return;
+    try {
+      const res = await fetch(`/api/conversations/${activeConversationId}/fork`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from_message_id: messageId }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const fork = data.conversation;
+      if (!fork?.id) return;
+      // Refresh sidebar list so the fork shows up at the top, then
+      // load it (which sets activeConversationId + replaces the
+      // visible message list with the fork's prefix).
+      await fetchConversations();
+      await loadConversation(fork.id);
+    } catch { /* network failure — silent, user retries */ }
+  }
+
   function handleEdit(newContent: string) {
     // Re-send with edited content, removing everything after the edited message
     handleSend(newContent);
@@ -830,6 +893,8 @@ export default function ChatPage() {
                     onEdit={handleEdit}
                     onFeedback={handleFeedback}
                     onSaveAction={handleSaveAction}
+                    onRegenerate={handleRegenerate}
+                    onFork={handleFork}
                   />
                 ))}
 
@@ -1203,8 +1268,9 @@ function buildContextPrompt(items: ChatContextItem[]): string {
 
 function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
   const t = useTranslations("console.chat");
+  const [tipsOpen, setTipsOpen] = useState(false);
   return (
-    <div className="flex flex-col items-center justify-center py-16">
+    <div className="mx-auto flex max-w-2xl flex-col items-center justify-center py-12">
       {/* Logo mark */}
       <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-700/30 bg-emerald-500/10">
         <svg className="h-6 w-6 text-emerald-400" viewBox="0 0 24 24" fill="none">
@@ -1215,27 +1281,63 @@ function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
       <h2 className="text-lg font-semibold text-content-secondary">
         {t("emptyState.title")}
       </h2>
-      <p className="mt-1 max-w-sm text-center text-sm text-content-muted">
+      <p className="mt-1 max-w-md text-center text-sm text-content-muted">
         {t("emptyState.description")}
       </p>
 
-      {/* Quick questions — first 3 presets, fully localized via the
-          dictionary so pt-BR / es operators see translated buttons. */}
-      <div className="mt-6 grid grid-cols-3 gap-2">
-        {QUICK_PRESET_IDS.slice(0, 3).map((id) => (
+      {/* Quick questions — all 6 presets in a 3x2 grid. Used to
+          slice to the first 3 because the original 3-column row
+          looked balanced visually, but that wasted half the
+          curated questions. Showing all 6 gives 2x more entry
+          points at zero design cost. */}
+      <div className="mt-6 grid w-full grid-cols-3 gap-2">
+        {QUICK_PRESET_IDS.map((id) => (
           <button
             key={id}
             onClick={() => onSuggest(t(`quick_presets.${id}.text`))}
-            className="rounded-lg border border-edge px-3 py-2 text-center text-[13px] text-content-tertiary transition-colors hover:border-emerald-600/50 hover:text-emerald-400"
+            className="rounded-lg border border-edge px-3 py-2 text-center text-[12px] text-content-tertiary transition-colors hover:border-emerald-600/50 hover:text-emerald-400"
           >
             {t(`quick_presets.${id}.label`)}
           </button>
         ))}
       </div>
 
-      <p className="mt-5 text-[10px] text-content-faint">
+      <p className="mt-4 text-[10px] text-content-faint">
         {t("emptyState.playbooksHint")}
       </p>
+
+      {/* Onboarding tips — collapsed by default to keep the empty
+          state clean for repeat users. Expanding shows 5 quick
+          tips on how to use the chat: phrasing style, attachments,
+          voice input, playbooks, follow-ups. The pre-Wave-3 empty
+          state had only the 3 quick buttons + a one-line hint
+          about playbooks — first-time users had no idea the chat
+          could do voice input, file attachments, or contextual
+          follow-ups. */}
+      <button
+        onClick={() => setTipsOpen(!tipsOpen)}
+        className="mt-6 flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-content-muted transition-colors hover:text-content-secondary"
+      >
+        <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none">
+          <path d="M8 1.5a4.5 4.5 0 00-2.5 8.25V11h5V9.75A4.5 4.5 0 008 1.5zM6 13h4M7 14.5h2" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {t("emptyState.tips_toggle")}
+        <svg className={`h-2.5 w-2.5 transition-transform ${tipsOpen ? "rotate-180" : ""}`} viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {tipsOpen && (
+        <div className="mt-3 w-full max-w-md rounded-lg border border-edge bg-surface-card/40 p-4">
+          <ul className="space-y-2 text-[11px] text-content-muted">
+            {(["natural", "context", "playbooks", "files", "voice"] as const).map((key) => (
+              <li key={key} className="flex gap-2">
+                <span className="text-emerald-500">•</span>
+                <span>{t(`emptyState.tips.${key}`)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

@@ -1032,7 +1032,15 @@
       "emptyState": {
         "title": "Vestigio Analysis",
         "description": "Ask about your revenue, risks, chargebacks, or what to fix first. Every answer is grounded in your audit data.",
-        "playbooksHint": "Open Playbooks for expert analysis prompts"
+        "playbooksHint": "Open Playbooks for expert analysis prompts",
+        "tips_toggle": "How to get the most out of Vestigio chat",
+        "tips": {
+          "natural": "Ask in natural language — no formatting needed. Reference findings, actions, surfaces, or workspaces by name.",
+          "context": "Click \"Discuss\" or \"Use as context\" on any finding/action to start a chat with it pre-attached.",
+          "playbooks": "Use Playbooks (top right) for curated multi-step analyses like full revenue audits or trust scores.",
+          "files": "Drag a CSV / JSON / TXT / PDF onto the chat to attach it as context for the next message.",
+          "voice": "Click the mic to dictate your question instead of typing."
+        }
       },
       "setupBanner": {
         "prefix": "No analysis context loaded.",

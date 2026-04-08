@@ -130,23 +130,161 @@ export default function ChatPage() {
   }
 
   // ── Load conversation messages ─────────────
+  // Two-phase load:
+  //   Phase 1 — fetch raw messages, parse blocks (JSON fast path
+  //             for new messages, marker parser for legacy ones).
+  //             Render immediately so the user sees something.
+  //   Phase 2 — scan for placeholder blocks (legacy messages whose
+  //             cards came out as "Finding abc123" / null KB slugs)
+  //             and call /api/chat/context-items to hydrate them in
+  //             one batched round trip. The hydrated blocks then
+  //             replace the placeholders and the renderer re-runs.
+  //
+  // The phase 2 step is a no-op when every message in the
+  // conversation came from the post-fix server (those persist as
+  // resolved JSON blocks already), so the hot path stays cheap.
   async function loadConversation(conversationId: string) {
     try {
       const res = await fetch(`/api/conversations/${conversationId}?message_limit=50`);
-      if (res.ok) {
-        const data = await res.json();
-        const loaded: ChatMessage[] = (data.messages || []).map((m: any) => ({
-          id: m.id,
-          conversationId: m.conversationId,
-          role: m.role,
-          blocks: parseBlocks(m.content, m.role),
-          model: m.model || undefined,
-          createdAt: new Date(m.createdAt),
-        }));
-        setMessages(loaded);
-        setActiveConversationId(conversationId);
-      }
+      if (!res.ok) return;
+      const data = await res.json();
+      const loaded: ChatMessage[] = (data.messages || []).map((m: any) => ({
+        id: m.id,
+        conversationId: m.conversationId,
+        role: m.role,
+        blocks: parseBlocks(m.content, m.role),
+        model: m.model || undefined,
+        createdAt: new Date(m.createdAt),
+      }));
+      setMessages(loaded);
+      setActiveConversationId(conversationId);
+
+      // Phase 2 — scan for placeholder blocks and hydrate them.
+      // Errors here are non-fatal: if hydration fails, the user
+      // still sees the styled cards from phase 1 (just with
+      // generic titles). Better than blocking the whole load.
+      hydrateLegacyPlaceholders(loaded).catch(() => {});
     } catch { /* continue */ }
+  }
+
+  // Walk a freshly-loaded message list, find any blocks that look
+  // like placeholders left over from the legacy `parseBlockMarkers`
+  // path, batch-resolve them via /api/chat/context-items, and
+  // replace the placeholders in state with the resolved versions.
+  //
+  // Placeholder detection invariants (these only ever come from
+  // parseBlockMarkers, never from the resolved server-side blocks):
+  //   - finding_card: pack === "" (real findings always carry a pack)
+  //   - action_card:  title === `Action ${id}` (literal placeholder)
+  //   - kb_article_card: slug === null (server resolver always sets slug)
+  async function hydrateLegacyPlaceholders(messages: ChatMessage[]) {
+    type HydrationItem = { kind: ChatContextKind | "kb_finding" | "kb_root_cause"; id: string };
+    const items: HydrationItem[] = [];
+    const seen = new Set<string>();
+
+    function track(kind: HydrationItem["kind"], id: string) {
+      const key = `${kind}:${id}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      items.push({ kind, id });
+    }
+
+    for (const msg of messages) {
+      if (msg.role !== "assistant") continue;
+      for (const block of msg.blocks) {
+        if (block.type === "finding_card" && block.finding.pack === "") {
+          track("finding", block.finding.id);
+        } else if (
+          block.type === "action_card" &&
+          block.action.title === `Action ${block.action.id}`
+        ) {
+          track("action", block.action.id);
+        } else if (block.type === "kb_article_card" && block.slug === null) {
+          track(
+            block.key_kind === "root_cause" ? "kb_root_cause" : "kb_finding",
+            block.key,
+          );
+        }
+      }
+    }
+
+    if (items.length === 0) return;
+
+    let resolvedById: Map<string, any>;
+    try {
+      const res = await fetch("/api/chat/context-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const arr: any[] = Array.isArray(data.items) ? data.items : [];
+      resolvedById = new Map(arr.map((it) => [`${it.kind}:${it.id}`, it]));
+    } catch {
+      return;
+    }
+
+    if (resolvedById.size === 0) return;
+
+    // Walk every message and merge resolved data into placeholder
+    // blocks. We rebuild the array immutably so React picks up the
+    // change in setMessages.
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.role !== "assistant") return msg;
+        let mutated = false;
+        const newBlocks = msg.blocks.map((block) => {
+          if (block.type === "finding_card" && block.finding.pack === "") {
+            const r = resolvedById.get(`finding:${block.finding.id}`);
+            if (r) {
+              mutated = true;
+              return {
+                ...block,
+                finding: {
+                  ...block.finding,
+                  title: r.title ?? block.finding.title,
+                  severity: r.severity ?? block.finding.severity,
+                  impact_mid: r.impact_mid ?? block.finding.impact_mid,
+                  pack: r.pack ?? block.finding.pack,
+                },
+              };
+            }
+          } else if (
+            block.type === "action_card" &&
+            block.action.title === `Action ${block.action.id}`
+          ) {
+            const r = resolvedById.get(`action:${block.action.id}`);
+            if (r) {
+              mutated = true;
+              return {
+                ...block,
+                action: {
+                  ...block.action,
+                  title: r.title ?? block.action.title,
+                  severity: r.severity ?? block.action.severity,
+                  impact_mid: r.impact_mid ?? block.action.impact_mid,
+                },
+              };
+            }
+          } else if (block.type === "kb_article_card" && block.slug === null) {
+            const lookupKind = block.key_kind === "root_cause" ? "kb_root_cause" : "kb_finding";
+            const r = resolvedById.get(`${lookupKind}:${block.key}`);
+            if (r) {
+              mutated = true;
+              return {
+                ...block,
+                title: r.title ?? null,
+                slug: r.slug ?? null,
+                excerpt: r.excerpt ?? null,
+              };
+            }
+          }
+          return block;
+        });
+        return mutated ? { ...msg, blocks: newBlocks } : msg;
+      }),
+    );
   }
 
   function parseBlocks(content: string, role: string): ContentBlock[] {

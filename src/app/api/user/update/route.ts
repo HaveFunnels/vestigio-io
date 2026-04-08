@@ -1,5 +1,6 @@
 import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { isDemoEmail } from "@/lib/demo-account";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
@@ -23,9 +24,7 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		return NextResponse.json({ message: "User not found!" }, { status: 404 });
 	}
 
-	const isDemoUser = session?.user?.email?.includes("demo-");
-
-	if (isDemoUser) {
+	if (isDemoEmail(session?.user?.email)) {
 		return NextResponse.json(
 			{ message: "Can't update demo user" },
 			{

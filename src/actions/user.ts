@@ -1,5 +1,6 @@
 "use server";
 
+import { isDemoEmail } from "@/lib/demo-account";
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { excludeFields } from "@/utils/exclude-fields";
@@ -12,7 +13,7 @@ export async function getUsers(filter: any) {
 	});
 
 	const filteredUsers = res
-		.filter((user) => !user.email?.includes("demo-"))
+		.filter((user) => !isDemoEmail(user.email))
 		.map((record) =>
 			excludeFields(record, [
 				"password",
@@ -44,7 +45,7 @@ export async function updateUser(data: any) {
 }
 
 export async function deleteUser(user: any) {
-	if (user?.email?.includes("demo-")) {
+	if (isDemoEmail(user?.email)) {
 		return new Error("Can't delete demo user");
 	}
 

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { evaluateAlerts } from "@/libs/alert-evaluator";
 import { trackError } from "@/libs/error-tracker";
+import { parseBlockMarkers, resolveCardData } from "@/lib/chat-block-parser";
 import {
   executePipeline,
   isLlmEnabled,
@@ -303,9 +304,7 @@ export async function POST(request: Request) {
           signal: abortController.signal,
         });
 
-        // ── Persist messages to conversation store ──
-        const convId = pipelineRequest.conversation_id;
-        // ── Persist messages ──────────────────────
+        // ── Cost computation ──────────────────────
         const totalInputTokens = result.tokens.input + result.guard_tokens.input + result.classifier_tokens.input;
         const totalOutputTokens = result.tokens.output + result.guard_tokens.output + result.classifier_tokens.output;
         // Use actual token-based cost (not rough estimate)
@@ -318,27 +317,6 @@ export async function POST(request: Request) {
           cache_read_input_tokens: 0,
         });
 
-        if (convId && convId !== "ephemeral") {
-          const store = getConversationStore();
-          // Save user message
-          store.addMessage(convId, { role: "user", content: body.message }).catch(() => {});
-          // Save assistant message with cost tracking (atomic)
-          store.addMessage(convId, {
-            role: "assistant",
-            content: result.response_text,
-            model: result.model_id_used,
-            inputTokens: totalInputTokens,
-            outputTokens: totalOutputTokens,
-            costCents,
-            toolCalls: result.tool_calls_made.length > 0
-              ? JSON.stringify(result.tool_calls_made.map((tc) => ({ tool: tc.tool_name, ms: tc.execution_ms })))
-              : undefined,
-            purpose: "core_chat",
-          }).catch(() => {});
-          // Update conversation totals
-          store.updateTotals(convId, costCents, totalInputTokens, totalOutputTokens).catch(() => {});
-        }
-
         // ── Compute remaining budget ─────────────
         let mcpRemaining: number | undefined;
         try {
@@ -348,6 +326,14 @@ export async function POST(request: Request) {
         } catch { /* continue */ }
 
         // ── Collect finding/action data for card resolution ──
+        // IMPORTANT: this used to happen AFTER persistence, so the saved
+        // assistant message was the raw LLM text with $$MARKER{...}$$
+        // tokens still inline. On re-mount, the client had no way to
+        // reconstruct the cards (it would need to refetch every finding)
+        // so the rich blocks fell back to literal text. We now compute
+        // these maps BEFORE persistence, parse + resolve the blocks
+        // server-side, and persist the resolved JSON so loadConversation()
+        // gets a render-ready payload with one round trip.
         let findingsMap: Record<string, any> = {};
         let actionsMap: Record<string, any> = {};
         try {
@@ -418,6 +404,54 @@ export async function POST(request: Request) {
             }
           }
         } catch { /* Sanity unavailable — client will render fallback cards */ }
+
+        // ── Parse + resolve blocks for the assistant message ──
+        // This is the persistence-side counterpart to what the client
+        // streaming hook does in `flushText` + the SSE done handler.
+        // Running it here means the database holds a render-ready
+        // ContentBlock[] JSON payload for every assistant message, so
+        // restoring a conversation on a later page load doesn't need
+        // to re-parse markers or re-fetch finding/action/KB metadata —
+        // the renderer just iterates the deserialized blocks. If the
+        // parse fails for any reason we still fall back to persisting
+        // the raw text so the message isn't lost; the renderer treats
+        // unrecognised content as a single markdown block.
+        let assistantMessageContent = result.response_text;
+        try {
+          const placeholderBlocks = parseBlockMarkers(result.response_text);
+          const resolvedBlocks = resolveCardData(
+            placeholderBlocks,
+            findingsMap,
+            actionsMap,
+            kbArticlesMap,
+          );
+          assistantMessageContent = JSON.stringify(resolvedBlocks);
+        } catch (err) {
+          console.warn("[chat route] block resolution failed, persisting raw text:", err);
+        }
+
+        // ── Persist messages to conversation store ──
+        const convId = pipelineRequest.conversation_id;
+        if (convId && convId !== "ephemeral") {
+          const store = getConversationStore();
+          // Save user message (raw text — user input has no markers to resolve)
+          store.addMessage(convId, { role: "user", content: body.message }).catch(() => {});
+          // Save assistant message with resolved blocks JSON + cost tracking (atomic)
+          store.addMessage(convId, {
+            role: "assistant",
+            content: assistantMessageContent,
+            model: result.model_id_used,
+            inputTokens: totalInputTokens,
+            outputTokens: totalOutputTokens,
+            costCents,
+            toolCalls: result.tool_calls_made.length > 0
+              ? JSON.stringify(result.tool_calls_made.map((tc) => ({ tool: tc.tool_name, ms: tc.execution_ms })))
+              : undefined,
+            purpose: "core_chat",
+          }).catch(() => {});
+          // Update conversation totals
+          store.updateTotals(convId, costCents, totalInputTokens, totalOutputTokens).catch(() => {});
+        }
 
         sendEvent("done", {
           request_id: result.request_id,

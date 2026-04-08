@@ -428,6 +428,11 @@ async function main() {
   console.log(`  ✓ Demo user: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
 
   // Organization
+  // NOTE: orgType='demo' is what makes isDemoOrg() in src/lib/demo-account.ts
+  // recognise this row as the demo account. Combined with the hardcoded
+  // id='demo_org', that gives the deletion guards two independent ways
+  // to identify it — so renaming the id later won't accidentally
+  // unprotect the org.
   const org = await prisma.organization.upsert({
     where: { id: 'demo_org' },
     create: {
@@ -436,12 +441,14 @@ async function main() {
       ownerId: demoUser.id,
       plan: 'pro',
       status: 'active',
+      orgType: 'demo',
     },
     update: {
       name: 'Acme Store',
       ownerId: demoUser.id,
       plan: 'pro',
       status: 'active',
+      orgType: 'demo',
     },
   });
   console.log(`  ✓ Organization: ${org.name} (${org.plan})`);

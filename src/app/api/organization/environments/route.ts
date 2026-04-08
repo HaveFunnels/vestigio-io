@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
+import { isDemoEnvironment, isDemoOrg } from "@/lib/demo-account";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { z } from "zod";
@@ -104,16 +105,37 @@ export const DELETE = withErrorTracking(async function DELETE(request: Request) 
     );
   }
 
-  // Verify environment belongs to this org
+  // Verify environment belongs to this org. Pull `orgType` so the demo
+  // guard below can match by either env id, org id, or orgType column.
   const env = await prisma.environment.findFirst({
     where: {
       id: res.data.environmentId,
       organizationId: membership.organizationId,
     },
+    include: {
+      organization: { select: { id: true, orgType: true } },
+    },
   });
 
   if (!env) {
     return NextResponse.json({ message: "Environment not found" }, { status: 404 });
+  }
+
+  // Demo environment is shared infra — never deletable.
+  // The Environment row has `onDelete: Cascade` on its FK from AuditCycle
+  // and from Finding, so deleting it would silently wipe every audit
+  // cycle, every persisted finding, and every snapshot for the demo
+  // account. The demo data loss incident (2026-04-07) traced back to
+  // exactly this code path firing without a guard. See
+  // src/lib/demo-account.ts for the post-mortem.
+  if (isDemoEnvironment(env) || isDemoOrg(env.organization)) {
+    return NextResponse.json(
+      {
+        message:
+          "The demo environment is shared infrastructure and cannot be deleted.",
+      },
+      { status: 403 },
+    );
   }
 
   await prisma.environment.delete({

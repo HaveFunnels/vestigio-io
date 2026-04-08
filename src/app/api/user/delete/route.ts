@@ -1,5 +1,6 @@
 import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { isDemoEmail } from "@/lib/demo-account";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -24,9 +25,11 @@ export const DELETE = withErrorTracking(async function DELETE(request: Request) 
 
 	const { email } = res.data;
 
-	const isDemoUser = email?.includes("demo-");
-
-	if (isDemoUser) {
+	// Demo account is shared infra — never deletable.
+	// (Pre-Wave 2 the check was `email?.includes("demo-")` with a hyphen,
+	// but the real demo email is `demo@vestigio.io` so the guard never
+	// fired. See src/lib/demo-account.ts for the post-mortem.)
+	if (isDemoEmail(email)) {
 		return NextResponse.json(
 			{ message: "Can't delete demo user" },
 			{ status: 400 }

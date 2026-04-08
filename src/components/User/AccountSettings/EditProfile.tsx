@@ -4,6 +4,7 @@ import Card from "@/components/Common/Dashboard/Card";
 import FormButton from "@/components/Common/Dashboard/FormButton";
 import InputGroup from "@/components/Common/Dashboard/InputGroup";
 import Loader from "@/components/Common/Loader";
+import { isDemoEmail } from "@/lib/demo-account";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
@@ -19,7 +20,7 @@ export default function EditProfile() {
 	});
 	const [file, setFile] = useState<File>();
 	const [loading, setLoading] = useState(false);
-	const isDemo = session?.user?.email?.includes("demo-");
+	const isDemo = isDemoEmail(session?.user?.email);
 
 	const t = useTranslations("account_settings_page.edit_profile");
 

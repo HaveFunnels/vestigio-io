@@ -1,5 +1,6 @@
 import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { isDemoEmail } from "@/lib/demo-account";
 import { prisma } from "@/libs/prismaDb";
 import bcrypt from "bcrypt";
 import { getServerSession } from "next-auth";
@@ -34,9 +35,7 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		return NextResponse.json({ message: "User not found!" }, { status: 404 });
 	}
 
-	const isDemo = user?.email?.includes("demo-");
-
-	if (isDemo) {
+	if (isDemoEmail(user?.email)) {
 		return NextResponse.json(
 			{ message: "Can't change password for demo user" },
 			{ status: 401 }

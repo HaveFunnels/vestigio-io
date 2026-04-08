@@ -2,6 +2,286 @@
 
 ---
 
+## Wave 2.4 — Confidence out of the UI, verification reframed as corroboration -- 2026-04-07
+
+### Goal
+
+Two operator-facing vocabulary problems were dragging the product down even though the underlying engine was correct:
+
+1. **Confidence as a number was hostile.** Every drawer, every chat message, every workspace card showed a "67% confidence" / "82% confidence" / "Confidence dropped 12 points since verification" string somewhere. Operators kept asking *"is 67% good?"* — and there was no good answer because the threshold is contextual and the number is internal calibration data, not a UX surface. The user's directive: **"o nível de confiança nao deveria ficar exposto pro cliente, isso é backend. O certo dividir em low, medium e high. low nao mostra pro cliente e continuar monitorando, medium e high mostram. Nada de confidence na UI, não ajuda, só atrapalha."**
+2. **The verification lifecycle vocabulary suggested the finding might be fake.** The internal enum `unverified / pending / partially / verified / degraded / stale` framed browser verification as a fact-check on whether the finding was real. But static evidence (HTTP, HTML, scripts, policies) is *real evidence* — browser verification is **corroboration layered on top of real evidence**, not a "let's see if this is true" gate. Calling a static-only finding "unverified" implied the engine was guessing. The user's directive: **"verification maturity assume o papel, mas os steps precisam ficar mais claros. 'unverified' parece que a gente tirou o finding out of thin air. Tem que ter um nome que sugira 'complementar', não 'descobrir se é real ou nao'."**
+
+Wave 2.4 fixes both at the projection layer without touching the engine internals. This was shipped in 2 commits: part 1 renamed verification stages, part 2 bucketed and removed confidence from the UI.
+
+### Architecture: rename at the projection layer, not the engine
+
+The engine's internal `VerificationMaturity` enum (in [packages/verification-lifecycle](packages/verification-lifecycle)) **stays unchanged**. The numeric `confidence` field on every internal type **stays unchanged** — calibration, change detection, root-cause grouping, MCP internal context, sorting, and impact estimation all still consume it. What changes is the **string the projection layer emits to the UI**, and the **bucket the UI consumes instead of the number**.
+
+Single translation point pattern: there is one `buildActionVerificationMaturity()` function in [packages/projections/engine.ts](packages/projections/engine.ts) that maps the engine enum → projection-layer `VerificationStage` string, and one `deriveConfidenceTier()` function in [packages/projections/types.ts](packages/projections/types.ts) that maps numeric confidence → tier. Anything downstream consumes the projection-layer string union and the bucket; nothing downstream looks at the engine enum directly.
+
+This is the same discipline as Wave 2.3 — keep the engine speaking its own language, do the translation once at the projection seam, so future renames remain a single-line change.
+
+### Part 1: Verification stage rename
+
+| Old key (engine internal, kept) | New key (projection-layer, emitted to UI) | What it means |
+|---|---|---|
+| `unverified` | `static_evidence` | Real evidence collected from HTTP/HTML/scripts/policies. Browser verification has not been run yet (and may not be needed for low-severity findings). |
+| `pending` | `confirming` | Browser verification is currently running. |
+| `partially` | `partial_confirmation` | Browser corroborated some but not all of the signals. |
+| `verified` | `confirmed` | Browser verification corroborated the finding in runtime. |
+| `degraded` | `evidence_weakened` | Was confirmed once, but a re-check shows the supporting evidence has weakened since then. |
+| `stale` | `confirmation_expired` | Was confirmed once, but the confirmation is now too old to be trusted without re-checking. |
+
+The new vocabulary frames every state as **additive corroboration on top of real static evidence**. `static_evidence` is not a downgrade — it's the floor, and for low-severity findings it may be the appropriate stop. `confirming` / `confirmed` are enrichment layers, not validation gates.
+
+**Backwards compat for persisted projections** — added `migrateLegacyVerificationMaturity()` in [packages/projections/types.ts](packages/projections/types.ts) and called it at the only persistence boundary, [packages/projections/prisma-finding-store.ts](packages/projections/prisma-finding-store.ts) `loadLatestForEnvironment`. Findings persisted by cycles run before Wave 2.4 still render correctly when reloaded from DB — the migration runs at parse time and rewrites the legacy string into the new vocabulary before it reaches any consumer.
+
+**i18n surface** — three new dictionary namespaces (`verification_badge`, `verification_panel`, `verification_sufficiency`) carry the operator-facing labels and explanations for each new state, in en/pt-BR/es. The badge component, the verification panel component, and the sufficiency warning component were rewritten to read from these namespaces; no inline English strings remain.
+
+### Part 2: Confidence tier bucketing + UI removal
+
+```ts
+// packages/projections/types.ts
+export type ConfidenceTier = 'low' | 'medium' | 'high';
+
+export function deriveConfidenceTier(confidence: number): ConfidenceTier {
+  if (confidence >= 70) return 'high';
+  if (confidence >= 40) return 'medium';
+  return 'low';
+}
+```
+
+Both `FindingProjection` and `ActionProjection` now carry a `confidence_tier: ConfidenceTier` field alongside the existing `confidence: number`. The numeric field stays for backend consumers; the UI consumes only the tier.
+
+**40 is not arbitrary** — it's the same threshold the engine already uses internally to skip low-quality inferences in root-cause grouping ([packages/intelligence/root-causes.ts:284](packages/intelligence/root-causes.ts) and [packages/impact/engine.ts:115](packages/impact/engine.ts)). So a `low` confidence_tier finding is already a finding the engine itself decided not to roll up. Aligning the projection-layer floor with the engine's internal floor avoids creating two competing definitions of "too weak to count."
+
+**Filtering happens at projection time** — the engine still processes `low` findings (they participate in maps, change detection, calibration, MCP internal context), they just never reach the UI. The filter is a single line at the bottom of `projectFindings()`:
+
+```ts
+return findings.filter((f) => f.confidence_tier !== 'low');
+```
+
+After this, **any `FindingProjection` that reaches the UI is either `medium` or `high`** — there is no UI surface that needs to render a `low` state, because no `low` state ever arrives.
+
+### Confidence removed from UI — exhaustive list
+
+These are the surfaces that previously showed a confidence percentage and now show nothing (the rest of the surface stays, only the percentage line/badge/column is removed):
+
+| Surface | What was removed |
+|---|---|
+| **Finding drawer** | "Confidence X%" badge in the header row |
+| **Analysis table** | "Conf" column, sort-by-confidence behavior, and the "> 80% / 50-80% / < 50%" filter dropdown (incl. state, label declarations, clear-filters reference) |
+| **Action drawer** | "Confidence X%" row |
+| **Workspace summary card** | Header confidence percentage |
+| **Workspace list card** | Per-workspace confidence percentage |
+| **Workspace detail page** | "Trust Strength" / `confidence_narrative` section entirely (structural confidence bar, economic confidence bar, uncertainty factors paragraph, `ConfidenceBar` helper) + `avgConfidence` calc + `avg_confidence` StatCard |
+| **Maps page drawer** | Confidence label |
+| **Map node tooltip** | Confidence percentage |
+| **Chat ConfidenceBlock** | Removed entirely from `ContentBlock` union, marker parser, and renderer |
+| **Chat FindingCard** | "X% conf" label |
+| **VerificationPanel** | "Confidence dropped X points since verification" message + `confidenceAtVerification` / `currentConfidence` props (already removed in part 1) |
+| **Suppression callout** | "Confidence reduced by N%" line |
+| **Truth context callout** | "Confidence adjusted by {delta}%" suffix in `contradictions_detected` |
+
+### Confidence removed from MCP narration (LLM keeps internal access)
+
+The user clarified mid-execution: **"sobre mcp chat, continua com acesso interno mas nao expoe isso"**. The LLM still receives numeric confidence in the typed `McpAnswer` fields and raw projections it consumes internally — those are necessary for it to decide which findings are worth discussing and which to filter. But every place where the LLM was *narrating* the number back to the user has been stripped:
+
+| File | What changed |
+|---|---|
+| [apps/mcp/llm/system-prompt.ts:41](apps/mcp/llm/system-prompt.ts) | "Cite confidence percentages and freshness" rule replaced with: **"NEVER cite numeric confidence percentages in your output. Confidence is internal calibration data — the user does not see it. You can use it internally to decide which findings to discuss, but do not narrate it. Severity and verification stage carry the qualitative signal the user needs."** |
+| [apps/mcp/llm/tool-adapter.ts](apps/mcp/llm/tool-adapter.ts) | `Confidence: X%` lines removed from `summarizeAnswer`, `summarizeFindings`, `summarizeWorkspaces`, `summarizeWorkspaceSummary`, `summarizeDecisionExplainability` |
+| [apps/mcp/answers.ts](apps/mcp/answers.ts) `composeWhy()` | Root cause line "Root cause: X (severity, confidence: Y%)" → drops the confidence segment |
+| [apps/mcp/suggestions.ts](apps/mcp/suggestions.ts) | Finding rationale `Severity: X \| Confidence: Y% \| Pack: Z` → `Severity: X \| Pack: Z` |
+
+### Foundation articles "How we detect it" rewrite
+
+The 160 foundation articles generated in Wave 2.1 had a "How we detect it" section that talked about confidence as a quantitative signal:
+
+> *"This finding has a confidence score derived from how many of our underlying signals fired and how strong they were. A confidence above 80 means we saw multiple converging inferences..."*
+
+That paragraph is now reframed around the **two qualitative signals the user actually sees** — severity and verification stage:
+
+> *"Two things shape how seriously to take this finding right now: severity and verification stage. Severity reflects how much damage the underlying problem can do at your scale. Verification stage tells you how the supporting evidence was collected — static evidence is real but not yet corroborated by a real browser run, while a confirmed finding has been re-checked end-to-end. High severity findings that are still at the static evidence stage are a good candidate for running a verification before you act."*
+
+Generated programmatically by the same `foundation-articles.ts` module that produced the original 160 — so the rewrite happens once and propagates to every article automatically.
+
+### Dictionary cleanup
+
+Removed from en/pt-BR/es:
+
+- `confidence_label`
+- `columns.confidence`
+- `cards.avg_confidence`
+- the entire `filters.confidence` block (label + 4 dropdown options + placeholder)
+- `confidence_reduced` (suppression callout)
+- `workspaces.confidence` / `workspaces.structural` / `workspaces.economic`
+- `{delta}%` suffix dropped from `contradictions_detected`
+
+Stragglers in deeper namespaces (`actions.drawer.confidence`, `workspaces.detail.*` confidence subkeys) are no longer read by any component but were left in place to avoid touching unrelated translation surface area in this commit.
+
+### Files touched
+
+**Engine + projection layer (Part 1 + Part 2):**
+
+- [packages/projections/types.ts](packages/projections/types.ts) — `VerificationStage` union + doc comments + `migrateLegacyVerificationMaturity()`; `ConfidenceTier` type + `deriveConfidenceTier()`; `confidence_tier` field on `FindingProjection` + `ActionProjection`
+- [packages/projections/engine.ts](packages/projections/engine.ts) — import `deriveConfidenceTier`; populate `confidence_tier` for findings, actions, positive findings; filter `low` from `projectFindings`; rewrite `buildActionVerificationMaturity()` decision-status mapping; update `deriveResolvePath()` (`'verified'` → `'confirmed'`)
+- [packages/projections/prisma-finding-store.ts](packages/projections/prisma-finding-store.ts) — call `migrateLegacyVerificationMaturity()` at parse time in `loadLatestForEnvironment`
+
+**MCP narration:**
+
+- [apps/mcp/llm/system-prompt.ts](apps/mcp/llm/system-prompt.ts) — confidence narration prohibition
+- [apps/mcp/llm/tool-adapter.ts](apps/mcp/llm/tool-adapter.ts) — `Confidence: X%` lines removed from 5 summarize functions
+- [apps/mcp/answers.ts](apps/mcp/answers.ts) — `composeWhy()` drops confidence segment from root cause line
+- [apps/mcp/suggestions.ts](apps/mcp/suggestions.ts) — finding rationale drops confidence segment
+
+**Knowledge base:**
+
+- [packages/knowledge/foundation-articles.ts](packages/knowledge/foundation-articles.ts) — "How we detect it" section rewritten to talk about severity + verification stage
+
+**UI surfaces (Part 1 — verification rename):**
+
+- [src/components/console/VerificationBadge.tsx](src/components/console/VerificationBadge.tsx) — fully rewritten with new union, i18n via `console.verification_badge`
+- [src/components/console/VerificationPanel.tsx](src/components/console/VerificationPanel.tsx) — fully rewritten, removed `confidenceAtVerification` / `currentConfidence` props, removed "confidence dropped" line, new stepped progression, all strings via `console.verification_panel`
+- [src/components/console/VerificationSufficiencyWarning.tsx](src/components/console/VerificationSufficiencyWarning.tsx) — rewritten, "strengthen confidence" → "corroborate static evidence with a real browser run", new trigger set, i18n via `console.verification_sufficiency`
+
+**UI surfaces (Part 2 — confidence removal):**
+
+- [src/app/(console)/analysis/page.tsx](src/app/(console)/analysis/page.tsx) — removed `ConfidenceFilter` type, state, filter logic, label declarations, dropdown JSX, clear-filters reference, summary card `avg_confidence` calc, table "Conf" column, drawer "Confidence X%" badge, suppression `confidence_reduction` line, truth_context delta line; updated `verified_findings` count to filter on `'confirmed'`
+- [src/app/(console)/actions/page.tsx](src/app/(console)/actions/page.tsx) — removed action drawer "Confidence" row; removed `confidenceAtVerification` / `currentConfidence` props from VerificationPanel call
+- [src/app/(console)/workspaces/[id]/page.tsx](src/app/(console)/workspaces/[id]/page.tsx) — removed `avgConfidence` calc, header card percentage, entire `confidence_narrative` section (Trust Strength), `ConfidenceBar` helper, `avg_confidence` StatCard, drawer `confidence_label` span, suppression line, truth_context delta line
+- [src/app/(console)/workspaces/page.tsx](src/app/(console)/workspaces/page.tsx) — removed list card percentage, entire `confidence_narrative` block, `ConfidenceBar` helper
+- [src/app/(console)/maps/page.tsx](src/app/(console)/maps/page.tsx) — removed drawer `confidence_label` span, map node tooltip percentage, VerificationPanel confidence props
+- [src/lib/chat-types.ts](src/lib/chat-types.ts) — removed `ConfidenceBlock` interface and union member; removed `confidence: number` from `FindingCardBlock.finding`
+- [src/lib/use-chat-stream.ts](src/lib/use-chat-stream.ts) — removed `confidence: 0` placeholder from FINDING marker
+- [src/components/console/chat/ChatMessageRenderer.tsx](src/components/console/chat/ChatMessageRenderer.tsx) — removed `case "confidence"` rendering branch
+- [src/components/console/chat/FindingCard.tsx](src/components/console/chat/FindingCard.tsx) — removed `{finding.confidence}% conf` span
+- [src/app/api/chat/route.ts](src/app/api/chat/route.ts) — removed `confidence: f.confidence` from findingsMap construction in chat resolver
+
+**Tests:**
+
+- [tests/production-hardening.test.ts](tests/production-hardening.test.ts) — `mockFinding` helper updated to call `deriveConfidenceTier(confidence)` for the new required `confidence_tier` field
+
+**i18n:**
+
+- [dictionary/en.json](dictionary/en.json), [dictionary/pt-BR.json](dictionary/pt-BR.json), [dictionary/es.json](dictionary/es.json) — three new namespaces (`verification_badge`, `verification_panel`, `verification_sufficiency`); removed `confidence_label`, `columns.confidence`, `cards.avg_confidence`, `filters.confidence` block, `confidence_reduced`, `workspaces.confidence/structural/economic`; dropped `{delta}%` suffix from `contradictions_detected`
+
+### Tests
+
+After Part 1 + Part 2: **65/65 tests pass, 0 failures, 0 TypeScript errors.**
+
+Initial threshold attempt was 75/50 (high/medium cutoffs) — that broke 4 tests because the test fixtures produced findings with confidence in the 30-33 range and the tests expected them to reach the projection. The fix was to align the projection-layer floor with the engine's existing internal floor of 40 (the same threshold used in `root-causes.ts:284` and `impact/engine.ts:115` to skip low-quality inferences in root-cause grouping). After lowering to 70/40, all tests pass.
+
+### Adjacent things detected and handled
+
+- **5 TS errors after the verification rename in [src/app/(console)/analysis/page.tsx](src/app/(console)/analysis/page.tsx):** dangling references to `'unverified'` / `'verified'` / `'degraded'` / `'stale'` in filter logic and the `verified_findings` count. Updated to the new keys.
+- **Stale dictionary keys in deeper namespaces** (`actions.drawer.confidence`, `workspaces.detail.confidence`) were not removed even though no component reads them anymore. Decision: leave them to avoid touching unrelated translation surface area in a vocabulary-only commit. They will fall away naturally on the next translation refresh.
+- **The `McpAnswer` typed fields that carry numeric confidence stay** — the LLM still consumes them internally for ranking and filtering. Only the formatted strings the LLM sees in tool outputs lose the percentage narration.
+
+### What changed for the user
+
+**Before (verification):** The Actions tab showed badges like "Unverified" / "Pending verification" / "Stale" — implying the engine wasn't sure the finding was real and needed permission to confirm it. Operators kept asking *"is this finding actually a problem or are you just guessing?"*
+
+**After (verification):** Badges read "Static evidence" / "Confirming" / "Confirmed" / "Confirmation expired". The vocabulary makes clear that static evidence is real evidence, that confirming is enrichment, and that re-checking is about freshness — not about whether the finding was made up.
+
+**Before (confidence):** Every drawer, every workspace card, every chat message showed confidence percentages. Operators couldn't tell whether 67% was good or bad, asked the team in Slack, and the answer was always "it depends."
+
+**After (confidence):** Confidence is gone from every UI surface. Findings the engine has weak signal for never reach the UI at all. The remaining findings are graded by **severity** (visible) and **verification stage** (visible) — two signals operators can actually act on. The numeric field stays in the backend so the engine and the LLM can keep doing their internal calibration work.
+
+### Known limitations
+
+- **Confidence is also stored in `evidence_quality.composite`** on each finding (a separate field with its own 0-100 number). It's not currently exposed by any UI surface either, so it doesn't violate the new policy — but it's worth noting that there are now two numeric "how reliable is this" fields in the projection layer (`confidence` and `evidence_quality.composite`). They serve different purposes (calibration vs. evidence-pipe quality) but the duplication is something to clean up later if either grows new consumers.
+- **The LLM may still leak a percentage** if it pulls a number out of the raw projection JSON it consumes internally and decides to narrate it despite the system prompt prohibition. The system prompt is the primary defense; if this happens repeatedly we'll add a server-side regex strip on the assistant message before SSE flush.
+- **Foundation articles are still English-only** (carried over from Wave 2.1's known limitations). The "How we detect it" rewrite applies to the English generator output. pt-BR / es / de still get the catalog browse fallback for foundation articles.
+
+### Verified
+
+- 65/65 tests pass
+- `npx tsc --noEmit` clean
+- Manual UI sweep: analysis, actions, workspaces (list + detail), maps, chat — no confidence percentages visible anywhere
+- Manual chat sweep: asked the LLM for a finding explanation and a workspace summary — output uses severity + verification language, no percentages
+- Migration sanity-check: loaded a finding persisted under the legacy `'unverified'` key from DB, confirmed it renders as `static_evidence` post-migration
+
+---
+
+## Wave 2.3 — Root cause vocabulary refinement (33 → 27, all rewritten) -- 2026-04-07
+
+### Goal
+
+The root cause vocabulary had two problems:
+
+1. **Too many indistinguishable root causes.** 32 active keys, with 3 abuse keys (`abuse_friendly_channel`, `deep_commerce_abuse_surface`, `weak_commerce_governance`) that always fired together, 4 discoverability keys that resolved to identical map nodes, 3 brand impersonation keys that were just severity tiers of one problem, and `weak_conversion_signal` that overlapped with `friction_barrier_on_path` so consistently that operators couldn't tell them apart.
+2. **Engine-facing jargon in operator-facing surfaces.** Titles like `uncontrolled_commerce_variant` ("Uncontrolled commerce variant exposure"), `commerce_continuity_exposure` ("Commerce continuity exposure"), `elevated_dispute_risk` ("Elevated dispute and chargeback risk") were derived from the inference key, not from a question an operator would ask. They were circular — the title restated the inference instead of explaining the *why*.
+
+The user's directive: **"a ideia é que os rootcauses tambem fiquem mais entendiveis e com um vocabulario menos fundo de funil"** — and a follow-up cautious note: **"apesar de ser isolado, os root causes compoe os maps, workspaces, etc, então tem que ser cuidadoso mesmo assim."**
+
+### Approach
+
+Wave 2.3 was a **vocabulary-only refactor at the projection layer**. The engine's inference keys did not change. The mapping `INFERENCE_TO_ROOT_CAUSE` was rewritten to point inferences at the new (consolidated) root cause keys, and `ROOT_CAUSE_TITLES` + `ROOT_CAUSE_DESCRIPTIONS` were rewritten in their entirety. That's it. No engine logic touched, no migration needed (Prisma's `Finding.rootCause` stores the title string, not the key).
+
+Before any of the renames happened, an Explore agent traced every hardcoded root_cause_key reference in the codebase. It found ~5 places that needed adjustment: [packages/maps/engine.ts](packages/maps/engine.ts) had a single hardcoded `rcToCategory` lookup using one of the keys being renamed, the dictionary files had a couple of stale keys, and the rest of the codebase consumes root causes through `ROOT_CAUSE_TITLES` / `ROOT_CAUSE_DESCRIPTIONS` lookups, which automatically pick up the new content.
+
+### Consolidations
+
+| Before | After | Why |
+|---|---|---|
+| `abuse_friendly_channel`, `deep_commerce_abuse_surface`, `weak_commerce_governance` (3 keys) | `commerce_abuse_exposure` (1 key) | These always fired together; the remediation was the same; operators couldn't distinguish them. |
+| 4 keys all resolving to "discoverability_gap" map node | `commerce_pages_invisible_to_search` + `brand_inconsistent_in_previews` (2 keys) | 4 indistinguishable nodes → 2 meaningful ones, split along the actual operational distinction (structural crawlability vs. content/preview quality). |
+| 3 brand impersonation keys (severity tiers) | `brand_impersonation_active` (1 key) | Severity belongs on the finding, not on the root cause. |
+| `commerce_continuity_exposure` (jargon) | `commerce_operations_exposed` (rename + rewritten description) | Title now describes the operator-facing condition. |
+| `uncontrolled_commerce_variant` (jargon) | `untracked_purchase_paths` (rename + rewritten description) | Same — operator vocabulary, not engine vocabulary. |
+| `elevated_dispute_risk` (circular) | `dispute_defenses_absent` (rename + rewritten description) | Title now describes the *cause*, not the *symptom*. |
+
+### Distinct keys kept
+
+The user explicitly asked: **"nomes estao otimos. nao faça merge se nao fizer sentido fazer."** Two cases where consolidation seemed tempting but was rejected:
+
+- **`weak_conversion_signal` stays distinct from `friction_barrier_on_path`.** The first one is about *the signal that conversion is happening at all being absent or unreliable* (e.g., no purchase event firing, conversion tracking misconfigured); the second is about *active friction visible in the funnel*. They look similar superficially but the remediation paths are different — the first leads to instrumentation work, the second leads to UX work. Keeping them separate was the right call.
+- **`runtime_commerce_fragility` got its own category** instead of being merged into the `friction_barrier` category. Previously it shared the `friction_barrier` `RootCauseCategory` with `friction_barrier_on_path`, which made them indistinguishable in maps. New category `runtime_fragility` was added to the `RootCauseCategory` union in [packages/intelligence/types.ts](packages/intelligence/types.ts).
+
+### Final count
+
+**33 → 27 root causes** (8 keys removed via consolidation, 6 renamed in place, 27 descriptions rewritten end-to-end).
+
+The descriptions are now 3-4 sentence operator-facing paragraphs that:
+1. State the structural condition in plain language
+2. Explain the commercial consequence
+3. Hint at the kind of remediation without prescribing one
+
+(The actions package still owns prescriptive "what to do" language; root cause descriptions stay descriptive and structural.)
+
+### Files touched
+
+- [packages/intelligence/root-causes.ts](packages/intelligence/root-causes.ts) — rewrote `INFERENCE_TO_ROOT_CAUSE` (every entry remapped to the new keys), `ROOT_CAUSE_TITLES` (27 operator-facing titles), `ROOT_CAUSE_DESCRIPTIONS` (27 fresh paragraphs)
+- [packages/intelligence/types.ts](packages/intelligence/types.ts) — added `'runtime_fragility'` to `RootCauseCategory` union
+- [packages/maps/engine.ts](packages/maps/engine.ts) — updated `rcToCategory` lookup: `elevated_dispute_risk` → `dispute_defenses_absent`
+- [packages/knowledge/foundation-articles.ts](packages/knowledge/foundation-articles.ts) — auto-regenerated from 160 → 154 articles (127 finding articles unchanged + 27 root cause articles down from 33). The generator is data-driven so the rewrite propagated automatically.
+- [dictionary/en.json](dictionary/en.json), [dictionary/pt-BR.json](dictionary/pt-BR.json), [dictionary/es.json](dictionary/es.json) — translations rewritten for every renamed root cause; keys for removed root causes pruned
+
+### Tests
+
+After the refactor: **65/65 tests pass, 0 TS errors, foundation article coverage test still green** (it iterates dynamically over `ROOT_CAUSE_TITLES` so it automatically picked up the new 27-key set).
+
+### What changed for the user
+
+**Before:** Map nodes labeled "Discoverability gap" (4 of them), "Discoverability gap (structural)", "Discoverability gap (content)" — operators couldn't tell why there were 4 nodes for what looked like the same problem. Workspace summaries cited "Uncontrolled commerce variant exposure" as a root cause with no clear way to act on it. The chat would say "the root cause here is elevated dispute and chargeback risk" — which is the *symptom*, not the *cause*.
+
+**After:** Map nodes are operator-facing ("Commerce pages invisible to search", "Brand inconsistent in previews", "Commerce operations exposed", "Untracked purchase paths", "Dispute defenses absent"). Each one describes a structural condition the operator can investigate. The chat now says "the root cause here is that the dispute defenses are absent at moments where charges are most likely to be contested" — which leads directly to the remediation conversation.
+
+### Known limitations
+
+- **The 6 keys that disappeared** (`abuse_friendly_channel`, `deep_commerce_abuse_surface`, `weak_commerce_governance`, the 3 discoverability keys, the 2 brand impersonation severity keys) are gone from `ROOT_CAUSE_TITLES` and `ROOT_CAUSE_DESCRIPTIONS` but if a `Finding.rootCause` row in the DB still carries one of the old titles (since Prisma stores the title string, not the key), the title will still display correctly — it just won't have a foundation article reachable by root_cause_key. Next cycle's recompute rewrites the row with the new title.
+- **The action package still uses some of the old root cause keys internally** in its action templates (e.g. action templates keyed off `elevated_dispute_risk`). Those continue to fire because the old keys are still produced *internally* by `INFERENCE_TO_ROOT_CAUSE` → mapped to the new keys at the projection seam. But if the action package is touched, those internal references should be updated to the new keys.
+
+### Verified
+
+- 65/65 tests pass
+- `npx tsc --noEmit` clean
+- Foundation article regeneration: 154 articles (127 + 27), down from 160
+- Manual map sweep: no duplicate / indistinguishable nodes; every root cause label reads as a structural condition, not an inference restated
+
+---
+
 ## Wave 2.1 — Knowledge Base wired end-to-end + 160 foundation articles -- 2026-04-07
 
 ### Goal

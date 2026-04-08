@@ -8,6 +8,7 @@ import { ConversationSidebar } from "@/components/console/chat/ConversationSideb
 import { ChatInputBar } from "@/components/console/chat/ChatInputBar";
 import { FileUploadZone, type UploadedFile } from "@/components/console/chat/FileUploadZone";
 // ChatBudgetBar removed — usage shown as radial indicator in ChatInputBar
+import { parseBlockMarkers } from "@/lib/chat-block-parser";
 import { useChatStream } from "@/lib/use-chat-stream";
 import type { ChatMessage, ContentBlock, ModelId, Conversation } from "@/lib/chat-types";
 
@@ -30,6 +31,22 @@ interface UsageState {
   envId: string | null;
 }
 
+// Hydrated context item — what the indicator above the editor renders.
+// Built by POSTing the raw {kind, id} pairs from URL params to
+// /api/chat/context-items, which resolves them through the in-memory
+// MCP projections so we get titles + severity + impact in one batched
+// round trip. Items that don't resolve are dropped silently (the user
+// just won't see them in the bar).
+type ChatContextKind = "finding" | "action" | "workspace" | "surface";
+interface ChatContextItem {
+  kind: ChatContextKind;
+  id: string;
+  title: string;
+  severity?: string;
+  impact_mid?: number;
+  pack?: string;
+}
+
 export default function ChatPage() {
   const router = useRouter();
   const t = useTranslations("console.chat");
@@ -37,9 +54,17 @@ export default function ChatPage() {
 
   // ── State ──────────────────────────────────
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  // Active conversation ID is persisted to localStorage (NOT sessionStorage)
+  // so it survives logout/login. The pre-Wave 2 implementation used
+  // sessionStorage, which the browser clears when the auth session ends —
+  // so users coming back to the app saw an empty chat page even though
+  // their conversations were intact in the database. The auto-restore
+  // useEffect below also picks the most recent conversation when no
+  // stored ID is present, so a brand-new login lands on the user's
+  // latest conversation instead of an empty state.
   const [activeConversationId, setActiveConversationId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
-      return sessionStorage.getItem("vestigio_active_conv") || null;
+      return localStorage.getItem("vestigio_active_conv") || null;
     }
     return null;
   });
@@ -50,7 +75,7 @@ export default function ChatPage() {
   const [questionQueue, setQuestionQueue] = useState<string[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
   const [playbooksOpen, setPlaybooksOpen] = useState(false);
-  const [contextItems, setContextItems] = useState<string[]>([]);
+  const [contextItems, setContextItems] = useState<ChatContextItem[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -128,52 +153,207 @@ export default function ChatPage() {
     if (role === "user") {
       return [{ type: "markdown", content }];
     }
-    // Try parsing as JSON ContentBlock array, fallback to markdown
+    // Modern persistence: assistant messages are stored as
+    // JSON.stringify(ContentBlock[]) — fully resolved cards included.
+    // This is the fast path and what every message saved after Wave 2
+    // uses. JSON.parse + an Array.isArray sanity check is enough.
     try {
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) return parsed;
-    } catch { /* not JSON */ }
-    return [{ type: "markdown", content }];
+    } catch { /* not JSON — fall through */ }
+    // Legacy fallback: messages persisted before the server-side
+    // resolver shipped still have raw `$$MARKER{...}$$` text. Run the
+    // marker parser on them so cards at least render with placeholder
+    // titles instead of literal "$$FINDING{abc123}$$" strings. The
+    // metadata won't be hydrated (we don't have findings_data /
+    // actions_data on a cold restore) so cards show generic titles +
+    // links — strictly better than the raw markers.
+    return parseBlockMarkers(content);
   }
 
   // ── Persist active conversation ID ─────────
   useEffect(() => {
     if (activeConversationId) {
-      sessionStorage.setItem("vestigio_active_conv", activeConversationId);
+      localStorage.setItem("vestigio_active_conv", activeConversationId);
     } else {
-      sessionStorage.removeItem("vestigio_active_conv");
+      localStorage.removeItem("vestigio_active_conv");
     }
   }, [activeConversationId]);
 
   // ── Init ───────────────────────────────────
+  // Two-step restore:
+  //   1. If localStorage has a stored conversation id, try to load it.
+  //      That covers normal "return to chat" flow inside the same login.
+  //   2. If no id is stored (first login, or after the user explicitly
+  //      cleared with handleNewChat), wait until /api/conversations
+  //      resolves and auto-select the most recent non-deleted thread.
+  //      This is what makes "log out, log back in" land on the user's
+  //      latest conversation instead of an empty page even when the
+  //      browser cleared every storage layer.
   useEffect(() => {
     fetchUsage();
     fetchConversations();
-    // Restore active conversation if returning from another tab
-    const stored = sessionStorage.getItem("vestigio_active_conv");
+    const stored = localStorage.getItem("vestigio_active_conv");
     if (stored && messages.length === 0) {
       loadConversation(stored);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Read URL context params and auto-send ──
+  // ── Auto-restore most recent conversation ──
+  // Fires once after fetchConversations() lands and only when nothing
+  // else has populated the chat yet. Picks the first conversation in
+  // the list (the API returns them ordered by updatedAt desc, see
+  // src/app/api/conversations/route.ts) so the user reliably lands on
+  // the thread they were last working on. Conditional on
+  // `messages.length === 0` so it never overrides an in-progress chat.
+  //
+  // **Race-condition guard:** if the URL carries context params, the
+  // user is intentionally starting a NEW context-aware chat — we must
+  // NOT auto-restore an old one and overwrite it. The URL effect
+  // above is async (it hydrates context metadata before calling
+  // handleSend) so there's a window where `activeConversationId` is
+  // still null and `messages` is still empty even though a new chat
+  // is about to be created. We sidestep that by checking the URL
+  // params directly here too.
+  useEffect(() => {
+    if (activeConversationId) return;
+    if (messages.length > 0) return;
+    if (conversations.length === 0) return;
+    if (
+      searchParams.get("finding") ||
+      searchParams.get("findings") ||
+      searchParams.get("action") ||
+      searchParams.get("context") ||
+      searchParams.get("surfaces")
+    ) {
+      return;
+    }
+    const mostRecent = conversations[0];
+    if (mostRecent?.id) {
+      loadConversation(mostRecent.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversations.length]);
+
+  // ── Read URL context params, hydrate metadata, then auto-send ──
+  // Entry points across the console (Discuss, Analyze together, Use
+  // as context) navigate here with raw IDs in the URL. The legacy
+  // implementation passed the IDs directly to the LLM as text and
+  // showed only a "1 item" counter — operators couldn't see WHICH
+  // finding was attached. The new flow:
+  //
+  //   1. Parse all known param shapes into a {kind, id}[] list.
+  //      Different entry points use different param names (`finding`,
+  //      `findings`, `action`, `context`, `surfaces`, plus a
+  //      `workspaces:` prefix from the workspaces page) — all are
+  //      normalised here.
+  //   2. POST the list to /api/chat/context-items, which hydrates
+  //      title + severity + impact from the in-memory MCP projections
+  //      in one batched round trip.
+  //   3. Set the rich items into state so the indicator bar above
+  //      the editor can render proper chips.
+  //   4. Auto-send the initial prompt as before, but now the prompt
+  //      can interpolate the resolved titles instead of raw IDs so
+  //      the LLM has the human-friendly context too.
+  //
+  // The context PERSISTS across follow-up messages — clicking "×" on
+  // a chip is the only way to remove an item. This matches the user
+  // mental model that "discussing finding X" is a sticky property of
+  // the conversation, not a one-shot lookup that vanishes after the
+  // first reply.
   useEffect(() => {
     const finding = searchParams.get("finding");
     const findings = searchParams.get("findings");
+    const action = searchParams.get("action");
     const context = searchParams.get("context");
+    const surfaces = searchParams.get("surfaces");
+
+    const raw: Array<{ kind: ChatContextKind; id: string }> = [];
     if (finding) {
-      setContextItems([finding]);
-      handleSend(`Discuss finding ${finding}. Explain the root cause, impact, and what to fix.`);
-    } else if (findings) {
-      const ids = findings.split(",").filter(Boolean);
-      setContextItems(ids);
-      handleSend(`Analyze these ${ids.length} findings together: ${ids.join(", ")}. What do they have in common? What's the combined impact and the single highest-leverage fix?`);
-    } else if (context) {
-      const ids = context.split(",").filter(Boolean);
-      setContextItems(ids);
-      handleSend(`Use these items as context for our conversation: ${ids.join(", ")}. Give me a summary of what you see.`);
+      raw.push({ kind: "finding", id: finding });
     }
+    if (findings) {
+      for (const id of findings.split(",").map((s) => s.trim()).filter(Boolean)) {
+        raw.push({ kind: "finding", id });
+      }
+    }
+    if (action) {
+      raw.push({ kind: "action", id: action });
+    }
+    if (surfaces) {
+      for (const id of surfaces.split(",").map((s) => s.trim()).filter(Boolean)) {
+        raw.push({ kind: "surface", id });
+      }
+    }
+    if (context) {
+      // Two flavours: `?context=workspaces:id1,id2` (workspaces page)
+      // and `?context=id1,id2` (inventory page, plain finding IDs).
+      // The `?context=maps` literal from the maps page has no items
+      // to hydrate — it just opens the chat with no specific context.
+      if (context === "maps") {
+        // No items, no hydration — fall through.
+      } else if (context.startsWith("workspaces:")) {
+        const list = context.slice("workspaces:".length);
+        for (const id of list.split(",").map((s) => s.trim()).filter(Boolean)) {
+          raw.push({ kind: "workspace", id });
+        }
+      } else {
+        for (const id of context.split(",").map((s) => s.trim()).filter(Boolean)) {
+          raw.push({ kind: "finding", id });
+        }
+      }
+    }
+
+    if (raw.length === 0) {
+      // No URL context — nothing to hydrate, nothing to auto-send.
+      return;
+    }
+
+    // Hydrate metadata via the batched endpoint, then set state and
+    // auto-send a context-aware initial prompt. We construct the
+    // prompt from the hydrated titles so the LLM sees human-readable
+    // names AND the IDs (so its tools can resolve them deterministically).
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/chat/context-items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: raw }),
+        });
+        if (!res.ok) throw new Error("hydration failed");
+        const data = await res.json();
+        const hydrated: ChatContextItem[] = Array.isArray(data.items) ? data.items : [];
+        if (cancelled) return;
+        setContextItems(hydrated);
+
+        // Build the initial prompt. If hydration came back empty (the
+        // engine no longer knows about these IDs), we still send a
+        // prompt referring to the raw IDs as a fallback so the user
+        // gets *something* — but the indicator stays empty.
+        const items = hydrated.length > 0 ? hydrated : raw.map((r) => ({
+          kind: r.kind,
+          id: r.id,
+          title: r.id,
+        } as ChatContextItem));
+        handleSend(buildContextPrompt(items));
+      } catch {
+        // Hydration unavailable — fall back to the legacy behaviour
+        // so the user still gets a response. The indicator just stays
+        // empty in this branch.
+        if (cancelled) return;
+        const placeholders: ChatContextItem[] = raw.map((r) => ({
+          kind: r.kind,
+          id: r.id,
+          title: r.id,
+        }));
+        setContextItems(placeholders);
+        handleSend(buildContextPrompt(placeholders));
+      }
+    })();
+
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -350,6 +530,14 @@ export default function ChatPage() {
 
   const budgetExhausted = usage ? usage.mcp_remaining <= 0 : false;
 
+  // Remove a single context item from the chip bar.
+  function handleRemoveContextItem(id: string, kind: ChatContextKind) {
+    setContextItems((prev) => prev.filter((it) => !(it.id === id && it.kind === kind)));
+  }
+  function handleClearAllContext() {
+    setContextItems([]);
+  }
+
   return (
     <div className="flex overflow-hidden" style={{ height: "calc(100vh - 4rem)" }}>
       {/* Conversation Sidebar */}
@@ -473,19 +661,13 @@ export default function ChatPage() {
             </div>
           </div>
 
-          {/* Context indicator */}
+          {/* Context indicator — rich chip bar attached to the editor */}
           {contextItems.length > 0 && (
-            <div className="flex items-center gap-2 border-t border-edge bg-surface-card/50 px-4 py-1.5 sm:px-6">
-              <svg className="h-3.5 w-3.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-              </svg>
-              <span className="text-[11px] text-content-muted">
-                {contextItems.length === 1 ? "1 item as context" : `${contextItems.length} items as context`}
-              </span>
-              <button onClick={() => setContextItems([])} className="ml-auto text-[10px] text-content-faint hover:text-content-muted">
-                &times;
-              </button>
-            </div>
+            <ContextIndicator
+              items={contextItems}
+              onRemove={handleRemoveContextItem}
+              onClearAll={handleClearAllContext}
+            />
           )}
 
           {/* Input */}
@@ -653,6 +835,185 @@ const FEATURED_BADGE_COLORS: Record<string, string> = {
   amber: 'bg-amber-500/10 text-amber-400 border-amber-700/30',
   cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-700/30',
 };
+
+// ── Context Indicator (chip bar above the editor) ──────────
+//
+// Renders one chip per attached context item, anchored to the top
+// edge of the chat input island so the user always sees what the
+// next message will be discussed against. Each chip carries a
+// kind-coloured icon, the resolved title (truncated), and a per-item
+// remove button. When more than one item is attached, a "clear all"
+// affordance appears at the right edge of the bar.
+//
+// The visual language matches Vestigio's existing chip pattern (used
+// for attached files in ChatInputBar) so the bar feels native to the
+// island below it instead of a separate banner.
+
+const CONTEXT_KIND_LABELS: Record<ChatContextKind, string> = {
+  finding: "Finding",
+  action: "Action",
+  workspace: "Workspace",
+  surface: "Surface",
+};
+
+const CONTEXT_KIND_STYLES: Record<ChatContextKind, { chip: string; icon: string }> = {
+  finding: {
+    chip: "border-red-700/40 bg-red-500/10 text-red-300 hover:border-red-600/60",
+    icon: "text-red-400",
+  },
+  action: {
+    chip: "border-emerald-700/40 bg-emerald-500/10 text-emerald-300 hover:border-emerald-600/60",
+    icon: "text-emerald-400",
+  },
+  workspace: {
+    chip: "border-violet-700/40 bg-violet-500/10 text-violet-300 hover:border-violet-600/60",
+    icon: "text-violet-400",
+  },
+  surface: {
+    chip: "border-cyan-700/40 bg-cyan-500/10 text-cyan-300 hover:border-cyan-600/60",
+    icon: "text-cyan-400",
+  },
+};
+
+function ContextKindIcon({ kind, className }: { kind: ChatContextKind; className?: string }) {
+  if (kind === "finding") {
+    return (
+      <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+      </svg>
+    );
+  }
+  if (kind === "action") {
+    return (
+      <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+      </svg>
+    );
+  }
+  if (kind === "workspace") {
+    return (
+      <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+    </svg>
+  );
+}
+
+function ContextIndicator({
+  items,
+  onRemove,
+  onClearAll,
+}: {
+  items: ChatContextItem[];
+  onRemove: (id: string, kind: ChatContextKind) => void;
+  onClearAll: () => void;
+}) {
+  return (
+    <div className="flex items-start gap-2 border-t border-edge bg-surface-card/40 px-4 py-2 sm:px-6">
+      <div className="flex shrink-0 items-center gap-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-content-muted">
+        <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+        </svg>
+        Context
+      </div>
+      <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+        {items.map((item) => {
+          const styles = CONTEXT_KIND_STYLES[item.kind];
+          const label = CONTEXT_KIND_LABELS[item.kind];
+          return (
+            <div
+              key={`${item.kind}:${item.id}`}
+              className={`group flex max-w-[260px] items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors ${styles.chip}`}
+              title={`${label}: ${item.title}`}
+            >
+              <ContextKindIcon kind={item.kind} className={`h-3 w-3 shrink-0 ${styles.icon}`} />
+              <span className="truncate font-medium">{item.title}</span>
+              <button
+                type="button"
+                onClick={() => onRemove(item.id, item.kind)}
+                className="ml-0.5 -mr-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded text-current opacity-60 transition-opacity hover:opacity-100"
+                aria-label={`Remove ${label.toLowerCase()} from context`}
+              >
+                <svg className="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none">
+                  <path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {items.length > 1 && (
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="shrink-0 self-start rounded px-1.5 py-1 text-[10px] text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
+        >
+          Clear all
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Build the auto-send prompt that pre-populates the chat when the
+// user lands here from a "Discuss" / "Use as context" CTA. The
+// resolved titles are interpolated so the LLM sees human-readable
+// names; the IDs come along too so internal tools can resolve them
+// deterministically. The prompt shape mirrors the legacy phrasings
+// so the LLM playbooks that key off "discuss finding" / "analyze
+// these N findings" / "use these items as context" still trigger.
+function buildContextPrompt(items: ChatContextItem[]): string {
+  if (items.length === 0) {
+    return "Give me a summary of what you see.";
+  }
+  if (items.length === 1) {
+    const it = items[0];
+    if (it.kind === "finding") {
+      return `Discuss finding "${it.title}" (${it.id}). Explain the root cause, impact, and what to fix.`;
+    }
+    if (it.kind === "action") {
+      return `Discuss action "${it.title}" (${it.id}). Why does it matter, what's the expected lift, and how should I sequence it?`;
+    }
+    if (it.kind === "workspace") {
+      return `Discuss the "${it.title}" workspace. Walk me through what's happening there and what to do about it.`;
+    }
+    return `Discuss surface ${it.title}. What findings touch it and what should I prioritise?`;
+  }
+
+  const findings = items.filter((i) => i.kind === "finding");
+  const actions = items.filter((i) => i.kind === "action");
+  const workspaces = items.filter((i) => i.kind === "workspace");
+  const surfaces = items.filter((i) => i.kind === "surface");
+
+  const parts: string[] = [];
+  if (findings.length > 0) {
+    parts.push(
+      `${findings.length} findings (${findings.map((f) => `"${f.title}"`).join(", ")})`,
+    );
+  }
+  if (actions.length > 0) {
+    parts.push(
+      `${actions.length} actions (${actions.map((a) => `"${a.title}"`).join(", ")})`,
+    );
+  }
+  if (workspaces.length > 0) {
+    parts.push(
+      `${workspaces.length} workspaces (${workspaces.map((w) => `"${w.title}"`).join(", ")})`,
+    );
+  }
+  if (surfaces.length > 0) {
+    parts.push(
+      `${surfaces.length} surfaces (${surfaces.map((s) => s.title).join(", ")})`,
+    );
+  }
+
+  return `Analyze these together: ${parts.join(", ")}. What do they have in common? What's the combined impact and the single highest-leverage fix?`;
+}
 
 function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
   const t = useTranslations("console.chat");

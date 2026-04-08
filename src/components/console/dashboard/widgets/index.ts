@@ -21,3 +21,8 @@ import "./ExposureKpiCard";
 import "./HealthTrendCard";
 import "./WhatChangedCard";
 import "./ActivityHeatmap";
+// Compact KPI tiles (liquid glass) — added with Phase 4 restructure
+import "./OpenCriticalKpi";
+import "./VerificationRateKpi";
+import "./StreakKpi";
+import "./TopPackKpi";

@@ -27,15 +27,15 @@
 
 import { useEffect } from "react";
 import {
-	Plus,
-	X,
-	ArrowCounterClockwise,
-	ChartLine,
-	Gauge,
-	Lightning,
-	Trophy,
-	SquaresFour,
-	Cards,
+	PlusIcon as Plus,
+	XIcon as X,
+	ArrowCounterClockwiseIcon as ArrowCounterClockwise,
+	ChartLineIcon as ChartLine,
+	GaugeIcon as Gauge,
+	LightningIcon as Lightning,
+	TrophyIcon as Trophy,
+	SquaresFourIcon as SquaresFour,
+	CardsIcon as Cards,
 } from "@phosphor-icons/react/dist/ssr";
 import {
 	listCatalogWidgets,

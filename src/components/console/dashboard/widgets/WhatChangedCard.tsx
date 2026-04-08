@@ -17,10 +17,10 @@
 // ──────────────────────────────────────────────
 
 import {
-	ArrowsClockwise,
-	CheckCircle,
-	Plus,
-	ShieldCheck,
+	ArrowsClockwiseIcon as ArrowsClockwise,
+	CheckCircleIcon as CheckCircle,
+	PlusIcon as Plus,
+	SealCheckIcon as ShieldCheck,
 } from "@phosphor-icons/react/dist/ssr";
 import {
 	registerWidget,
@@ -118,38 +118,38 @@ function WhatChangedCardComponent({ data }: WidgetProps) {
 	} = data.changeReport;
 
 	return (
-		<div className='flex h-full flex-col p-7'>
+		<div className='flex h-full flex-col p-5'>
 			{/* Eyebrow */}
 			<div className='flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<span>What changed since last cycle</span>
 				<span className='text-content-faint'>last 24h</span>
 			</div>
 
-			{/* Four sections in a grid */}
-			<div className='mt-4 grid flex-1 grid-cols-1 gap-5 md:grid-cols-2'>
+			{/* Four sections in a 2x2 grid */}
+			<div className='mt-3 grid flex-1 grid-cols-1 gap-3 md:grid-cols-2'>
 				<Section
-					icon={<Plus size={14} weight='bold' />}
+					icon={<Plus size={12} weight='bold' />}
 					label='new findings'
 					count={newFindings.length}
 					tone='added'
 					entries={newFindings}
 				/>
 				<Section
-					icon={<ArrowsClockwise size={14} weight='bold' />}
+					icon={<ArrowsClockwise size={12} weight='bold' />}
 					label='regressions'
 					count={regressions.length}
 					tone='regressed'
 					entries={regressions}
 				/>
 				<Section
-					icon={<CheckCircle size={14} weight='bold' />}
+					icon={<CheckCircle size={12} weight='bold' />}
 					label='resolved'
 					count={resolved.length}
 					tone='resolved'
 					entries={resolved}
 				/>
 				<Section
-					icon={<ShieldCheck size={14} weight='bold' />}
+					icon={<ShieldCheck size={12} weight='bold' />}
 					label='verifications confirmed'
 					count={verificationsConfirmed}
 					tone='verified'
@@ -157,7 +157,7 @@ function WhatChangedCardComponent({ data }: WidgetProps) {
 			</div>
 
 			{/* Caption strip */}
-			<p className='mt-4 line-clamp-2 border-t border-edge/40 pt-3 text-xs leading-snug text-content-secondary'>
+			<p className='mt-2 line-clamp-1 border-t border-edge/40 pt-2 text-[11px] leading-snug text-content-secondary'>
 				{caption}
 			</p>
 		</div>

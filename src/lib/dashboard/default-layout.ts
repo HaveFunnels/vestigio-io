@@ -13,11 +13,38 @@
 // **Layout coordinate system:**
 //   - x, y: position in the 12-column grid (0-indexed)
 //   - w, h: width/height in grid units
-//   - rowHeight is set on the grid container (80px in Phase 1)
+//   - rowHeight is set on the grid container (80px)
 //
-// The layout is intentionally compact — 5 widgets that cover the
-// hero content. More widgets get added in Phase 4 / from the
-// catalog.
+// Phase 4 user-feedback restructure — constraints driving this shape:
+//
+//   1. The TOP ROW must always be Money / Exposure / Critical, in
+//      that order. These are the user's "did I make money / am I
+//      losing money / is anything on fire" hero stats.
+//   2. Cards must justify their size — no card should leave large
+//      empty whitespace just for visual balance. The widget content
+//      itself was tightened (smaller padding, no caption strips on
+//      compact tiles) so widgets can shrink to their natural size.
+//   3. ActivityHeatmap is half-width (w=6) instead of the previous
+//      full-width strip — denser, less wasted vertical space.
+//   4. Drop TopPack from the top of the grid; the per-pack drill
+//      down is now INSIDE ExposureKpiCard so the segmented bar's
+//      color → pack mapping is finally explicit. TopPack stays as
+//      a small w=2 tile in the bottom KPI row.
+//
+//   ┌────────┬──────────────┬────────┐
+//   │ Money  │  Exposure    │Critical│   row 0-2 (h=3)
+//   │ w=4    │  w=5         │ w=3    │
+//   ├────────┴──────┬───────┴────────┤
+//   │ Health        │ WhatChanged    │   row 3-6 (h=4)
+//   │ w=6           │ w=6            │
+//   ├───────────────┼─────┬────┬────┤
+//   │ Heatmap       │Strk │Verf│Top │   row 7-9 (h=3)
+//   │ w=6           │w=2  │w=2 │w=2 │
+//   └───────────────┴─────┴────┴────┘
+//
+// Total: 10 row units. With rowHeight=80 and margin=14, the dashboard
+// renders in ~944px — close to a single screen on a standard 1080p
+// laptop without scrolling.
 // ──────────────────────────────────────────────
 
 export interface WidgetInstance {
@@ -33,66 +60,24 @@ export interface WidgetInstance {
 	h: number;
 }
 
-// Layout shape — 3 vertical columns with asymmetric widths and
-// vertically-stacked widgets of varying heights inside each column,
-// plus a full-width activity heatmap as the bottom strip.
-//
-//   Col A (w=4) — narrative          [MoneyRecovered hero, HealthTrend]
-//   Col B (w=5) — analytic detail    [WhatChanged, Exposure]
-//   Col C (w=3) — compact KPI strip  [4 liquid-glass tiles]
-//   Bottom (w=12) — wide heatmap strip
-//
-// react-grid-layout's vertical compactor packs each column
-// independently, so the masonry feel comes from setting distinct
-// heights — not from forcing y-alignment. Each column targets
-// ~11 row units of height; the heatmap then takes 4 more rows
-// underneath, giving a ~15-row total dashboard.
-//
-// **Why this shape and not 4+4+4:** the central detail column
-// (WhatChanged + Exposure) carries the most information density
-// per unit width, so it earns the widest slot. The narrative
-// column carries the hero and trend, both of which look better
-// tall+narrow than wide+short. The KPI strip stays compact so the
-// liquid-glass tiles can stack tightly without dominating.
 export const DEFAULT_LAYOUT: WidgetInstance[] = [
-	// ── Column A — narrative (w=4) ──
+	// ── Row 0-2 (h=3): hero strip — mandatory order ──
 	{
 		instanceId: "default-money",
 		defId: "money_recovered_ticker",
 		x: 0,
 		y: 0,
 		w: 4,
-		h: 5,
-	},
-	{
-		instanceId: "default-health",
-		defId: "health_trend",
-		x: 0,
-		y: 5,
-		w: 4,
-		h: 6,
-	},
-
-	// ── Column B — analytic detail (w=5) ──
-	{
-		instanceId: "default-changed",
-		defId: "what_changed",
-		x: 4,
-		y: 0,
-		w: 5,
-		h: 6,
+		h: 3,
 	},
 	{
 		instanceId: "default-exposure",
 		defId: "exposure_kpi",
 		x: 4,
-		y: 6,
+		y: 0,
 		w: 5,
-		h: 5,
+		h: 3,
 	},
-
-	// ── Column C — compact KPI strip (w=3) ──
-	// Three h=3 tiles + one h=2 tile = 11 rows, matching cols A/B.
 	{
 		instanceId: "default-critical",
 		defId: "open_critical_kpi",
@@ -101,31 +86,56 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		w: 3,
 		h: 3,
 	},
-	{ instanceId: "default-streak", defId: "streak_kpi", x: 9, y: 3, w: 3, h: 3 },
+
+	// ── Row 3-6 (h=4): trends + change report ──
+	{
+		instanceId: "default-health",
+		defId: "health_trend",
+		x: 0,
+		y: 3,
+		w: 6,
+		h: 4,
+	},
+	{
+		instanceId: "default-changed",
+		defId: "what_changed",
+		x: 6,
+		y: 3,
+		w: 6,
+		h: 4,
+	},
+
+	// ── Row 7-9 (h=3): heatmap + compact KPI tiles ──
+	{
+		instanceId: "default-heatmap",
+		defId: "activity_heatmap",
+		x: 0,
+		y: 7,
+		w: 6,
+		h: 3,
+	},
+	{
+		instanceId: "default-streak",
+		defId: "streak_kpi",
+		x: 6,
+		y: 7,
+		w: 2,
+		h: 3,
+	},
 	{
 		instanceId: "default-verification",
 		defId: "verification_rate_kpi",
-		x: 9,
-		y: 6,
-		w: 3,
+		x: 8,
+		y: 7,
+		w: 2,
 		h: 3,
 	},
 	{
 		instanceId: "default-toppack",
 		defId: "top_pack_kpi",
-		x: 9,
-		y: 9,
-		w: 3,
-		h: 2,
-	},
-
-	// ── Bottom strip — full-width activity heatmap ──
-	{
-		instanceId: "default-heatmap",
-		defId: "activity_heatmap",
-		x: 0,
-		y: 11,
-		w: 12,
-		h: 4,
+		x: 10,
+		y: 7,
+		w: 2,
+		h: 3,
 	},
 ];

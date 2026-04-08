@@ -18,7 +18,7 @@
 // Phase 5 polish). The number renders directly from mock data.
 // ──────────────────────────────────────────────
 
-import { TrendUp } from "@phosphor-icons/react/dist/ssr";
+import { TrendUpIcon as TrendUp } from "@phosphor-icons/react/dist/ssr";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -46,35 +46,34 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 	const sevenDayPositive = last7dCents > 0;
 
 	return (
-		<div className='relative flex h-full flex-col p-7'>
-			{/* Subtle liquid glass highlight in the corner — just enough to
-			    catch light but not overpower the solid card surface. */}
+		<div className='relative flex h-full flex-col p-5'>
+			{/* Subtle emerald gradient highlight */}
 			<div
-				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-transparent'
+				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/[0.05] via-transparent to-transparent'
 				aria-hidden
 			/>
 
 			{/* Eyebrow */}
 			<div className='relative flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
-				<TrendUp size={12} weight='bold' className='text-emerald-400' />
+				<TrendUp size={11} weight='bold' className='text-emerald-400' />
 				<span>Total recovered with Vestigio</span>
 			</div>
 
 			{/* Hero number */}
-			<div className='relative mt-4 flex items-end gap-3'>
-				<span className='font-mono text-6xl font-medium tabular-nums leading-none tracking-tight text-content'>
+			<div className='relative mt-2 flex items-end gap-3'>
+				<span className='font-mono text-5xl font-medium tabular-nums leading-none tracking-tight text-emerald-400'>
 					{formatCurrency(totalCents, currency)}
 				</span>
 			</div>
 
 			{/* Deltas — twin rows under the hero */}
-			<div className='relative mt-5 flex items-baseline gap-6'>
+			<div className='relative mt-3 flex items-baseline gap-5'>
 				<div className='flex flex-col gap-0.5'>
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
-						Last 7 days
+						7 days
 					</span>
 					<span
-						className={`font-mono text-sm tabular-nums ${
+						className={`font-mono text-xs tabular-nums ${
 							sevenDayPositive ? "text-emerald-400" : "text-content-muted"
 						}`}
 					>
@@ -83,10 +82,10 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 				</div>
 				<div className='flex flex-col gap-0.5'>
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
-						Last 30 days
+						30 days
 					</span>
 					<span
-						className={`font-mono text-sm tabular-nums ${
+						className={`font-mono text-xs tabular-nums ${
 							last30dCents > 0 ? "text-emerald-400" : "text-content-muted"
 						}`}
 					>
@@ -95,27 +94,24 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 				</div>
 			</div>
 
-			{/* Caption strip at the bottom — pushes everything else up so
-			    the narrative is the resting place of the eye. */}
-			<div className='relative mt-auto border-t border-edge/40 pt-3'>
-				<p className='line-clamp-2 text-xs leading-snug text-content-secondary'>
-					{caption}
-				</p>
-			</div>
+			{/* Caption — pushed to the bottom so the eye rests on it */}
+			<p className='relative mt-auto line-clamp-2 pt-2 text-[11px] leading-snug text-content-secondary'>
+				{caption}
+			</p>
 		</div>
 	);
 }
 
 registerWidget({
 	id: "money_recovered_ticker",
-	version: 1,
+	version: 2,
 	nameKey: "console.dashboard.widgets.money_recovered.name",
 	descriptionKey: "console.dashboard.widgets.money_recovered.description",
 	category: "kpi",
 	icon: "trend-up",
-	defaultSize: { w: 8, h: 2 },
-	minSize: { w: 6, h: 2 },
-	maxSize: { w: 12, h: 3 },
+	defaultSize: { w: 4, h: 3 },
+	minSize: { w: 3, h: 3 },
+	maxSize: { w: 6, h: 4 },
 	resizable: true,
 	// Locked — this is the hero element. Removing it leaves the
 	// dashboard without its anchor moment.

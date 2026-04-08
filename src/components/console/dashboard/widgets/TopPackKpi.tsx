@@ -15,7 +15,7 @@
 // the SHAPE of exposure, this tells you the WINNER.
 // ──────────────────────────────────────────────
 
-import { Crosshair } from "@phosphor-icons/react/dist/ssr";
+import { CrosshairIcon as Crosshair } from "@phosphor-icons/react/dist/ssr";
 import { captionForTopPack } from "@/lib/dashboard/captions";
 import {
 	registerWidget,
@@ -34,10 +34,10 @@ function TopPackKpiComponent({ data }: WidgetProps) {
 		: captionForTopPack("", 0);
 
 	return (
-		<div className='relative flex h-full flex-col justify-between overflow-hidden p-5'>
+		<div className='relative flex h-full flex-col p-4'>
 			{/* Liquid glass backdrop */}
 			<div
-				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-transparent backdrop-blur-md'
+				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-400/[0.05] via-transparent to-transparent backdrop-blur-md'
 				aria-hidden
 			/>
 			<div
@@ -47,21 +47,21 @@ function TopPackKpiComponent({ data }: WidgetProps) {
 
 			<div className='relative flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<Crosshair size={11} weight='bold' className='text-emerald-400' />
-				<span>Top exposure pack</span>
+				<span>Top pack</span>
 			</div>
 
-			<div className='relative flex flex-col gap-0.5'>
-				<span className='truncate text-base font-semibold leading-tight text-content'>
+			<div className='relative mt-2 flex flex-col gap-0.5'>
+				<span className='truncate text-sm font-semibold leading-tight text-content'>
 					{top ? packLabel(top.pack) : "—"}
 				</span>
 				{top && top.cents > 0 && (
-					<span className='font-mono text-[11px] tabular-nums text-content-muted'>
-						${(top.cents / 100_000).toFixed(1)}k/mo
+					<span className='font-mono text-[11px] tabular-nums text-red-400'>
+						−${(top.cents / 100_000).toFixed(1)}k/mo
 					</span>
 				)}
 			</div>
 
-			<p className='relative line-clamp-2 text-[11px] leading-snug text-content-muted'>
+			<p className='relative mt-auto line-clamp-2 pt-2 text-[11px] leading-snug text-content-secondary'>
 				{caption}
 			</p>
 		</div>
@@ -70,12 +70,12 @@ function TopPackKpiComponent({ data }: WidgetProps) {
 
 registerWidget({
 	id: "top_pack_kpi",
-	version: 1,
+	version: 2,
 	nameKey: "console.dashboard.widgets.top_pack.name",
 	descriptionKey: "console.dashboard.widgets.top_pack.description",
 	category: "kpi",
 	icon: "crosshair",
-	defaultSize: { w: 3, h: 2 },
+	defaultSize: { w: 2, h: 3 },
 	minSize: { w: 2, h: 2 },
 	maxSize: { w: 4, h: 3 },
 	resizable: true,

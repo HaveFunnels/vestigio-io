@@ -35,7 +35,10 @@ import {
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-import { DotsSixVertical, X } from "@phosphor-icons/react/dist/ssr";
+import {
+	DotsSixVerticalIcon as DotsSixVertical,
+	XIcon as X,
+} from "@phosphor-icons/react/dist/ssr";
 import { getWidgetDef } from "@/lib/dashboard/init";
 import type { DashboardData } from "@/lib/dashboard/types";
 import type { WidgetInstance } from "@/lib/dashboard/default-layout";
@@ -164,8 +167,8 @@ export function DashboardGrid({
 					layouts={{ lg: lgLayout, md: mdLayout, sm: smLayout }}
 					breakpoints={{ lg: 1200, md: 996, sm: 0 }}
 					cols={{ lg: 12, md: 8, sm: 1 }}
-					rowHeight={96}
-					margin={[18, 18]}
+					rowHeight={80}
+					margin={[14, 14]}
 					containerPadding={[0, 0]}
 					compactor={verticalCompactor}
 					dragConfig={{

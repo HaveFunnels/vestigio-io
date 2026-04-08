@@ -15,7 +15,7 @@
 // trending up, did we just flatline, did the last cycle drop us?
 // ──────────────────────────────────────────────
 
-import { Pulse } from "@phosphor-icons/react/dist/ssr";
+import { PulseIcon as Pulse } from "@phosphor-icons/react/dist/ssr";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -102,52 +102,49 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 	const deltaAbs = Math.abs(deltaVsLastCycle);
 
 	return (
-		<div className='flex h-full flex-col p-7'>
+		<div className='flex h-full flex-col p-5'>
 			{/* Eyebrow */}
 			<div className='flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
-				<Pulse size={12} weight='bold' className='text-emerald-400' />
+				<Pulse size={11} weight='bold' className='text-emerald-400' />
 				<span>Health score</span>
 			</div>
 
 			{/* Hero row: big number + delta */}
-			<div className='mt-4 flex items-end justify-between gap-6'>
-				<div className='flex items-baseline gap-3'>
+			<div className='mt-2 flex items-end justify-between gap-6'>
+				<div className='flex items-baseline gap-2'>
 					<span
-						className={`font-mono text-6xl font-medium tabular-nums leading-none tracking-tight ${colorClass}`}
+						className={`font-mono text-5xl font-medium tabular-nums leading-none tracking-tight ${colorClass}`}
 					>
 						{current}
 					</span>
 					<span className='font-mono text-xs text-content-faint'>/ 100</span>
 				</div>
-				<div className='flex flex-col items-end gap-1'>
-					<span
-						className={`font-mono text-sm tabular-nums ${
-							deltaPositive
-								? "text-emerald-400"
-								: deltaVsLastCycle < 0
-									? "text-red-400"
-									: "text-content-muted"
-						}`}
-					>
-						{deltaSign}
-						{deltaAbs} vs last cycle
-					</span>
-					<span className='text-[10px] text-content-faint'>last 30 days</span>
-				</div>
+				<span
+					className={`font-mono text-xs tabular-nums ${
+						deltaPositive
+							? "text-emerald-400"
+							: deltaVsLastCycle < 0
+								? "text-red-400"
+								: "text-content-muted"
+					}`}
+				>
+					{deltaSign}
+					{deltaAbs} vs last cycle
+				</span>
 			</div>
 
 			{/* Sparkline — fills the available width */}
-			<div className='mt-4 flex-1'>
+			<div className='mt-3 min-h-0 flex-1'>
 				<Sparkline data={trend30d} colorClass={strokeClass} />
 			</div>
 
 			{/* Sub-score strip */}
-			<div className='mt-4 grid grid-cols-3 divide-x divide-edge/40 border-t border-edge/40 pt-3'>
+			<div className='mt-3 grid grid-cols-3 divide-x divide-edge/40 border-t border-edge/40 pt-2'>
 				<div className='flex flex-col gap-0.5 pr-3'>
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
 						Structural
 					</span>
-					<span className='font-mono text-sm tabular-nums text-content-secondary'>
+					<span className='font-mono text-xs tabular-nums text-content-secondary'>
 						{components.structural}
 					</span>
 				</div>
@@ -155,7 +152,7 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
 						Action quality
 					</span>
-					<span className='font-mono text-sm tabular-nums text-content-secondary'>
+					<span className='font-mono text-xs tabular-nums text-content-secondary'>
 						{components.actionQuality}
 					</span>
 				</div>
@@ -163,14 +160,14 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
 						Verification
 					</span>
-					<span className='font-mono text-sm tabular-nums text-content-secondary'>
+					<span className='font-mono text-xs tabular-nums text-content-secondary'>
 						{components.verification}
 					</span>
 				</div>
 			</div>
 
 			{/* Caption strip */}
-			<p className='mt-3 line-clamp-2 text-xs leading-snug text-content-secondary'>
+			<p className='mt-2 line-clamp-2 text-[11px] leading-snug text-content-secondary'>
 				{caption}
 			</p>
 		</div>
@@ -179,14 +176,14 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 
 registerWidget({
 	id: "health_trend",
-	version: 1,
+	version: 2,
 	nameKey: "console.dashboard.widgets.health_trend.name",
 	descriptionKey: "console.dashboard.widgets.health_trend.description",
 	category: "trends",
 	icon: "pulse",
-	defaultSize: { w: 8, h: 3 },
-	minSize: { w: 6, h: 3 },
-	maxSize: { w: 12, h: 4 },
+	defaultSize: { w: 6, h: 4 },
+	minSize: { w: 5, h: 3 },
+	maxSize: { w: 12, h: 5 },
 	resizable: true,
 	removable: true,
 	inCatalog: true,

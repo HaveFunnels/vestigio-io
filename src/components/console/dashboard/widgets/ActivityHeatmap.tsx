@@ -16,7 +16,7 @@
 // the dopamine hook.
 // ──────────────────────────────────────────────
 
-import { Calendar } from "@phosphor-icons/react/dist/ssr";
+import { CalendarIcon as Calendar } from "@phosphor-icons/react/dist/ssr";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -45,7 +45,7 @@ function DayCell({ day }: { day: ActivityHeatmapDay }) {
 }
 
 function ActivityHeatmapComponent({ data }: WidgetProps) {
-	const { days, currentStreak, caption } = data.activityHeatmap;
+	const { days, currentStreak } = data.activityHeatmap;
 
 	// Group days into weeks (columns of 7) so the grid renders
 	// week-by-week left to right, oldest to newest. The first
@@ -61,25 +61,25 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 	}
 
 	return (
-		<div className='flex h-full flex-col p-7'>
-			{/* Eyebrow */}
-			<div className='flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
-				<Calendar size={12} weight='bold' className='text-emerald-400' />
-				<span>Activity</span>
-			</div>
-
-			{/* Streak readout */}
-			<div className='mt-3 flex items-baseline gap-2'>
-				<span className='font-mono text-3xl font-medium tabular-nums leading-none tracking-tight text-content'>
-					{currentStreak}
-				</span>
-				<span className='text-[11px] uppercase tracking-wider text-content-muted'>
-					day streak
-				</span>
+		<div className='flex h-full flex-col p-5'>
+			{/* Eyebrow + streak readout in a single row to save vertical space */}
+			<div className='flex items-baseline justify-between gap-2'>
+				<div className='flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
+					<Calendar size={11} weight='bold' className='text-emerald-400' />
+					<span>Activity · 90 days</span>
+				</div>
+				<div className='flex items-baseline gap-1.5'>
+					<span className='font-mono text-2xl font-medium tabular-nums leading-none tracking-tight text-content'>
+						{currentStreak}
+					</span>
+					<span className='text-[10px] uppercase tracking-wider text-content-muted'>
+						day streak
+					</span>
+				</div>
 			</div>
 
 			{/* The grid itself */}
-			<div className='mt-4 flex flex-1 items-end gap-1 overflow-hidden'>
+			<div className='mt-3 flex flex-1 items-end gap-1 overflow-hidden'>
 				{weeks.map((week, wi) => (
 					<div key={wi} className='flex flex-col gap-1'>
 						{week.map((day) => (
@@ -90,7 +90,7 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 			</div>
 
 			{/* Legend */}
-			<div className='mt-3 flex items-center gap-2 border-t border-edge/40 pt-2 text-[10px] text-content-faint'>
+			<div className='mt-2 flex items-center gap-2 border-t border-edge/40 pt-2 text-[10px] text-content-faint'>
 				<span>less</span>
 				<div className='flex gap-1'>
 					<div className='h-2 w-2 rounded-[2px] bg-surface-inset' />
@@ -100,27 +100,21 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 					<div className='h-2 w-2 rounded-[2px] bg-emerald-500' />
 				</div>
 				<span>more</span>
-				<span className='ml-auto'>90 days</span>
 			</div>
-
-			{/* Caption strip */}
-			<p className='mt-3 line-clamp-2 text-xs leading-snug text-content-secondary'>
-				{caption}
-			</p>
 		</div>
 	);
 }
 
 registerWidget({
 	id: "activity_heatmap",
-	version: 1,
+	version: 2,
 	nameKey: "console.dashboard.widgets.activity_heatmap.name",
 	descriptionKey: "console.dashboard.widgets.activity_heatmap.description",
 	category: "activity",
 	icon: "calendar",
-	defaultSize: { w: 4, h: 3 },
+	defaultSize: { w: 6, h: 3 },
 	minSize: { w: 4, h: 3 },
-	maxSize: { w: 8, h: 4 },
+	maxSize: { w: 12, h: 4 },
 	resizable: true,
 	removable: true,
 	inCatalog: true,

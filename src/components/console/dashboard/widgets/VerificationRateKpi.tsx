@@ -14,7 +14,7 @@
 // the aggregator already produces.
 // ──────────────────────────────────────────────
 
-import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import { SealCheckIcon as SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { captionForVerificationRate } from "@/lib/dashboard/captions";
 import {
 	registerWidget,
@@ -33,10 +33,10 @@ function VerificationRateKpiComponent({ data }: WidgetProps) {
 	const numberClass = rateColor(rate);
 
 	return (
-		<div className='relative flex h-full flex-col justify-between overflow-hidden p-5'>
+		<div className='relative flex h-full flex-col p-4'>
 			{/* Liquid glass backdrop */}
 			<div
-				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-transparent backdrop-blur-md'
+				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400/[0.05] via-transparent to-transparent backdrop-blur-md'
 				aria-hidden
 			/>
 			<div
@@ -45,11 +45,11 @@ function VerificationRateKpiComponent({ data }: WidgetProps) {
 			/>
 
 			<div className='relative flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
-				<ShieldCheck size={11} weight='bold' className='text-blue-400' />
-				<span>Verification rate</span>
+				<SealCheck size={11} weight='bold' className='text-blue-400' />
+				<span>Verified</span>
 			</div>
 
-			<div className='relative flex items-baseline gap-1'>
+			<div className='relative mt-2 flex items-baseline gap-1'>
 				<span
 					className={`font-mono text-4xl font-medium tabular-nums leading-none ${numberClass}`}
 				>
@@ -58,7 +58,7 @@ function VerificationRateKpiComponent({ data }: WidgetProps) {
 				<span className='font-mono text-xs text-content-faint'>%</span>
 			</div>
 
-			<p className='relative line-clamp-2 text-[11px] leading-snug text-content-muted'>
+			<p className='relative mt-auto line-clamp-2 pt-2 text-[11px] leading-snug text-content-secondary'>
 				{caption}
 			</p>
 		</div>

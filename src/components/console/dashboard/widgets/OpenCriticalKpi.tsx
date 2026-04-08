@@ -19,7 +19,7 @@
 // tile makes it impossible to miss when scanning the dashboard.
 // ──────────────────────────────────────────────
 
-import { Skull } from "@phosphor-icons/react/dist/ssr";
+import { SkullIcon as Skull } from "@phosphor-icons/react/dist/ssr";
 import { captionForOpenCritical } from "@/lib/dashboard/captions";
 import {
 	registerWidget,
@@ -38,12 +38,10 @@ function OpenCriticalKpiComponent({ data }: WidgetProps) {
 	const deltaNegative = criticalDeltaVsLastCycle < 0;
 
 	return (
-		<div className='relative flex h-full flex-col justify-between overflow-hidden p-5'>
-			{/* Liquid glass backdrop — subtle inner highlight ring on top
-			    of the parent surface. Pointer-events-none so the layer
-			    never intercepts hover/click. */}
+		<div className='relative flex h-full flex-col p-5'>
+			{/* Liquid glass backdrop */}
 			<div
-				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-transparent backdrop-blur-md'
+				className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-red-500/[0.06] via-transparent to-transparent backdrop-blur-md'
 				aria-hidden
 			/>
 			<div
@@ -62,15 +60,15 @@ function OpenCriticalKpiComponent({ data }: WidgetProps) {
 			</div>
 
 			{/* Hero number + delta */}
-			<div className='relative flex items-end justify-between'>
+			<div className='relative mt-2 flex items-baseline gap-3'>
 				<span
-					className={`font-mono text-4xl font-medium tabular-nums leading-none ${numberClass}`}
+					className={`font-mono text-5xl font-medium tabular-nums leading-none ${numberClass}`}
 				>
 					{criticalOpenCount}
 				</span>
 				{criticalDeltaVsLastCycle !== 0 && (
 					<span
-						className={`font-mono text-[11px] tabular-nums ${
+						className={`font-mono text-xs tabular-nums ${
 							deltaPositive
 								? "text-red-400"
 								: deltaNegative
@@ -79,13 +77,13 @@ function OpenCriticalKpiComponent({ data }: WidgetProps) {
 						}`}
 					>
 						{deltaPositive ? "+" : ""}
-						{criticalDeltaVsLastCycle}
+						{criticalDeltaVsLastCycle} cycle
 					</span>
 				)}
 			</div>
 
-			{/* Caption */}
-			<p className='relative line-clamp-2 text-[11px] leading-snug text-content-muted'>
+			{/* Caption — pushed to the bottom */}
+			<p className='relative mt-auto line-clamp-2 pt-2 text-[11px] leading-snug text-content-secondary'>
 				{caption}
 			</p>
 		</div>
@@ -94,12 +92,12 @@ function OpenCriticalKpiComponent({ data }: WidgetProps) {
 
 registerWidget({
 	id: "open_critical_kpi",
-	version: 1,
+	version: 2,
 	nameKey: "console.dashboard.widgets.open_critical.name",
 	descriptionKey: "console.dashboard.widgets.open_critical.description",
 	category: "kpi",
 	icon: "skull",
-	defaultSize: { w: 3, h: 2 },
+	defaultSize: { w: 3, h: 3 },
 	minSize: { w: 2, h: 2 },
 	maxSize: { w: 4, h: 3 },
 	resizable: true,

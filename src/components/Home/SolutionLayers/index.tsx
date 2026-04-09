@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 const i18n: Record<string, {
 	sectionLabel: string; title: string; subtitle: string;
 	layers: { eyebrow: string; title: string; body: string; support: string }[];
-	chat: { label: string; heading: string; userQuery: string; responseLabel: string; responseBody: string; chipFindings: string; chipActions: string; chipVerification: string };
+	chat: { label: string; heading: string; userQuery: string; responseLabel: string; responseBody: string; chipFindings: string; chipActions: string; chipVerification: string; satellites: [string, string, string] };
 	tools: string[][];
 }> = {
 	en: {
@@ -17,38 +17,38 @@ const i18n: Record<string, {
 			{ eyebrow: "Layer 2", title: "Prioritize and act with precision", body: "Turn signals into a continuous queue of action, with context and priority.", support: "Actions and workspaces help organize what to fix, track, and explore by route, journey, campaign, or environment." },
 			{ eyebrow: "Layer 3", title: "Validate with confidence", body: "Confirm if it's ready, if it got worse, or if the fix actually closed.", support: "Preflight, regressions, and verification help decide before scaling and track changes over time." },
 		],
-		chat: { label: "Agentic Chat", heading: "Explain, investigate, and validate with Agentic Chat", userQuery: "What risks are getting worse since the last analysis?", responseLabel: "Structured Response", responseBody: '"3 regressions found: checkout abandonment +12%, payment validation failed on 2 routes, SSL expires in 5 days."', chipFindings: "Used 3 Findings", chipActions: "Created a new Action", chipVerification: "Ran Verification as a user" },
+		chat: { label: "Agentic Chat", heading: "Explain, investigate, and validate with Agentic Chat", userQuery: "What risks are getting worse since the last analysis?", responseLabel: "Structured Response", responseBody: '"3 regressions found: checkout abandonment +12%, payment validation failed on 2 routes, SSL expires in 5 days."', chipFindings: "Used 3 Findings", chipActions: "Created a new Action", chipVerification: "Ran Verification as a user", satellites: ["Findings", "Actions", "Verification"] },
 		tools: [["Findings", "Analysis", "Evidence"], ["Actions", "Workspaces", "Priorities"], ["Preflight", "Regressions", "Verification"]],
 	},
 	"pt-BR": {
-		sectionLabel: "Solution", title: "Recuse escalar seu negócio no escuro.", subtitle: "Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.",
+		sectionLabel: "Solução", title: "Recuse escalar seu negócio no escuro.", subtitle: "Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.",
 		layers: [
-			{ eyebrow: "Layer 1", title: "Descubra antes dos outros", body: "Veja onde estão os riscos, vazamentos e oportunidades antes que virem custo.", support: "Findings, analysis e contexto inicial para entender o que está quebrando, o que está passando despercebido e o que pode comprometer escala." },
-			{ eyebrow: "Layer 2", title: "Priorize e aja com precisão", body: "Transforme sinais em uma fila contínua de ação, com contexto e prioridade.", support: "Actions e workspaces ajudam a organizar o que corrigir, acompanhar e explorar por rota, jornada, campanha ou ambiente." },
-			{ eyebrow: "Layer 3", title: "Valide com confiança", body: "Confirme se está pronto, se piorou ou se a correção realmente fechou.", support: "Preflight, regressions e verification ajudam a decidir antes de escalar e a acompanhar mudanças ao longo do tempo." },
+			{ eyebrow: "Camada 1", title: "Descubra antes dos outros", body: "Veja onde estão os riscos, vazamentos e oportunidades antes que virem custo.", support: "Achados, análise e contexto inicial para entender o que está quebrando, o que está passando despercebido e o que pode comprometer escala." },
+			{ eyebrow: "Camada 2", title: "Priorize e aja com precisão", body: "Transforme sinais em uma fila contínua de ação, com contexto e prioridade.", support: "Ações e workspaces ajudam a organizar o que corrigir, acompanhar e explorar por rota, jornada, campanha ou ambiente." },
+			{ eyebrow: "Camada 3", title: "Valide com confiança", body: "Confirme se está pronto, se piorou ou se a correção realmente fechou.", support: "Preflight, regressões e verificação ajudam a decidir antes de escalar e a acompanhar mudanças ao longo do tempo." },
 		],
-		chat: { label: "Agentic Chat", heading: "Explique, investigue e valide com o Agentic Chat", userQuery: "Quais riscos estão piorando desde a última análise?", responseLabel: "Structured Response", responseBody: '"3 regressões encontradas: checkout abandonment +12%, payment validation falhou em 2 rotas, SSL expira em 5 dias."', chipFindings: "Usou 3 Findings", chipActions: "Criou uma nova Action", chipVerification: "Rodou Verification como usuário" },
-		tools: [["Findings", "Analysis", "Evidence"], ["Actions", "Workspaces", "Priorities"], ["Preflight", "Regressions", "Verification"]],
+		chat: { label: "Agentic Chat", heading: "Explique, investigue e valide com o Agentic Chat", userQuery: "Quais riscos estão piorando desde a última análise?", responseLabel: "Resposta Estruturada", responseBody: '"3 regressões encontradas: abandono de checkout +12%, validação de pagamento falhou em 2 rotas, SSL expira em 5 dias."', chipFindings: "Usou 3 achados", chipActions: "Criou uma nova ação", chipVerification: "Rodou verificação como usuário", satellites: ["Achados", "Ações", "Verificação"] },
+		tools: [["Achados", "Análise", "Evidência"], ["Ações", "Workspaces", "Prioridades"], ["Preflight", "Regressões", "Verificação"]],
 	},
 	es: {
 		sectionLabel: "Solución", title: "Niégate a escalar tu negocio a ciegas.", subtitle: "Detecta temprano, prioriza con claridad y valida tu negocio digital de forma continua.",
 		layers: [
-			{ eyebrow: "Capa 1", title: "Descubre antes que otros", body: "Detecta riesgos, fugas y oportunidades antes de que se conviertan en costos.", support: "Findings, análisis y contexto inicial para entender qué se está rompiendo, qué pasa desapercibido y qué puede comprometer la escala." },
-			{ eyebrow: "Capa 2", title: "Prioriza y actúa con precisión", body: "Convierte señales en una cola continua de acción, con contexto y prioridad.", support: "Actions y workspaces ayudan a organizar qué corregir, rastrear y explorar por ruta, jornada, campaña o entorno." },
+			{ eyebrow: "Capa 1", title: "Descubre antes que otros", body: "Detecta riesgos, fugas y oportunidades antes de que se conviertan en costos.", support: "Hallazgos, análisis y contexto inicial para entender qué se está rompiendo, qué pasa desapercibido y qué puede comprometer la escala." },
+			{ eyebrow: "Capa 2", title: "Prioriza y actúa con precisión", body: "Convierte señales en una cola continua de acción, con contexto y prioridad.", support: "Acciones y workspaces ayudan a organizar qué corregir, rastrear y explorar por ruta, jornada, campaña o entorno." },
 			{ eyebrow: "Capa 3", title: "Valida con confianza", body: "Confirma si está listo, si empeoró o si la corrección realmente cerró.", support: "Preflight, regresiones y verificación ayudan a decidir antes de escalar y seguir cambios a lo largo del tiempo." },
 		],
-		chat: { label: "Agentic Chat", heading: "Explica, investiga y valida con Agentic Chat", userQuery: "¿Qué riesgos están empeorando desde el último análisis?", responseLabel: "Respuesta Estructurada", responseBody: '"3 regresiones encontradas: abandono de checkout +12%, validación de pago falló en 2 rutas, SSL expira en 5 días."', chipFindings: "Usó 3 Findings", chipActions: "Creó una nueva Action", chipVerification: "Ejecutó Verification como usuario" },
-		tools: [["Findings", "Analysis", "Evidence"], ["Actions", "Workspaces", "Priorities"], ["Preflight", "Regressions", "Verification"]],
+		chat: { label: "Agentic Chat", heading: "Explica, investiga y valida con Agentic Chat", userQuery: "¿Qué riesgos están empeorando desde el último análisis?", responseLabel: "Respuesta Estructurada", responseBody: '"3 regresiones encontradas: abandono de checkout +12%, validación de pago falló en 2 rutas, SSL expira en 5 días."', chipFindings: "Usó 3 hallazgos", chipActions: "Creó una nueva acción", chipVerification: "Ejecutó verificación como usuario", satellites: ["Hallazgos", "Acciones", "Verificación"] },
+		tools: [["Hallazgos", "Análisis", "Evidencia"], ["Acciones", "Workspaces", "Prioridades"], ["Preflight", "Regresiones", "Verificación"]],
 	},
 	de: {
 		sectionLabel: "Lösung", title: "Weigere dich, dein Geschäft im Dunkeln zu skalieren.", subtitle: "Erkenne früh, priorisiere klar und validiere dein digitales Geschäft kontinuierlich.",
 		layers: [
-			{ eyebrow: "Schicht 1", title: "Entdecke vor anderen", body: "Erkenne Risiken, Lecks und Chancen, bevor sie zu Kosten werden.", support: "Findings, Analyse und initialer Kontext, um zu verstehen, was bricht, was übersehen wird und was die Skalierung gefährden könnte." },
-			{ eyebrow: "Schicht 2", title: "Priorisiere und handle präzise", body: "Verwandle Signale in eine kontinuierliche Aktionswarteschlange mit Kontext und Priorität.", support: "Actions und Workspaces helfen zu organisieren, was korrigiert, verfolgt und erkundet werden soll." },
+			{ eyebrow: "Schicht 1", title: "Entdecke vor anderen", body: "Erkenne Risiken, Lecks und Chancen, bevor sie zu Kosten werden.", support: "Befunde, Analyse und initialer Kontext, um zu verstehen, was bricht, was übersehen wird und was die Skalierung gefährden könnte." },
+			{ eyebrow: "Schicht 2", title: "Priorisiere und handle präzise", body: "Verwandle Signale in eine kontinuierliche Aktionswarteschlange mit Kontext und Priorität.", support: "Aktionen und Workspaces helfen zu organisieren, was korrigiert, verfolgt und erkundet werden soll." },
 			{ eyebrow: "Schicht 3", title: "Validiere mit Vertrauen", body: "Bestätige, ob es bereit ist, ob es schlimmer wurde oder ob die Korrektur abgeschlossen wurde.", support: "Preflight, Regressionen und Verifizierung helfen bei Entscheidungen vor der Skalierung." },
 		],
-		chat: { label: "Agentic Chat", heading: "Erkläre, untersuche und validiere mit Agentic Chat", userQuery: "Welche Risiken verschlechtern sich seit der letzten Analyse?", responseLabel: "Strukturierte Antwort", responseBody: '"3 Regressionen gefunden: Checkout-Abbruch +12%, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL läuft in 5 Tagen ab."', chipFindings: "Nutzte 3 Findings", chipActions: "Erstellte eine neue Action", chipVerification: "Führte Verification als Benutzer aus" },
-		tools: [["Findings", "Analysis", "Evidence"], ["Actions", "Workspaces", "Priorities"], ["Preflight", "Regressions", "Verification"]],
+		chat: { label: "Agentic Chat", heading: "Erkläre, untersuche und validiere mit Agentic Chat", userQuery: "Welche Risiken verschlechtern sich seit der letzten Analyse?", responseLabel: "Strukturierte Antwort", responseBody: '"3 Regressionen gefunden: Checkout-Abbruch +12%, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL läuft in 5 Tagen ab."', chipFindings: "Nutzte 3 Befunde", chipActions: "Erstellte eine neue Aktion", chipVerification: "Führte Verifizierung als Benutzer aus", satellites: ["Befunde", "Aktionen", "Verifizierung"] },
+		tools: [["Befunde", "Analyse", "Beweise"], ["Aktionen", "Workspaces", "Prioritäten"], ["Preflight", "Regressionen", "Verifizierung"]],
 	},
 };
 
@@ -163,20 +163,32 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 							{/* Label below center */}
 							<div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest text-violet-400 sm:bottom-3">{t.label}</div>
 
-							{/* Orbiting satellites — each offset by 1/3 of the period */}
+							{/* Orbiting satellites — each offset by 1/3 of the period.
+							    The outer rotating element MUST be a 0×0 box anchored at
+							    the exact hub center, otherwise CSS `transform-origin:
+							    center center` resolves to the bounding box of the
+							    element's content — which is offset by the `translateY`
+							    below — and the whole orbit drifts off-center (which is
+							    exactly what was happening before this fix). */}
 							{[
-								{ label: "Findings", border: "border-emerald-500/20", dot: "bg-emerald-400", text: "text-emerald-400" },
-								{ label: "Actions", border: "border-violet-500/20", dot: "bg-violet-400", text: "text-violet-400" },
-								{ label: "Verification", border: "border-amber-500/20", dot: "bg-amber-400", text: "text-amber-400" },
+								{ label: t.satellites[0], border: "border-emerald-500/20", dot: "bg-emerald-400", text: "text-emerald-400" },
+								{ label: t.satellites[1], border: "border-violet-500/20", dot: "bg-violet-400", text: "text-violet-400" },
+								{ label: t.satellites[2], border: "border-amber-500/20", dot: "bg-amber-400", text: "text-amber-400" },
 							].map((sat, i) => (
 								<div
 									key={sat.label}
-									className="absolute left-1/2 top-1/2"
+									// `h-0 w-0` pins the transform-origin to the hub
+									// center. `left-1/2 top-1/2` puts the origin at the
+									// exact middle of the parent hub. Combined, the CW
+									// rotation is now perfectly concentric.
+									className="absolute left-1/2 top-1/2 h-0 w-0"
 									style={{ animation: 'orbitCW 40s linear infinite', animationDelay: `${-i * 40 / 3}s` }}
 								>
 									<div style={{ transform: 'translateY(calc(-1 * var(--orbit-radius)))' }}>
+										{/* Counter-rotation keeps each pill upright while
+										    the outer rotation carries it around the orbit. */}
 										<div style={{ animation: 'orbitCCW 40s linear infinite', animationDelay: `${-i * 40 / 3}s` }}>
-											<div className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border ${sat.border} bg-[#0c0c14] px-2.5 py-1 sm:px-3`}>
+											<div className={`-translate-x-1/2 flex items-center gap-1.5 whitespace-nowrap rounded-full border ${sat.border} bg-[#0c0c14] px-2.5 py-1 sm:px-3`}>
 												<div className={`h-1.5 w-1.5 rounded-full ${sat.dot}`} />
 												<span className={`text-[9px] font-semibold ${sat.text} sm:text-[10px]`}>{sat.label}</span>
 											</div>

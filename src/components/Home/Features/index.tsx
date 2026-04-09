@@ -172,7 +172,7 @@ const RevenueLeaksVisual = ({
 				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.02] px-3 py-2 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:border-red-500/20 group-hover:bg-white/[0.04]'
 				style={{ transitionDelay: `${i * 60}ms` }}
 			>
-				<div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-500/10 text-red-400 transition-all duration-300 group-hover:scale-110 group-hover:bg-red-500/15'>
+				<div className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-500/10 text-red-400 transition-all duration-300 group-hover:scale-110 group-hover:bg-red-500/15'>
 					{surfaceIconByOrder[i]}
 				</div>
 				<div className='min-w-0 flex-1'>
@@ -217,10 +217,10 @@ const ContinuousWatchVisual = ({
 	annotationValue: string;
 }) => {
 	const W = 480;
-	const H = 140;
+	const H = 170;
 	const PAD_X = 16;
-	const PAD_TOP = 22; // leave room for the label up top
-	const PAD_BOTTOM = 18; // leave room for the before/after labels
+	const PAD_TOP = 24; // leave room for the label up top
+	const PAD_BOTTOM = 22; // leave room for the before/after labels
 	const innerW = W - PAD_X * 2;
 	const innerH = H - PAD_TOP - PAD_BOTTOM;
 	const baseY = PAD_TOP + innerH;
@@ -272,7 +272,7 @@ const ContinuousWatchVisual = ({
 	const peakY = peak[1];
 
 	return (
-		<div className='relative aspect-[480/140] w-full'>
+		<div className='relative aspect-[480/170] w-full'>
 			<svg
 				viewBox={`0 0 ${W} ${H}`}
 				className='h-full w-full overflow-visible'
@@ -472,7 +472,7 @@ const EvidenceOrbitVisual = ({
 
 	return (
 		<div
-			className='relative mx-auto aspect-square w-full max-w-[300px]'
+			className='relative mx-auto aspect-square w-full max-w-[340px]'
 			style={{
 				animation: "vbento-bob 6s ease-in-out infinite",
 			}}
@@ -753,27 +753,32 @@ const BentoCard = ({
 			/>
 
 			<div className={`relative ${innerLayout} h-full`}>
-				{/* Visual zone — content-sized in stacked, flex-1 width-filling
-				    + top-aligned in horizontal so the chart hugs the top of the
-				    row instead of being centered with vertical dead space */}
+				{/* Visual zone.
+				    Stacked: content-sized at top of card.
+				    Horizontal: takes left column, flex container that
+				    centers the chart vertically + horizontally so it
+				    sits in the middle of the stretched column. */}
 				<div
 					className={
 						layout === "horizontal"
-							? "lg:flex-1 lg:self-start"
+							? "lg:flex lg:flex-1 lg:items-center lg:justify-center"
 							: ""
 					}
 				>
 					{visualSlot}
 				</div>
 
-				{/* Caption strip — pinned to the bottom of the card so all
-				    captions inside a row land on the same baseline. In horizontal
-				    layout the caption is the right column, also bottom-aligned. */}
+				{/* Caption strip with min-height so all captions in the same
+				    row have the same block height — eyebrow lands at the
+				    same Y across cards, titles align.
+				    Stacked: mt-auto pushes block to card bottom.
+				    Horizontal: caption is the right column, vertically
+				    centered inside its stretched column. */}
 				<div
 					className={
 						layout === "horizontal"
-							? "lg:max-w-[280px] lg:self-end"
-							: "mt-auto"
+							? "lg:flex lg:min-h-[156px] lg:max-w-[280px] lg:flex-col lg:justify-center"
+							: "mt-auto min-h-[156px]"
 					}
 				>
 					<div className='mb-2 flex items-center gap-2'>
@@ -787,7 +792,7 @@ const BentoCard = ({
 					<h3 className='mb-1.5 text-base font-semibold tracking-tight text-white sm:text-lg'>
 						{title}
 					</h3>
-					<p className='text-[13px] leading-relaxed text-zinc-400 sm:text-sm'>
+					<p className='line-clamp-5 text-[13px] leading-relaxed text-zinc-400 sm:text-sm'>
 						{description}
 					</p>
 				</div>
@@ -878,8 +883,11 @@ const Features = async () => {
 					</p>
 				</div>
 
-				{/* Bento grid */}
-				<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:grid-rows-2'>
+				{/* Bento grid — auto rows so row 2 (Card 3 horizontal) is
+				    naturally shorter than row 1 (Cards 1, 2 stacked). This
+				    is the trick to remove dead space from Cards 3 and 4
+				    without forcing equal-height rows. */}
+				<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:grid-rows-[auto_auto]'>
 					<BentoCard
 						accent='amber'
 						eyebrow={t("action_queue.eyebrow")}

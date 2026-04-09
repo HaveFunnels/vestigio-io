@@ -122,11 +122,11 @@ interface ActionRow {
 const ROW_DOTS = ["bg-red-400", "bg-amber-400", "bg-amber-400", "bg-yellow-400"];
 
 const ActionQueueVisual = ({ rows }: { rows: ActionRow[] }) => (
-	<div className='space-y-1.5'>
+	<div className='space-y-1'>
 		{rows.map((row, i) => (
 			<div
 				key={i}
-				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.015] px-3 py-2 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-amber-500/15 group-hover:bg-white/[0.025]'
+				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.015] px-3 py-1.5 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-amber-500/15 group-hover:bg-white/[0.025]'
 				style={{ transitionDelay: `${i * 40}ms` }}
 			>
 				<span className='font-mono text-[10px] tabular-nums text-zinc-500'>
@@ -165,11 +165,11 @@ const RevenueLeaksVisual = ({
 	confidenceLabel: string;
 	leakingLabel: string;
 }) => (
-	<div className='space-y-2'>
+	<div className='space-y-1.5'>
 		{rows.map((row, i) => (
 			<div
 				key={i}
-				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.02] px-3 py-2.5 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:border-red-500/20 group-hover:bg-white/[0.04]'
+				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.02] px-3 py-2 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:border-red-500/20 group-hover:bg-white/[0.04]'
 				style={{ transitionDelay: `${i * 60}ms` }}
 			>
 				<div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-500/10 text-red-400 transition-all duration-300 group-hover:scale-110 group-hover:bg-red-500/15'>
@@ -272,7 +272,7 @@ const ContinuousWatchVisual = ({
 	const peakY = peak[1];
 
 	return (
-		<div className='relative h-full w-full'>
+		<div className='relative aspect-[480/140] w-full'>
 			<svg
 				viewBox={`0 0 ${W} ${H}`}
 				className='h-full w-full overflow-visible'
@@ -472,7 +472,7 @@ const EvidenceOrbitVisual = ({
 
 	return (
 		<div
-			className='relative mx-auto aspect-square w-full max-w-[230px]'
+			className='relative mx-auto aspect-square w-full max-w-[300px]'
 			style={{
 				animation: "vbento-bob 6s ease-in-out infinite",
 			}}
@@ -727,7 +727,7 @@ const BentoCard = ({
 
 	const innerLayout =
 		layout === "horizontal"
-			? "flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6"
+			? "flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6"
 			: "flex flex-col gap-4";
 
 	return (
@@ -753,19 +753,29 @@ const BentoCard = ({
 			/>
 
 			<div className={`relative ${innerLayout} h-full`}>
-				{/* Visual zone */}
+				{/* Visual zone — content-sized in stacked, flex-1 width-filling
+				    + top-aligned in horizontal so the chart hugs the top of the
+				    row instead of being centered with vertical dead space */}
 				<div
 					className={
 						layout === "horizontal"
-							? "min-h-[110px] flex-1 lg:min-h-[120px]"
-							: "min-h-[110px] flex-1"
+							? "lg:flex-1 lg:self-start"
+							: ""
 					}
 				>
 					{visualSlot}
 				</div>
 
-				{/* Caption strip */}
-				<div className={layout === "horizontal" ? "lg:max-w-[280px]" : ""}>
+				{/* Caption strip — pinned to the bottom of the card so all
+				    captions inside a row land on the same baseline. In horizontal
+				    layout the caption is the right column, also bottom-aligned. */}
+				<div
+					className={
+						layout === "horizontal"
+							? "lg:max-w-[280px] lg:self-end"
+							: "mt-auto"
+					}
+				>
 					<div className='mb-2 flex items-center gap-2'>
 						<span className={`h-1.5 w-1.5 rounded-full ${a.dot}`} />
 						<span

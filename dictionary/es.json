@@ -87,6 +87,59 @@
         }
       ]
     },
+    "features_bento": {
+      "eyebrow": "Cómo funciona Vestigio",
+      "title_part1": "Deja de adivinar.",
+      "title_part2": "Empieza a decidir.",
+      "subtitle": "Cuatro respuestas, un motor de decisión. Descubre dónde estás perdiendo dinero, arregla lo que importa primero, valida con evidencia y detecta regresiones antes de que te cuesten caro.",
+      "action_queue": {
+        "eyebrow": "Prioriza",
+        "title": "Una cola clara de qué arreglar primero",
+        "description": "Cada hallazgo clasificado por impacto, urgencia y esfuerzo. No más hojas de cálculo — solo la próxima decisión, lista para ejecutar.",
+        "rows": [
+          { "title": "Pico de abandono en checkout", "impact": "−$8.420" },
+          { "title": "Brecha de confianza en formulario", "impact": "−$3.150" },
+          { "title": "Confusión en página de precios", "impact": "−$1.920" },
+          { "title": "Caída en onboarding", "impact": "−$1.140" }
+        ]
+      },
+      "revenue_leaks": {
+        "eyebrow": "Diagnostica",
+        "title": "Encuentra dónde sangra el dinero",
+        "description": "Vestigio cuantifica cada fuga en tu embudo — con rangos de confianza, no con corazonadas. Sabe exactamente cuánto te cuesta cada superficie rota.",
+        "confidence_label": "confianza",
+        "leaking_label": "Fuga",
+        "rows": [
+          { "surface": "Embudo de checkout", "loss": "−$8.420", "confidence": "94%" },
+          { "surface": "Página de precios", "loss": "−$3.150", "confidence": "88%" },
+          { "surface": "Flujo de onboarding", "loss": "−$1.920", "confidence": "91%" }
+        ]
+      },
+      "continuous_watch": {
+        "eyebrow": "Recupera",
+        "title": "Detén la fuga antes de que se acumule",
+        "description": "Vestigio rastrea cada fuga desde la detección hasta la resolución. Mira cómo tus pérdidas mensuales caen a medida que los hallazgos se cierran — y detecta nuevas regresiones en el momento en que aparecen.",
+        "axis_label": "Ingresos perdidos / mes",
+        "before_label": "Antes de Vestigio",
+        "after_label": "Después de Vestigio",
+        "annotation_label": "Ingresos recuperados",
+        "annotation_value": "−87,2%"
+      },
+      "evidence_orbit": {
+        "eyebrow": "Verifica",
+        "title": "Cada hallazgo se rastrea hasta la evidencia",
+        "description": "Verificado en navegador, contrastado entre fuentes, con marca de tiempo. Vestigio enriquece cada hallazgo con pruebas multi-fuente — para que tu equipo confíe en el diagnóstico.",
+        "center_label": "Hallazgo",
+        "evidence_types": {
+          "browser": "Navegador",
+          "static": "Estático",
+          "behavioral": "Comportamiento",
+          "cross_source": "Cruce",
+          "vendor": "Proveedor",
+          "timestamped": "Timestamp"
+        }
+      }
+    },
     "features_with_image_section": {
       "title": "¡Destaca y Lanza Rápido!",
       "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",

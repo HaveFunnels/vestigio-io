@@ -2,17 +2,13 @@
  * Home > Features ("How Vestigio works") — bento grid.
  *
  * Replaces the legacy 6-card uniform grid with an asymmetric 4-card bento
- * that mirrors the dashboard's design vocabulary (eyebrow + dot, JetBrains
- * Mono on numbers, colored shadows on hover, gradient highlight overlays,
- * negative-loss values in red).
+ * that mirrors the dashboard's design vocabulary. Every card maps to one
+ * of Vestigio's four product promises:
  *
- * Each card maps to one of Vestigio's four product promises:
  *   1. Action Queue          → "Prioritize fixes"           (amber)
  *   2. Revenue Leaks         → "Find what's bleeding"       (red)
- *   3. Continuous Watch      → "Catch regressions"          (emerald)
+ *   3. Continuous Watch      → "Recover the bleed"          (emerald)
  *   4. Evidence Verification → "Verify, don't guess"        (sky)
- *
- * The bento layout:
  *
  *   +-------------+-------------+----------+
  *   |  Card 1     |  Card 2     |  Card 4  |
@@ -22,12 +18,52 @@
  *   |       Card 3 — Continuous Watch      |
  *   +-------------+-------------+----------+
  *
- * On mobile (< sm) every card stacks. On tablet (sm-lg) cards reflow into
- * a 2-col layout. On desktop (lg+) the asymmetric bento takes over.
+ * Mobile: every card stacks. Tablet (sm-lg): 2-col uniform reflow.
+ * Desktop (lg+): the asymmetric bento takes over.
+ *
+ * All copy is i18n-driven (`homepage.features_bento.*`). The component
+ * is an async server component using `getTranslations` so it can stay
+ * out of the client bundle.
+ *
+ * Animations are CSS-keyframe-only (no JS) so the file remains a server
+ * component. Keyframes are inlined via a `<style>` block at the bottom
+ * with a `vbento-` prefix to avoid global collisions.
  */
 
-const surfaceIcon = {
-	checkout: (
+import { getTranslations } from "next-intl/server";
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * SVG helpers
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Build a smooth SVG path through a list of points using a Catmull-Rom-to-
+ * cubic-Bezier conversion. Produces continuous curves with no kinks.
+ */
+function smoothPath(points: [number, number][]): string {
+	if (points.length < 2) return "";
+	let d = `M ${points[0][0]} ${points[0][1]}`;
+	for (let i = 0; i < points.length - 1; i++) {
+		const p0 = points[i - 1] || points[i];
+		const p1 = points[i];
+		const p2 = points[i + 1];
+		const p3 = points[i + 2] || p2;
+		const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+		const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+		const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+		const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+		d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2[0]} ${p2[1]}`;
+	}
+	return d;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Surface icons (used by Revenue Leaks card)
+ * ────────────────────────────────────────────────────────────────────────── */
+
+const surfaceIconByOrder = [
+	// Checkout
+	(
 		<svg viewBox='0 0 24 24' fill='none' className='h-4 w-4'>
 			<path
 				d='M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 5h12.5'
@@ -40,7 +76,8 @@ const surfaceIcon = {
 			<circle cx='17' cy='20' r='1.5' stroke='currentColor' strokeWidth='1.5' />
 		</svg>
 	),
-	pricing: (
+	// Pricing tag
+	(
 		<svg viewBox='0 0 24 24' fill='none' className='h-4 w-4'>
 			<path
 				d='M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0l-7.6-7.6V4h9l8.6 8.6a2 2 0 010 2.8z'
@@ -52,7 +89,8 @@ const surfaceIcon = {
 			<circle cx='8' cy='8' r='1.5' fill='currentColor' />
 		</svg>
 	),
-	onboarding: (
+	// Onboarding
+	(
 		<svg viewBox='0 0 24 24' fill='none' className='h-4 w-4'>
 			<path
 				d='M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2'
@@ -70,54 +108,33 @@ const surfaceIcon = {
 			/>
 		</svg>
 	),
-};
-
-/* ──────────────────────────────────────────────────────────────────────────
- * Card 1 — Action Queue (amber)
- * ────────────────────────────────────────────────────────────────────────── */
-const actionQueueRows = [
-	{
-		rank: "01",
-		severity: "critical",
-		dot: "bg-red-400",
-		title: "Checkout abandons spike",
-		impact: "−$8,420",
-	},
-	{
-		rank: "02",
-		severity: "high",
-		dot: "bg-amber-400",
-		title: "Form trust gap",
-		impact: "−$3,150",
-	},
-	{
-		rank: "03",
-		severity: "high",
-		dot: "bg-amber-400",
-		title: "Pricing confusion",
-		impact: "−$1,920",
-	},
-	{
-		rank: "04",
-		severity: "medium",
-		dot: "bg-yellow-400",
-		title: "Onboarding drop-off",
-		impact: "−$1,140",
-	},
 ];
 
-const ActionQueueVisual = () => (
+/* ──────────────────────────────────────────────────────────────────────────
+ * Card 1 — Action Queue
+ * ────────────────────────────────────────────────────────────────────────── */
+
+interface ActionRow {
+	title: string;
+	impact: string;
+}
+
+const ROW_DOTS = ["bg-red-400", "bg-amber-400", "bg-amber-400", "bg-yellow-400"];
+
+const ActionQueueVisual = ({ rows }: { rows: ActionRow[] }) => (
 	<div className='space-y-1.5'>
-		{actionQueueRows.map((row, i) => (
+		{rows.map((row, i) => (
 			<div
-				key={row.rank}
-				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.015] px-3 py-2 transition-all duration-300 group-hover:border-white/10'
-				style={{ transitionDelay: `${i * 30}ms` }}
+				key={i}
+				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.015] px-3 py-2 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-amber-500/15 group-hover:bg-white/[0.025]'
+				style={{ transitionDelay: `${i * 40}ms` }}
 			>
 				<span className='font-mono text-[10px] tabular-nums text-zinc-500'>
-					{row.rank}
+					{String(i + 1).padStart(2, "0")}
 				</span>
-				<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${row.dot}`} />
+				<span
+					className={`h-1.5 w-1.5 shrink-0 rounded-full ${ROW_DOTS[i] || "bg-zinc-400"}`}
+				/>
 				<span className='flex-1 truncate text-[11px] font-medium text-zinc-200 sm:text-xs'>
 					{row.title}
 				</span>
@@ -130,53 +147,47 @@ const ActionQueueVisual = () => (
 );
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Card 2 — Revenue Leaks (red)
+ * Card 2 — Revenue Leaks
  * ────────────────────────────────────────────────────────────────────────── */
-const leakRows = [
-	{
-		icon: surfaceIcon.checkout,
-		surface: "Checkout funnel",
-		loss: "−$8,420",
-		confidence: "94%",
-	},
-	{
-		icon: surfaceIcon.pricing,
-		surface: "Pricing page",
-		loss: "−$3,150",
-		confidence: "88%",
-	},
-	{
-		icon: surfaceIcon.onboarding,
-		surface: "Onboarding flow",
-		loss: "−$1,920",
-		confidence: "91%",
-	},
-];
 
-const RevenueLeaksVisual = () => (
+interface LeakRow {
+	surface: string;
+	loss: string;
+	confidence: string;
+}
+
+const RevenueLeaksVisual = ({
+	rows,
+	confidenceLabel,
+	leakingLabel,
+}: {
+	rows: LeakRow[];
+	confidenceLabel: string;
+	leakingLabel: string;
+}) => (
 	<div className='space-y-2'>
-		{leakRows.map((row, i) => (
+		{rows.map((row, i) => (
 			<div
-				key={row.surface}
-				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.02] px-3 py-2.5 transition-all duration-300 group-hover:border-red-500/15'
-				style={{ transitionDelay: `${i * 40}ms` }}
+				key={i}
+				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.02] px-3 py-2.5 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:border-red-500/20 group-hover:bg-white/[0.04]'
+				style={{ transitionDelay: `${i * 60}ms` }}
 			>
-				<div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-500/10 text-red-400'>
-					{row.icon}
+				<div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-500/10 text-red-400 transition-all duration-300 group-hover:scale-110 group-hover:bg-red-500/15'>
+					{surfaceIconByOrder[i]}
 				</div>
 				<div className='min-w-0 flex-1'>
 					<div className='truncate text-[11px] font-medium text-zinc-200 sm:text-xs'>
 						{row.surface}
 					</div>
 					<div className='mt-0.5 text-[9px] uppercase tracking-[0.12em] text-zinc-500 sm:text-[10px]'>
-						confidence {row.confidence}
+						{confidenceLabel} {row.confidence}
 					</div>
 				</div>
 				<div className='font-mono text-xs tabular-nums text-red-400 sm:text-sm'>
 					{row.loss}
 				</div>
 				<span className='hidden rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.1em] text-red-300 sm:inline-block'>
-					Leaking
+					{leakingLabel}
 				</span>
 			</div>
 		))}
@@ -184,129 +195,260 @@ const RevenueLeaksVisual = () => (
 );
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Card 3 — Continuous Watch (emerald)
- * Multi-line sparkline with regression marker on the dipping line.
+ * Card 3 — Continuous Watch (before/after revenue-leak chart)
+ *
+ * Reference: Chargeflow's "Dispute Rate Reduced By −87.2%" graphic.
+ * Shows a dashed gray "before Vestigio" curve climbing to a peak, a
+ * diamond marker at the inflection point, and an emerald solid area
+ * curve descending after the marker. Big "−87.2%" annotation top-right.
  * ────────────────────────────────────────────────────────────────────────── */
-const ContinuousWatchVisual = () => {
-	// Three trend series across 16 cycles. Cycle index 11 has a sharp dip
-	// on the first series — that's where the regression marker lives.
-	const W = 320;
-	const H = 90;
-	const PAD_X = 4;
-	const PAD_Y = 8;
 
-	const series = [
-		{
-			color: "#10b981", // emerald-500 — the regressing series
-			values: [62, 64, 63, 66, 65, 68, 67, 70, 71, 72, 70, 38, 40, 42, 44, 46],
-		},
-		{
-			color: "#34d399", // emerald-400
-			values: [40, 42, 44, 43, 46, 48, 47, 50, 52, 54, 56, 58, 60, 61, 63, 64],
-		},
-		{
-			color: "#6ee7b7", // emerald-300
-			values: [25, 26, 28, 30, 32, 33, 35, 36, 38, 40, 41, 43, 44, 46, 48, 50],
-		},
+const ContinuousWatchVisual = ({
+	axisLabel,
+	beforeLabel,
+	afterLabel,
+	annotationLabel,
+	annotationValue,
+}: {
+	axisLabel: string;
+	beforeLabel: string;
+	afterLabel: string;
+	annotationLabel: string;
+	annotationValue: string;
+}) => {
+	const W = 480;
+	const H = 180;
+	const PAD_X = 16;
+	const PAD_TOP = 32; // leave room for the label up top
+	const PAD_BOTTOM = 24; // leave room for the before/after labels
+	const innerW = W - PAD_X * 2;
+	const innerH = H - PAD_TOP - PAD_BOTTOM;
+	const baseY = PAD_TOP + innerH;
+
+	// Y mapping: lower y value = higher revenue lost (chart climbs up)
+	const yAt = (frac: number) => PAD_TOP + innerH * frac;
+
+	// BEFORE curve — climbs from low to peak in the left half
+	const beforePoints: [number, number][] = [
+		[PAD_X + innerW * 0.0, yAt(0.95)],
+		[PAD_X + innerW * 0.08, yAt(0.94)],
+		[PAD_X + innerW * 0.16, yAt(0.9)],
+		[PAD_X + innerW * 0.24, yAt(0.82)],
+		[PAD_X + innerW * 0.32, yAt(0.65)],
+		[PAD_X + innerW * 0.4, yAt(0.4)],
+		[PAD_X + innerW * 0.46, yAt(0.18)],
+		[PAD_X + innerW * 0.5, yAt(0.08)], // peak
 	];
 
-	const xStep = (W - PAD_X * 2) / (series[0].values.length - 1);
-	const minVal = 20;
-	const maxVal = 80;
-	const yScale = (v: number) =>
-		PAD_Y + (1 - (v - minVal) / (maxVal - minVal)) * (H - PAD_Y * 2);
+	const peak = beforePoints[beforePoints.length - 1];
 
-	const toPath = (values: number[]) =>
-		values
-			.map((v, i) => `${i === 0 ? "M" : "L"} ${PAD_X + i * xStep} ${yScale(v)}`)
-			.join(" ");
+	// AFTER curve — descends from peak with realistic peaks/valleys
+	const afterPoints: [number, number][] = [
+		peak,
+		[PAD_X + innerW * 0.55, yAt(0.32)],
+		[PAD_X + innerW * 0.6, yAt(0.4)],
+		[PAD_X + innerW * 0.65, yAt(0.32)],
+		[PAD_X + innerW * 0.7, yAt(0.5)],
+		[PAD_X + innerW * 0.75, yAt(0.45)],
+		[PAD_X + innerW * 0.8, yAt(0.58)],
+		[PAD_X + innerW * 0.85, yAt(0.55)],
+		[PAD_X + innerW * 0.9, yAt(0.66)],
+		[PAD_X + innerW * 0.95, yAt(0.62)],
+		[PAD_X + innerW * 1.0, yAt(0.72)],
+	];
 
-	// Regression marker on series[0] at index 11 (the dip).
-	const regressionX = PAD_X + 11 * xStep;
-	const regressionY = yScale(series[0].values[11]);
+	const beforePath = smoothPath(beforePoints);
+	const afterLinePath = smoothPath(afterPoints);
+	// Area path: line + close to baseline
+	const afterAreaPath = `${afterLinePath} L ${afterPoints[afterPoints.length - 1][0]} ${baseY} L ${peak[0]} ${baseY} Z`;
+
+	// Diamond marker at the inflection — rotate a small square 45deg
+	const peakX = peak[0];
+	const peakY = peak[1];
 
 	return (
 		<div className='relative h-full w-full'>
 			<svg
 				viewBox={`0 0 ${W} ${H}`}
 				className='h-full w-full overflow-visible'
-				preserveAspectRatio='none'
+				preserveAspectRatio='xMidYMid meet'
 			>
-				{/* Subtle grid */}
-				{[0, 1, 2, 3].map((i) => (
+				<defs>
+					<linearGradient
+						id='vbento-area-gradient'
+						x1='0'
+						y1='0'
+						x2='0'
+						y2='1'
+					>
+						<stop offset='0%' stopColor='rgba(16,185,129,0.45)' />
+						<stop offset='60%' stopColor='rgba(16,185,129,0.1)' />
+						<stop offset='100%' stopColor='rgba(16,185,129,0)' />
+					</linearGradient>
+				</defs>
+
+				{/* Baseline rule */}
+				<line
+					x1={PAD_X}
+					y1={baseY}
+					x2={W - PAD_X}
+					y2={baseY}
+					stroke='rgba(255,255,255,0.06)'
+					strokeWidth='1'
+				/>
+
+				{/* Subtle horizontal grid */}
+				{[0.25, 0.5, 0.75].map((frac, i) => (
 					<line
 						key={i}
 						x1={PAD_X}
-						y1={PAD_Y + (i * (H - PAD_Y * 2)) / 3}
+						y1={yAt(frac)}
 						x2={W - PAD_X}
-						y2={PAD_Y + (i * (H - PAD_Y * 2)) / 3}
-						stroke='rgba(255,255,255,0.04)'
+						y2={yAt(frac)}
+						stroke='rgba(255,255,255,0.025)'
 						strokeWidth='1'
+						strokeDasharray='2 4'
 					/>
 				))}
 
-				{/* Lines (background → foreground) */}
-				{series
-					.slice()
-					.reverse()
-					.map((s, i) => {
-						const isPrimary = i === series.length - 1;
-						return (
-							<path
-								key={i}
-								d={toPath(s.values)}
-								fill='none'
-								stroke={s.color}
-								strokeWidth={isPrimary ? 1.75 : 1.25}
-								strokeLinecap='round'
-								strokeLinejoin='round'
-								opacity={isPrimary ? 1 : 0.55}
-							/>
-						);
-					})}
-
-				{/* Regression marker */}
-				<circle
-					cx={regressionX}
-					cy={regressionY}
-					r='6'
-					fill='rgba(239,68,68,0.15)'
-					stroke='rgba(239,68,68,0.5)'
-					strokeWidth='1.5'
+				{/* BEFORE curve — dashed gray */}
+				<path
+					d={beforePath}
+					fill='none'
+					stroke='rgba(255,255,255,0.35)'
+					strokeWidth='2'
+					strokeLinecap='round'
+					strokeDasharray='4 4'
 				/>
-				<circle cx={regressionX} cy={regressionY} r='2' fill='#f87171' />
+
+				{/* AFTER area — emerald gradient fill */}
+				<path d={afterAreaPath} fill='url(#vbento-area-gradient)' />
+
+				{/* AFTER line — emerald solid */}
+				<path
+					d={afterLinePath}
+					fill='none'
+					stroke='#10b981'
+					strokeWidth='2'
+					strokeLinecap='round'
+					strokeLinejoin='round'
+				/>
+
+				{/* Inflection diamond marker */}
+				<g transform={`rotate(45 ${peakX} ${peakY})`}>
+					<rect
+						x={peakX - 7}
+						y={peakY - 7}
+						width='14'
+						height='14'
+						fill='#10b981'
+						stroke='#0a0f0a'
+						strokeWidth='2'
+					/>
+				</g>
+				{/* Soft halo around the diamond */}
+				<circle
+					cx={peakX}
+					cy={peakY}
+					r='14'
+					fill='none'
+					stroke='rgba(16,185,129,0.25)'
+					strokeWidth='1'
+				/>
+
+				{/* Y-axis label (top-left) */}
+				<text
+					x={PAD_X}
+					y={PAD_TOP - 12}
+					fontSize='10'
+					fill='rgba(255,255,255,0.55)'
+					fontFamily='ui-sans-serif, system-ui'
+				>
+					{axisLabel}
+				</text>
+
+				{/* Before label */}
+				<text
+					x={PAD_X + innerW * 0.25}
+					y={H - 6}
+					fontSize='9'
+					fill='rgba(255,255,255,0.4)'
+					textAnchor='middle'
+					fontFamily='ui-sans-serif, system-ui'
+					letterSpacing='0.06em'
+				>
+					{beforeLabel.toUpperCase()}
+				</text>
+
+				{/* After label */}
+				<text
+					x={PAD_X + innerW * 0.75}
+					y={H - 6}
+					fontSize='9'
+					fill='rgba(110,231,183,0.65)'
+					textAnchor='middle'
+					fontFamily='ui-sans-serif, system-ui'
+					letterSpacing='0.06em'
+				>
+					{afterLabel.toUpperCase()}
+				</text>
+
+				{/* Vertical separator at the inflection */}
+				<line
+					x1={peakX}
+					y1={baseY}
+					x2={peakX}
+					y2={baseY + 8}
+					stroke='rgba(16,185,129,0.4)'
+					strokeWidth='1'
+				/>
 			</svg>
 
-			{/* Regression annotation pill — positioned absolutely over the dip */}
-			<div
-				className='pointer-events-none absolute flex items-center gap-1.5 rounded-full border border-red-500/40 bg-[#0f0a0a]/90 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-red-300 backdrop-blur-sm'
-				style={{
-					left: `${(regressionX / W) * 100}%`,
-					top: `${(regressionY / H) * 100 - 14}%`,
-					transform: "translateX(-50%)",
-				}}
-			>
-				<span className='h-1 w-1 rounded-full bg-red-400' />
-				Regression
+			{/* Annotation pill — positioned top-right of the chart area, HTML
+			    instead of SVG so it inherits Tailwind colors and the dashboard's
+			    eyebrow/value vocabulary. */}
+			<div className='pointer-events-none absolute right-3 top-1 flex flex-col items-end text-right'>
+				<span className='text-[9px] font-medium uppercase tracking-[0.14em] text-emerald-300/80'>
+					{annotationLabel}
+				</span>
+				<span
+					className='font-mono text-2xl font-semibold tabular-nums tracking-tight text-emerald-400 sm:text-3xl'
+					style={{
+						textShadow:
+							"0 8px 24px rgba(16,185,129,0.35), 0 2px 8px rgba(16,185,129,0.2)",
+					}}
+				>
+					{annotationValue}
+				</span>
 			</div>
 		</div>
 	);
 };
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Card 4 — Evidence Verification (sky/blue)
- * Orbital diagram: a center "Finding" node with evidence types orbiting.
+ * Card 4 — Evidence Verification (animated orbital diagram)
+ *
+ * Vertical bob on the whole graphic, slow rotation on the outer dashed
+ * ring, opposing rotation on the inner ring, pulsing center node, and a
+ * stagger reveal on the evidence pills. All animations are CSS-only.
  * ────────────────────────────────────────────────────────────────────────── */
-const evidenceTypes = [
-	{ label: "Browser", angle: 0 },
-	{ label: "Static", angle: 60 },
-	{ label: "Behavioral", angle: 120 },
-	{ label: "Cross-source", angle: 180 },
-	{ label: "Vendor", angle: 240 },
-	{ label: "Timestamped", angle: 300 },
-];
 
-const EvidenceOrbitVisual = () => {
+const EVIDENCE_KEYS = [
+	"browser",
+	"static",
+	"behavioral",
+	"cross_source",
+	"vendor",
+	"timestamped",
+] as const;
+
+const EvidenceOrbitVisual = ({
+	centerLabel,
+	types,
+}: {
+	centerLabel: string;
+	types: Record<string, string>;
+}) => {
 	const SIZE = 280;
 	const center = SIZE / 2;
 	const r1 = 70;
@@ -317,45 +459,105 @@ const EvidenceOrbitVisual = () => {
 		return { x: center + r * Math.cos(a), y: center + r * Math.sin(a) };
 	};
 
+	// Build evidence nodes from translated labels
+	const evidence = EVIDENCE_KEYS.map((key, i) => ({
+		label: types[key] || key,
+		angle: i * 60,
+	}));
+
 	return (
-		<div className='relative aspect-square w-full'>
+		<div
+			className='relative aspect-square w-full'
+			style={{
+				animation: "vbento-bob 6s ease-in-out infinite",
+			}}
+		>
 			<svg
 				viewBox={`0 0 ${SIZE} ${SIZE}`}
 				className='h-full w-full overflow-visible'
 			>
 				<defs>
-					<radialGradient id='orbit-glow' cx='50%' cy='50%' r='50%'>
-						<stop offset='0%' stopColor='rgba(56,189,248,0.18)' />
-						<stop offset='60%' stopColor='rgba(56,189,248,0.04)' />
+					<radialGradient id='vbento-orbit-glow' cx='50%' cy='50%' r='50%'>
+						<stop offset='0%' stopColor='rgba(56,189,248,0.22)' />
+						<stop offset='60%' stopColor='rgba(56,189,248,0.05)' />
 						<stop offset='100%' stopColor='rgba(56,189,248,0)' />
 					</radialGradient>
 				</defs>
 
-				{/* Center glow */}
-				<circle cx={center} cy={center} r={r2 + 20} fill='url(#orbit-glow)' />
+				{/* Pulsing center glow */}
+				<circle
+					cx={center}
+					cy={center}
+					r={r2 + 20}
+					fill='url(#vbento-orbit-glow)'
+					style={{
+						transformOrigin: `${center}px ${center}px`,
+						animation: "vbento-pulse-glow 4s ease-in-out infinite",
+					}}
+				/>
 
-				{/* Outer ring */}
-				<circle
-					cx={center}
-					cy={center}
-					r={r2}
-					fill='none'
-					stroke='rgba(56,189,248,0.18)'
-					strokeWidth='1'
-					strokeDasharray='2 4'
-				/>
-				{/* Inner ring */}
-				<circle
-					cx={center}
-					cy={center}
-					r={r1}
-					fill='none'
-					stroke='rgba(56,189,248,0.25)'
-					strokeWidth='1'
-				/>
+				{/* Outer dashed ring — slow clockwise rotation */}
+				<g
+					style={{
+						transformOrigin: `${center}px ${center}px`,
+						animation: "vbento-spin-cw 60s linear infinite",
+					}}
+				>
+					<circle
+						cx={center}
+						cy={center}
+						r={r2}
+						fill='none'
+						stroke='rgba(56,189,248,0.22)'
+						strokeWidth='1'
+						strokeDasharray='2 4'
+					/>
+					{/* Outer ring tick marks at the 6 evidence positions */}
+					{evidence.map((e, i) => {
+						const p = polar(r2, e.angle);
+						return (
+							<circle
+								key={i}
+								cx={p.x}
+								cy={p.y}
+								r='1.5'
+								fill='rgba(56,189,248,0.5)'
+							/>
+						);
+					})}
+				</g>
+
+				{/* Inner ring — opposing rotation */}
+				<g
+					style={{
+						transformOrigin: `${center}px ${center}px`,
+						animation: "vbento-spin-ccw 80s linear infinite",
+					}}
+				>
+					<circle
+						cx={center}
+						cy={center}
+						r={r1}
+						fill='none'
+						stroke='rgba(56,189,248,0.3)'
+						strokeWidth='1'
+					/>
+					{evidence.map((e, i) => {
+						const p = polar(r1, e.angle + 30);
+						return (
+							<circle
+								key={i}
+								cx={p.x}
+								cy={p.y}
+								r='2.5'
+								fill='rgba(56,189,248,0.55)'
+							/>
+						);
+					})}
+				</g>
 
 				{/* Connection lines from center to evidence nodes */}
-				{evidenceTypes.map((e, i) => {
+				{evidence.map((e, i) => {
 					const p = polar(r2, e.angle);
 					return (
 						<line
@@ -370,63 +572,50 @@ const EvidenceOrbitVisual = () => {
 					);
 				})}
 
-				{/* Inner ring nodes (small) */}
-				{evidenceTypes.map((e, i) => {
-					const p = polar(r1, e.angle + 30);
-					return (
-						<circle
-							key={i}
-							cx={p.x}
-							cy={p.y}
-							r='2.5'
-							fill='rgba(56,189,248,0.5)'
-						/>
-					);
-				})}
-
-				{/* Center finding node */}
+				{/* Center node — base */}
 				<circle
 					cx={center}
 					cy={center}
 					r='28'
 					fill='#0a0f1a'
-					stroke='rgba(56,189,248,0.5)'
+					stroke='rgba(56,189,248,0.55)'
 					strokeWidth='1.5'
 				/>
-				<circle
-					cx={center}
-					cy={center}
-					r='6'
-					fill='rgba(56,189,248,0.9)'
-				/>
+				{/* Center pulse ring (animated scale + opacity) */}
 				<circle
 					cx={center}
 					cy={center}
 					r='10'
 					fill='none'
-					stroke='rgba(56,189,248,0.4)'
+					stroke='rgba(56,189,248,0.5)'
 					strokeWidth='1'
+					style={{
+						transformOrigin: `${center}px ${center}px`,
+						animation: "vbento-center-pulse 3s ease-in-out infinite",
+					}}
 				/>
+				<circle cx={center} cy={center} r='6' fill='rgba(56,189,248,0.95)' />
 
-				{/* Outer evidence nodes — pills */}
-				{evidenceTypes.map((e, i) => {
+				{/* Outer evidence pills — stagger fade-in + gentle bob */}
+				{evidence.map((e, i) => {
 					const p = polar(r2, e.angle);
-					const labelWidth = e.label.length * 6 + 16;
+					const labelWidth = e.label.length * 6 + 18;
 					return (
 						<g
 							key={i}
-							className='transition-all duration-500'
-							style={{ transformOrigin: `${center}px ${center}px` }}
+							style={{
+								transformOrigin: `${p.x}px ${p.y}px`,
+								animation: `vbento-pill-bob ${3 + (i % 3) * 0.4}s ease-in-out ${i * 0.3}s infinite, vbento-fade-in 0.8s ease-out ${0.2 + i * 0.1}s both`,
+							}}
 						>
-							{/* Pill background */}
 							<rect
 								x={p.x - labelWidth / 2}
 								y={p.y - 9}
 								width={labelWidth}
-								height={18}
-								rx={9}
+								height='18'
+								rx='9'
 								fill='#0a0f1a'
-								stroke='rgba(56,189,248,0.4)'
+								stroke='rgba(56,189,248,0.42)'
 								strokeWidth='1'
 							/>
 							<text
@@ -445,10 +634,10 @@ const EvidenceOrbitVisual = () => {
 				})}
 			</svg>
 
-			{/* Center label sitting under the central node */}
+			{/* Center label — sits below the central node */}
 			<div className='pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-12 text-center'>
 				<div className='text-[9px] uppercase tracking-[0.18em] text-sky-300/70'>
-					Finding
+					{centerLabel}
 				</div>
 			</div>
 		</div>
@@ -456,8 +645,9 @@ const EvidenceOrbitVisual = () => {
 };
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Card chrome — shared wrapper with idle gradient + hover lift.
+ * Card chrome — shared wrapper with idle gradient + dramatic hover lift
  * ────────────────────────────────────────────────────────────────────────── */
+
 type Accent = "amber" | "red" | "emerald" | "sky";
 
 const accentConfig: Record<
@@ -468,39 +658,44 @@ const accentConfig: Record<
 		gradient: string;
 		hoverBorder: string;
 		hoverShadow: string;
+		topAccent: string;
 	}
 > = {
 	amber: {
 		dot: "bg-amber-400",
 		eyebrow: "text-amber-300/90",
-		gradient: "from-amber-500/[0.06] via-transparent to-transparent",
-		hoverBorder: "group-hover:border-amber-500/25",
+		gradient: "from-amber-500/[0.08] via-transparent to-transparent",
+		hoverBorder: "group-hover:border-amber-500/40",
 		hoverShadow:
-			"group-hover:shadow-[0_24px_60px_-30px_rgba(245,158,11,0.45)]",
+			"group-hover:shadow-[0_18px_50px_-18px_rgba(245,158,11,0.55)]",
+		topAccent: "bg-amber-400",
 	},
 	red: {
 		dot: "bg-red-400",
 		eyebrow: "text-red-300/90",
-		gradient: "from-red-500/[0.06] via-transparent to-transparent",
-		hoverBorder: "group-hover:border-red-500/25",
+		gradient: "from-red-500/[0.08] via-transparent to-transparent",
+		hoverBorder: "group-hover:border-red-500/40",
 		hoverShadow:
-			"group-hover:shadow-[0_24px_60px_-30px_rgba(239,68,68,0.45)]",
+			"group-hover:shadow-[0_18px_50px_-18px_rgba(239,68,68,0.55)]",
+		topAccent: "bg-red-400",
 	},
 	emerald: {
 		dot: "bg-emerald-400",
 		eyebrow: "text-emerald-300/90",
-		gradient: "from-emerald-500/[0.06] via-transparent to-transparent",
-		hoverBorder: "group-hover:border-emerald-500/25",
+		gradient: "from-emerald-500/[0.08] via-transparent to-transparent",
+		hoverBorder: "group-hover:border-emerald-500/40",
 		hoverShadow:
-			"group-hover:shadow-[0_24px_60px_-30px_rgba(16,185,129,0.45)]",
+			"group-hover:shadow-[0_18px_50px_-18px_rgba(16,185,129,0.55)]",
+		topAccent: "bg-emerald-400",
 	},
 	sky: {
 		dot: "bg-sky-400",
 		eyebrow: "text-sky-300/90",
-		gradient: "from-sky-500/[0.06] via-transparent to-transparent",
-		hoverBorder: "group-hover:border-sky-500/25",
+		gradient: "from-sky-500/[0.08] via-transparent to-transparent",
+		hoverBorder: "group-hover:border-sky-500/40",
 		hoverShadow:
-			"group-hover:shadow-[0_24px_60px_-30px_rgba(56,189,248,0.45)]",
+			"group-hover:shadow-[0_18px_50px_-18px_rgba(56,189,248,0.55)]",
+		topAccent: "bg-sky-400",
 	},
 };
 
@@ -511,7 +706,6 @@ interface BentoCardProps {
 	description: string;
 	className?: string;
 	visualSlot: React.ReactNode;
-	/** Layout: visual on top + text below (default), or side-by-side horizontal. */
 	layout?: "stacked" | "horizontal";
 }
 
@@ -533,16 +727,23 @@ const BentoCard = ({
 
 	return (
 		<div
-			className={`group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.02] p-6 transition-all duration-500 hover:border-white/15 sm:p-7 ${a.hoverBorder} ${a.hoverShadow} ${className}`}
+			className={`group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.02] p-6 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-7 ${a.hoverBorder} ${a.hoverShadow} ${className}`}
 		>
-			{/* Idle accent gradient — very subtle, brightens on hover */}
+			{/* Top accent bar — invisible at idle, slides in on hover */}
 			<div
-				className={`pointer-events-none absolute inset-0 rounded-[1.25rem] bg-gradient-to-br ${a.gradient} opacity-60 transition-opacity duration-500 group-hover:opacity-100`}
+				className={`pointer-events-none absolute left-0 right-0 top-0 h-px origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100 ${a.topAccent}`}
 				aria-hidden
 			/>
+
+			{/* Idle accent gradient — visible, brightens on hover */}
+			<div
+				className={`pointer-events-none absolute inset-0 rounded-[1.25rem] bg-gradient-to-br ${a.gradient} opacity-70 transition-opacity duration-500 group-hover:opacity-100`}
+				aria-hidden
+			/>
+
 			{/* Inner highlight border */}
 			<div
-				className='pointer-events-none absolute inset-0 rounded-[1.25rem] ring-1 ring-inset ring-white/[0.04]'
+				className='pointer-events-none absolute inset-0 rounded-[1.25rem] ring-1 ring-inset ring-white/[0.04] transition-all duration-500 group-hover:ring-white/[0.08]'
 				aria-hidden
 			/>
 
@@ -551,7 +752,7 @@ const BentoCard = ({
 				<div
 					className={
 						layout === "horizontal"
-							? "min-h-[120px] flex-1 lg:min-h-[140px]"
+							? "min-h-[140px] flex-1 lg:min-h-[160px]"
 							: "min-h-[140px] flex-1"
 					}
 				>
@@ -559,7 +760,7 @@ const BentoCard = ({
 				</div>
 
 				{/* Caption strip */}
-				<div className={layout === "horizontal" ? "lg:max-w-[280px]" : ""}>
+				<div className={layout === "horizontal" ? "lg:max-w-[300px]" : ""}>
 					<div className='mb-2 flex items-center gap-2'>
 						<span className={`h-1.5 w-1.5 rounded-full ${a.dot}`} />
 						<span
@@ -583,12 +784,61 @@ const BentoCard = ({
 /* ──────────────────────────────────────────────────────────────────────────
  * Section
  * ────────────────────────────────────────────────────────────────────────── */
-const Features = () => {
+
+const Features = async () => {
+	const t = await getTranslations("homepage.features_bento");
+
+	const actionRows = t.raw("action_queue.rows") as ActionRow[];
+	const leakRows = t.raw("revenue_leaks.rows") as LeakRow[];
+	const evidenceTypes = t.raw("evidence_orbit.evidence_types") as Record<
+		string,
+		string
+	>;
+
 	return (
 		<section
 			id='features'
 			className='relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28 xl:py-32'
 		>
+			{/* Component-scoped keyframes. Prefixed with `vbento-` so they
+			    can't collide with other animations elsewhere in the app.
+			    Server-component-friendly: no JS, no client hydration cost. */}
+			<style>{`
+				@keyframes vbento-spin-cw {
+					from { transform: rotate(0deg); }
+					to { transform: rotate(360deg); }
+				}
+				@keyframes vbento-spin-ccw {
+					from { transform: rotate(0deg); }
+					to { transform: rotate(-360deg); }
+				}
+				@keyframes vbento-pulse-glow {
+					0%, 100% { transform: scale(1); opacity: 0.85; }
+					50% { transform: scale(1.08); opacity: 1; }
+				}
+				@keyframes vbento-center-pulse {
+					0%, 100% { transform: scale(1); opacity: 0.5; }
+					50% { transform: scale(1.5); opacity: 0; }
+				}
+				@keyframes vbento-bob {
+					0%, 100% { transform: translateY(0); }
+					50% { transform: translateY(-6px); }
+				}
+				@keyframes vbento-pill-bob {
+					0%, 100% { transform: translateY(0); }
+					50% { transform: translateY(-2px); }
+				}
+				@keyframes vbento-fade-in {
+					from { opacity: 0; }
+					to { opacity: 1; }
+				}
+				@media (prefers-reduced-motion: reduce) {
+					.vbento-anim, [style*="vbento-"] {
+						animation: none !important;
+					}
+				}
+			`}</style>
+
 			{/* Soft ambient glow */}
 			<div
 				className='pointer-events-none absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-emerald-900/[0.08] blur-[120px]'
@@ -601,61 +851,74 @@ const Features = () => {
 					<div className='mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1'>
 						<span className='h-1.5 w-1.5 rounded-full bg-emerald-400' />
 						<span className='text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-300/90'>
-							How Vestigio works
+							{t("eyebrow")}
 						</span>
 					</div>
 					<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:text-3xl lg:text-[2.5rem]'>
-						Stop guessing.{" "}
-						<span className='text-zinc-500'>Start deciding.</span>
+						{t("title_part1")}{" "}
+						<span className='text-zinc-500'>{t("title_part2")}</span>
 					</h2>
 					<p className='mx-auto max-w-[560px] text-sm leading-relaxed text-zinc-400 sm:text-base'>
-						Four answers, one decision engine. Find where you&apos;re losing
-						money, fix what matters first, verify with evidence, and catch
-						regressions before they cost you.
+						{t("subtitle")}
 					</p>
 				</div>
 
 				{/* Bento grid */}
 				<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:grid-rows-2'>
-					{/* Card 1 — Action Queue (top-left) */}
 					<BentoCard
 						accent='amber'
-						eyebrow='Prioritize'
-						title='A clear queue of what to fix first'
-						description='Every finding ranked by impact, urgency, and effort. No more spreadsheets — just the next decision, ready to ship.'
+						eyebrow={t("action_queue.eyebrow")}
+						title={t("action_queue.title")}
+						description={t("action_queue.description")}
 						className='lg:col-start-1 lg:row-start-1'
-						visualSlot={<ActionQueueVisual />}
+						visualSlot={<ActionQueueVisual rows={actionRows} />}
 					/>
 
-					{/* Card 2 — Revenue Leaks (top-middle) */}
 					<BentoCard
 						accent='red'
-						eyebrow='Diagnose'
-						title='Find where money is bleeding'
-						description='Vestigio quantifies every leak across your funnel — with confidence ranges, not vibes. Know what each broken surface is costing you.'
+						eyebrow={t("revenue_leaks.eyebrow")}
+						title={t("revenue_leaks.title")}
+						description={t("revenue_leaks.description")}
 						className='lg:col-start-2 lg:row-start-1'
-						visualSlot={<RevenueLeaksVisual />}
+						visualSlot={
+							<RevenueLeaksVisual
+								rows={leakRows}
+								confidenceLabel={t("revenue_leaks.confidence_label")}
+								leakingLabel={t("revenue_leaks.leaking_label")}
+							/>
+						}
 					/>
 
-					{/* Card 3 — Continuous Watch (bottom-wide) */}
 					<BentoCard
 						accent='emerald'
-						eyebrow='Monitor'
-						title='Catch regressions before they cost you'
-						description='Vestigio tracks every surface across cycles and flags what got worse since the last analysis. Silent deploys never stay silent.'
+						eyebrow={t("continuous_watch.eyebrow")}
+						title={t("continuous_watch.title")}
+						description={t("continuous_watch.description")}
 						className='lg:col-span-2 lg:col-start-1 lg:row-start-2'
 						layout='horizontal'
-						visualSlot={<ContinuousWatchVisual />}
+						visualSlot={
+							<ContinuousWatchVisual
+								axisLabel={t("continuous_watch.axis_label")}
+								beforeLabel={t("continuous_watch.before_label")}
+								afterLabel={t("continuous_watch.after_label")}
+								annotationLabel={t("continuous_watch.annotation_label")}
+								annotationValue={t("continuous_watch.annotation_value")}
+							/>
+						}
 					/>
 
-					{/* Card 4 — Evidence Verification (right-tall) */}
 					<BentoCard
 						accent='sky'
-						eyebrow='Verify'
-						title='Every finding traces back to evidence'
-						description='Browser-verified, cross-checked, timestamped. Vestigio enriches every finding with multi-source proof — so your team trusts the call.'
+						eyebrow={t("evidence_orbit.eyebrow")}
+						title={t("evidence_orbit.title")}
+						description={t("evidence_orbit.description")}
 						className='lg:col-start-3 lg:row-span-2'
-						visualSlot={<EvidenceOrbitVisual />}
+						visualSlot={
+							<EvidenceOrbitVisual
+								centerLabel={t("evidence_orbit.center_label")}
+								types={evidenceTypes}
+							/>
+						}
 					/>
 				</div>
 			</div>

@@ -87,6 +87,59 @@
         }
       ]
     },
+    "features_bento": {
+      "eyebrow": "Como o Vestigio funciona",
+      "title_part1": "Pare de adivinhar.",
+      "title_part2": "Comece a decidir.",
+      "subtitle": "Quatro respostas, um mecanismo de decisão. Descubra onde você está perdendo dinheiro, corrija o que importa primeiro, valide com evidências e detecte regressões antes que elas custem caro.",
+      "action_queue": {
+        "eyebrow": "Priorize",
+        "title": "Uma fila clara do que corrigir primeiro",
+        "description": "Cada achado classificado por impacto, urgência e esforço. Sem mais planilhas — apenas a próxima decisão, pronta para executar.",
+        "rows": [
+          { "title": "Pico de abandono no checkout", "impact": "−R$ 42.100" },
+          { "title": "Quebra de confiança no formulário", "impact": "−R$ 15.750" },
+          { "title": "Confusão na página de preços", "impact": "−R$ 9.600" },
+          { "title": "Queda no onboarding", "impact": "−R$ 5.700" }
+        ]
+      },
+      "revenue_leaks": {
+        "eyebrow": "Diagnostique",
+        "title": "Encontre onde o dinheiro está vazando",
+        "description": "O Vestigio quantifica cada vazamento no seu funil — com faixas de confiança, não achismos. Saiba exatamente quanto cada superfície quebrada está te custando.",
+        "confidence_label": "confiança",
+        "leaking_label": "Vazando",
+        "rows": [
+          { "surface": "Funil de checkout", "loss": "−R$ 42.100", "confidence": "94%" },
+          { "surface": "Página de preços", "loss": "−R$ 15.750", "confidence": "88%" },
+          { "surface": "Fluxo de onboarding", "loss": "−R$ 9.600", "confidence": "91%" }
+        ]
+      },
+      "continuous_watch": {
+        "eyebrow": "Recupere",
+        "title": "Estanque o vazamento antes que ele se acumule",
+        "description": "O Vestigio acompanha cada vazamento da detecção à resolução. Veja suas perdas mensais caírem conforme os achados são fechados — e detecte novas regressões no momento em que aparecem.",
+        "axis_label": "Receita perdida / mês",
+        "before_label": "Antes do Vestigio",
+        "after_label": "Depois do Vestigio",
+        "annotation_label": "Receita recuperada",
+        "annotation_value": "−87,2%"
+      },
+      "evidence_orbit": {
+        "eyebrow": "Valide",
+        "title": "Cada achado rastreia até a evidência",
+        "description": "Verificado no navegador, cruzado entre fontes, com timestamp. O Vestigio enriquece cada achado com provas multi-fonte — para que seu time confie no diagnóstico.",
+        "center_label": "Achado",
+        "evidence_types": {
+          "browser": "Navegador",
+          "static": "Estático",
+          "behavioral": "Comportamental",
+          "cross_source": "Cruzamento",
+          "vendor": "Fornecedor",
+          "timestamped": "Timestamp"
+        }
+      }
+    },
     "features_with_image_section": {
       "title": "Destaque-se, Lance Rápido!",
       "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",

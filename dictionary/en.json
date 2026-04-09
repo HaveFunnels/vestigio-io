@@ -87,6 +87,59 @@
         }
       ]
     },
+    "features_bento": {
+      "eyebrow": "How Vestigio works",
+      "title_part1": "Stop guessing.",
+      "title_part2": "Start deciding.",
+      "subtitle": "Four answers, one decision engine. Find where you're losing money, fix what matters first, verify with evidence, and catch regressions before they cost you.",
+      "action_queue": {
+        "eyebrow": "Prioritize",
+        "title": "A clear queue of what to fix first",
+        "description": "Every finding ranked by impact, urgency, and effort. No more spreadsheets — just the next decision, ready to ship.",
+        "rows": [
+          { "title": "Checkout abandons spike", "impact": "−$8,420" },
+          { "title": "Form trust gap", "impact": "−$3,150" },
+          { "title": "Pricing confusion", "impact": "−$1,920" },
+          { "title": "Onboarding drop-off", "impact": "−$1,140" }
+        ]
+      },
+      "revenue_leaks": {
+        "eyebrow": "Diagnose",
+        "title": "Find where money is bleeding",
+        "description": "Vestigio quantifies every leak across your funnel — with confidence ranges, not vibes. Know what each broken surface is costing you.",
+        "confidence_label": "confidence",
+        "leaking_label": "Leaking",
+        "rows": [
+          { "surface": "Checkout funnel", "loss": "−$8,420", "confidence": "94%" },
+          { "surface": "Pricing page", "loss": "−$3,150", "confidence": "88%" },
+          { "surface": "Onboarding flow", "loss": "−$1,920", "confidence": "91%" }
+        ]
+      },
+      "continuous_watch": {
+        "eyebrow": "Recover",
+        "title": "Stop the bleed before it compounds",
+        "description": "Vestigio tracks every leak from detection to resolution. Watch your monthly losses drop as findings get closed — and catch new regressions the moment they appear.",
+        "axis_label": "Revenue lost / mo",
+        "before_label": "Before Vestigio",
+        "after_label": "After Vestigio",
+        "annotation_label": "Revenue recovered",
+        "annotation_value": "−87.2%"
+      },
+      "evidence_orbit": {
+        "eyebrow": "Verify",
+        "title": "Every finding traces back to evidence",
+        "description": "Browser-verified, cross-checked, timestamped. Vestigio enriches every finding with multi-source proof — so your team trusts the call.",
+        "center_label": "Finding",
+        "evidence_types": {
+          "browser": "Browser",
+          "static": "Static",
+          "behavioral": "Behavioral",
+          "cross_source": "Cross-source",
+          "vendor": "Vendor",
+          "timestamped": "Timestamped"
+        }
+      }
+    },
     "features_with_image_section": {
       "title": "Stand Out, Launch Fast!",
       "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",

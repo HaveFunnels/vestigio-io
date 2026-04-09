@@ -87,6 +87,59 @@
         }
       ]
     },
+    "features_bento": {
+      "eyebrow": "So funktioniert Vestigio",
+      "title_part1": "Schluss mit dem Raten.",
+      "title_part2": "Fang an zu entscheiden.",
+      "subtitle": "Vier Antworten, eine Entscheidungs-Engine. Finden Sie heraus, wo Sie Geld verlieren, beheben Sie zuerst, was zählt, prüfen Sie mit Beweisen und erkennen Sie Regressionen, bevor sie Sie etwas kosten.",
+      "action_queue": {
+        "eyebrow": "Priorisieren",
+        "title": "Eine klare Liste — was zuerst behoben gehört",
+        "description": "Jeder Befund nach Wirkung, Dringlichkeit und Aufwand sortiert. Keine Tabellen mehr — nur die nächste Entscheidung, einsatzbereit.",
+        "rows": [
+          { "title": "Checkout-Abbrüche steigen", "impact": "−7.840 €" },
+          { "title": "Vertrauenslücke im Formular", "impact": "−2.930 €" },
+          { "title": "Verwirrung auf Preisseite", "impact": "−1.790 €" },
+          { "title": "Onboarding-Abbruch", "impact": "−1.060 €" }
+        ]
+      },
+      "revenue_leaks": {
+        "eyebrow": "Diagnostizieren",
+        "title": "Finden Sie, wo das Geld blutet",
+        "description": "Vestigio quantifiziert jedes Leck in Ihrem Funnel — mit Konfidenzbereichen, nicht mit Bauchgefühl. Wissen Sie genau, was jede defekte Oberfläche Sie kostet.",
+        "confidence_label": "Konfidenz",
+        "leaking_label": "Leck",
+        "rows": [
+          { "surface": "Checkout-Funnel", "loss": "−7.840 €", "confidence": "94%" },
+          { "surface": "Preisseite", "loss": "−2.930 €", "confidence": "88%" },
+          { "surface": "Onboarding-Flow", "loss": "−1.790 €", "confidence": "91%" }
+        ]
+      },
+      "continuous_watch": {
+        "eyebrow": "Zurückgewinnen",
+        "title": "Stoppen Sie das Leck, bevor es sich aufstaut",
+        "description": "Vestigio verfolgt jedes Leck von der Erkennung bis zur Behebung. Sehen Sie, wie Ihre monatlichen Verluste sinken, sobald Befunde geschlossen werden — und entdecken Sie neue Regressionen im Moment ihres Auftretens.",
+        "axis_label": "Verlorene Einnahmen / Monat",
+        "before_label": "Vor Vestigio",
+        "after_label": "Nach Vestigio",
+        "annotation_label": "Wiedergewonnen",
+        "annotation_value": "−87,2%"
+      },
+      "evidence_orbit": {
+        "eyebrow": "Verifizieren",
+        "title": "Jeder Befund führt zurück zum Beweis",
+        "description": "Browser-verifiziert, mehrfach geprüft, mit Zeitstempel. Vestigio reichert jeden Befund mit Multi-Source-Beweisen an — damit Ihr Team der Diagnose vertraut.",
+        "center_label": "Befund",
+        "evidence_types": {
+          "browser": "Browser",
+          "static": "Statisch",
+          "behavioral": "Verhalten",
+          "cross_source": "Quervergleich",
+          "vendor": "Anbieter",
+          "timestamped": "Zeitstempel"
+        }
+      }
+    },
     "features_with_image_section": {
       "title": "Heben Sie sich ab, starten Sie schnell!",
       "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",

@@ -550,12 +550,14 @@ const trendConfig: Record<
 > = {
 	degrading: {
 		arrow: "\u2191",
-		color: "border-red-800/50 bg-red-500/5",
+		color:
+			"border-red-500/40 bg-red-500/[0.06] shadow-[0_8px_24px_-14px_rgba(239,68,68,0.22)]",
 		textColor: "text-red-600 dark:text-red-400",
 	},
 	improving: {
 		arrow: "\u2193",
-		color: "border-emerald-800/50 bg-emerald-500/5",
+		color:
+			"border-emerald-500/40 bg-emerald-500/[0.06] shadow-[0_8px_24px_-14px_rgba(16,185,129,0.22)]",
 		textColor: "text-emerald-600 dark:text-emerald-400",
 	},
 	stable: {
@@ -565,7 +567,8 @@ const trendConfig: Record<
 	},
 	mixed: {
 		arrow: "\u2195",
-		color: "border-amber-800/50 bg-amber-500/5",
+		color:
+			"border-amber-500/40 bg-amber-500/[0.06] shadow-[0_8px_24px_-14px_rgba(245,158,11,0.22)]",
 		textColor: "text-amber-600 dark:text-amber-400",
 	},
 };

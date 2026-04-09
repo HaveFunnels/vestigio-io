@@ -217,10 +217,10 @@ const ContinuousWatchVisual = ({
 	annotationValue: string;
 }) => {
 	const W = 480;
-	const H = 180;
+	const H = 140;
 	const PAD_X = 16;
-	const PAD_TOP = 32; // leave room for the label up top
-	const PAD_BOTTOM = 24; // leave room for the before/after labels
+	const PAD_TOP = 22; // leave room for the label up top
+	const PAD_BOTTOM = 18; // leave room for the before/after labels
 	const innerW = W - PAD_X * 2;
 	const innerH = H - PAD_TOP - PAD_BOTTOM;
 	const baseY = PAD_TOP + innerH;
@@ -228,33 +228,38 @@ const ContinuousWatchVisual = ({
 	// Y mapping: lower y value = higher revenue lost (chart climbs up)
 	const yAt = (frac: number) => PAD_TOP + innerH * frac;
 
-	// BEFORE curve — climbs from low to peak in the left half
+	// BEFORE curve — flat-high "stable chronic loss" line with mild
+	// natural wobble. Hovers around frac 0.16-0.22 (near top of chart =
+	// high revenue lost) for the entire left half. The story this tells
+	// is "leakage was constantly bleeding you" — not "leakage was
+	// growing".
 	const beforePoints: [number, number][] = [
-		[PAD_X + innerW * 0.0, yAt(0.95)],
-		[PAD_X + innerW * 0.08, yAt(0.94)],
-		[PAD_X + innerW * 0.16, yAt(0.9)],
-		[PAD_X + innerW * 0.24, yAt(0.82)],
-		[PAD_X + innerW * 0.32, yAt(0.65)],
-		[PAD_X + innerW * 0.4, yAt(0.4)],
-		[PAD_X + innerW * 0.46, yAt(0.18)],
-		[PAD_X + innerW * 0.5, yAt(0.08)], // peak
+		[PAD_X + innerW * 0.0, yAt(0.18)],
+		[PAD_X + innerW * 0.07, yAt(0.21)],
+		[PAD_X + innerW * 0.14, yAt(0.16)],
+		[PAD_X + innerW * 0.21, yAt(0.2)],
+		[PAD_X + innerW * 0.28, yAt(0.17)],
+		[PAD_X + innerW * 0.35, yAt(0.22)],
+		[PAD_X + innerW * 0.42, yAt(0.18)],
+		[PAD_X + innerW * 0.5, yAt(0.2)], // inflection
 	];
 
 	const peak = beforePoints[beforePoints.length - 1];
 
-	// AFTER curve — descends from peak with realistic peaks/valleys
+	// AFTER curve — descends from inflection with realistic peaks/valleys
+	// down to a low frac (~0.78) representing recovered revenue.
 	const afterPoints: [number, number][] = [
 		peak,
-		[PAD_X + innerW * 0.55, yAt(0.32)],
-		[PAD_X + innerW * 0.6, yAt(0.4)],
-		[PAD_X + innerW * 0.65, yAt(0.32)],
+		[PAD_X + innerW * 0.55, yAt(0.34)],
+		[PAD_X + innerW * 0.6, yAt(0.42)],
+		[PAD_X + innerW * 0.65, yAt(0.36)],
 		[PAD_X + innerW * 0.7, yAt(0.5)],
-		[PAD_X + innerW * 0.75, yAt(0.45)],
-		[PAD_X + innerW * 0.8, yAt(0.58)],
-		[PAD_X + innerW * 0.85, yAt(0.55)],
-		[PAD_X + innerW * 0.9, yAt(0.66)],
-		[PAD_X + innerW * 0.95, yAt(0.62)],
-		[PAD_X + innerW * 1.0, yAt(0.72)],
+		[PAD_X + innerW * 0.75, yAt(0.55)],
+		[PAD_X + innerW * 0.8, yAt(0.65)],
+		[PAD_X + innerW * 0.85, yAt(0.62)],
+		[PAD_X + innerW * 0.9, yAt(0.74)],
+		[PAD_X + innerW * 0.95, yAt(0.71)],
+		[PAD_X + innerW * 1.0, yAt(0.8)],
 	];
 
 	const beforePath = smoothPath(beforePoints);
@@ -467,7 +472,7 @@ const EvidenceOrbitVisual = ({
 
 	return (
 		<div
-			className='relative aspect-square w-full'
+			className='relative mx-auto aspect-square w-full max-w-[230px]'
 			style={{
 				animation: "vbento-bob 6s ease-in-out infinite",
 			}}
@@ -722,12 +727,12 @@ const BentoCard = ({
 
 	const innerLayout =
 		layout === "horizontal"
-			? "flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-8"
-			: "flex flex-col gap-6";
+			? "flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6"
+			: "flex flex-col gap-4";
 
 	return (
 		<div
-			className={`group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.02] p-6 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-7 ${a.hoverBorder} ${a.hoverShadow} ${className}`}
+			className={`group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.02] p-5 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-6 ${a.hoverBorder} ${a.hoverShadow} ${className}`}
 		>
 			{/* Top accent bar — invisible at idle, slides in on hover */}
 			<div
@@ -752,15 +757,15 @@ const BentoCard = ({
 				<div
 					className={
 						layout === "horizontal"
-							? "min-h-[140px] flex-1 lg:min-h-[160px]"
-							: "min-h-[140px] flex-1"
+							? "min-h-[110px] flex-1 lg:min-h-[120px]"
+							: "min-h-[110px] flex-1"
 					}
 				>
 					{visualSlot}
 				</div>
 
 				{/* Caption strip */}
-				<div className={layout === "horizontal" ? "lg:max-w-[300px]" : ""}>
+				<div className={layout === "horizontal" ? "lg:max-w-[280px]" : ""}>
 					<div className='mb-2 flex items-center gap-2'>
 						<span className={`h-1.5 w-1.5 rounded-full ${a.dot}`} />
 						<span
@@ -798,7 +803,7 @@ const Features = async () => {
 	return (
 		<section
 			id='features'
-			className='relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28 xl:py-32'
+			className='relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-10 sm:py-12 lg:py-16 xl:py-20'
 		>
 			{/* Component-scoped keyframes. Prefixed with `vbento-` so they
 			    can't collide with other animations elsewhere in the app.
@@ -847,18 +852,18 @@ const Features = async () => {
 
 			<div className='relative mx-auto w-full max-w-[1200px] px-4 sm:px-8 xl:px-0'>
 				{/* Header */}
-				<div className='mx-auto mb-10 max-w-[680px] text-center sm:mb-14'>
-					<div className='mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1'>
+				<div className='mx-auto mb-8 max-w-[680px] text-center sm:mb-10'>
+					<div className='mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1'>
 						<span className='h-1.5 w-1.5 rounded-full bg-emerald-400' />
 						<span className='text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-300/90'>
 							{t("eyebrow")}
 						</span>
 					</div>
-					<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:text-3xl lg:text-[2.5rem]'>
+					<h2 className='mb-3 text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:text-3xl lg:text-[2.25rem]'>
 						{t("title_part1")}{" "}
 						<span className='text-zinc-500'>{t("title_part2")}</span>
 					</h2>
-					<p className='mx-auto max-w-[560px] text-sm leading-relaxed text-zinc-400 sm:text-base'>
+					<p className='mx-auto max-w-[560px] text-sm leading-relaxed text-zinc-400 sm:text-[15px]'>
 						{t("subtitle")}
 					</p>
 				</div>

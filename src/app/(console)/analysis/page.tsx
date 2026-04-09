@@ -15,6 +15,11 @@ import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
+import {
+	DrawerSection,
+	DrawerStatBox,
+	DrawerStatRow,
+} from "@/components/console/DrawerSection";
 import { loadFindings } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { ShinyButton } from "@/components/ui/shiny-button";
@@ -196,7 +201,7 @@ export default function AnalysisPage() {
 	if (analysisState === "idle" && !hasExistingData) {
 		if (existingState.status === "not_ready") {
 			return (
-				<div className='p-6'>
+				<div className='p-4 sm:p-6'>
 					<ConsoleState state={existingState} loadingLabel='' emptyLabel=''>
 						{() => null}
 					</ConsoleState>
@@ -205,7 +210,7 @@ export default function AnalysisPage() {
 		}
 		// Show empty state with existing ConsoleState handling
 		return (
-			<div className='p-6'>
+			<div className='p-4 sm:p-6'>
 				<ConsoleState
 					state={existingState}
 					loadingLabel={t("loading")}
@@ -227,7 +232,7 @@ export default function AnalysisPage() {
 	}
 
 	return (
-		<div className='p-6'>
+		<div className='p-4 sm:p-6'>
 			<PageHeader
 				title={t("title")}
 				subtitle={
@@ -939,13 +944,20 @@ function FindingDrawerContent({
 		none: tc("impact_types.none"),
 	};
 
+	// Severity drives the accent color of the impact-related sections
+	const severityAccent: "danger" | "warning" | "default" =
+		finding.polarity === "positive"
+			? "default"
+			: finding.severity === "critical" || finding.severity === "high"
+				? "danger"
+				: finding.severity === "medium"
+					? "warning"
+					: "default";
+
 	return (
-		<div className='space-y-6'>
+		<div className='space-y-5'>
 			{/* Summary + badges */}
-			<section>
-				<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-					{td("summary")}
-				</h3>
+			<DrawerSection title={td("summary")} accent={severityAccent}>
 				<p className='text-sm text-content-secondary'>{finding.cause}</p>
 				<div className='mt-2 flex flex-wrap items-center gap-2'>
 					{finding.polarity === "positive" ? (
@@ -967,13 +979,13 @@ function FindingDrawerContent({
 						</code>
 					)}
 				</div>
-			</section>
+			</DrawerSection>
 
 			{/* Suppression Callout */}
 			{finding.suppression_context &&
 				finding.suppression_context.is_suppressed && (
-					<section>
-						<div className='rounded-md border border-amber-900/50 bg-amber-500/5 px-4 py-3'>
+					<DrawerStatBox accent='warning'>
+						<div className='px-4 py-3'>
 							<div className='mb-1 flex items-center gap-2'>
 								<span className='text-xs font-semibold text-amber-600 dark:text-amber-500'>
 									{td("suppressed")}
@@ -986,107 +998,95 @@ function FindingDrawerContent({
 								{finding.suppression_context.explanation}
 							</p>
 						</div>
-					</section>
+					</DrawerStatBox>
 				)}
 
 			{/* Effect */}
 			{finding.effect && (
-				<section>
-					<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-						{td("effect")}
-					</h3>
+				<DrawerSection title={td("effect")}>
 					<p className='text-sm text-content-muted'>{finding.effect}</p>
-				</section>
+				</DrawerSection>
 			)}
 
 			{/* Root Cause */}
 			{finding.root_cause && (
-				<section>
-					<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-						{td("root_cause")}
-					</h3>
-					<div className='rounded-md border border-edge bg-surface-card px-4 py-3'>
-						<span className='text-sm font-medium text-content-secondary'>
-							{finding.root_cause}
-						</span>
-					</div>
-				</section>
+				<DrawerSection title={td("root_cause")}>
+					<DrawerStatBox>
+						<div className='px-4 py-3'>
+							<span className='text-sm font-medium text-content-secondary'>
+								{finding.root_cause}
+							</span>
+						</div>
+					</DrawerStatBox>
+				</DrawerSection>
 			)}
 
 			{/* Impact Breakdown */}
 			{finding.polarity !== "positive" && (
-				<section>
-					<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-						{td("impact_breakdown")}
-					</h3>
-					<div className='space-y-2'>
-						<div className='flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2'>
-							<span className='text-xs text-content-muted'>
-								{td("monthly_range")}
-							</span>
-							<ImpactBadge
-								min={finding.impact.monthly_range.min}
-								max={finding.impact.monthly_range.max}
-							/>
-						</div>
-						<div className='flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2'>
-							<span className='text-xs text-content-muted'>
-								{td("midpoint")}
-							</span>
-							<ImpactBadge
-								min={finding.impact.midpoint}
-								max={finding.impact.midpoint}
-								compact
-							/>
-						</div>
-						<div className='flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2'>
-							<span className='text-xs text-content-muted'>
-								{td("impact_type")}
-							</span>
-							<span className='text-xs text-content-secondary'>
-								{impactTypeLabels[finding.impact.impact_type] ||
-									finding.impact.impact_type}
-							</span>
-						</div>
-					</div>
-				</section>
+				<DrawerSection title={td("impact_breakdown")} accent={severityAccent}>
+					<DrawerStatBox accent={severityAccent}>
+						<DrawerStatRow
+							label={td("monthly_range")}
+							value={
+								<ImpactBadge
+									min={finding.impact.monthly_range.min}
+									max={finding.impact.monthly_range.max}
+								/>
+							}
+						/>
+						<DrawerStatRow
+							label={td("midpoint")}
+							value={
+								<ImpactBadge
+									min={finding.impact.midpoint}
+									max={finding.impact.midpoint}
+									compact
+								/>
+							}
+						/>
+						<DrawerStatRow
+							label={td("impact_type")}
+							value={
+								impactTypeLabels[finding.impact.impact_type] ||
+								finding.impact.impact_type
+							}
+						/>
+					</DrawerStatBox>
+				</DrawerSection>
 			)}
 
 			{/* Evidence Quality */}
 			{finding.evidence_quality && (
-				<section>
-					<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-						{td("evidence_quality")}
-					</h3>
-					<div className='space-y-2 rounded-md border border-edge bg-surface-card px-4 py-3'>
-						<EvidenceQualityBar
-							label={td("source_reliability")}
-							value={finding.evidence_quality.source_reliability}
-						/>
-						<EvidenceQualityBar
-							label={td("completeness")}
-							value={finding.evidence_quality.completeness}
-						/>
-						<EvidenceQualityBar
-							label={td("recency")}
-							value={finding.evidence_quality.recency}
-						/>
-						<EvidenceQualityBar
-							label={td("corroboration")}
-							value={finding.evidence_quality.corroboration}
-						/>
-					</div>
-				</section>
+				<DrawerSection title={td("evidence_quality")} accent='info'>
+					<DrawerStatBox accent='info'>
+						<div className='space-y-2 px-4 py-3'>
+							<EvidenceQualityBar
+								label={td("source_reliability")}
+								value={finding.evidence_quality.source_reliability}
+							/>
+							<EvidenceQualityBar
+								label={td("completeness")}
+								value={finding.evidence_quality.completeness}
+							/>
+							<EvidenceQualityBar
+								label={td("recency")}
+								value={finding.evidence_quality.recency}
+							/>
+							<EvidenceQualityBar
+								label={td("corroboration")}
+								value={finding.evidence_quality.corroboration}
+							/>
+						</div>
+					</DrawerStatBox>
+				</DrawerSection>
 			)}
 
 			{/* Verification Lifecycle Panel */}
-			<section>
-				<div className='mb-2 flex items-center gap-1.5'>
-					<h3 className='text-xs font-semibold uppercase tracking-wider text-content-muted'>
-						{td("verification")}
-					</h3>
-					<InfoTooltip text={td("verification_tooltip")} />
-				</div>
+			<DrawerSection
+				title={td("verification")}
+				accent='info'
+				titleSlot={<InfoTooltip text={td("verification_tooltip")} />}
+			>
 				<VerificationPanel
 					maturity={finding.verification_maturity}
 					method={finding.verification_method}
@@ -1098,7 +1098,7 @@ function FindingDrawerContent({
 						toast.success(td("verification_requested"))
 					}
 				/>
-			</section>
+			</DrawerSection>
 
 			{/* Verification Sufficiency Warning */}
 			<VerificationSufficiencyWarning
@@ -1107,31 +1107,33 @@ function FindingDrawerContent({
 			/>
 
 			{/* Reasoning */}
-			<section>
-				<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-					{finding.polarity === "positive" ? td("why_good") : td("reasoning")}
-				</h3>
-				<div className='rounded-md border border-edge bg-surface-card px-4 py-3'>
-					<p className='text-sm leading-relaxed text-content-secondary'>
-						{finding.reasoning}
-					</p>
-				</div>
-			</section>
+			<DrawerSection
+				title={
+					finding.polarity === "positive" ? td("why_good") : td("reasoning")
+				}
+			>
+				<DrawerStatBox>
+					<div className='px-4 py-3'>
+						<p className='text-sm leading-relaxed text-content-secondary'>
+							{finding.reasoning}
+						</p>
+					</div>
+				</DrawerStatBox>
+			</DrawerSection>
 
 			{/* Truth Context — Wave 2.4: no longer surfaces the numeric delta. */}
 			{finding.truth_context && finding.truth_context.has_contradictions && (
-				<section>
-					<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-500'>
-						{td("evidence_contradictions")}
-					</h3>
-					<div className='rounded-md border border-amber-900/50 bg-amber-500/5 px-4 py-3'>
-						<p className='text-xs text-amber-600 dark:text-amber-300'>
-							{td("contradictions_detected", {
-								count: finding.truth_context.contradiction_count,
-							})}
-						</p>
-					</div>
-				</section>
+				<DrawerSection title={td("evidence_contradictions")} accent='warning'>
+					<DrawerStatBox accent='warning'>
+						<div className='px-4 py-3'>
+							<p className='text-xs text-amber-600 dark:text-amber-300'>
+								{td("contradictions_detected", {
+									count: finding.truth_context.contradiction_count,
+								})}
+							</p>
+						</div>
+					</DrawerStatBox>
+				</DrawerSection>
 			)}
 
 			{/* Knowledge Base Link — always render as a styled link */}
@@ -1188,10 +1190,10 @@ function FindingDrawerContent({
 
 			{/* Discuss CTA */}
 			{finding.polarity !== "positive" && (
-				<section>
+				<section className='pt-2'>
 					<button
 						onClick={onDiscuss}
-						className='w-full rounded-md border border-emerald-800/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400'
+						className='w-full rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-600 transition-colors hover:border-emerald-500 hover:bg-emerald-500/15 dark:text-emerald-400'
 					>
 						{td("discuss_finding")}
 					</button>

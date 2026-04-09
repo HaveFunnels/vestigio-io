@@ -46,7 +46,7 @@ export default async function DashboardPage() {
 	const { data, layout } = await loadDashboard();
 
 	return (
-		<main className='mx-auto max-w-[1400px] px-6 py-8'>
+		<main className='mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-8'>
 			<DashboardShell initialInstances={layout} data={data} />
 		</main>
 	);

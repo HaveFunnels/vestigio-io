@@ -40,9 +40,9 @@ export function DashboardHeader({
 	saveStatus = "idle",
 }: DashboardHeaderProps) {
 	return (
-		<div className='mb-6 flex items-center justify-between'>
-			<div className='flex flex-col gap-1'>
-				<h1 className='text-2xl font-semibold tracking-tight text-content'>
+		<div className='mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
+			<div className='flex min-w-0 flex-col gap-1'>
+				<h1 className='text-xl font-semibold tracking-tight text-content sm:text-2xl'>
 					Dashboard
 				</h1>
 				<p className='text-xs text-content-muted'>
@@ -52,7 +52,7 @@ export function DashboardHeader({
 				</p>
 			</div>
 
-			<div className='flex items-center gap-2'>
+			<div className='flex flex-wrap items-center gap-2 sm:flex-nowrap'>
 				{editing && <SaveStatusPip status={saveStatus} />}
 				{editing && onOpenCatalog && (
 					<button

@@ -16,6 +16,11 @@ import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
+import {
+	DrawerSection,
+	DrawerStatBox,
+	DrawerStatRow,
+} from "@/components/console/DrawerSection";
 import { loadActions, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type {
@@ -144,7 +149,7 @@ export default function ActionsPage() {
 	const changeReport = changeState.status === "ready" ? changeState.data : null;
 
 	return (
-		<div className='p-6'>
+		<div className='p-4 sm:p-6'>
 			<PageHeader
 				title={t("title")}
 				subtitle={t("subtitle")}
@@ -482,12 +487,12 @@ function ActionsContent({
 			</div>
 
 			{/* Tab Bar */}
-			<div className='mb-4 flex items-center gap-1 rounded-lg border border-edge bg-surface-card p-1'>
+			<div className='mb-4 flex items-center gap-1 overflow-x-auto rounded-lg border border-edge bg-surface-card p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
 				{tabs.map((tab) => (
 					<button
 						key={tab.key}
 						onClick={() => setActiveTab(tab.key)}
-						className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+						className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
 							activeTab === tab.key
 								? "bg-surface-inset font-semibold text-content"
 								: "text-content-muted hover:text-content-secondary"
@@ -728,37 +733,45 @@ function ActionDrawerContent({
 			.catch(() => {});
 	}, [action.root_cause_key]);
 
+	// Severity drives the accent color of the impact-related sections —
+	// critical/high actions get the red treatment, medium/low get amber,
+	// success/info reserved for the verification + scope blocks below.
+	const severityAccent: "danger" | "warning" | "default" =
+		action.severity === "critical" || action.severity === "high"
+			? "danger"
+			: action.severity === "medium"
+				? "warning"
+				: "default";
+
 	return (
-		<div className='space-y-6'>
+		<div className='space-y-5'>
 			{/* Description + Root Cause — visually connected */}
 			{(action.description || action.root_cause) && (
-				<section>
-					<div className='overflow-hidden rounded-md border border-edge bg-surface-card'>
-						{action.description && (
-							<div className='px-4 py-3'>
-								<h3 className='mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-faint'>
-									{t("drawer.description")}
-								</h3>
-								<p className='text-sm leading-relaxed text-content-secondary'>
-									{action.description}
-								</p>
-							</div>
-						)}
-						{action.description && action.root_cause && (
-							<div className='border-t border-edge/50' />
-						)}
-						{action.root_cause && (
-							<div className='px-4 py-3'>
-								<h3 className='mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-faint'>
-									{t("drawer.rootCause")}
-								</h3>
-								<span className='text-sm font-medium text-content-secondary'>
-									{action.root_cause}
-								</span>
-							</div>
-						)}
-					</div>
-				</section>
+				<DrawerStatBox>
+					{action.description && (
+						<div className='px-4 py-3'>
+							<h3 className='mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
+								{t("drawer.description")}
+							</h3>
+							<p className='text-sm leading-relaxed text-content-secondary'>
+								{action.description}
+							</p>
+						</div>
+					)}
+					{action.description && action.root_cause && (
+						<div className='border-t border-edge/50' />
+					)}
+					{action.root_cause && (
+						<div className='px-4 py-3'>
+							<h3 className='mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
+								{t("drawer.rootCause")}
+							</h3>
+							<span className='text-sm font-medium text-content-secondary'>
+								{action.root_cause}
+							</span>
+						</div>
+					)}
+				</DrawerStatBox>
 			)}
 
 			{/* Badge Row */}
@@ -779,62 +792,53 @@ function ActionDrawerContent({
 				</div>
 			</section>
 
-			{/* Impact Breakdown */}
+			{/* Impact Breakdown — accent + colored shadow scaled to severity */}
 			{action.impact && (
-				<section>
-					<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-						{t("drawer.impactBreakdown")}
-					</h3>
-					<div className='space-y-2 rounded-md border border-edge bg-surface-card px-4 py-3'>
-						<div className='flex items-center justify-between'>
-							<span className='text-xs text-content-muted'>
-								{t("drawer.monthlyRange")}
-							</span>
-							<ImpactBadge
-								min={action.impact.monthly_range.min}
-								max={action.impact.monthly_range.max}
-							/>
-						</div>
-						<div className='flex items-center justify-between'>
-							<span className='text-xs text-content-muted'>
-								{t("drawer.midpoint")}
-							</span>
-							<ImpactBadge
-								min={action.impact.midpoint}
-								max={action.impact.midpoint}
-								compact
-							/>
-						</div>
-						<div className='flex items-center justify-between'>
-							<span className='text-xs text-content-muted'>
-								{t("drawer.priorityScore")}
-							</span>
-							<span className='font-mono text-xs text-content-secondary'>
-								{action.priority_score}
-							</span>
-						</div>
-					</div>
-				</section>
+				<DrawerSection
+					title={t("drawer.impactBreakdown")}
+					accent={severityAccent}
+				>
+					<DrawerStatBox accent={severityAccent}>
+						<DrawerStatRow
+							label={t("drawer.monthlyRange")}
+							value={
+								<ImpactBadge
+									min={action.impact.monthly_range.min}
+									max={action.impact.monthly_range.max}
+								/>
+							}
+						/>
+						<DrawerStatRow
+							label={t("drawer.midpoint")}
+							value={
+								<ImpactBadge
+									min={action.impact.midpoint}
+									max={action.impact.midpoint}
+									compact
+								/>
+							}
+						/>
+						<DrawerStatRow
+							label={t("drawer.priorityScore")}
+							value={action.priority_score}
+							mono
+						/>
+					</DrawerStatBox>
+				</DrawerSection>
 			)}
 
 			{/* Operational Status Timeline */}
 			{action.operational_status && (
-				<section>
-					<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-						{t("drawer.operationalStatus")}
-					</h3>
+				<DrawerSection title={t("drawer.operationalStatus")} accent='info'>
 					<OperationalTimeline
 						category={action.category}
 						currentStatus={action.operational_status}
 					/>
-				</section>
+				</DrawerSection>
 			)}
 
 			{/* Verification Lifecycle Panel */}
-			<section>
-				<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-					{t("drawer.verification")}
-				</h3>
+			<DrawerSection title={t("drawer.verification")} accent='info'>
 				<VerificationPanel
 					maturity={action.verification_maturity}
 					method='unknown'
@@ -856,7 +860,7 @@ function ActionDrawerContent({
 						{t("drawer.verificationRunning")}
 					</p>
 				)}
-			</section>
+			</DrawerSection>
 
 			{/* Verification Sufficiency Warning */}
 			<VerificationSufficiencyWarning
@@ -865,14 +869,11 @@ function ActionDrawerContent({
 			/>
 
 			{/* Scope */}
-			<section>
-				<h3 className='mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted'>
-					{t("drawer.scope")}
-				</h3>
+			<DrawerSection title={t("drawer.scope")}>
 				<span
 					className={`inline-flex rounded border px-2 py-0.5 text-xs ${
 						action.cross_pack
-							? "border-emerald-800/50 text-emerald-600 dark:text-emerald-400"
+							? "border-emerald-500/40 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400"
 							: "border-edge text-content-muted"
 					}`}
 				>
@@ -880,7 +881,7 @@ function ActionDrawerContent({
 						? t("drawer.affectsMultiplePacks")
 						: t("drawer.singlePack")}
 				</span>
-			</section>
+			</DrawerSection>
 
 			{/* Knowledge Base Link — always render */}
 			{action.root_cause_key && (
@@ -937,10 +938,10 @@ function ActionDrawerContent({
 			)}
 
 			{/* Action Buttons */}
-			<section className='space-y-2'>
+			<section className='space-y-2 pt-2'>
 				<button
 					onClick={() => onNavigateChat(action.id)}
-					className='w-full rounded-md border border-emerald-800/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400'
+					className='w-full rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-600 transition-colors hover:border-emerald-500 hover:bg-emerald-500/15 dark:text-emerald-400'
 				>
 					{t("drawer.discussInChat")}
 				</button>

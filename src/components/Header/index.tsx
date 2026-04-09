@@ -55,10 +55,10 @@ const Header = () => {
 
 	return (
 		<header
-			className={`fixed left-0 top-0 z-999 w-full transition-all duration-300 ease-in-out ${
+			className={`fixed left-0 z-999 w-full transition-all duration-300 ease-in-out ${
 				stickyMenu
-					? "bg-[#090911]/90 py-4 shadow-lg backdrop-blur-md xl:py-0"
-					: "bg-transparent py-5 xl:py-0"
+					? "top-0 bg-[#090911]/90 py-4 shadow-lg backdrop-blur-md xl:py-0"
+					: "top-10 bg-transparent py-5 xl:py-0"
 			}`}
 		>
 			<div className='relative mx-auto max-w-[1170px] items-center justify-between px-4 sm:px-8 xl:flex xl:px-0'>

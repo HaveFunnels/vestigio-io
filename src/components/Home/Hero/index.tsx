@@ -491,37 +491,9 @@ const Hero = async ({
 			{/* Animated descending vestigio trails */}
 			<TrailLayer />
 
-			{/* ─────────── Top announcement banner ─────────── */}
-			<div className='relative mx-auto mb-10 flex w-full max-w-fit items-center justify-center px-4 sm:mb-14'>
-				<Link
-					href={primaryCtaHref}
-					className='group inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] py-1.5 pl-1.5 pr-3 text-xs text-zinc-300 backdrop-blur transition-all hover:border-emerald-400/30 hover:bg-white/[0.06] sm:gap-3 sm:pr-4'
-				>
-					<span className='inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-300 sm:text-[10px]'>
-						<span className='h-1 w-1 animate-[vhero-pulse_1.6s_ease-in-out_infinite] rounded-full bg-emerald-400' />
-						{t("banner.label")}
-					</span>
-					<span className='hidden truncate sm:inline'>
-						{t("banner.message")}
-					</span>
-					<span className='inline-flex shrink-0 items-center gap-1 font-medium text-emerald-300 transition-transform group-hover:translate-x-0.5'>
-						{t("banner.cta")}
-						<svg
-							viewBox='0 0 12 12'
-							fill='none'
-							stroke='currentColor'
-							strokeWidth='1.6'
-							className='h-3 w-3'
-						>
-							<path
-								d='M3 6h6M6.5 3.5L9 6 6.5 8.5'
-								strokeLinecap='round'
-								strokeLinejoin='round'
-							/>
-						</svg>
-					</span>
-				</Link>
-			</div>
+			{/* Announcement banner lives in the site layout now
+			    (src/components/AnnouncementBanner) so it sits above the
+			    header on the very first paint and auto-hides on scroll. */}
 
 			{/* ─────────── Headline + subtitle + pills + CTAs ─────────── */}
 			<div className='relative mx-auto w-full max-w-[1000px] px-4 text-center sm:px-8 xl:px-0'>
@@ -574,19 +546,20 @@ const Hero = async ({
 					))}
 				</div>
 
-				{/* CTAs */}
+				{/* CTAs — larger than typical buttons because they are the
+				    primary conversion action on the entire homepage. */}
 				<div className='mb-4 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
 					<Link
 						href={primaryCtaHref}
-						className='rounded-[1rem] bg-white px-7 py-3.5 text-center text-sm font-semibold text-black shadow-[0_18px_50px_-18px_rgba(255,255,255,0.6),0_8px_30px_-8px_rgba(16,185,129,0.45)] transition-all hover:bg-emerald-50 hover:shadow-[0_24px_60px_-18px_rgba(255,255,255,0.7),0_12px_36px_-8px_rgba(16,185,129,0.6)] focus-visible:ring-2 focus-visible:ring-emerald-400'
+						className='rounded-[1.1rem] bg-white px-9 py-5 text-center text-[15px] font-semibold text-black shadow-[0_22px_60px_-18px_rgba(255,255,255,0.65),0_10px_40px_-10px_rgba(16,185,129,0.5)] transition-all hover:bg-emerald-50 hover:shadow-[0_28px_72px_-18px_rgba(255,255,255,0.75),0_14px_44px_-10px_rgba(16,185,129,0.65)] focus-visible:ring-2 focus-visible:ring-emerald-400 sm:text-base'
 					>
 						{primaryCtaLabel ?? t("cta_primary")}
 					</Link>
 					<Link
 						href='#product-tour'
-						className='inline-flex items-center justify-center gap-2 rounded-[1rem] border border-white/15 bg-white/[0.02] px-7 py-3.5 text-center text-sm font-semibold text-white backdrop-blur transition-all hover:border-white/30 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-white/30'
+						className='inline-flex items-center justify-center gap-2.5 rounded-[1.1rem] border border-white/15 bg-white/[0.02] px-9 py-5 text-center text-[15px] font-semibold text-white backdrop-blur transition-all hover:border-white/30 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-white/30 sm:text-base'
 					>
-						<svg viewBox='0 0 16 16' fill='none' className='h-3.5 w-3.5'>
+						<svg viewBox='0 0 16 16' fill='none' className='h-4 w-4'>
 							<circle
 								cx='8'
 								cy='8'

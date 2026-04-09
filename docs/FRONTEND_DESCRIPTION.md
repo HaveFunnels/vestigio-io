@@ -125,6 +125,82 @@ A impressao geral correta e a de um **produto de decisao para operacao digital**
 
 O componente `SummaryCards` agora suporta mini-graficos via prop `sparkData: number[]`, renderizados com ApexCharts (sparkline mode, area chart, 40px de altura, cor baseada no variant).
 
+O `HealthTrendCard` da dashboard usa um sparkline **inline em SVG puro** (sem dependencia de chart lib), 30 pontos com area gradient, cor derivada da faixa do score (`emerald-400` ≥80, `amber-400` ≥60, `red-400` <60). Essa abordagem economiza ~80kb do bundle inicial e mantem o card responsivo a qualquer largura sem reflow.
+
+### 1.8 Padroes do Dashboard Bento
+
+A pagina `/app/dashboard` (descrita em detalhes na secao 5.0) introduz um conjunto de convencoes visuais reutilizaveis por widgets futuros. Documentadas aqui porque sao ortogonais ao layout — qualquer novo widget no registro deve segui-las para manter coerencia.
+
+#### 1.8.1 Numeros Negativos = Vermelho + Sinal Explicito
+
+Regra absoluta: qualquer metrica que represente **perda** (exposure mensal, incidents acumulados, prejuizo) e renderizada com:
+- Numero principal sempre em `text-red-400` / `text-red-500`
+- Sinal de menos `−` (minus character, nao hifen) prefixando o numero
+- Mesmo quando o valor cru no banco e positivo (e.g. `4_724_000` cents de exposure vira `−$47k/mo`)
+
+Aplica-se hoje a `ExposureKpiCard` (numero principal + cada linha do drill-down por pack) e `TopPackKpi`. O delta vs cycle anterior tem regra independente: ele segue a logica invertida — exposure caindo (delta negativo cru) e GOOD → emerald, exposure subindo → red. Os dois sinais coexistem sem conflito porque representam dimensoes diferentes (estado absoluto vs movimento).
+
+#### 1.8.2 Hero Zone + Caption Strip
+
+Cada widget da dashboard segue o padrao **hero zone** no topo (eyebrow + numero gigante + delta) e **caption strip** colado ao fundo via `mt-auto`. A caption nunca e marketing copy estatica — sempre vem do `data.<slice>.caption`, gerado pelas funcoes puras em `src/lib/dashboard/captions.ts`. Isso garante:
+
+1. Mesmo wording rule entre mock e producao (ambos chamam as mesmas funcoes)
+2. Captions interpretam os dados (`"Climbing 5 points — verification gaining ground"`), nao descrevem o widget
+3. i18n futuro substitui as strings em uma camada so
+
+Tom das captions: lead com o fato, depois interpretacao. Sem emoji, sem exclamacao, sempre mencionando a janela temporal quando relevante.
+
+#### 1.8.3 Liquid Glass para KPI Tiles Compactos
+
+KPI tiles compactos (`OpenCriticalKpi`, `VerificationRateKpi`, `StreakKpi`, `TopPackKpi`) usam um padrao "liquid glass" sutil para se diferenciarem visualmente dos cards heros pesados. Implementacao: duas camadas absolutas com `pointer-events-none` empilhadas dentro do tile:
+
+```tsx
+<div className='pointer-events-none absolute inset-0 rounded-2xl
+  bg-gradient-to-br from-{accent}-500/[0.05] via-transparent to-transparent
+  backdrop-blur-md' />
+<div className='pointer-events-none absolute inset-0 rounded-2xl
+  border border-white/[0.06]' />
+```
+
+A primeira camada e um gradiente de accent (red/blue/amber/emerald 4-6% opacity) com leve blur — nao chega a ser glass apple-loud, e mais um highlight de canto. A segunda e um inset border branco quase invisivel que da a sensacao de "borda iluminada por dentro". As duas camadas usam `pointer-events-none` para nao interceptarem hover/click do conteudo. O conteudo do tile vive em um sibling com `relative` posicionado por cima.
+
+A regra: liquid glass e ACENTO, nao TEMA. Cards principais (Money, Health, Exposure, WhatChanged, Heatmap) ficam solidos com `bg-surface-card`. So os tiles compactos recebem o tratamento, criando hierarquia visual implicita (compacto = leve = floating, hero = solido = anchor).
+
+#### 1.8.4 Drag/Resize Placeholder Estilizado
+
+`react-grid-layout` ship com um placeholder default vermelho 20% opacity durante drag — feio. Override em `src/styles/globals.css`:
+
+```css
+.react-grid-item.react-grid-placeholder {
+  background: rgb(16 185 129 / 0.08) !important;
+  border: 1.5px dashed rgb(16 185 129 / 0.6) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 0 0 4px rgb(16 185 129 / 0.06),
+    0 20px 40px -20px rgb(16 185 129 / 0.25) !important;
+}
+.react-grid-item.react-draggable-dragging {
+  z-index: 30 !important;
+  box-shadow:
+    0 30px 60px -20px rgb(0 0 0 / 0.4),
+    0 0 0 2px rgb(16 185 129 / 0.4) !important;
+}
+```
+
+O placeholder vira um outline emerald tracejado com glow ring. O widget ativamente arrastado ganha lift shadow + emerald ring para o usuario sempre saber qual card esta na mao.
+
+### 1.9 Tipografia Mono para Numeros Financeiros
+
+Todos os numeros monetarios e estatisticas no console usam **JetBrains Mono** via `next/font/google` (variavel CSS `--font-jetbrains-mono`, mapeada em `tailwind.config.ts` como `font-mono`). Essa decisao apareceu na Phase 1 da dashboard e foi extensa para os widgets — os numeros financeiros ganham tabular-nums automaticamente, alinhamento perfeito vertical em listas, e o "feel" de terminal financeiro que o produto persegue.
+
+```tsx
+<span className='font-mono text-5xl font-medium tabular-nums leading-none'>
+  $47,283
+</span>
+```
+
+`tabular-nums` e CRUCIAL — sem ele, numeros mudam de largura ao animar (count-up futuro) ou ao trocar valores em real-time, produzindo jitter. Com ele, cada digito ocupa o mesmo espaco.
+
 ---
 
 ## 2. Estrutura de Navegacao
@@ -174,16 +250,23 @@ A aplicacao possui **2 layouts principais** usados pelo usuario, mais 2 auxiliar
 **Arquivos**: `src/components/app/AppSidebar.tsx`, `src/components/app/AppSidebarLayout.tsx`, `src/components/app/sidebar-nav-data.ts`
 
 **Comportamento**:
-- **Desktop (md+)**: Colapsada por padrao (56px, so icones). Expande ao hover (~224px) com transicao suave. Labels e titulos de secao aparecem/desaparecem com opacity transition.
+- **Desktop (md+)**: Colapsada por padrao (56px, so icones). Expande ao hover (~224px) com transicao suave. **Quando expande, o sidenav OVERLAY o conteudo da pagina — nao empurra.** Implementacao: um spacer estatico `w-14 shrink-0` sempre ocupa a coluna do shell layout, e o `<aside>` real e absolutamente posicionado dentro dele com `z-30`, expandindo de `w-14` para `w-56` no hover. Quando expandido ganha `shadow-2xl` + `ring-1 ring-edge/40`. Page content nunca reflowa.
 - **Mobile (<md)**: Overlay lateral com backdrop escuro, aberta via botao hamburger no header. Sempre expandida. Fecha ao clicar no backdrop ou ao navegar.
 
-**Aparencia visual**: Fundo `bg-sidebar-bg` (levemente diferente do conteudo) com borda direita `border-edge`.
+**Aparencia visual**: Fundo `bg-surface-shell` com sombra ao expandir.
+
+**Logo crossfade smooth**: tanto o icone (collapsed state) quanto a wordmark completa (expanded state) sao sempre renderizados, layered absolutamente no mesmo `left-[14px]` anchor. A transicao usa opacity:
+- Icone: `opacity-100` quando colapsado, `opacity-0` quando expandido (200ms ease-out)
+- Wordmark: `opacity-0` quando colapsado, `opacity-100` quando expandido (300ms ease-out, com `delay-100` para o icone fade out primeiro)
+
+Antes da Phase 4 essa transicao era um hard swap baseado em `isExpanded ? <Wordmark/> : <Icon/>` — produzia flicker porque React desmontava uma arvore e construia outra. O padrao de duas camadas com opacity garante que o logo morfa em lugar.
 
 **Elementos dispostos (de cima para baixo)**:
 
 1. **Logo** "VESTIGIO" em `text-accent-text`, oculto quando colapsado (opacity transition)
 2. **Secao "Product"** (label uppercase, 10px):
-   - **Actions** (icone de raio, `/app/actions`) — **primeiro item, default landing**
+   - **Dashboard** (icone squares-four, `/app/dashboard`) — **primeiro item, default landing apos login** (Phase 4)
+   - **Actions** (icone de raio, `/app/actions`)
    - **Workspaces** (icone de grid, `/app/workspaces`)
    - **Chat** (icone de balao de mensagem, `/app/chat`)
    - **Analysis** (icone de lupa) — **expansivel**, com chevron rotativo:
@@ -401,6 +484,145 @@ A home page atual e composta por secoes empilhadas verticalmente, cada uma como 
 
 > Todas as telas do console compartilham o layout escuro (zinc-950), sidebar colapsavel a esquerda, e top bar com OrgSelector + McpUsageIndicator. O conteudo principal fica em `flex-1 overflow-y-auto`.
 
+### 5.0 Dashboard (One-Pager Bento)
+
+**Rota**: `/app/dashboard` — **default landing page apos login** (a partir de Phase 4)
+**Arquivo**: `src/app/app/dashboard/page.tsx` (Server Component)
+**Componentes**: `src/components/console/dashboard/{DashboardShell,DashboardGrid,DashboardHeader,CatalogDrawer}.tsx` + `widgets/*.tsx`
+
+**Descricao visual**: Bento asymmetric one-pager que sintetiza o estado operacional da org em ~944px de altura (cabe sem scroll em laptop 1080p). Combina hero stats financeiras, drill-downs por finding/pack, trend curves, change report e activity heatmap em 9 widgets organizados em uma grid 12-col customizavel pelo usuario.
+
+#### 5.0.1 Layout Padrao (DEFAULT_LAYOUT)
+
+Restricoes que dirigem o layout (Phase 4 user feedback):
+1. **Top row obrigatorio**: Money Recovered / Monthly Exposure / Open Critical, nessa ordem. Sao as hero stats "did I make money / am I losing money / is anything on fire".
+2. **Cards justificam seu tamanho**: padding e margens foram dimensionados pelo CONTEUDO real, nao pelo balanceamento visual. Nenhum card carrega whitespace gratuito.
+3. **ActivityHeatmap half-width** (`w=6`) em vez de full-width strip — mais denso, menos altura desperdicada.
+4. **Heatmap sem caption**: o streak readout no header proprio do widget JA e a narrativa.
+
+```
+┌────────┬──────────────┬────────┐
+│ Money  │  Exposure    │Critical│   row 0-2 (h=3)
+│ w=4    │  w=5         │ w=3    │
+├────────┴──────┬───────┴────────┤
+│ Health        │ WhatChanged    │   row 3-6 (h=4)
+│ w=6           │ w=6            │
+├───────────────┼─────┬────┬────┤
+│ Heatmap       │Strk │Verf│Top │   row 7-9 (h=3)
+│ w=6           │w=2  │w=2 │w=2 │
+└───────────────┴─────┴────┴────┘
+```
+
+10 row units total. `rowHeight=80`, `margin=14` → ~944px de altura.
+
+#### 5.0.2 Widget Registry (Extensibilidade)
+
+Cada widget e registrado em `src/lib/dashboard/widget-registry.ts` com `WidgetDefinition` (id estavel, version, defaultSize, min/maxSize, resizable, removable, inCatalog, dataKeys, Component). Adicionar um novo widget e: criar componente em `widgets/`, chamar `registerWidget()`, adicionar import side-effect em `widgets/index.ts`. Zero changes na pagina, na grid, no catalogo, na persistencia. O widget aparece automaticamente no `[+ Add Widget]` drawer.
+
+`src/lib/dashboard/init.ts` faz import side-effect dos widgets em uma camada separada para evitar circular import entre registry e widgets.
+
+#### 5.0.3 Widgets
+
+**1. MoneyRecoveredTicker** (`w=4 h=3`, locked `removable: false`)
+   - Eyebrow "Total recovered with Vestigio" + icone TrendUp emerald
+   - Numero hero em font-mono text-5xl emerald-400 (e ganho — verde)
+   - Twin deltas: 7 days / 30 days
+   - Caption interpretada (`"Strong week — $1.4k reclaimed in the last 7 days"`)
+   - Subtle emerald gradient highlight no canto
+
+**2. ExposureKpiCard** (`w=5 h=3`)
+   - Eyebrow "Monthly exposure" + icone Warning red
+   - Numero hero `−$47k/mo` em font-mono text-4xl **red-400** (regra de numero negativo, secao 1.8.1)
+   - Delta vs cycle anterior com cor invertida (down=emerald=good, up=red=bad)
+   - **Per-pack drill down**: 4 linhas com color dot + nome do pack + `−$Xk` em red. Substituiu o segmented bar antigo (que nao tinha legenda — color → pack mapping era opaco). Cada linha: `<dot bg={pack.colorClass}/> <name truncate/> <amount font-mono red-400/>`
+   - Subtle amber gradient highlight (warm "watch out")
+
+**3. OpenCriticalKpi** (`w=3 h=3`, **clickable**, liquid glass red)
+   - Eyebrow "Open critical" + icone Skull
+   - Numero hero text-4xl, cor depende: `text-emerald-400` se 0 (clean state), `text-red-400` se >0
+   - Delta vs cycle anterior em font-mono text-[11px]
+   - **Lista inline ate 3 critical items** (Phase 5 user feedback): cada linha clicavel com red dot + titulo truncado + `−$Xk`. Click → `/app/actions?selected=<inferenceKey>`. Suprimido durante edit mode.
+   - Liquid glass red `from-red-500/[0.06]`
+
+**4. HealthTrendCard** (`w=6 h=4`)
+   - Eyebrow "Health score" + icone Pulse
+   - Numero hero text-5xl com cor por faixa (≥80 emerald, ≥60 amber, <60 red)
+   - Delta vs last cycle no canto direito
+   - **Sparkline 30 dias inline em SVG puro** (sem chart lib), com area gradient
+   - Sub-score strip dividido em 3 colunas: Structural / Action quality / Verification
+   - Caption interpretada que destaca qual sub-score esta puxando o composite
+
+**5. WhatChangedCard** (`w=6 h=4`)
+   - Eyebrow "What changed since last cycle" / "last 24h"
+   - Grid 2x2 de Sections (new findings / regressions / resolved / verifications confirmed)
+   - Cada section tem icone + count em font-mono + label uppercase + lista de ate 3 entries com severity dot
+   - Caption interpretada do net delta (`"Net 1 improvement — 2 resolved, 3 new"`)
+
+**6. ActivityHeatmap** (`w=6 h=3`)
+   - Eyebrow + streak readout em UMA linha (economiza altura)
+   - Grid GitHub-style 13×7 squares (90 dias) com 5-step intensity scale (`bg-emerald-{900..500}/{60..100}`)
+   - Legenda compacta (less ◻◻◻◼◼ more)
+   - **Sem caption** — o streak readout no header e a narrativa
+
+**7. StreakKpi** (`w=2 h=3`, liquid glass amber)
+**8. VerificationRateKpi** (`w=2 h=3`, liquid glass blue)
+**9. TopPackKpi** (`w=2 h=3`, liquid glass emerald)
+   - Tres tiles compactos com mesmo skeleton: eyebrow + icone tinted + numero/label hero + caption interpretada
+   - Cada um le de uma slice diferente do `DashboardData` mas nao requer slice nova (derivam de heatmap, healthScore.components, exposure.byPack[0])
+
+#### 5.0.4 Caption Layer (Narrative Interpretation)
+
+Veja secao 1.8.2. Cada slice de `DashboardData` tem um campo `caption: string` populado pelas funcoes em `src/lib/dashboard/captions.ts`. Tanto o aggregator real (`src/lib/dashboard/aggregator.ts`) quanto o `MOCK_DASHBOARD_DATA` chamam as MESMAS funcoes — wording rule unico, mock e prod nunca divergem.
+
+#### 5.0.5 Edit Mode + Customizacao
+
+Toggle "Customize" no header da pagina. Quando ativo:
+1. Cada widget ganha **drag handle bar** no topo (matched a `dragConfig.handle` do react-grid-layout v2 por classe `widget-drag-handle` — drag so dispara da barra, conteudo do widget continua interativo)
+2. Cada widget removable ganha **botao X** no canto superior direito (visivel em group-hover)
+3. Bordas dos widgets mudam para emerald-500/50 + ring emerald-500/10
+4. Header mostra **save status pip** (Saving/Saved/Save failed) ao lado do botao Done
+5. Botao Done fica solido emerald (vs outlined no view mode)
+6. Botao "+ Add widget" abre o `CatalogDrawer`
+
+`CatalogDrawer` desliza da direita (440px desktop, full mobile), agrupa widgets por `WidgetCategory` (kpi/trends/activity/milestones/workspaces/actions). Widgets ja adicionados ficam disabled+greyed (preserva muscle memory). Footer tem "Reset layout to default" com confirm guard.
+
+Drag/resize/add/remove sao **debounced-saved** (800ms) via `PUT /api/dashboard/layout` com `AbortController` para cancelar requests anteriores. Optimistic UI — UI atualiza antes do servidor responder, save status pip indica falha de rede silenciosamente.
+
+#### 5.0.6 Persistencia (DashboardLayout Prisma Model)
+
+Layout customizado e persistido **per-user, per-org** no modelo `DashboardLayout` (Prisma):
+```
+DashboardLayout {
+  userId, organizationId, schemaVersion, layout (JSON Text), createdAt, updatedAt
+  @@unique([userId, organizationId])
+}
+```
+
+Por que per-user (nao per-org): cada membro tem seu proprio dashboard, da mesma forma que pessoas configuram VS Code diferente. JSON opaco em vez de normalizado: nunca queryamos por dentro do layout. `schemaVersion` permite migrations futuras quando widget ids forem renomeados.
+
+API:
+- `GET /api/dashboard/layout` → returna saved layout ou `DEFAULT_LAYOUT`
+- `PUT /api/dashboard/layout` → validacao rigorosa (defId existe no registry, instanceId unico, w/h clamp ao [minSize, maxSize], max 24 widgets por layout)
+
+#### 5.0.7 Aggregator Backend (`/api/dashboard/overview`)
+
+`computeDashboardData(prisma, orgId, envId)` orquestra 5 sub-aggregators (money/health/exposure/changeReport/activityHeatmap), cada um com try/catch isolado — uma slice quebrada nao derruba a dashboard inteira, fallback para zero-state.
+
+3 branches no GET endpoint:
+1. **Demo org** → `MOCK_DASHBOARD_DATA` (a demo seed nao tem audit cycles reais)
+2. **Real org sem env** → zero payload via `emptyDashboardData()` (estado vazio honesto, nunca numeros falsos para customer pagante)
+3. **Real org com env** → aggregator real
+
+A pagina `/app/dashboard` (Server Component) chama `computeDashboardData` direto, sem HTTP roundtrip server-side.
+
+#### 5.0.8 Tema (Light + Dark)
+
+Toda a dashboard funciona corretamente em **ambos os temas**. Padroes seguidos:
+- Backgrounds usam tokens semanticos (`bg-surface-card`, `bg-surface`, `border-edge`)
+- Acentos coloridos usam pattern `bg-emerald-500/10` + `text-emerald-600 dark:text-emerald-400` (NUNCA `bg-emerald-950/40` que so funciona dark)
+- KPI tiles liquid glass usam `from-{accent}-500/[0.05]` que renderiza coerente em ambos os temas
+- Drag handle bar, remove X, save status pip, Add widget, Done buttons — todos seguem o mesmo padrao theme-aware
+
 ### 5.1 Onboarding (Wizard Multi-step)
 
 **Rota**: `/app/onboarding` (alias de `/onboard`)
@@ -551,12 +773,12 @@ A home page atual e composta por secoes empilhadas verticalmente, cada uma como 
    - 6 templates (Find Revenue Leaks, Improve Conversion, etc.)
    - Labels de categoria, estimativa de queries, requisitos de plano
 
-### 5.4 Actions (Default Landing Page)
+### 5.4 Actions
 
-**Rota**: `/app/actions` (alias de `/actions`) — **default landing page after login**
+**Rota**: `/app/actions` (alias de `/actions`)
 **Arquivo**: `src/app/(console)/actions/page.tsx`
 
-**Descricao visual**: Operational queue categorizando incidents, opportunities e verifications. Superficie primaria de valor.
+**Descricao visual**: Operational queue categorizando incidents, opportunities e verifications. Superficie primaria de valor — recebe deep-links de outras paginas (e.g. dashboard `OpenCriticalKpi` envia `?selected=<inferenceKey>` que e consumido por um `useEffect` na pagina, que abre o `SideDrawer` da action correspondente e remove o param da URL via `history.replaceState` para evitar re-trigger no back button).
 
 **Elementos dispostos**:
 

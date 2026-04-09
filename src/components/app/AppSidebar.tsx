@@ -268,7 +268,23 @@ export default function AppSidebar({
 					{title}
 				</span>
 			</div>
-			<div className='flex flex-col gap-0.5'>{items.map(renderNavItem)}</div>
+			<div className='flex flex-col gap-0.5'>
+				{items.flatMap((item) => {
+					const node = renderNavItem(item);
+					if (item.dividerAfter) {
+						return [
+							node,
+							<div
+								key={`${item.id}-divider`}
+								role='separator'
+								aria-hidden='true'
+								className='mx-2 my-2 h-px bg-edge/40'
+							/>,
+						];
+					}
+					return [node];
+				})}
+			</div>
 		</div>
 	);
 

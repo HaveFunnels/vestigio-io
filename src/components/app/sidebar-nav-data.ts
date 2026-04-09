@@ -17,6 +17,12 @@ export interface NavItem {
 	labelKey: string;
 	icon: string;
 	children?: NavItem[];
+	/**
+	 * If true, the sidebar renders a thin separator line after this item.
+	 * Used to visually break the nav into groups (e.g. Dashboard sits
+	 * alone above the operating-surface tabs).
+	 */
+	dividerAfter?: boolean;
 }
 
 export const productNav: NavItem[] = [
@@ -26,6 +32,9 @@ export const productNav: NavItem[] = [
 		labelKey: "dashboard",
 		// Phosphor "squares-four" / dashboard pictogram
 		icon: "M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 8.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6A2.25 2.25 0 0115.75 3.75H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z",
+		// Dashboard sits alone in its own group; the operating-surface
+		// tabs (Actions, Workspaces, Chat, …) start fresh underneath.
+		dividerAfter: true,
 	},
 	{
 		id: "actions",

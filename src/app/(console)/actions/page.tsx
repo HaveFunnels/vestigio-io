@@ -312,6 +312,10 @@ function ActionsContent({
 					? `${formatCurrency(totalImpact)}`
 					: `$${totalImpact}`,
 			variant: "danger",
+			// Negative-number rule: addressable impact = money still on
+			// the table = a loss until the actions ship. SummaryCards
+			// renders this with a leading minus sign and forced red.
+			negative: true,
 			subtext: t("cards.perMonthMidpoint"),
 		},
 	];

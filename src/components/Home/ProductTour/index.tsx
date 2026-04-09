@@ -428,7 +428,7 @@ export default function ProductTour() {
   const ActivePanel = panelComponents[activeTab];
 
   return (
-    <section className="relative bg-[#090911] py-16 sm:py-20 lg:py-28">
+    <section id="product-tour" className="relative scroll-mt-24 bg-[#090911] py-16 sm:py-20 lg:py-28">
       {/* Background glow */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute left-1/2 top-[40%] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-violet-900/[0.06] blur-[120px] sm:h-[500px] sm:w-[600px] sm:blur-[160px]" />

@@ -57,6 +57,95 @@
         "description": "Built by the same team behind numerous successful SaaS and digital products"
       }
     },
+    "hero_v2": {
+      "banner": {
+        "label": "Vestigio Pulse",
+        "message": "Continuous, evidence-backed answers on what's bleeding revenue right now.",
+        "cta": "See how"
+      },
+      "headline_part1": "Find where your site is leaking money",
+      "headline_part2": "before you spend more on traffic.",
+      "subtitle": "Vestigio audits your digital operation, estimates impact, ranks what to fix first, and watches what may break next — so you stop scaling in the dark.",
+      "pills": [
+        "Find revenue leaks",
+        "Prioritize fixes",
+        "Verify with evidence",
+        "Catch regressions",
+        "Decide with confidence"
+      ],
+      "cta_primary": "Run free audit",
+      "cta_secondary": "Watch product tour",
+      "cta_micro": "Works for ecommerce, SaaS, lead gen, infoproducts, services and apps.",
+      "shell": {
+        "url": "app.vestigio.io/decisions",
+        "tab_active": "Decisions",
+        "tab_findings": "Findings",
+        "tab_surfaces": "Surfaces",
+        "queue_eyebrow": "Action Queue",
+        "queue_count": "12 actions ranked",
+        "actions": [
+          { "priority": "P1", "title": "Fix checkout redirect chain", "impact": "−$18k–42k/mo", "severity": "critical" },
+          { "priority": "P2", "title": "Add refund policy + trust marks", "impact": "−$3.6k–9k/mo", "severity": "high" },
+          { "priority": "P3", "title": "Enable mobile add-to-cart above fold", "impact": "−$5k–14k/mo", "severity": "high" },
+          { "priority": "P4", "title": "Recover analytics on /checkout", "impact": "−$9k–24k/mo", "severity": "medium" }
+        ],
+        "assistant_eyebrow": "Vestigio AI",
+        "assistant_message": "Your biggest leak is the checkout redirect chain. It adds 2.4s of latency at the payment step. I've ranked this P1 with strong evidence.",
+        "assistant_chip_evidence": "3 evidences",
+        "assistant_chip_action": "Action created",
+        "callout_eyebrow": "Total recovered",
+        "callout_value": "+$67.2k",
+        "callout_unit": "/mo",
+        "callout_sub": "after Vestigio fix-cycle"
+      }
+    },
+    "client_gallery": {
+      "eyebrow": "Trusted by digital operators",
+      "title": "Teams that refuse to scale in the dark",
+      "subtitle": "From ecommerce to SaaS to lead-gen, Vestigio is the decision engine operators reach for when something is costing them money — and they want to know exactly what."
+    },
+    "use_cases": {
+      "eyebrow": "What Vestigio does",
+      "title": "Audit, prioritize, recover — every layer of your funnel",
+      "subtitle": "Five product surfaces, one decision engine. From the first scan to continuous regression watch, Vestigio turns scattered signals into a single ranked queue.",
+      "items": [
+        {
+          "tag": "Action Queue",
+          "title": "Prioritize the fixes that actually move revenue",
+          "description": "Every finding ranked by impact, urgency and effort. No more spreadsheets — just the next decision, ready to ship.",
+          "cta": "Explore Actions"
+        },
+        {
+          "tag": "Revenue Audit",
+          "title": "Find every leak across your funnel",
+          "description": "Vestigio quantifies losses surface-by-surface — checkout, pricing, onboarding — with confidence ranges, not vibes.",
+          "cta": "Explore Audit"
+        },
+        {
+          "tag": "Evidence Trail",
+          "title": "Every finding traces back to multi-source proof",
+          "description": "Browser-verified, cross-checked, timestamped. Stop arguing about whether a finding is real — see the evidence.",
+          "cta": "Explore Evidence"
+        },
+        {
+          "tag": "Continuous Watch",
+          "title": "Catch regressions before your customers do",
+          "description": "Each deploy and campaign creates new vectors. Vestigio re-audits continuously so nothing degrades in silence.",
+          "cta": "Explore Monitoring"
+        },
+        {
+          "tag": "AI Decision Engine",
+          "title": "Ask in plain language, decide with full context",
+          "description": "A workspace for every business question — receita, churn, chargeback. Vestigio AI ties answers back to the evidence.",
+          "cta": "Explore Workspaces"
+        }
+      ],
+      "cta_primary": "Start your first audit"
+    },
+    "mini_calc_card": {
+      "eyebrow": "Free instant audit",
+      "tagline": "Try Vestigio on your own domain — no signup, no card."
+    },
     "features_section": {
       "title": "Launch SaaS Startup in Days",
       "subtitle": "Everything you need to build, launch, and scale your SaaS startup.",

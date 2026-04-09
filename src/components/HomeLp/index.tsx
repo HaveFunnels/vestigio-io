@@ -1,5 +1,6 @@
 import Hero from "@/components/Home/Hero";
 import ProductTour from "@/components/Home/ProductTour";
+import ClientGallery from "@/components/Home/ClientGallery";
 import SolutionLayers from "@/components/Home/SolutionLayers";
 import Features from "@/components/Home/Features";
 import FeaturesWithImage from "@/components/Home/FeaturesWithImage";
@@ -10,20 +11,20 @@ import FAQ from "@/components/Home/FAQ";
 import MiniCalculator from "@/components/Home/MiniCalculator";
 
 // ──────────────────────────────────────────────
-// HomeLp — landing page variant for /lp commercial funnel
+// HomeLp — landing page variant for /lp commercial funnel.
 //
-// Identical structure to the main Home component, but every primary
-// CTA points to the anonymous lead funnel (/lp/audit) instead of the
-// signup form. This is the dual-funnel split discussed in the product
-// brief: signup-led funnel at /, product-qualified-lead funnel at /lp.
+// Same section order as the main Home, but every primary CTA points
+// at the anonymous lead funnel (/lp/audit) instead of the signup
+// form. This is the dual-funnel split discussed in the product brief:
+// signup-led funnel at /, product-qualified-lead funnel at /lp.
 //
 // When the design diverges later (different copy, different sections,
 // different layout), this is the file to fork — the main Home stays
-// stable for the existing /vestigio.io traffic.
+// stable for existing /vestigio.io traffic.
 //
-// All sub-components accept an optional `primaryCtaHref` prop with a
-// safe default, so this wrapper is the only place that knows about
-// the CTA divergence. No conditional logic inside the sub-components.
+// Sub-components accept an optional `primaryCtaHref` prop with a safe
+// default, so this wrapper is the only place that knows about the
+// CTA divergence. No conditional logic inside the sub-components.
 // ──────────────────────────────────────────────
 
 const LP_CTA_HREF = "/lp/audit";
@@ -31,16 +32,20 @@ const LP_CTA_HREF = "/lp/audit";
 const HomeLp = () => {
 	return (
 		<>
-			<Hero primaryCtaHref={LP_CTA_HREF} primaryCtaLabel="Run free audit" />
+			<Hero primaryCtaHref={LP_CTA_HREF} primaryCtaLabel='Run free audit' />
 			<ProductTour />
-			<SolutionLayers />
-			<Features />
+			<ClientGallery />
 			<FeaturesWithImage />
+			<Features />
+			<SolutionLayers />
 			<Counter />
 			<Testimonials />
 			<FAQ />
 			<MiniCalculator primaryCtaHref={LP_CTA_HREF} />
-			<CallToAction primaryCtaHref={LP_CTA_HREF} primaryCtaLabel="Run free audit" />
+			<CallToAction
+				primaryCtaHref={LP_CTA_HREF}
+				primaryCtaLabel='Run free audit'
+			/>
 		</>
 	);
 };

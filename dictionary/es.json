@@ -57,6 +57,95 @@
         "description": "Creado por el mismo equipo detrás de numerosos productos SaaS y digitales exitosos"
       }
     },
+    "hero_v2": {
+      "banner": {
+        "label": "Vestigio Pulse",
+        "message": "Respuestas continuas y respaldadas por evidencia sobre lo que está sangrando ingresos ahora mismo.",
+        "cta": "Cómo funciona"
+      },
+      "headline_part1": "Descubre dónde tu sitio está perdiendo dinero",
+      "headline_part2": "antes de gastar más en tráfico.",
+      "subtitle": "Vestigio audita tu operación digital, estima el impacto, prioriza qué arreglar primero y vigila lo que puede romperse después — para que dejes de escalar a ciegas.",
+      "pills": [
+        "Encuentra fugas",
+        "Prioriza correcciones",
+        "Valida con evidencia",
+        "Detecta regresiones",
+        "Decide con confianza"
+      ],
+      "cta_primary": "Hacer auditoría gratis",
+      "cta_secondary": "Ver tour del producto",
+      "cta_micro": "Funciona para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",
+      "shell": {
+        "url": "app.vestigio.io/decisiones",
+        "tab_active": "Decisiones",
+        "tab_findings": "Hallazgos",
+        "tab_surfaces": "Superficies",
+        "queue_eyebrow": "Cola de Acciones",
+        "queue_count": "12 acciones priorizadas",
+        "actions": [
+          { "priority": "P1", "title": "Arreglar cadena de redirects en checkout", "impact": "−$18k–42k/mes", "severity": "critical" },
+          { "priority": "P2", "title": "Añadir política de reembolso + sellos", "impact": "−$3.6k–9k/mes", "severity": "high" },
+          { "priority": "P3", "title": "Subir add-to-cart móvil sobre la línea", "impact": "−$5k–14k/mes", "severity": "high" },
+          { "priority": "P4", "title": "Recuperar analytics en /checkout", "impact": "−$9k–24k/mes", "severity": "medium" }
+        ],
+        "assistant_eyebrow": "Vestigio AI",
+        "assistant_message": "Tu mayor fuga es la cadena de redirects en checkout. Añade 2,4s de latencia en el pago. La marqué como P1 con evidencia sólida.",
+        "assistant_chip_evidence": "3 evidencias",
+        "assistant_chip_action": "Acción creada",
+        "callout_eyebrow": "Total recuperado",
+        "callout_value": "+$67.2k",
+        "callout_unit": "/mes",
+        "callout_sub": "tras el ciclo de corrección de Vestigio"
+      }
+    },
+    "client_gallery": {
+      "eyebrow": "Confianza de operadores digitales",
+      "title": "Equipos que se niegan a escalar a ciegas",
+      "subtitle": "De ecommerce a SaaS y captación de leads, Vestigio es el motor de decisión al que recurren los operadores cuando algo les cuesta dinero — y quieren saber exactamente qué."
+    },
+    "use_cases": {
+      "eyebrow": "Qué hace Vestigio",
+      "title": "Audita, prioriza, recupera — en cada capa de tu funnel",
+      "subtitle": "Cinco superficies de producto, un motor de decisión. Del primer escaneo a la vigilancia continua, Vestigio convierte señales dispersas en una sola cola priorizada.",
+      "items": [
+        {
+          "tag": "Cola de Acciones",
+          "title": "Prioriza las correcciones que mueven ingresos",
+          "description": "Cada hallazgo clasificado por impacto, urgencia y esfuerzo. Sin más planillas — solo la próxima decisión, lista para ejecutar.",
+          "cta": "Explorar Acciones"
+        },
+        {
+          "tag": "Auditoría de Ingresos",
+          "title": "Encuentra cada fuga en tu funnel",
+          "description": "Vestigio cuantifica pérdidas superficie por superficie — checkout, precios, onboarding — con rangos de confianza, no corazonadas.",
+          "cta": "Explorar Auditoría"
+        },
+        {
+          "tag": "Rastro de Evidencia",
+          "title": "Cada hallazgo se rastrea hasta prueba multi-fuente",
+          "description": "Verificado en navegador, contrastado, con timestamp. Deja de discutir si un hallazgo es real — mira la evidencia.",
+          "cta": "Explorar Evidencia"
+        },
+        {
+          "tag": "Vigilancia Continua",
+          "title": "Detecta regresiones antes que tus clientes",
+          "description": "Cada deploy y campaña abre nuevos vectores. Vestigio reaudita en continuo para que nada se degrade en silencio.",
+          "cta": "Explorar Monitoreo"
+        },
+        {
+          "tag": "Motor de Decisión IA",
+          "title": "Pregunta en lenguaje natural, decide con contexto completo",
+          "description": "Un workspace para cada pregunta de negocio — ingresos, churn, chargeback. Vestigio AI conecta respuestas con la evidencia.",
+          "cta": "Explorar Workspaces"
+        }
+      ],
+      "cta_primary": "Empieza tu primera auditoría"
+    },
+    "mini_calc_card": {
+      "eyebrow": "Auditoría gratis al instante",
+      "tagline": "Prueba Vestigio en tu propio dominio — sin registro, sin tarjeta."
+    },
     "features_section": {
       "title": "Lanza tu Startup SaaS en Días",
       "subtitle": "Todo lo que necesitas para construir, lanzar y escalar tu startup SaaS.",

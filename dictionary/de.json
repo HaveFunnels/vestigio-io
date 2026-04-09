@@ -57,6 +57,95 @@
         "description": "Entwickelt vom selben Team, das hinter zahlreichen erfolgreichen SaaS- und digitalen Produkten steht"
       }
     },
+    "hero_v2": {
+      "banner": {
+        "label": "Vestigio Pulse",
+        "message": "Kontinuierliche, evidenzbasierte Antworten darauf, was gerade Umsatz blutet.",
+        "cta": "So funktioniert's"
+      },
+      "headline_part1": "Finden Sie heraus, wo Ihre Website Geld verliert",
+      "headline_part2": "bevor Sie mehr für Traffic ausgeben.",
+      "subtitle": "Vestigio prüft Ihre digitale Operation, schätzt den Impact, priorisiert was zuerst zu fixen ist und überwacht, was als Nächstes brechen könnte — damit Sie aufhören, im Dunkeln zu skalieren.",
+      "pills": [
+        "Lecks finden",
+        "Fixes priorisieren",
+        "Mit Beweis verifizieren",
+        "Regressionen erkennen",
+        "Mit Vertrauen entscheiden"
+      ],
+      "cta_primary": "Kostenloses Audit starten",
+      "cta_secondary": "Produkt-Tour ansehen",
+      "cta_micro": "Funktioniert für Ecommerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",
+      "shell": {
+        "url": "app.vestigio.io/entscheidungen",
+        "tab_active": "Entscheidungen",
+        "tab_findings": "Funde",
+        "tab_surfaces": "Flächen",
+        "queue_eyebrow": "Aktionswarteschlange",
+        "queue_count": "12 Aktionen priorisiert",
+        "actions": [
+          { "priority": "P1", "title": "Checkout-Redirect-Kette beheben", "impact": "−$18k–42k/Mon", "severity": "critical" },
+          { "priority": "P2", "title": "Rückgaberichtlinie + Trust-Marken", "impact": "−$3.6k–9k/Mon", "severity": "high" },
+          { "priority": "P3", "title": "Mobiles Add-to-Cart über die Falte", "impact": "−$5k–14k/Mon", "severity": "high" },
+          { "priority": "P4", "title": "Analytics auf /checkout wiederherstellen", "impact": "−$9k–24k/Mon", "severity": "medium" }
+        ],
+        "assistant_eyebrow": "Vestigio AI",
+        "assistant_message": "Ihr größtes Leck ist die Checkout-Redirect-Kette. Sie fügt 2,4s Latenz beim Bezahlschritt hinzu. Ich habe es als P1 mit starker Evidenz eingestuft.",
+        "assistant_chip_evidence": "3 Beweise",
+        "assistant_chip_action": "Aktion erstellt",
+        "callout_eyebrow": "Insgesamt zurückgewonnen",
+        "callout_value": "+$67.2k",
+        "callout_unit": "/Mon",
+        "callout_sub": "nach dem Vestigio-Fix-Zyklus"
+      }
+    },
+    "client_gallery": {
+      "eyebrow": "Vertrauen digitaler Operatoren",
+      "title": "Teams, die sich weigern, im Dunkeln zu skalieren",
+      "subtitle": "Von Ecommerce über SaaS bis Lead-Gen — Vestigio ist die Entscheidungs-Engine, zu der Operatoren greifen, wenn etwas Geld kostet — und sie genau wissen wollen, was."
+    },
+    "use_cases": {
+      "eyebrow": "Was Vestigio macht",
+      "title": "Auditieren, priorisieren, zurückgewinnen — auf jeder Funnel-Ebene",
+      "subtitle": "Fünf Produktflächen, eine Entscheidungs-Engine. Vom ersten Scan bis zur kontinuierlichen Regressions-Überwachung verwandelt Vestigio verstreute Signale in eine einzige priorisierte Warteschlange.",
+      "items": [
+        {
+          "tag": "Aktionswarteschlange",
+          "title": "Priorisieren Sie Fixes, die Umsatz wirklich bewegen",
+          "description": "Jeder Fund nach Impact, Dringlichkeit und Aufwand sortiert. Keine Tabellen mehr — nur die nächste Entscheidung, bereit zum Versand.",
+          "cta": "Aktionen erkunden"
+        },
+        {
+          "tag": "Umsatz-Audit",
+          "title": "Finden Sie jedes Leck in Ihrem Funnel",
+          "description": "Vestigio quantifiziert Verluste Fläche für Fläche — Checkout, Preise, Onboarding — mit Konfidenzbereichen, nicht Vermutungen.",
+          "cta": "Audit erkunden"
+        },
+        {
+          "tag": "Beweis-Spur",
+          "title": "Jeder Fund führt zurück zu Multi-Source-Beweis",
+          "description": "Browser-verifiziert, gegengeprüft, mit Zeitstempel. Hören Sie auf zu streiten, ob ein Fund echt ist — sehen Sie den Beweis.",
+          "cta": "Beweise erkunden"
+        },
+        {
+          "tag": "Kontinuierliche Wache",
+          "title": "Erkennen Sie Regressionen, bevor Ihre Kunden es tun",
+          "description": "Jeder Deploy und jede Kampagne erzeugt neue Vektoren. Vestigio auditiert kontinuierlich, damit nichts im Stillen degradiert.",
+          "cta": "Monitoring erkunden"
+        },
+        {
+          "tag": "KI-Entscheidungs-Engine",
+          "title": "Fragen Sie in natürlicher Sprache, entscheiden Sie mit vollem Kontext",
+          "description": "Ein Workspace pro Geschäftsfrage — Umsatz, Churn, Chargeback. Vestigio AI verbindet Antworten mit dem Beweis.",
+          "cta": "Workspaces erkunden"
+        }
+      ],
+      "cta_primary": "Erstes Audit starten"
+    },
+    "mini_calc_card": {
+      "eyebrow": "Sofortiges kostenloses Audit",
+      "tagline": "Testen Sie Vestigio auf Ihrer eigenen Domain — keine Anmeldung, keine Karte."
+    },
     "features_section": {
       "title": "SaaS-Startup in Tagen starten",
       "subtitle": "Alles, was Sie zum Aufbau, Start und zur Skalierung Ihres SaaS-Startups benötigen.",

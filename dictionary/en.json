@@ -63,9 +63,10 @@
         "message": "Continuous, evidence-backed answers on what's bleeding revenue right now.",
         "cta": "See how"
       },
-      "headline_part1": "Find where your site is leaking money",
-      "headline_part2": "before you spend more on traffic.",
-      "subtitle": "Vestigio audits your digital operation, estimates impact, ranks what to fix first, and watches what may break next — so you stop scaling in the dark.",
+      "headline_part1": "Skip the analytics.",
+      "headline_part2": "What matters is the decision.",
+      "headline_brush_word": "analytics",
+      "subtitle": "Vestigio audits your digital operation automatically and ranks what to fix so you stop leaving money on the table — you skip the analytics and go straight to the decision.",
       "pills": [
         { "impact": "Traffic but no leads", "solution": "We find the block" },
         { "impact": "Ads without return", "solution": "We show the leak" },
@@ -75,7 +76,7 @@
       ],
       "cta_primary": "Run free audit",
       "cta_secondary": "Watch product tour",
-      "cta_micro": "Works for ecommerce, SaaS, lead gen, infoproducts, services and apps.",
+      "cta_micro": "Perfect for ecommerce, SaaS, lead gen, infoproducts, services and apps.",
       "shell": { "_deprecated": "moved to product_tour" }
     },
     "product_tour": {
@@ -165,7 +166,7 @@
         ]
       },
       "chat_panel": {
-        "header": "Agentic Chat",
+        "header": "Vestigio Pulse",
         "thread": [
           { "from": "user", "text": "Where am I losing the most money right now?" },
           { "from": "ai", "text": "Your biggest revenue leak is the checkout redirect chain. It adds 2.4s of latency and is estimated to cost **−$18k to $42k per month** in lost conversions. I've created a P1 action to address this.", "chips": ["Used 3 findings", "Created action P1"] },
@@ -189,7 +190,7 @@
         ]
       },
       "overlay_ai": {
-        "eyebrow": "Vestigio AI",
+        "eyebrow": "Vestigio Pulse",
         "message": "I scanned 12 surfaces and found 23 findings. The top 3 are critical and account for 64% of the estimated loss.",
         "chip_evidence": "12 surfaces scanned",
         "chip_action": "9 actions queued"
@@ -238,7 +239,7 @@
         {
           "tag": "AI Decision Engine",
           "title": "Ask in plain language, decide with full context",
-          "description": "A workspace for every business question — receita, churn, chargeback. Vestigio AI ties answers back to the evidence.",
+          "description": "A workspace for every business question — receita, churn, chargeback. Vestigio Pulse ties answers back to the evidence.",
           "cta": "Explore Workspaces"
         }
       ],

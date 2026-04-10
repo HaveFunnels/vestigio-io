@@ -141,7 +141,7 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 	};
 
 	return (
-		<div className='mx-auto mb-10 grid w-full max-w-[1100px] grid-cols-1 gap-3 text-left sm:mb-12 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-3 xl:grid-cols-5'>
+		<div className='mx-auto mb-10 grid w-full max-w-[1100px] grid-cols-1 gap-2 text-left sm:mb-12 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-3 xl:grid-cols-5'>
 			{pills.map((pill, i) => {
 				const isOn = selected.has(i);
 
@@ -154,27 +154,34 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 						data-on={isOn || undefined}
 						className={[
 							"vhero-pill group/pill",
-							"relative isolate h-[120px] w-full overflow-hidden rounded-2xl",
+							// MOBILE: short horizontal pill (~56px) so 5 cards
+							// don't dominate the viewport. DESKTOP: full
+							// 120-px tall vertical card with the icon on top.
+							"relative isolate w-full overflow-hidden rounded-xl sm:rounded-2xl",
+							"h-[56px] sm:h-[120px]",
 							"border transition-all duration-500 ease-out",
 							"hover:-translate-y-0.5",
 							// Idle border vs selected border. The bg is handled
-							// by the liquid-fill ::before below, so we keep the
+							// by the liquid-fill div below, so we keep the
 							// element bg dark and let the fill paint over it.
 							isOn
-								? "border-emerald-400/60 shadow-[0_18px_44px_-18px_rgba(16,185,129,0.55)]"
+								? "border-emerald-400/60 shadow-[0_12px_30px_-14px_rgba(16,185,129,0.55)] sm:shadow-[0_18px_44px_-18px_rgba(16,185,129,0.55)]"
 								: "border-white/10 bg-white/[0.025] hover:border-emerald-400/30 hover:bg-white/[0.04]",
 						].join(" ")}
 						style={{
 							animation: `vhero-float-up 0.8s cubic-bezier(0.16,1,0.3,1) ${0.15 + i * 0.07}s both`,
 						}}
 					>
-						{/* Top-right checkbox — visual hint that the card is
-						    interactive. Click target is the whole card. */}
+						{/* Checkbox — desktop only. The card height on mobile
+						    is too small for a 5x5 checkbox to look right and
+						    the click affordance is already obvious from the
+						    color invert on tap. */}
 						<span
 							aria-hidden
 							className={[
 								"pointer-events-none absolute right-3 top-3 z-20",
-								"flex h-5 w-5 items-center justify-center rounded-[5px] border",
+								"hidden sm:flex",
+								"h-5 w-5 items-center justify-center rounded-[5px] border",
 								"transition-all duration-300",
 								isOn
 									? "border-[#0a1a14] bg-[#0a1a14] shadow-[0_0_10px_-1px_rgba(10,26,20,0.5)]"
@@ -199,11 +206,7 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 						</span>
 
 						{/* Liquid fill layer — emerald wave that animates from
-						    the bottom up when selected. `transform-origin:
-						    bottom` + `scaleY` is the simplest way to do a
-						    bottom-to-top fill that respects the card's
-						    rounded corners (since the parent has
-						    `overflow-hidden`). */}
+						    the bottom up when selected. */}
 						<div
 							aria-hidden
 							className={[
@@ -216,37 +219,38 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 						/>
 
 						{/* IDLE FACE — dark surface, white text, the user's
-						    pain. Visible when NOT selected. */}
+						    pain. Mobile: horizontal layout (icon + text in a
+						    row). Desktop: vertical layout (icon on top). */}
 						<div
 							className={[
-								"absolute inset-0 z-10 flex flex-col items-start justify-center px-5",
+								"absolute inset-0 z-10",
+								"flex items-center gap-3 px-3 sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:px-5",
 								"transition-opacity duration-500",
 								isOn ? "opacity-0" : "opacity-100",
 							].join(" ")}
 						>
-							<span className='mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-300'>
+							<span className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300 sm:mb-3 sm:h-9 sm:w-9 sm:rounded-lg'>
 								{PILL_ICONS[i]?.()}
 							</span>
-							<div className='pr-7 text-[14px] font-semibold leading-tight text-white sm:text-[15px]'>
+							<div className='text-[13px] font-semibold leading-tight text-white sm:pr-7 sm:text-[15px]'>
 								{pill.impact}
 							</div>
 						</div>
 
-						{/* SELECTED FACE — sits on top of the liquid fill,
-						    dark text on emerald background. Same vertical
-						    centering rules as idle face so the layout
-						    doesn't jump. */}
+						{/* SELECTED FACE — same layout rules as idle face so
+						    nothing jumps when toggled. */}
 						<div
 							className={[
-								"absolute inset-0 z-10 flex flex-col items-start justify-center px-5",
+								"absolute inset-0 z-10",
+								"flex items-center gap-3 px-3 sm:flex-col sm:items-start sm:justify-center sm:gap-0 sm:px-5",
 								"transition-opacity duration-500",
 								isOn ? "opacity-100 delay-200" : "opacity-0",
 							].join(" ")}
 						>
-							<span className='mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-[#0a1a14]/15 text-[#0a1a14]'>
+							<span className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#0a1a14]/15 text-[#0a1a14] sm:mb-3 sm:h-9 sm:w-9 sm:rounded-lg'>
 								{PILL_ICONS[i]?.()}
 							</span>
-							<div className='pr-7 text-[14px] font-semibold leading-tight text-[#0a1a14] sm:text-[15px]'>
+							<div className='text-[13px] font-semibold leading-tight text-[#0a1a14] sm:pr-7 sm:text-[15px]'>
 								{pill.solution}
 							</div>
 						</div>

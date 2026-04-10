@@ -63,9 +63,10 @@
         "message": "Respostas contínuas e baseadas em evidência sobre o que está vazando receita agora.",
         "cta": "Como funciona"
       },
-      "headline_part1": "Descubra onde seu site está vazando dinheiro",
-      "headline_part2": "antes de gastar mais em tráfego.",
-      "subtitle": "A Vestigio audita sua operação digital, estima impacto, prioriza o que corrigir primeiro e monitora o que pode piorar depois — para você parar de escalar no escuro.",
+      "headline_part1": "Pule o analytics.",
+      "headline_part2": "O que importa é a decisão.",
+      "headline_brush_word": "analytics",
+      "subtitle": "A Vestigio audita sua operação digital automaticamente e prioriza o que corrigir para você não deixar mais dinheiro na mesa — você pula o analytics e vai direto pra decisão.",
       "pills": [
         { "impact": "Tráfego mas sem leads", "solution": "Achamos o bloqueio" },
         { "impact": "Ads sem retorno", "solution": "Mostramos o vazamento" },
@@ -75,7 +76,7 @@
       ],
       "cta_primary": "Rodar auditoria grátis",
       "cta_secondary": "Ver tour do produto",
-      "cta_micro": "Funciona para ecommerce, SaaS, captação de leads, infoprodutos, serviços e apps.",
+      "cta_micro": "Perfeito para E-commerces, SaaS, captação de leads, infoprodutos, serviços e apps.",
       "shell": { "_deprecated": "moved to product_tour" }
     },
     "product_tour": {
@@ -109,9 +110,9 @@
       },
       "analysis_panel": {
         "summary_header": "Resumo da Análise",
-        "findings_header": "Principais Achados",
+        "findings_header": "Principais Descobertas",
         "summary_cards": [
-          { "label": "Total de achados", "value": "23", "sub": "issues em 12 superfícies" },
+          { "label": "Total de descobertas", "value": "23", "sub": "issues em 12 superfícies" },
           { "label": "Impacto Mensal Est.", "value": "−R$ 336k", "sub": "limite inferior" },
           { "label": "Alto Impacto", "value": "8", "sub": "crítico + alto" },
           { "label": "Superfícies", "value": "12", "sub": "live + verificadas" },
@@ -133,12 +134,12 @@
       },
       "inventory_panel": {
         "header": "Inventário de Superfícies",
-        "headers": { "surface": "Superfície", "path": "Rota", "status": "Status", "http": "HTTP", "findings": "Achados" },
+        "headers": { "surface": "Superfície", "path": "Rota", "status": "Status", "http": "HTTP", "findings": "Descobertas" },
         "status_live": "Ativa",
         "status_down": "Caída",
         "status_warn": "Atenção",
-        "findings_label": "achados",
-        "findings_label_one": "achado",
+        "findings_label": "descobertas",
+        "findings_label_one": "descoberta",
         "rows": [
           { "path": "/", "label": "Página Inicial", "status": "live", "code": 200, "findings": 3 },
           { "path": "/products", "label": "Produtos", "status": "live", "code": 200, "findings": 2 },
@@ -161,14 +162,14 @@
           { "name": "Integridade de Receita", "urgency": "FIX", "tone": "orange", "desc": "Vazamentos ativos em checkout, preços e onboarding. −R$ 270k/mês em risco." },
           { "name": "Resiliência a Chargebacks", "urgency": "MODERATE", "tone": "amber", "desc": "Prontidão pra disputas e lacunas em política de reembolso. 3 issues em aberto." },
           { "name": "SEO & Descoberta", "urgency": "WATCH", "tone": "sky", "desc": "Schema, sitemap e sinais de confiança. 2 issues em aberto." },
-          { "name": "Compliance Contínua", "urgency": "STABLE", "tone": "emerald", "desc": "WCAG, LGPD e consentimento regional. Todos os achados atuais fechados." }
+          { "name": "Compliance Contínua", "urgency": "STABLE", "tone": "emerald", "desc": "WCAG, LGPD e consentimento regional. Todos os descobertas atuais fechados." }
         ]
       },
       "chat_panel": {
-        "header": "Agentic Chat",
+        "header": "Vestigio Pulse",
         "thread": [
           { "from": "user", "text": "Onde estou perdendo mais dinheiro agora?" },
-          { "from": "ai", "text": "Seu maior vazamento de receita é a cadeia de redirects no checkout. Adiciona 2,4s de latência e estima-se um custo de **−R$ 91k a 210k por mês** em conversões perdidas. Criei uma ação P1 pra atacar isso.", "chips": ["Usou 3 achados", "Criou ação P1"] },
+          { "from": "ai", "text": "Seu maior vazamento de receita é a cadeia de redirects no checkout. Adiciona 2,4s de latência e estima-se um custo de **−R$ 91k a 210k por mês** em conversões perdidas. Criei uma ação P1 pra atacar isso.", "chips": ["Usou 3 descobertas", "Criou ação P1"] },
           { "from": "user", "text": "O que quebrou desde a última análise?" },
           { "from": "ai", "text": "3 regressões nos últimos 14 dias: abandono de checkout **+12%**, validação de pagamento falhou em 2 rotas, certificado SSL expira em 5 dias. As 2 primeiras já estão na fila como P1 e P3.", "chips": ["3 regressões", "2 ações priorizadas"] }
         ],
@@ -189,8 +190,8 @@
         ]
       },
       "overlay_ai": {
-        "eyebrow": "Vestigio AI",
-        "message": "Escaneei 12 superfícies e encontrei 23 achados. Os 3 principais são críticos e respondem por 64% da perda estimada.",
+        "eyebrow": "Vestigio Pulse",
+        "message": "Escaneei 12 superfícies e encontrei 23 descobertas. Os 3 principais são críticos e respondem por 64% da perda estimada.",
         "chip_evidence": "12 superfícies escaneadas",
         "chip_action": "9 ações na fila"
       },
@@ -214,7 +215,7 @@
         {
           "tag": "Fila de Ações",
           "title": "Priorize as correções que realmente movem receita",
-          "description": "Cada achado classificado por impacto, urgência e esforço. Sem mais planilhas — apenas a próxima decisão, pronta para executar.",
+          "description": "Cada descoberta classificado por impacto, urgência e esforço. Sem mais planilhas — apenas a próxima decisão, pronta para executar.",
           "cta": "Explorar Ações"
         },
         {
@@ -225,8 +226,8 @@
         },
         {
           "tag": "Trilha de Evidência",
-          "title": "Cada achado rastreia até prova multi-fonte",
-          "description": "Verificado no navegador, cruzado entre fontes, com timestamp. Pare de discutir se um achado é real — veja a evidência.",
+          "title": "Cada descoberta rastreia até prova multi-fonte",
+          "description": "Verificado no navegador, cruzado entre fontes, com timestamp. Pare de discutir se um descoberta é real — veja a evidência.",
           "cta": "Explorar Evidência"
         },
         {
@@ -238,7 +239,7 @@
         {
           "tag": "Motor de Decisão IA",
           "title": "Pergunte em linguagem natural, decida com contexto completo",
-          "description": "Um workspace para cada pergunta de negócio — receita, churn, chargeback. A Vestigio AI conecta respostas à evidência.",
+          "description": "Um workspace para cada pergunta de negócio — receita, churn, chargeback. A Vestigio Pulse conecta respostas à evidência.",
           "cta": "Explorar Workspaces"
         }
       ],
@@ -286,7 +287,7 @@
       "action_queue": {
         "eyebrow": "Priorize",
         "title": "Uma fila clara do que corrigir primeiro",
-        "description": "Cada achado classificado por impacto, urgência e esforço. Sem mais planilhas — apenas a próxima decisão, pronta para executar.",
+        "description": "Cada descoberta classificado por impacto, urgência e esforço. Sem mais planilhas — apenas a próxima decisão, pronta para executar.",
         "rows": [
           { "title": "Pico de abandono no checkout", "impact": "−R$ 42.100" },
           { "title": "Quebra de confiança no formulário", "impact": "−R$ 15.750" },
@@ -309,7 +310,7 @@
       "continuous_watch": {
         "eyebrow": "Recupere",
         "title": "Estanque o vazamento antes que ele se acumule",
-        "description": "O Vestigio acompanha cada vazamento da detecção à resolução. Veja suas perdas mensais caírem conforme os achados são fechados — e detecte novas regressões no momento em que aparecem.",
+        "description": "O Vestigio acompanha cada vazamento da detecção à resolução. Veja suas perdas mensais caírem conforme os descobertas são fechados — e detecte novas regressões no momento em que aparecem.",
         "axis_label": "Receita perdida / mês",
         "before_label": "Antes do Vestigio",
         "after_label": "Depois do Vestigio",
@@ -318,9 +319,9 @@
       },
       "evidence_orbit": {
         "eyebrow": "Valide",
-        "title": "Cada achado rastreia até a evidência",
-        "description": "Verificado no navegador, cruzado entre fontes, com timestamp. O Vestigio enriquece cada achado com provas multi-fonte — para que seu time confie no diagnóstico.",
-        "center_label": "Achado",
+        "title": "Cada descoberta rastreia até a evidência",
+        "description": "Verificado no navegador, cruzado entre fontes, com timestamp. O Vestigio enriquece cada descoberta com provas multi-fonte — para que seu time confie no diagnóstico.",
+        "center_label": "Descoberta",
         "evidence_types": {
           "browser": "Navegador",
           "static": "Estático",

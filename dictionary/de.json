@@ -63,9 +63,10 @@
         "message": "Kontinuierliche, evidenzbasierte Antworten darauf, was gerade Umsatz blutet.",
         "cta": "So funktioniert's"
       },
-      "headline_part1": "Finden Sie heraus, wo Ihre Website Geld verliert",
-      "headline_part2": "bevor Sie mehr für Traffic ausgeben.",
-      "subtitle": "Vestigio prüft Ihre digitale Operation, schätzt den Impact, priorisiert was zuerst zu fixen ist und überwacht, was als Nächstes brechen könnte — damit Sie aufhören, im Dunkeln zu skalieren.",
+      "headline_part1": "Überspring das Analytics.",
+      "headline_part2": "Was zählt, ist die Entscheidung.",
+      "headline_brush_word": "Analytics",
+      "subtitle": "Vestigio prüft deine digitale Operation automatisch und priorisiert, was zu beheben ist, damit du kein Geld mehr liegen lässt — du überspringst das Analytics und gehst direkt zur Entscheidung.",
       "pills": [
         { "impact": "Traffic, keine Leads", "solution": "Wir finden das Leck" },
         { "impact": "Ads ohne Rendite", "solution": "Wir zeigen das Leck" },
@@ -75,7 +76,7 @@
       ],
       "cta_primary": "Kostenloses Audit starten",
       "cta_secondary": "Produkt-Tour ansehen",
-      "cta_micro": "Funktioniert für Ecommerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",
+      "cta_micro": "Perfekt für E-Commerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",
       "shell": { "_deprecated": "moved to product_tour" }
     },
     "product_tour": {
@@ -165,7 +166,7 @@
         ]
       },
       "chat_panel": {
-        "header": "Agentic Chat",
+        "header": "Vestigio Pulse",
         "thread": [
           { "from": "user", "text": "Wo verliere ich gerade am meisten Geld?" },
           { "from": "ai", "text": "Ihr größtes Umsatzleck ist die Checkout-Redirect-Kette. Sie fügt 2,4s Latenz hinzu und kostet schätzungsweise **−€16k bis €38k pro Monat** an verlorenen Konversionen. Ich habe eine P1-Aktion erstellt.", "chips": ["3 Befunde verwendet", "Aktion P1 erstellt"] },
@@ -189,7 +190,7 @@
         ]
       },
       "overlay_ai": {
-        "eyebrow": "Vestigio AI",
+        "eyebrow": "Vestigio Pulse",
         "message": "Ich habe 12 Flächen gescannt und 23 Befunde gefunden. Die Top 3 sind kritisch und machen 64% des geschätzten Verlusts aus.",
         "chip_evidence": "12 Flächen gescannt",
         "chip_action": "9 Aktionen in Warteschlange"
@@ -238,7 +239,7 @@
         {
           "tag": "KI-Entscheidungs-Engine",
           "title": "Fragen Sie in natürlicher Sprache, entscheiden Sie mit vollem Kontext",
-          "description": "Ein Workspace pro Geschäftsfrage — Umsatz, Churn, Chargeback. Vestigio AI verbindet Antworten mit dem Beweis.",
+          "description": "Ein Workspace pro Geschäftsfrage — Umsatz, Churn, Chargeback. Vestigio Pulse verbindet Antworten mit dem Beweis.",
           "cta": "Workspaces erkunden"
         }
       ],

@@ -53,37 +53,55 @@ interface HeroProps {
 // this file only orchestrates the hero layout.
 
 /* ──────────────────────────────────────────────────────────────────
- * Animated Vestigio trails — small glowing emerald dots that wander
- * across the hero canvas in unpredictable paths (right → down →
- * left → down) and disappear off the bottom. The metaphor is
- * literal vestígios (Portuguese for "traces / footprints"): the user
- * sees something moving and is psychologically pulled to scroll
- * down to follow it.
+ * Vestigio trails — dashed L-shaped rails drawn over the hero
+ * canvas. Each rail is a faint dashed path (think Mixpanel-style
+ * background grid traces) and a brighter emerald pulse runs along
+ * the rail from start to finish. The metaphor is "vestígios" — the
+ * eye sees something moving along an invisible track and is pulled
+ * to follow it down the page.
  *
- * Each trail uses a unique multi-step CSS keyframe so trails NEVER
- * run in lockstep. They start at different X positions, follow
- * different turning patterns, and finish at different X positions.
- * Pure CSS — no JS.
+ * Implementation: 6 inline `<svg>` elements, each containing two
+ * paths:
+ *   1. The faint dashed RAIL — always visible at low opacity
+ *   2. The bright emerald PULSE — same path geometry but stroked
+ *      with a small visible segment via `stroke-dasharray` and
+ *      `stroke-dashoffset` animation, so the pulse looks like a
+ *      glowing dot tracing the rail
+ *
+ * Each rail has a different L-shape (right→down, down→right,
+ * down→left, etc.) and a different speed/delay so they never run
+ * in lockstep. Pure CSS keyframes — no JS.
  * ──────────────────────────────────────────────────────────────── */
 
-interface TrailLane {
-	/** Animation name — must match a `@keyframes vhero-trail-N` */
-	name: string;
+interface RailDef {
+	/** SVG path definition for the rail (and the pulse) */
+	d: string;
+	/** Total path length in user units — used to size the dash arrays.
+	 *  Approximate is fine, the pulse just needs a value bigger than
+	 *  the visible segment. */
+	length: number;
 	/** Negative delay so the loop is already in motion on first paint */
 	delay: number;
 	/** Total cycle length in seconds */
 	duration: number;
 }
 
-const TRAIL_LANES: TrailLane[] = [
-	{ name: "vhero-trail-zigzag-a", delay: 0,    duration: 18 },
-	{ name: "vhero-trail-zigzag-b", delay: 5,    duration: 22 },
-	{ name: "vhero-trail-zigzag-c", delay: 2.5,  duration: 20 },
-	{ name: "vhero-trail-zigzag-d", delay: 8,    duration: 19 },
-	{ name: "vhero-trail-zigzag-a", delay: 12,   duration: 24 },
-	{ name: "vhero-trail-zigzag-b", delay: 1,    duration: 17 },
-	{ name: "vhero-trail-zigzag-c", delay: 6.5,  duration: 21 },
-	{ name: "vhero-trail-zigzag-d", delay: 3.5,  duration: 23 },
+// All paths share a `0 0 100 100` viewBox so coordinates are in
+// percent of the SVG. The SVG itself is positioned absolutely with
+// inline `top/left/width/height` style props.
+const RAILS: RailDef[] = [
+	// Top-left → drops down → curves right
+	{ d: "M 5 5 L 5 60 Q 5 75 20 75 L 95 75", length: 165, delay: 0,   duration: 14 },
+	// Top-right → drops down → curves left
+	{ d: "M 95 5 L 95 50 Q 95 65 80 65 L 5 65", length: 165, delay: 6,  duration: 16 },
+	// Top-center → straight down → right elbow
+	{ d: "M 50 5 L 50 70 Q 50 85 65 85 L 95 85", length: 145, delay: 3,  duration: 13 },
+	// Mid-left → right → down
+	{ d: "M 5 30 L 70 30 Q 85 30 85 45 L 85 95", length: 155, delay: 9,  duration: 18 },
+	// Mid-right → left → down
+	{ d: "M 95 35 L 30 35 Q 15 35 15 50 L 15 95", length: 155, delay: 4,  duration: 17 },
+	// Top-near-center → diagonal down-right then down
+	{ d: "M 35 5 L 35 40 Q 35 55 50 55 L 50 95", length: 130, delay: 11, duration: 15 },
 ];
 
 const TrailLayer = () => (
@@ -91,19 +109,44 @@ const TrailLayer = () => (
 		className='pointer-events-none absolute inset-0 -z-1 overflow-hidden'
 		aria-hidden
 	>
-		{TRAIL_LANES.map((lane, i) => (
-			<div
-				key={i}
-				className='absolute left-0 top-0 h-3 w-3 rounded-full bg-emerald-300/70 shadow-[0_0_14px_4px_rgba(110,231,183,0.55)]'
-				style={{
-					animationName: lane.name,
-					animationDuration: `${lane.duration}s`,
-					animationIterationCount: "infinite",
-					animationTimingFunction: "cubic-bezier(0.65, 0, 0.35, 1)",
-					animationDelay: `-${lane.delay}s`,
-				}}
-			/>
-		))}
+		{RAILS.map((rail, i) => {
+			// The pulse is a 12-unit visible segment that travels along
+			// the path. `strokeDasharray` is `12 length` so there's only
+			// one visible segment at a time, and `strokeDashoffset`
+			// animates from `length` (offscreen at start) to `-12`
+			// (offscreen at end).
+			return (
+				<svg
+					key={i}
+					viewBox='0 0 100 100'
+					preserveAspectRatio='none'
+					className='absolute inset-0 h-full w-full'
+				>
+					{/* Faint dashed rail — always visible */}
+					<path
+						d={rail.d}
+						stroke='rgba(255, 255, 255, 0.06)'
+						strokeWidth='0.25'
+						strokeDasharray='1 1.5'
+						fill='none'
+					/>
+					{/* Bright emerald pulse — animates along the rail */}
+					<path
+						d={rail.d}
+						stroke='rgb(110 231 183)'
+						strokeWidth='0.45'
+						strokeLinecap='round'
+						fill='none'
+						style={{
+							filter: "drop-shadow(0 0 1.5px rgba(110, 231, 183, 0.9))",
+							strokeDasharray: `12 ${rail.length}`,
+							animation: `vhero-rail-pulse ${rail.duration}s linear infinite`,
+							animationDelay: `-${rail.delay}s`,
+						}}
+					/>
+				</svg>
+			);
+		})}
 	</div>
 );
 
@@ -120,57 +163,38 @@ const Hero = async ({
 	const t = await getTranslations("homepage.hero_v2");
 	const pills = t.raw("pills") as Pill[];
 
+	// Split the first headline so we can wrap the brush-highlighted word
+	// in a `<span>` with an SVG underline beneath it. The brush word
+	// comes from `headline_brush_word` in the dictionary so we don't
+	// have to hardcode "analytics" in 4 different translations.
+	const headline1 = t("headline_part1");
+	const brushWord = t("headline_brush_word");
+	const brushIdx = headline1.toLowerCase().indexOf(brushWord.toLowerCase());
+	const headline1Pre = brushIdx >= 0 ? headline1.slice(0, brushIdx) : headline1;
+	const headline1Brush =
+		brushIdx >= 0 ? headline1.slice(brushIdx, brushIdx + brushWord.length) : "";
+	const headline1Post =
+		brushIdx >= 0 ? headline1.slice(brushIdx + brushWord.length) : "";
+
 	return (
-		<section className='relative z-1 overflow-hidden pb-20 pt-28 sm:pb-24 sm:pt-32 lg:pb-32 lg:pt-40'>
+		<section className='relative z-1 overflow-hidden pb-10 pt-28 sm:pb-12 sm:pt-32 lg:pb-16 lg:pt-40'>
 			{/* Component-scoped keyframes — `vhero-` prefix avoids global
 			    collisions with the rest of the app. */}
 			<style>{`
-				/* Trail keyframes — each one defines a different zigzag
-				   path across the hero canvas. The X positions are in
-				   viewport-width units (vw) so they scale with the screen,
-				   the Y positions are in viewport-height (vh). Every
-				   trail enters at opacity 0, fades in around 8% of the
-				   cycle, holds visible until 92%, then fades out as it
-				   exits the bottom. */
-				@keyframes vhero-trail-zigzag-a {
-					0%   { transform: translate(8vw,  -4vh); opacity: 0; }
-					8%   { opacity: 0.85; }
-					22%  { transform: translate(8vw,  18vh); }
-					40%  { transform: translate(28vw, 32vh); }
-					58%  { transform: translate(28vw, 52vh); }
-					75%  { transform: translate(14vw, 68vh); }
-					92%  { opacity: 0.85; }
-					100% { transform: translate(14vw, 96vh); opacity: 0; }
-				}
-				@keyframes vhero-trail-zigzag-b {
-					0%   { transform: translate(72vw, -4vh); opacity: 0; }
-					8%   { opacity: 0.8; }
-					25%  { transform: translate(72vw, 22vh); }
-					45%  { transform: translate(52vw, 38vh); }
-					62%  { transform: translate(52vw, 56vh); }
-					78%  { transform: translate(68vw, 72vh); }
-					92%  { opacity: 0.8; }
-					100% { transform: translate(68vw, 100vh); opacity: 0; }
-				}
-				@keyframes vhero-trail-zigzag-c {
-					0%   { transform: translate(38vw, -4vh); opacity: 0; }
-					8%   { opacity: 0.7; }
-					20%  { transform: translate(38vw, 14vh); }
-					38%  { transform: translate(58vw, 28vh); }
-					56%  { transform: translate(58vw, 48vh); }
-					74%  { transform: translate(38vw, 62vh); }
-					90%  { transform: translate(38vw, 84vh); opacity: 0.7; }
-					100% { transform: translate(38vw, 100vh); opacity: 0; }
-				}
-				@keyframes vhero-trail-zigzag-d {
-					0%   { transform: translate(92vw, -4vh); opacity: 0; }
-					8%   { opacity: 0.9; }
-					22%  { transform: translate(92vw, 20vh); }
-					40%  { transform: translate(78vw, 36vh); }
-					58%  { transform: translate(86vw, 54vh); }
-					76%  { transform: translate(78vw, 70vh); }
-					92%  { opacity: 0.9; }
-					100% { transform: translate(82vw, 100vh); opacity: 0; }
+				/* Rail pulse keyframe — animates stroke-dashoffset so
+				   a single bright segment travels along the rail path
+				   from start to finish. The starting offset is positive
+				   (segment starts off-canvas at the rail beginning)
+				   and animates down to a negative value (segment exits
+				   off-canvas at the rail end). The numeric range is
+				   intentionally large so it works for any rail length;
+				   the visible segment width is set by stroke-dasharray
+				   on each path inline. */
+				@keyframes vhero-rail-pulse {
+					0%   { stroke-dashoffset: 200; opacity: 0; }
+					8%   { opacity: 1; }
+					92%  { opacity: 1; }
+					100% { stroke-dashoffset: -20; opacity: 0; }
 				}
 				@keyframes vhero-pulse {
 					0%, 100% { transform: scale(1); opacity: 0.9; }
@@ -230,10 +254,48 @@ const Hero = async ({
 			{/* ─────────── Headline + subtitle + pills + CTAs ─────────── */}
 			<div className='relative mx-auto w-full max-w-[1000px] px-4 text-center sm:px-8 xl:px-0'>
 				<h1 className='mb-5 text-[2.1rem] font-bold leading-[1.05] tracking-tight text-white sm:mb-6 sm:text-[3.25rem] lg:text-[4rem] xl:text-[4.5rem]'>
-					<span className='block'>{t("headline_part1")}</span>
-					<span className='block bg-gradient-to-r from-emerald-300 via-emerald-200 to-emerald-300 bg-clip-text pb-1 text-transparent'>
-						{t("headline_part2")}
+					<span className='block'>
+						{headline1Pre}
+						{/* Paintbrush-underlined word — solid white text on
+						    top, hand-drawn SVG stroke beneath. The SVG
+						    `viewBox` is wide and short and uses
+						    `preserveAspectRatio="none"` so it stretches to
+						    match whatever word it sits under. */}
+						{headline1Brush && (
+							<span className='relative inline-block'>
+								<span className='relative z-10'>{headline1Brush}</span>
+								<svg
+									className='pointer-events-none absolute inset-x-0 -bottom-1 h-[0.42em] w-full text-emerald-400 sm:-bottom-1.5'
+									viewBox='0 0 200 18'
+									fill='none'
+									preserveAspectRatio='none'
+									aria-hidden
+								>
+									{/* Hand-drawn paintbrush stroke — two
+									    overlapping curves with rough endcaps so
+									    it reads as ink, not a vector line. */}
+									<path
+										d='M2 11 C 30 4, 60 14, 95 8 C 130 3, 160 13, 198 7'
+										stroke='currentColor'
+										strokeWidth='6'
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										opacity='0.85'
+									/>
+									<path
+										d='M6 14 C 40 9, 80 16, 120 11 C 150 7, 175 14, 196 11'
+										stroke='currentColor'
+										strokeWidth='3'
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										opacity='0.55'
+									/>
+								</svg>
+							</span>
+						)}
+						{headline1Post}
 					</span>
+					<span className='block text-white'>{t("headline_part2")}</span>
 				</h1>
 
 				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>
@@ -246,20 +308,21 @@ const Hero = async ({
 				    HeroPills.tsx. */}
 				<HeroPills pills={pills} />
 
-				{/* CTAs — larger than typical buttons because they are the
-				    primary conversion action on the entire homepage. */}
-				<div className='mb-4 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
+				{/* CTAs — confident but not desperate. Smaller padding,
+				    softer shadow, single subtle glow on hover instead of
+				    a perpetual two-layer halo. */}
+				<div className='mb-3 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-3'>
 					<Link
 						href={primaryCtaHref}
-						className='rounded-[1.1rem] bg-white px-9 py-5 text-center text-[15px] font-semibold text-black shadow-[0_22px_60px_-18px_rgba(255,255,255,0.65),0_10px_40px_-10px_rgba(16,185,129,0.5)] transition-all hover:bg-emerald-50 hover:shadow-[0_28px_72px_-18px_rgba(255,255,255,0.75),0_14px_44px_-10px_rgba(16,185,129,0.65)] focus-visible:ring-2 focus-visible:ring-emerald-400 sm:text-base'
+						className='rounded-[0.875rem] bg-white px-6 py-3 text-center text-[14px] font-semibold text-black shadow-[0_8px_24px_-12px_rgba(255,255,255,0.4)] transition-all hover:bg-zinc-100 hover:shadow-[0_12px_30px_-12px_rgba(255,255,255,0.55)] focus-visible:ring-2 focus-visible:ring-emerald-400'
 					>
 						{primaryCtaLabel ?? t("cta_primary")}
 					</Link>
 					<Link
 						href='#product-tour'
-						className='inline-flex items-center justify-center gap-2.5 rounded-[1.1rem] border border-white/15 bg-white/[0.02] px-9 py-5 text-center text-[15px] font-semibold text-white backdrop-blur transition-all hover:border-white/30 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-white/30 sm:text-base'
+						className='inline-flex items-center justify-center gap-2 rounded-[0.875rem] border border-white/15 bg-white/[0.02] px-6 py-3 text-center text-[14px] font-semibold text-white backdrop-blur transition-all hover:border-white/30 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-white/30'
 					>
-						<svg viewBox='0 0 16 16' fill='none' className='h-4 w-4'>
+						<svg viewBox='0 0 16 16' fill='none' className='h-3.5 w-3.5'>
 							<circle
 								cx='8'
 								cy='8'
@@ -273,7 +336,7 @@ const Hero = async ({
 					</Link>
 				</div>
 
-				<p className='mx-auto mb-14 mt-2 max-w-[560px] text-[11px] text-zinc-500 sm:mb-16 sm:text-xs'>
+				<p className='mx-auto mt-2 max-w-[560px] text-[11px] text-zinc-500 sm:text-xs'>
 					{t("cta_micro")}
 				</p>
 			</div>

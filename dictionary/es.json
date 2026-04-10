@@ -63,9 +63,10 @@
         "message": "Respuestas continuas y respaldadas por evidencia sobre lo que está sangrando ingresos ahora mismo.",
         "cta": "Cómo funciona"
       },
-      "headline_part1": "Descubre dónde tu sitio está perdiendo dinero",
-      "headline_part2": "antes de gastar más en tráfico.",
-      "subtitle": "Vestigio audita tu operación digital, estima el impacto, prioriza qué arreglar primero y vigila lo que puede romperse después — para que dejes de escalar a ciegas.",
+      "headline_part1": "Salta el analytics.",
+      "headline_part2": "Lo que importa es la decisión.",
+      "headline_brush_word": "analytics",
+      "subtitle": "Vestigio audita tu operación digital automáticamente y prioriza qué arreglar para que no dejes más dinero sobre la mesa — saltas el analytics y vas directo a la decisión.",
       "pills": [
         { "impact": "Tráfico, sin leads", "solution": "Encontramos el bloqueo" },
         { "impact": "Ads sin retorno", "solution": "Mostramos la fuga" },
@@ -75,7 +76,7 @@
       ],
       "cta_primary": "Hacer auditoría gratis",
       "cta_secondary": "Ver tour del producto",
-      "cta_micro": "Funciona para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",
+      "cta_micro": "Perfecto para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",
       "shell": { "_deprecated": "moved to product_tour" }
     },
     "product_tour": {
@@ -165,7 +166,7 @@
         ]
       },
       "chat_panel": {
-        "header": "Agentic Chat",
+        "header": "Vestigio Pulse",
         "thread": [
           { "from": "user", "text": "¿Dónde estoy perdiendo más dinero ahora?" },
           { "from": "ai", "text": "Tu mayor fuga de ingresos es la cadena de redirects en el checkout. Añade 2,4s de latencia y se estima que cuesta **−$18k a $42k por mes** en conversiones perdidas. Creé una acción P1 para atacarlo.", "chips": ["Usó 3 hallazgos", "Creó acción P1"] },
@@ -189,7 +190,7 @@
         ]
       },
       "overlay_ai": {
-        "eyebrow": "Vestigio AI",
+        "eyebrow": "Vestigio Pulse",
         "message": "Escaneé 12 superficies y encontré 23 hallazgos. Los 3 principales son críticos y representan el 64% de la pérdida estimada.",
         "chip_evidence": "12 superficies escaneadas",
         "chip_action": "9 acciones en cola"
@@ -238,7 +239,7 @@
         {
           "tag": "Motor de Decisión IA",
           "title": "Pregunta en lenguaje natural, decide con contexto completo",
-          "description": "Un workspace para cada pregunta de negocio — ingresos, churn, chargeback. Vestigio AI conecta respuestas con la evidencia.",
+          "description": "Un workspace para cada pregunta de negocio — ingresos, churn, chargeback. Vestigio Pulse conecta respuestas con la evidencia.",
           "cta": "Explorar Workspaces"
         }
       ],

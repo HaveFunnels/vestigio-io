@@ -100,7 +100,7 @@ const Header = () => {
 							"max-w-[1170px] rounded-full border border-transparent bg-transparent px-4 py-4 shadow-none backdrop-blur-0 sm:px-8"
 				} xl:flex`}
 			>
-				<div className='flex shrink-0 items-center justify-between'>
+				<div className='flex w-full shrink-0 items-center justify-between xl:w-auto'>
 					<Link href='/' className='flex shrink-0 items-center'>
 						{typeof logoSrc === "string" ? (
 							<img

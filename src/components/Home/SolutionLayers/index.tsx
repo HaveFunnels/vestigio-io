@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 const i18n: Record<string, {
 	sectionLabel: string; title: string; subtitle: string;
 	layers: { eyebrow: string; title: string; body: string; support: string }[];
-	chat: { label: string; heading: string; userQuery: string; responseLabel: string; responseBody: string; chipFindings: string; chipActions: string; chipVerification: string; satellites: [string, string, string] };
+	chat: { label: string; heading: string; userQueryLabel: string; userQuery: string; responseLabel: string; responseBody: string; chipFindings: string; chipActions: string; chipVerification: string; satellites: [string, string, string] };
 	tools: string[][];
 }> = {
 	en: {
@@ -17,18 +17,18 @@ const i18n: Record<string, {
 			{ eyebrow: "Layer 2", title: "Prioritize and act with precision", body: "Turn signals into a continuous queue of action, with context and priority.", support: "Actions and workspaces help organize what to fix, track, and explore by route, journey, campaign, or environment." },
 			{ eyebrow: "Layer 3", title: "Validate with confidence", body: "Confirm if it's ready, if it got worse, or if the fix actually closed.", support: "Preflight, regressions, and verification help decide before scaling and track changes over time." },
 		],
-		chat: { label: "Agentic Chat", heading: "Explain, investigate, and validate with Agentic Chat", userQuery: "What risks are getting worse since the last analysis?", responseLabel: "Structured Response", responseBody: '"3 regressions found: checkout abandonment +12%, payment validation failed on 2 routes, SSL expires in 5 days."', chipFindings: "Used 3 Findings", chipActions: "Created a new Action", chipVerification: "Ran Verification as a user", satellites: ["Findings", "Actions", "Verification"] },
+		chat: { label: "Vestigio Pulse", heading: "Explain, investigate, and validate with Vestigio Pulse", userQueryLabel: "You ask:", userQuery: "What risks are getting worse since the last analysis?", responseLabel: "Structured Response", responseBody: '"3 regressions found: checkout abandonment +12%, payment validation failed on 2 routes, SSL expires in 5 days."', chipFindings: "Used 3 findings", chipActions: "Created a new action", chipVerification: "Ran verification as a user", satellites: ["Findings", "Actions", "Verification"] },
 		tools: [["Findings", "Analysis", "Evidence"], ["Actions", "Workspaces", "Priorities"], ["Preflight", "Regressions", "Verification"]],
 	},
 	"pt-BR": {
 		sectionLabel: "Solução", title: "Recuse escalar seu negócio no escuro.", subtitle: "Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.",
 		layers: [
-			{ eyebrow: "Camada 1", title: "Descubra antes dos outros", body: "Veja onde estão os riscos, vazamentos e oportunidades antes que virem custo.", support: "Achados, análise e contexto inicial para entender o que está quebrando, o que está passando despercebido e o que pode comprometer escala." },
+			{ eyebrow: "Camada 1", title: "Descubra antes dos outros", body: "Veja onde estão os riscos, vazamentos e oportunidades antes que virem custo.", support: "Descobertas, análise e contexto inicial para entender o que está quebrando, o que está passando despercebido e o que pode comprometer escala." },
 			{ eyebrow: "Camada 2", title: "Priorize e aja com precisão", body: "Transforme sinais em uma fila contínua de ação, com contexto e prioridade.", support: "Ações e workspaces ajudam a organizar o que corrigir, acompanhar e explorar por rota, jornada, campanha ou ambiente." },
 			{ eyebrow: "Camada 3", title: "Valide com confiança", body: "Confirme se está pronto, se piorou ou se a correção realmente fechou.", support: "Preflight, regressões e verificação ajudam a decidir antes de escalar e a acompanhar mudanças ao longo do tempo." },
 		],
-		chat: { label: "Agentic Chat", heading: "Explique, investigue e valide com o Agentic Chat", userQuery: "Quais riscos estão piorando desde a última análise?", responseLabel: "Resposta Estruturada", responseBody: '"3 regressões encontradas: abandono de checkout +12%, validação de pagamento falhou em 2 rotas, SSL expira em 5 dias."', chipFindings: "Usou 3 achados", chipActions: "Criou uma nova ação", chipVerification: "Rodou verificação como usuário", satellites: ["Achados", "Ações", "Verificação"] },
-		tools: [["Achados", "Análise", "Evidência"], ["Ações", "Workspaces", "Prioridades"], ["Preflight", "Regressões", "Verificação"]],
+		chat: { label: "Vestigio Pulse", heading: "Explique, investigue e valide com o Vestigio Pulse", userQueryLabel: "Você pergunta:", userQuery: "Quais riscos estão piorando desde a última análise?", responseLabel: "Resposta Estruturada", responseBody: '"3 regressões encontradas: abandono de checkout +12%, validação de pagamento falhou em 2 rotas, SSL expira em 5 dias."', chipFindings: "Usou 3 descobertas", chipActions: "Criou uma nova ação", chipVerification: "Rodou verificação como usuário", satellites: ["Descobertas", "Ações", "Verificação"] },
+		tools: [["Descobertas", "Análise", "Evidência"], ["Ações", "Workspaces", "Prioridades"], ["Preflight", "Regressões", "Verificação"]],
 	},
 	es: {
 		sectionLabel: "Solución", title: "Niégate a escalar tu negocio a ciegas.", subtitle: "Detecta temprano, prioriza con claridad y valida tu negocio digital de forma continua.",
@@ -37,7 +37,7 @@ const i18n: Record<string, {
 			{ eyebrow: "Capa 2", title: "Prioriza y actúa con precisión", body: "Convierte señales en una cola continua de acción, con contexto y prioridad.", support: "Acciones y workspaces ayudan a organizar qué corregir, rastrear y explorar por ruta, jornada, campaña o entorno." },
 			{ eyebrow: "Capa 3", title: "Valida con confianza", body: "Confirma si está listo, si empeoró o si la corrección realmente cerró.", support: "Preflight, regresiones y verificación ayudan a decidir antes de escalar y seguir cambios a lo largo del tiempo." },
 		],
-		chat: { label: "Agentic Chat", heading: "Explica, investiga y valida con Agentic Chat", userQuery: "¿Qué riesgos están empeorando desde el último análisis?", responseLabel: "Respuesta Estructurada", responseBody: '"3 regresiones encontradas: abandono de checkout +12%, validación de pago falló en 2 rutas, SSL expira en 5 días."', chipFindings: "Usó 3 hallazgos", chipActions: "Creó una nueva acción", chipVerification: "Ejecutó verificación como usuario", satellites: ["Hallazgos", "Acciones", "Verificación"] },
+		chat: { label: "Vestigio Pulse", heading: "Explica, investiga y valida con Vestigio Pulse", userQueryLabel: "Tú preguntas:", userQuery: "¿Qué riesgos están empeorando desde el último análisis?", responseLabel: "Respuesta Estructurada", responseBody: '"3 regresiones encontradas: abandono de checkout +12%, validación de pago falló en 2 rutas, SSL expira en 5 días."', chipFindings: "Usó 3 hallazgos", chipActions: "Creó una nueva acción", chipVerification: "Ejecutó verificación como usuario", satellites: ["Hallazgos", "Acciones", "Verificación"] },
 		tools: [["Hallazgos", "Análisis", "Evidencia"], ["Acciones", "Workspaces", "Prioridades"], ["Preflight", "Regresiones", "Verificación"]],
 	},
 	de: {
@@ -47,7 +47,7 @@ const i18n: Record<string, {
 			{ eyebrow: "Schicht 2", title: "Priorisiere und handle präzise", body: "Verwandle Signale in eine kontinuierliche Aktionswarteschlange mit Kontext und Priorität.", support: "Aktionen und Workspaces helfen zu organisieren, was korrigiert, verfolgt und erkundet werden soll." },
 			{ eyebrow: "Schicht 3", title: "Validiere mit Vertrauen", body: "Bestätige, ob es bereit ist, ob es schlimmer wurde oder ob die Korrektur abgeschlossen wurde.", support: "Preflight, Regressionen und Verifizierung helfen bei Entscheidungen vor der Skalierung." },
 		],
-		chat: { label: "Agentic Chat", heading: "Erkläre, untersuche und validiere mit Agentic Chat", userQuery: "Welche Risiken verschlechtern sich seit der letzten Analyse?", responseLabel: "Strukturierte Antwort", responseBody: '"3 Regressionen gefunden: Checkout-Abbruch +12%, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL läuft in 5 Tagen ab."', chipFindings: "Nutzte 3 Befunde", chipActions: "Erstellte eine neue Aktion", chipVerification: "Führte Verifizierung als Benutzer aus", satellites: ["Befunde", "Aktionen", "Verifizierung"] },
+		chat: { label: "Vestigio Pulse", heading: "Erkläre, untersuche und validiere mit Vestigio Pulse", userQueryLabel: "Du fragst:", userQuery: "Welche Risiken verschlechtern sich seit der letzten Analyse?", responseLabel: "Strukturierte Antwort", responseBody: '"3 Regressionen gefunden: Checkout-Abbruch +12%, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL läuft in 5 Tagen ab."', chipFindings: "Nutzte 3 Befunde", chipActions: "Erstellte eine neue Aktion", chipVerification: "Führte Verifizierung als Benutzer aus", satellites: ["Befunde", "Aktionen", "Verifizierung"] },
 		tools: [["Befunde", "Analyse", "Beweise"], ["Aktionen", "Workspaces", "Prioritäten"], ["Preflight", "Regressionen", "Verifizierung"]],
 	},
 };
@@ -130,7 +130,7 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 								<div className="grid h-7 w-7 place-items-center rounded-lg bg-white/10">
 									<svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
 								</div>
-								<span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">User Query</span>
+								<span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t.userQueryLabel}</span>
 							</div>
 							<p className="text-xs leading-relaxed text-gray-300">&ldquo;{t.userQuery}&rdquo;</p>
 							<div className="mt-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
@@ -163,36 +163,31 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 							{/* Label below center */}
 							<div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest text-violet-400 sm:bottom-3">{t.label}</div>
 
-							{/* Orbiting satellites — each offset by 1/3 of the period.
-							    The outer rotating element MUST be a 0×0 box anchored at
-							    the exact hub center, otherwise CSS `transform-origin:
-							    center center` resolves to the bounding box of the
-							    element's content — which is offset by the `translateY`
-							    below — and the whole orbit drifts off-center (which is
-							    exactly what was happening before this fix). */}
+							{/* Orbiting satellites — simple colored dots, no labels.
+							    The user explicitly asked for "só um ponto/bullet da
+							    cor deles" instead of the previous pill containers
+							    that had a colored bg, border, and a text label. The
+							    label was redundant with the section's `tools` table
+							    above and was making the orbit feel cluttered.
+
+							    The outer rotating element is a 0×0 box anchored at
+							    the exact hub center so `transform-origin: center`
+							    resolves to the hub's middle and the orbit stays
+							    perfectly concentric (was off-center in earlier
+							    iterations because the pill's bounding box pulled
+							    the transform-origin away from the hub). */}
 							{[
-								{ label: t.satellites[0], border: "border-emerald-500/20", dot: "bg-emerald-400", text: "text-emerald-400" },
-								{ label: t.satellites[1], border: "border-violet-500/20", dot: "bg-violet-400", text: "text-violet-400" },
-								{ label: t.satellites[2], border: "border-amber-500/20", dot: "bg-amber-400", text: "text-amber-400" },
+								{ key: "findings", color: "bg-emerald-400", glow: "shadow-[0_0_14px_4px_rgba(52,211,153,0.55)]" },
+								{ key: "actions",  color: "bg-violet-400",  glow: "shadow-[0_0_14px_4px_rgba(167,139,250,0.55)]" },
+								{ key: "verify",   color: "bg-amber-400",   glow: "shadow-[0_0_14px_4px_rgba(251,191,36,0.55)]" },
 							].map((sat, i) => (
 								<div
-									key={sat.label}
-									// `h-0 w-0` pins the transform-origin to the hub
-									// center. `left-1/2 top-1/2` puts the origin at the
-									// exact middle of the parent hub. Combined, the CW
-									// rotation is now perfectly concentric.
+									key={sat.key}
 									className="absolute left-1/2 top-1/2 h-0 w-0"
 									style={{ animation: 'orbitCW 40s linear infinite', animationDelay: `${-i * 40 / 3}s` }}
 								>
 									<div style={{ transform: 'translateY(calc(-1 * var(--orbit-radius)))' }}>
-										{/* Counter-rotation keeps each pill upright while
-										    the outer rotation carries it around the orbit. */}
-										<div style={{ animation: 'orbitCCW 40s linear infinite', animationDelay: `${-i * 40 / 3}s` }}>
-											<div className={`-translate-x-1/2 flex items-center gap-1.5 whitespace-nowrap rounded-full border ${sat.border} bg-[#0c0c14] px-2.5 py-1 sm:px-3`}>
-												<div className={`h-1.5 w-1.5 rounded-full ${sat.dot}`} />
-												<span className={`text-[9px] font-semibold ${sat.text} sm:text-[10px]`}>{sat.label}</span>
-											</div>
-										</div>
+										<div className={`-translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full ${sat.color} ${sat.glow}`} />
 									</div>
 								</div>
 							))}

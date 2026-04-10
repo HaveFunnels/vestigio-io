@@ -1,6 +1,6 @@
 import { BrandingProvider } from "@/components/BrandingProvider";
 import { Metadata } from "next";
-import { JetBrains_Mono, Outfit } from "next/font/google";
+import { Geist, JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "../styles/globals.css";
@@ -19,14 +19,14 @@ const jetbrainsMono = JetBrains_Mono({
 	display: "swap",
 });
 
-// Outfit — premium geometric display face used for hero headlines on
-// the marketing site. Has a distinctive round-terminal geometric
-// character that pairs well with Satoshi (the body sans) without being
-// generic. Loaded as a CSS variable so it can be applied via
-// `font-outfit` utility class in Tailwind.
-const outfit = Outfit({
+// Geist — Vercel's grotesk with sharp angular terminals and tight
+// metrics. Recommended by the taste-skill guidelines as the top pick
+// for premium headline typography. Used exclusively for the hero h1
+// via the `font-display` Tailwind utility; the rest of the site stays
+// on Satoshi for body + JetBrains Mono for numbers.
+const geist = Geist({
 	subsets: ["latin"],
-	variable: "--font-outfit",
+	variable: "--font-display",
 	display: "swap",
 });
 
@@ -73,7 +73,7 @@ export default async function RootLayout({
 	const messages = await getMessages();
 
 	return (
-		<html lang={locale} className={`dark ${jetbrainsMono.variable} ${outfit.variable}`} suppressHydrationWarning={true}>
+		<html lang={locale} className={`dark ${jetbrainsMono.variable} ${geist.variable}`} suppressHydrationWarning={true}>
 			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
 				<NextIntlClientProvider messages={messages}>
 					<BrandingProvider>

@@ -80,7 +80,7 @@ const RAILS: RailDef[] = [
 
 const TrailLayer = () => (
 	<div
-		className='pointer-events-none absolute inset-0 -z-1 overflow-hidden'
+		className='pointer-events-none absolute inset-x-0 top-0 -z-1 h-[300vh]'
 		aria-hidden
 	>
 		{RAILS.map((rail, i) => (
@@ -121,18 +121,19 @@ const Hero = async ({
 	// surtindo o efeito que deveria").
 
 	return (
-		<section className='relative z-1 overflow-hidden pb-10 pt-28 sm:pb-12 sm:pt-32 lg:pb-16 lg:pt-40'>
+		<section className='relative z-1 pb-10 pt-28 sm:pb-12 sm:pt-32 lg:pb-16 lg:pt-40'>
 			{/* Component-scoped keyframes — `vhero-` prefix avoids global
 			    collisions with the rest of the app. */}
 			<style>{`
 				/* Trail keyframe — a short bright segment that descends
-				   from the top of the hero to the bottom. Simple vertical
-				   translate, fades in near the top and out near the bottom. */
+				   through the hero AND into the product tour below.
+				   Using 250vh so the pulse travels well past the hero
+				   section boundary before fading out. */
 				@keyframes vhero-trail {
 					0%   { transform: translateY(-40px); opacity: 0; }
-					10%  { opacity: 1; }
-					90%  { opacity: 1; }
-					100% { transform: translateY(calc(100vh + 40px)); opacity: 0; }
+					5%   { opacity: 1; }
+					85%  { opacity: 1; }
+					100% { transform: translateY(250vh); opacity: 0; }
 				}
 				.vhero-trail {
 					animation-name: vhero-trail;
@@ -176,15 +177,14 @@ const Hero = async ({
 				}
 			`}</style>
 
-			{/* Background halos only — no opaque gradient anymore.
-			    The Hero now sits on top of the HomeBigCard wrapper's
-			    gradient (dark top → white bottom), so we no longer
-			    paint our own opaque background plate. The radial halos
-			    stay because they add atmospheric depth without
-			    blocking the wrapper gradient. */}
-			<div className='pointer-events-none absolute inset-0 -z-1' aria-hidden>
-				<div className='absolute left-1/2 top-0 h-[700px] w-[1100px] -translate-x-1/2 rounded-full bg-emerald-500/[0.08] blur-[140px]' />
-				<div className='absolute left-1/2 top-[200px] h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-indigo-500/[0.05] blur-[160px]' />
+			{/* Background halos — extend well past the Hero section so
+			    the glow fades gradually into the ProductTour below
+			    instead of cutting off abruptly at the section boundary.
+			    `overflow-hidden` is removed from the section so these
+			    can bleed out. */}
+			<div className='pointer-events-none absolute -inset-x-40 -top-20 -z-1 h-[200%]' aria-hidden>
+				<div className='absolute left-1/2 top-0 h-[900px] w-[1400px] -translate-x-1/2 rounded-full bg-emerald-500/[0.06] blur-[200px]' />
+				<div className='absolute left-1/2 top-[300px] h-[800px] w-[1200px] -translate-x-1/2 rounded-full bg-indigo-500/[0.04] blur-[200px]' />
 			</div>
 
 			{/* Animated descending vestigio trails */}
@@ -196,7 +196,7 @@ const Hero = async ({
 
 			{/* ─────────── Headline + subtitle + pills + CTAs ─────────── */}
 			<div className='relative mx-auto w-full max-w-[1000px] px-4 text-center sm:px-8 xl:px-0'>
-				<h1 className='mb-5 font-outfit text-[2.1rem] font-bold leading-[1.05] tracking-tighter text-white sm:mb-6 sm:text-[3.25rem] lg:text-[4rem] xl:text-[4.5rem]'>
+				<h1 className='mb-5 font-display text-[2.1rem] font-bold leading-[1.05] tracking-tighter text-white sm:mb-6 sm:text-[3.25rem] lg:text-[4rem] xl:text-[4.5rem]'>
 					<span className='block'>{t("headline_part1")}</span>
 					<span className='block'>{t("headline_part2")}</span>
 				</h1>

@@ -3,19 +3,17 @@
 /**
  * HeroPills — 5 interactive impact/solution cards in the hero.
  *
- * Each card has two layers of text (impact at idle, solution when
- * selected) that crossfade with a liquid-fill emerald animation.
- *
- * CARD LAYOUT (both mobile and desktop):
+ * Layout (both mobile and desktop):
  *   ┌──────────────────────┐
- *   │  🔍            ☑     │  ← row 1: icon (left) + checkbox (right)
- *   │  Frase em uma linha  │  ← row 2: single-line text, small font
+ *   │  🔍            ☐     │  ← row 1: icon (left) + checkbox (right)
+ *   │  Single line text    │  ← row 2: 12-13px regular weight, truncated
  *   └──────────────────────┘
  *
- * Text is small (12-13px), regular weight (not bold), limited to
- * one line via `truncate`. The icon is 18x18 and the checkbox is
- * 16x16. Card height adapts to content (~72px on desktop, ~60px
- * on mobile).
+ * The IDLE face is in normal document flow (not absolute) so the card
+ * auto-sizes to its content. The SELECTED face is absolute-positioned
+ * on top and crossfades in when the liquid fill reaches it. This
+ * guarantees the card always has a natural height regardless of which
+ * face is visible.
  */
 
 import { useState } from "react";
@@ -90,7 +88,6 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							"vhero-pill group/pill",
 							"relative isolate w-full overflow-hidden rounded-xl",
 							"border transition-all duration-500 ease-out",
-							"px-3 py-2.5 sm:px-3.5 sm:py-3",
 							"hover:-translate-y-0.5",
 							isOn
 								? "border-emerald-400/60 shadow-[0_10px_28px_-12px_rgba(16,185,129,0.5)]"
@@ -112,38 +109,36 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							].join(" ")}
 						/>
 
-						{/* IDLE FACE */}
+						{/* IDLE FACE — in normal flow so the card auto-sizes.
+						    Fades out when selected but stays in the DOM to
+						    preserve the card's natural height. */}
 						<div
 							className={[
-								"absolute inset-0 z-10 flex flex-col justify-between px-3 py-2.5 sm:px-3.5 sm:py-3",
+								"relative z-10 flex flex-col px-3 py-2.5 sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
 								isOn ? "opacity-0" : "opacity-100",
 							].join(" ")}
 						>
-							{/* Row 1: icon + checkbox */}
 							<div className='flex items-center justify-between'>
 								<span className='flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300'>
 									{PILL_ICONS[i]?.()}
 								</span>
-								<span className='flex h-4 w-4 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02]'>
-									{/* Empty checkbox */}
-								</span>
+								<span className='flex h-4 w-4 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02]' />
 							</div>
-							{/* Row 2: impact text */}
 							<div className='mt-2 truncate text-[12px] leading-tight text-zinc-300 sm:text-[13px]'>
 								{pill.impact}
 							</div>
 						</div>
 
-						{/* SELECTED FACE */}
+						{/* SELECTED FACE — absolute on top of the idle face,
+						    crossfades in when the liquid fill catches up. */}
 						<div
 							className={[
-								"absolute inset-0 z-10 flex flex-col justify-between px-3 py-2.5 sm:px-3.5 sm:py-3",
+								"absolute inset-0 z-10 flex flex-col px-3 py-2.5 sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
-								isOn ? "opacity-100 delay-200" : "opacity-0",
+								isOn ? "opacity-100 delay-200" : "pointer-events-none opacity-0",
 							].join(" ")}
 						>
-							{/* Row 1: icon + filled checkbox */}
 							<div className='flex items-center justify-between'>
 								<span className='flex h-6 w-6 items-center justify-center rounded-md bg-[#0a1a14]/15 text-[#0a1a14]'>
 									{PILL_ICONS[i]?.()}
@@ -154,7 +149,6 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 									</svg>
 								</span>
 							</div>
-							{/* Row 2: solution text */}
 							<div className='mt-2 truncate text-[12px] leading-tight text-[#0a1a14] sm:text-[13px]'>
 								{pill.solution}
 							</div>

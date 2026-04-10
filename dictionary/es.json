@@ -98,27 +98,129 @@
       "cta_primary": "Hacer auditoría gratis",
       "cta_secondary": "Ver tour del producto",
       "cta_micro": "Funciona para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",
-      "shell": {
-        "url": "app.vestigio.io/decisiones",
-        "tab_active": "Decisiones",
-        "tab_findings": "Hallazgos",
-        "tab_surfaces": "Superficies",
-        "queue_eyebrow": "Cola de Acciones",
-        "queue_count": "12 acciones priorizadas",
-        "actions": [
-          { "priority": "P1", "title": "Arreglar cadena de redirects en checkout", "impact": "−$18k–42k/mes", "severity": "critical" },
-          { "priority": "P2", "title": "Añadir política de reembolso + sellos", "impact": "−$3.6k–9k/mes", "severity": "high" },
-          { "priority": "P3", "title": "Subir add-to-cart móvil sobre la línea", "impact": "−$5k–14k/mes", "severity": "high" },
-          { "priority": "P4", "title": "Recuperar analytics en /checkout", "impact": "−$9k–24k/mes", "severity": "medium" }
+      "shell": { "_deprecated": "moved to product_tour" }
+    },
+    "product_tour": {
+      "eyebrow": "Tour del Producto",
+      "title": "No es un dashboard. Es una cola de decisiones.",
+      "subtitle": "Cada pestaña es una lente diferente sobre la misma imagen de ingresos — priorizada, con evidencia, y lista para actuar.",
+      "url": "app.vestigio.io/dashboard",
+      "tabs": {
+        "actions": "Acciones",
+        "analysis": "Análisis",
+        "inventory": "Inventario",
+        "workspaces": "Workspaces",
+        "chat": "Chat",
+        "maps": "Mapas"
+      },
+      "user_label": "Vestigio Pro",
+      "actions_panel": {
+        "eyebrow": "Cola de Acciones",
+        "count": "9 acciones priorizadas",
+        "rows": [
+          { "priority": "P1", "title": "Arreglar cadena de redirects en checkout", "desc": "3 redirects añaden 2,4s de latencia en el pago", "impact": "−$18k–42k", "severity": "critical" },
+          { "priority": "P2", "title": "Add-to-cart móvil bajo el pliegue", "desc": "Botón oculto en 68% de las sesiones móviles", "impact": "−$12k–28k", "severity": "critical" },
+          { "priority": "P3", "title": "SSL ausente en subdominio del checkout", "desc": "Navegador advierte a usuarios en 12% de los pagos", "impact": "−$8k–21k", "severity": "critical" },
+          { "priority": "P4", "title": "Filtro de precios pierde estado al navegar", "desc": "Estado no persiste entre transiciones de página", "impact": "−$5k–14k", "severity": "high" },
+          { "priority": "P5", "title": "Política de reembolso ausente del footer", "desc": "Eleva tasa de chargeback 2,1x sobre el mercado", "impact": "−$3.6k–9k", "severity": "high" },
+          { "priority": "P6", "title": "Pico de abandono en paso 3 del onboarding", "desc": "Caída de 78% → 41% en los últimos 2 ciclos", "impact": "−$4k–11k", "severity": "high" },
+          { "priority": "P7", "title": "Añadir analytics al embudo /checkout", "desc": "Sin visibilidad entre carrito y confirmación", "impact": "−$9k–24k", "severity": "medium" },
+          { "priority": "P8", "title": "Brecha de confianza en formulario", "desc": "9% de leads abandonan en el campo de email", "impact": "−$2k–6k", "severity": "medium" },
+          { "priority": "P9", "title": "Contraste del CTA del hero bajo WCAG", "desc": "Pérdida estimada de 4% en fondos oscuros", "impact": "−$1.5k–4k", "severity": "low" }
+        ]
+      },
+      "analysis_panel": {
+        "summary_header": "Resumen del Análisis",
+        "findings_header": "Hallazgos Principales",
+        "summary_cards": [
+          { "label": "Total de hallazgos", "value": "23", "sub": "issues en 12 superficies" },
+          { "label": "Impacto Mensual Est.", "value": "−$67.2k", "sub": "límite inferior" },
+          { "label": "Alto Impacto", "value": "8", "sub": "crítico + alto" },
+          { "label": "Superficies", "value": "12", "sub": "live + verificadas" },
+          { "label": "Confianza Media", "value": "82%", "sub": "basada en evidencia" },
+          { "label": "Fortalezas", "value": "6", "sub": "victorias a preservar" }
         ],
-        "assistant_eyebrow": "Vestigio AI",
-        "assistant_message": "Tu mayor fuga es la cadena de redirects en checkout. Añade 2,4s de latencia en el pago. La marqué como P1 con evidencia sólida.",
-        "assistant_chip_evidence": "3 evidencias",
-        "assistant_chip_action": "Acción creada",
-        "callout_eyebrow": "Total recuperado",
-        "callout_value": "+$67.2k",
-        "callout_unit": "/mes",
-        "callout_sub": "tras el ciclo de corrección de Vestigio"
+        "rows": [
+          { "title": "Cadena de redirects en checkout añade 2,4s de latencia", "severity": "critical", "impact": "−$18k–42k" },
+          { "title": "Botón add-to-cart móvil bajo el pliegue", "severity": "critical", "impact": "−$12k–28k" },
+          { "title": "Subdominio del checkout sin certificado SSL", "severity": "critical", "impact": "−$8k–21k" },
+          { "title": "Filtro de precios pierde estado al navegar", "severity": "high", "impact": "−$5k–14k" },
+          { "title": "Política de reembolso ausente eleva riesgo de chargeback", "severity": "high", "impact": "−$3.6k–9k" },
+          { "title": "Regresión de conversión en paso 3 del onboarding", "severity": "high", "impact": "−$4k–11k" },
+          { "title": "Sin analytics entre carrito y confirmación", "severity": "medium", "impact": "−$9k–24k" },
+          { "title": "Brecha de confianza en captura de email", "severity": "medium", "impact": "−$2k–6k" },
+          { "title": "Contraste del CTA del hero bajo WCAG", "severity": "low", "impact": "−$1.5k–4k" },
+          { "title": "Sellos de confianza ausentes del footer", "severity": "low", "impact": "−$0.8k–2k" }
+        ]
+      },
+      "inventory_panel": {
+        "header": "Inventario de Superficies",
+        "headers": { "surface": "Superficie", "path": "Ruta", "status": "Estado", "http": "HTTP", "findings": "Hallazgos" },
+        "status_live": "Activa",
+        "status_down": "Caída",
+        "status_warn": "Atención",
+        "findings_label": "hallazgos",
+        "findings_label_one": "hallazgo",
+        "rows": [
+          { "path": "/", "label": "Inicio", "status": "live", "code": 200, "findings": 3 },
+          { "path": "/products", "label": "Productos", "status": "live", "code": 200, "findings": 2 },
+          { "path": "/products/[id]", "label": "Detalle de Producto", "status": "live", "code": 200, "findings": 1 },
+          { "path": "/cart", "label": "Carrito", "status": "live", "code": 200, "findings": 4 },
+          { "path": "/checkout", "label": "Checkout", "status": "live", "code": 200, "findings": 6 },
+          { "path": "/checkout/payment", "label": "Pago", "status": "warn", "code": 200, "findings": 3 },
+          { "path": "/thank-you", "label": "Gracias", "status": "down", "code": 503, "findings": 1 },
+          { "path": "/pricing", "label": "Precios", "status": "live", "code": 200, "findings": 1 },
+          { "path": "/onboarding", "label": "Onboarding", "status": "live", "code": 200, "findings": 2 },
+          { "path": "/dashboard", "label": "Dashboard", "status": "live", "code": 200, "findings": 0 },
+          { "path": "/account", "label": "Cuenta", "status": "live", "code": 200, "findings": 0 },
+          { "path": "/blog", "label": "Blog", "status": "warn", "code": 200, "findings": 0 }
+        ]
+      },
+      "workspaces_panel": {
+        "header": "Workspaces",
+        "rows": [
+          { "name": "Preparación para Escalar", "urgency": "BLOCK", "tone": "red", "desc": "Bloqueadores críticos para escalar tráfico con seguridad. 5 issues abiertos." },
+          { "name": "Integridad de Ingresos", "urgency": "FIX", "tone": "orange", "desc": "Fugas activas en checkout, precios y onboarding. −$54k/mes en riesgo." },
+          { "name": "Resiliencia a Chargebacks", "urgency": "MODERATE", "tone": "amber", "desc": "Preparación para disputas y brechas en política de reembolso. 3 issues abiertos." },
+          { "name": "SEO y Descubribilidad", "urgency": "WATCH", "tone": "sky", "desc": "Schema, sitemap y señales de confianza. 2 issues abiertos." },
+          { "name": "Cumplimiento Continuo", "urgency": "STABLE", "tone": "emerald", "desc": "WCAG, GDPR y consentimiento regional. Todos los hallazgos actuales cerrados." }
+        ]
+      },
+      "chat_panel": {
+        "header": "Agentic Chat",
+        "thread": [
+          { "from": "user", "text": "¿Dónde estoy perdiendo más dinero ahora?" },
+          { "from": "ai", "text": "Tu mayor fuga de ingresos es la cadena de redirects en el checkout. Añade 2,4s de latencia y se estima que cuesta **−$18k a $42k por mes** en conversiones perdidas. Creé una acción P1 para atacarlo.", "chips": ["Usó 3 hallazgos", "Creó acción P1"] },
+          { "from": "user", "text": "¿Qué se rompió desde el último análisis?" },
+          { "from": "ai", "text": "3 regresiones en los últimos 14 días: abandono de checkout **+12%**, validación de pago falló en 2 rutas, certificado SSL expira en 5 días. Las dos primeras ya están en la cola como P1 y P3.", "chips": ["3 regresiones", "2 acciones priorizadas"] }
+        ],
+        "input_placeholder": "Pregunta cualquier cosa sobre tu negocio..."
+      },
+      "maps_panel": {
+        "header": "Mapa de Jornada",
+        "subtext": "Cada fuga mapeada a la superficie que la origina.",
+        "nodes": [
+          { "label": "Inicio", "path": "/", "tone": "emerald" },
+          { "label": "Productos", "path": "/products", "tone": "sky" },
+          { "label": "Detalle", "path": "/products/[id]", "tone": "sky" },
+          { "label": "Carrito", "path": "/cart", "tone": "amber" },
+          { "label": "Checkout", "path": "/checkout", "tone": "red" },
+          { "label": "Pago", "path": "/checkout/payment", "tone": "red" },
+          { "label": "Confirmación", "path": "/thank-you", "tone": "emerald" },
+          { "label": "Cuenta", "path": "/account", "tone": "emerald" }
+        ]
+      },
+      "overlay_ai": {
+        "eyebrow": "Vestigio AI",
+        "message": "Escaneé 12 superficies y encontré 23 hallazgos. Los 3 principales son críticos y representan el 64% de la pérdida estimada.",
+        "chip_evidence": "12 superficies escaneadas",
+        "chip_action": "9 acciones en cola"
+      },
+      "overlay_recovery": {
+        "eyebrow": "Recuperable",
+        "value": "+$67.2k",
+        "unit": "/mes",
+        "sub": "en 9 acciones priorizadas"
       }
     },
     "client_gallery": {

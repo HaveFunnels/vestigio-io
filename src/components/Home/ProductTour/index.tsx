@@ -1,556 +1,825 @@
 "use client";
 
-import { useState } from "react";
+/**
+ * ProductTour — the single source of truth for the "this is what
+ * Vestigio looks like" surface on the homepage.
+ *
+ * Replaces the legacy 6-tab static mockup AND the duplicate
+ * `BrowserShell` block that used to live inside the Hero. Everything
+ * the old Hero shell did (priority queue, AI assistant overlay,
+ * recovery callout) now lives here, anchored to the corners of the
+ * actual product mockup as floating overlay cards.
+ *
+ * Layout:
+ *
+ *   ┌──────────────────────────────────────────────┐
+ *   │ Section header (eyebrow / title / subtitle)  │
+ *   ├──────────────────────────────────────────────┤
+ *   │ ╔════════════ Browser shell ═══════════════╗ │
+ *   │ ║ chrome bar (traffic lights + URL)         ║ │
+ *   │ ║ ┌──────┬───────────────────────────────┐  ║ │
+ *   │ ║ │ side │  active panel content         │  ║ │
+ *   │ ║ │ nav  │  (Actions / Analysis / …)     │  ║ │
+ *   │ ║ │      │                               │  ║ │
+ *   │ ║ └──────┴───────────────────────────────┘  ║ │
+ *   │ ║   ⤴ AI assistant float (top-left)        ║ │
+ *   │ ║   ⤵ Recovered callout (bottom-right)     ║ │
+ *   │ ╚═══════════════════════════════════════════╝ │
+ *   └──────────────────────────────────────────────┘
+ *
+ * Design vocabulary inherited from the dashboard:
+ *   - JetBrains Mono + tabular-nums on every number
+ *   - Negative loss values prefixed with typographic minus + red
+ *   - Severity dots scaled by tone (red → orange → amber → sky)
+ *   - Eyebrow strips with colored dot + uppercase tracking
+ *   - Liquid-glass overlay cards (gradient backdrop + thin highlight
+ *     ring) — same pattern as the dashboard SummaryCards
+ *
+ * All copy is i18n-driven via `homepage.product_tour.*`. The mock
+ * data is intentionally larger than the previous version (9 actions,
+ * 10 findings, 12 inventory rows, 5 workspaces, 4 chat exchanges,
+ * 8 map nodes) so the panels never look empty regardless of which
+ * tab the user lands on.
+ */
 
-// ── Tab definitions ──
+import { useTranslations } from "next-intl";
+import { useState, type ReactNode } from "react";
 
-const tabs = [
-  {
-    id: "actions",
-    label: "Actions",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M11 2L4.5 11.5H10L9 18L15.5 8.5H10L11 2Z" />
-      </svg>
-    ),
-  },
-  {
-    id: "analysis",
-    label: "Analysis",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 16V10" />
-        <path d="M7 16V6" />
-        <path d="M11 16V8" />
-        <path d="M15 16V3" />
-      </svg>
-    ),
-  },
-  {
-    id: "inventory",
-    label: "Inventory",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="14" height="14" rx="2" />
-        <path d="M3 8H17" />
-        <path d="M8 8V17" />
-      </svg>
-    ),
-  },
-  {
-    id: "workspaces",
-    label: "Workspaces",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="2" width="7" height="7" rx="1.5" />
-        <rect x="11" y="2" width="7" height="7" rx="1.5" />
-        <rect x="2" y="11" width="7" height="7" rx="1.5" />
-        <rect x="11" y="11" width="7" height="7" rx="1.5" />
-      </svg>
-    ),
-  },
-  {
-    id: "chat",
-    label: "Chat",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 4H16C16.5523 4 17 4.44772 17 5V13C17 13.5523 16.5523 14 16 14H7L3 17V5C3 4.44772 3.44772 4 4 4Z" />
-      </svg>
-    ),
-  },
-  {
-    id: "maps",
-    label: "Maps",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="5" cy="5" r="2" />
-        <circle cx="15" cy="5" r="2" />
-        <circle cx="10" cy="15" r="2" />
-        <path d="M7 5H13" />
-        <path d="M6.5 6.5L8.5 13.5" />
-        <path d="M13.5 6.5L11.5 13.5" />
-      </svg>
-    ),
-  },
-] as const;
+// ─────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────
 
-type TabId = (typeof tabs)[number]["id"];
+type Severity = "critical" | "high" | "medium" | "low";
+type Tone = "red" | "orange" | "amber" | "sky" | "emerald";
 
-// ── Severity / priority helpers ──
-
-function SeverityBadge({ level }: { level: "critical" | "high" | "medium" | "low" }) {
-  const styles: Record<string, string> = {
-    critical: "bg-red-500/15 text-red-400 border-red-500/20",
-    high: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-    medium: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-    low: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  };
-  return (
-    <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${styles[level]}`}>
-      {level}
-    </span>
-  );
+interface ActionRow {
+	priority: string;
+	title: string;
+	desc: string;
+	impact: string;
+	severity: Severity;
 }
 
-function PriorityTag({ p }: { p: string }) {
-  return (
-    <span className="inline-flex h-6 w-7 items-center justify-center rounded bg-white/[0.06] text-[10px] font-bold text-zinc-400">
-      {p}
-    </span>
-  );
+interface FindingRow {
+	title: string;
+	severity: Severity;
+	impact: string;
 }
 
-// ── Tab content panels ──
-
-function ActionsPanel() {
-  const actions = [
-    { p: "P1", title: "Fix checkout redirect chain", impact: "$18k-42k/mo", severity: "critical" as const, desc: "3 redirects add 2.4s latency at payment step" },
-    { p: "P2", title: "Add refund policy page", impact: "$3.6k-9k/mo", severity: "high" as const, desc: "Missing policy drives chargeback rate 2.1x above market" },
-    { p: "P3", title: "Enable mobile add-to-cart", impact: "$18k-42k/mo", severity: "critical" as const, desc: "Button below fold on 68% of mobile sessions" },
-    { p: "P4", title: "Add analytics to checkout", impact: "$9.6k-24k/mo", severity: "medium" as const, desc: "No funnel visibility between cart and confirmation" },
-    { p: "P5", title: "Fix broken pricing filter", impact: "$5k-14k/mo", severity: "high" as const, desc: "State not persisting across page transitions" },
-    { p: "P6", title: "Add SSL on checkout subdomain", impact: "$8k-21k/mo", severity: "critical" as const, desc: "Browser warns users on 12% of payment starts" },
-  ];
-
-  return (
-    <div className="space-y-2">
-      <div className="mb-4 flex items-center justify-between lg:mb-5">
-        <h4 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 lg:text-[11px]">Action Queue</h4>
-        <span className="text-[10px] text-zinc-600 lg:text-xs">{actions.length} actions</span>
-      </div>
-      {actions.map((a) => (
-        <div
-          key={a.p}
-          className="flex items-start gap-3 rounded-lg border border-zinc-800/60 bg-white/[0.02] px-3 py-3 transition-colors hover:bg-white/[0.04] lg:gap-4 lg:px-4 lg:py-4"
-        >
-          <PriorityTag p={a.p} />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm text-zinc-200 lg:text-[15px]">{a.title}</div>
-            <div className="mt-0.5 hidden truncate text-xs text-zinc-500 lg:block">{a.desc}</div>
-          </div>
-          <span className="hidden shrink-0 text-xs font-medium text-emerald-400 sm:inline lg:text-sm">{a.impact}</span>
-          <SeverityBadge level={a.severity} />
-        </div>
-      ))}
-    </div>
-  );
+interface SummaryCard {
+	label: string;
+	value: string;
+	sub: string;
 }
 
-function AnalysisPanel() {
-  const summaryCards = [
-    { label: "Findings", value: "12 issues", sub: "4 strengths" },
-    { label: "Est. Impact", value: "$67.2k", sub: "/month" },
-    { label: "High Impact", value: "4", sub: "critical + high" },
-    { label: "Avg Confidence", value: "82%", sub: "evidence-based" },
-  ];
-
-  const findings = [
-    { title: "Checkout redirect chain adds 2.4s latency", severity: "critical" as const, impact: "$18k-42k" },
-    { title: "Missing refund policy raises chargeback risk", severity: "high" as const, impact: "$3.6k-9k" },
-    { title: "Mobile add-to-cart button below fold", severity: "critical" as const, impact: "$18k-42k" },
-    { title: "No analytics between cart and confirmation", severity: "medium" as const, impact: "$9.6k-24k" },
-    { title: "Pricing filter loses state on navigation", severity: "high" as const, impact: "$5k-14k" },
-    { title: "Checkout subdomain missing SSL cert", severity: "critical" as const, impact: "$8k-21k" },
-  ];
-
-  return (
-    <div>
-      <h4 className="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-500 lg:mb-5 lg:text-[11px]">Analysis Summary</h4>
-      <div className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-4 lg:mb-6 lg:gap-3">
-        {summaryCards.map((c) => (
-          <div key={c.label} className="rounded-lg border border-zinc-800/60 bg-white/[0.02] p-3 lg:p-4">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 lg:text-xs">{c.label}</div>
-            <div className="mt-1 text-base font-semibold text-white lg:mt-1.5 lg:text-xl">{c.value}</div>
-            <div className="mt-0.5 text-[10px] text-zinc-500 lg:text-xs">{c.sub}</div>
-          </div>
-        ))}
-      </div>
-      <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500 lg:text-[11px]">Top Findings</h4>
-      <div className="space-y-2">
-        {findings.map((f, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-lg border border-zinc-800/60 bg-white/[0.02] px-3 py-2.5 lg:px-4 lg:py-3">
-            <span className="min-w-0 flex-1 truncate text-xs text-zinc-300 lg:text-sm">{f.title}</span>
-            <span className="hidden shrink-0 text-xs font-medium text-emerald-400 sm:inline lg:text-sm">{f.impact}</span>
-            <SeverityBadge level={f.severity} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+interface InventoryRow {
+	path: string;
+	label: string;
+	status: "live" | "down" | "warn";
+	code: number;
+	findings: number;
 }
 
-function InventoryPanel() {
-  const surfaces = [
-    { path: "/", label: "Homepage", status: "Live", code: 200, findings: 3 },
-    { path: "/products", label: "Products", status: "Live", code: 200, findings: 2 },
-    { path: "/cart", label: "Cart", status: "Live", code: 200, findings: 4 },
-    { path: "/checkout", label: "Checkout", status: "Live", code: 200, findings: 6 },
-    { path: "/thank-you", label: "Thank You", status: "Down", code: 503, findings: 1 },
-  ];
-
-  return (
-    <div>
-      <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Surface Inventory</h4>
-
-      {/* Mobile: stacked cards */}
-      <div className="space-y-2 sm:hidden">
-        {surfaces.map((s) => (
-          <div key={s.path} className="rounded-lg border border-zinc-800/60 bg-white/[0.02] p-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate text-sm font-medium text-zinc-200">{s.label}</span>
-              <span className={`inline-flex shrink-0 items-center gap-1.5 text-[10px] font-semibold ${s.status === "Live" ? "text-emerald-400" : "text-red-400"}`}>
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${s.status === "Live" ? "bg-emerald-400" : "bg-red-400"}`} />
-                {s.status}
-              </span>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px]">
-              <span className="truncate font-mono text-zinc-500">{s.path}</span>
-              <div className="flex shrink-0 items-center gap-3">
-                <span className={`font-mono ${s.code >= 500 ? "text-red-400" : "text-zinc-600"}`}>{s.code}</span>
-                <span className="text-zinc-400">{s.findings} {s.findings === 1 ? "finding" : "findings"}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Desktop: table */}
-      <div className="hidden overflow-x-auto sm:block">
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="border-b border-zinc-800/60 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-              <th className="pb-2 pr-4">Surface</th>
-              <th className="pb-2 pr-4">Path</th>
-              <th className="pb-2 pr-4">Status</th>
-              <th className="pb-2 pr-4">HTTP</th>
-              <th className="pb-2 text-right">Findings</th>
-            </tr>
-          </thead>
-          <tbody>
-            {surfaces.map((s) => (
-              <tr key={s.path} className="border-b border-zinc-800/30">
-                <td className="py-2 pr-4 text-zinc-300">{s.label}</td>
-                <td className="py-2 pr-4 font-mono text-zinc-500">{s.path}</td>
-                <td className="py-2 pr-4">
-                  <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold ${s.status === "Live" ? "text-emerald-400" : "text-red-400"}`}>
-                    <span className={`inline-block h-1.5 w-1.5 rounded-full ${s.status === "Live" ? "bg-emerald-400" : "bg-red-400"}`} />
-                    {s.status}
-                  </span>
-                </td>
-                <td className={`py-2 pr-4 font-mono ${s.code >= 500 ? "text-red-400" : "text-zinc-500"}`}>{s.code}</td>
-                <td className="py-2 text-right text-zinc-400">{s.findings}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+interface WorkspaceRow {
+	name: string;
+	urgency: string;
+	tone: Tone;
+	desc: string;
 }
 
-function WorkspacesPanel() {
-  const workspaces = [
-    { name: "Scale Readiness", urgency: "BLOCK", color: "text-red-400 bg-red-500/10 border-red-500/20", desc: "Critical blockers for scaling infrastructure" },
-    { name: "Revenue Integrity", urgency: "FIX", color: "text-orange-400 bg-orange-500/10 border-orange-500/20", desc: "Revenue leaks and conversion issues" },
-    { name: "Chargeback Resilience", urgency: "MODERATE", color: "text-amber-400 bg-amber-500/10 border-amber-500/20", desc: "Chargeback prevention and dispute readiness" },
-  ];
-
-  return (
-    <div>
-      <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Workspaces</h4>
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-        {workspaces.map((w) => (
-          <div key={w.name} className="rounded-lg border border-zinc-800/60 bg-white/[0.02] p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-semibold text-white">{w.name}</span>
-              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${w.color}`}>
-                {w.urgency}
-              </span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-zinc-500">{w.desc}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+interface ChatMessage {
+	from: "user" | "ai";
+	text: string;
+	chips?: string[];
 }
 
-function ChatPanel() {
-  return (
-    <div>
-      <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Agentic Chat</h4>
-      <div className="space-y-3">
-        {/* User message */}
-        <div className="flex justify-end">
-          <div className="max-w-[92%] rounded-xl rounded-br-sm border border-zinc-800/60 bg-white/[0.04] px-3 py-2 sm:max-w-[80%] sm:px-4 sm:py-2.5">
-            <p className="text-xs text-zinc-300">&ldquo;Where am I losing the most money?&rdquo;</p>
-          </div>
-        </div>
-        {/* AI response */}
-        <div className="flex justify-start">
-          <div className="max-w-[95%] rounded-xl rounded-bl-sm border border-violet-500/20 bg-violet-500/[0.04] px-3 py-3 sm:max-w-[85%] sm:px-4">
-            <div className="mb-1.5 flex items-center gap-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-400">Vestigio AI</span>
-            </div>
-            <p className="text-xs leading-relaxed text-zinc-300">
-              Your biggest revenue leak is the checkout redirect chain. It adds 2.4s of latency and is estimated to cost{" "}
-              <span className="font-medium text-emerald-400">$18k-42k/mo</span> in lost conversions. I&apos;ve created an action to address this at P1 priority.
-            </p>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">Used 3 Findings</span>
-              <span className="rounded bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">Created Action</span>
-            </div>
-          </div>
-        </div>
-        {/* Input placeholder */}
-        <div className="flex items-center gap-2 rounded-lg border border-zinc-800/60 bg-white/[0.02] px-3 py-2.5">
-          <span className="flex-1 text-xs text-zinc-600">Ask anything about your business...</span>
-          <div className="grid h-6 w-6 place-items-center rounded bg-white/[0.06]">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500">
-              <path d="M5 10H15" />
-              <path d="M10 5L15 10L10 15" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+interface MapNode {
+	label: string;
+	path: string;
+	tone: Tone;
 }
 
-function MapsPanel() {
-  return (
-    <div>
-      <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Journey Map</h4>
-      <div className="relative flex min-h-[200px] items-center justify-center">
-        {/* Nodes — stacked vertically on mobile, horizontal flow on sm+ */}
-        <div className="relative flex flex-col items-center justify-center gap-y-3 sm:flex-row sm:flex-wrap sm:gap-x-10 sm:gap-y-8">
-          {/* Homepage node */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10">
-              <span className="text-[10px] font-bold text-emerald-400">/</span>
-            </div>
-            <span className="mt-1.5 text-[10px] text-zinc-500">Home</span>
-          </div>
+// ─────────────────────────────────────────────────────────────────────
+// Tone tokens (centralized so every panel uses the same vocabulary)
+// ─────────────────────────────────────────────────────────────────────
 
-          {/* Arrow — horizontal on sm+, downward on mobile */}
-          <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="hidden text-zinc-700 sm:block">
-            <path d="M0 6H28" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M24 2L28 6L24 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" className="block text-zinc-700 sm:hidden" aria-hidden>
-            <path d="M5 0V12" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M1.5 10L5 13.5L8.5 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-
-          {/* Products node */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/10">
-              <span className="text-[9px] font-bold text-blue-400">/prod</span>
-            </div>
-            <span className="mt-1.5 text-[10px] text-zinc-500">Products</span>
-          </div>
-
-          {/* Arrow — horizontal on sm+, downward on mobile */}
-          <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="hidden text-zinc-700 sm:block">
-            <path d="M0 6H28" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M24 2L28 6L24 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" className="block text-zinc-700 sm:hidden" aria-hidden>
-            <path d="M5 0V12" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M1.5 10L5 13.5L8.5 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-
-          {/* Cart node */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10">
-              <span className="text-[9px] font-bold text-amber-400">/cart</span>
-            </div>
-            <span className="mt-1.5 text-[10px] text-zinc-500">Cart</span>
-            <span className="mt-0.5 text-[9px] text-amber-400">4 findings</span>
-          </div>
-
-          {/* Arrow — horizontal on sm+, downward on mobile */}
-          <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="hidden text-zinc-700 sm:block">
-            <path d="M0 6H28" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M24 2L28 6L24 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" className="block text-zinc-700 sm:hidden" aria-hidden>
-            <path d="M5 0V12" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M1.5 10L5 13.5L8.5 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-
-          {/* Checkout node - highlighted as critical */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 shadow-[0_0_20px_-5px_rgba(239,68,68,0.3)]">
-              <span className="text-[8px] font-bold text-red-400">/check</span>
-            </div>
-            <span className="mt-1.5 text-[10px] text-zinc-500">Checkout</span>
-            <span className="mt-0.5 text-[9px] text-red-400">6 findings</span>
-          </div>
-
-          {/* Arrow — horizontal on sm+, downward on mobile */}
-          <svg width="32" height="12" viewBox="0 0 32 12" fill="none" className="hidden text-zinc-700 sm:block">
-            <path d="M0 6H28" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M24 2L28 6L24 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" className="block text-zinc-700 sm:hidden" aria-hidden>
-            <path d="M5 0V12" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M1.5 10L5 13.5L8.5 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-
-          {/* Thank you node */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-700/50 bg-zinc-800/30">
-              <span className="text-[8px] font-bold text-zinc-500">/thx</span>
-            </div>
-            <span className="mt-1.5 text-[10px] text-zinc-600">Thank You</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const panelComponents: Record<TabId, () => JSX.Element> = {
-  actions: ActionsPanel,
-  analysis: AnalysisPanel,
-  inventory: InventoryPanel,
-  workspaces: WorkspacesPanel,
-  chat: ChatPanel,
-  maps: MapsPanel,
+const SEVERITY_DOT: Record<Severity, string> = {
+	critical: "bg-red-400",
+	high: "bg-orange-400",
+	medium: "bg-amber-400",
+	low: "bg-sky-400",
 };
 
-// ── Main Component ──
+const SEVERITY_BADGE: Record<Severity, string> = {
+	critical: "border-red-500/30 bg-red-500/10 text-red-300",
+	high: "border-orange-500/30 bg-orange-500/10 text-orange-300",
+	medium: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+	low: "border-sky-500/30 bg-sky-500/10 text-sky-300",
+};
+
+const TONE_BADGE: Record<Tone, string> = {
+	red: "border-red-500/30 bg-red-500/10 text-red-300",
+	orange: "border-orange-500/30 bg-orange-500/10 text-orange-300",
+	amber: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+	sky: "border-sky-500/30 bg-sky-500/10 text-sky-300",
+	emerald: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+};
+
+const TONE_RING: Record<Tone, string> = {
+	red: "border-red-500/30 bg-red-500/10",
+	orange: "border-orange-500/30 bg-orange-500/10",
+	amber: "border-amber-500/30 bg-amber-500/10",
+	sky: "border-sky-500/30 bg-sky-500/10",
+	emerald: "border-emerald-500/30 bg-emerald-500/10",
+};
+
+const TONE_TEXT: Record<Tone, string> = {
+	red: "text-red-300",
+	orange: "text-orange-300",
+	amber: "text-amber-300",
+	sky: "text-sky-300",
+	emerald: "text-emerald-300",
+};
+
+// Render a translation string that contains `**bold**` markers as
+// React nodes with `<strong>` elements. Trusted-input only — the
+// translation strings are static literals from the dictionary, no
+// user input is interpolated. We use this instead of
+// `dangerouslySetInnerHTML` to keep the surface free of XSS vectors.
+function renderRichText(input: string): ReactNode[] {
+	const parts = input.split(/(\*\*[^*]+\*\*)/g);
+	return parts.map((part, i) => {
+		if (part.startsWith("**") && part.endsWith("**")) {
+			return <strong key={i}>{part.slice(2, -2)}</strong>;
+		}
+		return <span key={i}>{part}</span>;
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Tab definitions — icons only; labels come from translations
+// ─────────────────────────────────────────────────────────────────────
+
+const TABS = ["actions", "analysis", "inventory", "workspaces", "chat", "maps"] as const;
+type TabId = typeof TABS[number];
+
+const TAB_ICONS: Record<TabId, JSX.Element> = {
+	actions: (
+		<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+			<path d="M11 2L4.5 11.5H10L9 18L15.5 8.5H10L11 2Z" />
+		</svg>
+	),
+	analysis: (
+		<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+			<path d="M3 16V10" />
+			<path d="M7 16V6" />
+			<path d="M11 16V8" />
+			<path d="M15 16V3" />
+		</svg>
+	),
+	inventory: (
+		<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+			<rect x="3" y="3" width="14" height="14" rx="2" />
+			<path d="M3 8H17" />
+			<path d="M8 8V17" />
+		</svg>
+	),
+	workspaces: (
+		<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+			<rect x="2" y="2" width="7" height="7" rx="1.5" />
+			<rect x="11" y="2" width="7" height="7" rx="1.5" />
+			<rect x="2" y="11" width="7" height="7" rx="1.5" />
+			<rect x="11" y="11" width="7" height="7" rx="1.5" />
+		</svg>
+	),
+	chat: (
+		<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+			<path d="M4 4H16C16.5523 4 17 4.44772 17 5V13C17 13.5523 16.5523 14 16 14H7L3 17V5C3 4.44772 3.44772 4 4 4Z" />
+		</svg>
+	),
+	maps: (
+		<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+			<circle cx="5" cy="5" r="2" />
+			<circle cx="15" cy="5" r="2" />
+			<circle cx="10" cy="15" r="2" />
+			<path d="M7 5H13" />
+			<path d="M6.5 6.5L8.5 13.5" />
+			<path d="M13.5 6.5L11.5 13.5" />
+		</svg>
+	),
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// Action queue panel
+// ─────────────────────────────────────────────────────────────────────
+
+function ActionsPanel() {
+	const t = useTranslations("homepage.product_tour.actions_panel");
+	const rows = t.raw("rows") as ActionRow[];
+
+	return (
+		<div className="space-y-2">
+			<div className="mb-3 flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					<span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-300">
+						<span className="h-1 w-1 rounded-full bg-emerald-400" />
+						{t("eyebrow")}
+					</span>
+				</div>
+				<span className="font-mono text-[10px] tabular-nums text-zinc-500">
+					{t("count")}
+				</span>
+			</div>
+			<div className="space-y-1.5">
+				{rows.map((a) => (
+					<div
+						key={a.priority}
+						className="group flex items-center gap-3 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2.5 transition-colors hover:border-white/[0.08] hover:bg-white/[0.03]"
+					>
+						<span className="inline-flex h-6 w-7 shrink-0 items-center justify-center rounded-md bg-white/[0.05] font-mono text-[10px] font-bold tabular-nums text-zinc-400">
+							{a.priority}
+						</span>
+						<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[a.severity]}`} />
+						<div className="min-w-0 flex-1">
+							<div className="truncate text-[11px] font-medium text-zinc-100 sm:text-xs">
+								{a.title}
+							</div>
+							<div className="mt-0.5 hidden truncate text-[10px] text-zinc-500 sm:block">
+								{a.desc}
+							</div>
+						</div>
+						<span className="hidden shrink-0 font-mono text-[10px] tabular-nums text-red-400 sm:inline sm:text-[11px]">
+							{a.impact}
+						</span>
+						<span
+							className={`hidden shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] md:inline-block ${SEVERITY_BADGE[a.severity]}`}
+						>
+							{a.severity}
+						</span>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Analysis panel — summary cards + findings list
+// ─────────────────────────────────────────────────────────────────────
+
+function AnalysisPanel() {
+	const t = useTranslations("homepage.product_tour.analysis_panel");
+	const summary = t.raw("summary_cards") as SummaryCard[];
+	const rows = t.raw("rows") as FindingRow[];
+
+	return (
+		<div>
+			<h4 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+				{t("summary_header")}
+			</h4>
+			<div className="mb-5 grid grid-cols-2 gap-2 sm:gap-2.5 md:grid-cols-3 lg:grid-cols-6">
+				{summary.map((c) => (
+					<div
+						key={c.label}
+						className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5 lg:p-3"
+					>
+						<div className="text-[9px] font-medium uppercase tracking-wider text-zinc-500">
+							{c.label}
+						</div>
+						<div
+							className={`mt-1 font-mono text-base font-semibold tabular-nums lg:text-lg ${
+								c.value.startsWith("−") ? "text-red-400" : "text-white"
+							}`}
+						>
+							{c.value}
+						</div>
+						<div className="mt-0.5 text-[9px] text-zinc-500">{c.sub}</div>
+					</div>
+				))}
+			</div>
+			<h4 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+				{t("findings_header")}
+			</h4>
+			<div className="space-y-1.5">
+				{rows.map((f, i) => (
+					<div
+						key={i}
+						className="flex items-center gap-3 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2"
+					>
+						<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[f.severity]}`} />
+						<span className="min-w-0 flex-1 truncate text-[11px] text-zinc-200 sm:text-xs">
+							{f.title}
+						</span>
+						<span className="hidden shrink-0 font-mono text-[10px] tabular-nums text-red-400 sm:inline sm:text-[11px]">
+							{f.impact}
+						</span>
+						<span
+							className={`hidden shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] md:inline-block ${SEVERITY_BADGE[f.severity]}`}
+						>
+							{f.severity}
+						</span>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Inventory panel — table on desktop, stacked cards on mobile
+// ─────────────────────────────────────────────────────────────────────
+
+function InventoryPanel() {
+	const t = useTranslations("homepage.product_tour.inventory_panel");
+	const rows = t.raw("rows") as InventoryRow[];
+
+	const statusLabel = (s: InventoryRow["status"]) =>
+		s === "live" ? t("status_live") : s === "down" ? t("status_down") : t("status_warn");
+
+	const statusColor = (s: InventoryRow["status"]) =>
+		s === "live"
+			? { text: "text-emerald-400", dot: "bg-emerald-400" }
+			: s === "down"
+				? { text: "text-red-400", dot: "bg-red-400" }
+				: { text: "text-amber-400", dot: "bg-amber-400" };
+
+	return (
+		<div>
+			<h4 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+				{t("header")}
+			</h4>
+
+			{/* Mobile: stacked cards */}
+			<div className="space-y-1.5 sm:hidden">
+				{rows.map((s) => {
+					const sc = statusColor(s.status);
+					return (
+						<div
+							key={s.path}
+							className="rounded-lg border border-white/[0.05] bg-white/[0.015] p-2.5"
+						>
+							<div className="flex items-center justify-between gap-2">
+								<span className="truncate text-[11px] font-medium text-zinc-100">
+									{s.label}
+								</span>
+								<span className={`inline-flex shrink-0 items-center gap-1.5 text-[9px] font-semibold ${sc.text}`}>
+									<span className={`inline-block h-1.5 w-1.5 rounded-full ${sc.dot}`} />
+									{statusLabel(s.status)}
+								</span>
+							</div>
+							<div className="mt-1 flex items-center justify-between gap-2 text-[10px]">
+								<span className="truncate font-mono text-zinc-500">{s.path}</span>
+								<div className="flex shrink-0 items-center gap-2 font-mono tabular-nums">
+									<span className={s.code >= 500 ? "text-red-400" : "text-zinc-600"}>
+										{s.code}
+									</span>
+									<span className="text-zinc-400">
+										{s.findings} {s.findings === 1 ? t("findings_label_one") : t("findings_label")}
+									</span>
+								</div>
+							</div>
+						</div>
+					);
+				})}
+			</div>
+
+			{/* Desktop: table */}
+			<div className="hidden overflow-x-auto sm:block">
+				<table className="w-full text-left text-xs">
+					<thead>
+						<tr className="border-b border-white/[0.06] text-[9px] font-semibold uppercase tracking-wider text-zinc-600">
+							<th className="pb-2 pr-4">{t("headers.surface")}</th>
+							<th className="pb-2 pr-4">{t("headers.path")}</th>
+							<th className="pb-2 pr-4">{t("headers.status")}</th>
+							<th className="pb-2 pr-4">{t("headers.http")}</th>
+							<th className="pb-2 text-right">{t("headers.findings")}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{rows.map((s) => {
+							const sc = statusColor(s.status);
+							return (
+								<tr key={s.path} className="border-b border-white/[0.04]">
+									<td className="py-2 pr-4 text-[11px] text-zinc-200">{s.label}</td>
+									<td className="py-2 pr-4 font-mono text-[10px] text-zinc-500">{s.path}</td>
+									<td className="py-2 pr-4">
+										<span className={`inline-flex items-center gap-1.5 text-[9px] font-semibold ${sc.text}`}>
+											<span className={`inline-block h-1.5 w-1.5 rounded-full ${sc.dot}`} />
+											{statusLabel(s.status)}
+										</span>
+									</td>
+									<td className={`py-2 pr-4 font-mono text-[10px] tabular-nums ${s.code >= 500 ? "text-red-400" : "text-zinc-500"}`}>
+										{s.code}
+									</td>
+									<td className="py-2 text-right font-mono text-[10px] tabular-nums text-zinc-300">
+										{s.findings}
+									</td>
+								</tr>
+							);
+						})}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Workspaces panel — colored tone cards
+// ─────────────────────────────────────────────────────────────────────
+
+function WorkspacesPanel() {
+	const t = useTranslations("homepage.product_tour.workspaces_panel");
+	const rows = t.raw("rows") as WorkspaceRow[];
+
+	return (
+		<div>
+			<h4 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+				{t("header")}
+			</h4>
+			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+				{rows.map((w) => (
+					<div
+						key={w.name}
+						className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.04]"
+					>
+						<div className="mb-2 flex items-center justify-between gap-2">
+							<span className="truncate text-[12px] font-semibold text-white">{w.name}</span>
+							<span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] ${TONE_BADGE[w.tone]}`}>
+								{w.urgency}
+							</span>
+						</div>
+						<p className="text-[10px] leading-relaxed text-zinc-500">{w.desc}</p>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Chat panel — multi-turn conversation
+// ─────────────────────────────────────────────────────────────────────
+
+function ChatPanel() {
+	const t = useTranslations("homepage.product_tour.chat_panel");
+	const thread = t.raw("thread") as ChatMessage[];
+
+	return (
+		<div className="flex h-full flex-col">
+			<h4 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+				{t("header")}
+			</h4>
+			<div className="flex-1 space-y-3">
+				{thread.map((msg, i) =>
+					msg.from === "user" ? (
+						<div key={i} className="flex justify-end">
+							<div className="max-w-[88%] rounded-xl rounded-br-sm border border-white/[0.08] bg-white/[0.05] px-3 py-2 sm:max-w-[70%]">
+								<p className="text-[11px] text-zinc-200 sm:text-xs">{msg.text}</p>
+							</div>
+						</div>
+					) : (
+						<div key={i} className="flex justify-start">
+							<div className="max-w-[92%] rounded-xl rounded-bl-sm border border-violet-500/20 bg-violet-500/[0.05] px-3 py-2.5 sm:max-w-[80%]">
+								<div className="mb-1.5 flex items-center gap-1.5">
+									<div className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+									<span className="text-[9px] font-semibold uppercase tracking-wider text-violet-300">
+										Vestigio AI
+									</span>
+								</div>
+								<p className="text-[11px] leading-relaxed text-zinc-200 sm:text-xs">
+									{renderRichText(msg.text)}
+								</p>
+								{msg.chips && (
+									<div className="mt-2 flex flex-wrap gap-1">
+										{msg.chips.map((chip, ci) => (
+											<span
+												key={ci}
+												className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] tabular-nums text-emerald-300"
+											>
+												{chip}
+											</span>
+										))}
+									</div>
+								)}
+							</div>
+						</div>
+					)
+				)}
+			</div>
+			<div className="mt-3 flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+				<span className="flex-1 text-[11px] text-zinc-600">{t("input_placeholder")}</span>
+				<div className="grid h-5 w-5 place-items-center rounded bg-white/[0.06]">
+					<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500">
+						<path d="M5 10H15" />
+						<path d="M10 5L15 10L10 15" />
+					</svg>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Maps panel — graph of journey nodes
+// ─────────────────────────────────────────────────────────────────────
+
+function MapsPanel() {
+	const t = useTranslations("homepage.product_tour.maps_panel");
+	const nodes = t.raw("nodes") as MapNode[];
+
+	return (
+		<div className="flex h-full flex-col">
+			<div className="mb-4">
+				<h4 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+					{t("header")}
+				</h4>
+				<p className="mt-1 text-[10px] text-zinc-600">{t("subtext")}</p>
+			</div>
+
+			{/* Connection grid — nodes laid out in a 4-col flow with arrows */}
+			<div className="relative grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+				{nodes.map((n, i) => (
+					<div key={n.path} className="relative">
+						<div className={`flex flex-col items-center rounded-lg border ${TONE_RING[n.tone]} p-3 transition-all hover:scale-105`}>
+							<div className={`mb-1.5 grid h-9 w-9 place-items-center rounded-md border ${TONE_RING[n.tone]}`}>
+								<span className={`font-mono text-[9px] font-bold tabular-nums ${TONE_TEXT[n.tone]}`}>
+									{n.path.length > 6 ? n.path.slice(0, 5) + "…" : n.path}
+								</span>
+							</div>
+							<span className="text-[10px] font-medium text-zinc-300">{n.label}</span>
+						</div>
+						{/* Arrow connector to the next node — hidden on the last col */}
+						{(i + 1) % 4 !== 0 && i !== nodes.length - 1 && (
+							<svg
+								className="absolute right-[-10px] top-1/2 hidden -translate-y-1/2 text-zinc-700 sm:block"
+								width="12"
+								height="8"
+								viewBox="0 0 12 8"
+								fill="none"
+							>
+								<path d="M0 4H10M7 1L10 4L7 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+							</svg>
+						)}
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Floating overlay cards — anchored to corners of the browser shell
+// ─────────────────────────────────────────────────────────────────────
+
+function OverlayAI() {
+	const t = useTranslations("homepage.product_tour.overlay_ai");
+	return (
+		<div className="vptour-float-left pointer-events-none absolute z-30 hidden max-w-[280px] rounded-2xl border border-violet-500/30 bg-[#0c0d1c]/95 p-3.5 shadow-[0_24px_60px_-24px_rgba(139,92,246,0.55)] backdrop-blur lg:block lg:left-[-32px] lg:top-16 xl:left-[-72px]">
+			{/* Subtle gradient + ring overlay (same vocab as dashboard) */}
+			<div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/[0.08] via-transparent to-transparent" aria-hidden />
+			<div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/[0.04]" aria-hidden />
+			<div className="relative">
+				<div className="mb-2 flex items-center gap-2">
+					<div className="relative flex h-6 w-6 items-center justify-center rounded-md bg-violet-500/20">
+						<div className="absolute inset-0 animate-[vptour-pulse_2.6s_ease-in-out_infinite] rounded-md bg-violet-400/30" />
+						<svg viewBox="0 0 12 12" fill="none" className="relative h-3 w-3 text-violet-300">
+							<path d="M6 1l1.4 3.2L10.5 6 7.4 7.4 6 11l-1.4-3.6L1.5 6l3.1-1.8L6 1z" fill="currentColor" />
+						</svg>
+					</div>
+					<span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
+						{t("eyebrow")}
+					</span>
+					<span className="ml-auto h-1.5 w-1.5 animate-[vptour-pulse_1.6s_ease-in-out_infinite] rounded-full bg-emerald-400" />
+				</div>
+				<p className="mb-3 text-[11px] leading-relaxed text-zinc-200">{t("message")}</p>
+				<div className="flex flex-wrap gap-1.5">
+					<span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] tabular-nums text-emerald-300">
+						<span className="h-1 w-1 rounded-full bg-emerald-400" />
+						{t("chip_evidence")}
+					</span>
+					<span className="inline-flex items-center gap-1 rounded-md bg-violet-500/10 px-1.5 py-0.5 font-mono text-[9px] tabular-nums text-violet-300">
+						<span className="h-1 w-1 rounded-full bg-violet-400" />
+						{t("chip_action")}
+					</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function OverlayRecovery() {
+	const t = useTranslations("homepage.product_tour.overlay_recovery");
+	return (
+		<div className="vptour-float-right pointer-events-none absolute z-30 hidden max-w-[260px] rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.14] to-emerald-500/[0.04] p-4 shadow-[0_24px_60px_-24px_rgba(16,185,129,0.55)] backdrop-blur lg:block lg:bottom-16 lg:right-[-32px] xl:right-[-72px]">
+			<div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/[0.06]" aria-hidden />
+			<div className="relative">
+				<div className="mb-1 flex items-center gap-2">
+					<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-3.5 w-3.5 text-emerald-300">
+						<path d="M3 12l3-5 3 3 4-7" strokeLinecap="round" strokeLinejoin="round" />
+						<path d="M9 3h4v4" strokeLinecap="round" strokeLinejoin="round" />
+					</svg>
+					<span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+						{t("eyebrow")}
+					</span>
+				</div>
+				<div className="font-mono text-2xl font-semibold tabular-nums leading-none text-emerald-200 sm:text-3xl">
+					{t("value")}
+					<span className="ml-1 text-xs font-normal text-emerald-400/70 sm:text-sm">
+						{t("unit")}
+					</span>
+				</div>
+				<div className="mt-1 text-[10px] text-emerald-400/70">{t("sub")}</div>
+			</div>
+		</div>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────
+
+const PANELS: Record<TabId, () => JSX.Element> = {
+	actions: ActionsPanel,
+	analysis: AnalysisPanel,
+	inventory: InventoryPanel,
+	workspaces: WorkspacesPanel,
+	chat: ChatPanel,
+	maps: MapsPanel,
+};
 
 export default function ProductTour() {
-  const [activeTab, setActiveTab] = useState<TabId>("actions");
-  const ActivePanel = panelComponents[activeTab];
+	const t = useTranslations("homepage.product_tour");
+	const [activeTab, setActiveTab] = useState<TabId>("actions");
+	const ActivePanel = PANELS[activeTab];
 
-  return (
-    <section id="product-tour" className="relative scroll-mt-24 bg-[#090911] py-16 sm:py-20 lg:py-28">
-      {/* Background glow */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-[40%] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-violet-900/[0.06] blur-[120px] sm:h-[500px] sm:w-[600px] sm:blur-[160px]" />
-      </div>
+	return (
+		<section
+			id="product-tour"
+			className="relative scroll-mt-24 bg-[#090911] py-16 sm:py-20 lg:py-28"
+		>
+			{/* Component-scoped keyframes — `vptour-` prefix to avoid
+			    collisions with vhero / vbento. */}
+			<style>{`
+				@keyframes vptour-pulse {
+					0%, 100% { transform: scale(1); opacity: 0.9; }
+					50%      { transform: scale(1.18); opacity: 0.55; }
+				}
+				@keyframes vptour-float-left {
+					0%   { opacity: 0; transform: translateX(-12px); }
+					100% { opacity: 1; transform: translateX(0); }
+				}
+				@keyframes vptour-float-right {
+					0%   { opacity: 0; transform: translateX(12px); }
+					100% { opacity: 1; transform: translateX(0); }
+				}
+				@keyframes vptour-fade-in {
+					from { opacity: 0; transform: translateY(4px); }
+					to   { opacity: 1; transform: translateY(0); }
+				}
+				.vptour-float-left  { animation: vptour-float-left 1.1s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
+				.vptour-float-right { animation: vptour-float-right 1.1s cubic-bezier(0.16,1,0.3,1) 0.5s both; }
+				@media (prefers-reduced-motion: reduce) {
+					.vptour-float-left,
+					.vptour-float-right {
+						animation: none !important;
+					}
+				}
+			`}</style>
 
-      {/* Section header */}
-      <div className="mx-auto mb-10 max-w-[700px] px-4 text-center sm:mb-14 sm:px-8 lg:mb-18">
-        <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">Product Tour</span>
-        <h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">
-          See what Vestigio shows you
-        </h2>
-        <p className="text-sm leading-relaxed text-gray-400 sm:text-base lg:text-lg">
-          Explore the dashboard — every tab reveals actionable intelligence about your business.
-        </p>
-      </div>
+			{/* Background glow */}
+			<div className="pointer-events-none absolute inset-0 -z-10">
+				<div className="absolute left-1/2 top-[40%] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-violet-900/[0.06] blur-[120px] sm:h-[500px] sm:w-[600px] sm:blur-[160px]" />
+			</div>
 
-      {/* Browser mockup frame */}
-      <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
-        <div className="overflow-hidden rounded-xl border border-zinc-800/80 bg-[#0c0c14] shadow-[0_20px_80px_-20px_rgba(139,92,246,0.18),0_0_0_1px_rgba(255,255,255,0.02)] sm:rounded-2xl">
+			{/* Section header */}
+			<div className="mx-auto mb-10 max-w-[760px] px-4 text-center sm:mb-14 sm:px-8">
+				<span className="mb-3 inline-block text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-400">
+					{t("eyebrow")}
+				</span>
+				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">
+					{t("title")}
+				</h2>
+				<p className="text-sm leading-relaxed text-gray-400 sm:text-base">
+					{t("subtitle")}
+				</p>
+			</div>
 
-          {/* Browser title bar */}
-          <div className="flex items-center gap-2 border-b border-zinc-800/60 bg-[#0a0a12] px-3 py-2.5 sm:px-4 sm:py-3">
-            <div className="flex gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-              <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-              <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-            </div>
-            <div className="ml-2 flex min-w-0 flex-1 sm:ml-3">
-              <div className="mx-auto w-full max-w-[220px] truncate rounded-md bg-white/[0.04] px-3 py-1 text-center text-[10px] text-zinc-600 sm:max-w-[280px] sm:text-[11px]">
-                app.vestigio.io/dashboard
-              </div>
-            </div>
-            <div className="hidden w-[52px] sm:block" />
-          </div>
+			{/* Browser shell wrapper — `relative` so the overlays can be
+			    positioned absolutely against it. */}
+			<div className="relative mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
+				<OverlayAI />
+				<OverlayRecovery />
 
-          {/* App body: sidebar + content */}
-          <div className="flex flex-col md:flex-row">
+				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
+					{/* Browser title bar */}
+					<div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:px-4 sm:py-3">
+						<div className="flex gap-1.5">
+							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+						</div>
+						<div className="ml-2 flex min-w-0 flex-1 sm:ml-3">
+							<div className="mx-auto inline-flex max-w-full items-center gap-1.5 truncate rounded-md border border-white/[0.04] bg-white/[0.02] px-3 py-1 font-mono text-[10px] text-zinc-500 sm:text-[11px]">
+								<svg
+									viewBox="0 0 12 12"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="1.4"
+									className="h-3 w-3 shrink-0 text-emerald-400/80"
+								>
+									<path d="M4 6l1.5 1.5L8 4.5" strokeLinecap="round" strokeLinejoin="round" />
+									<circle cx="6" cy="6" r="4.5" />
+								</svg>
+								<span className="truncate">{t("url")}</span>
+							</div>
+						</div>
+						<div className="hidden w-[52px] sm:block" />
+					</div>
 
-            {/* Mobile horizontal tabs — with fade indicators for scroll discoverability */}
-            <div className="relative md:hidden">
-              <div className="flex overflow-x-auto border-b border-zinc-800/60 bg-[#0a0a12]/50 [mask-image:linear-gradient(to_right,transparent_0,black_12px,black_calc(100%-12px),transparent_100%)]">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex shrink-0 items-center gap-1.5 px-4 py-3 text-[11px] font-medium transition-colors ${
-                      activeTab === tab.id
-                        ? "border-b-2 border-violet-500 text-white"
-                        : "text-zinc-500 hover:text-zinc-300"
-                    }`}
-                  >
-                    <span className={activeTab === tab.id ? "text-violet-400" : "text-zinc-600"}>{tab.icon}</span>
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+					{/* App body: sidebar + content */}
+					<div className="flex flex-col md:flex-row">
+						{/* Mobile horizontal tabs */}
+						<div className="relative md:hidden">
+							<div className="flex overflow-x-auto border-b border-white/[0.06] bg-[#0a0a12]/60 [mask-image:linear-gradient(to_right,transparent_0,black_12px,black_calc(100%-12px),transparent_100%)]">
+								{TABS.map((tabId) => (
+									<button
+										key={tabId}
+										onClick={() => setActiveTab(tabId)}
+										className={`flex shrink-0 items-center gap-1.5 px-4 py-3 text-[11px] font-medium transition-colors ${
+											activeTab === tabId
+												? "border-b-2 border-violet-500 text-white"
+												: "text-zinc-500 hover:text-zinc-300"
+										}`}
+									>
+										<span className={activeTab === tabId ? "text-violet-400" : "text-zinc-600"}>
+											{TAB_ICONS[tabId]}
+										</span>
+										{t(`tabs.${tabId}`)}
+									</button>
+								))}
+							</div>
+						</div>
 
-            {/* Desktop sidebar */}
-            <div className="hidden w-[220px] shrink-0 border-r border-zinc-800/60 bg-[#0a0a12]/60 md:block lg:w-[240px]">
-              <div className="p-4 lg:p-5">
-                {/* App logo area */}
-                <div className="mb-5 flex items-center gap-2 px-2 py-2">
-                  <div className="grid h-7 w-7 place-items-center rounded-md bg-violet-500/15">
-                    <div className="h-2.5 w-2.5 rounded-sm bg-violet-400" />
-                  </div>
-                  <span className="text-sm font-semibold text-zinc-300">Vestigio</span>
-                </div>
+						{/* Desktop sidebar */}
+						<div className="hidden w-[200px] shrink-0 border-r border-white/[0.06] bg-[#0a0a12]/60 md:block lg:w-[220px]">
+							<div className="p-4 lg:p-5">
+								{/* App logo */}
+								<div className="mb-5 flex items-center gap-2 px-2 py-2">
+									<div className="grid h-7 w-7 place-items-center rounded-md bg-violet-500/15">
+										<div className="h-2.5 w-2.5 rounded-sm bg-violet-400" />
+									</div>
+									<span className="text-sm font-semibold text-zinc-300">Vestigio</span>
+								</div>
 
-                {/* Nav items */}
-                <nav className="space-y-1">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all ${
-                        activeTab === tab.id
-                          ? "bg-white/[0.06] text-white"
-                          : "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
-                      }`}
-                    >
-                      <span className={activeTab === tab.id ? "text-violet-400" : "text-zinc-600"}>{tab.icon}</span>
-                      {tab.label}
-                    </button>
-                  ))}
-                </nav>
+								{/* Nav items */}
+								<nav className="space-y-1">
+									{TABS.map((tabId) => (
+										<button
+											key={tabId}
+											onClick={() => setActiveTab(tabId)}
+											className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[13px] font-medium transition-all ${
+												activeTab === tabId
+													? "bg-white/[0.06] text-white"
+													: "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
+											}`}
+										>
+											<span className={activeTab === tabId ? "text-violet-400" : "text-zinc-600"}>
+												{TAB_ICONS[tabId]}
+											</span>
+											{t(`tabs.${tabId}`)}
+										</button>
+									))}
+								</nav>
 
-                {/* Filler: user card at bottom of sidebar to make it feel populated */}
-                <div className="mt-8 rounded-lg border border-zinc-800/60 bg-white/[0.02] p-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-emerald-500/20 to-violet-500/20 text-xs font-bold text-zinc-300">L</div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs font-semibold text-zinc-300">Luis Gall</div>
-                      <div className="truncate text-[10px] text-zinc-500">Vestigio Pro</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+								{/* User card pinned at bottom of sidebar */}
+								<div className="mt-8 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+									<div className="flex items-center gap-2.5">
+										<div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-emerald-500/20 to-violet-500/20 text-xs font-bold text-zinc-300">
+											L
+										</div>
+										<div className="min-w-0 flex-1">
+											<div className="truncate text-xs font-semibold text-zinc-300">Luis Gall</div>
+											<div className="truncate text-[10px] text-zinc-500">{t("user_label")}</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 
-            {/* Content area — tall on desktop to match real browser proportions.
-                Mobile: 380px, md: 720px, lg: 760px, xl: 800px. */}
-            <div className="flex min-h-[380px] flex-1 flex-col p-4 sm:p-6 md:min-h-[720px] md:p-7 lg:min-h-[760px] lg:p-9 xl:min-h-[800px]">
-              <div
-                key={activeTab}
-                className="flex-1 animate-[fadeIn_0.25s_ease-out]"
-                style={{ animationFillMode: "both" }}
-              >
-                <ActivePanel />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Inline keyframes for fade animation */}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-    </section>
-  );
+						{/* Active panel */}
+						<div className="flex min-h-[420px] flex-1 flex-col p-4 sm:p-6 md:min-h-[640px] md:p-7 lg:min-h-[680px] lg:p-8">
+							<div
+								key={activeTab}
+								className="flex-1 animate-[vptour-fade-in_0.25s_ease-out]"
+								style={{ animationFillMode: "both" }}
+							>
+								<ActivePanel />
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	);
 }

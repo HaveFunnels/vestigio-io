@@ -98,27 +98,129 @@
       "cta_primary": "Run free audit",
       "cta_secondary": "Watch product tour",
       "cta_micro": "Works for ecommerce, SaaS, lead gen, infoproducts, services and apps.",
-      "shell": {
-        "url": "app.vestigio.io/decisions",
-        "tab_active": "Decisions",
-        "tab_findings": "Findings",
-        "tab_surfaces": "Surfaces",
-        "queue_eyebrow": "Action Queue",
-        "queue_count": "12 actions ranked",
-        "actions": [
-          { "priority": "P1", "title": "Fix checkout redirect chain", "impact": "−$18k–42k/mo", "severity": "critical" },
-          { "priority": "P2", "title": "Add refund policy + trust marks", "impact": "−$3.6k–9k/mo", "severity": "high" },
-          { "priority": "P3", "title": "Enable mobile add-to-cart above fold", "impact": "−$5k–14k/mo", "severity": "high" },
-          { "priority": "P4", "title": "Recover analytics on /checkout", "impact": "−$9k–24k/mo", "severity": "medium" }
+      "shell": { "_deprecated": "moved to product_tour" }
+    },
+    "product_tour": {
+      "eyebrow": "Product Tour",
+      "title": "Not a dashboard. A queue of decisions.",
+      "subtitle": "Every tab is a different lens on the same revenue picture — ranked, evidenced, and ready to act on.",
+      "url": "app.vestigio.io/dashboard",
+      "tabs": {
+        "actions": "Actions",
+        "analysis": "Analysis",
+        "inventory": "Inventory",
+        "workspaces": "Workspaces",
+        "chat": "Chat",
+        "maps": "Maps"
+      },
+      "user_label": "Vestigio Pro",
+      "actions_panel": {
+        "eyebrow": "Action Queue",
+        "count": "9 actions ranked",
+        "rows": [
+          { "priority": "P1", "title": "Fix checkout redirect chain", "desc": "3 redirects add 2.4s latency at payment step", "impact": "−$18k–42k", "severity": "critical" },
+          { "priority": "P2", "title": "Mobile add-to-cart below fold", "desc": "Button hidden on 68% of mobile sessions", "impact": "−$12k–28k", "severity": "critical" },
+          { "priority": "P3", "title": "SSL missing on checkout subdomain", "desc": "Browser warns users on 12% of payment starts", "impact": "−$8k–21k", "severity": "critical" },
+          { "priority": "P4", "title": "Pricing filter loses state on nav", "desc": "State not persisting across page transitions", "impact": "−$5k–14k", "severity": "high" },
+          { "priority": "P5", "title": "Refund policy missing from footer", "desc": "Drives chargeback rate 2.1x above market", "impact": "−$3.6k–9k", "severity": "high" },
+          { "priority": "P6", "title": "Onboarding step 3 abandonment spike", "desc": "Drop from 78% → 41% in last 2 cycles", "impact": "−$4k–11k", "severity": "high" },
+          { "priority": "P7", "title": "Add analytics on /checkout funnel", "desc": "No funnel visibility between cart and confirmation", "impact": "−$9k–24k", "severity": "medium" },
+          { "priority": "P8", "title": "Form trust gap — no security badges", "desc": "9% of leads bounce at email field", "impact": "−$2k–6k", "severity": "medium" },
+          { "priority": "P9", "title": "Hero CTA color contrast below WCAG", "desc": "Estimated 4% click loss on dark backgrounds", "impact": "−$1.5k–4k", "severity": "low" }
+        ]
+      },
+      "analysis_panel": {
+        "summary_header": "Analysis Summary",
+        "findings_header": "Top Findings",
+        "summary_cards": [
+          { "label": "Total Findings", "value": "23", "sub": "issues across 12 surfaces" },
+          { "label": "Est. Monthly Impact", "value": "−$67.2k", "sub": "lower bound" },
+          { "label": "High Impact", "value": "8", "sub": "critical + high" },
+          { "label": "Surfaces Audited", "value": "12", "sub": "live + verified" },
+          { "label": "Avg Confidence", "value": "82%", "sub": "evidence-based" },
+          { "label": "Strengths", "value": "6", "sub": "wins to preserve" }
         ],
-        "assistant_eyebrow": "Vestigio AI",
-        "assistant_message": "Your biggest leak is the checkout redirect chain. It adds 2.4s of latency at the payment step. I've ranked this P1 with strong evidence.",
-        "assistant_chip_evidence": "3 evidences",
-        "assistant_chip_action": "Action created",
-        "callout_eyebrow": "Total recovered",
-        "callout_value": "+$67.2k",
-        "callout_unit": "/mo",
-        "callout_sub": "after Vestigio fix-cycle"
+        "rows": [
+          { "title": "Checkout redirect chain adds 2.4s latency", "severity": "critical", "impact": "−$18k–42k" },
+          { "title": "Mobile add-to-cart button below fold", "severity": "critical", "impact": "−$12k–28k" },
+          { "title": "Checkout subdomain missing SSL cert", "severity": "critical", "impact": "−$8k–21k" },
+          { "title": "Pricing filter loses state on navigation", "severity": "high", "impact": "−$5k–14k" },
+          { "title": "Missing refund policy raises chargeback risk", "severity": "high", "impact": "−$3.6k–9k" },
+          { "title": "Onboarding step 3 conversion regression", "severity": "high", "impact": "−$4k–11k" },
+          { "title": "No analytics between cart and confirmation", "severity": "medium", "impact": "−$9k–24k" },
+          { "title": "Form trust gap on email capture", "severity": "medium", "impact": "−$2k–6k" },
+          { "title": "Hero CTA color contrast below WCAG", "severity": "low", "impact": "−$1.5k–4k" },
+          { "title": "Footer trust marks missing", "severity": "low", "impact": "−$0.8k–2k" }
+        ]
+      },
+      "inventory_panel": {
+        "header": "Surface Inventory",
+        "headers": { "surface": "Surface", "path": "Path", "status": "Status", "http": "HTTP", "findings": "Findings" },
+        "status_live": "Live",
+        "status_down": "Down",
+        "status_warn": "Warn",
+        "findings_label": "findings",
+        "findings_label_one": "finding",
+        "rows": [
+          { "path": "/", "label": "Homepage", "status": "live", "code": 200, "findings": 3 },
+          { "path": "/products", "label": "Products", "status": "live", "code": 200, "findings": 2 },
+          { "path": "/products/[id]", "label": "Product Detail", "status": "live", "code": 200, "findings": 1 },
+          { "path": "/cart", "label": "Cart", "status": "live", "code": 200, "findings": 4 },
+          { "path": "/checkout", "label": "Checkout", "status": "live", "code": 200, "findings": 6 },
+          { "path": "/checkout/payment", "label": "Payment Step", "status": "warn", "code": 200, "findings": 3 },
+          { "path": "/thank-you", "label": "Thank You", "status": "down", "code": 503, "findings": 1 },
+          { "path": "/pricing", "label": "Pricing", "status": "live", "code": 200, "findings": 1 },
+          { "path": "/onboarding", "label": "Onboarding", "status": "live", "code": 200, "findings": 2 },
+          { "path": "/dashboard", "label": "Dashboard", "status": "live", "code": 200, "findings": 0 },
+          { "path": "/account", "label": "Account", "status": "live", "code": 200, "findings": 0 },
+          { "path": "/blog", "label": "Blog", "status": "warn", "code": 200, "findings": 0 }
+        ]
+      },
+      "workspaces_panel": {
+        "header": "Workspaces",
+        "rows": [
+          { "name": "Scale Readiness", "urgency": "BLOCK", "tone": "red", "desc": "Critical blockers preventing safe traffic scaling. 5 open issues." },
+          { "name": "Revenue Integrity", "urgency": "FIX", "tone": "orange", "desc": "Active leaks in checkout, pricing, and onboarding. −$54k/mo at risk." },
+          { "name": "Chargeback Resilience", "urgency": "MODERATE", "tone": "amber", "desc": "Dispute readiness and refund policy gaps. 3 open issues." },
+          { "name": "SEO & Discoverability", "urgency": "WATCH", "tone": "sky", "desc": "Schema, sitemap, and trust signals. 2 open issues." },
+          { "name": "Continuous Compliance", "urgency": "STABLE", "tone": "emerald", "desc": "WCAG, GDPR, and regional consent. All current findings closed." }
+        ]
+      },
+      "chat_panel": {
+        "header": "Agentic Chat",
+        "thread": [
+          { "from": "user", "text": "Where am I losing the most money right now?" },
+          { "from": "ai", "text": "Your biggest revenue leak is the checkout redirect chain. It adds 2.4s of latency and is estimated to cost **−$18k to $42k per month** in lost conversions. I've created a P1 action to address this.", "chips": ["Used 3 findings", "Created action P1"] },
+          { "from": "user", "text": "What broke since the last analysis cycle?" },
+          { "from": "ai", "text": "3 regressions detected in the last 14 days: checkout abandonment **+12%**, payment validation failed on 2 routes, SSL cert expires in 5 days. The first two are already in the queue at P1 and P3.", "chips": ["3 regressions", "2 actions ranked"] }
+        ],
+        "input_placeholder": "Ask anything about your business..."
+      },
+      "maps_panel": {
+        "header": "Journey Map",
+        "subtext": "Every leak mapped to the surface that owns it.",
+        "nodes": [
+          { "label": "Home", "path": "/", "tone": "emerald" },
+          { "label": "Products", "path": "/products", "tone": "sky" },
+          { "label": "Detail", "path": "/products/[id]", "tone": "sky" },
+          { "label": "Cart", "path": "/cart", "tone": "amber" },
+          { "label": "Checkout", "path": "/checkout", "tone": "red" },
+          { "label": "Payment", "path": "/checkout/payment", "tone": "red" },
+          { "label": "Confirmation", "path": "/thank-you", "tone": "emerald" },
+          { "label": "Account", "path": "/account", "tone": "emerald" }
+        ]
+      },
+      "overlay_ai": {
+        "eyebrow": "Vestigio AI",
+        "message": "I scanned 12 surfaces and found 23 findings. The top 3 are critical and account for 64% of the estimated loss.",
+        "chip_evidence": "12 surfaces scanned",
+        "chip_action": "9 actions queued"
+      },
+      "overlay_recovery": {
+        "eyebrow": "Recoverable",
+        "value": "+$67.2k",
+        "unit": "/mo",
+        "sub": "across 9 ranked actions"
       }
     },
     "client_gallery": {

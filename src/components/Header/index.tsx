@@ -11,38 +11,38 @@ import Account from "./Account";
 import { menuData } from "./menuData";
 
 /**
- * Header — site marketing header with three visual states:
+ * Header — site marketing header with TWO visual states (was three
+ * before — the intermediate "settling" state was deleted because it
+ * caused a visible jank between the full-width bar and the compact
+ * pill: a border-bottom would flash, then the bg would morph, then
+ * the rounded corners would snap. Now the header goes directly
+ * from default to compact pill in a single smooth transition.):
  *
- *   1. DEFAULT (scrollY < 8): sits below the announcement banner at
- *      `top-10`, transparent bg, full-width, shows menu + CTAs. The
- *      banner is still visible above it.
+ *   1. DEFAULT (scrollY < SCROLL_THRESHOLD)
+ *      Sits at `top-10` below the announcement banner. Transparent
+ *      background, full-width container, all menu items visible.
  *
- *   2. SETTLING (8 <= scrollY < 320): banner has slid out. Header is
- *      at `top-0`, still full-width, now with a darker solid bg and
- *      shadow so the page content doesn't bleed through.
+ *   2. COMPACT (scrollY >= SCROLL_THRESHOLD)
+ *      Liquid-glass floating pill at the top center of the viewport:
+ *        * `max-w-[620px]` centered, detached from edges
+ *        * `top-3`, rounded-full, h-12 fixed height
+ *        * `backdrop-blur-xl` + gradient bg + thin border + shadow
+ *        * Menu items collapse to opacity 0 + max-w 0
+ *        * Logo shrinks h-8 → h-6
+ *        * Login + Get started buttons tighten padding
+ *        * Everything in the pill is forced to vertical center via
+ *          `items-center` and a fixed `h-12` so the alignment problem
+ *          from the previous version goes away.
  *
- *   3. COMPACT (scrollY >= 320): the big reveal. Header transforms
- *      into a liquid-glass floating pill:
- *        - `max-w-[620px]` centered
- *        - `top-3` detached from the edge
- *        - `backdrop-blur-xl` + gradient bg + subtle border
- *        - `rounded-full`
- *        - Menu items collapse to 0 width (desktop only — on mobile
- *          the menu is already hidden behind the hamburger, so the
- *          pill just shrinks a little and re-aligns)
- *        - Only logo + login + get-started remain visible
- *
- * The 320px threshold is tuned so the transition happens after the
- * user has read past the headline and the pills, but before the
- * product tour kicks in. Feels natural, not jarring.
+ * The transition is a single 500ms ease-out on every property
+ * change, no intermediate state. `bg`/`border`/`max-w`/`rounded`/
+ * `padding`/`top` all morph together so visually it looks like the
+ * header gathers itself into a pill in one smooth motion.
  */
 
-// Scroll threshold for the liquid-glass pill compaction. Exported as
-// a const so it can be referenced elsewhere (e.g. a scroll-spy fix).
-const COMPACT_THRESHOLD_PX = 320;
+const SCROLL_THRESHOLD_PX = 80;
 
 const Header = () => {
-	const [bannerHidden, setBannerHidden] = useState(false);
 	const [compact, setCompact] = useState(false);
 	const { data: session } = useSession();
 	const branding = useBranding();
@@ -56,22 +56,18 @@ const Header = () => {
 		setNavbarOpen(!navbarOpen);
 	};
 
-	// Single scroll listener that drives both states. Using one listener
-	// (instead of two as before) avoids duplicate rAF callbacks and the
-	// double-run useEffect that wasn't cleaning up properly.
+	// Single scroll listener — drives the only state we have left.
 	useEffect(() => {
 		const handleScroll = () => {
-			const y = window.scrollY;
-			setBannerHidden(y >= 8);
-			setCompact(y >= COMPACT_THRESHOLD_PX);
+			setCompact(window.scrollY >= SCROLL_THRESHOLD_PX);
 		};
-		handleScroll(); // Sync on mount in case user reloaded mid-scroll
+		handleScroll(); // Sync on mount in case the user reloaded mid-scroll
 		window.addEventListener("scroll", handleScroll, { passive: true });
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
-	// The /-only scroll-active listener from the boilerplate. Separate
-	// from our own listener so we don't step on its toes.
+	// The /-only scroll-active listener from the boilerplate. Kept
+	// separate from our state listener so we don't entangle the two.
 	useEffect(() => {
 		if (window.location.pathname === "/") {
 			window.addEventListener("scroll", onScroll);
@@ -88,28 +84,24 @@ const Header = () => {
 		resources: "Resources",
 	};
 
-	// Header container positioning — follows the three-state model
-	// described in the file header comment.
-	const headerTop = bannerHidden ? "top-0" : "top-10";
-	const compactTop = compact ? "sm:top-3" : "";
-
 	return (
 		<header
-			className={`fixed left-0 right-0 z-999 transition-all duration-500 ease-out ${headerTop} ${compactTop}`}
+			className={`fixed left-0 right-0 z-999 transition-[top] duration-500 ease-out ${
+				compact ? "top-3" : "top-10"
+			}`}
 		>
 			<div
-				className={`relative mx-auto transition-all duration-500 ease-out ${
+				className={`relative mx-auto flex items-center justify-between transition-all duration-500 ease-out ${
 					compact
-						? // Compact pill — liquid glass, floating
-							"max-w-[620px] rounded-full border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-4 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl sm:px-5"
-						: // Expanded — full width
-							bannerHidden
-							? "max-w-[1170px] border-b border-white/[0.04] bg-[#090911]/85 px-4 py-3 shadow-lg backdrop-blur-md sm:px-8 xl:py-0"
-							: "max-w-[1170px] px-4 py-4 sm:px-8 xl:py-0"
-				} items-center justify-between xl:flex`}
+						? // Compact liquid-glass pill — fixed h-12 forces every
+							// child to align in the vertical center automatically.
+							"h-12 max-w-[620px] rounded-full border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl"
+						: // Default — full width, transparent, no border
+							"max-w-[1170px] rounded-full border border-transparent bg-transparent px-4 py-4 shadow-none backdrop-blur-0 sm:px-8"
+				} xl:flex`}
 			>
 				<div className='flex shrink-0 items-center justify-between'>
-					<Link href='/' className='shrink-0'>
+					<Link href='/' className='flex shrink-0 items-center'>
 						{typeof logoSrc === "string" ? (
 							<img
 								src={logoSrc}
@@ -175,9 +167,9 @@ const Header = () => {
 						"!visible relative mt-4 !h-auto max-h-[70vh] overflow-y-auto rounded-[1rem] bg-[#181822] p-5 shadow-lg sm:max-h-[60vh] sm:p-6"
 					}`}
 				>
-					{/* Nav — hidden in compact mode on desktop. The `max-w`
-					    trick collapses the nav to 0 smoothly while keeping it
-					    in the DOM, so the transition stays continuous. */}
+					{/* Nav — collapses to width 0 in compact mode. Items stay
+					    in the DOM, just visually gone, so the transition keeps
+					    morphing instead of remounting. */}
 					<nav
 						className={`overflow-hidden transition-all duration-500 ease-out lg:mx-auto ${
 							compact
@@ -187,10 +179,7 @@ const Header = () => {
 					>
 						<ul className='flex flex-col gap-5 xl:flex-row xl:items-center xl:gap-1'>
 							{menuData?.map((item, key) => (
-								<li
-									key={key}
-									className={`nav__menu ${compact ? "xl:py-2" : "xl:py-6"}`}
-								>
+								<li key={key} className='nav__menu xl:py-2'>
 									<Link
 										onClick={() => setNavbarOpen(false)}
 										href={
@@ -215,19 +204,15 @@ const Header = () => {
 						</ul>
 					</nav>
 
-					<div
-						className={`flex flex-col items-stretch gap-3 max-xl:mt-6 max-xl:border-t max-xl:border-white/5 max-xl:pt-5 sm:gap-3 xl:flex-row xl:items-center xl:border-0 xl:pt-0 ${
-							compact ? "xl:py-2" : "xl:mt-0"
-						}`}
-					>
+					<div className='flex items-center gap-3 max-xl:mt-6 max-xl:flex-col max-xl:items-stretch max-xl:border-t max-xl:border-white/5 max-xl:pt-5 xl:flex-row xl:border-0 xl:pt-0'>
 						{session?.user ? (
 							<Account navbarOpen={navbarOpen} />
 						) : (
 							<>
 								<Link
 									href='/auth/signin'
-									className={`rounded-[0.5rem] text-center text-sm font-medium text-gray-300 transition-all duration-300 hover:text-white ${
-										compact ? "px-3 py-1.5 xl:py-1" : "px-4 py-2.5 xl:px-4 xl:py-2"
+									className={`whitespace-nowrap rounded-[0.5rem] text-center text-sm font-medium text-gray-300 transition-all duration-300 hover:text-white ${
+										compact ? "px-3 py-1" : "px-4 py-2"
 									}`}
 								>
 									Login
@@ -235,10 +220,8 @@ const Header = () => {
 
 								<Link
 									href='/auth/signup'
-									className={`rounded-full border border-white/20 bg-white text-center text-sm font-medium text-black transition-all duration-300 hover:bg-gray-100 ${
-										compact
-											? "px-4 py-1.5 xl:py-1.5"
-											: "px-5 py-2.5 xl:py-2"
+									className={`whitespace-nowrap rounded-full border border-white/20 bg-white text-center text-sm font-medium text-black transition-all duration-300 hover:bg-gray-100 ${
+										compact ? "px-4 py-1.5" : "px-5 py-2"
 									}`}
 								>
 									Get started

@@ -1,4 +1,5 @@
 import Hero from "./Hero";
+import HomeBigCard from "./HomeBigCard";
 import ProductTour from "./ProductTour";
 import ClientGallery from "./ClientGallery";
 import SolutionLayers from "./SolutionLayers";
@@ -33,11 +34,13 @@ import MiniCalculator from "./MiniCalculator";
 const Home = () => {
 	return (
 		<>
-			<Hero />
-			<ProductTour />
-			<ClientGallery />
-			<FeaturesWithImage />
-			<Features />
+			<HomeBigCard>
+				<Hero />
+				<ProductTour />
+				<ClientGallery />
+				<FeaturesWithImage />
+				<Features />
+			</HomeBigCard>
 			<SolutionLayers />
 			<Counter />
 			<Testimonials />

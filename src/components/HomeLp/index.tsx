@@ -1,4 +1,5 @@
 import Hero from "@/components/Home/Hero";
+import HomeBigCard from "@/components/Home/HomeBigCard";
 import ProductTour from "@/components/Home/ProductTour";
 import ClientGallery from "@/components/Home/ClientGallery";
 import SolutionLayers from "@/components/Home/SolutionLayers";
@@ -32,11 +33,13 @@ const LP_CTA_HREF = "/lp/audit";
 const HomeLp = () => {
 	return (
 		<>
-			<Hero primaryCtaHref={LP_CTA_HREF} primaryCtaLabel='Run free audit' />
-			<ProductTour />
-			<ClientGallery />
-			<FeaturesWithImage />
-			<Features />
+			<HomeBigCard>
+				<Hero primaryCtaHref={LP_CTA_HREF} primaryCtaLabel='Run free audit' />
+				<ProductTour />
+				<ClientGallery />
+				<FeaturesWithImage />
+				<Features />
+			</HomeBigCard>
 			<SolutionLayers />
 			<Counter />
 			<Testimonials />

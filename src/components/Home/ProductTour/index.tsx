@@ -632,7 +632,7 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 	return (
 		<section
 			id="product-tour"
-			className="relative scroll-mt-24 py-10 sm:py-14 lg:py-20"
+			className="relative scroll-mt-24 pt-2 pb-10 sm:pt-3 sm:pb-14 lg:pt-4 lg:pb-20"
 		>
 			{/* Component-scoped keyframes — `vptour-` prefix to avoid
 			    collisions with vhero / vbento. */}

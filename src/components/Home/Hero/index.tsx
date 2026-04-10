@@ -106,7 +106,7 @@ const Hero = async () => {
 	// surtindo o efeito que deveria").
 
 	return (
-		<section className='relative z-1 pb-10 pt-28 sm:pb-12 sm:pt-32 lg:pb-16 lg:pt-40'>
+		<section className='relative z-1 pb-2 pt-28 sm:pb-3 sm:pt-32 lg:pb-4 lg:pt-40'>
 			{/* Component-scoped keyframes — `vhero-` prefix avoids global
 			    collisions with the rest of the app. */}
 			<style>{`

@@ -34,23 +34,11 @@
  */
 
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
 import HeroPills, { type Pill } from "./HeroPills";
 
-interface HeroProps {
-	// Optional CTA destination override. Default = signup flow.
-	// /lp variant passes "/lp/audit" so the primary CTA jumps directly
-	// into the anonymous lead funnel instead of asking for signup.
-	primaryCtaHref?: string;
-	primaryCtaLabel?: string;
-}
-
-// The browser-shell mockup that used to live here has moved to
-// `src/components/Home/ProductTour/index.tsx`. The Hero now ends at
-// the CTA strip — the product proof surface is the next section.
-//
 // Pill icons and the pill interaction state live in HeroPills.tsx —
-// this file only orchestrates the hero layout.
+// this file only orchestrates the hero layout. CTAs moved to
+// ProductTour so they sit below the product proof surface.
 
 /* ──────────────────────────────────────────────────────────────────
  * Vestigio trails — subtle dashed vertical lines on the LEFT and
@@ -110,10 +98,7 @@ const TrailLayer = () => (
  * Section
  * ──────────────────────────────────────────────────────────────── */
 
-const Hero = async ({
-	primaryCtaHref = "/auth/signup",
-	primaryCtaLabel,
-}: HeroProps = {}) => {
+const Hero = async () => {
 	const t = await getTranslations("homepage.hero_v2");
 	const pills = t.raw("pills") as Pill[];
 
@@ -211,37 +196,6 @@ const Hero = async ({
 				    HeroPills.tsx. */}
 				<HeroPills pills={pills} />
 
-				{/* CTAs — confident but not desperate. Smaller padding,
-				    softer shadow, single subtle glow on hover instead of
-				    a perpetual two-layer halo. */}
-				<div className='mb-3 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-3'>
-					<Link
-						href={primaryCtaHref}
-						className='rounded-[0.875rem] bg-white px-6 py-3 text-center text-[14px] font-semibold text-black shadow-[0_8px_24px_-12px_rgba(255,255,255,0.4)] transition-all hover:bg-zinc-100 hover:shadow-[0_12px_30px_-12px_rgba(255,255,255,0.55)] focus-visible:ring-2 focus-visible:ring-emerald-400'
-					>
-						{primaryCtaLabel ?? t("cta_primary")}
-					</Link>
-					<Link
-						href='#product-tour'
-						className='inline-flex items-center justify-center gap-2 rounded-[0.875rem] border border-white/15 bg-white/[0.02] px-6 py-3 text-center text-[14px] font-semibold text-white backdrop-blur transition-all hover:border-white/30 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-white/30'
-					>
-						<svg viewBox='0 0 16 16' fill='none' className='h-3.5 w-3.5'>
-							<circle
-								cx='8'
-								cy='8'
-								r='7'
-								stroke='currentColor'
-								strokeWidth='1.4'
-							/>
-							<path d='M6.5 5.5L11 8l-4.5 2.5v-5z' fill='currentColor' />
-						</svg>
-						{t("cta_secondary")}
-					</Link>
-				</div>
-
-				<p className='mx-auto mt-2 max-w-[560px] text-[11px] text-zinc-500 sm:text-xs'>
-					{t("cta_micro")}
-				</p>
 			</div>
 
 			{/* The product proof surface (browser shell with the action

@@ -96,6 +96,8 @@
       "eyebrow": "Tour del Producto",
       "title": "No es un dashboard. Es una cola de decisiones.",
       "subtitle": "Cada pestaña es una lente diferente sobre la misma imagen de ingresos — priorizada, con evidencia, y lista para actuar.",
+      "cta_primary": "Hacer auditoría gratis",
+      "cta_micro": "Perfecto para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",
       "url": "app.vestigio.io/dashboard",
       "tabs": {
         "actions": "Acciones",

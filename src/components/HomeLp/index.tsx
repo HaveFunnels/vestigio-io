@@ -34,8 +34,8 @@ const HomeLp = () => {
 	return (
 		<>
 			<HomeBigCard>
-				<Hero primaryCtaHref={LP_CTA_HREF} primaryCtaLabel='Run free audit' />
-				<ProductTour />
+				<Hero />
+				<ProductTour primaryCtaHref={LP_CTA_HREF} />
 				<ClientGallery />
 			</HomeBigCard>
 			<FeaturesWithImage />

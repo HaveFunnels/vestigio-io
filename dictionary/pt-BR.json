@@ -96,6 +96,8 @@
       "eyebrow": "Tour do Produto",
       "title": "Não é um dashboard. É uma fila de decisões.",
       "subtitle": "Cada aba é uma lente diferente sobre a mesma imagem da receita — priorizada, com evidência, e pronta pra agir.",
+      "cta_primary": "Rodar auditoria grátis",
+      "cta_micro": "Perfeito para E-commerces, SaaS, captação de leads, infoprodutos, serviços e apps.",
       "url": "app.vestigio.io/dashboard",
       "tabs": {
         "actions": "Ações",

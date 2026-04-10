@@ -96,6 +96,8 @@
       "eyebrow": "Product Tour",
       "title": "Not a dashboard. A queue of decisions.",
       "subtitle": "Every tab is a different lens on the same revenue picture — ranked, evidenced, and ready to act on.",
+      "cta_primary": "Run free audit",
+      "cta_micro": "Perfect for ecommerce, SaaS, lead gen, infoproducts, services and apps.",
       "url": "app.vestigio.io/dashboard",
       "tabs": {
         "actions": "Actions",

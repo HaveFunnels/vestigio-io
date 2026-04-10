@@ -43,6 +43,7 @@
  */
 
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 // ─────────────────────────────────────────────────────────────────────
@@ -619,7 +620,11 @@ const PANELS: Record<TabId, () => JSX.Element> = {
 	maps: MapsPanel,
 };
 
-export default function ProductTour() {
+interface ProductTourProps {
+	primaryCtaHref?: string;
+}
+
+export default function ProductTour({ primaryCtaHref = "/auth/signup" }: ProductTourProps) {
 	const t = useTranslations("homepage.product_tour");
 	const [activeTab, setActiveTab] = useState<TabId>("actions");
 	const ActivePanel = PANELS[activeTab];
@@ -643,18 +648,6 @@ export default function ProductTour() {
 				<div className="absolute left-1/2 top-[40%] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-violet-900/[0.06] blur-[120px] sm:h-[500px] sm:w-[600px] sm:blur-[160px]" />
 			</div>
 
-			{/* Section header */}
-			<div className="mx-auto mb-10 max-w-[760px] px-4 text-center sm:mb-14 sm:px-8">
-				<span className="mb-3 inline-block text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-400">
-					{t("eyebrow")}
-				</span>
-				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">
-					{t("title")}
-				</h2>
-				<p className="text-sm leading-relaxed text-gray-400 sm:text-base">
-					{t("subtitle")}
-				</p>
-			</div>
 
 			{/* Browser shell wrapper — `relative` so the overlays can be
 			    positioned absolutely against it. */}
@@ -761,6 +754,19 @@ export default function ProductTour() {
 					</div>
 				</div>
 			</div>
+
+				{/* CTA below the product tour */}
+				<div className="mx-auto mt-10 flex max-w-[700px] flex-col items-center gap-3 px-4 sm:mt-14 sm:px-8">
+					<Link
+						href={primaryCtaHref}
+						className="rounded-[0.875rem] bg-white px-6 py-3 text-center text-[14px] font-semibold text-black shadow-[0_8px_24px_-12px_rgba(255,255,255,0.4)] transition-all hover:bg-zinc-100 hover:shadow-[0_12px_30px_-12px_rgba(255,255,255,0.55)] focus-visible:ring-2 focus-visible:ring-emerald-400"
+					>
+						{t("cta_primary")}
+					</Link>
+					<p className="max-w-[560px] text-[11px] text-zinc-500 sm:text-xs">
+						{t("cta_micro")}
+					</p>
+				</div>
 		</section>
 	);
 }

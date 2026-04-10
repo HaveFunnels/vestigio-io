@@ -763,7 +763,7 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 					>
 						{t("cta_primary")}
 					</Link>
-					<p className="max-w-[560px] text-[11px] text-zinc-500 sm:text-xs">
+					<p className="max-w-[560px] text-center text-[11px] text-zinc-500 sm:text-xs">
 						{t("cta_micro")}
 					</p>
 				</div>

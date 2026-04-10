@@ -1,6 +1,6 @@
 import { BrandingProvider } from "@/components/BrandingProvider";
 import { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Outfit } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "../styles/globals.css";
@@ -16,6 +16,17 @@ import "../styles/satoshi.css";
 const jetbrainsMono = JetBrains_Mono({
 	subsets: ["latin"],
 	variable: "--font-jetbrains-mono",
+	display: "swap",
+});
+
+// Outfit — premium geometric display face used for hero headlines on
+// the marketing site. Has a distinctive round-terminal geometric
+// character that pairs well with Satoshi (the body sans) without being
+// generic. Loaded as a CSS variable so it can be applied via
+// `font-outfit` utility class in Tailwind.
+const outfit = Outfit({
+	subsets: ["latin"],
+	variable: "--font-outfit",
 	display: "swap",
 });
 
@@ -62,7 +73,7 @@ export default async function RootLayout({
 	const messages = await getMessages();
 
 	return (
-		<html lang={locale} className={`dark ${jetbrainsMono.variable}`} suppressHydrationWarning={true}>
+		<html lang={locale} className={`dark ${jetbrainsMono.variable} ${outfit.variable}`} suppressHydrationWarning={true}>
 			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
 				<NextIntlClientProvider messages={messages}>
 					<BrandingProvider>

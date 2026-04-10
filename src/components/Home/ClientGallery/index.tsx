@@ -26,7 +26,7 @@ const ClientGallery = async () => {
 	return (
 		<section
 			id='client-gallery'
-			className='relative z-1 overflow-hidden py-8 sm:py-10 lg:py-12'
+			className='relative z-1 overflow-hidden py-4 sm:py-6 lg:py-8'
 		>
 			<style>{`
 				@keyframes vclient-marquee {

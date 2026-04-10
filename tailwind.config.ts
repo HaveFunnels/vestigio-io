@@ -15,6 +15,8 @@ const config: Config = {
 			satoshi: ["Satoshi", "sans-serif"],
 			inter: ["Inter", "sans-serif"],
 			sans: ['"Satoshi"', ...defaultTheme.fontFamily.sans],
+			// Outfit — premium geometric display face for hero headlines.
+			outfit: ["var(--font-outfit)", "Satoshi", "sans-serif"],
 			// JetBrains Mono CSS var injected by next/font in src/app/layout.tsx.
 			// Used exclusively for numerics on the dashboard so financial data
 			// reads as financial data instead of UI prose.

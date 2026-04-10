@@ -53,55 +53,29 @@ interface HeroProps {
 // this file only orchestrates the hero layout.
 
 /* ──────────────────────────────────────────────────────────────────
- * Vestigio trails — dashed L-shaped rails drawn over the hero
- * canvas. Each rail is a faint dashed path (think Mixpanel-style
- * background grid traces) and a brighter emerald pulse runs along
- * the rail from start to finish. The metaphor is "vestígios" — the
- * eye sees something moving along an invisible track and is pulled
- * to follow it down the page.
- *
- * Implementation: 6 inline `<svg>` elements, each containing two
- * paths:
- *   1. The faint dashed RAIL — always visible at low opacity
- *   2. The bright emerald PULSE — same path geometry but stroked
- *      with a small visible segment via `stroke-dasharray` and
- *      `stroke-dashoffset` animation, so the pulse looks like a
- *      glowing dot tracing the rail
- *
- * Each rail has a different L-shape (right→down, down→right,
- * down→left, etc.) and a different speed/delay so they never run
- * in lockstep. Pure CSS keyframes — no JS.
+ * Vestigio trails — subtle dashed vertical lines on the LEFT and
+ * RIGHT sides of the hero only (never under the headline). Each
+ * rail is a thin, dark, dashed vertical line with a small bright
+ * pulse that descends along it. Fewer rails (4 total: 2 per side),
+ * thinner strokes, darker colors, and slower speeds.
  * ──────────────────────────────────────────────────────────────── */
 
 interface RailDef {
-	/** SVG path definition for the rail (and the pulse) */
-	d: string;
-	/** Total path length in user units — used to size the dash arrays.
-	 *  Approximate is fine, the pulse just needs a value bigger than
-	 *  the visible segment. */
-	length: number;
+	/** X position as a percentage of viewport width */
+	xPct: number;
 	/** Negative delay so the loop is already in motion on first paint */
 	delay: number;
 	/** Total cycle length in seconds */
 	duration: number;
 }
 
-// All paths share a `0 0 100 100` viewBox so coordinates are in
-// percent of the SVG. The SVG itself is positioned absolutely with
-// inline `top/left/width/height` style props.
+// 4 rails: 2 on the far left, 2 on the far right. None between
+// ~15% and ~85% where the hero content sits.
 const RAILS: RailDef[] = [
-	// Top-left → drops down → curves right
-	{ d: "M 5 5 L 5 60 Q 5 75 20 75 L 95 75", length: 165, delay: 0,   duration: 14 },
-	// Top-right → drops down → curves left
-	{ d: "M 95 5 L 95 50 Q 95 65 80 65 L 5 65", length: 165, delay: 6,  duration: 16 },
-	// Top-center → straight down → right elbow
-	{ d: "M 50 5 L 50 70 Q 50 85 65 85 L 95 85", length: 145, delay: 3,  duration: 13 },
-	// Mid-left → right → down
-	{ d: "M 5 30 L 70 30 Q 85 30 85 45 L 85 95", length: 155, delay: 9,  duration: 18 },
-	// Mid-right → left → down
-	{ d: "M 95 35 L 30 35 Q 15 35 15 50 L 15 95", length: 155, delay: 4,  duration: 17 },
-	// Top-near-center → diagonal down-right then down
-	{ d: "M 35 5 L 35 40 Q 35 55 50 55 L 50 95", length: 130, delay: 11, duration: 15 },
+	{ xPct: 4,  delay: 0,  duration: 18 },
+	{ xPct: 10, delay: 7,  duration: 22 },
+	{ xPct: 90, delay: 3,  duration: 20 },
+	{ xPct: 96, delay: 11, duration: 16 },
 ];
 
 const TrailLayer = () => (
@@ -109,44 +83,24 @@ const TrailLayer = () => (
 		className='pointer-events-none absolute inset-0 -z-1 overflow-hidden'
 		aria-hidden
 	>
-		{RAILS.map((rail, i) => {
-			// The pulse is a 12-unit visible segment that travels along
-			// the path. `strokeDasharray` is `12 length` so there's only
-			// one visible segment at a time, and `strokeDashoffset`
-			// animates from `length` (offscreen at start) to `-12`
-			// (offscreen at end).
-			return (
-				<svg
-					key={i}
-					viewBox='0 0 100 100'
-					preserveAspectRatio='none'
-					className='absolute inset-0 h-full w-full'
-				>
-					{/* Faint dashed rail — always visible */}
-					<path
-						d={rail.d}
-						stroke='rgba(255, 255, 255, 0.06)'
-						strokeWidth='0.25'
-						strokeDasharray='1 1.5'
-						fill='none'
-					/>
-					{/* Bright emerald pulse — animates along the rail */}
-					<path
-						d={rail.d}
-						stroke='rgb(110 231 183)'
-						strokeWidth='0.45'
-						strokeLinecap='round'
-						fill='none'
-						style={{
-							filter: "drop-shadow(0 0 1.5px rgba(110, 231, 183, 0.9))",
-							strokeDasharray: `12 ${rail.length}`,
-							animation: `vhero-rail-pulse ${rail.duration}s linear infinite`,
-							animationDelay: `-${rail.delay}s`,
-						}}
-					/>
-				</svg>
-			);
-		})}
+		{RAILS.map((rail, i) => (
+			<div
+				key={i}
+				className='absolute top-0 h-full w-px'
+				style={{ left: `${rail.xPct}%` }}
+			>
+				{/* Faint dashed vertical guide — always visible */}
+				<div className='absolute inset-y-0 left-0 w-px border-l border-dashed border-white/[0.04]' />
+				{/* Moving pulse — a short bright segment */}
+				<div
+					className='vhero-trail absolute left-0 top-0 h-8 w-px bg-gradient-to-b from-transparent via-emerald-400/40 to-transparent'
+					style={{
+						animationDelay: `-${rail.delay}s`,
+						animationDuration: `${rail.duration}s`,
+					}}
+				/>
+			</div>
+		))}
 	</div>
 );
 
@@ -163,38 +117,27 @@ const Hero = async ({
 	const t = await getTranslations("homepage.hero_v2");
 	const pills = t.raw("pills") as Pill[];
 
-	// Split the first headline so we can wrap the brush-highlighted word
-	// in a `<span>` with an SVG underline beneath it. The brush word
-	// comes from `headline_brush_word` in the dictionary so we don't
-	// have to hardcode "analytics" in 4 different translations.
-	const headline1 = t("headline_part1");
-	const brushWord = t("headline_brush_word");
-	const brushIdx = headline1.toLowerCase().indexOf(brushWord.toLowerCase());
-	const headline1Pre = brushIdx >= 0 ? headline1.slice(0, brushIdx) : headline1;
-	const headline1Brush =
-		brushIdx >= 0 ? headline1.slice(brushIdx, brushIdx + brushWord.length) : "";
-	const headline1Post =
-		brushIdx >= 0 ? headline1.slice(brushIdx + brushWord.length) : "";
+	// No brush underline — removed per user feedback ("não está
+	// surtindo o efeito que deveria").
 
 	return (
 		<section className='relative z-1 overflow-hidden pb-10 pt-28 sm:pb-12 sm:pt-32 lg:pb-16 lg:pt-40'>
 			{/* Component-scoped keyframes — `vhero-` prefix avoids global
 			    collisions with the rest of the app. */}
 			<style>{`
-				/* Rail pulse keyframe — animates stroke-dashoffset so
-				   a single bright segment travels along the rail path
-				   from start to finish. The starting offset is positive
-				   (segment starts off-canvas at the rail beginning)
-				   and animates down to a negative value (segment exits
-				   off-canvas at the rail end). The numeric range is
-				   intentionally large so it works for any rail length;
-				   the visible segment width is set by stroke-dasharray
-				   on each path inline. */
-				@keyframes vhero-rail-pulse {
-					0%   { stroke-dashoffset: 200; opacity: 0; }
-					8%   { opacity: 1; }
-					92%  { opacity: 1; }
-					100% { stroke-dashoffset: -20; opacity: 0; }
+				/* Trail keyframe — a short bright segment that descends
+				   from the top of the hero to the bottom. Simple vertical
+				   translate, fades in near the top and out near the bottom. */
+				@keyframes vhero-trail {
+					0%   { transform: translateY(-40px); opacity: 0; }
+					10%  { opacity: 1; }
+					90%  { opacity: 1; }
+					100% { transform: translateY(calc(100vh + 40px)); opacity: 0; }
+				}
+				.vhero-trail {
+					animation-name: vhero-trail;
+					animation-iteration-count: infinite;
+					animation-timing-function: linear;
 				}
 				@keyframes vhero-pulse {
 					0%, 100% { transform: scale(1); opacity: 0.9; }
@@ -253,49 +196,9 @@ const Hero = async ({
 
 			{/* ─────────── Headline + subtitle + pills + CTAs ─────────── */}
 			<div className='relative mx-auto w-full max-w-[1000px] px-4 text-center sm:px-8 xl:px-0'>
-				<h1 className='mb-5 text-[2.1rem] font-bold leading-[1.05] tracking-tight text-white sm:mb-6 sm:text-[3.25rem] lg:text-[4rem] xl:text-[4.5rem]'>
-					<span className='block'>
-						{headline1Pre}
-						{/* Paintbrush-underlined word — solid white text on
-						    top, hand-drawn SVG stroke beneath. The SVG
-						    `viewBox` is wide and short and uses
-						    `preserveAspectRatio="none"` so it stretches to
-						    match whatever word it sits under. */}
-						{headline1Brush && (
-							<span className='relative inline-block'>
-								<span className='relative z-10'>{headline1Brush}</span>
-								<svg
-									className='pointer-events-none absolute inset-x-0 -bottom-1 h-[0.42em] w-full text-emerald-400 sm:-bottom-1.5'
-									viewBox='0 0 200 18'
-									fill='none'
-									preserveAspectRatio='none'
-									aria-hidden
-								>
-									{/* Hand-drawn paintbrush stroke — two
-									    overlapping curves with rough endcaps so
-									    it reads as ink, not a vector line. */}
-									<path
-										d='M2 11 C 30 4, 60 14, 95 8 C 130 3, 160 13, 198 7'
-										stroke='currentColor'
-										strokeWidth='6'
-										strokeLinecap='round'
-										strokeLinejoin='round'
-										opacity='0.85'
-									/>
-									<path
-										d='M6 14 C 40 9, 80 16, 120 11 C 150 7, 175 14, 196 11'
-										stroke='currentColor'
-										strokeWidth='3'
-										strokeLinecap='round'
-										strokeLinejoin='round'
-										opacity='0.55'
-									/>
-								</svg>
-							</span>
-						)}
-						{headline1Post}
-					</span>
-					<span className='block text-white'>{t("headline_part2")}</span>
+				<h1 className='mb-5 font-outfit text-[2.1rem] font-bold leading-[1.05] tracking-tighter text-white sm:mb-6 sm:text-[3.25rem] lg:text-[4rem] xl:text-[4.5rem]'>
+					<span className='block'>{t("headline_part1")}</span>
+					<span className='block'>{t("headline_part2")}</span>
 				</h1>
 
 				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>

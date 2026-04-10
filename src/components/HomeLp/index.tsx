@@ -38,9 +38,9 @@ const HomeLp = () => {
 				<ProductTour primaryCtaHref={LP_CTA_HREF} />
 				<ClientGallery />
 			</HomeBigCard>
+			<SolutionLayers />
 			<FeaturesWithImage />
 			<Features />
-			<SolutionLayers />
 			<Counter />
 			<Testimonials />
 			<FAQ />

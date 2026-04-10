@@ -11,7 +11,7 @@ const i18n: Record<string, {
 	tools: string[][];
 }> = {
 	en: {
-		sectionLabel: "Solution", title: "Refuse to scale your business in the dark.", subtitle: "See early, prioritize with clarity, and validate your digital business continuously.",
+		sectionLabel: "What Vestigio does", title: "Refuse to scale your business in the dark.", subtitle: "See early, prioritize with clarity, and validate your digital business continuously.",
 		layers: [
 			{ eyebrow: "Layer 1", title: "Discover before others", body: "See where the risks, leaks, and opportunities are before they become costs.", support: "Findings, analysis, and initial context to understand what's breaking, what's going unnoticed, and what could compromise scale." },
 			{ eyebrow: "Layer 2", title: "Prioritize and act with precision", body: "Turn signals into a continuous queue of action, with context and priority.", support: "Actions and workspaces help organize what to fix, track, and explore by route, journey, campaign, or environment." },
@@ -21,7 +21,7 @@ const i18n: Record<string, {
 		tools: [["Findings", "Analysis", "Evidence"], ["Actions", "Workspaces", "Priorities"], ["Preflight", "Regressions", "Verification"]],
 	},
 	"pt-BR": {
-		sectionLabel: "Solução", title: "Recuse escalar seu negócio no escuro.", subtitle: "Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.",
+		sectionLabel: "O que a Vestigio faz", title: "Recuse escalar seu negócio no escuro.", subtitle: "Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.",
 		layers: [
 			{ eyebrow: "Camada 1", title: "Descubra antes dos outros", body: "Veja onde estão os riscos, vazamentos e oportunidades antes que virem custo.", support: "Descobertas, análise e contexto inicial para entender o que está quebrando, o que está passando despercebido e o que pode comprometer escala." },
 			{ eyebrow: "Camada 2", title: "Priorize e aja com precisão", body: "Transforme sinais em uma fila contínua de ação, com contexto e prioridade.", support: "Ações e workspaces ajudam a organizar o que corrigir, acompanhar e explorar por rota, jornada, campanha ou ambiente." },
@@ -31,7 +31,7 @@ const i18n: Record<string, {
 		tools: [["Descobertas", "Análise", "Evidência"], ["Ações", "Workspaces", "Prioridades"], ["Preflight", "Regressões", "Verificação"]],
 	},
 	es: {
-		sectionLabel: "Solución", title: "Niégate a escalar tu negocio a ciegas.", subtitle: "Detecta temprano, prioriza con claridad y valida tu negocio digital de forma continua.",
+		sectionLabel: "Qué hace Vestigio", title: "Niégate a escalar tu negocio a ciegas.", subtitle: "Detecta temprano, prioriza con claridad y valida tu negocio digital de forma continua.",
 		layers: [
 			{ eyebrow: "Capa 1", title: "Descubre antes que otros", body: "Detecta riesgos, fugas y oportunidades antes de que se conviertan en costos.", support: "Hallazgos, análisis y contexto inicial para entender qué se está rompiendo, qué pasa desapercibido y qué puede comprometer la escala." },
 			{ eyebrow: "Capa 2", title: "Prioriza y actúa con precisión", body: "Convierte señales en una cola continua de acción, con contexto y prioridad.", support: "Acciones y workspaces ayudan a organizar qué corregir, rastrear y explorar por ruta, jornada, campaña o entorno." },
@@ -41,7 +41,7 @@ const i18n: Record<string, {
 		tools: [["Hallazgos", "Análisis", "Evidencia"], ["Acciones", "Workspaces", "Prioridades"], ["Preflight", "Regresiones", "Verificación"]],
 	},
 	de: {
-		sectionLabel: "Lösung", title: "Weigere dich, dein Geschäft im Dunkeln zu skalieren.", subtitle: "Erkenne früh, priorisiere klar und validiere dein digitales Geschäft kontinuierlich.",
+		sectionLabel: "Was Vestigio macht", title: "Weigere dich, dein Geschäft im Dunkeln zu skalieren.", subtitle: "Erkenne früh, priorisiere klar und validiere dein digitales Geschäft kontinuierlich.",
 		layers: [
 			{ eyebrow: "Schicht 1", title: "Entdecke vor anderen", body: "Erkenne Risiken, Lecks und Chancen, bevor sie zu Kosten werden.", support: "Befunde, Analyse und initialer Kontext, um zu verstehen, was bricht, was übersehen wird und was die Skalierung gefährden könnte." },
 			{ eyebrow: "Schicht 2", title: "Priorisiere und handle präzise", body: "Verwandle Signale in eine kontinuierliche Aktionswarteschlange mit Kontext und Priorität.", support: "Aktionen und Workspaces helfen zu organisieren, was korrigiert, verfolgt und erkundet werden soll." },

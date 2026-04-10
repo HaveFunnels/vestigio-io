@@ -39,9 +39,9 @@ const Home = () => {
 				<ProductTour />
 				<ClientGallery />
 			</HomeBigCard>
+			<SolutionLayers />
 			<FeaturesWithImage />
 			<Features />
-			<SolutionLayers />
 			<Counter />
 			<Testimonials />
 			<FAQ />

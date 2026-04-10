@@ -1,44 +1,57 @@
 "use client";
 
 /**
- * HeroPills — the 5 interactive impact/solution cards in the hero.
+ * HeroPills — 5 interactive impact/solution cards in the hero.
  *
- * Each card has two faces:
- *   - FRONT: the user's pain ("I'm losing money I can't see")
- *   - BACK: the Vestigio feature that resolves that pain
- *           ("Revenue Leak Detection — Vestigio scans every funnel…")
+ * INTERACTION
  *
- * Click a card → the checkbox fills, the card gradient-sweeps into
- * emerald, and the text flip-reveals the solution. Clicking again
- * flips it back. The checkbox sits on the RIGHT side of the card
- * (previous version had it on the left next to the icon, which made
- * the label text wrap unevenly on mobile).
+ * Each card has two states:
+ *   - IDLE      → dark card, white text, the user's pain
+ *                 ("Traffic but no leads", "Ads without return", …)
+ *   - SELECTED  → emerald-filled card with dark text, the Vestigio
+ *                 promise that resolves that pain
+ *                 ("We find the block", "We show the leak", …)
  *
- * Entrance: each card uses the existing `vhero-float-up` keyframe
- * with a staggered delay. The keyframe is defined in the Hero section
- * `<style>` block, so HeroPills inherits it without needing its own.
+ * Click toggles. Multiple cards can be selected at once. The
+ * transition between idle and selected is a "liquid fill" — a
+ * pseudo-element scales from `scaleY(0)` at the bottom up to
+ * `scaleY(1)`, gated on the `[data-on=true]` attribute, so the
+ * emerald background fills the card from the bottom up like water
+ * filling a glass. Both layers of text crossfade in lockstep with
+ * the fill.
  *
- * The component is `"use client"` because it owns the selection
- * state. It receives pills + labels as props from the Hero (which
- * is an async server component pulling translations).
+ * COPY
+ *
+ * Pulled from `homepage.hero_v2.pills[i].{impact,solution}` via
+ * the dictionary. Each side is constrained to 3-4 words by
+ * convention so nothing wraps to a third line.
+ *
+ * STYLE
+ *
+ * No eyebrows above the text — the checkbox + the impact-vs-solution
+ * color contrast is enough to communicate the state. The card
+ * height is fixed (`h-[120px]`) and the inner content uses
+ * `flex flex-col justify-center` so the text is always vertically
+ * centered, never floating to the bottom.
+ *
+ * Layout: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5`
+ * — at xl all 5 pills sit in a single row, at lg they reflow to
+ * 3+2, at sm to 2+2+1, at mobile they stack.
  */
 
 import { useState } from "react";
 
 export interface Pill {
 	impact: string;
-	solution_title: string;
-	solution_body: string;
+	solution: string;
 }
 
 interface HeroPillsProps {
 	pills: Pill[];
-	eyebrowImpact: string;
-	eyebrowSolution: string;
 }
 
 const PILL_ICONS: Array<() => JSX.Element> = [
-	// 1. Droplet — revenue leak
+	// 1. Funnel — traffic going in but nothing coming out
 	() => (
 		<svg
 			viewBox='0 0 20 20'
@@ -48,10 +61,10 @@ const PILL_ICONS: Array<() => JSX.Element> = [
 			strokeLinecap='round'
 			strokeLinejoin='round'
 		>
-			<path d='M10 2.5c-2.5 3-5 5.8-5 9a5 5 0 0010 0c0-3.2-2.5-6-5-9z' />
+			<path d='M2 4h16l-6 7v6l-4-2v-4L2 4z' />
 		</svg>
 	),
-	// 2. Three bars — priority queue
+	// 2. Banknote with X — ads without return
 	() => (
 		<svg
 			viewBox='0 0 20 20'
@@ -61,10 +74,12 @@ const PILL_ICONS: Array<() => JSX.Element> = [
 			strokeLinecap='round'
 			strokeLinejoin='round'
 		>
-			<path d='M3 5h14M3 10h10M3 15h6' />
+			<rect x='2' y='5' width='16' height='10' rx='1.5' />
+			<circle cx='10' cy='10' r='2.2' />
+			<path d='M14 9l2 2M16 9l-2 2' />
 		</svg>
 	),
-	// 3. Shield check — verified
+	// 3. Heart — beautiful site, low conversion
 	() => (
 		<svg
 			viewBox='0 0 20 20'
@@ -74,11 +89,10 @@ const PILL_ICONS: Array<() => JSX.Element> = [
 			strokeLinecap='round'
 			strokeLinejoin='round'
 		>
-			<path d='M10 2.5l6 2v5c0 4-3 7-6 8-3-1-6-4-6-8v-5l6-2z' />
-			<path d='M7.5 10l2 2 3.5-4' />
+			<path d='M10 17s-6-3.5-6-8a3.5 3.5 0 016-2.5A3.5 3.5 0 0116 9c0 4.5-6 8-6 8z' />
 		</svg>
 	),
-	// 4. Clock — regressions
+	// 4. Question mark — don't know what to fix
 	() => (
 		<svg
 			viewBox='0 0 20 20'
@@ -88,11 +102,12 @@ const PILL_ICONS: Array<() => JSX.Element> = [
 			strokeLinecap='round'
 			strokeLinejoin='round'
 		>
-			<circle cx='10' cy='10' r='6.5' />
-			<path d='M10 6.5V10l2.2 2' />
+			<circle cx='10' cy='10' r='7' />
+			<path d='M8 7.5a2 2 0 014 0c0 1.2-1.5 1.5-2 2.5v0.5' />
+			<circle cx='10' cy='13.5' r='0.5' fill='currentColor' />
 		</svg>
 	),
-	// 5. Diamond — scale readiness
+	// 5. Warning triangle — breaks after deploy
 	() => (
 		<svg
 			viewBox='0 0 20 20'
@@ -102,20 +117,15 @@ const PILL_ICONS: Array<() => JSX.Element> = [
 			strokeLinecap='round'
 			strokeLinejoin='round'
 		>
-			<path d='M10 2.5L17.5 10 10 17.5 2.5 10 10 2.5z' />
-			<circle cx='10' cy='10' r='1.6' fill='currentColor' />
+			<path d='M10 3l8 14H2L10 3z' />
+			<path d='M10 8v4' />
+			<circle cx='10' cy='14.5' r='0.5' fill='currentColor' />
 		</svg>
 	),
 ];
 
-export default function HeroPills({
-	pills,
-	eyebrowImpact,
-	eyebrowSolution,
-}: HeroPillsProps) {
-	// Set of selected indices. Multiple cards can be selected at once
-	// — the user can "check off" each pain they feel and scan the
-	// list of corresponding solutions.
+export default function HeroPills({ pills }: HeroPillsProps) {
+	// Set of selected indices. Multiple cards can be selected at once.
 	const [selected, setSelected] = useState<Set<number>>(new Set());
 
 	const toggle = (i: number) => {
@@ -141,26 +151,35 @@ export default function HeroPills({
 						type='button'
 						onClick={() => toggle(i)}
 						aria-pressed={isOn}
-						className={`group/pill relative min-h-[112px] overflow-hidden rounded-xl border text-left backdrop-blur transition-all duration-500 ease-out hover:-translate-y-0.5 ${
+						data-on={isOn || undefined}
+						className={[
+							"vhero-pill group/pill",
+							"relative isolate h-[120px] w-full overflow-hidden rounded-2xl",
+							"border transition-all duration-500 ease-out",
+							"hover:-translate-y-0.5",
+							// Idle border vs selected border. The bg is handled
+							// by the liquid-fill ::before below, so we keep the
+							// element bg dark and let the fill paint over it.
 							isOn
-								? // SELECTED — emerald bg sweep + elevated shadow
-									"border-emerald-400/45 bg-gradient-to-br from-emerald-500/[0.14] via-emerald-500/[0.06] to-white/[0.02] shadow-[0_14px_36px_-14px_rgba(16,185,129,0.45)]"
-								: // IDLE
-									"border-white/10 bg-white/[0.025] hover:border-emerald-400/25 hover:bg-white/[0.04]"
-						}`}
+								? "border-emerald-400/60 shadow-[0_18px_44px_-18px_rgba(16,185,129,0.55)]"
+								: "border-white/10 bg-white/[0.025] hover:border-emerald-400/30 hover:bg-white/[0.04]",
+						].join(" ")}
 						style={{
 							animation: `vhero-float-up 0.8s cubic-bezier(0.16,1,0.3,1) ${0.15 + i * 0.07}s both`,
 						}}
 					>
-						{/* Top-right checkbox — click target is the whole
-						    card but the checkbox is the visual hint. */}
+						{/* Top-right checkbox — visual hint that the card is
+						    interactive. Click target is the whole card. */}
 						<span
 							aria-hidden
-							className={`pointer-events-none absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-[5px] border transition-all duration-300 ${
+							className={[
+								"pointer-events-none absolute right-3 top-3 z-20",
+								"flex h-5 w-5 items-center justify-center rounded-[5px] border",
+								"transition-all duration-300",
 								isOn
-									? "border-emerald-400 bg-emerald-400/90 shadow-[0_0_12px_-2px_rgba(16,185,129,0.7)]"
-									: "border-white/25 bg-white/[0.02] group-hover/pill:border-emerald-400/60 group-hover/pill:bg-emerald-400/15"
-							}`}
+									? "border-[#0a1a14] bg-[#0a1a14] shadow-[0_0_10px_-1px_rgba(10,26,20,0.5)]"
+									: "border-white/30 bg-white/[0.02] group-hover/pill:border-emerald-400/60",
+							].join(" ")}
 						>
 							<svg
 								viewBox='0 0 12 12'
@@ -168,7 +187,7 @@ export default function HeroPills({
 								stroke='currentColor'
 								strokeWidth='2.2'
 								className={`h-3 w-3 transition-all duration-300 ${
-									isOn ? "scale-100 text-[#0a1a14] opacity-100" : "scale-0 opacity-0"
+									isOn ? "scale-100 text-emerald-300 opacity-100" : "scale-0 opacity-0"
 								}`}
 							>
 								<path
@@ -179,51 +198,56 @@ export default function HeroPills({
 							</svg>
 						</span>
 
-						{/* FRONT FACE — impact. Visible when NOT selected.
-						    Fades + translates upward on flip. */}
+						{/* Liquid fill layer — emerald wave that animates from
+						    the bottom up when selected. `transform-origin:
+						    bottom` + `scaleY` is the simplest way to do a
+						    bottom-to-top fill that respects the card's
+						    rounded corners (since the parent has
+						    `overflow-hidden`). */}
 						<div
-							className={`absolute inset-0 flex flex-col justify-between p-4 transition-all duration-500 sm:p-5 ${
-								isOn
-									? "pointer-events-none -translate-y-2 opacity-0"
-									: "translate-y-0 opacity-100"
-							}`}
+							aria-hidden
+							className={[
+								"pointer-events-none absolute inset-0 z-0",
+								"origin-bottom",
+								"bg-gradient-to-t from-emerald-400 via-emerald-300 to-emerald-200",
+								"transition-transform duration-700 ease-[cubic-bezier(0.65,0,0.35,1)]",
+								isOn ? "scale-y-100" : "scale-y-0",
+							].join(" ")}
+						/>
+
+						{/* IDLE FACE — dark surface, white text, the user's
+						    pain. Visible when NOT selected. */}
+						<div
+							className={[
+								"absolute inset-0 z-10 flex flex-col items-start justify-center px-5",
+								"transition-opacity duration-500",
+								isOn ? "opacity-0" : "opacity-100",
+							].join(" ")}
 						>
-							<span className='flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 text-red-300 transition-colors group-hover/pill:bg-red-500/15'>
+							<span className='mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-300'>
 								{PILL_ICONS[i]?.()}
 							</span>
-							<div className='pr-6'>
-								<div className='mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-red-300/70'>
-									{eyebrowImpact}
-								</div>
-								<div className='text-[13px] font-medium leading-snug text-zinc-100'>
-									{pill.impact}
-								</div>
+							<div className='pr-7 text-[14px] font-semibold leading-tight text-white sm:text-[15px]'>
+								{pill.impact}
 							</div>
 						</div>
 
-						{/* BACK FACE — solution. Visible when selected. Fades
-						    + translates in from below so the transition feels
-						    like a "reveal" rather than a hard swap. */}
+						{/* SELECTED FACE — sits on top of the liquid fill,
+						    dark text on emerald background. Same vertical
+						    centering rules as idle face so the layout
+						    doesn't jump. */}
 						<div
-							className={`absolute inset-0 flex flex-col justify-between p-4 transition-all duration-500 sm:p-5 ${
-								isOn
-									? "translate-y-0 opacity-100"
-									: "pointer-events-none translate-y-2 opacity-0"
-							}`}
+							className={[
+								"absolute inset-0 z-10 flex flex-col items-start justify-center px-5",
+								"transition-opacity duration-500",
+								isOn ? "opacity-100 delay-200" : "opacity-0",
+							].join(" ")}
 						>
-							<span className='flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-200 shadow-[0_0_16px_-4px_rgba(16,185,129,0.7)]'>
+							<span className='mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-[#0a1a14]/15 text-[#0a1a14]'>
 								{PILL_ICONS[i]?.()}
 							</span>
-							<div className='pr-6'>
-								<div className='mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-300/80'>
-									{eyebrowSolution}
-								</div>
-								<div className='mb-1 text-[13px] font-semibold leading-snug text-white'>
-									{pill.solution_title}
-								</div>
-								<div className='text-[11px] leading-snug text-emerald-100/80'>
-									{pill.solution_body}
-								</div>
+							<div className='pr-7 text-[14px] font-semibold leading-tight text-[#0a1a14] sm:text-[15px]'>
+								{pill.solution}
 							</div>
 						</div>
 					</button>

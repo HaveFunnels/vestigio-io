@@ -238,13 +238,10 @@ const Hero = async ({
 				</p>
 
 				{/* 5 interactive impact / solution pills — client component.
-				    Each card flips between the user's pain and the Vestigio
-				    feature that resolves it when clicked. See HeroPills.tsx. */}
-				<HeroPills
-					pills={pills}
-					eyebrowImpact={t("pills_eyebrow_impact")}
-					eyebrowSolution={t("pills_eyebrow_solution")}
-				/>
+				    Each card uses a liquid-fill animation to invert from
+				    dark + pain → emerald + solution when clicked. See
+				    HeroPills.tsx. */}
+				<HeroPills pills={pills} />
 
 				{/* CTAs — larger than typical buttons because they are the
 				    primary conversion action on the entire homepage. */}

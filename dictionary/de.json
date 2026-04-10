@@ -67,34 +67,12 @@
       "headline_part2": "bevor Sie mehr für Traffic ausgeben.",
       "subtitle": "Vestigio prüft Ihre digitale Operation, schätzt den Impact, priorisiert was zuerst zu fixen ist und überwacht, was als Nächstes brechen könnte — damit Sie aufhören, im Dunkeln zu skalieren.",
       "pills": [
-        {
-          "impact": "Ich verliere Geld, das ich nicht sehe",
-          "solution_title": "Leck-Erkennung",
-          "solution_body": "Vestigio scannt jede Trichter-Oberfläche und markiert jedes Leck mit Dollar-Spanne und Konfidenz."
-        },
-        {
-          "impact": "Ich weiß nicht, wo ich anfangen soll",
-          "solution_title": "Priorisierte Aktionswarteschlange",
-          "solution_body": "Jeder Befund nach Wirkung, Dringlichkeit und Aufwand sortiert — einfach das Nächste ausführen."
-        },
-        {
-          "impact": "Ich vertraue meinen Daten nicht ganz",
-          "solution_title": "Beweisbasierte Verifizierung",
-          "solution_body": "Jeder Befund ist browser-verifiziert, kreuzgeprüft und mit Zeitstempel."
-        },
-        {
-          "impact": "Dinge brechen lautlos nach dem Deploy",
-          "solution_title": "Kontinuierliche Regressions-Wache",
-          "solution_body": "Vestigio verfolgt jede Oberfläche über die Zeit und meldet, was schlechter wurde."
-        },
-        {
-          "impact": "Ich skaliere im Dunkeln",
-          "solution_title": "Preflight für Skalierung",
-          "solution_body": "Wisse, ob du bereit bist, den Traffic zu verzehnfachen, bevor du dafür zahlst."
-        }
+        { "impact": "Traffic, keine Leads", "solution": "Wir finden das Leck" },
+        { "impact": "Ads ohne Rendite", "solution": "Wir zeigen das Leck" },
+        { "impact": "Schöne Seite, wenig Umsatz", "solution": "Fokus auf Conversion" },
+        { "impact": "Weiß nicht, was beheben", "solution": "Sortierte Liste, fertig" },
+        { "impact": "Bricht nach dem Deploy", "solution": "Vor Schaden erkannt" }
       ],
-      "pills_eyebrow_impact": "Deine Belastung",
-      "pills_eyebrow_solution": "Wie Vestigio löst",
       "cta_primary": "Kostenloses Audit starten",
       "cta_secondary": "Produkt-Tour ansehen",
       "cta_micro": "Funktioniert für Ecommerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",

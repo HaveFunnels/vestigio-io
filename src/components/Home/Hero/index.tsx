@@ -35,6 +35,7 @@
 
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import HeroPills, { type Pill } from "./HeroPills";
 
 interface HeroProps {
 	// Optional CTA destination override. Default = signup flow.
@@ -65,86 +66,8 @@ const SEVERITY_DOT: Record<ActionRow["severity"], string> = {
 	low: "bg-sky-400",
 };
 
-/* ──────────────────────────────────────────────────────────────────
- * Pill icons — one per promise. Stroke-only outline icons so they
- * read as a uniform set. 18px so the row stays tight.
- * ──────────────────────────────────────────────────────────────── */
-
-// Pill icons stored as render functions so the elements are
-// constructed at use-site (each call gets a fresh element). This
-// avoids the `react/jsx-key` lint warning that fires when JSX
-// elements are stored directly in an array literal — even when the
-// elements are read by index, eslint still requires keys.
-const PILL_ICONS: Array<() => JSX.Element> = [
-	// 1. Find revenue leaks — a droplet (leaks = water dropping)
-	() => (
-		<svg
-			viewBox='0 0 20 20'
-			fill='none'
-			stroke='currentColor'
-			strokeWidth='1.4'
-			strokeLinecap='round'
-			strokeLinejoin='round'
-		>
-			<path d='M10 2.5c-2.5 3-5 5.8-5 9a5 5 0 0010 0c0-3.2-2.5-6-5-9z' />
-		</svg>
-	),
-	// 2. Prioritize fixes — three stacked bars (priority queue)
-	() => (
-		<svg
-			viewBox='0 0 20 20'
-			fill='none'
-			stroke='currentColor'
-			strokeWidth='1.4'
-			strokeLinecap='round'
-			strokeLinejoin='round'
-		>
-			<path d='M3 5h14M3 10h10M3 15h6' />
-		</svg>
-	),
-	// 3. Verify with evidence — checkmark inside shield
-	() => (
-		<svg
-			viewBox='0 0 20 20'
-			fill='none'
-			stroke='currentColor'
-			strokeWidth='1.4'
-			strokeLinecap='round'
-			strokeLinejoin='round'
-		>
-			<path d='M10 2.5l6 2v5c0 4-3 7-6 8-3-1-6-4-6-8v-5l6-2z' />
-			<path d='M7.5 10l2 2 3.5-4' />
-		</svg>
-	),
-	// 4. Catch regressions — clock with arrow ring
-	() => (
-		<svg
-			viewBox='0 0 20 20'
-			fill='none'
-			stroke='currentColor'
-			strokeWidth='1.4'
-			strokeLinecap='round'
-			strokeLinejoin='round'
-		>
-			<circle cx='10' cy='10' r='6.5' />
-			<path d='M10 6.5V10l2.2 2' />
-		</svg>
-	),
-	// 5. Decide with confidence — diamond / decision node
-	() => (
-		<svg
-			viewBox='0 0 20 20'
-			fill='none'
-			stroke='currentColor'
-			strokeWidth='1.4'
-			strokeLinecap='round'
-			strokeLinejoin='round'
-		>
-			<path d='M10 2.5L17.5 10 10 17.5 2.5 10 10 2.5z' />
-			<circle cx='10' cy='10' r='1.6' fill='currentColor' />
-		</svg>
-	),
-];
+// Pill icons and the pill interaction state live in HeroPills.tsx —
+// this file only orchestrates the hero layout.
 
 /* ──────────────────────────────────────────────────────────────────
  * Animated Vestigio trails — descending dot traces as a subtle
@@ -424,7 +347,7 @@ const Hero = async ({
 	primaryCtaLabel,
 }: HeroProps = {}) => {
 	const t = await getTranslations("homepage.hero_v2");
-	const pills = t.raw("pills") as string[];
+	const pills = t.raw("pills") as Pill[];
 	const actions = t.raw("shell.actions") as ActionRow[];
 
 	return (
@@ -508,43 +431,14 @@ const Hero = async ({
 					{t("subtitle")}
 				</p>
 
-				{/* 5 horizontal pill cards — checkbox + icon + label */}
-				<div className='mx-auto mb-10 flex w-full max-w-[1000px] flex-wrap items-stretch justify-center gap-2.5 sm:mb-12 sm:gap-3'>
-					{pills.map((label, i) => (
-						<div
-							key={i}
-							className='group/pill relative flex min-w-[160px] flex-1 items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.025] px-3.5 py-2.5 text-left backdrop-blur transition-all hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-white/[0.04] sm:min-w-[170px] sm:gap-3 sm:px-4 sm:py-3'
-							style={{
-								animation: `vhero-float-up 0.8s cubic-bezier(0.16,1,0.3,1) ${0.15 + i * 0.07}s both`,
-							}}
-						>
-							{/* Custom checkbox — filled emerald square with check */}
-							<span className='flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border border-emerald-400/40 bg-emerald-400/15 transition-colors group-hover/pill:border-emerald-400/70 group-hover/pill:bg-emerald-400/25'>
-								<svg
-									viewBox='0 0 12 12'
-									fill='none'
-									stroke='currentColor'
-									strokeWidth='2'
-									className='h-2.5 w-2.5 text-emerald-300'
-								>
-									<path
-										d='M2.5 6.5l2.5 2.5L9.5 3.5'
-										strokeLinecap='round'
-										strokeLinejoin='round'
-									/>
-								</svg>
-							</span>
-							{/* Icon */}
-							<span className='flex h-5 w-5 shrink-0 items-center justify-center text-emerald-300/80 transition-colors group-hover/pill:text-emerald-300'>
-								{PILL_ICONS[i]?.()}
-							</span>
-							{/* Label */}
-							<span className='whitespace-nowrap text-[12px] font-medium text-zinc-200 sm:text-[13px]'>
-								{label}
-							</span>
-						</div>
-					))}
-				</div>
+				{/* 5 interactive impact / solution pills — client component.
+				    Each card flips between the user's pain and the Vestigio
+				    feature that resolves it when clicked. See HeroPills.tsx. */}
+				<HeroPills
+					pills={pills}
+					eyebrowImpact={t("pills_eyebrow_impact")}
+					eyebrowSolution={t("pills_eyebrow_solution")}
+				/>
 
 				{/* CTAs — larger than typical buttons because they are the
 				    primary conversion action on the entire homepage. */}

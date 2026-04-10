@@ -67,12 +67,34 @@
       "headline_part2": "antes de gastar mais em tráfego.",
       "subtitle": "A Vestigio audita sua operação digital, estima impacto, prioriza o que corrigir primeiro e monitora o que pode piorar depois — para você parar de escalar no escuro.",
       "pills": [
-        "Encontre vazamentos",
-        "Priorize correções",
-        "Valide com evidência",
-        "Detecte regressões",
-        "Decida com confiança"
+        {
+          "impact": "Estou perdendo dinheiro sem enxergar",
+          "solution_title": "Detecção de Vazamentos",
+          "solution_body": "O Vestigio varre cada superfície do funil e marca cada vazamento com faixa de impacto e confiança."
+        },
+        {
+          "impact": "Não sei por onde começar a corrigir",
+          "solution_title": "Fila de Ações Priorizada",
+          "solution_body": "Cada achado classificado por impacto, urgência e esforço — é só executar o próximo."
+        },
+        {
+          "impact": "Não confio totalmente nos meus dados",
+          "solution_title": "Verificação com Evidência",
+          "solution_body": "Cada achado é verificado no navegador, cruzado entre fontes e com timestamp."
+        },
+        {
+          "impact": "As coisas quebram depois que eu subo",
+          "solution_title": "Monitoramento Contínuo",
+          "solution_body": "O Vestigio rastreia cada superfície ao longo do tempo e avisa exatamente o que piorou."
+        },
+        {
+          "impact": "Estou escalando no escuro",
+          "solution_title": "Preflight de Escala",
+          "solution_body": "Saiba se está pronto para 10x o tráfego antes de pagar por ele."
+        }
       ],
+      "pills_eyebrow_impact": "Seu impacto",
+      "pills_eyebrow_solution": "Como o Vestigio resolve",
       "cta_primary": "Rodar auditoria grátis",
       "cta_secondary": "Ver tour do produto",
       "cta_micro": "Funciona para ecommerce, SaaS, captação de leads, infoprodutos, serviços e apps.",

@@ -67,12 +67,34 @@
       "headline_part2": "before you spend more on traffic.",
       "subtitle": "Vestigio audits your digital operation, estimates impact, ranks what to fix first, and watches what may break next — so you stop scaling in the dark.",
       "pills": [
-        "Find revenue leaks",
-        "Prioritize fixes",
-        "Verify with evidence",
-        "Catch regressions",
-        "Decide with confidence"
+        {
+          "impact": "I'm losing money I can't see",
+          "solution_title": "Revenue Leak Detection",
+          "solution_body": "Vestigio scans every funnel surface and tags each leak with a dollar range and confidence score."
+        },
+        {
+          "impact": "I don't know what to fix first",
+          "solution_title": "Prioritized Action Queue",
+          "solution_body": "Every finding ranked by impact, urgency, and effort — just execute the next one."
+        },
+        {
+          "impact": "I can't fully trust my data",
+          "solution_title": "Evidence-Backed Verification",
+          "solution_body": "Every finding is browser-verified, cross-checked across sources, and timestamped."
+        },
+        {
+          "impact": "Things break silently after I ship",
+          "solution_title": "Continuous Regression Watch",
+          "solution_body": "Vestigio tracks every surface across cycles and flags exactly what got worse."
+        },
+        {
+          "impact": "I'm scaling in the dark",
+          "solution_title": "Preflight Scale Readiness",
+          "solution_body": "Know if you're ready to 10x traffic before you pay for it."
+        }
       ],
+      "pills_eyebrow_impact": "Your impact",
+      "pills_eyebrow_solution": "How Vestigio solves it",
       "cta_primary": "Run free audit",
       "cta_secondary": "Watch product tour",
       "cta_micro": "Works for ecommerce, SaaS, lead gen, infoproducts, services and apps.",

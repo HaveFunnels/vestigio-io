@@ -67,12 +67,34 @@
       "headline_part2": "antes de gastar más en tráfico.",
       "subtitle": "Vestigio audita tu operación digital, estima el impacto, prioriza qué arreglar primero y vigila lo que puede romperse después — para que dejes de escalar a ciegas.",
       "pills": [
-        "Encuentra fugas",
-        "Prioriza correcciones",
-        "Valida con evidencia",
-        "Detecta regresiones",
-        "Decide con confianza"
+        {
+          "impact": "Estoy perdiendo dinero sin verlo",
+          "solution_title": "Detección de Fugas",
+          "solution_body": "Vestigio escanea cada superficie del embudo y marca cada fuga con rango de impacto y confianza."
+        },
+        {
+          "impact": "No sé por dónde empezar a arreglar",
+          "solution_title": "Cola de Acciones Priorizada",
+          "solution_body": "Cada hallazgo clasificado por impacto, urgencia y esfuerzo — solo ejecuta el siguiente."
+        },
+        {
+          "impact": "No confío totalmente en mis datos",
+          "solution_title": "Verificación con Evidencia",
+          "solution_body": "Cada hallazgo es verificado en navegador, cruzado entre fuentes y con timestamp."
+        },
+        {
+          "impact": "Las cosas se rompen en silencio tras desplegar",
+          "solution_title": "Vigilancia Continua",
+          "solution_body": "Vestigio rastrea cada superficie a lo largo del tiempo y avisa lo que empeoró."
+        },
+        {
+          "impact": "Estoy escalando a ciegas",
+          "solution_title": "Preflight de Escala",
+          "solution_body": "Sabe si estás listo para 10x tu tráfico antes de pagar por él."
+        }
       ],
+      "pills_eyebrow_impact": "Tu impacto",
+      "pills_eyebrow_solution": "Cómo lo resuelve Vestigio",
       "cta_primary": "Hacer auditoría gratis",
       "cta_secondary": "Ver tour del producto",
       "cta_micro": "Funciona para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",

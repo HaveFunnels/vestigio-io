@@ -569,67 +569,38 @@ function MapsPanel() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Floating overlay cards — anchored to corners of the browser shell
+// Sidebar Recovery Card — replaces the legacy user card at the bottom
+// of the sidebar. Uses the same copy tree (`overlay_recovery`) that
+// used to power the floating overlay — the overlay was removed in
+// Phase 7 because it was visually noisy and covered the product
+// shell's corners. This card sits inside the sidebar instead so the
+// "+$67k/mo recoverable" stat is still visible without fighting the
+// product mockup for attention.
 // ─────────────────────────────────────────────────────────────────────
 
-function OverlayAI() {
-	const t = useTranslations("homepage.product_tour.overlay_ai");
-	return (
-		<div className="vptour-float-left pointer-events-none absolute z-30 hidden max-w-[280px] rounded-2xl border border-violet-500/30 bg-[#0c0d1c]/95 p-3.5 shadow-[0_24px_60px_-24px_rgba(139,92,246,0.55)] backdrop-blur lg:block lg:left-[-32px] lg:top-16 xl:left-[-72px]">
-			{/* Subtle gradient + ring overlay (same vocab as dashboard) */}
-			<div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/[0.08] via-transparent to-transparent" aria-hidden />
-			<div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/[0.04]" aria-hidden />
-			<div className="relative">
-				<div className="mb-2 flex items-center gap-2">
-					<div className="relative flex h-6 w-6 items-center justify-center rounded-md bg-violet-500/20">
-						<div className="absolute inset-0 animate-[vptour-pulse_2.6s_ease-in-out_infinite] rounded-md bg-violet-400/30" />
-						<svg viewBox="0 0 12 12" fill="none" className="relative h-3 w-3 text-violet-300">
-							<path d="M6 1l1.4 3.2L10.5 6 7.4 7.4 6 11l-1.4-3.6L1.5 6l3.1-1.8L6 1z" fill="currentColor" />
-						</svg>
-					</div>
-					<span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-						{t("eyebrow")}
-					</span>
-					<span className="ml-auto h-1.5 w-1.5 animate-[vptour-pulse_1.6s_ease-in-out_infinite] rounded-full bg-emerald-400" />
-				</div>
-				<p className="mb-3 text-[11px] leading-relaxed text-zinc-200">{t("message")}</p>
-				<div className="flex flex-wrap gap-1.5">
-					<span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] tabular-nums text-emerald-300">
-						<span className="h-1 w-1 rounded-full bg-emerald-400" />
-						{t("chip_evidence")}
-					</span>
-					<span className="inline-flex items-center gap-1 rounded-md bg-violet-500/10 px-1.5 py-0.5 font-mono text-[9px] tabular-nums text-violet-300">
-						<span className="h-1 w-1 rounded-full bg-violet-400" />
-						{t("chip_action")}
-					</span>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function OverlayRecovery() {
+function SidebarRecoveryCard() {
 	const t = useTranslations("homepage.product_tour.overlay_recovery");
 	return (
-		<div className="vptour-float-right pointer-events-none absolute z-30 hidden max-w-[260px] rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.14] to-emerald-500/[0.04] p-4 shadow-[0_24px_60px_-24px_rgba(16,185,129,0.55)] backdrop-blur lg:block lg:bottom-16 lg:right-[-32px] xl:right-[-72px]">
-			<div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/[0.06]" aria-hidden />
+		<div className="mt-8 overflow-hidden rounded-lg border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.12] to-emerald-500/[0.02] p-3">
+			{/* Thin highlight ring for the liquid-glass feel */}
+			<div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-white/[0.04]" aria-hidden />
 			<div className="relative">
-				<div className="mb-1 flex items-center gap-2">
-					<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-3.5 w-3.5 text-emerald-300">
+				<div className="mb-1 flex items-center gap-1.5">
+					<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-3 w-3 text-emerald-300">
 						<path d="M3 12l3-5 3 3 4-7" strokeLinecap="round" strokeLinejoin="round" />
 						<path d="M9 3h4v4" strokeLinecap="round" strokeLinejoin="round" />
 					</svg>
-					<span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+					<span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-300">
 						{t("eyebrow")}
 					</span>
 				</div>
-				<div className="font-mono text-2xl font-semibold tabular-nums leading-none text-emerald-200 sm:text-3xl">
+				<div className="font-mono text-lg font-semibold tabular-nums leading-none text-emerald-200">
 					{t("value")}
-					<span className="ml-1 text-xs font-normal text-emerald-400/70 sm:text-sm">
+					<span className="ml-1 text-[10px] font-normal text-emerald-400/70">
 						{t("unit")}
 					</span>
 				</div>
-				<div className="mt-1 text-[10px] text-emerald-400/70">{t("sub")}</div>
+				<div className="mt-1 text-[9px] leading-tight text-emerald-400/70">{t("sub")}</div>
 			</div>
 		</div>
 	);
@@ -661,29 +632,9 @@ export default function ProductTour() {
 			{/* Component-scoped keyframes — `vptour-` prefix to avoid
 			    collisions with vhero / vbento. */}
 			<style>{`
-				@keyframes vptour-pulse {
-					0%, 100% { transform: scale(1); opacity: 0.9; }
-					50%      { transform: scale(1.18); opacity: 0.55; }
-				}
-				@keyframes vptour-float-left {
-					0%   { opacity: 0; transform: translateX(-12px); }
-					100% { opacity: 1; transform: translateX(0); }
-				}
-				@keyframes vptour-float-right {
-					0%   { opacity: 0; transform: translateX(12px); }
-					100% { opacity: 1; transform: translateX(0); }
-				}
 				@keyframes vptour-fade-in {
 					from { opacity: 0; transform: translateY(4px); }
 					to   { opacity: 1; transform: translateY(0); }
-				}
-				.vptour-float-left  { animation: vptour-float-left 1.1s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
-				.vptour-float-right { animation: vptour-float-right 1.1s cubic-bezier(0.16,1,0.3,1) 0.5s both; }
-				@media (prefers-reduced-motion: reduce) {
-					.vptour-float-left,
-					.vptour-float-right {
-						animation: none !important;
-					}
 				}
 			`}</style>
 
@@ -708,9 +659,6 @@ export default function ProductTour() {
 			{/* Browser shell wrapper — `relative` so the overlays can be
 			    positioned absolutely against it. */}
 			<div className="relative mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
-				<OverlayAI />
-				<OverlayRecovery />
-
 				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
 					{/* Browser title bar */}
 					<div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:px-4 sm:py-3">
@@ -792,18 +740,11 @@ export default function ProductTour() {
 									))}
 								</nav>
 
-								{/* User card pinned at bottom of sidebar */}
-								<div className="mt-8 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-									<div className="flex items-center gap-2.5">
-										<div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-emerald-500/20 to-violet-500/20 text-xs font-bold text-zinc-300">
-											L
-										</div>
-										<div className="min-w-0 flex-1">
-											<div className="truncate text-xs font-semibold text-zinc-300">Luis Gall</div>
-											<div className="truncate text-[10px] text-zinc-500">{t("user_label")}</div>
-										</div>
-									</div>
-								</div>
+								{/* Recovery card pinned at bottom of sidebar — was the
+								    floating overlay in the previous iteration. Removed
+								    PII (no real user names on a public marketing page).
+								    See SidebarRecoveryCard component above. */}
+								<SidebarRecoveryCard />
 							</div>
 						</div>
 

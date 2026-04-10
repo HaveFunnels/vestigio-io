@@ -53,26 +53,38 @@ interface HeroProps {
 // this file only orchestrates the hero layout.
 
 /* ──────────────────────────────────────────────────────────────────
- * Animated Vestigio trails — descending dot traces as a subtle
- * psychological scroll cue. Each trail is a fixed-width column with
- * a 2x24px dot animating top→bottom, staggered via inline delays so
- * they never all run in lockstep. CSS-keyframes only — no JS.
+ * Animated Vestigio trails — small glowing emerald dots that wander
+ * across the hero canvas in unpredictable paths (right → down →
+ * left → down) and disappear off the bottom. The metaphor is
+ * literal vestígios (Portuguese for "traces / footprints"): the user
+ * sees something moving and is psychologically pulled to scroll
+ * down to follow it.
+ *
+ * Each trail uses a unique multi-step CSS keyframe so trails NEVER
+ * run in lockstep. They start at different X positions, follow
+ * different turning patterns, and finish at different X positions.
+ * Pure CSS — no JS.
  * ──────────────────────────────────────────────────────────────── */
 
-const TRAIL_LANES: Array<{ leftPct: number; delay: number; duration: number }> =
-	[
-		{ leftPct: 6, delay: 0, duration: 14 },
-		{ leftPct: 14, delay: 4.5, duration: 11 },
-		{ leftPct: 22, delay: 1.7, duration: 16 },
-		{ leftPct: 31, delay: 7, duration: 13 },
-		{ leftPct: 42, delay: 3, duration: 18 },
-		{ leftPct: 51, delay: 6.2, duration: 12 },
-		{ leftPct: 60, delay: 1, duration: 15 },
-		{ leftPct: 69, delay: 8, duration: 17 },
-		{ leftPct: 78, delay: 2.3, duration: 13 },
-		{ leftPct: 86, delay: 5.5, duration: 14 },
-		{ leftPct: 94, delay: 0.8, duration: 11 },
-	];
+interface TrailLane {
+	/** Animation name — must match a `@keyframes vhero-trail-N` */
+	name: string;
+	/** Negative delay so the loop is already in motion on first paint */
+	delay: number;
+	/** Total cycle length in seconds */
+	duration: number;
+}
+
+const TRAIL_LANES: TrailLane[] = [
+	{ name: "vhero-trail-zigzag-a", delay: 0,    duration: 18 },
+	{ name: "vhero-trail-zigzag-b", delay: 5,    duration: 22 },
+	{ name: "vhero-trail-zigzag-c", delay: 2.5,  duration: 20 },
+	{ name: "vhero-trail-zigzag-d", delay: 8,    duration: 19 },
+	{ name: "vhero-trail-zigzag-a", delay: 12,   duration: 24 },
+	{ name: "vhero-trail-zigzag-b", delay: 1,    duration: 17 },
+	{ name: "vhero-trail-zigzag-c", delay: 6.5,  duration: 21 },
+	{ name: "vhero-trail-zigzag-d", delay: 3.5,  duration: 23 },
+];
 
 const TrailLayer = () => (
 	<div
@@ -82,22 +94,15 @@ const TrailLayer = () => (
 		{TRAIL_LANES.map((lane, i) => (
 			<div
 				key={i}
-				className='absolute top-0 h-full w-px'
-				style={{ left: `${lane.leftPct}%` }}
-			>
-				{/* faint vertical guide line so the trace looks like it
-				    follows a path; barely visible at idle */}
-				<div className='absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/[0.03] to-transparent' />
-				{/* the moving trace itself — a small bright vertical
-				    segment with an emerald glow */}
-				<div
-					className='vhero-trail absolute left-1/2 top-0 h-6 w-px -translate-x-1/2 rounded-full bg-gradient-to-b from-transparent via-emerald-300/70 to-transparent shadow-[0_0_8px_rgba(110,231,183,0.45)]'
-					style={{
-						animationDelay: `-${lane.delay}s`,
-						animationDuration: `${lane.duration}s`,
-					}}
-				/>
-			</div>
+				className='absolute left-0 top-0 h-3 w-3 rounded-full bg-emerald-300/70 shadow-[0_0_14px_4px_rgba(110,231,183,0.55)]'
+				style={{
+					animationName: lane.name,
+					animationDuration: `${lane.duration}s`,
+					animationIterationCount: "infinite",
+					animationTimingFunction: "cubic-bezier(0.65, 0, 0.35, 1)",
+					animationDelay: `-${lane.delay}s`,
+				}}
+			/>
 		))}
 	</div>
 );
@@ -116,20 +121,56 @@ const Hero = async ({
 	const pills = t.raw("pills") as Pill[];
 
 	return (
-		<section className='relative z-1 overflow-hidden pb-20 pt-10 sm:pb-24 sm:pt-14 lg:pb-32 lg:pt-20'>
+		<section className='relative z-1 overflow-hidden pb-20 pt-28 sm:pb-24 sm:pt-32 lg:pb-32 lg:pt-40'>
 			{/* Component-scoped keyframes — `vhero-` prefix avoids global
 			    collisions with the rest of the app. */}
 			<style>{`
-				@keyframes vhero-trail {
-					0%   { transform: translateY(-80px); opacity: 0; }
-					12%  { opacity: 0.85; }
-					88%  { opacity: 0.85; }
-					100% { transform: translateY(800px); opacity: 0; }
+				/* Trail keyframes — each one defines a different zigzag
+				   path across the hero canvas. The X positions are in
+				   viewport-width units (vw) so they scale with the screen,
+				   the Y positions are in viewport-height (vh). Every
+				   trail enters at opacity 0, fades in around 8% of the
+				   cycle, holds visible until 92%, then fades out as it
+				   exits the bottom. */
+				@keyframes vhero-trail-zigzag-a {
+					0%   { transform: translate(8vw,  -4vh); opacity: 0; }
+					8%   { opacity: 0.85; }
+					22%  { transform: translate(8vw,  18vh); }
+					40%  { transform: translate(28vw, 32vh); }
+					58%  { transform: translate(28vw, 52vh); }
+					75%  { transform: translate(14vw, 68vh); }
+					92%  { opacity: 0.85; }
+					100% { transform: translate(14vw, 96vh); opacity: 0; }
 				}
-				.vhero-trail {
-					animation-name: vhero-trail;
-					animation-iteration-count: infinite;
-					animation-timing-function: cubic-bezier(0.42, 0, 0.58, 1);
+				@keyframes vhero-trail-zigzag-b {
+					0%   { transform: translate(72vw, -4vh); opacity: 0; }
+					8%   { opacity: 0.8; }
+					25%  { transform: translate(72vw, 22vh); }
+					45%  { transform: translate(52vw, 38vh); }
+					62%  { transform: translate(52vw, 56vh); }
+					78%  { transform: translate(68vw, 72vh); }
+					92%  { opacity: 0.8; }
+					100% { transform: translate(68vw, 100vh); opacity: 0; }
+				}
+				@keyframes vhero-trail-zigzag-c {
+					0%   { transform: translate(38vw, -4vh); opacity: 0; }
+					8%   { opacity: 0.7; }
+					20%  { transform: translate(38vw, 14vh); }
+					38%  { transform: translate(58vw, 28vh); }
+					56%  { transform: translate(58vw, 48vh); }
+					74%  { transform: translate(38vw, 62vh); }
+					90%  { transform: translate(38vw, 84vh); opacity: 0.7; }
+					100% { transform: translate(38vw, 100vh); opacity: 0; }
+				}
+				@keyframes vhero-trail-zigzag-d {
+					0%   { transform: translate(92vw, -4vh); opacity: 0; }
+					8%   { opacity: 0.9; }
+					22%  { transform: translate(92vw, 20vh); }
+					40%  { transform: translate(78vw, 36vh); }
+					58%  { transform: translate(86vw, 54vh); }
+					76%  { transform: translate(78vw, 70vh); }
+					92%  { opacity: 0.9; }
+					100% { transform: translate(82vw, 100vh); opacity: 0; }
 				}
 				@keyframes vhero-pulse {
 					0%, 100% { transform: scale(1); opacity: 0.9; }

@@ -76,11 +76,9 @@ const FAQ = () => {
 								</span>
 							</button>
 							<div
-								className='grid'
-								style={{
-									gridTemplateRows: `${activeFaq === i ? "1fr" : "0fr"}`,
-									transition: "grid-template-rows 300ms",
-								}}
+								className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+									activeFaq === i ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+								}`}
 							>
 								<div className='overflow-hidden'>
 									<p className='border-t border-white/5 px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>

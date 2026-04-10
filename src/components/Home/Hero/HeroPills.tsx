@@ -52,13 +52,6 @@ const PILL_ICONS: Array<() => JSX.Element> = [
 			<circle cx='10' cy='13.5' r='0.5' fill='currentColor' />
 		</svg>
 	),
-	() => (
-		<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.4' strokeLinecap='round' strokeLinejoin='round' className='h-[18px] w-[18px]'>
-			<path d='M10 3l8 14H2L10 3z' />
-			<path d='M10 8v4' />
-			<circle cx='10' cy='14.5' r='0.5' fill='currentColor' />
-		</svg>
-	),
 ];
 
 export default function HeroPills({ pills }: HeroPillsProps) {
@@ -74,7 +67,7 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 	};
 
 	return (
-		<div className='mx-auto mb-8 grid w-full max-w-[1100px] grid-cols-2 gap-2 text-left sm:mb-10 sm:grid-cols-3 sm:gap-2.5 lg:grid-cols-5'>
+		<div className='mx-auto mb-8 grid w-full max-w-[900px] grid-cols-2 gap-2 text-left sm:mb-10 sm:gap-2.5 lg:grid-cols-4'>
 			{pills.map((pill, i) => {
 				const isOn = selected.has(i);
 

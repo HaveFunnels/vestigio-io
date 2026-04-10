@@ -68,16 +68,29 @@
       "headline_brush_word": "Analytics",
       "subtitle": "Vestigio prüft deine digitale Operation automatisch und priorisiert, was zu beheben ist, damit du kein Geld mehr liegen lässt — du überspringst das Analytics und gehst direkt zur Entscheidung.",
       "pills": [
-        { "impact": "Traffic, keine Leads", "solution": "Wir finden das Leck" },
-        { "impact": "Ads ohne Rendite", "solution": "Wir zeigen das Leck" },
-        { "impact": "Schöne Seite, wenig Umsatz", "solution": "Fokus auf Conversion" },
-        { "impact": "Weiß nicht, was beheben", "solution": "Sortierte Liste, fertig" },
-        { "impact": "Bricht nach dem Deploy", "solution": "Vor Schaden erkannt" }
+        {
+          "impact": "Traffic, keine Leads",
+          "solution": "Wir finden das Leck"
+        },
+        {
+          "impact": "Ads ohne Rendite",
+          "solution": "Wir zeigen das Leck"
+        },
+        {
+          "impact": "Schöne Seite, wenig Umsatz",
+          "solution": "Fokus auf Conversion"
+        },
+        {
+          "impact": "Weiß nicht, was beheben",
+          "solution": "Sortierte Liste, fertig"
+        }
       ],
       "cta_primary": "Kostenloses Audit starten",
       "cta_secondary": "Produkt-Tour ansehen",
       "cta_micro": "Perfekt für E-Commerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",
-      "shell": { "_deprecated": "moved to product_tour" }
+      "shell": {
+        "_deprecated": "moved to product_tour"
+      }
     },
     "product_tour": {
       "eyebrow": "Produkt-Tour",
@@ -97,81 +110,322 @@
         "eyebrow": "Aktionswarteschlange",
         "count": "9 Aktionen priorisiert",
         "rows": [
-          { "priority": "P1", "title": "Checkout-Redirect-Kette beheben", "desc": "3 Redirects fügen 2,4s Latenz beim Bezahlen hinzu", "impact": "−€16k–38k", "severity": "critical" },
-          { "priority": "P2", "title": "Mobiles Add-to-Cart unter der Falz", "desc": "Button auf 68% der mobilen Sessions versteckt", "impact": "−€11k–25k", "severity": "critical" },
-          { "priority": "P3", "title": "SSL fehlt auf Checkout-Subdomain", "desc": "Browser warnt Nutzer bei 12% der Bezahlvorgänge", "impact": "−€7k–19k", "severity": "critical" },
-          { "priority": "P4", "title": "Preisfilter verliert Status bei Navigation", "desc": "Status bleibt nicht erhalten zwischen Seiten", "impact": "−€4.5k–13k", "severity": "high" },
-          { "priority": "P5", "title": "Rückgaberichtlinie fehlt im Footer", "desc": "Erhöht Chargeback-Rate 2,1x über Marktdurchschnitt", "impact": "−€3.2k–8k", "severity": "high" },
-          { "priority": "P6", "title": "Onboarding Schritt 3 Abbruch-Spike", "desc": "Abfall von 78% → 41% in den letzten 2 Zyklen", "impact": "−€3.6k–10k", "severity": "high" },
-          { "priority": "P7", "title": "Analytics am /checkout-Funnel hinzufügen", "desc": "Keine Funnel-Sichtbarkeit zwischen Cart und Bestätigung", "impact": "−€8k–22k", "severity": "medium" },
-          { "priority": "P8", "title": "Vertrauenslücke im Formular", "desc": "9% der Leads brechen beim E-Mail-Feld ab", "impact": "−€1.8k–5k", "severity": "medium" },
-          { "priority": "P9", "title": "Hero-CTA Kontrast unter WCAG", "desc": "Geschätzter Klickverlust von 4% auf dunklen Hintergründen", "impact": "−€1.3k–3.5k", "severity": "low" }
+          {
+            "priority": "P1",
+            "title": "Checkout-Redirect-Kette beheben",
+            "desc": "3 Redirects fügen 2,4s Latenz beim Bezahlen hinzu",
+            "impact": "−€16k–38k",
+            "severity": "critical"
+          },
+          {
+            "priority": "P2",
+            "title": "Mobiles Add-to-Cart unter der Falz",
+            "desc": "Button auf 68% der mobilen Sessions versteckt",
+            "impact": "−€11k–25k",
+            "severity": "critical"
+          },
+          {
+            "priority": "P3",
+            "title": "SSL fehlt auf Checkout-Subdomain",
+            "desc": "Browser warnt Nutzer bei 12% der Bezahlvorgänge",
+            "impact": "−€7k–19k",
+            "severity": "critical"
+          },
+          {
+            "priority": "P4",
+            "title": "Preisfilter verliert Status bei Navigation",
+            "desc": "Status bleibt nicht erhalten zwischen Seiten",
+            "impact": "−€4.5k–13k",
+            "severity": "high"
+          },
+          {
+            "priority": "P5",
+            "title": "Rückgaberichtlinie fehlt im Footer",
+            "desc": "Erhöht Chargeback-Rate 2,1x über Marktdurchschnitt",
+            "impact": "−€3.2k–8k",
+            "severity": "high"
+          },
+          {
+            "priority": "P6",
+            "title": "Onboarding Schritt 3 Abbruch-Spike",
+            "desc": "Abfall von 78% → 41% in den letzten 2 Zyklen",
+            "impact": "−€3.6k–10k",
+            "severity": "high"
+          },
+          {
+            "priority": "P7",
+            "title": "Analytics am /checkout-Funnel hinzufügen",
+            "desc": "Keine Funnel-Sichtbarkeit zwischen Cart und Bestätigung",
+            "impact": "−€8k–22k",
+            "severity": "medium"
+          },
+          {
+            "priority": "P8",
+            "title": "Vertrauenslücke im Formular",
+            "desc": "9% der Leads brechen beim E-Mail-Feld ab",
+            "impact": "−€1.8k–5k",
+            "severity": "medium"
+          },
+          {
+            "priority": "P9",
+            "title": "Hero-CTA Kontrast unter WCAG",
+            "desc": "Geschätzter Klickverlust von 4% auf dunklen Hintergründen",
+            "impact": "−€1.3k–3.5k",
+            "severity": "low"
+          }
         ]
       },
       "analysis_panel": {
         "summary_header": "Analyse-Übersicht",
         "findings_header": "Top-Befunde",
         "summary_cards": [
-          { "label": "Gesamtbefunde", "value": "23", "sub": "Probleme über 12 Flächen" },
-          { "label": "Geschätzter Monatsverlust", "value": "−€60k", "sub": "Untergrenze" },
-          { "label": "Hohe Wirkung", "value": "8", "sub": "kritisch + hoch" },
-          { "label": "Geprüfte Flächen", "value": "12", "sub": "live + verifiziert" },
-          { "label": "Ø Konfidenz", "value": "82%", "sub": "beweisbasiert" },
-          { "label": "Stärken", "value": "6", "sub": "zu erhalten" }
+          {
+            "label": "Gesamtbefunde",
+            "value": "23",
+            "sub": "Probleme über 12 Flächen"
+          },
+          {
+            "label": "Geschätzter Monatsverlust",
+            "value": "−€60k",
+            "sub": "Untergrenze"
+          },
+          {
+            "label": "Hohe Wirkung",
+            "value": "8",
+            "sub": "kritisch + hoch"
+          },
+          {
+            "label": "Geprüfte Flächen",
+            "value": "12",
+            "sub": "live + verifiziert"
+          },
+          {
+            "label": "Ø Konfidenz",
+            "value": "82%",
+            "sub": "beweisbasiert"
+          },
+          {
+            "label": "Stärken",
+            "value": "6",
+            "sub": "zu erhalten"
+          }
         ],
         "rows": [
-          { "title": "Checkout-Redirect-Kette fügt 2,4s Latenz hinzu", "severity": "critical", "impact": "−€16k–38k" },
-          { "title": "Mobiles Add-to-Cart unter der Falz", "severity": "critical", "impact": "−€11k–25k" },
-          { "title": "Checkout-Subdomain ohne SSL-Zertifikat", "severity": "critical", "impact": "−€7k–19k" },
-          { "title": "Preisfilter verliert Status bei Navigation", "severity": "high", "impact": "−€4.5k–13k" },
-          { "title": "Fehlende Rückgaberichtlinie erhöht Chargeback-Risiko", "severity": "high", "impact": "−€3.2k–8k" },
-          { "title": "Konversionsregression in Onboarding-Schritt 3", "severity": "high", "impact": "−€3.6k–10k" },
-          { "title": "Keine Analytics zwischen Cart und Bestätigung", "severity": "medium", "impact": "−€8k–22k" },
-          { "title": "Vertrauenslücke bei E-Mail-Erfassung", "severity": "medium", "impact": "−€1.8k–5k" },
-          { "title": "Hero-CTA Farbkontrast unter WCAG", "severity": "low", "impact": "−€1.3k–3.5k" },
-          { "title": "Footer-Trust-Marken fehlen", "severity": "low", "impact": "−€0.7k–1.8k" }
+          {
+            "title": "Checkout-Redirect-Kette fügt 2,4s Latenz hinzu",
+            "severity": "critical",
+            "impact": "−€16k–38k"
+          },
+          {
+            "title": "Mobiles Add-to-Cart unter der Falz",
+            "severity": "critical",
+            "impact": "−€11k–25k"
+          },
+          {
+            "title": "Checkout-Subdomain ohne SSL-Zertifikat",
+            "severity": "critical",
+            "impact": "−€7k–19k"
+          },
+          {
+            "title": "Preisfilter verliert Status bei Navigation",
+            "severity": "high",
+            "impact": "−€4.5k–13k"
+          },
+          {
+            "title": "Fehlende Rückgaberichtlinie erhöht Chargeback-Risiko",
+            "severity": "high",
+            "impact": "−€3.2k–8k"
+          },
+          {
+            "title": "Konversionsregression in Onboarding-Schritt 3",
+            "severity": "high",
+            "impact": "−€3.6k–10k"
+          },
+          {
+            "title": "Keine Analytics zwischen Cart und Bestätigung",
+            "severity": "medium",
+            "impact": "−€8k–22k"
+          },
+          {
+            "title": "Vertrauenslücke bei E-Mail-Erfassung",
+            "severity": "medium",
+            "impact": "−€1.8k–5k"
+          },
+          {
+            "title": "Hero-CTA Farbkontrast unter WCAG",
+            "severity": "low",
+            "impact": "−€1.3k–3.5k"
+          },
+          {
+            "title": "Footer-Trust-Marken fehlen",
+            "severity": "low",
+            "impact": "−€0.7k–1.8k"
+          }
         ]
       },
       "inventory_panel": {
         "header": "Flächen-Inventar",
-        "headers": { "surface": "Fläche", "path": "Pfad", "status": "Status", "http": "HTTP", "findings": "Befunde" },
+        "headers": {
+          "surface": "Fläche",
+          "path": "Pfad",
+          "status": "Status",
+          "http": "HTTP",
+          "findings": "Befunde"
+        },
         "status_live": "Live",
         "status_down": "Ausgefallen",
         "status_warn": "Warnung",
         "findings_label": "Befunde",
         "findings_label_one": "Befund",
         "rows": [
-          { "path": "/", "label": "Startseite", "status": "live", "code": 200, "findings": 3 },
-          { "path": "/products", "label": "Produkte", "status": "live", "code": 200, "findings": 2 },
-          { "path": "/products/[id]", "label": "Produktdetails", "status": "live", "code": 200, "findings": 1 },
-          { "path": "/cart", "label": "Warenkorb", "status": "live", "code": 200, "findings": 4 },
-          { "path": "/checkout", "label": "Kasse", "status": "live", "code": 200, "findings": 6 },
-          { "path": "/checkout/payment", "label": "Bezahlung", "status": "warn", "code": 200, "findings": 3 },
-          { "path": "/thank-you", "label": "Danke", "status": "down", "code": 503, "findings": 1 },
-          { "path": "/pricing", "label": "Preise", "status": "live", "code": 200, "findings": 1 },
-          { "path": "/onboarding", "label": "Onboarding", "status": "live", "code": 200, "findings": 2 },
-          { "path": "/dashboard", "label": "Dashboard", "status": "live", "code": 200, "findings": 0 },
-          { "path": "/account", "label": "Konto", "status": "live", "code": 200, "findings": 0 },
-          { "path": "/blog", "label": "Blog", "status": "warn", "code": 200, "findings": 0 }
+          {
+            "path": "/",
+            "label": "Startseite",
+            "status": "live",
+            "code": 200,
+            "findings": 3
+          },
+          {
+            "path": "/products",
+            "label": "Produkte",
+            "status": "live",
+            "code": 200,
+            "findings": 2
+          },
+          {
+            "path": "/products/[id]",
+            "label": "Produktdetails",
+            "status": "live",
+            "code": 200,
+            "findings": 1
+          },
+          {
+            "path": "/cart",
+            "label": "Warenkorb",
+            "status": "live",
+            "code": 200,
+            "findings": 4
+          },
+          {
+            "path": "/checkout",
+            "label": "Kasse",
+            "status": "live",
+            "code": 200,
+            "findings": 6
+          },
+          {
+            "path": "/checkout/payment",
+            "label": "Bezahlung",
+            "status": "warn",
+            "code": 200,
+            "findings": 3
+          },
+          {
+            "path": "/thank-you",
+            "label": "Danke",
+            "status": "down",
+            "code": 503,
+            "findings": 1
+          },
+          {
+            "path": "/pricing",
+            "label": "Preise",
+            "status": "live",
+            "code": 200,
+            "findings": 1
+          },
+          {
+            "path": "/onboarding",
+            "label": "Onboarding",
+            "status": "live",
+            "code": 200,
+            "findings": 2
+          },
+          {
+            "path": "/dashboard",
+            "label": "Dashboard",
+            "status": "live",
+            "code": 200,
+            "findings": 0
+          },
+          {
+            "path": "/account",
+            "label": "Konto",
+            "status": "live",
+            "code": 200,
+            "findings": 0
+          },
+          {
+            "path": "/blog",
+            "label": "Blog",
+            "status": "warn",
+            "code": 200,
+            "findings": 0
+          }
         ]
       },
       "workspaces_panel": {
         "header": "Workspaces",
         "rows": [
-          { "name": "Skalierungsbereitschaft", "urgency": "BLOCK", "tone": "red", "desc": "Kritische Blocker für sicheres Traffic-Skalieren. 5 offene Probleme." },
-          { "name": "Umsatzintegrität", "urgency": "FIX", "tone": "orange", "desc": "Aktive Lecks in Checkout, Preise und Onboarding. −€48k/Monat in Gefahr." },
-          { "name": "Chargeback-Resilienz", "urgency": "MODERATE", "tone": "amber", "desc": "Disputbereitschaft und Rückgabe-Lücken. 3 offene Probleme." },
-          { "name": "SEO & Auffindbarkeit", "urgency": "WATCH", "tone": "sky", "desc": "Schema, Sitemap und Vertrauenssignale. 2 offene Probleme." },
-          { "name": "Kontinuierliche Compliance", "urgency": "STABLE", "tone": "emerald", "desc": "WCAG, DSGVO und regionale Einwilligung. Alle aktuellen Befunde geschlossen." }
+          {
+            "name": "Skalierungsbereitschaft",
+            "urgency": "BLOCK",
+            "tone": "red",
+            "desc": "Kritische Blocker für sicheres Traffic-Skalieren. 5 offene Probleme."
+          },
+          {
+            "name": "Umsatzintegrität",
+            "urgency": "FIX",
+            "tone": "orange",
+            "desc": "Aktive Lecks in Checkout, Preise und Onboarding. −€48k/Monat in Gefahr."
+          },
+          {
+            "name": "Chargeback-Resilienz",
+            "urgency": "MODERATE",
+            "tone": "amber",
+            "desc": "Disputbereitschaft und Rückgabe-Lücken. 3 offene Probleme."
+          },
+          {
+            "name": "SEO & Auffindbarkeit",
+            "urgency": "WATCH",
+            "tone": "sky",
+            "desc": "Schema, Sitemap und Vertrauenssignale. 2 offene Probleme."
+          },
+          {
+            "name": "Kontinuierliche Compliance",
+            "urgency": "STABLE",
+            "tone": "emerald",
+            "desc": "WCAG, DSGVO und regionale Einwilligung. Alle aktuellen Befunde geschlossen."
+          }
         ]
       },
       "chat_panel": {
         "header": "Vestigio Pulse",
         "thread": [
-          { "from": "user", "text": "Wo verliere ich gerade am meisten Geld?" },
-          { "from": "ai", "text": "Ihr größtes Umsatzleck ist die Checkout-Redirect-Kette. Sie fügt 2,4s Latenz hinzu und kostet schätzungsweise **−€16k bis €38k pro Monat** an verlorenen Konversionen. Ich habe eine P1-Aktion erstellt.", "chips": ["3 Befunde verwendet", "Aktion P1 erstellt"] },
-          { "from": "user", "text": "Was ist seit der letzten Analyse kaputtgegangen?" },
-          { "from": "ai", "text": "3 Regressionen in den letzten 14 Tagen: Checkout-Abbruch **+12%**, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL-Zertifikat läuft in 5 Tagen ab. Die ersten beiden sind bereits als P1 und P3 in der Warteschlange.", "chips": ["3 Regressionen", "2 Aktionen priorisiert"] }
+          {
+            "from": "user",
+            "text": "Wo verliere ich gerade am meisten Geld?"
+          },
+          {
+            "from": "ai",
+            "text": "Ihr größtes Umsatzleck ist die Checkout-Redirect-Kette. Sie fügt 2,4s Latenz hinzu und kostet schätzungsweise **−€16k bis €38k pro Monat** an verlorenen Konversionen. Ich habe eine P1-Aktion erstellt.",
+            "chips": [
+              "3 Befunde verwendet",
+              "Aktion P1 erstellt"
+            ]
+          },
+          {
+            "from": "user",
+            "text": "Was ist seit der letzten Analyse kaputtgegangen?"
+          },
+          {
+            "from": "ai",
+            "text": "3 Regressionen in den letzten 14 Tagen: Checkout-Abbruch **+12%**, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL-Zertifikat läuft in 5 Tagen ab. Die ersten beiden sind bereits als P1 und P3 in der Warteschlange.",
+            "chips": [
+              "3 Regressionen",
+              "2 Aktionen priorisiert"
+            ]
+          }
         ],
         "input_placeholder": "Frage alles über dein Geschäft..."
       },
@@ -179,14 +433,46 @@
         "header": "Reisekarte",
         "subtext": "Jedes Leck der Fläche zugeordnet, die es verursacht.",
         "nodes": [
-          { "label": "Start", "path": "/", "tone": "emerald" },
-          { "label": "Produkte", "path": "/products", "tone": "sky" },
-          { "label": "Detail", "path": "/products/[id]", "tone": "sky" },
-          { "label": "Warenkorb", "path": "/cart", "tone": "amber" },
-          { "label": "Kasse", "path": "/checkout", "tone": "red" },
-          { "label": "Bezahlung", "path": "/checkout/payment", "tone": "red" },
-          { "label": "Bestätigung", "path": "/thank-you", "tone": "emerald" },
-          { "label": "Konto", "path": "/account", "tone": "emerald" }
+          {
+            "label": "Start",
+            "path": "/",
+            "tone": "emerald"
+          },
+          {
+            "label": "Produkte",
+            "path": "/products",
+            "tone": "sky"
+          },
+          {
+            "label": "Detail",
+            "path": "/products/[id]",
+            "tone": "sky"
+          },
+          {
+            "label": "Warenkorb",
+            "path": "/cart",
+            "tone": "amber"
+          },
+          {
+            "label": "Kasse",
+            "path": "/checkout",
+            "tone": "red"
+          },
+          {
+            "label": "Bezahlung",
+            "path": "/checkout/payment",
+            "tone": "red"
+          },
+          {
+            "label": "Bestätigung",
+            "path": "/thank-you",
+            "tone": "emerald"
+          },
+          {
+            "label": "Konto",
+            "path": "/account",
+            "tone": "emerald"
+          }
         ]
       },
       "overlay_ai": {
@@ -289,10 +575,22 @@
         "title": "Eine klare Liste — was zuerst behoben gehört",
         "description": "Jeder Befund nach Wirkung, Dringlichkeit und Aufwand sortiert. Keine Tabellen mehr — nur die nächste Entscheidung, einsatzbereit.",
         "rows": [
-          { "title": "Checkout-Abbrüche steigen", "impact": "−7.840 €" },
-          { "title": "Vertrauenslücke im Formular", "impact": "−2.930 €" },
-          { "title": "Verwirrung auf Preisseite", "impact": "−1.790 €" },
-          { "title": "Onboarding-Abbruch", "impact": "−1.060 €" }
+          {
+            "title": "Checkout-Abbrüche steigen",
+            "impact": "−7.840 €"
+          },
+          {
+            "title": "Vertrauenslücke im Formular",
+            "impact": "−2.930 €"
+          },
+          {
+            "title": "Verwirrung auf Preisseite",
+            "impact": "−1.790 €"
+          },
+          {
+            "title": "Onboarding-Abbruch",
+            "impact": "−1.060 €"
+          }
         ]
       },
       "revenue_leaks": {
@@ -302,9 +600,21 @@
         "confidence_label": "Konfidenz",
         "leaking_label": "Leck",
         "rows": [
-          { "surface": "Checkout-Funnel", "loss": "−7.840 €", "confidence": "94%" },
-          { "surface": "Preisseite", "loss": "−2.930 €", "confidence": "88%" },
-          { "surface": "Onboarding-Flow", "loss": "−1.790 €", "confidence": "91%" }
+          {
+            "surface": "Checkout-Funnel",
+            "loss": "−7.840 €",
+            "confidence": "94%"
+          },
+          {
+            "surface": "Preisseite",
+            "loss": "−2.930 €",
+            "confidence": "88%"
+          },
+          {
+            "surface": "Onboarding-Flow",
+            "loss": "−1.790 €",
+            "confidence": "91%"
+          }
         ]
       },
       "continuous_watch": {
@@ -1239,8 +1549,7 @@
           "executive_summary": "Erstelle eine Zusammenfassung für eine Vorstandssitzung. Einschließen: monatlicher Gesamtumsatz in Gefahr (Summe aller Befunde), Top 3 kritische Probleme mit Dollar-Impact, 90-Tage-Prioritätsplan (Woche 1-2: Quick Wins, Monat 1: kritische Korrekturen, Monat 2-3: strategische Verbesserungen), erwarteter ROI des vollständigen Behebungsplans und ein Gesundheitswert von 0-100 für das Geschäft.",
           "cross_pack_correlation": "Analysiere Befunde über ALLE Packs hinweg (Umsatzintegrität, Skalierungsbereitschaft, Chargeback-Resilienz). Finde Korrelationen: Welche Befunde aus verschiedenen Packs teilen dieselbe Ursache? Wo reduziert die Behebung eines Umsatzproblems auch das Chargeback-Risiko? Wo hilft die Verbesserung des Vertrauens auch der Conversion? Erstelle eine Korrelationskarte mit verbundenen Befunden über Packs hinweg mit kombiniertem Impact."
         }
-      }
-      ,
+      },
       "context": {
         "title": "Kontext",
         "clear_all": "Alles entfernen",

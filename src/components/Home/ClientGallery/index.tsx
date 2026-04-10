@@ -29,7 +29,7 @@ const ClientGallery = async () => {
 	return (
 		<section
 			id='client-gallery'
-			className='relative z-1 overflow-hidden border-t border-white/[0.04] bg-[#080812] py-14 sm:py-16 lg:py-20'
+			className='relative z-1 overflow-hidden py-14 sm:py-16 lg:py-20'
 		>
 			<style>{`
 				@keyframes vclient-marquee {
@@ -45,36 +45,40 @@ const ClientGallery = async () => {
 				}
 			`}</style>
 
-			{/* Soft ambient halo */}
-			<div
-				className='pointer-events-none absolute left-1/2 top-1/2 h-[200px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.05] blur-[120px]'
-				aria-hidden
-			/>
+			{/* The ambient halo from previous versions was removed —
+			    it was an `emerald-500/[0.05]` blur that read fine on
+			    dark but added visual mud on the white bottom of the
+			    HomeBigCard gradient. */}
 
 			<div className='relative mx-auto w-full max-w-[1200px] px-4 sm:px-8 xl:px-0'>
-				{/* Header */}
+				{/* Header — colors tuned for the WHITE bottom of the
+				    HomeBigCard gradient. The ClientGallery is the last
+				    section inside the wrapper, so it sits on the lightest
+				    part of the gradient and needs dark text to be legible. */}
 				<div className='mx-auto mb-10 max-w-[640px] text-center sm:mb-12'>
-					<div className='mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1'>
-						<span className='h-1.5 w-1.5 rounded-full bg-emerald-400' />
-						<span className='text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90'>
+					<div className='mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-600/30 bg-emerald-50/80 px-3 py-1 backdrop-blur'>
+						<span className='h-1.5 w-1.5 rounded-full bg-emerald-500' />
+						<span className='text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700'>
 							{t("eyebrow")}
 						</span>
 					</div>
-					<h2 className='mb-3 text-[1.5rem] font-bold leading-[1.15] tracking-tight text-white sm:text-[1.875rem] lg:text-[2.25rem]'>
+					<h2 className='mb-3 text-[1.5rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-[1.875rem] lg:text-[2.25rem]'>
 						{t("title")}
 					</h2>
-					<p className='mx-auto max-w-[560px] text-sm leading-relaxed text-zinc-500 sm:text-[15px]'>
+					<p className='mx-auto max-w-[560px] text-sm leading-relaxed text-zinc-600 sm:text-[15px]'>
 						{t("subtitle")}
 					</p>
 				</div>
 
-				{/* Marquee row — soft edge mask, paused on hover */}
+				{/* Marquee row — soft edge mask, paused on hover.
+				    Brand glyphs use `text-zinc-700` (dark) so they read
+				    against the white bottom. */}
 				<div className='relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]'>
 					<div className='vclient-track flex w-max items-center gap-x-14 sm:gap-x-20'>
 						{loopBrands.map((brand, i) => (
 							<div
 								key={`${brand.id}-${i}`}
-								className='flex h-10 shrink-0 items-center justify-center text-zinc-500 opacity-60 transition-opacity hover:opacity-90 sm:h-12'
+								className='flex h-10 shrink-0 items-center justify-center text-zinc-700 opacity-70 transition-opacity hover:opacity-100 sm:h-12'
 								title={brand.name}
 								aria-label={brand.name}
 							>

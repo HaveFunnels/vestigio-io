@@ -627,7 +627,7 @@ export default function ProductTour() {
 	return (
 		<section
 			id="product-tour"
-			className="relative scroll-mt-24 bg-[#090911] py-16 sm:py-20 lg:py-28"
+			className="relative scroll-mt-24 py-16 sm:py-20 lg:py-28"
 		>
 			{/* Component-scoped keyframes — `vptour-` prefix to avoid
 			    collisions with vhero / vbento. */}

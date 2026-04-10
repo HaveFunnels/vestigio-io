@@ -37,9 +37,9 @@ const HomeLp = () => {
 				<Hero primaryCtaHref={LP_CTA_HREF} primaryCtaLabel='Run free audit' />
 				<ProductTour />
 				<ClientGallery />
-				<FeaturesWithImage />
-				<Features />
 			</HomeBigCard>
+			<FeaturesWithImage />
+			<Features />
 			<SolutionLayers />
 			<Counter />
 			<Testimonials />

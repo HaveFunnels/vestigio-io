@@ -38,9 +38,9 @@ const Home = () => {
 				<Hero />
 				<ProductTour />
 				<ClientGallery />
-				<FeaturesWithImage />
-				<Features />
 			</HomeBigCard>
+			<FeaturesWithImage />
+			<Features />
 			<SolutionLayers />
 			<Counter />
 			<Testimonials />

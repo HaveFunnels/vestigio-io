@@ -1,31 +1,52 @@
 /**
- * HomeBigCard — gradient wrapper that visually unifies the first
- * five sections of the homepage (Hero → ProductTour → ClientGallery
- * → FeaturesWithImage → Features) into a single "big card" with a
- * top-to-bottom zinc-tone gradient.
+ * HomeBigCard — gradient wrapper around the THREE top sections of
+ * the homepage (Hero → ProductTour → ClientGallery).
  *
  * The page background OUTSIDE this card stays the existing dark
- * `#090911` from the body, so the card looks like a lit zone
- * floating on the dark canvas — same vibe as the mixpanel reference
- * the user shared (a single product canvas surface that frames the
- * hero, the dashboard mockup, and the feature grid).
+ * `#090911` from the body, so the card reads as a lit canvas
+ * floating on the dark page — same idea as the mixpanel reference
+ * the user shared.
  *
- * Gradient direction: top → bottom, dark → progressively lighter.
- * The lightest stop is `zinc-500` rather than pure white because the
- * Features bento at the bottom is built around white-on-dark cards
- * (`bg-white/[0.02]` borders) that need a dark-enough background
- * to read against. Going to pure white would require redesigning
- * every bento card.
+ * SCOPE
  *
- * Layout chrome:
- *   - rounded-3xl corners on lg+ (sharp on mobile so it edge-to-edge)
- *   - mx margins on sm+ so the dark page bg shows around the card
- *   - thin white/8 border + outer shadow for the floating-card feel
+ * Phase 6 originally wrapped 5 sections (through the Features
+ * bento). Phase 7d shrinks the scope to just 3:
+ *   1. Hero
+ *   2. ProductTour
+ *   3. ClientGallery
  *
- * Inner sections must have transparent backgrounds — see the
- * `[&_section]:!bg-transparent` selector below, which forces every
- * descendant `<section>` element to inherit the wrapper's gradient
- * instead of painting its own opaque bg over it.
+ * Everything below ClientGallery (FeaturesWithImage, Features
+ * bento, SolutionLayers, …) is back to standalone dark sections
+ * — they were never the right fit for a light-bottom gradient
+ * because they're built around white-on-dark cards that disappear
+ * on a light background.
+ *
+ * GRADIENT
+ *
+ * Top → bottom, dark → white. The transition is intentionally
+ * abrupt mid-card (around 60% of the height) so the user clearly
+ * sees the canvas changing tone. The top half holds the Hero
+ * (dark elements stay readable) and the bottom half holds the
+ * ClientGallery (which adapts its text colors to dark for
+ * legibility on the light surface).
+ *
+ *   0% — #090911 (existing site dark)
+ *  35% — #1a1a22 (slightly lighter dark, holds the ProductTour)
+ *  60% — zinc-300 (the abrupt transition zone)
+ * 100% — white
+ *
+ * INNER ELEMENTS
+ *
+ * The previous version forced every nested `<section>` to
+ * `!bg-transparent` via an arbitrary-variant selector. Removed
+ * that hack — instead the three wrapped sections (Hero,
+ * ProductTour, ClientGallery) have their own `bg-*` classes
+ * deleted from their section wrappers in their respective files.
+ * Inner elements (the browser shell mockup, brand strip wrapper,
+ * cards) keep their opaque colors as designed. The user's exact
+ * words: "não quero elementos transparentes" — only the section
+ * background plate moved to the wrapper, everything inside stays
+ * the way it was painted.
  */
 
 import type { ReactNode } from "react";
@@ -44,17 +65,11 @@ export default function HomeBigCard({ children }: HomeBigCardProps) {
 					"border border-white/[0.06]",
 					"sm:rounded-3xl",
 					"shadow-[0_40px_120px_-30px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.03)]",
-					// The actual gradient — top dark, bottom lighter
-					"bg-gradient-to-b from-[#090911] via-zinc-900 to-zinc-700",
-					// Force every nested <section> to be transparent so the
-					// gradient shows through. Without this, the per-section
-					// bg-[#090911] / bg-[#080812] classes would paint over
-					// the wrapper and you'd see no gradient at all.
-					"[&_section]:!bg-transparent",
-					// Same for any direct nested div that has its own
-					// dark bg (Hero uses an absolute layer for its own
-					// background gradient — neutralize that too).
-					"[&_section_div.-z-2]:!hidden",
+					// The actual gradient — dark top, abrupt mid-band, white
+					// bottom. The arbitrary stop percentages (`from-X`,
+					// `via-Y`, `to-Z` with `via-N%`) shape the curve so the
+					// transition has a clear inflection.
+					"bg-[linear-gradient(to_bottom,#090911_0%,#0e0e16_30%,#1a1a22_55%,#a1a1aa_75%,#ffffff_100%)]",
 				].join(" ")}
 			>
 				{children}

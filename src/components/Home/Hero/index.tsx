@@ -209,10 +209,13 @@ const Hero = async ({
 				}
 			`}</style>
 
-			{/* Background — full-bleed vertical gradient in vestigio palette */}
-			<div className='-z-2 absolute inset-0' aria-hidden>
-				<div className='absolute inset-0 bg-gradient-to-b from-[#0a1a14] via-[#080912] to-[#080812]' />
-				{/* central blooming halo */}
+			{/* Background halos only — no opaque gradient anymore.
+			    The Hero now sits on top of the HomeBigCard wrapper's
+			    gradient (dark top → white bottom), so we no longer
+			    paint our own opaque background plate. The radial halos
+			    stay because they add atmospheric depth without
+			    blocking the wrapper gradient. */}
+			<div className='pointer-events-none absolute inset-0 -z-1' aria-hidden>
 				<div className='absolute left-1/2 top-0 h-[700px] w-[1100px] -translate-x-1/2 rounded-full bg-emerald-500/[0.08] blur-[140px]' />
 				<div className='absolute left-1/2 top-[200px] h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-indigo-500/[0.05] blur-[160px]' />
 			</div>

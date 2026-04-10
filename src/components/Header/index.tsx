@@ -107,7 +107,7 @@ const Header = () => {
 								src={logoSrc}
 								alt='Vestigio'
 								className={`w-auto transition-all duration-500 ${
-									compact ? "h-6" : "h-8"
+									compact ? "h-5 sm:h-6" : "h-6 sm:h-8"
 								}`}
 							/>
 						) : (
@@ -115,7 +115,7 @@ const Header = () => {
 								src={logoSrc}
 								alt='Vestigio'
 								className={`w-auto transition-all duration-500 ${
-									compact ? "h-6" : "h-8"
+									compact ? "h-5 sm:h-6" : "h-6 sm:h-8"
 								}`}
 							/>
 						)}

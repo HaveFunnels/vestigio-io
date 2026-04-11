@@ -872,7 +872,7 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 						</div>
 
 						{/* Active panel — fixed height, scrollable content */}
-						<div className="h-[420px] flex-1 overflow-y-auto p-4 sm:p-6 md:h-[640px] md:p-7 lg:h-[680px] lg:p-8">
+						<div className="h-[420px] shrink-0 overflow-y-auto p-4 sm:p-6 md:h-[640px] md:flex-1 md:shrink md:p-7 lg:h-[680px] lg:p-8">
 							<div
 								key={activeTab}
 								className="animate-[vptour-fade-in_0.25s_ease-out]"

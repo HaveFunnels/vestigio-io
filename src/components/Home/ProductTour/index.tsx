@@ -538,8 +538,8 @@ function FlowNode({ node, size = "sm" }: { node: MapNode; size?: "sm" | "lg" }) 
 					: "h-8 w-8 text-[9px] md:h-9 md:w-9 md:text-[10px]"
 			} ${
 				isMain
-					? "border-2 border-emerald-400/50 bg-emerald-500/15 text-emerald-300"
-					: "border border-white/[0.08] bg-white/[0.04] text-zinc-500"
+					? "border-2 border-emerald-400/50 bg-[#0c1a14] text-emerald-300"
+					: "border border-white/[0.08] bg-[#0d0d17] text-zinc-500"
 			}`}>
 				{node.pct}%
 			</div>

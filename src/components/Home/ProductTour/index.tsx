@@ -554,35 +554,56 @@ function FlowNode({ node, size = "sm" }: { node: MapNode; size?: "sm" | "lg" }) 
 	);
 }
 
-/**
- * A stage layer row (mobile) / column (desktop) with 3 nodes.
- * The main node has connector stubs above/below (mobile) or left/right (desktop)
- * to link visually to adjacent stages.
+/*
+ * Mobile vertical flowchart with curved SVG connectors.
+ *
+ * Grid: 3 columns. 5 rows: start, stage1, stage2, stage3, finish.
+ * Main nodes zigzag: col0 → col1 → col2 so the path isn't a straight
+ * line. An SVG sits behind the grid drawing quadratic bezier curves
+ * from one main node center to the next.
+ *
+ * Main node column indices: start=1, stage0=0, stage1=1, stage2=2, finish=1
+ * X centers (% of width):  col0≈16.7%, col1=50%, col2≈83.3%
+ *
+ * Row Y centers are evenly spaced across 5 rows.
  */
-function StageLayer({ stage }: { stage: MapNode[] }) {
-	return (
-		<div className="flex items-start justify-center gap-4 md:flex-col md:items-center md:gap-2">
-			{stage.map((node, ni) => (
-				<div key={ni} className="relative">
-					<FlowNode node={node} />
-					{/* Vertical connector stubs on main node (mobile) */}
-					{node.main && (
-						<>
-							<div className="absolute -top-3 left-1/2 h-3 w-px -translate-x-1/2 bg-emerald-500/40 md:hidden" />
-							<div className="absolute -bottom-3 left-1/2 h-3 w-px -translate-x-1/2 bg-emerald-500/40 md:hidden" />
-						</>
-					)}
-					{/* Horizontal connector stubs on main node (desktop) */}
-					{node.main && (
-						<>
-							<div className="absolute left-1/2 top-1/2 hidden h-px w-3 -translate-x-full -translate-y-1/2 bg-emerald-500/40 md:block" style={{ left: "-4px" }} />
-							<div className="absolute top-1/2 hidden h-px w-3 -translate-y-1/2 bg-emerald-500/40 md:block" style={{ left: "calc(100% + 4px)" }} />
-						</>
-					)}
-				</div>
-			))}
-		</div>
-	);
+
+// Column X positions as % of the SVG viewBox width (0–100)
+const COL_X = [16.7, 50, 83.3];
+// Row Y positions (5 rows, evenly spaced with padding)
+const ROW_Y = [6, 27, 50, 73, 94];
+// Which column holds the main node per row
+const MAIN_COL = [1, 0, 1, 2, 1]; // start, s1, s2, s3, finish
+
+/** Build the SVG path that curves through the main nodes (mobile) */
+function buildMobilePath(): string {
+	const pts = MAIN_COL.map((col, row) => ({ x: COL_X[col], y: ROW_Y[row] }));
+	let d = `M${pts[0].x} ${pts[0].y}`;
+	for (let i = 1; i < pts.length; i++) {
+		const prev = pts[i - 1];
+		const curr = pts[i];
+		const midY = (prev.y + curr.y) / 2;
+		d += ` C${prev.x} ${midY}, ${curr.x} ${midY}, ${curr.x} ${curr.y}`;
+	}
+	return d;
+}
+
+/** Build the SVG path for desktop (horizontal flow) */
+// Desktop: 5 columns, 3 rows. Main nodes zigzag vertically: row1→row0→row1→row2→row1
+const DESK_COL_X = [6, 27, 50, 73, 94];
+const DESK_ROW_Y = [16.7, 50, 83.3];
+const DESK_MAIN_ROW = [1, 0, 1, 2, 1]; // start, s1, s2, s3, finish
+
+function buildDesktopPath(): string {
+	const pts = DESK_MAIN_ROW.map((row, col) => ({ x: DESK_COL_X[col], y: DESK_ROW_Y[row] }));
+	let d = `M${pts[0].x} ${pts[0].y}`;
+	for (let i = 1; i < pts.length; i++) {
+		const prev = pts[i - 1];
+		const curr = pts[i];
+		const midX = (prev.x + curr.x) / 2;
+		d += ` C${midX} ${prev.y}, ${midX} ${curr.y}, ${curr.x} ${curr.y}`;
+	}
+	return d;
 }
 
 function MapsPanel() {
@@ -593,41 +614,79 @@ function MapsPanel() {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="mb-5">
+			<div className="mb-4">
 				<h4 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
 					{t("header")}
 				</h4>
 				<p className="mt-1 text-[10px] text-zinc-600">{t("subtext")}</p>
 			</div>
 
-			{/* Mobile: vertical flowchart */}
-			<div className="flex flex-1 flex-col items-center gap-3 md:hidden">
-				<FlowNode node={start} size="lg" />
-				{/* Connector from start to first stage */}
-				<div className="h-4 w-px bg-emerald-500/40" />
-				{stages.map((stage, si) => (
-					<div key={si} className="contents">
-						<StageLayer stage={stage} />
-						{/* Connector between stages */}
-						<div className="h-4 w-px bg-emerald-500/40" />
+			{/* ── Mobile: vertical flowchart ── */}
+			<div className="relative flex-1 md:hidden">
+				{/* Curved connector SVG behind everything */}
+				<svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
+					<path d={buildMobilePath()} stroke="rgba(16,185,129,0.35)" strokeWidth="0.8" fill="none" vectorEffect="non-scaling-stroke" />
+				</svg>
+
+				{/* 5-row, 3-col grid — nodes placed at their positions */}
+				<div className="relative grid h-full grid-cols-3 grid-rows-5 gap-y-2">
+					{/* Row 0: Start — centered (col 1) */}
+					<div className="col-start-2 row-start-1 flex items-center justify-center">
+						<FlowNode node={start} size="lg" />
 					</div>
-				))}
-				<FlowNode node={finish} size="lg" />
+
+					{/* Row 1–3: Stages */}
+					{stages.map((stage, si) => (
+						stage.map((node, ni) => (
+							<div
+								key={`${si}-${ni}`}
+								className="flex items-center justify-center"
+								style={{ gridRow: si + 2, gridColumn: ni + 1 }}
+							>
+								<FlowNode node={node} />
+							</div>
+						))
+					))}
+
+					{/* Row 4: Finish — centered (col 1) */}
+					<div className="col-start-2 row-start-5 flex items-center justify-center">
+						<FlowNode node={finish} size="lg" />
+					</div>
+				</div>
 			</div>
 
-			{/* Desktop: horizontal flowchart */}
-			<div className="hidden flex-1 items-center justify-between md:flex">
-				<FlowNode node={start} size="lg" />
-				{/* Connector from start */}
-				<div className="h-px flex-1 max-w-6 bg-emerald-500/40 lg:max-w-10" />
-				{stages.map((stage, si) => (
-					<div key={si} className="contents">
-						<StageLayer stage={stage} />
-						{/* Connector between stages */}
-						<div className="h-px flex-1 max-w-6 bg-emerald-500/40 lg:max-w-10" />
+			{/* ── Desktop: horizontal flowchart ── */}
+			<div className="relative hidden flex-1 md:block">
+				{/* Curved connector SVG */}
+				<svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
+					<path d={buildDesktopPath()} stroke="rgba(16,185,129,0.35)" strokeWidth="0.8" fill="none" vectorEffect="non-scaling-stroke" />
+				</svg>
+
+				{/* 3-row, 5-col grid */}
+				<div className="relative grid h-full grid-cols-5 grid-rows-3 gap-x-1">
+					{/* Col 0: Start — centered (row 1) */}
+					<div className="col-start-1 row-start-2 flex items-center justify-center">
+						<FlowNode node={start} size="lg" />
 					</div>
-				))}
-				<FlowNode node={finish} size="lg" />
+
+					{/* Col 1–3: Stages — main zigzags row0→row1→row2 */}
+					{stages.map((stage, si) => (
+						stage.map((node, ni) => (
+							<div
+								key={`${si}-${ni}`}
+								className="flex items-center justify-center"
+								style={{ gridColumn: si + 2, gridRow: ni + 1 }}
+							>
+								<FlowNode node={node} />
+							</div>
+						))
+					))}
+
+					{/* Col 4: Finish — centered (row 1) */}
+					<div className="col-start-5 row-start-2 flex items-center justify-center">
+						<FlowNode node={finish} size="lg" />
+					</div>
+				</div>
 			</div>
 		</div>
 	);

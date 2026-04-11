@@ -443,14 +443,14 @@
             { "label": "Preise", "path": "/preise", "pct": 14 }
           ],
           [
-            { "label": "Detail", "path": "/produkte/[id]", "pct": 52, "main": true },
             { "label": "Vergleich", "path": "/vergleich", "pct": 9 },
+            { "label": "Detail", "path": "/produkte/[id]", "pct": 52, "main": true },
             { "label": "Bewertungen", "path": "/bewertungen", "pct": 7 }
           ],
           [
-            { "label": "Kasse", "path": "/kasse", "pct": 24, "main": true },
             { "label": "Warenkorb", "path": "/warenkorb", "pct": 15 },
-            { "label": "Support", "path": "/support", "pct": 3 }
+            { "label": "Support", "path": "/support", "pct": 3 },
+            { "label": "Kasse", "path": "/kasse", "pct": 24, "main": true }
           ]
         ]
       },

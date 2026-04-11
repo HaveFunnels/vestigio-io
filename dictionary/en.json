@@ -443,14 +443,14 @@
             { "label": "Pricing", "path": "/pricing", "pct": 14 }
           ],
           [
-            { "label": "Product Detail", "path": "/products/[id]", "pct": 52, "main": true },
             { "label": "Compare", "path": "/compare", "pct": 9 },
+            { "label": "Detail", "path": "/products/[id]", "pct": 52, "main": true },
             { "label": "Reviews", "path": "/reviews", "pct": 7 }
           ],
           [
-            { "label": "Checkout", "path": "/checkout", "pct": 24, "main": true },
             { "label": "Cart", "path": "/cart", "pct": 15 },
-            { "label": "Support", "path": "/support", "pct": 3 }
+            { "label": "Support", "path": "/support", "pct": 3 },
+            { "label": "Checkout", "path": "/checkout", "pct": 24, "main": true }
           ]
         ]
       },

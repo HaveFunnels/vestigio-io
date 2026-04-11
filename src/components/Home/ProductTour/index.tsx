@@ -778,12 +778,12 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
 					{/* Browser title bar */}
 					<div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:px-4 sm:py-3">
-						<div className="flex gap-1.5">
+						<div className="flex w-[52px] shrink-0 gap-1.5">
 							<div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
 							<div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
 							<div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
 						</div>
-						<div className="flex min-w-0 sm:ml-3 sm:flex-1">
+						<div className="flex min-w-0 flex-1">
 							<div className="mx-auto inline-flex max-w-full items-center gap-1.5 truncate rounded-md border border-white/[0.04] bg-white/[0.02] px-3 py-1 font-mono text-[10px] text-zinc-500 sm:text-[11px]">
 								<svg
 									viewBox="0 0 12 12"
@@ -798,7 +798,7 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 								<span className="truncate">{t("url")}</span>
 							</div>
 						</div>
-						<div className="hidden w-[52px] sm:block" />
+						<div className="w-[52px] shrink-0" />
 					</div>
 
 					{/* App body: sidebar + content */}

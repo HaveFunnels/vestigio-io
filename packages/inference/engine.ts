@@ -199,7 +199,165 @@ export function computeInferences(
   inferences.push(...inferIntentAbsorberDetected(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferIntentDecayTimeExcessive(byKey, scoping, cycle_ref, ids));
 
+  // Wave 3.3: Security posture inferences
+  inferences.push(...inferSecurityHeaderWeakness(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMixedContentExposure(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferOpenRedirectIndicator(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSensitiveEndpointExposed(first, byKey, scoping, cycle_ref, ids));
+
   return inferences;
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.3: Security Posture Inferences
+// ──────────────────────────────────────────────
+
+function inferSecurityHeaderWeakness(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const score = byKey.get('security_headers_score');
+  const hstsMissing = byKey.get('hsts_missing');
+  const cspWeak = byKey.get('csp_missing_or_weak');
+  const clickjackMissing = byKey.get('clickjack_protection_missing');
+
+  if (!score && !hstsMissing && !cspWeak && !clickjackMissing) return [];
+
+  const factors: string[] = [];
+  const relevant: Signal[] = [];
+
+  if (score) {
+    relevant.push(score);
+    factors.push(`headers score ${score.numeric_value}/100`);
+  }
+  if (hstsMissing) { relevant.push(hstsMissing); factors.push('HSTS missing'); }
+  if (cspWeak) { relevant.push(cspWeak); factors.push(cspWeak.value === 'weak' ? 'CSP weak (unsafe-inline/eval)' : 'CSP missing'); }
+  if (clickjackMissing) { relevant.push(clickjackMissing); factors.push('clickjack protection missing'); }
+
+  const numericScore = score?.numeric_value ?? 100;
+  const severity = numericScore < 30 ? 'high' : numericScore < 60 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'security_header_weakness',
+    category: InferenceCategory.SecurityHeaderWeakness,
+    conclusion: 'security_header_weakness',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: 85,
+    scoping, cycle_ref, ids,
+    signal_refs: relevant.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevant.flatMap(s => s.evidence_refs),
+    reasoning: `Security headers ${severity}. ${factors.join('; ')}. Missing or weak HTTP security headers expose users to clickjacking, downgrade attacks, and XSS injection.`,
+  })];
+}
+
+function inferMixedContentExposure(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const mixedScript = byKey.get('mixed_content_script');
+  const mixedForm = byKey.get('mixed_content_form_action');
+  const mixedCheckout = byKey.get('mixed_content_on_checkout');
+
+  if (!mixedScript && !mixedForm && !mixedCheckout) return [];
+
+  const factors: string[] = [];
+  const relevant: Signal[] = [];
+
+  if (mixedScript) { relevant.push(mixedScript); factors.push(`${mixedScript.numeric_value} mixed script(s)`); }
+  if (mixedForm) { relevant.push(mixedForm); factors.push(`${mixedForm.numeric_value} insecure form action(s)`); }
+  if (mixedCheckout) { relevant.push(mixedCheckout); factors.push(`mixed content on ${mixedCheckout.numeric_value} commercial page(s)`); }
+
+  const severity = mixedCheckout ? 'high' : (mixedForm || mixedScript) ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'mixed_content_exposure',
+    category: InferenceCategory.MixedContentExposure,
+    conclusion: 'mixed_content_exposure',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: 95,
+    scoping, cycle_ref, ids,
+    signal_refs: relevant.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevant.flatMap(s => s.evidence_refs),
+    reasoning: `Mixed content exposure ${severity}. ${factors.join('; ')}. Browsers block mixed content on commercial pages, breaking checkout and eroding trust.`,
+  })];
+}
+
+function inferOpenRedirectIndicator(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const urlParam = byKey.get('redirect_with_url_parameter');
+  const crossDomain = byKey.get('redirect_chain_to_unknown_domain');
+
+  if (!urlParam && !crossDomain) return [];
+
+  const factors: string[] = [];
+  const relevant: Signal[] = [];
+
+  if (urlParam) { relevant.push(urlParam); factors.push(`${urlParam.numeric_value} URL-parameter redirect(s)`); }
+  if (crossDomain) { relevant.push(crossDomain); factors.push(`${crossDomain.numeric_value} cross-domain redirect(s) to unknown destinations`); }
+
+  const severity = (urlParam && crossDomain) ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'open_redirect_indicator',
+    category: InferenceCategory.OpenRedirectIndicator,
+    conclusion: 'open_redirect_indicator',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: 70,
+    scoping, cycle_ref, ids,
+    signal_refs: relevant.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevant.flatMap(s => s.evidence_refs),
+    reasoning: `Open redirect indicators ${severity}. ${factors.join('; ')}. Open redirects let attackers craft phishing URLs hosted on the legitimate domain.`,
+  })];
+}
+
+function inferSensitiveEndpointExposed(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const adminExposed = byKey.get('admin_panel_exposed');
+  const sensitiveFile = byKey.get('sensitive_file_accessible');
+  const apiDocs = byKey.get('api_docs_public');
+
+  if (!adminExposed && !sensitiveFile && !apiDocs) return [];
+
+  const factors: string[] = [];
+  const relevant: Signal[] = [];
+
+  if (sensitiveFile) { relevant.push(sensitiveFile); factors.push(`${sensitiveFile.numeric_value} sensitive file(s) publicly accessible`); }
+  if (adminExposed) { relevant.push(adminExposed); factors.push(`${adminExposed.numeric_value} admin path(s) exposed`); }
+  if (apiDocs) { relevant.push(apiDocs); factors.push(`${apiDocs.numeric_value} API doc endpoint(s) public`); }
+
+  const severity = sensitiveFile ? 'high' : (adminExposed || apiDocs) ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'sensitive_endpoint_exposed',
+    category: InferenceCategory.SensitiveEndpointExposed,
+    conclusion: 'sensitive_endpoint_exposed',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: 90,
+    scoping, cycle_ref, ids,
+    signal_refs: relevant.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevant.flatMap(s => s.evidence_refs),
+    reasoning: `Sensitive endpoints exposed ${severity}. ${factors.join('; ')}. Public access to admin panels, env files, or internal APIs creates immediate compromise risk.`,
+  })];
 }
 
 function inferCommerceContext(

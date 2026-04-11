@@ -3867,6 +3867,396 @@ function extractBehavioralSignals(
 // Wave 3.1: Policy Enrichment Signals (from LLM content analysis)
 // ──────────────────────────────────────────────
 
+// ──────────────────────────────────────────────
+// Wave 3.3: Security Posture Signals
+//
+// Detects 4 finding families using only evidence the pipeline
+// already collects: HTTP response headers, scripts, forms,
+// iframes, redirects, and HTTP responses on probe paths.
+// ──────────────────────────────────────────────
+
+const KNOWN_REDIRECT_PROVIDERS = new Set([
+  'stripe.com', 'checkout.stripe.com', 'paypal.com', 'paypalobjects.com',
+  'google.com', 'accounts.google.com', 'facebook.com', 'apple.com',
+  'shopify.com', 'mercadopago.com', 'pagseguro.com.br',
+]);
+
+const SENSITIVE_FILE_PATHS = ['/.env', '/.git/config', '/backup.sql', '/database.sql', '/wp-config.php.bak', '/server-status', '/phpinfo.php'];
+const ADMIN_PATHS = ['/admin', '/wp-admin', '/administrator', '/cpanel', '/phpmyadmin'];
+const API_DOC_PATHS = ['/swagger', '/api-docs', '/graphql', '/docs/api'];
+
+function secHostOf(url: string): string {
+  try { return new URL(url).hostname.toLowerCase(); } catch { return ''; }
+}
+function secIsHttps(url: string): boolean {
+  try { return new URL(url).protocol === 'https:'; } catch { return false; }
+}
+function secIsHttp(url: string): boolean {
+  try { return new URL(url).protocol === 'http:'; } catch { return false; }
+}
+function secPathOf(url: string): string {
+  try { return new URL(url).pathname.toLowerCase(); } catch { return ''; }
+}
+function secIsCheckoutUrl(url: string): boolean {
+  const p = secPathOf(url);
+  return /(checkout|cart|payment|pay|carrinho|pagamento)/.test(p);
+}
+function secGetHeader(headers: Record<string, string>, name: string): string | undefined {
+  const target = name.toLowerCase();
+  for (const k of Object.keys(headers)) {
+    if (k.toLowerCase() === target) return headers[k];
+  }
+  return undefined;
+}
+function secRootDomain(host: string): string {
+  const parts = host.split('.');
+  if (parts.length <= 2) return host;
+  return parts.slice(-2).join('.');
+}
+
+function extractSecurityPostureSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  // ── Finding A: Security Header Posture ──
+  const httpResponses = byType.get(EvidenceType.HttpResponse) || [];
+  if (httpResponses.length > 0) {
+    const headerPresence = { hsts: 0, csp: 0, xfo: 0, xcto: 0, referrer: 0, permissions: 0 };
+    let cspWeak = false;
+    let pagesWithoutHsts = 0;
+    let pagesWithoutCsp = 0;
+    let pagesWithoutClickjack = 0;
+    let totalCommercialPages = 0;
+    const cspWeakUrls: string[] = [];
+
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      if (!secIsHttps(p.url)) continue;
+      if (p.status_code < 200 || p.status_code >= 400) continue;
+
+      const hsts = secGetHeader(p.headers, 'strict-transport-security');
+      const csp = secGetHeader(p.headers, 'content-security-policy');
+      const xfo = secGetHeader(p.headers, 'x-frame-options');
+      const xcto = secGetHeader(p.headers, 'x-content-type-options');
+      const referrer = secGetHeader(p.headers, 'referrer-policy');
+      const permissions = secGetHeader(p.headers, 'permissions-policy');
+
+      if (hsts) headerPresence.hsts++;
+      else pagesWithoutHsts++;
+
+      if (csp) {
+        headerPresence.csp++;
+        if (/unsafe-inline|unsafe-eval/.test(csp)) {
+          cspWeak = true;
+          if (cspWeakUrls.length < 3) cspWeakUrls.push(p.url);
+        }
+      } else {
+        pagesWithoutCsp++;
+      }
+
+      const hasClickjackProtection = !!xfo || (csp && /frame-ancestors/.test(csp));
+      if (xfo) headerPresence.xfo++;
+      if (!hasClickjackProtection) pagesWithoutClickjack++;
+
+      if (xcto) headerPresence.xcto++;
+      if (referrer) headerPresence.referrer++;
+      if (permissions) headerPresence.permissions++;
+
+      if (secIsCheckoutUrl(p.url)) totalCommercialPages++;
+    }
+
+    const httpsPages = httpResponses.filter((e) => {
+      const p = e.payload as HttpResponsePayload;
+      return secIsHttps(p.url) && p.status_code >= 200 && p.status_code < 400;
+    }).length;
+
+    if (httpsPages > 0) {
+      // Composite score 0-100 (each header ~16 points)
+      const score = Math.round(
+        ((headerPresence.hsts / httpsPages) * 17) +
+        ((headerPresence.csp / httpsPages) * 17) +
+        ((headerPresence.xfo / httpsPages) * 17) +
+        ((headerPresence.xcto / httpsPages) * 17) +
+        ((headerPresence.referrer / httpsPages) * 16) +
+        ((headerPresence.permissions / httpsPages) * 16)
+      );
+      const scoreLevel = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
+      signals.push(createSignal({ ids,
+        signal_key: `security_headers_score`,
+        category: SignalCategory.Security,
+        attribute: 'security.headers.score',
+        value: scoreLevel,
+        numeric_value: score,
+        confidence: 90,
+        scoping, cycle_ref,
+        evidence_refs: httpResponses.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `Security headers composite score: ${score}/100 across ${httpsPages} HTTPS pages.`,
+      }));
+
+      if (pagesWithoutHsts > 0) {
+        signals.push(createSignal({ ids,
+          signal_key: `hsts_missing`,
+          category: SignalCategory.Security,
+          attribute: 'security.headers.hsts_missing',
+          value: 'true',
+          numeric_value: pagesWithoutHsts,
+          confidence: 95,
+          scoping, cycle_ref,
+          evidence_refs: httpResponses.slice(0, 2).map((e) => makeRef('evidence', e.id)),
+          description: `Strict-Transport-Security header missing on ${pagesWithoutHsts} HTTPS page(s).`,
+        }));
+      }
+
+      if (pagesWithoutCsp > 0 || cspWeak) {
+        signals.push(createSignal({ ids,
+          signal_key: `csp_missing_or_weak`,
+          category: SignalCategory.Security,
+          attribute: 'security.headers.csp_missing_or_weak',
+          value: cspWeak ? 'weak' : 'missing',
+          numeric_value: pagesWithoutCsp,
+          confidence: 90,
+          scoping, cycle_ref,
+          evidence_refs: httpResponses.slice(0, 2).map((e) => makeRef('evidence', e.id)),
+          description: cspWeak
+            ? `Content-Security-Policy uses unsafe-inline/unsafe-eval on ${cspWeakUrls.length} page(s).`
+            : `Content-Security-Policy header missing on ${pagesWithoutCsp} page(s).`,
+        }));
+      }
+
+      if (pagesWithoutClickjack > 0) {
+        signals.push(createSignal({ ids,
+          signal_key: `clickjack_protection_missing`,
+          category: SignalCategory.Security,
+          attribute: 'security.headers.clickjack_missing',
+          value: 'true',
+          numeric_value: pagesWithoutClickjack,
+          confidence: 90,
+          scoping, cycle_ref,
+          evidence_refs: httpResponses.slice(0, 2).map((e) => makeRef('evidence', e.id)),
+          description: `Clickjacking protection (X-Frame-Options or CSP frame-ancestors) missing on ${pagesWithoutClickjack} page(s).`,
+        }));
+      }
+    }
+  }
+
+  // ── Finding B: Mixed Content on Commercial Pages ──
+  const scripts = byType.get(EvidenceType.Script) || [];
+  const forms = byType.get(EvidenceType.Form) || [];
+  const iframes = byType.get(EvidenceType.Iframe) || [];
+
+  const mixedScripts: Evidence[] = [];
+  const mixedFormsEvidence: Evidence[] = [];
+  let mixedOnCheckoutCount = 0;
+  const mixedCheckoutUrls = new Set<string>();
+
+  for (const e of scripts) {
+    const p = e.payload as ScriptPayload;
+    if (secIsHttps(p.page_url) && secIsHttp(p.src)) {
+      mixedScripts.push(e);
+      if (secIsCheckoutUrl(p.page_url)) {
+        mixedOnCheckoutCount++;
+        mixedCheckoutUrls.add(p.page_url);
+      }
+    }
+  }
+
+  for (const e of forms) {
+    const p = e.payload as FormPayload;
+    if (secIsHttps(p.page_url) && p.action && secIsHttp(p.action)) {
+      mixedFormsEvidence.push(e);
+      if (secIsCheckoutUrl(p.page_url) || p.has_payment_fields) {
+        mixedOnCheckoutCount++;
+        mixedCheckoutUrls.add(p.page_url);
+      }
+    }
+  }
+
+  const mixedIframes: Evidence[] = [];
+  for (const e of iframes) {
+    const p = e.payload as IframePayload;
+    if (secIsHttps(p.page_url) && secIsHttp(p.src)) {
+      mixedIframes.push(e);
+      if (secIsCheckoutUrl(p.page_url)) {
+        mixedOnCheckoutCount++;
+        mixedCheckoutUrls.add(p.page_url);
+      }
+    }
+  }
+
+  if (mixedScripts.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: `mixed_content_script`,
+      category: SignalCategory.Security,
+      attribute: 'security.mixed_content.script',
+      value: 'true',
+      numeric_value: mixedScripts.length,
+      confidence: 95,
+      scoping, cycle_ref,
+      evidence_refs: mixedScripts.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+      description: `${mixedScripts.length} script(s) loaded over insecure HTTP from HTTPS pages.`,
+    }));
+  }
+
+  if (mixedFormsEvidence.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: `mixed_content_form_action`,
+      category: SignalCategory.Security,
+      attribute: 'security.mixed_content.form_action',
+      value: 'true',
+      numeric_value: mixedFormsEvidence.length,
+      confidence: 98,
+      scoping, cycle_ref,
+      evidence_refs: mixedFormsEvidence.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+      description: `${mixedFormsEvidence.length} form(s) submit to insecure HTTP from HTTPS pages.`,
+    }));
+  }
+
+  if (mixedOnCheckoutCount > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: `mixed_content_on_checkout`,
+      category: SignalCategory.Security,
+      attribute: 'security.mixed_content.on_checkout',
+      value: 'true',
+      numeric_value: mixedCheckoutUrls.size,
+      confidence: 98,
+      scoping, cycle_ref,
+      evidence_refs: [...mixedScripts, ...mixedFormsEvidence, ...mixedIframes].slice(0, 3).map((e) => makeRef('evidence', e.id)),
+      description: `Mixed content detected on ${mixedCheckoutUrls.size} commercial/checkout page(s).`,
+    }));
+  }
+
+  // ── Finding C: Open Redirect Indicators ──
+  const redirects = byType.get(EvidenceType.Redirect) || [];
+  const REDIRECT_PARAM_NAMES = ['url', 'redirect', 'next', 'return_to', 'returnto', 'goto', 'target', 'redir', 'destination', 'continue', 'r'];
+
+  const openRedirectCandidates: Evidence[] = [];
+  const crossDomainRedirects: Evidence[] = [];
+  const rootHost = scoping.environment_id ? secRootDomain(secHostOf(scoping.environment_id)) : '';
+
+  for (const e of redirects) {
+    const p = e.payload as RedirectPayload;
+    try {
+      const sourceUrl = new URL(p.source_url);
+      const targetHost = secHostOf(p.target_url);
+      let foundOpenRedirect = false;
+      for (const param of REDIRECT_PARAM_NAMES) {
+        const value = sourceUrl.searchParams.get(param);
+        if (value && (value.includes('://') || value.startsWith('//'))) {
+          openRedirectCandidates.push(e);
+          foundOpenRedirect = true;
+          break;
+        }
+      }
+
+      if (!foundOpenRedirect && targetHost) {
+        const targetRoot = secRootDomain(targetHost);
+        const sourceRoot = secRootDomain(sourceUrl.hostname);
+        if (targetRoot !== sourceRoot && !KNOWN_REDIRECT_PROVIDERS.has(targetHost) && !KNOWN_REDIRECT_PROVIDERS.has(targetRoot)) {
+          crossDomainRedirects.push(e);
+        }
+      }
+    } catch { /* skip malformed redirect */ }
+  }
+
+  if (openRedirectCandidates.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: `redirect_with_url_parameter`,
+      category: SignalCategory.Security,
+      attribute: 'security.redirect.url_parameter',
+      value: 'true',
+      numeric_value: openRedirectCandidates.length,
+      confidence: 70,
+      scoping, cycle_ref,
+      evidence_refs: openRedirectCandidates.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+      description: `${openRedirectCandidates.length} redirect(s) appear to use URL query parameters as the destination — potential open redirect.`,
+    }));
+  }
+
+  if (crossDomainRedirects.length > 0) {
+    signals.push(createSignal({ ids,
+      signal_key: `redirect_chain_to_unknown_domain`,
+      category: SignalCategory.Security,
+      attribute: 'security.redirect.cross_domain',
+      value: 'true',
+      numeric_value: crossDomainRedirects.length,
+      confidence: 65,
+      scoping, cycle_ref,
+      evidence_refs: crossDomainRedirects.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+      description: `${crossDomainRedirects.length} redirect(s) cross to a different root domain not in known providers list.`,
+    }));
+  }
+
+  // ── Finding D: Exposed Sensitive Endpoints ──
+  // Reads HttpResponsePayload for paths that match sensitive patterns and returned 200.
+  if (httpResponses.length > 0) {
+    const adminExposed: Evidence[] = [];
+    const sensitiveExposed: Evidence[] = [];
+    const apiDocsExposed: Evidence[] = [];
+
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      if (p.status_code !== 200) continue;
+      const path = secPathOf(p.url);
+      if (!path) continue;
+
+      if (ADMIN_PATHS.some((adm) => path === adm || path.startsWith(adm + '/'))) {
+        adminExposed.push(e);
+      }
+      if (SENSITIVE_FILE_PATHS.some((sf) => path === sf || path.endsWith(sf))) {
+        sensitiveExposed.push(e);
+      }
+      if (API_DOC_PATHS.some((api) => path === api || path.startsWith(api + '/'))) {
+        apiDocsExposed.push(e);
+      }
+    }
+
+    if (adminExposed.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `admin_panel_exposed`,
+        category: SignalCategory.Security,
+        attribute: 'security.endpoint.admin_exposed',
+        value: 'true',
+        numeric_value: adminExposed.length,
+        confidence: 85,
+        scoping, cycle_ref,
+        evidence_refs: adminExposed.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${adminExposed.length} admin panel path(s) accessible (HTTP 200).`,
+      }));
+    }
+
+    if (sensitiveExposed.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `sensitive_file_accessible`,
+        category: SignalCategory.Security,
+        attribute: 'security.endpoint.sensitive_file',
+        value: 'true',
+        numeric_value: sensitiveExposed.length,
+        confidence: 98,
+        scoping, cycle_ref,
+        evidence_refs: sensitiveExposed.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${sensitiveExposed.length} sensitive file(s) publicly accessible (.env, .git, backups).`,
+      }));
+    }
+
+    if (apiDocsExposed.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `api_docs_public`,
+        category: SignalCategory.Security,
+        attribute: 'security.endpoint.api_docs',
+        value: 'true',
+        numeric_value: apiDocsExposed.length,
+        confidence: 80,
+        scoping, cycle_ref,
+        evidence_refs: apiDocsExposed.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${apiDocsExposed.length} API documentation endpoint(s) publicly accessible.`,
+      }));
+    }
+  }
+}
+
 function extractPolicyEnrichmentSignals(
   byType: Map<EvidenceType, Evidence[]>,
   scoping: Scoping,

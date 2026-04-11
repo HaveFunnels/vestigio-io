@@ -433,48 +433,25 @@
       },
       "maps_panel": {
         "header": "Reisekarte",
-        "subtext": "Jedes Leck der Fläche zugeordnet, die es verursacht.",
-        "nodes": [
-          {
-            "label": "Start",
-            "path": "/",
-            "tone": "emerald"
-          },
-          {
-            "label": "Produkte",
-            "path": "/products",
-            "tone": "sky"
-          },
-          {
-            "label": "Detail",
-            "path": "/products/[id]",
-            "tone": "sky"
-          },
-          {
-            "label": "Warenkorb",
-            "path": "/cart",
-            "tone": "amber"
-          },
-          {
-            "label": "Kasse",
-            "path": "/checkout",
-            "tone": "red"
-          },
-          {
-            "label": "Bezahlung",
-            "path": "/checkout/payment",
-            "tone": "red"
-          },
-          {
-            "label": "Bestätigung",
-            "path": "/thank-you",
-            "tone": "emerald"
-          },
-          {
-            "label": "Konto",
-            "path": "/account",
-            "tone": "emerald"
-          }
+        "subtext": "Hauptkonversionspfad und wo Besucher abspringen.",
+        "start": { "label": "Start", "path": "/", "pct": 100, "main": true },
+        "finish": { "label": "Danke", "path": "/danke", "pct": 3, "main": true },
+        "stages": [
+          [
+            { "label": "Produkte", "path": "/produkte", "pct": 68, "main": true },
+            { "label": "Blog", "path": "/blog", "pct": 18 },
+            { "label": "Preise", "path": "/preise", "pct": 14 }
+          ],
+          [
+            { "label": "Detail", "path": "/produkte/[id]", "pct": 52, "main": true },
+            { "label": "Vergleich", "path": "/vergleich", "pct": 9 },
+            { "label": "Bewertungen", "path": "/bewertungen", "pct": 7 }
+          ],
+          [
+            { "label": "Kasse", "path": "/kasse", "pct": 24, "main": true },
+            { "label": "Warenkorb", "path": "/warenkorb", "pct": 15 },
+            { "label": "Support", "path": "/support", "pct": 3 }
+          ]
         ]
       },
       "overlay_ai": {

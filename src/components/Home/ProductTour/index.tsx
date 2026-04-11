@@ -98,7 +98,8 @@ interface ChatMessage {
 interface MapNode {
 	label: string;
 	path: string;
-	tone: Tone;
+	pct: number;
+	main?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -526,45 +527,101 @@ function ChatPanel() {
 // Maps panel — graph of journey nodes
 // ─────────────────────────────────────────────────────────────────────
 
+/** A single node card with percentage badge */
+function FlowNode({ node }: { node: MapNode }) {
+	return (
+		<div className={`relative flex items-center gap-2 rounded-lg border px-3 py-2.5 ${
+			node.main
+				? "border-emerald-500/30 bg-emerald-500/[0.06]"
+				: "border-white/[0.06] bg-white/[0.02]"
+		}`}>
+			<div className={`grid h-7 w-7 shrink-0 place-items-center rounded-md text-[9px] font-bold ${
+				node.main
+					? "bg-emerald-500/15 font-mono tabular-nums text-emerald-300"
+					: "bg-white/[0.06] font-mono tabular-nums text-zinc-400"
+			}`}>
+				{node.pct}%
+			</div>
+			<div className="min-w-0">
+				<div className="truncate text-[11px] font-medium text-zinc-200">{node.label}</div>
+				<div className="truncate font-mono text-[9px] text-zinc-500">{node.path}</div>
+			</div>
+		</div>
+	);
+}
+
+/** Vertical connector between stages */
+function VConnector({ main }: { main?: boolean }) {
+	return (
+		<div className="flex justify-center py-1 md:hidden">
+			<div className={`h-5 w-px ${main ? "bg-emerald-500/40" : "bg-white/[0.06]"}`} />
+		</div>
+	);
+}
+
+/** Horizontal connector between stages (desktop only) */
+function HConnector({ main }: { main?: boolean }) {
+	return (
+		<div className="hidden items-center md:flex">
+			<div className={`h-px w-6 lg:w-10 ${main ? "bg-emerald-500/40" : "bg-white/[0.06]"}`} />
+			{main && (
+				<svg width="6" height="8" viewBox="0 0 6 8" fill="none" className="-ml-1 text-emerald-500/40">
+					<path d="M1 1L5 4L1 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			)}
+		</div>
+	);
+}
+
 function MapsPanel() {
 	const t = useTranslations("homepage.product_tour.maps_panel");
-	const nodes = t.raw("nodes") as MapNode[];
+	const start = t.raw("start") as MapNode;
+	const finish = t.raw("finish") as MapNode;
+	const stages = t.raw("stages") as MapNode[][];
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="mb-4">
+			<div className="mb-5">
 				<h4 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
 					{t("header")}
 				</h4>
 				<p className="mt-1 text-[10px] text-zinc-600">{t("subtext")}</p>
 			</div>
 
-			{/* Connection grid — nodes laid out in a 4-col flow with arrows */}
-			<div className="relative grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
-				{nodes.map((n, i) => (
-					<div key={n.path} className="relative">
-						<div className={`flex flex-col items-center rounded-lg border ${TONE_RING[n.tone]} p-3 transition-all hover:scale-105`}>
-							<div className={`mb-1.5 grid h-9 w-9 place-items-center rounded-md border ${TONE_RING[n.tone]}`}>
-								<span className={`font-mono text-[9px] font-bold tabular-nums ${TONE_TEXT[n.tone]}`}>
-									{n.path.length > 6 ? n.path.slice(0, 5) + "…" : n.path}
-								</span>
-							</div>
-							<span className="text-[10px] font-medium text-zinc-300">{n.label}</span>
+			{/* Flow: vertical on mobile, horizontal on desktop */}
+			<div className="flex flex-col items-stretch md:flex-row md:items-start">
+				{/* Start node */}
+				<div className="shrink-0 md:pt-6">
+					<FlowNode node={start} />
+				</div>
+
+				<HConnector main />
+				<VConnector main />
+
+				{/* Stages */}
+				{stages.map((stage, si) => (
+					<div key={si} className="contents">
+						<div className="flex shrink-0 flex-col gap-1.5">
+							{stage.map((node, ni) => (
+								<FlowNode key={ni} node={node} />
+							))}
 						</div>
-						{/* Arrow connector to the next node — hidden on the last col */}
-						{(i + 1) % 4 !== 0 && i !== nodes.length - 1 && (
-							<svg
-								className="absolute right-[-10px] top-1/2 hidden -translate-y-1/2 text-zinc-700 sm:block"
-								width="12"
-								height="8"
-								viewBox="0 0 12 8"
-								fill="none"
-							>
-								<path d="M0 4H10M7 1L10 4L7 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-							</svg>
+						{si < stages.length - 1 && (
+							<>
+								<HConnector main />
+								<VConnector main />
+							</>
 						)}
 					</div>
 				))}
+
+				<HConnector main />
+				<VConnector main />
+
+				{/* Finish node */}
+				<div className="shrink-0 md:pt-6">
+					<FlowNode node={finish} />
+				</div>
 			</div>
 		</div>
 	);

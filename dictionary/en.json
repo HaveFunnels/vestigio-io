@@ -433,48 +433,25 @@
       },
       "maps_panel": {
         "header": "Journey Map",
-        "subtext": "Every leak mapped to the surface that owns it.",
-        "nodes": [
-          {
-            "label": "Home",
-            "path": "/",
-            "tone": "emerald"
-          },
-          {
-            "label": "Products",
-            "path": "/products",
-            "tone": "sky"
-          },
-          {
-            "label": "Detail",
-            "path": "/products/[id]",
-            "tone": "sky"
-          },
-          {
-            "label": "Cart",
-            "path": "/cart",
-            "tone": "amber"
-          },
-          {
-            "label": "Checkout",
-            "path": "/checkout",
-            "tone": "red"
-          },
-          {
-            "label": "Payment",
-            "path": "/checkout/payment",
-            "tone": "red"
-          },
-          {
-            "label": "Confirmation",
-            "path": "/thank-you",
-            "tone": "emerald"
-          },
-          {
-            "label": "Account",
-            "path": "/account",
-            "tone": "emerald"
-          }
+        "subtext": "Main conversion path and where visitors drop off.",
+        "start": { "label": "Home", "path": "/", "pct": 100, "main": true },
+        "finish": { "label": "Thank You", "path": "/thank-you", "pct": 3, "main": true },
+        "stages": [
+          [
+            { "label": "Products", "path": "/products", "pct": 68, "main": true },
+            { "label": "Blog", "path": "/blog", "pct": 18 },
+            { "label": "Pricing", "path": "/pricing", "pct": 14 }
+          ],
+          [
+            { "label": "Product Detail", "path": "/products/[id]", "pct": 52, "main": true },
+            { "label": "Compare", "path": "/compare", "pct": 9 },
+            { "label": "Reviews", "path": "/reviews", "pct": 7 }
+          ],
+          [
+            { "label": "Checkout", "path": "/checkout", "pct": 24, "main": true },
+            { "label": "Cart", "path": "/cart", "pct": 15 },
+            { "label": "Support", "path": "/support", "pct": 3 }
+          ]
         ]
       },
       "overlay_ai": {

@@ -568,12 +568,12 @@
       ]
     },
     "features_bento": {
-      "eyebrow": "Como o Vestigio funciona",
+      "eyebrow": "O que vai acontecer?",
       "title_part1": "Pare de adivinhar.",
       "title_part2": "Comece a decidir.",
       "subtitle": "Quatro respostas, um mecanismo de decisão. Descubra onde você está perdendo dinheiro, corrija o que importa primeiro, valide com evidências e detecte regressões antes que elas custem caro.",
       "action_queue": {
-        "eyebrow": "Priorize",
+        "eyebrow": "A Vestigio prioriza",
         "title": "Uma fila clara do que corrigir primeiro",
         "description": "Cada descoberta classificado por impacto, urgência e esforço. Sem mais planilhas — apenas a próxima decisão, pronta para executar.",
         "rows": [
@@ -596,7 +596,7 @@
         ]
       },
       "revenue_leaks": {
-        "eyebrow": "Diagnostique",
+        "eyebrow": "A Vestigio diagnostica",
         "title": "Encontre onde o dinheiro está vazando",
         "description": "O Vestigio quantifica cada vazamento no seu funil — com faixas de confiança, não achismos. Saiba exatamente quanto cada superfície quebrada está te custando.",
         "confidence_label": "confiança",
@@ -620,7 +620,7 @@
         ]
       },
       "continuous_watch": {
-        "eyebrow": "Recupere",
+        "eyebrow": "Você recupera",
         "title": "Estanque o vazamento antes que ele se acumule",
         "description": "O Vestigio acompanha cada vazamento da detecção à resolução. Veja suas perdas mensais caírem conforme os descobertas são fechados — e detecte novas regressões no momento em que aparecem.",
         "axis_label": "Receita perdida / mês",
@@ -630,7 +630,7 @@
         "annotation_value": "+87,2%"
       },
       "evidence_orbit": {
-        "eyebrow": "Valide",
+        "eyebrow": "A Vestigio audita",
         "title": "Cada descoberta rastreia até a evidência",
         "description": "Verificado no navegador, cruzado entre fontes, com timestamp. O Vestigio enriquece cada descoberta com provas multi-fonte — para que seu time confie no diagnóstico.",
         "center_label": "Descoberta",

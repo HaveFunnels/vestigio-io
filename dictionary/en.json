@@ -568,12 +568,12 @@
       ]
     },
     "features_bento": {
-      "eyebrow": "How Vestigio works",
+      "eyebrow": "What will happen?",
       "title_part1": "Stop guessing.",
       "title_part2": "Start deciding.",
       "subtitle": "Four answers, one decision engine. Find where you're losing money, fix what matters first, verify with evidence, and catch regressions before they cost you.",
       "action_queue": {
-        "eyebrow": "Prioritize",
+        "eyebrow": "Vestigio prioritizes",
         "title": "A clear queue of what to fix first",
         "description": "Every finding ranked by impact, urgency, and effort. No more spreadsheets — just the next decision, ready to ship.",
         "rows": [
@@ -596,7 +596,7 @@
         ]
       },
       "revenue_leaks": {
-        "eyebrow": "Diagnose",
+        "eyebrow": "Vestigio diagnoses",
         "title": "Find where money is bleeding",
         "description": "Vestigio quantifies every leak across your funnel — with confidence ranges, not vibes. Know what each broken surface is costing you.",
         "confidence_label": "confidence",
@@ -620,7 +620,7 @@
         ]
       },
       "continuous_watch": {
-        "eyebrow": "Recover",
+        "eyebrow": "You recover",
         "title": "Stop the bleed before it compounds",
         "description": "Vestigio tracks every leak from detection to resolution. Watch your monthly losses drop as findings get closed — and catch new regressions the moment they appear.",
         "axis_label": "Revenue lost / mo",
@@ -630,7 +630,7 @@
         "annotation_value": "+87.2%"
       },
       "evidence_orbit": {
-        "eyebrow": "Verify",
+        "eyebrow": "Vestigio audits",
         "title": "Every finding traces back to evidence",
         "description": "Browser-verified, cross-checked, timestamped. Vestigio enriches every finding with multi-source proof — so your team trusts the call.",
         "center_label": "Finding",

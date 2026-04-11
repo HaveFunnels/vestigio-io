@@ -568,12 +568,12 @@
       ]
     },
     "features_bento": {
-      "eyebrow": "So funktioniert Vestigio",
+      "eyebrow": "Was wird passieren?",
       "title_part1": "Schluss mit dem Raten.",
       "title_part2": "Fang an zu entscheiden.",
       "subtitle": "Vier Antworten, eine Entscheidungs-Engine. Finden Sie heraus, wo Sie Geld verlieren, beheben Sie zuerst, was zählt, prüfen Sie mit Beweisen und erkennen Sie Regressionen, bevor sie Sie etwas kosten.",
       "action_queue": {
-        "eyebrow": "Priorisieren",
+        "eyebrow": "Vestigio priorisiert",
         "title": "Eine klare Liste — was zuerst behoben gehört",
         "description": "Jeder Befund nach Wirkung, Dringlichkeit und Aufwand sortiert. Keine Tabellen mehr — nur die nächste Entscheidung, einsatzbereit.",
         "rows": [
@@ -596,7 +596,7 @@
         ]
       },
       "revenue_leaks": {
-        "eyebrow": "Diagnostizieren",
+        "eyebrow": "Vestigio diagnostiziert",
         "title": "Finden Sie, wo das Geld blutet",
         "description": "Vestigio quantifiziert jedes Leck in Ihrem Funnel — mit Konfidenzbereichen, nicht mit Bauchgefühl. Wissen Sie genau, was jede defekte Oberfläche Sie kostet.",
         "confidence_label": "Konfidenz",
@@ -620,7 +620,7 @@
         ]
       },
       "continuous_watch": {
-        "eyebrow": "Zurückgewinnen",
+        "eyebrow": "Sie gewinnen zurück",
         "title": "Stoppen Sie das Leck, bevor es sich aufstaut",
         "description": "Vestigio verfolgt jedes Leck von der Erkennung bis zur Behebung. Sehen Sie, wie Ihre monatlichen Verluste sinken, sobald Befunde geschlossen werden — und entdecken Sie neue Regressionen im Moment ihres Auftretens.",
         "axis_label": "Verlorene Einnahmen / Monat",
@@ -630,7 +630,7 @@
         "annotation_value": "+87,2%"
       },
       "evidence_orbit": {
-        "eyebrow": "Verifizieren",
+        "eyebrow": "Vestigio prüft",
         "title": "Jeder Befund führt zurück zum Beweis",
         "description": "Browser-verifiziert, mehrfach geprüft, mit Zeitstempel. Vestigio reichert jeden Befund mit Multi-Source-Beweisen an — damit Ihr Team der Diagnose vertraut.",
         "center_label": "Befund",

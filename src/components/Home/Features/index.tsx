@@ -889,12 +889,17 @@ const Features = async () => {
 				    without forcing equal-height rows. */}
 				<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:grid-rows-[auto_auto]'>
 					<BentoCard
-						accent='amber'
-						eyebrow={t("action_queue.eyebrow")}
-						title={t("action_queue.title")}
-						description={t("action_queue.description")}
+						accent='sky'
+						eyebrow={t("evidence_orbit.eyebrow")}
+						title={t("evidence_orbit.title")}
+						description={t("evidence_orbit.description")}
 						className='lg:col-start-1 lg:row-start-1'
-						visualSlot={<ActionQueueVisual rows={actionRows} />}
+						visualSlot={
+							<EvidenceOrbitVisual
+								centerLabel={t("evidence_orbit.center_label")}
+								types={evidenceTypes}
+							/>
+						}
 					/>
 
 					<BentoCard
@@ -913,12 +918,21 @@ const Features = async () => {
 					/>
 
 					<BentoCard
+						accent='amber'
+						eyebrow={t("action_queue.eyebrow")}
+						title={t("action_queue.title")}
+						description={t("action_queue.description")}
+						className='lg:col-span-2 lg:col-start-1 lg:row-start-2'
+						layout='horizontal'
+						visualSlot={<ActionQueueVisual rows={actionRows} />}
+					/>
+
+					<BentoCard
 						accent='emerald'
 						eyebrow={t("continuous_watch.eyebrow")}
 						title={t("continuous_watch.title")}
 						description={t("continuous_watch.description")}
-						className='lg:col-span-2 lg:col-start-1 lg:row-start-2'
-						layout='horizontal'
+						className='lg:col-start-3 lg:row-span-2'
 						visualSlot={
 							<ContinuousWatchVisual
 								axisLabel={t("continuous_watch.axis_label")}
@@ -926,20 +940,6 @@ const Features = async () => {
 								afterLabel={t("continuous_watch.after_label")}
 								annotationLabel={t("continuous_watch.annotation_label")}
 								annotationValue={t("continuous_watch.annotation_value")}
-							/>
-						}
-					/>
-
-					<BentoCard
-						accent='sky'
-						eyebrow={t("evidence_orbit.eyebrow")}
-						title={t("evidence_orbit.title")}
-						description={t("evidence_orbit.description")}
-						className='lg:col-start-3 lg:row-span-2'
-						visualSlot={
-							<EvidenceOrbitVisual
-								centerLabel={t("evidence_orbit.center_label")}
-								types={evidenceTypes}
 							/>
 						}
 					/>

@@ -527,48 +527,53 @@ function ChatPanel() {
 // Maps panel — graph of journey nodes
 // ─────────────────────────────────────────────────────────────────────
 
-/** A single node card with percentage badge */
-function FlowNode({ node }: { node: MapNode }) {
+/** Compact node for the flowchart */
+function FlowNode({ node, size = "sm" }: { node: MapNode; size?: "sm" | "lg" }) {
+	const isMain = !!node.main;
 	return (
-		<div className={`relative flex items-center gap-2 rounded-lg border px-3 py-2.5 ${
-			node.main
-				? "border-emerald-500/30 bg-emerald-500/[0.06]"
-				: "border-white/[0.06] bg-white/[0.02]"
-		}`}>
-			<div className={`grid h-7 w-7 shrink-0 place-items-center rounded-md text-[9px] font-bold ${
-				node.main
-					? "bg-emerald-500/15 font-mono tabular-nums text-emerald-300"
-					: "bg-white/[0.06] font-mono tabular-nums text-zinc-400"
+		<div className={`flex flex-col items-center gap-1 ${size === "lg" ? "w-full" : ""}`}>
+			{/* Pct badge */}
+			<div className={`grid place-items-center rounded-full font-mono font-bold tabular-nums ${
+				size === "lg"
+					? "h-10 w-10 text-[11px] md:h-12 md:w-12 md:text-xs"
+					: "h-8 w-8 text-[9px] md:h-9 md:w-9 md:text-[10px]"
+			} ${
+				isMain
+					? "border-2 border-emerald-400/50 bg-emerald-500/15 text-emerald-300"
+					: "border border-white/[0.08] bg-white/[0.04] text-zinc-500"
 			}`}>
 				{node.pct}%
 			</div>
-			<div className="min-w-0">
-				<div className="truncate text-[11px] font-medium text-zinc-200">{node.label}</div>
-				<div className="truncate font-mono text-[9px] text-zinc-500">{node.path}</div>
-			</div>
+			<span className={`text-center leading-tight ${
+				size === "lg"
+					? "text-[10px] font-semibold text-zinc-200 md:text-[11px]"
+					: "text-[8px] text-zinc-400 md:text-[9px]"
+			}`}>
+				{node.label}
+			</span>
+			<span className="hidden font-mono text-[8px] text-zinc-600 md:block">{node.path}</span>
 		</div>
 	);
 }
 
-/** Vertical connector between stages */
-function VConnector({ main }: { main?: boolean }) {
+/** Vertical arrow connector between layers (mobile) */
+function VArrow() {
 	return (
-		<div className="flex justify-center py-1 md:hidden">
-			<div className={`h-5 w-px ${main ? "bg-emerald-500/40" : "bg-white/[0.06]"}`} />
+		<div className="flex justify-center py-0.5 md:hidden">
+			<svg width="8" height="16" viewBox="0 0 8 16" fill="none" className="text-emerald-500/40">
+				<path d="M4 0V13M1 10L4 14L7 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+			</svg>
 		</div>
 	);
 }
 
-/** Horizontal connector between stages (desktop only) */
-function HConnector({ main }: { main?: boolean }) {
+/** Horizontal arrow connector between columns (desktop) */
+function HArrow() {
 	return (
-		<div className="hidden items-center md:flex">
-			<div className={`h-px w-6 lg:w-10 ${main ? "bg-emerald-500/40" : "bg-white/[0.06]"}`} />
-			{main && (
-				<svg width="6" height="8" viewBox="0 0 6 8" fill="none" className="-ml-1 text-emerald-500/40">
-					<path d="M1 1L5 4L1 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-				</svg>
-			)}
+		<div className="hidden shrink-0 items-center self-center md:flex">
+			<svg width="20" height="8" viewBox="0 0 20 8" fill="none" className="text-emerald-500/40">
+				<path d="M0 4H17M14 1L18 4L14 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+			</svg>
 		</div>
 	);
 }
@@ -588,39 +593,42 @@ function MapsPanel() {
 				<p className="mt-1 text-[10px] text-zinc-600">{t("subtext")}</p>
 			</div>
 
-			{/* Flow: vertical on mobile, horizontal on desktop */}
-			<div className="flex flex-col items-stretch md:flex-row md:items-start">
-				{/* Start node */}
-				<div className="shrink-0 md:pt-6">
-					<FlowNode node={start} />
+			{/* Flowchart: layers stacked vertically on mobile, horizontal on desktop */}
+			<div className="flex flex-1 flex-col items-center md:flex-row md:items-stretch md:justify-between md:gap-0">
+				{/* Start */}
+				<div className="flex shrink-0 items-center justify-center md:flex-col">
+					<FlowNode node={start} size="lg" />
 				</div>
 
-				<HConnector main />
-				<VConnector main />
+				<HArrow />
+				<VArrow />
 
-				{/* Stages */}
+				{/* Stage layers */}
 				{stages.map((stage, si) => (
 					<div key={si} className="contents">
-						<div className="flex shrink-0 flex-col gap-1.5">
+						{/* One layer = 3 nodes side by side */}
+						<div className="flex w-full items-start justify-center gap-3 md:w-auto md:flex-col md:gap-1.5">
 							{stage.map((node, ni) => (
-								<FlowNode key={ni} node={node} />
+								<div key={ni} className="flex-1 md:flex-none">
+									<FlowNode node={node} />
+								</div>
 							))}
 						</div>
 						{si < stages.length - 1 && (
 							<>
-								<HConnector main />
-								<VConnector main />
+								<HArrow />
+								<VArrow />
 							</>
 						)}
 					</div>
 				))}
 
-				<HConnector main />
-				<VConnector main />
+				<HArrow />
+				<VArrow />
 
-				{/* Finish node */}
-				<div className="shrink-0 md:pt-6">
-					<FlowNode node={finish} />
+				{/* Finish */}
+				<div className="flex shrink-0 items-center justify-center md:flex-col">
+					<FlowNode node={finish} size="lg" />
 				</div>
 			</div>
 		</div>

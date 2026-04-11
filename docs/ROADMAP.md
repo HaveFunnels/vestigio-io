@@ -546,6 +546,75 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 ---
 
+### 3.7 Copy Analysis Pack — AI-Powered Copy & Funnel Alignment
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` `docs` |
+| **Priority** | P1 |
+
+**The thesis:** Most SaaS/ecommerce sites have copy that was written once and never audited against the actual ICP, funnel stage, or commercial intent of each page. The result is generic copy that doesn't convert — not because the product is bad, but because the words on the page don't match the buyer's mental state at that point in the journey. This pack turns Vestigio into a **copy strategist** that evaluates alignment between what the page says and what the page should say.
+
+**Requires:** Haiku LLM calls per commercial page (~$0.003/page). A reference knowledge base of copy best practices, marketing angles, and funnel-stage expectations that the LLM evaluates against.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Copy Best Practices Knowledge Base** | Build a structured reference at `packages/copy-analysis/guidelines.ts` containing: (1) **Funnel-stage expectations** — what copy should accomplish at each stage (awareness → consideration → decision → post-purchase), what tone/length/CTA style is appropriate, what objections to address; (2) **ICP alignment criteria** — how copy should reflect the target persona's language, pain points, sophistication level, and buying triggers; (3) **Marketing angle taxonomy** — common angles (social proof, urgency, authority, transformation, risk reversal, exclusivity) and where each is appropriate vs manipulative; (4) **Page-type copy rules** — homepage hero (clarity > cleverness, 5-second test), pricing page (value framing, objection handling, comparison anchoring), checkout (trust, friction reduction, commitment reinforcement), landing page (single CTA, message match with ad source), product page (benefit > feature, sensory language, social proof proximity). Each guideline is a structured object with `id`, `category`, `rule`, `good_example`, `bad_example`, `funnel_stages[]`, `page_types[]` so the LLM can cite specific guidelines in its analysis. | Medium |
+| B | **Copy extraction enrichment** | Expand `body_text_snippet` from 500 to 2000 chars on commercial-classified pages (checkout, pricing, cart, landing). Extract: page headline (h1), subheadline, CTA text(s), social proof elements, trust signals, urgency indicators. New evidence type `CopyElementsPayload { headline, subheadline, ctas[], social_proof[], trust_signals[], urgency_elements[], body_snippet }`. | Low |
+| C | **ICP profile input** | During onboarding (or in settings), capture ICP basics: target persona description, industry, average deal size, buying sophistication (technical/non-technical/mixed), primary pain point. Stored on the Environment model. Falls back to heuristic ICP detection from the site content if not provided. | Low |
+| D | **Haiku copy analysis per page** | For each commercial page, call Haiku with: the extracted copy elements, the page's funnel classification (from URL/content classifier), the ICP profile, and the relevant subset of guidelines. Structured output: `CopyAnalysis { funnel_alignment_score (0-100), icp_match_score (0-100), issues[] { guideline_id, severity, description, suggestion }, strengths[], overall_grade ('A'-'F') }`. Cache by SHA256(copy_elements + icp_profile + guidelines_version). | Medium |
+| E | **New signals** | `copy_funnel_misalignment` (copy tone/intent doesn't match funnel stage), `copy_icp_disconnect` (language doesn't match target persona), `missing_trust_at_decision_point` (checkout/pricing lacks trust copy), `cta_clarity_weak` (ambiguous or competing CTAs), `value_proposition_absent` (no clear "why buy" above fold), `objection_unaddressed` (common objections for the ICP not handled), `social_proof_misplaced` (testimonials on wrong pages or absent from decision pages). | Medium |
+| F | **New inference keys** | `copy_misaligned_with_funnel_stage`, `copy_disconnected_from_icp`, `trust_copy_absent_at_decision`, `cta_unclear_or_competing`, `value_proposition_missing_above_fold`, `key_objection_unaddressed`, `social_proof_ineffective_placement`. Each maps to root cause `copy_strategy_gap` (new). | Medium |
+| G | **Decision pack** | New `copy_alignment_pack`. Pack question: `is_copy_aligned_with_commercial_intent`. Four tiers: Incident (grade F, critical funnel pages have anti-patterns), FixBeforeScale (grade C-D, significant misalignments), Optimize (grade B, room for improvement), Observe (grade A, copy is well-aligned). | Low |
+| H | **Workspace** | `copy_alignment` workspace. Shows per-page copy grades, overall funnel alignment score, top issues by impact, before/after suggestion previews. | Medium |
+| I | **MCP integration** | New tool `analyze_copy` that lets the operator ask "Why isn't my checkout page converting?" and get copy-specific analysis citing guidelines. New playbook `copy_audit` for comprehensive copy review. | Low |
+
+**Cost estimate:** ~$0.01-0.02 per audit (3-8 commercial pages x Haiku). Negligible.
+
+**Dependency:** 3.2A (expand body_text_snippet) is a prerequisite. Can share the expanded snippet extraction.
+
+---
+
+### 3.8 Shopify Integration — Complete the Loop
+
+| | |
+|---|---|
+| **Tag** | `platform` `collection` |
+| **Priority** | P1 |
+
+**Current state:** Phase 4A shipped a read-only Shopify Admin API client (`packages/shopify-adapter/`), a production poller with adaptive backoff, and a mapper that translates Shopify metrics → `BusinessInputs`. **What's missing** is the user-facing connection flow and the pipeline integration that makes it automatic.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **OAuth install flow** | Implement Shopify OAuth 2.0: `/api/shopify/auth` (redirect to Shopify with scopes `read_orders,read_customers`) → `/api/shopify/callback` (exchange code for access_token, store credentials). Standard Shopify embedded app flow. | Medium |
+| B | **Credentials storage** | New Prisma model `ShopifyConnection { id, env_id, shop_domain, access_token (encrypted), scopes, installed_at, last_polled_at, status }`. Encrypt access_token at rest. | Low |
+| C | **Settings UI** | "Connect Shopify" card in `/app/settings/integrations` (new page or section in existing settings). Shows connection status, shop domain, last sync time, disconnect button. | Low |
+| D | **Pipeline auto-trigger** | After each audit cycle, if ShopifyConnection exists for the env, run the poller and inject `BusinessInputs` as evidence before `recomputeAll()`. Same pattern as the behavioral pixel worker. | Low |
+| E | **Revenue data enrichment** | With real Shopify revenue data, impact baselines switch from heuristic to data-driven. The `basis_type` in BusinessInputs becomes `data_driven`, and all monetary impact estimates ($X/mo lost) use real numbers instead of industry benchmarks. | Already built (mapper handles this) |
+
+---
+
+### 3.9 Stripe Integration — Revenue Intelligence
+
+| | |
+|---|---|
+| **Tag** | `platform` `collection` |
+| **Priority** | P2 |
+
+**Current state:** Stripe is the primary billing provider (checkout, webhooks, subscription lifecycle). **But** we only use Stripe for billing ourselves — we don't read the customer's Stripe data for revenue intelligence the way we do with Shopify.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **OAuth Connect flow** | Stripe Connect (Standard or Express) OAuth: let the customer connect their own Stripe account so we can read their revenue data. `/api/stripe/connect/auth` → `/api/stripe/connect/callback`. Scopes: `read_only` on charges, invoices, subscriptions. | Medium |
+| B | **Credentials storage** | New Prisma model `StripeConnection { id, env_id, stripe_account_id, access_token (encrypted), refresh_token, scopes, connected_at, last_polled_at, status }`. | Low |
+| C | **Revenue poller** | Fetch last 90d of charges/invoices/subscriptions. Compute: MRR, churn rate, avg revenue per customer, refund rate, failed payment rate. Map to `BusinessInputs` (same interface as Shopify mapper). | Medium |
+| D | **Settings UI** | "Connect Stripe" card alongside Shopify in integrations settings. | Low |
+| E | **Chargeback pack enrichment** | With real Stripe dispute data, the chargeback pack gets real dispute rates instead of heuristics. Findings like `elevated_dispute_risk` can show actual dollar amounts. | Low |
+
+**Note:** This is about reading the **customer's** Stripe account for revenue intelligence — completely separate from our own Stripe billing integration which is already working.
+
+---
+
 ## Wave 4 — Expansion & Depth
 
 **Goal:** Extend the product into new strategic lenses, deeper verification, and platform maturity.
@@ -618,7 +687,7 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 | **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | 2.1 ✅, 2.3 ✅, 2.4 ✅ — **2.2 (Members) + 2.5 (Prisma Migrate) open** |
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | **Done — 2026-04-10/11** ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | **Done — 2026-04-11** ✅ |
-| **3** | Semantic Enrichment & New Lenses | LLM on policy pages, CTA/trust language, cybersecurity Phase 1, composite findings, journey narrative | All open |
+| **3** | Semantic Enrichment & New Lenses | LLM on policy pages, CTA/trust language, cybersecurity Phase 1, composite findings, journey narrative, **copy analysis pack**, **Shopify completion**, **Stripe revenue intelligence** | All open |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 
 ---

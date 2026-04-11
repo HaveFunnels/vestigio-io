@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-import { Sparkles } from "lucide-react";
 
 interface ShinyButtonProps {
   children: React.ReactNode;
@@ -17,10 +16,7 @@ export function ShinyButton({ children, onClick, className = "", disabled }: Shi
       onClick={onClick}
       disabled={disabled}
     >
-      <span className="flex items-center gap-1.5">
-        <Sparkles className="h-3 w-3" />
-        {children}
-      </span>
+      <span>{children}</span>
     </button>
   );
 }

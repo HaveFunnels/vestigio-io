@@ -655,13 +655,13 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 			<div className="relative mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
 				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
 					{/* Browser title bar */}
-					<div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:px-4 sm:py-3">
-						<div className="flex gap-1.5">
+					<div className="flex items-center justify-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:justify-start sm:px-4 sm:py-3">
+						<div className="hidden gap-1.5 sm:flex">
 							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
 							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
 							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
 						</div>
-						<div className="ml-2 flex min-w-0 flex-1 sm:ml-3">
+						<div className="flex min-w-0 sm:ml-3 sm:flex-1">
 							<div className="mx-auto inline-flex max-w-full items-center gap-1.5 truncate rounded-md border border-white/[0.04] bg-white/[0.02] px-3 py-1 font-mono text-[10px] text-zinc-500 sm:text-[11px]">
 								<svg
 									viewBox="0 0 12 12"
@@ -681,25 +681,32 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 
 					{/* App body: sidebar + content */}
 					<div className="flex flex-col md:flex-row">
-						{/* Mobile horizontal tabs */}
+						{/* Mobile horizontal tabs — all icons visible, only active shows label */}
 						<div className="relative md:hidden">
-							<div className="flex overflow-x-auto border-b border-white/[0.06] bg-[#0a0a12]/60 [mask-image:linear-gradient(to_right,transparent_0,black_12px,black_calc(100%-12px),transparent_100%)]">
-								{TABS.map((tabId) => (
-									<button
-										key={tabId}
-										onClick={() => setActiveTab(tabId)}
-										className={`flex shrink-0 items-center gap-1.5 px-4 py-3 text-[11px] font-medium transition-colors ${
-											activeTab === tabId
-												? "border-b-2 border-violet-500 text-white"
-												: "text-zinc-500 hover:text-zinc-300"
-										}`}
-									>
-										<span className={activeTab === tabId ? "text-violet-400" : "text-zinc-600"}>
-											{TAB_ICONS[tabId]}
-										</span>
-										{t(`tabs.${tabId}`)}
-									</button>
-								))}
+							<div className="flex items-center justify-center gap-0.5 border-b border-white/[0.06] bg-[#0a0a12]/60 px-2 py-1.5">
+								{TABS.map((tabId) => {
+									const isActive = activeTab === tabId;
+									return (
+										<button
+											key={tabId}
+											onClick={() => setActiveTab(tabId)}
+											className={`flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-medium transition-all ${
+												isActive
+													? "bg-white/[0.08] text-white"
+													: "text-zinc-500 hover:text-zinc-300"
+											}`}
+										>
+											<span className={isActive ? "text-violet-400" : "text-zinc-600"}>
+												{TAB_ICONS[tabId]}
+											</span>
+											{isActive && (
+												<span className="animate-[vptour-fade-in_0.2s_ease-out]">
+													{t(`tabs.${tabId}`)}
+												</span>
+											)}
+										</button>
+									);
+								})}
 							</div>
 						</div>
 
@@ -742,11 +749,11 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 							</div>
 						</div>
 
-						{/* Active panel */}
-						<div className="flex min-h-[420px] flex-1 flex-col p-4 sm:p-6 md:min-h-[640px] md:p-7 lg:min-h-[680px] lg:p-8">
+						{/* Active panel — fixed height, scrollable content */}
+						<div className="h-[420px] flex-1 overflow-y-auto p-4 sm:p-6 md:h-[640px] md:p-7 lg:h-[680px] lg:p-8">
 							<div
 								key={activeTab}
-								className="flex-1 animate-[vptour-fade-in_0.25s_ease-out]"
+								className="animate-[vptour-fade-in_0.25s_ease-out]"
 								style={{ animationFillMode: "both" }}
 							>
 								<ActivePanel />

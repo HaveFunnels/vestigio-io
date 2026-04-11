@@ -1,4 +1,5 @@
 import { BrandingProvider } from "@/components/BrandingProvider";
+import JsonLd from "@/components/SEO/JsonLd";
 import { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
@@ -75,6 +76,7 @@ export default async function RootLayout({
 	return (
 		<html lang={locale} className={`dark ${jetbrainsMono.variable} ${geist.variable}`} suppressHydrationWarning={true}>
 			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
+				<JsonLd />
 				<NextIntlClientProvider messages={messages}>
 					<BrandingProvider>
 						{children}

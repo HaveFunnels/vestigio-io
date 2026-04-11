@@ -1,5 +1,6 @@
 "use client";
 
+import FaqJsonLd from "@/components/SEO/FaqJsonLd";
 import { useState } from "react";
 
 const faqData = [
@@ -34,6 +35,7 @@ const FAQ = () => {
 
 	return (
 		<section id="faq" className='overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28'>
+			<FaqJsonLd faqs={faqData} />
 			{/* Section header */}
 			<div className='mx-auto mb-10 max-w-[600px] px-4 text-center sm:mb-12'>
 				<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl'>

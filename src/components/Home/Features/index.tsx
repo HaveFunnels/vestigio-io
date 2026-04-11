@@ -169,24 +169,24 @@ const RevenueLeaksVisual = ({
 		{rows.map((row, i) => (
 			<div
 				key={i}
-				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.02] px-3 py-2 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:border-red-500/20 group-hover:bg-white/[0.04]'
+				className='flex items-center gap-2 rounded-[0.625rem] border border-white/5 bg-white/[0.02] px-2.5 py-2 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:border-red-500/20 group-hover:bg-white/[0.04] lg:gap-3 lg:px-3'
 				style={{ transitionDelay: `${i * 60}ms` }}
 			>
 				<div className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-500/10 text-red-400 transition-all duration-300 group-hover:scale-110 group-hover:bg-red-500/15'>
 					{surfaceIconByOrder[i]}
 				</div>
 				<div className='min-w-0 flex-1'>
-					<div className='truncate text-[11px] font-medium text-zinc-200 sm:text-xs'>
+					<div className='truncate text-[11px] font-medium text-zinc-200'>
 						{row.surface}
 					</div>
-					<div className='mt-0.5 text-[9px] uppercase tracking-[0.12em] text-zinc-500 sm:text-[10px]'>
+					<div className='mt-0.5 text-[9px] uppercase tracking-[0.12em] text-zinc-500'>
 						{confidenceLabel} {row.confidence}
 					</div>
 				</div>
-				<div className='font-mono text-xs tabular-nums text-red-400 sm:text-sm'>
+				<div className='shrink-0 font-mono text-[11px] tabular-nums text-red-400 lg:text-sm'>
 					{row.loss}
 				</div>
-				<span className='hidden rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.1em] text-red-300 sm:inline-block'>
+				<span className='hidden shrink-0 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.1em] text-red-300 xl:inline-block'>
 					{leakingLabel}
 				</span>
 			</div>

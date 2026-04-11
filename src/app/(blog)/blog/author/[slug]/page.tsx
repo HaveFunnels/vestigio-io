@@ -1,9 +1,37 @@
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import { integrations } from "../../../../../../integrations.config";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+	if (!integrations?.isSanityEnabled) {
+		return { title: "Author — Vestigio Blog" };
+	}
+	const { getAuthorBySlug } = await import("@/sanity/sanity-utils");
+	const params = await props.params;
+	const author = (await getAuthorBySlug(params.slug)) as any;
+
+	if (!author) {
+		return { title: "Author — Vestigio Blog" };
+	}
+
+	return {
+		title: `${author.name} — Vestigio Blog`,
+		description: `Read blog posts by ${author.name} on the Vestigio blog.`,
+		openGraph: {
+			title: `${author.name} — Vestigio Blog`,
+			description: `Read blog posts by ${author.name} on the Vestigio blog.`,
+		},
+		twitter: {
+			card: "summary",
+			title: `${author.name} — Vestigio Blog`,
+			description: `Read blog posts by ${author.name} on the Vestigio blog.`,
+		},
+	};
+}
 
 export default async function AuthorPage(props: Props) {
 	if (!integrations?.isSanityEnabled) return notFound();

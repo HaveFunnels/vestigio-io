@@ -253,7 +253,10 @@ export default function SolutionLayers() {
 			</div>
 
 			<div className="mx-auto mb-12 max-w-[700px] px-4 text-center sm:mb-16 sm:px-8 lg:mb-20">
-				<span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">{t.sectionLabel}</span>
+				<div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
+						<span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+						<span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">{t.sectionLabel}</span>
+					</div>
 				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">{t.title}</h2>
 				<p className="text-sm leading-relaxed text-gray-400 sm:text-base lg:text-lg">{t.subtitle}</p>
 			</div>

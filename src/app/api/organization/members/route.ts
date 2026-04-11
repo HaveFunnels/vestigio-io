@@ -78,9 +78,9 @@ export const DELETE = withErrorTracking(async function DELETE(request: Request) 
     return NextResponse.json({ message: "No organization found" }, { status: 404 });
   }
 
-  // Only owner can remove members
-  if (membership.role !== "owner") {
-    return NextResponse.json({ message: "Only the organization owner can remove members" }, { status: 403 });
+  // Owner or admin can remove members
+  if (!["owner", "admin"].includes(membership.role)) {
+    return NextResponse.json({ message: "Only owners and admins can remove members" }, { status: 403 });
   }
 
   const body = await request.json();
@@ -105,9 +105,14 @@ export const DELETE = withErrorTracking(async function DELETE(request: Request) 
     return NextResponse.json({ message: "Member not found" }, { status: 404 });
   }
 
-  // Cannot remove yourself (owner)
+  // Cannot remove yourself
   if (targetMembership.userId === userId) {
     return NextResponse.json({ message: "Cannot remove yourself from the organization" }, { status: 400 });
+  }
+
+  // Admins cannot remove owners
+  if (membership.role === "admin" && targetMembership.role === "owner") {
+    return NextResponse.json({ message: "Admins cannot remove the organization owner" }, { status: 403 });
   }
 
   await prisma.membership.delete({
@@ -116,3 +121,77 @@ export const DELETE = withErrorTracking(async function DELETE(request: Request) 
 
   return NextResponse.json({ message: "Member removed" });
 }, { endpoint: "/api/organization/members", method: "DELETE" });
+
+// ──────────────────────────────────────────────
+// PATCH — change member role
+// Owner can change any role. Admin can change member/viewer roles only.
+// ──────────────────────────────────────────────
+
+const patchSchema = z.object({
+  membershipId: z.string().min(1),
+  role: z.enum(["admin", "member", "viewer"]),
+});
+
+export const PATCH = withErrorTracking(async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = (session.user as any).id;
+  if (!userId) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const membership = await resolveUserMembership(userId);
+  if (!membership) {
+    return NextResponse.json({ message: "No organization found" }, { status: 404 });
+  }
+
+  if (!["owner", "admin"].includes(membership.role)) {
+    return NextResponse.json({ message: "Insufficient permissions" }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const res = patchSchema.safeParse(body);
+
+  if (!res.success) {
+    return NextResponse.json(
+      { message: "Invalid payload", errors: res.error.flatten().fieldErrors },
+      { status: 400 },
+    );
+  }
+
+  const targetMembership = await prisma.membership.findFirst({
+    where: {
+      id: res.data.membershipId,
+      organizationId: membership.organizationId,
+    },
+  });
+
+  if (!targetMembership) {
+    return NextResponse.json({ message: "Member not found" }, { status: 404 });
+  }
+
+  // Cannot change own role
+  if (targetMembership.userId === userId) {
+    return NextResponse.json({ message: "Cannot change your own role" }, { status: 400 });
+  }
+
+  // Cannot change owner role (only owner transfer can do that)
+  if (targetMembership.role === "owner") {
+    return NextResponse.json({ message: "Cannot change the owner's role" }, { status: 403 });
+  }
+
+  // Admins cannot promote to admin
+  if (membership.role === "admin" && res.data.role === "admin") {
+    return NextResponse.json({ message: "Only owners can promote members to admin" }, { status: 403 });
+  }
+
+  await prisma.membership.update({
+    where: { id: targetMembership.id },
+    data: { role: res.data.role },
+  });
+
+  return NextResponse.json({ message: "Role updated" });
+}, { endpoint: "/api/organization/members", method: "PATCH" });

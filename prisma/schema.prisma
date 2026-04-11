@@ -197,6 +197,7 @@ model Organization {
   usage                   Usage[]
   conversations           Conversation[]
   tokenLedger             TokenCostLedger[]
+  orgInvites              OrgInvite[]
 
   @@index([orgType, status])
 }
@@ -212,6 +213,24 @@ model Membership {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
+}
+
+model OrgInvite {
+  id             String   @id @default(cuid())
+  organizationId String
+  email          String
+  role           String   @default("member") // admin | member | viewer
+  status         String   @default("pending") // pending | accepted | expired | revoked
+  token          String   @unique
+  expiresAt      DateTime
+  invitedBy      String // userId of the person who sent the invite
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+  @@index([token])
+  @@index([organizationId, status])
 }
 
 model Environment {

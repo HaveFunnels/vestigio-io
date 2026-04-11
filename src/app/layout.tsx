@@ -32,6 +32,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
+	metadataBase: new URL("https://vestigio.io"),
 	icons: [
 		{
 			rel: "icon",
@@ -50,6 +51,15 @@ export const metadata: Metadata = {
 	},
 	description:
 		"Vestigio is the intelligence layer that audits, monitors, and optimizes your SaaS platform.",
+	alternates: {
+		canonical: "/",
+		languages: {
+			"en": "/",
+			"pt-BR": "/",
+			"es": "/",
+			"de": "/",
+		},
+	},
 	openGraph: {
 		type: "website",
 		siteName: "Vestigio",

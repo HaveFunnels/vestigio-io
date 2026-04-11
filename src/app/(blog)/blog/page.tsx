@@ -4,11 +4,21 @@ import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { integrations, messages } from "../../../../integrations.config";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
-	title: `Blog - Vestigio`,
-	description: `Blog posts from Vestigio`,
+	title: "Blog — Vestigio",
+	description: "Insights, tutorials, and best practices for SaaS platform optimization, automated audits, and data-driven decision making.",
+	openGraph: {
+		type: "website",
+		title: "Blog — Vestigio",
+		description: "Insights, tutorials, and best practices for SaaS platform optimization, automated audits, and data-driven decision making.",
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Blog — Vestigio",
+		description: "Insights, tutorials, and best practices for SaaS platform optimization, automated audits, and data-driven decision making.",
+	},
 };
 
 const BlogGrid = async () => {

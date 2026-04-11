@@ -1,9 +1,35 @@
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { integrations } from "../../../../../integrations.config";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+	if (!integrations?.isSanityEnabled) return {};
+
+	const { getPostBySlug } = await import("@/sanity/sanity-utils");
+	const { slug } = await params;
+	const post = await getPostBySlug(slug);
+
+	if (!post?.title) return {};
+
+	return {
+		title: post.title,
+		description: post.metadata ?? `Read "${post.title}" on the Vestigio blog.`,
+		openGraph: {
+			type: "article",
+			title: post.title,
+			description: post.metadata ?? `Read "${post.title}" on the Vestigio blog.`,
+		},
+		twitter: {
+			card: "summary_large_image",
+			title: post.title,
+			description: post.metadata ?? `Read "${post.title}" on the Vestigio blog.`,
+		},
+	};
+}
 
 export default async function SingleBlog(props: Props) {
 	if (!integrations?.isSanityEnabled) return notFound();

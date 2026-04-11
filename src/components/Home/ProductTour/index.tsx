@@ -45,6 +45,7 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 // ─────────────────────────────────────────────────────────────────────
 // Types
@@ -757,11 +758,10 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 
 				{/* CTA below the product tour */}
 				<div className="mx-auto mt-10 flex max-w-[700px] flex-col items-center gap-3 px-4 sm:mt-14 sm:px-8">
-					<Link
-						href={primaryCtaHref}
-						className="rounded-[0.875rem] bg-white px-6 py-3 text-center text-[14px] font-semibold text-black shadow-[0_8px_24px_-12px_rgba(255,255,255,0.4)] transition-all hover:bg-zinc-100 hover:shadow-[0_12px_30px_-12px_rgba(255,255,255,0.55)] focus-visible:ring-2 focus-visible:ring-emerald-400"
-					>
-						{t("cta_primary")}
+					<Link href={primaryCtaHref} className="inline-block">
+						<ShinyButton>
+							{t("cta_primary")}
+						</ShinyButton>
 					</Link>
 					<p className="max-w-[560px] text-center text-[11px] text-zinc-500 sm:text-xs">
 						{t("cta_micro")}

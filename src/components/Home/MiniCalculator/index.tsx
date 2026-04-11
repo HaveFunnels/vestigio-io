@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ShinyButton } from "@/components/ui/shiny-button";
 
 // ── MiniCalculator section
 //
@@ -337,13 +336,13 @@ const MiniCalculator = ({
 											className={inputClass}
 										/>
 										{!showExtra && (
-											<ShinyButton
+											<button
 												onClick={handleSubmit}
-												className='w-full shrink-0 sm:w-auto'
 												disabled={!url.trim()}
+												className='w-full shrink-0 rounded-[0.875rem] bg-white px-6 py-3 text-center text-[14px] font-semibold text-black shadow-[0_8px_24px_-12px_rgba(255,255,255,0.4)] transition-all hover:bg-zinc-100 hover:shadow-[0_12px_30px_-12px_rgba(255,255,255,0.55)] focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:opacity-40 disabled:cursor-default sm:w-auto'
 											>
 												{t("cta_audit")}
-											</ShinyButton>
+											</button>
 										)}
 									</div>
 
@@ -388,12 +387,12 @@ const MiniCalculator = ({
 													)}
 												</select>
 											</div>
-											<ShinyButton
+											<button
 												onClick={handleSubmit}
-												className='w-full sm:w-auto'
+												className='mx-auto w-full rounded-[0.875rem] bg-white px-6 py-3 text-center text-[14px] font-semibold text-black shadow-[0_8px_24px_-12px_rgba(255,255,255,0.4)] transition-all hover:bg-zinc-100 hover:shadow-[0_12px_30px_-12px_rgba(255,255,255,0.55)] focus-visible:ring-2 focus-visible:ring-emerald-400 sm:w-auto'
 											>
 												{t("cta_audit")}
-											</ShinyButton>
+											</button>
 										</div>
 									)}
 								</div>
@@ -558,10 +557,11 @@ const MiniCalculator = ({
 										{t("cta_question")}
 									</p>
 									<div className='mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
-										<Link href={primaryCtaHref} className='inline-block'>
-											<ShinyButton className='w-full sm:w-auto'>
-												{t("cta_signup")}
-											</ShinyButton>
+										<Link
+											href={primaryCtaHref}
+											className='rounded-[0.875rem] bg-white px-6 py-3 text-center text-[14px] font-semibold text-black shadow-[0_8px_24px_-12px_rgba(255,255,255,0.4)] transition-all hover:bg-zinc-100 hover:shadow-[0_12px_30px_-12px_rgba(255,255,255,0.55)] focus-visible:ring-2 focus-visible:ring-emerald-400'
+										>
+											{t("cta_signup")}
 										</Link>
 										<Link
 											href='/pricing'

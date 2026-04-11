@@ -91,16 +91,17 @@ const Header = () => {
 			}`}
 		>
 			<div
-				className={`relative mx-auto flex items-center justify-between transition-all duration-500 ease-out ${
+				className={`relative mx-auto flex flex-col transition-all duration-500 ease-out xl:flex-row xl:items-center xl:justify-between ${
 					compact
-						? // Compact liquid-glass pill — fixed h-12 forces every
-							// child to align in the vertical center automatically.
-							"h-12 max-w-[620px] rounded-full border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl"
+						? // Compact liquid-glass pill
+							navbarOpen
+								? "max-w-[620px] rounded-[1.25rem] border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-5 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl"
+								: "h-12 max-w-[620px] rounded-full border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl"
 						: // Default — full width, transparent, no border
 							"max-w-[1170px] rounded-full border border-transparent bg-transparent px-4 py-4 shadow-none backdrop-blur-0 sm:px-8"
-				} xl:flex`}
+				}`}
 			>
-				<div className='flex w-full shrink-0 items-center justify-between xl:w-auto'>
+				<div className={`flex w-full shrink-0 items-center justify-between xl:w-auto ${compact && !navbarOpen ? "h-12" : ""}`}>
 					<Link href='/' className='flex shrink-0 items-center'>
 						{typeof logoSrc === "string" ? (
 							<img
@@ -162,10 +163,11 @@ const Header = () => {
 				</div>
 
 				<div
-					className={`invisible h-0 w-full items-center justify-between xl:visible xl:flex xl:h-auto ${
-						navbarOpen &&
-						"!visible relative mt-4 !h-auto max-h-[70vh] overflow-y-auto rounded-[1rem] bg-[#181822] p-5 shadow-lg sm:max-h-[60vh] sm:p-6"
-					}`}
+					className={`w-full items-center justify-between ${
+						navbarOpen
+							? "mt-4 block max-h-[70vh] overflow-y-auto rounded-[1rem] bg-[#181822] p-5 shadow-lg sm:max-h-[60vh] sm:p-6 xl:mt-0 xl:bg-transparent xl:p-0 xl:shadow-none"
+							: "hidden xl:flex"
+					} xl:flex xl:h-auto`}
 				>
 					{/* Nav — collapses to width 0 in compact mode. Items stay
 					    in the DOM, just visually gone, so the transition keeps

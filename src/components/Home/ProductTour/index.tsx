@@ -624,7 +624,7 @@ function MapsPanel() {
 			{/* ── Mobile: vertical flowchart ── */}
 			<div className="relative flex-1 md:hidden">
 				{/* Curved connector SVG behind everything */}
-				<svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
+				<svg className="absolute inset-0 -z-10 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
 					<path d={buildMobilePath()} stroke="rgba(16,185,129,0.35)" strokeWidth="0.8" fill="none" vectorEffect="non-scaling-stroke" />
 				</svg>
 
@@ -658,7 +658,7 @@ function MapsPanel() {
 			{/* ── Desktop: horizontal flowchart ── */}
 			<div className="relative hidden flex-1 md:block">
 				{/* Curved connector SVG */}
-				<svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
+				<svg className="absolute inset-0 -z-10 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
 					<path d={buildDesktopPath()} stroke="rgba(16,185,129,0.35)" strokeWidth="0.8" fill="none" vectorEffect="non-scaling-stroke" />
 				</svg>
 
@@ -777,11 +777,11 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 			<div className="relative mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
 				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
 					{/* Browser title bar */}
-					<div className="flex items-center justify-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:justify-start sm:px-4 sm:py-3">
+					<div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:px-4 sm:py-3">
 						<div className="flex gap-1.5">
-							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+							<div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+							<div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+							<div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
 						</div>
 						<div className="flex min-w-0 sm:ml-3 sm:flex-1">
 							<div className="mx-auto inline-flex max-w-full items-center gap-1.5 truncate rounded-md border border-white/[0.04] bg-white/[0.02] px-3 py-1 font-mono text-[10px] text-zinc-500 sm:text-[11px]">

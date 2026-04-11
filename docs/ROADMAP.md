@@ -568,10 +568,17 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 | G | **Decision pack** | New `copy_alignment_pack`. Pack question: `is_copy_aligned_with_commercial_intent`. Four tiers: Incident (grade F, critical funnel pages have anti-patterns), FixBeforeScale (grade C-D, significant misalignments), Optimize (grade B, room for improvement), Observe (grade A, copy is well-aligned). | Low |
 | H | **Workspace** | `copy_alignment` workspace. Shows per-page copy grades, overall funnel alignment score, top issues by impact, before/after suggestion previews. | Medium |
 | I | **MCP integration** | New tool `analyze_copy` that lets the operator ask "Why isn't my checkout page converting?" and get copy-specific analysis citing guidelines. New playbook `copy_audit` for comprehensive copy review. | Low |
+| J | **Message-match (UTM heuristic)** | The pixel already captures UTM params (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`) and referrer. Cross-reference: if `utm_term=frete+gratis+ecommerce` and the landing page never mentions "frete" or "gratis", that's a high-confidence message mismatch. Only fire findings when the signal is strong — exact keyword absent from h1/subheadline/CTAs on the LP that received that traffic. New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. Phase 1 is UTM heuristic only (no ad platform API needed); Phase 2 (3.10) adds real ad creative text via Meta/Google integration. | Low |
+| K | **Cross-page narrative consistency** | Haiku call with copy elements from all commercial pages in sequence (by funnel stage). Detect: contradictory promises ("enterprise-grade" on hero, "perfect for startups" on pricing), abandoned commitments (trial mentioned once then never again), tone shifts (formal hero → casual checkout), inconsistent naming (product called different things on different pages). New signal `narrative_contradiction_detected`, `promise_abandoned_cross_page`, `tone_inconsistency`. | Medium |
+| L | **Pricing page psychology** | Specialized Haiku analysis for the pricing page: anchoring effectiveness (is the middle plan the obvious choice?), decoy positioning, value framing (features listed vs benefits communicated), plan naming (do names communicate progression?), objection handling on-page, comparison anchoring against alternatives. New signal `pricing_page_psychology_weak`, `value_framing_features_over_benefits`. | Low |
+| M | **Localization quality** | For multi-locale sites, compare the persuasive structure (not just words) between the primary locale and translations. Detect when translation preserved meaning but lost marketing intent — "Get started free" → "Comece gratuitamente" is technically correct but persuasively dead. New signal `translation_lost_persuasive_intent`. Requires the site to have multiple locale versions of the same page (detected by hreflang or URL pattern). | Medium |
+| N | **Micro-copy audit** | Extract and analyze form labels, error messages, button text, tooltips, empty states, confirmation messages. These are small copy moments with outsized conversion impact. "Enviar" vs "Garantir minha vaga" on a checkout button. New signal `microcopy_generic_at_conversion_point`, `error_message_unhelpful`. | Low |
+| O | **SEO vs conversion tension** | Cross-reference SEO audit data (already collected) with copy analysis. Detect when keyword-optimized copy is hurting readability/conversion (keyword stuffing in headlines), or when conversion-optimized creative copy is invisible to Google (no target keyword in h1/title). New signal `seo_copy_tension_detected`. | Low |
+| P | **Copy staleness** | Detect outdated references: social proof numbers that contradict footer/about ("500+ companies" but footer says "10,000+"), expired promotions still live, date references in the past, screenshots of old product versions, testimonials from companies that no longer exist or rebranded. Rule-based + light Haiku verification. New signal `copy_stale_reference_detected`. | Low |
 
-**Cost estimate:** ~$0.01-0.02 per audit (3-8 commercial pages x Haiku). Negligible.
+**Cost estimate:** ~$0.02-0.05 per audit (3-8 commercial pages x Haiku, cross-page analysis, pricing page specialist call). Still negligible.
 
-**Dependency:** 3.2A (expand body_text_snippet) is a prerequisite. Can share the expanded snippet extraction.
+**Dependency:** 3.2A (expand body_text_snippet) is a prerequisite. Can share the expanded snippet extraction. Item J depends on behavioral pixel UTM capture (already shipping in Wave 0.2/0.3). Items K-P can be implemented incrementally after the core A-I are live.
 
 ---
 
@@ -612,6 +619,28 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 | E | **Chargeback pack enrichment** | With real Stripe dispute data, the chargeback pack gets real dispute rates instead of heuristics. Findings like `elevated_dispute_risk` can show actual dollar amounts. | Low |
 
 **Note:** This is about reading the **customer's** Stripe account for revenue intelligence — completely separate from our own Stripe billing integration which is already working.
+
+---
+
+### 3.10 Ad Platform Integrations — Message-Match Phase 2
+
+| | |
+|---|---|
+| **Tag** | `platform` `collection` `engine` |
+| **Priority** | P2 |
+
+**Context:** 3.7J implements message-match via UTM heuristics (high-confidence only, no API needed). This item upgrades to **precise message-match** by pulling actual ad creative text from the ad platforms. When connected, the copy analysis pack can compare the exact ad headline/description against the landing page copy word-for-word.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Meta Ads API integration** | OAuth flow for Facebook/Instagram Ads. Read-only access to active ad creatives (`ads.read` scope). Pull: ad headline, primary text, description, CTA type, destination URL, ad status. New Prisma model `MetaAdsConnection { id, env_id, access_token (encrypted), ad_account_id, connected_at, last_synced_at }`. Poller syncs active creatives every 24h. | Medium |
+| B | **Google Ads API integration** | OAuth flow for Google Ads. Read-only access to ad creatives. Pull: responsive search ad headlines/descriptions, destination URLs, campaign/ad group structure. New Prisma model `GoogleAdsConnection`. Same sync pattern as Meta. | Medium |
+| C | **Creative → LP matcher** | Match ad creatives to landing pages via: (1) destination URL exact match, (2) UTM campaign/content → creative ID mapping, (3) final URL domain + path pattern. Each matched pair becomes a `AdLpPair { creative_text, creative_cta, lp_url, lp_copy_elements }` fed to the Haiku analysis. | Low |
+| D | **Precise message-match analysis** | Haiku call per `AdLpPair`: does the LP headline echo the ad promise? Does the LP CTA match the ad CTA type? Is the value prop consistent? Structured output with specific mismatch points and fix suggestions. Replaces/augments the UTM heuristic findings from 3.7J with higher-confidence, more actionable findings. | Low |
+| E | **Ad spend waste signal** | If the ad platform provides spend data, quantify message-mismatch findings in dollars: "This LP receives ~$X/day in ad spend but breaks the ad promise — estimated waste: $Y/mo." Makes the finding directly revenue-tied. | Low |
+| F | **Settings UI** | "Connect Meta Ads" and "Connect Google Ads" cards in the integrations settings page alongside Shopify/Stripe. | Low |
+
+**Dependency:** 3.7A-D (core copy analysis) must ship first. 3.7J (UTM heuristic) should ship as the interim solution.
 
 ---
 

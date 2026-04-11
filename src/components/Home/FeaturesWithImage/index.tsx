@@ -143,7 +143,7 @@ const FeaturesWithImage = async () => {
 	return (
 		<section
 			id='solutions'
-			className='relative z-1 overflow-hidden border-t border-white/[0.04] bg-[#080812] py-16 sm:py-20 lg:py-24 xl:py-28'
+			className='relative z-1 hidden overflow-hidden border-t border-white/[0.04] bg-[#080812] sm:block sm:py-20 lg:py-24 xl:py-28'
 		>
 			{/* Soft ambient halo */}
 			<div

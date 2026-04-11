@@ -818,7 +818,7 @@ const Features = async () => {
 	return (
 		<section
 			id='features'
-			className='relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-10 sm:py-12 lg:py-16 xl:py-20'
+			className='relative z-1 hidden overflow-hidden border-t border-white/5 bg-[#090911] sm:block sm:py-12 lg:py-16 xl:py-20'
 		>
 			{/* Component-scoped keyframes. Prefixed with `vbento-` so they
 			    can't collide with other animations elsewhere in the app.

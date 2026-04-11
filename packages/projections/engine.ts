@@ -184,6 +184,11 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   cta_late_availability_delays_action: 'revenue_integrity',
   checkout_abandon_no_feedback: 'revenue_integrity',
   sensitive_input_perceived_risk_dropoff: 'revenue_integrity',
+  // Wave 3.3: Security posture
+  security_header_weakness: 'money_moment_exposure',
+  mixed_content_exposure: 'money_moment_exposure',
+  open_redirect_indicator: 'money_moment_exposure',
+  sensitive_endpoint_exposed: 'money_moment_exposure',
 };
 
 // Inference → typical page surface

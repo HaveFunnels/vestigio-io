@@ -1343,4 +1343,34 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.08, max: 0.22 }, medium: { min: 0.04, max: 0.12 }, low: { min: 0.02, max: 0.05 },
     base_metric: 'revenue',
   },
+
+  // ── Wave 3.3: Security posture (money_moment_exposure) ──
+  security_header_weakness: {
+    inference_key: 'security_header_weakness', impact_category: 'conversion_loss',
+    cause: 'Missing or weak HTTP security headers',
+    effect: 'Browsers display security warnings and block features, eroding visitor trust at commercial surfaces',
+    high: { min: 0.03, max: 0.08 }, medium: { min: 0.01, max: 0.03 }, low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
+  mixed_content_exposure: {
+    inference_key: 'mixed_content_exposure', impact_category: 'conversion_loss',
+    cause: 'HTTP resources loaded on HTTPS commercial pages',
+    effect: 'Modern browsers block mixed content on secure pages — checkout scripts, payment forms, and trust badges silently fail',
+    high: { min: 0.05, max: 0.15 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  open_redirect_indicator: {
+    inference_key: 'open_redirect_indicator', impact_category: 'revenue_loss',
+    cause: 'Redirects with controllable URL parameters',
+    effect: 'Attackers craft phishing links using the legitimate domain, stealing credentials and payment information from real customers',
+    high: { min: 0.04, max: 0.10 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  sensitive_endpoint_exposed: {
+    inference_key: 'sensitive_endpoint_exposed', impact_category: 'revenue_loss',
+    cause: 'Admin panels, env files, or API documentation publicly accessible',
+    effect: 'Exposed credentials, config files, and admin surfaces create direct paths to data breach or infrastructure takeover',
+    high: { min: 0.05, max: 0.15 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
 };

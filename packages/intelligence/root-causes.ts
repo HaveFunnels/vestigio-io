@@ -189,6 +189,12 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   cta_late_availability_delays_action:        { root_cause_key: 'behavioral_path_disconnection', category: 'behavioral_path_integrity', impact_types: ['revenue_loss'] },
   checkout_abandon_no_feedback:               { root_cause_key: 'behavioral_hesitation_at_commitment', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss'] },
   sensitive_input_perceived_risk_dropoff:      { root_cause_key: 'behavioral_trust_failure_at_input', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss'] },
+
+  // Wave 3.3: Security posture (money_moment_exposure)
+  security_header_weakness:   { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
+  mixed_content_exposure:     { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
+  open_redirect_indicator:    { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
+  sensitive_endpoint_exposed: { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a
@@ -233,6 +239,8 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   // Phase 4B Hardening
   behavioral_value_justification_gap: "Buyers see your price but can't see the value",
   behavioral_trust_failure_at_input: "Buyers don't trust your forms with sensitive data",
+  // Wave 3.3
+  security_posture_inadequate: 'Your visible security posture creates financial and trust risk',
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -306,6 +314,8 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   behavioral_value_justification_gap: "Buyers see your price but cannot see the value that justifies it. They view the pricing page, backtrack to features, oscillate between surfaces, and abandon. The value proposition is structurally present but behaviorally insufficient to close the gap between price awareness and purchase confidence. They left not because the price was too high, but because nothing told them it was worth it.",
 
   behavioral_trust_failure_at_input: "Forms on conversion-proximate pages ask for sensitive data — payment, identity, contact — without enough trust context around them. The mismatch between what's being asked and what's being promised causes immediate dropoff. The buyer doesn't know enough to feel safe handing over their information, and they back out at the field.",
+
+  security_posture_inadequate: "Your site's visible security posture has gaps that browsers, security-aware buyers, and automated scanners can detect. Missing security headers let attackers inject content or downgrade connections. Mixed content on commercial pages triggers browser warnings that block checkout scripts. Exposed admin panels or config files give attackers a direct path to compromise. These are not theoretical vulnerabilities — they are structural conditions that erode trust and create financial exposure every day.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

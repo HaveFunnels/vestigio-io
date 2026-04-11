@@ -62,7 +62,8 @@ export type EvidencePayload =
   | BrandImpersonationMatchPayload
   | ShopifyStoreMetricsPayload
   | BehavioralSessionPayload
-  | SurfaceVitalityPayload;
+  | SurfaceVitalityPayload
+  | ContentEnrichmentPayload;
 
 export interface HttpResponsePayload {
   type: 'http_response';
@@ -734,4 +735,21 @@ export interface SurfaceVitalityPayload {
   page_type: string;
   /** Whether this is a commercial surface */
   is_commercial: boolean;
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.1: LLM Content Enrichment Evidence Payload
+// ──────────────────────────────────────────────
+
+export interface ContentEnrichmentPayload {
+  type: 'content_enrichment';
+  enrichment_type: 'policy_quality';
+  source_evidence_key: string;
+  source_url: string;
+  scores: { clarity_score: number; readability_grade: string };
+  flags: { ambiguity_flags: string[]; regulatory_gaps: string[] };
+  missing_elements: string[];
+  confidence: number;
+  model_used: string;
+  cached: boolean;
 }

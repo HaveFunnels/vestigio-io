@@ -30,6 +30,7 @@ import {
   BrandImpersonationMatchPayload,
   BehavioralSessionPayload,
   SurfaceVitalityPayload,
+  ContentEnrichmentPayload,
 } from '../domain';
 import type { BehavioralCohortPayload } from '../behavioral';
 import { BuiltGraph, GraphQuery } from '../graph';
@@ -154,6 +155,12 @@ export function extractSignals(
 
   // Behavioral cohort signals (pixel-dependent workspaces)
   extractBehavioralCohortSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Wave 3.1: LLM enrichment signals from policy quality assessment
+  extractPolicyEnrichmentSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Wave 3.3: Security posture signals from existing evidence
+  extractSecurityPostureSignals(byType, scoping, cycle_ref, signals, ids);
 
   return signals;
 }
@@ -3852,6 +3859,73 @@ function extractBehavioralSignals(
           description: `${p.sensitive_field_dropoff_count} sessions drop off immediately after interacting with ${topKind} fields. Users perceive risk at the sensitive data entry moment — the trust model is insufficient for the data being requested.`,
         }));
       }
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.1: Policy Enrichment Signals (from LLM content analysis)
+// ──────────────────────────────────────────────
+
+function extractPolicyEnrichmentSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const enrichments = byType.get(EvidenceType.ContentEnrichment) || [];
+  if (enrichments.length === 0) return;
+
+  for (const e of enrichments) {
+    const p = e.payload as ContentEnrichmentPayload;
+    if (p.enrichment_type !== 'policy_quality') continue;
+
+    const refs = [makeRef('evidence', e.id)];
+
+    // Signal 1: policy_quality_score — overall clarity assessment
+    const qualityLevel = p.scores.clarity_score >= 70 ? 'good'
+      : p.scores.clarity_score >= 40 ? 'fair' : 'poor';
+
+    signals.push(createSignal({ ids,
+      signal_key: `policy_quality_score_${p.source_url}`,
+      category: SignalCategory.Policy,
+      attribute: 'policy.enrichment.quality_score',
+      value: qualityLevel,
+      numeric_value: p.scores.clarity_score,
+      confidence: p.confidence,
+      scoping, cycle_ref,
+      evidence_refs: refs,
+      description: `Policy quality (LLM-assessed): ${qualityLevel} (clarity ${p.scores.clarity_score}/100, readability: ${p.scores.readability_grade}) for ${p.source_url}`,
+    }));
+
+    // Signal 2: policy_ambiguity_detected — fires when ambiguity flags exist
+    if (p.flags.ambiguity_flags.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `policy_ambiguity_detected_${p.source_url}`,
+        category: SignalCategory.Policy,
+        attribute: 'policy.enrichment.ambiguity_detected',
+        value: 'true',
+        numeric_value: p.flags.ambiguity_flags.length,
+        confidence: p.confidence,
+        scoping, cycle_ref,
+        evidence_refs: refs,
+        description: `${p.flags.ambiguity_flags.length} ambiguous clause(s) detected in policy at ${p.source_url}: ${p.flags.ambiguity_flags.slice(0, 3).join('; ')}`,
+      }));
+    }
+
+    // Signal 3: policy_missing_critical_section — one per missing critical section
+    for (const missing of p.missing_elements) {
+      signals.push(createSignal({ ids,
+        signal_key: `policy_missing_section_${missing.replace(/\s+/g, '_').toLowerCase()}_${p.source_url}`,
+        category: SignalCategory.Policy,
+        attribute: 'policy.enrichment.missing_critical_section',
+        value: missing,
+        confidence: p.confidence,
+        scoping, cycle_ref,
+        evidence_refs: refs,
+        description: `Policy at ${p.source_url} is missing critical section: ${missing}`,
+      }));
     }
   }
 }

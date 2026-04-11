@@ -844,6 +844,45 @@ function inferRefundPolicyRisk(
     score += 15;
   }
 
+  // Wave 3.1: LLM enrichment signals — degradation-safe (works without enrichment)
+  const qualityScore = first('policy.enrichment.quality_score');
+  if (qualityScore) {
+    relevantSignals.push(qualityScore);
+    if (qualityScore.value === 'poor') {
+      factors.push('LLM-assessed policy quality is poor');
+      score += 15;
+    } else if (qualityScore.value === 'fair') {
+      factors.push('LLM-assessed policy quality is only fair');
+      score += 8;
+    }
+  }
+
+  const ambiguityDetected = byKey.get(
+    [...byKey.keys()].find(k => k.startsWith('policy_ambiguity_detected_')) || '',
+  );
+  if (ambiguityDetected) {
+    relevantSignals.push(ambiguityDetected);
+    const flagCount = ambiguityDetected.numeric_value || 0;
+    if (flagCount >= 3) {
+      factors.push(`${flagCount} ambiguous clauses detected by LLM`);
+      score += 12;
+    } else if (flagCount > 0) {
+      factors.push(`${flagCount} ambiguous clause(s) detected by LLM`);
+      score += 6;
+    }
+  }
+
+  const missingSectionSignals = [...byKey.entries()]
+    .filter(([k]) => k.startsWith('policy_missing_section_'))
+    .map(([, v]) => v);
+  if (missingSectionSignals.length > 0) {
+    for (const ms of missingSectionSignals) {
+      relevantSignals.push(ms);
+    }
+    factors.push(`${missingSectionSignals.length} critical section(s) missing per LLM analysis`);
+    score += Math.min(20, missingSectionSignals.length * 5);
+  }
+
   if (score === 0) return [];
 
   const severity = score >= 40 ? 'high' : score >= 20 ? 'medium' : 'low';

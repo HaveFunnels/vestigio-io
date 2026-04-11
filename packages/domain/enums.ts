@@ -164,6 +164,8 @@ export enum EvidenceType {
   // Phase 4B: Behavioral intelligence evidence
   BehavioralSession = 'behavioral_session',
   SurfaceVitality = 'surface_vitality',
+  // Wave 3.1: LLM enrichment evidence
+  ContentEnrichment = 'content_enrichment',
 }
 
 export enum SourceKind {
@@ -250,6 +252,8 @@ export enum SignalCategory {
   BrandIntegrity = 'brand_integrity',
   // Phase 4B
   Behavioral = 'behavioral',
+  // Wave 3.3: Security posture
+  Security = 'security',
 }
 
 export enum InferenceCategory {
@@ -413,4 +417,9 @@ export enum InferenceCategory {
   PathLengthExceedsEfficient = 'path_length_exceeds_efficient',
   IntentAbsorberDetected = 'intent_absorber_detected',
   IntentDecayTimeExcessive = 'intent_decay_time_excessive',
+  // Wave 3.3: Security posture
+  SecurityHeaderWeakness = 'security_header_weakness',
+  MixedContentExposure = 'mixed_content_exposure',
+  OpenRedirectIndicator = 'open_redirect_indicator',
+  SensitiveEndpointExposed = 'sensitive_endpoint_exposed',
 }

@@ -384,7 +384,7 @@ function parseStructuredItem(item: any): ParsedStructuredData | null {
 // Phase 2: Body Text Extraction
 // ──────────────────────────────────────────────
 
-function extractBodyText(html: string): string | null {
+export function extractBodyText(html: string): string | null {
   // Remove scripts and styles
   let text = html.replace(/<script[\s\S]*?<\/script>/gi, '');
   text = text.replace(/<style[\s\S]*?<\/style>/gi, '');

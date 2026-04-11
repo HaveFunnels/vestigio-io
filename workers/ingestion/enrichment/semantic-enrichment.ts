@@ -1,0 +1,339 @@
+import type {
+  EnrichmentContext,
+  EnrichmentPass,
+  EnrichmentResult,
+  ShouldRunDecision,
+} from "./types";
+import { buildFailedResult } from "./types";
+import { httpFetch } from "../http-client";
+import { extractBodyText } from "../parser";
+import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
+import type { Evidence, ContentEnrichmentPayload, PolicyPagePayload } from "../../../packages/domain";
+import {
+  EvidenceType,
+  SourceKind,
+  CollectionMethod,
+  FreshnessState,
+} from "../../../packages/domain";
+
+// ──────────────────────────────────────────────
+// Wave 3.1 — Semantic Enrichment (Policy Pages)
+//
+// LLM-powered analysis of policy page content quality.
+// Uses Haiku for fast, cheap assessment of:
+//   - Clarity and readability
+//   - Ambiguity flags (vague language)
+//   - Regulatory gaps (missing required disclosures)
+//   - Missing critical sections
+//
+// Degradation-safe: all errors are caught and the pass
+// returns buildFailedResult(). Rule-based signals from
+// Stage A-C continue working without enrichment.
+// ──────────────────────────────────────────────
+
+const PASS_NAME = "semantic_enrichment";
+const PASS_LABEL = "Wave 3.1 — Semantic Enrichment";
+
+/** Max policy pages to analyze per cycle (cost control) */
+const MAX_PAGES = 5;
+
+/** Max body text chars sent to the LLM (cost + context window control) */
+const MAX_TEXT_CHARS = 8_000;
+
+// ──────────────────────────────────────────────
+// LLM Prompt
+// ──────────────────────────────────────────────
+
+const SYSTEM_PROMPT = `You are a policy quality analyst. You assess e-commerce policy pages (refund, privacy, terms, shipping, etc.) for clarity, completeness, and consumer-friendliness.
+
+You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+
+function buildUserPrompt(policyType: string, bodyText: string): string {
+  return `Analyze this ${policyType} policy page content for quality. Respond with ONLY a JSON object matching this exact schema:
+
+{
+  "clarity_score": <number 0-100, how clear and unambiguous the policy is>,
+  "readability_grade": "<string: 'easy' | 'moderate' | 'difficult' | 'very_difficult'>",
+  "ambiguity_flags": ["<list of vague/ambiguous phrases or clauses found>"],
+  "regulatory_gaps": ["<list of missing regulatory disclosures for e-commerce>"],
+  "missing_elements": ["<list of critical sections missing from this policy type>"],
+  "confidence": <number 0-100, your confidence in this assessment>
+}
+
+Policy content (${policyType}):
+---
+${bodyText}
+---`;
+}
+
+// ──────────────────────────────────────────────
+// Response parsing
+// ──────────────────────────────────────────────
+
+interface PolicyQualityAssessment {
+  clarity_score: number;
+  readability_grade: string;
+  ambiguity_flags: string[];
+  regulatory_gaps: string[];
+  missing_elements: string[];
+  confidence: number;
+}
+
+function parseAssessment(raw: string): PolicyQualityAssessment | null {
+  try {
+    // Strip markdown fences if present
+    const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+    const parsed = JSON.parse(cleaned);
+
+    // Validate required fields
+    if (
+      typeof parsed.clarity_score !== "number" ||
+      typeof parsed.readability_grade !== "string" ||
+      !Array.isArray(parsed.ambiguity_flags) ||
+      !Array.isArray(parsed.regulatory_gaps) ||
+      !Array.isArray(parsed.missing_elements) ||
+      typeof parsed.confidence !== "number"
+    ) {
+      return null;
+    }
+
+    return {
+      clarity_score: Math.max(0, Math.min(100, parsed.clarity_score)),
+      readability_grade: parsed.readability_grade,
+      ambiguity_flags: parsed.ambiguity_flags.filter((f: unknown) => typeof f === "string"),
+      regulatory_gaps: parsed.regulatory_gaps.filter((f: unknown) => typeof f === "string"),
+      missing_elements: parsed.missing_elements.filter((f: unknown) => typeof f === "string"),
+      confidence: Math.max(0, Math.min(100, parsed.confidence)),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ──────────────────────────────────────────────
+// Eligibility (shouldRun)
+// ──────────────────────────────────────────────
+
+function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
+  // Gate 1: Only full audit cycles
+  if (ctx.mode !== "full") {
+    return {
+      run: false,
+      reason: `mode is '${ctx.mode}' — semantic enrichment only runs in 'full' mode`,
+    };
+  }
+
+  // Gate 2: LLM must be enabled
+  if (!isLlmEnabled()) {
+    return {
+      run: false,
+      reason: "LLM not enabled (VESTIGIO_LLM_ENABLED !== 'true' or ANTHROPIC_API_KEY missing)",
+    };
+  }
+
+  // Gate 3: Must have detected policy pages
+  const policyPages = ctx.evidence.filter(
+    (e) =>
+      e.evidence_type === EvidenceType.PolicyPage &&
+      (e.payload as PolicyPagePayload).detected === true,
+  );
+
+  if (policyPages.length === 0) {
+    return {
+      run: false,
+      reason: "no detected policy pages in evidence",
+    };
+  }
+
+  return {
+    run: true,
+    reason: `${policyPages.length} detected policy page(s), mode=full, LLM enabled`,
+  };
+}
+
+// ──────────────────────────────────────────────
+// Execution
+// ──────────────────────────────────────────────
+
+async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
+  const startTime = Date.now();
+
+  ctx.emit({
+    type: "step",
+    stage: "enrichment",
+    data: { message: "Wave 3.1: starting semantic enrichment of policy pages", index: 0 },
+    timestamp: new Date(),
+  });
+
+  try {
+    // Collect detected policy pages, capped at MAX_PAGES
+    const policyPages = ctx.evidence
+      .filter(
+        (e) =>
+          e.evidence_type === EvidenceType.PolicyPage &&
+          (e.payload as PolicyPagePayload).detected === true,
+      )
+      .slice(0, MAX_PAGES);
+
+    const evidenceAdded: Evidence[] = [];
+    let pagesProcessed = 0;
+
+    for (const policyEvidence of policyPages) {
+      const payload = policyEvidence.payload as PolicyPagePayload;
+      pagesProcessed++;
+
+      ctx.emit({
+        type: "step",
+        stage: "enrichment",
+        data: {
+          message: `Wave 3.1: analyzing ${payload.policy_type} policy (${pagesProcessed}/${policyPages.length})`,
+          index: pagesProcessed,
+        },
+        timestamp: new Date(),
+      });
+
+      try {
+        // 1. Re-fetch the page to get fresh body content
+        const response = await httpFetch(payload.url);
+        if (response.status_code >= 400) {
+          console.warn(
+            `[semantic-enrichment ${ctx.cycle_ref}] ${payload.url} returned ${response.status_code}, skipping`,
+          );
+          continue;
+        }
+
+        // 2. Extract body text
+        const bodyText = extractBodyText(response.body);
+        if (!bodyText || bodyText.length < 50) {
+          console.warn(
+            `[semantic-enrichment ${ctx.cycle_ref}] ${payload.url} has insufficient body text, skipping`,
+          );
+          continue;
+        }
+
+        // 3. Truncate to MAX_TEXT_CHARS for cost control
+        const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
+
+        // 4. Call Haiku for policy quality assessment
+        const result = await callModel("haiku_4_5", [
+          {
+            role: "user",
+            content: buildUserPrompt(payload.policy_type, truncatedText),
+          },
+        ], {
+          max_tokens: 1024,
+          temperature: 0.1,
+          system: SYSTEM_PROMPT,
+        });
+
+        // 5. Extract text from response
+        const textBlock = result.content.find((b) => b.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          console.warn(
+            `[semantic-enrichment ${ctx.cycle_ref}] no text in LLM response for ${payload.url}`,
+          );
+          continue;
+        }
+
+        // 6. Parse structured response
+        const assessment = parseAssessment(textBlock.text);
+        if (!assessment) {
+          console.warn(
+            `[semantic-enrichment ${ctx.cycle_ref}] failed to parse LLM response for ${payload.url}`,
+          );
+          continue;
+        }
+
+        // 7. Build ContentEnrichmentPayload evidence
+        const now = new Date();
+        const enrichmentPayload: ContentEnrichmentPayload = {
+          type: "content_enrichment",
+          enrichment_type: "policy_quality",
+          source_evidence_key: policyEvidence.evidence_key,
+          source_url: payload.url,
+          scores: {
+            clarity_score: assessment.clarity_score,
+            readability_grade: assessment.readability_grade,
+          },
+          flags: {
+            ambiguity_flags: assessment.ambiguity_flags,
+            regulatory_gaps: assessment.regulatory_gaps,
+          },
+          missing_elements: assessment.missing_elements,
+          confidence: assessment.confidence,
+          model_used: result.model,
+          cached: false,
+        };
+
+        const evidence: Evidence = {
+          id: `enrich_${pagesProcessed}_${Date.now()}`,
+          evidence_key: `content_enrichment:${payload.policy_type}:${payload.url}`,
+          evidence_type: EvidenceType.ContentEnrichment,
+          subject_ref: ctx.scoping.subject_ref || `website:${ctx.root_domain}`,
+          scoping: ctx.scoping,
+          cycle_ref: ctx.cycle_ref,
+          freshness: {
+            observed_at: now,
+            fresh_until: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+            freshness_state: FreshnessState.Fresh,
+            staleness_reason: null,
+          },
+          source_kind: SourceKind.HttpFetch,
+          collection_method: CollectionMethod.ApiCall,
+          payload: enrichmentPayload,
+          quality_score: assessment.confidence,
+          created_at: now,
+          updated_at: now,
+        };
+
+        evidenceAdded.push(evidence);
+      } catch (pageErr) {
+        // Per-page errors are non-fatal — continue to next page
+        const message = pageErr instanceof Error ? pageErr.message : String(pageErr);
+        console.warn(
+          `[semantic-enrichment ${ctx.cycle_ref}] error processing ${payload.url}: ${message}`,
+        );
+      }
+    }
+
+    ctx.emit({
+      type: "step",
+      stage: "enrichment",
+      data: {
+        message: `Wave 3.1: semantic enrichment complete — ${evidenceAdded.length} enrichment(s) from ${pagesProcessed} page(s)`,
+        index: pagesProcessed + 1,
+      },
+      timestamp: new Date(),
+    });
+
+    return {
+      pass_name: PASS_NAME,
+      status: "completed",
+      reason: `${evidenceAdded.length} policy page(s) enriched`,
+      evidence_added: evidenceAdded,
+      duration_ms: Date.now() - startTime,
+      attempts: 1,
+      cost_units: evidenceAdded.length, // 1 LLM call per enriched page
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[semantic-enrichment ${ctx.cycle_ref}] pass-level error:`, err);
+    return buildFailedResult(
+      PASS_NAME,
+      `Semantic enrichment failed: ${message}`,
+      Date.now() - startTime,
+      1,
+    );
+  }
+}
+
+// ──────────────────────────────────────────────
+// Pass export
+// ──────────────────────────────────────────────
+
+export const semanticEnrichmentPass: EnrichmentPass = {
+  name: PASS_NAME,
+  label: PASS_LABEL,
+  shouldRun,
+  run,
+};

@@ -5,6 +5,7 @@ import type {
 } from "./types";
 import { buildSkippedResult } from "./types";
 import { selectiveHeadlessPass } from "./selective-headless";
+import { semanticEnrichmentPass } from "./semantic-enrichment";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -30,8 +31,7 @@ import { selectiveHeadlessPass } from "./selective-headless";
  */
 const PASS_REGISTRY: EnrichmentPass[] = [
   selectiveHeadlessPass,
-  // Wave 3 LLM Semantic Enrichment will be added here:
-  //   semanticEnrichmentPass,
+  semanticEnrichmentPass,
 ];
 
 /**

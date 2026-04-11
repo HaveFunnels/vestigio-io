@@ -10,6 +10,7 @@ export type {
 export { buildSkippedResult, buildFailedResult } from "./types";
 export { runEnrichmentPasses, listRegisteredPasses } from "./runner";
 export { selectiveHeadlessPass } from "./selective-headless";
+export { semanticEnrichmentPass } from "./semantic-enrichment";
 export {
   buildStageDScenarios,
   pickCommercialPathScenario,

@@ -6,7 +6,6 @@ import SolutionLayers from "@/components/Home/SolutionLayers";
 import Features from "@/components/Home/Features";
 import FeaturesWithImage from "@/components/Home/FeaturesWithImage";
 import Counter from "@/components/Home/Counter";
-import CallToAction from "@/components/Home/CallToAction";
 import Testimonials from "@/components/Home/Testimonials";
 import FAQ from "@/components/Home/FAQ";
 import MiniCalculator from "@/components/Home/MiniCalculator";
@@ -45,10 +44,6 @@ const HomeLp = () => {
 			<Testimonials />
 			<FAQ />
 			<MiniCalculator primaryCtaHref={LP_CTA_HREF} />
-			<CallToAction
-				primaryCtaHref={LP_CTA_HREF}
-				primaryCtaLabel='Run free audit'
-			/>
 		</>
 	);
 };

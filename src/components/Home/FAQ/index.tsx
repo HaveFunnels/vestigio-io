@@ -80,10 +80,12 @@ const FAQ = () => {
 									activeFaq === i ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
 								}`}
 							>
-								<div className='overflow-hidden'>
-									<p className='border-t border-white/5 px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>
-										{answer}
-									</p>
+								<div className='min-h-0 overflow-hidden'>
+									<div className='border-t border-white/5'>
+										<p className='px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>
+											{answer}
+										</p>
+									</div>
 								</div>
 							</div>
 						</div>

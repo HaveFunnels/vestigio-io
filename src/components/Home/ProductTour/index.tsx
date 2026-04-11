@@ -719,7 +719,7 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
 					{/* Browser title bar */}
 					<div className="flex items-center justify-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:justify-start sm:px-4 sm:py-3">
-						<div className="hidden gap-1.5 sm:flex">
+						<div className="flex gap-1.5">
 							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
 							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
 							<div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />

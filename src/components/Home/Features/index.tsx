@@ -888,18 +888,15 @@ const Features = async () => {
 				    is the trick to remove dead space from Cards 3 and 4
 				    without forcing equal-height rows. */}
 				<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:grid-rows-[auto_auto]'>
+					{/* Mobile order: 1-audita 2-diagnostica 3-prioriza 4-recupera
+					     Desktop: original bento grid positions via lg:col/row */}
 					<BentoCard
-						accent='sky'
-						eyebrow={t("evidence_orbit.eyebrow")}
-						title={t("evidence_orbit.title")}
-						description={t("evidence_orbit.description")}
-						className='lg:col-start-1 lg:row-start-1'
-						visualSlot={
-							<EvidenceOrbitVisual
-								centerLabel={t("evidence_orbit.center_label")}
-								types={evidenceTypes}
-							/>
-						}
+						accent='amber'
+						eyebrow={t("action_queue.eyebrow")}
+						title={t("action_queue.title")}
+						description={t("action_queue.description")}
+						className='order-3 lg:order-none lg:col-start-1 lg:row-start-1'
+						visualSlot={<ActionQueueVisual rows={actionRows} />}
 					/>
 
 					<BentoCard
@@ -907,7 +904,7 @@ const Features = async () => {
 						eyebrow={t("revenue_leaks.eyebrow")}
 						title={t("revenue_leaks.title")}
 						description={t("revenue_leaks.description")}
-						className='lg:col-start-2 lg:row-start-1'
+						className='order-2 lg:order-none lg:col-start-2 lg:row-start-1'
 						visualSlot={
 							<RevenueLeaksVisual
 								rows={leakRows}
@@ -918,21 +915,12 @@ const Features = async () => {
 					/>
 
 					<BentoCard
-						accent='amber'
-						eyebrow={t("action_queue.eyebrow")}
-						title={t("action_queue.title")}
-						description={t("action_queue.description")}
-						className='lg:col-span-2 lg:col-start-1 lg:row-start-2'
-						layout='horizontal'
-						visualSlot={<ActionQueueVisual rows={actionRows} />}
-					/>
-
-					<BentoCard
 						accent='emerald'
 						eyebrow={t("continuous_watch.eyebrow")}
 						title={t("continuous_watch.title")}
 						description={t("continuous_watch.description")}
-						className='lg:col-start-3 lg:row-span-2'
+						className='order-4 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-start-2'
+						layout='horizontal'
 						visualSlot={
 							<ContinuousWatchVisual
 								axisLabel={t("continuous_watch.axis_label")}
@@ -940,6 +928,20 @@ const Features = async () => {
 								afterLabel={t("continuous_watch.after_label")}
 								annotationLabel={t("continuous_watch.annotation_label")}
 								annotationValue={t("continuous_watch.annotation_value")}
+							/>
+						}
+					/>
+
+					<BentoCard
+						accent='sky'
+						eyebrow={t("evidence_orbit.eyebrow")}
+						title={t("evidence_orbit.title")}
+						description={t("evidence_orbit.description")}
+						className='order-1 lg:order-none lg:col-start-3 lg:row-span-2'
+						visualSlot={
+							<EvidenceOrbitVisual
+								centerLabel={t("evidence_orbit.center_label")}
+								types={evidenceTypes}
 							/>
 						}
 					/>

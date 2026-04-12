@@ -1,7 +1,7 @@
 "use client";
 
 import FaqJsonLd from "@/components/SEO/FaqJsonLd";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const faqData = [
 	{
@@ -28,9 +28,24 @@ const faqData = [
 
 const FAQ = () => {
 	const [activeFaq, setActiveFaq] = useState<number | null>(0);
+	const [mounted, setMounted] = useState(false);
+	const contentRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+	useEffect(() => { setMounted(true); }, []);
+
+	const setContentRef = useCallback((el: HTMLDivElement | null, i: number) => {
+		contentRefs.current[i] = el;
+	}, []);
 
 	const handleFaqToggle = (id: number) => {
 		activeFaq === id ? setActiveFaq(null) : setActiveFaq(id);
+	};
+
+	const getMaxHeight = (i: number) => {
+		if (activeFaq !== i) return '0px';
+		if (!mounted) return '500px';
+		const el = contentRefs.current[i];
+		return el ? `${el.scrollHeight}px` : '500px';
 	};
 
 	return (
@@ -48,50 +63,57 @@ const FAQ = () => {
 
 			<div className='mx-auto w-full max-w-[700px] px-4 sm:px-8 xl:px-0'>
 				<div className='flex flex-col gap-3'>
-					{faqData.map(({ question, answer }, i) => (
-						<div
-							key={i}
-							className='rounded-[1rem] border border-white/5 bg-white/[0.02] transition-colors hover:border-white/10'
-						>
-							<button
-								onClick={() => handleFaqToggle(i)}
-								className='flex w-full items-center justify-between gap-4 px-4 py-4 text-left text-sm font-medium text-white sm:px-6 sm:py-5'
-							>
-								{question}
-								<span
-									className={`ml-2 shrink-0 text-gray-500 transition-transform duration-200 ${activeFaq === i ? "rotate-180" : ""}`}
-								>
-									<svg
-										width='20'
-										height='20'
-										viewBox='0 0 24 25'
-										fill='none'
-										xmlns='http://www.w3.org/2000/svg'
-									>
-										<path
-											fillRule='evenodd'
-											clipRule='evenodd'
-											d='M4.43057 8.87618C4.70014 8.56168 5.17361 8.52526 5.48811 8.79483L12 14.3765L18.5119 8.79483C18.8264 8.52526 19.2999 8.56168 19.5695 8.87618C19.839 9.19067 19.8026 9.66415 19.4881 9.93371L12.4881 15.9337C12.2072 16.1745 11.7928 16.1745 11.5119 15.9337L4.51192 9.93371C4.19743 9.66415 4.161 9.19067 4.43057 8.87618Z'
-											fill='currentColor'
-										/>
-									</svg>
-								</span>
-							</button>
+					{faqData.map(({ question, answer }, i) => {
+						const isOpen = activeFaq === i;
+						return (
 							<div
-								className='overflow-hidden transition-[max-height,opacity] duration-300 ease-out'
-								style={{
-									maxHeight: activeFaq === i ? '300px' : '0px',
-									opacity: activeFaq === i ? 1 : 0,
-								}}
+								key={i}
+								className='rounded-[1rem] border border-white/5 bg-white/[0.02] transition-colors hover:border-white/10'
 							>
-								<div className='border-t border-white/5'>
-									<p className='px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>
-										{answer}
-									</p>
+								<button
+									onClick={() => handleFaqToggle(i)}
+									className='flex w-full items-center justify-between gap-4 px-4 py-4 text-left text-sm font-medium text-white sm:px-6 sm:py-5'
+								>
+									{question}
+									<span
+										className={`ml-2 shrink-0 text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+									>
+										<svg
+											width='20'
+											height='20'
+											viewBox='0 0 24 25'
+											fill='none'
+											xmlns='http://www.w3.org/2000/svg'
+										>
+											<path
+												fillRule='evenodd'
+												clipRule='evenodd'
+												d='M4.43057 8.87618C4.70014 8.56168 5.17361 8.52526 5.48811 8.79483L12 14.3765L18.5119 8.79483C18.8264 8.52526 19.2999 8.56168 19.5695 8.87618C19.839 9.19067 19.8026 9.66415 19.4881 9.93371L12.4881 15.9337C12.2072 16.1745 11.7928 16.1745 11.5119 15.9337L4.51192 9.93371C4.19743 9.66415 4.161 9.19067 4.43057 8.87618Z'
+												fill='currentColor'
+											/>
+										</svg>
+									</span>
+								</button>
+								<div
+									ref={(el) => setContentRef(el, i)}
+									className='overflow-hidden'
+									style={{
+										maxHeight: getMaxHeight(i),
+										opacity: isOpen ? 1 : 0,
+										transition: mounted
+											? 'max-height 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms ease'
+											: 'none',
+									}}
+								>
+									<div className='border-t border-white/5'>
+										<p className='px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>
+											{answer}
+										</p>
+									</div>
 								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 			</div>
 		</section>

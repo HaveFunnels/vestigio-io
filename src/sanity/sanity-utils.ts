@@ -18,7 +18,7 @@ import {
 	getFoundationArticleByRootCauseKey,
 	getFoundationArticleBySlug,
 	listFoundationArticles,
-	type FoundationArticle,
+	type AnyFoundationArticle,
 } from "../../packages/knowledge/foundation-articles";
 
 const SANITY_ENABLED = !!(
@@ -144,15 +144,15 @@ export interface KnowledgeArticle {
  * content. Foundation articles are bilingual-neutral (English) and
  * always carry the `is_foundation` marker so the consumer can tell.
  */
-function foundationToKnowledgeArticle(article: FoundationArticle): KnowledgeArticle & { is_foundation: true } {
+function foundationToKnowledgeArticle(article: AnyFoundationArticle): KnowledgeArticle & { is_foundation: true } {
 	return {
 		_id: article._id,
 		title: article.title,
 		slug: article.slug,
 		category: article.category,
 		locale: "en",
-		finding_key: article.finding_key,
-		root_cause_key: article.root_cause_key,
+		finding_key: 'finding_key' in article ? article.finding_key : undefined,
+		root_cause_key: 'root_cause_key' in article ? article.root_cause_key : undefined,
 		excerpt: article.excerpt,
 		body: article.body,
 		publishedAt: undefined,

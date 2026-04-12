@@ -34,6 +34,7 @@ import {
   ROOT_CAUSE_TITLES,
   ROOT_CAUSE_DESCRIPTIONS,
 } from '../intelligence/root-causes';
+import { shopifyIntegrationSetup } from './guides/shopify-integration-setup';
 
 // ── Types (mirror Sanity's KnowledgeArticle) ────────────────────
 
@@ -50,6 +51,17 @@ export interface FoundationArticle {
   /** Marker so consumers can distinguish foundation from authored content */
   is_foundation: true;
 }
+
+/** Guide articles share the same shape but use the 'guide' category. */
+export interface GuideArticle extends Omit<FoundationArticle, 'category' | 'finding_key' | 'root_cause_key'> {
+  category: 'guide';
+}
+
+// ── All guide articles (add new guides to this array) ──────────
+
+const GUIDE_ARTICLES: GuideArticle[] = [
+  shopifyIntegrationSetup,
+];
 
 interface PortableTextBlock {
   _type: 'block';
@@ -309,10 +321,13 @@ function buildFoundationArticleForRootCause(rootCauseKey: string): FoundationArt
 
 // ── Cached generation ───────────────────────────────────────────
 
+/** Union of all article types managed by the foundation system. */
+export type AnyFoundationArticle = FoundationArticle | GuideArticle;
+
 let _byFindingKey: Map<string, FoundationArticle> | null = null;
 let _byRootCauseKey: Map<string, FoundationArticle> | null = null;
-let _bySlug: Map<string, FoundationArticle> | null = null;
-let _allArticles: FoundationArticle[] | null = null;
+let _bySlug: Map<string, AnyFoundationArticle> | null = null;
+let _allArticles: AnyFoundationArticle[] | null = null;
 
 function ensureBuilt(): void {
   if (_allArticles) return;
@@ -349,6 +364,12 @@ function ensureBuilt(): void {
     _bySlug.set(article.slug.current, article);
     _allArticles.push(article);
   }
+
+  // Guide articles
+  for (const guide of GUIDE_ARTICLES) {
+    _bySlug.set(guide.slug.current, guide);
+    _allArticles.push(guide);
+  }
 }
 
 // ── Public lookup API ───────────────────────────────────────────
@@ -369,16 +390,22 @@ export function getFoundationArticleByRootCauseKey(
   return _byRootCauseKey!.get(rootCauseKey) ?? null;
 }
 
-/** Look up a foundation article by slug (matches `finding-<key>` or `root-cause-<key>`). */
-export function getFoundationArticleBySlug(slug: string): FoundationArticle | null {
+/** Look up a foundation article by slug (matches `finding-<key>`, `root-cause-<key>`, or guide slugs). */
+export function getFoundationArticleBySlug(slug: string): AnyFoundationArticle | null {
   ensureBuilt();
   return _bySlug!.get(slug) ?? null;
 }
 
-/** Return every foundation article (used by the catalog listing). */
-export function listFoundationArticles(): FoundationArticle[] {
+/** Return every foundation article including guides (used by the catalog listing). */
+export function listFoundationArticles(): AnyFoundationArticle[] {
   ensureBuilt();
   return _allArticles!.slice();
+}
+
+/** Return only guide articles. */
+export function listGuideArticles(): GuideArticle[] {
+  ensureBuilt();
+  return _allArticles!.filter((a): a is GuideArticle => a.category === 'guide');
 }
 
 /** Used by tests to assert coverage. */

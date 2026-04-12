@@ -564,44 +564,7 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 ---
 
-### 3.7 Copy Analysis Pack — AI-Powered Copy & Funnel Alignment (Foundation Shipped)
-
-| | |
-|---|---|
-| **Tag** | `engine` `collection` `docs` |
-| **Priority** | P1 |
-| **Status** | **Foundation shipped — 2026-04-11.** The engine foundation for copy analysis is live via Wave 3.1 Tier 1+2 extensions. 4 enrichment types (`checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing`) produce `ContentEnrichmentPayload` evidence via Haiku. Signal extraction (`extractCopyEnrichmentSignals`) and inference functions wired. Tier 2 added 3 more signals (`social_proof_quality`, `form_error_quality`, `onboarding_quality`) at the engine level. Root cause `copy_strategy_gap` defined. The full 16-item A-P spec below represents the complete vision — items E-F are partially covered by existing signals, A-D and G-P are the remaining work to make this a standalone pack with its own decision, workspace, guidelines KB, ICP input, and advanced analyses (cross-page narrative, pricing psychology, localization quality, micro-copy, SEO tension, staleness). |
-
-**The thesis:** Most SaaS/ecommerce sites have copy that was written once and never audited against the actual ICP, funnel stage, or commercial intent of each page. The result is generic copy that doesn't convert — not because the product is bad, but because the words on the page don't match the buyer's mental state at that point in the journey. This pack turns Vestigio into a **copy strategist** that evaluates alignment between what the page says and what the page should say.
-
-**Requires:** Haiku LLM calls per commercial page (~$0.003/page). A reference knowledge base of copy best practices, marketing angles, and funnel-stage expectations that the LLM evaluates against.
-
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| A | **Copy Best Practices Knowledge Base** | Build a structured reference at `packages/copy-analysis/guidelines.ts` containing: (1) **Funnel-stage expectations** — what copy should accomplish at each stage (awareness → consideration → decision → post-purchase), what tone/length/CTA style is appropriate, what objections to address; (2) **ICP alignment criteria** — how copy should reflect the target persona's language, pain points, sophistication level, and buying triggers; (3) **Marketing angle taxonomy** — common angles (social proof, urgency, authority, transformation, risk reversal, exclusivity) and where each is appropriate vs manipulative; (4) **Page-type copy rules** — homepage hero (clarity > cleverness, 5-second test), pricing page (value framing, objection handling, comparison anchoring), checkout (trust, friction reduction, commitment reinforcement), landing page (single CTA, message match with ad source), product page (benefit > feature, sensory language, social proof proximity). Each guideline is a structured object with `id`, `category`, `rule`, `good_example`, `bad_example`, `funnel_stages[]`, `page_types[]` so the LLM can cite specific guidelines in its analysis. | Medium |
-| B | **Copy extraction enrichment** | Expand `body_text_snippet` from 500 to 2000 chars on commercial-classified pages (checkout, pricing, cart, landing). Extract: page headline (h1), subheadline, CTA text(s), social proof elements, trust signals, urgency indicators. New evidence type `CopyElementsPayload { headline, subheadline, ctas[], social_proof[], trust_signals[], urgency_elements[], body_snippet }`. | Low |
-| C | **ICP profile input** | During onboarding (or in settings), capture ICP basics: target persona description, industry, average deal size, buying sophistication (technical/non-technical/mixed), primary pain point. Stored on the Environment model. Falls back to heuristic ICP detection from the site content if not provided. | Low |
-| D | **Haiku copy analysis per page** | For each commercial page, call Haiku with: the extracted copy elements, the page's funnel classification (from URL/content classifier), the ICP profile, and the relevant subset of guidelines. Structured output: `CopyAnalysis { funnel_alignment_score (0-100), icp_match_score (0-100), issues[] { guideline_id, severity, description, suggestion }, strengths[], overall_grade ('A'-'F') }`. Cache by SHA256(copy_elements + icp_profile + guidelines_version). | Medium |
-| E | **New signals** | `copy_funnel_misalignment` (copy tone/intent doesn't match funnel stage), `copy_icp_disconnect` (language doesn't match target persona), `missing_trust_at_decision_point` (checkout/pricing lacks trust copy), `cta_clarity_weak` (ambiguous or competing CTAs), `value_proposition_absent` (no clear "why buy" above fold), `objection_unaddressed` (common objections for the ICP not handled), `social_proof_misplaced` (testimonials on wrong pages or absent from decision pages). | Medium |
-| F | **New inference keys** | `copy_misaligned_with_funnel_stage`, `copy_disconnected_from_icp`, `trust_copy_absent_at_decision`, `cta_unclear_or_competing`, `value_proposition_missing_above_fold`, `key_objection_unaddressed`, `social_proof_ineffective_placement`. Each maps to root cause `copy_strategy_gap` (new). | Medium |
-| G | **Decision pack** | New `copy_alignment_pack`. Pack question: `is_copy_aligned_with_commercial_intent`. Four tiers: Incident (grade F, critical funnel pages have anti-patterns), FixBeforeScale (grade C-D, significant misalignments), Optimize (grade B, room for improvement), Observe (grade A, copy is well-aligned). | Low |
-| H | **Workspace** | `copy_alignment` workspace. Shows per-page copy grades, overall funnel alignment score, top issues by impact, before/after suggestion previews. | Medium |
-| I | **MCP integration** | New tool `analyze_copy` that lets the operator ask "Why isn't my checkout page converting?" and get copy-specific analysis citing guidelines. New playbook `copy_audit` for comprehensive copy review. | Low |
-| J | **Message-match (UTM heuristic)** | The pixel already captures UTM params (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`) and referrer. Cross-reference: if `utm_term=frete+gratis+ecommerce` and the landing page never mentions "frete" or "gratis", that's a high-confidence message mismatch. Only fire findings when the signal is strong — exact keyword absent from h1/subheadline/CTAs on the LP that received that traffic. New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. Phase 1 is UTM heuristic only (no ad platform API needed); Phase 2 (3.10) adds real ad creative text via Meta/Google integration. | Low |
-| K | **Cross-page narrative consistency** | Haiku call with copy elements from all commercial pages in sequence (by funnel stage). Detect: contradictory promises ("enterprise-grade" on hero, "perfect for startups" on pricing), abandoned commitments (trial mentioned once then never again), tone shifts (formal hero → casual checkout), inconsistent naming (product called different things on different pages). New signal `narrative_contradiction_detected`, `promise_abandoned_cross_page`, `tone_inconsistency`. | Medium |
-| L | **Pricing page psychology** | Specialized Haiku analysis for the pricing page: anchoring effectiveness (is the middle plan the obvious choice?), decoy positioning, value framing (features listed vs benefits communicated), plan naming (do names communicate progression?), objection handling on-page, comparison anchoring against alternatives. New signal `pricing_page_psychology_weak`, `value_framing_features_over_benefits`. | Low |
-| M | **Localization quality** | For multi-locale sites, compare the persuasive structure (not just words) between the primary locale and translations. Detect when translation preserved meaning but lost marketing intent — "Get started free" → "Comece gratuitamente" is technically correct but persuasively dead. New signal `translation_lost_persuasive_intent`. Requires the site to have multiple locale versions of the same page (detected by hreflang or URL pattern). | Medium |
-| N | **Micro-copy audit** | Extract and analyze form labels, error messages, button text, tooltips, empty states, confirmation messages. These are small copy moments with outsized conversion impact. "Enviar" vs "Garantir minha vaga" on a checkout button. New signal `microcopy_generic_at_conversion_point`, `error_message_unhelpful`. | Low |
-| O | **SEO vs conversion tension** | Cross-reference SEO audit data (already collected) with copy analysis. Detect when keyword-optimized copy is hurting readability/conversion (keyword stuffing in headlines), or when conversion-optimized creative copy is invisible to Google (no target keyword in h1/title). New signal `seo_copy_tension_detected`. | Low |
-| P | **Copy staleness** | Detect outdated references: social proof numbers that contradict footer/about ("500+ companies" but footer says "10,000+"), expired promotions still live, date references in the past, screenshots of old product versions, testimonials from companies that no longer exist or rebranded. Rule-based + light Haiku verification. New signal `copy_stale_reference_detected`. | Low |
-
-**Cost estimate:** ~$0.02-0.05 per audit (3-8 commercial pages x Haiku, cross-page analysis, pricing page specialist call). Still negligible.
-
-**Dependency:** 3.2A (expand body_text_snippet) is a prerequisite. Can share the expanded snippet extraction. Item J depends on behavioral pixel UTM capture (already shipping in Wave 0.2/0.3). Items K-P can be implemented incrementally after the core A-I are live.
-
----
-
-### 3.8 Shopify Integration — Complete the Loop
+### 3.7 Shopify Integration — Complete the Loop
 
 | | |
 |---|---|
@@ -620,12 +583,12 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 ---
 
-### 3.9 Stripe Integration — Revenue Intelligence
+### 3.8 Stripe Integration — Revenue Intelligence
 
 | | |
 |---|---|
 | **Tag** | `platform` `collection` |
-| **Priority** | P2 |
+| **Priority** | P1 |
 
 **Current state:** Stripe is the primary billing provider (checkout, webhooks, subscription lifecycle). **But** we only use Stripe for billing ourselves — we don't read the customer's Stripe data for revenue intelligence the way we do with Shopify.
 
@@ -641,25 +604,61 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 ---
 
-### 3.10 Ad Platform Integrations — Message-Match Phase 2
+### 3.9 Ad Platform Integrations — Meta & Google Ads
 
 | | |
 |---|---|
 | **Tag** | `platform` `collection` `engine` |
-| **Priority** | P2 |
+| **Priority** | P1 |
 
-**Context:** 3.7J implements message-match via UTM heuristics (high-confidence only, no API needed). This item upgrades to **precise message-match** by pulling actual ad creative text from the ad platforms. When connected, the copy analysis pack can compare the exact ad headline/description against the landing page copy word-for-word.
+**Context:** Pulling actual ad creative text from ad platforms enables precise message-match analysis (does the landing page deliver what the ad promised?), ad spend waste quantification, and conversion attribution. This data also enriches the Copy Analysis Pack (3.10) with real ad creatives instead of UTM heuristics.
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
 | A | **Meta Ads API integration** | OAuth flow for Facebook/Instagram Ads. Read-only access to active ad creatives (`ads.read` scope). Pull: ad headline, primary text, description, CTA type, destination URL, ad status. New Prisma model `MetaAdsConnection { id, env_id, access_token (encrypted), ad_account_id, connected_at, last_synced_at }`. Poller syncs active creatives every 24h. | Medium |
 | B | **Google Ads API integration** | OAuth flow for Google Ads. Read-only access to ad creatives. Pull: responsive search ad headlines/descriptions, destination URLs, campaign/ad group structure. New Prisma model `GoogleAdsConnection`. Same sync pattern as Meta. | Medium |
 | C | **Creative → LP matcher** | Match ad creatives to landing pages via: (1) destination URL exact match, (2) UTM campaign/content → creative ID mapping, (3) final URL domain + path pattern. Each matched pair becomes a `AdLpPair { creative_text, creative_cta, lp_url, lp_copy_elements }` fed to the Haiku analysis. | Low |
-| D | **Precise message-match analysis** | Haiku call per `AdLpPair`: does the LP headline echo the ad promise? Does the LP CTA match the ad CTA type? Is the value prop consistent? Structured output with specific mismatch points and fix suggestions. Replaces/augments the UTM heuristic findings from 3.7J with higher-confidence, more actionable findings. | Low |
+| D | **Precise message-match analysis** | Haiku call per `AdLpPair`: does the LP headline echo the ad promise? Does the LP CTA match the ad CTA type? Is the value prop consistent? Structured output with specific mismatch points and fix suggestions. New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. | Low |
 | E | **Ad spend waste signal** | If the ad platform provides spend data, quantify message-mismatch findings in dollars: "This LP receives ~$X/day in ad spend but breaks the ad promise — estimated waste: $Y/mo." Makes the finding directly revenue-tied. | Low |
 | F | **Settings UI** | "Connect Meta Ads" and "Connect Google Ads" cards in the integrations settings page alongside Shopify/Stripe. | Low |
 
-**Dependency:** 3.7A-D (core copy analysis) must ship first. 3.7J (UTM heuristic) should ship as the interim solution.
+---
+
+### 3.10 Copy Analysis Pack — AI-Powered Copy & Funnel Alignment (Foundation Shipped)
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` `docs` |
+| **Priority** | P1 |
+| **Status** | **Foundation shipped — 2026-04-11.** The engine foundation for copy analysis is live via Wave 3.1 Tier 1+2 extensions. 4 enrichment types (`checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing`) produce `ContentEnrichmentPayload` evidence via Haiku. Signal extraction (`extractCopyEnrichmentSignals`) and inference functions wired. Tier 2 added 3 more signals (`social_proof_quality`, `form_error_quality`, `onboarding_quality`) at the engine level. Root cause `copy_strategy_gap` defined. The full 16-item A-P spec below represents the complete vision — items E-F are partially covered by existing signals, A-D and G-P are the remaining work to make this a standalone pack with its own decision, workspace, guidelines KB, ICP input, and advanced analyses (cross-page narrative, pricing psychology, localization quality, micro-copy, SEO tension, staleness). |
+| **Why after integrations?** | With Shopify/Stripe connected (3.7/3.8), copy analysis can measure impact against **real revenue data** instead of heuristics. With ad platform data (3.9), message-match (item J) can compare **actual ad creative text** against landing page copy word-for-word, not just UTM keyword guesses. The pack is 10x more valuable with integration data feeding it. |
+
+**The thesis:** Most SaaS/ecommerce sites have copy that was written once and never audited against the actual ICP, funnel stage, or commercial intent of each page. The result is generic copy that doesn't convert — not because the product is bad, but because the words on the page don't match the buyer's mental state at that point in the journey. This pack turns Vestigio into a **copy strategist** that evaluates alignment between what the page says and what the page should say.
+
+**Requires:** Haiku LLM calls per commercial page (~$0.003/page). A reference knowledge base of copy best practices, marketing angles, and funnel-stage expectations that the LLM evaluates against.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Copy Best Practices Knowledge Base** | Build a structured reference at `packages/copy-analysis/guidelines.ts` containing: (1) **Funnel-stage expectations** — what copy should accomplish at each stage (awareness → consideration → decision → post-purchase), what tone/length/CTA style is appropriate, what objections to address; (2) **ICP alignment criteria** — how copy should reflect the target persona's language, pain points, sophistication level, and buying triggers; (3) **Marketing angle taxonomy** — common angles (social proof, urgency, authority, transformation, risk reversal, exclusivity) and where each is appropriate vs manipulative; (4) **Page-type copy rules** — homepage hero (clarity > cleverness, 5-second test), pricing page (value framing, objection handling, comparison anchoring), checkout (trust, friction reduction, commitment reinforcement), landing page (single CTA, message match with ad source), product page (benefit > feature, sensory language, social proof proximity). Each guideline is a structured object with `id`, `category`, `rule`, `good_example`, `bad_example`, `funnel_stages[]`, `page_types[]` so the LLM can cite specific guidelines in its analysis. | Medium |
+| B | **Copy extraction enrichment** | ✅ Done — `body_text_snippet` expanded to 2000 chars (2026-04-12). Remaining: extract page headline (h1), subheadline, CTA text(s), social proof elements, trust signals, urgency indicators into `CopyElementsPayload`. | Low |
+| C | **ICP profile input** | During onboarding (or in settings), capture ICP basics: target persona description, industry, average deal size, buying sophistication (technical/non-technical/mixed), primary pain point. Stored on the Environment model. Falls back to heuristic ICP detection from the site content if not provided. | Low |
+| D | **Haiku copy analysis per page** | For each commercial page, call Haiku with: the extracted copy elements, the page's funnel classification (from URL/content classifier), the ICP profile, and the relevant subset of guidelines. Structured output: `CopyAnalysis { funnel_alignment_score (0-100), icp_match_score (0-100), issues[] { guideline_id, severity, description, suggestion }, strengths[], overall_grade ('A'-'F') }`. Cache by SHA256(copy_elements + icp_profile + guidelines_version). | Medium |
+| E | **New signals** | `copy_funnel_misalignment` (copy tone/intent doesn't match funnel stage), `copy_icp_disconnect` (language doesn't match target persona), `missing_trust_at_decision_point` (checkout/pricing lacks trust copy), `cta_clarity_weak` (ambiguous or competing CTAs), `value_proposition_absent` (no clear "why buy" above fold), `objection_unaddressed` (common objections for the ICP not handled), `social_proof_misplaced` (testimonials on wrong pages or absent from decision pages). | Medium |
+| F | **New inference keys** | `copy_misaligned_with_funnel_stage`, `copy_disconnected_from_icp`, `trust_copy_absent_at_decision`, `cta_unclear_or_competing`, `value_proposition_missing_above_fold`, `key_objection_unaddressed`, `social_proof_ineffective_placement`. Each maps to root cause `copy_strategy_gap` (new). | Medium |
+| G | **Decision pack** | New `copy_alignment_pack`. Pack question: `is_copy_aligned_with_commercial_intent`. Four tiers: Incident (grade F, critical funnel pages have anti-patterns), FixBeforeScale (grade C-D, significant misalignments), Optimize (grade B, room for improvement), Observe (grade A, copy is well-aligned). | Low |
+| H | **Workspace** | `copy_alignment` workspace. Shows per-page copy grades, overall funnel alignment score, top issues by impact, before/after suggestion previews. | Medium |
+| I | **MCP integration** | New tool `analyze_copy` that lets the operator ask "Why isn't my checkout page converting?" and get copy-specific analysis citing guidelines. New playbook `copy_audit` for comprehensive copy review. | Low |
+| J | **Message-match** | With ad platform data (3.9), compare actual ad creative text against LP copy. Without it, falls back to UTM keyword heuristic (compare `utm_term` keywords against h1/subheadline/CTAs on the LP). New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. **Significantly stronger with 3.9 data.** | Low |
+| K | **Cross-page narrative consistency** | Haiku call with copy elements from all commercial pages in sequence (by funnel stage). Detect: contradictory promises ("enterprise-grade" on hero, "perfect for startups" on pricing), abandoned commitments (trial mentioned once then never again), tone shifts (formal hero → casual checkout), inconsistent naming (product called different things on different pages). New signal `narrative_contradiction_detected`, `promise_abandoned_cross_page`, `tone_inconsistency`. | Medium |
+| L | **Pricing page psychology** | Specialized Haiku analysis for the pricing page: anchoring effectiveness (is the middle plan the obvious choice?), decoy positioning, value framing (features listed vs benefits communicated), plan naming (do names communicate progression?), objection handling on-page, comparison anchoring against alternatives. New signal `pricing_page_psychology_weak`, `value_framing_features_over_benefits`. | Low |
+| M | **Localization quality** | For multi-locale sites, compare the persuasive structure (not just words) between the primary locale and translations. Detect when translation preserved meaning but lost marketing intent — "Get started free" → "Comece gratuitamente" is technically correct but persuasively dead. New signal `translation_lost_persuasive_intent`. Requires the site to have multiple locale versions of the same page (detected by hreflang or URL pattern). | Medium |
+| N | **Micro-copy audit** | Extract and analyze form labels, error messages, button text, tooltips, empty states, confirmation messages. These are small copy moments with outsized conversion impact. "Enviar" vs "Garantir minha vaga" on a checkout button. New signal `microcopy_generic_at_conversion_point`, `error_message_unhelpful`. | Low |
+| O | **SEO vs conversion tension** | Cross-reference SEO audit data (already collected) with copy analysis. Detect when keyword-optimized copy is hurting readability/conversion (keyword stuffing in headlines), or when conversion-optimized creative copy is invisible to Google (no target keyword in h1/title). New signal `seo_copy_tension_detected`. | Low |
+| P | **Copy staleness** | Detect outdated references: social proof numbers that contradict footer/about ("500+ companies" but footer says "10,000+"), expired promotions still live, date references in the past, screenshots of old product versions, testimonials from companies that no longer exist or rebranded. Rule-based + light Haiku verification. New signal `copy_stale_reference_detected`. | Low |
+
+**Cost estimate:** ~$0.02-0.05 per audit (3-8 commercial pages x Haiku, cross-page analysis, pricing page specialist call). Still negligible.
+
+**Dependency:** 3.2A (expand body_text_snippet) ✅ done. Items K-P can be implemented incrementally after the core A-I are live. Item J is stronger with 3.9 (ad platform data) but can ship with UTM heuristic first.
 
 ---
 
@@ -667,7 +666,7 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 | | |
 |---|---|
-| **Status** | **Partial — 2026-04-11.** Backend: Pulse Summary API endpoint at `/api/workspace/pulse-summary` (Haiku briefings, in-memory cache by environmentId_perspective_cycleRef, 1h TTL, graceful degradation). Frontend: workspace page redesigned with 5 perspectives (Panorama, Receita, Confiança, Comportamento, Copy). 4 transversal lenses (PulseSummary, RevenueMap, CycleDelta, BraggingRights) as components. Perspective detail pages at `/workspaces/perspective/[slug]`. **Remaining:** maturity stage detection (3.11A), perspective grouping in projections engine (3.11C), Revenue Map aggregation (3.11D), Cycle Delta lens data (3.11E), Bragging Rights lens data (3.11F), browser verification of all frontend work. |
+| **Status** | **Engine complete, frontend needs verification — 2026-04-12.** Backend: Pulse Summary API endpoint, `detectMaturityStage()` in `packages/classification/maturity.ts`, `groupByPerspective()` + `buildRevenueMap()` + `buildCycleDelta()` + `buildBraggingRights()` in `packages/projections/engine.ts`, `maturity_stage` field on `MultiPackResult`. Frontend: workspace page redesigned with 5 perspectives (Panorama, Receita, Confiança, Comportamento, Copy). 4 transversal lenses (PulseSummary, RevenueMap, CycleDelta, BraggingRights) as components. Perspective detail pages at `/workspaces/perspective/[slug]`. **Remaining:** wire new engine functions into frontend API routes so components get real data; browser verification. |
 
 **Goal:** Consolidate 12 flat workspaces into 5 smart perspectives with transversal lenses that cut across all packs. Each perspective adapts its content based on the detected maturity stage of the business.
 
@@ -704,12 +703,12 @@ Maturity stage influences: which findings appear first, how Pulse Summary frames
 
 | # | Part | Tag | Effort | Status |
 |---|---|---|---|---|
-| A | **Maturity stage detection** — computed property on Environment model. Heuristic based on cycle count, behavioral session count, integration connections, resolved finding ratio. | `engine` | Low | Open |
+| A | **Maturity stage detection** — `detectMaturityStage()` in `packages/classification/maturity.ts`. Returns launch/growth/scale based on sessions, integrations, cycles, resolved findings. | `engine` | Low | ✅ Done — 2026-04-12 |
 | B | **Pulse Summary API** — new endpoint that calls Haiku with workspace findings and returns a 3-4 sentence briefing. Cached per cycle. | `mcp` `engine` | Medium | ✅ `/api/workspace/pulse-summary` with 1h cache |
-| C | **Perspective grouping in projections** — modify projectWorkspaces() to group workspace projections by perspective instead of flat list. Each perspective contains its core pack findings + any behavioral sub-views. | `engine` | Medium | Open |
-| D | **Revenue Map aggregation** — aggregate impact value_cases by perspective for the treemap/bar chart. | `engine` | Low | Open |
-| E | **Cycle Delta lens** — expose change_report data grouped by perspective. | `engine` | Low | Open |
-| F | **Bragging Rights lens** — aggregate POSITIVE_CHECKS + resolved findings count per perspective. | `engine` | Low | Open |
+| C | **Perspective grouping in projections** — `groupByPerspective()` in `packages/projections/engine.ts`. Groups workspaces into 5 perspectives with aggregate stats. | `engine` | Medium | ✅ Done — 2026-04-12 |
+| D | **Revenue Map aggregation** — `buildRevenueMap()` aggregates impact value_cases by perspective. | `engine` | Low | ✅ Done — 2026-04-12 |
+| E | **Cycle Delta lens** — `buildCycleDelta()` groups change_report data by perspective. | `engine` | Low | ✅ Done — 2026-04-12 |
+| F | **Bragging Rights lens** — `buildBraggingRights()` aggregates POSITIVE_CHECKS + resolved findings. | `engine` | Low | ✅ Done — 2026-04-12 |
 | G | **Frontend: Workspace page redesign** — replace flat workspace grid with perspective-based navigation. Each perspective is a page with Pulse Summary, findings table, and filtered transversal lenses. Panorama is the home with all 4 lenses showing global data. | `frontend` | High | ✅ Built, needs browser verification |
 | H | **Frontend: Pulse Summary component** — renders the LLM briefing in each workspace with a subtle loading state. | `frontend` | Low | ✅ `PulseSummary.tsx` |
 | I | **Frontend: Revenue Map visualization** — treemap or horizontal bar chart showing $ impact by perspective. | `frontend` | Medium | ✅ `RevenueMap.tsx` (needs real data from 3.11D) |

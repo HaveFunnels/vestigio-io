@@ -65,7 +65,7 @@ const FeatureItem: React.FC<{ feature: Feature }> = ({ feature }) => {
 						onMouseLeave={() => setShowTooltip(false)}
 					>
 						<span className='inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full border border-zinc-700 text-[9px] leading-none text-zinc-600'>
-							?
+							+
 						</span>
 						{showTooltip && (
 							<span className='absolute bottom-full left-1/2 z-50 mb-2 w-52 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs leading-relaxed text-zinc-300 shadow-lg'>

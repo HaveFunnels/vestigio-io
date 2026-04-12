@@ -131,6 +131,30 @@ const Footer = () => {
 								</li>
 							</ul>
 						</div>
+
+						{/* Legal */}
+						<div className='w-full sm:w-auto'>
+							<h2 className='mb-5 text-sm font-semibold uppercase tracking-wider text-white'>
+								Legal
+							</h2>
+							<ul className='flex flex-col gap-3'>
+								<li>
+									<Link className='text-sm text-gray-500 transition-colors hover:text-white' href='/terms'>
+										Terms of Use
+									</Link>
+								</li>
+								<li>
+									<Link className='text-sm text-gray-500 transition-colors hover:text-white' href='/privacy'>
+										Privacy Policy
+									</Link>
+								</li>
+								<li>
+									<Link className='text-sm text-gray-500 transition-colors hover:text-white' href='/refund-policy'>
+										Refund Policy
+									</Link>
+								</li>
+							</ul>
+						</div>
 					</div>
 				</div>
 

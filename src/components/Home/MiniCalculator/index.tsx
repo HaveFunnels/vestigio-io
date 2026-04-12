@@ -275,13 +275,13 @@ const MiniCalculator = ({
 	const totalMax = findingImpacts.reduce((s, [, max]) => s + max, 0);
 
 	const inputClass =
-		"w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-all hover:border-white/20 focus:border-emerald-500/60 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-500/40";
+		"w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition-all hover:border-zinc-300 focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500/40";
 
 	const domainInputClass =
-		`w-full rounded-xl bg-white/[0.03] px-5 py-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-all ${
+		`w-full rounded-xl bg-zinc-50 px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition-all ${
 			domainReady
-				? "border border-emerald-500/60 ring-1 ring-emerald-500/40 bg-white/[0.05]"
-				: "border border-emerald-400/30 ring-1 ring-emerald-400/20 shadow-[0_0_20px_-6px_rgba(16,185,129,0.25)] hover:border-emerald-400/50"
+				? "border border-emerald-500 ring-1 ring-emerald-500/40 bg-white"
+				: "border border-emerald-500/40 ring-1 ring-emerald-500/20 shadow-[0_0_20px_-6px_rgba(16,185,129,0.15)] hover:border-emerald-500/60"
 		}`;
 
 	return (
@@ -298,28 +298,28 @@ const MiniCalculator = ({
 				    Hover-lift, animated conic border on hover, soft inner
 				    glow. The whole section is "one big card" so the
 				    calculator stops looking like just-another-section. */}
-				<div className='vcalc-card group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-b from-[#0d1d18] via-[#0b0f1c] to-[#080812] p-6 transition-all duration-500 hover:-translate-y-1 hover:border-emerald-400/25 hover:shadow-[0_30px_90px_-30px_rgba(16,185,129,0.45),0_20px_60px_-30px_rgba(99,102,241,0.35)] sm:p-10 lg:p-14'>
+				<div className='vcalc-card group relative overflow-hidden rounded-3xl border border-zinc-200/60 bg-white p-6 shadow-[0_25px_80px_-20px_rgba(0,0,0,0.35),0_10px_30px_-10px_rgba(0,0,0,0.2)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_100px_-20px_rgba(16,185,129,0.25),0_25px_60px_-20px_rgba(0,0,0,0.3)] sm:p-10 lg:p-14'>
 					{/* Soft conic gradient halo behind the card edges */}
 					<div
-						className='pointer-events-none absolute inset-0 -z-1 opacity-60 transition-opacity duration-500 group-hover:opacity-100'
+						className='pointer-events-none absolute inset-0 -z-1 opacity-30 transition-opacity duration-500 group-hover:opacity-50'
 						aria-hidden
 					>
-						<div className='absolute -left-20 -top-20 h-[300px] w-[300px] rounded-full bg-emerald-500/[0.10] blur-3xl' />
-						<div className='absolute -bottom-20 -right-20 h-[300px] w-[300px] rounded-full bg-indigo-500/[0.12] blur-3xl' />
+						<div className='absolute -left-20 -top-20 h-[300px] w-[300px] rounded-full bg-emerald-400/[0.08] blur-3xl' />
+						<div className='absolute -bottom-20 -right-20 h-[300px] w-[300px] rounded-full bg-indigo-400/[0.06] blur-3xl' />
 					</div>
 
 					{/* Stripe accents echoing the hero shell */}
-					<div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent' />
-					<div className='pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent' />
+					<div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent' />
+					<div className='pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-400/10 to-transparent' />
 
 					{/* Eyebrow + tagline header (only in input state — once the
 					    flow is running, the existing in-card headlines take
 					    over) */}
 					{state === "input" && (
 						<div className='relative mb-6 flex flex-col items-center gap-3 text-center sm:mb-8'>
-							<span className='inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] px-3 py-1'>
-								<span className='h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400' />
-								<span className='text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300'>
+							<span className='inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-50 px-3 py-1'>
+								<span className='h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500' />
+								<span className='text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-600'>
 									{tCard("eyebrow")}
 								</span>
 							</span>
@@ -333,10 +333,10 @@ const MiniCalculator = ({
 						{/* ===================== INPUT ===================== */}
 						{state === "input" && (
 							<div className='text-center'>
-								<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl xl:text-5xl'>
+								<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl xl:text-5xl'>
 									{t("title")}
 								</h2>
-								<p className='mx-auto mb-8 max-w-[540px] text-sm text-gray-400 sm:mb-10 sm:text-base'>
+								<p className='mx-auto mb-8 max-w-[540px] text-sm text-zinc-500 sm:mb-10 sm:text-base'>
 									{t("subtitle")}
 								</p>
 
@@ -374,7 +374,7 @@ const MiniCalculator = ({
 										>
 											<div className='flex w-full flex-col items-center gap-3 sm:flex-row'>
 												<div className='relative w-full'>
-													<span className='absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500'>
+													<span className='absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-400'>
 														{sym}
 													</span>
 													<input
@@ -399,7 +399,7 @@ const MiniCalculator = ({
 															<option
 																key={key}
 																value={key}
-																className='bg-zinc-900 text-white'
+																className='bg-white text-zinc-900'
 															>
 																{t(IMPACT_PROFILES[key].label)}
 															</option>
@@ -422,7 +422,7 @@ const MiniCalculator = ({
 						{/* ===================== LOADING ===================== */}
 						{state === "loading" && (
 							<div className='text-center'>
-								<h2 className='mb-2 text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl'>
+								<h2 className='mb-2 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl'>
 									{t("analyzing")}{" "}
 									<span className='block break-all sm:inline'>{domain}</span>
 								</h2>
@@ -432,7 +432,7 @@ const MiniCalculator = ({
 
 								{/* Progress bar */}
 								<div className='mx-auto mb-6 w-full max-w-[480px]'>
-									<div className='relative h-2.5 w-full overflow-hidden rounded-full bg-white/[0.06]'>
+									<div className='relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-100'>
 										<div
 											className='h-full rounded-full bg-emerald-500'
 											style={{
@@ -453,7 +453,7 @@ const MiniCalculator = ({
 								{/* Status message — fade down transition */}
 								<div className='relative h-6 overflow-hidden'>
 									<p
-										className='text-sm text-zinc-400'
+										className='text-sm text-zinc-500'
 										style={{
 											transition: "opacity 0.25s ease, transform 0.25s ease",
 											opacity: statusFading ? 0 : 1,
@@ -475,9 +475,9 @@ const MiniCalculator = ({
 									<p className='mb-2 font-mono text-xs uppercase tracking-widest text-zinc-500'>
 										{t("scan_complete")}
 									</p>
-									<h2 className='text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl'>
+									<h2 className='text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl'>
 										{t("results_for")}{" "}
-										<span className='break-all text-emerald-400'>{domain}</span>
+										<span className='break-all text-emerald-600'>{domain}</span>
 									</h2>
 								</div>
 
@@ -485,7 +485,7 @@ const MiniCalculator = ({
                 accent gradient overlay + colored shadow scaled to severity
                 so the eye reads "this is a list of losses" before parsing
                 any individual row. */}
-								<div className='relative mb-4 overflow-hidden rounded-2xl border border-red-500/30 bg-white/[0.02] shadow-[0_8px_24px_-14px_rgba(239,68,68,0.28)]'>
+								<div className='relative mb-4 overflow-hidden rounded-2xl border border-red-200 bg-red-50/50 shadow-[0_8px_24px_-14px_rgba(239,68,68,0.15)]'>
 									{/* Subtle red gradient highlight in the corner */}
 									<div
 										className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-red-500/[0.05] via-transparent to-transparent'
@@ -493,7 +493,7 @@ const MiniCalculator = ({
 									/>
 
 									{/* Desktop column headers */}
-									<div className='relative hidden grid-cols-[100px_1fr_200px] gap-4 border-b border-white/5 px-5 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500 sm:grid'>
+									<div className='relative hidden grid-cols-[100px_1fr_200px] gap-4 border-b border-red-100 px-5 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500 sm:grid'>
 										<span>{t("col_severity")}</span>
 										<span>{t("col_finding")}</span>
 										<span className='text-right'>{t("col_impact")}</span>
@@ -507,7 +507,7 @@ const MiniCalculator = ({
 													key={finding.key}
 													className={`px-4 py-4 sm:grid sm:grid-cols-[100px_1fr_200px] sm:items-center sm:gap-4 sm:px-5 ${
 														i < selectedFindings.length - 1
-															? "border-b border-white/[0.04]"
+															? "border-b border-red-100"
 															: ""
 													}`}
 												>
@@ -525,7 +525,7 @@ const MiniCalculator = ({
 															/mo
 														</span>
 													</div>
-													<p className='text-sm leading-snug text-zinc-200 sm:mb-0'>
+													<p className='text-sm leading-snug text-zinc-700 sm:mb-0'>
 														{t(finding.key)}
 													</p>
 													<p className='hidden font-mono text-sm tabular-nums text-red-400 sm:block sm:text-right'>
@@ -573,7 +573,7 @@ const MiniCalculator = ({
 
 								{/* CTA */}
 								<div className='text-center'>
-									<p className='mb-6 text-sm text-zinc-300 sm:text-base'>
+									<p className='mb-6 text-sm text-zinc-600 sm:text-base'>
 										{t("cta_question")}
 									</p>
 									<div className='mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
@@ -584,17 +584,17 @@ const MiniCalculator = ({
 										</Link>
 										<Link
 											href='/pricing'
-											className='rounded-[1rem] border border-white/20 px-7 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-white/40 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-white/30'
+											className='rounded-[1rem] border border-zinc-200 px-7 py-3 text-center text-sm font-semibold text-zinc-900 transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-zinc-300'
 										>
 											{t("cta_pricing")}
 										</Link>
 									</div>
-									<p className='mx-auto max-w-[500px] text-xs text-zinc-600'>
+									<p className='mx-auto max-w-[500px] text-xs text-zinc-400'>
 										{t("disclaimer")}
 									</p>
 									<button
 										onClick={handleReset}
-										className='mt-6 text-xs text-zinc-600 underline underline-offset-2 transition-colors hover:text-zinc-400'
+										className='mt-6 text-xs text-zinc-400 underline underline-offset-2 transition-colors hover:text-zinc-600'
 									>
 										{t("scan_another")}
 									</button>

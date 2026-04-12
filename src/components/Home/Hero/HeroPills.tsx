@@ -96,7 +96,7 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							aria-hidden
 							className={[
 								"absolute -left-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-md sm:hidden",
-								isOn ? "bg-[#0a1a14]/20 text-[#0a1a14]" : "bg-emerald-500/15 text-emerald-300",
+								isOn ? "bg-white text-emerald-700 shadow-sm" : "bg-emerald-500/15 text-emerald-300",
 							].join(" ")}
 						>
 							{PILL_ICONS[i]?.()}
@@ -153,7 +153,7 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 						>
 							{/* Desktop icon + checkbox row (hidden on mobile) */}
 							<div className='hidden items-center justify-between sm:flex'>
-								<span className='flex h-6 w-6 items-center justify-center rounded-md bg-[#0a1a14]/15 text-[#0a1a14]'>
+								<span className='flex h-6 w-6 items-center justify-center rounded-md bg-white text-emerald-700 shadow-sm'>
 									{PILL_ICONS[i]?.()}
 								</span>
 								<span className='flex h-4 w-4 items-center justify-center rounded-[3px] border border-[#0a1a14]/30 bg-[#0a1a14]'>

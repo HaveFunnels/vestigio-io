@@ -12,6 +12,7 @@ export { runEnrichmentPasses, listRegisteredPasses } from "./runner";
 export { selectiveHeadlessPass } from "./selective-headless";
 export { semanticEnrichmentPass } from "./semantic-enrichment";
 export { nucleiScanPass } from "./nuclei-scan";
+export { katanaDiscoveryPass } from "./katana-discovery";
 export {
   buildStageDScenarios,
   pickCommercialPathScenario,

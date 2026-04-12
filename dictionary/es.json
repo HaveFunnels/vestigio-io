@@ -2200,13 +2200,13 @@
         "subtitle": "Esto suele tardar unos segundos."
       },
       "org_name": {
-        "title": "Nombra tu organización",
+        "title": "Empecemos — nombra tu organización",
         "subtitle": "Este es el nombre de tu equipo o empresa en Vestigio.",
         "label": "Nombre de la organización",
         "placeholder": "Acme Corp"
       },
       "domain": {
-        "title": "¿Qué dominio quieres auditar?",
+        "title": "Llévanos a tu sitio web",
         "subtitle": "Ingresa la URL de tu sitio web para que Vestigio pueda iniciar el análisis.",
         "label": "Dominio",
         "placeholder": "https://example.com",
@@ -2217,7 +2217,7 @@
         "ownership_description": "Vestigio solo rastreará páginas públicas. Al marcar esto confirmas que tienes derecho a analizar este sitio."
       },
       "business_context": {
-        "title": "Contexto del negocio",
+        "title": "Cuéntanos sobre tu negocio",
         "subtitle": "Ayuda a Vestigio a adaptar su análisis a tu modelo de negocio.",
         "business_type": "Tipo de negocio",
         "types": {
@@ -2268,11 +2268,12 @@
         "skip": "Omitir por ahora"
       },
       "notifications": {
-        "title": "Mantente informado",
+        "title": "Mantente al tanto",
         "subtitle": "Recibe alertas cuando una de tus páginas deje de estar disponible, cuando se detecte un incidente o cuando aparezca una regresión. Puedes cambiar esto en cualquier momento en Configuración.",
         "phone": "Número de teléfono",
-        "phone_placeholder": "+5511999999999",
-        "phone_help": "Formato internacional. Solo es obligatorio si activas SMS o WhatsApp.",
+        "phone_placeholder": "+55 11 99999-9999",
+        "phone_help": "Formato internacional E.164, ej: +55 11 99999-9999. Solo es obligatorio si activas SMS o WhatsApp.",
+        "phone_format_hint": "Formato: +[código de país] [número], ej: +55 11 99999-9999",
         "invalid_phone": "Ingresa un teléfono válido en formato internacional (ej.: +5511999999999)",
         "notify_me_by": "Notifícame por",
         "add_phone_first": "agrega primero un número de teléfono",
@@ -2292,8 +2293,8 @@
         }
       },
       "review": {
-        "title": "Revisa tu configuración",
-        "subtitle": "Confirma tus datos antes de elegir un plan.",
+        "title": "Ya casi — revisa tu configuración",
+        "subtitle": "Aquí tienes un resumen de todo lo que ingresaste. Confirma tus datos antes de elegir un plan.",
         "organization": "Organización",
         "domain": "Dominio",
         "business_type": "Tipo de Negocio",

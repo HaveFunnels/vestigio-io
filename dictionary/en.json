@@ -2224,13 +2224,13 @@
         "subtitle": "This usually takes a few seconds."
       },
       "org_name": {
-        "title": "Name your organization",
+        "title": "Let's get started — name your organization",
         "subtitle": "This is your team or company name in Vestigio.",
         "label": "Organization name",
         "placeholder": "Acme Corp"
       },
       "domain": {
-        "title": "What domain do you want to audit?",
+        "title": "Point us to your website",
         "subtitle": "Enter your website URL so Vestigio can start the analysis.",
         "label": "Domain",
         "placeholder": "https://example.com",
@@ -2241,7 +2241,7 @@
         "ownership_description": "Vestigio will only crawl public pages. By checking this you confirm you have the right to analyze this site."
       },
       "business_context": {
-        "title": "Business context",
+        "title": "Tell us about your business",
         "subtitle": "Help Vestigio tailor its analysis to your business model.",
         "business_type": "Business type",
         "types": {
@@ -2292,11 +2292,12 @@
         "skip": "Skip for now"
       },
       "notifications": {
-        "title": "Stay informed",
+        "title": "Stay in the loop",
         "subtitle": "Get alerted when one of your pages goes down, when an incident is detected, or when a regression appears. You can change these anytime in Settings.",
         "phone": "Phone number",
-        "phone_placeholder": "+5511999999999",
-        "phone_help": "International format. Required only if you enable SMS or WhatsApp.",
+        "phone_placeholder": "+55 11 99999-9999",
+        "phone_help": "E.164 international format, e.g. +55 11 99999-9999. Required only if you enable SMS or WhatsApp.",
+        "phone_format_hint": "Format: +[country code] [number], e.g. +55 11 99999-9999",
         "invalid_phone": "Please enter a valid phone in international format (e.g. +5511999999999)",
         "notify_me_by": "Notify me by",
         "add_phone_first": "add a phone number first",
@@ -2316,8 +2317,8 @@
         }
       },
       "review": {
-        "title": "Review your setup",
-        "subtitle": "Confirm your details before choosing a plan.",
+        "title": "Almost there — review your setup",
+        "subtitle": "Here is a summary of everything you entered. Confirm your details before choosing a plan.",
         "organization": "Organization",
         "domain": "Domain",
         "business_type": "Business Type",

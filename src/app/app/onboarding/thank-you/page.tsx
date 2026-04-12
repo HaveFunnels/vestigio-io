@@ -30,6 +30,8 @@ export default function OnboardThankYouPage() {
 	const searchParams = useSearchParams();
 	const orgId = searchParams.get("org");
 	const [activeStage, setActiveStage] = useState(0);
+	const [countdown, setCountdown] = useState(Math.ceil(REDIRECT_AFTER_MS / 1000));
+	const [progress, setProgress] = useState(0);
 
 	// Redirect after a short dwell.
 	useEffect(() => {
@@ -45,6 +47,18 @@ export default function OnboardThankYouPage() {
 			setActiveStage((s) => (s < STAGES.length - 1 ? s + 1 : s));
 		}, REDIRECT_AFTER_MS / STAGES.length);
 		return () => clearInterval(interval);
+	}, []);
+
+	// Countdown timer + progress bar
+	useEffect(() => {
+		const startTime = Date.now();
+		const tick = setInterval(() => {
+			const elapsed = Date.now() - startTime;
+			const remaining = Math.max(0, Math.ceil((REDIRECT_AFTER_MS - elapsed) / 1000));
+			setCountdown(remaining);
+			setProgress(Math.min(100, (elapsed / REDIRECT_AFTER_MS) * 100));
+		}, 100);
+		return () => clearInterval(tick);
 	}, []);
 
 	return (
@@ -71,8 +85,19 @@ export default function OnboardThankYouPage() {
 					as they&rsquo;re discovered &mdash; no need to refresh.
 				</p>
 
+				{/* Progress bar + countdown */}
+				<div className="mt-6 overflow-hidden rounded-full bg-zinc-800">
+					<div
+						className="h-1.5 rounded-full bg-emerald-500 transition-all duration-100 ease-linear"
+						style={{ width: `${progress}%` }}
+					/>
+				</div>
+				<p className="mt-2 text-xs text-zinc-500">
+					Redirecting in {countdown}s&hellip;
+				</p>
+
 				{/* Stage progression */}
-				<ul className="mt-8 space-y-2.5 text-left">
+				<ul className="mt-6 space-y-2.5 text-left">
 					{STAGES.map((label, idx) => {
 						const isDone = idx < activeStage;
 						const isActive = idx === activeStage;

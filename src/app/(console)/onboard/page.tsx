@@ -487,7 +487,8 @@ export default function OnboardPage() {
 		(currentStep === "org" && form.organizationName.length > 0) ||
 		(currentStep === "domain" &&
 			form.domain.length > 0 &&
-			form.ownershipConfirmed) ||
+			form.ownershipConfirmed &&
+			!domainChecking) ||
 		currentStep === "business" ||
 		currentStep === "saas_setup" ||
 		currentStep === "notifications" ||
@@ -583,30 +584,43 @@ export default function OnboardPage() {
 							>
 								{t("domain.label")}
 							</label>
-							<input
-								id='domain'
-								type='url'
-								value={form.domain}
-								onChange={(e) => {
-									update("domain", e.target.value);
-									setDomainError(null);
-									setDomainWarning(null);
-								}}
-								placeholder={t("domain.placeholder")}
-								className={`w-full rounded-md border bg-surface-input px-4 py-2 text-sm text-content outline-none placeholder:text-content-faint focus:ring-1 ${
-									domainError
-										? "border-red-500 focus:border-red-500 focus:ring-red-500"
-										: "border-edge focus:border-emerald-600 focus:ring-emerald-600"
-								}`}
-							/>
+							<div className='relative'>
+								<input
+									id='domain'
+									type='url'
+									value={form.domain}
+									onChange={(e) => {
+										update("domain", e.target.value);
+										setDomainError(null);
+										setDomainWarning(null);
+									}}
+									placeholder={t("domain.placeholder")}
+									className={`w-full rounded-md border bg-surface-input px-4 py-2 text-sm text-content outline-none placeholder:text-content-faint focus:ring-1 ${
+										domainError
+											? "border-red-500 focus:border-red-500 focus:ring-red-500"
+											: "border-edge focus:border-emerald-600 focus:ring-emerald-600"
+									}`}
+								/>
+								{domainChecking && (
+									<div className='absolute right-3 top-1/2 -translate-y-1/2'>
+										<div className='h-4 w-4 animate-spin rounded-full border-2 border-edge border-t-emerald-500' />
+									</div>
+								)}
+							</div>
 							{domainError && (
-								<p className='mt-1.5 text-xs text-red-600 dark:text-red-400'>
-									{domainError}
-								</p>
+								<div className='mt-2 flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400'>
+									<svg className='mt-0.5 h-4 w-4 flex-shrink-0' viewBox='0 0 20 20' fill='currentColor'>
+										<path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clipRule='evenodd' />
+									</svg>
+									<span>{domainError}</span>
+								</div>
 							)}
 							{domainWarning && (
-								<div className='mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400'>
-									{domainWarning} — {t("domain.warning_continue")}
+								<div className='mt-2 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-400'>
+									<svg className='mt-0.5 h-4 w-4 flex-shrink-0' viewBox='0 0 20 20' fill='currentColor'>
+										<path fillRule='evenodd' d='M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z' clipRule='evenodd' />
+									</svg>
+									<span>{domainWarning} — {t("domain.warning_continue")}</span>
 								</div>
 							)}
 						</div>
@@ -862,13 +876,21 @@ export default function OnboardPage() {
 								}`}
 							/>
 							{phoneError && (
-								<p className='mt-1.5 text-xs text-red-600 dark:text-red-400'>
-									{phoneError}
-								</p>
+								<div className='mt-2 flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400'>
+									<svg className='mt-0.5 h-4 w-4 flex-shrink-0' viewBox='0 0 20 20' fill='currentColor'>
+										<path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clipRule='evenodd' />
+									</svg>
+									<span>{phoneError}</span>
+								</div>
 							)}
 							<p className='mt-1.5 text-xs text-content-muted'>
 								{t("notifications.phone_help")}
 							</p>
+							{form.phone && !phoneError && (
+								<p className='mt-1 text-xs text-content-faint'>
+									{t("notifications.phone_format_hint")}
+								</p>
+							)}
 						</div>
 						<div className='space-y-2'>
 							<label className='block text-sm font-medium text-content-secondary'>

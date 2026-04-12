@@ -1808,6 +1808,22 @@
         "skip_note": "__TODO__",
         "skip": "__TODO__"
       },
+      "notifications": {
+        "title": "__TODO__",
+        "subtitle": "__TODO__",
+        "phone": "__TODO__",
+        "phone_placeholder": "+55 11 99999-9999",
+        "phone_help": "__TODO__",
+        "phone_format_hint": "__TODO__",
+        "invalid_phone": "__TODO__",
+        "notify_me_by": "__TODO__",
+        "add_phone_first": "__TODO__",
+        "channels": {
+          "email": { "label": "__TODO__", "description": "__TODO__" },
+          "sms": { "label": "__TODO__", "description": "__TODO__" },
+          "whatsapp": { "label": "__TODO__", "description": "__TODO__" }
+        }
+      },
       "review": {
         "title": "__TODO__",
         "subtitle": "__TODO__",

@@ -2586,7 +2586,12 @@
       "conversion_final_step_retry": "Los intentos de conversión requieren múltiples reintentos por fricción en los pasos finales",
       "cta_late_availability_delays_action": "Los usuarios retrasan la acción por la disponibilidad tardía del CTA principal",
       "checkout_abandon_no_feedback": "Los usuarios abandonan después de iniciar el Checkout por falta de retroalimentación inmediata o indicación de progreso",
-      "sensitive_input_perceived_risk_dropoff": "Los usuarios abandonan después de ingresar información sensible por riesgo percibido"
+      "sensitive_input_perceived_risk_dropoff": "Los usuarios abandonan después de ingresar información sensible por riesgo percibido",
+      "security_header_weakness": "Los navegadores señalan tu sitio como inseguro para los compradores",
+      "mixed_content_exposure": "El Checkout falla silenciosamente para algunos visitantes",
+      "open_redirect_indicator": "Tu dominio puede usarse para hacer phishing a tus propios clientes",
+      "sensitive_endpoint_exposed": "Las credenciales de infraestructura están a una búsqueda de distancia",
+      "error_page_information_leak": "Tus páginas de error ayudan a los atacantes a mapear tu sistema"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Los compradores pierden la confianza en el momento del checkout",
@@ -2615,7 +2620,15 @@
       "behavioral_hesitation_at_commitment": "Los compradores reales dudan en el momento de la compra",
       "behavioral_path_disconnection": "Tu flujo de compra se ve bien en el código pero falla para usuarios reales",
       "behavioral_value_justification_gap": "Los compradores ven tu precio pero no logran ver el valor",
-      "behavioral_trust_failure_at_input": "Los compradores no confían en entregar datos sensibles a tus formularios"
+      "behavioral_trust_failure_at_input": "Los compradores no confían en entregar datos sensibles a tus formularios",
+      "security_posture_inadequate": "Tu sitio parece inseguro para navegadores y compradores",
+      "behavioral_first_session_failure": "Los visitantes nuevos se estancan antes de alcanzar un hito de ingresos",
+      "behavioral_action_value_misalignment": "Las acciones de bajo valor dominan mientras las de alto valor pasan desapercibidas",
+      "paid_acquisition_waste": "El tráfico pago encuentra fricción que se acumula en gasto desperdiciado",
+      "mobile_conversion_failure": "Los visitantes móviles enfrentan barreras de conversión que los usuarios de escritorio nunca ven",
+      "behavioral_friction_tax": "Cada paso del embudo cuesta más esfuerzo del que debería",
+      "behavioral_trust_revenue_gap": "Los compradores quieren convertir pero no tienen la confianza suficiente para seguir adelante",
+      "behavioral_path_inefficiency": "El camino hasta la compra es más largo de lo que la intención del comprador puede sostener"
     },
     "root_cause_descriptions": {
       "trust_failure_at_checkout": "Los compradores llegan al momento del pago, pero las señales de confianza a su alrededor se debilitan en lugar de fortalecerse. Traspasos fuera del dominio, proveedores de pago no reconocidos y la ausencia de pistas de seguridad en el momento equivocado hacen que el comprador se eche para atrás — justo cuando la conversión estaba más cerca. El comprador quería pagar; la experiencia lo asustó.",
@@ -2644,7 +2657,15 @@
       "behavioral_hesitation_at_commitment": "Los datos de sesión real muestran a los compradores llegando al momento de la compra, dudando, buscando seguridad en otro lugar del sitio y abandonando. La brecha entre la intención y la confianza es observable en su comportamiento — y recuperable. Querían comprar. Algo los detuvo, y se ve en el replay de la sesión.",
       "behavioral_path_disconnection": "Tu flujo de compra se ve bien en el código pero falla para usuarios reales. Los pasos del embudo muestran tráfico pero nunca avanzan. Los CTAs son visibles pero nunca se interactúan. Los puntos de entrada móvil están rotos. Los pasos críticos disparan reintentos silenciosos en lugar de progresión. El camino existe estructuralmente y falla conductualmente — y solo el pixel lo ve.",
       "behavioral_value_justification_gap": "Los compradores ven tu precio pero no pueden ver el valor que lo justifica. Ven la página de precios, retroceden a las características, oscilan entre superficies y abandonan. La propuesta de valor está estructuralmente presente pero conductualmente es insuficiente para cerrar la brecha entre el conocimiento del precio y la confianza de compra. Se fueron no porque el precio fuera demasiado alto, sino porque nada les dijo que valía la pena.",
-      "behavioral_trust_failure_at_input": "Los formularios en páginas próximas a la conversión piden datos sensibles — pago, identidad, contacto — sin suficiente contexto de confianza alrededor. El descalce entre lo que se está pidiendo y lo que se está prometiendo causa un abandono inmediato. El comprador no sabe lo suficiente para sentirse seguro entregando su información, y se echa para atrás en el campo."
+      "behavioral_trust_failure_at_input": "Los formularios en páginas próximas a la conversión piden datos sensibles — pago, identidad, contacto — sin suficiente contexto de confianza alrededor. El descalce entre lo que se está pidiendo y lo que se está prometiendo causa un abandono inmediato. El comprador no sabe lo suficiente para sentirse seguro entregando su información, y se echa para atrás en el campo.",
+      "security_posture_inadequate": "La postura de seguridad de tu sitio — headers faltantes, contenido mixto, redirecciones abiertas, endpoints expuestos — señala inseguridad tanto a navegadores como a compradores. Los navegadores modernos alertan activamente a los visitantes, suprimiendo la conversión antes de que la oferta sea leída. La infraestructura expuesta invita a la explotación. Las señales técnicas que dicen 'este sitio es seguro' están ausentes, y tanto humanos como máquinas lo notan.",
+      "behavioral_first_session_failure": "Los visitantes nuevos llegan con intención pero se estancan antes de alcanzar cualquier hito de ingresos. Los datos de sesión muestran nuevos usuarios chocando con barreras de confianza, CTAs ausentes o flujos sin salida en su primera interacción. La primera sesión es la ventana de conversión de mayor apalancamiento — cuando falla, el comprador rara vez regresa. Cada estancamiento en la primera sesión es una pérdida permanente de la conversión más barata que jamás obtendrás.",
+      "behavioral_action_value_misalignment": "El comportamiento de los visitantes se concentra en acciones de bajo valor mientras que las acciones de alto valor que generan ingresos permanecen subexpuestas o enterradas. El tráfico fluye hacia superficies que no avanzan la compra, y las páginas que más importan reciben el menor engagement. El sitio está activo pero improductivo — actividad sin avance. Las acciones que generan ingresos necesitan estar donde la atención ya está, no donde desearías que estuviera.",
+      "paid_acquisition_waste": "El tráfico pago aterriza en experiencias con fricción elevada, brechas de confianza o problemas compuestos en móvil que suprimen la conversión por la que pagaste. El costo de adquisición es fijo pero la tasa de conversión está degradada — cada punto de fricción en la ruta pagada multiplica tu costo efectivo por adquisición. Estás pagando el precio completo por la mitad del resultado, y el desperdicio escala linealmente con la inversión.",
+      "mobile_conversion_failure": "Los visitantes móviles encuentran barreras de conversión que los usuarios de escritorio nunca ven — CTAs rotos, fricción en formularios, brechas de timing entre intención y acción. La experiencia móvil sistemáticamente rinde por debajo contra la misma oferta, misma calidad de tráfico, misma intención de compra. Dado que el móvil es típicamente la mayoría del tráfico, esta brecha representa la mayor pérdida de ingresos a nivel de segmento que la mayoría de los sitios cargan.",
+      "behavioral_friction_tax": "Cada paso del embudo cuesta más esfuerzo del que debería. Los datos de sesión muestran oscilación entre páginas, entradas repetidas al checkout y fatiga de decisión manifestándose como navegación de ida y vuelta antes del abandono. La fricción acumulada a lo largo de la ruta actúa como un impuesto invisible sobre la conversión — ningún paso individual está roto, pero la suma de todos excede lo que los compradores están dispuestos a soportar.",
+      "behavioral_trust_revenue_gap": "Los compradores demuestran clara intención de compra pero abandonan en momentos próximos a la conversión porque las señales de confianza son insuficientes. Los patrones de sesión muestran comportamiento elevado de búsqueda de seguridad — visitas a páginas de políticas, consultas al soporte, escaneo de sellos de confianza — seguidos de abandono. La brecha entre la disposición a comprar y la disposición a confiar es medible y recuperable. Estos compradores querían convertir; solo necesitaban una razón más para sentirse seguros.",
+      "behavioral_path_inefficiency": "El camino desde la primera interacción hasta la compra es más largo de lo que la intención del comprador puede sostener. Demasiadas páginas intermedias, tiempo excesivo entre señales de intención y oportunidades de conversión, y superficies que absorben atención sin avanzar la compra — todo contribuye al deterioro. Para cuando el comprador llega al punto de conversión, la urgencia que lo trajo se ha disipado. Los caminos más cortos convierten; los más largos se fugan."
     },
     "positive_checks": {
       "strong_cta_clarity": {
@@ -2798,7 +2819,8 @@
       "mobile_revenue": "Exposición de Ingresos Móvil",
       "friction_tax": "Impuesto de Fricción",
       "trust_gap": "Brecha de Confianza e Ingresos",
-      "path_efficiency": "Eficiencia de Ruta de Compra"
+      "path_efficiency": "Eficiencia de Ruta de Compra",
+      "security_posture": "Postura de Seguridad"
     }
   }
 }

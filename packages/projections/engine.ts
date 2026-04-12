@@ -193,6 +193,7 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   buyer_session_theft_risk: 'money_moment_exposure',
   checkout_clickjack_risk: 'money_moment_exposure',
   payment_data_unencrypted: 'money_moment_exposure',
+  error_page_information_leak: 'money_moment_exposure',
 };
 
 // Inference → typical page surface
@@ -336,6 +337,7 @@ const INFERENCE_SURFACES: Record<string, string> = {
   buyer_session_theft_risk: '/checkout, /cart, /account (cookie security)',
   checkout_clickjack_risk: '/checkout, /payment (clickjack protection)',
   payment_data_unencrypted: '/checkout, /payment (form targets)',
+  error_page_information_leak: '/ (error responses)',
 };
 
 // Human-readable titles for inference findings
@@ -483,6 +485,7 @@ export const INFERENCE_TITLES: Record<string, string> = {
   buyer_session_theft_risk: 'Buyer sessions can be stolen on your commercial pages',
   checkout_clickjack_risk: 'Your checkout page can be faked inside another site',
   payment_data_unencrypted: 'Payment data crosses an unencrypted boundary',
+  error_page_information_leak: 'Your error pages help attackers map your system',
 };
 
 // ── Parametric Title Resolution ──

@@ -1388,6 +1388,13 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.06, max: 0.15 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.02 },
     base_metric: 'revenue',
   },
+  error_page_information_leak: {
+    inference_key: 'error_page_information_leak', impact_category: 'revenue_loss',
+    cause: 'Error pages expose internal system architecture to anyone',
+    effect: 'Verbose error responses with stack traces, database details, and framework versions give attackers a roadmap — targeted attacks become trivial instead of opportunistic',
+    high: { min: 0.03, max: 0.08 }, medium: { min: 0.01, max: 0.04 }, low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
   payment_data_unencrypted: {
     inference_key: 'payment_data_unencrypted', impact_category: 'revenue_loss',
     cause: 'Payment data crosses an unencrypted boundary',

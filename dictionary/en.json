@@ -2581,7 +2581,8 @@
       "checkout_script_hijack_risk": "Your checkout can be hijacked by compromised scripts",
       "buyer_session_theft_risk": "Buyer sessions can be stolen on your commercial pages",
       "checkout_clickjack_risk": "Your checkout page can be faked inside another site",
-      "payment_data_unencrypted": "Payment data crosses an unencrypted boundary"
+      "payment_data_unencrypted": "Payment data crosses an unencrypted boundary",
+      "error_page_information_leak": "Your error pages help attackers map your system"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Buyers lose trust at the checkout moment",

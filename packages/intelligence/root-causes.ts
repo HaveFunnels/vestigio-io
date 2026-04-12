@@ -199,6 +199,7 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   buyer_session_theft_risk:      { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
   checkout_clickjack_risk:       { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
   payment_data_unencrypted:      { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
+  error_page_information_leak:   { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
 
   // Phase 5: Behavioral cohort inference mappings
 

@@ -34,6 +34,7 @@ import { mapPollResultToSnapshotData } from "../../packages/shopify-adapter/snap
 import { decryptConfig } from "@/libs/integration-crypto";
 import type { IntegrationSnapshot } from "../../packages/integrations/types";
 import type { Evidence } from "../../packages/domain";
+import { triggerIncidentNotifications } from "@/libs/notification-triggers";
 
 export interface RunAuditCycleResult {
 	cycleId: string;
@@ -441,6 +442,17 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				);
 			} catch (err) {
 				console.error(`[audit-runner ${cycleId}] findings save failed:`, err);
+			}
+
+			// (e2) Trigger notifications for critical findings
+			try {
+				await triggerIncidentNotifications({
+					userId: cycle.organization.ownerId,
+					domain: env.domain,
+					findings: projections.findings,
+				});
+			} catch {
+				// Non-fatal: notification failure shouldn't block the audit
 			}
 
 			// (f) Retention prune — keep last 10 snapshots per env

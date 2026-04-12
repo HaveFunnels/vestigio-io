@@ -128,6 +128,19 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
   let pricingSeen = false;
   let policyOpenedAfterIntent = false;
 
+  let formErrorCount = 0;
+  let lastExitPage: string | undefined;
+
+  // The following event types are collected by vestigio.js but intentionally
+  // not aggregated into SessionAggregate. They serve as raw evidence for
+  // future analysis but don't currently feed into findings:
+  //
+  // - backtrack: navigation back (covered by rapid_backtrack which IS handled)
+  // - heartbeat: keepalive pings (used for session timeout, not analysis)
+  // - step_reached: funnel step progression (covered by milestone tracking)
+  // - order_bump_seen / order_bump_accept: (future: upsell/cross-sell analysis)
+  // - upsell_seen / upsell_accept: (future: post-purchase monetization analysis)
+
   for (const event of events) {
     const surface = normalizeSurface(event.url);
 
@@ -268,6 +281,16 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
         handoffTargetHost = (event.data.target_host as string) || null;
         break;
       }
+      case 'form_error': {
+        // Track form error count — feeds into friction analysis
+        formErrorCount++;
+        break;
+      }
+      case 'page_leave': {
+        // Track the last page before exit — useful for drop-off analysis
+        if (event.url) lastExitPage = event.url;
+        break;
+      }
     }
   }
 
@@ -351,6 +374,9 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
     pricing_then_backtrack: pricingThenBacktrack,
 
     journey_type: classifyJourneyFromProgression(surfaceTypes),
+
+    form_errors: formErrorCount || undefined,
+    last_exit_page: lastExitPage,
   };
 }
 

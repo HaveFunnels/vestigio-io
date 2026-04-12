@@ -280,6 +280,11 @@ export interface SessionAggregate {
 
   /** Journey type classification */
   journey_type: JourneyType | null;
+
+  /** Form error count — friction signal from form_error events */
+  form_errors?: number;
+  /** Last page URL before session exit — drop-off analysis */
+  last_exit_page?: string;
 }
 
 export type JourneyType =

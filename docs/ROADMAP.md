@@ -564,22 +564,140 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 ---
 
-### 3.7 Shopify Integration — Complete the Loop
+### 3.7 Integration Data Layer + Shopify (Expanded)
 
 | | |
 |---|---|
-| **Tag** | `platform` `collection` |
+| **Tag** | `engine` `platform` `collection` `frontend` |
 | **Priority** | P1 |
 
-**Current state:** Phase 4A shipped a read-only Shopify Admin API client (`packages/shopify-adapter/`), a production poller with adaptive backoff, and a mapper that translates Shopify metrics → `BusinessInputs`. **What's missing** is the user-facing connection flow and the pipeline integration that makes it automatic.
+**Current state:** Phase 4A shipped a read-only Shopify Admin API client (`packages/shopify-adapter/`), a production poller with adaptive backoff, and a mapper that translates Shopify metrics → `BusinessInputs`. **What's missing:** user-facing connection flow, pipeline integration, expanded data (customers/products/checkouts/inventory), and — critically — an **Integration Data Layer** that reconciles data from multiple sources (Shopify, Stripe, Meta, Google) without breaking when any source is absent.
+
+#### 3.7.0 Integration Data Layer (Architectural Foundation)
+
+Not all users are Shopify users. Some use Stripe. Some will connect both. Future ad platforms bring ad spend data. The engine must handle any combination without breaking.
+
+**The `IntegrationSnapshot` pattern:** Each integration produces a typed snapshot. A reconciliation layer merges them into the existing `BusinessInputs` (unchanged — no downstream consumers break) plus a new `CommerceContext` (extended data that `BusinessInputs` can't hold) and future `AdSpendInputs`.
+
+```
+Shopify ─┐                                    ┌→ BusinessInputs (unchanged, reconciled)
+Stripe  ─┤→ IntegrationSnapshot<source> ──→ reconcile() ─┤→ CommerceContext (new, extended)
+Meta    ─┤                                    ├→ AdSpendInputs (new, future)
+Google  ─┘                                    └→ OperationalAmplifiers (existing, merged)
+```
+
+**Reconciliation rules for overlapping fields:**
+
+| Field | Shopify | Stripe | Priority rule |
+|---|---|---|---|
+| `monthly_revenue` | ✅ extrapolated from orders | ✅ from charges/invoices | Stripe wins (payment source of truth for SaaS); Shopify wins for pure ecommerce. Determined by `onboarding_business_model`. |
+| `monthly_transactions` | ✅ order count | ✅ charge count | Same priority rule as revenue |
+| `chargeback_rate` | Proxy (refund rate, capped 10%) | ✅ Real dispute rate | Stripe always wins (real disputes > proxy) |
+| `churn_rate` | null | ✅ from subscriptions | Stripe only |
+| `refund_rate` | ✅ from orders | ✅ from refunds | Average of both when available |
+
+**Provenance tracking:** Every field in the reconciled `BusinessInputs` carries a `source` tag so the UI can show "Based on Shopify data" or "Based on Shopify + Stripe data". Stored in a parallel `DataProvenance` object, not on `BusinessInputs` itself (keeps the interface clean).
+
+**`CommerceContext` (new type):** Extended commerce data that doesn't fit in `BusinessInputs` but is consumed by signals, inferences, and workspaces:
+
+```typescript
+interface CommerceContext {
+  // Shopify-exclusive
+  abandonment_rate: number | null;
+  abandonment_value_monthly: number | null;
+  repeat_purchase_rate: number | null;
+  new_vs_returning_ratio: number | null;
+  avg_customer_lifetime_value: number | null;
+  total_products: number | null;
+  products_never_sold_30d: number | null;
+  out_of_stock_promoted_count: number | null;
+  top_products_by_revenue: { title: string; revenue: number }[];
+
+  // Stripe-exclusive (future 3.8)
+  mrr: number | null;
+  subscriber_churn_rate: number | null;
+  failed_payment_rate: number | null;
+
+  // Ad platforms (future 3.9)
+  total_ad_spend_monthly: number | null;
+  ad_spend_by_platform: Record<string, number>;
+
+  // Meta
+  sources: string[];  // ['shopify'], ['shopify', 'stripe'], etc.
+  basis_type: 'data_driven' | 'mixed' | 'heuristic';
+}
+```
+
+**Revenue Recovery Tracker:** Correlates resolved findings with revenue changes across cycles.
+
+```typescript
+interface RevenueRecoveryEstimate {
+  finding_key: string;
+  resolved_at_cycle: string;
+  estimated_impact_at_resolution: { min: number; max: number };
+  revenue_delta_next_cycle: number | null;
+  confidence: 'correlation' | 'strong_correlation' | 'inconclusive';
+}
+```
+
+Logic: compare `BusinessInputs.monthly_revenue` at cycle N (resolution) vs N+1. If revenue increased AND the finding had high estimated impact → `strong_correlation`. Lives in Bragging Rights lens and Panorama dashboard as "Estimated recovery: $X/mo from resolved findings".
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| A | **OAuth install flow** | Implement Shopify OAuth 2.0: `/api/shopify/auth` (redirect to Shopify with scopes `read_orders,read_customers`) → `/api/shopify/callback` (exchange code for access_token, store credentials). Standard Shopify embedded app flow. | Medium |
-| B | **Credentials storage** | New Prisma model `ShopifyConnection { id, env_id, shop_domain, access_token (encrypted), scopes, installed_at, last_polled_at, status }`. Encrypt access_token at rest. | Low |
-| C | **Settings UI** | "Connect Shopify" card in `/app/settings/integrations` (new page or section in existing settings). Shows connection status, shop domain, last sync time, disconnect button. | Low |
-| D | **Pipeline auto-trigger** | After each audit cycle, if ShopifyConnection exists for the env, run the poller and inject `BusinessInputs` as evidence before `recomputeAll()`. Same pattern as the behavioral pixel worker. | Low |
-| E | **Revenue data enrichment** | With real Shopify revenue data, impact baselines switch from heuristic to data-driven. The `basis_type` in BusinessInputs becomes `data_driven`, and all monetary impact estimates ($X/mo lost) use real numbers instead of industry benchmarks. | Already built (mapper handles this) |
+| 0a | **IntegrationSnapshot type** | Generic typed snapshot per source. Each integration mapper produces one. Stored as Evidence. | Low |
+| 0b | **reconcileIntegrations()** | Merges N snapshots into `BusinessInputs` + `CommerceContext` + `OperationalAmplifiers`. Priority rules by field + business model. Provenance tracking. | Medium |
+| 0c | **CommerceContext type + wiring** | New type consumed by signals/inferences. Passed through `MultiPackInput` alongside `BusinessInputs`. | Low |
+| 0d | **Revenue Recovery Tracker** | Cross-cycle correlation of resolved findings + revenue delta. Surfaces in Bragging Rights + Panorama. | Medium |
+
+#### 3.7.1 Shopify Connection Flow
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Custom App flow (not OAuth)** | User creates a Custom App in Shopify admin, grants scopes, copies Admin API access token. Vestigio stores it. No OAuth needed — simpler, no app store listing required. Scopes: `read_orders`, `read_customers`, `read_products`, `read_inventory`. | Low |
+| B | **Credentials storage** | New Prisma model `IntegrationConnection { id, env_id, provider ('shopify'\|'stripe'\|'meta_ads'\|'google_ads'), config (encrypted JSON), status, installed_at, last_synced_at, sync_error }`. Generic model for all integrations — avoids N models. Encrypt config at rest via `VESTIGIO_SECRET_KEY`. | Low |
+| C | **API routes** | `POST /api/integrations/connect` (store credentials + verify connection), `GET /api/integrations/status` (sync state per provider), `DELETE /api/integrations/disconnect` (revoke), `POST /api/integrations/sync` (manual trigger). All generic — `provider` field routes to the right adapter. | Medium |
+| D | **Data Sources UI — Shopify card** | Card in `/app/settings/data-sources` with: (1) Store URL field (`mystore.myshopify.com`), (2) Admin API Access Token field (password-masked), (3) Inline step-by-step: "In Shopify admin → Settings → Apps → Develop apps → Create app → Configure Admin API scopes (read_orders, read_customers, read_products, read_inventory) → Install → Copy token", (4) Link to KB article: "Need help? [Step-by-step guide with screenshots](/app/knowledge-base/shopify-integration-setup)", (5) Connection status indicator (connected/syncing/error), (6) Last sync time + "Sync now" button, (7) Value feedback: "Analyzing $124k across 1,284 orders (last 30d)". | Medium |
+| E | **Knowledge Base article** | Sanity article at slug `shopify-integration-setup`. Full tutorial: why connect, what data we read (reassure: read-only, no write access), step-by-step with `[SCREENSHOT: description]` placeholders for user-provided screenshots. Category: `guide`. | Low |
+
+#### 3.7.2 Expanded Shopify Data
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| F | **Abandoned checkouts** | Fetch `/checkouts.json` (created_at filter, 90d window). Aggregate: abandonment_count, abandonment_rate, abandonment_value, avg_steps_before_abandon. Map to `CommerceContext.abandonment_rate` + `abandonment_value_monthly`. | Medium |
+| G | **Customers** | Fetch `/customers.json` (orders_count, total_spent). Aggregate: repeat_purchase_rate, new_vs_returning_ratio, avg_customer_lifetime_value. Map to `CommerceContext`. | Medium |
+| H | **Products** | Fetch `/products.json` (id, title, status, variants). Cross-reference with order line items. Identify: total_products, products_never_sold_30d (listed but 0 orders), top_products_by_revenue. Map to `CommerceContext`. | Medium |
+| I | **Inventory levels** | Fetch `/inventory_levels.json` for products found on crawled pages. Identify: out_of_stock_promoted_count (product page exists in crawl inventory but stock = 0). Map to `CommerceContext`. | Low |
+
+#### 3.7.3 Pipeline Hookup
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| J | **Pipeline auto-trigger** | In `runAuditCycle()`, after behavioral processing and before `recomputeAll()`: load `IntegrationConnection` for the env, if Shopify connected → run poller → produce `IntegrationSnapshot<'shopify'>` → store as Evidence. | Low |
+| K | **Reconciliation in recompute** | In `recomputeAll()`, before impact estimation: collect all `IntegrationSnapshot` evidence → call `reconcileIntegrations()` → pass reconciled `BusinessInputs` + `CommerceContext` to impact engine. | Low |
+
+#### 3.7.4 New Findings & Signals
+
+| # | Finding | Data source | Pack | Effort |
+|---|---------|-------------|------|--------|
+| L | `checkout_abandonment_revenue_leak` — "Your checkout loses $X/mo in abandoned carts" | abandoned_checkouts | revenue_integrity | Low |
+| M | `promoted_product_out_of_stock` — "Products on your site are out of stock, frustrating buyers" | inventory_levels + crawled pages | money_moment_exposure | Low |
+| N | `high_refund_rate_eroding_revenue` — "Refund rate is X%, eroding $Y/mo in revenue" | refund data (real, not proxy) | chargeback_resilience | Low |
+| O | `single_payment_gateway_risk` — "95%+ of payments go through one gateway — one outage stops all revenue" | payment_methods | money_moment_exposure | Low |
+| P | `discount_abuse_pattern` — "X% of orders use discounts, leaking $Y/mo in margin" | discount data | channel_integrity | Low |
+| Q | `low_repeat_purchase_rate` — "Only X% of buyers return — acquisition cost isn't being recovered" | customers | revenue_integrity | Low |
+| R | `dead_weight_products` — "X products are listed but haven't sold in 30 days" | products + orders | revenue_integrity (action_value_map behavioral) | Low |
+
+#### 3.7.5 Transversal Impact (existing surfaces enriched by Shopify data)
+
+| Surface | What changes with Shopify connected |
+|---|---|
+| **Impact estimates** | `basis_type` switches from `heuristic` → `data_driven`. All $X/mo estimates use real revenue. Confidence boost 1.3x. |
+| **Maps** | Revenue Leakage Map nodes show real $ amounts per surface. |
+| **Inventory page** | Products enriched with Shopify sales data (revenue per page, orders per product). |
+| **Workspace Revenue Map** | Real $ breakdown by perspective instead of heuristic ranges. |
+| **Bragging Rights** | Revenue Recovery Tracker: "Vestigio helped recover est. $X/mo from N resolved findings." |
+| **Pulse Summary** | Haiku cites real numbers: "Your checkout abandonment costs $4.2k/mo based on Shopify data." |
+| **Operational Amplifiers** | 5 amplifiers (cancellation, discount abuse, economic leakage, payment concentration, tx failure) derived from real Shopify operational data. Already built in mapper. |
 
 ---
 
@@ -592,13 +710,15 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 **Current state:** Stripe is the primary billing provider (checkout, webhooks, subscription lifecycle). **But** we only use Stripe for billing ourselves — we don't read the customer's Stripe data for revenue intelligence the way we do with Shopify.
 
+**Architecture:** Uses the same `IntegrationConnection` Prisma model and `IntegrationSnapshot<'stripe'>` pattern from 3.7.0. The `reconcileIntegrations()` function handles Shopify+Stripe overlap automatically.
+
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| A | **OAuth Connect flow** | Stripe Connect (Standard or Express) OAuth: let the customer connect their own Stripe account so we can read their revenue data. `/api/stripe/connect/auth` → `/api/stripe/connect/callback`. Scopes: `read_only` on charges, invoices, subscriptions. | Medium |
-| B | **Credentials storage** | New Prisma model `StripeConnection { id, env_id, stripe_account_id, access_token (encrypted), refresh_token, scopes, connected_at, last_polled_at, status }`. | Low |
-| C | **Revenue poller** | Fetch last 90d of charges/invoices/subscriptions. Compute: MRR, churn rate, avg revenue per customer, refund rate, failed payment rate. Map to `BusinessInputs` (same interface as Shopify mapper). | Medium |
-| D | **Settings UI** | "Connect Stripe" card alongside Shopify in integrations settings. | Low |
-| E | **Chargeback pack enrichment** | With real Stripe dispute data, the chargeback pack gets real dispute rates instead of heuristics. Findings like `elevated_dispute_risk` can show actual dollar amounts. | Low |
+| A | **OAuth Connect flow** | Stripe Connect (Standard or Express) OAuth: let the customer connect their own Stripe account so we can read their revenue data. `/api/stripe/connect/auth` → `/api/stripe/connect/callback`. Scopes: `read_only` on charges, invoices, subscriptions. Uses the generic `IntegrationConnection` model from 3.7.1B. | Medium |
+| B | **Revenue poller** | Fetch last 90d of charges/invoices/subscriptions. Compute: MRR, churn rate, avg revenue per customer, refund rate, failed payment rate, real dispute rate. Produce `IntegrationSnapshot<'stripe'>`. | Medium |
+| C | **Settings UI** | "Connect Stripe" card alongside Shopify in Data Sources page. Same pattern as Shopify card. | Low |
+| D | **Chargeback pack enrichment** | With real Stripe dispute data, the chargeback pack gets real dispute rates instead of Shopify's refund-rate proxy. `reconcileIntegrations()` prefers Stripe's `chargeback_rate` over Shopify's proxy when both present. | Low |
+| E | **SaaS-specific fields** | Populate `CommerceContext.mrr`, `subscriber_churn_rate`, `failed_payment_rate` — Shopify can't provide these. | Low |
 
 **Note:** This is about reading the **customer's** Stripe account for revenue intelligence — completely separate from our own Stripe billing integration which is already working.
 
@@ -613,14 +733,16 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 **Context:** Pulling actual ad creative text from ad platforms enables precise message-match analysis (does the landing page deliver what the ad promised?), ad spend waste quantification, and conversion attribution. This data also enriches the Copy Analysis Pack (3.10) with real ad creatives instead of UTM heuristics.
 
+**Architecture:** Uses the same `IntegrationConnection` model. Ad data flows into `CommerceContext.total_ad_spend_monthly` and `ad_spend_by_platform` via `IntegrationSnapshot<'meta_ads'>` / `IntegrationSnapshot<'google_ads'>`.
+
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| A | **Meta Ads API integration** | OAuth flow for Facebook/Instagram Ads. Read-only access to active ad creatives (`ads.read` scope). Pull: ad headline, primary text, description, CTA type, destination URL, ad status. New Prisma model `MetaAdsConnection { id, env_id, access_token (encrypted), ad_account_id, connected_at, last_synced_at }`. Poller syncs active creatives every 24h. | Medium |
-| B | **Google Ads API integration** | OAuth flow for Google Ads. Read-only access to ad creatives. Pull: responsive search ad headlines/descriptions, destination URLs, campaign/ad group structure. New Prisma model `GoogleAdsConnection`. Same sync pattern as Meta. | Medium |
+| A | **Meta Ads API integration** | OAuth flow for Facebook/Instagram Ads. Read-only access to active ad creatives (`ads.read` scope). Pull: ad headline, primary text, description, CTA type, destination URL, ad status, ad spend. New `IntegrationSnapshot<'meta_ads'>`. Poller syncs active creatives every 24h. | Medium |
+| B | **Google Ads API integration** | OAuth flow for Google Ads. Read-only access to ad creatives. Pull: responsive search ad headlines/descriptions, destination URLs, campaign/ad group structure, ad spend. New `IntegrationSnapshot<'google_ads'>`. Same sync pattern as Meta. | Medium |
 | C | **Creative → LP matcher** | Match ad creatives to landing pages via: (1) destination URL exact match, (2) UTM campaign/content → creative ID mapping, (3) final URL domain + path pattern. Each matched pair becomes a `AdLpPair { creative_text, creative_cta, lp_url, lp_copy_elements }` fed to the Haiku analysis. | Low |
 | D | **Precise message-match analysis** | Haiku call per `AdLpPair`: does the LP headline echo the ad promise? Does the LP CTA match the ad CTA type? Is the value prop consistent? Structured output with specific mismatch points and fix suggestions. New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. | Low |
-| E | **Ad spend waste signal** | If the ad platform provides spend data, quantify message-mismatch findings in dollars: "This LP receives ~$X/day in ad spend but breaks the ad promise — estimated waste: $Y/mo." Makes the finding directly revenue-tied. | Low |
-| F | **Settings UI** | "Connect Meta Ads" and "Connect Google Ads" cards in the integrations settings page alongside Shopify/Stripe. | Low |
+| E | **Ad spend waste signal** | Quantify message-mismatch findings in dollars: "This LP receives ~$X/day in ad spend but breaks the ad promise — estimated waste: $Y/mo." Uses `CommerceContext.ad_spend_by_platform` for real $ amounts. | Low |
+| F | **Settings UI** | "Connect Meta Ads" and "Connect Google Ads" cards in the Data Sources page alongside Shopify/Stripe. | Low |
 
 ---
 

@@ -175,6 +175,94 @@ export default function DataSourcesPage() {
 		}
 	};
 
+	// ── Shopify state ──
+	const [shopifyStatus, setShopifyStatus] = useState<SourceStatus>("not_configured");
+	const [shopifyStoreUrl, setShopifyStoreUrl] = useState("");
+	const [shopifyToken, setShopifyToken] = useState("");
+	const [shopifySaving, setShopifySaving] = useState(false);
+	const [shopifySyncing, setShopifySyncing] = useState(false);
+	const [shopifyLastSync, setShopifyLastSync] = useState<string | null>(null);
+	const [shopifyError, setShopifyError] = useState<string | null>(null);
+	const [shopifyValueFeedback, setShopifyValueFeedback] = useState<string | null>(null);
+
+	const fetchShopifyStatus = useCallback(async () => {
+		try {
+			const res = await fetch("/api/integrations");
+			if (!res.ok) return;
+			const { integrations } = await res.json();
+			const shopify = integrations?.find((i: any) => i.provider === "shopify");
+			if (shopify) {
+				setShopifyStatus(mapStatus(shopify.status));
+				setShopifyLastSync(shopify.lastSyncedAt);
+				setShopifyError(shopify.syncError);
+				if (shopify.valueFeedback) setShopifyValueFeedback(shopify.valueFeedback);
+			}
+		} catch { /* silent */ }
+	}, []);
+
+	useEffect(() => { fetchShopifyStatus(); }, [fetchShopifyStatus]);
+
+	const handleConnectShopify = async () => {
+		if (!shopifyStoreUrl.trim() || !shopifyToken.trim()) {
+			setShopifyError("Store URL and Access Token are required.");
+			return;
+		}
+		setShopifySaving(true);
+		setShopifyError(null);
+		try {
+			const res = await fetch("/api/integrations", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					provider: "shopify",
+					config: { store_url: shopifyStoreUrl.trim(), access_token: shopifyToken.trim() },
+				}),
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				setShopifyError(data.message || "Failed to connect Shopify.");
+				return;
+			}
+			setShopifyStatus("configured");
+			setShopifyToken("");
+			await fetchShopifyStatus();
+		} catch {
+			setShopifyError("Network error. Please try again.");
+		} finally {
+			setShopifySaving(false);
+		}
+	};
+
+	const handleDisconnectShopify = async () => {
+		if (!confirm("Disconnect Shopify? Revenue data will revert to heuristic estimates.")) return;
+		try {
+			await fetch("/api/integrations", {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ provider: "shopify" }),
+			});
+			setShopifyStatus("not_configured");
+			setShopifyStoreUrl("");
+			setShopifyToken("");
+			setShopifyLastSync(null);
+			setShopifyError(null);
+			setShopifyValueFeedback(null);
+		} catch { /* silent */ }
+	};
+
+	const handleSyncShopify = async () => {
+		setShopifySyncing(true);
+		try {
+			const res = await fetch("/api/integrations/sync", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ provider: "shopify" }),
+			});
+			if (res.ok) await fetchShopifyStatus();
+		} catch { /* silent */ }
+		finally { setShopifySyncing(false); }
+	};
+
 	const [pixelCopied, setPixelCopied] = useState(false);
 	const pixelSnippet = `<script async src="https://app.vestigio.io/snippet/vestigio.js" data-env="${environmentId}"></script>`;
 
@@ -218,11 +306,11 @@ export default function DataSourcesPage() {
 		{
 			id: "shopify",
 			title: "Shopify",
-			description: "Connect Shopify for product catalog and checkout analysis.",
+			description: "Import real revenue, orders, customers, and product data to replace heuristic estimates with data-driven insights.",
 			icon: "M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z",
-			status: "coming_soon" as SourceStatus,
-			configurable: false,
-			unlocks: "Product catalog analysis, cart abandonment insights",
+			status: shopifyStatus,
+			configurable: true,
+			unlocks: "Real revenue data, abandoned cart insights, product analytics, customer metrics",
 		},
 	];
 
@@ -340,6 +428,80 @@ export default function DataSourcesPage() {
 										</div>
 									</Field>
 								</div>
+							</div>
+						)}
+
+						{/* Expanded Shopify form */}
+						{source.id === "shopify" && expandedCard === "shopify" && (
+							<div style={{ padding: "0 20px 20px", borderTop: "1px solid #27272a" }}>
+								{shopifyStatus === "configured" || shopifyStatus === "verified" ? (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+										<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+											<div>
+												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Connected</p>
+												{shopifyLastSync && (
+													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last sync: {new Date(shopifyLastSync).toLocaleString()}</p>
+												)}
+												{shopifyValueFeedback && (
+													<p style={{ color: "#10b981", fontSize: 12, marginTop: 4 }}>{shopifyValueFeedback}</p>
+												)}
+											</div>
+											<div style={{ display: "flex", gap: 8 }}>
+												<button onClick={handleSyncShopify} disabled={shopifySyncing} style={{ ...buttonStyle, backgroundColor: "#27272a", color: "#e4e4e7" }}>
+													{shopifySyncing ? "Syncing..." : "Sync Now"}
+												</button>
+												<button onClick={handleDisconnectShopify} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
+													Disconnect
+												</button>
+											</div>
+										</div>
+										{shopifyError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{shopifyError}
+											</div>
+										)}
+									</div>
+								) : (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+										{/* Inline instructions */}
+										<div style={{ padding: "12px 14px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>How to get your Shopify credentials:</p>
+											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
+												<li>In your Shopify admin, go to <strong style={{ color: "#a1a1aa" }}>Settings &rarr; Apps and sales channels</strong></li>
+												<li>Click <strong style={{ color: "#a1a1aa" }}>Develop apps</strong> &rarr; <strong style={{ color: "#a1a1aa" }}>Create an app</strong></li>
+												<li>Name it &quot;Vestigio&quot; and click <strong style={{ color: "#a1a1aa" }}>Configure Admin API scopes</strong></li>
+												<li>Enable: <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>read_orders</code>, <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>read_customers</code>, <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>read_products</code>, <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>read_inventory</code></li>
+												<li>Click <strong style={{ color: "#a1a1aa" }}>Install app</strong> &rarr; copy the <strong style={{ color: "#a1a1aa" }}>Admin API access token</strong></li>
+											</ol>
+											<a href="/app/knowledge-base/shopify-integration-setup" style={{ color: "#6366f1", fontSize: 12, marginTop: 8, display: "inline-block", textDecoration: "none" }}>
+												Need help? Step-by-step guide with screenshots &rarr;
+											</a>
+										</div>
+
+										<Field label="Store URL" hint="Your Shopify store URL (e.g., mystore.myshopify.com)">
+											<input type="text" value={shopifyStoreUrl} onChange={(e) => setShopifyStoreUrl(e.target.value)} placeholder="mystore.myshopify.com" style={inputStyle} />
+										</Field>
+										<Field label="Admin API Access Token" hint="Starts with shpat_...">
+											<input type="password" value={shopifyToken} onChange={(e) => setShopifyToken(e.target.value)} placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" style={inputStyle} />
+										</Field>
+
+										<div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#71717a", fontSize: 11, lineHeight: 1.5 }}>
+												Vestigio only requests <strong style={{ color: "#a1a1aa" }}>read-only</strong> access. We never modify your store data. Your credentials are encrypted at rest with AES-256-GCM.
+											</p>
+										</div>
+
+										{shopifyError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{shopifyError}
+											</div>
+										)}
+
+										<button onClick={handleConnectShopify} disabled={shopifySaving} style={buttonStyle}>
+											{shopifySaving ? "Connecting..." : "Connect Shopify"}
+										</button>
+									</div>
+								)}
 							</div>
 						)}
 

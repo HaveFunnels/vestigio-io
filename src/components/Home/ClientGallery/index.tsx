@@ -48,13 +48,9 @@ const ClientGallery = async () => {
 			    HomeBigCard gradient. */}
 
 			<div className='relative mx-auto w-full max-w-[1200px] px-4 sm:px-8 xl:px-0'>
-				{/* Header text removed — the user explicitly asked for
-				    "deixe só a galeria pertinho do produto" so the strip
-				    of brand logos is now anchored right under the product
-				    tour with no eyebrow / title / subtitle frame.
-				    The `t` translations for `eyebrow / title / subtitle`
-				    are kept in the dictionary in case we want to bring the
-				    framing back later, but the JSX no longer reads them. */}
+				<p className='mb-4 text-center text-[11px] text-zinc-500 sm:mb-5 sm:text-xs'>
+					Confiada por mais de <strong className='font-semibold text-zinc-400'>20.000 empresas</strong>, marcas e especialistas em crescimento.
+				</p>
 
 				{/* Marquee row — soft edge mask, paused on hover.
 				    Brand glyphs use `text-zinc-700` (dark) so they read

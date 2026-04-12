@@ -124,7 +124,7 @@ export default function PricingComponent({
 			</div>
 
 			{/* Cycle Toggle */}
-			<div className='mb-12 flex justify-center'>
+			<div className='mb-12 flex flex-col items-center gap-2'>
 				<div className='relative inline-flex items-center rounded-lg border border-white/10 bg-white/[0.03] p-1'>
 					{/* Sliding highlight */}
 					<div
@@ -156,18 +156,18 @@ export default function PricingComponent({
 					>
 						Annually
 					</button>
-					{/* Save badge — fades in on annual */}
-					<span
-						className={cn(
-							"absolute -right-16 top-1/2 -translate-y-1/2 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400 transition-all duration-300",
-							billingCycle === "annually"
-								? "translate-x-0 opacity-100"
-								: "-translate-x-2 opacity-0"
-						)}
-					>
-						Save {annualDiscountPercent}%
-					</span>
 				</div>
+				{/* Save badge — below the toggle, fades in on annual */}
+				<span
+					className={cn(
+						"rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400 transition-all duration-300",
+						billingCycle === "annually"
+							? "translate-y-0 opacity-100"
+							: "-translate-y-1 opacity-0"
+					)}
+				>
+					Save {annualDiscountPercent}%
+				</span>
 			</div>
 
 			{/* Cards */}
@@ -181,9 +181,9 @@ export default function PricingComponent({
 						<div
 							key={plan.id}
 							className={cn(
-								"group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-300",
+								"group relative flex flex-col rounded-2xl border p-6 transition-all duration-300",
 								plan.isPopular
-									? "border-emerald-500/50 bg-emerald-500/[0.06] shadow-[0_12px_40px_-16px_rgba(16,185,129,0.4)] md:scale-[1.03]"
+									? "border-emerald-500/50 bg-emerald-500/[0.06] pt-8 shadow-[0_12px_40px_-16px_rgba(16,185,129,0.4)] md:scale-[1.03]"
 									: "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
 							)}
 						>
@@ -191,7 +191,7 @@ export default function PricingComponent({
                   vocabulary as the dashboard's accent layers */}
 							{plan.isPopular && (
 								<div
-									className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/[0.06] via-transparent to-transparent'
+									className='pointer-events-none absolute inset-0 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/[0.06] via-transparent to-transparent'
 									aria-hidden
 								/>
 							)}

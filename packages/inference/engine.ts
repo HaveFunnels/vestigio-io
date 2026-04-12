@@ -226,6 +226,15 @@ export function computeInferences(
   inferences.push(...inferProductPageCopyGeneric(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPricingPageFramingUnclear(byKey, scoping, cycle_ref, ids));
 
+  // Phase 4A: Commerce context inferences (Shopify-powered)
+  inferences.push(...inferCheckoutAbandonmentRevenueLeak(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPromotedProductOutOfStock(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferHighRefundRateErodingRevenue(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSinglePaymentGatewayRisk(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferDiscountAbusePattern(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferLowRepeatPurchaseRate(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferDeadWeightProducts(byKey, scoping, cycle_ref, ids));
+
   return inferences;
 }
 
@@ -3236,4 +3245,138 @@ function inferOnboardingNoQuickWin(byKey: Map<string, Signal>, scoping: Scoping,
   const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
   return [createInference({ inference_key: 'onboarding_no_quick_win', category: InferenceCategory.OnboardingNoQuickWin, conclusion: 'onboarding_no_quick_win', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `New users don't experience product value in the first session. Without a quick win in the first minutes — a visible result, a completed setup, a personalized recommendation — trial users conclude the product isn't for them and never return. ${matches.length} onboarding surface(s) lack immediate value delivery.` })];
+}
+
+// ──────────────────────────────────────────────
+// Phase 4A: Commerce Context Inferences
+//
+// Inferences powered by real Shopify data via
+// CommerceContext. These fire only when the
+// corresponding commerce signal is present.
+// ──────────────────────────────────────────────
+
+function inferCheckoutAbandonmentRevenueLeak(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('checkout_abandonment_rate_high');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'checkout_abandonment_revenue_leak',
+    category: InferenceCategory.CheckoutAbandonmentRevenueLeak,
+    conclusion: 'checkout_abandonment_revenue_leak',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Checkout abandonment rate is ${sig.numeric_value}%. Every abandoned cart is revenue that reached the final step and walked away. At this rate, your checkout is the single largest revenue leak in the business — more than any marketing problem or product issue.`,
+  })];
+}
+
+function inferPromotedProductOutOfStock(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('promoted_products_out_of_stock');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'promoted_product_out_of_stock',
+    category: InferenceCategory.PromotedProductOutOfStock,
+    conclusion: 'promoted_product_out_of_stock',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${sig.numeric_value} promoted product(s) are out of stock. Buyers arrive ready to purchase and find they cannot — ad spend drives traffic to dead ends, organic rankings reward pages that frustrate instead of convert.`,
+  })];
+}
+
+function inferHighRefundRateErodingRevenue(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('refund_rate_elevated');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'high_refund_rate_eroding_revenue',
+    category: InferenceCategory.HighRefundRateErodingRevenue,
+    conclusion: 'high_refund_rate_eroding_revenue',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Refund rate of ${sig.numeric_value}% is eating into revenue. Each refund costs the sale plus processing fees, shipping, and operational time. A refund rate this high signals a systemic gap between what the buyer expected and what they received.`,
+  })];
+}
+
+function inferSinglePaymentGatewayRisk(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('payment_gateway_concentrated');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'single_payment_gateway_risk',
+    category: InferenceCategory.SinglePaymentGatewayRisk,
+    conclusion: 'single_payment_gateway_risk',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${sig.numeric_value}% of transactions flow through a single payment gateway. A single point of failure for all revenue — one gateway outage, rate limit, or policy change stops every transaction until resolved. No fallback means zero revenue during downtime.`,
+  })];
+}
+
+function inferDiscountAbusePattern(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('discount_usage_elevated');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'discount_abuse_pattern',
+    category: InferenceCategory.DiscountAbusePattern,
+    conclusion: 'discount_abuse_pattern',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${sig.numeric_value}% of orders use discount codes. When most orders are discounted, full-price purchases become the exception — buyers learn to wait for codes, share them freely, and never pay the listed price. Margin erosion compounds every month.`,
+  })];
+}
+
+function inferLowRepeatPurchaseRate(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('repeat_purchase_rate_low');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'low_repeat_purchase_rate',
+    category: InferenceCategory.LowRepeatPurchaseRate,
+    conclusion: 'low_repeat_purchase_rate',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Only ${sig.numeric_value}% of customers return to buy again. Customer acquisition cost is not being amortized across multiple purchases — each customer is effectively a one-time transaction, making every new sale as expensive as the first.`,
+  })];
+}
+
+function inferDeadWeightProducts(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('dead_weight_products_detected');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'dead_weight_products',
+    category: InferenceCategory.DeadWeightProducts,
+    conclusion: 'dead_weight_products',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${sig.numeric_value} product(s) haven't generated a single sale in 30 days. Dead inventory dilutes site search results, clutters category pages, and wastes operational bandwidth on listings that contribute nothing to revenue.`,
+  })];
 }

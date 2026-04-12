@@ -253,6 +253,15 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   cta_clarity_weak_on_commercial:    { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
   product_page_copy_generic:         { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
   pricing_page_framing_unclear:      { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
+
+  // Phase 4A: Commerce context findings (Shopify-powered)
+  checkout_abandonment_revenue_leak:  { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss'] },
+  promoted_product_out_of_stock:      { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
+  high_refund_rate_eroding_revenue:   { root_cause_key: 'dispute_defenses_absent', category: 'dispute_exposure', impact_types: ['revenue_loss', 'chargeback_risk'] },
+  single_payment_gateway_risk:        { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss', 'scale_risk'] },
+  discount_abuse_pattern:             { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  low_repeat_purchase_rate:           { root_cause_key: 'weak_conversion_signal', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
+  dead_weight_products:               { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a

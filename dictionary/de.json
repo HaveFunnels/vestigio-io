@@ -2167,7 +2167,14 @@
       "checkout_trust_language_absent": "Ihr Checkout sagt dem Käufer nicht, dass der Kauf sicher ist",
       "cta_clarity_weak_on_commercial": "Ihre Buttons konkurrieren miteinander und keiner überzeugt",
       "product_page_copy_generic": "Ihre Produktseiten verwenden generischen Lieferantentext",
-      "pricing_page_framing_unclear": "Ihr Besucher weiß nicht, welchen Plan er wählen soll"
+      "pricing_page_framing_unclear": "Ihr Besucher weiß nicht, welchen Plan er wählen soll",
+      "checkout_abandonment_revenue_leak": "Ihr Checkout verliert Geld jedes Mal, wenn ein Käufer abbricht",
+      "promoted_product_out_of_stock": "Produkte auf Ihrer Seite können nicht gekauft werden — nicht vorrätig",
+      "high_refund_rate_eroding_revenue": "Die Rückerstattungsrate frisst Ihren Umsatz auf",
+      "single_payment_gateway_risk": "Ein Ausfall des Zahlungsgateways stoppt Ihren gesamten Umsatz",
+      "discount_abuse_pattern": "Übermäßiger Rabattgebrauch lässt Marge bei den meisten Bestellungen entweichen",
+      "low_repeat_purchase_rate": "Käufer kommen nicht zurück — die Akquisitionskosten werden nicht gedeckt",
+      "dead_weight_products": "Gelistete Produkte wurden seit 30 Tagen nicht verkauft — totes Gewicht"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Käufer verlieren das Vertrauen im Checkout-Moment",

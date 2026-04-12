@@ -17,6 +17,9 @@ export interface CommerceContext {
   products_never_sold_30d: number | null;
   out_of_stock_promoted_count: number | null;
   top_products_by_revenue: { title: string; revenue: number }[];
+  refund_rate: number | null;
+  discount_usage_rate: number | null;
+  payment_gateway_concentration: number | null;
 
   // Stripe-sourced (future)
   mrr: number | null;

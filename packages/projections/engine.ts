@@ -211,6 +211,14 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   cta_clarity_weak_on_commercial: 'revenue_integrity',
   product_page_copy_generic: 'revenue_integrity',
   pricing_page_framing_unclear: 'revenue_integrity',
+  // Phase 4A: Commerce context (Shopify-powered)
+  checkout_abandonment_revenue_leak: 'revenue_integrity',
+  promoted_product_out_of_stock: 'money_moment_exposure',
+  high_refund_rate_eroding_revenue: 'chargeback_resilience',
+  single_payment_gateway_risk: 'money_moment_exposure',
+  discount_abuse_pattern: 'channel_integrity',
+  low_repeat_purchase_rate: 'revenue_integrity',
+  dead_weight_products: 'revenue_integrity',
 };
 
 // Inference → typical page surface
@@ -368,6 +376,14 @@ const INFERENCE_SURFACES: Record<string, string> = {
   cta_clarity_weak_on_commercial: '/, /product, /pricing, /checkout (CTA clarity)',
   product_page_copy_generic: '/product, /item, /p (product copy)',
   pricing_page_framing_unclear: '/pricing, /plans (plan framing)',
+  // Phase 4A: Commerce context
+  checkout_abandonment_revenue_leak: '/checkout (abandonment)',
+  promoted_product_out_of_stock: '/products (inventory)',
+  high_refund_rate_eroding_revenue: '/orders (refunds)',
+  single_payment_gateway_risk: '/checkout (payments)',
+  discount_abuse_pattern: '/cart, /checkout (discounts)',
+  low_repeat_purchase_rate: '/store (retention)',
+  dead_weight_products: '/products (catalog)',
 };
 
 // Human-readable titles for inference findings
@@ -529,6 +545,14 @@ export const INFERENCE_TITLES: Record<string, string> = {
   cta_clarity_weak_on_commercial: 'Your buttons compete with each other and none convinces',
   product_page_copy_generic: 'Your product pages use generic supplier text',
   pricing_page_framing_unclear: "Your visitor doesn't know which plan to choose",
+  // Phase 4A: Commerce context (Shopify-powered)
+  checkout_abandonment_revenue_leak: 'Your checkout loses money every time a buyer walks away',
+  promoted_product_out_of_stock: "Products on your site can't be bought — out of stock",
+  high_refund_rate_eroding_revenue: 'Refund rate is eating into your revenue',
+  single_payment_gateway_risk: 'One payment gateway outage stops all your revenue',
+  discount_abuse_pattern: 'Discount overuse is leaking margin on most orders',
+  low_repeat_purchase_rate: "Buyers aren't coming back — acquisition cost isn't being recovered",
+  dead_weight_products: "Listed products haven't sold in 30 days — dead weight",
 };
 
 // ── Parametric Title Resolution ──

@@ -33,6 +33,7 @@ import {
   ContentEnrichmentPayload,
 } from '../domain';
 import type { BehavioralCohortPayload } from '../behavioral';
+import type { CommerceContext } from '../integrations/commerce-context';
 import { BuiltGraph, GraphQuery } from '../graph';
 
 // ──────────────────────────────────────────────
@@ -45,6 +46,7 @@ export function extractSignals(
   graph: BuiltGraph,
   scoping: Scoping,
   cycle_ref: string,
+  commerce_context?: CommerceContext | null,
 ): Signal[] {
   const signals: Signal[] = [];
   const query = new GraphQuery(graph);
@@ -164,6 +166,11 @@ export function extractSignals(
 
   // Wave 3.1 Tier 2: LLM enrichment signals from copy/form/onboarding quality
   extractCopyEnrichmentSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Phase 4A: Commerce context signals from Shopify integration data
+  if (commerce_context) {
+    extractCommerceContextSignals(commerce_context, scoping, cycle_ref, signals, ids);
+  }
 
   return signals;
 }
@@ -5287,4 +5294,144 @@ function computeOverallSlice(cohorts: BehavioralCohortPayload['cohorts']): impor
     pricing_backtrack_rate: w(a.pricing_backtrack_rate, b.pricing_backtrack_rate),
     policy_detour_before_conversion_rate: w(a.policy_detour_before_conversion_rate, b.policy_detour_before_conversion_rate),
   };
+}
+
+// ──────────────────────────────────────────────
+// Phase 4A: Commerce Context Signals
+//
+// Signals derived from Shopify integration data
+// (CommerceContext). These fire only when real
+// commerce data is present — never from heuristics.
+// ──────────────────────────────────────────────
+
+function extractCommerceContextSignals(
+  commerce: CommerceContext,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  // Integration evidence refs — these signals come from integration data, not crawl evidence
+  const integrationRefs: string[] = [];
+
+  // 1. Checkout abandonment rate high (> 60%)
+  if (commerce.abandonment_rate !== null && commerce.abandonment_rate > 0.60) {
+    const rate = commerce.abandonment_rate;
+    const severity = rate > 0.80 ? 'high' : rate > 0.70 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'checkout_abandonment_rate_high',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.checkout_abandonment_rate',
+      value: severity,
+      numeric_value: Math.round(rate * 100),
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Checkout abandonment rate is ${Math.round(rate * 100)}%. More than half of buyers who start checkout never complete it — revenue is walking away at the final step.`,
+    }));
+  }
+
+  // 2. Promoted products out of stock
+  if (commerce.out_of_stock_promoted_count !== null && commerce.out_of_stock_promoted_count > 0) {
+    const count = commerce.out_of_stock_promoted_count;
+    const severity = count >= 5 ? 'high' : count >= 2 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'promoted_products_out_of_stock',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.promoted_out_of_stock',
+      value: severity,
+      numeric_value: count,
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `${count} promoted product(s) are out of stock. Buyers land on pages for items they cannot purchase — ad spend and organic traffic convert to frustration instead of revenue.`,
+    }));
+  }
+
+  // 3. Refund rate elevated (> 5%)
+  if (commerce.refund_rate !== null && commerce.refund_rate > 0.05) {
+    const rate = commerce.refund_rate;
+    const severity = rate > 0.10 ? 'high' : rate > 0.07 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'refund_rate_elevated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.refund_rate',
+      value: severity,
+      numeric_value: Math.round(rate * 100),
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Refund rate is ${(rate * 100).toFixed(1)}% of orders. Every refund erodes margin and signals expectation misalignment between what's promised and what's delivered.`,
+    }));
+  }
+
+  // 4. Payment gateway concentrated (> 90%)
+  if (commerce.payment_gateway_concentration !== null && commerce.payment_gateway_concentration > 0.90) {
+    const ratio = commerce.payment_gateway_concentration;
+    const severity = ratio > 0.98 ? 'high' : ratio > 0.95 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'payment_gateway_concentrated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.payment_gateway_concentration',
+      value: severity,
+      numeric_value: Math.round(ratio * 100),
+      confidence: 90,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `${Math.round(ratio * 100)}% of transactions flow through a single payment gateway. One outage stops all revenue — no fallback path exists.`,
+    }));
+  }
+
+  // 5. Discount usage elevated (> 40%)
+  if (commerce.discount_usage_rate !== null && commerce.discount_usage_rate > 0.40) {
+    const rate = commerce.discount_usage_rate;
+    const severity = rate > 0.60 ? 'high' : rate > 0.50 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'discount_usage_elevated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.discount_usage_rate',
+      value: severity,
+      numeric_value: Math.round(rate * 100),
+      confidence: 90,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `${Math.round(rate * 100)}% of orders use a discount code. Widespread discounting erodes margin and trains buyers to never pay full price.`,
+    }));
+  }
+
+  // 6. Repeat purchase rate low (< 15%)
+  if (commerce.repeat_purchase_rate !== null && commerce.repeat_purchase_rate < 0.15) {
+    const rate = commerce.repeat_purchase_rate;
+    const severity = rate < 0.05 ? 'high' : rate < 0.10 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'repeat_purchase_rate_low',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.repeat_purchase_rate',
+      value: severity,
+      numeric_value: Math.round(rate * 100),
+      confidence: 90,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Only ${Math.round(rate * 100)}% of customers make a repeat purchase. Acquisition cost is not being recovered through retention — every new customer is a one-time transaction.`,
+    }));
+  }
+
+  // 7. Dead weight products (never sold in 30 days, > 5)
+  if (commerce.products_never_sold_30d !== null && commerce.products_never_sold_30d > 5) {
+    const count = commerce.products_never_sold_30d;
+    const total = commerce.total_products ?? count;
+    const ratio = total > 0 ? count / total : 0;
+    const severity = ratio > 0.50 ? 'high' : ratio > 0.25 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'dead_weight_products_detected',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.dead_weight_products',
+      value: severity,
+      numeric_value: count,
+      confidence: 90,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `${count} product(s) haven't sold in 30 days${total > count ? ` (${Math.round(ratio * 100)}% of catalog)` : ''}. Dead inventory dilutes search, clutters navigation, and wastes operational effort on items that generate no revenue.`,
+    }));
+  }
 }

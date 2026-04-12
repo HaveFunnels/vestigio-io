@@ -182,6 +182,9 @@ function reconcileCommerceContext(
     products_never_sold_30d: null,
     out_of_stock_promoted_count: null,
     top_products_by_revenue: [],
+    refund_rate: null,
+    discount_usage_rate: null,
+    payment_gateway_concentration: null,
 
     // Stripe-sourced defaults
     mrr: null,
@@ -224,6 +227,10 @@ function reconcileCommerceContext(
     if (sd.inventory) {
       context.out_of_stock_promoted_count = sd.inventory.out_of_stock_promoted;
     }
+
+    context.refund_rate = sd.refunds.refund_rate;
+    context.discount_usage_rate = sd.discounts.discount_usage_rate;
+    context.payment_gateway_concentration = sd.payment_methods.concentration_ratio;
   }
 
   // Populate from Stripe

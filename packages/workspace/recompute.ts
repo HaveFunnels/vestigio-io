@@ -265,10 +265,26 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // ─── Phase 26: Evidence quality assessment (early, feeds confidence) ───
   const evidenceQuality = assessAllEvidenceQuality(evidence);
 
+  // ─── Early integration reconciliation — needed before signal extraction ───
+  let commerceContext: CommerceContext | null = null;
+  let dataProvenance: DataProvenance | null = null;
+  let reconciledBusinessInputs: BusinessInputs | null = input.business_inputs || null;
+  let reconciledAmplifiers: OperationalAmplifiers | undefined;
+
+  const integrationSnapshots = input.integration_snapshots || [];
+  if (integrationSnapshots.length > 0) {
+    const businessModel = input.onboarding_business_model || 'ecommerce';
+    const reconciliation = reconcileIntegrations(integrationSnapshots, businessModel);
+    reconciledBusinessInputs = reconciliation.business_inputs;
+    commerceContext = reconciliation.commerce_context;
+    reconciledAmplifiers = reconciliation.amplifiers;
+    dataProvenance = reconciliation.provenance;
+  }
+
   // ─── Shared pipeline: graph + signals + inferences ───
   const graph = buildGraph(evidence, root_domain, cycle_ref);
   const graphStats = summarizeGraph(graph);
-  const rawSignals = extractSignals(evidence, graph, scoping, cycle_ref);
+  const rawSignals = extractSignals(evidence, graph, scoping, cycle_ref, commerceContext);
 
   // ─── Phase 26: Truth resolution — harmonize multi-source signals ───
   const truthHarmonization = harmonizeSignals(rawSignals, evidence);
@@ -585,22 +601,6 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     actions_by_decision: actionsByDecision,
     translations,
   });
-
-  // ─── Integration reconciliation — merge multi-source data before impact ───
-  let commerceContext: CommerceContext | null = null;
-  let dataProvenance: DataProvenance | null = null;
-  let reconciledBusinessInputs: BusinessInputs | null = input.business_inputs || null;
-  let reconciledAmplifiers: OperationalAmplifiers | undefined;
-
-  const integrationSnapshots = input.integration_snapshots || [];
-  if (integrationSnapshots.length > 0) {
-    const businessModel = input.onboarding_business_model || 'ecommerce';
-    const reconciliation = reconcileIntegrations(integrationSnapshots, businessModel);
-    reconciledBusinessInputs = reconciliation.business_inputs;
-    commerceContext = reconciliation.commerce_context;
-    reconciledAmplifiers = reconciliation.amplifiers;
-    dataProvenance = reconciliation.provenance;
-  }
 
   // Impact estimation — with profile freshness penalty and reconciled inputs/amplifiers
   const valueCases = estimateImpact(allInferences, reconciledBusinessInputs, profilePenalty, reconciledAmplifiers);

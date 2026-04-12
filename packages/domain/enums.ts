@@ -254,6 +254,8 @@ export enum SignalCategory {
   Behavioral = 'behavioral',
   // Wave 3.3: Security posture
   Security = 'security',
+  // Phase 4A: Commerce context
+  Commerce = 'commerce',
 }
 
 export enum InferenceCategory {
@@ -441,4 +443,12 @@ export enum InferenceCategory {
   SocialProofGeneric = 'social_proof_generic',
   FormErrorMessagesUnhelpful = 'form_error_messages_unhelpful',
   OnboardingNoQuickWin = 'onboarding_no_quick_win',
+  // Phase 4A: Commerce context findings (Shopify-powered)
+  CheckoutAbandonmentRevenueLeak = 'checkout_abandonment_revenue_leak',
+  PromotedProductOutOfStock = 'promoted_product_out_of_stock',
+  HighRefundRateErodingRevenue = 'high_refund_rate_eroding_revenue',
+  SinglePaymentGatewayRisk = 'single_payment_gateway_risk',
+  DiscountAbusePattern = 'discount_abuse_pattern',
+  LowRepeatPurchaseRate = 'low_repeat_purchase_rate',
+  DeadWeightProducts = 'dead_weight_products',
 }

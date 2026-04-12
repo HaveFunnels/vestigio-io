@@ -307,20 +307,22 @@ function AnalysisPanel() {
 				{rows.map((f, i) => (
 					<div
 						key={i}
-						className="flex items-center gap-3 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2"
+						className="rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2"
 					>
-						<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[f.severity]}`} />
-						<span className="min-w-0 flex-1 truncate text-[11px] text-zinc-200 sm:text-xs">
-							{f.title}
-						</span>
-						<span className="hidden shrink-0 font-mono text-[10px] tabular-nums text-red-400 sm:inline sm:text-[11px]">
+						<div className="flex items-center gap-3">
+							<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[f.severity]}`} />
+							<span className="min-w-0 flex-1 truncate text-[11px] text-zinc-200 sm:text-xs">
+								{f.title}
+							</span>
+							<span
+								className={`hidden shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] md:inline-block ${SEVERITY_BADGE[f.severity]}`}
+							>
+								{f.severity}
+							</span>
+						</div>
+						<div className="mt-1 pl-[18px] font-mono text-[10px] tabular-nums text-red-400 sm:text-[11px]">
 							{f.impact}
-						</span>
-						<span
-							className={`hidden shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] md:inline-block ${SEVERITY_BADGE[f.severity]}`}
-						>
-							{f.severity}
-						</span>
+						</div>
 					</div>
 				))}
 			</div>
@@ -346,11 +348,28 @@ function InventoryPanel() {
 				? { text: "text-red-400", dot: "bg-red-400" }
 				: { text: "text-amber-400", dot: "bg-amber-400" };
 
+	const liveCount = rows.filter(r => r.status === "live").length;
+	const downCount = rows.filter(r => r.status !== "live").length;
+
 	return (
 		<div>
 			<h4 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
 				{t("header")}
 			</h4>
+
+			{/* Live / Down summary strip */}
+			<div className="mb-3 flex gap-2">
+				<div className="flex flex-1 items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2">
+					<span className="h-2 w-2 rounded-full bg-emerald-400" />
+					<span className="font-mono text-sm font-semibold tabular-nums text-emerald-300">{liveCount}</span>
+					<span className="text-[10px] text-emerald-400/70">{t("status_live")}</span>
+				</div>
+				<div className="flex flex-1 items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2">
+					<span className="h-2 w-2 rounded-full bg-red-400" />
+					<span className="font-mono text-sm font-semibold tabular-nums text-red-300">{downCount}</span>
+					<span className="text-[10px] text-red-400/70">{t("status_down")}</span>
+				</div>
+			</div>
 
 			{/* Mobile: stacked cards */}
 			<div className="space-y-1.5 sm:hidden">
@@ -772,8 +791,12 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 			</div>
 
 
-			{/* Browser shell wrapper — `relative` so the overlays can be
-			    positioned absolutely against it. */}
+			{/* Section headline */}
+			<p className="mx-auto mb-6 max-w-[600px] px-4 text-center text-sm text-zinc-400 sm:mb-8 sm:text-base">
+				{t("section_headline")}
+			</p>
+
+			{/* Browser shell wrapper */}
 			<div className="relative mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
 				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
 					{/* Browser title bar */}

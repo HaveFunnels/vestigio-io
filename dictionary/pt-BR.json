@@ -96,8 +96,8 @@
       "eyebrow": "Tour do Produto",
       "title": "Não é um dashboard. É uma fila de decisões.",
       "subtitle": "Cada aba é uma lente diferente sobre a mesma imagem da receita — priorizada, com evidência, e pronta pra agir.",
+      "section_headline": "Veja exatamente o que a Vestigio entrega pra você.",
       "cta_primary": "Rodar auditoria grátis",
-      "cta_micro": "Perfeito para E-commerces, SaaS, captação de leads, infoprodutos, serviços e apps.",
       "url": "app.vestigio.io/dashboard",
       "tabs": {
         "actions": "Ações",
@@ -121,8 +121,8 @@
           },
           {
             "priority": "P2",
-            "title": "Add-to-cart mobile abaixo da dobra",
-            "desc": "Botão escondido em 68% das sessões mobile",
+            "title": "Botão de compra invisível no mobile",
+            "desc": "Não aparece na tela inicial em 68% das sessões mobile",
             "impact": "−R$ 60k–140k",
             "severity": "critical"
           },
@@ -184,12 +184,12 @@
           {
             "label": "Total de descobertas",
             "value": "23",
-            "sub": "issues em 12 superfícies"
+            "sub": "Issues em 12 superfícies"
           },
           {
             "label": "Impacto Mensal Est.",
             "value": "−R$ 336k",
-            "sub": "limite inferior"
+            "sub": "Baseado em integrações"
           },
           {
             "label": "Alto Impacto",
@@ -219,7 +219,7 @@
             "impact": "−R$ 91k–210k"
           },
           {
-            "title": "Botão add-to-cart mobile abaixo da dobra",
+            "title": "Botão de compra invisível no mobile",
             "severity": "critical",
             "impact": "−R$ 60k–140k"
           },

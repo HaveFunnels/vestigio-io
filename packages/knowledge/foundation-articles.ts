@@ -35,6 +35,13 @@ import {
   ROOT_CAUSE_DESCRIPTIONS,
 } from '../intelligence/root-causes';
 import { shopifyIntegrationSetup } from './guides/shopify-integration-setup';
+import {
+  getTranslatedInferenceTitle,
+  getTranslatedRootCauseTitle,
+  getTranslatedRootCauseDescription,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+} from './article-translations';
 
 // ── Types (mirror Sanity's KnowledgeArticle) ────────────────────
 
@@ -43,6 +50,7 @@ export interface FoundationArticle {
   title: string;
   slug: { current: string };
   category: 'finding' | 'concept';
+  locale: string;
   finding_key?: string;
   root_cause_key?: string;
   excerpt: string;
@@ -151,22 +159,38 @@ function quote(text: string): PortableTextBlock {
  * positive_check key). The article is composed from the existing
  * engine metadata so it cannot drift from what the engine actually
  * produces.
+ *
+ * When `locale` is provided (and is not 'en'), translated titles and
+ * descriptions are used where available — falling back to English
+ * for any key that lacks a translation.
  */
-function buildFoundationArticleForFinding(inferenceKey: string): FoundationArticle | null {
+function buildFoundationArticleForFinding(inferenceKey: string, locale: string = 'en'): FoundationArticle | null {
   const title = INFERENCE_TITLES[inferenceKey];
   const positive = POSITIVE_CHECKS.find((c) => c.key === inferenceKey);
 
   if (!title && !positive) return null;
 
   const isPositive = !!positive;
-  const finalTitle = positive?.title ?? title;
+  // For non-English locales, try the translated title first
+  const englishTitle = positive?.title ?? title;
+  const finalTitle = (locale !== 'en'
+    ? getTranslatedInferenceTitle(locale, inferenceKey) ?? englishTitle
+    : englishTitle);
   const packKey = positive?.pack ?? INFERENCE_TO_PACK[inferenceKey] ?? 'unknown';
   const pack = PACK_LABELS[packKey] ?? PACK_LABELS.unknown;
 
   const rootCauseEntry = INFERENCE_TO_ROOT_CAUSE[inferenceKey];
   const rootCauseKey = rootCauseEntry?.root_cause_key ?? null;
-  const rootCauseTitle = rootCauseKey ? ROOT_CAUSE_TITLES[rootCauseKey] : null;
-  const rootCauseDescription = rootCauseKey ? ROOT_CAUSE_DESCRIPTIONS[rootCauseKey] : null;
+  const rootCauseTitle = rootCauseKey
+    ? (locale !== 'en'
+      ? getTranslatedRootCauseTitle(locale, rootCauseKey) ?? ROOT_CAUSE_TITLES[rootCauseKey]
+      : ROOT_CAUSE_TITLES[rootCauseKey])
+    : null;
+  const rootCauseDescription = rootCauseKey
+    ? (locale !== 'en'
+      ? getTranslatedRootCauseDescription(locale, rootCauseKey) ?? ROOT_CAUSE_DESCRIPTIONS[rootCauseKey]
+      : ROOT_CAUSE_DESCRIPTIONS[rootCauseKey])
+    : null;
 
   // ── Excerpt ──
   const excerpt = isPositive
@@ -240,10 +264,11 @@ function buildFoundationArticleForFinding(inferenceKey: string): FoundationArtic
   ));
 
   return {
-    _id: `foundation:finding:${inferenceKey}`,
+    _id: `foundation:finding:${inferenceKey}${locale !== 'en' ? `:${locale}` : ''}`,
     title: finalTitle,
     slug: { current: `finding-${inferenceKey}` },
     category: 'finding',
+    locale,
     finding_key: inferenceKey,
     excerpt,
     body,
@@ -256,12 +281,21 @@ function buildFoundationArticleForFinding(inferenceKey: string): FoundationArtic
  * Build a foundation article for a root cause. The article aggregates
  * the description and lists every inference key that maps into it,
  * giving the reader a structural view of the problem family.
+ *
+ * When `locale` is provided (and is not 'en'), translated titles and
+ * descriptions are used where available — falling back to English.
  */
-function buildFoundationArticleForRootCause(rootCauseKey: string): FoundationArticle | null {
+function buildFoundationArticleForRootCause(rootCauseKey: string, locale: string = 'en'): FoundationArticle | null {
   const title = ROOT_CAUSE_TITLES[rootCauseKey];
   if (!title) return null;
 
-  const description = ROOT_CAUSE_DESCRIPTIONS[rootCauseKey] ?? null;
+  // Use translated title and description when available
+  const localizedTitle = locale !== 'en'
+    ? getTranslatedRootCauseTitle(locale, rootCauseKey) ?? title
+    : title;
+  const description = locale !== 'en'
+    ? getTranslatedRootCauseDescription(locale, rootCauseKey) ?? (ROOT_CAUSE_DESCRIPTIONS[rootCauseKey] ?? null)
+    : (ROOT_CAUSE_DESCRIPTIONS[rootCauseKey] ?? null);
 
   // Find all findings that roll up into this root cause
   const findingKeys = Object.entries(INFERENCE_TO_ROOT_CAUSE)
@@ -272,13 +306,13 @@ function buildFoundationArticleForRootCause(rootCauseKey: string): FoundationArt
   // ── Excerpt ──
   const excerpt = description
     ? description.split('.').slice(0, 1).join('.') + '.'
-    : title;
+    : localizedTitle;
 
   // ── Body ──
   const body: PortableTextBlock[] = [];
 
   body.push(h2('What this root cause is'));
-  body.push(p(title));
+  body.push(p(localizedTitle));
   if (description) {
     body.push(p(description));
   }
@@ -289,7 +323,10 @@ function buildFoundationArticleForRootCause(rootCauseKey: string): FoundationArt
       `Vestigio collapses related findings into a single root cause so that fixes target structural problems rather than individual symptoms. The following findings can all be expressions of this root cause:`,
     ));
     for (const key of findingKeys) {
-      body.push(p(`• ${INFERENCE_TITLES[key]}`));
+      const findingTitle = locale !== 'en'
+        ? getTranslatedInferenceTitle(locale, key) ?? INFERENCE_TITLES[key]
+        : INFERENCE_TITLES[key];
+      body.push(p(`• ${findingTitle}`));
     }
   }
 
@@ -307,10 +344,11 @@ function buildFoundationArticleForRootCause(rootCauseKey: string): FoundationArt
   ));
 
   return {
-    _id: `foundation:root_cause:${rootCauseKey}`,
-    title,
+    _id: `foundation:root_cause:${rootCauseKey}${locale !== 'en' ? `:${locale}` : ''}`,
+    title: localizedTitle,
     slug: { current: `root-cause-${rootCauseKey}` },
     category: 'concept',
+    locale,
     root_cause_key: rootCauseKey,
     excerpt,
     body,
@@ -324,52 +362,69 @@ function buildFoundationArticleForRootCause(rootCauseKey: string): FoundationArt
 /** Union of all article types managed by the foundation system. */
 export type AnyFoundationArticle = FoundationArticle | GuideArticle;
 
-let _byFindingKey: Map<string, FoundationArticle> | null = null;
-let _byRootCauseKey: Map<string, FoundationArticle> | null = null;
-let _bySlug: Map<string, AnyFoundationArticle> | null = null;
-let _allArticles: AnyFoundationArticle[] | null = null;
+interface LocaleCache {
+  byFindingKey: Map<string, FoundationArticle>;
+  byRootCauseKey: Map<string, FoundationArticle>;
+  bySlug: Map<string, AnyFoundationArticle>;
+  allArticles: AnyFoundationArticle[];
+}
 
-function ensureBuilt(): void {
-  if (_allArticles) return;
+/** Per-locale caches. English is always built first; other locales on demand. */
+const _localeCache = new Map<string, LocaleCache>();
+
+function ensureBuiltForLocale(locale: string): LocaleCache {
+  const existing = _localeCache.get(locale);
+  if (existing) return existing;
+
   blockCounter = 0;
-  _byFindingKey = new Map();
-  _byRootCauseKey = new Map();
-  _bySlug = new Map();
-  _allArticles = [];
+  const cache: LocaleCache = {
+    byFindingKey: new Map(),
+    byRootCauseKey: new Map(),
+    bySlug: new Map(),
+    allArticles: [],
+  };
 
   // Findings
   for (const inferenceKey of Object.keys(INFERENCE_TITLES)) {
-    const article = buildFoundationArticleForFinding(inferenceKey);
+    const article = buildFoundationArticleForFinding(inferenceKey, locale);
     if (!article) continue;
-    _byFindingKey.set(inferenceKey, article);
-    _bySlug.set(article.slug.current, article);
-    _allArticles.push(article);
+    cache.byFindingKey.set(inferenceKey, article);
+    cache.bySlug.set(article.slug.current, article);
+    cache.allArticles.push(article);
   }
 
   // Positive findings
   for (const positive of POSITIVE_CHECKS) {
-    if (_byFindingKey.has(positive.key)) continue;
-    const article = buildFoundationArticleForFinding(positive.key);
+    if (cache.byFindingKey.has(positive.key)) continue;
+    const article = buildFoundationArticleForFinding(positive.key, locale);
     if (!article) continue;
-    _byFindingKey.set(positive.key, article);
-    _bySlug.set(article.slug.current, article);
-    _allArticles.push(article);
+    cache.byFindingKey.set(positive.key, article);
+    cache.bySlug.set(article.slug.current, article);
+    cache.allArticles.push(article);
   }
 
   // Root causes
   for (const rootCauseKey of Object.keys(ROOT_CAUSE_TITLES)) {
-    const article = buildFoundationArticleForRootCause(rootCauseKey);
+    const article = buildFoundationArticleForRootCause(rootCauseKey, locale);
     if (!article) continue;
-    _byRootCauseKey.set(rootCauseKey, article);
-    _bySlug.set(article.slug.current, article);
-    _allArticles.push(article);
+    cache.byRootCauseKey.set(rootCauseKey, article);
+    cache.bySlug.set(article.slug.current, article);
+    cache.allArticles.push(article);
   }
 
-  // Guide articles
+  // Guide articles (English-only for now — shared across locales)
   for (const guide of GUIDE_ARTICLES) {
-    _bySlug.set(guide.slug.current, guide);
-    _allArticles.push(guide);
+    cache.bySlug.set(guide.slug.current, guide);
+    cache.allArticles.push(guide);
   }
+
+  _localeCache.set(locale, cache);
+  return cache;
+}
+
+/** Backwards-compatible: build/return the English cache. */
+function ensureBuilt(): LocaleCache {
+  return ensureBuiltForLocale('en');
 }
 
 // ── Public lookup API ───────────────────────────────────────────
@@ -377,35 +432,37 @@ function ensureBuilt(): void {
 /** Look up a foundation article by inference_key (finding). */
 export function getFoundationArticleByFindingKey(
   findingKey: string,
+  locale: string = 'en',
 ): FoundationArticle | null {
-  ensureBuilt();
-  return _byFindingKey!.get(findingKey) ?? null;
+  const cache = ensureBuiltForLocale(locale);
+  return cache.byFindingKey.get(findingKey) ?? null;
 }
 
 /** Look up a foundation article by root_cause_key. */
 export function getFoundationArticleByRootCauseKey(
   rootCauseKey: string,
+  locale: string = 'en',
 ): FoundationArticle | null {
-  ensureBuilt();
-  return _byRootCauseKey!.get(rootCauseKey) ?? null;
+  const cache = ensureBuiltForLocale(locale);
+  return cache.byRootCauseKey.get(rootCauseKey) ?? null;
 }
 
 /** Look up a foundation article by slug (matches `finding-<key>`, `root-cause-<key>`, or guide slugs). */
-export function getFoundationArticleBySlug(slug: string): AnyFoundationArticle | null {
-  ensureBuilt();
-  return _bySlug!.get(slug) ?? null;
+export function getFoundationArticleBySlug(slug: string, locale: string = 'en'): AnyFoundationArticle | null {
+  const cache = ensureBuiltForLocale(locale);
+  return cache.bySlug.get(slug) ?? null;
 }
 
 /** Return every foundation article including guides (used by the catalog listing). */
-export function listFoundationArticles(): AnyFoundationArticle[] {
-  ensureBuilt();
-  return _allArticles!.slice();
+export function listFoundationArticles(locale: string = 'en'): AnyFoundationArticle[] {
+  const cache = ensureBuiltForLocale(locale);
+  return cache.allArticles.slice();
 }
 
 /** Return only guide articles. */
 export function listGuideArticles(): GuideArticle[] {
-  ensureBuilt();
-  return _allArticles!.filter((a): a is GuideArticle => a.category === 'guide');
+  const cache = ensureBuilt();
+  return cache.allArticles.filter((a): a is GuideArticle => a.category === 'guide');
 }
 
 /** Used by tests to assert coverage. */
@@ -414,10 +471,10 @@ export function getFoundationCoverage(): {
   total_root_causes: number;
   total_articles: number;
 } {
-  ensureBuilt();
+  const cache = ensureBuilt();
   return {
-    total_findings: _byFindingKey!.size,
-    total_root_causes: _byRootCauseKey!.size,
-    total_articles: _allArticles!.length,
+    total_findings: cache.byFindingKey.size,
+    total_root_causes: cache.byRootCauseKey.size,
+    total_articles: cache.allArticles.length,
   };
 }

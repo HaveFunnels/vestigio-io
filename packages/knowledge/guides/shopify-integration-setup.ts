@@ -70,6 +70,7 @@ export const shopifyIntegrationSetup: GuideArticle = {
   _id: 'guide:shopify-integration-setup',
   title: 'How to Connect Shopify to Vestigio',
   slug: { current: 'shopify-integration-setup' },
+  locale: 'en',
   category: 'guide',
   excerpt:
     'Step-by-step tutorial for connecting your Shopify store to Vestigio so that revenue estimates are replaced with real data and new commerce findings are unlocked.',

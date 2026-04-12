@@ -141,8 +141,8 @@ export interface KnowledgeArticle {
 /**
  * Adapt a programmatically generated foundation article to the
  * KnowledgeArticle shape so it can be returned alongside Sanity-authored
- * content. Foundation articles are bilingual-neutral (English) and
- * always carry the `is_foundation` marker so the consumer can tell.
+ * content. Foundation articles carry locale metadata and the
+ * `is_foundation` marker so the consumer can tell.
  */
 function foundationToKnowledgeArticle(article: AnyFoundationArticle): KnowledgeArticle & { is_foundation: true } {
 	return {
@@ -150,7 +150,7 @@ function foundationToKnowledgeArticle(article: AnyFoundationArticle): KnowledgeA
 		title: article.title,
 		slug: article.slug,
 		category: article.category,
-		locale: "en",
+		locale: article.locale ?? "en",
 		finding_key: 'finding_key' in article ? article.finding_key : undefined,
 		root_cause_key: 'root_cause_key' in article ? article.root_cause_key : undefined,
 		excerpt: article.excerpt,
@@ -195,7 +195,7 @@ export const getKnowledgeArticles = async (locale = "en"): Promise<KnowledgeArti
 	// precedence on slug conflict so writers can override the
 	// programmatic foundation with richer hand-authored content.
 	const sanitySlugs = new Set(sanityArticles.map((a) => a.slug.current));
-	const foundationArticles = listFoundationArticles()
+	const foundationArticles = listFoundationArticles(locale)
 		.map(foundationToKnowledgeArticle)
 		.filter((a) => !sanitySlugs.has(a.slug.current));
 
@@ -214,7 +214,7 @@ export const getKnowledgeArticleBySlug = async (
 	if (article) return article;
 
 	// Fall back to foundation article if Sanity has no match
-	const foundation = getFoundationArticleBySlug(slug);
+	const foundation = getFoundationArticleBySlug(slug, locale);
 	return foundation ? foundationToKnowledgeArticle(foundation) : null;
 };
 
@@ -240,12 +240,13 @@ export const getKnowledgeArticleByFindingKey = async (
 	if (article) return article;
 
 	// Fall back to foundation article — every inference_key has one
-	const foundation = getFoundationArticleByFindingKey(findingKey);
+	const foundation = getFoundationArticleByFindingKey(findingKey, locale);
 	return foundation ? foundationToKnowledgeArticle(foundation) : null;
 };
 
 export const getKnowledgeArticleByRootCauseKey = async (
 	rootCauseKey: string,
+	locale: string = "en",
 ): Promise<KnowledgeArticle | null> => {
 	const article = await sanityFetch<KnowledgeArticle | null>({
 		query: kbByRootCauseKeyQuery,
@@ -255,6 +256,6 @@ export const getKnowledgeArticleByRootCauseKey = async (
 	if (article) return article;
 
 	// Fall back to foundation article — every root_cause_key has one
-	const foundation = getFoundationArticleByRootCauseKey(rootCauseKey);
+	const foundation = getFoundationArticleByRootCauseKey(rootCauseKey, locale);
 	return foundation ? foundationToKnowledgeArticle(foundation) : null;
 };

@@ -82,18 +82,9 @@ const Counter = () => {
 							</div>
 
 							<div className='relative text-center'>
-								<div className='relative inline-block'>
-									<svg className='h-[5rem] sm:h-[6.5rem] lg:h-[8rem]' viewBox='0 0 180 100' aria-label='4X'>
-										<defs>
-											<linearGradient id='roi-text-grad' x1='0' y1='0' x2='0' y2='1'>
-												<stop offset='0%' stopColor='#34d399' />
-												<stop offset='85%' stopColor='#34d399' stopOpacity='0.5' />
-												<stop offset='100%' stopColor='#0d1a12' stopOpacity='0' />
-											</linearGradient>
-										</defs>
-										<text x='50%' y='80%' textAnchor='middle' fill='url(#roi-text-grad)' className='font-display' style={{ fontSize: '90px', fontWeight: 700, letterSpacing: '-0.05em', filter: 'drop-shadow(0 12px 48px rgba(16,185,129,0.3)) drop-shadow(0 4px 16px rgba(16,185,129,0.2))' }}>4X</text>
-									</svg>
-								</div>
+								<span className='font-display text-[5rem] font-bold leading-none tracking-tighter sm:text-[6.5rem] lg:text-[8rem]' style={{ background: 'linear-gradient(to bottom, #34d399 0%, #34d399 60%, rgba(52,211,153,0.3) 85%, transparent 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 8px 32px rgba(16,185,129,0.3))' }}>
+									4X
+								</span>
 								<h3 className='mt-2 text-lg font-bold text-white sm:text-xl'>ROI Guarantee</h3>
 								<p className='mt-1 text-sm text-zinc-400'>Você literalmente não tem como perder.</p>
 							</div>

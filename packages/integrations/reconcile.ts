@@ -22,10 +22,6 @@ import { CommerceContext } from './commerce-context';
 import {
   IntegrationSnapshot,
   IntegrationProvider,
-  ShopifySnapshotData,
-  StripeSnapshotData,
-  MetaAdsSnapshotData,
-  GoogleAdsSnapshotData,
 } from './types';
 
 export interface DataProvenance {

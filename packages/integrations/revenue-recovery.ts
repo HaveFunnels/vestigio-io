@@ -77,7 +77,9 @@ export function computeRevenueRecovery(
     };
   });
 
-  const totalRecovery = revenueDelta > 0 ? Math.round(revenueDelta) : 0;
+  const totalRecovery = revenueDelta > 0
+    ? estimates.reduce((sum, e) => sum + (e.revenue_delta_next_cycle ?? 0), 0)
+    : 0;
 
   return {
     estimates,

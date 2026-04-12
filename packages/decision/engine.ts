@@ -291,6 +291,21 @@ function resolveDecisionOutcome(
     return { decision_key: 'path_efficiency_good', category: DecisionClass.State, primary_outcome: 'observation' };
   }
 
+  // ── Security posture (Wave 3.3) ──
+
+  if (questionKey === 'is_visible_security_posture_creating_financial_risk') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'security_posture_critical', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'security_posture_elevated', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'security_posture_weak', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'security_posture_adequate', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
   // Default fallback
   return {
     decision_key: `${questionKey}_result`,
@@ -326,6 +341,9 @@ function buildActions(
   }
   if (questionKey === 'is_chargeback_pressure_elevated') {
     return buildChargebackActions(risk, inferences, translations);
+  }
+  if (questionKey === 'is_visible_security_posture_creating_financial_risk') {
+    return buildSecurityPostureActions(risk, inferences, translations);
   }
 
   const ta = translations?.actions;
@@ -539,6 +557,71 @@ function buildChargebackActions(
   };
 }
 
+function buildSecurityPostureActions(
+  risk: RiskEvaluation,
+  inferences: Inference[],
+  translations?: EngineTranslations,
+): { primary: string; secondary: string[]; verification: string[] } {
+  const secondary: string[] = [];
+  const verification: string[] = [];
+
+  const headerWeak = inferences.find(i => i.inference_key === 'security_header_weakness');
+  const mixedContent = inferences.find(i => i.inference_key === 'mixed_content_exposure');
+  const openRedirect = inferences.find(i => i.inference_key === 'open_redirect_indicator');
+  const sensitiveEndpoint = inferences.find(i => i.inference_key === 'sensitive_endpoint_exposed');
+
+  if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+    const primary = 'Critical security exposures detected. Fix before processing any customer transactions.';
+
+    if (sensitiveEndpoint && sensitiveEndpoint.conclusion_value !== 'low') {
+      secondary.push('Remove or restrict access to exposed sensitive endpoints (admin panels, config files, backup archives).');
+    }
+    if (mixedContent && mixedContent.conclusion_value !== 'low') {
+      secondary.push('Eliminate mixed content on commercial pages: serve all resources over HTTPS to prevent interception.');
+    }
+    if (openRedirect && openRedirect.conclusion_value !== 'low') {
+      secondary.push('Close open redirect vectors that could be used for phishing or traffic hijacking.');
+    }
+    if (headerWeak && headerWeak.conclusion_value !== 'low') {
+      secondary.push('Deploy security headers (CSP, HSTS, X-Frame-Options) to harden the trust posture.');
+    }
+
+    verification.push('Re-run security analysis after fixes to confirm exposures are resolved.');
+    verification.push('Verify sensitive endpoints are no longer publicly accessible.');
+    return { primary, secondary, verification };
+  }
+
+  if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+    const primary = 'Security posture has significant gaps. Address before scaling traffic.';
+
+    if (headerWeak && headerWeak.conclusion_value !== 'low') {
+      secondary.push('Strengthen security headers to reduce exposure to injection and clickjacking.');
+    }
+    if (openRedirect && openRedirect.conclusion_value !== 'low') {
+      secondary.push('Fix open redirect endpoints to prevent abuse.');
+    }
+
+    verification.push('Re-run analysis after implementing security improvements.');
+    return { primary, secondary, verification };
+  }
+
+  if (risk.decision_impact === DecisionImpact.Optimize) {
+    return {
+      primary: 'Security posture is functional but has hardening opportunities.',
+      secondary: [
+        ...(headerWeak ? ['Consider adding stricter Content-Security-Policy and Permissions-Policy headers.'] : []),
+      ],
+      verification: ['Schedule periodic security posture review.'],
+    };
+  }
+
+  return {
+    primary: 'Security posture is adequate. No significant exposures detected.',
+    secondary: [],
+    verification: ['Schedule periodic security posture assessment.'],
+  };
+}
+
 function buildSummary(decisionKey: string, risk: RiskEvaluation, translations?: EngineTranslations): string {
   const ts = translations?.summaries;
 
@@ -581,6 +664,14 @@ function buildSummary(decisionKey: string, risk: RiskEvaluation, translations?: 
       return `Low chargeback risk. Risk score: ${risk.raw_risk_score}/100. Minor improvements available but not blocking.`;
     case 'chargeback_resilience_strong':
       return `Chargeback resilience is strong. No significant dispute risk detected (score: ${risk.raw_risk_score}/100).`;
+    case 'security_posture_critical':
+      return `Critical security exposures detected. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Sensitive files or mixed content on commercial pages create immediate financial risk.`;
+    case 'security_posture_elevated':
+      return `Elevated security posture risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Weak headers or open redirects increase exposure.`;
+    case 'security_posture_weak':
+      return `Security posture has minor gaps. Risk score: ${risk.raw_risk_score}/100. Hardening opportunities exist but are not blocking.`;
+    case 'security_posture_adequate':
+      return `Security posture is adequate. No significant exposures detected (score: ${risk.raw_risk_score}/100).`;
     default:
       return `Decision: ${decisionKey}. Risk: ${risk.raw_risk_score}/100, Confidence: ${risk.confidence_score}/100.`;
   }

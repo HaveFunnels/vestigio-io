@@ -323,6 +323,11 @@ const INFERENCE_SURFACES: Record<string, string> = {
   cta_late_availability_delays_action: '/ (CTA render timing, behavioral)',
   checkout_abandon_no_feedback: '/checkout (immediate abandon, behavioral)',
   sensitive_input_perceived_risk_dropoff: '/checkout, /billing (sensitive field dropoff, behavioral)',
+  // Wave 3.3: Security posture
+  security_header_weakness: '/ (sitewide security headers)',
+  mixed_content_exposure: '/checkout, /cart (mixed content)',
+  open_redirect_indicator: '/ (redirect endpoints)',
+  sensitive_endpoint_exposed: '/ (exposed files and endpoints)',
 };
 
 // Human-readable titles for inference findings
@@ -461,6 +466,11 @@ export const INFERENCE_TITLES: Record<string, string> = {
   cta_late_availability_delays_action: 'Users delay action due to late availability of primary CTA',
   checkout_abandon_no_feedback: 'Users abandon after initiating checkout due to lack of immediate feedback or progress indication',
   sensitive_input_perceived_risk_dropoff: 'Users drop off after entering sensitive information due to perceived risk',
+  // Wave 3.3: Security posture
+  security_header_weakness: 'Security Headers Weak',
+  mixed_content_exposure: 'Mixed Content on Commercial Pages',
+  open_redirect_indicator: 'Open Redirect Detected',
+  sensitive_endpoint_exposed: 'Sensitive Endpoints Exposed',
 };
 
 // ── Parametric Title Resolution ──
@@ -934,6 +944,7 @@ export function projectWorkspaces(
   const scaleFindings = findings.filter(f => f.pack === 'scale_readiness');
   const revenueFindings = findings.filter(f => f.pack === 'revenue_integrity');
   const chargebackFindings = findings.filter(f => f.pack === 'chargeback_resilience');
+  const securityFindings = findings.filter(f => f.pack === 'money_moment_exposure');
   const saasFindings = findings.filter(f => f.pack === 'saas_growth_readiness');
 
   const wn = translations?.workspace_names;
@@ -968,6 +979,16 @@ export function projectWorkspaces(
       coherenceByDecisionRef.get(makeRef('decision', result.chargeback_resilience.decision.id)) || null,
       narrative,
       changeSummaryMap.get('chargeback_resilience_pack') ?? null,
+    ),
+    buildWorkspaceProjection(
+      'security_posture', wn?.security_posture ?? 'Security Posture', 'security_posture',
+      'money_moment_exposure_pack',
+      result.money_moment_exposure.decision.decision_key,
+      result.money_moment_exposure.decision.decision_impact,
+      securityFindings,
+      coherenceByDecisionRef.get(makeRef('decision', result.money_moment_exposure.decision.id)) || null,
+      narrative,
+      changeSummaryMap.get('money_moment_exposure_pack') ?? null,
     ),
   ];
 
@@ -1132,6 +1153,11 @@ const DECISION_KEY_TO_PACK: Record<string, string> = {
   path_inefficiency_high: 'path_efficiency_pack',
   path_improvable: 'path_efficiency_pack',
   path_efficiency_good: 'path_efficiency_pack',
+  // Wave 3.3: Security posture
+  security_posture_critical: 'money_moment_exposure_pack',
+  security_posture_elevated: 'money_moment_exposure_pack',
+  security_posture_weak: 'money_moment_exposure_pack',
+  security_posture_adequate: 'money_moment_exposure_pack',
 };
 
 function resolvePackKeyForDecision(decisionKey: string): string | null {
@@ -1142,6 +1168,7 @@ function resolvePackKeyForDecision(decisionKey: string): string | null {
   if (decisionKey.includes('chargeback')) return 'chargeback_resilience_pack';
   if (decisionKey.includes('saas') || decisionKey.includes('growth')) return 'saas_growth_readiness_pack';
   if (decisionKey.includes('channel')) return 'channel_integrity_pack';
+  if (decisionKey.includes('security_posture')) return 'money_moment_exposure_pack';
   return null;
 }
 

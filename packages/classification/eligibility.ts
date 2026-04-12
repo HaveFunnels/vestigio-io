@@ -185,6 +185,8 @@ export interface PackEligibility {
   channel_integrity: EligibilityResult;
   discoverability: EligibilityResult;
   brand_integrity: EligibilityResult;
+  // Wave 3.3: Cybersecurity pack — always eligible (HTTP evidence)
+  money_moment_exposure: EligibilityResult;
   // Behavioral workspaces (pixel-dependent) — shared gate for all 7
   behavioral_workspaces: EligibilityResult;
 }
@@ -208,6 +210,8 @@ export function computePackEligibility(
     discoverability: { eligible: true, confidence: 1, blockers: [], reasons: ['Always applicable — all sites need discoverability'] },
     // Brand integrity is always eligible (all brands have exposure risk)
     brand_integrity: { eligible: true, confidence: 1, blockers: [], reasons: ['Always applicable — all brands face impersonation risk'] },
+    // Wave 3.3: Security posture — always eligible (uses universally collected HTTP evidence)
+    money_moment_exposure: { eligible: true, confidence: 1, blockers: [], reasons: ['Always applicable — uses universally collected HTTP evidence'] },
     // Behavioral workspaces — eligible when pixel data is available with sufficient sessions
     behavioral_workspaces: isBehavioralPackEligible(
       behavioralContext?.hasBehavioralEvidence ?? false,

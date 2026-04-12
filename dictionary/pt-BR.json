@@ -2629,7 +2629,11 @@
       "conversion_final_step_retry": "Tentativas de conversão exigem múltiplas repetições por fricção nas etapas finais",
       "cta_late_availability_delays_action": "Usuários atrasam a ação por disponibilidade tardia do CTA principal",
       "checkout_abandon_no_feedback": "Usuários abandonam após iniciar o Checkout por falta de feedback imediato ou indicação de progresso",
-      "sensitive_input_perceived_risk_dropoff": "Usuários abandonam após inserir informações sensíveis por risco percebido"
+      "sensitive_input_perceived_risk_dropoff": "Usuários abandonam após inserir informações sensíveis por risco percebido",
+      "security_header_weakness": "Cabeçalhos de Segurança Fracos",
+      "mixed_content_exposure": "Conteúdo Misto em Páginas Comerciais",
+      "open_redirect_indicator": "Redirecionamento Aberto Detectado",
+      "sensitive_endpoint_exposed": "Endpoints Sensíveis Expostos"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Compradores perdem a confiança no momento do checkout",
@@ -2841,7 +2845,8 @@
       "mobile_revenue": "Exposição de Receita Mobile",
       "friction_tax": "Imposto de Fricção",
       "trust_gap": "Gap de Confiança e Receita",
-      "path_efficiency": "Eficiência do Caminho de Compra"
+      "path_efficiency": "Eficiência do Caminho de Compra",
+      "security_posture": "Postura de Segurança"
     },
     "admin": {
       "common": {

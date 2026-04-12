@@ -224,6 +224,7 @@ export type WorkspaceProjectionType =
   | 'preflight'
   | 'revenue'
   | 'chargeback'
+  | 'security_posture'
   // Behavioral workspaces (pixel-dependent)
   | 'first_impression'
   | 'action_value'

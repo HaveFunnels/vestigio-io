@@ -1,9 +1,26 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 const Counter = () => {
+	const sectionRef = useRef<HTMLElement>(null);
+	const [inView, setInView] = useState(false);
+
+	useEffect(() => {
+		const el = sectionRef.current;
+		if (!el) return;
+		const obs = new IntersectionObserver(
+			([entry]) => setInView(entry.isIntersecting),
+			{ rootMargin: "200px" },
+		);
+		obs.observe(el);
+		return () => obs.disconnect();
+	}, []);
+
 	return (
-		<section className='relative overflow-hidden border-t border-white/5 bg-[#090911] py-14 sm:py-16 lg:py-20'>
+		<section ref={sectionRef} className='relative overflow-hidden border-t border-white/5 bg-[#090911] py-14 sm:py-16 lg:py-20'>
 			<style>{`
+				.vcounter-paused * { animation-play-state: paused !important; }
 				@keyframes vcounter-float {
 					0%, 100% { transform: translateY(0); }
 					50% { transform: translateY(-6px); }
@@ -15,7 +32,7 @@ const Counter = () => {
 				}
 			`}</style>
 
-			<div className='mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>
+			<div className={`mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0 ${!inView ? 'vcounter-paused' : ''}`}>
 				<p className='mb-6 text-center text-sm font-semibold text-white sm:mb-8 sm:text-base'>
 					Feito pra quem não aceita escalar no escuro.
 				</p>

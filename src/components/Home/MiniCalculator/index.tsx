@@ -289,8 +289,8 @@ const MiniCalculator = ({
 			{/* Ambient page-background halos so the gradient card sits on
 			    a subtly lit canvas instead of a flat plate. */}
 			<div className='pointer-events-none absolute inset-0 -z-1' aria-hidden>
-				<div className='absolute left-1/2 top-1/2 h-[460px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.06] blur-[140px]' />
-				<div className='absolute left-1/2 top-1/2 h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.05] blur-[120px]' />
+				<div className='absolute left-1/2 top-1/2 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.07] blur-[90px]' />
+				<div className='absolute left-1/2 top-1/2 h-[250px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.05] blur-[80px]' />
 			</div>
 
 			<div className='mx-auto w-full max-w-[920px] px-4 sm:px-8 xl:px-0'>

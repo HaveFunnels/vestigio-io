@@ -787,7 +787,7 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 
 			{/* Background glow */}
 			<div className="pointer-events-none absolute inset-0 -z-10">
-				<div className="absolute left-1/2 top-[40%] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-violet-900/[0.06] blur-[120px] sm:h-[500px] sm:w-[600px] sm:blur-[160px]" />
+				<div className="absolute left-1/2 top-[40%] h-[350px] w-[450px] -translate-x-1/2 rounded-full bg-violet-900/[0.07] blur-[80px] sm:h-[400px] sm:w-[500px] sm:blur-[100px]" />
 			</div>
 
 

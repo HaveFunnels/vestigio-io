@@ -73,7 +73,7 @@ export default function AnnouncementBanner({
 			{/* Backdrop — subtle gradient with backdrop-blur for the
 			    "liquid glass" feel; NOT full black so the banner reads as
 			    a promo flash rather than as part of the header. */}
-			<div className='relative flex h-full w-full items-center justify-center border-b border-white/[0.06] bg-gradient-to-r from-[#0a1a14]/90 via-[#0b0e1c]/90 to-[#0a0a14]/90 px-3 backdrop-blur-md sm:px-6'>
+			<div className='relative flex h-full w-full items-center justify-center border-b border-white/[0.06] bg-gradient-to-r from-[#0a1a14] via-[#0b0e1c] to-[#0a0a14] px-3 sm:px-6'>
 				<Link
 					href={href}
 					onClick={handleClick}

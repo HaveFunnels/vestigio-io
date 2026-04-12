@@ -277,7 +277,7 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   behavioral_value_justification_gap: "Buyers see your price but can't see the value",
   behavioral_trust_failure_at_input: "Buyers don't trust your forms with sensitive data",
   // Wave 3.3
-  security_posture_inadequate: 'Your visible security posture creates financial and trust risk',
+  security_posture_inadequate: 'Your site looks unsafe to browsers and buyers',
   // Phase 5: Behavioral cohort root causes
   behavioral_first_session_failure: 'First-time visitors stall before reaching a revenue milestone',
   behavioral_action_value_misalignment: 'Low-value actions dominate while high-value actions go unseen',
@@ -360,7 +360,7 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
 
   behavioral_trust_failure_at_input: "Forms on conversion-proximate pages ask for sensitive data — payment, identity, contact — without enough trust context around them. The mismatch between what's being asked and what's being promised causes immediate dropoff. The buyer doesn't know enough to feel safe handing over their information, and they back out at the field.",
 
-  security_posture_inadequate: "Your site's visible security posture has gaps that browsers, security-aware buyers, and automated scanners can detect. Missing security headers let attackers inject content or downgrade connections. Mixed content on commercial pages triggers browser warnings that block checkout scripts. Exposed admin panels or config files give attackers a direct path to compromise. These are not theoretical vulnerabilities — they are structural conditions that erode trust and create financial exposure every day.",
+  security_posture_inadequate: "Your buyers see signals that your site is unsafe — and they leave. Browsers remove the padlock, show 'Not Secure' warnings, and silently block payment scripts when security headers are missing or content is mixed. Checkout forms stop submitting. Trust badges disappear. The buyer clicks 'Pay' and nothing happens. Meanwhile, exposed configuration files and admin panels mean one breach away from total commerce shutdown. These are not hypothetical risks — they cost you conversions every day and create catastrophic downside if exploited.",
 
   // Phase 5: Behavioral cohort root causes
   behavioral_first_session_failure: "First-time visitors arrive with intent but stall before reaching any revenue milestone. Session data shows new users hitting trust barriers, missing CTAs, or encountering dead-end flows within their first interaction. The first session is the highest-leverage conversion window — when it fails, the buyer rarely returns. Every first-session stall is a permanent loss of the cheapest conversion you'll ever get.",

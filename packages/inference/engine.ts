@@ -250,7 +250,7 @@ function inferSecurityHeaderWeakness(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Security headers ${severity}. ${factors.join('; ')}. Missing or weak HTTP security headers expose users to clickjacking, downgrade attacks, and XSS injection.`,
+    reasoning: `Browser trust signals ${severity}. ${factors.join('; ')}. Browsers show "Not Secure" warnings and remove the padlock when these headers are missing — buyers see these signals and abandon.`,
   })];
 }
 
@@ -286,7 +286,7 @@ function inferMixedContentExposure(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Mixed content exposure ${severity}. ${factors.join('; ')}. Browsers block mixed content on commercial pages, breaking checkout and eroding trust.`,
+    reasoning: `Checkout breakage risk ${severity}. ${factors.join('; ')}. Payment scripts, forms, and trust badges loaded over HTTP are silently blocked on HTTPS pages — the buyer clicks Pay and nothing happens.`,
   })];
 }
 
@@ -320,7 +320,7 @@ function inferOpenRedirectIndicator(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Open redirect indicators ${severity}. ${factors.join('; ')}. Open redirects let attackers craft phishing URLs hosted on the legitimate domain.`,
+    reasoning: `Domain phishing risk ${severity}. ${factors.join('; ')}. Attackers create legitimate-looking links on your domain that redirect buyers to fake checkout pages — real customers lose money thinking they are on your site.`,
   })];
 }
 
@@ -356,7 +356,7 @@ function inferSensitiveEndpointExposed(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Sensitive endpoints exposed ${severity}. ${factors.join('; ')}. Public access to admin panels, env files, or internal APIs creates immediate compromise risk.`,
+    reasoning: `Infrastructure exposure ${severity}. ${factors.join('; ')}. Publicly accessible credentials and admin panels mean one breach away from total commerce shutdown — revenue goes to zero.`,
   })];
 }
 

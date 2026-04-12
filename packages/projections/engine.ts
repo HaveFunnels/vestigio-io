@@ -467,10 +467,10 @@ export const INFERENCE_TITLES: Record<string, string> = {
   checkout_abandon_no_feedback: 'Users abandon after initiating checkout due to lack of immediate feedback or progress indication',
   sensitive_input_perceived_risk_dropoff: 'Users drop off after entering sensitive information due to perceived risk',
   // Wave 3.3: Security posture
-  security_header_weakness: 'Security Headers Weak',
-  mixed_content_exposure: 'Mixed Content on Commercial Pages',
-  open_redirect_indicator: 'Open Redirect Detected',
-  sensitive_endpoint_exposed: 'Sensitive Endpoints Exposed',
+  security_header_weakness: 'Browsers signal your site as unsafe to buyers',
+  mixed_content_exposure: 'Checkout silently breaks for some visitors',
+  open_redirect_indicator: 'Your domain can be used to phish your own customers',
+  sensitive_endpoint_exposed: 'Infrastructure credentials are one search away',
 };
 
 // ── Parametric Title Resolution ──

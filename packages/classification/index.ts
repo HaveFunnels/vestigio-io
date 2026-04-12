@@ -9,3 +9,4 @@ export {
   type EligibilityResult,
   type PackEligibility,
 } from './eligibility';
+export { detectMaturityStage, type MaturityStage, type MaturityDetectionInput } from './maturity';

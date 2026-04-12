@@ -22,6 +22,7 @@ import { produceIntelligence, DecisionIntelligenceResult } from '../intelligence
 import { estimateImpact, summarizeImpact, QuantifiedValueCase, ImpactSummary, BusinessInputs } from '../impact';
 import { computeClassification, extractClassificationInput, ClassificationState } from '../classification';
 import { computePackEligibility, PackEligibility } from '../classification/eligibility';
+import { detectMaturityStage, MaturityStage } from '../classification/maturity';
 import { extractSaasSignals } from '../signals/saas-signals';
 import { computeSaasInferences } from '../inference/saas-inference';
 import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
@@ -44,6 +45,15 @@ import {
 import { buildConfidenceAudit, ConfidenceIntegrityResult, ConfidenceAdjustment } from './confidence-audit';
 import { validateBehavior, BehavioralValidationResult } from './behavioral-validation';
 import type { EngineTranslations } from '../projections/types';
+import {
+  computeTrustSurfaceScore,
+  TrustSurfaceScore,
+  detectBlastRadiusRegression,
+  BlastRadiusAlert,
+  compressOpportunities,
+  OpportunityCompressionResult,
+  CompressibleFinding,
+} from '../composites';
 
 // Phase 29: Cross-layer penalty budget
 // Maximum total confidence reduction across all penalty layers (suppression, profile, coherence).
@@ -210,6 +220,8 @@ export interface MultiPackResult {
   confidence_audit: ConfidenceIntegrityResult | null;
   /** Behavioral validation results */
   behavioral_validation: BehavioralValidationResult | null;
+  /** Wave 3.11: Maturity stage of this workspace */
+  maturity_stage: MaturityStage;
   /** Behavioral workspaces (pixel-dependent) — null when no pixel data */
   behavioral_packs: {
     first_impression: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
@@ -220,6 +232,13 @@ export interface MultiPackResult {
     trust_gap: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
     path_efficiency: { decision: Decision; risk_evaluation: RiskEvaluation; actions: Action[]; workspace: BehavioralWorkspaceResult } | null;
   };
+
+  // Wave 3.4: Composite findings — enrichments computed after the core pipeline
+  composites: {
+    trust_surface_score: TrustSurfaceScore;
+    blast_radius: BlastRadiusAlert;
+    opportunity_compression: OpportunityCompressionResult;
+  } | null;
 }
 
 export function recomputeAll(input: MultiPackInput): MultiPackResult {
@@ -695,6 +714,20 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     allSignals,
   );
 
+  // ─── Wave 3.11: Maturity stage detection ───
+  const resolvedCount = changeReport ? changeReport.resolved_issues.length : 0;
+  const hasIntegrations = evidence.some(
+    e => e.evidence_type === EvidenceType.IntegrationSnapshot ||
+         (e.evidence_type as string) === 'shopify_store_metrics',
+  );
+  const maturityStage = detectMaturityStage({
+    evidence,
+    pack_eligibility: packEligibility,
+    cycle_count: input.previous_snapshot ? 2 : 1, // at least 2 if we have a previous snapshot
+    resolved_count: resolvedCount,
+    has_integrations: hasIntegrations,
+  });
+
   // Reassemble pack results with possibly-adjusted decisions and risk evaluations
   const assembledResult: MultiPackResult = {
     graph_stats: graphStats,
@@ -754,7 +787,12 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     // Phase 27: Confidence audit and behavioral validation (computed post-assembly)
     confidence_audit: null,       // set below
     behavioral_validation: null,  // set below
+    // Wave 3.11: Maturity stage
+    maturity_stage: maturityStage,
     behavioral_packs: behavioralPacks,
+
+    // Wave 3.4: Composite findings (computed post-assembly)
+    composites: null,
   };
 
   // ─── Phase 29: Confidence audit — instrumented with real before/after values ───
@@ -762,6 +800,23 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // ─── Phase 27: Behavioral validation — edge case checks ───
   assembledResult.behavioral_validation = validateBehavior(assembledResult, assembledResult.confidence_audit);
+
+  // ─── Wave 3.4: Composite findings — enrich from completed pipeline results ───
+  const trustSurfaceScore = computeTrustSurfaceScore(allInferences);
+  const blastRadius = detectBlastRadiusRegression(changeReport);
+
+  // Build CompressibleFinding[] from value cases (available without circular dep on projections)
+  const compressibleFindings: CompressibleFinding[] = valueCases.map(vc => ({
+    inference_key: vc.inference_key,
+    impact_range: { min: vc.estimated_impact.range.min, max: vc.estimated_impact.range.max },
+  }));
+  const opportunityCompression = compressOpportunities(compressibleFindings);
+
+  assembledResult.composites = {
+    trust_surface_score: trustSurfaceScore,
+    blast_radius: blastRadius,
+    opportunity_compression: opportunityCompression,
+  };
 
   return assembledResult;
 }

@@ -18,9 +18,13 @@ import {
   EngineTranslations,
   ChangeReportProjection,
   DecisionChangeProjection,
+  PerspectiveGroup,
+  RevenueMapEntry,
+  CycleDeltaByPerspective,
+  BraggingRights,
   deriveConfidenceTier,
 } from './types';
-import type { DecisionChange } from '../change-detection/types';
+import type { DecisionChange, CycleChangeReport } from '../change-detection/types';
 
 // ──────────────────────────────────────────────
 // Projection Engine
@@ -1867,5 +1871,311 @@ function buildFindingEvidenceQuality(
     recency: avg(pool.map(eq => eq.recency)),
     corroboration: avg(pool.map(eq => eq.corroboration)),
     composite: avg(pool.map(eq => eq.composite_score)),
+  };
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.11: Perspective Grouping
+// ──────────────────────────────────────────────
+
+/**
+ * Pack keys that belong to each perspective. A pack can appear in
+ * multiple perspectives (panorama includes everything).
+ */
+const PERSPECTIVE_PACK_MAP: Record<string, Set<string>> = {
+  receita: new Set([
+    'scale_readiness_pack',
+    'revenue_integrity_pack',
+    'first_impression_revenue_pack',
+    'action_value_map_pack',
+    'acquisition_integrity_pack',
+    'friction_tax_pack',
+    'path_efficiency_pack',
+  ]),
+  confianca: new Set([
+    'chargeback_resilience_pack',
+    'money_moment_exposure_pack',
+    'trust_revenue_gap_pack',
+  ]),
+  comportamento: new Set([
+    'mobile_revenue_exposure_pack',
+    'first_impression_revenue_pack',
+    'action_value_map_pack',
+    'acquisition_integrity_pack',
+    'friction_tax_pack',
+    'trust_revenue_gap_pack',
+    'path_efficiency_pack',
+  ]),
+  copy: new Set<string>(), // dynamic — see isCopyWorkspace below
+};
+
+const PERSPECTIVE_NAMES: Record<string, string> = {
+  panorama: 'Panorama',
+  receita: 'Receita',
+  confianca: 'Confiança',
+  comportamento: 'Comportamento',
+  copy: 'Copy',
+};
+
+function isCopyWorkspace(ws: WorkspaceProjection): boolean {
+  // Pack keys containing 'copy' or enrichment-related findings
+  if (ws.pack_key.includes('copy')) return true;
+  return ws.findings.some(f =>
+    f.inference_key.includes('copy') ||
+    f.inference_key.includes('content_enrichment') ||
+    f.pack.includes('copy'),
+  );
+}
+
+function belongsToPerspective(ws: WorkspaceProjection, perspectiveId: string): boolean {
+  if (perspectiveId === 'panorama') return true;
+  if (perspectiveId === 'copy') return isCopyWorkspace(ws);
+  const packSet = PERSPECTIVE_PACK_MAP[perspectiveId];
+  return packSet ? packSet.has(ws.pack_key) : false;
+}
+
+function buildPerspectiveGroup(
+  id: string,
+  workspaces: WorkspaceProjection[],
+): PerspectiveGroup {
+  let totalMin = 0;
+  let totalMax = 0;
+  let findingCount = 0;
+  let regressionCount = 0;
+  let improvementCount = 0;
+  let resolvedCount = 0;
+  let positiveCheckCount = 0;
+
+  for (const ws of workspaces) {
+    totalMin += ws.summary.total_loss_range.min;
+    totalMax += ws.summary.total_loss_range.max;
+    findingCount += ws.findings.length;
+
+    for (const f of ws.findings) {
+      if (f.polarity === 'positive') {
+        positiveCheckCount++;
+      } else if (f.change_class === 'regression') {
+        regressionCount++;
+      } else if (f.change_class === 'improvement') {
+        improvementCount++;
+      } else if (f.change_class === 'resolved') {
+        resolvedCount++;
+      }
+    }
+
+    if (ws.change_summary) {
+      regressionCount += ws.change_summary.regression_count;
+      improvementCount += ws.change_summary.improvement_count;
+      resolvedCount += ws.change_summary.resolved_count;
+    }
+  }
+
+  return {
+    id,
+    name: PERSPECTIVE_NAMES[id] || id,
+    workspaces,
+    aggregate_loss_range: findingCount > 0 ? { min: totalMin, max: totalMax } : null,
+    finding_count: findingCount,
+    regression_count: regressionCount,
+    improvement_count: improvementCount,
+    resolved_count: resolvedCount,
+    positive_check_count: positiveCheckCount,
+  };
+}
+
+/**
+ * Group workspace projections into the 5 redesigned perspectives.
+ * Does NOT mutate the input array.
+ */
+export function groupByPerspective(
+  workspaces: WorkspaceProjection[],
+): PerspectiveGroup[] {
+  const perspectiveIds = ['panorama', 'receita', 'confianca', 'comportamento', 'copy'];
+
+  return perspectiveIds.map(pid => {
+    const filtered = workspaces.filter(ws => belongsToPerspective(ws, pid));
+    return buildPerspectiveGroup(pid, filtered);
+  });
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.11: Revenue Map Aggregation
+// ──────────────────────────────────────────────
+
+/**
+ * Map a pack string to the perspective it primarily belongs to.
+ * Used by buildRevenueMap to aggregate value cases by perspective.
+ */
+function packToPerspective(pack: string): string {
+  // Revenue perspective
+  if (['scale_readiness', 'revenue_integrity', 'first_impression_revenue',
+       'action_value_map', 'acquisition_integrity', 'friction_tax',
+       'path_efficiency'].includes(pack)) {
+    return 'receita';
+  }
+  // Trust perspective
+  if (['chargeback_resilience', 'money_moment_exposure', 'trust_revenue_gap'].includes(pack)) {
+    return 'confianca';
+  }
+  // Behavior perspective
+  if (['mobile_revenue_exposure'].includes(pack)) {
+    return 'comportamento';
+  }
+  // Copy — enrichment-related
+  if (pack.includes('copy') || pack.includes('content_enrichment')) {
+    return 'copy';
+  }
+  // Default to panorama (catch-all)
+  return 'panorama';
+}
+
+/**
+ * Aggregate quantified value cases by perspective, producing a revenue
+ * map suitable for the workspace redesign's Revenue Map lens.
+ */
+export function buildRevenueMap(
+  valueCases: import('../impact').QuantifiedValueCase[],
+): RevenueMapEntry[] {
+  const accumulator = new Map<string, { min: number; max: number; count: number }>();
+
+  for (const vc of valueCases) {
+    const pack = INFERENCE_TO_PACK[vc.inference_key] || 'unknown';
+    const perspectiveId = packToPerspective(pack);
+
+    if (!accumulator.has(perspectiveId)) {
+      accumulator.set(perspectiveId, { min: 0, max: 0, count: 0 });
+    }
+    const entry = accumulator.get(perspectiveId)!;
+    entry.min += vc.estimated_impact.range.min;
+    entry.max += vc.estimated_impact.range.max;
+    entry.count++;
+  }
+
+  const entries: RevenueMapEntry[] = [];
+
+  for (const [perspectiveId, data] of accumulator) {
+    entries.push({
+      perspective_id: perspectiveId,
+      label: PERSPECTIVE_NAMES[perspectiveId] || perspectiveId,
+      total_min: Math.round(data.min),
+      total_max: Math.round(data.max),
+      midpoint: Math.round((data.min + data.max) / 2),
+      case_count: data.count,
+    });
+  }
+
+  // Sort by midpoint descending (highest impact first)
+  entries.sort((a, b) => b.midpoint - a.midpoint);
+  return entries;
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.11: Cycle Delta Lens
+// ──────────────────────────────────────────────
+
+/**
+ * Map a decision_key to a perspective by resolving through the pack layer.
+ */
+function decisionKeyToPerspective(decisionKey: string): string {
+  const packKey = resolvePackKeyForDecision(decisionKey);
+  if (!packKey) return 'panorama';
+  // Strip '_pack' suffix to get the pack name for perspective mapping
+  const pack = packKey.replace(/_pack$/, '');
+  return packToPerspective(pack);
+}
+
+/**
+ * Group cycle-to-cycle changes by perspective, enabling the Cycle Delta
+ * lens in the redesigned workspace UI.
+ */
+export function buildCycleDelta(
+  changeReport: CycleChangeReport | null,
+): CycleDeltaByPerspective[] {
+  if (!changeReport) return [];
+
+  const accumulator = new Map<string, {
+    regressions: { inference_key: string; severity: string }[];
+    improvements: { inference_key: string; severity: string }[];
+    new_issues: string[];
+    resolved: string[];
+  }>();
+
+  function ensurePerspective(pid: string) {
+    if (!accumulator.has(pid)) {
+      accumulator.set(pid, { regressions: [], improvements: [], new_issues: [], resolved: [] });
+    }
+    return accumulator.get(pid)!;
+  }
+
+  for (const dc of changeReport.regressions) {
+    const pid = decisionKeyToPerspective(dc.decision_key);
+    ensurePerspective(pid).regressions.push({
+      inference_key: dc.decision_key,
+      severity: dc.severity,
+    });
+  }
+
+  for (const dc of changeReport.improvements) {
+    const pid = decisionKeyToPerspective(dc.decision_key);
+    ensurePerspective(pid).improvements.push({
+      inference_key: dc.decision_key,
+      severity: dc.severity,
+    });
+  }
+
+  for (const dc of changeReport.new_issues) {
+    const pid = decisionKeyToPerspective(dc.decision_key);
+    ensurePerspective(pid).new_issues.push(dc.decision_key);
+  }
+
+  for (const dc of changeReport.resolved_issues) {
+    const pid = decisionKeyToPerspective(dc.decision_key);
+    ensurePerspective(pid).resolved.push(dc.decision_key);
+  }
+
+  const result: CycleDeltaByPerspective[] = [];
+  for (const [pid, data] of accumulator) {
+    result.push({ perspective_id: pid, ...data });
+  }
+
+  return result;
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.11: Bragging Rights Lens
+// ──────────────────────────────────────────────
+
+/**
+ * Build the "bragging rights" view — positive achievements, resolved
+ * issues, and improvements that users can celebrate.
+ */
+export function buildBraggingRights(
+  findings: FindingProjection[],
+  result: MultiPackResult,
+): BraggingRights {
+  const inferences = result.inferences;
+
+  // Evaluate positive checks that pass
+  const positiveChecks: { label: string; pack: string }[] = [];
+  for (const check of POSITIVE_CHECKS) {
+    if (check.check(inferences, result)) {
+      positiveChecks.push({ label: check.title, pack: check.pack });
+    }
+  }
+
+  // Count resolved from change_report
+  const changeReport = result.change_report;
+  const resolvedSinceLastCycle = changeReport
+    ? changeReport.resolved_issues.length
+    : 0;
+
+  const improvementsCount = changeReport
+    ? changeReport.improvements.length
+    : 0;
+
+  return {
+    positive_checks: positiveChecks,
+    resolved_since_last_cycle: resolvedSinceLastCycle,
+    improvements_count: improvementsCount,
   };
 }

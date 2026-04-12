@@ -382,6 +382,61 @@ export interface SystemHealthIndicators {
 // Passed through the engine chain to produce localized projections.
 // ──────────────────────────────────────────────
 
+// ──────────────────────────────────────────────
+// Wave 3.11: Perspective Grouping Types
+// ──────────────────────────────────────────────
+
+export interface PerspectiveGroup {
+  id: string; // panorama, receita, confianca, comportamento, copy
+  name: string;
+  workspaces: WorkspaceProjection[];
+  aggregate_loss_range: { min: number; max: number } | null;
+  finding_count: number;
+  regression_count: number;
+  improvement_count: number;
+  resolved_count: number;
+  positive_check_count: number;
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.11: Revenue Map Types
+// ──────────────────────────────────────────────
+
+export interface RevenueMapEntry {
+  perspective_id: string;
+  label: string;
+  total_min: number;
+  total_max: number;
+  midpoint: number;
+  case_count: number;
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.11: Cycle Delta Lens Types
+// ──────────────────────────────────────────────
+
+export interface CycleDeltaByPerspective {
+  perspective_id: string;
+  regressions: { inference_key: string; severity: string }[];
+  improvements: { inference_key: string; severity: string }[];
+  new_issues: string[];
+  resolved: string[];
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.11: Bragging Rights Lens Types
+// ──────────────────────────────────────────────
+
+export interface BraggingRights {
+  positive_checks: { label: string; pack: string }[];
+  resolved_since_last_cycle: number;
+  improvements_count: number;
+}
+
+// ──────────────────────────────────────────────
+// Engine Translations — i18n support for engine output
+// ──────────────────────────────────────────────
+
 export interface EngineTranslations {
   inference_titles: Record<string, string>;
   root_cause_titles: Record<string, string>;

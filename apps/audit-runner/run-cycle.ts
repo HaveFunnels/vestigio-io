@@ -29,6 +29,10 @@ import { PrismaFindingStore, projectAll } from "../../packages/projections";
 import { recomputeAll } from "../../packages/workspace";
 import { loadEngineTranslations } from "@/lib/engine-translations";
 import { processBehavioralEventsForEnv } from "./process-behavioral";
+import { pollShopifyData } from "../../workers/shopify/poller";
+import { mapPollResultToSnapshotData } from "../../packages/shopify-adapter/snapshot-mapper";
+import { decryptConfig } from "@/libs/integration-crypto";
+import type { IntegrationSnapshot } from "../../packages/integrations/types";
 import type { Evidence } from "../../packages/domain";
 
 export interface RunAuditCycleResult {
@@ -327,6 +331,60 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// Non-fatal — the cycle still produces non-behavioral findings.
 			}
 
+			// Wave 0.4: Load integration connections for this environment
+			// and fetch Shopify data if a connected Shopify integration
+			// exists. The snapshot is passed to recomputeAll() so the
+			// engine can factor real commerce data into its analysis.
+			const integrationSnapshots: IntegrationSnapshot[] = [];
+			try {
+				const integrationConnections = await prisma.integrationConnection.findMany({
+					where: { environmentId: env.id, status: 'connected' },
+				});
+
+				const shopifyConn = integrationConnections.find(c => c.provider === 'shopify');
+				if (shopifyConn) {
+					try {
+						const config = decryptConfig(shopifyConn.config);
+						const pollResult = await pollShopifyData({
+							shop_domain: config.store_url,
+							access_token: config.access_token,
+							api_key: config.api_key || '',
+							api_secret: config.api_secret || '',
+						});
+
+						if (pollResult.metrics.length > 0) {
+							const snapshot: IntegrationSnapshot<'shopify'> = {
+								provider: 'shopify',
+								fetched_at: new Date().toISOString(),
+								window: '30d',
+								data: mapPollResultToSnapshotData(pollResult),
+							};
+							integrationSnapshots.push(snapshot);
+						}
+
+						// Update last synced timestamp
+						await prisma.integrationConnection.update({
+							where: { id: shopifyConn.id },
+							data: { lastSyncedAt: new Date(), status: 'connected', syncError: null },
+						});
+
+						console.log(
+							`[audit-runner ${cycleId}] Shopify integration synced (orders=${pollResult.orders_fetched}, basis=${pollResult.basis_type})`,
+						);
+					} catch (err) {
+						// Non-fatal: log error but don't block the audit
+						console.warn(`[audit-runner ${cycleId}] Shopify integration sync failed:`, err);
+						await prisma.integrationConnection.update({
+							where: { id: shopifyConn.id },
+							data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
+						}).catch(() => { /* swallow secondary error */ });
+					}
+				}
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] integration connections lookup failed:`, err);
+				// Non-fatal — the cycle still works without integration data.
+			}
+
 			// (b) Engine
 			const recomputeStartMs = Date.now();
 			const multiPackResult = recomputeAll({
@@ -346,6 +404,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				onboarding_conversion_model: businessProfile?.conversionModel ?? null,
 				previous_snapshot: previousSnapshot,
 				translations,
+				integration_snapshots: integrationSnapshots.length > 0 ? integrationSnapshots : undefined,
 			});
 			const recomputeMs = Date.now() - recomputeStartMs;
 

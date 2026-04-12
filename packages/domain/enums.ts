@@ -422,4 +422,10 @@ export enum InferenceCategory {
   MixedContentExposure = 'mixed_content_exposure',
   OpenRedirectIndicator = 'open_redirect_indicator',
   SensitiveEndpointExposed = 'sensitive_endpoint_exposed',
+  // Wave 3.3 expansion: cybersecurity pack
+  CheckoutScriptHijackRisk = 'checkout_script_hijack_risk',
+  BuyerSessionTheftRisk = 'buyer_session_theft_risk',
+  CheckoutClickjackRisk = 'checkout_clickjack_risk',
+  PaymentDataUnencrypted = 'payment_data_unencrypted',
+  ErrorPageInformationLeak = 'error_page_information_leak',
 }

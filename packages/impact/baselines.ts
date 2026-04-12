@@ -1359,18 +1359,40 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.05, max: 0.15 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
     base_metric: 'revenue',
   },
-  open_redirect_indicator: {
-    inference_key: 'open_redirect_indicator', impact_category: 'revenue_loss',
-    cause: 'Your domain can be weaponized against your own customers',
-    effect: 'Redirect endpoints with controllable URL parameters let attackers create legitimate-looking links on your domain that redirect buyers to fake checkout pages — real customers lose money thinking they are on your site',
-    high: { min: 0.04, max: 0.10 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
-    base_metric: 'revenue',
-  },
   sensitive_endpoint_exposed: {
     inference_key: 'sensitive_endpoint_exposed', impact_category: 'revenue_loss',
     cause: 'Infrastructure credentials are one search away from compromise',
     effect: 'Publicly accessible .env files, database backups, and admin panels give attackers everything needed to take over commerce operations — a breach shuts down revenue entirely',
     high: { min: 0.05, max: 0.15 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  // Wave 3.3 expansion: cybersecurity pack
+  checkout_script_hijack_risk: {
+    inference_key: 'checkout_script_hijack_risk', impact_category: 'conversion_loss',
+    cause: 'Your checkout can be hijacked by compromised scripts',
+    effect: 'Unvetted external scripts on payment pages without CSP can silently replace payment forms, redirect card data, or inject fake checkout flows — buyers trust your domain while attackers capture their payment details',
+    high: { min: 0.08, max: 0.20 }, medium: { min: 0.03, max: 0.08 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  buyer_session_theft_risk: {
+    inference_key: 'buyer_session_theft_risk', impact_category: 'revenue_loss',
+    cause: 'Buyer sessions can be stolen on your commercial pages',
+    effect: 'Cookies on commercial pages lacking Secure, HttpOnly, or SameSite flags allow attackers to steal buyer sessions via XSS or network sniffing, make purchases with saved payment methods, or access account data',
+    high: { min: 0.05, max: 0.12 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  checkout_clickjack_risk: {
+    inference_key: 'checkout_clickjack_risk', impact_category: 'conversion_loss',
+    cause: 'Your checkout page can be faked inside another site',
+    effect: 'Missing clickjack protection on commercial pages allows attackers to embed your checkout in an invisible iframe inside a fake site — buyers authorize payments thinking they are on a different page',
+    high: { min: 0.06, max: 0.15 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  payment_data_unencrypted: {
+    inference_key: 'payment_data_unencrypted', impact_category: 'revenue_loss',
+    cause: 'Payment data crosses an unencrypted boundary',
+    effect: 'Payment forms submitting to insecure HTTP or untrusted external destinations expose card numbers, CVVs, and personal data to any network observer — from coffee shop WiFi to compromised routers',
+    high: { min: 0.10, max: 0.25 }, medium: { min: 0.04, max: 0.10 }, low: { min: 0.01, max: 0.04 },
     base_metric: 'revenue',
   },
 };

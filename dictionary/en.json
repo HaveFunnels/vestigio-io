@@ -2577,8 +2577,11 @@
       "sensitive_input_perceived_risk_dropoff": "Users drop off after entering sensitive information due to perceived risk",
       "security_header_weakness": "Browsers signal your site as unsafe to buyers",
       "mixed_content_exposure": "Checkout silently breaks for some visitors",
-      "open_redirect_indicator": "Your domain can be used to phish your own customers",
-      "sensitive_endpoint_exposed": "Infrastructure credentials are one search away"
+      "sensitive_endpoint_exposed": "Infrastructure credentials are one search away",
+      "checkout_script_hijack_risk": "Your checkout can be hijacked by compromised scripts",
+      "buyer_session_theft_risk": "Buyer sessions can be stolen on your commercial pages",
+      "checkout_clickjack_risk": "Your checkout page can be faked inside another site",
+      "payment_data_unencrypted": "Payment data crosses an unencrypted boundary"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Buyers lose trust at the checkout moment",
@@ -2607,7 +2610,15 @@
       "behavioral_hesitation_at_commitment": "Real buyers hesitate at the moment of purchase",
       "behavioral_path_disconnection": "Your purchase flow looks fine in code but fails for real users",
       "behavioral_value_justification_gap": "Buyers see your price but can't see the value",
-      "behavioral_trust_failure_at_input": "Buyers don't trust your forms with sensitive data"
+      "behavioral_trust_failure_at_input": "Buyers don't trust your forms with sensitive data",
+      "security_posture_inadequate": "Your site looks unsafe to browsers and buyers",
+      "behavioral_first_session_failure": "First-time visitors stall before reaching a revenue milestone",
+      "behavioral_action_value_misalignment": "Low-value actions dominate while high-value actions go unseen",
+      "paid_acquisition_waste": "Paid traffic hits friction that compounds into wasted spend",
+      "mobile_conversion_failure": "Mobile visitors face conversion barriers desktop users never see",
+      "behavioral_friction_tax": "Every funnel step costs more effort than it should",
+      "behavioral_trust_revenue_gap": "Buyers want to convert but lack the trust to follow through",
+      "behavioral_path_inefficiency": "The path to purchase is longer than buyer intent can sustain"
     },
     "root_cause_descriptions": {
       "trust_failure_at_checkout": "Buyers reach the moment of payment but trust signals around them weaken instead of strengthen. Off-domain handoffs, unrecognized payment providers, and missing security cues at the wrong moment cause buyers to back out — exactly when conversion is closest. The buyer wanted to pay; the experience scared them off.",
@@ -2636,7 +2647,15 @@
       "behavioral_hesitation_at_commitment": "Real session data shows buyers reaching the moment of purchase, hesitating, seeking reassurance elsewhere on the site, and abandoning. The gap between intent and confidence is observable in their behavior — and recoverable. They wanted to buy. Something stopped them, and it shows up in the session replay.",
       "behavioral_path_disconnection": "Your purchase flow looks fine in the code but fails for real users. Funnel steps show traffic but never advance. CTAs are visible but never engaged. Mobile entry points are broken. Critical steps trigger silent retries instead of progression. The path exists structurally and fails behaviorally — and only the pixel sees it.",
       "behavioral_value_justification_gap": "Buyers see your price but cannot see the value that justifies it. They view the pricing page, backtrack to features, oscillate between surfaces, and abandon. The value proposition is structurally present but behaviorally insufficient to close the gap between price awareness and purchase confidence. They left not because the price was too high, but because nothing told them it was worth it.",
-      "behavioral_trust_failure_at_input": "Forms on conversion-proximate pages ask for sensitive data — payment, identity, contact — without enough trust context around them. The mismatch between what's being asked and what's being promised causes immediate dropoff. The buyer doesn't know enough to feel safe handing over their information, and they back out at the field."
+      "behavioral_trust_failure_at_input": "Forms on conversion-proximate pages ask for sensitive data — payment, identity, contact — without enough trust context around them. The mismatch between what's being asked and what's being promised causes immediate dropoff. The buyer doesn't know enough to feel safe handing over their information, and they back out at the field.",
+      "security_posture_inadequate": "Your site's security posture — missing headers, mixed content, open redirects, exposed endpoints — signals unsafety to both browsers and buyers. Modern browsers actively warn visitors, suppressing conversion before the offer is even read. Exposed infrastructure invites exploitation. The technical signals that say 'this site is safe' are absent, and both humans and machines notice.",
+      "behavioral_first_session_failure": "First-time visitors arrive with intent but stall before reaching any revenue milestone. Session data shows new users hitting trust barriers, missing CTAs, or encountering dead-end flows within their first interaction. The first session is the highest-leverage conversion window — when it fails, the buyer rarely returns. Every first-session stall is a permanent loss of the cheapest conversion you'll ever get.",
+      "behavioral_action_value_misalignment": "Visitor behavior concentrates on low-value actions while the high-value actions that drive revenue remain underexposed or buried. Traffic flows to surfaces that don't advance the purchase, and the pages that matter most receive the least engagement. The site is busy but unproductive — activity without advancement. Revenue-generating actions need to be where the attention already is, not where you wish it were.",
+      "paid_acquisition_waste": "Paid traffic lands on experiences with elevated friction, trust gaps, or mobile-compounding issues that suppress the conversion you paid to create. The acquisition cost is fixed but the conversion rate is degraded — every friction point on the paid path multiplies your effective cost per acquisition. You're paying full price for half the result, and the waste scales linearly with spend.",
+      "mobile_conversion_failure": "Mobile visitors encounter conversion barriers that desktop users never see — broken CTAs, form friction, timing gaps between intent and action. The mobile experience systematically underperforms against the same offer, same traffic quality, same buyer intent. Since mobile is typically the majority of traffic, this gap represents the single largest segment-level revenue loss most sites carry.",
+      "behavioral_friction_tax": "Every step in the funnel costs more effort than it should. Session data shows oscillation between pages, repeated checkout entries, and decision fatigue manifesting as back-and-forth navigation before dropoff. The cumulative friction across the path acts as an invisible tax on conversion — no single step is broken, but the sum of all steps exceeds what buyers are willing to endure.",
+      "behavioral_trust_revenue_gap": "Buyers demonstrate clear purchase intent but abandon at conversion-proximate moments because trust signals are insufficient. Session patterns show elevated reassurance-seeking behavior — policy page visits, support lookups, trust badge scanning — followed by abandonment. The gap between willingness to buy and willingness to trust is measurable and recoverable. These buyers wanted to convert; they needed one more reason to feel safe.",
+      "behavioral_path_inefficiency": "The path from first interaction to purchase is longer than buyer intent can sustain. Too many intermediate pages, excessive time between intent signals and conversion opportunities, and intent-absorbing surfaces that capture attention without advancing the purchase all contribute to decay. By the time the buyer reaches the conversion point, the urgency that brought them has dissipated. Shorter paths convert; longer paths leak."
     },
     "positive_checks": {
       "strong_cta_clarity": {

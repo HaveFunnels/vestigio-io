@@ -2632,8 +2632,11 @@
       "sensitive_input_perceived_risk_dropoff": "Usuários abandonam após inserir informações sensíveis por risco percebido",
       "security_header_weakness": "Navegadores sinalizam seu site como inseguro para compradores",
       "mixed_content_exposure": "Checkout quebra silenciosamente para parte dos visitantes",
-      "open_redirect_indicator": "Seu domínio pode ser usado para phishing dos seus clientes",
-      "sensitive_endpoint_exposed": "Credenciais de infraestrutura estão a uma busca de distância"
+      "sensitive_endpoint_exposed": "Credenciais de infraestrutura estão a uma busca de distância",
+      "checkout_script_hijack_risk": "Seu checkout pode ser sequestrado por scripts comprometidos",
+      "buyer_session_theft_risk": "Sessões de compradores podem ser roubadas nas suas páginas comerciais",
+      "checkout_clickjack_risk": "Sua página de pagamento pode ser falsificada dentro de outro site",
+      "payment_data_unencrypted": "Dados de pagamento cruzam uma fronteira sem criptografia"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Compradores perdem a confiança no momento do checkout",
@@ -2662,7 +2665,15 @@
       "behavioral_hesitation_at_commitment": "Compradores reais hesitam no momento da compra",
       "behavioral_path_disconnection": "Seu fluxo de compra parece bom no código mas falha para usuários reais",
       "behavioral_value_justification_gap": "Compradores veem seu preço mas não conseguem ver o valor",
-      "behavioral_trust_failure_at_input": "Compradores não confiam em entregar dados sensíveis aos seus formulários"
+      "behavioral_trust_failure_at_input": "Compradores não confiam em entregar dados sensíveis aos seus formulários",
+      "security_posture_inadequate": "Seu site parece inseguro para navegadores e compradores",
+      "behavioral_first_session_failure": "Visitantes de primeira vez travam antes de alcançar um marco de receita",
+      "behavioral_action_value_misalignment": "Ações de baixo valor dominam enquanto ações de alto valor passam despercebidas",
+      "paid_acquisition_waste": "Tráfego pago encontra fricção que se acumula em gasto desperdiçado",
+      "mobile_conversion_failure": "Visitantes mobile enfrentam barreiras de conversão que usuários desktop nunca veem",
+      "behavioral_friction_tax": "Cada etapa do funil custa mais esforço do que deveria",
+      "behavioral_trust_revenue_gap": "Compradores querem converter mas não têm confiança suficiente para seguir em frente",
+      "behavioral_path_inefficiency": "O caminho até a compra é mais longo do que a intenção do comprador consegue sustentar"
     },
     "root_cause_descriptions": {
       "trust_failure_at_checkout": "Compradores chegam ao momento do pagamento, mas os sinais de confiança ao redor enfraquecem em vez de fortalecer. Redirecionamentos para outros domínios, provedores de pagamento desconhecidos e ausência de pistas de segurança no momento errado fazem o comprador desistir — exatamente quando a conversão estava mais próxima. O comprador queria pagar; a experiência o assustou.",

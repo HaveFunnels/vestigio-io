@@ -202,8 +202,14 @@ export function computeInferences(
   // Wave 3.3: Security posture inferences
   inferences.push(...inferSecurityHeaderWeakness(first, byKey, scoping, cycle_ref, ids));
   inferences.push(...inferMixedContentExposure(first, byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferOpenRedirectIndicator(first, byKey, scoping, cycle_ref, ids));
+  // open_redirect_indicator merged into inferRedirectTrustErosion (revenue_integrity pack)
   inferences.push(...inferSensitiveEndpointExposed(first, byKey, scoping, cycle_ref, ids));
+  // Wave 3.3 expansion: new cybersecurity findings
+  inferences.push(...inferCheckoutScriptHijackRisk(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferBuyerSessionTheftRisk(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCheckoutClickjackRisk(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPaymentDataUnencrypted(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferErrorPageInformationLeak(first, byKey, scoping, cycle_ref, ids));
 
   return inferences;
 }
@@ -222,9 +228,9 @@ function inferSecurityHeaderWeakness(
   const score = byKey.get('security_headers_score');
   const hstsMissing = byKey.get('hsts_missing');
   const cspWeak = byKey.get('csp_missing_or_weak');
-  const clickjackMissing = byKey.get('clickjack_protection_missing');
+  // clickjack_protection_missing removed — now handled by checkout_clickjack_risk
 
-  if (!score && !hstsMissing && !cspWeak && !clickjackMissing) return [];
+  if (!score && !hstsMissing && !cspWeak) return [];
 
   const factors: string[] = [];
   const relevant: Signal[] = [];
@@ -235,7 +241,6 @@ function inferSecurityHeaderWeakness(
   }
   if (hstsMissing) { relevant.push(hstsMissing); factors.push('HSTS missing'); }
   if (cspWeak) { relevant.push(cspWeak); factors.push(cspWeak.value === 'weak' ? 'CSP weak (unsafe-inline/eval)' : 'CSP missing'); }
-  if (clickjackMissing) { relevant.push(clickjackMissing); factors.push('clickjack protection missing'); }
 
   const numericScore = score?.numeric_value ?? 100;
   const severity = numericScore < 30 ? 'high' : numericScore < 60 ? 'medium' : 'low';
@@ -357,6 +362,143 @@ function inferSensitiveEndpointExposed(
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
     reasoning: `Infrastructure exposure ${severity}. ${factors.join('; ')}. Publicly accessible credentials and admin panels mean one breach away from total commerce shutdown — revenue goes to zero.`,
+  })];
+}
+
+function inferCheckoutScriptHijackRisk(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const hijackRisk = byKey.get('checkout_script_hijack_risk');
+  if (!hijackRisk) return [];
+
+  const count = hijackRisk.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'checkout_script_hijack_risk',
+    category: InferenceCategory.CheckoutScriptHijackRisk,
+    conclusion: 'checkout_script_hijack_risk',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: hijackRisk.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', hijackRisk.id)],
+    evidence_refs: hijackRisk.evidence_refs,
+    reasoning: `Checkout hijack risk ${severity}. ${count} unvetted external script(s) load on payment pages without CSP protection. A single compromised script can silently replace the payment form, redirect card data to an attacker, or inject fake checkout flows — buyers see your domain and trust it.`,
+  })];
+}
+
+function inferBuyerSessionTheftRisk(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const cookieWeak = byKey.get('cookie_security_weak');
+  if (!cookieWeak) return [];
+
+  const count = cookieWeak.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'buyer_session_theft_risk',
+    category: InferenceCategory.BuyerSessionTheftRisk,
+    conclusion: 'buyer_session_theft_risk',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: cookieWeak.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', cookieWeak.id)],
+    evidence_refs: cookieWeak.evidence_refs,
+    reasoning: `Session theft risk ${severity}. ${count} cookie(s) on commercial pages lack Secure, HttpOnly, or SameSite flags. Attackers can steal buyer sessions via XSS or network sniffing, make purchases with saved payment methods, or access account data — all without the buyer knowing.`,
+  })];
+}
+
+function inferCheckoutClickjackRisk(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const clickjackMissing = byKey.get('clickjack_protection_missing');
+  const checkoutDetected = first('checkout.detected');
+
+  if (!clickjackMissing || !checkoutDetected) return [];
+
+  const count = clickjackMissing.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'checkout_clickjack_risk',
+    category: InferenceCategory.CheckoutClickjackRisk,
+    conclusion: 'checkout_clickjack_risk',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: clickjackMissing.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', clickjackMissing.id)],
+    evidence_refs: clickjackMissing.evidence_refs,
+    reasoning: `Clickjack risk ${severity}. Clickjacking protection missing on ${count} page(s) and commercial checkout exists. Attackers can embed your checkout page inside a fake site using an invisible iframe — buyers think they are clicking on the attacker's page but are actually authorizing payments on yours.`,
+  })];
+}
+
+function inferPaymentDataUnencrypted(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const insecureTarget = byKey.get('payment_form_insecure_target');
+  if (!insecureTarget) return [];
+
+  const count = insecureTarget.numeric_value || 0;
+  const severity = count >= 2 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'payment_data_unencrypted',
+    category: InferenceCategory.PaymentDataUnencrypted,
+    conclusion: 'payment_data_unencrypted',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: insecureTarget.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', insecureTarget.id)],
+    evidence_refs: insecureTarget.evidence_refs,
+    reasoning: `Payment data exposure ${severity}. ${count} payment form(s) submit to insecure or untrusted destinations. Card numbers, CVVs, and personal data cross an unencrypted boundary where any network observer — coffee shop WiFi, ISP, compromised router — can capture them in plaintext.`,
+  })];
+}
+
+function inferErrorPageInformationLeak(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const leaks = byKey.get('error_page_leaks_internals');
+  if (!leaks) return [];
+
+  const count = leaks.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'error_page_information_leak',
+    category: InferenceCategory.ErrorPageInformationLeak,
+    conclusion: 'error_page_information_leak',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: leaks.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', leaks.id)],
+    evidence_refs: leaks.evidence_refs,
+    reasoning: `Error page information leak ${severity}. ${count} error page(s) return verbose responses (> 2 KB) on 4xx/5xx status codes. These likely expose stack traces, framework versions, database connection details, or internal file paths — giving attackers a detailed map of the system architecture to craft targeted exploits.`,
   })];
 }
 
@@ -1303,10 +1445,33 @@ function inferRedirectTrustErosion(
   ids: IdGenerator,
 ): Inference[] {
   const sig = byKey.get('checkout_redirect_trust_erosion');
-  if (!sig) return [];
+  const urlParam = byKey.get('redirect_with_url_parameter');
+  const crossDomain = byKey.get('redirect_chain_to_unknown_domain');
 
-  const hops = sig.numeric_value || 0;
-  const severity = hops >= 3 ? 'high' : 'medium';
+  if (!sig && !urlParam && !crossDomain) return [];
+
+  const factors: string[] = [];
+  const relevant: Signal[] = [];
+  let hops = 0;
+
+  if (sig) {
+    relevant.push(sig);
+    hops = sig.numeric_value || 0;
+    factors.push(`${hops} redirect hop(s) crossing domains on checkout path`);
+  }
+  if (urlParam) {
+    relevant.push(urlParam);
+    factors.push(`${urlParam.numeric_value} URL-parameter redirect(s) exposing open redirect risk`);
+  }
+  if (crossDomain) {
+    relevant.push(crossDomain);
+    factors.push(`${crossDomain.numeric_value} cross-domain redirect(s) to unknown destinations`);
+  }
+
+  const severity = (hops >= 3 || (urlParam && crossDomain)) ? 'high'
+    : (sig || urlParam || crossDomain) ? 'medium' : 'low';
+
+  const confidence = sig ? sig.confidence : 70;
 
   return [createInference({
     inference_key: 'redirect_chain_erodes_checkout_trust',
@@ -1314,11 +1479,11 @@ function inferRedirectTrustErosion(
     conclusion: 'redirect_chain_erodes_checkout_trust',
     conclusion_value: severity,
     severity_hint: severity,
-    confidence: sig.confidence,
+    confidence,
     scoping, cycle_ref, ids,
-    signal_refs: [makeRef('signal', sig.id)],
-    evidence_refs: sig.evidence_refs,
-    reasoning: `The checkout path passes through ${hops} redirect hop(s) crossing multiple domains. Industry data shows each redirect loses 5-15% of users. On the path to payment, this compounds into direct revenue loss as buyers interpret domain changes as untrustworthy.`,
+    signal_refs: relevant.map(s => makeRef('signal', s.id)),
+    evidence_refs: relevant.flatMap(s => s.evidence_refs),
+    reasoning: `Redirect trust erosion ${severity}. ${factors.join('; ')}. Industry data shows each redirect loses 5-15% of users. On the path to payment, this compounds into direct revenue loss as buyers interpret domain changes as untrustworthy.`,
   })];
 }
 

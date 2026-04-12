@@ -187,8 +187,12 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   // Wave 3.3: Security posture
   security_header_weakness: 'money_moment_exposure',
   mixed_content_exposure: 'money_moment_exposure',
-  open_redirect_indicator: 'money_moment_exposure',
   sensitive_endpoint_exposed: 'money_moment_exposure',
+  // Wave 3.3 expansion: cybersecurity pack
+  checkout_script_hijack_risk: 'money_moment_exposure',
+  buyer_session_theft_risk: 'money_moment_exposure',
+  checkout_clickjack_risk: 'money_moment_exposure',
+  payment_data_unencrypted: 'money_moment_exposure',
 };
 
 // Inference → typical page surface
@@ -326,8 +330,12 @@ const INFERENCE_SURFACES: Record<string, string> = {
   // Wave 3.3: Security posture
   security_header_weakness: '/ (sitewide security headers)',
   mixed_content_exposure: '/checkout, /cart (mixed content)',
-  open_redirect_indicator: '/ (redirect endpoints)',
   sensitive_endpoint_exposed: '/ (exposed files and endpoints)',
+  // Wave 3.3 expansion: cybersecurity pack
+  checkout_script_hijack_risk: '/checkout, /payment (external scripts)',
+  buyer_session_theft_risk: '/checkout, /cart, /account (cookie security)',
+  checkout_clickjack_risk: '/checkout, /payment (clickjack protection)',
+  payment_data_unencrypted: '/checkout, /payment (form targets)',
 };
 
 // Human-readable titles for inference findings
@@ -469,8 +477,12 @@ export const INFERENCE_TITLES: Record<string, string> = {
   // Wave 3.3: Security posture
   security_header_weakness: 'Browsers signal your site as unsafe to buyers',
   mixed_content_exposure: 'Checkout silently breaks for some visitors',
-  open_redirect_indicator: 'Your domain can be used to phish your own customers',
   sensitive_endpoint_exposed: 'Infrastructure credentials are one search away',
+  // Wave 3.3 expansion: cybersecurity pack
+  checkout_script_hijack_risk: 'Your checkout can be hijacked by compromised scripts',
+  buyer_session_theft_risk: 'Buyer sessions can be stolen on your commercial pages',
+  checkout_clickjack_risk: 'Your checkout page can be faked inside another site',
+  payment_data_unencrypted: 'Payment data crosses an unencrypted boundary',
 };
 
 // ── Parametric Title Resolution ──

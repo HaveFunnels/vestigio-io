@@ -4255,6 +4255,154 @@ function extractSecurityPostureSignals(
       }));
     }
   }
+
+  // ── Finding E: Checkout Script Hijack Risk ──
+  // External scripts WITHOUT known_provider on pages with payment forms + weak/missing CSP
+  const cspSignal = signals.find(s => s.signal_key === 'csp_missing_or_weak');
+  if (cspSignal && forms.length > 0 && scripts.length > 0) {
+    const paymentPageUrls = new Set<string>();
+    for (const e of forms) {
+      const p = e.payload as FormPayload;
+      if (p.has_payment_fields) paymentPageUrls.add(p.page_url);
+    }
+
+    if (paymentPageUrls.size > 0) {
+      const hijackScripts: Evidence[] = [];
+      for (const e of scripts) {
+        const p = e.payload as ScriptPayload;
+        if (p.is_external && !p.known_provider && paymentPageUrls.has(p.page_url)) {
+          hijackScripts.push(e);
+        }
+      }
+
+      if (hijackScripts.length > 0) {
+        signals.push(createSignal({ ids,
+          signal_key: `checkout_script_hijack_risk`,
+          category: SignalCategory.Security,
+          attribute: 'security.checkout.script_hijack_risk',
+          value: 'true',
+          numeric_value: hijackScripts.length,
+          confidence: 80,
+          scoping, cycle_ref,
+          evidence_refs: hijackScripts.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+          description: `${hijackScripts.length} unvetted external script(s) load on payment pages without CSP protection.`,
+        }));
+      }
+    }
+  }
+
+  // ── Finding F: Buyer Session Theft Risk (Cookie Security) ──
+  if (httpResponses.length > 0) {
+    let weakCookieCount = 0;
+    const weakCookieEvidence: Evidence[] = [];
+
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      if (p.status_code < 200 || p.status_code >= 400) continue;
+      if (!secIsCheckoutUrl(p.url) && !/(product|pricing|cart|login|account|billing)/.test(secPathOf(p.url))) continue;
+
+      const setCookie = secGetHeader(p.headers, 'set-cookie');
+      if (!setCookie) continue;
+
+      // Parse individual cookies from Set-Cookie header(s)
+      const cookies = setCookie.split(/,(?=\s*[a-zA-Z_]+=)/);
+      for (const cookie of cookies) {
+        const lower = cookie.toLowerCase();
+        const missingSecure = !lower.includes('secure');
+        const missingHttpOnly = !lower.includes('httponly');
+        const missingSameSite = !lower.includes('samesite');
+        if (missingSecure || missingHttpOnly || missingSameSite) {
+          weakCookieCount++;
+          if (weakCookieEvidence.length < 3) weakCookieEvidence.push(e);
+        }
+      }
+    }
+
+    if (weakCookieCount > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `cookie_security_weak`,
+        category: SignalCategory.Security,
+        attribute: 'security.cookie.weak',
+        value: 'true',
+        numeric_value: weakCookieCount,
+        confidence: 85,
+        scoping, cycle_ref,
+        evidence_refs: weakCookieEvidence.map((e) => makeRef('evidence', e.id)),
+        description: `${weakCookieCount} cookie(s) on commercial pages lack Secure, HttpOnly, or SameSite flags.`,
+      }));
+    }
+  }
+
+  // ── Finding G: Payment Form Insecure Target ──
+  if (forms.length > 0) {
+    const KNOWN_PAYMENT_PROVIDERS = new Set([
+      'stripe.com', 'checkout.stripe.com', 'js.stripe.com',
+      'paypal.com', 'www.paypal.com', 'paypalobjects.com',
+      'square.com', 'squareup.com',
+      'braintreegateway.com', 'braintree-api.com',
+      'adyen.com', 'checkout.adyen.com',
+      'mercadopago.com', 'api.mercadopago.com',
+      'pagseguro.com.br', 'pagseguro.uol.com.br',
+      'shopify.com', 'checkout.shopify.com',
+    ]);
+
+    const insecureForms: Evidence[] = [];
+    for (const e of forms) {
+      const p = e.payload as FormPayload;
+      if (!p.has_payment_fields) continue;
+
+      const action = p.action || '';
+      const isInsecureHttp = action.startsWith('http://');
+      const isExternalUntrusted = p.is_external && p.target_host
+        && !KNOWN_PAYMENT_PROVIDERS.has(p.target_host.toLowerCase())
+        && !KNOWN_PAYMENT_PROVIDERS.has(secRootDomain(p.target_host.toLowerCase()));
+
+      if (isInsecureHttp || isExternalUntrusted) {
+        insecureForms.push(e);
+      }
+    }
+
+    if (insecureForms.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `payment_form_insecure_target`,
+        category: SignalCategory.Security,
+        attribute: 'security.form.payment_insecure_target',
+        value: 'true',
+        numeric_value: insecureForms.length,
+        confidence: 90,
+        scoping, cycle_ref,
+        evidence_refs: insecureForms.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${insecureForms.length} payment form(s) submit to insecure (HTTP) or untrusted external destinations.`,
+      }));
+    }
+  }
+
+  // ── Finding: Error Page Information Leak ──
+  // 4xx/5xx responses with content_length > 2000 suggest verbose error pages
+  // that may expose stack traces, framework details, or database info.
+  if (httpResponses.length > 0) {
+    const verboseErrorPages: Evidence[] = [];
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      if (p.status_code >= 400 && p.status_code < 600 && (p.content_length ?? 0) > 2000) {
+        verboseErrorPages.push(e);
+      }
+    }
+
+    if (verboseErrorPages.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `error_page_leaks_internals`,
+        category: SignalCategory.Security,
+        attribute: 'security.error_page.leaks_internals',
+        value: 'true',
+        numeric_value: verboseErrorPages.length,
+        confidence: 75,
+        scoping, cycle_ref,
+        evidence_refs: verboseErrorPages.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${verboseErrorPages.length} error page(s) (4xx/5xx) with content > 2 KB suggest verbose responses that may expose stack traces, framework versions, or database details.`,
+      }));
+    }
+  }
 }
 
 function extractPolicyEnrichmentSignals(

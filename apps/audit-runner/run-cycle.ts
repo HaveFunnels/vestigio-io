@@ -345,8 +345,13 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				if (shopifyConn) {
 					try {
 						const config = decryptConfig(shopifyConn.config);
+						// Normalize store_url → bare domain for the Shopify client
+						// (user input may include protocol, e.g. "https://example.myshopify.com")
+						const shopDomain = (config.store_url || '')
+							.replace(/^https?:\/\//, '')
+							.replace(/\/+$/, '');
 						const pollResult = await pollShopifyData({
-							shop_domain: config.store_url,
+							shop_domain: shopDomain,
 							access_token: config.access_token,
 							api_key: config.api_key || '',
 							api_secret: config.api_secret || '',

@@ -120,21 +120,22 @@ export async function pollShopifyData(
     );
   }
 
-  // Step 3: Fetch checkouts, customers, products in parallel (non-fatal)
-  const [checkoutResult, customerResult, productResult] = await Promise.all([
-    fetchAbandonedCheckouts(credentials, since).catch(err => ({
-      checkouts: [] as any[],
-      errors: [err instanceof Error ? err.message : String(err)],
-    })),
-    fetchCustomers(credentials, since).catch(err => ({
-      customers: [] as any[],
-      errors: [err instanceof Error ? err.message : String(err)],
-    })),
-    fetchProducts(credentials).catch(err => ({
-      products: [] as any[],
-      errors: [err instanceof Error ? err.message : String(err)],
-    })),
-  ]);
+  // Step 3: Fetch checkouts, customers, products sequentially (non-fatal)
+  // NOTE: Shopify REST API rate limit is 2 req/s. Running these in parallel
+  // would fire 3 initial requests simultaneously, risking 429s. Sequential
+  // execution with the 500ms delay inside each fetch function stays safe.
+  const checkoutResult = await fetchAbandonedCheckouts(credentials, since).catch(err => ({
+    checkouts: [] as any[],
+    errors: [err instanceof Error ? err.message : String(err)],
+  }));
+  const customerResult = await fetchCustomers(credentials, since).catch(err => ({
+    customers: [] as any[],
+    errors: [err instanceof Error ? err.message : String(err)],
+  }));
+  const productResult = await fetchProducts(credentials).catch(err => ({
+    products: [] as any[],
+    errors: [err instanceof Error ? err.message : String(err)],
+  }));
 
   errors.push(...checkoutResult.errors);
   errors.push(...customerResult.errors);

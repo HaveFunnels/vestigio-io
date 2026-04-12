@@ -5,16 +5,30 @@ import {
   ShopifyConnectionState,
   ShopifyErrorType,
   PollingBackoffState,
+  ShopifyCheckoutMetrics,
+  ShopifyCustomerMetrics,
+  ShopifyProductMetrics,
+  ShopifyInventoryMetrics,
   DEFAULT_POLLING_CONFIG,
   DEFAULT_BACKOFF,
 } from '../../packages/shopify-adapter';
 import {
   fetchOrders,
+  fetchAbandonedCheckouts,
+  fetchCustomers,
+  fetchProducts,
+  fetchInventoryLevels,
   verifyConnection,
   classifyHttpError,
   classifyNetworkError,
 } from '../../packages/shopify-adapter/client';
-import { aggregateOrdersIntoMetrics } from '../../packages/shopify-adapter/aggregator';
+import {
+  aggregateOrdersIntoMetrics,
+  aggregateCheckouts,
+  aggregateCustomers,
+  aggregateProducts,
+  aggregateInventory,
+} from '../../packages/shopify-adapter/aggregator';
 import {
   mapToBusinessInputs,
   determineBasisType,
@@ -52,6 +66,11 @@ export interface ShopifyPollResult {
   connection_state: ShopifyConnectionState;
   value_feedback: string | null;
   initial_sync_complete: boolean;
+  // Phase 4A.2: Extended metrics
+  checkout_metrics: ShopifyCheckoutMetrics | null;
+  customer_metrics: ShopifyCustomerMetrics | null;
+  product_metrics: ShopifyProductMetrics | null;
+  inventory_metrics: ShopifyInventoryMetrics | null;
 }
 
 /**
@@ -101,20 +120,73 @@ export async function pollShopifyData(
     );
   }
 
-  // Step 3: Aggregate
+  // Step 3: Fetch checkouts, customers, products in parallel (non-fatal)
+  const [checkoutResult, customerResult, productResult] = await Promise.all([
+    fetchAbandonedCheckouts(credentials, since).catch(err => ({
+      checkouts: [] as any[],
+      errors: [err instanceof Error ? err.message : String(err)],
+    })),
+    fetchCustomers(credentials, since).catch(err => ({
+      customers: [] as any[],
+      errors: [err instanceof Error ? err.message : String(err)],
+    })),
+    fetchProducts(credentials).catch(err => ({
+      products: [] as any[],
+      errors: [err instanceof Error ? err.message : String(err)],
+    })),
+  ]);
+
+  errors.push(...checkoutResult.errors);
+  errors.push(...customerResult.errors);
+  errors.push(...productResult.errors);
+
+  // Step 4: Fetch inventory levels (depends on product variant IDs)
+  let inventoryResult: { levels: any[]; errors: string[] } = { levels: [], errors: [] };
+  if (productResult.products.length > 0) {
+    const variantIds = productResult.products
+      .flatMap((p: any) => p.variants.map((v: any) => String(v.id)));
+    if (variantIds.length > 0) {
+      inventoryResult = await fetchInventoryLevels(credentials, variantIds).catch(err => ({
+        levels: [] as any[],
+        errors: [err instanceof Error ? err.message : String(err)],
+      }));
+      errors.push(...inventoryResult.errors);
+    }
+  }
+
+  // Step 5: Aggregate orders
   const metrics = aggregateOrdersIntoMetrics(orders, pollingConfig.windows);
 
-  // Step 4: Map to BusinessInputs
+  // Step 6: Aggregate extended metrics (non-fatal — null on failure)
+  const checkoutMetrics = checkoutResult.checkouts.length > 0
+    ? aggregateCheckouts(checkoutResult.checkouts, 90)
+    : null;
+
+  const customerMetrics = customerResult.customers.length > 0
+    ? aggregateCustomers(customerResult.customers)
+    : null;
+
+  // For product metrics, we would need order line items.
+  // Use an empty array as placeholder — full implementation requires line_items in order fetch.
+  const productMetrics = productResult.products.length > 0
+    ? aggregateProducts(productResult.products, [])
+    : null;
+
+  const inventoryMetrics = (productResult.products.length > 0 && inventoryResult.levels.length > 0)
+    ? aggregateInventory(productResult.products, inventoryResult.levels, [])
+    : null;
+
+  // Step 7: Map to BusinessInputs
   const businessInputs = mapToBusinessInputs(metrics);
   const basisType = determineBasisType(businessInputs);
 
-  // Step 5: Compute operational context (Phase 4A.1)
+  // Step 8: Compute operational context (Phase 4A.1)
   const operationalContext = computeOperationalContext(metrics);
 
-  // Step 6: Build value feedback for UI
+  // Step 9: Build value feedback for UI
   const valueFeedback = buildValueFeedback(metrics);
 
-  // Step 7: Update connection state with summary
+  // Step 10: Update connection state with summary
   const m30d = metrics.find(m => m.window === '30d');
   connectionState.initial_sync_complete = true;
   connectionState.last_successful_sync_at = new Date();
@@ -124,7 +196,7 @@ export async function pollShopifyData(
     currency: m30d.revenue.currency,
   } : null;
 
-  // Step 8: Update cursor
+  // Step 11: Update cursor
   const lastOrderId = orders.length > 0 ? String(orders[orders.length - 1].id) : pollingConfig.cursor;
 
   return {
@@ -140,6 +212,10 @@ export async function pollShopifyData(
     connection_state: connectionState,
     value_feedback: valueFeedback,
     initial_sync_complete: true,
+    checkout_metrics: checkoutMetrics,
+    customer_metrics: customerMetrics,
+    product_metrics: productMetrics,
+    inventory_metrics: inventoryMetrics,
   };
 }
 
@@ -228,5 +304,9 @@ function buildFailResult(
     connection_state: connectionState,
     value_feedback: null,
     initial_sync_complete: false,
+    checkout_metrics: null,
+    customer_metrics: null,
+    product_metrics: null,
+    inventory_metrics: null,
   };
 }

@@ -194,6 +194,79 @@ export interface ShopifyRawTransaction {
   gateway: string;
 }
 
+// ──────────────────────────────────────────────
+// Phase 4A.2: Additional Shopify API response types
+// Checkouts, Customers, Products, Inventory
+// ──────────────────────────────────────────────
+
+/**
+ * Raw abandoned checkout from Shopify Admin API.
+ */
+export interface ShopifyCheckout {
+  id: number;
+  created_at: string;
+  total_price: string;
+  currency: string;
+  completed_at: string | null;
+  abandoned_checkout_url: string | null;
+}
+
+/**
+ * Raw customer from Shopify Admin API.
+ */
+export interface ShopifyCustomer {
+  id: number;
+  orders_count: number;
+  total_spent: string;
+  created_at: string;
+  currency: string;
+}
+
+/**
+ * Raw product from Shopify Admin API.
+ */
+export interface ShopifyProduct {
+  id: number;
+  title: string;
+  status: string;
+  variants: { id: number; inventory_quantity: number; price: string }[];
+}
+
+/**
+ * Raw inventory level from Shopify Admin API.
+ */
+export interface ShopifyInventoryLevel {
+  inventory_item_id: number;
+  available: number;
+}
+
+// ──────────────────────────────────────────────
+// Phase 4A.2: Aggregated metrics types
+// ──────────────────────────────────────────────
+
+export interface ShopifyCheckoutMetrics {
+  abandonment_count: number;
+  recovery_rate: number;  // completed / total
+  total_abandoned_value: number;
+}
+
+export interface ShopifyCustomerMetrics {
+  total_customers: number;
+  repeat_rate: number;  // orders_count > 1 / total
+  new_vs_returning_ratio: number;  // new / returning
+  avg_lifetime_value: number;
+}
+
+export interface ShopifyProductMetrics {
+  total_products: number;
+  never_sold_30d: number;  // cross-referenced with order line items
+  top_by_revenue: { title: string; revenue: number }[];
+}
+
+export interface ShopifyInventoryMetrics {
+  out_of_stock_promoted: number;  // variants with available=0 that appear on crawled pages
+}
+
 /**
  * Adaptive backoff state for polling reliability.
  */

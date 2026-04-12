@@ -2,6 +2,14 @@ import {
   ShopifyRawOrder,
   ShopifyStoreMetrics,
   MetricsWindow,
+  ShopifyCheckout,
+  ShopifyCheckoutMetrics,
+  ShopifyCustomer,
+  ShopifyCustomerMetrics,
+  ShopifyProduct,
+  ShopifyProductMetrics,
+  ShopifyInventoryLevel,
+  ShopifyInventoryMetrics,
 } from './types';
 
 // ──────────────────────────────────────────────
@@ -185,6 +193,146 @@ function aggregateWindow(
       concentration_ratio: round4(concentrationRatio),
     },
     computed_at: new Date(),
+  };
+}
+
+// ──────────────────────────────────────────────
+// Phase 4A.2: Additional aggregation functions
+// Checkouts, Customers, Products, Inventory
+// ──────────────────────────────────────────────
+
+/**
+ * Aggregate abandoned checkouts into metrics.
+ * Filters to checkouts within the specified window.
+ */
+export function aggregateCheckouts(
+  checkouts: ShopifyCheckout[],
+  windowDays: number,
+): ShopifyCheckoutMetrics {
+  const cutoff = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+  const filtered = checkouts.filter(c => new Date(c.created_at) >= cutoff);
+
+  const total = filtered.length;
+  const completed = filtered.filter(c => c.completed_at !== null).length;
+  const abandoned = filtered.filter(c => c.completed_at === null);
+
+  let totalAbandonedValue = 0;
+  for (const c of abandoned) {
+    totalAbandonedValue += parseFloat(c.total_price) || 0;
+  }
+
+  return {
+    abandonment_count: abandoned.length,
+    recovery_rate: round4(total > 0 ? completed / total : 0),
+    total_abandoned_value: round2(totalAbandonedValue),
+  };
+}
+
+/**
+ * Aggregate customers into metrics.
+ */
+export function aggregateCustomers(
+  customers: ShopifyCustomer[],
+): ShopifyCustomerMetrics {
+  const total = customers.length;
+  if (total === 0) {
+    return {
+      total_customers: 0,
+      repeat_rate: 0,
+      new_vs_returning_ratio: 0,
+      avg_lifetime_value: 0,
+    };
+  }
+
+  const returning = customers.filter(c => c.orders_count > 1).length;
+  const newCustomers = total - returning;
+
+  let totalSpent = 0;
+  for (const c of customers) {
+    totalSpent += parseFloat(c.total_spent) || 0;
+  }
+
+  return {
+    total_customers: total,
+    repeat_rate: round4(returning / total),
+    new_vs_returning_ratio: round4(returning > 0 ? newCustomers / returning : newCustomers),
+    avg_lifetime_value: round2(totalSpent / total),
+  };
+}
+
+/**
+ * Aggregate products cross-referenced with order line items.
+ * Identifies products never sold in 30d and top revenue products.
+ */
+export function aggregateProducts(
+  products: ShopifyProduct[],
+  orderLineItems: { product_id: number; quantity: number; total: number }[],
+): ShopifyProductMetrics {
+  const totalProducts = products.length;
+
+  // Build set of products that had sales
+  const soldProductIds = new Set(orderLineItems.map(li => li.product_id));
+
+  // Products with no sales in the provided line items (assumed 30d)
+  const neverSold = products.filter(p => !soldProductIds.has(p.id)).length;
+
+  // Revenue per product from line items
+  const revenueByProduct = new Map<number, number>();
+  for (const li of orderLineItems) {
+    revenueByProduct.set(li.product_id, (revenueByProduct.get(li.product_id) || 0) + li.total);
+  }
+
+  // Top products by revenue
+  const topByRevenue = Array.from(revenueByProduct.entries())
+    .map(([productId, revenue]) => {
+      const product = products.find(p => p.id === productId);
+      return { title: product?.title || `Product #${productId}`, revenue: round2(revenue) };
+    })
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+
+  return {
+    total_products: totalProducts,
+    never_sold_30d: neverSold,
+    top_by_revenue: topByRevenue,
+  };
+}
+
+/**
+ * Aggregate inventory levels to detect out-of-stock promoted products.
+ * Promoted product IDs come from crawled pages (externally provided).
+ */
+export function aggregateInventory(
+  products: ShopifyProduct[],
+  levels: ShopifyInventoryLevel[],
+  promotedProductIds: number[],
+): ShopifyInventoryMetrics {
+  // Build a map of inventory_item_id -> available quantity
+  const availableMap = new Map<number, number>();
+  for (const level of levels) {
+    // Sum available across locations for same item
+    const current = availableMap.get(level.inventory_item_id) || 0;
+    availableMap.set(level.inventory_item_id, current + level.available);
+  }
+
+  // For each promoted product, check if any variant is out of stock
+  const promotedSet = new Set(promotedProductIds);
+  let outOfStockPromoted = 0;
+
+  for (const product of products) {
+    if (!promotedSet.has(product.id)) continue;
+
+    // A product is considered out of stock if ALL variants have 0 or less available
+    const allOutOfStock = product.variants.every(v => {
+      const available = availableMap.get(v.id) ?? v.inventory_quantity;
+      return available <= 0;
+    });
+
+    if (allOutOfStock) outOfStockPromoted++;
+  }
+
+  return {
+    out_of_stock_promoted: outOfStockPromoted,
   };
 }
 

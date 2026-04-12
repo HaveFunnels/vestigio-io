@@ -4,6 +4,10 @@ import {
   ShopifyConnectionStatus,
   ShopifyErrorType,
   ShopifyRawOrder,
+  ShopifyCheckout,
+  ShopifyCustomer,
+  ShopifyProduct,
+  ShopifyInventoryLevel,
   REQUIRED_SCOPES,
 } from './types';
 
@@ -176,6 +180,208 @@ export async function fetchOrdersSinceCursor(
     errors.push(err instanceof Error ? err.message : String(err));
     return { orders: [], last_id: sinceId, errors };
   }
+}
+
+// ──────────────────────────────────────────────
+// Phase 4A.2: Additional fetch methods
+// Checkouts, Customers, Products, Inventory
+// ──────────────────────────────────────────────
+
+/**
+ * Fetch abandoned checkouts (status=open) within a date range.
+ * Non-fatal: returns empty array + errors on failure.
+ */
+export async function fetchAbandonedCheckouts(
+  credentials: ShopifyCredentials,
+  since: Date,
+): Promise<{ checkouts: ShopifyCheckout[]; errors: string[] }> {
+  const errors: string[] = [];
+  const allCheckouts: ShopifyCheckout[] = [];
+
+  const sinceISO = since.toISOString();
+  let pageUrl: string | null =
+    `/checkouts.json?created_at_min=${sinceISO}&status=open&limit=250`;
+
+  let pageCount = 0;
+  const MAX_PAGES = 10;
+
+  while (pageUrl && pageCount < MAX_PAGES) {
+    try {
+      const response = await shopifyFetch(credentials, pageUrl);
+      if (!response.ok) {
+        errors.push(`Checkouts fetch failed: HTTP ${response.status}`);
+        break;
+      }
+
+      const data = await response.json();
+      const checkouts: ShopifyCheckout[] = (data.checkouts || []).map((c: any) => ({
+        id: c.id,
+        created_at: c.created_at,
+        total_price: c.total_price,
+        currency: c.currency,
+        completed_at: c.completed_at || null,
+        abandoned_checkout_url: c.abandoned_checkout_url || null,
+      }));
+      allCheckouts.push(...checkouts);
+
+      const linkHeader = response.headers.get('link');
+      pageUrl = extractNextPageUrl(linkHeader, credentials.shop_domain);
+      pageCount++;
+
+      await delay(500);
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+      break;
+    }
+  }
+
+  return { checkouts: allCheckouts, errors };
+}
+
+/**
+ * Fetch customers created since a given date.
+ * Non-fatal: returns empty array + errors on failure.
+ */
+export async function fetchCustomers(
+  credentials: ShopifyCredentials,
+  since: Date,
+): Promise<{ customers: ShopifyCustomer[]; errors: string[] }> {
+  const errors: string[] = [];
+  const allCustomers: ShopifyCustomer[] = [];
+
+  const sinceISO = since.toISOString();
+  let pageUrl: string | null =
+    `/customers.json?created_at_min=${sinceISO}&limit=250&fields=id,orders_count,total_spent,created_at,currency`;
+
+  let pageCount = 0;
+  const MAX_PAGES = 10;
+
+  while (pageUrl && pageCount < MAX_PAGES) {
+    try {
+      const response = await shopifyFetch(credentials, pageUrl);
+      if (!response.ok) {
+        errors.push(`Customers fetch failed: HTTP ${response.status}`);
+        break;
+      }
+
+      const data = await response.json();
+      const customers: ShopifyCustomer[] = (data.customers || []).map((c: any) => ({
+        id: c.id,
+        orders_count: c.orders_count,
+        total_spent: c.total_spent,
+        created_at: c.created_at,
+        currency: c.currency,
+      }));
+      allCustomers.push(...customers);
+
+      const linkHeader = response.headers.get('link');
+      pageUrl = extractNextPageUrl(linkHeader, credentials.shop_domain);
+      pageCount++;
+
+      await delay(500);
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+      break;
+    }
+  }
+
+  return { customers: allCustomers, errors };
+}
+
+/**
+ * Fetch active products with variant inventory data.
+ * Non-fatal: returns empty array + errors on failure.
+ */
+export async function fetchProducts(
+  credentials: ShopifyCredentials,
+): Promise<{ products: ShopifyProduct[]; errors: string[] }> {
+  const errors: string[] = [];
+  const allProducts: ShopifyProduct[] = [];
+
+  let pageUrl: string | null =
+    `/products.json?status=active&limit=250&fields=id,title,status,variants`;
+
+  let pageCount = 0;
+  const MAX_PAGES = 10;
+
+  while (pageUrl && pageCount < MAX_PAGES) {
+    try {
+      const response = await shopifyFetch(credentials, pageUrl);
+      if (!response.ok) {
+        errors.push(`Products fetch failed: HTTP ${response.status}`);
+        break;
+      }
+
+      const data = await response.json();
+      const products: ShopifyProduct[] = (data.products || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        status: p.status,
+        variants: (p.variants || []).map((v: any) => ({
+          id: v.id,
+          inventory_quantity: v.inventory_quantity,
+          price: v.price,
+        })),
+      }));
+      allProducts.push(...products);
+
+      const linkHeader = response.headers.get('link');
+      pageUrl = extractNextPageUrl(linkHeader, credentials.shop_domain);
+      pageCount++;
+
+      await delay(500);
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+      break;
+    }
+  }
+
+  return { products: allProducts, errors };
+}
+
+/**
+ * Fetch inventory levels for specific inventory item IDs.
+ * Batches requests in groups of 50 IDs (Shopify limit).
+ * Non-fatal: returns empty array + errors on failure.
+ */
+export async function fetchInventoryLevels(
+  credentials: ShopifyCredentials,
+  inventoryItemIds: string[],
+): Promise<{ levels: ShopifyInventoryLevel[]; errors: string[] }> {
+  const errors: string[] = [];
+  const allLevels: ShopifyInventoryLevel[] = [];
+
+  // Shopify limits inventory_item_ids to 50 per request
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < inventoryItemIds.length; i += BATCH_SIZE) {
+    const batch = inventoryItemIds.slice(i, i + BATCH_SIZE);
+    const idsParam = batch.join(',');
+
+    try {
+      const response = await shopifyFetch(
+        credentials,
+        `/inventory_levels.json?inventory_item_ids=${idsParam}`,
+      );
+      if (!response.ok) {
+        errors.push(`Inventory levels fetch failed: HTTP ${response.status}`);
+        break;
+      }
+
+      const data = await response.json();
+      const levels: ShopifyInventoryLevel[] = (data.inventory_levels || []).map((l: any) => ({
+        inventory_item_id: l.inventory_item_id,
+        available: l.available,
+      }));
+      allLevels.push(...levels);
+
+      await delay(500);
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+      break;
+    }
+  }
+
+  return { levels: allLevels, errors };
 }
 
 // ──────────────────────────────────────────────

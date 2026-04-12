@@ -1454,4 +1454,34 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.08, max: 0.20 }, medium: { min: 0.04, max: 0.10 }, low: { min: 0.02, max: 0.05 },
     base_metric: 'revenue',
   },
+
+  // ── Tier 1 Copy Analysis ──────────────────────
+  checkout_trust_language_absent: {
+    inference_key: 'checkout_trust_language_absent', impact_category: 'conversion_loss',
+    cause: "Your checkout doesn't tell the buyer it's safe to purchase",
+    effect: 'Checkout pages without security language, guarantees, or social proof leave buyers anxious at the payment moment — the absence of reassurance directly suppresses conversion at the highest-intent step',
+    high: { min: 0.05, max: 0.15 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  cta_clarity_weak_on_commercial: {
+    inference_key: 'cta_clarity_weak_on_commercial', impact_category: 'conversion_loss',
+    cause: 'Your buttons compete with each other and none convinces',
+    effect: 'Competing, generic, or unclear CTAs on commercial pages leave visitors unsure what to do next — when every button competes equally, none wins the click and conversion stalls',
+    high: { min: 0.06, max: 0.18 }, medium: { min: 0.03, max: 0.08 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  product_page_copy_generic: {
+    inference_key: 'product_page_copy_generic', impact_category: 'conversion_loss',
+    cause: 'Your product pages use generic supplier text',
+    effect: 'Manufacturer-standard descriptions fail to differentiate, address objections, or communicate benefits — buyers comparison-shop and leave because every store says the same thing',
+    high: { min: 0.05, max: 0.12 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  pricing_page_framing_unclear: {
+    inference_key: 'pricing_page_framing_unclear', impact_category: 'conversion_loss',
+    cause: "Your visitor doesn't know which plan to choose",
+    effect: 'When the recommended plan is unclear, features are listed without value framing, and objections are unaddressed — visitors stall at plan selection because they cannot decide',
+    high: { min: 0.04, max: 0.12 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
 };

@@ -198,6 +198,15 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   cors_misconfiguration_risk: 'money_moment_exposure',
   rate_limiting_absent_on_commerce: 'money_moment_exposure',
   predictable_order_urls: 'money_moment_exposure',
+  // Wave 3.1 Tier 2: LLM enrichment findings
+  social_proof_generic: 'revenue_integrity',
+  form_error_messages_unhelpful: 'revenue_integrity',
+  onboarding_no_quick_win: 'saas_growth_readiness',
+  // Tier 1 Copy Analysis
+  checkout_trust_language_absent: 'revenue_integrity',
+  cta_clarity_weak_on_commercial: 'revenue_integrity',
+  product_page_copy_generic: 'revenue_integrity',
+  pricing_page_framing_unclear: 'revenue_integrity',
 };
 
 // Inference → typical page surface
@@ -346,6 +355,15 @@ const INFERENCE_SURFACES: Record<string, string> = {
   cors_misconfiguration_risk: '/checkout, /cart, /payment (CORS headers)',
   rate_limiting_absent_on_commerce: '/checkout, /cart, /api (rate limiting)',
   predictable_order_urls: '/order, /invoice, /account (sequential URLs)',
+  // Wave 3.1 Tier 2: LLM enrichment findings
+  social_proof_generic: '/ (testimonials, reviews)',
+  form_error_messages_unhelpful: '/checkout, /contact (form errors)',
+  onboarding_no_quick_win: '/app (onboarding)',
+  // Tier 1 Copy Analysis
+  checkout_trust_language_absent: '/checkout, /cart, /payment (trust language)',
+  cta_clarity_weak_on_commercial: '/, /product, /pricing, /checkout (CTA clarity)',
+  product_page_copy_generic: '/product, /item, /p (product copy)',
+  pricing_page_framing_unclear: '/pricing, /plans (plan framing)',
 };
 
 // Human-readable titles for inference findings
@@ -498,6 +516,15 @@ export const INFERENCE_TITLES: Record<string, string> = {
   cors_misconfiguration_risk: 'Malicious sites can make purchases on behalf of your customers',
   rate_limiting_absent_on_commerce: 'Fraud bots can test stolen cards on your checkout without limits',
   predictable_order_urls: 'Anyone can access your customers\' order data',
+  // Wave 3.1 Tier 2: LLM enrichment findings
+  social_proof_generic: "Your testimonials don't convince because they say nothing specific",
+  form_error_messages_unhelpful: 'Your forms drive buyers away when they make a mistake',
+  onboarding_no_quick_win: "Your onboarding doesn't deliver a quick win in the first minutes",
+  // Tier 1 Copy Analysis
+  checkout_trust_language_absent: "Your checkout doesn't tell the buyer it's safe to purchase",
+  cta_clarity_weak_on_commercial: 'Your buttons compete with each other and none convinces',
+  product_page_copy_generic: 'Your product pages use generic supplier text',
+  pricing_page_framing_unclear: "Your visitor doesn't know which plan to choose",
 };
 
 // ── Parametric Title Resolution ──

@@ -220,6 +220,12 @@ export function computeInferences(
   inferences.push(...inferFormErrorMessagesUnhelpful(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferOnboardingNoQuickWin(byKey, scoping, cycle_ref, ids));
 
+  // Tier 1 Copy Analysis inferences
+  inferences.push(...inferCheckoutTrustLanguageAbsent(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCtaClarityWeak(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferProductPageCopyGeneric(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPricingPageFramingUnclear(byKey, scoping, cycle_ref, ids));
+
   return inferences;
 }
 
@@ -3064,6 +3070,103 @@ function inferIntentAbsorberDetected(byKey: Map<string, Signal>, scoping: Scopin
 
 function inferIntentDecayTimeExcessive(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   return inferCohort(byKey.get('intent_decay_time_excessive'), 'intent_decay_time_excessive', InferenceCategory.IntentDecayTimeExcessive, 'The average time from expressed intent to conversion start is excessively long. Purchase intent decays over time — the longer a user takes between deciding to buy and completing the purchase, the less likely they are to follow through. The path from pricing/cart to checkout needs to be shortened and streamlined to preserve intent momentum.', scoping, cycle_ref, ids);
+}
+
+// ──────────────────────────────────────────────
+// Tier 1 Copy Analysis Inferences
+// ──────────────────────────────────────────────
+
+function inferCheckoutTrustLanguageAbsent(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  // Look for signals with the checkout_trust_language_absent prefix
+  const matches = Array.from(byKey.entries()).filter(([k]) => k.startsWith('checkout_trust_language_absent_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 20 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'checkout_trust_language_absent',
+    category: InferenceCategory.CheckoutTrustLanguageAbsent,
+    conclusion: 'checkout_trust_language_absent',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: worst.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Checkout pages lack trust language (trust score ${score}/100). Buyers at the payment moment see no security language, guarantees, or social proof — the absence of reassurance at the most anxious point in the journey directly suppresses conversion.`,
+  })];
+}
+
+function inferCtaClarityWeak(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = Array.from(byKey.entries()).filter(([k]) => k.startsWith('cta_clarity_weak_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 30 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'cta_clarity_weak_on_commercial',
+    category: InferenceCategory.CtaClarityWeak,
+    conclusion: 'cta_clarity_weak_on_commercial',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: worst.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Commercial pages have weak CTA clarity (score ${score}/100). Competing, generic, or unclear calls-to-action leave visitors unsure what to do next — when every button competes equally, none wins the click.`,
+  })];
+}
+
+function inferProductPageCopyGeneric(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = Array.from(byKey.entries()).filter(([k]) => k.startsWith('product_description_generic_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 20 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'product_page_copy_generic',
+    category: InferenceCategory.ProductPageCopyGeneric,
+    conclusion: 'product_page_copy_generic',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: worst.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Product pages use generic supplier text (quality score ${score}/100). Manufacturer-standard descriptions fail to differentiate, address objections, or communicate benefits — buyers comparison-shop and leave because every store says the same thing.`,
+  })];
+}
+
+function inferPricingPageFramingUnclear(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = Array.from(byKey.entries()).filter(([k]) => k.startsWith('pricing_page_framing_weak_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 25 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'pricing_page_framing_unclear',
+    category: InferenceCategory.PricingPageFramingUnclear,
+    conclusion: 'pricing_page_framing_unclear',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: worst.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Pricing page framing is weak (framing score ${score}/100). When the recommended plan isn't obvious, features aren't framed as benefits, and objections aren't handled — visitors stall at the plan selection step because they can't decide.`,
+  })];
 }
 
 function createInference(params: {

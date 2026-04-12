@@ -242,6 +242,17 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   path_length_exceeds_efficient:   { root_cause_key: 'behavioral_path_inefficiency', category: 'behavioral_path_integrity', impact_types: ['revenue_loss'] },
   intent_decay_time_excessive:     { root_cause_key: 'behavioral_path_inefficiency', category: 'behavioral_path_integrity', impact_types: ['revenue_loss'] },
   intent_absorber_detected:        { root_cause_key: 'behavioral_path_inefficiency', category: 'behavioral_path_integrity', impact_types: ['revenue_loss', 'scale_risk'] },
+
+  // Wave 3.1 Tier 2: LLM enrichment findings
+  social_proof_generic:              { root_cause_key: 'copy_strategy_gap', category: 'conversion_clarity', impact_types: ['revenue_loss', 'trust_erosion'] },
+  form_error_messages_unhelpful:     { root_cause_key: 'copy_strategy_gap', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
+  onboarding_no_quick_win:           { root_cause_key: 'saas_activation_barrier', category: 'saas_activation_failure', impact_types: ['revenue_loss'] },
+
+  // Tier 1 Copy Analysis findings
+  checkout_trust_language_absent:    { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss', 'trust_erosion'] },
+  cta_clarity_weak_on_commercial:    { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
+  product_page_copy_generic:         { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
+  pricing_page_framing_unclear:      { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a
@@ -296,6 +307,8 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   behavioral_friction_tax: 'Every funnel step costs more effort than it should',
   behavioral_trust_revenue_gap: 'Buyers want to convert but lack the trust to follow through',
   behavioral_path_inefficiency: 'The path to purchase is longer than buyer intent can sustain',
+  // Wave 3.1 Tier 2: LLM enrichment root causes
+  copy_strategy_gap: "Your copy doesn't match what buyers need to hear",
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -386,6 +399,9 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   behavioral_trust_revenue_gap: "Buyers demonstrate clear purchase intent but abandon at conversion-proximate moments because trust signals are insufficient. Session patterns show elevated reassurance-seeking behavior — policy page visits, support lookups, trust badge scanning — followed by abandonment. The gap between willingness to buy and willingness to trust is measurable and recoverable. These buyers wanted to convert; they needed one more reason to feel safe.",
 
   behavioral_path_inefficiency: "The path from first interaction to purchase is longer than buyer intent can sustain. Too many intermediate pages, excessive time between intent signals and conversion opportunities, and intent-absorbing surfaces that capture attention without advancing the purchase all contribute to decay. By the time the buyer reaches the conversion point, the urgency that brought them has dissipated. Shorter paths convert; longer paths leak.",
+
+  // Wave 3.1 Tier 2: LLM enrichment root causes
+  copy_strategy_gap: "Your commercial copy — testimonials, error messages, onboarding flows, CTAs — doesn't address what the buyer needs to hear at each stage of their journey. Generic social proof that says nothing specific, form errors that speak in code instead of plain language, and onboarding that never delivers a quick win all share the same root cause: the words on the page were written for completeness, not persuasion. Every surface that fails to answer the buyer's real question at that moment is a surface that loses revenue.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

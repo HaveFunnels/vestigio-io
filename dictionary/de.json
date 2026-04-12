@@ -2160,7 +2160,14 @@
       "email_deliverability_risk": "Ihre Bestellbestätigungs-E-Mails erreichen den Käufer nicht",
       "cors_misconfiguration_risk": "Bösartige Websites können im Namen Ihrer Kunden einkaufen",
       "rate_limiting_absent_on_commerce": "Betrugsbots können gestohlene Karten unbegrenzt an Ihrem Checkout testen",
-      "predictable_order_urls": "Jeder kann auf die Bestelldaten Ihrer Kunden zugreifen"
+      "predictable_order_urls": "Jeder kann auf die Bestelldaten Ihrer Kunden zugreifen",
+      "social_proof_generic": "Ihre Testimonials überzeugen nicht, weil sie nichts Konkretes sagen",
+      "form_error_messages_unhelpful": "Ihre Formulare vertreiben Käufer wenn sie einen Fehler machen",
+      "onboarding_no_quick_win": "Ihr Onboarding liefert keinen Quick Win in den ersten Minuten",
+      "checkout_trust_language_absent": "Ihr Checkout sagt dem Käufer nicht, dass der Kauf sicher ist",
+      "cta_clarity_weak_on_commercial": "Ihre Buttons konkurrieren miteinander und keiner überzeugt",
+      "product_page_copy_generic": "Ihre Produktseiten verwenden generischen Lieferantentext",
+      "pricing_page_framing_unclear": "Ihr Besucher weiß nicht, welchen Plan er wählen soll"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Käufer verlieren das Vertrauen im Checkout-Moment",
@@ -2197,7 +2204,8 @@
       "mobile_conversion_failure": "Mobile Besucher stoßen auf Konversionsbarrieren die Desktop-Nutzer nie sehen",
       "behavioral_friction_tax": "Jeder Funnel-Schritt kostet mehr Aufwand als er sollte",
       "behavioral_trust_revenue_gap": "K��ufer wollen konvertieren aber haben nicht genug Vertrauen um durchzuziehen",
-      "behavioral_path_inefficiency": "Der Weg zum Kauf ist länger als die Kaufabsicht aushalten kann"
+      "behavioral_path_inefficiency": "Der Weg zum Kauf ist länger als die Kaufabsicht aushalten kann",
+      "copy_strategy_gap": "Ihr Copy sagt nicht was der Käufer hören muss"
     },
     "root_cause_descriptions": {
       "trust_failure_at_checkout": "Käufer erreichen den Zahlungsmoment, aber die Vertrauenssignale um sie herum werden schwächer statt stärker. Domain-Wechsel, unbekannte Zahlungsanbieter und fehlende Sicherheitshinweise im falschen Moment bringen Käufer zum Abbruch — genau wenn die Konversion am nächsten ist. Der Käufer wollte bezahlen; das Erlebnis hat ihn abgeschreckt.",

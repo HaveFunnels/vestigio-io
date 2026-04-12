@@ -2641,7 +2641,14 @@
       "email_deliverability_risk": "Seus emails de confirmação de compra não chegam ao comprador",
       "cors_misconfiguration_risk": "Sites maliciosos podem fazer compras em nome dos seus clientes",
       "rate_limiting_absent_on_commerce": "Bots testam cartões clonados no seu checkout sem limite",
-      "predictable_order_urls": "Dados de pedidos dos seus clientes podem ser acessados por qualquer pessoa"
+      "predictable_order_urls": "Dados de pedidos dos seus clientes podem ser acessados por qualquer pessoa",
+      "social_proof_generic": "Seus depoimentos não convencem porque não dizem nada específico",
+      "form_error_messages_unhelpful": "Seus formulários expulsam compradores quando dão erro",
+      "onboarding_no_quick_win": "Seu onboarding não entrega um quick win nos primeiros minutos",
+      "checkout_trust_language_absent": "Seu checkout não diz ao comprador que é seguro comprar",
+      "cta_clarity_weak_on_commercial": "Seus botões competem entre si e nenhum convence",
+      "product_page_copy_generic": "Suas páginas de produto usam texto genérico do fornecedor",
+      "pricing_page_framing_unclear": "Seu visitante não sabe qual plano escolher"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Compradores perdem a confiança no momento do checkout",
@@ -2678,7 +2685,8 @@
       "mobile_conversion_failure": "Visitantes mobile enfrentam barreiras de conversão que usuários desktop nunca veem",
       "behavioral_friction_tax": "Cada etapa do funil custa mais esforço do que deveria",
       "behavioral_trust_revenue_gap": "Compradores querem converter mas não têm confiança suficiente para seguir em frente",
-      "behavioral_path_inefficiency": "O caminho até a compra é mais longo do que a intenção do comprador consegue sustentar"
+      "behavioral_path_inefficiency": "O caminho até a compra é mais longo do que a intenção do comprador consegue sustentar",
+      "copy_strategy_gap": "Sua copy não diz o que o comprador precisa ouvir"
     },
     "root_cause_descriptions": {
       "trust_failure_at_checkout": "Compradores chegam ao momento do pagamento, mas os sinais de confiança ao redor enfraquecem em vez de fortalecer. Redirecionamentos para outros domínios, provedores de pagamento desconhecidos e ausência de pistas de segurança no momento errado fazem o comprador desistir — exatamente quando a conversão estava mais próxima. O comprador queria pagar; a experiência o assustou.",

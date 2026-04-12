@@ -2586,7 +2586,14 @@
       "email_deliverability_risk": "Your order confirmation emails don't reach the buyer",
       "cors_misconfiguration_risk": "Malicious sites can make purchases on behalf of your customers",
       "rate_limiting_absent_on_commerce": "Fraud bots can test stolen cards on your checkout without limits",
-      "predictable_order_urls": "Anyone can access your customers' order data"
+      "predictable_order_urls": "Anyone can access your customers' order data",
+      "social_proof_generic": "Your testimonials don't convince because they say nothing specific",
+      "form_error_messages_unhelpful": "Your forms drive buyers away when they make a mistake",
+      "onboarding_no_quick_win": "Your onboarding doesn't deliver a quick win in the first minutes",
+      "checkout_trust_language_absent": "Your checkout doesn't tell the buyer it's safe to purchase",
+      "cta_clarity_weak_on_commercial": "Your buttons compete with each other and none convinces",
+      "product_page_copy_generic": "Your product pages use generic supplier text",
+      "pricing_page_framing_unclear": "Your visitor doesn't know which plan to choose"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Buyers lose trust at the checkout moment",
@@ -2623,7 +2630,8 @@
       "mobile_conversion_failure": "Mobile visitors face conversion barriers desktop users never see",
       "behavioral_friction_tax": "Every funnel step costs more effort than it should",
       "behavioral_trust_revenue_gap": "Buyers want to convert but lack the trust to follow through",
-      "behavioral_path_inefficiency": "The path to purchase is longer than buyer intent can sustain"
+      "behavioral_path_inefficiency": "The path to purchase is longer than buyer intent can sustain",
+      "copy_strategy_gap": "Your copy doesn't match what buyers need to hear"
     },
     "root_cause_descriptions": {
       "trust_failure_at_checkout": "Buyers reach the moment of payment but trust signals around them weaken instead of strengthen. Off-domain handoffs, unrecognized payment providers, and missing security cues at the wrong moment cause buyers to back out — exactly when conversion is closest. The buyer wanted to pay; the experience scared them off.",

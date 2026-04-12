@@ -4716,6 +4716,105 @@ function extractCopyEnrichmentSignals(
         }));
       }
     }
+
+    // Finding 4: Checkout trust language absent
+    if (p.enrichment_type === 'checkout_trust') {
+      const results = (p.results || {}) as {
+        trust_signals_present?: boolean; has_security_language?: boolean;
+        has_guarantee?: boolean; has_urgency_manipulation?: boolean;
+        trust_score?: number;
+      };
+      const trustScore = results.trust_score ?? 0;
+
+      if (trustScore < 40) {
+        const severity = trustScore < 20 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `checkout_trust_language_absent_${p.source_url}`,
+          category: SignalCategory.Trust,
+          attribute: 'enrichment.checkout_trust.score',
+          value: severity,
+          numeric_value: trustScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Checkout trust language absent at ${p.source_url}: trust score ${trustScore}/100, security language: ${results.has_security_language ? 'yes' : 'no'}, guarantee: ${results.has_guarantee ? 'yes' : 'no'}`,
+        }));
+      }
+    }
+
+    // Finding 5: CTA clarity weak on commercial pages
+    if (p.enrichment_type === 'cta_clarity') {
+      const results = (p.results || {}) as {
+        ctas?: string[]; primary_cta_clear?: boolean;
+        competing_ctas?: number; generic_cta_detected?: boolean;
+        clarity_score?: number;
+      };
+      const clarityScore = results.clarity_score ?? 0;
+      const competingCtas = results.competing_ctas ?? 0;
+
+      if (clarityScore < 50 || competingCtas > 2) {
+        const severity = clarityScore < 30 || competingCtas > 3 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `cta_clarity_weak_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.cta_clarity.score',
+          value: severity,
+          numeric_value: clarityScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `CTA clarity weak at ${p.source_url}: clarity score ${clarityScore}/100, ${competingCtas} competing CTAs, primary CTA clear: ${results.primary_cta_clear ? 'yes' : 'no'}, generic CTA: ${results.generic_cta_detected ? 'yes' : 'no'}`,
+        }));
+      }
+    }
+
+    // Finding 6: Product page copy generic
+    if (p.enrichment_type === 'product_page_quality') {
+      const results = (p.results || {}) as {
+        is_generic_description?: boolean; benefits_vs_features_ratio?: number;
+        objections_addressed?: boolean; description_quality_score?: number;
+      };
+      const qualityScore = results.description_quality_score ?? 0;
+
+      if (qualityScore < 40) {
+        const severity = qualityScore < 20 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `product_description_generic_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.product_page.quality_score',
+          value: severity,
+          numeric_value: qualityScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Product page copy generic at ${p.source_url}: quality score ${qualityScore}/100, generic description: ${results.is_generic_description ? 'yes' : 'no'}, objections addressed: ${results.objections_addressed ? 'yes' : 'no'}`,
+        }));
+      }
+    }
+
+    // Finding 7: Pricing page framing weak
+    if (p.enrichment_type === 'pricing_page_framing') {
+      const results = (p.results || {}) as {
+        recommended_plan_clear?: boolean; value_framing_quality?: number;
+        has_objection_handling?: boolean; framing_score?: number;
+      };
+      const framingScore = results.framing_score ?? 0;
+
+      if (framingScore < 50) {
+        const severity = framingScore < 25 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `pricing_page_framing_weak_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.pricing_page.framing_score',
+          value: severity,
+          numeric_value: framingScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Pricing page framing weak at ${p.source_url}: framing score ${framingScore}/100, recommended plan clear: ${results.recommended_plan_clear ? 'yes' : 'no'}, objection handling: ${results.has_objection_handling ? 'yes' : 'no'}`,
+        }));
+      }
+    }
   }
 }
 

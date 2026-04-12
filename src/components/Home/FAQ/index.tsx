@@ -1,7 +1,7 @@
 "use client";
 
 import FaqJsonLd from "@/components/SEO/FaqJsonLd";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 const faqData = [
 	{
@@ -27,88 +27,70 @@ const faqData = [
 ];
 
 const FAQ = () => {
-	const [activeFaq, setActiveFaq] = useState<number | null>(0);
-	const [mounted, setMounted] = useState(false);
-	const contentRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-	useEffect(() => { setMounted(true); }, []);
-
-	const setContentRef = useCallback((el: HTMLDivElement | null, i: number) => {
-		contentRefs.current[i] = el;
-	}, []);
-
-	const handleFaqToggle = (id: number) => {
-		activeFaq === id ? setActiveFaq(null) : setActiveFaq(id);
-	};
-
-	const getMaxHeight = (i: number) => {
-		if (activeFaq !== i) return '0px';
-		if (!mounted) return '500px';
-		const el = contentRefs.current[i];
-		return el ? `${el.scrollHeight}px` : '500px';
-	};
+	const [openIndex, setOpenIndex] = useState<number | null>(0);
 
 	return (
-		<section id="faq" className='overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28'>
+		<section
+			id="faq"
+			className="overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28"
+		>
 			<FaqJsonLd faqs={faqData} />
-			{/* Section header */}
-			<div className='mx-auto mb-10 max-w-[600px] px-4 text-center sm:mb-12'>
-				<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl'>
+
+			<div className="mx-auto mb-10 max-w-[600px] px-4 text-center sm:mb-12">
+				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl">
 					Frequently asked questions
 				</h2>
-				<p className='text-sm text-gray-400 sm:text-base'>
+				<p className="text-sm text-zinc-400 sm:text-base">
 					Everything you need to know about Vestigio.
 				</p>
 			</div>
 
-			<div className='mx-auto w-full max-w-[700px] px-4 sm:px-8 xl:px-0'>
-				<div className='flex flex-col gap-3'>
+			<div className="mx-auto w-full max-w-[700px] px-4 sm:px-8 xl:px-0">
+				<div className="flex flex-col gap-3">
 					{faqData.map(({ question, answer }, i) => {
-						const isOpen = activeFaq === i;
+						const isOpen = openIndex === i;
 						return (
 							<div
 								key={i}
-								className='rounded-[1rem] border border-white/5 bg-white/[0.02] transition-colors hover:border-white/10'
+								className="rounded-2xl border border-white/5 bg-white/[0.02] transition-colors duration-200 hover:border-white/10"
 							>
 								<button
-									onClick={() => handleFaqToggle(i)}
-									className='flex w-full items-center justify-between gap-4 px-4 py-4 text-left text-sm font-medium text-white sm:px-6 sm:py-5'
+									onClick={() => setOpenIndex(isOpen ? null : i)}
+									className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"
 								>
-									{question}
-									<span
-										className={`ml-2 shrink-0 text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-									>
-										<svg
-											width='20'
-											height='20'
-											viewBox='0 0 24 25'
-											fill='none'
-											xmlns='http://www.w3.org/2000/svg'
-										>
-											<path
-												fillRule='evenodd'
-												clipRule='evenodd'
-												d='M4.43057 8.87618C4.70014 8.56168 5.17361 8.52526 5.48811 8.79483L12 14.3765L18.5119 8.79483C18.8264 8.52526 19.2999 8.56168 19.5695 8.87618C19.839 9.19067 19.8026 9.66415 19.4881 9.93371L12.4881 15.9337C12.2072 16.1745 11.7928 16.1745 11.5119 15.9337L4.51192 9.93371C4.19743 9.66415 4.161 9.19067 4.43057 8.87618Z'
-												fill='currentColor'
-											/>
-										</svg>
+									<span className="text-sm font-medium text-white sm:text-[15px]">
+										{question}
 									</span>
+									<svg
+										width="18"
+										height="18"
+										viewBox="0 0 18 18"
+										fill="none"
+										className={`shrink-0 text-zinc-500 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isOpen ? "rotate-180" : ""}`}
+									>
+										<path
+											d="M4.5 6.75L9 11.25L13.5 6.75"
+											stroke="currentColor"
+											strokeWidth="1.5"
+											strokeLinecap="round"
+											strokeLinejoin="round"
+										/>
+									</svg>
 								</button>
+
+								{/* CSS grid 0fr→1fr: the only reliable CSS-only auto-height animation */}
 								<div
-									ref={(el) => setContentRef(el, i)}
-									className='overflow-hidden'
+									className="grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
 									style={{
-										maxHeight: getMaxHeight(i),
-										opacity: isOpen ? 1 : 0,
-										transition: mounted
-											? 'max-height 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms ease'
-											: 'none',
+										gridTemplateRows: isOpen ? "1fr" : "0fr",
 									}}
 								>
-									<div className='border-t border-white/5'>
-										<p className='px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>
-											{answer}
-										</p>
+									<div className="overflow-hidden" style={{ minHeight: 0 }}>
+										<div className="border-t border-white/5 px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
+											<p className="text-sm leading-relaxed text-zinc-400">
+												{answer}
+											</p>
+										</div>
 									</div>
 								</div>
 							</div>

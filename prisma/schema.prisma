@@ -246,6 +246,7 @@ model Environment {
   auditCycles      AuditCycle[]
   findings         Finding[]
   saasAccessConfig SaasAccessConfig?
+  integrations     IntegrationConnection[]
   // Wave 0.2: Raw behavioral events from the snippet for this env
   behavioralEvents RawBehavioralEvent[]
 }
@@ -444,6 +445,27 @@ model SaasAccessConfig {
   updatedAt            DateTime  @updatedAt
 
   environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────────────────────────────────────
+// Integration Connections — Shopify, Stripe, Meta, Google
+// ──────────────────────────────────────────────
+
+model IntegrationConnection {
+  id              String    @id @default(cuid())
+  environmentId   String
+  environment     Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  provider        String    // shopify | stripe | meta_ads | google_ads
+  config          String    @db.Text // encrypted JSON (store URL, access token, etc.)
+  status          String    @default("pending") // pending | connected | error | disconnected
+  syncError       String?   // last sync error message
+  installedAt     DateTime  @default(now())
+  lastSyncedAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([environmentId, provider])
+  @@index([environmentId])
 }
 
 // ──────────────────────────────────────────────

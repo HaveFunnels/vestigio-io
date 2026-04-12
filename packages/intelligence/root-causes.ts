@@ -195,6 +195,43 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   mixed_content_exposure:     { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
   open_redirect_indicator:    { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
   sensitive_endpoint_exposed: { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
+
+  // Phase 5: Behavioral cohort inference mappings
+
+  // first_impression_revenue pack — first session stalls, trust barriers, CTA timing
+  first_session_milestone_stall:  { root_cause_key: 'behavioral_first_session_failure', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss'] },
+  first_session_trust_barrier:    { root_cause_key: 'behavioral_first_session_failure', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
+  first_session_cta_timing_gap:   { root_cause_key: 'behavioral_first_session_failure', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss'] },
+
+  // action_value_map pack — low-value actions dominate, high-value underexposed
+  low_value_action_dominates:     { root_cause_key: 'behavioral_action_value_misalignment', category: 'behavioral_path_integrity', impact_types: ['revenue_loss'] },
+  high_value_action_underexposed: { root_cause_key: 'behavioral_action_value_misalignment', category: 'behavioral_path_integrity', impact_types: ['revenue_loss'] },
+  dead_weight_surface_traffic:    { root_cause_key: 'behavioral_action_value_misalignment', category: 'behavioral_path_integrity', impact_types: ['revenue_loss', 'scale_risk'] },
+
+  // acquisition_integrity pack — paid traffic friction and trust gaps
+  paid_traffic_friction_elevated:  { root_cause_key: 'paid_acquisition_waste', category: 'friction_barrier', impact_types: ['revenue_loss', 'scale_risk'] },
+  paid_traffic_trust_gap:          { root_cause_key: 'paid_acquisition_waste', category: 'friction_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  paid_mobile_compounding_waste:   { root_cause_key: 'paid_acquisition_waste', category: 'friction_barrier', impact_types: ['revenue_loss', 'scale_risk'] },
+
+  // mobile_revenue_exposure pack — mobile-specific conversion degradation
+  mobile_conversion_gap:           { root_cause_key: 'mobile_conversion_failure', category: 'friction_barrier', impact_types: ['revenue_loss', 'scale_risk'] },
+  mobile_form_friction_elevated:   { root_cause_key: 'mobile_conversion_failure', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+  mobile_cta_timing_degraded:      { root_cause_key: 'mobile_conversion_failure', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+
+  // friction_tax pack — funnel step friction, oscillation cost, checkout entry
+  funnel_step_friction_cost:       { root_cause_key: 'behavioral_friction_tax', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+  oscillation_decision_cost:       { root_cause_key: 'behavioral_friction_tax', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+  checkout_entry_friction:         { root_cause_key: 'behavioral_friction_tax', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+
+  // trust_revenue_gap pack — trust deficit dragging conversion
+  trust_deficit_conversion_drag:   { root_cause_key: 'behavioral_trust_revenue_gap', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
+  reassurance_seeking_elevated:    { root_cause_key: 'behavioral_trust_revenue_gap', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
+  sensitive_input_trust_gap:       { root_cause_key: 'behavioral_trust_revenue_gap', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
+
+  // path_efficiency pack — path length, intent decay, intent absorbers
+  path_length_exceeds_efficient:   { root_cause_key: 'behavioral_path_inefficiency', category: 'behavioral_path_integrity', impact_types: ['revenue_loss'] },
+  intent_decay_time_excessive:     { root_cause_key: 'behavioral_path_inefficiency', category: 'behavioral_path_integrity', impact_types: ['revenue_loss'] },
+  intent_absorber_detected:        { root_cause_key: 'behavioral_path_inefficiency', category: 'behavioral_path_integrity', impact_types: ['revenue_loss', 'scale_risk'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a
@@ -241,6 +278,14 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   behavioral_trust_failure_at_input: "Buyers don't trust your forms with sensitive data",
   // Wave 3.3
   security_posture_inadequate: 'Your visible security posture creates financial and trust risk',
+  // Phase 5: Behavioral cohort root causes
+  behavioral_first_session_failure: 'First-time visitors stall before reaching a revenue milestone',
+  behavioral_action_value_misalignment: 'Low-value actions dominate while high-value actions go unseen',
+  paid_acquisition_waste: 'Paid traffic hits friction that compounds into wasted spend',
+  mobile_conversion_failure: 'Mobile visitors face conversion barriers desktop users never see',
+  behavioral_friction_tax: 'Every funnel step costs more effort than it should',
+  behavioral_trust_revenue_gap: 'Buyers want to convert but lack the trust to follow through',
+  behavioral_path_inefficiency: 'The path to purchase is longer than buyer intent can sustain',
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -316,6 +361,21 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   behavioral_trust_failure_at_input: "Forms on conversion-proximate pages ask for sensitive data — payment, identity, contact — without enough trust context around them. The mismatch between what's being asked and what's being promised causes immediate dropoff. The buyer doesn't know enough to feel safe handing over their information, and they back out at the field.",
 
   security_posture_inadequate: "Your site's visible security posture has gaps that browsers, security-aware buyers, and automated scanners can detect. Missing security headers let attackers inject content or downgrade connections. Mixed content on commercial pages triggers browser warnings that block checkout scripts. Exposed admin panels or config files give attackers a direct path to compromise. These are not theoretical vulnerabilities — they are structural conditions that erode trust and create financial exposure every day.",
+
+  // Phase 5: Behavioral cohort root causes
+  behavioral_first_session_failure: "First-time visitors arrive with intent but stall before reaching any revenue milestone. Session data shows new users hitting trust barriers, missing CTAs, or encountering dead-end flows within their first interaction. The first session is the highest-leverage conversion window — when it fails, the buyer rarely returns. Every first-session stall is a permanent loss of the cheapest conversion you'll ever get.",
+
+  behavioral_action_value_misalignment: "Visitor behavior concentrates on low-value actions while the high-value actions that drive revenue remain underexposed or buried. Traffic flows to surfaces that don't advance the purchase, and the pages that matter most receive the least engagement. The site is busy but unproductive — activity without advancement. Revenue-generating actions need to be where the attention already is, not where you wish it were.",
+
+  paid_acquisition_waste: "Paid traffic lands on experiences with elevated friction, trust gaps, or mobile-compounding issues that suppress the conversion you paid to create. The acquisition cost is fixed but the conversion rate is degraded — every friction point on the paid path multiplies your effective cost per acquisition. You're paying full price for half the result, and the waste scales linearly with spend.",
+
+  mobile_conversion_failure: "Mobile visitors encounter conversion barriers that desktop users never see — broken CTAs, form friction, timing gaps between intent and action. The mobile experience systematically underperforms against the same offer, same traffic quality, same buyer intent. Since mobile is typically the majority of traffic, this gap represents the single largest segment-level revenue loss most sites carry.",
+
+  behavioral_friction_tax: "Every step in the funnel costs more effort than it should. Session data shows oscillation between pages, repeated checkout entries, and decision fatigue manifesting as back-and-forth navigation before dropoff. The cumulative friction across the path acts as an invisible tax on conversion — no single step is broken, but the sum of all steps exceeds what buyers are willing to endure.",
+
+  behavioral_trust_revenue_gap: "Buyers demonstrate clear purchase intent but abandon at conversion-proximate moments because trust signals are insufficient. Session patterns show elevated reassurance-seeking behavior — policy page visits, support lookups, trust badge scanning — followed by abandonment. The gap between willingness to buy and willingness to trust is measurable and recoverable. These buyers wanted to convert; they needed one more reason to feel safe.",
+
+  behavioral_path_inefficiency: "The path from first interaction to purchase is longer than buyer intent can sustain. Too many intermediate pages, excessive time between intent signals and conversion opportunities, and intent-absorbing surfaces that capture attention without advancing the purchase all contribute to decay. By the time the buyer reaches the conversion point, the urgency that brought them has dissipated. Shorter paths convert; longer paths leak.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

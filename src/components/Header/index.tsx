@@ -88,19 +88,19 @@ const Header = () => {
 
 	return (
 		<header
-			className={`fixed left-0 right-0 z-999 transition-[top] duration-500 ease-out ${
+			className={`fixed left-0 right-0 z-999 will-change-transform transition-[top] duration-500 ease-out ${
 				compact ? "top-3" : bannerVisible ? "top-10" : "top-3"
 			}`}
 		>
 			<div
-				className={`relative mx-auto flex flex-col transition-all duration-500 ease-out xl:flex-row xl:items-center xl:justify-between ${
+				className={`relative mx-auto flex flex-col will-change-[transform,opacity] xl:flex-row xl:items-center xl:justify-between ${
 					compact
 						? // Compact liquid-glass pill
 							navbarOpen
-								? "max-w-[620px] rounded-[1.25rem] border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-5 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl"
-								: "h-12 max-w-[620px] rounded-full border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl"
+								? "max-w-[620px] rounded-[1.25rem] border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-5 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl transition-[border-radius,background,border-color,box-shadow,backdrop-filter] duration-500 ease-out"
+								: "h-12 max-w-[620px] rounded-full border border-white/[0.12] bg-gradient-to-b from-white/[0.08] to-white/[0.03] px-5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] backdrop-blur-xl transition-[border-radius,background,border-color,box-shadow,backdrop-filter,max-width,padding] duration-500 ease-out"
 						: // Default — full width, transparent, no border
-							"max-w-[1170px] rounded-full border border-transparent bg-transparent px-4 py-4 shadow-none backdrop-blur-0 sm:px-8"
+							"max-w-[1170px] rounded-full border border-transparent bg-transparent px-4 py-4 shadow-none backdrop-blur-0 sm:px-8 transition-[border-radius,background,border-color,box-shadow,backdrop-filter,max-width,padding] duration-500 ease-out"
 				}`}
 			>
 				<div className={`flex w-full shrink-0 items-center justify-between xl:w-auto ${compact && !navbarOpen ? "h-12" : ""}`}>
@@ -175,7 +175,7 @@ const Header = () => {
 					    in the DOM, just visually gone, so the transition keeps
 					    morphing instead of remounting. */}
 					<nav
-						className={`overflow-hidden transition-all duration-500 ease-out lg:mx-auto ${
+						className={`overflow-hidden transition-[max-width,opacity] duration-500 ease-out lg:mx-auto ${
 							compact
 								? "xl:max-w-0 xl:opacity-0"
 								: "xl:max-w-[800px] xl:opacity-100"

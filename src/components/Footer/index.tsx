@@ -16,9 +16,9 @@ const Footer = () => {
 					<div className='w-full sm:max-w-[300px]'>
 						<Link href='/'>
 							{branding.logo_light?.dataUrl ? (
-								<img src={logoSrc} alt="Vestigio" className="h-10 w-auto" />
+								<img src={logoSrc} alt="Vestigio" className="h-5 w-auto sm:h-7" />
 							) : (
-								<Image src="/images/logo/logo-light.png" alt="Vestigio" width={214} height={40} />
+								<Image src="/images/logo/logo-light.png" alt="Vestigio" width={214} height={40} className="h-5 w-auto sm:h-7" />
 							)}
 						</Link>
 						<p className='mt-5 text-sm text-gray-500'>

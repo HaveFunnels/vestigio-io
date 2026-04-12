@@ -194,22 +194,22 @@
           {
             "label": "Alto Impacto",
             "value": "8",
-            "sub": "crítico + alto"
+            "sub": "Crítico + Alto"
           },
           {
             "label": "Superfícies",
             "value": "12",
-            "sub": "live + verificadas"
+            "sub": "Live + Verificadas"
           },
           {
             "label": "Confiança Média",
             "value": "82%",
-            "sub": "baseada em evidência"
+            "sub": "Baseada em Evidência"
           },
           {
             "label": "Pontos Fortes",
             "value": "6",
-            "sub": "vitórias a preservar"
+            "sub": "Vitórias a Preservar"
           }
         ],
         "rows": [
@@ -600,10 +600,10 @@
         "eyebrow": "Você recupera",
         "title": "Estanque o vazamento antes que ele se acumule",
         "description": "O Vestigio acompanha cada vazamento da detecção à resolução. Veja suas perdas mensais caírem conforme os descobertas são fechados — e detecte novas regressões no momento em que aparecem.",
-        "axis_label": "Faturamento perdida / mês",
+        "axis_label": "Faturamento perdido / mês",
         "before_label": "Antes do Vestigio",
         "after_label": "Depois do Vestigio",
-        "annotation_label": "Faturamento recuperada",
+        "annotation_label": "Faturamento recuperado",
         "annotation_value": "+87,2%"
       },
       "evidence_orbit": {
@@ -2692,8 +2692,8 @@
       "pricing_page_framing_unclear": "Seu visitante não sabe qual plano escolher",
       "checkout_abandonment_revenue_leak": "Seu checkout perde dinheiro toda vez que um comprador desiste",
       "promoted_product_out_of_stock": "Produtos no seu site não podem ser comprados — fora de estoque",
-      "high_refund_rate_eroding_revenue": "A taxa de reembolso está corroendo sua receita",
-      "single_payment_gateway_risk": "Uma queda no gateway de pagamento para toda a sua receita",
+      "high_refund_rate_eroding_revenue": "A taxa de reembolso está corroendo o faturamento",
+      "single_payment_gateway_risk": "Uma queda no gateway de pagamento para todo o faturamento",
       "discount_abuse_pattern": "O uso excessivo de descontos está vazando margem na maioria dos pedidos",
       "low_repeat_purchase_rate": "Compradores não estão voltando — o custo de aquisição não está sendo recuperado",
       "dead_weight_products": "Produtos listados não venderam em 30 dias — peso morto"
@@ -2742,7 +2742,7 @@
       "friction_barrier_on_path": "Obstáculos técnicos no caminho da intenção até a compra — páginas lentas, formulários quebrados ou excessivamente longos, redirecionamentos redundantes — suprimem a conversão diretamente. Compradores não atravessam fricção; eles desistem. Cada passo que pede demais é um passo que perde faturamento.",
       "measurement_blindspot": "As páginas que geram faturamento não estão sendo medidas. Sem analytics no caminho de comércio, qualquer outra melhoria é chute — você não pode otimizar o que não consegue ver. Decisões são tomadas no instinto em vez de dados, e os vazamentos continuam invisíveis.",
       "policy_deficiency": "Políticas obrigatórias do consumidor (privacidade, termos, devoluções) estão ausentes, incompletas ou enterradas onde o comprador não acha. Isso cria risco jurídico, quebra confiança no momento da compra, e bloqueia aceitação de tráfego pago em plataformas que exigem presença de políticas antes de servir anúncios.",
-      "active_revenue_leakage": "A faturamento está vazando neste momento por caminhos quebrados específicos — fluxos de checkout mortos, formulários quebrados, rotas de conversão ausentes. Não é risco hipotético; é dinheiro saindo hoje. Cada ciclo que isso permanece é perda direta de faturamento com etiqueta de dólar quantificável.",
+      "active_revenue_leakage": "O faturamento está vazando neste momento por caminhos quebrados específicos — fluxos de checkout mortos, formulários quebrados, rotas de conversão ausentes. Não é risco hipotético; é dinheiro saindo hoje. Cada ciclo que isso permanece é perda direta de faturamento com etiqueta de dólar quantificável.",
       "weak_conversion_signal": "Visitantes chegam às suas páginas comerciais mas não conseguem ver como comprar de você. O CTA principal está ausente, pouco claro, ou competindo com ações secundárias mais barulhentas. Mesmo compradores que chegaram prontos para converter não acham o caminho — e vão embora.",
       "support_gap": "Clientes não conseguem te alcançar quando algo dá errado. Métodos de contato escondidos, ausência de chat, sem telefone ou email perto do momento da compra — compradores que não conseguem chegar ao suporte abrem disputas em vez disso. Cada chargeback é uma conversa malsucedida que deveria ter sido um ticket de suporte.",
       "expectation_failure": "Compradores completam a compra sem saber exatamente o que compraram, quando vai chegar, ou como devolver. O descompasso entre expectativa e realidade é a pré-condição para chargebacks. Confirmação, transparência e continuidade da marca no checkout não são opcionais — são o contrato que previne disputas.",
@@ -2751,15 +2751,15 @@
       "commerce_operations_exposed": "Painéis administrativos, endpoints de debug, arquivos de configuração e ferramentas operacionais destinadas a uso interno estão publicamente acessíveis a partir do seu domínio comercial. Essas superfícies permitem manipulação de preços, interrupção do checkout e extração de dados por qualquer um que as encontre. Suas ferramentas internas fazem parte da sua superfície de ataque pública, queira você ou não.",
       "weak_channel_posture": "A postura técnica pública do seu site sinaliza fraqueza para compradores cautelosos e para os navegadores. Indicadores de segurança ausentes, avisos de conteúdo misto ou problemas de certificado suprimem a conversão antes mesmo da oferta ser lida. O navegador do comprador está dizendo a ele que algo está errado — ele confia mais no navegador do que em você.",
       "commerce_abuse_exposure": "Códigos de desconto, fluxos de reembolso, lógica de carrinho e endpoints de preço estão expostos a abuso automatizado. Bots e scripts exploram URLs previsíveis, ausência de rate limit ou governança fraca para drenar margens, enumerar cupons ou disparar reembolsos fraudulentos em escala. O abuso compõe silenciosamente — quando você percebe a perda, já pagou por ela.",
-      "untracked_purchase_paths": "Variantes de comércio descobertas via JavaScript ou renderizadas dinamicamente operam fora do seu principal modelo de salvaguarda de confiança, medição e preço. A faturamento que flui por esses caminhos é simultaneamente desprotegida e invisível ao seu analytics — você não consegue medi-las, não consegue confiar nelas, e pode nem saber que existem.",
+      "untracked_purchase_paths": "Variantes de comércio descobertas via JavaScript ou renderizadas dinamicamente operam fora do seu principal modelo de salvaguarda de confiança, medição e preço. O faturamento que flui por esses caminhos é simultaneamente desprotegido e invisível ao seu analytics — você não consegue medi-lo, não consegue confiar nele, e pode nem saber que existe.",
       "runtime_commerce_fragility": "Suas páginas de comércio falham ou travam quando usuários reais as abrem em navegadores reais. APIs de checkout lentas, landing pages sobrecarregadas, problemas de sequenciamento onde o comprador chega ao passo de compra antes dos scripts críticos estarem prontos — a realidade técnica da página degrada a conversão que a análise estática não consegue ver. A página funciona pra você no dev. Quebra pra eles em produção.",
       "third_party_dependency_risk": "Experiência crítica do comprador — pagamento, selos de confiança, widgets de suporte, medição — depende de serviços externos que falham, carregam tarde ou adicionam peso demais. Quando um terceiro falha, seu caminho de conversão quebra junto. Confiabilidade que você não controla é confiabilidade que você não pode prometer ao seu comprador.",
       "saas_activation_barrier": "Novos usuários trial não conseguem chegar ao momento em que o produto prova seu valor. Onboarding de alta complexidade, ausência de orientação para o próximo passo, ou desconexão entre a promessa da landing e a realidade do app mata a conversão trial-para-pago antes do usuário ver o que está pagando. Eles se inscrevem curiosos e saem não convencidos.",
       "saas_product_experience_gap": "Uma vez dentro do produto, usuários não conseguem descobrir o que ele faz por eles. Estados vazios sem orientação, funcionalidades enterradas e navegação complexa impedem o momento de ativação. O produto é capaz; a experiência esconde essa capacidade. Usuários churnam para produtos que não são realmente melhores — só são melhores em mostrar seu valor.",
-      "saas_expansion_blocked": "Usuários que pagariam felizes por mais não conseguem encontrar o caminho de upgrade nem avaliá-lo. Preços ocultos, CTAs de upgrade ausentes, ou prompts mostrados sem contexto de valor limitam a faturamento no tier atual mesmo quando a disposição a pagar é maior. Dinheiro está ficando na mesa porque o caminho pra te entregar não está visível.",
+      "saas_expansion_blocked": "Usuários que pagariam felizes por mais não conseguem encontrar o caminho de upgrade nem avaliá-lo. Preços ocultos, CTAs de upgrade ausentes, ou prompts mostrados sem contexto de valor limitam o faturamento no tier atual mesmo quando a disposição a pagar é maior. Dinheiro está ficando na mesa porque o caminho pra te entregar não está visível.",
       "brand_inconsistent_in_previews": "Sua marca aparece inconsistente — ou fraca — em resultados de busca, previews sociais e resumos de assistentes de IA. A primeira impressão do seu negócio está sendo moldada por títulos ausentes, descrições rasas e metadata conflitante entre superfícies. Reconhecimento e confiança erodem antes do comprador chegar ao site.",
       "commerce_pages_invisible_to_search": "Buscadores e assistentes de IA não conseguem encontrar nem entender adequadamente suas páginas de produto e preço. Sinais de indexação ausentes, sem links internos, e dados estruturados ausentes tornam seu inventário comercial invisível à descoberta orgânica e dirigida por IA. Cada query não capturada é demanda direta que você nunca verá.",
-      "brand_impersonation_exposure": "Sua marca está sendo ativamente personificada. Domínios sósia, typosquats, superfícies de phishing ou variantes fragmentadas da marca interceptam tráfego, rodam transações fraudulentas ou capturam visitas mal digitadas. Cada comprador interceptado é faturamento direta que você ganhou mas nunca viu — e cada transação fraudulenta destrói a confiança da marca que você levou anos construindo.",
+      "brand_impersonation_exposure": "Sua marca está sendo ativamente personificada. Domínios sósia, typosquats, superfícies de phishing ou variantes fragmentadas da marca interceptam tráfego, rodam transações fraudulentas ou capturam visitas mal digitadas. Cada comprador interceptado é faturamento direto que você ganhou mas nunca viu — e cada transação fraudulenta destrói a confiança da marca que você levou anos construindo.",
       "behavioral_hesitation_at_commitment": "Dados de sessão real mostram compradores chegando ao momento da compra, hesitando, buscando garantias em outros lugares do site, e abandonando. A lacuna entre intenção e confiança é observável no comportamento — e recuperável. Eles queriam comprar. Algo os parou, e isso aparece no replay da sessão.",
       "behavioral_path_disconnection": "Seu fluxo de compra parece bom no código mas falha para usuários reais. Etapas do funil mostram tráfego mas nunca avançam. CTAs estão visíveis mas nunca engajam. Pontos de entrada mobile estão quebrados. Etapas críticas disparam tentativas silenciosas em vez de progressão. O caminho existe estruturalmente e falha comportamentalmente — e só o pixel vê.",
       "behavioral_value_justification_gap": "Compradores veem seu preço mas não conseguem ver o valor que justifica. Eles olham a página de preços, voltam às features, oscilam entre superfícies, e abandonam. A proposta de valor está estruturalmente presente mas é comportamentalmente insuficiente pra fechar a lacuna entre consciência de preço e confiança na compra. Eles foram embora não porque o preço estava alto, mas porque nada disse a eles que valia a pena.",
@@ -2850,7 +2850,7 @@
         "optimize_verify": "Agende reanálises periódicas para detectar regressões."
       },
       "revenue_integrity": {
-        "block_primary": "A faturamento está vazando ativamente. Corrija o caminho de conversão imediatamente.",
+        "block_primary": "O faturamento está vazando ativamente. Corrija o caminho de conversão imediatamente.",
         "block_close_leak": "Feche pontos de vazamento de faturamento: corrija formulários quebrados, consolide o Checkout em um domínio e garanta uma entrada clara de conversão.",
         "block_consolidate": "Consolide o caminho de conversão: reduza a fragmentação entre hosts externos e elimine redirecionamentos desnecessários antes do Checkout.",
         "block_restore_trust": "Restaure a confiança no Checkout: adicione políticas, verifique provedores, garanta continuidade da marca durante o fluxo de compra.",
@@ -2863,7 +2863,7 @@
         "fix_streamline": "Simplifique o fluxo de Checkout: minimize handoffs e mantenha o caminho de conversão no domínio quando possível.",
         "fix_verify": "Execute a análise novamente após implementar as alterações.",
         "optimize_primary": "O caminho de faturamento é funcional mas possui oportunidades de otimização.",
-        "optimize_measurement": "Melhore a cobertura de medição para melhor quantificar o impacto na faturamento.",
+        "optimize_measurement": "Melhore a cobertura de medição para melhor quantificar o impacto no faturamento.",
         "optimize_clarify": "Clarifique o caminho principal de conversão para melhores taxas de conversão.",
         "optimize_verify": "Agende análises periódicas de faturamento para acompanhar melhorias.",
         "stable_primary": "A integridade do faturamento está estável. Nenhum vazamento significativo detectado.",

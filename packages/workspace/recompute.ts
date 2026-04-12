@@ -52,6 +52,7 @@ const PENALTY_BUDGET_FLOOR = 0.40; // max 60% total reduction
 import { createPreflightWorkspace, WorkspaceResult } from './workspace';
 import { createRevenueWorkspace, RevenueWorkspaceResult } from './revenue-workspace';
 import { createChargebackWorkspace, ChargebackWorkspaceResult } from './chargeback-workspace';
+import { createSecurityWorkspace, SecurityWorkspaceResult } from './security-workspace';
 import { createBehavioralWorkspace, BehavioralWorkspaceResult, BehavioralWorkspaceType } from './behavioral-workspace';
 import { EvidenceType } from '../domain';
 
@@ -174,7 +175,7 @@ export interface MultiPackResult {
     decision: Decision;
     risk_evaluation: RiskEvaluation;
     actions: Action[];
-    workspace: WorkspaceResult;
+    workspace: SecurityWorkspaceResult;
   };
   intelligence: DecisionIntelligenceResult;
   impact: {
@@ -293,8 +294,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     conversion_proximity, is_production, translations,
   });
   const securityActions = deriveActions(securityResult.decision);
-  const securityWorkspace = createPreflightWorkspace(
-    { name: 'Security Posture', type: 'analysis', scoping, landing_url, cycle_ref },
+  const securityWorkspace = createSecurityWorkspace(
+    { name: 'Security Posture', scoping, landing_url, cycle_ref },
     securityResult.decision, securityActions, inferences,
   );
 

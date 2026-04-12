@@ -62,7 +62,7 @@ export function ROICalculator({
 
   return (
     <section className="relative z-1 bg-[#090911] py-16 lg:py-24">
-      <div className="mx-auto max-w-5xl px-4 sm:px-8">
+      <div className="mx-auto max-w-[1240px] px-4 sm:px-8">
         <h2 className="mb-10 text-center text-2xl font-semibold text-zinc-100 sm:text-3xl">
           {resolvedHeading}
         </h2>
@@ -137,7 +137,7 @@ export function ROICalculator({
               <div className="w-full rounded-xl bg-emerald-500/[0.08] p-6 text-center sm:p-8">
                 <p className="mb-3 text-sm text-zinc-400">{l.resultLabel}</p>
                 <p
-                  className="text-3xl font-bold text-white sm:text-4xl"
+                  className="whitespace-nowrap text-2xl font-bold text-white sm:text-3xl lg:text-4xl"
                   style={{ textShadow: "0 0 40px rgba(16,185,129,0.3)" }}
                 >
                   {formatCurrency(results.recoveryLow, locale, currencySymbol)}

@@ -112,9 +112,9 @@ See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milest
 | Cybersecurity Pack (12 findings) | ✅ **Done — Wave 3.3 (2026-04-11)** | Wave 3.3 | 12 findings in `money_moment_exposure` pack, SecurityWorkspace, all i18n |
 | LLM Enrichment — Policy + Copy (7 findings) | ✅ **Done — Wave 3.1 (2026-04-11)** | Wave 3.1 | Tier 1 (4 enrichment types) + Tier 2 (3 copy signals wired, enrichment pass pending) |
 | Workspace Redesign — Perspectives + Lenses | **Partial — Wave 3.11 (2026-04-11)** | Wave 3.11 | Pulse Summary API + frontend redesign built; needs browser verification |
-| Members & Invite Flow | **Partial — Wave 2.2 (2026-04-11)** | Wave 2.2 | OrgInvite model + API routes + modal + accept-invite page; seat limits + members table pending |
+| Members & Invite Flow | ✅ **Done — Wave 2.2 (2026-04-12)** | Wave 2.2 | Full lifecycle: OrgInvite model, invite/accept/revoke APIs, Brevo email, seat limits, members table with role management |
 | `integration_pull` executor | Scaffolded only | Wave 3 | executors.ts:197-212 returns "not implemented" |
-| `body_text_snippet` 500 → 2000 chars | Still 500 | Wave 3 | parser.ts:105 hardcoded |
+| `body_text_snippet` 500 → 2000 chars | ✅ **Done — 2026-04-12** | Wave 3.7B | parser.ts:105 changed to 2000 |
 | Conversation export/branching | Not started | Wave 4 | unchanged |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2 | unchanged |
 
@@ -366,21 +366,21 @@ Everything in Wave 1 either fixes a P0 (broken) or makes the value delivery loop
 
 ---
 
-### 2.2 Members & Invite Flow (Partial)
+### 2.2 Members & Invite Flow ✅
 
 | | |
 |---|---|
 | **Tag** | `platform` |
 | **Priority** | P1 |
-| **Status** | **Partial — 2026-04-11.** Prisma model `OrgInvite` added to schema. API routes for creating invites (`POST /api/organization/invites`) and accepting invites (`POST /api/organization/invites/accept`) created. `InviteMemberModal` component built. Accept-invite page at `/accept-invite` created. Members page at `/app/members` exists. Remaining: seat limit enforcement, role change/remove UI for admins, email delivery integration, end-to-end testing. |
+| **Status** | **Done — 2026-04-11/12.** Full invite lifecycle: Prisma `OrgInvite` model with unique constraint on `(organizationId, email)`, secure 32-byte token, 7-day expiry. API routes: `POST /api/organization/invites` (create + Brevo email), `GET` (list), `DELETE` (revoke), `GET/POST /api/organization/invites/accept` (validate + accept). Seat limit enforcement checks `memberCount + pendingInviteCount >= plan.maxMembers` with upgrade prompt on `SEAT_LIMIT` code. `InviteMemberModal` with email/role form, error states, seat limit handling. Accept-invite page at `/accept-invite?token=xxx` with 4 states (loading/valid/error/accepted) + auto-redirect. Members page at `/app/members` with full table (avatar, name, email, role badge, joined date), role change dropdown (owner→admin promotion, admin→member/viewer), remove button with confirmation, pending invites section with revoke. Permission model: owner can do everything, admin can manage members/viewers, self-modification blocked. |
 
 | # | Part | Description | Status |
 |---|------|-------------|--------|
-| A | **Invite button handler** | Wire the "Invite Members" button to open a modal: email input, role selector (admin/member/viewer), send invite. | ✅ InviteMemberModal built |
-| B | **Invite model** | New Prisma model: `OrgInvite { id, org_id, email, role, status (pending/accepted/expired), token, expires_at, invited_by }`. | ✅ Prisma model added |
-| C | **Magic link email** | On invite creation, send email with magic link: `/accept-invite?token=xxx`. Uses existing SMTP configuration. Link creates user + membership + redirects to console. | ✅ Accept-invite page + API route created |
-| D | **Seat limits** | Enforce plan-based seat limits. Before sending invite, check `membership count < plan.max_members`. Show upgrade prompt if at limit. | Open |
-| E | **Members table** | Render existing members with name, email, role, joined date. Add role change dropdown and remove button for admins. | Partial — members page exists, role change/remove pending |
+| A | **Invite button handler** | Wire the "Invite Members" button to open a modal: email input, role selector (admin/member/viewer), send invite. | ✅ InviteMemberModal + wired in members page |
+| B | **Invite model** | New Prisma model: `OrgInvite { id, org_id, email, role, status (pending/accepted/expired), token, expires_at, invited_by }`. | ✅ Prisma model with unique constraint + token index |
+| C | **Magic link email** | On invite creation, send email with magic link: `/accept-invite?token=xxx`. Uses Brevo SMTP. Link creates user + membership + redirects to console. | ✅ Brevo email + accept page + accept API with transaction |
+| D | **Seat limits** | Enforce plan-based seat limits. Before sending invite, check `membership count + pending invites < plan.max_members`. Show upgrade prompt if at limit. | ✅ Enforced in POST handler with SEAT_LIMIT code + upgrade link in modal |
+| E | **Members table** | Render existing members with name, email, role, joined date. Add role change dropdown and remove button for admins. | ✅ Full table + role change (PATCH) + remove (DELETE) + pending invites section |
 
 ---
 
@@ -481,7 +481,7 @@ Everything in Wave 1 either fixes a P0 (broken) or makes the value delivery loop
 
 | # | Part | Description | Status |
 |---|------|-------------|--------|
-| A | **Expand body_text_snippet** | Parser currently stores first 500 chars. Expand to 2000 chars on commercial-classified pages (checkout, pricing, cart). ~5 lines of code in parser.ts. | Open — still 500 chars |
+| A | **Expand body_text_snippet** | Parser now stores first 2000 chars (was 500). Applies to all pages — classification happens downstream. | ✅ Done — 2026-04-12 |
 | B | **CTA clarity analysis** | Haiku call with all CTA link texts from commercial pages. Output: per-CTA `clarity_score`, `is_ambiguous`, `competing_ctas_detected`. | ✅ Covered by `cta_clarity` enrichment type in 3.1 Tier 1 |
 | C | **Trust language detection** | Haiku call with checkout page snippet. Output: `has_security_assurance`, `has_guarantee`, `has_urgency_tactics`, `trust_language_score`. | ✅ Covered by `checkout_trust` enrichment type in 3.1 Tier 1 |
 | D | **Signal integration** | Enriched signals feed `trust_break_in_checkout`, `unclear_conversion_intent`, `strong_cta_clarity`. | ✅ Signals wired in `extractCopyEnrichmentSignals()` |

@@ -102,7 +102,7 @@ export function parsePage(html: string, pageUrl: string): ParsedPage {
     inline_scripts: extractInlineScripts(html),
     structured_data: extractStructuredData(html),
     body_word_count: wordCount,
-    body_text_snippet: bodyText ? bodyText.slice(0, 500) : null,
+    body_text_snippet: bodyText ? bodyText.slice(0, 2000) : null,
   };
 }
 

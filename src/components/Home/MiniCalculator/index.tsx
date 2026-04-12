@@ -278,10 +278,10 @@ const MiniCalculator = ({
 		"w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition-all hover:border-zinc-300 focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500/40";
 
 	const domainInputClass =
-		`w-full rounded-xl bg-zinc-50 px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition-all ${
+		`shiny-input w-full rounded-xl px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none ${
 			domainReady
-				? "border border-emerald-500 ring-1 ring-emerald-500/40 bg-white"
-				: "border border-emerald-500/40 ring-1 ring-emerald-500/20 shadow-[0_0_20px_-6px_rgba(16,185,129,0.15)] hover:border-emerald-500/60"
+				? "!border-emerald-500 ring-1 ring-emerald-500/40 !bg-white"
+				: ""
 		}`;
 
 	return (
@@ -293,12 +293,12 @@ const MiniCalculator = ({
 				<div className='absolute left-1/2 top-1/2 h-[250px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.05] blur-[80px]' />
 			</div>
 
-			<div className='mx-auto w-full max-w-[920px] px-4 sm:px-8 xl:px-0'>
+			<div className='mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0'>
 				{/* Gradient hero card — the calculator's container.
 				    Hover-lift, animated conic border on hover, soft inner
 				    glow. The whole section is "one big card" so the
 				    calculator stops looking like just-another-section. */}
-				<div className='vcalc-card group relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-white p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_60px_-10px_rgba(16,185,129,0.15)] transition-all duration-500 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.2),0_35px_100px_-20px_rgba(16,185,129,0.3),0_0_80px_-10px_rgba(16,185,129,0.25)] sm:p-10 lg:p-14'>
+				<div className='vcalc-card shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] transition-[transform] duration-500 hover:-translate-y-1 sm:p-10 lg:p-14'>
 					{/* Soft conic gradient halo behind the card edges */}
 					<div
 						className='pointer-events-none absolute inset-0 -z-1 opacity-50 transition-opacity duration-500 group-hover:opacity-80'

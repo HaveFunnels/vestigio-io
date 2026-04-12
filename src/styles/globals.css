@@ -342,6 +342,60 @@
 		}
 	}
 
+	/* ── Shiny Card — animated emerald border (same effect as ShinyButton) ── */
+	.shiny-card {
+		--shiny-card-bg: #ffffff;
+		--shiny-card-highlight: #10b981;
+		--shiny-card-highlight-subtle: #6ee7b7;
+		position: relative;
+		border: 1.5px solid transparent;
+		background:
+			linear-gradient(var(--shiny-card-bg), var(--shiny-card-bg)) padding-box,
+			conic-gradient(
+					from calc(var(--gradient-angle) - var(--gradient-angle-offset)),
+					transparent,
+					var(--shiny-card-highlight) var(--gradient-percent),
+					var(--shiny-card-highlight-subtle) calc(var(--gradient-percent) * 2),
+					var(--shiny-card-highlight) calc(var(--gradient-percent) * 3),
+					transparent calc(var(--gradient-percent) * 4)
+				)
+				border-box;
+		animation: gradient-angle 4s linear infinite;
+		transition: 500ms cubic-bezier(0.25, 1, 0.5, 1);
+		transition-property: --gradient-angle-offset, --gradient-percent, --gradient-shine, box-shadow;
+	}
+
+	.shiny-card:hover {
+		--gradient-percent: 18%;
+		--gradient-angle-offset: 90deg;
+		box-shadow:
+			0 0 0 1px rgba(16, 185, 129, 0.15),
+			0 0 60px -10px rgba(16, 185, 129, 0.2),
+			0 25px 80px -20px rgba(0, 0, 0, 0.35);
+	}
+
+	/* ── Shiny Input — animated emerald border for form fields ── */
+	.shiny-input {
+		--shiny-input-bg: #fafafa;
+		--shiny-input-highlight: #10b981;
+		border: 1.5px solid transparent;
+		background:
+			linear-gradient(var(--shiny-input-bg), var(--shiny-input-bg)) padding-box,
+			conic-gradient(
+					from calc(var(--gradient-angle) - var(--gradient-angle-offset)),
+					rgba(16, 185, 129, 0.2),
+					var(--shiny-input-highlight) var(--gradient-percent),
+					rgba(16, 185, 129, 0.2) calc(var(--gradient-percent) * 4)
+				)
+				border-box;
+		animation: gradient-angle 4s linear infinite;
+	}
+
+	.shiny-input:focus {
+		--shiny-input-bg: #ffffff;
+		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+	}
+
 	/* Chrome, Safari and Opera */
 	.no-scrollbar::-webkit-scrollbar {
 		display: none;

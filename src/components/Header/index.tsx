@@ -57,18 +57,36 @@ const Header = () => {
 		setNavbarOpen(!navbarOpen);
 	};
 
-	// Single scroll listener — drives compact state + banner sync.
+	// Track whether banner was dismissed (survives re-renders)
+	const [bannerDismissed, setBannerDismissed] = useState(false);
+
+	useEffect(() => {
+		// Check if already dismissed this session
+		if (sessionStorage.getItem("banner_dismissed") === "1") {
+			setBannerDismissed(true);
+			setBannerVisible(false);
+		}
+		// Listen for dismiss event from banner component
+		const onDismiss = () => {
+			setBannerDismissed(true);
+			setBannerVisible(false);
+		};
+		window.addEventListener("vestigio:banner-dismissed", onDismiss);
+		return () => window.removeEventListener("vestigio:banner-dismissed", onDismiss);
+	}, []);
+
+	// Scroll listener — drives compact state + banner visibility
 	useEffect(() => {
 		const handleScroll = () => {
 			setCompact(window.scrollY >= SCROLL_THRESHOLD_PX);
-			// Check if banner still exists in DOM (it removes itself when dismissed)
-			const bannerExists = !!document.getElementById('announcement-banner');
-			setBannerVisible(window.scrollY < 8 && bannerExists);
+			if (!bannerDismissed) {
+				setBannerVisible(window.scrollY < 8);
+			}
 		};
 		handleScroll();
 		window.addEventListener("scroll", handleScroll, { passive: true });
 		return () => window.removeEventListener("scroll", handleScroll);
-	}, []);
+	}, [bannerDismissed]);
 
 	// The /-only scroll-active listener from the boilerplate. Kept
 	// separate from our state listener so we don't entangle the two.

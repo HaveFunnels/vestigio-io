@@ -108,17 +108,17 @@ function extractDomain(input: string): string {
 	return cleaned.split("/")[0] || input.trim();
 }
 
-function formatCurrency(val: number): string {
-	if (val >= 1000) return `$${Math.round(val / 1000)}k`;
-	return `$${Math.round(val)}`;
+function formatCurrency(val: number, sym = "$"): string {
+	if (val >= 1000) return `${sym}${Math.round(val / 1000)}k`;
+	return `${sym}${Math.round(val)}`;
 }
 
 // Negative-number rule (matches the dashboard's vocabulary): values
 // that represent loss are displayed with a leading minus character
 // (the typographic minus, not a hyphen) so the eye reads "this is
 // money you're losing" before parsing the digits.
-function formatLoss(val: number): string {
-	return `−${formatCurrency(val)}`;
+function formatLoss(val: number, sym = "$"): string {
+	return `−${formatCurrency(val, sym)}`;
 }
 
 function pickRandomFindings(businessType: BusinessType): FindingDef[] {
@@ -154,6 +154,7 @@ const MiniCalculator = ({
 }: MiniCalculatorProps = {}) => {
 	const t = useTranslations("homepage.mini_calculator");
 	const tCard = useTranslations("homepage.mini_calc_card");
+	const sym = t("currency_symbol") || "$";
 	const [state, setState] = useState<State>("input");
 	const [url, setUrl] = useState("");
 	const [revenue, setRevenue] = useState("");
@@ -243,6 +244,13 @@ const MiniCalculator = ({
 		if (e.key === "Enter") handleSubmit();
 	};
 
+	const isValidDomain = (v: string): boolean => {
+		const trimmed = v.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+		return /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(trimmed);
+	};
+
+	const domainReady = isValidDomain(url);
+
 	const handleReset = () => {
 		setState("input");
 		setUrl("");
@@ -268,6 +276,13 @@ const MiniCalculator = ({
 
 	const inputClass =
 		"w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-all hover:border-white/20 focus:border-emerald-500/60 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-500/40";
+
+	const domainInputClass =
+		`w-full rounded-xl bg-white/[0.03] px-5 py-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-all ${
+			domainReady
+				? "border border-emerald-500/60 ring-1 ring-emerald-500/40 bg-white/[0.05]"
+				: "border border-emerald-400/30 ring-1 ring-emerald-400/20 shadow-[0_0_20px_-6px_rgba(16,185,129,0.25)] hover:border-emerald-400/50"
+		}`;
 
 	return (
 		<section className='relative z-1 overflow-hidden border-t border-white/5 bg-[#080812] py-20 sm:py-24 lg:py-32'>
@@ -334,16 +349,20 @@ const MiniCalculator = ({
 											onChange={(e) => setUrl(e.target.value)}
 											onKeyDown={handleKeyDown}
 											placeholder={t("url_placeholder")}
-											className={inputClass}
+											className={domainInputClass}
 										/>
-										{!showExtra && (
-											<ShinyButton
-												onClick={handleSubmit}
+										{!showExtra && domainReady && (
+											<div
 												className='w-full shrink-0 sm:w-auto'
-												disabled={!url.trim()}
+												style={{ animation: "fadeSlideUp 0.35s cubic-bezier(0.16,1,0.3,1) both" }}
 											>
-												{t("cta_audit")}
-											</ShinyButton>
+												<ShinyButton
+													onClick={handleSubmit}
+													className='w-full sm:w-auto'
+												>
+													{t("cta_audit")}
+												</ShinyButton>
+											</div>
 										)}
 									</div>
 
@@ -356,7 +375,7 @@ const MiniCalculator = ({
 											<div className='flex w-full flex-col items-center gap-3 sm:flex-row'>
 												<div className='relative w-full'>
 													<span className='absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500'>
-														$
+														{sym}
 													</span>
 													<input
 														ref={revenueRef}
@@ -502,7 +521,7 @@ const MiniCalculator = ({
 															CRITICAL
 														</span>
 														<span className='font-mono text-sm tabular-nums text-red-400 sm:hidden'>
-															−{formatCurrency(impMin)}–{formatCurrency(impMax)}
+															−{formatCurrency(impMin, sym)}–{formatCurrency(impMax, sym)}
 															/mo
 														</span>
 													</div>
@@ -510,7 +529,7 @@ const MiniCalculator = ({
 														{t(finding.key)}
 													</p>
 													<p className='hidden font-mono text-sm tabular-nums text-red-400 sm:block sm:text-right'>
-														−{formatCurrency(impMin)}–{formatCurrency(impMax)}
+														−{formatCurrency(impMin, sym)}–{formatCurrency(impMax, sym)}
 														/mo
 													</p>
 												</div>
@@ -544,7 +563,7 @@ const MiniCalculator = ({
 													"0 8px 32px rgba(239,68,68,0.35), 0 2px 8px rgba(239,68,68,0.25)",
 											}}
 										>
-											{formatLoss(totalMin)}–{formatCurrency(totalMax)}
+											{formatLoss(totalMin, sym)}–{formatCurrency(totalMax, sym)}
 										</span>
 										<span className='ml-1 font-mono text-base font-normal text-zinc-500 sm:text-lg lg:text-xl'>
 											/mo
@@ -589,6 +608,16 @@ const MiniCalculator = ({
 			</div>
 
 			<style jsx>{`
+				@keyframes fadeSlideUp {
+					from {
+						opacity: 0;
+						transform: translateY(8px) scale(0.95);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0) scale(1);
+					}
+				}
 				@keyframes fadeSlideRight {
 					from {
 						opacity: 0;

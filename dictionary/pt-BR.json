@@ -60,7 +60,7 @@
     "hero_v2": {
       "banner": {
         "label": "Vestigio Pulse",
-        "message": "Respostas contínuas e baseadas em evidência sobre o que está vazando receita agora.",
+        "message": "Respostas contínuas e baseadas em evidência sobre o que está vazando faturamento agora.",
         "cta": "Como funciona"
       },
       "headline_part1": "Pule o analytics.",
@@ -95,7 +95,7 @@
     "product_tour": {
       "eyebrow": "Tour do Produto",
       "title": "Não é um dashboard. É uma fila de decisões.",
-      "subtitle": "Cada aba é uma lente diferente sobre a mesma imagem da receita — priorizada, com evidência, e pronta pra agir.",
+      "subtitle": "Cada aba é uma lente diferente sobre a mesma imagem do faturamento — priorizada, com evidência, e pronta pra agir.",
       "section_headline": "Veja exatamente o que a Vestigio entrega pra você.",
       "cta_primary": "Rodar auditoria grátis",
       "url": "app.vestigio.io/dashboard",
@@ -376,7 +376,7 @@
             "desc": "Bloqueadores críticos para escalar tráfego com segurança. 5 issues em aberto."
           },
           {
-            "name": "Integridade de Receita",
+            "name": "Integridade de Faturamento",
             "urgency": "FIX",
             "tone": "orange",
             "desc": "Vazamentos ativos em checkout, preços e onboarding. −R$ 270k/mês em risco."
@@ -410,7 +410,7 @@
           },
           {
             "from": "ai",
-            "text": "Seu maior vazamento de receita é a cadeia de redirects no checkout. Adiciona 2,4s de latência e estima-se um custo de **−R$ 91k a 210k por mês** em conversões perdidas. Criei uma ação P1 pra atacar isso.",
+            "text": "Seu maior vazamento de faturamento é a cadeia de redirects no checkout. Adiciona 2,4s de latência e estima-se um custo de **−R$ 91k a 210k por mês** em conversões perdidas. Criei uma ação P1 pra atacar isso.",
             "chips": [
               "Usou 3 descobertas",
               "Criou ação P1"
@@ -479,12 +479,12 @@
       "items": [
         {
           "tag": "Fila de Ações",
-          "title": "Priorize as correções que realmente movem receita",
+          "title": "Priorize as correções que realmente movem faturamento",
           "description": "Cada descoberta classificado por impacto, urgência e esforço. Sem mais planilhas — apenas a próxima decisão, pronta para executar.",
           "cta": "Explorar Ações"
         },
         {
-          "tag": "Auditoria de Receita",
+          "tag": "Auditoria de Faturamento",
           "title": "Encontre cada vazamento no seu funil",
           "description": "A Vestigio quantifica perdas superfície por superfície — checkout, preços, onboarding — com faixas de confiança, não achismos.",
           "cta": "Explorar Auditoria"
@@ -504,7 +504,7 @@
         {
           "tag": "Motor de Decisão IA",
           "title": "Pergunte em linguagem natural, decida com contexto completo",
-          "description": "Um workspace para cada pergunta de negócio — receita, churn, chargeback. A Vestigio Pulse conecta respostas à evidência.",
+          "description": "Um workspace para cada pergunta de negócio — faturamento, churn, chargeback. A Vestigio Pulse conecta respostas à evidência.",
           "cta": "Explorar Workspaces"
         }
       ],
@@ -600,10 +600,10 @@
         "eyebrow": "Você recupera",
         "title": "Estanque o vazamento antes que ele se acumule",
         "description": "O Vestigio acompanha cada vazamento da detecção à resolução. Veja suas perdas mensais caírem conforme os descobertas são fechados — e detecte novas regressões no momento em que aparecem.",
-        "axis_label": "Receita perdida / mês",
+        "axis_label": "Faturamento perdida / mês",
         "before_label": "Antes do Vestigio",
         "after_label": "Depois do Vestigio",
-        "annotation_label": "Receita recuperada",
+        "annotation_label": "Faturamento recuperada",
         "annotation_value": "+87,2%"
       },
       "evidence_orbit": {
@@ -771,9 +771,10 @@
     },
     "mini_calculator": {
       "title": "Veja quanto dinheiro você está deixando na mesa",
-      "subtitle": "Insira a URL do seu site para um diagnóstico gratuito de possíveis vazamentos de receita.",
+      "subtitle": "Insira a URL do seu site para um diagnóstico gratuito de possíveis vazamentos de faturamento.",
+      "currency_symbol": "R$",
       "url_placeholder": "Digite a URL do seu site...",
-      "revenue_placeholder": "Receita mensal média",
+      "revenue_placeholder": "Faturamento mensal médio",
       "cta_audit": "Rodar Auditoria Grátis",
       "analyzing": "Analisando",
       "analyzing_sub": "Isso normalmente leva alguns segundos...",
@@ -782,7 +783,7 @@
       "status_payment": "Verificando integridade de pagamento...",
       "status_trust": "Avaliando indicadores de confiança...",
       "status_friction": "Medindo fricção de conversão...",
-      "status_impact": "Calculando impacto na receita...",
+      "status_impact": "Calculando impacto no faturamento...",
       "status_report": "Preparando seu relatório...",
       "scan_complete": "Análise concluída",
       "results_for": "Resultados para",
@@ -813,7 +814,7 @@
       "f_subscription_churn_signals": "Padrões de risco de churn de assinatura detectados",
       "f_refund_abuse_surface": "Fluxo de reembolso vulnerável a padrões de abuso",
       "f_discount_endpoint_exposed": "Mecanismo de desconto explorável sem proteção",
-      "f_analytics_blind_spot": "Ponto cego de analytics em páginas críticas de receita",
+      "f_analytics_blind_spot": "Ponto cego de analytics em páginas críticas de faturamento",
       "f_scripts_blocking": "Scripts de terceiros bloqueando renderização crítica",
       "f_mobile_friction": "Experiência mobile degradada em páginas-chave",
       "f_broken_critical_links": "Links quebrados em páginas de alta intenção",
@@ -1127,7 +1128,7 @@
     "heading": "Dashboard",
     "stats": {
       "total_visitors": "Total de Visitantes",
-      "total_revenue": "Receita Total",
+      "total_revenue": "Faturamento Total",
       "free_users": "Usuários Gratuitos",
       "pro_users": "Usuários Pro"
     },
@@ -1135,8 +1136,8 @@
       "title": "Visão Geral",
       "description": "Uma visão geral da atividade e desempenho da sua organização em todos os seus projetos.",
       "stats": {
-        "monthly_recurring_revenue": "Receita Recorrente Mensal",
-        "revenue": "Receita",
+        "monthly_recurring_revenue": "Faturamento Recorrente Mensal",
+        "revenue": "Faturamento",
         "fees": "Taxas",
         "new_customers": "Novos Clientes",
         "churn": "Churn",
@@ -1190,13 +1191,13 @@
       "packs": {
         "all": "Todos os Packs",
         "scale_readiness": "Prontidão para Escala",
-        "revenue_integrity": "Integridade de Receita",
+        "revenue_integrity": "Integridade de Faturamento",
         "chargeback_resilience": "Resiliência a Chargeback",
         "saas_growth_readiness": "Crescimento SaaS"
       },
       "pack_labels": {
         "scale_readiness": "Escala",
-        "revenue_integrity": "Receita",
+        "revenue_integrity": "Faturamento",
         "chargeback_resilience": "Chargeback",
         "saas_growth_readiness": "SaaS"
       },
@@ -1207,7 +1208,7 @@
         "neutral": "Neutro"
       },
       "impact_types": {
-        "revenue_loss": "Perda de Receita",
+        "revenue_loss": "Perda de Faturamento",
         "conversion_loss": "Perda de Conversão",
         "chargeback_risk": "Risco de Chargeback",
         "traffic_waste": "Desperdício de Tráfego",
@@ -1216,7 +1217,7 @@
       },
       "workspace_types": {
         "preflight": "Prontidão para Escala",
-        "revenue": "Integridade de Receita",
+        "revenue": "Integridade de Faturamento",
         "chargeback": "Resiliência a Chargeback"
       },
       "columns": {
@@ -1554,14 +1555,14 @@
       "economic": "Econômico",
       "types": {
         "preflight": "Prontidão para Escalar",
-        "revenue": "Integridade de Receita",
+        "revenue": "Integridade de Faturamento",
         "chargeback": "Resiliência de Chargeback",
-        "first_impression": "Receita de Primeira Impressão",
+        "first_impression": "Faturamento de Primeira Impressão",
         "action_value": "Mapa de Valor de Ações",
         "acquisition_integrity": "Integridade de Aquisição",
-        "mobile_revenue": "Exposição de Receita Mobile",
+        "mobile_revenue": "Exposição de Faturamento Mobile",
         "friction_tax": "Imposto de Fricção",
-        "trust_gap": "Gap de Confiança e Receita",
+        "trust_gap": "Gap de Confiança e Faturamento",
         "path_efficiency": "Eficiência do Caminho"
       },
       "trends": {
@@ -1624,13 +1625,13 @@
       "panorama_subtitle": "Vis\u00e3o transversal da sa\u00fade do seu ambiente.",
       "perspectives_heading": "Perspectivas",
       "perspectives": {
-        "revenue": "Receita",
+        "revenue": "Faturamento",
         "trust": "Confian\u00e7a",
         "behavior": "Comportamento",
         "copy": "Copy"
       },
       "perspective_descriptions": {
-        "revenue": "Integridade de receita, resili\u00eancia de chargeback e impacto monet\u00e1rio.",
+        "revenue": "Integridade de faturamento, resili\u00eancia de chargeback e impacto monet\u00e1rio.",
         "trust": "Prontid\u00e3o para escalar, postura de seguran\u00e7a e sinais de confian\u00e7a.",
         "behavior": "Padr\u00f5es de comportamento do usu\u00e1rio a partir de dados do pixel.",
         "copy": "Qualidade do copy, clareza da mensagem e an\u00e1lise de persuas\u00e3o."
@@ -1644,7 +1645,7 @@
       "no_data_yet": "Sem dados ainda",
       "workspaces_in_perspective": "Workspaces",
       "lenses": {
-        "revenue_map": "Mapa de Receita",
+        "revenue_map": "Mapa de Faturamento",
         "total_exposure": "Exposi\u00e7\u00e3o total",
         "cycle_delta": "Delta do Ciclo",
         "no_changes": "Sem mudan\u00e7as neste ciclo.",
@@ -1658,7 +1659,7 @@
     },
     "dashboard": {
       "title": "Dashboard",
-      "subtitle": "Visão geral de saúde de receita, exposição e atividade recente.",
+      "subtitle": "Visão geral de saúde de faturamento, exposição e atividade recente.",
       "customize": "Personalizar",
       "done": "Pronto",
       "widgets": {
@@ -1792,13 +1793,13 @@
       "step_failed": "Não foi possível concluir o passo.",
       "emptyState": {
         "title": "Análise Vestigio",
-        "description": "Pergunte sobre receita, riscos, chargebacks ou o que corrigir primeiro. Cada resposta é baseada nos dados da sua auditoria.",
+        "description": "Pergunte sobre faturamento, riscos, chargebacks ou o que corrigir primeiro. Cada resposta é baseada nos dados da sua auditoria.",
         "playbooksHint": "Abra Playbooks para prompts de análise especializada",
         "tips_toggle": "Como aproveitar melhor o chat do Vestigio",
         "tips": {
           "natural": "Pergunte em linguagem natural — sem formatação especial. Cite descobertas, ações, superfícies ou workspaces pelo nome.",
           "context": "Clique em \"Discutir\" ou \"Usar como contexto\" em qualquer descoberta/ação para começar um chat com o item já anexado.",
-          "playbooks": "Use Playbooks (canto superior direito) para análises curadas multi-step como auditorias completas de receita ou trust scores.",
+          "playbooks": "Use Playbooks (canto superior direito) para análises curadas multi-step como auditorias completas de faturamento ou trust scores.",
           "files": "Arraste um CSV / JSON / TXT / PDF para o chat para anexá-lo como contexto da próxima mensagem.",
           "voice": "Clique no microfone para ditar sua pergunta em vez de digitar."
         }
@@ -1821,7 +1822,7 @@
       "validation": {
         "accidental": "Isso parece um envio acidental.",
         "too_short": "A entrada é curta demais para ser útil.",
-        "too_vague": "Muito vago — tente perguntar sobre receita, escala ou o que corrigir.",
+        "too_vague": "Muito vago — tente perguntar sobre faturamento, escala ou o que corrigir.",
         "too_broad": "Essa pergunta é ampla. Uma versão específica traz melhores resultados.",
         "try_specific": "Tente uma pergunta mais específica para melhores resultados.",
         "asked_recently": "Você perguntou isso recentemente. Tente uma pergunta complementar."
@@ -1848,7 +1849,7 @@
         "low_budget_warning": "O orçamento está baixo. Escolha o playbook com cuidado para extrair o máximo valor.",
         "queries": "~{count} consultas",
         "revenue_leaks": {
-          "title": "Encontrar Vazamentos de Receita",
+          "title": "Encontrar Vazamentos de Faturamento",
           "description": "Identifique onde o dinheiro está sendo perdido no seu funil de conversão."
         },
         "conversion": {
@@ -1873,16 +1874,16 @@
         }
       },
       "playbook_prompts": {
-        "revenue_leak_full_audit": "Execute uma análise completa de vazamento de receita. Mostre cada descoberta que causa perda de receita, ranqueada por impacto mensal em dólares do maior para o menor. Para as 5 maiores, explique a causa raiz e o que corrigir cada uma recuperaria. Depois mostre a perda mensal combinada total e a recuperação estimada se eu corrigir as 3 principais.",
+        "revenue_leak_full_audit": "Execute uma análise completa de vazamento de faturamento. Mostre cada descoberta que causa perda de faturamento, ranqueada por impacto mensal em dólares do maior para o menor. Para as 5 maiores, explique a causa raiz e o que corrigir cada uma recuperaria. Depois mostre a perda mensal combinada total e a recuperação estimada se eu corrigir as 3 principais.",
         "conversion_bottleneck": "Mapeie meu funil de conversão da landing até a compra/cadastro. Em cada etapa, mostre quais descobertas criam fricção. Onde está a maior queda? Qual é a causa raiz dessa queda? Se eu pudesse corrigir apenas uma coisa para melhorar a conversão, o que deveria ser e quanto moveria o ponteiro?",
         "trust_signal_audit": "Avalie os sinais de confiança do meu site nestas dimensões: SSL e selos de segurança, avaliações e depoimentos, informações da empresa (sobre, equipe, endereço), opções de contato (telefone, chat, email), políticas (devoluções, privacidade, termos), confiança no pagamento (logos, garantias), prova social (número de clientes, menções na mídia). Para cada dimensão, avalie de 1-10 e explique o que está faltando. Qual é minha pontuação geral de confiança e o que melhoraria mais rápido?",
-        "executive_summary": "Crie um resumo executivo adequado para uma reunião de diretoria. Inclua: receita mensal total em risco (soma de todas as descobertas), 3 principais problemas críticos com impacto em dólares, roadmap de prioridades para 90 dias (semana 1-2: quick wins, mês 1: correções críticas, mês 2-3: melhorias estratégicas), ROI esperado do plano completo de remediação e uma pontuação de saúde de 0-100 para o negócio.",
-        "cross_pack_correlation": "Analise descobertas em TODOS os packs (integridade de receita, prontidão para escala, resiliência a chargebacks). Encontre correlações: Quais descobertas de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de receita também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando descobertas conectadas entre packs com impacto combinado."
+        "executive_summary": "Crie um resumo executivo adequado para uma reunião de diretoria. Inclua: faturamento mensal total em risco (soma de todas as descobertas), 3 principais problemas críticos com impacto em dólares, roadmap de prioridades para 90 dias (semana 1-2: quick wins, mês 1: correções críticas, mês 2-3: melhorias estratégicas), ROI esperado do plano completo de remediação e uma pontuação de saúde de 0-100 para o negócio.",
+        "cross_pack_correlation": "Analise descobertas em TODOS os packs (integridade de faturamento, prontidão para escala, resiliência a chargebacks). Encontre correlações: Quais descobertas de packs diferentes compartilham a mesma causa raiz? Onde corrigir um problema de faturamento também reduz risco de chargeback? Onde melhorar confiança também ajuda conversão? Construa um mapa de correlação mostrando descobertas conectadas entre packs com impacto combinado."
       },
       "quick_presets": {
         "losing_money": {
           "text": "Onde estou perdendo dinheiro?",
-          "label": "Vazamentos de receita"
+          "label": "Vazamentos de faturamento"
         },
         "scale_traffic": {
           "text": "Posso escalar tráfego pago com segurança?",
@@ -1907,9 +1908,9 @@
       },
       "featured_playbooks": {
         "revenue_leak_full_audit": {
-          "title": "Auditoria Completa de Vazamento de Receita",
+          "title": "Auditoria Completa de Vazamento de Faturamento",
           "description": "Análise completa de onde o dinheiro escapa do funil, ranqueada por impacto em $.",
-          "category": "Receita"
+          "category": "Faturamento"
         },
         "conversion_bottleneck": {
           "title": "Mapa de Gargalos de Conversão",
@@ -2115,7 +2116,7 @@
         },
         "shopify_commerce": {
           "name": "Shopify",
-          "description": "Conecte sua loja Shopify para dados reais de receita e pedidos"
+          "description": "Conecte sua loja Shopify para dados reais de faturamento e pedidos"
         }
       }
     },
@@ -2308,7 +2309,7 @@
           "hybrid": "Híbrido",
           "hybrid_desc": "Modelo de negócio misto"
         },
-        "monthly_revenue": "Receita mensal",
+        "monthly_revenue": "Faturamento mensal",
         "monthly_revenue_placeholder": "ex: $50k",
         "avg_order_value": "Ticket médio",
         "avg_order_value_placeholder": "ex: $120",
@@ -2375,7 +2376,7 @@
         "organization": "Organização",
         "domain": "Domínio",
         "business_type": "Tipo de Negócio",
-        "monthly_revenue": "Receita Mensal",
+        "monthly_revenue": "Faturamento Mensal",
         "avg_order_value": "Ticket Médio",
         "conversion_model": "Modelo de Conversão",
         "saas_access": "Acesso SaaS",
@@ -2455,7 +2456,7 @@
       "actions": "Ações",
       "workspaces": "Espaços de trabalho",
       "panorama": "Panorama",
-      "perspective_revenue": "Receita",
+      "perspective_revenue": "Faturamento",
       "perspective_trust": "Confiança",
       "perspective_behavior": "Comportamento",
       "perspective_copy": "Copy",
@@ -2556,11 +2557,11 @@
       "trust_boundary_crossed": "Continuidade de confiança no Checkout quebrada",
       "policy_gap": "Políticas de proteção ao consumidor ausentes ou incompletas",
       "checkout_integrity": "Integridade estrutural do Checkout degradada",
-      "revenue_path_fragile": "Caminho de receita estruturalmente frágil sob escala",
+      "revenue_path_fragile": "Caminho de faturamento estruturalmente frágil sob escala",
       "measurement_coverage": "Infraestrutura de medição insuficiente para otimização",
       "conversion_flow_fragmented": "Fluxo de conversão disperso entre domínios",
-      "friction_on_critical_path": "Barreiras de fricção no caminho de receita",
-      "revenue_leakage": "Receita vazando ativamente do caminho de conversão",
+      "friction_on_critical_path": "Barreiras de fricção no caminho de faturamento",
+      "revenue_leakage": "Faturamento vazando ativamente do caminho de conversão",
       "trust_break_in_checkout": "Sinais de confiança ausentes no momento da compra",
       "measurement_blindspot": "Ponto cego na medição de páginas comerciais",
       "unclear_conversion_intent": "Caminho principal de conversão pouco claro para visitantes",
@@ -2578,7 +2579,7 @@
       "upgrade_timing_wrong": "Prompts de upgrade exibidos sem contexto de valor",
       "no_expansion_path": "Sem caminho self-service de gratuito para pago",
       "landing_app_mismatch": "Promessa da landing page desconectada da realidade do app",
-      "critical_path_broken": "Páginas críticas de receita inacessíveis",
+      "critical_path_broken": "Páginas críticas de faturamento inacessíveis",
       "form_data_leaves_domain": "Dados do comprador saindo do domínio por destinos de formulário não reconhecidos",
       "checkout_provider_fragmented": "Checkout fragmentado entre provedores concorrentes",
       "redirect_chain_erodes_checkout_trust": "Confiança no Checkout erodida por cadeia de redirecionamentos",
@@ -2588,7 +2589,7 @@
       "platform_checkout_risk_unaddressed": "Risco de Checkout específico da plataforma não tratado",
       "post_purchase_confirmation_absent": "Confirmação pós-compra e termos de devolução ambos ausentes",
       "high_intent_surfaces_blind": "Superfícies de alta intenção operando sem visibilidade de otimização",
-      "revenue_path_regressed": "Caminho de receita degradado desde a última auditoria",
+      "revenue_path_regressed": "Caminho de faturamento degradado desde a última auditoria",
       "refund_terms_too_thin": "Termos de reembolso e devolução muito superficiais para neutralizar disputas",
       "support_hidden_at_purchase": "Suporte existe mas está oculto quando compradores precisam de segurança",
       "trust_surface_too_thin": "Sinais de confiança comercial muito superficiais em superfícies de alta intenção",
@@ -2631,7 +2632,7 @@
       "third_party_weight_delays_trust": "Peso de requisições de terceiros atrasando o momento de confiança e intenção",
       "checkout_brittle_third_party": "Confiabilidade do Checkout depende de serviços de terceiros frágeis",
       "purchase_blocked_failing_requests": "Fluxo de compra bloqueado por requisições de terceiros falhando",
-      "measurement_breaks_revenue_path": "Continuidade de medição quebra no caminho que gera receita",
+      "measurement_breaks_revenue_path": "Continuidade de medição quebra no caminho que gera faturamento",
       "purchase_before_deps_ready": "Compradores alcançam o momento de compra antes das dependências críticas estarem prontas",
       "trust_assets_late_load": "Ativos de confiança e garantia carregam tarde demais para acalmar a hesitação",
       "mobile_heavy_runtime_chain": "Caminho comercial mobile degradado por cadeia pesada de dependências de Runtime",
@@ -2696,7 +2697,7 @@
       "friction_barrier_on_path": "Fricção bloqueando compradores no caminho até a compra",
       "measurement_blindspot": "Você não consegue medir o que acontece nas suas páginas de compra",
       "policy_deficiency": "Políticas obrigatórias estão ausentes ou difíceis de encontrar",
-      "active_revenue_leakage": "Receita está vazando do seu fluxo de compra",
+      "active_revenue_leakage": "Faturamento está vazando do seu fluxo de compra",
       "weak_conversion_signal": "Visitantes não conseguem ver como comprar de você",
       "support_gap": "Clientes não conseguem chegar ao suporte quando mais precisam",
       "expectation_failure": "Compradores não sabem o que estão pagando",
@@ -2719,7 +2720,7 @@
       "behavioral_value_justification_gap": "Compradores veem seu preço mas não conseguem ver o valor",
       "behavioral_trust_failure_at_input": "Compradores não confiam em entregar dados sensíveis aos seus formulários",
       "security_posture_inadequate": "Seu site parece inseguro para navegadores e compradores",
-      "behavioral_first_session_failure": "Visitantes de primeira vez travam antes de alcançar um marco de receita",
+      "behavioral_first_session_failure": "Visitantes de primeira vez travam antes de alcançar um marco de faturamento",
       "behavioral_action_value_misalignment": "Ações de baixo valor dominam enquanto ações de alto valor passam despercebidas",
       "paid_acquisition_waste": "Tráfego pago encontra fricção que se acumula em gasto desperdiçado",
       "mobile_conversion_failure": "Visitantes mobile enfrentam barreiras de conversão que usuários desktop nunca veem",
@@ -2731,10 +2732,10 @@
     "root_cause_descriptions": {
       "trust_failure_at_checkout": "Compradores chegam ao momento do pagamento, mas os sinais de confiança ao redor enfraquecem em vez de fortalecer. Redirecionamentos para outros domínios, provedores de pagamento desconhecidos e ausência de pistas de segurança no momento errado fazem o comprador desistir — exatamente quando a conversão estava mais próxima. O comprador queria pagar; a experiência o assustou.",
       "fragmented_conversion_path": "Seu fluxo de compra está dividido entre múltiplos domínios ou exige passos demais. Cada transição entre superfícies é uma nova chance do comprador desistir. O caminho que deveria parecer uma experiência contínua parece uma corrida de revezamento, com troca de bastão a cada etapa.",
-      "friction_barrier_on_path": "Obstáculos técnicos no caminho da intenção até a compra — páginas lentas, formulários quebrados ou excessivamente longos, redirecionamentos redundantes — suprimem a conversão diretamente. Compradores não atravessam fricção; eles desistem. Cada passo que pede demais é um passo que perde receita.",
-      "measurement_blindspot": "As páginas que geram receita não estão sendo medidas. Sem analytics no caminho de comércio, qualquer outra melhoria é chute — você não pode otimizar o que não consegue ver. Decisões são tomadas no instinto em vez de dados, e os vazamentos continuam invisíveis.",
+      "friction_barrier_on_path": "Obstáculos técnicos no caminho da intenção até a compra — páginas lentas, formulários quebrados ou excessivamente longos, redirecionamentos redundantes — suprimem a conversão diretamente. Compradores não atravessam fricção; eles desistem. Cada passo que pede demais é um passo que perde faturamento.",
+      "measurement_blindspot": "As páginas que geram faturamento não estão sendo medidas. Sem analytics no caminho de comércio, qualquer outra melhoria é chute — você não pode otimizar o que não consegue ver. Decisões são tomadas no instinto em vez de dados, e os vazamentos continuam invisíveis.",
       "policy_deficiency": "Políticas obrigatórias do consumidor (privacidade, termos, devoluções) estão ausentes, incompletas ou enterradas onde o comprador não acha. Isso cria risco jurídico, quebra confiança no momento da compra, e bloqueia aceitação de tráfego pago em plataformas que exigem presença de políticas antes de servir anúncios.",
-      "active_revenue_leakage": "A receita está vazando neste momento por caminhos quebrados específicos — fluxos de checkout mortos, formulários quebrados, rotas de conversão ausentes. Não é risco hipotético; é dinheiro saindo hoje. Cada ciclo que isso permanece é perda direta de receita com etiqueta de dólar quantificável.",
+      "active_revenue_leakage": "A faturamento está vazando neste momento por caminhos quebrados específicos — fluxos de checkout mortos, formulários quebrados, rotas de conversão ausentes. Não é risco hipotético; é dinheiro saindo hoje. Cada ciclo que isso permanece é perda direta de faturamento com etiqueta de dólar quantificável.",
       "weak_conversion_signal": "Visitantes chegam às suas páginas comerciais mas não conseguem ver como comprar de você. O CTA principal está ausente, pouco claro, ou competindo com ações secundárias mais barulhentas. Mesmo compradores que chegaram prontos para converter não acham o caminho — e vão embora.",
       "support_gap": "Clientes não conseguem te alcançar quando algo dá errado. Métodos de contato escondidos, ausência de chat, sem telefone ou email perto do momento da compra — compradores que não conseguem chegar ao suporte abrem disputas em vez disso. Cada chargeback é uma conversa malsucedida que deveria ter sido um ticket de suporte.",
       "expectation_failure": "Compradores completam a compra sem saber exatamente o que compraram, quando vai chegar, ou como devolver. O descompasso entre expectativa e realidade é a pré-condição para chargebacks. Confirmação, transparência e continuidade da marca no checkout não são opcionais — são o contrato que previne disputas.",
@@ -2743,24 +2744,24 @@
       "commerce_operations_exposed": "Painéis administrativos, endpoints de debug, arquivos de configuração e ferramentas operacionais destinadas a uso interno estão publicamente acessíveis a partir do seu domínio comercial. Essas superfícies permitem manipulação de preços, interrupção do checkout e extração de dados por qualquer um que as encontre. Suas ferramentas internas fazem parte da sua superfície de ataque pública, queira você ou não.",
       "weak_channel_posture": "A postura técnica pública do seu site sinaliza fraqueza para compradores cautelosos e para os navegadores. Indicadores de segurança ausentes, avisos de conteúdo misto ou problemas de certificado suprimem a conversão antes mesmo da oferta ser lida. O navegador do comprador está dizendo a ele que algo está errado — ele confia mais no navegador do que em você.",
       "commerce_abuse_exposure": "Códigos de desconto, fluxos de reembolso, lógica de carrinho e endpoints de preço estão expostos a abuso automatizado. Bots e scripts exploram URLs previsíveis, ausência de rate limit ou governança fraca para drenar margens, enumerar cupons ou disparar reembolsos fraudulentos em escala. O abuso compõe silenciosamente — quando você percebe a perda, já pagou por ela.",
-      "untracked_purchase_paths": "Variantes de comércio descobertas via JavaScript ou renderizadas dinamicamente operam fora do seu principal modelo de salvaguarda de confiança, medição e preço. A receita que flui por esses caminhos é simultaneamente desprotegida e invisível ao seu analytics — você não consegue medi-las, não consegue confiar nelas, e pode nem saber que existem.",
+      "untracked_purchase_paths": "Variantes de comércio descobertas via JavaScript ou renderizadas dinamicamente operam fora do seu principal modelo de salvaguarda de confiança, medição e preço. A faturamento que flui por esses caminhos é simultaneamente desprotegida e invisível ao seu analytics — você não consegue medi-las, não consegue confiar nelas, e pode nem saber que existem.",
       "runtime_commerce_fragility": "Suas páginas de comércio falham ou travam quando usuários reais as abrem em navegadores reais. APIs de checkout lentas, landing pages sobrecarregadas, problemas de sequenciamento onde o comprador chega ao passo de compra antes dos scripts críticos estarem prontos — a realidade técnica da página degrada a conversão que a análise estática não consegue ver. A página funciona pra você no dev. Quebra pra eles em produção.",
       "third_party_dependency_risk": "Experiência crítica do comprador — pagamento, selos de confiança, widgets de suporte, medição — depende de serviços externos que falham, carregam tarde ou adicionam peso demais. Quando um terceiro falha, seu caminho de conversão quebra junto. Confiabilidade que você não controla é confiabilidade que você não pode prometer ao seu comprador.",
       "saas_activation_barrier": "Novos usuários trial não conseguem chegar ao momento em que o produto prova seu valor. Onboarding de alta complexidade, ausência de orientação para o próximo passo, ou desconexão entre a promessa da landing e a realidade do app mata a conversão trial-para-pago antes do usuário ver o que está pagando. Eles se inscrevem curiosos e saem não convencidos.",
       "saas_product_experience_gap": "Uma vez dentro do produto, usuários não conseguem descobrir o que ele faz por eles. Estados vazios sem orientação, funcionalidades enterradas e navegação complexa impedem o momento de ativação. O produto é capaz; a experiência esconde essa capacidade. Usuários churnam para produtos que não são realmente melhores — só são melhores em mostrar seu valor.",
-      "saas_expansion_blocked": "Usuários que pagariam felizes por mais não conseguem encontrar o caminho de upgrade nem avaliá-lo. Preços ocultos, CTAs de upgrade ausentes, ou prompts mostrados sem contexto de valor limitam a receita no tier atual mesmo quando a disposição a pagar é maior. Dinheiro está ficando na mesa porque o caminho pra te entregar não está visível.",
+      "saas_expansion_blocked": "Usuários que pagariam felizes por mais não conseguem encontrar o caminho de upgrade nem avaliá-lo. Preços ocultos, CTAs de upgrade ausentes, ou prompts mostrados sem contexto de valor limitam a faturamento no tier atual mesmo quando a disposição a pagar é maior. Dinheiro está ficando na mesa porque o caminho pra te entregar não está visível.",
       "brand_inconsistent_in_previews": "Sua marca aparece inconsistente — ou fraca — em resultados de busca, previews sociais e resumos de assistentes de IA. A primeira impressão do seu negócio está sendo moldada por títulos ausentes, descrições rasas e metadata conflitante entre superfícies. Reconhecimento e confiança erodem antes do comprador chegar ao site.",
       "commerce_pages_invisible_to_search": "Buscadores e assistentes de IA não conseguem encontrar nem entender adequadamente suas páginas de produto e preço. Sinais de indexação ausentes, sem links internos, e dados estruturados ausentes tornam seu inventário comercial invisível à descoberta orgânica e dirigida por IA. Cada query não capturada é demanda direta que você nunca verá.",
-      "brand_impersonation_exposure": "Sua marca está sendo ativamente personificada. Domínios sósia, typosquats, superfícies de phishing ou variantes fragmentadas da marca interceptam tráfego, rodam transações fraudulentas ou capturam visitas mal digitadas. Cada comprador interceptado é receita direta que você ganhou mas nunca viu — e cada transação fraudulenta destrói a confiança da marca que você levou anos construindo.",
+      "brand_impersonation_exposure": "Sua marca está sendo ativamente personificada. Domínios sósia, typosquats, superfícies de phishing ou variantes fragmentadas da marca interceptam tráfego, rodam transações fraudulentas ou capturam visitas mal digitadas. Cada comprador interceptado é faturamento direta que você ganhou mas nunca viu — e cada transação fraudulenta destrói a confiança da marca que você levou anos construindo.",
       "behavioral_hesitation_at_commitment": "Dados de sessão real mostram compradores chegando ao momento da compra, hesitando, buscando garantias em outros lugares do site, e abandonando. A lacuna entre intenção e confiança é observável no comportamento — e recuperável. Eles queriam comprar. Algo os parou, e isso aparece no replay da sessão.",
       "behavioral_path_disconnection": "Seu fluxo de compra parece bom no código mas falha para usuários reais. Etapas do funil mostram tráfego mas nunca avançam. CTAs estão visíveis mas nunca engajam. Pontos de entrada mobile estão quebrados. Etapas críticas disparam tentativas silenciosas em vez de progressão. O caminho existe estruturalmente e falha comportamentalmente — e só o pixel vê.",
       "behavioral_value_justification_gap": "Compradores veem seu preço mas não conseguem ver o valor que justifica. Eles olham a página de preços, voltam às features, oscilam entre superfícies, e abandonam. A proposta de valor está estruturalmente presente mas é comportamentalmente insuficiente pra fechar a lacuna entre consciência de preço e confiança na compra. Eles foram embora não porque o preço estava alto, mas porque nada disse a eles que valia a pena.",
       "behavioral_trust_failure_at_input": "Formulários em páginas próximas à conversão pedem dados sensíveis — pagamento, identidade, contato — sem contexto de confiança suficiente ao redor. O descompasso entre o que está sendo pedido e o que está sendo prometido causa abandono imediato. O comprador não sabe o suficiente pra se sentir seguro entregando seus dados, e desiste no campo.",
       "security_posture_inadequate": "A postura de segurança do seu site — headers ausentes, conteúdo misto, redirecionamentos abertos, endpoints expostos — sinaliza insegurança tanto para navegadores quanto para compradores. Navegadores modernos alertam ativamente os visitantes, suprimindo a conversão antes mesmo da oferta ser lida. Infraestrutura exposta convida exploração. Os sinais técnicos que dizem 'este site é seguro' estão ausentes, e tanto humanos quanto máquinas percebem.",
-      "behavioral_first_session_failure": "Visitantes de primeira vez chegam com intenção mas travam antes de alcançar qualquer marco de receita. Dados de sessão mostram novos usuários batendo em barreiras de confiança, CTAs ausentes ou fluxos sem saída na primeira interação. A primeira sessão é a janela de conversão de maior alavancagem — quando falha, o comprador raramente volta. Cada travamento na primeira sessão é uma perda permanente da conversão mais barata que você jamais vai conseguir.",
-      "behavioral_action_value_misalignment": "O comportamento dos visitantes se concentra em ações de baixo valor enquanto as ações de alto valor que geram receita permanecem subexpostas ou enterradas. O tráfego flui para superfícies que não avançam a compra, e as páginas mais importantes recebem o menor engajamento. O site está movimentado mas improdutivo — atividade sem avanço. Ações que geram receita precisam estar onde a atenção já está, não onde você gostaria que estivesse.",
+      "behavioral_first_session_failure": "Visitantes de primeira vez chegam com intenção mas travam antes de alcançar qualquer marco de faturamento. Dados de sessão mostram novos usuários batendo em barreiras de confiança, CTAs ausentes ou fluxos sem saída na primeira interação. A primeira sessão é a janela de conversão de maior alavancagem — quando falha, o comprador raramente volta. Cada travamento na primeira sessão é uma perda permanente da conversão mais barata que você jamais vai conseguir.",
+      "behavioral_action_value_misalignment": "O comportamento dos visitantes se concentra em ações de baixo valor enquanto as ações de alto valor que geram faturamento permanecem subexpostas ou enterradas. O tráfego flui para superfícies que não avançam a compra, e as páginas mais importantes recebem o menor engajamento. O site está movimentado mas improdutivo — atividade sem avanço. Ações que geram faturamento precisam estar onde a atenção já está, não onde você gostaria que estivesse.",
       "paid_acquisition_waste": "Tráfego pago aterrissa em experiências com fricção elevada, lacunas de confiança ou problemas compostos no mobile que suprimem a conversão pela qual você pagou. O custo de aquisição é fixo mas a taxa de conversão está degradada — cada ponto de fricção no caminho pago multiplica seu custo efetivo por aquisição. Você está pagando preço cheio por metade do resultado, e o desperdício escala linearmente com o investimento.",
-      "mobile_conversion_failure": "Visitantes mobile encontram barreiras de conversão que usuários desktop nunca veem — CTAs quebrados, fricção em formulários, gaps de timing entre intenção e ação. A experiência mobile sistematicamente performa abaixo contra a mesma oferta, mesma qualidade de tráfego, mesma intenção de compra. Como mobile é tipicamente a maioria do tráfego, essa lacuna representa a maior perda de receita por segmento que a maioria dos sites carrega.",
+      "mobile_conversion_failure": "Visitantes mobile encontram barreiras de conversão que usuários desktop nunca veem — CTAs quebrados, fricção em formulários, gaps de timing entre intenção e ação. A experiência mobile sistematicamente performa abaixo contra a mesma oferta, mesma qualidade de tráfego, mesma intenção de compra. Como mobile é tipicamente a maioria do tráfego, essa lacuna representa a maior perda de faturamento por segmento que a maioria dos sites carrega.",
       "behavioral_friction_tax": "Cada etapa do funil custa mais esforço do que deveria. Dados de sessão mostram oscilação entre páginas, entradas repetidas no checkout e fadiga de decisão se manifestando como navegação vai-e-volta antes do abandono. A fricção acumulada ao longo do caminho age como um imposto invisível sobre a conversão — nenhuma etapa isolada está quebrada, mas a soma de todas excede o que compradores estão dispostos a aguentar.",
       "behavioral_trust_revenue_gap": "Compradores demonstram clara intenção de compra mas abandonam em momentos próximos à conversão porque sinais de confiança são insuficientes. Padrões de sessão mostram comportamento elevado de busca por garantias — visitas a páginas de política, consultas ao suporte, escaneamento de selos de confiança — seguidos de abandono. A lacuna entre disposição para comprar e disposição para confiar é mensurável e recuperável. Esses compradores queriam converter; eles só precisavam de mais um motivo pra se sentir seguros.",
       "behavioral_path_inefficiency": "O caminho da primeira interação até a compra é mais longo do que a intenção do comprador consegue sustentar. Páginas intermediárias demais, tempo excessivo entre sinais de intenção e oportunidades de conversão, e superfícies que absorvem atenção sem avançar a compra — tudo contribui para a deterioração. Quando o comprador chega ao ponto de conversão, a urgência que o trouxe já se dissipou. Caminhos mais curtos convertem; caminhos mais longos vazam."
@@ -2779,7 +2780,7 @@
         "description": "Políticas de privacidade, termos e reembolso estão presentes e acessíveis. Isso sustenta a confiança do comprador e a conformidade regulatória."
       },
       "low_friction_checkout": {
-        "title": "Caminho de receita livre de fricção estrutural",
+        "title": "Caminho de faturamento livre de fricção estrutural",
         "description": "Nenhum formulário quebrado, redirecionamento excessivo ou página de carregamento lento detectado no caminho de conversão. O caminho da intenção até a compra está limpo."
       },
       "measurement_covered": {
@@ -2835,31 +2836,31 @@
         "fix_primary": "Trate os problemas de alta prioridade antes de aumentar o tráfego significativamente.",
         "fix_improve_policy": "Melhore a cobertura de políticas para reduzir o risco de conformidade.",
         "fix_install_analytics": "Instale ferramentas de analytics para habilitar atribuição e otimização adequadas.",
-        "fix_strengthen_revenue": "Fortaleça o caminho de receita: reduza redirecionamentos e fricção no fluxo de conversão.",
+        "fix_strengthen_revenue": "Fortaleça o caminho de faturamento: reduza redirecionamentos e fricção no fluxo de conversão.",
         "fix_verify": "Execute a análise novamente após implementar as alterações.",
         "optimize_primary": "O tráfego pode ser escalado. Monitore possíveis regressões.",
         "optimize_measurement": "Considere melhorar a cobertura de medição para melhor otimização.",
         "optimize_verify": "Agende reanálises periódicas para detectar regressões."
       },
       "revenue_integrity": {
-        "block_primary": "A receita está vazando ativamente. Corrija o caminho de conversão imediatamente.",
-        "block_close_leak": "Feche pontos de vazamento de receita: corrija formulários quebrados, consolide o Checkout em um domínio e garanta uma entrada clara de conversão.",
+        "block_primary": "A faturamento está vazando ativamente. Corrija o caminho de conversão imediatamente.",
+        "block_close_leak": "Feche pontos de vazamento de faturamento: corrija formulários quebrados, consolide o Checkout em um domínio e garanta uma entrada clara de conversão.",
         "block_consolidate": "Consolide o caminho de conversão: reduza a fragmentação entre hosts externos e elimine redirecionamentos desnecessários antes do Checkout.",
         "block_restore_trust": "Restaure a confiança no Checkout: adicione políticas, verifique provedores, garanta continuidade da marca durante o fluxo de compra.",
         "block_reduce_friction": "Reduza a fricção no caminho crítico: corrija ações de formulário quebradas, acelere páginas lentas, elimine redirecionamentos desnecessários.",
-        "block_verify_revenue": "Execute a análise de receita novamente após as correções para confirmar que o vazamento foi resolvido.",
+        "block_verify_revenue": "Execute a análise de faturamento novamente após as correções para confirmar que o vazamento foi resolvido.",
         "block_verify_conversion": "Monitore a taxa de conversão após as alterações para medir a melhoria.",
-        "fix_primary": "O caminho de receita tem problemas estruturais. Resolva antes de escalar o investimento em anúncios.",
-        "fix_measurement": "Melhore a medição: instale analytics nas páginas comerciais para tornar o vazamento de receita visível.",
+        "fix_primary": "O caminho de faturamento tem problemas estruturais. Resolva antes de escalar o investimento em anúncios.",
+        "fix_measurement": "Melhore a medição: instale analytics nas páginas comerciais para tornar o vazamento de faturamento visível.",
         "fix_clarify_intent": "Clarifique a intenção de conversão: estabeleça um CTA principal claro e reduza ações concorrentes.",
         "fix_streamline": "Simplifique o fluxo de Checkout: minimize handoffs e mantenha o caminho de conversão no domínio quando possível.",
         "fix_verify": "Execute a análise novamente após implementar as alterações.",
-        "optimize_primary": "O caminho de receita é funcional mas possui oportunidades de otimização.",
-        "optimize_measurement": "Melhore a cobertura de medição para melhor quantificar o impacto na receita.",
+        "optimize_primary": "O caminho de faturamento é funcional mas possui oportunidades de otimização.",
+        "optimize_measurement": "Melhore a cobertura de medição para melhor quantificar o impacto na faturamento.",
         "optimize_clarify": "Clarifique o caminho principal de conversão para melhores taxas de conversão.",
-        "optimize_verify": "Agende análises periódicas de receita para acompanhar melhorias.",
-        "stable_primary": "A integridade da receita está estável. Nenhum vazamento significativo detectado.",
-        "stable_verify": "Agende análises periódicas de receita para detectar regressões."
+        "optimize_verify": "Agende análises periódicas de faturamento para acompanhar melhorias.",
+        "stable_primary": "A integridade do faturamento está estável. Nenhum vazamento significativo detectado.",
+        "stable_verify": "Agende análises periódicas de faturamento para detectar regressões."
       },
       "chargeback": {
         "block_primary": "Alta exposição a Chargeback. Adicione política de reembolso, canais de suporte e sinais de confiança imediatamente.",
@@ -2886,10 +2887,10 @@
       "fix_before_scale": "Problemas devem ser corrigidos antes de escalar o tráfego. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100.",
       "ready_with_risks": "O tráfego pode ser escalado com cautela. Alguns riscos permanecem (pontuação: {risk_score}/100) mas não são bloqueantes.",
       "safe_to_scale": "Seguro para escalar tráfego. Nenhum risco significativo detectado (pontuação: {risk_score}/100).",
-      "revenue_leakage_detected": "Vazamento ativo de receita detectado. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. O caminho de conversão possui problemas estruturais críticos causando perda de dinheiro.",
-      "revenue_at_risk": "O caminho de receita possui problemas significativos. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Corrija antes de aumentar o investimento em anúncios.",
-      "revenue_path_fragile": "O caminho de receita é funcional mas frágil. Pontuação de risco: {risk_score}/100. Existem oportunidades de otimização para reduzir o vazamento.",
-      "revenue_integrity_stable": "A integridade da receita está estável. Nenhum vazamento significativo detectado (pontuação: {risk_score}/100).",
+      "revenue_leakage_detected": "Vazamento ativo de faturamento detectado. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. O caminho de conversão possui problemas estruturais críticos causando perda de dinheiro.",
+      "revenue_at_risk": "O caminho de faturamento possui problemas significativos. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Corrija antes de aumentar o investimento em anúncios.",
+      "revenue_path_fragile": "O caminho de faturamento é funcional mas frágil. Pontuação de risco: {risk_score}/100. Existem oportunidades de otimização para reduzir o vazamento.",
+      "revenue_integrity_stable": "A integridade do faturamento está estável. Nenhum vazamento significativo detectado (pontuação: {risk_score}/100).",
       "high_chargeback_risk": "Alto risco de Chargeback. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Políticas ausentes, lacunas de suporte e problemas de expectativa criam exposição significativa a disputas.",
       "moderate_chargeback_risk": "Risco moderado de Chargeback. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Algumas medidas de proteção estão ausentes.",
       "low_chargeback_risk": "Baixo risco de Chargeback. Pontuação de risco: {risk_score}/100. Melhorias menores disponíveis mas não bloqueantes.",
@@ -2908,15 +2909,15 @@
     },
     "workspace_names": {
       "preflight": "Pré-lançamento",
-      "revenue": "Análise de Receita",
+      "revenue": "Análise de Faturamento",
       "chargeback": "Análise de Chargeback",
       "saas": "Crescimento SaaS",
-      "first_impression": "Receita de Primeira Impressão",
+      "first_impression": "Faturamento de Primeira Impressão",
       "action_value": "Mapa de Valor de Ações",
       "acquisition_integrity": "Integridade de Aquisição",
-      "mobile_revenue": "Exposição de Receita Mobile",
+      "mobile_revenue": "Exposição de Faturamento Mobile",
       "friction_tax": "Imposto de Fricção",
-      "trust_gap": "Gap de Confiança e Receita",
+      "trust_gap": "Gap de Confiança e Faturamento",
       "path_efficiency": "Eficiência do Caminho de Compra",
       "security_posture": "Postura de Segurança"
     },
@@ -2954,7 +2955,7 @@
         "playwright_runs": "Execucoes Playwright",
         "estimated_tokens": "Tokens Estimados",
         "total_cost": "Custo Total",
-        "monthly_recurring_revenue": "Receita Recorrente Mensal",
+        "monthly_recurring_revenue": "Faturamento Recorrente Mensal",
         "orgs_over_limit": "Orgs Acima do Limite",
         "unresolved_errors": "Erros Nao Resolvidos",
         "platform_health": "Saude da Plataforma",

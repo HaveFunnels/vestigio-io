@@ -772,6 +772,7 @@
     "mini_calculator": {
       "title": "See what you're leaving on the table",
       "subtitle": "Enter your website URL to get a free snapshot of potential revenue leaks.",
+      "currency_symbol": "$",
       "url_placeholder": "Enter your website URL...",
       "revenue_placeholder": "Average monthly revenue",
       "cta_audit": "Run Free Audit",

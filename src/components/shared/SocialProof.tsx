@@ -10,65 +10,195 @@ export interface Testimonial {
   avatar?: string;
 }
 
-const DEFAULT_TESTIMONIALS: Testimonial[] = [
+// ── English testimonials ────────────────────────────────────────────
+const ROW1_EN: Testimonial[] = [
   {
     quote:
-      "Vestigio found $47k in revenue leaks we had no idea existed. The ROI was obvious within the first cycle.",
+      "Vestigio found $47k in revenue leaks we had no idea existed. The ROI was obvious within the first audit cycle.",
     name: "Sarah Chen",
     role: "Head of Growth",
     company: "TechFlow",
   },
   {
     quote:
-      "We stopped guessing and started deciding. The prioritized action queue changed how we operate.",
+      "We stopped guessing and started deciding. The prioritized action queue changed how our team operates daily.",
     name: "Marcus Rivera",
     role: "CEO",
     company: "ShopScale",
   },
   {
     quote:
-      "Every time we deploy, Vestigio catches regressions before our customers do. It's our safety net.",
+      "Every deploy, Vestigio catches regressions before customers notice. It's our revenue safety net.",
     name: "Priya Patel",
     role: "VP Engineering",
     company: "CloudCart",
   },
   {
     quote:
-      "The audit paid for itself in week one. We found checkout friction that was costing us $12k/month.",
+      "The audit paid for itself in week one. Checkout friction was costing us $12k/month and we had no clue.",
     name: "David Kim",
     role: "Founder",
     company: "NexaCommerce",
   },
   {
     quote:
-      "Finally, a tool that speaks revenue, not just technical jargon. Our whole team can use it.",
+      "Finally, a tool that speaks revenue impact, not technical jargon. Our whole C-suite uses it.",
     name: "Ana Costa",
     role: "COO",
     company: "BrazilDigital",
   },
   {
     quote:
-      "Vestigio replaced three tools for us — analytics, audit, and monitoring in one decision engine.",
+      "Vestigio replaced our analytics, audit, and monitoring stack — one decision engine for everything.",
     name: "James Mitchell",
     role: "CTO",
     company: "ScaleOps",
   },
+];
+
+const ROW2_EN: Testimonial[] = [
   {
     quote:
-      "The 4X ROI guarantee isn't marketing — we actually hit 6X in our second month.",
+      "We hit 6X ROI in our second month. The impact quantification alone justified the investment.",
     name: "Lisa Wang",
     role: "Director of Commerce",
     company: "PeakRetail",
   },
   {
     quote:
-      "I showed the Vestigio report to our board and they immediately approved the budget. The data speaks.",
+      "I showed the Vestigio report to our board and they immediately greenlit the budget. Data that speaks.",
     name: "Rafael Santos",
     role: "CEO",
     company: "FunnelPro",
   },
+  {
+    quote:
+      "Our checkout conversion jumped 23% after fixing what Vestigio flagged. No other tool caught it.",
+    name: "Emily Zhang",
+    role: "Growth Lead",
+    company: "CartGenius",
+  },
+  {
+    quote:
+      "The workspace perspectives let me see revenue risk from five angles. Nothing else gives that clarity.",
+    name: "Tom Anderson",
+    role: "VP Revenue",
+    company: "DataDrive",
+  },
+  {
+    quote:
+      "We were bleeding $8k/month on mobile friction alone. Vestigio found it, we fixed it in a day.",
+    name: "Kenji Tanaka",
+    role: "CTO",
+    company: "MobileFirst",
+  },
+  {
+    quote:
+      "Integration was 60 seconds. First actionable insight came 3 minutes later. That's what fast looks like.",
+    name: "Olivia Martinez",
+    role: "Head of Digital",
+    company: "GrowthLab",
+  },
 ];
 
+// ── Portuguese (pt-BR) testimonials ─────────────────────────────────
+const ROW1_PT: Testimonial[] = [
+  {
+    quote:
+      "A Vestigio encontrou R$180k em vazamentos de faturamento que não tínhamos ideia. O ROI foi óbvio no primeiro ciclo.",
+    name: "Lucas Mendes",
+    role: "Head de Crescimento",
+    company: "TechBrasil",
+  },
+  {
+    quote:
+      "Paramos de adivinhar e começamos a decidir. A fila priorizada de ações mudou como operamos.",
+    name: "Carolina Silva",
+    role: "CEO",
+    company: "EscalaShop",
+  },
+  {
+    quote:
+      "Cada deploy, a Vestigio pega regressões antes dos clientes perceberem. É nossa rede de segurança.",
+    name: "Fernando Costa",
+    role: "VP Engenharia",
+    company: "CloudBR",
+  },
+  {
+    quote:
+      "A auditoria se pagou na primeira semana. Fricção no checkout custava R$45k/mês e não sabíamos.",
+    name: "Marcos Oliveira",
+    role: "Fundador",
+    company: "NexaCommerce",
+  },
+  {
+    quote:
+      "Finalmente uma ferramenta que fala em impacto de faturamento, não jargão técnico. Todo o time usa.",
+    name: "Ana Beatriz Santos",
+    role: "COO",
+    company: "DigitalBrasil",
+  },
+  {
+    quote:
+      "A Vestigio substituiu nosso stack de analytics, auditoria e monitoramento — uma engine de decisão.",
+    name: "Pedro Almeida",
+    role: "CTO",
+    company: "ScaleOps Brasil",
+  },
+];
+
+const ROW2_PT: Testimonial[] = [
+  {
+    quote:
+      "Atingimos 6X de ROI no segundo mês. Só a quantificação de impacto já justificou o investimento.",
+    name: "Juliana Ferreira",
+    role: "Diretora Comercial",
+    company: "PeakRetail BR",
+  },
+  {
+    quote:
+      "Mostrei o relatório da Vestigio pro board e aprovaram o budget na hora. Dados que falam por si.",
+    name: "Rafael Nascimento",
+    role: "CEO",
+    company: "FunnelPro",
+  },
+  {
+    quote:
+      "Conversão do checkout subiu 23% depois de corrigir o que a Vestigio flagou. Nenhuma outra ferramenta pegou.",
+    name: "Camila Rodrigues",
+    role: "Growth Lead",
+    company: "CartGenius BR",
+  },
+  {
+    quote:
+      "As perspectivas dos workspaces me mostram risco de faturamento de 5 ângulos. Nada mais dá essa clareza.",
+    name: "Thiago Martins",
+    role: "VP Faturamento",
+    company: "DataDrive BR",
+  },
+  {
+    quote:
+      "Estávamos perdendo R$30k/mês em fricção mobile. A Vestigio encontrou, corrigimos em um dia.",
+    name: "Kenji Tanaka",
+    role: "CTO",
+    company: "MobileFirst",
+  },
+  {
+    quote:
+      "Integração levou 60 segundos. Primeiro insight acionável veio 3 minutos depois. Isso é velocidade.",
+    name: "Mariana Costa",
+    role: "Head Digital",
+    company: "GrowthLab BR",
+  },
+];
+
+// ── Heading defaults per locale ─────────────────────────────────────
+const HEADINGS: Record<string, string> = {
+  en: "Trusted by growth-focused digital businesses",
+  "pt-BR": "Empresas focadas em crescimento confiam na Vestigio",
+};
+
+// ── Helper functions ────────────────────────────────────────────────
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -97,7 +227,7 @@ function Avatar({ name, avatar }: { name: string; avatar?: string }) {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="flex w-[340px] shrink-0 flex-col justify-between rounded-xl border border-white/5 bg-white/[0.03] p-5 sm:w-[380px]">
+    <div className="flex w-[400px] shrink-0 flex-col justify-between rounded-xl border border-white/5 bg-white/[0.03] p-5 sm:w-[440px]">
       <p className="mb-4 text-sm leading-relaxed text-zinc-300">
         &ldquo;{t.quote}&rdquo;
       </p>
@@ -114,22 +244,27 @@ function TestimonialCard({ t }: { t: Testimonial }) {
   );
 }
 
+// ── Component ───────────────────────────────────────────────────────
 interface SocialProofProps {
-  testimonials?: Testimonial[];
+  row1?: Testimonial[];
+  row2?: Testimonial[];
   heading?: string;
+  locale?: "en" | "pt-BR";
 }
 
 export function SocialProof({
-  testimonials = DEFAULT_TESTIMONIALS,
-  heading = "Trusted by growth-focused digital businesses",
+  row1,
+  row2,
+  heading,
+  locale = "pt-BR",
 }: SocialProofProps) {
-  const half = Math.ceil(testimonials.length / 2);
-  const row1 = testimonials.slice(0, half);
-  const row2 = testimonials.slice(half);
+  const resolvedRow1 = row1 ?? (locale === "pt-BR" ? ROW1_PT : ROW1_EN);
+  const resolvedRow2 = row2 ?? (locale === "pt-BR" ? ROW2_PT : ROW2_EN);
+  const resolvedHeading = heading ?? HEADINGS[locale] ?? HEADINGS["pt-BR"];
 
   // Duplicate each row for seamless loop
-  const track1 = [...row1, ...row1];
-  const track2 = [...row2, ...row2];
+  const track1 = [...resolvedRow1, ...resolvedRow1];
+  const track2 = [...resolvedRow2, ...resolvedRow2];
 
   return (
     <section className="relative z-1 overflow-hidden bg-[#090911] py-16 lg:py-24">
@@ -142,8 +277,8 @@ export function SocialProof({
           from { transform: translateX(-50%); }
           to   { transform: translateX(0); }
         }
-        .vsp-track-left  { animation: vsp-scroll-left  40s linear infinite; }
-        .vsp-track-right { animation: vsp-scroll-right  40s linear infinite; }
+        .vsp-track-left  { animation: vsp-scroll-left  45s linear infinite; }
+        .vsp-track-right { animation: vsp-scroll-right  45s linear infinite; }
         .vsp-track-left:hover,
         .vsp-track-right:hover { animation-play-state: paused; }
         @media (prefers-reduced-motion: reduce) {
@@ -154,13 +289,13 @@ export function SocialProof({
 
       <div className="mx-auto max-w-7xl px-4 sm:px-8">
         <h2 className="mb-10 text-center text-lg font-medium text-zinc-400 sm:text-xl">
-          {heading}
+          {resolvedHeading}
         </h2>
       </div>
 
       {/* Row 1 — scrolls left */}
-      <div className="relative mb-4 w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
-        <div className="vsp-track-left flex w-max gap-4">
+      <div className="relative mb-5 w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
+        <div className="vsp-track-left flex w-max gap-5">
           {track1.map((t, i) => (
             <TestimonialCard key={`r1-${t.name}-${i}`} t={t} />
           ))}
@@ -169,7 +304,7 @@ export function SocialProof({
 
       {/* Row 2 — scrolls right */}
       <div className="relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
-        <div className="vsp-track-right flex w-max gap-4">
+        <div className="vsp-track-right flex w-max gap-5">
           {track2.map((t, i) => (
             <TestimonialCard key={`r2-${t.name}-${i}`} t={t} />
           ))}

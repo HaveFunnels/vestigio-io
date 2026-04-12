@@ -19,7 +19,7 @@ import { resolveDecisionConflicts, ConflictReport } from '../decision/conflict-r
 import { generateOpportunities, OpportunityGenerationResult } from '../decision/opportunity-gate';
 import { deriveActions } from '../actions';
 import { produceIntelligence, DecisionIntelligenceResult } from '../intelligence';
-import { estimateImpact, summarizeImpact, QuantifiedValueCase, ImpactSummary, BusinessInputs } from '../impact';
+import { estimateImpact, summarizeImpact, QuantifiedValueCase, ImpactSummary, BusinessInputs, OperationalAmplifiers } from '../impact';
 import { computeClassification, extractClassificationInput, ClassificationState } from '../classification';
 import { computePackEligibility, PackEligibility } from '../classification/eligibility';
 import { detectMaturityStage, MaturityStage } from '../classification/maturity';
@@ -54,6 +54,14 @@ import {
   OpportunityCompressionResult,
   CompressibleFinding,
 } from '../composites';
+import {
+  IntegrationSnapshot,
+  CommerceContext,
+  DataProvenance,
+  reconcileIntegrations,
+  RevenueRecoveryResult,
+  computeRevenueRecovery,
+} from '../integrations';
 
 // Phase 29: Cross-layer penalty budget
 // Maximum total confidence reduction across all penalty layers (suppression, profile, coherence).
@@ -151,6 +159,8 @@ export interface MultiPackInput {
   profile_drift_signals?: ProfileDriftSignal[];
   /** Engine translations for i18n support */
   translations?: EngineTranslations;
+  /** Integration snapshots from connected data sources */
+  integration_snapshots?: IntegrationSnapshot[];
 }
 
 export interface MultiPackResult {
@@ -239,6 +249,11 @@ export interface MultiPackResult {
     blast_radius: BlastRadiusAlert;
     opportunity_compression: OpportunityCompressionResult;
   } | null;
+
+  // Integration data layer
+  commerce_context: CommerceContext | null;
+  data_provenance: DataProvenance | null;
+  revenue_recovery: RevenueRecoveryResult | null;
 }
 
 export function recomputeAll(input: MultiPackInput): MultiPackResult {
@@ -571,8 +586,24 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     translations,
   });
 
-  // Impact estimation — with profile freshness penalty applied
-  const valueCases = estimateImpact(allInferences, input.business_inputs || null, profilePenalty);
+  // ─── Integration reconciliation — merge multi-source data before impact ───
+  let commerceContext: CommerceContext | null = null;
+  let dataProvenance: DataProvenance | null = null;
+  let reconciledBusinessInputs: BusinessInputs | null = input.business_inputs || null;
+  let reconciledAmplifiers: OperationalAmplifiers | undefined;
+
+  const integrationSnapshots = input.integration_snapshots || [];
+  if (integrationSnapshots.length > 0) {
+    const businessModel = input.onboarding_business_model || 'ecommerce';
+    const reconciliation = reconcileIntegrations(integrationSnapshots, businessModel);
+    reconciledBusinessInputs = reconciliation.business_inputs;
+    commerceContext = reconciliation.commerce_context;
+    reconciledAmplifiers = reconciliation.amplifiers;
+    dataProvenance = reconciliation.provenance;
+  }
+
+  // Impact estimation — with profile freshness penalty and reconciled inputs/amplifiers
+  const valueCases = estimateImpact(allInferences, reconciledBusinessInputs, profilePenalty, reconciledAmplifiers);
   const impactSummary = summarizeImpact(valueCases);
 
   // Phase 25: Decision conflict resolution
@@ -670,6 +701,35 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   };
   if (input.previous_snapshot) {
     changeReport = detectChanges(input.previous_snapshot, cycleSnapshot);
+  }
+
+  // ─── Integration: Revenue recovery estimation ───
+  let revenueRecovery: RevenueRecoveryResult | null = null;
+  if (changeReport && reconciledBusinessInputs?.monthly_revenue !== null && dataProvenance) {
+    // Resolved findings from change detection
+    const resolvedFindings = changeReport.resolved_issues.map(ri => {
+      // Find matching value case for impact range
+      const vc = valueCases.find(v => v.inference_key === ri.decision_key);
+      return {
+        key: ri.decision_key,
+        cycle_ref: ri.previous_cycle_ref,
+        impact_range: vc
+          ? { min: vc.estimated_impact.range.min, max: vc.estimated_impact.range.max }
+          : { min: 0, max: 0 },
+      };
+    });
+
+    if (resolvedFindings.length > 0 && input.previous_snapshot) {
+      // Previous revenue is approximated from the previous cycle's business inputs
+      // In a real implementation this would come from stored integration snapshots
+      const previousRevenue = input.business_inputs?.monthly_revenue ?? null;
+      revenueRecovery = computeRevenueRecovery(
+        resolvedFindings,
+        reconciledBusinessInputs!.monthly_revenue,
+        previousRevenue,
+        dataProvenance.monthly_revenue_source || 'unknown',
+      );
+    }
   }
 
   // ─── Phase 30B: Inject regression inference from change detection ───
@@ -793,6 +853,11 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
     // Wave 3.4: Composite findings (computed post-assembly)
     composites: null,
+
+    // Integration data layer
+    commerce_context: commerceContext,
+    data_provenance: dataProvenance,
+    revenue_recovery: revenueRecovery,
   };
 
   // ─── Phase 29: Confidence audit — instrumented with real before/after values ───

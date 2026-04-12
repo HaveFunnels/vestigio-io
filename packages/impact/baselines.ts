@@ -1402,4 +1402,56 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.10, max: 0.25 }, medium: { min: 0.04, max: 0.10 }, low: { min: 0.01, max: 0.04 },
     base_metric: 'revenue',
   },
+  // Wave 3.3 expansion: cybersecurity pack (batch 2)
+  email_deliverability_risk: {
+    inference_key: 'email_deliverability_risk', impact_category: 'chargeback_risk',
+    cause: 'Order confirmation emails may not reach buyers',
+    effect: 'Without SPF/DKIM/DMARC, transactional emails land in spam — buyers assume fraud and file chargebacks',
+    high: { min: 0.04, max: 0.10 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  cors_misconfiguration_risk: {
+    inference_key: 'cors_misconfiguration_risk', impact_category: 'revenue_loss',
+    cause: 'Any website can make authenticated requests to your checkout',
+    effect: 'Wildcard CORS on payment endpoints lets malicious sites read session data, initiate purchases, and extract customer information',
+    high: { min: 0.05, max: 0.12 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  rate_limiting_absent_on_commerce: {
+    inference_key: 'rate_limiting_absent_on_commerce', impact_category: 'revenue_loss',
+    cause: 'Commercial endpoints accept unlimited automated requests',
+    effect: 'Without rate limiting, bots can test thousands of stolen cards per minute, hoard inventory, and scrape pricing — generating chargebacks and operational chaos',
+    high: { min: 0.06, max: 0.15 }, medium: { min: 0.03, max: 0.08 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  predictable_order_urls: {
+    inference_key: 'predictable_order_urls', impact_category: 'revenue_loss',
+    cause: 'Customer order and account data is accessible via predictable URLs',
+    effect: 'Sequential URLs like /order/123 let anyone enumerate orders, invoices, and customer profiles — exposing personal and financial data at scale',
+    high: { min: 0.05, max: 0.15 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+
+  // ── Wave 3.1 Tier 2: LLM enrichment findings ──────────
+  social_proof_generic: {
+    inference_key: 'social_proof_generic', impact_category: 'conversion_loss',
+    cause: 'Testimonials are generic and unattributed',
+    effect: "Reviews like 'Great product!' without a name, company, or measurable outcome reduce trust instead of building it — buyers question if the reviews are real",
+    high: { min: 0.03, max: 0.08 }, medium: { min: 0.01, max: 0.04 }, low: { min: 0.005, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  form_error_messages_unhelpful: {
+    inference_key: 'form_error_messages_unhelpful', impact_category: 'conversion_loss',
+    cause: 'Form error messages are technical instead of helpful',
+    effect: "When a buyer enters an invalid email and sees 'Invalid input' instead of 'Please enter a valid email (e.g. name@example.com)', they don't know what to fix and abandon the form",
+    high: { min: 0.04, max: 0.10 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  onboarding_no_quick_win: {
+    inference_key: 'onboarding_no_quick_win', impact_category: 'conversion_loss',
+    cause: 'New users don\'t experience product value in the first session',
+    effect: "Without a quick win in the first minutes — a visible result, a completed setup, a personalized recommendation — trial users conclude the product isn't for them and never return",
+    high: { min: 0.08, max: 0.20 }, medium: { min: 0.04, max: 0.10 }, low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
 };

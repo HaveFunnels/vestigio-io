@@ -162,6 +162,9 @@ export function extractSignals(
   // Wave 3.3: Security posture signals from existing evidence
   extractSecurityPostureSignals(byType, scoping, cycle_ref, signals, ids);
 
+  // Wave 3.1 Tier 2: LLM enrichment signals from copy/form/onboarding quality
+  extractCopyEnrichmentSignals(byType, scoping, cycle_ref, signals, ids);
+
   return signals;
 }
 
@@ -4403,6 +4406,153 @@ function extractSecurityPostureSignals(
       }));
     }
   }
+
+  // ── Finding: Email Deliverability Risk (Heuristic) ──
+  // Commerce site with checkout but no detectable email infrastructure
+  const checkoutSignal = signals.find(s => s.attribute === 'checkout.detected' || s.attribute === 'checkout.mode');
+  if (checkoutSignal) {
+    const metas = byType.get(EvidenceType.Meta) || [];
+    const techs = byType.get(EvidenceType.TechnologyDetected) || [];
+
+    let hasEmailInfra = false;
+    const EMAIL_TECH_KEYWORDS = ['mailchimp', 'sendgrid', 'mailgun', 'postmark', 'ses', 'sparkpost', 'mandrill', 'klaviyo', 'sendinblue', 'brevo', 'mailerlite', 'convertkit', 'drip', 'activecampaign', 'hubspot', 'intercom'];
+
+    for (const e of techs) {
+      const p = e.payload as TechnologyDetectedPayload;
+      const key = p.technology_key.toLowerCase();
+      const cat = p.category.toLowerCase();
+      if (cat === 'email' || cat === 'email_provider' || cat === 'marketing_automation' || EMAIL_TECH_KEYWORDS.some(kw => key.includes(kw))) {
+        hasEmailInfra = true;
+        break;
+      }
+    }
+
+    if (!hasEmailInfra) {
+      // Check meta evidence for email-related structured data
+      for (const e of metas) {
+        const p = e.payload as MetaPayload;
+        if (p.structured_data && Array.isArray(p.structured_data)) {
+          for (const sd of p.structured_data) {
+            const sdStr = JSON.stringify(sd).toLowerCase();
+            if (sdStr.includes('email') && (sdStr.includes('transactional') || sdStr.includes('notification') || sdStr.includes('confirmation'))) {
+              hasEmailInfra = true;
+              break;
+            }
+          }
+        }
+        if (hasEmailInfra) break;
+      }
+    }
+
+    if (!hasEmailInfra) {
+      signals.push(createSignal({ ids,
+        signal_key: `email_infrastructure_absent`,
+        category: SignalCategory.Security,
+        attribute: 'security.email.infrastructure_absent',
+        value: 'true',
+        numeric_value: 1,
+        confidence: 60,
+        scoping, cycle_ref,
+        evidence_refs: checkoutSignal.evidence_refs.slice(0, 2),
+        description: `Commerce site with checkout detected but no email infrastructure (ESP, transactional email provider) found — order confirmation emails may not reach buyers.`,
+      }));
+    }
+  }
+
+  // ── Finding: CORS Wildcard on Commercial Pages ──
+  if (httpResponses.length > 0) {
+    const corsWildcardEvidence: Evidence[] = [];
+
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      if (p.status_code < 200 || p.status_code >= 400) continue;
+      if (!secIsCheckoutUrl(p.url)) continue;
+
+      const acao = secGetHeader(p.headers, 'access-control-allow-origin');
+      if (acao && acao.trim() === '*') {
+        corsWildcardEvidence.push(e);
+      }
+    }
+
+    if (corsWildcardEvidence.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `cors_wildcard_on_commercial`,
+        category: SignalCategory.Security,
+        attribute: 'security.cors.wildcard_on_commercial',
+        value: 'true',
+        numeric_value: corsWildcardEvidence.length,
+        confidence: 80,
+        scoping, cycle_ref,
+        evidence_refs: corsWildcardEvidence.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${corsWildcardEvidence.length} commercial page(s) return Access-Control-Allow-Origin: * — any website can make authenticated requests to checkout endpoints.`,
+      }));
+    }
+  }
+
+  // ── Finding: Rate Limiting Absent on Commerce (Heuristic) ──
+  if (checkoutSignal && httpResponses.length > 0) {
+    let hasRateLimitHeaders = false;
+    const commercialResponses: Evidence[] = [];
+
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      if (p.status_code < 200 || p.status_code >= 400) continue;
+      if (!secIsCheckoutUrl(p.url) && !/(product|pricing|cart|login|account|billing|api)/.test(secPathOf(p.url))) continue;
+
+      commercialResponses.push(e);
+      const rl1 = secGetHeader(p.headers, 'x-ratelimit-limit');
+      const rl2 = secGetHeader(p.headers, 'ratelimit-limit');
+      const rl3 = secGetHeader(p.headers, 'x-rate-limit-limit');
+      const rl4 = secGetHeader(p.headers, 'retry-after');
+      if (rl1 || rl2 || rl3 || rl4) {
+        hasRateLimitHeaders = true;
+        break;
+      }
+    }
+
+    if (!hasRateLimitHeaders && commercialResponses.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `no_rate_limit_headers_commercial`,
+        category: SignalCategory.Security,
+        attribute: 'security.rate_limit.absent_commercial',
+        value: 'true',
+        numeric_value: commercialResponses.length,
+        confidence: 55,
+        scoping, cycle_ref,
+        evidence_refs: commercialResponses.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `No rate-limit headers (X-RateLimit-Limit, RateLimit-Limit, Retry-After) detected on ${commercialResponses.length} commercial page response(s) — heuristic indicator, absence of headers does not guarantee absence of rate limiting.`,
+      }));
+    }
+  }
+
+  // ── Finding: Predictable Data URL Patterns ──
+  if (httpResponses.length > 0) {
+    const PREDICTABLE_URL_PATTERN = /\/(order|invoice|user|account|customer|receipt|booking|ticket|reservation)\/\d+/i;
+    const predictableEvidence: Evidence[] = [];
+
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      if (p.status_code !== 200) continue;
+      const path = secPathOf(p.url);
+      if (PREDICTABLE_URL_PATTERN.test(path)) {
+        predictableEvidence.push(e);
+      }
+    }
+
+    if (predictableEvidence.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `predictable_data_url_pattern`,
+        category: SignalCategory.Security,
+        attribute: 'security.url.predictable_data_pattern',
+        value: 'true',
+        numeric_value: predictableEvidence.length,
+        confidence: 70,
+        scoping, cycle_ref,
+        evidence_refs: predictableEvidence.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${predictableEvidence.length} URL(s) matching predictable patterns (e.g. /order/123, /invoice/456) return HTTP 200 — sequential enumeration may expose customer data.`,
+      }));
+    }
+  }
 }
 
 function extractPolicyEnrichmentSignals(
@@ -4464,6 +4614,107 @@ function extractPolicyEnrichmentSignals(
         evidence_refs: refs,
         description: `Policy at ${p.source_url} is missing critical section: ${missing}`,
       }));
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.1 Tier 2: Copy / Form / Onboarding enrichment signals
+// Dormant until the semantic enrichment pass produces the evidence.
+// ──────────────────────────────────────────────
+function extractCopyEnrichmentSignals(
+  byType: Map<EvidenceType, Evidence[]>,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const enrichments = byType.get(EvidenceType.ContentEnrichment) || [];
+  if (enrichments.length === 0) return;
+
+  for (const e of enrichments) {
+    const p = e.payload as any; // ContentEnrichmentPayload — enrichment_type extended by enrichment pass
+    const refs = [makeRef('evidence', e.id)];
+
+    // Finding 1: Social proof quality — generic testimonials
+    if (p.enrichment_type === 'social_proof_quality') {
+      const results = (p.results || {}) as {
+        has_names?: boolean; has_companies?: boolean; has_specific_outcomes?: boolean;
+        generic_count?: number; total_count?: number;
+      };
+      const isGeneric = !results.has_names && !results.has_companies && !results.has_specific_outcomes;
+      const genericRatio = (results.total_count && results.total_count > 0)
+        ? (results.generic_count ?? 0) / results.total_count : 0;
+
+      if (isGeneric || genericRatio > 0.5) {
+        const severity = genericRatio >= 0.8 || isGeneric ? 'high' : genericRatio >= 0.5 ? 'medium' : 'low';
+        signals.push(createSignal({ ids,
+          signal_key: `social_proof_quality_low_${p.source_url}`,
+          category: SignalCategory.Trust,
+          attribute: 'enrichment.social_proof.quality',
+          value: severity,
+          numeric_value: genericRatio * 100,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Social proof quality is ${severity} at ${p.source_url}: testimonials lack names, companies, or measurable outcomes (${Math.round(genericRatio * 100)}% generic)`,
+        }));
+      }
+    }
+
+    // Finding 2: Form error message quality
+    if (p.enrichment_type === 'form_error_quality') {
+      const results = (p.results || {}) as {
+        generic_error_count?: number; helpful_error_count?: number;
+        total_error_count?: number; uses_technical_jargon?: boolean;
+      };
+      const total = results.total_error_count ?? 0;
+      const genericCount = results.generic_error_count ?? 0;
+      const genericRatio = total > 0 ? genericCount / total : 0;
+      const isPoor = results.uses_technical_jargon || genericRatio > 0.5;
+
+      if (isPoor && total > 0) {
+        const severity = genericRatio >= 0.8 || results.uses_technical_jargon ? 'high' : genericRatio >= 0.5 ? 'medium' : 'low';
+        signals.push(createSignal({ ids,
+          signal_key: `form_error_messages_poor_${p.source_url}`,
+          category: SignalCategory.Friction,
+          attribute: 'enrichment.form_error.quality',
+          value: severity,
+          numeric_value: genericRatio * 100,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Form error messages at ${p.source_url} are ${severity}: ${genericCount}/${total} errors are generic/technical instead of helpful`,
+        }));
+      }
+    }
+
+    // Finding 3: Onboarding quality — no quick win
+    if (p.enrichment_type === 'onboarding_quality') {
+      const results = (p.results || {}) as {
+        has_quick_win?: boolean; time_to_first_value_minutes?: number;
+        delivers_immediate_result?: boolean; has_personalization?: boolean;
+      };
+      const noQuickWin = results.has_quick_win === false
+        || (results.time_to_first_value_minutes != null && results.time_to_first_value_minutes > 5)
+        || results.delivers_immediate_result === false;
+
+      if (noQuickWin) {
+        const ttv = results.time_to_first_value_minutes ?? null;
+        const severity = (ttv != null && ttv > 15) || (!results.has_quick_win && !results.has_personalization) ? 'high'
+          : (ttv != null && ttv > 5) || !results.has_quick_win ? 'medium' : 'low';
+        signals.push(createSignal({ ids,
+          signal_key: `onboarding_quick_win_absent_${p.source_url}`,
+          category: SignalCategory.Onboarding,
+          attribute: 'enrichment.onboarding.quick_win',
+          value: severity,
+          numeric_value: ttv ?? undefined,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Onboarding at ${p.source_url} does not deliver a quick win${ttv != null ? ` (time-to-value: ${ttv} min)` : ''}: new users see no immediate result, completed setup, or personalized recommendation`,
+        }));
+      }
     }
   }
 }

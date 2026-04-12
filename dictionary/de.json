@@ -2156,7 +2156,11 @@
       "security_header_weakness": "Browser signalisieren Käufern dass Ihre Website unsicher ist",
       "mixed_content_exposure": "Checkout bricht für manche Besucher stillschweigend zusammen",
       "open_redirect_indicator": "Ihre Domain kann für Phishing Ihrer eigenen Kunden missbraucht werden",
-      "sensitive_endpoint_exposed": "Infrastruktur-Zugangsdaten sind nur eine Suche entfernt"
+      "sensitive_endpoint_exposed": "Infrastruktur-Zugangsdaten sind nur eine Suche entfernt",
+      "email_deliverability_risk": "Ihre Bestellbestätigungs-E-Mails erreichen den Käufer nicht",
+      "cors_misconfiguration_risk": "Bösartige Websites können im Namen Ihrer Kunden einkaufen",
+      "rate_limiting_absent_on_commerce": "Betrugsbots können gestohlene Karten unbegrenzt an Ihrem Checkout testen",
+      "predictable_order_urls": "Jeder kann auf die Bestelldaten Ihrer Kunden zugreifen"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Käufer verlieren das Vertrauen im Checkout-Moment",

@@ -194,6 +194,10 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   checkout_clickjack_risk: 'money_moment_exposure',
   payment_data_unencrypted: 'money_moment_exposure',
   error_page_information_leak: 'money_moment_exposure',
+  email_deliverability_risk: 'money_moment_exposure',
+  cors_misconfiguration_risk: 'money_moment_exposure',
+  rate_limiting_absent_on_commerce: 'money_moment_exposure',
+  predictable_order_urls: 'money_moment_exposure',
 };
 
 // Inference → typical page surface
@@ -338,6 +342,10 @@ const INFERENCE_SURFACES: Record<string, string> = {
   checkout_clickjack_risk: '/checkout, /payment (clickjack protection)',
   payment_data_unencrypted: '/checkout, /payment (form targets)',
   error_page_information_leak: '/ (error responses)',
+  email_deliverability_risk: '/ (sitewide email infrastructure)',
+  cors_misconfiguration_risk: '/checkout, /cart, /payment (CORS headers)',
+  rate_limiting_absent_on_commerce: '/checkout, /cart, /api (rate limiting)',
+  predictable_order_urls: '/order, /invoice, /account (sequential URLs)',
 };
 
 // Human-readable titles for inference findings
@@ -486,6 +494,10 @@ export const INFERENCE_TITLES: Record<string, string> = {
   checkout_clickjack_risk: 'Your checkout page can be faked inside another site',
   payment_data_unencrypted: 'Payment data crosses an unencrypted boundary',
   error_page_information_leak: 'Your error pages help attackers map your system',
+  email_deliverability_risk: 'Your order confirmation emails don\'t reach the buyer',
+  cors_misconfiguration_risk: 'Malicious sites can make purchases on behalf of your customers',
+  rate_limiting_absent_on_commerce: 'Fraud bots can test stolen cards on your checkout without limits',
+  predictable_order_urls: 'Anyone can access your customers\' order data',
 };
 
 // ── Parametric Title Resolution ──

@@ -2637,7 +2637,11 @@
       "buyer_session_theft_risk": "Sessões de compradores podem ser roubadas nas suas páginas comerciais",
       "checkout_clickjack_risk": "Sua página de pagamento pode ser falsificada dentro de outro site",
       "payment_data_unencrypted": "Dados de pagamento cruzam uma fronteira sem criptografia",
-      "error_page_information_leak": "Suas páginas de erro revelam como atacar seu sistema"
+      "error_page_information_leak": "Suas páginas de erro revelam como atacar seu sistema",
+      "email_deliverability_risk": "Seus emails de confirmação de compra não chegam ao comprador",
+      "cors_misconfiguration_risk": "Sites maliciosos podem fazer compras em nome dos seus clientes",
+      "rate_limiting_absent_on_commerce": "Bots testam cartões clonados no seu checkout sem limite",
+      "predictable_order_urls": "Dados de pedidos dos seus clientes podem ser acessados por qualquer pessoa"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Compradores perdem a confiança no momento do checkout",

@@ -428,4 +428,17 @@ export enum InferenceCategory {
   CheckoutClickjackRisk = 'checkout_clickjack_risk',
   PaymentDataUnencrypted = 'payment_data_unencrypted',
   ErrorPageInformationLeak = 'error_page_information_leak',
+  EmailDeliverabilityRisk = 'email_deliverability_risk',
+  CorsMisconfigurationRisk = 'cors_misconfiguration_risk',
+  RateLimitingAbsent = 'rate_limiting_absent_on_commerce',
+  PredictableOrderUrls = 'predictable_order_urls',
+  // Tier 1 Copy Analysis
+  CheckoutTrustLanguageAbsent = 'checkout_trust_language_absent',
+  CtaClarityWeak = 'cta_clarity_weak',
+  ProductPageCopyGeneric = 'product_page_copy_generic',
+  PricingPageFramingUnclear = 'pricing_page_framing_unclear',
+  // Tier 2 LLM enrichment findings
+  SocialProofGeneric = 'social_proof_generic',
+  FormErrorMessagesUnhelpful = 'form_error_messages_unhelpful',
+  OnboardingNoQuickWin = 'onboarding_no_quick_win',
 }

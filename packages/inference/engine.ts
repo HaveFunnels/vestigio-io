@@ -210,6 +210,15 @@ export function computeInferences(
   inferences.push(...inferCheckoutClickjackRisk(first, byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPaymentDataUnencrypted(first, byKey, scoping, cycle_ref, ids));
   inferences.push(...inferErrorPageInformationLeak(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferEmailDeliverabilityRisk(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCorsMisconfigurationRisk(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferRateLimitingAbsent(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPredictableOrderUrls(first, byKey, scoping, cycle_ref, ids));
+
+  // Wave 3.1 Tier 2: LLM enrichment inferences (dormant until enrichment evidence exists)
+  inferences.push(...inferSocialProofGeneric(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFormErrorMessagesUnhelpful(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferOnboardingNoQuickWin(byKey, scoping, cycle_ref, ids));
 
   return inferences;
 }
@@ -499,6 +508,114 @@ function inferErrorPageInformationLeak(
     signal_refs: [makeRef('signal', leaks.id)],
     evidence_refs: leaks.evidence_refs,
     reasoning: `Error page information leak ${severity}. ${count} error page(s) return verbose responses (> 2 KB) on 4xx/5xx status codes. These likely expose stack traces, framework versions, database connection details, or internal file paths — giving attackers a detailed map of the system architecture to craft targeted exploits.`,
+  })];
+}
+
+function inferEmailDeliverabilityRisk(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const emailAbsent = byKey.get('email_infrastructure_absent');
+  if (!emailAbsent) return [];
+
+  const checkoutExists = first('checkout.detected') || first('checkout.mode');
+  const severity = checkoutExists ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'email_deliverability_risk',
+    category: InferenceCategory.EmailDeliverabilityRisk,
+    conclusion: 'email_deliverability_risk',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: emailAbsent.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', emailAbsent.id)],
+    evidence_refs: emailAbsent.evidence_refs,
+    reasoning: `Email deliverability risk ${severity}. Commerce site with checkout but no detectable email infrastructure (ESP, transactional email provider). Without SPF/DKIM/DMARC configured through a reputable email provider, order confirmation emails land in spam — buyers assume the purchase failed or was fraudulent and file chargebacks.`,
+  })];
+}
+
+function inferCorsMisconfigurationRisk(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const corsWildcard = byKey.get('cors_wildcard_on_commercial');
+  if (!corsWildcard) return [];
+
+  const count = corsWildcard.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'cors_misconfiguration_risk',
+    category: InferenceCategory.CorsMisconfigurationRisk,
+    conclusion: 'cors_misconfiguration_risk',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: corsWildcard.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', corsWildcard.id)],
+    evidence_refs: corsWildcard.evidence_refs,
+    reasoning: `CORS misconfiguration risk ${severity}. ${count} commercial page(s) return Access-Control-Allow-Origin: *. Wildcard CORS on payment endpoints lets any website make authenticated cross-origin requests — malicious sites can read session data, initiate purchases, and extract customer information using the buyer's authenticated session.`,
+  })];
+}
+
+function inferRateLimitingAbsent(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const noRateLimit = byKey.get('no_rate_limit_headers_commercial');
+  if (!noRateLimit) return [];
+
+  const count = noRateLimit.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'rate_limiting_absent_on_commerce',
+    category: InferenceCategory.RateLimitingAbsent,
+    conclusion: 'rate_limiting_absent_on_commerce',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: noRateLimit.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', noRateLimit.id)],
+    evidence_refs: noRateLimit.evidence_refs,
+    reasoning: `Rate limiting risk ${severity}. No rate-limit headers detected on ${count} commercial endpoint(s). Without rate limiting, fraud bots can test thousands of stolen cards per minute, hoard inventory through automated cart requests, and scrape pricing — generating chargebacks, stock manipulation, and operational chaos.`,
+  })];
+}
+
+function inferPredictableOrderUrls(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const predictable = byKey.get('predictable_data_url_pattern');
+  if (!predictable) return [];
+
+  const count = predictable.numeric_value || 0;
+  const severity = count >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'predictable_order_urls',
+    category: InferenceCategory.PredictableOrderUrls,
+    conclusion: 'predictable_order_urls',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: predictable.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', predictable.id)],
+    evidence_refs: predictable.evidence_refs,
+    reasoning: `Predictable URL exposure ${severity}. ${count} URL(s) matching sequential patterns (e.g. /order/123, /invoice/456) return HTTP 200. Sequential URLs let anyone enumerate orders, invoices, and customer profiles — exposing personal and financial data at scale without authentication barriers.`,
   })];
 }
 
@@ -2987,4 +3104,33 @@ function createInference(params: {
     created_at: now,
     updated_at: now,
   };
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.1 Tier 2: LLM Enrichment Inferences
+// Dormant until enrichment signals are produced.
+// ──────────────────────────────────────────────
+
+function inferSocialProofGeneric(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('social_proof_quality_low_'));
+  if (matches.length === 0) return [];
+  const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'social_proof_generic', category: InferenceCategory.SocialProofGeneric, conclusion: 'social_proof_generic', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `Testimonials are generic and unattributed. Reviews like "Great product!" without a name, company, or measurable outcome reduce trust instead of building it — buyers question if the reviews are real. ${matches.length} page(s) show social proof that lacks specificity.` })];
+}
+
+function inferFormErrorMessagesUnhelpful(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('form_error_messages_poor_'));
+  if (matches.length === 0) return [];
+  const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'form_error_messages_unhelpful', category: InferenceCategory.FormErrorMessagesUnhelpful, conclusion: 'form_error_messages_unhelpful', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `Form error messages are technical instead of helpful. When a buyer enters an invalid email and sees "Invalid input" instead of "Please enter a valid email (e.g. name@example.com)", they don't know what to fix and abandon the form. ${matches.length} form(s) use generic or technical error messages.` })];
+}
+
+function inferOnboardingNoQuickWin(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('onboarding_quick_win_absent_'));
+  if (matches.length === 0) return [];
+  const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'onboarding_no_quick_win', category: InferenceCategory.OnboardingNoQuickWin, conclusion: 'onboarding_no_quick_win', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `New users don't experience product value in the first session. Without a quick win in the first minutes — a visible result, a completed setup, a personalized recommendation — trial users conclude the product isn't for them and never return. ${matches.length} onboarding surface(s) lack immediate value delivery.` })];
 }

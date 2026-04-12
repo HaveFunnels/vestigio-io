@@ -2591,7 +2591,11 @@
       "mixed_content_exposure": "El Checkout falla silenciosamente para algunos visitantes",
       "open_redirect_indicator": "Tu dominio puede usarse para hacer phishing a tus propios clientes",
       "sensitive_endpoint_exposed": "Las credenciales de infraestructura están a una búsqueda de distancia",
-      "error_page_information_leak": "Tus páginas de error ayudan a los atacantes a mapear tu sistema"
+      "error_page_information_leak": "Tus páginas de error ayudan a los atacantes a mapear tu sistema",
+      "email_deliverability_risk": "Tus emails de confirmación de compra no llegan al comprador",
+      "cors_misconfiguration_risk": "Sitios maliciosos pueden hacer compras en nombre de tus clientes",
+      "rate_limiting_absent_on_commerce": "Bots prueban tarjetas robadas en tu checkout sin límite",
+      "predictable_order_urls": "Cualquiera puede acceder a los datos de pedidos de tus clientes"
     },
     "root_cause_titles": {
       "trust_failure_at_checkout": "Los compradores pierden la confianza en el momento del checkout",

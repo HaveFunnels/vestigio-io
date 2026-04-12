@@ -1,19 +1,30 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
+import PulseSummary from "@/components/console/PulseSummary";
+import RevenueMap from "@/components/console/RevenueMap";
+import CycleDelta from "@/components/console/CycleDelta";
+import BraggingRights from "@/components/console/BraggingRights";
 import { loadWorkspaces } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
-import { ShinyButton } from "@/components/ui/shiny-button";
 import type { WorkspaceProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
-// Workspaces Page — Phase 4 UX Overhaul
-// ──────────────────────────────────���───────────
+// Panorama — redesigned Workspaces page
+//
+// 4 transversal lenses at the top:
+//   1. Pulse Summary — LLM briefing
+//   2. Revenue Map — $ impact by perspective
+//   3. Cycle Delta — what changed
+//   4. Bragging Rights — positive signals
+//
+// Below: Perspective cards linking to detail pages.
+// ──────────────────────────────────────────────
 
 function formatCurrency(value: number): string {
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
@@ -21,366 +32,289 @@ function formatCurrency(value: number): string {
   return `$${Math.round(value)}`;
 }
 
+function classifyWorkspacePerspective(ws: WorkspaceProjection): string {
+  if (ws.category === "behavioral") return "behavior";
+  if (ws.type === "revenue" || ws.type === "chargeback") return "revenue";
+  if (ws.type === "preflight") return "trust";
+  return "trust";
+}
+
 export default function WorkspacesPage() {
   const mcpData = useMcpData();
-  const dataState = mcpData.workspaces.status !== "not_ready" ? mcpData.workspaces : loadWorkspaces();
+  const dataState =
+    mcpData.workspaces.status !== "not_ready"
+      ? mcpData.workspaces
+      : loadWorkspaces();
   const t = useTranslations("console.workspaces");
   const tc = useTranslations("console.common");
 
   return (
     <div className="p-6">
-      <PageHeader title={t("title")} subtitle={t("subtitle")} tooltip={tc("page_tooltips.workspaces")} />
+      <PageHeader
+        title={t("panorama_title")}
+        subtitle={t("panorama_subtitle")}
+        tooltip={tc("page_tooltips.workspaces")}
+      />
       <ConsoleState
         state={dataState}
         loadingLabel={t("loading")}
         emptyLabel={t("empty")}
       >
-        {(workspaces) => <WorkspacesContent workspaces={workspaces} />}
+        {(workspaces) => <PanoramaContent workspaces={workspaces} />}
       </ConsoleState>
     </div>
   );
 }
 
-function WorkspacesContent({
+function PanoramaContent({
   workspaces,
 }: {
   workspaces: WorkspaceProjection[];
 }) {
   const router = useRouter();
   const t = useTranslations("console.workspaces");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const toggleSelect = useCallback((id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }, []);
-
-  // Phase C: split into Core vs Behavioral. Core stays as-is, Behavioral
-  // gets a banner + greyed cards when no pixel data is available.
-  const coreWorkspaces = workspaces.filter((w) => w.category !== "behavioral");
-  const behavioralWorkspaces = workspaces.filter((w) => w.category === "behavioral");
-
-  // Banner state for the behavioral category. We show:
-  //  - the locked banner when EVERY behavioral workspace is unconfigured
-  //  - the collecting banner when at least one is collecting (not yet active)
-  //  - no banner when at least one is active (real findings flowing)
-  const allUnconfigured =
-    behavioralWorkspaces.length > 0 &&
-    behavioralWorkspaces.every((w) => w.pixel_status === "unconfigured");
-  const anyCollecting =
-    !allUnconfigured &&
-    behavioralWorkspaces.some((w) => w.pixel_status === "collecting") &&
-    behavioralWorkspaces.every((w) => w.pixel_status !== "active");
-
-  return (
-    <>
-      {selectedIds.size > 0 && (
-        <div className="mb-4 flex items-center gap-4 rounded-lg border border-edge bg-surface-card px-4 py-2.5 shadow-lg">
-          <span className="text-sm font-medium text-content">{t("selected", { count: selectedIds.size })}</span>
-          <div className="flex-1" />
-          <ShinyButton onClick={() => router.push(`/chat?context=workspaces:${[...selectedIds].join(",")}`)}>
-            {t("use_as_context")}
-          </ShinyButton>
-          <button onClick={() => setSelectedIds(new Set())} className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-muted transition-colors hover:bg-surface-card-hover">{t("clear")}</button>
-        </div>
-      )}
-
-      {/* ── Core category ── */}
-      {coreWorkspaces.length > 0 && (
-        <CategorySection title={t("categories.core")}>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {coreWorkspaces.map((ws) => (
-              <WorkspaceCard
-                key={ws.id}
-                workspace={ws}
-                selected={selectedIds.has(ws.id)}
-                onSelectToggle={(e) => toggleSelect(ws.id, e)}
-                onOpen={() => router.push(`/app/workspaces/${ws.id}`)}
-              />
-            ))}
-          </div>
-        </CategorySection>
-      )}
-
-      {/* ── Behavioral category ── */}
-      {behavioralWorkspaces.length > 0 && (
-        <CategorySection title={t("categories.behavioral")}>
-          {(allUnconfigured || anyCollecting) && (
-            <PixelBanner
-              variant={allUnconfigured ? "locked" : "collecting"}
-              message={
-                allUnconfigured
-                  ? t("categories.behavioral_locked_banner")
-                  : t("categories.behavioral_collecting_banner")
-              }
-              ctaLabel={t("categories.configure_pixel_cta")}
-              onCtaClick={() => router.push("/app/settings/data-sources")}
-            />
-          )}
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {behavioralWorkspaces.map((ws) => {
-              const isLocked = ws.pixel_status !== "active";
-              return (
-                <WorkspaceCard
-                  key={ws.id}
-                  workspace={ws}
-                  selected={selectedIds.has(ws.id)}
-                  onSelectToggle={(e) => toggleSelect(ws.id, e)}
-                  onOpen={() =>
-                    isLocked
-                      ? router.push("/app/settings/data-sources")
-                      : router.push(`/app/workspaces/${ws.id}`)
-                  }
-                  locked={isLocked}
-                />
-              );
-            })}
-          </div>
-        </CategorySection>
-      )}
-    </>
+  // Aggregate data for pulse summary
+  const allFindings = useMemo(
+    () => workspaces.flatMap((ws) => ws.findings),
+    [workspaces]
   );
-}
-
-// ──────────────────────────────────────────────
-// Category section wrapper
-// ──────────────────────────────────────────────
-
-function CategorySection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mb-8">
-      <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-        {title}
-      </h2>
-      {children}
-    </section>
+  const positiveChecks = useMemo(
+    () =>
+      allFindings
+        .filter((f) => f.polarity === "positive")
+        .map((f) => f.title),
+    [allFindings]
   );
-}
 
-// ──────────────────────────────────────────────
-// Pixel status banner — appears under "Behavioral" when locked/collecting
-// ──────────────────────────────────────────────
-
-function PixelBanner({
-  variant,
-  message,
-  ctaLabel,
-  onCtaClick,
-}: {
-  variant: "locked" | "collecting";
-  message: string;
-  ctaLabel: string;
-  onCtaClick: () => void;
-}) {
-  // Locked = yellow (action required); Collecting = blue (informational)
-  const styles =
-    variant === "locked"
-      ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-      : "border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-300";
-  const buttonStyles =
-    variant === "locked"
-      ? "border-amber-500/50 bg-amber-500/20 text-amber-700 dark:text-amber-300 hover:bg-amber-500/30"
-      : "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20";
-
-  return (
-    <div className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${styles}`}>
-      <span className="mt-0.5 text-base" aria-hidden>
-        {variant === "locked" ? "\u26A0" : "\u2139"}
-      </span>
-      <p className="flex-1 text-sm leading-relaxed">{message}</p>
-      <button
-        onClick={onCtaClick}
-        className={`shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${buttonStyles}`}
-      >
-        {ctaLabel}
-      </button>
-    </div>
-  );
-}
-
-// ──────────────────────────────────────────────
-// Workspace card — handles both active and locked variants
-// ──────────────────────────────────────────────
-
-function WorkspaceCard({
-  workspace: ws,
-  selected,
-  onSelectToggle,
-  onOpen,
-  locked = false,
-}: {
-  workspace: WorkspaceProjection;
-  selected: boolean;
-  onSelectToggle: (e: React.MouseEvent) => void;
-  onOpen: () => void;
-  locked?: boolean;
-}) {
-  const t = useTranslations("console.workspaces");
-
-  // Locked cards have muted colors and no checkbox (you can't select a
-  // workspace that has no data — picking it as chat context would be
-  // useless).
-  const cardClasses = locked
-    ? "group relative w-full rounded-lg border border-dashed border-edge bg-surface-card/40 text-left opacity-60 transition-opacity hover:opacity-80"
-    : `group relative w-full rounded-lg border text-left transition-colors hover:border-edge hover:bg-surface-card-hover ${
-        selected ? "border-indigo-500/40 bg-indigo-500/5" : "border-edge bg-surface-card"
-      }`;
-
-  return (
-    <button onClick={onOpen} className={cardClasses}>
-      {!locked && (
-        <div className="absolute right-3 top-3 z-10" onClick={onSelectToggle}>
-          <input
-            type="checkbox"
-            checked={selected}
-            readOnly
-            className="h-3.5 w-3.5 cursor-pointer rounded border-edge bg-surface-input text-indigo-500 focus:ring-0"
-          />
-        </div>
-      )}
-      <div className="px-5 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className={`text-base font-semibold ${locked ? "text-content-muted" : "text-content"}`}>
-              {ws.name}
-            </span>
-            <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
-              {t.has(`types.${ws.type}`) ? t(`types.${ws.type}`) : ws.type}
-            </span>
-            {!locked && <WorkspaceChangeTrend summary={ws.change_summary} />}
-          </div>
-          {!locked && <SeverityBadge value={ws.decision_impact} />}
-        </div>
-
-        {locked ? (
-          <PixelStatusContent workspace={ws} />
-        ) : (
-          <ActiveCardContent workspace={ws} />
-        )}
-      </div>
-    </button>
-  );
-}
-
-// ──────────────────────────────────────────────
-// Active card body — the original 4-stat grid + narrative
-// ──────────────────────────────────────────────
-
-function ActiveCardContent({ workspace: ws }: { workspace: WorkspaceProjection }) {
-  const t = useTranslations("console.workspaces");
-  return (
-    <>
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <div>
-          <div className="text-xs text-content-faint">{t("monthly_loss")}</div>
-          <div className="text-sm font-bold text-red-500 dark:text-red-400">
-            {formatCurrency(ws.summary.total_loss_mid)}
-          </div>
-        </div>
-        <div>
-          <div className="text-xs text-content-faint">{t("issues")}</div>
-          <div className="text-sm font-medium text-content-secondary">
-            {ws.summary.issue_count}
-          </div>
-        </div>
-        <div>
-          <div className="text-xs text-content-faint">{t("top_issue")}</div>
-          <div className="truncate text-xs text-content-muted">
-            {ws.summary.top_issues[0] || "\u2014"}
-          </div>
-        </div>
-      </div>
-      {/* Wave 2.4: removed confidence_narrative + ConfidenceBar — those are
-          engine-internal signals that don't help an operator decide. */}
-      <div className="mt-3 flex items-center gap-1 text-xs font-medium text-accent opacity-0 transition-opacity group-hover:opacity-100">
-        {t("view_details")} <span>&rarr;</span>
-      </div>
-    </>
-  );
-}
-
-// ──────────────────────────────────────────────
-// Locked card body — pixel status + CTA
-// ──────────────────────────────────────────────
-
-function PixelStatusContent({ workspace: ws }: { workspace: WorkspaceProjection }) {
-  const t = useTranslations("console.workspaces");
-  const status = ws.pixel_status;
-  if (!status) return null;
-
-  const label =
-    status === "collecting" && ws.pixel_progress
-      ? t("pixel_status.collecting", {
-          current: ws.pixel_progress.current,
-          required: ws.pixel_progress.required,
-        })
-      : status === "collecting"
-      ? t("pixel_status.collecting", { current: 0, required: 20 })
-      : t("pixel_status.unconfigured");
-
-  return (
-    <div className="mt-4 border-t border-dashed border-edge pt-4">
-      <div className="flex items-center gap-2 text-xs text-content-muted">
-        <span className="inline-block h-2 w-2 rounded-full bg-content-faint" aria-hidden />
-        {label}
-      </div>
-      <p className="mt-2 text-xs leading-relaxed text-content-faint">
-        {t("view_details")} <span>&rarr;</span>
-      </p>
-    </div>
-  );
-}
-
-function WorkspaceChangeTrend({
-  summary,
-}: {
-  summary: WorkspaceProjection["change_summary"];
-}) {
-  if (!summary) return null;
-
-  const config: Record<string, { icon: string; color: string; label: string }> =
-    {
-      degrading: {
-        icon: "\u2191",
-        color: "text-red-500 dark:text-red-400",
-        label: `${summary.regression_count} regression${
-          summary.regression_count !== 1 ? "s" : ""
-        }`,
-      },
-      improving: {
-        icon: "\u2193",
-        color: "text-emerald-600 dark:text-emerald-400",
-        label: `${summary.improvement_count} improvement${
-          summary.improvement_count !== 1 ? "s" : ""
-        }`,
-      },
-      stable: { icon: "\u2014", color: "text-content-faint", label: "stable" },
-      mixed: {
-        icon: "\u2195",
-        color: "text-amber-600 dark:text-amber-400",
-        label: "mixed changes",
-      },
+  // Compute perspective aggregates
+  const perspectives = useMemo(() => {
+    const map: Record<
+      string,
+      {
+        key: string;
+        findingCount: number;
+        issueCount: number;
+        totalLoss: number;
+        topSeverity: string;
+        hasData: boolean;
+        isLocked: boolean;
+      }
+    > = {
+      revenue: { key: "revenue", findingCount: 0, issueCount: 0, totalLoss: 0, topSeverity: "none", hasData: false, isLocked: false },
+      trust: { key: "trust", findingCount: 0, issueCount: 0, totalLoss: 0, topSeverity: "none", hasData: false, isLocked: false },
+      behavior: { key: "behavior", findingCount: 0, issueCount: 0, totalLoss: 0, topSeverity: "none", hasData: false, isLocked: false },
+      copy: { key: "copy", findingCount: 0, issueCount: 0, totalLoss: 0, topSeverity: "none", hasData: false, isLocked: false },
     };
 
-  const c = config[summary.trend] || config.stable;
+    const severityRank: Record<string, number> = {
+      critical: 4,
+      high: 3,
+      medium: 2,
+      low: 1,
+      none: 0,
+    };
+
+    let hasBehavioral = false;
+    let allBehavioralLocked = true;
+
+    for (const ws of workspaces) {
+      const p = classifyWorkspacePerspective(ws);
+      if (!map[p]) continue;
+
+      map[p].findingCount += ws.findings.length;
+      map[p].issueCount += ws.summary.issue_count;
+      map[p].totalLoss += ws.summary.total_loss_mid;
+      map[p].hasData = true;
+
+      if (ws.category === "behavioral") {
+        hasBehavioral = true;
+        if (ws.pixel_status === "active") allBehavioralLocked = false;
+      }
+
+      const rank = severityRank[ws.decision_impact] ?? 0;
+      const currentRank = severityRank[map[p].topSeverity] ?? 0;
+      if (rank > currentRank) map[p].topSeverity = ws.decision_impact;
+    }
+
+    if (hasBehavioral && allBehavioralLocked) {
+      map.behavior.isLocked = true;
+    }
+
+    return map;
+  }, [workspaces]);
+
+  // Perspective card config
+  const cards: {
+    key: string;
+    label: string;
+    description: string;
+    icon: string;
+    accentColor: string;
+    accentBg: string;
+    accentBorder: string;
+  }[] = [
+    {
+      key: "revenue",
+      label: t("perspectives.revenue"),
+      description: t("perspective_descriptions.revenue"),
+      icon: "M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+      accentColor: "text-red-400",
+      accentBg: "bg-red-500/[0.06]",
+      accentBorder: "border-red-500/20 hover:border-red-500/40",
+    },
+    {
+      key: "trust",
+      label: t("perspectives.trust"),
+      description: t("perspective_descriptions.trust"),
+      icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z",
+      accentColor: "text-amber-400",
+      accentBg: "bg-amber-500/[0.06]",
+      accentBorder: "border-amber-500/20 hover:border-amber-500/40",
+    },
+    {
+      key: "behavior",
+      label: t("perspectives.behavior"),
+      description: t("perspective_descriptions.behavior"),
+      icon: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z",
+      accentColor: "text-violet-400",
+      accentBg: "bg-violet-500/[0.06]",
+      accentBorder: "border-violet-500/20 hover:border-violet-500/40",
+    },
+    {
+      key: "copy",
+      label: t("perspectives.copy"),
+      description: t("perspective_descriptions.copy"),
+      icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z",
+      accentColor: "text-blue-400",
+      accentBg: "bg-blue-500/[0.06]",
+      accentBorder: "border-blue-500/20 hover:border-blue-500/40",
+    },
+  ];
 
   return (
-    <span
-      className={`inline-flex items-center gap-1 text-[11px] font-medium ${c.color}`}
-    >
-      <span className="text-xs">{c.icon}</span>
-      {c.label}
-    </span>
+    <>
+      {/* ── Lens 1: Pulse Summary ── */}
+      <PulseSummary
+        findings={allFindings}
+        positiveChecks={positiveChecks}
+      />
+
+      {/* ── Lenses 2-4: Revenue Map, Cycle Delta, Bragging Rights ── */}
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <RevenueMap workspaces={workspaces} />
+        <CycleDelta workspaces={workspaces} />
+        <BraggingRights workspaces={workspaces} />
+      </div>
+
+      {/* ── Perspective Cards ── */}
+      <section className="mt-8">
+        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-content-muted">
+          {t("perspectives_heading")}
+        </h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {cards.map((card) => {
+            const data = perspectives[card.key];
+            const isLocked = data?.isLocked;
+            const hasData = data?.hasData;
+            const isCopyEmpty = card.key === "copy" && !hasData;
+
+            return (
+              <button
+                key={card.key}
+                onClick={() => {
+                  if (isLocked) {
+                    router.push("/app/settings/data-sources");
+                  } else {
+                    router.push(`/workspaces/perspective/${card.key}`);
+                  }
+                }}
+                className={`group relative rounded-lg border text-left transition-all ${card.accentBorder} ${
+                  isLocked || isCopyEmpty ? "opacity-60" : ""
+                } bg-white/[0.02] hover:bg-white/[0.04]`}
+              >
+                <div className="p-5">
+                  {/* Icon + Label */}
+                  <div className="flex items-start gap-3">
+                    <div className={`rounded-md ${card.accentBg} p-2`}>
+                      <svg
+                        className={`h-5 w-5 ${card.accentColor}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d={card.icon}
+                        />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-content">
+                        {card.label}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-content-faint">
+                        {card.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="mt-4 border-t border-white/[0.04] pt-3">
+                    {isLocked ? (
+                      <div className="flex items-center gap-2 text-xs text-amber-400">
+                        <span>{"\u26A0"}</span>
+                        <span>{t("pixel_required")}</span>
+                      </div>
+                    ) : isCopyEmpty ? (
+                      <div className="text-xs text-content-faint">
+                        {t("coming_soon")}
+                      </div>
+                    ) : hasData ? (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <div className="text-[10px] uppercase text-content-faint">
+                              {t("issues")}
+                            </div>
+                            <div className="font-[family-name:var(--font-jetbrains-mono)] text-sm font-bold text-content-secondary">
+                              {data.issueCount}
+                            </div>
+                          </div>
+                          {data.totalLoss > 0 && (
+                            <div>
+                              <div className="text-[10px] uppercase text-content-faint">
+                                {t("monthly_loss")}
+                              </div>
+                              <div className="font-[family-name:var(--font-jetbrains-mono)] text-sm font-bold text-red-400">
+                                {formatCurrency(data.totalLoss)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <SeverityBadge value={data.topSeverity} />
+                      </div>
+                    ) : (
+                      <div className="text-xs text-content-faint">
+                        {t("no_data_yet")}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Arrow indicator */}
+                  {!isLocked && !isCopyEmpty && (
+                    <div className="mt-3 flex items-center gap-1 text-xs font-medium text-content-faint opacity-0 transition-opacity group-hover:opacity-100">
+                      {t("view_perspective")} <span>&rarr;</span>
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </>
   );
 }
-

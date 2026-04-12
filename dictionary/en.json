@@ -1564,6 +1564,41 @@
         "unconfigured": "Pixel not configured",
         "collecting": "Collecting data ({current} / {required} sessions)",
         "active": "Active"
+      },
+      "panorama_title": "Panorama",
+      "panorama_subtitle": "Cross-perspective overview of your environment health.",
+      "perspectives_heading": "Perspectives",
+      "perspectives": {
+        "revenue": "Receita",
+        "trust": "Confian\u00e7a",
+        "behavior": "Comportamento",
+        "copy": "Copy"
+      },
+      "perspective_descriptions": {
+        "revenue": "Revenue integrity, chargeback resilience, and monetary impact.",
+        "trust": "Scale readiness, security posture, and trust signals.",
+        "behavior": "User behavior patterns from pixel data.",
+        "copy": "Copy quality, messaging clarity, and persuasion analysis."
+      },
+      "perspective_findings": "Findings",
+      "perspective_not_found": "Perspective not found.",
+      "back_to_panorama": "Panorama",
+      "view_perspective": "View perspective",
+      "pixel_required": "Pixel required",
+      "coming_soon": "Coming soon",
+      "no_data_yet": "No data yet",
+      "workspaces_in_perspective": "Workspaces",
+      "lenses": {
+        "revenue_map": "Revenue Map",
+        "total_exposure": "Total exposure",
+        "cycle_delta": "Cycle Delta",
+        "no_changes": "No changes this cycle.",
+        "improved": "improved",
+        "worsened": "worsened",
+        "new_findings": "new",
+        "bragging_rights": "What you are doing right",
+        "resolved_this_cycle": "findings resolved this cycle",
+        "more_checks": "more"
       }
     },
     "dashboard": {
@@ -2364,6 +2399,11 @@
       "onboard": "Onboarding",
       "actions": "Actions",
       "workspaces": "Workspaces",
+      "panorama": "Panorama",
+      "perspective_revenue": "Receita",
+      "perspective_trust": "Confian\u00e7a",
+      "perspective_behavior": "Comportamento",
+      "perspective_copy": "Copy",
       "chat": "Chat",
       "analysis": "Analysis",
       "findings": "Findings",

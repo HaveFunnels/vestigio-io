@@ -5,10 +5,27 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-const navItems = [
+interface NavItem {
+  href: string;
+  labelKey: string;
+  icon: string;
+  children?: { href: string; labelKey: string }[];
+}
+
+const navItems: NavItem[] = [
   { href: "/onboard", labelKey: "onboard", icon: "rocket" },
   { href: "/actions", labelKey: "actions", icon: "bolt" },
-  { href: "/workspaces", labelKey: "workspaces", icon: "grid" },
+  {
+    href: "/workspaces",
+    labelKey: "panorama",
+    icon: "grid",
+    children: [
+      { href: "/workspaces/perspective/revenue", labelKey: "perspective_revenue" },
+      { href: "/workspaces/perspective/trust", labelKey: "perspective_trust" },
+      { href: "/workspaces/perspective/behavior", labelKey: "perspective_behavior" },
+      { href: "/workspaces/perspective/copy", labelKey: "perspective_copy" },
+    ],
+  },
   { href: "/chat", labelKey: "chat", icon: "chat" },
   { href: "/analysis", labelKey: "findings", icon: "search" },
   { href: "/inventory", labelKey: "inventory", icon: "layers" },
@@ -56,21 +73,44 @@ export default function Sidebar() {
       <nav className="flex flex-1 flex-col gap-1 p-2">
         {navItems.map((item) => {
           const active = pathname.startsWith(item.href);
+          const hasChildren = item.children && item.children.length > 0;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                active
-                  ? "bg-emerald-500/10 text-emerald-400"
-                  : "text-content-muted hover:bg-surface-inset hover:text-content-secondary"
-              }`}
-            >
-              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d={icons[item.icon]} />
-              </svg>
-              {!collapsed && <span>{t(item.labelKey as "actions")}</span>}
-            </Link>
+            <div key={item.href}>
+              <Link
+                href={item.href}
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "text-content-muted hover:bg-surface-inset hover:text-content-secondary"
+                }`}
+              >
+                <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={icons[item.icon]} />
+                </svg>
+                {!collapsed && <span>{t(item.labelKey as "actions")}</span>}
+              </Link>
+              {/* Perspective sub-links when expanded and active */}
+              {hasChildren && active && !collapsed && (
+                <div className="ml-8 mt-0.5 space-y-0.5">
+                  {item.children!.map((child) => {
+                    const childActive = pathname === child.href;
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className={`block rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                          childActive
+                            ? "text-emerald-400"
+                            : "text-content-faint hover:text-content-muted"
+                        }`}
+                      >
+                        {t(child.labelKey as "actions")}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>

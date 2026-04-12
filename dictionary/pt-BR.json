@@ -1619,6 +1619,41 @@
           "mixed": "mudanças mistas",
           "no_significant_changes": "Sem mudanças significativas"
         }
+      },
+      "panorama_title": "Panorama",
+      "panorama_subtitle": "Vis\u00e3o transversal da sa\u00fade do seu ambiente.",
+      "perspectives_heading": "Perspectivas",
+      "perspectives": {
+        "revenue": "Receita",
+        "trust": "Confian\u00e7a",
+        "behavior": "Comportamento",
+        "copy": "Copy"
+      },
+      "perspective_descriptions": {
+        "revenue": "Integridade de receita, resili\u00eancia de chargeback e impacto monet\u00e1rio.",
+        "trust": "Prontid\u00e3o para escalar, postura de seguran\u00e7a e sinais de confian\u00e7a.",
+        "behavior": "Padr\u00f5es de comportamento do usu\u00e1rio a partir de dados do pixel.",
+        "copy": "Qualidade do copy, clareza da mensagem e an\u00e1lise de persuas\u00e3o."
+      },
+      "perspective_findings": "Descobertas",
+      "perspective_not_found": "Perspectiva n\u00e3o encontrada.",
+      "back_to_panorama": "Panorama",
+      "view_perspective": "Ver perspectiva",
+      "pixel_required": "Pixel necess\u00e1rio",
+      "coming_soon": "Em breve",
+      "no_data_yet": "Sem dados ainda",
+      "workspaces_in_perspective": "Workspaces",
+      "lenses": {
+        "revenue_map": "Mapa de Receita",
+        "total_exposure": "Exposi\u00e7\u00e3o total",
+        "cycle_delta": "Delta do Ciclo",
+        "no_changes": "Sem mudan\u00e7as neste ciclo.",
+        "improved": "melhorou",
+        "worsened": "piorou",
+        "new_findings": "novo(s)",
+        "bragging_rights": "O que voc\u00ea est\u00e1 fazendo certo",
+        "resolved_this_cycle": "descobertas resolvidas neste ciclo",
+        "more_checks": "mais"
       }
     },
     "dashboard": {
@@ -2419,6 +2454,11 @@
       "onboard": "Configuração inicial",
       "actions": "Ações",
       "workspaces": "Espaços de trabalho",
+      "panorama": "Panorama",
+      "perspective_revenue": "Receita",
+      "perspective_trust": "Confiança",
+      "perspective_behavior": "Comportamento",
+      "perspective_copy": "Copy",
       "chat": "Chat",
       "analysis": "Análise",
       "findings": "Descobertas",

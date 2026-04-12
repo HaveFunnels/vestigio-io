@@ -44,6 +44,7 @@ const SCROLL_THRESHOLD_PX = 80;
 
 const Header = () => {
 	const [compact, setCompact] = useState(false);
+	const [bannerVisible, setBannerVisible] = useState(true);
 	const { data: session } = useSession();
 	const branding = useBranding();
 	const logoSrc = branding.logo_light?.dataUrl || logoStatic;
@@ -56,10 +57,11 @@ const Header = () => {
 		setNavbarOpen(!navbarOpen);
 	};
 
-	// Single scroll listener — drives the only state we have left.
+	// Single scroll listener — drives compact state + banner sync.
 	useEffect(() => {
 		const handleScroll = () => {
 			setCompact(window.scrollY >= SCROLL_THRESHOLD_PX);
+			setBannerVisible(window.scrollY < 8);
 		};
 		handleScroll(); // Sync on mount in case the user reloaded mid-scroll
 		window.addEventListener("scroll", handleScroll, { passive: true });
@@ -87,7 +89,7 @@ const Header = () => {
 	return (
 		<header
 			className={`fixed left-0 right-0 z-999 transition-[top] duration-500 ease-out ${
-				compact ? "top-3" : "top-10"
+				compact ? "top-3" : bannerVisible ? "top-10" : "top-3"
 			}`}
 		>
 			<div

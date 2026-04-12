@@ -16,6 +16,10 @@ const Counter = () => {
 			`}</style>
 
 			<div className='mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0'>
+				<p className='mb-6 text-center text-sm font-semibold text-white sm:mb-8 sm:text-base'>
+					Feito pra quem não aceita escalar no escuro.
+				</p>
+
 				{/* Bento grid: 2 cols desktop, 1 col mobile */}
 				<div className='grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2'>
 
@@ -61,11 +65,15 @@ const Counter = () => {
 							</div>
 
 							<div className='relative text-center'>
-								<div className='font-display text-[4rem] font-bold leading-none tracking-tighter text-emerald-400 sm:text-[5rem] lg:text-[6rem]' style={{ textShadow: '0 12px 48px rgba(16,185,129,0.3), 0 4px 16px rgba(16,185,129,0.2)' }}>
-									4X
+								<div className='relative inline-block'>
+									<span className='font-display text-[5rem] font-bold leading-none tracking-tighter text-emerald-400 sm:text-[6.5rem] lg:text-[8rem]' style={{ textShadow: '0 12px 48px rgba(16,185,129,0.3), 0 4px 16px rgba(16,185,129,0.2)' }}>
+										4X
+									</span>
+									{/* Bottom fade mask */}
+									<div className='pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0a0a14] to-transparent' />
 								</div>
-								<h3 className='mt-3 text-lg font-bold text-white sm:text-xl'>ROI Guarantee</h3>
-								<p className='mt-1 text-sm text-zinc-400'>You literally can&apos;t lose with us.</p>
+								<h3 className='mt-2 text-lg font-bold text-white sm:text-xl'>ROI Guarantee</h3>
+								<p className='mt-1 text-sm text-zinc-400'>Você literalmente não tem como perder.</p>
 							</div>
 						</div>
 					</div>

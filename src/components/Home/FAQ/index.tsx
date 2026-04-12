@@ -78,16 +78,16 @@ const FAQ = () => {
 								</span>
 							</button>
 							<div
-								className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-									activeFaq === i ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-								}`}
+								className='overflow-hidden transition-[max-height,opacity] duration-300 ease-out'
+								style={{
+									maxHeight: activeFaq === i ? '300px' : '0px',
+									opacity: activeFaq === i ? 1 : 0,
+								}}
 							>
-								<div className='min-h-0 overflow-hidden'>
-									<div className='border-t border-white/5'>
-										<p className='px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>
-											{answer}
-										</p>
-									</div>
+								<div className='border-t border-white/5'>
+									<p className='px-4 py-4 text-sm leading-relaxed text-gray-400 sm:px-6 sm:py-5'>
+										{answer}
+									</p>
 								</div>
 							</div>
 						</div>

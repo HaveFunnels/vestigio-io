@@ -72,9 +72,9 @@ const DEFAULT_FEATURES: Record<string, PlanFeature[]> = {
 };
 
 const DEFAULT_PLANS: PlanConfig[] = [
-  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1, features: DEFAULT_FEATURES.vestigio },
-  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3, features: DEFAULT_FEATURES.pro },
-  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10, features: DEFAULT_FEATURES.max },
+  { key: "vestigio", label: "Starter", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1, features: DEFAULT_FEATURES.vestigio },
+  { key: "pro", label: "Pro", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3, features: DEFAULT_FEATURES.pro },
+  { key: "max", label: "Max", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10, features: DEFAULT_FEATURES.max },
 ];
 
 let cached: PlanConfig[] | null = null;

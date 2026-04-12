@@ -511,7 +511,7 @@ export function usePricingPlans() {
 export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 	{
 		id: "vestigio",
-		name: "Vestigio",
+		name: "Starter",
 		description: PLAN_DESCRIPTIONS.vestigio,
 		priceMonthly: 99,
 		priceAnnually: 950,
@@ -533,7 +533,7 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 	},
 	{
 		id: "pro",
-		name: "Vestigio Pro",
+		name: "Pro",
 		description: PLAN_DESCRIPTIONS.pro,
 		priceMonthly: 199,
 		priceAnnually: 1910,
@@ -555,7 +555,7 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 	},
 	{
 		id: "max",
-		name: "Vestigio Max",
+		name: "Max",
 		description: PLAN_DESCRIPTIONS.max,
 		priceMonthly: 399,
 		priceAnnually: 3830,

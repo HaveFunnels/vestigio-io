@@ -12,6 +12,7 @@ type BillingCycle = "monthly" | "annually";
 interface Feature {
 	name: string;
 	isIncluded: boolean;
+	tooltip?: string;
 }
 
 interface PriceTier {
@@ -40,6 +41,8 @@ interface PricingComponentProps {
 
 const FeatureItem: React.FC<{ feature: Feature }> = ({ feature }) => {
 	const Icon = feature.isIncluded ? Check : X;
+	const [showTooltip, setShowTooltip] = useState(false);
+
 	return (
 		<li className='flex items-start gap-3 py-1.5'>
 			<Icon
@@ -55,6 +58,26 @@ const FeatureItem: React.FC<{ feature: Feature }> = ({ feature }) => {
 				)}
 			>
 				{feature.name}
+				{feature.tooltip && (
+					<span
+						className='relative ml-1.5 inline-block'
+						onMouseEnter={() => setShowTooltip(true)}
+						onMouseLeave={() => setShowTooltip(false)}
+					>
+						<span className='inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full border border-zinc-700 text-[9px] leading-none text-zinc-600'>
+							?
+						</span>
+						{showTooltip && (
+							<span className='absolute bottom-full left-1/2 z-50 mb-2 w-52 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs leading-relaxed text-zinc-300 shadow-lg'>
+								{feature.tooltip}
+								{/* Arrow */}
+								<span className='absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-zinc-700'>
+									<span className='absolute -top-[5px] left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-800' />
+								</span>
+							</span>
+						)}
+					</span>
+				)}
 			</span>
 		</li>
 	);
@@ -104,8 +127,8 @@ export default function PricingComponent({
 	billingCycle,
 	onCycleChange,
 	onPlanSelect,
-	heading = "Choose the right plan for your business.",
-	subheading = "Scale effortlessly with intelligence designed for growth, from startups to enterprise.",
+	heading = "Veja exatamente o que est\u00e1 perdendo. Corrija. Escale.",
+	subheading = "Intelig\u00eancia que se paga sozinha. Comece gr\u00e1tis, evolua quando quiser.",
 	className,
 }: PricingComponentProps) {
 	const annualDiscountPercent = 20;
@@ -401,6 +424,7 @@ function buildFeatures(
 				? "Daily audit cycles"
 				: "Weekly audit cycles",
 			isIncluded: true,
+			tooltip: "How often Vestigio runs a full analysis of your site",
 		},
 		{
 			name: isTop
@@ -409,6 +433,7 @@ function buildFeatures(
 					? "Advanced findings & actions"
 					: "Core findings & actions",
 			isIncluded: true,
+			tooltip: "Number and depth of issues detected and prioritized actions generated",
 		},
 		{
 			name:
@@ -418,6 +443,7 @@ function buildFeatures(
 						? "5x more agentic insights"
 						: "20x more agentic insights",
 			isIncluded: true,
+			tooltip: "AI-powered conversations with Vestigio Pulse about your data",
 		},
 		{
 			name: isTop
@@ -427,11 +453,11 @@ function buildFeatures(
 					: "Email support",
 			isIncluded: true,
 		},
-		{ name: "AI Chat assistant", isIncluded: isMid || isTop },
-		{ name: "Revenue integrity maps", isIncluded: isMid || isTop },
-		{ name: "Custom integrations", isIncluded: isMid || isTop },
-		{ name: "SSO / SAML", isIncluded: isTop },
-		{ name: "SLA guarantee", isIncluded: isTop },
+		{ name: "AI Chat assistant", isIncluded: isMid || isTop, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
+		{ name: "Revenue integrity maps", isIncluded: isMid || isTop, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
+		{ name: "Custom integrations", isIncluded: isMid || isTop, tooltip: "Connect Shopify, Stripe, and ad platforms for real revenue data" },
+		{ name: "SSO / SAML", isIncluded: isTop, tooltip: "Single sign-on for enterprise identity providers" },
+		{ name: "SLA guarantee", isIncluded: isTop, tooltip: "Contractual uptime and response time commitments" },
 	];
 }
 
@@ -494,15 +520,15 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		features: [
 			{ name: "1 environment", isIncluded: true },
 			{ name: "Up to 1 team member", isIncluded: true },
-			{ name: "Weekly audit cycles", isIncluded: true },
-			{ name: "Core findings & actions", isIncluded: true },
-			{ name: "Agentic insights", isIncluded: true },
+			{ name: "Weekly audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
+			{ name: "Core findings & actions", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
+			{ name: "Agentic insights", isIncluded: true, tooltip: "AI-powered conversations with Vestigio Pulse about your data" },
 			{ name: "Email support", isIncluded: true },
-			{ name: "AI Chat assistant", isIncluded: false },
-			{ name: "Revenue integrity maps", isIncluded: false },
-			{ name: "Custom integrations", isIncluded: false },
-			{ name: "SSO / SAML", isIncluded: false },
-			{ name: "SLA guarantee", isIncluded: false },
+			{ name: "AI Chat assistant", isIncluded: false, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
+			{ name: "Revenue integrity maps", isIncluded: false, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
+			{ name: "Custom integrations", isIncluded: false, tooltip: "Connect Shopify, Stripe, and ad platforms for real revenue data" },
+			{ name: "SSO / SAML", isIncluded: false, tooltip: "Single sign-on for enterprise identity providers" },
+			{ name: "SLA guarantee", isIncluded: false, tooltip: "Contractual uptime and response time commitments" },
 		],
 	},
 	{
@@ -516,15 +542,15 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		features: [
 			{ name: "3 environments", isIncluded: true },
 			{ name: "Up to 3 team members", isIncluded: true },
-			{ name: "Daily audit cycles", isIncluded: true },
-			{ name: "Advanced findings & actions", isIncluded: true },
-			{ name: "5x more agentic insights", isIncluded: true },
+			{ name: "Daily audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
+			{ name: "Advanced findings & actions", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
+			{ name: "5x more agentic insights", isIncluded: true, tooltip: "AI-powered conversations with Vestigio Pulse about your data" },
 			{ name: "Priority support", isIncluded: true },
-			{ name: "AI Chat assistant", isIncluded: true },
-			{ name: "Revenue integrity maps", isIncluded: true },
-			{ name: "Custom integrations", isIncluded: true },
-			{ name: "SSO / SAML", isIncluded: false },
-			{ name: "SLA guarantee", isIncluded: false },
+			{ name: "AI Chat assistant", isIncluded: true, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
+			{ name: "Revenue integrity maps", isIncluded: true, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
+			{ name: "Custom integrations", isIncluded: true, tooltip: "Connect Shopify, Stripe, and ad platforms for real revenue data" },
+			{ name: "SSO / SAML", isIncluded: false, tooltip: "Single sign-on for enterprise identity providers" },
+			{ name: "SLA guarantee", isIncluded: false, tooltip: "Contractual uptime and response time commitments" },
 		],
 	},
 	{
@@ -538,15 +564,15 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		features: [
 			{ name: "10 environments", isIncluded: true },
 			{ name: "Up to 10 team members", isIncluded: true },
-			{ name: "Daily audit cycles", isIncluded: true },
-			{ name: "Full analysis suite", isIncluded: true },
-			{ name: "20x more agentic insights", isIncluded: true },
+			{ name: "Daily audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
+			{ name: "Full analysis suite", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
+			{ name: "20x more agentic insights", isIncluded: true, tooltip: "AI-powered conversations with Vestigio Pulse about your data" },
 			{ name: "Dedicated account manager", isIncluded: true },
-			{ name: "AI Chat assistant", isIncluded: true },
-			{ name: "Revenue integrity maps", isIncluded: true },
-			{ name: "Custom integrations", isIncluded: true },
-			{ name: "SSO / SAML", isIncluded: true },
-			{ name: "SLA guarantee", isIncluded: true },
+			{ name: "AI Chat assistant", isIncluded: true, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
+			{ name: "Revenue integrity maps", isIncluded: true, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
+			{ name: "Custom integrations", isIncluded: true, tooltip: "Connect Shopify, Stripe, and ad platforms for real revenue data" },
+			{ name: "SSO / SAML", isIncluded: true, tooltip: "Single sign-on for enterprise identity providers" },
+			{ name: "SLA guarantee", isIncluded: true, tooltip: "Contractual uptime and response time commitments" },
 		],
 	},
 ];

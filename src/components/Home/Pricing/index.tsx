@@ -7,6 +7,10 @@ import PricingComponent, {
   FALLBACK_PLANS,
   type BillingCycle,
 } from "@/components/ui/pricing-card";
+import SocialProof from "@/components/shared/SocialProof";
+import ROICalculator from "@/components/shared/ROICalculator";
+import PricingFAQ from "@/components/shared/PricingFAQ";
+import FinalCTA from "@/components/shared/FinalCTA";
 
 const HomePricing = () => {
   const [cycle, setCycle] = useState<BillingCycle>("annually");
@@ -26,9 +30,13 @@ const HomePricing = () => {
         billingCycle={cycle}
         onCycleChange={setCycle}
         onPlanSelect={handlePlanSelect}
-        heading="Simple, Transparent Pricing"
-        subheading="Intelligence that pays for itself. Start with a free trial, upgrade when you're ready."
+        heading="Veja exatamente o que est&aacute; perdendo. Corrija. Escale."
+        subheading="Intelig&ecirc;ncia que se paga sozinha. Comece gr&aacute;tis, evolua quando quiser."
       />
+      <SocialProof />
+      <ROICalculator />
+      <PricingFAQ />
+      <FinalCTA />
     </section>
   );
 };

@@ -792,7 +792,7 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 
 
 			{/* Section headline */}
-			<p className="mx-auto mb-6 max-w-[600px] px-4 text-center text-sm text-zinc-400 sm:mb-8 sm:text-base">
+			<p className="mx-auto mb-6 max-w-[600px] px-4 text-center text-sm font-semibold text-white sm:mb-8 sm:text-base">
 				{t("section_headline")}
 			</p>
 

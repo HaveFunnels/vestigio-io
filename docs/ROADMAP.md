@@ -1,7 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-11
+> Last updated: 2026-04-12
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
+>
+> **2026-04-12 Engine expansion + marketing polish continued:** Four major engine streams completed over 2026-04-11/12. **(1) Wave 3.3 Cybersecurity Pack — fully shipped.** Grew from the original 4 findings to **12 findings** across security headers, mixed content, redirects, sensitive endpoints, CORS, rate limiting, cookies, error pages, and predictable URLs. All findings reframed with commercial language ("Browsers signal your site as unsafe to buyers" instead of "Security Headers Weak"). Nuclei and Katana enrichment passes wired into the pipeline runner (`workers/ingestion/enrichment/runner.ts`). Dedicated `SecurityWorkspace` with aggregation logic (`packages/workspace/security-workspace.ts`). New `money_moment_exposure` decision pack. **(2) Wave 3.1 LLM Enrichment — extended to 7 findings.** Beyond the original policy page analysis (Tier 1), added 4 new enrichment types: `checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing` with Haiku LLM calls per page type. Then Tier 2 added 3 more: `social_proof_quality`, `form_error_quality`, `onboarding_quality` — signals + inferences wired but semantic enrichment pass not yet extended to produce their evidence. **(3) Wave 3.11 Workspace Redesign — partially shipped.** Pulse Summary API endpoint (`/api/workspace/pulse-summary`) with Haiku briefings + 1h in-memory cache. Frontend redesign: 5 perspectives (Panorama, Receita, Confiança, Comportamento, Copy) with 4 transversal lenses (Pulse Summary, Revenue Map, Cycle Delta, Bragging Rights). Perspective detail pages at `/workspaces/perspective/[slug]`. Needs browser verification. **(4) Wave 2.2 Members & Invite — partially shipped.** OrgInvite Prisma model, API routes (`/api/organization/invites`, `/api/organization/invites/accept`), InviteMemberModal component, accept-invite page. **(5) Homepage polish continued:** replaced counter stats with Chargeflow-inspired bento grid (4X ROI Guarantee hero card, Vestigio Pulse orbit visual, Quick Start/Visibilidade Completa/Monitoramento Contínuo/Integrações cards), fixed FAQ mobile accordion (max-height transition), added trust headline above client gallery, receita→faturamento i18n fix, MiniCalculator domain regex validation + currency localization, white bold headline above ProductTour. Complete German (de) engine translations added. **(6) ROADMAP expansion:** Added Wave 3.7 (Copy Analysis Pack, 16-item A-P spec), 3.8 (Shopify completion), 3.9 (Stripe Revenue Intelligence), 3.10 (Ad Platform Integrations), 3.11 (Workspace Redesign spec).
 >
 > **2026-04-11 Marketing surface polish + SEO overhaul:** Two streams of work completed over 2026-04-10/11. **(1) Homepage UX polish (Phases 11-14).** Removed 5th pill card for symmetry (2+2 mobile grid), fixed FAQ accordion clipping (grid-rows + min-h-0), moved CTA from Hero to below ProductTour, tightened Hero/ProductTour gap, added BigCard rounded corners on mobile, redesigned pill cards for mobile (icon badge on corner, single-line layout), reordered sections (SolutionLayers right after BigCard, renamed pill to "O que a Vestigio faz"), fixed mobile hamburger menu (flex-col + dropdown height), hid FeaturesWithImage on mobile, reordered Features bento (CSS order for mobile: audita→diagnostica→prioriza→recupera while preserving desktop bento grid), rewrote ProductTour Maps tab as a zigzag flowchart with bezier SVG connectors, redesigned mobile tabs (icon-only with active label), fixed panel height (overflow-y-auto), centered URL bar, colored traffic light dots, bumped hero headline to 2.5rem, replaced ShinyButton (removed sparkle, inverted to white bg/black text/emerald highlight), removed CallToAction section. **(2) SEO overhaul** based on freeseoknowledge.com best practices audit. Added: JSON-LD structured data (Organization, WebSite with SearchAction, SoftwareApplication with 3 pricing tiers, FAQPage on FAQ section), dynamic OG image (1200x630 via ImageResponse API), metadataBase + canonical URLs, hreflang tags for 4 locales (en/pt-BR/es/de), expanded sitemap (added /pricing, dynamic blog posts from Sanity, fixed lastModified), replaced force-dynamic with revalidate=3600 on homepage + blog, improved page titles (keyword-rich extended format), added OG/Twitter metadata to pricing/blog/support pages, added generateMetadata to blog posts and author pages, added noindex layout for /scans/, expanded robots.txt disallows (/lp/, /scans/). SEO score estimated improvement: 4/10 → 7-8/10.
 >
@@ -106,7 +108,11 @@ See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milest
 | Knowledge Base — finding/action drawer Learn more + chat KB cards + 160 foundation articles | ✅ **Done — Wave 2.1 (2026-04-07)** | Wave 2.1 | drawers always render styled card; chat embeds `$$KB{...}$$` markers as styled blocks; programmatic foundation generator covers every finding + root cause; Sanity remains override layer |
 | Root cause vocabulary refinement (33 → 27, all rewritten) | ✅ **Done — Wave 2.3 (2026-04-07)** | Wave 2.3 | 8 keys consolidated, 6 renamed, 27 descriptions rewritten end-to-end; new `runtime_fragility` category; no DB migration needed (Prisma stores title string); foundation articles auto-regenerated 160 → 154 |
 | Confidence out of UI + verification reframed as corroboration | ✅ **Done — Wave 2.4 (2026-04-07)** | Wave 2.4 | `confidence_tier` (low/medium/high) bucketing at projection layer, `low` filtered out before reaching UI; every confidence percentage removed from drawers/tables/cards/chat/maps/MCP narration; verification stages renamed to `static_evidence/confirming/partial_confirmation/confirmed/evidence_weakened/confirmation_expired`; backwards-compat via `migrateLegacyVerificationMaturity()`; engine internals untouched |
-| Katana / Nuclei runners | Built, not invoked from main pipeline | Wave 2 | runners ready, no caller in pipeline |
+| Katana / Nuclei runners | ✅ **Done — Wave 3.3 (2026-04-11)** | Wave 3.3 | Wired as enrichment passes in `workers/ingestion/enrichment/runner.ts` (katanaDiscoveryPass → nucleiScanPass) |
+| Cybersecurity Pack (12 findings) | ✅ **Done — Wave 3.3 (2026-04-11)** | Wave 3.3 | 12 findings in `money_moment_exposure` pack, SecurityWorkspace, all i18n |
+| LLM Enrichment — Policy + Copy (7 findings) | ✅ **Done — Wave 3.1 (2026-04-11)** | Wave 3.1 | Tier 1 (4 enrichment types) + Tier 2 (3 copy signals wired, enrichment pass pending) |
+| Workspace Redesign — Perspectives + Lenses | **Partial — Wave 3.11 (2026-04-11)** | Wave 3.11 | Pulse Summary API + frontend redesign built; needs browser verification |
+| Members & Invite Flow | **Partial — Wave 2.2 (2026-04-11)** | Wave 2.2 | OrgInvite model + API routes + modal + accept-invite page; seat limits + members table pending |
 | `integration_pull` executor | Scaffolded only | Wave 3 | executors.ts:197-212 returns "not implemented" |
 | `body_text_snippet` 500 → 2000 chars | Still 500 | Wave 3 | parser.ts:105 hardcoded |
 | Conversation export/branching | Not started | Wave 4 | unchanged |
@@ -360,20 +366,21 @@ Everything in Wave 1 either fixes a P0 (broken) or makes the value delivery loop
 
 ---
 
-### 2.2 Members & Invite Flow
+### 2.2 Members & Invite Flow (Partial)
 
 | | |
 |---|---|
 | **Tag** | `platform` |
 | **Priority** | P1 |
+| **Status** | **Partial — 2026-04-11.** Prisma model `OrgInvite` added to schema. API routes for creating invites (`POST /api/organization/invites`) and accepting invites (`POST /api/organization/invites/accept`) created. `InviteMemberModal` component built. Accept-invite page at `/accept-invite` created. Members page at `/app/members` exists. Remaining: seat limit enforcement, role change/remove UI for admins, email delivery integration, end-to-end testing. |
 
-| # | Part | Description |
-|---|------|-------------|
-| A | **Invite button handler** | Wire the "Invite Members" button to open a modal: email input, role selector (admin/member/viewer), send invite. |
-| B | **Invite model** | New Prisma model: `Invite { id, org_id, email, role, status (pending/accepted/expired), token, expires_at, invited_by }`. |
-| C | **Magic link email** | On invite creation, send email with magic link: `/accept-invite?token=xxx`. Uses existing SMTP configuration. Link creates user + membership + redirects to console. |
-| D | **Seat limits** | Enforce plan-based seat limits. Before sending invite, check `membership count < plan.max_members`. Show upgrade prompt if at limit. |
-| E | **Members table** | Render existing members with name, email, role, joined date. Add role change dropdown and remove button for admins. |
+| # | Part | Description | Status |
+|---|------|-------------|--------|
+| A | **Invite button handler** | Wire the "Invite Members" button to open a modal: email input, role selector (admin/member/viewer), send invite. | ✅ InviteMemberModal built |
+| B | **Invite model** | New Prisma model: `OrgInvite { id, org_id, email, role, status (pending/accepted/expired), token, expires_at, invited_by }`. | ✅ Prisma model added |
+| C | **Magic link email** | On invite creation, send email with magic link: `/accept-invite?token=xxx`. Uses existing SMTP configuration. Link creates user + membership + redirects to console. | ✅ Accept-invite page + API route created |
+| D | **Seat limits** | Enforce plan-based seat limits. Before sending invite, check `membership count < plan.max_members`. Show upgrade prompt if at limit. | Open |
+| E | **Members table** | Render existing members with name, email, role, joined date. Add role change dropdown and remove button for admins. | Partial — members page exists, role change/remove pending |
 
 ---
 
@@ -442,62 +449,73 @@ Everything in Wave 1 either fixes a P0 (broken) or makes the value delivery loop
 
 ---
 
-### 3.1 LLM Enrichment — Policy Pages
+### 3.1 LLM Enrichment — Policy Pages ✅ (+ Tier 1 & Tier 2 Extensions)
 
 | | |
 |---|---|
 | **Tag** | `engine` `collection` |
 | **Priority** | P1 |
+| **Status** | **Done — 2026-04-11.** Core policy enrichment shipped (A-G). Extended well beyond the original scope with two additional tiers. **Tier 1** added 4 new enrichment types: `checkout_trust` (checkout pages), `cta_clarity` (commercial pages), `product_page_quality` (product pages), `pricing_page_framing` (pricing pages) — each with dedicated Haiku prompts, page classification helpers, and type-specific structured output in `semantic-enrichment.ts`. **Tier 2** added 3 more copy analysis signals: `social_proof_quality`, `form_error_quality`, `onboarding_quality` — signals + inferences wired in the engine, but the semantic enrichment pass hasn't been extended yet to produce their evidence types (engine-side ready, collection-side pending). Total: **7 LLM-powered findings** across policy, checkout, CTA, product, pricing, social proof, form errors, and onboarding quality. |
 
 **The highest-ROI semantic enrichment opportunity.** Per [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md) and [NORTHSTAR.md](NORTHSTAR.md).
 
-| # | Part | Description |
-|---|------|-------------|
-| A | **Enrichment step in pipeline** | After Phase 2B content enrichment (post-parser, pre-signals), add a `runSemanticEnrichment()` step. Starts with policy pages only. |
-| B | **Policy quality analysis** | Haiku call per policy page. Input: policy body text. Output: `PolicyQualityAssessment { clarity_score, ambiguity_flags[], missing_sections[], regulatory_gaps[], readability_grade }`. Structured output schema. |
-| C | **New evidence type** | `ContentEnrichmentPayload` with `enrichment_type`, `scores`, `flags`, `missing_elements`, `confidence`, `model_used`, `cached`. |
-| D | **Cache layer** | Key: SHA256(evidence_hash + enrichment_type). Store in evidence store. Skip enrichment if cached result exists and source evidence unchanged. |
-| E | **Degradation** | If Haiku API unavailable or over budget, skip enrichment. Existing rule-based `thin_refund_policy` and `policy_gap` signals continue to work. |
-| F | **Signal integration** | New signals from enrichment: `policy_quality_score` (numeric), `policy_ambiguity_detected` (boolean), `policy_missing_critical_section` (boolean with section name). Feed into `refund_policy_gap` and `policy_deficiency` root cause. |
-| G | **Cost** | ~$0.002 per audit (1-3 policy pages × Haiku). Negligible. |
+| # | Part | Description | Status |
+|---|------|-------------|--------|
+| A | **Enrichment step in pipeline** | After Phase 2B content enrichment (post-parser, pre-signals), add a `runSemanticEnrichment()` step. Starts with policy pages only. | ✅ `semanticEnrichmentPass` in enrichment runner |
+| B | **Policy quality analysis** | Haiku call per policy page. Input: policy body text. Output: `PolicyQualityAssessment { clarity_score, ambiguity_flags[], missing_sections[], regulatory_gaps[], readability_grade }`. Structured output schema. | ✅ |
+| C | **New evidence type** | `ContentEnrichmentPayload` with `enrichment_type`, `scores`, `flags`, `missing_elements`, `confidence`, `model_used`, `cached`. | ✅ Extended with 7 enrichment types |
+| D | **Cache layer** | Key: SHA256(evidence_hash + enrichment_type). Store in evidence store. Skip enrichment if cached result exists and source evidence unchanged. | ✅ |
+| E | **Degradation** | If Haiku API unavailable or over budget, skip enrichment. Existing rule-based `thin_refund_policy` and `policy_gap` signals continue to work. | ✅ |
+| F | **Signal integration** | New signals from enrichment: `policy_quality_score` (numeric), `policy_ambiguity_detected` (boolean), `policy_missing_critical_section` (boolean with section name). Feed into `refund_policy_gap` and `policy_deficiency` root cause. | ✅ + 6 additional enrichment signal extractors |
+| G | **Cost** | ~$0.02 per audit (expanded to 3-8 commercial pages × Haiku). Still negligible. | ✅ |
 
 ---
 
-### 3.2 LLM Enrichment — CTA Clarity & Trust Language
+### 3.2 LLM Enrichment — CTA Clarity & Trust Language (Partially Subsumed)
 
 | | |
 |---|---|
 | **Tag** | `engine` `collection` |
 | **Priority** | P2 |
+| **Status** | **Partially subsumed by Wave 3.1 Tier 1 (2026-04-11).** Items B and C are now covered by the `cta_clarity` and `checkout_trust` enrichment types added in Wave 3.1 Tier 1 extension. Item A (`body_text_snippet` expansion) and deeper signal integration still pending. |
 
-| # | Part | Description |
-|---|------|-------------|
-| A | **Expand body_text_snippet** | Parser currently stores first 500 chars. Expand to 2000 chars on commercial-classified pages (checkout, pricing, cart). ~5 lines of code in parser.ts. |
-| B | **CTA clarity analysis** | Haiku call with all CTA link texts from commercial pages. Output: per-CTA `clarity_score`, `is_ambiguous`, `competing_ctas_detected`. |
-| C | **Trust language detection** | Haiku call with checkout page snippet. Output: `has_security_assurance`, `has_guarantee`, `has_urgency_tactics`, `trust_language_score`. |
-| D | **Signal integration** | Enriched signals feed `trust_break_in_checkout`, `unclear_conversion_intent`, `strong_cta_clarity`. |
+| # | Part | Description | Status |
+|---|------|-------------|--------|
+| A | **Expand body_text_snippet** | Parser currently stores first 500 chars. Expand to 2000 chars on commercial-classified pages (checkout, pricing, cart). ~5 lines of code in parser.ts. | Open — still 500 chars |
+| B | **CTA clarity analysis** | Haiku call with all CTA link texts from commercial pages. Output: per-CTA `clarity_score`, `is_ambiguous`, `competing_ctas_detected`. | ✅ Covered by `cta_clarity` enrichment type in 3.1 Tier 1 |
+| C | **Trust language detection** | Haiku call with checkout page snippet. Output: `has_security_assurance`, `has_guarantee`, `has_urgency_tactics`, `trust_language_score`. | ✅ Covered by `checkout_trust` enrichment type in 3.1 Tier 1 |
+| D | **Signal integration** | Enriched signals feed `trust_break_in_checkout`, `unclear_conversion_intent`, `strong_cta_clarity`. | ✅ Signals wired in `extractCopyEnrichmentSignals()` |
 
 ---
 
-### 3.3 Cybersecurity Pack — Phase 1 (Zero Collection Dependency)
+### 3.3 Cybersecurity Pack — Phase 1 ✅ (12 Findings)
 
 | | |
 |---|---|
-| **Tag** | `engine` |
+| **Tag** | `engine` `collection` |
 | **Priority** | P1 |
+| **Status** | **Done — 2026-04-11.** Grew from 4 original findings to **12 findings** across the full security surface. All findings framed with commercial language per Vestigio's philosophy (e.g., "Browsers signal your site as unsafe to buyers" instead of "Security Headers Weak"). Nuclei scan and Katana discovery passes wired into enrichment pipeline runner. Dedicated `SecurityWorkspace` with `SecurityContext` (risk_level, checkout_risks, infrastructure_risks, trust_signal_gaps) and `SecuritySummary` (what_buyers_see, what_attackers_see, what_breaks_silently). Decision pack `money_moment_exposure` with question key `is_visible_security_posture_creating_financial_risk` (4 tiers). Always-eligible (no prerequisites). Full i18n in en/pt-BR/es/de. |
 
 Per [FINDINGS_OPPORTUNITIES.md § 6](FINDINGS_OPPORTUNITIES.md) and [NORTHSTAR.md](NORTHSTAR.md) (Money-Moment Exposure).
 
-| # | Finding | Evidence | Signals | Effort |
-|---|---------|----------|---------|--------|
-| A | Security header posture | `HttpResponsePayload.headers` (already collected) | `hsts_missing`, `csp_missing_or_weak`, `clickjack_protection_missing`, `security_headers_score` | Low |
-| B | Mixed content on commercial pages | `ScriptPayload.src`, `FormPayload.action`, `IframePayload.src` (already collected) | `mixed_content_script`, `mixed_content_form_action`, `mixed_content_on_checkout` | Low |
-| C | Open redirect indicators | `RedirectPayload` (already collected) | `redirect_with_url_parameter`, `redirect_chain_to_unknown_domain` | Low |
-| D | Exposed sensitive endpoints | Add 10-15 sensitive paths to crawl discovery probe list | `admin_panel_exposed`, `sensitive_file_accessible`, `api_docs_public` | Low |
+| # | Finding | Status |
+|---|---------|--------|
+| A | Security headers (HSTS, CSP) — `security_header_weakness` | ✅ |
+| B | Clickjack protection — `clickjack_protection_missing` | ✅ |
+| C | Mixed content on commercial pages — `mixed_content_exposure` | ✅ |
+| D | Redirect chain trust erosion — `redirect_chain_erodes_checkout_trust` (merged open redirect) | ✅ |
+| E | Exposed sensitive endpoints — `sensitive_endpoint_exposed` | ✅ |
+| F | CORS misconfiguration — `cors_misconfiguration` | ✅ |
+| G | Rate limiting absent — `rate_limiting_absent` | ✅ |
+| H | Cookie security — `cookie_security_lax` | ✅ |
+| I | Error page information leak — `error_page_information_leak` | ✅ |
+| J | Predictable resource URLs — `predictable_resource_urls` | ✅ |
+| K | Nuclei scan pass — `nuclei-scan.ts` enrichment pass | ✅ Wired in pipeline runner |
+| L | Katana discovery pass — `katana-discovery.ts` enrichment pass | ✅ Wired in pipeline runner |
 
-**Decision pack:** New `money_moment_exposure_pack`. Pack question: "Is the visible security posture creating financial or trust risk?"
+**Decision pack:** `money_moment_exposure`. Pack question: "Is the visible security posture creating financial or trust risk?"
 
-**Finding families:** Checkout Security Weakness, Trust-Surface Security Gap, Exposed Sensitive Surface, Transport Integrity Failure.
+**Files:** [packages/signals/engine.ts](../packages/signals/engine.ts) (`extractSecurityPostureSignals`), [packages/inference/engine.ts](../packages/inference/engine.ts) (12 security inferences), [packages/impact/baselines.ts](../packages/impact/baselines.ts) (12 baselines), [packages/workspace/security-workspace.ts](../packages/workspace/security-workspace.ts) (new), [packages/workspace/recompute.ts](../packages/workspace/recompute.ts) (wired), [packages/decision/engine.ts](../packages/decision/engine.ts) (question_key handler), [workers/ingestion/enrichment/nuclei-scan.ts](../workers/ingestion/enrichment/nuclei-scan.ts) (new), [workers/ingestion/enrichment/katana-discovery.ts](../workers/ingestion/enrichment/katana-discovery.ts) (new), [workers/ingestion/enrichment/runner.ts](../workers/ingestion/enrichment/runner.ts) (registry).
 
 ---
 
@@ -546,12 +564,13 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 ---
 
-### 3.7 Copy Analysis Pack — AI-Powered Copy & Funnel Alignment
+### 3.7 Copy Analysis Pack — AI-Powered Copy & Funnel Alignment (Foundation Shipped)
 
 | | |
 |---|---|
 | **Tag** | `engine` `collection` `docs` |
 | **Priority** | P1 |
+| **Status** | **Foundation shipped — 2026-04-11.** The engine foundation for copy analysis is live via Wave 3.1 Tier 1+2 extensions. 4 enrichment types (`checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing`) produce `ContentEnrichmentPayload` evidence via Haiku. Signal extraction (`extractCopyEnrichmentSignals`) and inference functions wired. Tier 2 added 3 more signals (`social_proof_quality`, `form_error_quality`, `onboarding_quality`) at the engine level. Root cause `copy_strategy_gap` defined. The full 16-item A-P spec below represents the complete vision — items E-F are partially covered by existing signals, A-D and G-P are the remaining work to make this a standalone pack with its own decision, workspace, guidelines KB, ICP input, and advanced analyses (cross-page narrative, pricing psychology, localization quality, micro-copy, SEO tension, staleness). |
 
 **The thesis:** Most SaaS/ecommerce sites have copy that was written once and never audited against the actual ICP, funnel stage, or commercial intent of each page. The result is generic copy that doesn't convert — not because the product is bad, but because the words on the page don't match the buyer's mental state at that point in the journey. This pack turns Vestigio into a **copy strategist** that evaluates alignment between what the page says and what the page should say.
 
@@ -644,7 +663,11 @@ Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthe
 
 ---
 
-### 3.11 Workspace Redesign — Perspectives + Transversal Lenses
+### 3.11 Workspace Redesign — Perspectives + Transversal Lenses (Partial)
+
+| | |
+|---|---|
+| **Status** | **Partial — 2026-04-11.** Backend: Pulse Summary API endpoint at `/api/workspace/pulse-summary` (Haiku briefings, in-memory cache by environmentId_perspective_cycleRef, 1h TTL, graceful degradation). Frontend: workspace page redesigned with 5 perspectives (Panorama, Receita, Confiança, Comportamento, Copy). 4 transversal lenses (PulseSummary, RevenueMap, CycleDelta, BraggingRights) as components. Perspective detail pages at `/workspaces/perspective/[slug]`. **Remaining:** maturity stage detection (3.11A), perspective grouping in projections engine (3.11C), Revenue Map aggregation (3.11D), Cycle Delta lens data (3.11E), Bragging Rights lens data (3.11F), browser verification of all frontend work. |
 
 **Goal:** Consolidate 12 flat workspaces into 5 smart perspectives with transversal lenses that cut across all packs. Each perspective adapts its content based on the detected maturity stage of the business.
 
@@ -679,19 +702,19 @@ Maturity stage influences: which findings appear first, how Pulse Summary frames
 
 #### Implementation parts
 
-| # | Part | Tag | Effort |
-|---|---|---|---|
-| A | **Maturity stage detection** — computed property on Environment model. Heuristic based on cycle count, behavioral session count, integration connections, resolved finding ratio. | `engine` | Low |
-| B | **Pulse Summary API** — new endpoint that calls Haiku with workspace findings and returns a 3-4 sentence briefing. Cached per cycle. | `mcp` `engine` | Medium |
-| C | **Perspective grouping in projections** — modify projectWorkspaces() to group workspace projections by perspective instead of flat list. Each perspective contains its core pack findings + any behavioral sub-views. | `engine` | Medium |
-| D | **Revenue Map aggregation** — aggregate impact value_cases by perspective for the treemap/bar chart. | `engine` | Low |
-| E | **Cycle Delta lens** — expose change_report data grouped by perspective. | `engine` | Low |
-| F | **Bragging Rights lens** — aggregate POSITIVE_CHECKS + resolved findings count per perspective. | `engine` | Low |
-| G | **Frontend: Workspace page redesign** — replace flat workspace grid with perspective-based navigation. Each perspective is a page with Pulse Summary, findings table, and filtered transversal lenses. Panorama is the home with all 4 lenses showing global data. | `frontend` | High |
-| H | **Frontend: Pulse Summary component** — renders the LLM briefing in each workspace with a subtle loading state. | `frontend` | Low |
-| I | **Frontend: Revenue Map visualization** — treemap or horizontal bar chart showing $ impact by perspective. | `frontend` | Medium |
-| J | **Frontend: Cycle Delta component** — shows improved/worsened/new findings with change badges. | `frontend` | Low |
-| K | **Frontend: Bragging Rights component** — shows positive checks with green checkmarks and resolved count. | `frontend` | Low |
+| # | Part | Tag | Effort | Status |
+|---|---|---|---|---|
+| A | **Maturity stage detection** — computed property on Environment model. Heuristic based on cycle count, behavioral session count, integration connections, resolved finding ratio. | `engine` | Low | Open |
+| B | **Pulse Summary API** — new endpoint that calls Haiku with workspace findings and returns a 3-4 sentence briefing. Cached per cycle. | `mcp` `engine` | Medium | ✅ `/api/workspace/pulse-summary` with 1h cache |
+| C | **Perspective grouping in projections** — modify projectWorkspaces() to group workspace projections by perspective instead of flat list. Each perspective contains its core pack findings + any behavioral sub-views. | `engine` | Medium | Open |
+| D | **Revenue Map aggregation** — aggregate impact value_cases by perspective for the treemap/bar chart. | `engine` | Low | Open |
+| E | **Cycle Delta lens** — expose change_report data grouped by perspective. | `engine` | Low | Open |
+| F | **Bragging Rights lens** — aggregate POSITIVE_CHECKS + resolved findings count per perspective. | `engine` | Low | Open |
+| G | **Frontend: Workspace page redesign** — replace flat workspace grid with perspective-based navigation. Each perspective is a page with Pulse Summary, findings table, and filtered transversal lenses. Panorama is the home with all 4 lenses showing global data. | `frontend` | High | ✅ Built, needs browser verification |
+| H | **Frontend: Pulse Summary component** — renders the LLM briefing in each workspace with a subtle loading state. | `frontend` | Low | ✅ `PulseSummary.tsx` |
+| I | **Frontend: Revenue Map visualization** — treemap or horizontal bar chart showing $ impact by perspective. | `frontend` | Medium | ✅ `RevenueMap.tsx` (needs real data from 3.11D) |
+| J | **Frontend: Cycle Delta component** — shows improved/worsened/new findings with change badges. | `frontend` | Low | ✅ `CycleDelta.tsx` (needs real data from 3.11E) |
+| K | **Frontend: Bragging Rights component** — shows positive checks with green checkmarks and resolved count. | `frontend` | Low | ✅ `BraggingRights.tsx` (needs real data from 3.11F) |
 
 ---
 

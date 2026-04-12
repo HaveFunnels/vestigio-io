@@ -298,19 +298,19 @@ const MiniCalculator = ({
 				    Hover-lift, animated conic border on hover, soft inner
 				    glow. The whole section is "one big card" so the
 				    calculator stops looking like just-another-section. */}
-				<div className='vcalc-card group relative overflow-hidden rounded-3xl border border-zinc-200/60 bg-white p-6 shadow-[0_25px_80px_-20px_rgba(0,0,0,0.35),0_10px_30px_-10px_rgba(0,0,0,0.2)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_100px_-20px_rgba(16,185,129,0.25),0_25px_60px_-20px_rgba(0,0,0,0.3)] sm:p-10 lg:p-14'>
+				<div className='vcalc-card group relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-white p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_60px_-10px_rgba(16,185,129,0.15)] transition-all duration-500 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-[0_0_0_1px_rgba(16,185,129,0.2),0_35px_100px_-20px_rgba(16,185,129,0.3),0_0_80px_-10px_rgba(16,185,129,0.25)] sm:p-10 lg:p-14'>
 					{/* Soft conic gradient halo behind the card edges */}
 					<div
-						className='pointer-events-none absolute inset-0 -z-1 opacity-30 transition-opacity duration-500 group-hover:opacity-50'
+						className='pointer-events-none absolute inset-0 -z-1 opacity-50 transition-opacity duration-500 group-hover:opacity-80'
 						aria-hidden
 					>
-						<div className='absolute -left-20 -top-20 h-[300px] w-[300px] rounded-full bg-emerald-400/[0.08] blur-3xl' />
-						<div className='absolute -bottom-20 -right-20 h-[300px] w-[300px] rounded-full bg-indigo-400/[0.06] blur-3xl' />
+						<div className='absolute -left-20 -top-20 h-[300px] w-[300px] rounded-full bg-emerald-400/[0.15] blur-3xl' />
+						<div className='absolute -bottom-20 -right-20 h-[300px] w-[300px] rounded-full bg-emerald-400/[0.10] blur-3xl' />
 					</div>
 
-					{/* Stripe accents echoing the hero shell */}
-					<div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent' />
-					<div className='pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-400/10 to-transparent' />
+					{/* Emerald accent lines top and bottom */}
+					<div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent' />
+					<div className='pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent' />
 
 					{/* Eyebrow + tagline header (only in input state — once the
 					    flow is running, the existing in-card headlines take

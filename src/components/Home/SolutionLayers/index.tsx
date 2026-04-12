@@ -66,9 +66,9 @@ function useLocale() {
 
 const accents = ["emerald", "violet", "amber"] as const;
 const colors = {
-	emerald: { border: "border-emerald-500/20", text: "text-emerald-400", bg: "bg-emerald-500/10", glow: "shadow-[0_8px_60px_-15px_rgba(16,185,129,0.2)]", pill: "bg-emerald-500/10 text-emerald-400" },
-	violet:  { border: "border-violet-500/20",  text: "text-violet-400",  bg: "bg-violet-500/10",  glow: "shadow-[0_8px_60px_-15px_rgba(139,92,246,0.2)]", pill: "bg-violet-500/10 text-violet-400" },
-	amber:   { border: "border-amber-500/20",   text: "text-amber-400",   bg: "bg-amber-500/10",   glow: "shadow-[0_8px_60px_-15px_rgba(245,158,11,0.2)]", pill: "bg-amber-500/10 text-amber-400" },
+	emerald: { border: "border-emerald-500/20", text: "text-emerald-400", bg: "bg-emerald-500/10", glow: "shadow-[0_4px_30px_-10px_rgba(16,185,129,0.15)]", pill: "bg-emerald-500/10 text-emerald-400" },
+	violet:  { border: "border-violet-500/20",  text: "text-violet-400",  bg: "bg-violet-500/10",  glow: "shadow-[0_4px_30px_-10px_rgba(139,92,246,0.15)]", pill: "bg-violet-500/10 text-violet-400" },
+	amber:   { border: "border-amber-500/20",   text: "text-amber-400",   bg: "bg-amber-500/10",   glow: "shadow-[0_4px_30px_-10px_rgba(245,158,11,0.15)]", pill: "bg-amber-500/10 text-amber-400" },
 };
 
 // ── Entrance animation: CSS-only, one-shot on mount ──
@@ -87,14 +87,14 @@ function LayerCard({ layer, index, tools, accent }: {
 
 	return (
 		<div
-			className="sticky z-10 pb-6 layer-fade-in"
+			className="sticky z-10 pb-6 layer-fade-in will-change-[transform,opacity]"
 			style={{
 				// CSS variable so mobile and desktop can have independent top offsets
 				top: `calc(var(--layer-sticky-top, 80px) + ${index * 20}px)`,
 				animationDelay: `${index * 120}ms`,
 			}}
 		>
-			<div className={`rounded-2xl border ${c.border} ${c.glow} bg-[#0c0c14] backdrop-blur-md`}>
+			<div className={`rounded-2xl border ${c.border} ${c.glow} bg-[#0c0c14]`}>
 				<div className="flex flex-col gap-5 p-5 sm:gap-6 sm:p-10 md:flex-row md:items-start lg:p-12">
 					<div className="min-w-0 flex-1">
 						<span className={`mb-4 inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${c.pill} sm:mb-5`}>{layer.eyebrow}</span>
@@ -115,7 +115,7 @@ function LayerCard({ layer, index, tools, accent }: {
 function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 	return (
 		<div className="relative z-20 pt-8 pb-4 layer-fade-in">
-			<div className="rounded-2xl border border-white/[0.06] bg-[#0c0c14] p-5 backdrop-blur-md sm:p-10 lg:p-12">
+			<div className="rounded-2xl border border-white/[0.06] bg-[#0c0c14] p-5 sm:p-10 lg:p-12">
 					<div className="mb-8 text-center sm:mb-10">
 						<span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">{t.label}</span>
 						<h3 className="text-lg font-bold text-white sm:text-2xl">{t.heading}</h3>
@@ -249,7 +249,7 @@ export default function SolutionLayers() {
 				}
 			`}</style>
 			<div className="pointer-events-none absolute inset-0 -z-10">
-				<div className="absolute left-1/2 top-[30%] h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-violet-900/8 blur-[120px] sm:h-[600px] sm:w-[700px] sm:blur-[180px]" />
+				<div className="absolute left-1/2 top-[30%] h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-violet-900/8 blur-[80px] sm:h-[500px] sm:w-[600px] sm:blur-[100px]" />
 			</div>
 
 			<div className="mx-auto mb-12 max-w-[700px] px-4 text-center sm:mb-16 sm:px-8 lg:mb-20">

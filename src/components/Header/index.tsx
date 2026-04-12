@@ -61,9 +61,11 @@ const Header = () => {
 	useEffect(() => {
 		const handleScroll = () => {
 			setCompact(window.scrollY >= SCROLL_THRESHOLD_PX);
-			setBannerVisible(window.scrollY < 8);
+			// Check if banner still exists in DOM (it removes itself when dismissed)
+			const bannerExists = !!document.getElementById('announcement-banner');
+			setBannerVisible(window.scrollY < 8 && bannerExists);
 		};
-		handleScroll(); // Sync on mount in case the user reloaded mid-scroll
+		handleScroll();
 		window.addEventListener("scroll", handleScroll, { passive: true });
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);

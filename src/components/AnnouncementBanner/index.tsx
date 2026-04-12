@@ -42,21 +42,28 @@ export default function AnnouncementBanner({
 }: AnnouncementBannerProps) {
 	const t = useTranslations("homepage.hero_v2.banner");
 	const [visible, setVisible] = useState(true);
+	const [dismissed, setDismissed] = useState(false);
 
 	useEffect(() => {
-		// Hide once the user scrolls past the banner's own height.
-		// Using a small threshold prevents flicker from sub-pixel scroll
-		// jitter on trackpads.
+		if (dismissed) return;
 		const onScroll = () => {
 			setVisible(window.scrollY < 8);
 		};
 		onScroll();
 		window.addEventListener("scroll", onScroll, { passive: true });
 		return () => window.removeEventListener("scroll", onScroll);
-	}, []);
+	}, [dismissed]);
+
+	const handleClick = () => {
+		setDismissed(true);
+		setVisible(false);
+	};
+
+	if (dismissed) return null;
 
 	return (
 		<div
+			id="announcement-banner"
 			className={`pointer-events-none fixed inset-x-0 top-0 z-[1001] transition-transform duration-300 ease-out ${
 				visible ? "translate-y-0" : "-translate-y-full"
 			}`}
@@ -69,6 +76,7 @@ export default function AnnouncementBanner({
 			<div className='relative flex h-full w-full items-center justify-center border-b border-white/[0.06] bg-gradient-to-r from-[#0a1a14]/90 via-[#0b0e1c]/90 to-[#0a0a14]/90 px-3 backdrop-blur-md sm:px-6'>
 				<Link
 					href={href}
+					onClick={handleClick}
 					className='pointer-events-auto group inline-flex max-w-full items-center gap-2 text-[11px] leading-tight text-zinc-300 transition-colors hover:text-white sm:gap-3 sm:text-xs'
 				>
 					<span className='inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-300 sm:text-[10px]'>

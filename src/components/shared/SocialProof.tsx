@@ -277,8 +277,8 @@ export function SocialProof({
           from { transform: translateX(-50%); }
           to   { transform: translateX(0); }
         }
-        .vsp-track-left  { animation: vsp-scroll-left  45s linear infinite; }
-        .vsp-track-right { animation: vsp-scroll-right  45s linear infinite; }
+        .vsp-track-left  { animation: vsp-scroll-left  90s linear infinite; }
+        .vsp-track-right { animation: vsp-scroll-right  90s linear infinite; }
         .vsp-track-left:hover,
         .vsp-track-right:hover { animation-play-state: paused; }
         @media (prefers-reduced-motion: reduce) {

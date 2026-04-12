@@ -187,7 +187,7 @@ export default function DataSourcesPage() {
 
 	const fetchShopifyStatus = useCallback(async () => {
 		try {
-			const res = await fetch("/api/integrations");
+			const res = await fetch(`/api/integrations?environment_id=${environmentId}`);
 			if (!res.ok) return;
 			const { integrations } = await res.json();
 			const shopify = integrations?.find((i: any) => i.provider === "shopify");
@@ -198,7 +198,7 @@ export default function DataSourcesPage() {
 				if (shopify.valueFeedback) setShopifyValueFeedback(shopify.valueFeedback);
 			}
 		} catch { /* silent */ }
-	}, []);
+	}, [environmentId]);
 
 	useEffect(() => { fetchShopifyStatus(); }, [fetchShopifyStatus]);
 
@@ -214,6 +214,7 @@ export default function DataSourcesPage() {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
+					environmentId,
 					provider: "shopify",
 					config: { store_url: shopifyStoreUrl.trim(), access_token: shopifyToken.trim() },
 				}),
@@ -239,7 +240,7 @@ export default function DataSourcesPage() {
 			await fetch("/api/integrations", {
 				method: "DELETE",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ provider: "shopify" }),
+				body: JSON.stringify({ environmentId, provider: "shopify" }),
 			});
 			setShopifyStatus("not_configured");
 			setShopifyStoreUrl("");
@@ -256,7 +257,7 @@ export default function DataSourcesPage() {
 			const res = await fetch("/api/integrations/sync", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ provider: "shopify" }),
+				body: JSON.stringify({ environmentId, provider: "shopify" }),
 			});
 			if (res.ok) await fetchShopifyStatus();
 		} catch { /* silent */ }
@@ -646,6 +647,10 @@ function BoolSelect({ value, onChange }: { value: boolean | null; onChange: (v: 
 
 function mapStatus(status: string): SourceStatus {
 	if (status === "unconfigured" || !status) return "not_configured";
+	if (status === "connected") return "verified";
+	if (status === "pending") return "configured";
+	if (status === "error") return "failed";
+	if (status === "disconnected") return "not_configured";
 	return status as SourceStatus;
 }
 

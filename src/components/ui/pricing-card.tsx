@@ -384,9 +384,9 @@ const PLAN_DESCRIPTIONS: Record<string, string> = {
 };
 
 const PLAN_CTA: Record<string, string> = {
-	vestigio: "Start Free Trial",
-	pro: "Choose Pro",
-	max: "Contact Sales",
+	vestigio: "Começar agora",
+	pro: "Escolher Pro",
+	max: "Começar agora",
 };
 
 /** Derive feature list from admin-configured plan features, or fall back to legacy logic */
@@ -516,7 +516,7 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		priceMonthly: 99,
 		priceAnnually: 950,
 		isPopular: false,
-		buttonLabel: "Start Free Trial",
+		buttonLabel: "Começar agora",
 		features: [
 			{ name: "1 environment", isIncluded: true },
 			{ name: "Up to 1 team member", isIncluded: true },
@@ -538,7 +538,7 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		priceMonthly: 199,
 		priceAnnually: 1910,
 		isPopular: true,
-		buttonLabel: "Choose Pro",
+		buttonLabel: "Escolher Pro",
 		features: [
 			{ name: "3 environments", isIncluded: true },
 			{ name: "Up to 3 team members", isIncluded: true },
@@ -560,7 +560,7 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		priceMonthly: 399,
 		priceAnnually: 3830,
 		isPopular: false,
-		buttonLabel: "Contact Sales",
+		buttonLabel: "Começar agora",
 		features: [
 			{ name: "10 environments", isIncluded: true },
 			{ name: "Up to 10 team members", isIncluded: true },

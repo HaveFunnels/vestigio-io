@@ -17,13 +17,13 @@ interface FinalCTAProps {
 const DEFAULT_TRUST_BADGES: TrustBadge[] = [
   { label: "Sem cartão de crédito" },
   { label: "Resultado em 60 segundos" },
-  { label: "4X ROI Guarantee" },
+  { label: "Garantia de 4X ROI" },
 ];
 
 export function FinalCTA({
   headline = "Pare de escalar no escuro.",
   subheadline = "Descubra onde seu negócio digital está vazando dinheiro. Comece em 60 segundos.",
-  primaryLabel = "Rodar Auditoria Grátis",
+  primaryLabel = "Começar agora",
   primaryHref = "/auth/signup",
   secondaryLabel = "Falar com time",
   secondaryHref = "/support",

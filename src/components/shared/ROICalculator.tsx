@@ -20,7 +20,7 @@ export function ROICalculator({
   currencySymbol = "R$",
   locale = "pt-BR",
   heading = "Descubra quanto faturamento você está perdendo",
-  ctaText = "Start Free Trial",
+  ctaText = "Começar agora",
   ctaHref = "/auth/signup",
 }: ROICalculatorProps) {
   const [monthlyRevenue, setMonthlyRevenue] = useState(50000);
@@ -127,7 +127,7 @@ export function ROICalculator({
                   d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              4X ROI Guarantee
+              Garantia de 4X ROI
             </span>
           </div>
 

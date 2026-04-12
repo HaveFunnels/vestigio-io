@@ -17,7 +17,7 @@ const faqData = [
 	{
 		question: "Can I try it before committing?",
 		answer:
-			"Yes. You can sign up for a free trial and run your first audit immediately. No credit card required to get started.",
+			"Yes. You can sign up and run your first audit immediately. No credit card required to get started.",
 	},
 	{
 		question: "What pricing plans are available?",

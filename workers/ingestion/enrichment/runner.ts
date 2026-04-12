@@ -6,6 +6,7 @@ import type {
 import { buildSkippedResult } from "./types";
 import { selectiveHeadlessPass } from "./selective-headless";
 import { semanticEnrichmentPass } from "./semantic-enrichment";
+import { nucleiScanPass } from "./nuclei-scan";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -31,6 +32,7 @@ import { semanticEnrichmentPass } from "./semantic-enrichment";
  */
 const PASS_REGISTRY: EnrichmentPass[] = [
   selectiveHeadlessPass,
+  nucleiScanPass,
   semanticEnrichmentPass,
 ];
 

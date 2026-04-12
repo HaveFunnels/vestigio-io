@@ -11,6 +11,7 @@ export { buildSkippedResult, buildFailedResult } from "./types";
 export { runEnrichmentPasses, listRegisteredPasses } from "./runner";
 export { selectiveHeadlessPass } from "./selective-headless";
 export { semanticEnrichmentPass } from "./semantic-enrichment";
+export { nucleiScanPass } from "./nuclei-scan";
 export {
   buildStageDScenarios,
   pickCommercialPathScenario,

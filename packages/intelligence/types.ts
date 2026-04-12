@@ -50,7 +50,9 @@ export type RootCauseCategory =
   | 'behavioral_conversion_failure'
   | 'behavioral_path_integrity'
   // Wave 2.3: Runtime fragility (separated from friction_barrier so maps treat them distinctly)
-  | 'runtime_fragility';
+  | 'runtime_fragility'
+  // Tier 1 Copy Analysis
+  | 'copy_clarity';
 
 export type RootCauseSeverity = 'critical' | 'high' | 'medium' | 'low';
 

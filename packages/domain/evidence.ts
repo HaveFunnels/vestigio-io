@@ -743,12 +743,14 @@ export interface SurfaceVitalityPayload {
 
 export interface ContentEnrichmentPayload {
   type: 'content_enrichment';
-  enrichment_type: 'policy_quality';
+  enrichment_type: 'policy_quality' | 'checkout_trust' | 'cta_clarity' | 'product_page_quality' | 'pricing_page_framing';
   source_evidence_key: string;
   source_url: string;
   scores: { clarity_score: number; readability_grade: string };
   flags: { ambiguity_flags: string[]; regulatory_gaps: string[] };
   missing_elements: string[];
+  /** Flexible results map for type-specific enrichment output */
+  results: Record<string, unknown>;
   confidence: number;
   model_used: string;
   cached: boolean;

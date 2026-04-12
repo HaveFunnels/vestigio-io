@@ -8,7 +8,7 @@ import { buildFailedResult } from "./types";
 import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
-import type { Evidence, ContentEnrichmentPayload, PolicyPagePayload } from "../../../packages/domain";
+import type { Evidence, ContentEnrichmentPayload, PolicyPagePayload, FormPayload, PageContentPayload } from "../../../packages/domain";
 import {
   EvidenceType,
   SourceKind,
@@ -34,8 +34,8 @@ import {
 const PASS_NAME = "semantic_enrichment";
 const PASS_LABEL = "Wave 3.1 — Semantic Enrichment";
 
-/** Max policy pages to analyze per cycle (cost control) */
-const MAX_PAGES = 5;
+/** Max total pages to analyze per cycle across all enrichment types (cost control) */
+const MAX_PAGES = 10;
 
 /** Max body text chars sent to the LLM (cost + context window control) */
 const MAX_TEXT_CHARS = 8_000;
@@ -64,6 +64,147 @@ Policy content (${policyType}):
 ---
 ${bodyText}
 ---`;
+}
+
+// ──────────────────────────────────────────────
+// Copy Analysis Prompts (Tier 1)
+// ──────────────────────────────────────────────
+
+const CHECKOUT_TRUST_SYSTEM = `You are a checkout trust analyst. You assess e-commerce checkout pages for trust language that reassures buyers at the moment of purchase.
+
+You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+
+function buildCheckoutTrustPrompt(bodyText: string): string {
+  return `Analyze this checkout/cart/payment page for trust language. Does it mention:
+- Security (SSL, encryption, secure payment)
+- Guarantees (money-back, satisfaction, free returns)
+- Social proof near the CTA
+- Payment method badges
+
+Respond with ONLY a JSON object matching this exact schema:
+{
+  "trust_signals_present": <boolean>,
+  "has_security_language": <boolean>,
+  "has_guarantee": <boolean>,
+  "has_urgency_manipulation": <boolean>,
+  "trust_score": <number 0-100>,
+  "confidence": <number 0-100>
+}
+
+Page content:
+---
+${bodyText}
+---`;
+}
+
+const CTA_CLARITY_SYSTEM = `You are a CTA clarity analyst. You assess web pages for call-to-action effectiveness, competing actions, and clarity of the primary conversion path.
+
+You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+
+function buildCtaClarityPrompt(bodyText: string): string {
+  return `Extract all CTA texts from this page. Evaluate:
+- Are there competing CTAs?
+- Is the primary CTA clear?
+- Does the CTA text communicate value vs generic ("Submit", "Click here")?
+
+Respond with ONLY a JSON object matching this exact schema:
+{
+  "ctas": ["<list of CTA texts found>"],
+  "primary_cta_clear": <boolean>,
+  "competing_ctas": <number of competing CTAs>,
+  "generic_cta_detected": <boolean>,
+  "clarity_score": <number 0-100>,
+  "confidence": <number 0-100>
+}
+
+Page content:
+---
+${bodyText}
+---`;
+}
+
+const PRODUCT_PAGE_SYSTEM = `You are a product page copy analyst. You assess product descriptions for quality, uniqueness, benefit-orientation, and persuasiveness.
+
+You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+
+function buildProductPagePrompt(bodyText: string): string {
+  return `Analyze this product page description. Evaluate:
+- Is the description unique or manufacturer-generic?
+- Does it describe benefits or just features?
+- Does it address common objections?
+- Does it use sensory/emotional language?
+
+Respond with ONLY a JSON object matching this exact schema:
+{
+  "is_generic_description": <boolean>,
+  "benefits_vs_features_ratio": <number 0-1, where 1 = all benefits>,
+  "objections_addressed": <boolean>,
+  "description_quality_score": <number 0-100>,
+  "confidence": <number 0-100>
+}
+
+Page content:
+---
+${bodyText}
+---`;
+}
+
+const PRICING_FRAMING_SYSTEM = `You are a pricing page analyst. You assess pricing pages for clarity of plan recommendation, value framing, comparison anchoring, and objection handling.
+
+You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+
+function buildPricingFramingPrompt(bodyText: string): string {
+  return `Analyze this pricing page. Evaluate:
+- Is the recommended plan obvious?
+- Are features described as benefits?
+- Is there comparison anchoring?
+- Are objections handled (FAQ, guarantee)?
+
+Respond with ONLY a JSON object matching this exact schema:
+{
+  "recommended_plan_clear": <boolean>,
+  "value_framing_quality": <number 0-100>,
+  "has_objection_handling": <boolean>,
+  "framing_score": <number 0-100>,
+  "confidence": <number 0-100>
+}
+
+Page content:
+---
+${bodyText}
+---`;
+}
+
+// ──────────────────────────────────────────────
+// URL classification helpers
+// ──────────────────────────────────────────────
+
+const CHECKOUT_URL_PATTERNS = /\/(checkout|cart|payment|pay|order|compra|carrinho|pagamento)/i;
+const PRODUCT_URL_PATTERNS = /\/(product|item|p|produto|produit)\//i;
+const PRICING_URL_PATTERNS = /\/(pricing|plans|precos|prices|planos)/i;
+const COMMERCIAL_URL_PATTERNS = /\/(checkout|cart|payment|product|item|p|pricing|plans|precos|homepage|$)/i;
+
+function isCheckoutPage(url: string, evidence: Evidence[]): boolean {
+  if (CHECKOUT_URL_PATTERNS.test(url)) return true;
+  // Check if any form on this page has payment fields
+  return evidence.some(
+    (e) =>
+      e.evidence_type === EvidenceType.Form &&
+      (e.payload as FormPayload).page_url === url &&
+      (e.payload as FormPayload).has_payment_fields,
+  );
+}
+
+function isProductPage(url: string): boolean {
+  return PRODUCT_URL_PATTERNS.test(url);
+}
+
+function isPricingPage(url: string): boolean {
+  return PRICING_URL_PATTERNS.test(url);
+}
+
+function isCommercialPage(url: string): boolean {
+  return COMMERCIAL_URL_PATTERNS.test(url) || isCheckoutPage(url, []) || isProductPage(url) || isPricingPage(url);
 }
 
 // ──────────────────────────────────────────────
@@ -110,6 +251,19 @@ function parseAssessment(raw: string): PolicyQualityAssessment | null {
   }
 }
 
+/** Generic JSON parser that strips markdown fences and validates confidence field */
+function parseJsonResponse(raw: string): (Record<string, unknown> & { confidence: number }) | null {
+  try {
+    const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+    const parsed = JSON.parse(cleaned);
+    if (typeof parsed.confidence !== "number") return null;
+    parsed.confidence = Math.max(0, Math.min(100, parsed.confidence));
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 // ──────────────────────────────────────────────
 // Eligibility (shouldRun)
 // ──────────────────────────────────────────────
@@ -131,23 +285,27 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
     };
   }
 
-  // Gate 3: Must have detected policy pages
+  // Gate 3: Must have policy pages OR page content with commercial URLs
   const policyPages = ctx.evidence.filter(
     (e) =>
       e.evidence_type === EvidenceType.PolicyPage &&
       (e.payload as PolicyPagePayload).detected === true,
   );
 
-  if (policyPages.length === 0) {
+  const pageContentEvidence = ctx.evidence.filter(
+    (e) => e.evidence_type === EvidenceType.PageContent,
+  );
+
+  if (policyPages.length === 0 && pageContentEvidence.length === 0) {
     return {
       run: false,
-      reason: "no detected policy pages in evidence",
+      reason: "no detected policy pages or page content in evidence",
     };
   }
 
   return {
     run: true,
-    reason: `${policyPages.length} detected policy page(s), mode=full, LLM enabled`,
+    reason: `${policyPages.length} policy page(s), ${pageContentEvidence.length} page content(s), mode=full, LLM enabled`,
   };
 }
 
@@ -260,6 +418,7 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
             regulatory_gaps: assessment.regulatory_gaps,
           },
           missing_elements: assessment.missing_elements,
+          results: {},
           confidence: assessment.confidence,
           model_used: result.model,
           cached: false,
@@ -296,6 +455,142 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
       }
     }
 
+    // ── Tier 1 Copy Analysis: analyze commercial pages ──
+    // Collect unique page URLs from PageContent evidence
+    const pageContentEvidence = ctx.evidence.filter(
+      (e) => e.evidence_type === EvidenceType.PageContent,
+    );
+
+    // Classify pages by type for enrichment
+    const checkoutPages: Evidence[] = [];
+    const commercialPages: Evidence[] = [];
+    const productPages: Evidence[] = [];
+    const pricingPages: Evidence[] = [];
+
+    for (const e of pageContentEvidence) {
+      const p = e.payload as PageContentPayload;
+      const url = p.url;
+      if (isCheckoutPage(url, ctx.evidence)) checkoutPages.push(e);
+      if (isCommercialPage(url)) commercialPages.push(e);
+      if (isProductPage(url)) productPages.push(e);
+      if (isPricingPage(url)) pricingPages.push(e);
+    }
+
+    // Budget guard: track total pages analyzed across all types
+    let totalBudget = MAX_PAGES - pagesProcessed;
+
+    // Helper: run a copy enrichment pass for a set of pages
+    async function runCopyEnrichment(
+      pages: Evidence[],
+      enrichmentType: ContentEnrichmentPayload['enrichment_type'],
+      systemPrompt: string,
+      buildPrompt: (bodyText: string) => string,
+      label: string,
+    ): Promise<void> {
+      const cap = Math.min(pages.length, totalBudget);
+      if (cap <= 0) return;
+
+      for (let i = 0; i < cap; i++) {
+        const pageEvidence = pages[i];
+        const p = pageEvidence.payload as PageContentPayload;
+        pagesProcessed++;
+        totalBudget--;
+
+        ctx.emit({
+          type: "step",
+          stage: "enrichment",
+          data: {
+            message: `Wave 3.1: ${label} (${i + 1}/${cap}) — ${p.url}`,
+            index: pagesProcessed,
+          },
+          timestamp: new Date(),
+        });
+
+        try {
+          const response = await httpFetch(p.url);
+          if (response.status_code >= 400) {
+            console.warn(`[semantic-enrichment ${ctx.cycle_ref}] ${p.url} returned ${response.status_code}, skipping ${label}`);
+            continue;
+          }
+
+          const bodyText = extractBodyText(response.body);
+          if (!bodyText || bodyText.length < 50) {
+            console.warn(`[semantic-enrichment ${ctx.cycle_ref}] ${p.url} insufficient body text, skipping ${label}`);
+            continue;
+          }
+
+          const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
+
+          const result = await callModel("haiku_4_5", [
+            { role: "user", content: buildPrompt(truncatedText) },
+          ], {
+            max_tokens: 1024,
+            temperature: 0.1,
+            system: systemPrompt,
+          });
+
+          const textBlock = result.content.find((b) => b.type === "text");
+          if (!textBlock || textBlock.type !== "text") {
+            console.warn(`[semantic-enrichment ${ctx.cycle_ref}] no text in LLM response for ${label} on ${p.url}`);
+            continue;
+          }
+
+          const assessment = parseJsonResponse(textBlock.text);
+          if (!assessment) {
+            console.warn(`[semantic-enrichment ${ctx.cycle_ref}] failed to parse LLM response for ${label} on ${p.url}`);
+            continue;
+          }
+
+          const now = new Date();
+          const enrichmentPayload: ContentEnrichmentPayload = {
+            type: "content_enrichment",
+            enrichment_type: enrichmentType,
+            source_evidence_key: pageEvidence.evidence_key,
+            source_url: p.url,
+            scores: { clarity_score: 0, readability_grade: "n/a" },
+            flags: { ambiguity_flags: [], regulatory_gaps: [] },
+            missing_elements: [],
+            results: assessment as Record<string, unknown>,
+            confidence: assessment.confidence,
+            model_used: result.model,
+            cached: false,
+          };
+
+          const evidence: Evidence = {
+            id: `enrich_${enrichmentType}_${pagesProcessed}_${Date.now()}`,
+            evidence_key: `content_enrichment:${enrichmentType}:${p.url}`,
+            evidence_type: EvidenceType.ContentEnrichment,
+            subject_ref: ctx.scoping.subject_ref || `website:${ctx.root_domain}`,
+            scoping: ctx.scoping,
+            cycle_ref: ctx.cycle_ref,
+            freshness: {
+              observed_at: now,
+              fresh_until: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+              freshness_state: FreshnessState.Fresh,
+              staleness_reason: null,
+            },
+            source_kind: SourceKind.HttpFetch,
+            collection_method: CollectionMethod.ApiCall,
+            payload: enrichmentPayload,
+            quality_score: assessment.confidence,
+            created_at: now,
+            updated_at: now,
+          };
+
+          evidenceAdded.push(evidence);
+        } catch (pageErr) {
+          const message = pageErr instanceof Error ? pageErr.message : String(pageErr);
+          console.warn(`[semantic-enrichment ${ctx.cycle_ref}] error in ${label} for ${p.url}: ${message}`);
+        }
+      }
+    }
+
+    // Run each copy analysis type
+    await runCopyEnrichment(checkoutPages, 'checkout_trust', CHECKOUT_TRUST_SYSTEM, buildCheckoutTrustPrompt, 'checkout trust analysis');
+    await runCopyEnrichment(commercialPages, 'cta_clarity', CTA_CLARITY_SYSTEM, buildCtaClarityPrompt, 'CTA clarity analysis');
+    await runCopyEnrichment(productPages, 'product_page_quality', PRODUCT_PAGE_SYSTEM, buildProductPagePrompt, 'product page quality analysis');
+    await runCopyEnrichment(pricingPages, 'pricing_page_framing', PRICING_FRAMING_SYSTEM, buildPricingFramingPrompt, 'pricing page framing analysis');
+
     ctx.emit({
       type: "step",
       stage: "enrichment",
@@ -309,7 +604,7 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
     return {
       pass_name: PASS_NAME,
       status: "completed",
-      reason: `${evidenceAdded.length} policy page(s) enriched`,
+      reason: `${evidenceAdded.length} page(s) enriched (policy + copy analysis)`,
       evidence_added: evidenceAdded,
       duration_ms: Date.now() - startTime,
       attempts: 1,

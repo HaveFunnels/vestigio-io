@@ -1,4 +1,9 @@
-import { NuvemshopStoreMetrics } from './types';
+import {
+  NuvemshopStoreMetrics,
+  NuvemshopCouponMetrics,
+  NuvemshopShippingMetrics,
+  NuvemshopChannelMetrics,
+} from './types';
 import { BusinessInputs } from '../../packages/impact/types';
 
 // ──────────────────────────────────────────────
@@ -95,13 +100,20 @@ export interface OperationalContext {
   economic_leakage_amplifier: number;
   payment_concentration_amplifier: number;
   transaction_failure_amplifier: number;
+  /** Nuvemshop-exclusive: fraud signal from cancel_reason=fraud orders */
+  fraud_signal_amplifier: number;
+  /** Nuvemshop-exclusive: coupon abuse risk from stacking/unlimited coupons */
+  coupon_abuse_amplifier: number;
 }
 
 /**
  * Compute operational amplifiers from Nuvemshop metrics.
+ * Extended with coupon and channel data when available.
  */
 export function computeOperationalContext(
   metrics: NuvemshopStoreMetrics[],
+  couponMetrics?: NuvemshopCouponMetrics | null,
+  channelMetrics?: NuvemshopChannelMetrics | null,
 ): OperationalContext {
   const primary = metrics.find(m => m.window === '30d') || metrics[0];
 
@@ -112,6 +124,8 @@ export function computeOperationalContext(
       economic_leakage_amplifier: 1.0,
       payment_concentration_amplifier: 1.0,
       transaction_failure_amplifier: 1.0,
+      fraud_signal_amplifier: 1.0,
+      coupon_abuse_amplifier: 1.0,
     };
   }
 
@@ -131,12 +145,32 @@ export function computeOperationalContext(
   const txFailRate = primary.transactions.failure_rate;
   const txFailAmp = txFailRate > 0.05 ? 1.3 : txFailRate > 0.03 ? 1.15 : 1.0;
 
+  // Nuvemshop-exclusive: fraud signal from cancel_reason=fraud
+  let fraudAmp = 1.0;
+  if (channelMetrics) {
+    const totalOrders = primary.revenue.order_count;
+    const fraudRate = totalOrders > 0 ? channelMetrics.fraud_cancelled_count / totalOrders : 0;
+    fraudAmp = fraudRate > 0.03 ? 1.4 : fraudRate > 0.01 ? 1.2 : 1.0;
+  }
+
+  // Nuvemshop-exclusive: coupon abuse risk
+  let couponAbuseAmp = 1.0;
+  if (couponMetrics && couponMetrics.active_coupons > 0) {
+    const riskSignals =
+      (couponMetrics.stacking_enabled_count > 3 ? 1 : 0) +
+      (couponMetrics.unlimited_coupons > 5 ? 1 : 0) +
+      (couponMetrics.expired_but_active > 0 ? 1 : 0);
+    couponAbuseAmp = riskSignals >= 2 ? 1.3 : riskSignals >= 1 ? 1.15 : 1.0;
+  }
+
   return {
     cancellation_amplifier: cancellationAmp,
     discount_abuse_amplifier: discountAmp,
     economic_leakage_amplifier: leakageAmp,
     payment_concentration_amplifier: concentrationAmp,
     transaction_failure_amplifier: txFailAmp,
+    fraud_signal_amplifier: fraudAmp,
+    coupon_abuse_amplifier: couponAbuseAmp,
   };
 }
 

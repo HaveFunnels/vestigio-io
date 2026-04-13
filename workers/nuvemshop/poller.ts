@@ -6,18 +6,25 @@ import {
   NuvemshopErrorType,
   NuvemshopCustomerMetrics,
   NuvemshopProductMetrics,
+  NuvemshopCouponMetrics,
+  NuvemshopShippingMetrics,
+  NuvemshopChannelMetrics,
   DEFAULT_POLLING_CONFIG,
 } from '../../packages/nuvemshop-adapter';
 import {
   fetchOrders,
   fetchCustomers,
   fetchProducts,
+  fetchCoupons,
   verifyConnection,
 } from '../../packages/nuvemshop-adapter/client';
 import {
   aggregateOrdersIntoMetrics,
   aggregateCustomers,
   aggregateProducts,
+  aggregateCoupons,
+  aggregateShipping,
+  aggregateChannels,
 } from '../../packages/nuvemshop-adapter/aggregator';
 import {
   mapToBusinessInputs,
@@ -56,6 +63,9 @@ export interface NuvemshopPollResult {
   initial_sync_complete: boolean;
   customer_metrics: NuvemshopCustomerMetrics | null;
   product_metrics: NuvemshopProductMetrics | null;
+  coupon_metrics: NuvemshopCouponMetrics | null;
+  shipping_metrics: NuvemshopShippingMetrics | null;
+  channel_metrics: NuvemshopChannelMetrics | null;
 }
 
 /**
@@ -103,7 +113,7 @@ export async function pollNuvemshopData(
     );
   }
 
-  // Step 3: Fetch customers and products sequentially (respect 2 req/s rate limit)
+  // Step 3: Fetch customers, products, and coupons sequentially (respect 2 req/s rate limit)
   const customerResult = await fetchCustomers(credentials, since).catch(err => ({
     customers: [] as any[],
     errors: [err instanceof Error ? err.message : String(err)],
@@ -112,9 +122,14 @@ export async function pollNuvemshopData(
     products: [] as any[],
     errors: [err instanceof Error ? err.message : String(err)],
   }));
+  const couponResult = await fetchCoupons(credentials).catch(err => ({
+    coupons: [] as any[],
+    errors: [err instanceof Error ? err.message : String(err)],
+  }));
 
   errors.push(...customerResult.errors);
   errors.push(...productResult.errors);
+  errors.push(...couponResult.errors);
 
   // Step 4: Aggregate orders
   const metrics = aggregateOrdersIntoMetrics(orders, pollingConfig.windows);
@@ -137,12 +152,25 @@ export async function pollNuvemshopData(
     ? aggregateProducts(productResult.products, orderLineItems)
     : null;
 
+  // Step 5b: Aggregate extended metrics (coupons, shipping, channels)
+  const couponMetrics = couponResult.coupons.length > 0
+    ? aggregateCoupons(couponResult.coupons)
+    : null;
+
+  const shippingMetrics = orders.length > 0
+    ? aggregateShipping(orders)
+    : null;
+
+  const channelMetrics = orders.length > 0
+    ? aggregateChannels(orders)
+    : null;
+
   // Step 6: Map to BusinessInputs
   const businessInputs = mapToBusinessInputs(metrics);
   const basisType = determineBasisType(businessInputs);
 
-  // Step 7: Compute operational context
-  const operationalContext = computeOperationalContext(metrics);
+  // Step 7: Compute operational context (with Nuvemshop-exclusive enrichment)
+  const operationalContext = computeOperationalContext(metrics, couponMetrics, channelMetrics);
 
   // Step 8: Build value feedback for UI
   const valueFeedback = buildValueFeedback(metrics);
@@ -175,6 +203,9 @@ export async function pollNuvemshopData(
     initial_sync_complete: true,
     customer_metrics: customerMetrics,
     product_metrics: productMetrics,
+    coupon_metrics: couponMetrics,
+    shipping_metrics: shippingMetrics,
+    channel_metrics: channelMetrics,
   };
 }
 
@@ -213,5 +244,8 @@ function buildFailResult(
     initial_sync_complete: false,
     customer_metrics: null,
     product_metrics: null,
+    coupon_metrics: null,
+    shipping_metrics: null,
+    channel_metrics: null,
   };
 }

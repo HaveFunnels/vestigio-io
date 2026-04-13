@@ -129,6 +129,17 @@ export const REQUIRED_SCOPES = [
   'read_orders',
   'read_customers',
   'read_products',
+  'read_content',           // copy analysis (future)
+  'read_coupons',           // discount fraud/hijack
+  'read_discounts',         // discount fraud/hijack
+  'read_domains',           // domain verification vs env
+  'read_manual_orders',     // orders that aren't automated
+  'view_email_templates',   // copy + chargeback risk (future)
+  'read_orders_risk',       // fraud risk signals
+  'read_fulfillment_orders', // fulfillment friction
+  'read_locations',         // inventory locations
+  'read_shipping',          // shipping cost enrichment
+  'view_subscriptions',     // recurring revenue detection
 ] as const;
 
 /**
@@ -149,6 +160,16 @@ export interface NuvemshopRawOrder {
   gateway: string;          // payment provider
   cancelled_at: string | null;
   paid_at: string | null;
+  // Shipping data (read_shipping + read_fulfillment_orders)
+  shipping_cost_customer: string | null;
+  shipping_cost_owner: string | null;
+  shipping_min_days: number | null;
+  shipping_max_days: number | null;
+  shipping_pickup_type: string | null; // ship | pickup
+  // Storefront / channel
+  storefront: string | null;  // store, meli, api, form, pos
+  // Cancel reason
+  cancel_reason: string | null; // customer, inventory, fraud, other
   products: NuvemshopOrderProduct[];
   customer: { id: number; name: string; email: string } | null;
 }
@@ -195,6 +216,35 @@ export interface NuvemshopVariant {
   stock_management: boolean;
 }
 
+/**
+ * Raw coupon from Nuvemshop API.
+ */
+export interface NuvemshopCoupon {
+  id: number;
+  code: string;
+  type: string;        // percentage, absolute, shipping
+  value: string;       // discount amount/percentage
+  valid: boolean;
+  used: number;
+  max_uses: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  min_price: string | null;
+  first_consumer_purchase: boolean;
+  combines_with_other_discounts: boolean;
+  deleted_at: string | null;
+}
+
+/**
+ * Raw domain from Nuvemshop API.
+ */
+export interface NuvemshopDomain {
+  id: string;
+  url: string;
+  ssl: boolean;
+  created_at: string;
+}
+
 // ── Aggregated metrics types ──
 
 export interface NuvemshopCustomerMetrics {
@@ -207,7 +257,31 @@ export interface NuvemshopCustomerMetrics {
 export interface NuvemshopProductMetrics {
   total_products: number;
   never_sold_30d: number;
+  out_of_stock_count: number;  // variants with stock=0 and stock_management=true
   top_by_revenue: { title: string; revenue: number }[];
+}
+
+export interface NuvemshopCouponMetrics {
+  active_coupons: number;
+  total_used: number;
+  stacking_enabled_count: number;   // coupons that combine with other discounts
+  unlimited_coupons: number;        // coupons with no max_uses (abuse risk)
+  expired_but_active: number;       // valid=true but end_date passed (leak)
+  first_purchase_only: number;
+}
+
+export interface NuvemshopShippingMetrics {
+  orders_with_free_shipping: number;
+  avg_shipping_cost_customer: number;
+  avg_shipping_days: number;
+  pickup_rate: number;              // % of orders using pickup vs ship
+  shipping_cost_ratio: number;      // avg shipping cost / avg order value
+}
+
+export interface NuvemshopChannelMetrics {
+  channels: { channel: string; count: number }[];
+  fraud_cancelled_count: number;    // orders cancelled with reason=fraud
+  inventory_cancelled_count: number; // orders cancelled with reason=inventory
 }
 
 /**

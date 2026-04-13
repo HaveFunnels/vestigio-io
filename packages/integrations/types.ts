@@ -45,6 +45,7 @@ export interface ShopifySnapshotData {
 // Nuvemshop data — mirrors ShopifySnapshotData shape for engine compatibility.
 // Nuvemshop lacks abandoned checkout API and separate inventory levels API,
 // so those fields are always null. Stock data comes from product variants.
+// Extended fields (coupons, shipping, channels) are Nuvemshop-exclusive.
 export interface NuvemshopSnapshotData {
   revenue: { total: number; order_count: number; average_order_value: number; currency: string };
   refunds: { total_amount: number; refund_count: number; refund_rate: number };
@@ -56,6 +57,26 @@ export interface NuvemshopSnapshotData {
   customers: { total: number; repeat_rate: number; new_vs_returning_ratio: number; avg_lifetime_value: number } | null;
   products: { total: number; never_sold_30d: number; top_by_revenue: { title: string; revenue: number }[] } | null;
   inventory: { out_of_stock_promoted: number } | null;
+  // Nuvemshop-exclusive extended data
+  coupons: {
+    active_coupons: number;
+    total_used: number;
+    stacking_enabled_count: number;
+    unlimited_coupons: number;
+    expired_but_active: number;
+  } | null;
+  shipping: {
+    orders_with_free_shipping: number;
+    avg_shipping_cost_customer: number;
+    avg_shipping_days: number;
+    pickup_rate: number;
+    shipping_cost_ratio: number;
+  } | null;
+  channels: {
+    entries: { channel: string; count: number }[];
+    fraud_cancelled_count: number;
+    inventory_cancelled_count: number;
+  } | null;
 }
 
 // Stub types for future integrations — just enough to compile

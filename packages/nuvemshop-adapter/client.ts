@@ -6,6 +6,8 @@ import {
   NuvemshopRawOrder,
   NuvemshopCustomer,
   NuvemshopProduct,
+  NuvemshopCoupon,
+  NuvemshopDomain,
 } from './types';
 
 // ──────────────────────────────────────────────
@@ -125,7 +127,7 @@ export async function fetchOrders(
 
   while (page <= MAX_PAGES) {
     try {
-      const path = `/orders?status=any&created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=${Math.min(perPage, 200)}&page=${page}&fields=id,number,created_at,updated_at,status,payment_status,shipping_status,total,subtotal,discount,currency,gateway,cancelled_at,paid_at,products,customer`;
+      const path = `/orders?status=any&created_at_min=${sinceISO}&created_at_max=${untilISO}&per_page=${Math.min(perPage, 200)}&page=${page}&fields=id,number,created_at,updated_at,status,payment_status,shipping_status,total,subtotal,discount,currency,gateway,cancelled_at,paid_at,shipping_cost_customer,shipping_cost_owner,shipping_min_days,shipping_max_days,shipping_pickup_type,storefront,cancel_reason,products,customer`;
 
       const response = await nuvemshopFetch(credentials, path);
       if (!response.ok) {
@@ -269,6 +271,101 @@ export async function fetchProducts(
   return { products: allProducts, errors };
 }
 
+/**
+ * Fetch active coupons.
+ * Non-fatal: returns empty array + errors on failure.
+ */
+export async function fetchCoupons(
+  credentials: NuvemshopCredentials,
+): Promise<{ coupons: NuvemshopCoupon[]; errors: string[] }> {
+  const errors: string[] = [];
+  const allCoupons: NuvemshopCoupon[] = [];
+
+  let page = 1;
+  const MAX_PAGES = 10;
+
+  while (page <= MAX_PAGES) {
+    try {
+      const path = `/coupons?per_page=200&page=${page}&fields=id,code,type,value,valid,used,max_uses,start_date,end_date,min_price,first_consumer_purchase,combines_with_other_discounts,deleted_at`;
+
+      const response = await nuvemshopFetch(credentials, path);
+      if (!response.ok) {
+        errors.push(`Coupons fetch failed: HTTP ${response.status}`);
+        break;
+      }
+
+      const data = await response.json();
+      const coupons: NuvemshopCoupon[] = (Array.isArray(data) ? data : []).map((c: any) => ({
+        id: c.id,
+        code: c.code || '',
+        type: c.type || 'percentage',
+        value: c.value || '0',
+        valid: c.valid ?? true,
+        used: c.used || 0,
+        max_uses: c.max_uses ?? null,
+        start_date: c.start_date || null,
+        end_date: c.end_date || null,
+        min_price: c.min_price || null,
+        first_consumer_purchase: c.first_consumer_purchase ?? false,
+        combines_with_other_discounts: c.combines_with_other_discounts ?? false,
+        deleted_at: c.deleted_at || null,
+      }));
+      allCoupons.push(...coupons);
+
+      if (coupons.length < 200) break;
+      page++;
+      await delay(500);
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+      break;
+    }
+  }
+
+  return { coupons: allCoupons, errors };
+}
+
+/**
+ * Fetch store domains.
+ * Non-fatal: returns empty array + errors on failure.
+ */
+export async function fetchDomains(
+  credentials: NuvemshopCredentials,
+): Promise<{ domains: NuvemshopDomain[]; errors: string[] }> {
+  const errors: string[] = [];
+  try {
+    // Domains are returned as part of the store object
+    const response = await nuvemshopFetch(credentials, '/store?fields=domains,original_domain');
+    if (!response.ok) {
+      errors.push(`Domains fetch failed: HTTP ${response.status}`);
+      return { domains: [], errors };
+    }
+
+    const data = await response.json();
+    const rawDomains = data.domains || [];
+    const domains: NuvemshopDomain[] = rawDomains.map((d: any) => ({
+      id: d.id || String(d.url),
+      url: d.url || '',
+      ssl: d.ssl ?? false,
+      created_at: d.created_at || new Date().toISOString(),
+    }));
+
+    // Also include the original domain
+    if (data.original_domain) {
+      domains.push({
+        id: 'original',
+        url: data.original_domain,
+        ssl: true,
+        created_at: data.created_at || new Date().toISOString(),
+      });
+    }
+
+    return { domains, errors };
+  } catch (err) {
+    errors.push(err instanceof Error ? err.message : String(err));
+    return { domains: [], errors };
+  }
+}
+
 // ──────────────────────────────────────────────
 // Internal helpers
 // ──────────────────────────────────────────────
@@ -314,6 +411,13 @@ function mapRawOrders(data: any): NuvemshopRawOrder[] {
     gateway: o.gateway || 'unknown',
     cancelled_at: o.cancelled_at || null,
     paid_at: o.paid_at || null,
+    shipping_cost_customer: o.shipping_cost_customer || null,
+    shipping_cost_owner: o.shipping_cost_owner || null,
+    shipping_min_days: o.shipping_min_days ?? null,
+    shipping_max_days: o.shipping_max_days ?? null,
+    shipping_pickup_type: o.shipping_pickup_type || null,
+    storefront: o.storefront || null,
+    cancel_reason: o.cancel_reason || null,
     products: (o.products || []).map((p: any) => ({
       id: p.id,
       product_id: p.product_id,

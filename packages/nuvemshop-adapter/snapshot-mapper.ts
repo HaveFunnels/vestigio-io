@@ -81,8 +81,36 @@ export function mapPollResultToSnapshotData(
           })),
         }
       : null,
-    // No inventory levels API in Nuvemshop (stock is on variant)
-    inventory: null,
+    // Stock from product variants → out_of_stock_count
+    inventory: pollResult.product_metrics
+      ? { out_of_stock_promoted: pollResult.product_metrics.out_of_stock_count }
+      : null,
+    // Nuvemshop-exclusive extended data
+    coupons: pollResult.coupon_metrics
+      ? {
+          active_coupons: pollResult.coupon_metrics.active_coupons,
+          total_used: pollResult.coupon_metrics.total_used,
+          stacking_enabled_count: pollResult.coupon_metrics.stacking_enabled_count,
+          unlimited_coupons: pollResult.coupon_metrics.unlimited_coupons,
+          expired_but_active: pollResult.coupon_metrics.expired_but_active,
+        }
+      : null,
+    shipping: pollResult.shipping_metrics
+      ? {
+          orders_with_free_shipping: pollResult.shipping_metrics.orders_with_free_shipping,
+          avg_shipping_cost_customer: pollResult.shipping_metrics.avg_shipping_cost_customer,
+          avg_shipping_days: pollResult.shipping_metrics.avg_shipping_days,
+          pickup_rate: pollResult.shipping_metrics.pickup_rate,
+          shipping_cost_ratio: pollResult.shipping_metrics.shipping_cost_ratio,
+        }
+      : null,
+    channels: pollResult.channel_metrics
+      ? {
+          entries: pollResult.channel_metrics.channels,
+          fraud_cancelled_count: pollResult.channel_metrics.fraud_cancelled_count,
+          inventory_cancelled_count: pollResult.channel_metrics.inventory_cancelled_count,
+        }
+      : null,
   };
 }
 
@@ -98,5 +126,8 @@ function buildEmptySnapshotData(): NuvemshopSnapshotData {
     customers: null,
     products: null,
     inventory: null,
+    coupons: null,
+    shipping: null,
+    channels: null,
   };
 }

@@ -6,6 +6,10 @@ import {
   NuvemshopCustomerMetrics,
   NuvemshopProduct,
   NuvemshopProductMetrics,
+  NuvemshopCoupon,
+  NuvemshopCouponMetrics,
+  NuvemshopShippingMetrics,
+  NuvemshopChannelMetrics,
 } from './types';
 
 // ──────────────────────────────────────────────
@@ -234,10 +238,133 @@ export function aggregateProducts(
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 10);
 
+  // Count products with all variants out of stock (stock_management=true and stock=0)
+  const outOfStock = products.filter(p =>
+    p.variants.length > 0 &&
+    p.variants.every(v => v.stock_management && (v.stock === null || v.stock <= 0))
+  ).length;
+
   return {
     total_products: totalProducts,
     never_sold_30d: neverSold,
+    out_of_stock_count: outOfStock,
     top_by_revenue: topByRevenue,
+  };
+}
+
+/**
+ * Aggregate coupon data into risk/abuse metrics.
+ */
+export function aggregateCoupons(
+  coupons: NuvemshopCoupon[],
+): NuvemshopCouponMetrics {
+  const now = new Date();
+  const activeCoupons = coupons.filter(c => c.valid && !c.deleted_at);
+  const totalUsed = activeCoupons.reduce((sum, c) => sum + c.used, 0);
+  const stackingEnabled = activeCoupons.filter(c => c.combines_with_other_discounts).length;
+  const unlimited = activeCoupons.filter(c => c.max_uses === null || c.max_uses === 0).length;
+  const firstPurchaseOnly = activeCoupons.filter(c => c.first_consumer_purchase).length;
+
+  // Expired but still marked valid — potential leak
+  const expiredButActive = activeCoupons.filter(c => {
+    if (!c.end_date) return false;
+    return new Date(c.end_date) < now;
+  }).length;
+
+  return {
+    active_coupons: activeCoupons.length,
+    total_used: totalUsed,
+    stacking_enabled_count: stackingEnabled,
+    unlimited_coupons: unlimited,
+    expired_but_active: expiredButActive,
+    first_purchase_only: firstPurchaseOnly,
+  };
+}
+
+/**
+ * Aggregate shipping metrics from orders.
+ */
+export function aggregateShipping(
+  orders: NuvemshopRawOrder[],
+): NuvemshopShippingMetrics {
+  if (orders.length === 0) {
+    return {
+      orders_with_free_shipping: 0,
+      avg_shipping_cost_customer: 0,
+      avg_shipping_days: 0,
+      pickup_rate: 0,
+      shipping_cost_ratio: 0,
+    };
+  }
+
+  let freeShipping = 0;
+  let totalShippingCost = 0;
+  let shippingCostOrders = 0;
+  let totalDays = 0;
+  let daysCount = 0;
+  let pickupCount = 0;
+  let totalOrderValue = 0;
+
+  for (const o of orders) {
+    const shippingCost = parseFloat(o.shipping_cost_customer || '0') || 0;
+    const orderTotal = parseFloat(o.total) || 0;
+    totalOrderValue += orderTotal;
+
+    if (shippingCost === 0) {
+      freeShipping++;
+    } else {
+      totalShippingCost += shippingCost;
+      shippingCostOrders++;
+    }
+
+    if (o.shipping_min_days !== null && o.shipping_max_days !== null) {
+      totalDays += (o.shipping_min_days + o.shipping_max_days) / 2;
+      daysCount++;
+    }
+
+    if (o.shipping_pickup_type === 'pickup') {
+      pickupCount++;
+    }
+  }
+
+  const avgShippingCost = shippingCostOrders > 0 ? totalShippingCost / shippingCostOrders : 0;
+  const avgOrderValue = orders.length > 0 ? totalOrderValue / orders.length : 0;
+
+  return {
+    orders_with_free_shipping: freeShipping,
+    avg_shipping_cost_customer: round2(avgShippingCost),
+    avg_shipping_days: round2(daysCount > 0 ? totalDays / daysCount : 0),
+    pickup_rate: round4(orders.length > 0 ? pickupCount / orders.length : 0),
+    shipping_cost_ratio: round4(avgOrderValue > 0 ? avgShippingCost / avgOrderValue : 0),
+  };
+}
+
+/**
+ * Aggregate channel and cancellation reason metrics from orders.
+ */
+export function aggregateChannels(
+  orders: NuvemshopRawOrder[],
+): NuvemshopChannelMetrics {
+  const channelMap = new Map<string, number>();
+  let fraudCancelled = 0;
+  let inventoryCancelled = 0;
+
+  for (const o of orders) {
+    const channel = o.storefront || 'store';
+    channelMap.set(channel, (channelMap.get(channel) || 0) + 1);
+
+    if (o.cancel_reason === 'fraud') fraudCancelled++;
+    if (o.cancel_reason === 'inventory') inventoryCancelled++;
+  }
+
+  const channels = Array.from(channelMap.entries())
+    .map(([channel, count]) => ({ channel, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    channels,
+    fraud_cancelled_count: fraudCancelled,
+    inventory_cancelled_count: inventoryCancelled,
   };
 }
 

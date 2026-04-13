@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Success Stories — photo cards with stat overlays
@@ -10,83 +11,37 @@ import { useRef, useState, useEffect, useCallback } from "react";
 //          swipeable + arrow navigation
 // ──────────────────────────────────────────────
 
-interface Stat {
-  value: string;
-  label: string;
-}
-
-interface Story {
-  /** Photo from public/images/stories/ */
-  image: string;
-  /** Industry badge text */
+interface StoryI18n {
   industry: string;
-  /** Badge color class */
-  badgeColor: string;
-  stats: [Stat, Stat, Stat];
+  stat1_value: string; stat1_label: string;
+  stat2_value: string; stat2_label: string;
+  stat3_value: string; stat3_label: string;
 }
 
-const STORIES: Story[] = [
-  {
-    image: "/images/stories/story-1.webp",
-    industry: "Outdoor leisure industry",
-    badgeColor: "bg-violet-500",
-    stats: [
-      { value: "51.42%", label: "Engagement Rate" },
-      { value: "35K", label: "Total Orders" },
-      { value: "1.33%", label: "Conversion Rate" },
-    ],
-  },
-  {
-    image: "/images/stories/story-2.webp",
-    industry: "Fashion & Apparel",
-    badgeColor: "bg-emerald-500",
-    stats: [
-      { value: "2.8x", label: "Revenue Growth" },
-      { value: "12K", label: "New Customers" },
-      { value: "4.7%", label: "Repeat Rate" },
-    ],
-  },
-  {
-    image: "/images/stories/story-3.webp",
-    industry: "Health & Wellness",
-    badgeColor: "bg-amber-500",
-    stats: [
-      { value: "38%", label: "Cost Reduction" },
-      { value: "89K", label: "Sessions Tracked" },
-      { value: "0.4%", label: "Chargeback Rate" },
-    ],
-  },
-  {
-    image: "/images/stories/story-4.webp",
-    industry: "Home & Garden",
-    badgeColor: "bg-sky-500",
-    stats: [
-      { value: "62%", label: "Fraud Blocked" },
-      { value: "18K", label: "Orders Protected" },
-      { value: "3.1x", label: "ROI" },
-    ],
-  },
-  {
-    image: "/images/stories/story-5.webp",
-    industry: "Electronics & Tech",
-    badgeColor: "bg-rose-500",
-    stats: [
-      { value: "27%", label: "Revenue Recovered" },
-      { value: "42K", label: "Disputes Won" },
-      { value: "94%", label: "Win Rate" },
-    ],
-  },
+// Non-translatable visual config per story
+const STORY_VISUALS = [
+  { image: "/images/stories/story-1.webp", badgeColor: "bg-violet-500" },
+  { image: "/images/stories/story-2.webp", badgeColor: "bg-emerald-500" },
+  { image: "/images/stories/story-3.webp", badgeColor: "bg-amber-500" },
+  { image: "/images/stories/story-4.webp", badgeColor: "bg-sky-500" },
+  { image: "/images/stories/story-5.webp", badgeColor: "bg-rose-500" },
 ];
 
 // ── Story Card ─────────────────────────────────
 
-function StoryCard({ story }: { story: Story }) {
+function StoryCard({ story, visual }: { story: StoryI18n; visual: typeof STORY_VISUALS[number] }) {
+  const stats = [
+    { value: story.stat1_value, label: story.stat1_label },
+    { value: story.stat2_value, label: story.stat2_label },
+    { value: story.stat3_value, label: story.stat3_label },
+  ];
+
   return (
     <div className="group relative overflow-hidden rounded-2xl bg-zinc-900 shadow-lg">
       {/* Photo */}
       <div className="relative aspect-[4/5] w-full overflow-hidden">
         <img
-          src={story.image}
+          src={visual.image}
           alt={story.industry}
           loading="lazy"
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -101,7 +56,7 @@ function StoryCard({ story }: { story: Story }) {
         {/* Industry badge */}
         <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
           <span
-            className={`inline-block rounded-full ${story.badgeColor} px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-lg sm:text-xs`}
+            className={`inline-block rounded-full ${visual.badgeColor} px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-lg sm:text-xs`}
           >
             {story.industry}
           </span>
@@ -109,7 +64,7 @@ function StoryCard({ story }: { story: Story }) {
 
         {/* Stats row — glass cards at bottom */}
         <div className="absolute inset-x-0 bottom-0 flex gap-2 p-3 sm:gap-2.5 sm:p-4">
-          {story.stats.map((stat, i) => (
+          {stats.map((stat, i) => (
             <div
               key={i}
               className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.08] px-3 py-2.5 backdrop-blur-md sm:px-4 sm:py-3"
@@ -166,6 +121,9 @@ function ArrowButton({
 // ── Section ────────────────────────────────────
 
 const Testimonials = () => {
+  const t = useTranslations("homepage.success_stories");
+  const stories = t.raw("stories") as StoryI18n[];
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [canGoLeft, setCanGoLeft] = useState(false);
@@ -179,7 +137,6 @@ const Testimonials = () => {
     setCanGoLeft(scrollLeft > 4);
     setCanGoRight(scrollLeft < maxScroll - 4);
 
-    // Determine active index based on scroll position
     const children = Array.from(el.children) as HTMLElement[];
     let closest = 0;
     let minDist = Infinity;
@@ -200,7 +157,6 @@ const Testimonials = () => {
     if (!el) return;
     el.addEventListener("scroll", updateNav, { passive: true });
     updateNav();
-    // Recalc on resize
     window.addEventListener("resize", updateNav);
     return () => {
       el.removeEventListener("scroll", updateNav);
@@ -212,11 +168,10 @@ const Testimonials = () => {
     (dir: "left" | "right") => {
       const el = scrollRef.current;
       if (!el) return;
-      // Scroll by one card width + gap
       const child = el.children[0] as HTMLElement | undefined;
       if (!child) return;
       const cardWidth = child.offsetWidth;
-      const gap = 20; // gap-5 = 1.25rem = 20px
+      const gap = 20;
       const amount = dir === "left" ? -(cardWidth + gap) : cardWidth + gap;
       el.scrollBy({ left: amount, behavior: "smooth" });
     },
@@ -230,13 +185,13 @@ const Testimonials = () => {
         <div className="mb-8 flex items-end justify-between sm:mb-10">
           <div>
             <h2 className="mb-3 text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:text-3xl lg:text-4xl">
-              Success{" "}
+              {t("title")}{" "}
               <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text italic text-transparent">
-                Stories
+                {t("title_accent")}
               </span>
             </h2>
             <p className="max-w-md text-sm text-zinc-400 sm:text-base">
-              Real results from brands that transformed their business with Vestigio.
+              {t("subtitle")}
             </p>
           </div>
 
@@ -253,12 +208,12 @@ const Testimonials = () => {
           className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 sm:-mx-0 sm:px-0"
           style={{ scrollSnapType: "x mandatory" }}
         >
-          {STORIES.map((story, i) => (
+          {stories.map((story, i) => (
             <div
               key={i}
               className="w-[80vw] flex-none snap-center sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]"
             >
-              <StoryCard story={story} />
+              <StoryCard story={story} visual={STORY_VISUALS[i] ?? STORY_VISUALS[0]} />
             </div>
           ))}
         </div>
@@ -268,7 +223,7 @@ const Testimonials = () => {
           <ArrowButton direction="left" onClick={() => scrollTo("left")} disabled={!canGoLeft} />
 
           <div className="flex gap-1.5">
-            {STORIES.map((_, i) => (
+            {stories.map((_, i) => (
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all duration-300 ${

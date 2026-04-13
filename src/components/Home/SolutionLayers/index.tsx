@@ -1,68 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-// ── i18n ──
-
-const i18n: Record<string, {
-	sectionLabel: string; title: string; subtitle: string;
-	layers: { eyebrow: string; title: string; body: string; support: string }[];
-	chat: { label: string; heading: string; userQueryLabel: string; userQuery: string; responseLabel: string; responseBody: string; chipFindings: string; chipActions: string; chipVerification: string; satellites: [string, string, string] };
-	tools: string[][];
-}> = {
-	en: {
-		sectionLabel: "What Vestigio does", title: "Refuse to scale your business in the dark.", subtitle: "See early, prioritize with clarity, and validate your digital business continuously.",
-		layers: [
-			{ eyebrow: "Layer 1", title: "Discover before others", body: "See where the risks, leaks, and opportunities are before they become costs.", support: "Findings, analysis, and initial context to understand what's breaking, what's going unnoticed, and what could compromise scale." },
-			{ eyebrow: "Layer 2", title: "Prioritize and act with precision", body: "Turn signals into a continuous queue of action, with context and priority.", support: "Actions and workspaces help organize what to fix, track, and explore by route, journey, campaign, or environment." },
-			{ eyebrow: "Layer 3", title: "Validate with confidence", body: "Confirm if it's ready, if it got worse, or if the fix actually closed.", support: "Preflight, regressions, and verification help decide before scaling and track changes over time." },
-		],
-		chat: { label: "Vestigio Pulse", heading: "Explain, investigate, and validate with Vestigio Pulse", userQueryLabel: "You ask:", userQuery: "What risks are getting worse since the last analysis?", responseLabel: "Structured Response", responseBody: '"3 regressions found: checkout abandonment +12%, payment validation failed on 2 routes, SSL expires in 5 days."', chipFindings: "Used 3 findings", chipActions: "Created a new action", chipVerification: "Ran verification as a user", satellites: ["Findings", "Actions", "Verification"] },
-		tools: [["Findings", "Analysis", "Evidence"], ["Actions", "Workspaces", "Priorities"], ["Preflight", "Regressions", "Verification"]],
-	},
-	"pt-BR": {
-		sectionLabel: "O que a Vestigio faz", title: "Recuse escalar seu negócio no escuro.", subtitle: "Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.",
-		layers: [
-			{ eyebrow: "Camada 1", title: "Descubra antes dos outros", body: "Veja onde estão os riscos, vazamentos e oportunidades antes que virem custo.", support: "Descobertas, análise e contexto inicial para entender o que está quebrando, o que está passando despercebido e o que pode comprometer escala." },
-			{ eyebrow: "Camada 2", title: "Priorize e aja com precisão", body: "Transforme sinais em uma fila contínua de ação, com contexto e prioridade.", support: "Ações e workspaces ajudam a organizar o que corrigir, acompanhar e explorar por rota, jornada, campanha ou ambiente." },
-			{ eyebrow: "Camada 3", title: "Valide com confiança", body: "Confirme se está pronto, se piorou ou se a correção realmente fechou.", support: "Preflight, regressões e verificação ajudam a decidir antes de escalar e a acompanhar mudanças ao longo do tempo." },
-		],
-		chat: { label: "Vestigio Pulse", heading: "Explique, investigue e valide com o Vestigio Pulse", userQueryLabel: "Você pergunta:", userQuery: "Quais riscos estão piorando desde a última análise?", responseLabel: "Resposta Estruturada", responseBody: '"3 regressões encontradas: abandono de checkout +12%, validação de pagamento falhou em 2 rotas, SSL expira em 5 dias."', chipFindings: "Usou 3 descobertas", chipActions: "Criou uma nova ação", chipVerification: "Rodou verificação como usuário", satellites: ["Descobertas", "Ações", "Verificação"] },
-		tools: [["Descobertas", "Análise", "Evidência"], ["Ações", "Workspaces", "Prioridades"], ["Preflight", "Regressões", "Verificação"]],
-	},
-	es: {
-		sectionLabel: "Qué hace Vestigio", title: "Niégate a escalar tu negocio a ciegas.", subtitle: "Detecta temprano, prioriza con claridad y valida tu negocio digital de forma continua.",
-		layers: [
-			{ eyebrow: "Capa 1", title: "Descubre antes que otros", body: "Detecta riesgos, fugas y oportunidades antes de que se conviertan en costos.", support: "Hallazgos, análisis y contexto inicial para entender qué se está rompiendo, qué pasa desapercibido y qué puede comprometer la escala." },
-			{ eyebrow: "Capa 2", title: "Prioriza y actúa con precisión", body: "Convierte señales en una cola continua de acción, con contexto y prioridad.", support: "Acciones y workspaces ayudan a organizar qué corregir, rastrear y explorar por ruta, jornada, campaña o entorno." },
-			{ eyebrow: "Capa 3", title: "Valida con confianza", body: "Confirma si está listo, si empeoró o si la corrección realmente cerró.", support: "Preflight, regresiones y verificación ayudan a decidir antes de escalar y seguir cambios a lo largo del tiempo." },
-		],
-		chat: { label: "Vestigio Pulse", heading: "Explica, investiga y valida con Vestigio Pulse", userQueryLabel: "Tú preguntas:", userQuery: "¿Qué riesgos están empeorando desde el último análisis?", responseLabel: "Respuesta Estructurada", responseBody: '"3 regresiones encontradas: abandono de checkout +12%, validación de pago falló en 2 rutas, SSL expira en 5 días."', chipFindings: "Usó 3 hallazgos", chipActions: "Creó una nueva acción", chipVerification: "Ejecutó verificación como usuario", satellites: ["Hallazgos", "Acciones", "Verificación"] },
-		tools: [["Hallazgos", "Análisis", "Evidencia"], ["Acciones", "Workspaces", "Prioridades"], ["Preflight", "Regresiones", "Verificación"]],
-	},
-	de: {
-		sectionLabel: "Was Vestigio macht", title: "Weigere dich, dein Geschäft im Dunkeln zu skalieren.", subtitle: "Erkenne früh, priorisiere klar und validiere dein digitales Geschäft kontinuierlich.",
-		layers: [
-			{ eyebrow: "Schicht 1", title: "Entdecke vor anderen", body: "Erkenne Risiken, Lecks und Chancen, bevor sie zu Kosten werden.", support: "Befunde, Analyse und initialer Kontext, um zu verstehen, was bricht, was übersehen wird und was die Skalierung gefährden könnte." },
-			{ eyebrow: "Schicht 2", title: "Priorisiere und handle präzise", body: "Verwandle Signale in eine kontinuierliche Aktionswarteschlange mit Kontext und Priorität.", support: "Aktionen und Workspaces helfen zu organisieren, was korrigiert, verfolgt und erkundet werden soll." },
-			{ eyebrow: "Schicht 3", title: "Validiere mit Vertrauen", body: "Bestätige, ob es bereit ist, ob es schlimmer wurde oder ob die Korrektur abgeschlossen wurde.", support: "Preflight, Regressionen und Verifizierung helfen bei Entscheidungen vor der Skalierung." },
-		],
-		chat: { label: "Vestigio Pulse", heading: "Erkläre, untersuche und validiere mit Vestigio Pulse", userQueryLabel: "Du fragst:", userQuery: "Welche Risiken verschlechtern sich seit der letzten Analyse?", responseLabel: "Strukturierte Antwort", responseBody: '"3 Regressionen gefunden: Checkout-Abbruch +12%, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL läuft in 5 Tagen ab."', chipFindings: "Nutzte 3 Befunde", chipActions: "Erstellte eine neue Aktion", chipVerification: "Führte Verifizierung als Benutzer aus", satellites: ["Befunde", "Aktionen", "Verifizierung"] },
-		tools: [["Befunde", "Analyse", "Beweise"], ["Aktionen", "Workspaces", "Prioritäten"], ["Preflight", "Regressionen", "Verifizierung"]],
-	},
-};
-
-function useLocale() {
-	const [locale, setLocale] = useState("pt-BR");
-	useEffect(() => {
-		const l = navigator.language || "en";
-		if (l.startsWith("pt")) setLocale("pt-BR");
-		else if (l.startsWith("es")) setLocale("es");
-		else if (l.startsWith("de")) setLocale("de");
-		else setLocale("en");
-	}, []);
-	return locale;
-}
+import { useTranslations } from "next-intl";
 
 const accents = ["emerald", "violet", "amber"] as const;
 const colors = {
@@ -70,13 +8,6 @@ const colors = {
 	violet:  { border: "border-violet-500/20",  text: "text-violet-400",  bg: "bg-violet-500/10",  glow: "shadow-[0_4px_30px_-10px_rgba(139,92,246,0.15)]", pill: "bg-violet-500/10 text-violet-400" },
 	amber:   { border: "border-amber-500/20",   text: "text-amber-400",   bg: "bg-amber-500/10",   glow: "shadow-[0_4px_30px_-10px_rgba(245,158,11,0.15)]", pill: "bg-amber-500/10 text-amber-400" },
 };
-
-// ── Entrance animation: CSS-only, one-shot on mount ──
-//
-// Previously used IntersectionObserver + sentinel to fade cards in on scroll,
-// but on short mobile viewports it raced with the sticky layout and cards
-// flickered/faded mid-scroll. Now we just play a one-shot CSS fade on mount
-// (the cards are always "visible" after that, no scroll-dependent state).
 
 // ── Layer Card ──
 function LayerCard({ layer, index, tools, accent }: {
@@ -89,7 +20,6 @@ function LayerCard({ layer, index, tools, accent }: {
 		<div
 			className="sticky z-10 pb-6 layer-fade-in will-change-[transform,opacity]"
 			style={{
-				// CSS variable so mobile and desktop can have independent top offsets
 				top: `calc(var(--layer-sticky-top, 80px) + ${index * 20}px)`,
 				animationDelay: `${index * 120}ms`,
 			}}
@@ -112,13 +42,26 @@ function LayerCard({ layer, index, tools, accent }: {
 }
 
 // ── Agentic Chat Flow ──
-function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
+interface ChatI18n {
+	label: string;
+	heading: string;
+	user_query_label: string;
+	user_query: string;
+	response_label: string;
+	response_body: string;
+	chip_findings: string;
+	chip_actions: string;
+	chip_verification: string;
+	satellites: [string, string, string];
+}
+
+function AgenticChatFlow({ chat }: { chat: ChatI18n }) {
 	return (
 		<div className="relative z-20 pt-8 pb-4 layer-fade-in">
 			<div className="rounded-2xl border border-white/[0.06] bg-[#0c0c14] p-5 sm:p-10 lg:p-12">
 					<div className="mb-8 text-center sm:mb-10">
-						<span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">{t.label}</span>
-						<h3 className="text-lg font-bold text-white sm:text-2xl">{t.heading}</h3>
+						<span className="mb-2 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">{chat.label}</span>
+						<h3 className="text-lg font-bold text-white sm:text-2xl">{chat.heading}</h3>
 					</div>
 
 					{/* Desktop: horizontal flow. Mobile: vertical. */}
@@ -130,9 +73,9 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 								<div className="grid h-7 w-7 place-items-center rounded-lg bg-white/10">
 									<svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
 								</div>
-								<span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{t.userQueryLabel}</span>
+								<span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{chat.user_query_label}</span>
 							</div>
-							<p className="text-xs leading-relaxed text-zinc-300">&ldquo;{t.userQuery}&rdquo;</p>
+							<p className="text-xs leading-relaxed text-zinc-300">&ldquo;{chat.user_query}&rdquo;</p>
 							<div className="mt-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 						</div>
 
@@ -161,21 +104,9 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 								</svg>
 							</div>
 							{/* Label below center */}
-							<div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest text-violet-400 sm:bottom-3">{t.label}</div>
+							<div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest text-violet-400 sm:bottom-3">{chat.label}</div>
 
-							{/* Orbiting satellites — simple colored dots, no labels.
-							    The user explicitly asked for "só um ponto/bullet da
-							    cor deles" instead of the previous pill containers
-							    that had a colored bg, border, and a text label. The
-							    label was redundant with the section's `tools` table
-							    above and was making the orbit feel cluttered.
-
-							    The outer rotating element is a 0×0 box anchored at
-							    the exact hub center so `transform-origin: center`
-							    resolves to the hub's middle and the orbit stays
-							    perfectly concentric (was off-center in earlier
-							    iterations because the pill's bounding box pulled
-							    the transform-origin away from the hub). */}
+							{/* Orbiting satellites */}
 							{[
 								{ key: "findings", color: "bg-emerald-400", glow: "shadow-[0_0_14px_4px_rgba(52,211,153,0.55)]" },
 								{ key: "actions",  color: "bg-violet-400",  glow: "shadow-[0_0_14px_4px_rgba(167,139,250,0.55)]" },
@@ -203,13 +134,13 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 								<div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10">
 									<div className="h-2 w-2 rounded-full bg-emerald-400" />
 								</div>
-								<span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">{t.responseLabel}</span>
+								<span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">{chat.response_label}</span>
 							</div>
-							<p className="mb-4 text-xs leading-relaxed text-zinc-300">{t.responseBody}</p>
+							<p className="mb-4 text-xs leading-relaxed text-zinc-300">&ldquo;{chat.response_body}&rdquo;</p>
 							<div className="flex flex-wrap gap-1.5">
-								<span className="inline-block w-fit rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">{t.chipFindings}</span>
-								<span className="inline-block w-fit rounded-md bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">{t.chipActions}</span>
-								<span className="inline-block w-fit rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">{t.chipVerification}</span>
+								<span className="inline-block w-fit rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">{chat.chip_findings}</span>
+								<span className="inline-block w-fit rounded-md bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">{chat.chip_actions}</span>
+								<span className="inline-block w-fit rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">{chat.chip_verification}</span>
 							</div>
 							<div className="mt-3 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 						</div>
@@ -229,13 +160,14 @@ function MobileArrow() {
 
 // ── Main ──
 export default function SolutionLayers() {
-	const locale = useLocale();
-	const t = i18n[locale] || i18n["en"];
+	const t = useTranslations("homepage.solution_layers");
+	const layers = t.raw("layers") as { eyebrow: string; title: string; body: string; support: string }[];
+	const tools = t.raw("tools") as string[][];
+	const chat = t.raw("chat") as ChatI18n;
 
 	return (
 		<section className="relative bg-[#090911] py-16 sm:py-20 lg:py-28">
-			{/* One-shot entrance animation for layer cards + chat flow.
-			    Runs once on mount, no scroll dependency — fixes mobile fade race. */}
+			{/* One-shot entrance animation */}
 			<style>{`
 				@keyframes layerFadeIn {
 					from { opacity: 0; transform: translateY(12px) scale(0.98); }
@@ -255,17 +187,17 @@ export default function SolutionLayers() {
 			<div className="mx-auto mb-12 max-w-[700px] px-4 text-center sm:mb-16 sm:px-8 lg:mb-20">
 				<div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
 						<span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-						<span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">{t.sectionLabel}</span>
+						<span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">{t("section_label")}</span>
 					</div>
-				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">{t.title}</h2>
-				<p className="text-sm leading-relaxed text-zinc-400 sm:text-base lg:text-lg">{t.subtitle}</p>
+				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">{t("title")}</h2>
+				<p className="text-sm leading-relaxed text-zinc-400 sm:text-base lg:text-lg">{t("subtitle")}</p>
 			</div>
 
 			<div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">
-				{t.layers.map((layer, i) => (
-					<LayerCard key={i} layer={layer} index={i} tools={t.tools[i]} accent={accents[i]} />
+				{layers.map((layer, i) => (
+					<LayerCard key={i} layer={layer} index={i} tools={tools[i]} accent={accents[i]} />
 				))}
-				<AgenticChatFlow t={t.chat} />
+				<AgenticChatFlow chat={chat} />
 			</div>
 		</section>
 	);

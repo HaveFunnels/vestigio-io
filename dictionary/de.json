@@ -514,6 +514,133 @@
       "eyebrow": "Sofortiges kostenloses Audit",
       "tagline": "Testen Sie Vestigio auf Ihrer eigenen Domain — keine Anmeldung, keine Karte."
     },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "subtitle": "Alles, was Sie über Vestigio wissen müssen.",
+      "items": [
+        {
+          "question": "Was macht Vestigio konkret?",
+          "answer": "Vestigio ist eine Intelligenzschicht für SaaS-Plattformen. Es auditiert Ihre Website, erkennt Regressionen zwischen Zyklen, verifiziert Befunde mit Browser-Evidenz und liefert umsetzbare Erkenntnisse — alles KI-gesteuert."
+        },
+        {
+          "question": "Wie funktioniert das Verifizierungssystem?",
+          "answer": "Vestigio nutzt eine mehrstufige Verifizierungspipeline: statische Analyse, browserbasierte Verifizierung via Playwright und Korroborationsbewertung. Jeder Befund hat ein Vertrauensniveau — von nicht verifiziert bis vollständig verifiziert."
+        },
+        {
+          "question": "Kann ich es vor dem Kauf testen?",
+          "answer": "Ja. Sie können sich anmelden und sofort Ihr erstes Audit durchführen. Keine Kreditkarte erforderlich."
+        },
+        {
+          "question": "Welche Preispläne gibt es?",
+          "answer": "Wir bieten drei Pläne: Vestigio (Starter), Pro und Max — jeweils mit steigenden MCP-Abfragelimits, Playwright-Läufen und Funktionen. Schauen Sie in unseren Preisbereich für detaillierte Vergleiche."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Bereit, Ihre Plattform auf Autopilot zu setzen?",
+      "subtitle": "Schließen Sie sich SaaS-Teams an, die Vestigio nutzen, um Audits zu automatisieren, Regressionen zu erkennen und evidenzbasierte Entscheidungen zu treffen.",
+      "primary": "Kostenlos starten",
+      "secondary": "Live-Demo testen"
+    },
+    "video_testimonials": {
+      "title": "Das sagen unsere Kunden",
+      "items": [
+        {
+          "name": "Daniel",
+          "role": "Grant Vent Superheroes of PBC",
+          "quote": "Fast über Nacht sahen wir Ergebnisse. Wir übertreffen Unternehmen in unserer Region, die seit über 10 Jahren im Geschäft sind."
+        },
+        {
+          "name": "John",
+          "role": "Pooper Scoopers",
+          "quote": "Innerhalb von 3 Wochen haben wir über 100 Bewertungen gesammelt. Der Wechsel zu Vestigio war sehr einfach."
+        },
+        {
+          "name": "Jarell",
+          "role": "Jarell Small Photography",
+          "quote": "Nach 2 Monaten mit Vestigio hatte ich 67 Bewertungen. Alle echt, von bestehenden Kunden, und das hat das Geschäft weiter vorangetrieben."
+        }
+      ]
+    },
+    "success_stories": {
+      "title": "Erfolgs-",
+      "title_accent": "geschichten",
+      "subtitle": "Echte Ergebnisse von Marken, die ihr Geschäft mit Vestigio transformiert haben.",
+      "stories": [
+        {
+          "industry": "Outdoor-Freizeit",
+          "stat1_value": "51.42%", "stat1_label": "Engagement-Rate",
+          "stat2_value": "35K", "stat2_label": "Gesamtbestellungen",
+          "stat3_value": "1.33%", "stat3_label": "Konversionsrate"
+        },
+        {
+          "industry": "Mode & Bekleidung",
+          "stat1_value": "2.8x", "stat1_label": "Umsatzwachstum",
+          "stat2_value": "12K", "stat2_label": "Neue Kunden",
+          "stat3_value": "4.7%", "stat3_label": "Wiederkaufrate"
+        },
+        {
+          "industry": "Gesundheit & Wellness",
+          "stat1_value": "38%", "stat1_label": "Kostenreduktion",
+          "stat2_value": "89K", "stat2_label": "Erfasste Sitzungen",
+          "stat3_value": "0.4%", "stat3_label": "Chargeback-Rate"
+        },
+        {
+          "industry": "Haus & Garten",
+          "stat1_value": "62%", "stat1_label": "Betrug blockiert",
+          "stat2_value": "18K", "stat2_label": "Geschützte Bestellungen",
+          "stat3_value": "3.1x", "stat3_label": "ROI"
+        },
+        {
+          "industry": "Elektronik & Tech",
+          "stat1_value": "27%", "stat1_label": "Umsatz wiederhergestellt",
+          "stat2_value": "42K", "stat2_label": "Streitfälle gewonnen",
+          "stat3_value": "94%", "stat3_label": "Gewinnrate"
+        }
+      ]
+    },
+    "solution_layers": {
+      "section_label": "Was Vestigio macht",
+      "title": "Weigere dich, dein Geschäft im Dunkeln zu skalieren.",
+      "subtitle": "Erkenne früh, priorisiere klar und validiere dein digitales Geschäft kontinuierlich.",
+      "layers": [
+        {
+          "eyebrow": "Schicht 1",
+          "title": "Entdecke vor anderen",
+          "body": "Erkenne Risiken, Lecks und Chancen, bevor sie zu Kosten werden.",
+          "support": "Befunde, Analyse und initialer Kontext, um zu verstehen, was bricht, was übersehen wird und was die Skalierung gefährden könnte."
+        },
+        {
+          "eyebrow": "Schicht 2",
+          "title": "Priorisiere und handle präzise",
+          "body": "Verwandle Signale in eine kontinuierliche Aktionswarteschlange mit Kontext und Priorität.",
+          "support": "Aktionen und Workspaces helfen zu organisieren, was korrigiert, verfolgt und erkundet werden soll."
+        },
+        {
+          "eyebrow": "Schicht 3",
+          "title": "Validiere mit Vertrauen",
+          "body": "Bestätige, ob es bereit ist, ob es schlimmer wurde oder ob die Korrektur abgeschlossen wurde.",
+          "support": "Preflight, Regressionen und Verifizierung helfen bei Entscheidungen vor der Skalierung."
+        }
+      ],
+      "tools": [
+        ["Befunde", "Analyse", "Beweise"],
+        ["Aktionen", "Workspaces", "Prioritäten"],
+        ["Preflight", "Regressionen", "Verifizierung"]
+      ],
+      "chat": {
+        "label": "Vestigio Pulse",
+        "heading": "Erkläre, untersuche und validiere mit Vestigio Pulse",
+        "user_query_label": "Du fragst:",
+        "user_query": "Welche Risiken verschlechtern sich seit der letzten Analyse?",
+        "response_label": "Strukturierte Antwort",
+        "response_body": "3 Regressionen gefunden: Checkout-Abbruch +12%, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL läuft in 5 Tagen ab.",
+        "chip_findings": "Nutzte 3 Befunde",
+        "chip_actions": "Erstellte eine neue Aktion",
+        "chip_verification": "Führte Verifizierung als Benutzer aus",
+        "satellites": ["Befunde", "Aktionen", "Verifizierung"]
+      }
+    },
     "features_section": {
       "title": "SaaS-Startup in Tagen starten",
       "subtitle": "Alles, was Sie zum Aufbau, Start und zur Skalierung Ihres SaaS-Startups benötigen.",

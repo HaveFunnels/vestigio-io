@@ -514,6 +514,133 @@
       "eyebrow": "Free instant audit",
       "tagline": "Try Vestigio on your own domain — no signup, no card."
     },
+    "faq": {
+      "title": "Frequently asked questions",
+      "subtitle": "Everything you need to know about Vestigio.",
+      "items": [
+        {
+          "question": "What does Vestigio actually do?",
+          "answer": "Vestigio is an intelligence layer for SaaS platforms. It audits your site, detects regressions between cycles, verifies findings with browser evidence, and surfaces actionable insights — all powered by AI."
+        },
+        {
+          "question": "How does the verification system work?",
+          "answer": "Vestigio uses a multi-stage verification pipeline: static analysis, browser-based verification via Playwright, and corroboration scoring. Each finding carries a trust level — from unverified to fully verified — so you always know the confidence behind every decision."
+        },
+        {
+          "question": "Can I try it before committing?",
+          "answer": "Yes. You can sign up and run your first audit immediately. No credit card required to get started."
+        },
+        {
+          "question": "What pricing plans are available?",
+          "answer": "We offer three plans: Vestigio (starter), Pro, and Max — each with increasing MCP query limits, Playwright runs, and features. Check our pricing section for detailed comparisons."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Ready to put your platform on autopilot?",
+      "subtitle": "Join SaaS teams using Vestigio to automate auditing, detect regressions, and make evidence-based decisions.",
+      "primary": "Get started free",
+      "secondary": "Try live demo"
+    },
+    "video_testimonials": {
+      "title": "Hear from Our Clients",
+      "items": [
+        {
+          "name": "Daniel",
+          "role": "Grant Vent Superheroes of PBC",
+          "quote": "Almost overnight we started seeing results. We're outranking businesses in our local area that have been in business for 10+ years."
+        },
+        {
+          "name": "John",
+          "role": "Pooper Scoopers",
+          "quote": "Within 3 weeks, we gained over a 100 reviews. Switching over to Review Harvest has been a breeze."
+        },
+        {
+          "name": "Jarell",
+          "role": "Jarell Small Photography",
+          "quote": "After working with Review Harvest for 2 months, I got 67 reviews. All real genuine reviews from clients I already had and those helped propel the business even more."
+        }
+      ]
+    },
+    "success_stories": {
+      "title": "Success",
+      "title_accent": "Stories",
+      "subtitle": "Real results from brands that transformed their business with Vestigio.",
+      "stories": [
+        {
+          "industry": "Outdoor leisure industry",
+          "stat1_value": "51.42%", "stat1_label": "Engagement Rate",
+          "stat2_value": "35K", "stat2_label": "Total Orders",
+          "stat3_value": "1.33%", "stat3_label": "Conversion Rate"
+        },
+        {
+          "industry": "Fashion & Apparel",
+          "stat1_value": "2.8x", "stat1_label": "Revenue Growth",
+          "stat2_value": "12K", "stat2_label": "New Customers",
+          "stat3_value": "4.7%", "stat3_label": "Repeat Rate"
+        },
+        {
+          "industry": "Health & Wellness",
+          "stat1_value": "38%", "stat1_label": "Cost Reduction",
+          "stat2_value": "89K", "stat2_label": "Sessions Tracked",
+          "stat3_value": "0.4%", "stat3_label": "Chargeback Rate"
+        },
+        {
+          "industry": "Home & Garden",
+          "stat1_value": "62%", "stat1_label": "Fraud Blocked",
+          "stat2_value": "18K", "stat2_label": "Orders Protected",
+          "stat3_value": "3.1x", "stat3_label": "ROI"
+        },
+        {
+          "industry": "Electronics & Tech",
+          "stat1_value": "27%", "stat1_label": "Revenue Recovered",
+          "stat2_value": "42K", "stat2_label": "Disputes Won",
+          "stat3_value": "94%", "stat3_label": "Win Rate"
+        }
+      ]
+    },
+    "solution_layers": {
+      "section_label": "What Vestigio does",
+      "title": "Refuse to scale your business in the dark.",
+      "subtitle": "See early, prioritize with clarity, and validate your digital business continuously.",
+      "layers": [
+        {
+          "eyebrow": "Layer 1",
+          "title": "Discover before others",
+          "body": "See where the risks, leaks, and opportunities are before they become costs.",
+          "support": "Findings, analysis, and initial context to understand what's breaking, what's going unnoticed, and what could compromise scale."
+        },
+        {
+          "eyebrow": "Layer 2",
+          "title": "Prioritize and act with precision",
+          "body": "Turn signals into a continuous queue of action, with context and priority.",
+          "support": "Actions and workspaces help organize what to fix, track, and explore by route, journey, campaign, or environment."
+        },
+        {
+          "eyebrow": "Layer 3",
+          "title": "Validate with confidence",
+          "body": "Confirm if it's ready, if it got worse, or if the fix actually closed.",
+          "support": "Preflight, regressions, and verification help decide before scaling and track changes over time."
+        }
+      ],
+      "tools": [
+        ["Findings", "Analysis", "Evidence"],
+        ["Actions", "Workspaces", "Priorities"],
+        ["Preflight", "Regressions", "Verification"]
+      ],
+      "chat": {
+        "label": "Vestigio Pulse",
+        "heading": "Explain, investigate, and validate with Vestigio Pulse",
+        "user_query_label": "You ask:",
+        "user_query": "What risks are getting worse since the last analysis?",
+        "response_label": "Structured Response",
+        "response_body": "3 regressions found: checkout abandonment +12%, payment validation failed on 2 routes, SSL expires in 5 days.",
+        "chip_findings": "Used 3 findings",
+        "chip_actions": "Created a new action",
+        "chip_verification": "Ran verification as a user",
+        "satellites": ["Findings", "Actions", "Verification"]
+      }
+    },
     "features_section": {
       "title": "Launch SaaS Startup in Days",
       "subtitle": "Everything you need to build, launch, and scale your SaaS startup.",

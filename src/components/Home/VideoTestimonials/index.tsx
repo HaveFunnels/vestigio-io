@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // VideoTestimonials — portrait video social proof
@@ -18,46 +19,22 @@ import { useRef, useState, useEffect, useCallback } from "react";
 //   3. Replace the src + poster URLs below
 // ──────────────────────────────────────────────
 
-interface VideoTestimonial {
+interface VideoTestimonialItem {
   name: string;
   role: string;
   quote: string;
-  /** CDN URL to the .mp4 file */
-  videoSrc: string;
-  /** CDN URL to the poster/thumbnail image */
-  posterSrc: string;
 }
 
-const TESTIMONIALS: VideoTestimonial[] = [
-  {
-    name: "Daniel",
-    role: "Grant Vent Superheroes of PBC",
-    quote:
-      "Almost overnight we started seeing results. We're outranking businesses in our local area that have been in business for 10+ years.",
-    videoSrc: "/videos/testimonials/daniel.mp4",
-    posterSrc: "/videos/testimonials/daniel-poster.webp",
-  },
-  {
-    name: "John",
-    role: "Pooper Scoopers",
-    quote:
-      "Within 3 weeks, we gained over a 100 reviews. Switching over to Review Harvest has been a breeze.",
-    videoSrc: "/videos/testimonials/john.mp4",
-    posterSrc: "/videos/testimonials/john-poster.webp",
-  },
-  {
-    name: "Jarell",
-    role: "Jarell Small Photography",
-    quote:
-      "After working with Review Harvest for 2 months, I got 67 reviews. All real genuine reviews from clients I already had and those helped propel the business even more.",
-    videoSrc: "/videos/testimonials/jarell.mp4",
-    posterSrc: "/videos/testimonials/jarell-poster.webp",
-  },
+// Video/poster paths are not translated — they're assets
+const VIDEO_ASSETS = [
+  { videoSrc: "/videos/testimonials/daniel.mp4", posterSrc: "/videos/testimonials/daniel-poster.webp" },
+  { videoSrc: "/videos/testimonials/john.mp4", posterSrc: "/videos/testimonials/john-poster.webp" },
+  { videoSrc: "/videos/testimonials/jarell.mp4", posterSrc: "/videos/testimonials/jarell-poster.webp" },
 ];
 
 // ── Individual video card ──────────────────────
 
-function VideoCard({ testimonial }: { testimonial: VideoTestimonial }) {
+function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; videoSrc: string; posterSrc: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -105,8 +82,8 @@ function VideoCard({ testimonial }: { testimonial: VideoTestimonial }) {
         <video
           ref={videoRef}
           className="absolute inset-0 h-full w-full object-cover"
-          src={testimonial.videoSrc}
-          poster={testimonial.posterSrc}
+          src={videoSrc}
+          poster={posterSrc}
           preload="none"
           playsInline
           loop
@@ -120,8 +97,8 @@ function VideoCard({ testimonial }: { testimonial: VideoTestimonial }) {
 
         {/* Name + role overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h3 className="text-base font-bold text-white">{testimonial.name}</h3>
-          <p className="text-xs text-white/60">{testimonial.role}</p>
+          <h3 className="text-base font-bold text-white">{item.name}</h3>
+          <p className="text-xs text-white/60">{item.role}</p>
         </div>
 
         {/* Play / Pause indicator */}
@@ -145,7 +122,7 @@ function VideoCard({ testimonial }: { testimonial: VideoTestimonial }) {
         </div>
 
         {/* Loading shimmer — visible only before poster loads */}
-        {!loaded && !testimonial.posterSrc && (
+        {!loaded && !posterSrc && (
           <div className="absolute inset-0 animate-pulse bg-zinc-800" />
         )}
       </div>
@@ -165,7 +142,7 @@ function VideoCard({ testimonial }: { testimonial: VideoTestimonial }) {
           ))}
         </div>
         <p className="text-[13px] leading-relaxed text-zinc-400">
-          {testimonial.quote}
+          {item.quote}
         </p>
       </div>
     </div>
@@ -175,6 +152,9 @@ function VideoCard({ testimonial }: { testimonial: VideoTestimonial }) {
 // ── Section ────────────────────────────────────
 
 const VideoTestimonials = () => {
+  const t = useTranslations("homepage.video_testimonials");
+  const items = t.raw("items") as VideoTestimonialItem[];
+
   return (
     <section className="relative z-1 overflow-hidden border-t border-white/5 bg-[#080812] py-16 sm:py-20 lg:py-28">
       {/* Ambient halos */}
@@ -201,14 +181,19 @@ const VideoTestimonials = () => {
           {/* Header */}
           <div className="mb-8 text-center sm:mb-10">
             <h2 className="text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl">
-              Hear from Our Clients
+              {t("title")}
             </h2>
           </div>
 
           {/* 3-column video grid */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
-            {TESTIMONIALS.map((t) => (
-              <VideoCard key={t.name} testimonial={t} />
+            {items.map((item, i) => (
+              <VideoCard
+                key={item.name}
+                item={item}
+                videoSrc={VIDEO_ASSETS[i]?.videoSrc ?? ""}
+                posterSrc={VIDEO_ASSETS[i]?.posterSrc ?? ""}
+              />
             ))}
           </div>
         </div>

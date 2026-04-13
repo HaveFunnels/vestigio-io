@@ -514,6 +514,133 @@
       "eyebrow": "Auditoria grátis instantânea",
       "tagline": "Teste a Vestigio no seu próprio domínio — sem cadastro, sem cartão."
     },
+    "faq": {
+      "title": "Perguntas frequentes",
+      "subtitle": "Tudo que você precisa saber sobre a Vestigio.",
+      "items": [
+        {
+          "question": "O que a Vestigio faz na prática?",
+          "answer": "A Vestigio é uma camada de inteligência para plataformas SaaS. Ela audita seu site, detecta regressões entre ciclos, verifica descobertas com evidências de navegador e apresenta insights acionáveis — tudo com IA."
+        },
+        {
+          "question": "Como funciona o sistema de verificação?",
+          "answer": "A Vestigio usa um pipeline de verificação em múltiplas etapas: análise estática, verificação via navegador com Playwright e pontuação de corroboração. Cada descoberta tem um nível de confiança — de não verificada a totalmente verificada — para que você sempre saiba a confiança por trás de cada decisão."
+        },
+        {
+          "question": "Posso experimentar antes de contratar?",
+          "answer": "Sim. Você pode se cadastrar e rodar sua primeira auditoria imediatamente. Não é necessário cartão de crédito para começar."
+        },
+        {
+          "question": "Quais planos de preço estão disponíveis?",
+          "answer": "Oferecemos três planos: Vestigio (inicial), Pro e Max — cada um com limites crescentes de consultas MCP, execuções Playwright e funcionalidades. Confira nossa seção de preços para comparações detalhadas."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Pronto para colocar sua plataforma no piloto automático?",
+      "subtitle": "Junte-se a equipes SaaS que usam a Vestigio para automatizar auditorias, detectar regressões e tomar decisões baseadas em evidências.",
+      "primary": "Comece grátis",
+      "secondary": "Teste a demo"
+    },
+    "video_testimonials": {
+      "title": "Ouça nossos clientes",
+      "items": [
+        {
+          "name": "Daniel",
+          "role": "Grant Vent Superheroes of PBC",
+          "quote": "Quase da noite pro dia começamos a ver resultados. Estamos superando empresas da nossa região que estão no mercado há mais de 10 anos."
+        },
+        {
+          "name": "John",
+          "role": "Pooper Scoopers",
+          "quote": "Em 3 semanas, conseguimos mais de 100 avaliações. A migração para a Vestigio foi muito tranquila."
+        },
+        {
+          "name": "Jarell",
+          "role": "Jarell Small Photography",
+          "quote": "Depois de 2 meses usando a Vestigio, consegui 67 avaliações. Todas genuínas de clientes que eu já tinha, e isso ajudou a impulsionar o negócio ainda mais."
+        }
+      ]
+    },
+    "success_stories": {
+      "title": "Histórias de",
+      "title_accent": "Sucesso",
+      "subtitle": "Resultados reais de marcas que transformaram seus negócios com a Vestigio.",
+      "stories": [
+        {
+          "industry": "Lazer ao ar livre",
+          "stat1_value": "51.42%", "stat1_label": "Taxa de Engajamento",
+          "stat2_value": "35K", "stat2_label": "Pedidos Totais",
+          "stat3_value": "1.33%", "stat3_label": "Taxa de Conversão"
+        },
+        {
+          "industry": "Moda & Vestuário",
+          "stat1_value": "2.8x", "stat1_label": "Crescimento de Receita",
+          "stat2_value": "12K", "stat2_label": "Novos Clientes",
+          "stat3_value": "4.7%", "stat3_label": "Taxa de Recompra"
+        },
+        {
+          "industry": "Saúde & Bem-estar",
+          "stat1_value": "38%", "stat1_label": "Redução de Custo",
+          "stat2_value": "89K", "stat2_label": "Sessões Rastreadas",
+          "stat3_value": "0.4%", "stat3_label": "Taxa de Chargeback"
+        },
+        {
+          "industry": "Casa & Jardim",
+          "stat1_value": "62%", "stat1_label": "Fraude Bloqueada",
+          "stat2_value": "18K", "stat2_label": "Pedidos Protegidos",
+          "stat3_value": "3.1x", "stat3_label": "ROI"
+        },
+        {
+          "industry": "Eletrônicos & Tech",
+          "stat1_value": "27%", "stat1_label": "Receita Recuperada",
+          "stat2_value": "42K", "stat2_label": "Disputas Ganhas",
+          "stat3_value": "94%", "stat3_label": "Taxa de Vitória"
+        }
+      ]
+    },
+    "solution_layers": {
+      "section_label": "O que a Vestigio faz",
+      "title": "Recuse escalar seu negócio no escuro.",
+      "subtitle": "Enxergue cedo, priorize com clareza e valide seu negócio digital de maneira contínua.",
+      "layers": [
+        {
+          "eyebrow": "Camada 1",
+          "title": "Descubra antes dos outros",
+          "body": "Veja onde estão os riscos, vazamentos e oportunidades antes que virem custo.",
+          "support": "Descobertas, análise e contexto inicial para entender o que está quebrando, o que está passando despercebido e o que pode comprometer escala."
+        },
+        {
+          "eyebrow": "Camada 2",
+          "title": "Priorize e aja com precisão",
+          "body": "Transforme sinais em uma fila contínua de ação, com contexto e prioridade.",
+          "support": "Ações e workspaces ajudam a organizar o que corrigir, acompanhar e explorar por rota, jornada, campanha ou ambiente."
+        },
+        {
+          "eyebrow": "Camada 3",
+          "title": "Valide com confiança",
+          "body": "Confirme se está pronto, se piorou ou se a correção realmente fechou.",
+          "support": "Preflight, regressões e verificação ajudam a decidir antes de escalar e a acompanhar mudanças ao longo do tempo."
+        }
+      ],
+      "tools": [
+        ["Descobertas", "Análise", "Evidência"],
+        ["Ações", "Workspaces", "Prioridades"],
+        ["Preflight", "Regressões", "Verificação"]
+      ],
+      "chat": {
+        "label": "Vestigio Pulse",
+        "heading": "Explique, investigue e valide com o Vestigio Pulse",
+        "user_query_label": "Você pergunta:",
+        "user_query": "Quais riscos estão piorando desde a última análise?",
+        "response_label": "Resposta Estruturada",
+        "response_body": "3 regressões encontradas: abandono de checkout +12%, validação de pagamento falhou em 2 rotas, SSL expira em 5 dias.",
+        "chip_findings": "Usou 3 descobertas",
+        "chip_actions": "Criou uma nova ação",
+        "chip_verification": "Rodou verificação como usuário",
+        "satellites": ["Descobertas", "Ações", "Verificação"]
+      }
+    },
     "features_section": {
       "title": "Lance sua Startup SaaS em Dias",
       "subtitle": "Tudo o que você precisa para construir, lançar e escalar sua startup SaaS.",

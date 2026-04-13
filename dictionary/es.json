@@ -2030,6 +2030,154 @@
     "organization_selector": {
       "no_organization": "Sin organización"
     },
+    "state": {
+      "loading": "Cargando análisis...",
+      "no_data": "No se encontraron datos.",
+      "not_ready": "No Listo",
+      "complete_setup": "Completar Configuración",
+      "error_loading": "Error al Cargar Datos",
+      "retry": "Reintentar",
+      "saas_not_ready": "Análisis SaaS No Listo",
+      "setup_progress": "Progreso ({completed}/{total})",
+      "required": "Requerido",
+      "configure_data_sources": "Configurar en Fuentes de Datos",
+      "no_data_yet": "Sin Datos Aún"
+    },
+    "change_badge": {
+      "regression": "Regresión",
+      "improvement": "Mejoró",
+      "new_issue": "Nuevo",
+      "resolved": "Resuelto",
+      "stable_risk": "Riesgo Estable"
+    },
+    "change_timeline": {
+      "no_changes": "Sin cambios para mostrar",
+      "no_risk_change": "Sin cambio en el score de riesgo",
+      "points": "puntos",
+      "severity_label": "Severidad"
+    },
+    "budget_bar": {
+      "left": "{remaining}/{limit} restantes",
+      "last_query": "Última consulta hoy.",
+      "queries_left": "{remaining} consultas restantes.",
+      "try_playbook": "Usa un playbook para máximo valor.",
+      "queries_remaining": "{remaining} consultas restantes. Considera consolidar preguntas.",
+      "budget_used": "Presupuesto diario agotado. Se renueva mañana.",
+      "upgrade_prompt": "Mejora tu plan para más consultas diarias."
+    },
+    "conversation_sidebar": {
+      "title": "Conversaciones",
+      "search_placeholder": "Buscar...",
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "this_week": "Esta semana",
+      "older": "Anteriores",
+      "searching": "Buscando...",
+      "no_matches": "Sin resultados",
+      "no_conversations": "Sin conversaciones aún",
+      "untitled": "Sin título",
+      "collapse": "Colapsar",
+      "rename": "Renombrar",
+      "delete": "Eliminar"
+    },
+    "thinking": {
+      "thinking": "Pensando",
+      "thinking_1": "Pensando.",
+      "thinking_2": "Pensando..",
+      "thinking_3": "Pensando..."
+    },
+    "message_actions": {
+      "send_edited": "Enviar editado",
+      "cancel": "Cancelar",
+      "copy": "Copiar",
+      "edit_resend": "Editar y reenviar",
+      "retry_last": "Reintentar último",
+      "regenerate": "Regenerar esta respuesta",
+      "fork": "Bifurcar desde este mensaje",
+      "good_response": "Buena respuesta",
+      "poor_response": "Mala respuesta",
+      "what_was_helpful": "¿Qué fue útil?",
+      "what_could_be_better": "¿Qué podría ser mejor?",
+      "optional": "(opcional)",
+      "positive_placeholder": "Este análisis fue preciso porque...",
+      "negative_placeholder": "Esperaba una respuesta más específica sobre...",
+      "skip": "Omitir",
+      "submit": "Enviar"
+    },
+    "kb_article_card": {
+      "learn_more": "Saber más",
+      "browse_related": "Ver documentación relacionada",
+      "default_subtitle": "Abre la base de conocimiento para saber más sobre este tema."
+    },
+    "file_upload": {
+      "drop_here": "Suelta los archivos aquí",
+      "file_types": "CSV, JSON, TXT, MD, PDF (máx 2MB)",
+      "attach_file": "Adjuntar archivo"
+    },
+    "chat_input": {
+      "placeholder": "Pregunta sobre ingresos, riesgos o qué corregir primero...",
+      "stop": "Detener",
+      "used": "{used}/{limit} usados",
+      "hint_send": "Enter envía · Shift+Enter nueva línea",
+      "attach_file": "Adjuntar archivo"
+    },
+    "pulse_summary": {
+      "label": "Vestigio Pulse"
+    },
+    "data_table": {
+      "no_data": "No hay datos disponibles"
+    },
+    "activity_heatmap": {
+      "eyebrow": "Actividad · 90 días",
+      "day_streak": "días seguidos",
+      "less": "menos",
+      "more": "más"
+    },
+    "money_recovered": {
+      "eyebrow": "Total recuperado con Vestigio",
+      "seven_days": "7 días",
+      "thirty_days": "30 días"
+    },
+    "organization": {
+      "title": "Organización",
+      "subtitle": "Administra tu organización, plan y entornos.",
+      "loading": "Cargando organización...",
+      "saved": "Guardado",
+      "save_changes": "Guardar Cambios",
+      "details": "Detalles",
+      "org_name": "Organización",
+      "plan": "Plan",
+      "status": "Estado",
+      "created": "Creado",
+      "business_profile": "Perfil del Negocio",
+      "business_model": "Modelo de Negocio",
+      "monthly_revenue": "Ingresos Mensuales",
+      "avg_order_value": "Valor Promedio de Pedido",
+      "monthly_transactions": "Transacciones Mensuales",
+      "conversion_rate": "Tasa de Conversión",
+      "conversion_model": "Modelo de Conversión",
+      "environments": "Entornos",
+      "add": "+ Agregar",
+      "no_environments": "Ningún entorno configurado aún.",
+      "production": "Producción",
+      "added_date": "Agregado el {date}",
+      "remove": "Eliminar",
+      "members": "Miembros",
+      "member_count": "{count} miembro(s)",
+      "no_members": "Ningún miembro aún.",
+      "col_member": "Miembro",
+      "col_role": "Rol",
+      "col_joined": "Se unió",
+      "col_actions": "Acciones",
+      "unnamed": "Sin nombre",
+      "add_env_title": "Agregar Entorno",
+      "domain_label": "Dominio",
+      "domain_placeholder": "staging.ejemplo.com",
+      "production_env": "Entorno de producción",
+      "create": "Crear",
+      "cancel": "Cancelar",
+      "retry": "Reintentar"
+    },
     "actions": {
       "title": "Acciones",
       "subtitle": "Cola priorizada de lo que necesita atención",

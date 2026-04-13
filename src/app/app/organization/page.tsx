@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Organization — full management page
@@ -115,6 +116,7 @@ function AddEnvironmentModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const t = useTranslations("console.organization");
   const [domain, setDomain] = useState("");
   const [isProduction, setIsProduction] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -150,15 +152,15 @@ function AddEnvironmentModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-lg border border-edge bg-surface-card p-6 shadow-xl">
-        <h3 className="mb-4 text-lg font-semibold text-content">Add Environment</h3>
+        <h3 className="mb-4 text-lg font-semibold text-content">{t("add_env_title")}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm text-content-muted">Domain</label>
+            <label className="mb-1 block text-sm text-content-muted">{t("domain_label")}</label>
             <input
               type="text"
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
-              placeholder="staging.example.com"
+              placeholder={t("domain_placeholder")}
               className="w-full rounded-md border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder-content-faint outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               required
               minLength={3}
@@ -171,7 +173,7 @@ function AddEnvironmentModal({
               onChange={(e) => setIsProduction(e.target.checked)}
               className="h-4 w-4 rounded border-edge bg-surface-inset text-emerald-500 focus:ring-emerald-500"
             />
-            Production environment
+            {t("production_env")}
           </label>
           {error && <p className="text-sm text-red-400">{error}</p>}
           <div className="flex gap-3 pt-2">
@@ -180,7 +182,7 @@ function AddEnvironmentModal({
               onClick={onClose}
               className="flex-1 rounded-md border border-edge px-4 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-card-hover"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               type="submit"
@@ -188,7 +190,7 @@ function AddEnvironmentModal({
               className="flex flex-1 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
             >
               {saving && <Spinner />}
-              Create
+              {t("create")}
             </button>
           </div>
         </form>
@@ -199,6 +201,7 @@ function AddEnvironmentModal({
 
 // ── Main Page ──
 export default function OrganizationPage() {
+  const t = useTranslations("console.organization");
   const [data, setData] = useState<OrgData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -368,7 +371,7 @@ export default function OrganizationPage() {
       <div className="flex h-64 items-center justify-center p-6">
         <div className="flex items-center gap-3 text-content-muted">
           <Spinner />
-          <span className="text-sm">Loading organization...</span>
+          <span className="text-sm">{t("loading")}</span>
         </div>
       </div>
     );
@@ -379,9 +382,9 @@ export default function OrganizationPage() {
     return (
       <div className="p-6">
         <div className="mb-6">
-          <h1 className="text-xl font-semibold text-content">Organization</h1>
+          <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
           <p className="mt-1 text-sm text-content-muted">
-            Manage your organization, plan, and environments.
+            {t("subtitle")}
           </p>
         </div>
         <div className="rounded-lg border border-edge bg-surface-card px-6 py-12 text-center">
@@ -390,7 +393,7 @@ export default function OrganizationPage() {
             onClick={() => { setLoading(true); fetchData(); }}
             className="mt-4 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
           >
-            Retry
+            {t("retry")}
           </button>
         </div>
       </div>
@@ -404,22 +407,22 @@ export default function OrganizationPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-content">Organization</h1>
+          <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
           <p className="mt-1 text-sm text-content-muted">
-            Manage your organization, plan, and environments.
+            {t("subtitle")}
           </p>
         </div>
         {isOwnerOrAdmin && (
           <div className="flex items-center gap-3">
             {saveError && <span className="text-sm text-red-400">{saveError}</span>}
-            {saveSuccess && <span className="text-sm text-emerald-400">Saved</span>}
+            {saveSuccess && <span className="text-sm text-emerald-400">{t("saved")}</span>}
             <button
               onClick={handleSave}
               disabled={saving}
               className="flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
             >
               {saving && <Spinner />}
-              Save Changes
+              {t("save_changes")}
             </button>
           </div>
         )}
@@ -431,12 +434,12 @@ export default function OrganizationPage() {
           {/* Org Details */}
           <section className="rounded-lg border border-edge bg-surface-card p-5">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-content-muted">
-              Details
+              {t("details")}
             </h2>
             <div className="space-y-3">
               {/* Editable name */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-content-muted">Organization</span>
+                <span className="text-sm text-content-muted">{t("org_name")}</span>
                 {isOwnerOrAdmin ? (
                   <input
                     type="text"
@@ -451,7 +454,7 @@ export default function OrganizationPage() {
 
               {/* Plan badge */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-content-muted">Plan</span>
+                <span className="text-sm text-content-muted">{t("plan")}</span>
                 <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
                   {PLAN_LABELS[organization.plan] || organization.plan}
                 </span>
@@ -459,7 +462,7 @@ export default function OrganizationPage() {
 
               {/* Status badge */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-content-muted">Status</span>
+                <span className="text-sm text-content-muted">{t("status")}</span>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[organization.status] || "bg-surface-card-hover text-content-secondary"}`}
                 >
@@ -469,7 +472,7 @@ export default function OrganizationPage() {
 
               {/* Created */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-content-muted">Created</span>
+                <span className="text-sm text-content-muted">{t("created")}</span>
                 <span className="text-sm text-content-secondary">{formatDate(organization.createdAt)}</span>
               </div>
             </div>
@@ -478,13 +481,13 @@ export default function OrganizationPage() {
           {/* Business Profile */}
           <section className="rounded-lg border border-edge bg-surface-card p-5">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-content-muted">
-              Business Profile
+              {t("business_profile")}
             </h2>
             {isOwnerOrAdmin ? (
               <div className="space-y-3">
                 {/* Business Model */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Business Model</span>
+                  <span className="text-sm text-content-muted">{t("business_model")}</span>
                   <select
                     value={editBusinessModel}
                     onChange={(e) => setEditBusinessModel(e.target.value)}
@@ -498,7 +501,7 @@ export default function OrganizationPage() {
 
                 {/* Monthly Revenue */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Monthly Revenue</span>
+                  <span className="text-sm text-content-muted">{t("monthly_revenue")}</span>
                   <div className="relative w-48">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-content-muted">$</span>
                     <input
@@ -513,7 +516,7 @@ export default function OrganizationPage() {
 
                 {/* Average Order Value */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Avg Order Value</span>
+                  <span className="text-sm text-content-muted">{t("avg_order_value")}</span>
                   <div className="relative w-48">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-content-muted">$</span>
                     <input
@@ -528,7 +531,7 @@ export default function OrganizationPage() {
 
                 {/* Monthly Transactions */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Monthly Transactions</span>
+                  <span className="text-sm text-content-muted">{t("monthly_transactions")}</span>
                   <input
                     type="number"
                     value={editMonthlyTxns}
@@ -540,7 +543,7 @@ export default function OrganizationPage() {
 
                 {/* Conversion Rate */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Conversion Rate</span>
+                  <span className="text-sm text-content-muted">{t("conversion_rate")}</span>
                   <div className="relative w-48">
                     <input
                       type="number"
@@ -556,7 +559,7 @@ export default function OrganizationPage() {
 
                 {/* Conversion Model */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Conversion Model</span>
+                  <span className="text-sm text-content-muted">{t("conversion_model")}</span>
                   <select
                     value={editConversionModel}
                     onChange={(e) => setEditConversionModel(e.target.value)}
@@ -571,29 +574,29 @@ export default function OrganizationPage() {
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Business Model</span>
+                  <span className="text-sm text-content-muted">{t("business_model")}</span>
                   <span className="text-sm text-content-secondary">
                     {BUSINESS_MODEL_LABELS[businessProfile?.businessModel || ""] || "--"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Monthly Revenue</span>
+                  <span className="text-sm text-content-muted">{t("monthly_revenue")}</span>
                   <span className="text-sm text-content-secondary">{formatCurrency(businessProfile?.monthlyRevenue)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Avg Order Value</span>
+                  <span className="text-sm text-content-muted">{t("avg_order_value")}</span>
                   <span className="text-sm text-content-secondary">{formatCurrency(businessProfile?.averageOrderValue)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Monthly Transactions</span>
+                  <span className="text-sm text-content-muted">{t("monthly_transactions")}</span>
                   <span className="text-sm text-content-secondary">{formatNumber(businessProfile?.monthlyTransactions)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Conversion Rate</span>
+                  <span className="text-sm text-content-muted">{t("conversion_rate")}</span>
                   <span className="text-sm text-content-secondary">{formatPercent(businessProfile?.conversionRate)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-content-muted">Conversion Model</span>
+                  <span className="text-sm text-content-muted">{t("conversion_model")}</span>
                   <span className="text-sm text-content-secondary">
                     {CONVERSION_MODEL_LABELS[businessProfile?.conversionModel || ""] || "--"}
                   </span>
@@ -609,21 +612,21 @@ export default function OrganizationPage() {
           <section className="rounded-lg border border-edge bg-surface-card p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-content-muted">
-                Environments
+                {t("environments")}
               </h2>
               {isOwnerOrAdmin && (
                 <button
                   onClick={() => setShowAddEnv(true)}
                   className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-500"
                 >
-                  + Add
+                  {t("add")}
                 </button>
               )}
             </div>
 
             {environments.length === 0 ? (
               <div className="rounded-md border border-edge px-4 py-6 text-center">
-                <p className="text-sm text-content-muted">No environments configured yet.</p>
+                <p className="text-sm text-content-muted">{t("no_environments")}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -637,11 +640,11 @@ export default function OrganizationPage() {
                         <span className="truncate text-sm font-medium text-content-secondary">{env.domain}</span>
                         {env.isProduction && (
                           <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-400">
-                            Production
+                            {t("production")}
                           </span>
                         )}
                       </div>
-                      <p className="mt-0.5 text-xs text-content-muted">Added {formatDate(env.createdAt)}</p>
+                      <p className="mt-0.5 text-xs text-content-muted">{t("added_date", { date: formatDate(env.createdAt) })}</p>
                     </div>
                     {isOwner && (
                       <button
@@ -649,7 +652,7 @@ export default function OrganizationPage() {
                         disabled={deletingEnv === env.id}
                         className="ml-3 shrink-0 rounded-md px-2 py-1 text-xs text-content-muted transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                       >
-                        {deletingEnv === env.id ? "..." : "Remove"}
+                        {deletingEnv === env.id ? "..." : t("remove")}
                       </button>
                     )}
                   </div>
@@ -662,14 +665,14 @@ export default function OrganizationPage() {
           <section className="rounded-lg border border-edge bg-surface-card p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-content-muted">
-                Members
+                {t("members")}
               </h2>
-              <span className="text-xs text-content-muted">{members.length} member{members.length !== 1 ? "s" : ""}</span>
+              <span className="text-xs text-content-muted">{t("member_count", { count: members.length })}</span>
             </div>
 
             {members.length === 0 ? (
               <div className="rounded-md border border-edge px-4 py-6 text-center">
-                <p className="text-sm text-content-muted">No members yet.</p>
+                <p className="text-sm text-content-muted">{t("no_members")}</p>
               </div>
             ) : (
               <div className="overflow-x-auto rounded-md border border-edge">
@@ -677,17 +680,17 @@ export default function OrganizationPage() {
                   <thead>
                     <tr className="border-b border-edge bg-surface-card">
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                        Member
+                        {t("col_member")}
                       </th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                        Role
+                        {t("col_role")}
                       </th>
                       <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                        Joined
+                        {t("col_joined")}
                       </th>
                       {isOwner && (
                         <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                          Actions
+                          {t("col_actions")}
                         </th>
                       )}
                     </tr>
@@ -698,7 +701,7 @@ export default function OrganizationPage() {
                         <td className="px-4 py-3">
                           <div>
                             <div className="text-sm font-medium text-content-secondary">
-                              {member.name || "Unnamed"}
+                              {member.name || t("unnamed")}
                             </div>
                             <div className="text-xs text-content-muted">{member.email}</div>
                           </div>
@@ -727,7 +730,7 @@ export default function OrganizationPage() {
                                 disabled={deletingMember === member.id}
                                 className="rounded-md px-2 py-1 text-xs text-content-muted transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                               >
-                                {deletingMember === member.id ? "..." : "Remove"}
+                                {deletingMember === member.id ? "..." : t("remove")}
                               </button>
                             ) : (
                               <span className="text-xs text-content-faint">--</span>

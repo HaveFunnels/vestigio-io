@@ -2054,6 +2054,154 @@
     "organization_selector": {
       "no_organization": "No organization"
     },
+    "state": {
+      "loading": "Loading analysis...",
+      "no_data": "No data found.",
+      "not_ready": "Not Ready",
+      "complete_setup": "Complete Setup",
+      "error_loading": "Error Loading Data",
+      "retry": "Retry",
+      "saas_not_ready": "SaaS Analysis Not Ready",
+      "setup_progress": "Setup Progress ({completed}/{total})",
+      "required": "Required",
+      "configure_data_sources": "Configure in Data Sources",
+      "no_data_yet": "No Data Yet"
+    },
+    "change_badge": {
+      "regression": "Regression",
+      "improvement": "Improved",
+      "new_issue": "New",
+      "resolved": "Resolved",
+      "stable_risk": "Stable Risk"
+    },
+    "change_timeline": {
+      "no_changes": "No changes to display",
+      "no_risk_change": "No change in risk score",
+      "points": "points",
+      "severity_label": "Severity"
+    },
+    "budget_bar": {
+      "left": "{remaining}/{limit} left",
+      "last_query": "Last query today.",
+      "queries_left": "{remaining} queries left.",
+      "try_playbook": "Try a playbook for maximum value.",
+      "queries_remaining": "{remaining} queries remaining. Consider consolidating questions.",
+      "budget_used": "Daily budget used. Resets tomorrow.",
+      "upgrade_prompt": "Upgrade for more daily queries."
+    },
+    "conversation_sidebar": {
+      "title": "Conversations",
+      "search_placeholder": "Search...",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "this_week": "This week",
+      "older": "Older",
+      "searching": "Searching...",
+      "no_matches": "No matches",
+      "no_conversations": "No conversations yet",
+      "untitled": "Untitled",
+      "collapse": "Collapse",
+      "rename": "Rename",
+      "delete": "Delete"
+    },
+    "thinking": {
+      "thinking": "Thinking",
+      "thinking_1": "Thinking.",
+      "thinking_2": "Thinking..",
+      "thinking_3": "Thinking..."
+    },
+    "message_actions": {
+      "send_edited": "Send edited",
+      "cancel": "Cancel",
+      "copy": "Copy",
+      "edit_resend": "Edit & resend",
+      "retry_last": "Retry last",
+      "regenerate": "Regenerate this response",
+      "fork": "Fork from this message",
+      "good_response": "Good response",
+      "poor_response": "Poor response",
+      "what_was_helpful": "What was helpful?",
+      "what_could_be_better": "What could be better?",
+      "optional": "(optional)",
+      "positive_placeholder": "This analysis was accurate because...",
+      "negative_placeholder": "I expected a more specific answer about...",
+      "skip": "Skip",
+      "submit": "Submit"
+    },
+    "kb_article_card": {
+      "learn_more": "Learn more",
+      "browse_related": "Browse related docs",
+      "default_subtitle": "Open the knowledge base to learn more about this topic."
+    },
+    "file_upload": {
+      "drop_here": "Drop files here",
+      "file_types": "CSV, JSON, TXT, MD, PDF (max 2MB)",
+      "attach_file": "Attach file"
+    },
+    "chat_input": {
+      "placeholder": "Ask about your revenue, risks, or what to fix first...",
+      "stop": "Stop",
+      "used": "{used}/{limit} used",
+      "hint_send": "Enter send · Shift+Enter new line",
+      "attach_file": "Attach file"
+    },
+    "pulse_summary": {
+      "label": "Vestigio Pulse"
+    },
+    "data_table": {
+      "no_data": "No data available"
+    },
+    "activity_heatmap": {
+      "eyebrow": "Activity · 90 days",
+      "day_streak": "day streak",
+      "less": "less",
+      "more": "more"
+    },
+    "money_recovered": {
+      "eyebrow": "Total recovered with Vestigio",
+      "seven_days": "7 days",
+      "thirty_days": "30 days"
+    },
+    "organization": {
+      "title": "Organization",
+      "subtitle": "Manage your organization, plan, and environments.",
+      "loading": "Loading organization...",
+      "saved": "Saved",
+      "save_changes": "Save Changes",
+      "details": "Details",
+      "org_name": "Organization",
+      "plan": "Plan",
+      "status": "Status",
+      "created": "Created",
+      "business_profile": "Business Profile",
+      "business_model": "Business Model",
+      "monthly_revenue": "Monthly Revenue",
+      "avg_order_value": "Avg Order Value",
+      "monthly_transactions": "Monthly Transactions",
+      "conversion_rate": "Conversion Rate",
+      "conversion_model": "Conversion Model",
+      "environments": "Environments",
+      "add": "+ Add",
+      "no_environments": "No environments configured yet.",
+      "production": "Production",
+      "added_date": "Added {date}",
+      "remove": "Remove",
+      "members": "Members",
+      "member_count": "{count} member(s)",
+      "no_members": "No members yet.",
+      "col_member": "Member",
+      "col_role": "Role",
+      "col_joined": "Joined",
+      "col_actions": "Actions",
+      "unnamed": "Unnamed",
+      "add_env_title": "Add Environment",
+      "domain_label": "Domain",
+      "domain_placeholder": "staging.example.com",
+      "production_env": "Production environment",
+      "create": "Create",
+      "cancel": "Cancel",
+      "retry": "Retry"
+    },
     "actions": {
       "title": "Actions",
       "subtitle": "Prioritized queue of what needs attention",

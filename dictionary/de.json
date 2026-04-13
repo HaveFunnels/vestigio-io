@@ -2066,6 +2066,154 @@
     "organization_selector": {
       "no_organization": "Keine Organisation"
     },
+    "state": {
+      "loading": "Analyse wird geladen...",
+      "no_data": "Keine Daten gefunden.",
+      "not_ready": "Nicht Bereit",
+      "complete_setup": "Einrichtung abschließen",
+      "error_loading": "Fehler beim Laden der Daten",
+      "retry": "Erneut versuchen",
+      "saas_not_ready": "SaaS-Analyse Nicht Bereit",
+      "setup_progress": "Fortschritt ({completed}/{total})",
+      "required": "Erforderlich",
+      "configure_data_sources": "In Datenquellen konfigurieren",
+      "no_data_yet": "Noch Keine Daten"
+    },
+    "change_badge": {
+      "regression": "Regression",
+      "improvement": "Verbessert",
+      "new_issue": "Neu",
+      "resolved": "Behoben",
+      "stable_risk": "Stabiles Risiko"
+    },
+    "change_timeline": {
+      "no_changes": "Keine Änderungen vorhanden",
+      "no_risk_change": "Keine Änderung im Risiko-Score",
+      "points": "Punkte",
+      "severity_label": "Schweregrad"
+    },
+    "budget_bar": {
+      "left": "{remaining}/{limit} übrig",
+      "last_query": "Letzte Abfrage heute.",
+      "queries_left": "{remaining} Abfragen übrig.",
+      "try_playbook": "Nutze ein Playbook für maximalen Wert.",
+      "queries_remaining": "{remaining} Abfragen übrig. Erwäge, Fragen zu bündeln.",
+      "budget_used": "Tagesbudget aufgebraucht. Wird morgen erneuert.",
+      "upgrade_prompt": "Upgrade für mehr tägliche Abfragen."
+    },
+    "conversation_sidebar": {
+      "title": "Gespräche",
+      "search_placeholder": "Suchen...",
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "this_week": "Diese Woche",
+      "older": "Älter",
+      "searching": "Suche...",
+      "no_matches": "Keine Treffer",
+      "no_conversations": "Noch keine Gespräche",
+      "untitled": "Ohne Titel",
+      "collapse": "Einklappen",
+      "rename": "Umbenennen",
+      "delete": "Löschen"
+    },
+    "thinking": {
+      "thinking": "Denkt nach",
+      "thinking_1": "Denkt nach.",
+      "thinking_2": "Denkt nach..",
+      "thinking_3": "Denkt nach..."
+    },
+    "message_actions": {
+      "send_edited": "Bearbeitet senden",
+      "cancel": "Abbrechen",
+      "copy": "Kopieren",
+      "edit_resend": "Bearbeiten & erneut senden",
+      "retry_last": "Letztes wiederholen",
+      "regenerate": "Diese Antwort regenerieren",
+      "fork": "Ab dieser Nachricht verzweigen",
+      "good_response": "Gute Antwort",
+      "poor_response": "Schlechte Antwort",
+      "what_was_helpful": "Was war hilfreich?",
+      "what_could_be_better": "Was könnte besser sein?",
+      "optional": "(optional)",
+      "positive_placeholder": "Diese Analyse war genau, weil...",
+      "negative_placeholder": "Ich erwartete eine spezifischere Antwort über...",
+      "skip": "Überspringen",
+      "submit": "Absenden"
+    },
+    "kb_article_card": {
+      "learn_more": "Mehr erfahren",
+      "browse_related": "Verwandte Dokumentation ansehen",
+      "default_subtitle": "Öffne die Wissensbasis, um mehr über dieses Thema zu erfahren."
+    },
+    "file_upload": {
+      "drop_here": "Dateien hier ablegen",
+      "file_types": "CSV, JSON, TXT, MD, PDF (max 2MB)",
+      "attach_file": "Datei anhängen"
+    },
+    "chat_input": {
+      "placeholder": "Frage zu Umsatz, Risiken oder was zuerst zu beheben ist...",
+      "stop": "Stopp",
+      "used": "{used}/{limit} verwendet",
+      "hint_send": "Enter senden · Shift+Enter neue Zeile",
+      "attach_file": "Datei anhängen"
+    },
+    "pulse_summary": {
+      "label": "Vestigio Pulse"
+    },
+    "data_table": {
+      "no_data": "Keine Daten verfügbar"
+    },
+    "activity_heatmap": {
+      "eyebrow": "Aktivität · 90 Tage",
+      "day_streak": "Tage in Folge",
+      "less": "weniger",
+      "more": "mehr"
+    },
+    "money_recovered": {
+      "eyebrow": "Insgesamt mit Vestigio zurückgewonnen",
+      "seven_days": "7 Tage",
+      "thirty_days": "30 Tage"
+    },
+    "organization": {
+      "title": "Organisation",
+      "subtitle": "Verwalte deine Organisation, Plan und Umgebungen.",
+      "loading": "Organisation wird geladen...",
+      "saved": "Gespeichert",
+      "save_changes": "Änderungen Speichern",
+      "details": "Details",
+      "org_name": "Organisation",
+      "plan": "Plan",
+      "status": "Status",
+      "created": "Erstellt",
+      "business_profile": "Geschäftsprofil",
+      "business_model": "Geschäftsmodell",
+      "monthly_revenue": "Monatlicher Umsatz",
+      "avg_order_value": "Durchschnittlicher Bestellwert",
+      "monthly_transactions": "Monatliche Transaktionen",
+      "conversion_rate": "Konversionsrate",
+      "conversion_model": "Konversionsmodell",
+      "environments": "Umgebungen",
+      "add": "+ Hinzufügen",
+      "no_environments": "Noch keine Umgebungen konfiguriert.",
+      "production": "Produktion",
+      "added_date": "Hinzugefügt am {date}",
+      "remove": "Entfernen",
+      "members": "Mitglieder",
+      "member_count": "{count} Mitglied(er)",
+      "no_members": "Noch keine Mitglieder.",
+      "col_member": "Mitglied",
+      "col_role": "Rolle",
+      "col_joined": "Beigetreten",
+      "col_actions": "Aktionen",
+      "unnamed": "Unbenannt",
+      "add_env_title": "Umgebung Hinzufügen",
+      "domain_label": "Domain",
+      "domain_placeholder": "staging.beispiel.de",
+      "production_env": "Produktionsumgebung",
+      "create": "Erstellen",
+      "cancel": "Abbrechen",
+      "retry": "Erneut versuchen"
+    },
     "settings": {
       "title": "Einstellungen",
       "subtitle": "Domains verwalten, Datenabdeckung prüfen und Konto konfigurieren.",

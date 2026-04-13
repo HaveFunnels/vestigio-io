@@ -2197,7 +2197,8 @@
       "placeholder": "Pergunte sobre faturamento, riscos ou o que corrigir primeiro...",
       "stop": "Parar",
       "used": "{used}/{limit} usados",
-      "hint_send": "Enter envia · Shift+Enter nova linha"
+      "hint_send": "Enter envia · Shift+Enter nova linha",
+      "attach_file": "Anexar arquivo"
     },
     "pulse_summary": {
       "label": "Vestigio Pulse"
@@ -2252,7 +2253,9 @@
       "domain_label": "Domínio",
       "domain_placeholder": "staging.exemplo.com",
       "production_env": "Ambiente de produção",
-      "create": "Criar"
+      "create": "Criar",
+      "cancel": "Cancelar",
+      "retry": "Tentar Novamente"
     },
     "actions": {
       "title": "Ações",

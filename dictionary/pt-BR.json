@@ -85,7 +85,7 @@
           "solution": "Fila pronta pra agir"
         }
       ],
-      "cta_primary": "Rodar auditoria grátis",
+      "cta_primary": "Rodar diagnóstico gratuito",
       "cta_secondary": "Ver tour do produto",
       "cta_micro": "Perfeito para E-commerces, SaaS, captação de leads, infoprodutos, serviços e apps.",
       "shell": {
@@ -97,7 +97,7 @@
       "title": "Não é um dashboard. É uma fila de decisões.",
       "subtitle": "Cada aba é uma lente diferente sobre a mesma imagem do faturamento — priorizada, com evidência, e pronta pra agir.",
       "section_headline": "Veja exatamente o que a Vestigio entrega pra você.",
-      "cta_primary": "Rodar auditoria grátis",
+      "cta_primary": "Rodar diagnóstico gratuito",
       "url": "app.vestigio.io/dashboard",
       "tabs": {
         "actions": "Ações",
@@ -511,7 +511,7 @@
       "cta_primary": "Comece sua primeira auditoria"
     },
     "mini_calc_card": {
-      "eyebrow": "Auditoria grátis instantânea",
+      "eyebrow": "Diagnóstico gratuito instantâneo",
       "tagline": "Teste a Vestigio no seu próprio domínio — sem cadastro, sem cartão."
     },
     "faq": {
@@ -916,7 +916,7 @@
       "currency_symbol": "R$",
       "url_placeholder": "Digite a URL do seu site...",
       "revenue_placeholder": "Faturamento mensal médio",
-      "cta_audit": "Rodar Auditoria Grátis",
+      "cta_audit": "Rodar Diagnóstico Gratuito",
       "analyzing": "Analisando",
       "analyzing_sub": "Isso normalmente leva alguns segundos...",
       "status_discovering": "Descobrindo a estrutura do seu site...",

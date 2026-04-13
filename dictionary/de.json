@@ -85,7 +85,7 @@
           "solution": "Sortierte Liste, fertig"
         }
       ],
-      "cta_primary": "Kostenloses Audit starten",
+      "cta_primary": "Kostenlose Diagnose starten",
       "cta_secondary": "Produkt-Tour ansehen",
       "cta_micro": "Perfekt für E-Commerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",
       "shell": {
@@ -96,7 +96,7 @@
       "eyebrow": "Produkt-Tour",
       "title": "Kein Dashboard. Eine Warteschlange von Entscheidungen.",
       "subtitle": "Jeder Tab ist eine andere Linse auf dasselbe Umsatzbild — priorisiert, mit Beweisen und bereit zum Handeln.",
-      "cta_primary": "Kostenloses Audit starten",
+      "cta_primary": "Kostenlose Diagnose starten",
       "cta_micro": "Perfekt für E-Commerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",
       "url": "app.vestigio.io/dashboard",
       "tabs": {
@@ -511,7 +511,7 @@
       "cta_primary": "Erstes Audit starten"
     },
     "mini_calc_card": {
-      "eyebrow": "Sofortiges kostenloses Audit",
+      "eyebrow": "Sofortige kostenlose Diagnose",
       "tagline": "Testen Sie Vestigio auf Ihrer eigenen Domain — keine Anmeldung, keine Karte."
     },
     "faq": {
@@ -915,7 +915,7 @@
       "subtitle": "Geben Sie die URL Ihrer Website ein, um eine kostenlose Analyse möglicher Umsatzverluste zu erhalten.",
       "url_placeholder": "Website-URL eingeben...",
       "revenue_placeholder": "Durchschnittlicher Monatsumsatz",
-      "cta_audit": "Kostenloses Audit starten",
+      "cta_audit": "Kostenlose Diagnose starten",
       "analyzing": "Analysiere",
       "analyzing_sub": "Das dauert normalerweise nur wenige Sekunden...",
       "status_discovering": "Website-Struktur wird erkundet...",

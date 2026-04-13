@@ -85,7 +85,7 @@
           "solution": "Cola lista para actuar"
         }
       ],
-      "cta_primary": "Hacer auditoría gratis",
+      "cta_primary": "Hacer diagnóstico gratis",
       "cta_secondary": "Ver tour del producto",
       "cta_micro": "Perfecto para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",
       "shell": {
@@ -96,7 +96,7 @@
       "eyebrow": "Tour del Producto",
       "title": "No es un dashboard. Es una cola de decisiones.",
       "subtitle": "Cada pestaña es una lente diferente sobre la misma imagen de ingresos — priorizada, con evidencia, y lista para actuar.",
-      "cta_primary": "Hacer auditoría gratis",
+      "cta_primary": "Hacer diagnóstico gratis",
       "cta_micro": "Perfecto para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",
       "url": "app.vestigio.io/dashboard",
       "tabs": {
@@ -511,7 +511,7 @@
       "cta_primary": "Empieza tu primera auditoría"
     },
     "mini_calc_card": {
-      "eyebrow": "Auditoría gratis al instante",
+      "eyebrow": "Diagnóstico gratis al instante",
       "tagline": "Prueba Vestigio en tu propio dominio — sin registro, sin tarjeta."
     },
     "faq": {
@@ -915,7 +915,7 @@
       "subtitle": "Ingresa la URL de tu sitio web para obtener un diagnóstico gratuito de posibles fugas de ingresos.",
       "url_placeholder": "Ingresa la URL de tu sitio web...",
       "revenue_placeholder": "Ingreso mensual promedio",
-      "cta_audit": "Ejecutar Auditoría Gratis",
+      "cta_audit": "Ejecutar Diagnóstico Gratis",
       "analyzing": "Analizando",
       "analyzing_sub": "Esto generalmente toma unos segundos...",
       "status_discovering": "Descubriendo la estructura de tu sitio...",

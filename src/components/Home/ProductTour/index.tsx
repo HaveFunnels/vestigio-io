@@ -791,13 +791,17 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 			</div>
 
 
-			{/* Section headline */}
-			<p className="mx-auto mb-6 max-w-[600px] px-4 text-center text-sm font-semibold text-white sm:mb-8 sm:text-base">
-				{t("section_headline")}
-			</p>
-
 			{/* Browser shell wrapper */}
 			<div className="relative mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
+				{/* Notch — glued to the top of the browser shell */}
+				<div className="flex justify-center">
+					<div className="relative z-10 inline-flex items-center gap-2 rounded-t-lg border border-b-0 border-white/[0.08] bg-[#0a0a14] px-5 py-2 sm:px-6 sm:py-2.5">
+						<span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
+						<span className="text-[11px] font-semibold tracking-wide text-zinc-200 sm:text-xs">
+							{t("section_headline")}
+						</span>
+					</div>
+				</div>
 				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
 					{/* Browser title bar */}
 					<div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:px-4 sm:py-3">

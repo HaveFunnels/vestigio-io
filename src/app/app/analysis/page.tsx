@@ -860,8 +860,9 @@ function AnalysisContent({
 					</span>
 					<div className='flex-1' />
 					<ShinyButton
+						variant="console"
 						onClick={() =>
-							router.push(`/chat?findings=${[...selectedIds].join(",")}`)
+							router.push(`/app/chat?findings=${[...selectedIds].join(",")}`)
 						}
 					>
 						{selectedIds.size === 1

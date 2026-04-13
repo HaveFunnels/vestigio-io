@@ -390,11 +390,11 @@ function SelectionBar({
 			</span>
 			<div className='flex-1' />
 			{count >= 2 && onAnalyzeTogether && (
-				<ShinyButton onClick={onAnalyzeTogether}>
+				<ShinyButton variant="console" onClick={onAnalyzeTogether}>
 					{t("analyze_together", { count })}
 				</ShinyButton>
 			)}
-			<ShinyButton onClick={onUseAsContext}>{t("use_as_context")}</ShinyButton>
+			<ShinyButton variant="console" onClick={onUseAsContext}>{t("use_as_context")}</ShinyButton>
 			<button
 				onClick={onClear}
 				className='rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-card-hover'

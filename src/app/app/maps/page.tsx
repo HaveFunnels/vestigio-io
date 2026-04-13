@@ -734,7 +734,8 @@ export default function MapsPage() {
 				</div>
 				{dataState.status === "ready" && (
 					<ShinyButton
-						onClick={() => (window.location.href = "/chat?context=maps")}
+						variant="console"
+						onClick={() => (window.location.href = "/app/chat?context=maps")}
 					>
 						{t("useAsContext")}
 					</ShinyButton>

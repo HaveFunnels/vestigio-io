@@ -183,7 +183,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			</nav>
 
 			{/* ── Header — left accent border ── */}
-			<div className={`mt-4 rounded border-l-2 ${perspective.border} bg-zinc-50 px-5 py-4 dark:bg-white/[0.02]`}>
+			<div className={`mt-4 rounded border-l-2 ${perspective.border} px-5 py-4`}>
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<div>
 						<h1 className="text-[16px] font-semibold text-zinc-800 dark:text-zinc-200">

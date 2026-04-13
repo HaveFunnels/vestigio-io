@@ -197,7 +197,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       </Link>
 
       {/* Perspective header — left accent border */}
-      <div className={`mt-4 rounded border-l-2 ${meta.borderColor} ${meta.barColor} px-5 py-4`}>
+      <div className={`mt-4 rounded border-l-2 ${meta.borderColor} px-5 py-4`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <svg className={`h-5 w-5 ${meta.accentColor} opacity-70`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

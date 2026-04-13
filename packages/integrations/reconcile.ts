@@ -22,6 +22,8 @@ import { CommerceContext } from './commerce-context';
 import {
   IntegrationSnapshot,
   IntegrationProvider,
+  ShopifySnapshotData,
+  NuvemshopSnapshotData,
 } from './types';
 
 export interface DataProvenance {
@@ -48,12 +50,19 @@ export function reconcileIntegrations(
 ): ReconciliationResult {
   // Find snapshots by provider, preferring 30d window
   const shopify = findSnapshot<'shopify'>(snapshots, 'shopify');
+  const nuvemshop = findSnapshot<'nuvemshop'>(snapshots, 'nuvemshop');
   const stripe = findSnapshot<'stripe'>(snapshots, 'stripe');
   const metaAds = findSnapshot<'meta_ads'>(snapshots, 'meta_ads');
   const googleAds = findSnapshot<'google_ads'>(snapshots, 'google_ads');
 
+  // Resolve primary ecommerce source: Shopify wins over Nuvemshop if both present.
+  // Both have identical data shapes, so we unify into a single "ecommerce" snapshot.
+  const ecommerceSnapshot = shopify || nuvemshop;
+  const ecommerceProvider = shopify ? 'shopify' : nuvemshop ? 'nuvemshop' : null;
+
   const overallSources: string[] = [];
   if (shopify) overallSources.push('shopify');
+  if (nuvemshop) overallSources.push('nuvemshop');
   if (stripe) overallSources.push('stripe');
   if (metaAds) overallSources.push('meta_ads');
   if (googleAds) overallSources.push('google_ads');
@@ -66,13 +75,13 @@ export function reconcileIntegrations(
   };
 
   // ── Build BusinessInputs ──
-  const business_inputs = reconcileBusinessInputs(shopify, stripe, business_model, provenance);
+  const business_inputs = reconcileBusinessInputs(ecommerceSnapshot, ecommerceProvider, stripe, business_model, provenance);
 
   // ── Build CommerceContext ──
-  const commerce_context = reconcileCommerceContext(shopify, stripe, metaAds, googleAds, overallSources);
+  const commerce_context = reconcileCommerceContext(ecommerceSnapshot, ecommerceProvider, stripe, metaAds, googleAds, overallSources);
 
   // ── Build OperationalAmplifiers ──
-  const amplifiers = reconcileAmplifiers(shopify, stripe);
+  const amplifiers = reconcileAmplifiers(ecommerceSnapshot, ecommerceProvider, stripe);
 
   return { business_inputs, commerce_context, amplifiers, provenance };
 }
@@ -99,8 +108,13 @@ function findSnapshot<T extends IntegrationProvider>(
 // Internal: reconcile BusinessInputs
 // ──────────────────────────────────────────────
 
+// EcommerceSnapshot is a unified type covering Shopify and Nuvemshop
+// (identical data shapes).
+type EcommerceSnapshot = IntegrationSnapshot<'shopify'> | IntegrationSnapshot<'nuvemshop'>;
+
 function reconcileBusinessInputs(
-  shopify: IntegrationSnapshot<'shopify'> | null,
+  ecommerce: EcommerceSnapshot | null,
+  ecommerceProvider: string | null,
   stripe: IntegrationSnapshot<'stripe'> | null,
   business_model: string,
   provenance: DataProvenance,
@@ -116,35 +130,35 @@ function reconcileBusinessInputs(
 
   const isSaas = business_model === 'saas';
 
-  // Monthly revenue: Stripe wins for SaaS, Shopify wins for ecommerce
+  // Monthly revenue: Stripe wins for SaaS, ecommerce source wins for ecommerce
   if (isSaas && stripe) {
     result.monthly_revenue = normalizeToMonthly(stripe.data.revenue.total, stripe.window);
     provenance.monthly_revenue_source = 'stripe';
-  } else if (shopify) {
-    result.monthly_revenue = normalizeToMonthly(shopify.data.revenue.total, shopify.window);
-    provenance.monthly_revenue_source = 'shopify';
+  } else if (ecommerce) {
+    result.monthly_revenue = normalizeToMonthly(ecommerce.data.revenue.total, ecommerce.window);
+    provenance.monthly_revenue_source = ecommerceProvider;
   } else if (stripe) {
     result.monthly_revenue = normalizeToMonthly(stripe.data.revenue.total, stripe.window);
     provenance.monthly_revenue_source = 'stripe';
   }
 
-  // AOV and transactions from Shopify (order-level granularity)
-  if (shopify) {
-    result.average_order_value = shopify.data.revenue.average_order_value;
-    result.monthly_transactions = normalizeToMonthly(shopify.data.revenue.order_count, shopify.window);
+  // AOV and transactions from ecommerce source (order-level granularity)
+  if (ecommerce) {
+    result.average_order_value = ecommerce.data.revenue.average_order_value;
+    result.monthly_transactions = normalizeToMonthly(ecommerce.data.revenue.order_count, ecommerce.window);
   } else if (stripe) {
     result.monthly_transactions = normalizeToMonthly(stripe.data.revenue.charge_count, stripe.window);
   }
 
-  // Chargeback rate: Stripe's real dispute rate always wins over Shopify's refund proxy
+  // Chargeback rate: Stripe's real dispute rate always wins over ecommerce refund proxy
   if (stripe) {
     result.chargeback_rate = stripe.data.dispute_rate;
     provenance.chargeback_rate_source = 'stripe';
-  } else if (shopify) {
-    result.chargeback_rate = shopify.data.refunds.refund_rate > 0
-      ? Math.min(shopify.data.refunds.refund_rate, 0.10)
+  } else if (ecommerce) {
+    result.chargeback_rate = ecommerce.data.refunds.refund_rate > 0
+      ? Math.min(ecommerce.data.refunds.refund_rate, 0.10)
       : null;
-    provenance.chargeback_rate_source = 'shopify';
+    provenance.chargeback_rate_source = ecommerceProvider;
   }
 
   // Churn rate: only Stripe provides this
@@ -161,14 +175,15 @@ function reconcileBusinessInputs(
 // ──────────────────────────────────────────────
 
 function reconcileCommerceContext(
-  shopify: IntegrationSnapshot<'shopify'> | null,
+  ecommerce: EcommerceSnapshot | null,
+  ecommerceProvider: string | null,
   stripe: IntegrationSnapshot<'stripe'> | null,
   metaAds: IntegrationSnapshot<'meta_ads'> | null,
   googleAds: IntegrationSnapshot<'google_ads'> | null,
   sources: string[],
 ): CommerceContext {
   const context: CommerceContext = {
-    // Shopify-sourced defaults
+    // Ecommerce-sourced defaults (Shopify or Nuvemshop)
     abandonment_rate: null,
     abandonment_value_monthly: null,
     repeat_purchase_rate: null,
@@ -196,16 +211,16 @@ function reconcileCommerceContext(
     basis_type: sources.length === 0 ? 'heuristic' : sources.length >= 2 ? 'data_driven' : 'mixed',
   };
 
-  // Populate from Shopify
-  if (shopify) {
-    const sd = shopify.data;
+  // Populate from ecommerce source (Shopify or Nuvemshop — identical data shapes)
+  if (ecommerce) {
+    const sd = ecommerce.data;
 
     if (sd.abandoned_checkouts) {
       const totalOrders = sd.revenue.order_count + sd.abandoned_checkouts.count;
       context.abandonment_rate = totalOrders > 0
         ? sd.abandoned_checkouts.count / totalOrders
         : null;
-      context.abandonment_value_monthly = normalizeToMonthly(sd.abandoned_checkouts.total_value, shopify.window);
+      context.abandonment_value_monthly = normalizeToMonthly(sd.abandoned_checkouts.total_value, ecommerce.window);
     }
 
     if (sd.customers) {
@@ -266,15 +281,16 @@ function reconcileCommerceContext(
 // ──────────────────────────────────────────────
 
 function reconcileAmplifiers(
-  shopify: IntegrationSnapshot<'shopify'> | null,
+  ecommerce: EcommerceSnapshot | null,
+  ecommerceProvider: string | null,
   stripe: IntegrationSnapshot<'stripe'> | null,
 ): OperationalAmplifiers {
   const amplifiers: OperationalAmplifiers = {};
 
-  if (!shopify && !stripe) return amplifiers;
+  if (!ecommerce && !stripe) return amplifiers;
 
-  if (shopify) {
-    const sd = shopify.data;
+  if (ecommerce) {
+    const sd = ecommerce.data;
 
     // Cancellation: > 5% = moderate concern, > 10% = high
     const cancelRate = sd.order_status.cancellation_rate;

@@ -264,6 +264,95 @@ export default function DataSourcesPage() {
 		finally { setShopifySyncing(false); }
 	};
 
+	// ── Nuvemshop state ──
+	const [nuvemshopStatus, setNuvemshopStatus] = useState<SourceStatus>("not_configured");
+	const [nuvemshopStoreId, setNuvemshopStoreId] = useState("");
+	const [nuvemshopToken, setNuvemshopToken] = useState("");
+	const [nuvemshopSaving, setNuvemshopSaving] = useState(false);
+	const [nuvemshopSyncing, setNuvemshopSyncing] = useState(false);
+	const [nuvemshopLastSync, setNuvemshopLastSync] = useState<string | null>(null);
+	const [nuvemshopError, setNuvemshopError] = useState<string | null>(null);
+	const [nuvemshopValueFeedback, setNuvemshopValueFeedback] = useState<string | null>(null);
+
+	const fetchNuvemshopStatus = useCallback(async () => {
+		try {
+			const res = await fetch(`/api/integrations?environment_id=${environmentId}`);
+			if (!res.ok) return;
+			const { integrations } = await res.json();
+			const nuvemshop = integrations?.find((i: any) => i.provider === "nuvemshop");
+			if (nuvemshop) {
+				setNuvemshopStatus(mapStatus(nuvemshop.status));
+				setNuvemshopLastSync(nuvemshop.lastSyncedAt);
+				setNuvemshopError(nuvemshop.syncError);
+				if (nuvemshop.valueFeedback) setNuvemshopValueFeedback(nuvemshop.valueFeedback);
+			}
+		} catch { /* silent */ }
+	}, [environmentId]);
+
+	useEffect(() => { fetchNuvemshopStatus(); }, [fetchNuvemshopStatus]);
+
+	const handleConnectNuvemshop = async () => {
+		if (!nuvemshopStoreId.trim() || !nuvemshopToken.trim()) {
+			setNuvemshopError("Store ID e Access Token são obrigatórios.");
+			return;
+		}
+		setNuvemshopSaving(true);
+		setNuvemshopError(null);
+		try {
+			const res = await fetch("/api/integrations", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					environmentId,
+					provider: "nuvemshop",
+					config: { store_id: nuvemshopStoreId.trim(), access_token: nuvemshopToken.trim() },
+				}),
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				setNuvemshopError(data.message || "Falha ao conectar Nuvemshop.");
+				return;
+			}
+			setNuvemshopStatus("configured");
+			setNuvemshopToken("");
+			await fetchNuvemshopStatus();
+		} catch {
+			setNuvemshopError("Erro de rede. Tente novamente.");
+		} finally {
+			setNuvemshopSaving(false);
+		}
+	};
+
+	const handleDisconnectNuvemshop = async () => {
+		if (!confirm("Desconectar Nuvemshop? Dados de faturamento voltarão a estimativas heurísticas.")) return;
+		try {
+			await fetch("/api/integrations", {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ environmentId, provider: "nuvemshop" }),
+			});
+			setNuvemshopStatus("not_configured");
+			setNuvemshopStoreId("");
+			setNuvemshopToken("");
+			setNuvemshopLastSync(null);
+			setNuvemshopError(null);
+			setNuvemshopValueFeedback(null);
+		} catch { /* silent */ }
+	};
+
+	const handleSyncNuvemshop = async () => {
+		setNuvemshopSyncing(true);
+		try {
+			const res = await fetch("/api/integrations/sync", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ environmentId, provider: "nuvemshop" }),
+			});
+			if (res.ok) await fetchNuvemshopStatus();
+		} catch { /* silent */ }
+		finally { setNuvemshopSyncing(false); }
+	};
+
 	const [pixelCopied, setPixelCopied] = useState(false);
 	const pixelSnippet = `<script async src="https://app.vestigio.io/snippet/vestigio.js" data-env="${environmentId}"></script>`;
 
@@ -312,6 +401,15 @@ export default function DataSourcesPage() {
 			status: shopifyStatus,
 			configurable: true,
 			unlocks: "Real revenue data, abandoned cart insights, product analytics, customer metrics",
+		},
+		{
+			id: "nuvemshop",
+			title: "Nuvemshop",
+			description: "Importe dados reais de faturamento, pedidos, clientes e produtos da sua loja Nuvemshop.",
+			icon: "M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z",
+			status: nuvemshopStatus,
+			configurable: true,
+			unlocks: "Dados reais de faturamento, analytics de produtos, métricas de clientes",
 		},
 	];
 
@@ -500,6 +598,79 @@ export default function DataSourcesPage() {
 
 										<button onClick={handleConnectShopify} disabled={shopifySaving} style={buttonStyle}>
 											{shopifySaving ? "Connecting..." : "Connect Shopify"}
+										</button>
+									</div>
+								)}
+							</div>
+						)}
+
+						{/* Expanded Nuvemshop form */}
+						{source.id === "nuvemshop" && expandedCard === "nuvemshop" && (
+							<div style={{ padding: "0 20px 20px", borderTop: "1px solid #27272a" }}>
+								{nuvemshopStatus === "configured" || nuvemshopStatus === "verified" ? (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+										<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+											<div>
+												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Conectado</p>
+												{nuvemshopLastSync && (
+													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Último sync: {new Date(nuvemshopLastSync).toLocaleString()}</p>
+												)}
+												{nuvemshopValueFeedback && (
+													<p style={{ color: "#10b981", fontSize: 12, marginTop: 4 }}>{nuvemshopValueFeedback}</p>
+												)}
+											</div>
+											<div style={{ display: "flex", gap: 8 }}>
+												<button onClick={handleSyncNuvemshop} disabled={nuvemshopSyncing} style={{ ...buttonStyle, backgroundColor: "#27272a", color: "#e4e4e7" }}>
+													{nuvemshopSyncing ? "Sincronizando..." : "Sincronizar"}
+												</button>
+												<button onClick={handleDisconnectNuvemshop} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
+													Desconectar
+												</button>
+											</div>
+										</div>
+										{nuvemshopError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{nuvemshopError}
+											</div>
+										)}
+									</div>
+								) : (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+										{/* Inline instructions */}
+										<div style={{ padding: "12px 14px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Como obter as credenciais Nuvemshop:</p>
+											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
+												<li>Acesse o link de instalação do app Vestigio na sua loja Nuvemshop</li>
+												<li>Autorize o app — você será redirecionado de volta com um código de autorização</li>
+												<li>O sistema troca o código por um <strong style={{ color: "#a1a1aa" }}>access_token</strong> e <strong style={{ color: "#a1a1aa" }}>store_id</strong></li>
+												<li>Copie o <strong style={{ color: "#a1a1aa" }}>Store ID</strong> e o <strong style={{ color: "#a1a1aa" }}>Access Token</strong> nos campos abaixo</li>
+											</ol>
+											<a href="/app/knowledge-base/nuvemshop-integration-setup" style={{ color: "#6366f1", fontSize: 12, marginTop: 8, display: "inline-block", textDecoration: "none" }}>
+												Precisa de ajuda? Guia passo a passo com screenshots &rarr;
+											</a>
+										</div>
+
+										<Field label="Store ID" hint="ID numérico da loja (retornado como user_id na autenticação OAuth)">
+											<input type="text" value={nuvemshopStoreId} onChange={(e) => setNuvemshopStoreId(e.target.value)} placeholder="1234567" style={inputStyle} />
+										</Field>
+										<Field label="Access Token" hint="Token OAuth da Nuvemshop">
+											<input type="password" value={nuvemshopToken} onChange={(e) => setNuvemshopToken(e.target.value)} placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" style={inputStyle} />
+										</Field>
+
+										<div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#71717a", fontSize: 11, lineHeight: 1.5 }}>
+												A Vestigio solicita apenas acesso <strong style={{ color: "#a1a1aa" }}>somente leitura</strong>. Nunca modificamos dados da sua loja. Suas credenciais são criptografadas em repouso com AES-256-GCM.
+											</p>
+										</div>
+
+										{nuvemshopError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{nuvemshopError}
+											</div>
+										)}
+
+										<button onClick={handleConnectNuvemshop} disabled={nuvemshopSaving} style={buttonStyle}>
+											{nuvemshopSaving ? "Conectando..." : "Conectar Nuvemshop"}
 										</button>
 									</div>
 								)}

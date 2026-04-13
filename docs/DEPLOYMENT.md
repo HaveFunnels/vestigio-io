@@ -84,6 +84,26 @@ needs a `paddlePriceId` matching a Paddle price ID.
 
 ---
 
+## Nuvemshop Integration
+
+| Env var | Description | Where to get it |
+|---------|-------------|-----------------|
+| `NUVEMSHOP_APP_ID` | Nuvemshop Partner App ID (e.g., `29656`) | partners.nuvemshop.com.br → App → Overview |
+| `NUVEMSHOP_CLIENT_SECRET` | App client secret for OAuth token exchange | partners.nuvemshop.com.br → App → Credentials |
+
+**OAuth setup in Nuvemshop Partners:**
+1. Go to partners.nuvemshop.com.br → App → Edit
+2. Set **Redirect URL** to: `https://app.vestigio.io/api/integrations/nuvemshop/callback`
+3. Set required **Scopes**: `read_orders`, `read_customers`, `read_products`
+4. Set **LGPD Webhooks**:
+   - Store Redact URL: `https://app.vestigio.io/api/integrations/nuvemshop/webhooks/store-redact`
+   - Customers Redact URL: `https://app.vestigio.io/api/integrations/nuvemshop/webhooks/customers-redact`
+   - Customers Data Request URL: `https://app.vestigio.io/api/integrations/nuvemshop/webhooks/customers-data-request`
+
+**Demo store:** https://vestigiodemostore.lojavirtualnuvem.com.br/
+
+---
+
 ## Database
 
 | Env var | Description |
@@ -129,6 +149,10 @@ META_SYSTEM_USER_TOKEN=...
 META_WABA_ID=...
 META_PHONE_NUMBER_ID=...
 META_WEBHOOK_VERIFY_TOKEN=...
+
+# Nuvemshop
+NUVEMSHOP_APP_ID=29656
+NUVEMSHOP_CLIENT_SECRET=...
 
 # AI
 ANTHROPIC_API_KEY=sk-ant-...

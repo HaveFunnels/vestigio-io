@@ -10,7 +10,7 @@ import { z } from "zod";
 // Integration Sync — POST (manual trigger)
 // ──────────────────────────────────────────────
 
-const SUPPORTED_PROVIDERS = ["shopify", "stripe", "meta_ads", "google_ads"] as const;
+const SUPPORTED_PROVIDERS = ["shopify", "nuvemshop", "stripe", "meta_ads", "google_ads"] as const;
 
 // ── Authorization helper ─────────────────────
 
@@ -124,6 +124,85 @@ async function syncShopify(config: Record<string, string>): Promise<{ ok: boolea
   }
 }
 
+// ── Nuvemshop sync ──────────────────────────
+
+async function syncNuvemshop(config: Record<string, string>): Promise<{ ok: boolean; summary?: Record<string, unknown>; error?: string }> {
+  const { store_id, access_token } = config;
+
+  if (!store_id || !access_token) {
+    return { ok: false, error: "Missing store_id or access_token in config" };
+  }
+
+  const baseUrl = `https://api.nuvemshop.com.br/v1/${store_id}`;
+  const headers = {
+    "Authentication": `bearer ${access_token}`,
+    "User-Agent": "Vestigio (support@vestigio.io)",
+    "Content-Type": "application/json",
+  };
+
+  try {
+    // Fetch store info
+    const storeRes = await fetch(`${baseUrl}/store`, {
+      method: "GET",
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!storeRes.ok) {
+      if (storeRes.status === 401 || storeRes.status === 403) {
+        return { ok: false, error: "Token de acesso Nuvemshop inválido ou expirado" };
+      }
+      return { ok: false, error: `Nuvemshop API retornou ${storeRes.status}` };
+    }
+
+    const storeData = await storeRes.json();
+    const storeName = typeof storeData.name === 'object'
+      ? (storeData.name?.pt || storeData.name?.en || Object.values(storeData.name)[0] || null)
+      : storeData.name || null;
+
+    // Fetch order count
+    // Nuvemshop uses x-total-count header for counts
+    const ordersRes = await fetch(`${baseUrl}/orders?per_page=1&status=any`, {
+      method: "GET",
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    let orderCount: number | null = null;
+    if (ordersRes.ok) {
+      orderCount = parseInt(ordersRes.headers.get("x-total-count") || "0", 10) || null;
+    }
+
+    // Fetch product count
+    const productsRes = await fetch(`${baseUrl}/products?per_page=1&published=true`, {
+      method: "GET",
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    let productCount: number | null = null;
+    if (productsRes.ok) {
+      productCount = parseInt(productsRes.headers.get("x-total-count") || "0", 10) || null;
+    }
+
+    return {
+      ok: true,
+      summary: {
+        store_name: storeName,
+        store_domain: storeData.original_domain ?? null,
+        order_count: orderCount,
+        product_count: productCount,
+        synced_at: new Date().toISOString(),
+      },
+    };
+  } catch (err: any) {
+    if (err.name === "TimeoutError" || err.name === "AbortError") {
+      return { ok: false, error: "Nuvemshop API request timed out" };
+    }
+    return { ok: false, error: `Sync failed: ${err.message}` };
+  }
+}
+
 // ── Schema ───────────────────────────────────
 
 const syncSchema = z.object({
@@ -195,6 +274,9 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   switch (provider) {
     case "shopify":
       syncResult = await syncShopify(config);
+      break;
+    case "nuvemshop":
+      syncResult = await syncNuvemshop(config);
       break;
     default:
       return NextResponse.json(

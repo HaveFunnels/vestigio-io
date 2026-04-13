@@ -30,7 +30,9 @@ import { recomputeAll } from "../../packages/workspace";
 import { loadEngineTranslations } from "@/lib/engine-translations";
 import { processBehavioralEventsForEnv } from "./process-behavioral";
 import { pollShopifyData } from "../../workers/shopify/poller";
-import { mapPollResultToSnapshotData } from "../../packages/shopify-adapter/snapshot-mapper";
+import { mapPollResultToSnapshotData as mapShopifyPollResult } from "../../packages/shopify-adapter/snapshot-mapper";
+import { pollNuvemshopData } from "../../workers/nuvemshop/poller";
+import { mapPollResultToSnapshotData as mapNuvemshopPollResult } from "../../packages/nuvemshop-adapter/snapshot-mapper";
 import { decryptConfig } from "@/libs/integration-crypto";
 import type { IntegrationSnapshot } from "../../packages/integrations/types";
 import type { Evidence } from "../../packages/domain";
@@ -363,7 +365,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 								provider: 'shopify',
 								fetched_at: new Date().toISOString(),
 								window: '30d',
-								data: mapPollResultToSnapshotData(pollResult),
+								data: mapShopifyPollResult(pollResult),
 							};
 							integrationSnapshots.push(snapshot);
 						}
@@ -386,10 +388,47 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						}).catch(() => { /* swallow secondary error */ });
 					}
 				}
-			} catch (err) {
-				console.warn(`[audit-runner ${cycleId}] integration connections lookup failed:`, err);
-				// Non-fatal — the cycle still works without integration data.
-			}
+
+					// Wave 0.5: Nuvemshop integration (same pattern as Shopify)
+					const nuvemshopConn = integrationConnections.find(c => c.provider === 'nuvemshop');
+					if (nuvemshopConn) {
+						try {
+							const config = decryptConfig(nuvemshopConn.config);
+							const nuvemshopPollResult = await pollNuvemshopData({
+								store_id: config.store_id || '',
+								access_token: config.access_token,
+							});
+
+							if (nuvemshopPollResult.metrics.length > 0) {
+								const snapshot: IntegrationSnapshot<'nuvemshop'> = {
+									provider: 'nuvemshop',
+									fetched_at: new Date().toISOString(),
+									window: '30d',
+									data: mapNuvemshopPollResult(nuvemshopPollResult),
+								};
+								integrationSnapshots.push(snapshot);
+							}
+
+							await prisma.integrationConnection.update({
+								where: { id: nuvemshopConn.id },
+								data: { lastSyncedAt: new Date(), status: 'connected', syncError: null },
+							});
+
+							console.log(
+								`[audit-runner ${cycleId}] Nuvemshop integration synced (orders=${nuvemshopPollResult.orders_fetched}, basis=${nuvemshopPollResult.basis_type})`,
+							);
+						} catch (err) {
+							console.warn(`[audit-runner ${cycleId}] Nuvemshop integration sync failed:`, err);
+							await prisma.integrationConnection.update({
+								where: { id: nuvemshopConn.id },
+								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
+							}).catch(() => { /* swallow secondary error */ });
+						}
+					}
+				} catch (err) {
+					console.warn(`[audit-runner ${cycleId}] integration connections lookup failed:`, err);
+					// Non-fatal — the cycle still works without integration data.
+				}
 
 			// (b) Engine
 			const recomputeStartMs = Date.now();

@@ -115,6 +115,7 @@ See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milest
 | Members & Invite Flow | ✅ **Done — Wave 2.2 (2026-04-12)** | Wave 2.2 | Full lifecycle: OrgInvite model, invite/accept/revoke APIs, Brevo email, seat limits, members table with role management |
 | `integration_pull` executor | Scaffolded only | Wave 3 | executors.ts:197-212 returns "not implemented" |
 | `body_text_snippet` 500 → 2000 chars | ✅ **Done — 2026-04-12** | Wave 3.7B | parser.ts:105 changed to 2000 |
+| Nuvemshop Integration (full) | ✅ **Done — 2026-04-12** | Wave 3.7B | OAuth callback, adapter package, poller, reconciliation, audit runner, Data Sources UI, KB guide, LGPD webhooks |
 | Conversation export/branching | Not started | Wave 4 | unchanged |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2 | unchanged |
 
@@ -698,6 +699,44 @@ Logic: compare `BusinessInputs.monthly_revenue` at cycle N (resolution) vs N+1. 
 | **Bragging Rights** | Revenue Recovery Tracker: "Vestigio helped recover est. $X/mo from N resolved findings." |
 | **Pulse Summary** | Haiku cites real numbers: "Your checkout abandonment costs $4.2k/mo based on Shopify data." |
 | **Operational Amplifiers** | 5 amplifiers (cancellation, discount abuse, economic leakage, payment concentration, tx failure) derived from real Shopify operational data. Already built in mapper. |
+
+---
+
+### 3.7B Nuvemshop Integration
+
+| | |
+|---|---|
+| **Tag** | `platform` `collection` `engine` `frontend` |
+| **Priority** | P1 |
+| **Status** | ✅ **Done — 2026-04-12** |
+
+**Context:** Nuvemshop holds 30-40% of the Brazilian SMB e-commerce market (vs Shopify's ~20%). Co-launching Nuvemshop alongside Shopify is critical for go-to-market in Brazil.
+
+**Architecture:** Mirrors the Shopify adapter exactly. `NuvemshopSnapshotData` has the identical shape as `ShopifySnapshotData`, so the engine's reconciliation layer treats them interchangeably. One Nuvemshop OR one Shopify per environment; if both exist, Shopify wins (unlikely scenario). Uses the same `IntegrationConnection` Prisma model.
+
+**Key difference from Shopify:** Nuvemshop uses full OAuth (authorization_code flow) instead of custom app tokens. Tokens don't expire. Rate limit: 2 req/s with 40-burst bucket (leaky bucket algorithm).
+
+| # | Part | Description | Status |
+|---|------|-------------|--------|
+| A | **OAuth callback route** | `POST /api/integrations/nuvemshop/callback` — exchanges code for `access_token` + `user_id` (store_id), persists encrypted credentials, verifies connection, redirects to Data Sources. | ✅ Done |
+| B | **LGPD webhooks** | 3 mandatory LGPD compliance endpoints for Nuvemshop app homologation: store-redact, customers-redact, customers-data-request. | ✅ Done |
+| C | **Adapter package** | `packages/nuvemshop-adapter/` — types, client, aggregator, mapper, snapshot-mapper. Mirrors Shopify adapter structure. | ✅ Done |
+| D | **Poller worker** | `workers/nuvemshop/poller.ts` — fetch orders/customers/products, aggregate into time-windowed metrics, produce BusinessInputs + OperationalContext. | ✅ Done |
+| E | **Integration types** | Added `'nuvemshop'` to `IntegrationProvider`, `NuvemshopSnapshotData` to `IntegrationDataMap`. | ✅ Done |
+| F | **Reconciliation** | Updated `reconcileIntegrations()` to treat Shopify and Nuvemshop as interchangeable ecommerce sources. | ✅ Done |
+| G | **API routes** | Added Nuvemshop to connect/verify/disconnect + sync routes. | ✅ Done |
+| H | **Audit runner** | Wired Nuvemshop poller into `runAuditCycle()` alongside Shopify. | ✅ Done |
+| I | **Data Sources UI** | Nuvemshop card with OAuth instructions, store ID + token fields, connect/disconnect/sync. PT-BR copy. | ✅ Done |
+| J | **KB guide** | `nuvemshop-integration-setup` guide with setup instructions. | ✅ Done |
+
+**Nuvemshop API limitations vs Shopify:**
+- No abandoned checkout API → `abandoned_checkouts` always null
+- No separate inventory levels endpoint → stock comes from product variants
+- Customer list doesn't include `orders_count` → repeat rate inferred from `total_spent` + `last_order_id`
+- Pagination via `page` + `per_page` (max 200) instead of cursor-based
+
+**Demo store:** `vestigiodemostore.lojavirtualnuvem.com.br` (Store ID: 7556429)
+**Partner dashboard:** partners.nuvemshop.com.br (App ID: 29656)
 
 ---
 

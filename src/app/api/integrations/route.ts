@@ -10,7 +10,7 @@ import { z } from "zod";
 // Integrations — POST (connect) + GET (list) + DELETE (disconnect)
 // ──────────────────────────────────────────────
 
-const SUPPORTED_PROVIDERS = ["shopify", "stripe", "meta_ads", "google_ads"] as const;
+const SUPPORTED_PROVIDERS = ["shopify", "nuvemshop", "stripe", "meta_ads", "google_ads"] as const;
 
 // ── Authorization helper ─────────────────────
 
@@ -80,6 +80,44 @@ async function verifyShopifyConnection(config: Record<string, string>): Promise<
       return { ok: false, error: "Shopify API request timed out" };
     }
     return { ok: false, error: `Failed to reach Shopify: ${err.message}` };
+  }
+}
+
+// ── Nuvemshop connection verification ────────
+
+async function verifyNuvemshopConnection(config: Record<string, string>): Promise<{ ok: boolean; error?: string }> {
+  const { store_id, access_token } = config;
+
+  if (!store_id || !access_token) {
+    return { ok: false, error: "store_id and access_token are required for Nuvemshop" };
+  }
+
+  const storeUrl = `https://api.nuvemshop.com.br/v1/${store_id}/store`;
+
+  try {
+    const res = await fetch(storeUrl, {
+      method: "GET",
+      headers: {
+        "Authentication": `bearer ${access_token}`,
+        "User-Agent": "Vestigio (support@vestigio.io)",
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        return { ok: false, error: "Token de acesso Nuvemshop inválido" };
+      }
+      return { ok: false, error: `Nuvemshop API retornou ${res.status}` };
+    }
+
+    return { ok: true };
+  } catch (err: any) {
+    if (err.name === "TimeoutError" || err.name === "AbortError") {
+      return { ok: false, error: "Nuvemshop API request timed out" };
+    }
+    return { ok: false, error: `Falha ao conectar com Nuvemshop: ${err.message}` };
   }
 }
 
@@ -155,6 +193,8 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 
   if (provider === "shopify") {
     verificationResult = await verifyShopifyConnection(config);
+  } else if (provider === "nuvemshop") {
+    verificationResult = await verifyNuvemshopConnection(config);
   }
   // Future: add verification for stripe, meta_ads, google_ads
 

@@ -82,7 +82,7 @@ export default function WorkspaceDetailPage({
 								</Link>
 							</div>
 						);
-					}}
+					}
 					return <WorkspaceDetail workspace={workspace} />;
 				}}
 			</ConsoleState>

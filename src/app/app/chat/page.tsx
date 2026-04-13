@@ -1510,100 +1510,81 @@ function buildContextPrompt(items: ChatContextItem[], t: any): string {
 	return prompt("combined", { parts: parts.join(", ") });
 }
 
+// Preset visual metadata — color accent per question topic
+const PRESET_STYLE: Record<string, { accent: string; gradient: string }> = {
+	losing_money: { accent: "text-red-400", gradient: "from-red-500/[0.04]" },
+	scale_traffic: { accent: "text-amber-400", gradient: "from-amber-500/[0.04]" },
+	fix_first: { accent: "text-emerald-400", gradient: "from-emerald-500/[0.04]" },
+	chargeback_risk: { accent: "text-red-400", gradient: "from-red-500/[0.04]" },
+	recent_changes: { accent: "text-sky-400", gradient: "from-sky-500/[0.04]" },
+	regressions: { accent: "text-violet-400", gradient: "from-violet-500/[0.04]" },
+};
+
 function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
 	const t = useTranslations("console.chat");
 	const [tipsOpen, setTipsOpen] = useState(false);
 	return (
-		<div className='mx-auto flex max-w-2xl flex-col items-center justify-center py-12'>
+		<div className="mx-auto flex max-w-2xl flex-col items-center justify-center py-12">
 			{/* Logo mark */}
-			<div className='mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10'>
-				<svg
-					className='h-6 w-6 text-emerald-400'
-					viewBox='0 0 24 24'
-					fill='none'
-				>
-					<path
-						d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'
-						stroke='currentColor'
-						strokeWidth='1.5'
-						strokeLinecap='round'
-						strokeLinejoin='round'
-					/>
+			<div className="relative mb-5 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
+				<div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/[0.06] via-transparent to-transparent" />
+				<svg className="relative h-6 w-6 text-emerald-400" viewBox="0 0 24 24" fill="none">
+					<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
 				</svg>
 			</div>
 
-			<h2 className='text-lg font-semibold text-content-secondary'>
+			<h2 className="text-lg font-semibold text-content">
 				{t("emptyState.title")}
 			</h2>
-			<p className='mt-1 max-w-md text-center text-sm text-content-muted'>
+			<p className="mt-1 max-w-md text-center text-[13px] leading-relaxed text-content-muted">
 				{t("emptyState.description")}
 			</p>
 
-			{/* Quick questions — all 6 presets in a 3x2 grid. Used to
-          slice to the first 3 because the original 3-column row
-          looked balanced visually, but that wasted half the
-          curated questions. Showing all 6 gives 2x more entry
-          points at zero design cost. */}
-			<div className='mt-6 grid w-full grid-cols-3 gap-2'>
-				{QUICK_PRESET_IDS.map((id) => (
-					<button
-						key={id}
-						onClick={() => onSuggest(t(`quick_presets.${id}.text`))}
-						className='rounded-lg border border-edge px-3 py-2 text-center text-[12px] text-content-tertiary transition-colors hover:border-emerald-600/50 hover:text-emerald-400'
-					>
-						{t(`quick_presets.${id}.label`)}
-					</button>
-				))}
+			{/* Quick questions — 3x2 grid styled as dashboard widget cards */}
+			<div className="mt-6 grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
+				{QUICK_PRESET_IDS.map((id) => {
+					const style = PRESET_STYLE[id] || PRESET_STYLE.losing_money;
+					return (
+						<button
+							key={id}
+							onClick={() => onSuggest(t(`quick_presets.${id}.text`))}
+							className="group relative overflow-hidden rounded-2xl border border-edge bg-surface-card px-4 py-3 text-left shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:border-content-faint hover:shadow-xl"
+						>
+							<div className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${style.gradient} via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100`} />
+							<span className={`relative block font-mono text-[11px] font-medium tabular-nums ${style.accent} mb-1 opacity-60`}>
+								{String(QUICK_PRESET_IDS.indexOf(id) + 1).padStart(2, "0")}
+							</span>
+							<span className="relative block text-[12px] font-medium leading-snug text-content-secondary group-hover:text-content">
+								{t(`quick_presets.${id}.label`)}
+							</span>
+						</button>
+					);
+				})}
 			</div>
 
-			<p className='mt-4 text-[10px] text-content-faint'>
+			<p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
 				{t("emptyState.playbooksHint")}
 			</p>
 
-			{/* Onboarding tips — collapsed by default to keep the empty
-          state clean for repeat users. Expanding shows 5 quick
-          tips on how to use the chat: phrasing style, attachments,
-          voice input, playbooks, follow-ups. The pre-Wave-3 empty
-          state had only the 3 quick buttons + a one-line hint
-          about playbooks — first-time users had no idea the chat
-          could do voice input, file attachments, or contextual
-          follow-ups. */}
+			{/* Onboarding tips */}
 			<button
 				onClick={() => setTipsOpen(!tipsOpen)}
-				className='mt-6 flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-content-muted transition-colors hover:text-content-secondary'
+				className="mt-5 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] text-content-muted transition-colors hover:text-content-secondary"
 			>
-				<svg className='h-3 w-3' viewBox='0 0 16 16' fill='none'>
-					<path
-						d='M8 1.5a4.5 4.5 0 00-2.5 8.25V11h5V9.75A4.5 4.5 0 008 1.5zM6 13h4M7 14.5h2'
-						stroke='currentColor'
-						strokeWidth='1.25'
-						strokeLinecap='round'
-						strokeLinejoin='round'
-					/>
+				<svg className="h-3 w-3" viewBox="0 0 16 16" fill="none">
+					<path d="M8 1.5a4.5 4.5 0 00-2.5 8.25V11h5V9.75A4.5 4.5 0 008 1.5zM6 13h4M7 14.5h2" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
 				</svg>
 				{t("emptyState.tips_toggle")}
-				<svg
-					className={`h-2.5 w-2.5 transition-transform ${tipsOpen ? "rotate-180" : ""}`}
-					viewBox='0 0 16 16'
-					fill='none'
-				>
-					<path
-						d='M4 6l4 4 4-4'
-						stroke='currentColor'
-						strokeWidth='1.5'
-						strokeLinecap='round'
-						strokeLinejoin='round'
-					/>
+				<svg className={`h-2.5 w-2.5 transition-transform ${tipsOpen ? "rotate-180" : ""}`} viewBox="0 0 16 16" fill="none">
+					<path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
 				</svg>
 			</button>
 			{tipsOpen && (
-				<div className='mt-3 w-full max-w-md rounded-lg border border-edge bg-surface-card/40 p-4'>
-					<ul className='space-y-2 text-[11px] text-content-muted'>
-						{(
-							["natural", "context", "playbooks", "files", "voice"] as const
-						).map((key) => (
-							<li key={key} className='flex gap-2'>
-								<span className='text-emerald-500'>•</span>
+				<div className="mt-3 w-full max-w-md overflow-hidden rounded-2xl border border-edge bg-surface-card p-4 shadow-lg">
+					<ul className="space-y-2 text-[11px] text-content-muted">
+						{(["natural", "context", "playbooks", "files", "voice"] as const).map((key) => (
+							<li key={key} className="flex gap-2">
+								<span className="mt-[1px] h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/50" />
 								<span>{t(`emptyState.tips.${key}`)}</span>
 							</li>
 						))}

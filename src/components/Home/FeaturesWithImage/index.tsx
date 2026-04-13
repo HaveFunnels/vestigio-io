@@ -143,7 +143,7 @@ const FeaturesWithImage = async () => {
 	return (
 		<section
 			id='solutions'
-			className='relative z-1 hidden overflow-hidden border-t border-white/[0.04] bg-[#080812] sm:block sm:py-20 lg:py-24 xl:py-28'
+			className='relative z-1 hidden overflow-hidden border-t border-white/5 bg-[#080812] sm:block sm:py-20 lg:py-28'
 		>
 			{/* Soft ambient halo */}
 			<div
@@ -178,18 +178,18 @@ const FeaturesWithImage = async () => {
 						return (
 							<div
 								key={i}
-								className={`group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-white/[0.07] bg-white/[0.015] p-6 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-white/[0.18] sm:p-7 ${accent.hoverBorder} ${accent.shadow} ${
+								className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-white/[0.18] sm:p-7 ${accent.hoverBorder} ${accent.shadow} ${
 									isLast ? "lg:col-span-2 lg:col-start-2" : ""
 								}`}
 							>
 								{/* Idle gradient → brightens on hover */}
 								<div
-									className={`pointer-events-none absolute inset-0 rounded-[1.25rem] bg-gradient-to-br ${accent.gradient} via-transparent to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-100`}
+									className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${accent.gradient} via-transparent to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-100`}
 									aria-hidden
 								/>
 								{/* Inner ring */}
 								<div
-									className='pointer-events-none absolute inset-0 rounded-[1.25rem] ring-1 ring-inset ring-white/[0.04] transition-all duration-500 group-hover:ring-white/[0.08]'
+									className='pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/[0.04] transition-all duration-500 group-hover:ring-white/[0.08]'
 									aria-hidden
 								/>
 
@@ -206,7 +206,7 @@ const FeaturesWithImage = async () => {
 												{item.tag}
 											</span>
 										</div>
-										<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.625rem] border border-white/10 bg-white/[0.04] text-zinc-300 transition-colors group-hover:text-white'>
+										<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-zinc-300 transition-colors group-hover:text-white'>
 											<div className='h-4 w-4'>{accent.icon}</div>
 										</div>
 									</div>

@@ -126,7 +126,7 @@ const ActionQueueVisual = ({ rows }: { rows: ActionRow[] }) => (
 		{rows.map((row, i) => (
 			<div
 				key={i}
-				className='flex items-center gap-3 rounded-[0.625rem] border border-white/5 bg-white/[0.015] px-3 py-1.5 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-amber-500/15 group-hover:bg-white/[0.025]'
+				className='flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.015] px-3 py-1.5 transition-all duration-300 group-hover:translate-x-0.5 group-hover:border-amber-500/15 group-hover:bg-white/[0.025]'
 				style={{ transitionDelay: `${i * 40}ms` }}
 			>
 				<span className='font-mono text-[10px] tabular-nums text-zinc-500'>
@@ -169,7 +169,7 @@ const RevenueLeaksVisual = ({
 		{rows.map((row, i) => (
 			<div
 				key={i}
-				className='flex items-center gap-2 rounded-[0.625rem] border border-white/5 bg-white/[0.02] px-2.5 py-2 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:border-red-500/20 group-hover:bg-white/[0.04] lg:gap-3 lg:px-3'
+				className='flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-2.5 py-2 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:border-red-500/20 group-hover:bg-white/[0.04] lg:gap-3 lg:px-3'
 				style={{ transitionDelay: `${i * 60}ms` }}
 			>
 				<div className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-red-500/10 text-red-400 transition-all duration-300 group-hover:scale-110 group-hover:bg-red-500/15'>
@@ -732,7 +732,7 @@ const BentoCard = ({
 
 	return (
 		<div
-			className={`group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.02] p-5 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-6 ${a.hoverBorder} ${a.hoverShadow} ${className}`}
+			className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-white/20 sm:p-6 ${a.hoverBorder} ${a.hoverShadow} ${className}`}
 		>
 			{/* Top accent bar — invisible at idle, slides in on hover */}
 			<div
@@ -742,13 +742,13 @@ const BentoCard = ({
 
 			{/* Idle accent gradient — visible, brightens on hover */}
 			<div
-				className={`pointer-events-none absolute inset-0 rounded-[1.25rem] bg-gradient-to-br ${a.gradient} opacity-70 transition-opacity duration-500 group-hover:opacity-100`}
+				className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${a.gradient} opacity-70 transition-opacity duration-500 group-hover:opacity-100`}
 				aria-hidden
 			/>
 
 			{/* Inner highlight border */}
 			<div
-				className='pointer-events-none absolute inset-0 rounded-[1.25rem] ring-1 ring-inset ring-white/[0.04] transition-all duration-500 group-hover:ring-white/[0.08]'
+				className='pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/[0.04] transition-all duration-500 group-hover:ring-white/[0.08]'
 				aria-hidden
 			/>
 
@@ -818,7 +818,7 @@ const Features = async () => {
 	return (
 		<section
 			id='features'
-			className='relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-10 sm:py-12 lg:py-16 xl:py-20'
+			className='relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28'
 		>
 			{/* Component-scoped keyframes. Prefixed with `vbento-` so they
 			    can't collide with other animations elsewhere in the app.

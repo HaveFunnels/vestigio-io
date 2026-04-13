@@ -176,7 +176,7 @@ function VideoCard({ testimonial }: { testimonial: VideoTestimonial }) {
 
 const VideoTestimonials = () => {
   return (
-    <section className="relative z-1 overflow-hidden border-t border-white/5 bg-[#080812] py-20 sm:py-24 lg:py-32">
+    <section className="relative z-1 overflow-hidden border-t border-white/5 bg-[#080812] py-16 sm:py-20 lg:py-28">
       {/* Ambient halos */}
       <div className="pointer-events-none absolute inset-0 -z-1" aria-hidden>
         <div className="absolute left-1/2 top-1/2 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.05] blur-[90px]" />

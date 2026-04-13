@@ -224,7 +224,7 @@ const Testimonials = () => {
   );
 
   return (
-    <section className="relative z-1 overflow-hidden border-t border-white/5 bg-[#0d0d15] py-16 sm:py-20 lg:py-28">
+    <section className="relative z-1 overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28">
       <div className="mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0">
         {/* Header + navigation */}
         <div className="mb-8 flex items-end justify-between sm:mb-10">

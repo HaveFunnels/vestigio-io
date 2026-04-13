@@ -285,7 +285,7 @@ const MiniCalculator = ({
 		}`;
 
 	return (
-		<section className='relative z-1 overflow-hidden border-t border-white/5 bg-[#080812] py-20 sm:py-24 lg:py-32'>
+		<section className='relative z-1 overflow-hidden border-t border-white/5 bg-[#080812] py-16 sm:py-20 lg:py-28'>
 			{/* Ambient page-background halos so the gradient card sits on
 			    a subtly lit canvas instead of a flat plate. */}
 			<div className='pointer-events-none absolute inset-0 -z-1' aria-hidden>

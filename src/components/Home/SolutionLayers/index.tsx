@@ -99,8 +99,8 @@ function LayerCard({ layer, index, tools, accent }: {
 					<div className="min-w-0 flex-1">
 						<span className={`mb-4 inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${c.pill} sm:mb-5`}>{layer.eyebrow}</span>
 						<h3 className="mb-3 text-lg font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">{layer.title}</h3>
-						<p className="mb-3 text-sm leading-relaxed text-gray-300 sm:text-base">{layer.body}</p>
-						<p className="text-xs leading-relaxed text-gray-500 sm:text-sm">{layer.support}</p>
+						<p className="mb-3 text-sm leading-relaxed text-zinc-300 sm:text-base">{layer.body}</p>
+						<p className="text-xs leading-relaxed text-zinc-500 sm:text-sm">{layer.support}</p>
 					</div>
 					<div className="flex shrink-0 flex-wrap gap-2 md:flex-col md:items-end md:pt-8">
 						{tools.map((t) => <span key={t} className={`rounded-lg border ${c.border} px-3 py-1.5 text-xs font-medium ${c.text}`}>{t}</span>)}
@@ -130,9 +130,9 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 								<div className="grid h-7 w-7 place-items-center rounded-lg bg-white/10">
 									<svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
 								</div>
-								<span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t.userQueryLabel}</span>
+								<span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{t.userQueryLabel}</span>
 							</div>
-							<p className="text-xs leading-relaxed text-gray-300">&ldquo;{t.userQuery}&rdquo;</p>
+							<p className="text-xs leading-relaxed text-zinc-300">&ldquo;{t.userQuery}&rdquo;</p>
 							<div className="mt-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 						</div>
 
@@ -205,7 +205,7 @@ function AgenticChatFlow({ t }: { t: typeof i18n["en"]["chat"] }) {
 								</div>
 								<span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">{t.responseLabel}</span>
 							</div>
-							<p className="mb-4 text-xs leading-relaxed text-gray-300">{t.responseBody}</p>
+							<p className="mb-4 text-xs leading-relaxed text-zinc-300">{t.responseBody}</p>
 							<div className="flex flex-wrap gap-1.5">
 								<span className="inline-block w-fit rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">{t.chipFindings}</span>
 								<span className="inline-block w-fit rounded-md bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">{t.chipActions}</span>
@@ -258,7 +258,7 @@ export default function SolutionLayers() {
 						<span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">{t.sectionLabel}</span>
 					</div>
 				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">{t.title}</h2>
-				<p className="text-sm leading-relaxed text-gray-400 sm:text-base lg:text-lg">{t.subtitle}</p>
+				<p className="text-sm leading-relaxed text-zinc-400 sm:text-base lg:text-lg">{t.subtitle}</p>
 			</div>
 
 			<div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">

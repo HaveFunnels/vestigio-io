@@ -13,7 +13,7 @@ const CallToAction = ({
 	const t = useTranslations("homepage.cta");
 
 	return (
-		<section className='relative z-1 overflow-hidden bg-[#090911] py-16 sm:py-20 lg:py-28'>
+		<section className='relative z-1 overflow-hidden bg-[#090911] py-12 sm:py-16 lg:py-20'>
 			<div className='mx-auto w-full max-w-[700px] px-4 text-center sm:px-8 xl:px-0'>
 				{/* Gradient glow */}
 				<div className='absolute left-1/2 top-1/2 h-[220px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-900/20 blur-[80px] sm:h-[300px] sm:w-[500px] sm:blur-[100px]' />

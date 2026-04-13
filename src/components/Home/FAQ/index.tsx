@@ -17,7 +17,7 @@ const FAQ = () => {
 	return (
 		<section
 			id="faq"
-			className="overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28"
+			className="overflow-hidden border-t border-white/5 bg-[#090911] py-10 sm:py-14 lg:py-16"
 		>
 			<FaqJsonLd faqs={items} />
 

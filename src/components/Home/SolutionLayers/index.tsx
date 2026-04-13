@@ -166,7 +166,7 @@ export default function SolutionLayers() {
 	const chat = t.raw("chat") as ChatI18n;
 
 	return (
-		<section className="relative bg-[#090911] py-16 sm:py-20 lg:py-28">
+		<section className="relative bg-[#090911] py-12 sm:py-16 lg:py-20">
 			{/* One-shot entrance animation */}
 			<style>{`
 				@keyframes layerFadeIn {

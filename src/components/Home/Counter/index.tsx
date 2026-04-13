@@ -20,7 +20,7 @@ const Counter = () => {
 	}, []);
 
 	return (
-		<section ref={sectionRef} className='relative overflow-hidden border-t border-white/5 bg-[#090911] py-16 sm:py-20 lg:py-28'>
+		<section ref={sectionRef} className='relative overflow-hidden border-t border-white/5 bg-[#090911] py-10 sm:py-14 lg:py-16'>
 			<style>{`
 				.vcounter-paused * { animation-play-state: paused !important; }
 				@keyframes vcounter-float {

@@ -114,64 +114,64 @@
         "rows": [
           {
             "priority": "P1",
-            "title": "Checkout-Redirect-Kette beheben",
-            "desc": "3 Redirects fügen 2,4s Latenz beim Bezahlen hinzu",
+            "title": "Ihr Checkout dauert 2,4s länger als nötig",
+            "desc": "Kunden warten extra zwischen Warenkorb und Zahlung — 68% brechen auf Mobilgeräten ab",
             "impact": "−€16k–38k",
             "severity": "critical"
           },
           {
             "priority": "P2",
-            "title": "Mobiles Add-to-Cart unter der Falz",
-            "desc": "Button auf 68% der mobilen Sessions versteckt",
+            "title": "Kauf-Button auf Mobilgeräten unsichtbar",
+            "desc": "Käufer müssen scrollen, um den Button auf 68% der Sessions zu finden",
             "impact": "−€11k–25k",
             "severity": "critical"
           },
           {
             "priority": "P3",
-            "title": "SSL fehlt auf Checkout-Subdomain",
-            "desc": "Browser warnt Nutzer bei 12% der Bezahlvorgänge",
+            "title": "'Nicht sicher'-Warnung erscheint bei der Zahlung",
+            "desc": "12% der Käufer sehen eine Sicherheitswarnung bei der Karteneingabe",
             "impact": "−€7k–19k",
             "severity": "critical"
           },
           {
             "priority": "P4",
-            "title": "Preisfilter verliert Status bei Navigation",
-            "desc": "Status bleibt nicht erhalten zwischen Seiten",
+            "title": "Produktfilter werden bei jeder Navigation zurückgesetzt",
+            "desc": "Käufer verlieren ihre Auswahl und müssen neu anfangen",
             "impact": "−€4.5k–13k",
             "severity": "high"
           },
           {
             "priority": "P5",
-            "title": "Rückgaberichtlinie fehlt im Footer",
-            "desc": "Erhöht Chargeback-Rate 2,1x über Marktdurchschnitt",
+            "title": "Keine Rückgaberichtlinie während des Kaufs sichtbar",
+            "desc": "Chargeback-Rate 2,1x über Marktdurchschnitt ohne sichtbare Richtlinie",
             "impact": "−€3.2k–8k",
             "severity": "high"
           },
           {
             "priority": "P6",
-            "title": "Onboarding Schritt 3 Abbruch-Spike",
-            "desc": "Abfall von 78% → 41% in den letzten 2 Zyklen",
+            "title": "Mehr als die Hälfte der Anmeldungen brechen bei Schritt 3 ab",
+            "desc": "Konversion fällt von 78% → 41% in den letzten 2 Zyklen",
             "impact": "−€3.6k–10k",
             "severity": "high"
           },
           {
             "priority": "P7",
-            "title": "Analytics am /checkout-Funnel hinzufügen",
-            "desc": "Keine Funnel-Sichtbarkeit zwischen Cart und Bestätigung",
+            "title": "Keine Sicht zwischen Warenkorb und Kauf",
+            "desc": "Sie können nicht sehen, wo Käufer in den letzten Schritten abbrechen",
             "impact": "−€8k–22k",
             "severity": "medium"
           },
           {
             "priority": "P8",
-            "title": "Vertrauenslücke im Formular",
-            "desc": "9% der Leads brechen beim E-Mail-Feld ab",
+            "title": "9% der Leads brechen beim E-Mail-Feld ab",
+            "desc": "Keine Vertrauenssignale beim Formular — Besucher fühlen sich unsicher",
             "impact": "−€1.8k–5k",
             "severity": "medium"
           },
           {
             "priority": "P9",
-            "title": "Hero-CTA Kontrast unter WCAG",
-            "desc": "Geschätzter Klickverlust von 4% auf dunklen Hintergründen",
+            "title": "Haupt-Button auf dunklen Hintergründen schwer zu sehen",
+            "desc": "Geschätzt 4% der Besucher finden den Button nicht",
             "impact": "−€1.3k–3.5k",
             "severity": "low"
           }
@@ -214,52 +214,52 @@
         ],
         "rows": [
           {
-            "title": "Checkout-Redirect-Kette fügt 2,4s Latenz hinzu",
+            "title": "Checkout dauert 2,4s länger als nötig",
             "severity": "critical",
             "impact": "−€16k–38k"
           },
           {
-            "title": "Mobiles Add-to-Cart unter der Falz",
+            "title": "Kauf-Button auf Mobilgeräten unsichtbar",
             "severity": "critical",
             "impact": "−€11k–25k"
           },
           {
-            "title": "Checkout-Subdomain ohne SSL-Zertifikat",
+            "title": "'Nicht sicher'-Warnung erscheint bei der Zahlung",
             "severity": "critical",
             "impact": "−€7k–19k"
           },
           {
-            "title": "Preisfilter verliert Status bei Navigation",
+            "title": "Produktfilter werden bei Navigation zurückgesetzt",
             "severity": "high",
             "impact": "−€4.5k–13k"
           },
           {
-            "title": "Fehlende Rückgaberichtlinie erhöht Chargeback-Risiko",
+            "title": "Keine Rückgaberichtlinie während des Kaufs sichtbar",
             "severity": "high",
             "impact": "−€3.2k–8k"
           },
           {
-            "title": "Konversionsregression in Onboarding-Schritt 3",
+            "title": "Mehr als die Hälfte der Anmeldungen brechen bei Schritt 3 ab",
             "severity": "high",
             "impact": "−€3.6k–10k"
           },
           {
-            "title": "Keine Analytics zwischen Cart und Bestätigung",
+            "title": "Keine Sicht zwischen Warenkorb und Kauf",
             "severity": "medium",
             "impact": "−€8k–22k"
           },
           {
-            "title": "Vertrauenslücke bei E-Mail-Erfassung",
+            "title": "9% der Leads brechen beim E-Mail-Feld ab",
             "severity": "medium",
             "impact": "−€1.8k–5k"
           },
           {
-            "title": "Hero-CTA Farbkontrast unter WCAG",
+            "title": "Haupt-Button auf dunklen Hintergründen schwer zu sehen",
             "severity": "low",
             "impact": "−€1.3k–3.5k"
           },
           {
-            "title": "Footer-Trust-Marken fehlen",
+            "title": "Keine Vertrauens-Siegel im Footer",
             "severity": "low",
             "impact": "−€0.7k–1.8k"
           }
@@ -410,7 +410,7 @@
           },
           {
             "from": "ai",
-            "text": "Ihr größtes Umsatzleck ist die Checkout-Redirect-Kette. Sie fügt 2,4s Latenz hinzu und kostet schätzungsweise **−€16k bis €38k pro Monat** an verlorenen Konversionen. Ich habe eine P1-Aktion erstellt.",
+            "text": "Ihr größtes Leck ist beim Checkout — er dauert 2,4s länger als nötig und das kostet Sie **−€16k bis €38k pro Monat** an verlorenen Verkäufen. Ich habe eine P1-Aktion erstellt, um das zu beheben.",
             "chips": [
               "3 Befunde verwendet",
               "Aktion P1 erstellt"

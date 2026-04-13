@@ -114,64 +114,64 @@
         "rows": [
           {
             "priority": "P1",
-            "title": "Arreglar cadena de redirects en checkout",
-            "desc": "3 redirects añaden 2,4s de latencia en el pago",
+            "title": "Tu checkout tarda 2,4s más de lo que debería",
+            "desc": "Clientes esperan tiempo extra entre carrito y pago — 68% abandonan en móvil",
             "impact": "−$18k–42k",
             "severity": "critical"
           },
           {
             "priority": "P2",
-            "title": "Add-to-cart móvil bajo el pliegue",
-            "desc": "Botón oculto en 68% de las sesiones móviles",
+            "title": "Botón de compra invisible en móvil",
+            "desc": "El comprador necesita desplazarse para encontrar el botón en 68% de las sesiones",
             "impact": "−$12k–28k",
             "severity": "critical"
           },
           {
             "priority": "P3",
-            "title": "SSL ausente en subdominio del checkout",
-            "desc": "Navegador advierte a usuarios en 12% de los pagos",
+            "title": "Aviso de 'No seguro' aparece al momento del pago",
+            "desc": "12% de compradores ven alerta de seguridad al ingresar la tarjeta",
             "impact": "−$8k–21k",
             "severity": "critical"
           },
           {
             "priority": "P4",
-            "title": "Filtro de precios pierde estado al navegar",
-            "desc": "Estado no persiste entre transiciones de página",
+            "title": "Filtros de producto se reinician al navegar",
+            "desc": "El comprador pierde su selección y debe empezar de nuevo",
             "impact": "−$5k–14k",
             "severity": "high"
           },
           {
             "priority": "P5",
-            "title": "Política de reembolso ausente del footer",
-            "desc": "Eleva tasa de chargeback 2,1x sobre el mercado",
+            "title": "Sin política de devolución visible durante la compra",
+            "desc": "Tasa de chargeback 2,1x sobre el mercado cuando la política no está visible",
             "impact": "−$3.6k–9k",
             "severity": "high"
           },
           {
             "priority": "P6",
-            "title": "Pico de abandono en paso 3 del onboarding",
-            "desc": "Caída de 78% → 41% en los últimos 2 ciclos",
+            "title": "Más de la mitad de los registros abandonan en el paso 3",
+            "desc": "Conversión cae de 78% → 41% en los últimos 2 ciclos",
             "impact": "−$4k–11k",
             "severity": "high"
           },
           {
             "priority": "P7",
-            "title": "Añadir analytics al embudo /checkout",
-            "desc": "Sin visibilidad entre carrito y confirmación",
+            "title": "Estás ciego entre el carrito y la compra",
+            "desc": "Sin visibilidad de dónde abandonan los compradores en los últimos pasos",
             "impact": "−$9k–24k",
             "severity": "medium"
           },
           {
             "priority": "P8",
-            "title": "Brecha de confianza en formulario",
-            "desc": "9% de leads abandonan en el campo de email",
+            "title": "9% de leads abandonan en el campo de email",
+            "desc": "Sin señales de confianza cerca del formulario — el visitante no se siente seguro",
             "impact": "−$2k–6k",
             "severity": "medium"
           },
           {
             "priority": "P9",
-            "title": "Contraste del CTA del hero bajo WCAG",
-            "desc": "Pérdida estimada de 4% en fondos oscuros",
+            "title": "Botón principal difícil de ver en fondos oscuros",
+            "desc": "Estimación de 4% de visitantes no encuentran el botón",
             "impact": "−$1.5k–4k",
             "severity": "low"
           }
@@ -214,52 +214,52 @@
         ],
         "rows": [
           {
-            "title": "Cadena de redirects en checkout añade 2,4s de latencia",
+            "title": "Checkout tarda 2,4s más de lo que debería",
             "severity": "critical",
             "impact": "−$18k–42k"
           },
           {
-            "title": "Botón add-to-cart móvil bajo el pliegue",
+            "title": "Botón de compra invisible en móvil",
             "severity": "critical",
             "impact": "−$12k–28k"
           },
           {
-            "title": "Subdominio del checkout sin certificado SSL",
+            "title": "Aviso de 'No seguro' aparece al momento del pago",
             "severity": "critical",
             "impact": "−$8k–21k"
           },
           {
-            "title": "Filtro de precios pierde estado al navegar",
+            "title": "Filtros de producto se reinician al navegar",
             "severity": "high",
             "impact": "−$5k–14k"
           },
           {
-            "title": "Política de reembolso ausente eleva riesgo de chargeback",
+            "title": "Sin política de devolución visible durante la compra",
             "severity": "high",
             "impact": "−$3.6k–9k"
           },
           {
-            "title": "Regresión de conversión en paso 3 del onboarding",
+            "title": "Más de la mitad de los registros abandonan en el paso 3",
             "severity": "high",
             "impact": "−$4k–11k"
           },
           {
-            "title": "Sin analytics entre carrito y confirmación",
+            "title": "Sin visibilidad entre carrito y compra",
             "severity": "medium",
             "impact": "−$9k–24k"
           },
           {
-            "title": "Brecha de confianza en captura de email",
+            "title": "9% de leads abandonan en el campo de email",
             "severity": "medium",
             "impact": "−$2k–6k"
           },
           {
-            "title": "Contraste del CTA del hero bajo WCAG",
+            "title": "Botón principal difícil de ver en fondos oscuros",
             "severity": "low",
             "impact": "−$1.5k–4k"
           },
           {
-            "title": "Sellos de confianza ausentes del footer",
+            "title": "Sin sellos de confianza en el footer",
             "severity": "low",
             "impact": "−$0.8k–2k"
           }
@@ -410,7 +410,7 @@
           },
           {
             "from": "ai",
-            "text": "Tu mayor fuga de ingresos es la cadena de redirects en el checkout. Añade 2,4s de latencia y se estima que cuesta **−$18k a $42k por mes** en conversiones perdidas. Creé una acción P1 para atacarlo.",
+            "text": "Tu mayor fuga está en el checkout — tarda 2,4s más de lo que debería y eso te está costando **−$18k a $42k por mes** en ventas perdidas. Creé una acción P1 para corregirlo.",
             "chips": [
               "Usó 3 hallazgos",
               "Creó acción P1"

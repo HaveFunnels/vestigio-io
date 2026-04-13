@@ -114,64 +114,64 @@
         "rows": [
           {
             "priority": "P1",
-            "title": "Fix checkout redirect chain",
-            "desc": "3 redirects add 2.4s latency at payment step",
+            "title": "Your checkout takes 2.4s longer than it should",
+            "desc": "Customers wait extra time between cart and payment — 68% drop off on mobile",
             "impact": "−$18k–42k",
             "severity": "critical"
           },
           {
             "priority": "P2",
-            "title": "Mobile add-to-cart below fold",
-            "desc": "Button hidden on 68% of mobile sessions",
+            "title": "Buy button invisible on mobile",
+            "desc": "Shoppers have to scroll to find the buy button on 68% of sessions",
             "impact": "−$12k–28k",
             "severity": "critical"
           },
           {
             "priority": "P3",
-            "title": "SSL missing on checkout subdomain",
-            "desc": "Browser warns users on 12% of payment starts",
+            "title": "'Not secure' warning shows at payment",
+            "desc": "12% of buyers see a security alert right when entering card details",
             "impact": "−$8k–21k",
             "severity": "critical"
           },
           {
             "priority": "P4",
-            "title": "Pricing filter loses state on nav",
-            "desc": "State not persisting across page transitions",
+            "title": "Product filters reset every time customer navigates",
+            "desc": "Shoppers lose their selection and have to start over",
             "impact": "−$5k–14k",
             "severity": "high"
           },
           {
             "priority": "P5",
-            "title": "Refund policy missing from footer",
-            "desc": "Drives chargeback rate 2.1x above market",
+            "title": "No return policy visible during purchase",
+            "desc": "Chargeback rate 2.1x above market average when policy is missing",
             "impact": "−$3.6k–9k",
             "severity": "high"
           },
           {
             "priority": "P6",
-            "title": "Onboarding step 3 abandonment spike",
-            "desc": "Drop from 78% → 41% in last 2 cycles",
+            "title": "More than half of signups drop off at step 3",
+            "desc": "Conversion drops from 78% → 41% in last 2 cycles",
             "impact": "−$4k–11k",
             "severity": "high"
           },
           {
             "priority": "P7",
-            "title": "Add analytics on /checkout funnel",
-            "desc": "No funnel visibility between cart and confirmation",
+            "title": "You're blind between cart and purchase",
+            "desc": "No visibility into where buyers drop off in the final steps",
             "impact": "−$9k–24k",
             "severity": "medium"
           },
           {
             "priority": "P8",
-            "title": "Form trust gap — no security badges",
-            "desc": "9% of leads bounce at email field",
+            "title": "9% of leads abandon at the email field",
+            "desc": "No trust signals near the form — visitors don't feel safe submitting",
             "impact": "−$2k–6k",
             "severity": "medium"
           },
           {
             "priority": "P9",
-            "title": "Hero CTA color contrast below WCAG",
-            "desc": "Estimated 4% click loss on dark backgrounds",
+            "title": "Main button hard to see on dark backgrounds",
+            "desc": "Estimated 4% of visitors can't find the call-to-action",
             "impact": "−$1.5k–4k",
             "severity": "low"
           }
@@ -214,52 +214,52 @@
         ],
         "rows": [
           {
-            "title": "Checkout redirect chain adds 2.4s latency",
+            "title": "Checkout takes 2.4s longer than it should",
             "severity": "critical",
             "impact": "−$18k–42k"
           },
           {
-            "title": "Mobile add-to-cart button below fold",
+            "title": "Buy button invisible on mobile",
             "severity": "critical",
             "impact": "−$12k–28k"
           },
           {
-            "title": "Checkout subdomain missing SSL cert",
+            "title": "'Not secure' warning shows at payment",
             "severity": "critical",
             "impact": "−$8k–21k"
           },
           {
-            "title": "Pricing filter loses state on navigation",
+            "title": "Product filters reset every time customer navigates",
             "severity": "high",
             "impact": "−$5k–14k"
           },
           {
-            "title": "Missing refund policy raises chargeback risk",
+            "title": "No return policy visible during purchase",
             "severity": "high",
             "impact": "−$3.6k–9k"
           },
           {
-            "title": "Onboarding step 3 conversion regression",
+            "title": "More than half of signups drop off at step 3",
             "severity": "high",
             "impact": "−$4k–11k"
           },
           {
-            "title": "No analytics between cart and confirmation",
+            "title": "No visibility between cart and purchase",
             "severity": "medium",
             "impact": "−$9k–24k"
           },
           {
-            "title": "Form trust gap on email capture",
+            "title": "9% of leads abandon at the email field",
             "severity": "medium",
             "impact": "−$2k–6k"
           },
           {
-            "title": "Hero CTA color contrast below WCAG",
+            "title": "Main button hard to see on dark backgrounds",
             "severity": "low",
             "impact": "−$1.5k–4k"
           },
           {
-            "title": "Footer trust marks missing",
+            "title": "No trust badges in footer",
             "severity": "low",
             "impact": "−$0.8k–2k"
           }
@@ -410,7 +410,7 @@
           },
           {
             "from": "ai",
-            "text": "Your biggest revenue leak is the checkout redirect chain. It adds 2.4s of latency and is estimated to cost **−$18k to $42k per month** in lost conversions. I've created a P1 action to address this.",
+            "text": "Your biggest leak is at checkout — it takes 2.4s longer than it should, and that's costing you **−$18k to $42k per month** in lost sales. I've created a P1 action to fix this.",
             "chips": [
               "Used 3 findings",
               "Created action P1"

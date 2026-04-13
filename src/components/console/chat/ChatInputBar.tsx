@@ -6,6 +6,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import type { ModelId } from "@/lib/chat-types";
 import { ModelSelector } from "./ModelSelector";
 import { VoiceInput } from "./VoiceInput";
@@ -41,14 +42,15 @@ export function ChatInputBar({
   attachedFiles = [],
   onAttachFiles,
   onRemoveFile,
-  placeholder = "Ask about your revenue, risks, or what to fix first...",
+  placeholder,
   mcpPct = 0,
   mcpUsed = 0,
   mcpLimit = 0,
   isStreaming = false,
   onStop,
-  stopLabel = "Stop",
+  stopLabel,
 }: ChatInputBarProps) {
+  const t = useTranslations("console.chat_input");
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -126,7 +128,7 @@ export function ChatInputBar({
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
             className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30"
-            title="Attach file"
+            title={t("attach_file")}
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
               <path d="M14 9.5V12a2 2 0 01-2 2H4a2 2 0 01-2-2V9.5M8 10V2m0 0L5 5m3-3l3 3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
@@ -148,7 +150,7 @@ export function ChatInputBar({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={disabled}
-            placeholder={placeholder}
+            placeholder={placeholder || t("placeholder")}
             rows={1}
             className="min-h-[36px] flex-1 resize-none bg-transparent py-2 text-sm text-white placeholder-content-muted outline-none disabled:opacity-50"
           />
@@ -160,13 +162,13 @@ export function ChatInputBar({
 
             {/* Radial usage */}
             {mcpLimit > 0 && (
-              <div className="group relative flex items-center justify-center" title={`${mcpUsed}/${mcpLimit} queries used`}>
+              <div className="group relative flex items-center justify-center" title={t("used", { used: mcpUsed, limit: mcpLimit })}>
                 <svg width="18" height="18" viewBox="0 0 20 20" className="rotate-[-90deg]">
                   <circle cx="10" cy="10" r={radius} fill="none" className="stroke-surface-card" strokeWidth="2.5" />
                   <circle cx="10" cy="10" r={radius} fill="none" className={`${usageColor} transition-all duration-500`} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset} />
                 </svg>
                 <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-surface-tooltip px-2 py-1 text-[10px] text-content-secondary opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                  {mcpUsed}/{mcpLimit} used
+                  {t("used", { used: mcpUsed, limit: mcpLimit })}
                 </div>
               </div>
             )}
@@ -179,8 +181,8 @@ export function ChatInputBar({
             {isStreaming && onStop ? (
               <button
                 onClick={onStop}
-                title={stopLabel}
-                aria-label={stopLabel}
+                title={stopLabel || t("stop")}
+                aria-label={stopLabel || t("stop")}
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white transition-colors hover:bg-red-500"
               >
                 <svg className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
@@ -205,7 +207,7 @@ export function ChatInputBar({
       {/* Hints — outside the island */}
       <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between px-1">
         <p className="text-[9px] text-content-faint">
-          Enter send · Shift+Enter new line
+          {t("hint_send")}
         </p>
         {input.length > 1500 && (
           <span className={`font-mono text-[9px] ${input.length > 1900 ? "text-red-400" : "text-content-faint"}`}>

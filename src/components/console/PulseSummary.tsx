@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Pulse Summary — Intelligence briefing
@@ -12,6 +13,7 @@ interface PulseSummaryProps {
 }
 
 export default function PulseSummary({ perspective }: PulseSummaryProps) {
+  const t = useTranslations("console.pulse_summary");
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
@@ -44,7 +46,7 @@ export default function PulseSummary({ perspective }: PulseSummaryProps) {
         <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-transparent" />
         <div className="relative mb-3 flex items-center gap-2">
           <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">Vestigio Pulse</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">{t("label")}</span>
         </div>
         <div className="relative space-y-1.5">
           <div className="h-3 w-full animate-pulse rounded bg-emerald-500/[0.06]" />
@@ -61,7 +63,7 @@ export default function PulseSummary({ perspective }: PulseSummaryProps) {
       <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-transparent" />
       <div className="relative mb-2 flex items-center gap-2">
         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">Vestigio Pulse</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">{t("label")}</span>
         <span className="font-mono text-[10px] tabular-nums text-content-faint">
           {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         </span>

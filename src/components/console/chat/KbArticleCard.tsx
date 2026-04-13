@@ -11,6 +11,7 @@
  *   linking to the catalog page filtered by key, so the link is never dead.
  */
 
+import { useTranslations } from "next-intl";
 import type { KbArticleCardBlock } from "@/lib/chat-types";
 
 interface KbArticleCardProps {
@@ -19,12 +20,14 @@ interface KbArticleCardProps {
 }
 
 export function KbArticleCard({ block, onNavigate }: KbArticleCardProps) {
+  const t = useTranslations("console.kb_article_card");
+
   const href = block.slug
     ? `/app/knowledge-base/${block.slug}`
     : `/app/knowledge-base?${block.key_kind}=${encodeURIComponent(block.key)}`;
 
-  const title = block.title || (block.key_kind === "root_cause" ? "Browse related docs" : "Browse related docs");
-  const subtitle = block.excerpt || "Open the knowledge base to learn more about this topic.";
+  const title = block.title || t("browse_related");
+  const subtitle = block.excerpt || t("default_subtitle");
 
   return (
     <button
@@ -42,7 +45,7 @@ export function KbArticleCard({ block, onNavigate }: KbArticleCardProps) {
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">
-          Learn more
+          {t("learn_more")}
         </div>
         <div className="mt-0.5 truncate text-sm font-medium text-content-secondary group-hover:text-content">
           {title}

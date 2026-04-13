@@ -6,24 +6,26 @@
  */
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 interface ThinkingIndicatorProps {
   stage?: string; // e.g., "Analyzing findings...", "Tracing root causes..."
 }
 
-const THINKING_STAGES = [
-  "Thinking",
-  "Thinking.",
-  "Thinking..",
-  "Thinking...",
-];
+const THINKING_KEYS = [
+  "thinking",
+  "thinking_1",
+  "thinking_2",
+  "thinking_3",
+] as const;
 
 export function ThinkingIndicator({ stage }: ThinkingIndicatorProps) {
+  const t = useTranslations("console.thinking");
   const [dotIndex, setDotIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setDotIndex((prev) => (prev + 1) % THINKING_STAGES.length);
+      setDotIndex((prev) => (prev + 1) % THINKING_KEYS.length);
     }, 400);
     return () => clearInterval(interval);
   }, []);
@@ -40,7 +42,7 @@ export function ThinkingIndicator({ stage }: ThinkingIndicatorProps) {
 
         {/* Stage label */}
         <span className="text-xs text-content-muted">
-          {stage || THINKING_STAGES[dotIndex]}
+          {stage || t(THINKING_KEYS[dotIndex])}
         </span>
       </div>
     </div>

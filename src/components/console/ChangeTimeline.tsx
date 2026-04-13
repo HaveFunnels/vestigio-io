@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import ChangeBadge from "@/components/console/ChangeBadge";
 import type { DecisionChangeProjection } from "../../../packages/projections";
 
@@ -42,10 +43,12 @@ export default function ChangeTimeline({
   changes: DecisionChangeProjection[];
   maxItems?: number;
 }) {
+  const t = useTranslations("console.change_timeline");
+
   if (changes.length === 0) {
     return (
       <div className="rounded-lg border border-edge bg-surface-card px-4 py-6 text-center">
-        <span className="text-sm text-content-muted">No changes to display</span>
+        <span className="text-sm text-content-muted">{t("no_changes")}</span>
       </div>
     );
   }
@@ -99,7 +102,7 @@ export default function ChangeTimeline({
               {/* Severity change */}
               {change.previous_severity && change.current_severity && change.previous_severity !== change.current_severity && (
                 <div className="mt-1 text-xs text-content-muted">
-                  Severity: {change.previous_severity} &rarr; {change.current_severity}
+                  {t("severity_label")}: {change.previous_severity} &rarr; {change.current_severity}
                 </div>
               )}
 
@@ -122,8 +125,10 @@ export default function ChangeTimeline({
 // ──────────────────────────────────────────────
 
 function RiskDelta({ delta }: { delta: number }) {
+  const t = useTranslations("console.change_timeline");
+
   if (delta === 0) {
-    return <span className="text-xs text-content-muted">No change in risk score</span>;
+    return <span className="text-xs text-content-muted">{t("no_risk_change")}</span>;
   }
 
   const isWorse = delta > 0;
@@ -132,7 +137,7 @@ function RiskDelta({ delta }: { delta: number }) {
 
   return (
     <span className={`text-xs font-medium ${color}`}>
-      {sign}{delta} points
+      {sign}{delta} {t("points")}
     </span>
   );
 }

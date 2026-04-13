@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 // ──────────────────────────────────────────────
 // Chat Budget Bar — usage-aware MCP UX
 //
@@ -23,6 +25,7 @@ export default function ChatBudgetBar({
   mcpPct,
   plan,
 }: ChatBudgetBarProps) {
+  const t = useTranslations("console.budget_bar");
   const pct = Math.min(100, mcpPct);
 
   const barColor =
@@ -49,32 +52,32 @@ export default function ChatBudgetBar({
 
           {/* Label */}
           <span className={`shrink-0 text-[10px] font-medium tabular-nums ${textColor}`}>
-            {mcpRemaining}/{mcpLimit} left
+            {t("left", { remaining: mcpRemaining, limit: mcpLimit })}
           </span>
         </div>
 
         {/* Threshold nudges */}
         {pct >= 90 && mcpRemaining > 0 && (
           <p className="mt-1 text-[10px] text-amber-400/80">
-            {mcpRemaining === 1 ? "Last query today." : `${mcpRemaining} queries left.`}
-            {" "}Try a playbook for maximum value.
+            {mcpRemaining === 1 ? t("last_query") : t("queries_left", { remaining: mcpRemaining })}
+            {" "}{t("try_playbook")}
           </p>
         )}
 
         {pct >= 70 && pct < 90 && (
           <p className="mt-1 text-[10px] text-content-faint">
-            {mcpRemaining} queries remaining. Consider consolidating questions.
+            {t("queries_remaining", { remaining: mcpRemaining })}
           </p>
         )}
 
         {mcpRemaining === 0 && (
           <div className="mt-1 flex items-center gap-2">
             <p className="text-[10px] text-red-400/80">
-              Daily budget used. Resets tomorrow.
+              {t("budget_used")}
             </p>
             {plan !== 'max' && (
               <span className="text-[10px] text-content-faint">
-                Upgrade for more daily queries.
+                {t("upgrade_prompt")}
               </span>
             )}
           </div>

@@ -16,6 +16,7 @@
 // the dopamine hook.
 // ──────────────────────────────────────────────
 
+import { useTranslations } from "next-intl";
 import { CalendarIcon as Calendar } from "@phosphor-icons/react/dist/ssr";
 import {
 	registerWidget,
@@ -45,6 +46,7 @@ function DayCell({ day }: { day: ActivityHeatmapDay }) {
 }
 
 function ActivityHeatmapComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.activity_heatmap");
 	const { days, currentStreak } = data.activityHeatmap;
 
 	// Group days into weeks (columns of 7) so the grid renders
@@ -66,14 +68,14 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 			<div className='flex items-baseline justify-between gap-2'>
 				<div className='flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 					<Calendar size={11} weight='bold' className='text-emerald-400' />
-					<span>Activity · 90 days</span>
+					<span>{t("eyebrow")}</span>
 				</div>
 				<div className='flex items-baseline gap-1.5'>
 					<span className='font-mono text-2xl font-medium tabular-nums leading-none tracking-tight text-content'>
 						{currentStreak}
 					</span>
 					<span className='text-[10px] uppercase tracking-wider text-content-muted'>
-						day streak
+						{t("day_streak")}
 					</span>
 				</div>
 			</div>
@@ -91,7 +93,7 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 
 			{/* Legend */}
 			<div className='mt-2 flex items-center gap-2 border-t border-edge/40 pt-2 text-[10px] text-content-faint'>
-				<span>less</span>
+				<span>{t("less")}</span>
 				<div className='flex gap-1'>
 					<div className='h-2 w-2 rounded-[2px] bg-surface-inset' />
 					<div className='h-2 w-2 rounded-[2px] bg-emerald-900/60' />
@@ -99,7 +101,7 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 					<div className='h-2 w-2 rounded-[2px] bg-emerald-600/80' />
 					<div className='h-2 w-2 rounded-[2px] bg-emerald-500' />
 				</div>
-				<span>more</span>
+				<span>{t("more")}</span>
 			</div>
 		</div>
 	);

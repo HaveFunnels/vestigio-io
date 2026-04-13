@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 export interface UploadedFile {
   name: string;
@@ -62,6 +63,7 @@ export async function processFileList(fileList: FileList): Promise<UploadedFile[
 }
 
 export function FileUploadZone({ onFilesAdded, children }: FileUploadZoneProps) {
+  const t = useTranslations("console.file_upload");
   const [dragging, setDragging] = useState(false);
   const dragCounter = useRef(0);
 
@@ -112,8 +114,8 @@ export function FileUploadZone({ onFilesAdded, children }: FileUploadZoneProps) 
             <svg className="mx-auto h-8 w-8 text-emerald-400" viewBox="0 0 24 24" fill="none">
               <path d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="mt-2 text-sm text-emerald-400">Drop files here</p>
-            <p className="mt-0.5 text-[10px] text-content-muted">CSV, JSON, TXT, MD, PDF (max 2MB)</p>
+            <p className="mt-2 text-sm text-emerald-400">{t("drop_here")}</p>
+            <p className="mt-0.5 text-[10px] text-content-muted">{t("file_types")}</p>
           </div>
         </div>
       )}

@@ -16,6 +16,7 @@
 // the network is bad and silent failures would be terrifying.
 // ──────────────────────────────────────────────
 
+import { useTranslations } from "next-intl";
 import {
 	PlusIcon as Plus,
 	SlidersIcon as Sliders,
@@ -39,16 +40,18 @@ export function DashboardHeader({
 	onOpenCatalog,
 	saveStatus = "idle",
 }: DashboardHeaderProps) {
+	const t = useTranslations("console.dashboard");
+
 	return (
 		<div className='mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
 			<div className='flex min-w-0 flex-col gap-1'>
 				<h1 className='text-xl font-semibold tracking-tight text-content sm:text-2xl'>
-					Dashboard
+					{t("title")}
 				</h1>
 				<p className='text-xs text-content-muted'>
 					{editing
-						? "Drag widgets to rearrange. Resize from the corner. Add or remove from the catalog."
-						: "Your overview of revenue health, exposure, and recent activity."}
+						? t("editing_subtitle")
+						: t("subtitle")}
 				</p>
 			</div>
 
@@ -61,7 +64,7 @@ export function DashboardHeader({
 						className='flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:border-emerald-500 hover:bg-emerald-500/15 dark:text-emerald-300'
 					>
 						<Plus size={14} weight='bold' />
-						<span>Add widget</span>
+						<span>{t("add_widget")}</span>
 					</button>
 				)}
 				<button
@@ -75,7 +78,7 @@ export function DashboardHeader({
 					}`}
 				>
 					<Sliders size={14} weight='bold' />
-					<span>{editing ? "Done" : "Customize"}</span>
+					<span>{editing ? t("done") : t("customize")}</span>
 				</button>
 			</div>
 		</div>
@@ -83,12 +86,14 @@ export function DashboardHeader({
 }
 
 function SaveStatusPip({ status }: { status: SaveStatus }) {
+	const t = useTranslations("console.dashboard.save_status");
+
 	if (status === "idle") return null;
 	if (status === "saving") {
 		return (
 			<span className='flex items-center gap-1.5 text-[10px] text-content-faint'>
 				<CircleNotch size={11} className='animate-spin' />
-				Saving…
+				{t("saving")}
 			</span>
 		);
 	}
@@ -96,14 +101,14 @@ function SaveStatusPip({ status }: { status: SaveStatus }) {
 		return (
 			<span className='flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400'>
 				<CheckCircle size={11} weight='fill' />
-				Saved
+				{t("saved")}
 			</span>
 		);
 	}
 	return (
 		<span className='flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400'>
 			<Warning size={11} weight='fill' />
-			Save failed
+			{t("error")}
 		</span>
 	);
 }

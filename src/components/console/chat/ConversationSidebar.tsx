@@ -17,6 +17,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import type { Conversation } from "@/lib/chat-types";
 
 interface ConversationSidebarProps {
@@ -30,20 +31,22 @@ interface ConversationSidebarProps {
   onToggleCollapse?: () => void;
 }
 
-function groupByDate(conversations: Conversation[]): Map<string, Conversation[]> {
+type DateLabel = "today" | "yesterday" | "this_week" | "older";
+
+function groupByDate(conversations: Conversation[]): Map<DateLabel, Conversation[]> {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today.getTime() - 86_400_000);
   const weekAgo = new Date(today.getTime() - 7 * 86_400_000);
 
-  const groups = new Map<string, Conversation[]>();
+  const groups = new Map<DateLabel, Conversation[]>();
   for (const conv of conversations) {
     const d = new Date(conv.updatedAt);
-    let label: string;
-    if (d >= today) label = "Today";
-    else if (d >= yesterday) label = "Yesterday";
-    else if (d >= weekAgo) label = "This week";
-    else label = "Older";
+    let label: DateLabel;
+    if (d >= today) label = "today";
+    else if (d >= yesterday) label = "yesterday";
+    else if (d >= weekAgo) label = "this_week";
+    else label = "older";
 
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label)!.push(conv);
@@ -117,6 +120,8 @@ export function ConversationSidebar({
     setRenamingId(null);
   }
 
+  const t = useTranslations("console.conversation_sidebar");
+
   if (collapsed) {
     return null;
   }
@@ -125,9 +130,9 @@ export function ConversationSidebar({
     <div className="flex w-64 flex-col border-r border-edge bg-surface-inset">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-edge px-3 py-2.5">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-content-muted">Conversations</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-content-muted">{t("title")}</span>
         <div className="flex items-center gap-1">
-          <button onClick={onToggleCollapse} className="rounded p-1 text-content-muted hover:bg-surface-card-hover hover:text-content-secondary" title="Collapse">
+          <button onClick={onToggleCollapse} className="rounded p-1 text-content-muted hover:bg-surface-card-hover hover:text-content-secondary" title={t("collapse")}>
             <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         </div>
@@ -144,7 +149,7 @@ export function ConversationSidebar({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..."
+            placeholder={t("search_placeholder")}
             className="w-full rounded-md border border-edge bg-surface-card py-1.5 pl-8 pr-2 text-xs text-content-secondary placeholder-content-faint outline-none focus:border-edge-focus"
           />
           {search && (
@@ -159,14 +164,14 @@ export function ConversationSidebar({
       <div className="flex-1 overflow-y-auto px-2 pb-2">
         {displayConversations.length === 0 && (
           <div className="px-2 py-6 text-center text-xs text-content-faint">
-            {searching ? "Searching..." : search ? "No matches" : "No conversations yet"}
+            {searching ? t("searching") : search ? t("no_matches") : t("no_conversations")}
           </div>
         )}
 
         {Array.from(groups.entries()).map(([label, convs]) => (
           <div key={label} className="mb-2">
             <div className="px-2 py-1.5">
-              <span className="text-[10px] font-medium text-content-faint">{label}</span>
+              <span className="text-[10px] font-medium text-content-faint">{t(label)}</span>
             </div>
             {convs.map((conv) => (
               <div
@@ -188,16 +193,16 @@ export function ConversationSidebar({
                   />
                 ) : (
                   <button onClick={() => onSelect(conv.id)} className="min-w-0 flex-1 truncate text-left text-xs">
-                    {conv.title || "Untitled"}
+                    {conv.title || t("untitled")}
                   </button>
                 )}
 
                 {hoveredId === conv.id && renamingId !== conv.id && (
                   <div className="flex shrink-0 items-center gap-0.5">
-                    <button onClick={() => startRename(conv)} className="rounded p-0.5 text-content-faint hover:bg-surface-card-hover hover:text-content-tertiary" title="Rename">
+                    <button onClick={() => startRename(conv)} className="rounded p-0.5 text-content-faint hover:bg-surface-card-hover hover:text-content-tertiary" title={t("rename")}>
                       <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); onDelete(conv.id); }} className="rounded p-0.5 text-content-faint hover:bg-surface-card-hover hover:text-red-400" title="Delete">
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(conv.id); }} className="rounded p-0.5 text-content-faint hover:bg-surface-card-hover hover:text-red-400" title={t("delete")}>
                       <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none"><path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                     </button>
                   </div>

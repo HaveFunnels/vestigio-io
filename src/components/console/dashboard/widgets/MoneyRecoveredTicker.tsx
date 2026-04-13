@@ -18,6 +18,7 @@
 // Phase 5 polish). The number renders directly from mock data.
 // ──────────────────────────────────────────────
 
+import { useTranslations } from "next-intl";
 import { TrendUpIcon as TrendUp } from "@phosphor-icons/react/dist/ssr";
 import {
 	registerWidget,
@@ -41,6 +42,7 @@ function formatSignedCents(cents: number, currency: string): string {
 }
 
 function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.money_recovered");
 	const { totalCents, last7dCents, last30dCents, currency, caption } =
 		data.moneyRecovered;
 	const sevenDayPositive = last7dCents > 0;
@@ -56,7 +58,7 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 			{/* Eyebrow */}
 			<div className='relative flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<TrendUp size={11} weight='bold' className='text-emerald-400' />
-				<span>Total recovered with Vestigio</span>
+				<span>{t("eyebrow")}</span>
 			</div>
 
 			{/* Hero number */}
@@ -70,7 +72,7 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 			<div className='relative mt-3 flex items-baseline gap-5'>
 				<div className='flex flex-col gap-0.5'>
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
-						7 days
+						{t("seven_days")}
 					</span>
 					<span
 						className={`font-mono text-xs tabular-nums ${
@@ -82,7 +84,7 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 				</div>
 				<div className='flex flex-col gap-0.5'>
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
-						30 days
+						{t("thirty_days")}
 					</span>
 					<span
 						className={`font-mono text-xs tabular-nums ${

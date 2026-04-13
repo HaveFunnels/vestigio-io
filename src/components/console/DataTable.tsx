@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export interface Column<T> {
   key: string;
@@ -21,9 +22,11 @@ export default function DataTable<T extends Record<string, any>>({
   columns,
   data,
   onRowClick,
-  emptyMessage = "No data available",
+  emptyMessage,
   getRowKey,
 }: DataTableProps<T>) {
+  const t = useTranslations("console.data_table");
+
   return (
     <div className="overflow-x-auto rounded-md border border-edge">
       <table className="w-full text-left text-sm">
@@ -43,7 +46,7 @@ export default function DataTable<T extends Record<string, any>>({
           {data.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="px-4 py-8 text-center text-content-faint">
-                {emptyMessage}
+                {emptyMessage || t("no_data")}
               </td>
             </tr>
           ) : (

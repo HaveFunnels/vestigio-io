@@ -85,7 +85,7 @@ export default function PerspectivePage({ params }: { params: Promise<{ slug: st
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="mb-3 text-4xl text-zinc-300 dark:text-zinc-700">&empty;</div>
         <h2 className="text-lg font-semibold text-zinc-300">{t("perspective_not_found")}</h2>
-        <Link href="/workspaces" className="mt-4 text-sm text-zinc-500 transition-colors hover:text-zinc-300">
+        <Link href="/app/workspaces" className="mt-4 text-sm text-zinc-500 transition-colors hover:text-zinc-300">
           &larr; {t("back_to_panorama")}
         </Link>
       </div>
@@ -187,7 +187,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
     <>
       {/* Back nav */}
       <Link
-        href="/workspaces"
+        href="/app/workspaces"
         className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400 transition-colors hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400"
       >
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

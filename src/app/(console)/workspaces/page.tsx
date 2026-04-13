@@ -189,7 +189,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                 key={pDef.key}
                 onClick={() => {
                   if (isLocked) router.push("/app/settings/data-sources");
-                  else router.push(`/workspaces/perspective/${pDef.key}`);
+                  else router.push(`/app/workspaces/perspective/${pDef.key}`);
                 }}
                 className={`group relative border-l-2 ${pDef.borderColor} ${pDef.hoverBg} bg-white dark:bg-[rgb(var(--bg-card))] px-5 py-4 text-left transition-colors ${
                   isLocked || isCopyEmpty ? "opacity-50" : ""

@@ -112,11 +112,6 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
     () => workspaces.flatMap((ws) => ws.findings),
     [workspaces],
   );
-  const positiveChecks = useMemo(
-    () => allFindings.filter((f) => f.polarity === "positive").map((f) => f.title),
-    [allFindings],
-  );
-
   // Aggregate per perspective
   const perspectiveData = useMemo(() => {
     const map: Record<string, { issues: number; loss: number; topSeverity: string; hasData: boolean; isLocked: boolean }> = {};
@@ -153,7 +148,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
   return (
     <div className="space-y-6">
       {/* ── Lens 1: Intel Briefing ── */}
-      <PulseSummary findings={allFindings} positiveChecks={positiveChecks} />
+      <PulseSummary />
 
       {/* ── Lenses 2-4: Revenue Map | Delta + Rights ── */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">

@@ -1,261 +1,257 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
-import { isLlmEnabled } from "../../../../../apps/mcp/llm";
-import { callModel } from "../../../../../apps/mcp/llm/client";
+import { isLlmEnabled, callModel } from "../../../../../apps/mcp/llm/client";
+import { prisma } from "@/libs/prismaDb";
 
 // ──────────────────────────────────────────────
 // Pulse Summary API — POST /api/workspace/pulse-summary
 //
 // Generates a concise LLM briefing for a workspace
-// perspective using Haiku. Cached in-memory (1h TTL)
-// to avoid redundant calls within the same cycle.
+// perspective. Loads ALL context server-side from the
+// DB (same data the MCP chat sees) so the briefing
+// is as rich as a chat response.
+//
+// The frontend only sends: { perspective, locale }
+// Everything else is loaded from the latest findings.
 // ──────────────────────────────────────────────
 
-// ── Types ───────────────────────────────────────
-
 type Perspective = "panorama" | "revenue" | "trust" | "behavior" | "copy";
-type MaturityStage = "launch" | "growth" | "scale";
 type Locale = "en" | "pt-BR" | "es" | "de";
 
-interface Finding {
-  title: string;
-  severity: string;
-  impact_estimate: string;
-}
+const VALID_PERSPECTIVES = new Set<Perspective>(["panorama", "revenue", "trust", "behavior", "copy"]);
+const VALID_LOCALES = new Set<Locale>(["en", "pt-BR", "es", "de"]);
 
-interface CycleDelta {
-  improved: number;
-  worsened: number;
-  new: number;
-}
+// ── In-memory cache (1h TTL) ──────────────────
 
-interface PulseSummaryRequest {
-  perspective: Perspective;
-  findings: Finding[];
-  positive_checks: string[];
-  cycle_delta: CycleDelta;
-  maturity_stage: MaturityStage;
-  locale: Locale;
-  environment_id?: string;
-  cycle_ref?: string;
-}
-
-// ── In-memory cache (Map + TTL) ─────────────────
-
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-interface CacheEntry {
-  summary: string;
-  created_at: number;
-}
-
+const CACHE_TTL_MS = 60 * 60 * 1000;
+interface CacheEntry { summary: string; created_at: number }
 const cache = new Map<string, CacheEntry>();
 
 function getCached(key: string): string | null {
   const entry = cache.get(key);
   if (!entry) return null;
-  if (Date.now() - entry.created_at > CACHE_TTL_MS) {
-    cache.delete(key);
-    return null;
-  }
+  if (Date.now() - entry.created_at > CACHE_TTL_MS) { cache.delete(key); return null; }
   return entry.summary;
 }
 
 function setCache(key: string, summary: string): void {
   cache.set(key, { summary, created_at: Date.now() });
-
-  // Periodic cleanup: evict expired entries when cache grows large
   if (cache.size > 500) {
     const now = Date.now();
-    for (const [k, v] of cache) {
-      if (now - v.created_at > CACHE_TTL_MS) cache.delete(k);
-    }
+    for (const [k, v] of cache) { if (now - v.created_at > CACHE_TTL_MS) cache.delete(k); }
   }
 }
 
-// ── Validation ──────────────────────────────────
+// ── Perspective classification ────────────────
 
-const VALID_PERSPECTIVES = new Set<Perspective>(["panorama", "revenue", "trust", "behavior", "copy"]);
-const VALID_STAGES = new Set<MaturityStage>(["launch", "growth", "scale"]);
-const VALID_LOCALES = new Set<Locale>(["en", "pt-BR", "es", "de"]);
-
-function validateBody(body: any): { valid: true; data: PulseSummaryRequest } | { valid: false; error: string } {
-  if (!body || typeof body !== "object") {
-    return { valid: false, error: "Invalid request body" };
-  }
-
-  if (!VALID_PERSPECTIVES.has(body.perspective)) {
-    return { valid: false, error: `Invalid perspective. Must be one of: ${[...VALID_PERSPECTIVES].join(", ")}` };
-  }
-
-  if (!Array.isArray(body.findings)) {
-    return { valid: false, error: "findings must be an array" };
-  }
-
-  if (body.findings.length > 50) {
-    return { valid: false, error: "Too many findings (max 50)" };
-  }
-
-  if (!Array.isArray(body.positive_checks)) {
-    return { valid: false, error: "positive_checks must be an array" };
-  }
-
-  if (!body.cycle_delta || typeof body.cycle_delta !== "object") {
-    return { valid: false, error: "cycle_delta is required" };
-  }
-
-  if (!VALID_STAGES.has(body.maturity_stage)) {
-    return { valid: false, error: `Invalid maturity_stage. Must be one of: ${[...VALID_STAGES].join(", ")}` };
-  }
-
-  if (!VALID_LOCALES.has(body.locale)) {
-    return { valid: false, error: `Invalid locale. Must be one of: ${[...VALID_LOCALES].join(", ")}` };
-  }
-
-  return { valid: true, data: body as PulseSummaryRequest };
+function classifyFindingPerspective(packKey: string, category: string): string {
+  if (category === "behavioral") return "behavior";
+  if (packKey === "revenue_integrity" || packKey === "chargeback_resilience") return "revenue";
+  if (packKey === "scale_readiness" || packKey === "money_moment_exposure") return "trust";
+  return "trust";
 }
 
-// ── Prompt builders ─────────────────────────────
+// ── Prompt builders ───────────────────────────
 
 function buildSystemMessage(locale: Locale): string {
+  const lang = locale === "pt-BR" ? "Brazilian Portuguese" : locale === "es" ? "Spanish" : locale === "de" ? "German" : "English";
   return [
     "You are the Vestigio intelligence engine generating a workspace briefing.",
     "Be direct, specific, and commercially-focused.",
     "Frame everything in terms of revenue impact.",
-    "Adapt tone to the business maturity stage.",
-    `Respond in ${locale === "pt-BR" ? "Brazilian Portuguese" : locale === "es" ? "Spanish" : locale === "de" ? "German" : "English"}.`,
+    "When dollar/currency amounts are available, cite them specifically.",
+    "Adapt tone to the business situation — urgent when there are critical issues, encouraging when things are improving.",
+    `Respond in ${lang}.`,
     "Output ONLY the briefing text — no headings, no bullet points, no markdown. 3-4 sentences max.",
   ].join(" ");
 }
 
-function buildUserMessage(data: PulseSummaryRequest): string {
+function buildUserMessage(perspective: string, context: {
+  findings: { title: string; severity: string; pack: string; impact_mid: number; change_class: string | null; polarity: string }[];
+  businessProfile: { businessModel: string | null; monthlyRevenue: number | null } | null;
+  domain: string;
+  totalExposure: number;
+  improved: number;
+  worsened: number;
+  newIssues: number;
+  resolved: number;
+  positiveChecks: number;
+}): string {
   const parts: string[] = [];
 
-  parts.push(`Perspective: ${data.perspective}`);
-  parts.push(`Maturity stage: ${data.maturity_stage}`);
+  parts.push(`Perspective: ${perspective}`);
+  parts.push(`Domain: ${context.domain}`);
 
-  if (data.findings.length > 0) {
-    const findingLines = data.findings.slice(0, 10).map(
-      (f) => `- ${f.title} (severity: ${f.severity}, impact: ${f.impact_estimate})`
-    );
-    parts.push(`Top findings:\n${findingLines.join("\n")}`);
+  if (context.businessProfile) {
+    const bp = context.businessProfile;
+    if (bp.businessModel) parts.push(`Business model: ${bp.businessModel}`);
+    if (bp.monthlyRevenue) parts.push(`Monthly revenue: $${bp.monthlyRevenue.toLocaleString()}`);
+  }
+
+  parts.push(`Total monthly exposure: $${Math.round(context.totalExposure).toLocaleString()}`);
+
+  const negativeFindings = context.findings.filter(f => f.polarity === "negative");
+  if (negativeFindings.length > 0) {
+    const lines = negativeFindings.slice(0, 12).map(f => {
+      const impact = f.impact_mid > 0 ? ` ($${Math.round(f.impact_mid).toLocaleString()}/mo)` : "";
+      const change = f.change_class ? ` [${f.change_class}]` : "";
+      return `- ${f.title} (${f.severity})${impact}${change}`;
+    });
+    parts.push(`Findings (${negativeFindings.length} issues):\n${lines.join("\n")}`);
   } else {
     parts.push("No negative findings this cycle.");
   }
 
-  if (data.positive_checks.length > 0) {
-    parts.push(`Positive checks: ${data.positive_checks.slice(0, 10).join(", ")}`);
+  if (context.positiveChecks > 0) {
+    parts.push(`Positive checks passing: ${context.positiveChecks}`);
   }
 
-  const delta = data.cycle_delta;
-  parts.push(
-    `Cycle changes: ${delta.improved} improved, ${delta.worsened} worsened, ${delta.new} new`
-  );
+  const delta = [];
+  if (context.worsened > 0) delta.push(`${context.worsened} worsened`);
+  if (context.newIssues > 0) delta.push(`${context.newIssues} new`);
+  if (context.improved > 0) delta.push(`${context.improved} improved`);
+  if (context.resolved > 0) delta.push(`${context.resolved} resolved`);
+  if (delta.length > 0) parts.push(`Changes since last cycle: ${delta.join(", ")}`);
 
   parts.push(
     "Write a 3-4 sentence briefing as an analyst speaking directly to the business owner. " +
-    "Be specific about dollar amounts when impact estimates are available. " +
-    "Prioritize actionable insight over general observations."
+    "Be specific about dollar amounts. Prioritize actionable insight over general observations."
   );
 
   return parts.join("\n\n");
 }
 
-// ── Route handler ───────────────────────────────
+// ── Route handler ─────────────────────────────
 
 export async function POST(request: Request) {
-  // ── Auth ──
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-
   const userId = (session.user as any).id;
   if (!userId) {
     return NextResponse.json({ message: "Invalid session" }, { status: 401 });
   }
 
-  // ── Parse + validate ──
   let body: any;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
+  try { body = await request.json(); } catch {
+    return NextResponse.json({ message: "Invalid body" }, { status: 400 });
   }
 
-  const validation = validateBody(body);
-  if (!validation.valid) {
-    return NextResponse.json({ message: validation.error }, { status: 400 });
-  }
+  const perspective: Perspective = VALID_PERSPECTIVES.has(body.perspective) ? body.perspective : "panorama";
+  const locale: Locale = VALID_LOCALES.has(body.locale) ? body.locale : "pt-BR";
 
-  const data = validation.data;
-
-  // ── Resolve environment for cache key ──
-  let envId = data.environment_id || "default";
-  try {
-    const { prisma } = await import("@/libs/prismaDb");
-    const membership = await prisma.membership.findFirst({
-      where: { userId },
-      include: {
-        organization: {
-          include: {
-            environments: {
-              where: data.environment_id
-                ? { id: data.environment_id }
-                : { isProduction: true },
-              take: 1,
-            },
-          },
+  // ── Resolve environment from user's org ──
+  const membership = await prisma.membership.findFirst({
+    where: { userId },
+    include: {
+      organization: {
+        include: {
+          environments: { take: 1 },
+          businessProfile: true,
         },
       },
-      orderBy: { createdAt: "desc" },
-    });
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-    if (!membership?.organization) {
-      return NextResponse.json({ message: "No organization found" }, { status: 403 });
-    }
+  if (!membership?.organization) {
+    return NextResponse.json({ message: "No organization found" }, { status: 403 });
+  }
 
-    const env = membership.organization.environments[0];
-    if (!env) {
-      return NextResponse.json({ message: "No environment configured" }, { status: 404 });
-    }
-
-    if (data.environment_id && env.id !== data.environment_id) {
-      return NextResponse.json({ message: "Environment not found in your organization" }, { status: 403 });
-    }
-
-    envId = env.id;
-  } catch {
-    // Dev fallback — continue with default envId
+  const env = membership.organization.environments[0];
+  if (!env) {
+    return NextResponse.json({ summary: null, fallback: true });
   }
 
   // ── Cache check ──
-  const cycleRef = data.cycle_ref || "current";
-  const cacheKey = `${envId}_${data.perspective}_${cycleRef}`;
+  const latestCycle = await prisma.auditCycle.findFirst({
+    where: { environmentId: env.id, status: "complete" },
+    orderBy: { completedAt: "desc" },
+    select: { id: true },
+  });
+
+  const cycleRef = latestCycle?.id || "none";
+  const cacheKey = `${env.id}_${perspective}_${cycleRef}`;
   const cached = getCached(cacheKey);
   if (cached) {
     return NextResponse.json({ summary: cached });
   }
 
-  // ── LLM availability check ──
+  // ── LLM check ──
   if (!isLlmEnabled()) {
     return NextResponse.json({ summary: null, fallback: true });
   }
+
+  // ── Load findings from DB ──
+  const findings = await prisma.finding.findMany({
+    where: { environmentId: env.id },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+
+  if (findings.length === 0) {
+    return NextResponse.json({ summary: null, fallback: true });
+  }
+
+  // ── Filter by perspective ──
+  const perspectiveFindings = perspective === "panorama"
+    ? findings
+    : findings.filter(f => {
+        const p = classifyFindingPerspective(f.packKey || "", f.category || "core");
+        return p === perspective;
+      });
+
+  // ── Build context ──
+  let totalExposure = 0;
+  let improved = 0, worsened = 0, newIssues = 0, resolved = 0, positiveChecks = 0;
+
+  const mappedFindings = perspectiveFindings.map(f => {
+    const data = f.data as any || {};
+    const impactMid = data.impact?.midpoint || 0;
+    const polarity = data.polarity || "negative";
+    const changeClass = data.change_class || null;
+
+    if (polarity === "negative") totalExposure += impactMid;
+    if (polarity === "positive") positiveChecks++;
+    if (changeClass === "improvement") improved++;
+    if (changeClass === "regression") worsened++;
+    if (changeClass === "new_issue") newIssues++;
+    if (changeClass === "resolved") resolved++;
+
+    return {
+      title: f.title || data.title || "Untitled",
+      severity: data.severity || "medium",
+      pack: f.packKey || "",
+      impact_mid: impactMid,
+      change_class: changeClass,
+      polarity,
+    };
+  });
 
   // ── Call Haiku ──
   try {
     const result = await callModel(
       "haiku_4_5",
-      [{ role: "user", content: buildUserMessage(data) }],
+      [{ role: "user", content: buildUserMessage(perspective, {
+        findings: mappedFindings,
+        businessProfile: membership.organization.businessProfile,
+        domain: env.domain,
+        totalExposure,
+        improved,
+        worsened,
+        newIssues,
+        resolved,
+        positiveChecks,
+      }) }],
       {
         max_tokens: 300,
         temperature: 0.4,
-        system: buildSystemMessage(data.locale),
+        system: buildSystemMessage(locale),
       },
     );
 
-    // Extract text from content blocks
     const textBlock = result.content.find((b) => b.type === "text");
     const summary = textBlock && "text" in textBlock ? textBlock.text.trim() : null;
 
@@ -263,9 +259,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ summary: null, fallback: true });
     }
 
-    // Cache the result
     setCache(cacheKey, summary);
-
     return NextResponse.json({ summary });
   } catch (err: any) {
     console.error("[pulse-summary] Haiku call failed:", err?.message || err);

@@ -134,11 +134,6 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
     perspectiveWorkspaces.length > 0 &&
     perspectiveWorkspaces.every((ws) => ws.pixel_status !== "active");
 
-  const positiveChecks = useMemo(
-    () => allFindings.filter((f) => f.polarity === "positive").map((f) => f.title),
-    [allFindings],
-  );
-
   const perspectiveLabel = t(`perspectives.${slug}`);
 
   const findingColumns: Column<FindingProjection>[] = [
@@ -242,7 +237,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
 
       {/* Pulse Summary */}
       <div className="mt-5">
-        <PulseSummary perspective={slug} findings={allFindings} positiveChecks={positiveChecks} />
+        <PulseSummary perspective={slug} />
       </div>
 
       {/* Lenses — same asymmetric layout */}

@@ -1,34 +1,23 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 // ──────────────────────────────────────────────
 // Pulse Summary — Intelligence briefing
 //
 // Full-width strip with emerald accent bar.
-// Text reveals character-by-character on first load
-// for that "receiving live intel" feel.
+// All context loaded server-side from DB (same data
+// the MCP chat sees). Component only sends perspective.
 // ──────────────────────────────────────────────
 
 interface PulseSummaryProps {
   perspective?: string;
-  findings?: unknown[];
-  positiveChecks?: string[];
-  cycleDelta?: Record<string, unknown>;
-  maturityStage?: string;
 }
 
-export default function PulseSummary({
-  perspective,
-  findings,
-  positiveChecks,
-  cycleDelta,
-  maturityStage,
-}: PulseSummaryProps) {
+export default function PulseSummary({ perspective }: PulseSummaryProps) {
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
-  const textRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,14 +29,6 @@ export default function PulseSummary({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             perspective: perspective || "panorama",
-            findings: (findings || []).slice(0, 50).map((f: any) => ({
-              title: f.title || "",
-              severity: f.severity || "medium",
-              impact_estimate: f.impact?.midpoint ? `$${f.impact.midpoint}/mo` : "unknown",
-            })),
-            positive_checks: positiveChecks || [],
-            cycle_delta: cycleDelta || { improved: 0, worsened: 0, new: 0 },
-            maturity_stage: maturityStage || "growth",
             locale: "pt-BR",
           }),
         });
@@ -59,11 +40,7 @@ export default function PulseSummary({
 
         const data = await res.json();
         if (!cancelled) {
-          if (data.fallback || !data.text) {
-            setText(null);
-          } else {
-            setText(data.text);
-          }
+          setText(data.fallback || !data.summary ? null : data.summary);
           setLoading(false);
         }
       } catch {
@@ -73,9 +50,8 @@ export default function PulseSummary({
 
     fetchPulse();
     return () => { cancelled = true; };
-  }, [perspective, findings, positiveChecks, cycleDelta, maturityStage]);
+  }, [perspective]);
 
-  // Reveal animation after text loads
   useEffect(() => {
     if (text && !revealed) {
       const timer = setTimeout(() => setRevealed(true), 50);
@@ -125,7 +101,6 @@ export default function PulseSummary({
           </span>
         </div>
         <p
-          ref={textRef}
           className={`text-[13px] leading-[1.7] text-zinc-600 dark:text-zinc-300 transition-opacity duration-700 ${
             revealed ? "opacity-100" : "opacity-0"
           }`}

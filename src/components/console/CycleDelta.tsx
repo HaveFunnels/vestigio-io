@@ -5,15 +5,15 @@ import { useTranslations } from "next-intl";
 import type { WorkspaceProjection } from "../../../packages/projections";
 
 // ──────────────────────────────────────────────
-// Cycle Delta — compact list of what changed
+// Cycle Delta — what changed since last audit
 //
-// Shows: improved (green), worsened (red), new (blue)
-// Each with count + top finding headline.
+// Compact vertical timeline of changes.
+// Each category: count badge + top finding headline.
+// No card wrapper — lives inside the right column.
 // ──────────────────────────────────────────────
 
 interface CycleDeltaProps {
   workspaces: WorkspaceProjection[];
-  /** Filter to a single perspective */
   filterPerspective?: string;
 }
 
@@ -24,113 +24,54 @@ function classifyWorkspacePerspective(ws: WorkspaceProjection): string {
   return "trust";
 }
 
-export default function CycleDelta({
-  workspaces,
-  filterPerspective,
-}: CycleDeltaProps) {
+export default function CycleDelta({ workspaces, filterPerspective }: CycleDeltaProps) {
   const t = useTranslations("console.workspaces");
 
   const delta = useMemo(() => {
-    let improved = 0;
-    let worsened = 0;
-    let newFindings = 0;
-    let topImproved: string | null = null;
-    let topWorsened: string | null = null;
-    let topNew: string | null = null;
+    const rows: { type: "regression" | "improvement" | "new"; count: number; top: string | null; color: string; icon: string }[] = [];
+    let improved = 0, worsened = 0, newF = 0;
+    let topI: string | null = null, topW: string | null = null, topN: string | null = null;
 
     for (const ws of workspaces) {
-      if (filterPerspective && classifyWorkspacePerspective(ws) !== filterPerspective)
-        continue;
-
+      if (filterPerspective && classifyWorkspacePerspective(ws) !== filterPerspective) continue;
       for (const f of ws.findings) {
-        if (f.change_class === "improvement") {
-          improved++;
-          if (!topImproved) topImproved = f.title;
-        } else if (f.change_class === "regression") {
-          worsened++;
-          if (!topWorsened) topWorsened = f.title;
-        } else if (f.change_class === "new_issue") {
-          newFindings++;
-          if (!topNew) topNew = f.title;
-        }
+        if (f.change_class === "improvement") { improved++; if (!topI) topI = f.title; }
+        else if (f.change_class === "regression") { worsened++; if (!topW) topW = f.title; }
+        else if (f.change_class === "new_issue") { newF++; if (!topN) topN = f.title; }
       }
     }
 
-    return { improved, worsened, newFindings, topImproved, topWorsened, topNew };
+    if (worsened > 0) rows.push({ type: "regression", count: worsened, top: topW, color: "text-red-400", icon: "\u2191" });
+    if (newF > 0) rows.push({ type: "new", count: newF, top: topN, color: "text-sky-400", icon: "\u2022" });
+    if (improved > 0) rows.push({ type: "improvement", count: improved, top: topI, color: "text-emerald-400", icon: "\u2193" });
+
+    return rows;
   }, [workspaces, filterPerspective]);
 
-  const hasChanges =
-    delta.improved > 0 || delta.worsened > 0 || delta.newFindings > 0;
-
-  if (!hasChanges) {
-    return (
-      <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-5">
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          {t("lenses.cycle_delta")}
-        </h3>
-        <p className="text-sm text-content-faint">{t("lenses.no_changes")}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-5">
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
+    <div>
+      <h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
         {t("lenses.cycle_delta")}
       </h3>
 
-      {/* Summary line */}
-      <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
-        {delta.improved > 0 && (
-          <span className="font-[family-name:var(--font-jetbrains-mono)] font-medium text-emerald-400">
-            {delta.improved} {t("lenses.improved")}
-          </span>
-        )}
-        {delta.worsened > 0 && (
-          <span className="font-[family-name:var(--font-jetbrains-mono)] font-medium text-red-400">
-            {delta.worsened} {t("lenses.worsened")}
-          </span>
-        )}
-        {delta.newFindings > 0 && (
-          <span className="font-[family-name:var(--font-jetbrains-mono)] font-medium text-blue-400">
-            {delta.newFindings} {t("lenses.new_findings")}
-          </span>
-        )}
-      </div>
-
-      {/* Detail rows */}
-      <div className="space-y-2">
-        {delta.improved > 0 && delta.topImproved && (
-          <div className="flex items-start gap-2">
-            <span className="mt-0.5 text-xs text-emerald-400">{"\u2193"}</span>
-            <div className="min-w-0 flex-1">
-              <span className="truncate text-xs text-content-secondary">
-                {delta.topImproved}
+      {delta.length === 0 ? (
+        <p className="text-[12px] text-zinc-600">{t("lenses.no_changes")}</p>
+      ) : (
+        <div className="space-y-2">
+          {delta.map((row) => (
+            <div key={row.type} className="flex items-start gap-2">
+              {/* Count badge */}
+              <span className={`font-[family-name:var(--font-jetbrains-mono)] text-[13px] font-semibold tabular-nums ${row.color} w-5 shrink-0 text-right`}>
+                {row.icon}{row.count}
+              </span>
+              {/* Headline */}
+              <span className="truncate text-[12px] leading-[1.5] text-zinc-400">
+                {row.top}
               </span>
             </div>
-          </div>
-        )}
-        {delta.worsened > 0 && delta.topWorsened && (
-          <div className="flex items-start gap-2">
-            <span className="mt-0.5 text-xs text-red-400">{"\u2191"}</span>
-            <div className="min-w-0 flex-1">
-              <span className="truncate text-xs text-content-secondary">
-                {delta.topWorsened}
-              </span>
-            </div>
-          </div>
-        )}
-        {delta.newFindings > 0 && delta.topNew && (
-          <div className="flex items-start gap-2">
-            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
-            <div className="min-w-0 flex-1">
-              <span className="truncate text-xs text-content-secondary">
-                {delta.topNew}
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

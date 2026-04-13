@@ -109,27 +109,6 @@ export default withAuth(
 			return NextResponse.redirect(new URL(isAdmin ? "/app/admin/overview" : "/app", req.url));
 		}
 
-		// Legacy route redirects — safety net for old bookmarks/links
-		const consoleRedirects: Record<string, string> = {
-			"/analysis": "/app/analysis",
-			"/chat": "/app/chat",
-			"/actions": "/app/actions",
-			"/workspaces": "/app/workspaces",
-			"/maps": "/app/maps",
-			"/onboard": "/app/onboarding",
-			"/settings": "/app/settings",
-		};
-		for (const [from, to] of Object.entries(consoleRedirects)) {
-			if (pathname === from || pathname === from + "/") {
-				return NextResponse.redirect(new URL(to, req.url));
-			}
-			// Also catch sub-paths (e.g., /workspaces/perspective/revenue → /app/workspaces/perspective/revenue)
-			if (pathname.startsWith(from + "/")) {
-				const subpath = pathname.slice(from.length);
-				return NextResponse.redirect(new URL(to + subpath, req.url));
-			}
-		}
-
 		// ── System Admin vs User routing ─────────────
 		// System Admin: manages the Vestigio platform. Not a customer.
 		//   No org, no onboarding, no analysis. Goes to /app/admin/*.

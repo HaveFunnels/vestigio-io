@@ -24,22 +24,22 @@ const VALID_LOCALES = new Set<Locale>(["en", "pt-BR", "es", "de"]);
 
 // ── In-memory cache (1h TTL) ──────────────────
 
-const CACHE_TTL_MS = 60 * 60 * 1000;
-interface CacheEntry { summary: string; created_at: number }
-const cache = new Map<string, CacheEntry>();
+// Cache keyed by env+perspective+cycleId — valid until a new cycle completes.
+// No TTL: the cycleRef in the key changes when a new audit finishes,
+// which naturally invalidates stale entries. Max 1000 entries with LRU eviction.
+const MAX_CACHE = 1000;
+const cache = new Map<string, string>();
 
 function getCached(key: string): string | null {
-  const entry = cache.get(key);
-  if (!entry) return null;
-  if (Date.now() - entry.created_at > CACHE_TTL_MS) { cache.delete(key); return null; }
-  return entry.summary;
+  return cache.get(key) ?? null;
 }
 
 function setCache(key: string, summary: string): void {
-  cache.set(key, { summary, created_at: Date.now() });
-  if (cache.size > 500) {
-    const now = Date.now();
-    for (const [k, v] of cache) { if (now - v.created_at > CACHE_TTL_MS) cache.delete(k); }
+  cache.set(key, summary);
+  if (cache.size > MAX_CACHE) {
+    // Evict oldest (first inserted)
+    const firstKey = cache.keys().next().value;
+    if (firstKey) cache.delete(firstKey);
   }
 }
 

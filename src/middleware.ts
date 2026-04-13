@@ -109,7 +109,7 @@ export default withAuth(
 			return NextResponse.redirect(new URL(isAdmin ? "/app/admin/overview" : "/app", req.url));
 		}
 
-		// Old console routes → /app equivalents
+		// Legacy route redirects — safety net for old bookmarks/links
 		const consoleRedirects: Record<string, string> = {
 			"/analysis": "/app/analysis",
 			"/chat": "/app/chat",

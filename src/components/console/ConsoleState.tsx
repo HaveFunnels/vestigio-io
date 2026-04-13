@@ -37,7 +37,7 @@ export default function ConsoleState<T>({
         <h2 className="text-lg font-semibold text-content-secondary">Not Ready</h2>
         <p className="mt-1 max-w-md text-sm text-content-faint">{state.reason}</p>
         <Link
-          href="/onboard"
+          href="/app/onboarding"
           className="mt-4 rounded-md bg-accent-cta px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-cta-hover"
         >
           Complete Setup

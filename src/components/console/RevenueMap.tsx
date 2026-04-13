@@ -86,10 +86,10 @@ export default function RevenueMap({ workspaces, filterPerspective }: RevenueMap
   return (
     <div className="flex flex-col">
       <div className="mb-3 flex items-baseline justify-between">
-        <h3 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+        <h3 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500">
           {t("lenses.revenue_map")}
         </h3>
-        <span className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] text-zinc-600">
+        <span className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] text-zinc-400 dark:text-zinc-600">
           /mo
         </span>
       </div>
@@ -101,11 +101,11 @@ export default function RevenueMap({ workspaces, filterPerspective }: RevenueMap
             <div key={b.key}>
               {/* Label row */}
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-[12px] font-medium text-zinc-400">
+                <span className="text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
                   {b.label}
                 </span>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-[family-name:var(--font-jetbrains-mono)] text-[11px] text-zinc-600">
+                  <span className="font-[family-name:var(--font-jetbrains-mono)] text-[11px] text-zinc-400 dark:text-zinc-600">
                     {b.issueCount}
                   </span>
                   <span className={`font-[family-name:var(--font-jetbrains-mono)] text-[14px] font-semibold tabular-nums ${b.textColor}`}>
@@ -114,9 +114,9 @@ export default function RevenueMap({ workspaces, filterPerspective }: RevenueMap
                 </div>
               </div>
               {/* Bar */}
-              <div className="h-[6px] w-full bg-white/[0.03]">
+              <div className="h-[6px] w-full rounded-sm bg-zinc-100 dark:bg-white/[0.03]">
                 <div
-                  className={`h-full ${b.barColor}`}
+                  className={`h-full rounded-sm ${b.barColor}`}
                   style={{
                     width: animated ? `${pct}%` : "0%",
                     transition: `width 600ms cubic-bezier(0.16, 1, 0.3, 1) ${i * 80}ms`,
@@ -131,7 +131,7 @@ export default function RevenueMap({ workspaces, filterPerspective }: RevenueMap
       {/* Total */}
       {buckets.length > 1 && (
         <div className="mt-3 flex items-baseline justify-between border-t border-white/[0.04] pt-3">
-          <span className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-wider text-zinc-600">
+          <span className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
             {t("lenses.total_exposure")}
           </span>
           <span className="font-[family-name:var(--font-jetbrains-mono)] text-[16px] font-bold tabular-nums text-red-400">

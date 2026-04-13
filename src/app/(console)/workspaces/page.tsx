@@ -156,16 +156,16 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
       <PulseSummary findings={allFindings} positiveChecks={positiveChecks} />
 
       {/* ── Lenses 2-4: Revenue Map | Delta + Rights ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
         {/* Left: Revenue Map */}
-        <div className="border border-white/[0.04] bg-white/[0.015] p-5">
+        <div className="rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
           <RevenueMap workspaces={workspaces} />
         </div>
 
         {/* Right: stacked Delta + Rights */}
-        <div className="flex flex-col gap-5 border border-white/[0.04] bg-white/[0.015] p-5">
+        <div className="flex flex-col gap-5 rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
           <CycleDelta workspaces={workspaces} />
-          <div className="border-t border-white/[0.04] pt-4">
+          <div className="border-t border-zinc-100 pt-4 dark:border-white/[0.04]">
             <BraggingRights workspaces={workspaces} />
           </div>
         </div>
@@ -173,11 +173,11 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
 
       {/* ── Perspective Cards ── */}
       <section>
-        <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-600">
+        <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
           {t("perspectives_heading")}
         </h2>
 
-        <div className="grid grid-cols-1 gap-px bg-white/[0.03] sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded bg-zinc-200 dark:bg-white/[0.03] sm:grid-cols-2 lg:grid-cols-4">
           {PERSPECTIVES.map((pDef) => {
             const data = perspectiveData[pDef.key];
             const isLocked = data?.isLocked;
@@ -191,7 +191,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                   if (isLocked) router.push("/app/settings/data-sources");
                   else router.push(`/workspaces/perspective/${pDef.key}`);
                 }}
-                className={`group relative border-l-2 ${pDef.borderColor} ${pDef.hoverBg} bg-[rgb(var(--bg-card))] px-5 py-4 text-left transition-colors ${
+                className={`group relative border-l-2 ${pDef.borderColor} ${pDef.hoverBg} bg-white dark:bg-[rgb(var(--bg-card))] px-5 py-4 text-left transition-colors ${
                   isLocked || isCopyEmpty ? "opacity-50" : ""
                 }`}
               >
@@ -206,7 +206,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d={pDef.icon} />
                   </svg>
-                  <span className="text-[13px] font-semibold text-zinc-300">
+                  <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300">
                     {t(`perspectives.${pDef.key}`)}
                   </span>
                 </div>
@@ -214,21 +214,21 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                 {/* Stats row */}
                 <div className="mt-3 flex items-end justify-between">
                   {isLocked ? (
-                    <span className="text-[11px] text-amber-500/80">
+                    <span className="text-[11px] text-amber-600 dark:text-amber-500/80">
                       {t("pixel_required")}
                     </span>
                   ) : isCopyEmpty ? (
-                    <span className="text-[11px] text-zinc-600">
+                    <span className="text-[11px] text-zinc-400 dark:text-zinc-600">
                       {t("coming_soon")}
                     </span>
                   ) : hasData ? (
                     <>
                       {/* Big number: issue count */}
                       <div>
-                        <div className="font-[family-name:var(--font-jetbrains-mono)] text-[22px] font-bold tabular-nums leading-none text-zinc-200">
+                        <div className="font-[family-name:var(--font-jetbrains-mono)] text-[22px] font-bold tabular-nums leading-none text-zinc-800 dark:text-zinc-200">
                           {data.issues}
                         </div>
-                        <div className="mt-0.5 text-[10px] text-zinc-600">
+                        <div className="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-600">
                           {t("issues")}
                         </div>
                       </div>
@@ -244,7 +244,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                       </div>
                     </>
                   ) : (
-                    <span className="text-[11px] text-zinc-600">
+                    <span className="text-[11px] text-zinc-400 dark:text-zinc-600">
                       {t("no_data_yet")}
                     </span>
                   )}
@@ -252,7 +252,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
 
                 {/* Hover arrow */}
                 {!isLocked && !isCopyEmpty && (
-                  <div className="absolute bottom-4 right-4 text-zinc-600 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="absolute bottom-4 right-4 text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100 dark:text-zinc-600">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                     </svg>

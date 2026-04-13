@@ -83,7 +83,7 @@ export default function PerspectivePage({ params }: { params: Promise<{ slug: st
   if (!["revenue", "trust", "behavior", "copy"].includes(slug)) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="mb-3 text-4xl text-zinc-700">&empty;</div>
+        <div className="mb-3 text-4xl text-zinc-300 dark:text-zinc-700">&empty;</div>
         <h2 className="text-lg font-semibold text-zinc-300">{t("perspective_not_found")}</h2>
         <Link href="/workspaces" className="mt-4 text-sm text-zinc-500 transition-colors hover:text-zinc-300">
           &larr; {t("back_to_panorama")}
@@ -188,7 +188,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       {/* Back nav */}
       <Link
         href="/workspaces"
-        className="inline-flex items-center gap-1.5 text-[12px] text-zinc-600 transition-colors hover:text-zinc-400"
+        className="inline-flex items-center gap-1.5 text-[12px] text-zinc-400 transition-colors hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400"
       >
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -197,7 +197,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       </Link>
 
       {/* Perspective header — left accent border */}
-      <div className={`mt-4 border-l-2 ${meta.borderColor} ${meta.barColor} px-5 py-4`}>
+      <div className={`mt-4 rounded border-l-2 ${meta.borderColor} ${meta.barColor} px-5 py-4`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <svg className={`h-5 w-5 ${meta.accentColor} opacity-70`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -210,17 +210,17 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
           </div>
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <div className="font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums text-zinc-200">
+              <div className="font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
                 {negativeFindings.length}
               </div>
-              <div className="text-[10px] text-zinc-600">{t("issues")}</div>
+              <div className="text-[10px] text-zinc-400 dark:text-zinc-600">{t("issues")}</div>
             </div>
             {totalLoss > 0 && (
               <div className="text-right">
                 <div className={`font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums ${meta.accentColor}`}>
                   {fmtCurrency(totalLoss)}
                 </div>
-                <div className="text-[10px] text-zinc-600">/mo</div>
+                <div className="text-[10px] text-zinc-400 dark:text-zinc-600">/mo</div>
               </div>
             )}
           </div>
@@ -229,7 +229,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
 
       {/* Locked banner */}
       {isBehaviorLocked && (
-        <div className="mt-4 flex items-center gap-3 border-l-2 border-l-amber-500/60 bg-amber-500/[0.04] px-5 py-3">
+        <div className="mt-4 flex items-center gap-3 rounded border-l-2 border-l-amber-500/60 bg-amber-50 px-5 py-3 dark:bg-amber-500/[0.04]">
           <span className="text-[12px] text-amber-400/80">{t("categories.behavioral_locked_banner")}</span>
           <button
             onClick={() => router.push("/app/settings/data-sources")}
@@ -247,12 +247,12 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
 
       {/* Lenses — same asymmetric layout */}
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
-        <div className="border border-white/[0.04] bg-white/[0.015] p-5">
+        <div className="rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
           <RevenueMap workspaces={workspaces} filterPerspective={slug} />
         </div>
-        <div className="flex flex-col gap-5 border border-white/[0.04] bg-white/[0.015] p-5">
+        <div className="flex flex-col gap-5 rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
           <CycleDelta workspaces={workspaces} filterPerspective={slug} />
-          <div className="border-t border-white/[0.04] pt-4">
+          <div className="border-t border-zinc-100 pt-4 dark:border-white/[0.04]">
             <BraggingRights workspaces={workspaces} filterPerspective={slug} />
           </div>
         </div>
@@ -261,10 +261,10 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       {/* Findings table */}
       {allFindings.length > 0 && (
         <section className="mt-6">
-          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-600">
+          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
             {t("perspective_findings")}
           </h2>
-          <div className="border border-white/[0.04] bg-white/[0.015]">
+          <div className="overflow-hidden rounded border border-zinc-200 bg-white dark:border-white/[0.04] dark:bg-white/[0.015]">
             <DataTable
               columns={findingColumns}
               data={allFindings}
@@ -279,15 +279,15 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       {/* Workspace breakdown */}
       {perspectiveWorkspaces.length > 1 && (
         <section className="mt-6">
-          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-600">
+          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
             {t("workspaces_in_perspective")}
           </h2>
-          <div className="grid grid-cols-1 gap-px bg-white/[0.03] lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded bg-zinc-200 dark:bg-white/[0.03] lg:grid-cols-2">
             {perspectiveWorkspaces.map((ws) => (
               <button
                 key={ws.id}
                 onClick={() => router.push(`/app/workspaces/${ws.id}`)}
-                className="bg-[rgb(var(--bg-card))] px-5 py-3.5 text-left transition-colors hover:bg-white/[0.03]"
+                className="bg-white px-5 py-3.5 text-left transition-colors hover:bg-zinc-50 dark:bg-[rgb(var(--bg-card))] dark:hover:bg-white/[0.03]"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] font-medium text-zinc-300">{ws.name}</span>
@@ -322,7 +322,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-600">
+        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
           {td("summary")}
         </h3>
         <p className="text-[13px] leading-relaxed text-zinc-400">{finding.cause}</p>
@@ -339,7 +339,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
       {finding.effect && (
         <section>
-          <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-600">
+          <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
             {td("effect")}
           </h3>
           <p className="text-[13px] text-zinc-500">{finding.effect}</p>
@@ -348,10 +348,10 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
       {finding.polarity !== "positive" && (
         <section>
-          <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-600">
+          <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
             {td("impact_breakdown")}
           </h3>
-          <div className="flex items-center justify-between border border-white/[0.04] bg-white/[0.015] px-4 py-2">
+          <div className="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-white/[0.04] dark:bg-white/[0.015]">
             <span className="text-[11px] text-zinc-600">{td("monthly_range")}</span>
             <ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} />
           </div>
@@ -359,14 +359,14 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       )}
 
       <section>
-        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-600">
+        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
           {finding.polarity === "positive" ? td("why_good") : td("reasoning")}
         </h3>
         <p className="text-[13px] leading-relaxed text-zinc-500">{finding.reasoning}</p>
       </section>
 
       <section>
-        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-600">
+        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
           {td("verification")}
         </h3>
         <VerificationPanel
@@ -386,7 +386,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
         <section>
           <button
             onClick={onDiscuss}
-            className="w-full border border-emerald-500/30 bg-emerald-500/[0.06] px-4 py-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px] font-medium text-emerald-400 transition-colors hover:border-emerald-500/50 hover:bg-emerald-500/[0.1]"
+            className="w-full rounded border border-emerald-500/30 bg-emerald-50 px-4 py-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px] font-medium text-emerald-600 transition-colors hover:bg-emerald-100 dark:bg-emerald-500/[0.06] dark:text-emerald-400 dark:hover:border-emerald-500/50 dark:hover:bg-emerald-500/[0.1]"
           >
             {td("discuss_finding")}
           </button>

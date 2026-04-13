@@ -50,12 +50,12 @@ export default function CycleDelta({ workspaces, filterPerspective }: CycleDelta
 
   return (
     <div>
-      <h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+      <h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500">
         {t("lenses.cycle_delta")}
       </h3>
 
       {delta.length === 0 ? (
-        <p className="text-[12px] text-zinc-600">{t("lenses.no_changes")}</p>
+        <p className="text-[12px] text-zinc-400 dark:text-zinc-600">{t("lenses.no_changes")}</p>
       ) : (
         <div className="space-y-2">
           {delta.map((row) => (
@@ -65,7 +65,7 @@ export default function CycleDelta({ workspaces, filterPerspective }: CycleDelta
                 {row.icon}{row.count}
               </span>
               {/* Headline */}
-              <span className="truncate text-[12px] leading-[1.5] text-zinc-400">
+              <span className="truncate text-[12px] leading-[1.5] text-zinc-500 dark:text-zinc-400">
                 {row.top}
               </span>
             </div>

@@ -43,16 +43,16 @@ export default function BraggingRights({ workspaces, filterPerspective }: Braggi
 
   return (
     <div>
-      <h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-emerald-500/60">
+      <h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-emerald-600/60 dark:text-emerald-500/60">
         {t("lenses.bragging_rights")}
       </h3>
 
       {resolvedCount > 0 && (
         <div className="mb-2.5 flex items-baseline gap-1.5">
-          <span className="font-[family-name:var(--font-jetbrains-mono)] text-[18px] font-bold tabular-nums text-emerald-400">
+          <span className="font-[family-name:var(--font-jetbrains-mono)] text-[18px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
             {resolvedCount}
           </span>
-          <span className="text-[11px] text-emerald-400/60">
+          <span className="text-[11px] text-emerald-600/60 dark:text-emerald-400/60">
             {t("lenses.resolved_this_cycle")}
           </span>
         </div>
@@ -62,14 +62,14 @@ export default function BraggingRights({ workspaces, filterPerspective }: Braggi
         <div className="space-y-1">
           {positiveChecks.slice(0, 5).map((check, i) => (
             <div key={i} className="flex items-start gap-1.5">
-              <span className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-emerald-500/50" />
+              <span className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-emerald-500/60" />
               <span className="text-[11px] leading-[1.5] text-zinc-500">
                 {check}
               </span>
             </div>
           ))}
           {positiveChecks.length > 5 && (
-            <span className="text-[10px] text-zinc-600">
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-600">
               +{positiveChecks.length - 5} {t("lenses.more_checks")}
             </span>
           )}

@@ -185,12 +185,12 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                   if (isLocked) router.push("/app/settings/data-sources");
                   else router.push(`/app/workspaces/perspective/${pDef.key}`);
                 }}
-                className={`group relative overflow-hidden rounded-2xl border border-edge bg-surface-card px-5 py-4 text-left shadow-lg transition-all hover:border-edge hover:shadow-xl ${
-                  isLocked || isCopyEmpty ? "opacity-50" : ""
+                className={`group relative overflow-hidden rounded-2xl border border-edge bg-surface-card px-5 py-4 text-left shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl ${
+                  isLocked || isCopyEmpty ? "opacity-50" : "hover:border-content-faint"
                 }`}
               >
-                {/* Subtle gradient per perspective */}
-                <div className={`pointer-events-none absolute inset-0 rounded-2xl ${pDef.accentBg} bg-gradient-to-br from-current via-transparent to-transparent opacity-[0.5]`} />
+                {/* Subtle gradient per perspective — intensifies on hover */}
+                <div className={`pointer-events-none absolute inset-0 rounded-2xl ${pDef.accentBg} bg-gradient-to-br from-current via-transparent to-transparent opacity-[0.12] transition-opacity duration-200 group-hover:opacity-[0.25]`} />
 
                 {/* Icon + Name */}
                 <div className="relative flex items-center gap-2.5">

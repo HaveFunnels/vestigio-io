@@ -39,11 +39,16 @@ export default function PulseSummary({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            perspective,
-            findings,
-            positiveChecks,
-            cycleDelta,
-            maturityStage,
+            perspective: perspective || "panorama",
+            findings: (findings || []).slice(0, 50).map((f: any) => ({
+              title: f.title || "",
+              severity: f.severity || "medium",
+              impact_estimate: f.impact?.midpoint ? `$${f.impact.midpoint}/mo` : "unknown",
+            })),
+            positive_checks: positiveChecks || [],
+            cycle_delta: cycleDelta || { improved: 0, worsened: 0, new: 0 },
+            maturity_stage: maturityStage || "growth",
+            locale: "pt-BR",
           }),
         });
 

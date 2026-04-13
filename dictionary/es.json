@@ -769,6 +769,20 @@
       "title": "Últimos Blogs y Noticias",
       "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
     },
+    "counter": {
+      "tagline": "Hecho para quienes se niegan a escalar a ciegas.",
+      "quick_start_title": "Quick Start",
+      "quick_start_desc": "Empieza en segundos, solo con tu dominio.",
+      "visibility_title": "Visibilidad Completa",
+      "visibility_desc": "Más de 15.000 señales analizadas automáticamente.",
+      "roi_subtitle": "Literalmente no puedes perder.",
+      "pulse_title": "Vestigio Pulse",
+      "pulse_desc": "Habla con tus datos. Pregunta, investiga, decide.",
+      "monitoring_title": "Monitoreo Continuo",
+      "monitoring_desc": "Ciclos automáticos de auditoría.",
+      "integrations_title": "Integraciones",
+      "integrations_desc": "Shopify, Stripe, GA y más."
+    },
     "mini_calculator": {
       "title": "Descubre cuánto dinero estás dejando sobre la mesa",
       "subtitle": "Ingresa la URL de tu sitio web para obtener un diagnóstico gratuito de posibles fugas de ingresos.",

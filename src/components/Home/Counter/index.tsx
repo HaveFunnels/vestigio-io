@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const Counter = () => {
 	const sectionRef = useRef<HTMLElement>(null);
 	const [inView, setInView] = useState(false);
+	const t = useTranslations("homepage.counter");
 
 	useEffect(() => {
 		const el = sectionRef.current;
@@ -34,7 +36,7 @@ const Counter = () => {
 
 			<div className={`mx-auto w-full max-w-[1170px] px-4 sm:px-8 xl:px-0 ${!inView ? 'vcounter-paused' : ''}`}>
 				<p className='mb-6 text-center text-sm font-semibold text-white sm:mb-8 sm:text-base'>
-					Feito pra quem não aceita escalar no escuro.
+					{t("tagline")}
 				</p>
 
 				{/* Bento grid: 2 cols desktop, 1 col mobile */}
@@ -50,12 +52,12 @@ const Counter = () => {
 								</svg>
 							</div>
 							<div>
-								<h3 className='text-sm font-semibold text-white sm:text-base'>Quick Start</h3>
-								<p className='mt-0.5 text-xs text-zinc-400 sm:text-sm'>Comece em segundos, apenas com seu domínio.</p>
+								<h3 className='text-sm font-semibold text-white sm:text-base'>{t("quick_start_title")}</h3>
+								<p className='mt-0.5 text-xs text-zinc-400 sm:text-sm'>{t("quick_start_desc")}</p>
 							</div>
 						</div>
 
-						{/* Visibilidade Completa */}
+						{/* Full Visibility */}
 						<div className='group flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 transition-all duration-300 hover:border-emerald-500/20 hover:bg-white/[0.04] sm:p-6'>
 							<div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10'>
 								<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-5 w-5 text-violet-400'>
@@ -64,8 +66,8 @@ const Counter = () => {
 								</svg>
 							</div>
 							<div>
-								<h3 className='text-sm font-semibold text-white sm:text-base'>Visibilidade Completa</h3>
-								<p className='mt-0.5 text-xs text-zinc-400 sm:text-sm'>Mais de 15 mil sinais analisados automaticamente.</p>
+								<h3 className='text-sm font-semibold text-white sm:text-base'>{t("visibility_title")}</h3>
+								<p className='mt-0.5 text-xs text-zinc-400 sm:text-sm'>{t("visibility_desc")}</p>
 							</div>
 						</div>
 
@@ -86,7 +88,7 @@ const Counter = () => {
 									4X
 								</span>
 								<h3 className='mt-2 text-lg font-bold text-white sm:text-xl'>ROI Guarantee</h3>
-								<p className='mt-1 text-sm text-zinc-400'>Você literalmente não tem como perder.</p>
+								<p className='mt-1 text-sm text-zinc-400'>{t("roi_subtitle")}</p>
 							</div>
 						</div>
 					</div>
@@ -132,14 +134,14 @@ const Counter = () => {
 							</div>
 
 							<div className='relative mt-auto pt-32 text-center'>
-								<h3 className='text-lg font-bold text-white'>Vestigio Pulse</h3>
-								<p className='mt-1 text-sm text-zinc-400'>Converse com seus dados. Pergunte, investigue, decida.</p>
+								<h3 className='text-lg font-bold text-white'>{t("pulse_title")}</h3>
+								<p className='mt-1 text-sm text-zinc-400'>{t("pulse_desc")}</p>
 							</div>
 						</div>
 
 						{/* Bottom two small cards */}
 						<div className='flex gap-3 sm:gap-4'>
-							{/* Monitoramento Contínuo */}
+							{/* Continuous Monitoring */}
 							<div className='group flex flex-1 items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 transition-all duration-300 hover:border-emerald-500/20 hover:bg-white/[0.04]'>
 								<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/10'>
 									<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-4.5 w-4.5 text-sky-400'>
@@ -147,12 +149,12 @@ const Counter = () => {
 									</svg>
 								</div>
 								<div>
-									<h3 className='text-sm font-semibold text-white'>Monitoramento Contínuo</h3>
-									<p className='mt-0.5 text-[11px] text-zinc-500'>Ciclos automáticos de auditoria.</p>
+									<h3 className='text-sm font-semibold text-white'>{t("monitoring_title")}</h3>
+									<p className='mt-0.5 text-[11px] text-zinc-500'>{t("monitoring_desc")}</p>
 								</div>
 							</div>
 
-							{/* Integrações */}
+							{/* Integrations */}
 							<div className='group flex flex-1 items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 transition-all duration-300 hover:border-emerald-500/20 hover:bg-white/[0.04]'>
 								<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10'>
 									<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-4.5 w-4.5 text-amber-400'>
@@ -163,8 +165,8 @@ const Counter = () => {
 									</svg>
 								</div>
 								<div>
-									<h3 className='text-sm font-semibold text-white'>Integrações</h3>
-									<p className='mt-0.5 text-[11px] text-zinc-500'>Shopify, Stripe, GA e mais.</p>
+									<h3 className='text-sm font-semibold text-white'>{t("integrations_title")}</h3>
+									<p className='mt-0.5 text-[11px] text-zinc-500'>{t("integrations_desc")}</p>
 								</div>
 							</div>
 						</div>

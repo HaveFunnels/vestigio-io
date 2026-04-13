@@ -769,6 +769,20 @@
       "title": "Latest Blogs & News",
       "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
     },
+    "counter": {
+      "tagline": "Built for those who refuse to scale in the dark.",
+      "quick_start_title": "Quick Start",
+      "quick_start_desc": "Get started in seconds, just with your domain.",
+      "visibility_title": "Full Visibility",
+      "visibility_desc": "Over 15,000 signals analyzed automatically.",
+      "roi_subtitle": "You literally can't lose.",
+      "pulse_title": "Vestigio Pulse",
+      "pulse_desc": "Talk to your data. Ask, investigate, decide.",
+      "monitoring_title": "Continuous Monitoring",
+      "monitoring_desc": "Automated audit cycles.",
+      "integrations_title": "Integrations",
+      "integrations_desc": "Shopify, Stripe, GA and more."
+    },
     "mini_calculator": {
       "title": "See what you're leaving on the table",
       "subtitle": "Enter your website URL to get a free snapshot of potential revenue leaks.",

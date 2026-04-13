@@ -769,6 +769,20 @@
       "title": "Neueste Blogs & News",
       "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
     },
+    "counter": {
+      "tagline": "Gemacht für alle, die sich weigern, im Dunkeln zu skalieren.",
+      "quick_start_title": "Quick Start",
+      "quick_start_desc": "Starten Sie in Sekunden, nur mit Ihrer Domain.",
+      "visibility_title": "Volle Sichtbarkeit",
+      "visibility_desc": "Über 15.000 Signale automatisch analysiert.",
+      "roi_subtitle": "Sie können buchstäblich nicht verlieren.",
+      "pulse_title": "Vestigio Pulse",
+      "pulse_desc": "Sprechen Sie mit Ihren Daten. Fragen, untersuchen, entscheiden.",
+      "monitoring_title": "Kontinuierliches Monitoring",
+      "monitoring_desc": "Automatische Audit-Zyklen.",
+      "integrations_title": "Integrationen",
+      "integrations_desc": "Shopify, Stripe, GA und mehr."
+    },
     "mini_calculator": {
       "title": "Sehen Sie, wie viel Geld Sie auf dem Tisch liegen lassen",
       "subtitle": "Geben Sie die URL Ihrer Website ein, um eine kostenlose Analyse möglicher Umsatzverluste zu erhalten.",

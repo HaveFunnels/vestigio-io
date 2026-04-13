@@ -6,10 +6,7 @@ import type { WorkspaceProjection } from "../../../packages/projections";
 
 // ──────────────────────────────────────────────
 // Revenue Map — where the money leaks
-//
-// Horizontal bars with inline labels.
-// The hero lens — gets 60% width in the grid.
-// Animates bars on mount for visual punch.
+// Styled to match dashboard widget cards.
 // ──────────────────────────────────────────────
 
 interface PerspectiveBucket {
@@ -35,10 +32,10 @@ function classifyWorkspacePerspective(ws: WorkspaceProjection): string {
   return "trust";
 }
 
-function fmt(value: number, currency = "BRL"): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
-  return `${Math.round(value)}`;
+function fmt(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
+  return `$${Math.round(value)}`;
 }
 
 interface RevenueMapProps {
@@ -84,39 +81,29 @@ export default function RevenueMap({ workspaces, filterPerspective }: RevenueMap
   if (buckets.length === 0) return null;
 
   return (
-    <div className="flex flex-col">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h3 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500">
+    <div className="flex h-full flex-col p-5">
+      <div className="mb-4 flex items-baseline justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
           {t("lenses.revenue_map")}
-        </h3>
-        <span className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] text-zinc-400 dark:text-zinc-600">
-          /mo
         </span>
+        <span className="font-mono text-[10px] tabular-nums text-content-faint">/ mo</span>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="flex-1 space-y-3">
         {buckets.map((b, i) => {
           const pct = Math.max(3, (b.totalLoss / maxLoss) * 100);
           return (
             <div key={b.key}>
-              {/* Label row */}
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
-                  {b.label}
-                </span>
+                <span className="text-xs text-content-secondary">{b.label}</span>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-[family-name:var(--font-jetbrains-mono)] text-[11px] text-zinc-400 dark:text-zinc-600">
-                    {b.issueCount}
-                  </span>
-                  <span className={`font-[family-name:var(--font-jetbrains-mono)] text-[14px] font-semibold tabular-nums ${b.textColor}`}>
-                    {fmt(b.totalLoss)}
-                  </span>
+                  <span className="font-mono text-[11px] tabular-nums text-content-faint">{b.issueCount}</span>
+                  <span className={`font-mono text-sm font-medium tabular-nums ${b.textColor}`}>{fmt(b.totalLoss)}</span>
                 </div>
               </div>
-              {/* Bar */}
-              <div className="h-[6px] w-full rounded-sm bg-zinc-100 dark:bg-white/[0.03]">
+              <div className="h-1.5 w-full rounded-full bg-surface-inset">
                 <div
-                  className={`h-full rounded-sm ${b.barColor}`}
+                  className={`h-1.5 rounded-full ${b.barColor}`}
                   style={{
                     width: animated ? `${pct}%` : "0%",
                     transition: `width 600ms cubic-bezier(0.16, 1, 0.3, 1) ${i * 80}ms`,
@@ -128,13 +115,12 @@ export default function RevenueMap({ workspaces, filterPerspective }: RevenueMap
         })}
       </div>
 
-      {/* Total */}
       {buckets.length > 1 && (
-        <div className="mt-3 flex items-baseline justify-between border-t border-white/[0.04] pt-3">
-          <span className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
+        <div className="mt-3 flex items-baseline justify-between border-t border-edge/40 pt-3">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
             {t("lenses.total_exposure")}
           </span>
-          <span className="font-[family-name:var(--font-jetbrains-mono)] text-[16px] font-bold tabular-nums text-red-400">
+          <span className="font-mono text-base font-medium tabular-nums text-red-400">
             {fmt(totalExposure)}
           </span>
         </div>

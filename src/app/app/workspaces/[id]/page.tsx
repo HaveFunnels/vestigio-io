@@ -219,7 +219,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 				<div className="space-y-5">
 					{/* Change Summary */}
 					{(workspace.change_summary || workspaceChanges.length > 0) && (
-						<section className="rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
+						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
 							<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
 								{t("detail.change_summary")}
 							</h2>
@@ -236,7 +236,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					)}
 
 					{/* Findings */}
-					<section className="rounded border border-zinc-200 bg-white dark:border-white/[0.04] dark:bg-white/[0.015]">
+					<section className="rounded-2xl border border-edge bg-surface-card shadow-lg">
 						<div className="px-5 pt-5 pb-2">
 							<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
 								{isPreflight ? t("detail.preflight_checklist") : t("detail.findings")}
@@ -267,7 +267,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 				<div className="space-y-5">
 					{/* Coherence */}
 					{workspace.coherence && (
-						<section className="rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
+						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
 							<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
 								{t("detail.coherence")}
 							</h2>
@@ -311,7 +311,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					)}
 
 					{/* Quick Stats */}
-					<section className="rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
+					<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
 						<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
 							{t("detail.quick_stats")}
 						</h2>
@@ -393,7 +393,7 @@ function PreflightChecklist({
 						<button
 							key={f.id}
 							onClick={() => onFindingClick(f)}
-							className="flex w-full items-start gap-3 rounded border border-zinc-200 bg-white px-4 py-2.5 text-left transition-colors hover:bg-zinc-50 dark:border-white/[0.04] dark:bg-white/[0.015] dark:hover:bg-white/[0.03]"
+							className="flex w-full items-start gap-3 rounded-xl border border-edge bg-surface-card px-4 py-2.5 text-left transition-colors hover:bg-surface-card-hover"
 						>
 							<span className={`mt-0.5 text-[12px] font-bold ${iconColor}`}>{icon}</span>
 							<div className="min-w-0 flex-1">
@@ -465,7 +465,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 			{finding.root_cause && (
 				<section>
 					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("root_cause")}</h3>
-					<div className="rounded border border-zinc-200 bg-zinc-50 px-4 py-2.5 dark:border-white/[0.04] dark:bg-white/[0.015]">
+					<div className="rounded-xl border border-edge bg-surface-card px-4 py-2.5">
 						<span className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300">{finding.root_cause}</span>
 					</div>
 				</section>
@@ -475,15 +475,15 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 				<section>
 					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("impact_breakdown")}</h3>
 					<div className="space-y-1.5">
-						<div className="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-white/[0.04] dark:bg-white/[0.015]">
+						<div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card/50 px-4 py-2">
 							<span className="text-[11px] text-zinc-500">{td("monthly_range")}</span>
 							<ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} />
 						</div>
-						<div className="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-white/[0.04] dark:bg-white/[0.015]">
+						<div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card/50 px-4 py-2">
 							<span className="text-[11px] text-zinc-500">{td("midpoint")}</span>
 							<ImpactBadge min={finding.impact.midpoint} max={finding.impact.midpoint} compact />
 						</div>
-						<div className="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-white/[0.04] dark:bg-white/[0.015]">
+						<div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card/50 px-4 py-2">
 							<span className="text-[11px] text-zinc-500">{td("impact_type")}</span>
 							<span className="text-[11px] text-zinc-600 dark:text-zinc-400">{tc(`impact_types.${finding.impact.impact_type}`)}</span>
 						</div>
@@ -494,7 +494,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 			{finding.evidence_quality && (
 				<section>
 					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("evidence_quality")}</h3>
-					<div className="space-y-2 rounded border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-white/[0.04] dark:bg-white/[0.015]">
+					<div className="space-y-2 rounded-xl border border-edge bg-surface-card/50 px-4 py-3">
 						<EvidenceQualityBar label={td("source_reliability")} value={finding.evidence_quality.source_reliability} />
 						<EvidenceQualityBar label={td("completeness")} value={finding.evidence_quality.completeness} />
 						<EvidenceQualityBar label={td("recency")} value={finding.evidence_quality.recency} />
@@ -588,7 +588,7 @@ function TrendHeadline({ summary }: { summary: NonNullable<WorkspaceProjection["
 
 function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
 	return (
-		<div className="rounded border border-zinc-200 bg-zinc-50 px-3 py-2.5 dark:border-white/[0.04] dark:bg-white/[0.015]">
+		<div className="rounded-xl border border-edge bg-surface-card/50 px-3 py-2.5">
 			<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
 				{label}
 			</div>

@@ -241,13 +241,15 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       </div>
 
       {/* Lenses — same asymmetric layout */}
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
-        <div className="rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
+        <div className="overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
           <RevenueMap workspaces={workspaces} filterPerspective={slug} />
         </div>
-        <div className="flex flex-col gap-5 rounded border border-zinc-200 bg-white p-5 dark:border-white/[0.04] dark:bg-white/[0.015]">
-          <CycleDelta workspaces={workspaces} filterPerspective={slug} />
-          <div className="border-t border-zinc-100 pt-4 dark:border-white/[0.04]">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
+          <div className="flex-1 p-5">
+            <CycleDelta workspaces={workspaces} filterPerspective={slug} />
+          </div>
+          <div className="border-t border-edge/40 p-5">
             <BraggingRights workspaces={workspaces} filterPerspective={slug} />
           </div>
         </div>
@@ -259,7 +261,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
           <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
             {t("perspective_findings")}
           </h2>
-          <div className="overflow-hidden rounded border border-zinc-200 bg-white dark:border-white/[0.04] dark:bg-white/[0.015]">
+          <div className="overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
             <DataTable
               columns={findingColumns}
               data={allFindings}
@@ -277,12 +279,12 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
           <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
             {t("workspaces_in_perspective")}
           </h2>
-          <div className="grid grid-cols-1 gap-px overflow-hidden rounded bg-zinc-200 dark:bg-white/[0.03] lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {perspectiveWorkspaces.map((ws) => (
               <button
                 key={ws.id}
                 onClick={() => router.push(`/app/workspaces/${ws.id}`)}
-                className="bg-white px-5 py-3.5 text-left transition-colors hover:bg-zinc-50 dark:bg-[rgb(var(--bg-card))] dark:hover:bg-white/[0.03]"
+                className="rounded-2xl border border-edge bg-surface-card px-5 py-3.5 text-left shadow-lg transition-all hover:shadow-xl"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] font-medium text-zinc-300">{ws.name}</span>

@@ -6,6 +6,7 @@ import SolutionLayers from "./SolutionLayers";
 import Features from "./Features";
 import FeaturesWithImage from "./FeaturesWithImage";
 import Counter from "./Counter";
+import VideoTestimonials from "./VideoTestimonials";
 import Testimonials from "./Testimonials";
 import FAQ from "./FAQ";
 import MiniCalculator from "./MiniCalculator";
@@ -42,6 +43,7 @@ const Home = () => {
 			<FeaturesWithImage />
 			<Features />
 			<Counter />
+			<VideoTestimonials />
 			<Testimonials />
 			<FAQ />
 			<MiniCalculator />

@@ -3527,5 +3527,182 @@
 		"s16_cnpj": "CNPJ: 65.445.297/0001-44",
 		"s16_address": "Dirección: Av. Prefeito Osmar Cunha, 416, Sala 1108, Centro, Florianópolis/SC, CEP 88.015-100, Brasil",
 		"s16_email": "support@vestigio.io"
+	},
+	"terms_of_use": {
+		"meta_title": "Términos de Uso — Vestigio",
+		"meta_description": "Términos de Uso de Vestigio. Lea las reglas y condiciones que rigen el uso de la plataforma.",
+		"heading": "Términos de Uso",
+		"last_updated": "Última actualización: 14 de abril de 2026",
+		"translation_disclaimer": "Esta es una traducción de cortesía de nuestros Términos de Uso en portugués. En caso de conflicto o inconsistencia entre versiones, prevalece la versión en portugués.",
+		"intro_1": "Estos Términos de Uso (“Términos”) rigen el acceso y uso de los Servicios ofrecidos por VESTIGIO TECNOLOGIA LTDA, inscrita en el CNPJ con el nº 65.445.297/0001-44, nombre comercial VESTIGIO TECNOLOGIA, con sede en Av. Prefeito Osmar Cunha, 416, Sala 1108, Centro, Florianópolis/SC, CEP 88.015-100, Brasil (“Vestigio”, “nosotros”, “nuestro” o “nuestra”).",
+		"intro_2": "Al acceder o utilizar Vestigio, usted acepta estos Términos. Si no está de acuerdo, no utilice los Servicios.",
+		"s1_title": "1. Definiciones",
+		"s1_body": "A los efectos de estos Términos:",
+		"s1_definitions": [
+			{
+				"term": "Servicios",
+				"body": "la plataforma Vestigio, sus paneles, interfaces, APIs, píxeles, snippets, integraciones, análisis, informes, findings, outputs, recursos de IA, planes, créditos y funcionalidades relacionadas;"
+			},
+			{
+				"term": "Cuenta",
+				"body": "registro individual o corporativo utilizado para acceder a los Servicios;"
+			},
+			{
+				"term": "Cliente",
+				"body": "persona física o jurídica que contrata o utiliza Vestigio;"
+			},
+			{
+				"term": "Free Trial",
+				"body": "acceso temporal, promocional, condicional o gratuito al Servicio;"
+			},
+			{
+				"term": "Créditos de IA",
+				"body": "créditos pagados o puestos a disposición para su uso en funcionalidades de inteligencia artificial dentro de la plataforma;"
+			},
+			{
+				"term": "Activos Analizados",
+				"body": "dominios, subdominios, URLs, páginas, tiendas, apps, cuentas, integraciones, píxeles, snippets y demás activos registrados o conectados por el Cliente."
+			}
+		],
+		"s2_title": "2. Elegibilidad y cuenta",
+		"s2_body_1": "Usted declara que posee capacidad legal para contratar y utilizar los Servicios.",
+		"s2_body_2": "Usted se compromete a:",
+		"s2_items": [
+			"proporcionar información veraz, precisa y actualizada;",
+			"mantener la confidencialidad de sus credenciales;",
+			"responder por toda actividad realizada en su Cuenta;",
+			"notificar a Vestigio en caso de uso no autorizado, incidente de seguridad o sospecha de compromiso de acceso."
+		],
+		"s2_body_3": "Vestigio podrá rechazar registros, limitar el acceso, exigir verificación adicional o suspender cuentas cuando haya indicios de fraude, abuso, riesgo operativo, inconsistencia de registro o violación de estos Términos.",
+		"s3_title": "3. Alcance de los Servicios",
+		"s3_body_1": "Vestigio es una plataforma de inteligencia, observabilidad, análisis digital, automatización y apoyo a la decisión sobre entornos digitales.",
+		"s3_body_2": "Vestigio podrá, entre otras actividades:",
+		"s3_items_1": [
+			"analizar activos públicos en internet;",
+			"observar estructuras visibles a través de DOM, navegador, DevTools, metadatos y elementos públicos;",
+			"ejecutar interacciones automatizadas equivalentes a las de un cliente o usuario común;",
+			"procesar datos provenientes de píxel, snippet o integraciones autorizadas;",
+			"generar outputs, insights, informes, findings, estimaciones, respuestas y recomendaciones con apoyo de automatización e inteligencia artificial."
+		],
+		"s3_body_3": "Vestigio no se califica, por sí sola, como:",
+		"s3_items_2": [
+			"consultoría jurídica;",
+			"consultoría contable;",
+			"auditoría legal independiente;",
+			"pentest formal contratado con alcance específico;",
+			"certificación regulatoria;",
+			"garantía de conformidad o seguridad absoluta;",
+			"garantía de aprobación por plataformas de terceros, incluyendo Meta, procesadores de pago, marketplaces o redes de anuncios."
+		],
+		"s4_title": "4. Responsabilidad del Cliente sobre activos e integraciones",
+		"s4_body_1": "Usted es el único responsable de:",
+		"s4_items": [
+			"registrar únicamente Activos Analizados para los cuales posea autorización legítima;",
+			"instalar píxeles, snippets e integraciones únicamente en entornos bajo su control o debidamente autorizados;",
+			"garantizar la licitud del uso de la plataforma en su operación;",
+			"revisar los outputs generados antes de tomar decisiones críticas, comerciales, jurídicas, operativas o financieras."
+		],
+		"s4_body_2": "Vestigio no se responsabiliza por actos practicados por usted fuera de la plataforma, ni por el uso indebido de los Servicios en activos de terceros sin autorización.",
+		"s5_title": "5. Free Trial, planes y créditos de IA",
+		"s5_body_1": "Vestigio podrá ofrecer:",
+		"s5_items": [
+			"free trial;",
+			"planes mensuales;",
+			"planes anuales;",
+			"créditos de IA;",
+			"otros modelos comerciales que ponga a disposición en el futuro."
+		],
+		"s5_body_2": "El free trial podrá ponerse a disposición únicamente para usuarios seleccionados, por un período limitado, bajo criterios promocionales, comerciales o estratégicos definidos exclusivamente por Vestigio.",
+		"s5_body_3": "Los créditos de IA podrán estar disponibles únicamente para clientes con plan activo, salvo que Vestigio indique expresamente lo contrario.",
+		"s5_body_4": "Los precios, límites, franquicias, políticas de consumo, validez, renovación, facturación, upgrade y downgrade podrán figurar en páginas comerciales, paneles, checkout, propuestas, órdenes de compra, correos electrónicos o documentación complementaria.",
+		"s6_title": "6. Pagos",
+		"s6_body_1": "Los Servicios pagos se cobran de forma anticipada, conforme al plan, ciclo, precio y condiciones vigentes en el momento de la contratación o renovación.",
+		"s6_body_2": "La facturación podrá ser procesada por Paddle y por socios o procesadores relacionados con el flujo de pago.",
+		"s6_body_3": "Usted autoriza a Vestigio y a sus procesadores de pago a realizar los cobros correspondientes, incluidos los recurrentes, cuando aplique la renovación automática.",
+		"s6_body_4": "Impuestos, cargos, tarifas bancarias, tasas cambiarias y demás costos incidentes sobre la contratación y el uso de los Servicios podrán cobrarse de acuerdo con la legislación y reglas del medio de pago utilizado.",
+		"s7_title": "7. Renovación, upgrade, downgrade y cancelación",
+		"s7_body_1": "Salvo indicación expresa en contrario, las suscripciones podrán renovarse automáticamente al final de cada ciclo de facturación.",
+		"s7_body_2": "La cancelación impide renovaciones futuras, pero no deshace cobros ya realizados, ni genera automáticamente reembolso de valores relativos a períodos ya iniciados o efectivamente disfrutados.",
+		"s7_body_3": "Eventuales reglas de upgrade, downgrade, migración entre planes, créditos y ajustes de ciclo podrán definirse en documentación complementaria o en las pantallas del producto.",
+		"s8_title": "8. Uso permitido",
+		"s8_body": "Usted se compromete a utilizar los Servicios únicamente para fines legítimos, autorizados y compatibles con estos Términos.",
+		"s9_title": "9. Usos prohibidos",
+		"s9_body": "Está prohibido:",
+		"s9_items": [
+			"utilizar Vestigio para fines ilegales, abusivos, fraudulentos o no autorizados;",
+			"registrar, analizar, conectar o monitorear activos sin la debida autorización;",
+			"usar la plataforma para invadir, derribar, explotar o perjudicar a terceros;",
+			"intentar eludir límites técnicos, de plan, de seguridad o de facturación;",
+			"realizar scraping abusivo contra la propia Vestigio;",
+			"introducir malware, código malicioso, automatizaciones hostiles o tráfico abusivo;",
+			"realizar ingeniería inversa, desmontaje, descompilación o intento de extracción del código, lógica interna, modelos, sistema o infraestructura de Vestigio, salvo cuando la ley lo permita de forma inderogable;",
+			"copiar, revender, sublicenciar, distribuir, reproducir o explotar comercialmente Vestigio sin autorización expresa por escrito;",
+			"usar outputs, informes o recomendaciones de la plataforma para actividades ilegales o que violen derechos de terceros."
+		],
+		"s10_title": "10. Datos públicos, automatización e IA",
+		"s10_body_1": "Vestigio puede basarse en datos públicos, datos observables, automatización, integraciones, señales probabilísticas e inteligencia artificial para generar outputs.",
+		"s10_body_2": "Usted reconoce que:",
+		"s10_items": [
+			"los outputs pueden contener errores, imprecisiones, inferencias, aproximaciones, falsos positivos, falsos negativos y variaciones de interpretación;",
+			"la plataforma no sustituye la validación humana cuando la decisión implique un riesgo relevante;",
+			"ningún output constituye asesoramiento jurídico, contable, regulatorio ni promesa de resultado."
+		],
+		"s11_title": "11. Suspensión y terminación",
+		"s11_body": "Vestigio podrá suspender, restringir o terminar cuentas, accesos, trials, créditos, integraciones, píxeles o funcionalidades, con o sin aviso previo, cuando haya:",
+		"s11_items": [
+			"violación de estos Términos;",
+			"sospecha de fraude o abuso;",
+			"riesgo de seguridad;",
+			"impago;",
+			"determinación legal o regulatoria;",
+			"uso incompatible con la estabilidad o integridad de la plataforma;",
+			"intento de eludir límites, reglas o políticas de Vestigio;",
+			"análisis o conexión de activos de terceros sin la debida autorización."
+		],
+		"s12_title": "12. Propiedad intelectual",
+		"s12_body_1": "Todos los derechos relativos a Vestigio, incluyendo software, código, diseño, layout, marca, nombre, logotipos, interfaces, documentación, metodologías, flujos, estructura de datos, outputs internos, know-how y elementos visuales pertenecen a Vestigio o a sus licenciadores.",
+		"s12_body_2": "El uso de los Servicios no le transfiere ningún derecho de propiedad intelectual, salvo el derecho limitado, revocable, no exclusivo e intransferible de uso conforme a estos Términos.",
+		"s13_title": "13. Confidencialidad y protección operativa",
+		"s13_body": "En la medida aplicable, Vestigio adoptará salvaguardas razonables para proteger datos, credenciales, integraciones e información operativa tratada en sus Servicios. Usted también debe adoptar medidas razonables de protección en su operación, incluso en la gestión de accesos, instalación de píxeles, configuración de integraciones y uso de los outputs.",
+		"s14_title": "14. Exenciones",
+		"s14_body": "En la máxima medida permitida por la ley aplicable, los Servicios se prestan tal cual y según disponibilidad. Vestigio no garantiza:",
+		"s14_items": [
+			"funcionamiento ininterrumpido;",
+			"ausencia de fallas o incompatibilidades;",
+			"ausencia de errores en los outputs;",
+			"disponibilidad permanente de integraciones o terceros;",
+			"resultado comercial, financiero, regulatorio u operativo específico;",
+			"aprobación por parte de terceros;",
+			"seguridad absoluta;",
+			"adecuación del Servicio a cualquier finalidad particular no expresamente contratada."
+		],
+		"s15_title": "15. Limitación de responsabilidad",
+		"s15_body": "En la máxima medida permitida por la legislación aplicable:",
+		"s15_items": [
+			"Vestigio no responderá por daños indirectos, incidentales, especiales, consecuenciales, lucro cesante, pérdida de ingresos, pérdida de oportunidad, pérdida de datos, daños reputacionales o interrupción de negocios;",
+			"Vestigio no responderá por fallas, indisponibilidades, limitaciones o decisiones de terceros, incluyendo plataformas, integraciones, redes, navegadores, hosts, procesadores de pago, APIs y proveedores;",
+			"Vestigio no responderá por actos practicados fuera de la plataforma, ni por decisiones tomadas exclusivamente con base en outputs sin la debida validación del Cliente;",
+			"la responsabilidad total y agregada de Vestigio, si fuere reconocida, quedará limitada al valor efectivamente pagado por el Cliente a Vestigio en los 12 (doce) meses anteriores al hecho que originó la reclamación."
+		],
+		"s16_title": "16. Indemnización",
+		"s16_body": "Usted acepta indemnizar, defender y mantener indemne a Vestigio frente a reclamaciones, pérdidas, costos, daños, gastos y responsabilidades derivados de:",
+		"s16_items": [
+			"uso indebido de los Servicios;",
+			"registro o análisis de activos sin autorización;",
+			"violación de estos Términos;",
+			"violación de derechos de terceros;",
+			"uso ilegal, fraudulento o abusivo de la plataforma."
+		],
+		"s17_title": "17. Cambios en los Servicios y en estos Términos",
+		"s17_body_1": "Vestigio podrá alterar, suspender, remover, evolucionar o descontinuar funcionalidades, integraciones, planes, trials, créditos y demás elementos de los Servicios en cualquier momento.",
+		"s17_body_2": "Vestigio también podrá actualizar estos Términos. La versión más reciente será siempre la vigente a partir de su publicación.",
+		"s18_title": "18. Ley aplicable y foro",
+		"s18_body_1": "Estos Términos se regirán por las leyes de la República Federativa del Brasil.",
+		"s18_body_2": "Queda elegido el foro de la comarca de Florianópolis/SC, con exclusión de cualquier otro, por más privilegiado que sea, salvo los casos de competencia legal obligatoria.",
+		"s19_title": "19. Contacto",
+		"s19_company": "VESTIGIO TECNOLOGIA LTDA",
+		"s19_cnpj": "CNPJ: 65.445.297/0001-44",
+		"s19_address": "Dirección: Av. Prefeito Osmar Cunha, 416, Sala 1108, Centro, Florianópolis/SC, CEP 88.015-100, Brasil",
+		"s19_email": "support@vestigio.io"
 	}
 }

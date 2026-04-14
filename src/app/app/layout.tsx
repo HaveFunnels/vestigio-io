@@ -6,6 +6,7 @@ import { AppProviders } from "./providers";
 import { syncUserLocale } from "@/libs/sync-locale";
 import { loadEngineTranslations } from "@/lib/engine-translations";
 import { startHealthCheckTimer } from "@/libs/health-checker";
+import { touchEnvActivity, resumeIfPaused } from "@/libs/env-activity";
 
 export const metadata = {
 	title: "Vestigio",
@@ -34,6 +35,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 			domain: orgCtx.domain,
 			engineTranslations,
 		});
+
+		// Wave 5 Fase 2 — activity tracking + auto-resume. Non-blocking best
+		// effort; if DB is unreachable the layout still renders.
+		if (orgCtx.envId && orgCtx.envId !== "default" && orgCtx.envId !== "env_1") {
+			await touchEnvActivity(orgCtx.envId);
+			await resumeIfPaused(orgCtx.envId);
+		}
 	}
 
 	// Pre-load all MCP data server-side and pass to client via context.

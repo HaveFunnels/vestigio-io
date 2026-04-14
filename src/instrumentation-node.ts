@@ -24,6 +24,12 @@
 const HEAL_INTERVAL_MS = 60_000;
 const LEAD_CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const RATE_PRUNE_INTERVAL_MS = 5 * 60 * 1000; // 5 min
+// Wave 5 Fase 2 — check once an hour whether any env has gone 14 days
+// without access and should be paused. Hourly cadence is fine because
+// the threshold is measured in days; a pause that lands up to 60min
+// late is invisible to the user.
+const INACTIVITY_PAUSE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const INACTIVITY_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
 export async function registerNodeInstrumentation(): Promise<void> {
 	const { healStuckCycles, redispatchOrphanedPending } = await import(
@@ -121,4 +127,87 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	}, RATE_PRUNE_INTERVAL_MS);
 
 	console.log("✓ Behavioral rate-limit prune cron registered (5m interval)");
+
+	// ── Inactivity pause cron (Wave 5 Fase 2) ──
+	// Auto-pauses continuous audits for envs the customer hasn't opened in
+	// 14 days. A NotificationLog row is inserted so the owner gets an email
+	// explaining the pause. When they come back, the layout's resume hook
+	// clears the flag and dispatches a catch-up cycle.
+	//
+	// Demo orgs are exempt — they must stay live so sales surfaces don't
+	// fall back to empty state.
+	const runInactivityPause = async () => {
+		try {
+			const cutoff = new Date(Date.now() - INACTIVITY_THRESHOLD_MS);
+			// Find candidate envs (activated, not already paused, idle past
+			// the threshold, and not belonging to a demo org). Null
+			// lastAccessedAt counts as "never accessed" → also eligible after
+			// creation + threshold. We gate on activated=true so we never
+			// pause something that hasn't had a real cycle yet.
+			const candidates = await prisma.environment.findMany({
+				where: {
+					activated: true,
+					continuousPaused: false,
+					OR: [
+						{ lastAccessedAt: { lt: cutoff } },
+						{ lastAccessedAt: null, createdAt: { lt: cutoff } },
+					],
+					organization: {
+						orgType: { not: "demo" },
+					},
+				},
+				select: {
+					id: true,
+					organizationId: true,
+					domain: true,
+					organization: {
+						select: { name: true, ownerId: true },
+					},
+				},
+				take: 50, // batch cap — long tail catches up on the next hour
+			});
+
+			if (candidates.length === 0) return;
+
+			for (const env of candidates) {
+				try {
+					await prisma.environment.update({
+						where: { id: env.id },
+						data: { continuousPaused: true },
+					});
+					// Record the event via NotificationLog so the messaging
+					// cron (or a downstream job) can deliver a real email.
+					// We don't send the email inline here — NotificationLog is
+					// the queue/record, and the notification dispatcher reads
+					// from it. Keeps this cron fast and idempotent.
+					await prisma.notificationLog.create({
+						data: {
+							userId: env.organization?.ownerId ?? null,
+							channel: "email",
+							event: "inactivity_pause",
+							recipient: env.organization?.ownerId ?? "unknown",
+							subject: `Audits paused for ${env.domain}`,
+							status: "skipped", // actual send is handled downstream
+							provider: "internal",
+						},
+					});
+					console.log(
+						`[inactivity-pause] paused env=${env.id} domain=${env.domain} org=${env.organizationId}`,
+					);
+				} catch (err) {
+					console.error(
+						`[inactivity-pause] failed to pause env=${env.id}:`,
+						err,
+					);
+				}
+			}
+		} catch (err) {
+			console.error("[inactivity-pause] pass failed:", err);
+		}
+	};
+
+	// Boot pass — catch anything missed while the process was down.
+	runInactivityPause();
+	setInterval(runInactivityPause, INACTIVITY_PAUSE_INTERVAL_MS);
+	console.log("✓ Inactivity pause cron registered (1h interval, 14d threshold)");
 }

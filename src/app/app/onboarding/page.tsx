@@ -94,12 +94,22 @@ type StepId =
 	| "review"
 	| "plan";
 
-function getSteps(businessType: BusinessType): StepId[] {
-	const base: StepId[] = ["org", "domain", "business"];
+function getSteps(
+	businessType: BusinessType,
+	hasActiveOrg: boolean,
+): StepId[] {
+	// Wave 5 Fase 2: admin-provisioned orgs already have a name + plan set
+	// by the admin, so skip "org" (nothing to collect) AND skip "plan" (no
+	// checkout needed). The final action on review calls
+	// /api/environments/activate instead of opening Paddle.
+	const base: StepId[] = hasActiveOrg ? ["domain", "business"] : ["org", "domain", "business"];
 	if (businessType === "saas") {
 		base.push("saas_setup");
 	}
-	base.push("notifications", "review", "plan");
+	base.push("notifications", "review");
+	if (!hasActiveOrg) {
+		base.push("plan");
+	}
 	return base;
 }
 
@@ -259,16 +269,21 @@ export default function OnboardPage() {
 
 	// If user already has an active org WITH a domain and this is not a payment callback, redirect to app.
 	// Users with an org but no domain (e.g. demo accounts) should be allowed to complete setup.
+	// Wave 5 Fase 2: also respect hasActivatedEnv — admin-provisioned orgs may
+	// already have a domain row (provisioned mode) but no activated env, and
+	// those users MUST complete onboarding. Redirecting them to /app/analysis
+	// would create a loop with the middleware gate.
 	const [hasExistingDomain, setHasExistingDomain] = useState<boolean | null>(
 		null
 	);
 	useEffect(() => {
 		if ((session?.user as any)?.hasOrganization === true) {
+			const envActivated = (session?.user as any)?.hasActivatedEnv === true;
 			fetch("/api/usage")
 				.then((r) => (r.ok ? r.json() : null))
 				.then((data) => {
 					setHasExistingDomain(!!data?.domain);
-					if (!paymentSuccess && data?.domain) {
+					if (!paymentSuccess && data?.domain && envActivated) {
 						router.replace("/app/analysis");
 					}
 				})
@@ -337,7 +352,14 @@ export default function OnboardPage() {
 		return /^\+?[1-9]\d{6,14}$/.test(cleaned);
 	}
 
-	const steps = useMemo(() => getSteps(form.businessType), [form.businessType]);
+	// True when the caller already has an active org (admin-provisioned
+	// shell) — drives two changes: skip the plan picker, and swap the final
+	// action from Paddle checkout to /api/environments/activate.
+	const hasActiveOrg = (session?.user as any)?.hasOrganization === true;
+	const steps = useMemo(
+		() => getSteps(form.businessType, hasActiveOrg),
+		[form.businessType, hasActiveOrg],
+	);
 	const totalSteps = steps.length;
 	const currentStep = steps[stepIndex] || "org";
 
@@ -413,8 +435,67 @@ export default function OnboardPage() {
 		setLoading(true);
 		setError(null);
 
+		// Wave 5 Fase 2 branch: admin-provisioned shell orgs already have a
+		// plan + membership; all we need is env + BusinessProfile + first
+		// audit cycle. No Paddle checkout.
+		if (hasActiveOrg) {
+			try {
+				const saasPayload =
+					form.businessType === "saas" &&
+					!form.saasSkipped &&
+					form.saasLoginUrl
+						? {
+								saasLoginUrl: form.saasLoginUrl,
+								saasEmail: form.saasEmail,
+								saasAuthMethod: form.saasAuthMethod,
+								saasMfaMode: form.saasMfaMode,
+							}
+						: {};
+
+				const response = await fetch("/api/environments/activate", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						domain: form.domain,
+						businessModel: form.businessType,
+						conversionModel: form.conversionModel,
+						monthlyRevenue: parseRevenue(form.monthlyRevenue),
+						averageOrderValue: parseRevenue(form.averageTicket),
+						...saasPayload,
+					}),
+				});
+
+				const data = await response.json();
+
+				if (!response.ok) {
+					setError(data.message || t("errors.something_wrong"));
+					setLoading(false);
+					return;
+				}
+
+				// Refresh the JWT so hasActivatedEnv flips to true. Without this,
+				// the middleware would bounce the user back to /app/onboarding
+				// on the next navigation even though the env is activated.
+				await updateSession();
+
+				// Hand off to inventory where the first-cycle progress banner
+				// (wired via SSE) takes over. If the redirect arrived in the
+				// response we honor it; otherwise default to inventory.
+				const target = data.redirectTo || "/app/inventory";
+				const cycleQuery = data.cycle?.id
+					? `?cycle=${encodeURIComponent(data.cycle.id)}`
+					: "";
+				router.replace(`${target}${cycleQuery}`);
+			} catch (err) {
+				setError(t("errors.network_error"));
+				setLoading(false);
+			}
+			return;
+		}
+
+		// Legacy self-serve flow — org doesn't exist yet, go through
+		// /api/onboard which creates org+env+profile then opens Paddle.
 		try {
-			// Step 1: Create org + env + profile via API (no Stripe session)
 			const response = await fetch("/api/onboard", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -1022,6 +1103,37 @@ export default function OnboardPage() {
 								</div>
 							))}
 						</div>
+
+						{/* Wave 5 Fase 2 — admin-provisioned orgs activate here
+						    without going through Paddle. The cycle fires
+						    fire-and-forget and we redirect to inventory where
+						    an SSE-backed progress banner takes over. */}
+						{hasActiveOrg && (
+							<>
+								{error && (
+									<div className='rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-600 dark:text-red-400'>
+										{error}
+									</div>
+								)}
+								<button
+									onClick={handleActivate}
+									disabled={loading}
+									className='w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_-12px_rgba(16,185,129,0.6)] transition-colors hover:bg-emerald-500 disabled:opacity-50 disabled:shadow-none'
+								>
+									{loading
+										? t("plan.opening_checkout")
+										: t("review.activate_environment", {
+												default: "Activate environment",
+											})}
+								</button>
+								<p className='text-center text-xs text-content-faint'>
+									{t("review.activate_hint", {
+										default:
+											"Your first audit starts immediately. Follow progress live on the inventory page.",
+									})}
+								</p>
+							</>
+						)}
 					</section>
 				)}
 
@@ -1114,7 +1226,9 @@ export default function OnboardPage() {
 				)}
 
 				{/* ── Navigation ── */}
-				{currentStep !== "plan" && (
+				{/* Hidden on plan step (has its own CTA) and on review+hasActiveOrg
+				    (the inline "Activate environment" CTA is the final action). */}
+				{currentStep !== "plan" && !(currentStep === "review" && hasActiveOrg) && (
 					<div className='mt-8 flex justify-between'>
 						<button
 							onClick={prev}

@@ -142,10 +142,17 @@ export default withAuth(
 		// ── Onboarding gate (users only) ────────────
 		// Users without an active org must complete onboarding first.
 		const hasOrganization = req.nextauth.token?.hasOrganization;
+		// Wave 5 Fase 2: admin-provisioned "shell" orgs have a membership but
+		// no activated environment. Route them through onboarding too so the
+		// owner contributes env + business profile + triggers the first audit
+		// cycle, rather than landing in an empty dashboard.
+		const hasActivatedEnv = req.nextauth.token?.hasActivatedEnv;
+		const needsOnboarding =
+			hasOrganization === false || hasActivatedEnv === false;
 		if (
 			pathname.startsWith("/app") &&
 			!pathname.startsWith("/app/onboarding") &&
-			hasOrganization === false
+			needsOnboarding
 		) {
 			return NextResponse.redirect(new URL("/app/onboarding", req.url));
 		}

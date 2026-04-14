@@ -235,17 +235,40 @@ export const authOptions: NextAuthOptions = {
 			const { token, trigger, session, account } = payload;
 			const user: User = payload.user;
 
-			if (trigger === "update") {
+			// hasActivatedEnv (Wave 5 Fase 2) — true when the user has at
+			// least one Environment with activated=true. The middleware uses
+			// this to route members-with-shell-orgs through onboarding before
+			// letting them hit the console. Kept separate from hasOrganization
+			// so admin-provisioned orgs (which have membership but no env)
+			// land in onboarding instead of an empty dashboard.
+			async function resolveActivationSignals(userId: string) {
 				const membership = await prisma.membership.findFirst({
 					where: {
-						userId: token.sub as string,
+						userId,
 						organization: { status: "active" },
 					},
+					select: { organizationId: true },
 				});
+				if (!membership) {
+					return { hasOrganization: false, hasActivatedEnv: false };
+				}
+				const env = await prisma.environment.findFirst({
+					where: {
+						organizationId: membership.organizationId,
+						activated: true,
+					},
+					select: { id: true },
+				});
+				return { hasOrganization: true, hasActivatedEnv: !!env };
+			}
+
+			if (trigger === "update") {
+				const signals = await resolveActivationSignals(token.sub as string);
 				return {
 					...token,
 					...(session?.user || {}),
-					hasOrganization: !!membership,
+					hasOrganization: signals.hasOrganization,
+					hasActivatedEnv: signals.hasActivatedEnv,
 					picture: session?.user?.image ?? token.picture,
 					image: session?.user?.image ?? token.image,
 					locale: session?.user?.locale ?? token.locale,
@@ -253,19 +276,14 @@ export const authOptions: NextAuthOptions = {
 			}
 
 			if (user) {
-				const membership = await prisma.membership.findFirst({
-					where: {
-						userId: user.id,
-						organization: { status: "active" },
-					},
-				});
-
+				const signals = await resolveActivationSignals(user.id);
 				const isImpersonating = account?.provider === "impersonate";
 
 				return {
 					...token,
 					uid: user.id,
-					hasOrganization: !!membership,
+					hasOrganization: signals.hasOrganization,
+					hasActivatedEnv: signals.hasActivatedEnv,
 					isImpersonating,
 					role: user.role,
 					picture: user.image,
@@ -286,6 +304,7 @@ export const authOptions: NextAuthOptions = {
 						...session.user,
 						id: token.sub,
 						hasOrganization: token.hasOrganization ?? true,
+						hasActivatedEnv: token.hasActivatedEnv ?? false,
 						isImpersonating: token.isImpersonating ?? false,
 						role: token.role,
 						image: token.picture,

@@ -239,6 +239,10 @@ model Environment {
   domain         String
   landingUrl     String
   isProduction   Boolean  @default(true)
+  // Wave 5 Fase 2: activation lifecycle
+  activated        Boolean   @default(false) // true once the first cold full cycle has been dispatched
+  lastAccessedAt   DateTime? // updated (1h-debounced) when an owner/member loads /app/*; drives inactivity pause
+  continuousPaused Boolean   @default(false) // true when >14d without access; cleared on next access, triggers catch-up cycle
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -249,6 +253,9 @@ model Environment {
   integrations     IntegrationConnection[]
   // Wave 0.2: Raw behavioral events from the snippet for this env
   behavioralEvents RawBehavioralEvent[]
+
+  @@index([activated, continuousPaused])
+  @@index([lastAccessedAt])
 }
 
 model BusinessProfile {

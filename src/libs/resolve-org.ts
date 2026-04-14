@@ -10,6 +10,11 @@ export interface OrgEnvironment {
 	id: string;
 	domain: string;
 	isProduction: boolean;
+	// Wave 5 Fase 2 — let the layout render the paused banner without a
+	// second DB roundtrip. Defaults to false on environments that haven't
+	// been migrated yet.
+	continuousPaused?: boolean;
+	activated?: boolean;
 }
 
 export interface OrgContext {
@@ -30,7 +35,7 @@ const DEMO_CONTEXT: OrgContext = {
 	domain: "shop.com",
 	plan: "vestigio",
 	isAdmin: false,
-	environments: [{ id: "env_1", domain: "shop.com", isProduction: true }],
+	environments: [{ id: "env_1", domain: "shop.com", isProduction: true, continuousPaused: false, activated: true }],
 	maxEnvironments: 1,
 };
 
@@ -85,7 +90,13 @@ export async function resolveOrgContext(): Promise<OrgContext> {
 			domain: defaultEnv?.domain || "unknown",
 			plan: org.plan || "vestigio",
 			isAdmin,
-			environments: allEnvs.map(e => ({ id: e.id, domain: e.domain, isProduction: e.isProduction })),
+			environments: allEnvs.map(e => ({
+				id: e.id,
+				domain: e.domain,
+				isProduction: e.isProduction,
+				continuousPaused: (e as any).continuousPaused ?? false,
+				activated: (e as any).activated ?? false,
+			})),
 			maxEnvironments: maxEnvs,
 		};
 	} catch {

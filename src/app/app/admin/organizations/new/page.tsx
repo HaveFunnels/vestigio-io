@@ -46,6 +46,12 @@ export default function AdminCreateOrganizationPage() {
   const [trialEndsAt, setTrialEndsAt] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [ownerName, setOwnerName] = useState("");
+  // Toggle-gated block. Default OFF — admin creates a shell; owner fills
+  // env + BusinessProfile during onboarding after impersonation. The owner
+  // has the real business numbers that calibrate impact findings, so
+  // shell mode is the preferred path. Admin can flip this ON for
+  // one-shot setup when they have trustworthy data from a sales convo.
+  const [provisionEnv, setProvisionEnv] = useState(false);
   const [domain, setDomain] = useState("");
   const [landingUrl, setLandingUrl] = useState("");
   const [isProduction, setIsProduction] = useState(true);
@@ -93,9 +99,11 @@ export default function AdminCreateOrganizationPage() {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ownerEmail.trim())) {
       return "Owner email is not valid";
     }
-    if (!domain.trim()) return "Domain is required";
     if (orgType === "trial" && !trialEndsAt) {
       return "Trial end date is required for trial orgs";
+    }
+    if (provisionEnv && !domain.trim()) {
+      return "Domain is required when provisioning the environment inline";
     }
     return null;
   }
@@ -119,15 +127,19 @@ export default function AdminCreateOrganizationPage() {
         status,
         ownerEmail: ownerEmail.trim(),
         ownerName: ownerName.trim() || null,
-        domain: domain.trim(),
-        landingUrl: landingUrl.trim() || null,
-        isProduction,
-        businessModel,
-        conversionModel,
       };
       if (orgType === "trial") body.trialEndsAt = new Date(trialEndsAt).toISOString();
-      if (monthlyRevenue) body.monthlyRevenue = Number(monthlyRevenue);
-      if (averageOrderValue) body.averageOrderValue = Number(averageOrderValue);
+      // Only include env/business fields when provisioned mode is explicitly
+      // enabled — sending empty strings would trip the backend validation.
+      if (provisionEnv) {
+        body.domain = domain.trim();
+        body.landingUrl = landingUrl.trim() || null;
+        body.isProduction = isProduction;
+        body.businessModel = businessModel;
+        body.conversionModel = conversionModel;
+        if (monthlyRevenue) body.monthlyRevenue = Number(monthlyRevenue);
+        if (averageOrderValue) body.averageOrderValue = Number(averageOrderValue);
+      }
 
       const res = await fetch("/api/admin/organizations", {
         method: "POST",
@@ -385,7 +397,28 @@ export default function AdminCreateOrganizationPage() {
           </div>
         </section>
 
+        {/* ── Provisioning mode toggle ── */}
+        <section className="rounded-lg border border-edge bg-surface-card p-5">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={provisionEnv}
+              onChange={(e) => setProvisionEnv(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-edge bg-surface-inset text-accent focus:ring-accent/30"
+            />
+            <span>
+              <span className="block text-sm font-medium text-content">
+                Provision environment &amp; business profile now
+              </span>
+              <span className="mt-0.5 block text-xs text-content-faint">
+                Off by default. Owner fills the domain + monthly revenue + AOV + business model during onboarding after impersonation — they have the real numbers that calibrate impact findings. Flip this on only when you already have trustworthy data (e.g. from a sales call) and want a one-shot setup.
+              </span>
+            </span>
+          </label>
+        </section>
+
         {/* ── Environment ── */}
+        {provisionEnv && (
         <section className="rounded-lg border border-edge bg-surface-card p-5">
           <h2 className="mb-4 text-sm font-semibold text-content">Initial environment</h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -433,8 +466,10 @@ export default function AdminCreateOrganizationPage() {
             </div>
           </div>
         </section>
+        )}
 
         {/* ── Business Profile ── */}
+        {provisionEnv && (
         <section className="rounded-lg border border-edge bg-surface-card p-5">
           <h2 className="mb-4 text-sm font-semibold text-content">Business profile</h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -498,6 +533,7 @@ export default function AdminCreateOrganizationPage() {
             </div>
           </div>
         </section>
+        )}
 
         {/* ── Error ── */}
         {error && (

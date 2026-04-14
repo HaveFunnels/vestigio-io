@@ -9,12 +9,29 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import AppSidebar from "./AppSidebar";
 import CommandPalette from "./CommandPalette";
+import CycleProgressBanner from "./CycleProgressBanner";
 import { orgDropdownNav } from "./sidebar-nav-data";
+
+// Routes where the in-flight audit banner should appear. Keep this list
+// tight — the banner takes vertical space above the page content, so
+// showing it on e.g. Settings would be distracting.
+const CYCLE_BANNER_ROUTES = new Set([
+	"/app/inventory",
+	"/app/analysis",
+	"/app/actions",
+]);
+
+function shouldShowCycleBanner(pathname: string | null): boolean {
+	if (!pathname) return false;
+	return CYCLE_BANNER_ROUTES.has(pathname);
+}
 
 interface OrgEnv {
 	id: string;
 	domain: string;
 	isProduction: boolean;
+	continuousPaused?: boolean;
+	activated?: boolean;
 }
 
 interface OrgCtx {
@@ -301,6 +318,9 @@ export default function AppSidebarLayout({
 	children,
 }: AppSidebarLayoutProps) {
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const pathnameForBanner = usePathname();
+	const showCycleBanner =
+		!isAdmin && shouldShowCycleBanner(pathnameForBanner);
 
 	return (
 		<div className="flex h-screen bg-surface-shell text-content">
@@ -367,6 +387,23 @@ export default function AppSidebarLayout({
 
 				{/* ── Content area: floats on top of the shell ── */}
 				<div className="relative mx-2 mb-2 flex min-h-0 flex-1 flex-col rounded-xl bg-surface shadow-lg ring-1 ring-edge/50">
+					{/* Wave 5 Fase 2 — paused banner. The resume-on-access hook
+					    in the layout server component already dispatched a
+					    catch-up cycle, so we just communicate what happened
+					    rather than offer a "Resume audits" button. */}
+					{!isAdmin && orgCtx.environments.some((e) => e.continuousPaused) && (
+						<div className="mx-6 mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+							<p className="font-medium">Audits were paused after 14 days without access.</p>
+							<p className="mt-0.5 text-xs text-amber-700/80 dark:text-amber-400/80">
+								Resuming now — a catch-up audit is running against your site. You&apos;ll see updated findings shortly.
+							</p>
+						</div>
+					)}
+					{showCycleBanner && (
+						<div className="px-6 pt-4">
+							<CycleProgressBanner />
+						</div>
+					)}
 					<PageFade>
 						{children}
 					</PageFade>

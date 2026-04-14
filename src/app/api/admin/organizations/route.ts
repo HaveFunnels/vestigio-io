@@ -74,15 +74,30 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
 // ──────────────────────────────────────────────
 // POST /api/admin/organizations
 //
-// Admin-driven org provisioning: creates Organization + owner User
-// (if email doesn't exist) + Membership + Environment + BusinessProfile
-// in a single transaction, with plan/status/orgType chosen manually.
+// Admin-driven org provisioning.
 //
-// Purpose: onboard customers during demos or trials without routing
-// them through the self-service Stripe/Paddle checkout funnel. The
-// owner User is created with a null password — admin enters the org
-// via the existing impersonation flow; the customer can later set a
-// password via the standard password-reset route.
+// Two modes, controlled by whether `domain` is provided:
+//
+//   (A) Shell mode — no domain supplied.
+//       Creates only Organization + owner User + Membership. The owner
+//       finishes setup (env + BusinessProfile + first audit cycle) via
+//       the onboarding flow after impersonation or login. This is the
+//       preferred mode because it lets the owner contribute their own
+//       revenue/AOV/business-model data instead of the admin guessing.
+//
+//   (B) Provisioned mode — domain + business fields supplied.
+//       Also creates Environment + BusinessProfile inline. Useful when
+//       the admin already has trustworthy business data (e.g. pulled
+//       from a sales conversation) and wants a one-shot setup. The env
+//       is NOT marked `activated=true` in this mode — the owner still
+//       has to hit the activate endpoint to trigger the first cycle so
+//       we never dispatch audits from an admin screen without the
+//       owner's review.
+//
+// Plan/status/orgType/trialEndsAt are chosen manually and bypass the
+// Stripe/Paddle funnel. The owner User is created with a null password
+// — admin enters the org via the impersonation flow; the customer can
+// later set a password via the standard password-reset route.
 // ──────────────────────────────────────────────
 
 interface CreateOrgBody {
@@ -93,7 +108,8 @@ interface CreateOrgBody {
   trialEndsAt?: string | null;  // ISO date, required if orgType="trial"
   ownerEmail: string;
   ownerName?: string | null;
-  domain: string;
+  // Mode (B) fields — all optional; presence of `domain` flips to provisioned mode.
+  domain?: string | null;
   landingUrl?: string | null;   // derived from domain if omitted
   isProduction?: boolean;
   businessModel?: "ecommerce" | "lead_gen" | "saas" | "hybrid";
@@ -131,12 +147,11 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Invalid JSON body" }, { status: 400 });
   }
 
-  // ── Validate required fields ──
+  // ── Validate required fields (shell mode is the baseline) ──
   const errors: string[] = [];
   if (!body.name || !body.name.trim()) errors.push("name is required");
   if (!body.plan || !body.plan.trim()) errors.push("plan is required");
   if (!body.ownerEmail || !body.ownerEmail.trim()) errors.push("ownerEmail is required");
-  if (!body.domain || !body.domain.trim()) errors.push("domain is required");
 
   const ownerEmail = body.ownerEmail?.trim().toLowerCase();
   if (ownerEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ownerEmail)) {
@@ -167,14 +182,18 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
     }
   }
 
+  // Provisioned-mode fields are only validated when `domain` is present.
+  // In shell mode these are ignored.
+  const provisionedMode = !!(body.domain && body.domain.trim());
   const businessModel = body.businessModel || "ecommerce";
-  if (!["ecommerce", "lead_gen", "saas", "hybrid"].includes(businessModel)) {
-    errors.push("businessModel must be ecommerce|lead_gen|saas|hybrid");
-  }
-
   const conversionModel = body.conversionModel || "checkout";
-  if (!["checkout", "whatsapp", "form", "external"].includes(conversionModel)) {
-    errors.push("conversionModel must be checkout|whatsapp|form|external");
+  if (provisionedMode) {
+    if (!["ecommerce", "lead_gen", "saas", "hybrid"].includes(businessModel)) {
+      errors.push("businessModel must be ecommerce|lead_gen|saas|hybrid");
+    }
+    if (!["checkout", "whatsapp", "form", "external"].includes(conversionModel)) {
+      errors.push("conversionModel must be checkout|whatsapp|form|external");
+    }
   }
 
   if (errors.length > 0) {
@@ -191,8 +210,10 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
     );
   }
 
-  const normalizedDomain = normalizeDomain(body.domain);
-  const landingUrl = deriveLandingUrl(normalizedDomain, body.landingUrl);
+  const normalizedDomain = provisionedMode ? normalizeDomain(body.domain!) : null;
+  const landingUrl = provisionedMode && normalizedDomain
+    ? deriveLandingUrl(normalizedDomain, body.landingUrl)
+    : null;
   const isProduction = body.isProduction !== false; // default true
 
   // ── Create everything in a transaction ──
@@ -235,26 +256,33 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
         },
       });
 
-      // 4. Create Environment
-      const environment = await tx.environment.create({
-        data: {
-          organizationId: org.id,
-          domain: normalizedDomain,
-          landingUrl,
-          isProduction,
-        },
-      });
+      // Shell mode stops here — owner finishes setup via onboarding.
+      let environment: { id: string; domain: string } | null = null;
+      if (provisionedMode && normalizedDomain && landingUrl) {
+        // 4. Create Environment (not yet activated; owner still has to
+        //    click "Activate Environment" from onboarding to trigger
+        //    the first cycle. Admin provisioning the domain doesn't
+        //    imply admin wants to run an audit against it right now).
+        environment = await tx.environment.create({
+          data: {
+            organizationId: org.id,
+            domain: normalizedDomain,
+            landingUrl,
+            isProduction,
+          },
+        });
 
-      // 5. Create BusinessProfile (best-effort: only the fields provided)
-      await tx.businessProfile.create({
-        data: {
-          organizationId: org.id,
-          businessModel,
-          conversionModel,
-          monthlyRevenue: body.monthlyRevenue ?? null,
-          averageOrderValue: body.averageOrderValue ?? null,
-        },
-      });
+        // 5. Create BusinessProfile (best-effort: only the fields provided)
+        await tx.businessProfile.create({
+          data: {
+            organizationId: org.id,
+            businessModel,
+            conversionModel,
+            monthlyRevenue: body.monthlyRevenue ?? null,
+            averageOrderValue: body.averageOrderValue ?? null,
+          },
+        });
+      }
 
       return { org, owner, environment, ownerCreated };
     });
@@ -274,6 +302,7 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
         status,
         ownerEmail,
         ownerCreated: result.ownerCreated,
+        mode: provisionedMode ? "provisioned" : "shell",
         domain: normalizedDomain,
       },
       ipAddress: ip ?? undefined,
@@ -294,10 +323,10 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
           name: result.owner.name,
           created: result.ownerCreated,
         },
-        environment: {
-          id: result.environment.id,
-          domain: result.environment.domain,
-        },
+        environment: result.environment
+          ? { id: result.environment.id, domain: result.environment.domain }
+          : null,
+        mode: provisionedMode ? "provisioned" : "shell",
       },
       { status: 201 },
     );

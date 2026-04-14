@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { signIn } from "next-auth/react";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import PricingComponent, {
@@ -60,7 +59,7 @@ declare global {
 
 export default function BillingPage() {
   const t = useTranslations("console.billing");
-  const { data: session } = useSession();
+  const { data: session, update: updateSession } = useSession();
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const { plans: fetchedPlans, loading } = usePricingPlans();
 
@@ -159,8 +158,11 @@ export default function BillingPage() {
 
         if (res.ok) {
           toast.success(t("errors.plan_changed"));
-          // Refresh session so next-auth picks up changes from the webhook
-          await signIn("fetchSession", { redirect: false });
+          // Refresh session so next-auth re-runs the jwt callback and picks
+          // up the plan change written by the webhook/API. `update()` is the
+          // NextAuth v4 idiomatic refresh; the legacy `signIn("fetchSession")`
+          // path was removed as a security vulnerability.
+          await updateSession();
           await fetchBilling();
         } else {
           const data = await res.json();
@@ -195,7 +197,8 @@ export default function BillingPage() {
 
       if (res.ok) {
         toast.success(t("errors.subscription_canceled"));
-        await signIn("fetchSession", { redirect: false });
+        // Same rationale as handleChangePlan — re-read JWT from DB post-action.
+        await updateSession();
         await fetchBilling();
       } else {
         const data = await res.json();

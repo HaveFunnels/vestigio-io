@@ -125,4 +125,4 @@ EXPOSE 3000 3001
 # is the intended safety net.
 # `exec` ensures the child process becomes PID 1 so SIGTERM from Railway
 # reaches Next.js / worker directly for graceful drain.
-CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else npx prisma db push --skip-generate && exec node server.js; fi"]
+CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else npx prisma db push && exec node server.js; fi"]

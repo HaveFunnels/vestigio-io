@@ -35,3 +35,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+# locally-stored, not for repo
+.mcp.json
+docs/desiredexample-pricing.html
+docs/market-research.md
+scripts/create-nuvemshop-demo.ts

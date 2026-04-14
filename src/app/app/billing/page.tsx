@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { signIn } from "next-auth/react";
 import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
 import PricingComponent, {
   usePricingPlans,
   FALLBACK_PLANS,
@@ -58,6 +59,7 @@ declare global {
 // ──────────────────────────────────────────────
 
 export default function BillingPage() {
+  const t = useTranslations("console.billing");
   const { data: session } = useSession();
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const { plans: fetchedPlans, loading } = usePricingPlans();
@@ -119,7 +121,7 @@ export default function BillingPage() {
   const openPaddleCheckout = useCallback(
     (paddlePriceId: string) => {
       if (!window.Paddle) {
-        toast.error("Payment system is loading. Please try again in a moment.");
+        toast.error(t("errors.payment_loading"));
         return;
       }
 
@@ -133,7 +135,7 @@ export default function BillingPage() {
         },
       });
     },
-    [session],
+    [session, t],
   );
 
   // ──────────────────────────────────────────────
@@ -156,22 +158,22 @@ export default function BillingPage() {
         });
 
         if (res.ok) {
-          toast.success("Plan changed successfully. Changes take effect immediately.");
+          toast.success(t("errors.plan_changed"));
           // Refresh session so next-auth picks up changes from the webhook
           await signIn("fetchSession", { redirect: false });
           await fetchBilling();
         } else {
           const data = await res.json();
-          toast.error(data.message || "Failed to change plan.");
+          toast.error(data.message || t("errors.plan_change_failed"));
         }
       } catch {
-        toast.error("Network error. Please try again.");
+        toast.error(t("errors.network_error"));
       } finally {
         setActionLoading(false);
         setShowManageMenu(false);
       }
     },
-    [billing, fetchBilling],
+    [billing, fetchBilling, t],
   );
 
   // ──────────────────────────────────────────────
@@ -192,21 +194,21 @@ export default function BillingPage() {
       });
 
       if (res.ok) {
-        toast.success("Subscription canceled. You'll retain access until the end of your billing period.");
+        toast.success(t("errors.subscription_canceled"));
         await signIn("fetchSession", { redirect: false });
         await fetchBilling();
       } else {
         const data = await res.json();
-        toast.error(data.message || "Failed to cancel subscription.");
+        toast.error(data.message || t("errors.cancel_failed"));
       }
     } catch {
-      toast.error("Network error. Please try again.");
+      toast.error(t("errors.network_error"));
     } finally {
       setActionLoading(false);
       setShowCancelConfirm(false);
       setShowManageMenu(false);
     }
-  }, [billing, fetchBilling]);
+  }, [billing, fetchBilling, t]);
 
   // ──────────────────────────────────────────────
   // Plan Selection — routes to checkout or change-plan
@@ -219,7 +221,7 @@ export default function BillingPage() {
       // Find the paddlePriceId for the selected plan
       const targetPlan = pricingPlans.find((p) => p.key === planId);
       if (!targetPlan?.paddlePriceId) {
-        toast.error("This plan is not yet available for purchase. Please contact support.");
+        toast.error(t("errors.plan_unavailable"));
         return;
       }
 
@@ -231,7 +233,7 @@ export default function BillingPage() {
         openPaddleCheckout(targetPlan.paddlePriceId);
       }
     },
-    [currentPlanId, pricingPlans, billing, handleChangePlan, openPaddleCheckout],
+    [currentPlanId, pricingPlans, billing, handleChangePlan, openPaddleCheckout, t],
   );
 
   // ──────────────────────────────────────────────
@@ -262,9 +264,9 @@ export default function BillingPage() {
       <PaddleLoader />
 
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-content">Billing</h1>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Manage your subscription, compare plans, and upgrade anytime.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -272,39 +274,39 @@ export default function BillingPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-edge bg-surface-card p-5">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-content-muted">
-            Current Plan
+            {t("current_plan")}
           </h2>
           <div className="space-y-3">
             {[
               {
-                label: "Plan",
-                value: billingLoading ? "Loading..." : planLabel(currentPlanId),
+                label: t("plan"),
+                value: billingLoading ? t("loading") : planLabel(currentPlanId),
               },
               {
-                label: "Price",
+                label: t("price"),
                 value: billingLoading
-                  ? "Loading..."
+                  ? t("loading")
                   : currentPlan
                     ? `$${currentPlan.priceMonthly}/mo`
                     : "—",
               },
               {
-                label: "Renewal Date",
+                label: t("renewal_date"),
                 value: billingLoading
-                  ? "Loading..."
+                  ? t("loading")
                   : formatDate(billing?.currentPeriodEnd || null),
               },
               {
-                label: "Account",
+                label: t("account"),
                 value: session?.user?.email || "—",
               },
               {
-                label: "Status",
+                label: t("status"),
                 value: billingLoading
-                  ? "Loading..."
+                  ? t("loading")
                   : billing?.subscriptionId
-                    ? "Active"
-                    : "No active subscription",
+                    ? t("active")
+                    : t("no_subscription"),
               },
             ].map((row) => (
               <div
@@ -326,7 +328,7 @@ export default function BillingPage() {
                   disabled={actionLoading}
                   className="w-full rounded-md border border-edge px-4 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-card-hover disabled:opacity-50"
                 >
-                  {actionLoading ? "Processing..." : "Manage Subscription"}
+                  {actionLoading ? t("processing") : t("manage_subscription")}
                 </button>
 
                 {/* Dropdown Menu */}
@@ -342,7 +344,7 @@ export default function BillingPage() {
                       }}
                       className="w-full px-4 py-2.5 text-left text-sm text-content-secondary transition-colors hover:bg-surface-card-hover"
                     >
-                      Change Plan
+                      {t("change_plan")}
                     </button>
                     <button
                       onClick={() => {
@@ -351,7 +353,7 @@ export default function BillingPage() {
                       }}
                       className="w-full border-t border-edge px-4 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-surface-card-hover"
                     >
-                      Cancel Subscription
+                      {t("cancel_subscription")}
                     </button>
                   </div>
                 )}
@@ -366,7 +368,7 @@ export default function BillingPage() {
                 }}
                 className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
               >
-                Subscribe to a Plan
+                {t("subscribe_to_plan")}
               </button>
             )}
           </div>
@@ -374,22 +376,22 @@ export default function BillingPage() {
 
         <section className="rounded-lg border border-edge bg-surface-card p-5">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-content-muted">
-            Usage This Period
+            {t("usage_period")}
           </h2>
           <div className="space-y-3">
             {[
               {
-                label: "Agentic Insights",
+                label: t("agentic_insights"),
                 used: billingLoading ? "..." : String(billing?.usage.mcpQueries ?? 0),
                 total: billingLoading ? "..." : String(billing?.usage.maxMcpQueries ?? "—"),
               },
               {
-                label: "Environments",
+                label: t("environments"),
                 used: billingLoading ? "..." : String(billing?.usage.environments ?? 0),
                 total: billingLoading ? "..." : String(billing?.usage.maxEnvironments ?? "—"),
               },
               {
-                label: "Team Members",
+                label: t("team_members"),
                 used: billingLoading ? "..." : String(billing?.usage.members ?? 0),
                 total: billingLoading ? "..." : String(billing?.usage.maxMembers ?? "—"),
               },
@@ -414,12 +416,10 @@ export default function BillingPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-md rounded-lg border border-edge bg-surface-card p-6">
             <h3 className="text-lg font-semibold text-content">
-              Cancel Subscription
+              {t("cancel_modal_title")}
             </h3>
             <p className="mt-2 text-sm text-content-muted">
-              Are you sure you want to cancel your subscription? This action
-              takes effect immediately. You will lose access to{" "}
-              {planLabel(currentPlanId)} features.
+              {t("cancel_modal_text", { plan: planLabel(currentPlanId) })}
             </p>
             <div className="mt-6 flex gap-3 justify-end">
               <button
@@ -427,14 +427,14 @@ export default function BillingPage() {
                 disabled={actionLoading}
                 className="rounded-md border border-edge px-4 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-card-hover disabled:opacity-50"
               >
-                Keep Subscription
+                {t("keep_subscription")}
               </button>
               <button
                 onClick={handleCancelSubscription}
                 disabled={actionLoading}
                 className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-50"
               >
-                {actionLoading ? "Canceling..." : "Confirm Cancellation"}
+                {actionLoading ? t("canceling") : t("confirm_cancellation")}
               </button>
             </div>
           </div>
@@ -452,8 +452,8 @@ export default function BillingPage() {
             billingCycle={cycle}
             onCycleChange={setCycle}
             onPlanSelect={handlePlanSelect}
-            heading="Compare Plans"
-            subheading="Upgrade or downgrade anytime. Changes take effect immediately."
+            heading={t("compare_plans")}
+            subheading={t("compare_plans_subtitle")}
           />
         </div>
       )}

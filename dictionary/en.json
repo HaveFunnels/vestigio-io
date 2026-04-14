@@ -1058,33 +1058,36 @@
 		}
 	},
 	"footer": {
-		"copyright": "© Vestigio — Intelligence & Decision Engine for SaaS",
-		"company": {
-			"title": "Company",
-			"items": {
-				"aboutUs": "About Us",
-				"ourStory": "Our Story",
-				"workWithUs": "Work with Us"
-			}
+		"tagline": "The intelligence layer that audits, monitors, and optimizes your SaaS platform.",
+		"social": {
+			"twitter": "Twitter",
+			"github": "GitHub"
 		},
 		"product": {
 			"title": "Product",
-			"items": {
-				"features": "Features",
-				"integrations": "Integrations",
-				"pricing": "Pricing & Plans",
-				"changelog": "Changelog"
-			}
+			"features": "Features",
+			"solutions": "Solutions",
+			"pricing": "Pricing",
+			"demo": "Demo"
 		},
 		"resources": {
 			"title": "Resources",
-			"items": {
-				"ourBlog": "Our Blog",
-				"heatMaps": "Heatmaps",
-				"affiliate": "Affiliate Program",
-				"integrations": "Integrations"
-			}
-		}
+			"blog": "Blog",
+			"support": "Support",
+			"changelog": "Changelog"
+		},
+		"company": {
+			"title": "Company",
+			"about": "About",
+			"contact": "Contact"
+		},
+		"legal": {
+			"title": "Legal",
+			"terms": "Terms of Use",
+			"privacy": "Privacy Policy",
+			"refund": "Refund Policy"
+		},
+		"copyright": "© {year} Vestigio. All rights reserved."
 	},
 	"signInPage": {
 		"socialSignIn": "Sign in with",

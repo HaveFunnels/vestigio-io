@@ -2,11 +2,14 @@
 import { useBranding, useFeatureFlags } from "@/components/BrandingProvider";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 const Footer = () => {
 	const branding = useBranding();
 	const flags = useFeatureFlags();
 	const logoSrc = branding.logo_light?.dataUrl || "/images/logo/logo-light.png";
+	const t = useTranslations("footer");
+	const year = new Date().getFullYear();
 
 	return (
 		<footer className='relative z-1 mt-auto overflow-hidden border-t border-white/5 bg-[#090911] py-12 sm:py-16 lg:py-20'>
@@ -21,9 +24,7 @@ const Footer = () => {
 								<Image src="/images/logo/logo-light.png" alt="Vestigio" width={214} height={40} className="h-5 w-auto sm:h-7" />
 							)}
 						</Link>
-						<p className='mt-5 text-sm text-zinc-500'>
-							The intelligence layer that audits, monitors, and optimizes your SaaS platform.
-						</p>
+						<p className='mt-5 text-sm text-zinc-500'>{t("tagline")}</p>
 
 						<ul className='mt-8 flex items-center gap-3'>
 							<li>
@@ -31,7 +32,7 @@ const Footer = () => {
 									href='https://x.com/vestigio_io'
 									target='_blank'
 									rel='noopener noreferrer'
-									aria-label='Twitter'
+									aria-label={t("social.twitter")}
 									className='flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-zinc-500 transition-colors hover:border-white/20 hover:text-white'
 								>
 									<svg className='h-4 w-4 fill-current' viewBox='0 0 24 24'>
@@ -44,7 +45,7 @@ const Footer = () => {
 									href='https://github.com/vestigio-io'
 									target='_blank'
 									rel='noopener noreferrer'
-									aria-label='GitHub'
+									aria-label={t("social.github")}
 									className='flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-zinc-500 transition-colors hover:border-white/20 hover:text-white'
 								>
 									<svg className='h-4 w-4 fill-current' viewBox='0 0 24 24'>
@@ -59,27 +60,27 @@ const Footer = () => {
 						{/* Product */}
 						<div className='w-full sm:w-auto'>
 							<h2 className='mb-5 text-sm font-semibold uppercase tracking-wider text-white'>
-								Product
+								{t("product.title")}
 							</h2>
 							<ul className='flex flex-col gap-3'>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/#features'>
-										Features
+										{t("product.features")}
 									</Link>
 								</li>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/#solutions'>
-										Solutions
+										{t("product.solutions")}
 									</Link>
 								</li>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/#pricing'>
-										Pricing
+										{t("product.pricing")}
 									</Link>
 								</li>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/auth/signin'>
-										Demo
+										{t("product.demo")}
 									</Link>
 								</li>
 							</ul>
@@ -88,25 +89,25 @@ const Footer = () => {
 						{/* Resources */}
 						<div className='w-full sm:w-auto'>
 							<h2 className='mb-5 text-sm font-semibold uppercase tracking-wider text-white'>
-								Resources
+								{t("resources.title")}
 							</h2>
 							<ul className='flex flex-col gap-3'>
 								{flags.blog_enabled && (
 									<li>
 										<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/blog'>
-											Blog
+											{t("resources.blog")}
 										</Link>
 									</li>
 								)}
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/support'>
-										Support
+										{t("resources.support")}
 									</Link>
 								</li>
 								{flags.blog_enabled && (
 									<li>
 										<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/blog'>
-											Changelog
+											{t("resources.changelog")}
 										</Link>
 									</li>
 								)}
@@ -116,17 +117,17 @@ const Footer = () => {
 						{/* Company */}
 						<div className='w-full sm:w-auto'>
 							<h2 className='mb-5 text-sm font-semibold uppercase tracking-wider text-white'>
-								Company
+								{t("company.title")}
 							</h2>
 							<ul className='flex flex-col gap-3'>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/support'>
-										About
+										{t("company.about")}
 									</Link>
 								</li>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/support'>
-										Contact
+										{t("company.contact")}
 									</Link>
 								</li>
 							</ul>
@@ -135,22 +136,22 @@ const Footer = () => {
 						{/* Legal */}
 						<div className='w-full sm:w-auto'>
 							<h2 className='mb-5 text-sm font-semibold uppercase tracking-wider text-white'>
-								Legal
+								{t("legal.title")}
 							</h2>
 							<ul className='flex flex-col gap-3'>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/terms'>
-										Terms of Use
+										{t("legal.terms")}
 									</Link>
 								</li>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/privacy'>
-										Privacy Policy
+										{t("legal.privacy")}
 									</Link>
 								</li>
 								<li>
 									<Link className='text-sm text-zinc-500 transition-colors hover:text-white' href='/refund-policy'>
-										Refund Policy
+										{t("legal.refund")}
 									</Link>
 								</li>
 							</ul>
@@ -161,7 +162,7 @@ const Footer = () => {
 				{/* Bottom bar */}
 				<div className='mt-10 border-t border-white/5 pt-6 sm:mt-12 sm:pt-8'>
 					<p className='text-center text-xs text-zinc-600'>
-						&copy; {new Date().getFullYear()} Vestigio. All rights reserved.
+						{t("copyright", { year })}
 					</p>
 				</div>
 			</div>

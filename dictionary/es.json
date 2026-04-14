@@ -1057,33 +1057,36 @@
 		}
 	},
 	"footer": {
-		"copyright": "© Vestigio — Motor de Inteligencia y Decisión para SaaS",
-		"company": {
-			"title": "Empresa",
-			"items": {
-				"aboutUs": "Sobre Nosotros",
-				"ourStory": "Nuestra Historia",
-				"workWithUs": "Trabaja con Nosotros"
-			}
+		"tagline": "La capa de inteligencia que audita, monitorea y optimiza tu plataforma SaaS.",
+		"social": {
+			"twitter": "Twitter",
+			"github": "GitHub"
 		},
 		"product": {
 			"title": "Producto",
-			"items": {
-				"features": "Características",
-				"integrations": "Integraciones",
-				"pricing": "Precios y Planes",
-				"changelog": "Registro de Cambios"
-			}
+			"features": "Funciones",
+			"solutions": "Soluciones",
+			"pricing": "Precios",
+			"demo": "Demostración"
 		},
 		"resources": {
 			"title": "Recursos",
-			"items": {
-				"ourBlog": "Nuestro Blog",
-				"heatMaps": "Mapas de Calor",
-				"affiliate": "Programa de Afiliados",
-				"integrations": "Integraciones"
-			}
-		}
+			"blog": "Blog",
+			"support": "Soporte",
+			"changelog": "Novedades"
+		},
+		"company": {
+			"title": "Empresa",
+			"about": "Acerca de",
+			"contact": "Contacto"
+		},
+		"legal": {
+			"title": "Legal",
+			"terms": "Términos de Uso",
+			"privacy": "Política de Privacidad",
+			"refund": "Política de Reembolso"
+		},
+		"copyright": "© {year} Vestigio. Todos los derechos reservados."
 	},
 	"signInPage": {
 		"socialSignIn": "Iniciar sesión con",

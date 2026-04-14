@@ -283,11 +283,11 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   channel_integrity_compromise: 'Your store is exposed to fraud and tampering',
   // Wave 2.3 rename: was commerce_continuity_exposure
   commerce_operations_exposed: "Your store's admin tools are publicly visible",
-  weak_channel_posture: 'Your site signals weakness to cautious buyers',
+  weak_channel_posture: 'Your site looks unsafe to cautious buyers',
   // Wave 2.3 consolidation: was abuse_friendly_channel + deep_commerce_abuse_surface + weak_commerce_governance
-  commerce_abuse_exposure: 'Discount, refund, and pricing logic exposed to abuse',
+  commerce_abuse_exposure: 'Bots are draining your discounts, refunds, and margins',
   // Wave 2.3 rename: was uncontrolled_commerce_variant
-  untracked_purchase_paths: 'Hidden purchase paths bypass your main safeguards',
+  untracked_purchase_paths: "You have hidden checkout paths you're not watching",
   // Phase 2D
   runtime_commerce_fragility: 'Your store breaks for real users in real browsers',
   third_party_dependency_risk: 'Critical buyer experience depends on flaky third parties',
@@ -302,7 +302,7 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   brand_impersonation_exposure: 'Your brand is being impersonated or hijacked',
   // Phase 4B
   behavioral_hesitation_at_commitment: 'Real buyers hesitate at the moment of purchase',
-  behavioral_path_disconnection: 'Your purchase flow looks fine in code but fails for real users',
+  behavioral_path_disconnection: 'Your purchase flow looks fine but fails for real buyers',
   // Phase 4B Hardening
   behavioral_value_justification_gap: "Buyers see your price but can't see the value",
   behavioral_trust_failure_at_input: "Buyers don't trust your forms with sensitive data",
@@ -310,12 +310,12 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   security_posture_inadequate: 'Your site looks unsafe to browsers and buyers',
   // Phase 5: Behavioral cohort root causes
   behavioral_first_session_failure: 'First-time visitors stall before reaching a revenue milestone',
-  behavioral_action_value_misalignment: 'Low-value actions dominate while high-value actions go unseen',
-  paid_acquisition_waste: 'Paid traffic hits friction that compounds into wasted spend',
+  behavioral_action_value_misalignment: 'Visitors are clicking the wrong things while your money-makers sit ignored',
+  paid_acquisition_waste: "You're paying for ad clicks that your site can't convert",
   mobile_conversion_failure: 'Mobile visitors face conversion barriers desktop users never see',
-  behavioral_friction_tax: 'Every funnel step costs more effort than it should',
-  behavioral_trust_revenue_gap: 'Buyers want to convert but lack the trust to follow through',
-  behavioral_path_inefficiency: 'The path to purchase is longer than buyer intent can sustain',
+  behavioral_friction_tax: 'Every step of your checkout asks too much of buyers',
+  behavioral_trust_revenue_gap: "Buyers want to buy but don't trust you enough to finish",
+  behavioral_path_inefficiency: 'Your path to purchase is too long for buyers to stay engaged',
   // Wave 3.1 Tier 2: LLM enrichment root causes
   copy_strategy_gap: "Your copy doesn't match what buyers need to hear",
 };
@@ -345,24 +345,24 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   expectation_failure: "Buyers complete the purchase without knowing exactly what they bought, when it ships, or how to return it. The mismatch between expectation and reality is the precondition for chargebacks. Confirmation, transparency, and brand continuity at checkout aren't optional — they're the contract that prevents disputes.",
 
   // Wave 2.3 rename
-  dispute_defenses_absent: "The structural defenses that prevent chargebacks — clear policies, reachable support, transparent expectations, brand continuity at payment — are missing in combination. Each defense alone reduces dispute rate; their simultaneous absence compounds risk into elevated chargeback exposure.",
+  dispute_defenses_absent: "The basics that stop buyers from filing chargebacks are missing. Your return policy is unclear, support is hard to reach, buyers don't know exactly what they bought, and the payment page doesn't even look like your brand. Any one of these on its own causes disputes. You have all of them at once — and every dispute costs you money plus a fee.",
 
   // Phase 3A
-  channel_integrity_compromise: "Your store is exposed to script tampering, traffic diversion, or weakly governed infrastructure. Third-party scripts running on payment pages, unrecognized form targets, or unprotected endpoints turn your commercial channel into an attack surface. The buyer experience is at the mercy of code you don't fully control.",
+  channel_integrity_compromise: "Outside scripts are running on your payment pages, and your forms send data to places you don't recognize. This opens the door for attackers to steal buyer information or redirect payments. Your store's safety depends on code you don't fully control — and your buyers pay the price if anything breaks.",
 
   // Wave 2.3 rename: was commerce_continuity_exposure
-  commerce_operations_exposed: "Admin panels, debug endpoints, configuration files, and operational tools meant for internal use are publicly accessible from your commerce domain. These surfaces enable pricing manipulation, checkout disruption, and data extraction by anyone who finds them. Your internal tools are part of your public attack surface whether you realize it or not.",
+  commerce_operations_exposed: "The admin pages, setup files, and internal tools you use to run your store are sitting out in the open where anyone can find them. Someone who stumbles on them can change your prices, break your checkout, or copy out your customer data. You think these tools are private. They're not.",
 
-  weak_channel_posture: "Your site's public technical posture signals weakness to cautious buyers and to browsers. Missing security indicators, mixed content warnings, or certificate issues suppress conversion before the offer is even read. The buyer's browser tells them something is wrong — they trust the browser more than they trust you.",
+  weak_channel_posture: "When buyers land on your site, their browser flags it as unsafe — missing padlock, security warnings, or \"Not Secure\" labels. Cautious buyers leave before they even read your offer. Their browser is telling them something is wrong, and they trust the browser more than they trust you.",
 
   // Wave 2.3 consolidation (3 → 1)
-  commerce_abuse_exposure: "Discount codes, refund flows, cart logic, and pricing endpoints are exposed to automated abuse. Bots and scripts exploit predictable URLs, missing rate limits, or weak governance to drain margins, enumerate coupons, or trigger fraudulent refunds at scale. The abuse compounds silently — by the time you notice the loss, you've already paid for it.",
+  commerce_abuse_exposure: "Automated scripts are exploiting your discount codes, refund flow, and pricing rules to take money out of your business. They guess coupon codes, trigger fake refunds, and do it faster than you can notice. By the time it shows up in your numbers, you've already paid for it.",
 
   // Wave 2.3 rename: was uncontrolled_commerce_variant
-  untracked_purchase_paths: "JavaScript-discovered or dynamically-rendered commerce variants operate outside your main trust, measurement, and pricing safeguard model. Revenue flowing through these paths is simultaneously unprotected and invisible to your analytics — you can't measure them, can't trust them, and may not even know they exist.",
+  untracked_purchase_paths: "Some of your buyers are paying through checkout paths you didn't intend to track or protect. You can't see the revenue they bring in, you can't tell if they're being abused, and you may not even know they exist. Money is moving through your store in places you're not watching.",
 
   // Phase 2D
-  runtime_commerce_fragility: "Your commerce pages fail or stall when real users open them in real browsers. Slow checkout APIs, overloaded landing pages, sequencing problems where buyers reach the purchase step before critical scripts are ready — the technical reality of the page degrades the conversion that static analysis can't see. The page works for you in dev. It breaks for them in production.",
+  runtime_commerce_fragility: "Your store works when you test it, but breaks when real buyers open it. Checkout pages load too slowly. Landing pages stall. Buyers reach \"Pay\" before the button is ready and click nothing. These failures only show up for real buyers on real devices — and every one of them is a sale you lost without knowing why.",
 
   third_party_dependency_risk: "Critical buyer experience — payment, trust badges, support widgets, measurement — depends on external services that fail, load late, or add too much weight. When a third party hiccups, your conversion path breaks with it. Reliability you don't control is reliability you can't promise to your buyer.",
 
@@ -374,43 +374,43 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   saas_expansion_blocked: "Users who would happily pay for more cannot find the upgrade path or evaluate it. Hidden pricing, missing upgrade CTAs, or prompts shown without value context cap revenue at the current tier even when willingness-to-pay is higher. Money is leaving on the table because the path to give it to you isn't visible.",
 
   // Wave 2.3 consolidation (2 → 1, content/brand layer)
-  brand_inconsistent_in_previews: "Your brand appears inconsistently — or weakly — in search results, social previews, and AI assistant summaries. The first impression of your business is being shaped by missing titles, thin descriptions, and conflicting metadata across surfaces. Recognition and trust erode before buyers ever reach the site.",
+  brand_inconsistent_in_previews: "When your business shows up in Google, on social media, or inside AI assistants like ChatGPT, it looks different every time — and often weak. Missing titles, thin descriptions, and mismatched details shape buyers' first impression before they ever visit your site. You lose trust before you get a chance to earn it.",
 
   // Wave 2.3 consolidation (2 → 1, structural layer)
-  commerce_pages_invisible_to_search: "Search engines and AI assistants cannot find or properly understand your product and pricing pages. Missing indexing signals, no internal links, and absent structured data make your commercial inventory invisible to organic and AI-driven discovery. Every uncaptured query is direct demand you'll never see.",
+  commerce_pages_invisible_to_search: "Google and AI assistants like ChatGPT can't properly see your product and pricing pages. They're missing the signals search engines look for, so when a buyer searches for exactly what you sell, your competitors show up and you don't. Every search you don't appear in is a buyer who was ready to pay — and found someone else.",
 
   // Wave 2.3 consolidation (3 → 1, broadened)
   brand_impersonation_exposure: "Your brand is being actively impersonated. Lookalike domains, typosquats, phishing surfaces, or fragmented brand variants intercept traffic, run fraudulent transactions, or capture mistyped visits. Every intercepted buyer is direct revenue you earned but never saw — and every fraudulent transaction damages the brand trust you spent years building.",
 
   // Phase 4B
-  behavioral_hesitation_at_commitment: "Real session data shows buyers reaching the moment of purchase, hesitating, seeking reassurance elsewhere on the site, and abandoning. The gap between intent and confidence is observable in their behavior — and recoverable. They wanted to buy. Something stopped them, and it shows up in the session replay.",
+  behavioral_hesitation_at_commitment: "Your buyers get to the payment step, then stop. They click around looking for something that will make them feel okay about paying — then they leave. They came to buy. Something made them doubt at the last moment. You can see it happen, and you can fix it.",
 
-  behavioral_path_disconnection: "Your purchase flow looks fine in the code but fails for real users. Funnel steps show traffic but never advance. CTAs are visible but never engaged. Mobile entry points are broken. Critical steps trigger silent retries instead of progression. The path exists structurally and fails behaviorally — and only the pixel sees it.",
+  behavioral_path_disconnection: "Your checkout looks fine when you walk through it, but real buyers get stuck. They land on steps and never move forward. They see the \"Buy\" button but never click it. Mobile buyers hit dead ends. You only see it when you watch what actual visitors do — which is exactly what Vestigio is doing.",
 
   // Phase 4B Hardening
-  behavioral_value_justification_gap: "Buyers see your price but cannot see the value that justifies it. They view the pricing page, backtrack to features, oscillate between surfaces, and abandon. The value proposition is structurally present but behaviorally insufficient to close the gap between price awareness and purchase confidence. They left not because the price was too high, but because nothing told them it was worth it.",
+  behavioral_value_justification_gap: "Buyers look at your price, then bounce back to your features page, then to pricing again, then leave. They're trying to decide if it's worth it — and nothing on the page tells them clearly enough. They didn't leave because it costs too much. They left because you never made the case that it's worth the cost.",
 
-  behavioral_trust_failure_at_input: "Forms on conversion-proximate pages ask for sensitive data — payment, identity, contact — without enough trust context around them. The mismatch between what's being asked and what's being promised causes immediate dropoff. The buyer doesn't know enough to feel safe handing over their information, and they back out at the field.",
+  behavioral_trust_failure_at_input: "Your forms ask buyers for card numbers, personal details, and contact info — but nothing on the page reassures them it's safe to share. They reach the field, hesitate, and walk away instead of typing. The moment you ask for something sensitive, buyers need to feel safe. Right now they don't.",
 
-  security_posture_inadequate: "Your buyers see signals that your site is unsafe — and they leave. Browsers remove the padlock, show 'Not Secure' warnings, and silently block payment scripts when security headers are missing or content is mixed. Checkout forms stop submitting. Trust badges disappear. The buyer clicks 'Pay' and nothing happens. Meanwhile, exposed configuration files and admin panels mean one breach away from total commerce shutdown. These are not hypothetical risks — they cost you conversions every day and create catastrophic downside if exploited.",
+  security_posture_inadequate: "Buyers see warning signs the moment they land on your site. The padlock is gone, the browser says \"Not Secure,\" and payment forms quietly stop working. Buyers click \"Pay\" and nothing happens. At the same time, internal admin pages are sitting in the open, one step away from a full breach. This is costing you sales every single day — and setting you up for a much bigger disaster.",
 
   // Phase 5: Behavioral cohort root causes
   behavioral_first_session_failure: "First-time visitors arrive with intent but stall before reaching any revenue milestone. Session data shows new users hitting trust barriers, missing CTAs, or encountering dead-end flows within their first interaction. The first session is the highest-leverage conversion window — when it fails, the buyer rarely returns. Every first-session stall is a permanent loss of the cheapest conversion you'll ever get.",
 
-  behavioral_action_value_misalignment: "Visitor behavior concentrates on low-value actions while the high-value actions that drive revenue remain underexposed or buried. Traffic flows to surfaces that don't advance the purchase, and the pages that matter most receive the least engagement. The site is busy but unproductive — activity without advancement. Revenue-generating actions need to be where the attention already is, not where you wish it were.",
+  behavioral_action_value_misalignment: "Visitors are busy clicking around your site — just not on the things that lead to a sale. The pages that make you money get the least attention. Your buyers' eyes are in one place, and your \"Buy\" button is in another. You need to move the sale to where the attention already is.",
 
-  paid_acquisition_waste: "Paid traffic lands on experiences with elevated friction, trust gaps, or mobile-compounding issues that suppress the conversion you paid to create. The acquisition cost is fixed but the conversion rate is degraded — every friction point on the paid path multiplies your effective cost per acquisition. You're paying full price for half the result, and the waste scales linearly with spend.",
+  paid_acquisition_waste: "Every time someone clicks your ad, you pay. But your landing pages are slow, the trust cues are missing, and mobile makes it worse — so most of those expensive visitors never buy. You're paying full price for half the result, and the more you spend on ads, the more you waste.",
 
   mobile_conversion_failure: "Mobile visitors encounter conversion barriers that desktop users never see — broken CTAs, form friction, timing gaps between intent and action. The mobile experience systematically underperforms against the same offer, same traffic quality, same buyer intent. Since mobile is typically the majority of traffic, this gap represents the single largest segment-level revenue loss most sites carry.",
 
-  behavioral_friction_tax: "Every step in the funnel costs more effort than it should. Session data shows oscillation between pages, repeated checkout entries, and decision fatigue manifesting as back-and-forth navigation before dropoff. The cumulative friction across the path acts as an invisible tax on conversion — no single step is broken, but the sum of all steps exceeds what buyers are willing to endure.",
+  behavioral_friction_tax: "No single page on your site is broken — but buyers have to work too hard at every step. They go back and forth between pages, re-enter checkout, and get tired of deciding. The effort adds up until they give up. Each page is fine on its own; together they ask more of buyers than they're willing to give.",
 
-  behavioral_trust_revenue_gap: "Buyers demonstrate clear purchase intent but abandon at conversion-proximate moments because trust signals are insufficient. Session patterns show elevated reassurance-seeking behavior — policy page visits, support lookups, trust badge scanning — followed by abandonment. The gap between willingness to buy and willingness to trust is measurable and recoverable. These buyers wanted to convert; they needed one more reason to feel safe.",
+  behavioral_trust_revenue_gap: "Your buyers are ready to pay — then they check your returns policy, look for a support contact, scan for trust badges, and leave anyway. They weren't hunting for reasons to say no. They were looking for one more reason to say yes, and they didn't find it.",
 
-  behavioral_path_inefficiency: "The path from first interaction to purchase is longer than buyer intent can sustain. Too many intermediate pages, excessive time between intent signals and conversion opportunities, and intent-absorbing surfaces that capture attention without advancing the purchase all contribute to decay. By the time the buyer reaches the conversion point, the urgency that brought them has dissipated. Shorter paths convert; longer paths leak.",
+  behavioral_path_inefficiency: "Buyers arrive ready to buy, but your site makes them walk through too many pages before they can. By the time they reach \"Pay,\" the interest that brought them has faded. Shorter paths turn intent into sales. Longer paths let it slip away.",
 
   // Wave 3.1 Tier 2: LLM enrichment root causes
-  copy_strategy_gap: "Your commercial copy — testimonials, error messages, onboarding flows, CTAs — doesn't address what the buyer needs to hear at each stage of their journey. Generic social proof that says nothing specific, form errors that speak in code instead of plain language, and onboarding that never delivers a quick win all share the same root cause: the words on the page were written for completeness, not persuasion. Every surface that fails to answer the buyer's real question at that moment is a surface that loses revenue.",
+  copy_strategy_gap: "The words on your site — testimonials, error messages, onboarding steps, buttons — aren't saying what buyers actually need to hear. Your testimonials are generic. Your form errors read like computer code. Your onboarding never gives the new user a quick win. At every moment, buyers have a real question in their head, and your copy answers the wrong one.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

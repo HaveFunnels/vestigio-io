@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Data Sources Settings
@@ -81,6 +82,7 @@ function getEnvironmentId(): string {
 }
 
 export default function DataSourcesPage() {
+	const t = useTranslations("console.data_sources_extra");
 	const [expandedCard, setExpandedCard] = useState<string | null>(null);
 	const [saasForm, setSaasForm] = useState<SaasFormData>(defaultSaasForm);
 	const [saasStatus, setSaasStatus] = useState<SourceStatus>("not_configured");
@@ -503,7 +505,7 @@ export default function DataSourcesPage() {
 								)}
 								{source.configurable && (
 									<p style={{ fontSize: 12, color: "#52525b", marginTop: 8 }}>
-										{expandedCard === source.id ? "Close" : "Configure"} &rarr;
+										{expandedCard === source.id ? t("close") : t("configure")} &rarr;
 									</p>
 								)}
 							</div>

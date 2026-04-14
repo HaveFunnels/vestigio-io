@@ -1850,6 +1850,17 @@
           "workspaces": "Workspaces",
           "actions": "Actions"
         }
+      },
+      "mock_data": {
+        "payment_intent_loss": "Buyers are dropping out at the 3DS security step",
+        "chargeback_proof_gap": "You are losing chargebacks because the proof is missing",
+        "refund_loop": "Refunds are firing twice on retried payments",
+        "trust_boundary_crossed": "Buyers are getting bounced to a different domain at checkout",
+        "mobile_checkout_drag": "Your mobile checkout takes 4.8s before the buyer can do anything",
+        "pricing_page_outdated": "Your pricing page is showing a plan that no longer exists",
+        "refund_policy_reverted": "Your refund policy disappeared from checkout again",
+        "og_image_stale": "Your homepage was sharing an outdated preview image",
+        "trust_seals_missing": "The trust seals were missing at the payment step"
       }
     },
     "chat": {
@@ -3197,6 +3208,24 @@
         "optimize_verify": "Monitor chargeback rates periodically.",
         "strong_primary": "Chargeback resilience is strong. Continue monitoring.",
         "strong_verify": "Schedule periodic chargeback risk assessment."
+      },
+      "security_posture": {
+        "incident_primary": "You have critical security holes that buyers can see. Fix these before taking another payment.",
+        "incident_sensitive_endpoint": "Lock down or remove the admin pages, config files, and backups that are currently public.",
+        "incident_mixed_content": "Stop loading insecure content on your sale pages — every resource needs to come over HTTPS or buyers see broken padlocks.",
+        "incident_open_redirect": "Close the open redirects on your site — attackers can use them to send your customers to fake checkout pages.",
+        "incident_security_headers": "Add the basic security headers (CSP, HSTS, X-Frame-Options) so the browser stops flagging your site as risky.",
+        "incident_verify_rerun": "Run a new audit after the fixes so we can confirm the holes are closed.",
+        "incident_verify_endpoints": "Double-check that the previously exposed pages are no longer reachable from the open internet.",
+        "fix_primary": "Your security has gaps that will hurt you at scale. Close them before pushing more traffic.",
+        "fix_security_headers": "Tighten your security headers so the site is less exposed to injection and clickjacking attacks.",
+        "fix_open_redirect": "Fix the open redirect endpoints — they are easy to abuse.",
+        "fix_verify_rerun": "Run a new audit after the changes to confirm they took effect.",
+        "optimize_primary": "Your security holds up. There are still some hardening wins available.",
+        "optimize_csp": "Consider stricter Content-Security-Policy and Permissions-Policy headers for extra defense.",
+        "optimize_verify": "Re-check security posture every few months to catch regressions.",
+        "observe_primary": "Your security is in good shape. No significant exposures right now.",
+        "observe_verify": "Schedule a periodic security check to keep this clean."
       }
     },
     "summaries": {
@@ -3237,6 +3266,41 @@
       "trust_gap": "Trust Revenue Gap",
       "path_efficiency": "Path to Purchase Efficiency",
       "security_posture": "Security Posture"
+    },
+    "behavioral_issues": {
+      "first_session_milestone_stall": "First-time visitors are leaving before they show intent to buy",
+      "first_session_trust_barrier": "New visitors hit a trust wall before they engage",
+      "first_session_cta_timing_gap": "It takes too long for new visitors to see what to do",
+      "low_value_action_dominates": "Visitors are spending attention on actions that do not make money",
+      "high_value_action_underexposed": "The actions that make you money are too hard to find",
+      "dead_weight_surface_traffic": "Pages that bring no revenue are eating your traffic",
+      "paid_traffic_friction_elevated": "Visitors from your ads are hitting more friction than the average buyer",
+      "paid_traffic_trust_gap": "Visitors from ads do not trust your site as fast as organic visitors",
+      "paid_mobile_compounding_waste": "Your paid mobile traffic is leaking money on two fronts at once",
+      "mobile_conversion_gap": "Mobile buyers convert way less than desktop buyers",
+      "mobile_form_friction_elevated": "Your forms are painful to fill out on a phone",
+      "mobile_cta_timing_degraded": "Your buy buttons take too long to react on mobile",
+      "funnel_step_friction_cost": "Each step in your funnel is costing you more than it should",
+      "oscillation_decision_cost": "Buyers are bouncing back and forth before deciding — and many never decide",
+      "checkout_entry_friction": "Something at the start of checkout is making buyers stall",
+      "trust_deficit_conversion_drag": "Buyers want to convert but trust gaps are pulling them away",
+      "reassurance_seeking_elevated": "Buyers keep checking policies and reviews — they need more reassurance to feel safe",
+      "sensitive_input_trust_gap": "Buyers are abandoning the moment they have to type their card or personal data",
+      "path_length_exceeds_efficient": "The path from interest to purchase is too long for buyers to stick with",
+      "intent_absorber_detected": "Some pages are stealing attention from buyers without moving them toward a sale",
+      "intent_decay_time_excessive": "Too much time passes between when a buyer wants to buy and when they can actually buy"
+    },
+    "maps": {
+      "names": {
+        "revenue_leakage": "Where you are losing revenue",
+        "chargeback_risk": "Where chargeback risk is building",
+        "root_cause": "What is actually causing the problems"
+      },
+      "categories": {
+        "policy": "Your policies",
+        "support": "How customers reach you",
+        "trust": "Trust signals"
+      }
     }
   }
 }

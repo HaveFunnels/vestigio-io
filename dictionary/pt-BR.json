@@ -1905,6 +1905,17 @@
           "workspaces": "Espaços de trabalho",
           "actions": "Ações"
         }
+      },
+      "mock_data": {
+        "payment_intent_loss": "Compradores estão desistindo na etapa de segurança 3DS",
+        "chargeback_proof_gap": "Você está perdendo chargebacks porque falta evidência",
+        "refund_loop": "Os reembolsos estão sendo disparados em dobro nos pagamentos reprocessados",
+        "trust_boundary_crossed": "O comprador está sendo jogado pra outro domínio no checkout",
+        "mobile_checkout_drag": "Seu checkout mobile leva 4,8s antes do comprador conseguir fazer qualquer coisa",
+        "pricing_page_outdated": "Sua página de preços está mostrando um plano que não existe mais",
+        "refund_policy_reverted": "Sua política de reembolso sumiu do checkout de novo",
+        "og_image_stale": "Sua homepage estava compartilhando uma imagem de preview desatualizada",
+        "trust_seals_missing": "Os selos de confiança sumiram na etapa de pagamento"
       }
     },
     "chat": {
@@ -3252,6 +3263,24 @@
         "optimize_verify": "Monitore as taxas de Chargeback periodicamente.",
         "strong_primary": "A resiliência contra Chargeback está forte. Continue monitorando.",
         "strong_verify": "Agende avaliações periódicas de risco de Chargeback."
+      },
+      "security_posture": {
+        "incident_primary": "Você tem falhas críticas de segurança que o comprador consegue enxergar. Resolva antes de aceitar outro pagamento.",
+        "incident_sensitive_endpoint": "Tranque ou remova as páginas de admin, arquivos de configuração e backups que estão públicos agora.",
+        "incident_mixed_content": "Pare de carregar conteúdo inseguro nas páginas de venda — tudo precisa vir por HTTPS ou o comprador vai ver o cadeado quebrado.",
+        "incident_open_redirect": "Feche os redirecionamentos abertos no seu site — atacantes podem usar pra mandar seus clientes pra checkouts falsos.",
+        "incident_security_headers": "Adicione os headers de segurança básicos (CSP, HSTS, X-Frame-Options) pra que o navegador pare de sinalizar seu site como arriscado.",
+        "incident_verify_rerun": "Rode uma nova auditoria depois das correções pra confirmar que as falhas foram fechadas.",
+        "incident_verify_endpoints": "Confirme que as páginas que estavam expostas não são mais acessíveis pela internet aberta.",
+        "fix_primary": "Sua segurança tem brechas que vão te prejudicar quando escalar. Feche antes de empurrar mais tráfego.",
+        "fix_security_headers": "Reforce seus headers de segurança pra reduzir exposição a ataques de injeção e clickjacking.",
+        "fix_open_redirect": "Corrija os endpoints de redirecionamento aberto — são fáceis de abusar.",
+        "fix_verify_rerun": "Rode uma nova auditoria depois das mudanças pra confirmar que surtiram efeito.",
+        "optimize_primary": "Sua segurança aguenta. Ainda dá pra reforçar em alguns pontos.",
+        "optimize_csp": "Considere headers Content-Security-Policy e Permissions-Policy mais rígidos como defesa extra.",
+        "optimize_verify": "Revise a postura de segurança a cada poucos meses pra pegar regressões.",
+        "observe_primary": "Sua segurança está em bom estado. Sem exposições significativas no momento.",
+        "observe_verify": "Agende uma checagem periódica de segurança pra manter assim."
       }
     },
     "summaries": {
@@ -3292,6 +3321,41 @@
       "trust_gap": "Gap de Confiança e Faturamento",
       "path_efficiency": "Eficiência do Caminho de Compra",
       "security_posture": "Postura de Segurança"
+    },
+    "behavioral_issues": {
+      "first_session_milestone_stall": "Visitantes de primeira vez estão saindo antes de mostrar qualquer sinal de compra",
+      "first_session_trust_barrier": "Novos visitantes esbarram num muro de desconfiança antes de se envolverem",
+      "first_session_cta_timing_gap": "O visitante demora demais pra entender o que deve fazer na sua página",
+      "low_value_action_dominates": "Seus visitantes estão gastando atenção em ações que não geram dinheiro",
+      "high_value_action_underexposed": "As ações que fazem você ganhar dinheiro estão escondidas demais",
+      "dead_weight_surface_traffic": "Páginas que não trazem faturamento estão consumindo seu tráfego",
+      "paid_traffic_friction_elevated": "Quem vem dos seus anúncios enfrenta mais atrito do que o comprador médio",
+      "paid_traffic_trust_gap": "Visitantes dos anúncios não confiam no seu site tão rápido quanto os orgânicos",
+      "paid_mobile_compounding_waste": "Seu tráfego pago no celular está vazando dinheiro em duas frentes ao mesmo tempo",
+      "mobile_conversion_gap": "Compradores no celular convertem muito menos do que no desktop",
+      "mobile_form_friction_elevated": "Seus formulários são um inferno de preencher no celular",
+      "mobile_cta_timing_degraded": "Seus botões de compra demoram demais pra responder no celular",
+      "funnel_step_friction_cost": "Cada passo do seu funil está custando mais do que deveria",
+      "oscillation_decision_cost": "Compradores ficam indo e voltando antes de decidir — e muitos nunca decidem",
+      "checkout_entry_friction": "Alguma coisa logo no começo do checkout está travando o comprador",
+      "trust_deficit_conversion_drag": "O comprador quer converter, mas falhas de confiança estão puxando ele pra trás",
+      "reassurance_seeking_elevated": "Compradores ficam checando políticas e avaliações — precisam de mais segurança pra se sentir confiantes",
+      "sensitive_input_trust_gap": "Compradores estão abandonando na hora de digitar o cartão ou dados pessoais",
+      "path_length_exceeds_efficient": "O caminho até a compra é longo demais pro comprador aguentar",
+      "intent_absorber_detected": "Algumas páginas estão roubando a atenção do comprador sem levar à venda",
+      "intent_decay_time_excessive": "Passa tempo demais entre o comprador querer comprar e conseguir comprar de verdade"
+    },
+    "maps": {
+      "names": {
+        "revenue_leakage": "Onde você está perdendo receita",
+        "chargeback_risk": "Onde o risco de chargeback está se acumulando",
+        "root_cause": "O que está realmente causando os problemas"
+      },
+      "categories": {
+        "policy": "Suas políticas",
+        "support": "Como o cliente te encontra",
+        "trust": "Sinais de confiança"
+      }
     },
     "admin": {
       "common": {

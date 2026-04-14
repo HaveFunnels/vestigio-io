@@ -1826,6 +1826,17 @@
           "workspaces": "Espacios de trabajo",
           "actions": "Acciones"
         }
+      },
+      "mock_data": {
+        "payment_intent_loss": "Los compradores están abandonando en el paso de seguridad 3DS",
+        "chargeback_proof_gap": "Estás perdiendo chargebacks porque falta la evidencia",
+        "refund_loop": "Los reembolsos se están disparando dos veces en pagos reintentados",
+        "trust_boundary_crossed": "El comprador está siendo lanzado a otro dominio en el checkout",
+        "mobile_checkout_drag": "Tu checkout móvil tarda 4.8s antes de que el comprador pueda hacer algo",
+        "pricing_page_outdated": "Tu página de precios está mostrando un plan que ya no existe",
+        "refund_policy_reverted": "Tu política de reembolso desapareció del checkout otra vez",
+        "og_image_stale": "Tu homepage estaba compartiendo una imagen de vista previa desactualizada",
+        "trust_seals_missing": "Los sellos de confianza desaparecieron en el paso de pago"
       }
     },
     "chat": {
@@ -3053,44 +3064,44 @@
     },
     "positive_checks": {
       "strong_cta_clarity": {
-        "title": "La intención de conversión es clara e inequívoca",
-        "description": "La ruta principal de conversión es identificable y está libre de llamadas a la acción en competencia. Los visitantes pueden encontrar cómo comprar."
+        "title": "Tus clientes saben exactamente cómo comprar",
+        "description": "Tu botón de compra es claro y no hay otra llamada a la acción robando atención. El visitante no tiene que pensarlo dos veces para saber cómo comprar."
       },
       "trust_continuity_good": {
-        "title": "Continuidad de confianza mantenida a través del Checkout",
-        "description": "El flujo de conversión permanece en el dominio sin quiebres de confianza. Los usuarios no son redirigidos a dominios desconocidos durante la compra."
+        "title": "Los clientes se mantienen en tu dominio durante el checkout",
+        "description": "El comprador nunca es lanzado a un dominio extraño al pagar. Todo el flujo pasa donde él lo espera — sin redirecciones sorpresa, sin confianza rota."
       },
       "policy_coverage_complete": {
-        "title": "Políticas de protección al consumidor implementadas",
-        "description": "Las políticas de privacidad, términos y reembolso están presentes y accesibles. Esto respalda la confianza del comprador y el cumplimiento regulatorio."
+        "title": "Tus políticas están visibles y son fáciles de encontrar",
+        "description": "Las políticas de privacidad, términos y reembolso están presentes y accesibles. El comprador encuentra lo que necesita antes de hacer clic en comprar — y eso genera confianza."
       },
       "low_friction_checkout": {
-        "title": "Ruta de ingresos libre de fricción estructural",
-        "description": "No se detectaron formularios rotos, redirecciones excesivas o páginas de carga lenta en la ruta de conversión. La ruta desde la intención hasta la compra está limpia."
+        "title": "Tu camino de compra está libre de fricción",
+        "description": "Sin formularios rotos, sin cadenas de redirecciones, sin páginas lentas entre el carrito y la confirmación. Quien quiere comprar puede comprar."
       },
       "measurement_covered": {
-        "title": "La infraestructura de medición cubre las rutas comerciales",
-        "description": "Las herramientas de analítica están presentes con suficiente profundidad para soportar la atribución, optimización y medición de conversiones."
+        "title": "Puedes ver lo que pasa en tu embudo",
+        "description": "La analítica está en su lugar a lo largo del camino de compra. Puedes rastrear de dónde vienen los compradores, dónde convierten y dónde abandonan."
       },
       "support_reachable": {
-        "title": "Canales de soporte visibles y accesibles",
-        "description": "Los métodos de contacto están disponibles y son descubribles. Los clientes pueden resolver problemas a través del soporte en lugar de presentar disputas."
+        "title": "Los clientes te encuentran cuando tienen un problema",
+        "description": "Los canales de contacto están visibles y accesibles. Cuando algo sale mal, el comprador habla contigo en lugar de abrir un chargeback."
       },
       "smooth_activation": {
-        "title": "El flujo de activación es claro y de baja fricción",
-        "description": "La ruta de onboarding tiene pasos siguientes claros, indicadores de progreso y complejidad manejable. Los nuevos usuarios pueden alcanzar el valor rápidamente."
+        "title": "Los nuevos usuarios llegan al valor rápido",
+        "description": "Tu onboarding muestra próximos pasos claros y no acumula complejidad el primer día. El usuario llega al momento \"aha\" sin atascarse en el camino."
       },
       "navigation_clean": {
-        "title": "La navegación de la aplicación es limpia y fácil de recorrer",
-        "description": "La estructura de navegación es manejable en profundidad y amplitud. Los usuarios pueden encontrar las funciones principales sin sentirse abrumados."
+        "title": "Tu app es fácil de navegar",
+        "description": "Los usuarios encuentran las funciones sin perderse en menús. Nada está enterrado en capas de navegación ni escondido detrás de etiquetas confusas."
       },
       "upgrade_path_visible": {
-        "title": "La ruta de mejora es visible con contexto de valor claro",
-        "description": "Las superficies de mejora están presentes, son prominentes e incluyen propuestas de valor. Los usuarios pueden descubrir y evaluar los planes de pago."
+        "title": "Los usuarios ven cómo hacer upgrade y por qué",
+        "description": "Las opciones de upgrade están visibles y explican lo que el usuario gana. Quien quiere pagarte más puede encontrar el camino para hacerlo."
       },
       "empty_states_guided": {
-        "title": "Los estados vacíos proporcionan guía clara",
-        "description": "Las pantallas vacías incluyen dirección, opciones de datos de ejemplo o guía de pasos siguientes. Los nuevos usuarios no se quedan mirando interfaces en blanco."
+        "title": "Los nuevos usuarios no se quedan mirando pantallas vacías",
+        "description": "Las pantallas vacías guían al usuario hacia una primera acción — datos de ejemplo, sugerencias o próximos pasos claros. Nadie abre tu app y se siente perdido."
       }
     },
     "field_kind_labels": {
@@ -3165,6 +3176,24 @@
         "optimize_verify": "Monitorea las tasas de Chargeback periódicamente.",
         "strong_primary": "La resiliencia ante Chargeback es fuerte. Continúa monitoreando.",
         "strong_verify": "Programa una evaluación periódica del riesgo de Chargeback."
+      },
+      "security_posture": {
+        "incident_primary": "Tienes agujeros de seguridad críticos que los compradores pueden ver. Arréglalos antes de aceptar otro pago.",
+        "incident_sensitive_endpoint": "Bloquea o elimina las páginas de admin, archivos de configuración y respaldos que ahora mismo están públicos.",
+        "incident_mixed_content": "Deja de cargar contenido inseguro en tus páginas de venta — todo tiene que venir por HTTPS o el comprador verá el candado roto.",
+        "incident_open_redirect": "Cierra los redireccionamientos abiertos en tu sitio — los atacantes pueden usarlos para mandar a tus clientes a checkouts falsos.",
+        "incident_security_headers": "Agrega los headers de seguridad básicos (CSP, HSTS, X-Frame-Options) para que el navegador deje de marcar tu sitio como riesgoso.",
+        "incident_verify_rerun": "Ejecuta una nueva auditoría después de las correcciones para confirmar que los agujeros están cerrados.",
+        "incident_verify_endpoints": "Confirma que las páginas que estaban expuestas ya no son accesibles desde la internet abierta.",
+        "fix_primary": "Tu seguridad tiene brechas que te van a golpear al escalar. Ciérralas antes de empujar más tráfico.",
+        "fix_security_headers": "Refuerza tus headers de seguridad para reducir la exposición a ataques de inyección y clickjacking.",
+        "fix_open_redirect": "Corrige los endpoints de redireccionamiento abierto — son fáciles de abusar.",
+        "fix_verify_rerun": "Ejecuta una nueva auditoría después de los cambios para confirmar que surtieron efecto.",
+        "optimize_primary": "Tu seguridad aguanta. Todavía hay algunos refuerzos que puedes ganar.",
+        "optimize_csp": "Considera headers Content-Security-Policy y Permissions-Policy más estrictos como defensa extra.",
+        "optimize_verify": "Revisa la postura de seguridad cada pocos meses para detectar regresiones.",
+        "observe_primary": "Tu seguridad está en buena forma. Sin exposiciones significativas ahora mismo.",
+        "observe_verify": "Programa una revisión periódica de seguridad para mantener esto limpio."
       }
     },
     "summaries": {
@@ -3205,6 +3234,41 @@
       "trust_gap": "Brecha de Confianza e Ingresos",
       "path_efficiency": "Eficiencia de Ruta de Compra",
       "security_posture": "Postura de Seguridad"
+    },
+    "behavioral_issues": {
+      "first_session_milestone_stall": "Los visitantes nuevos se van antes de mostrar cualquier señal de querer comprar",
+      "first_session_trust_barrier": "Los visitantes nuevos chocan con un muro de desconfianza antes de siquiera interactuar",
+      "first_session_cta_timing_gap": "Les toma demasiado tiempo a los nuevos visitantes entender qué hacer en tu página",
+      "low_value_action_dominates": "Tus visitantes gastan atención en acciones que no generan dinero",
+      "high_value_action_underexposed": "Las acciones que te hacen ganar dinero están demasiado escondidas",
+      "dead_weight_surface_traffic": "Páginas que no generan ingresos se están comiendo tu tráfico",
+      "paid_traffic_friction_elevated": "Los visitantes de tus anuncios encuentran más fricción que el comprador promedio",
+      "paid_traffic_trust_gap": "Los visitantes de anuncios no confían en tu sitio tan rápido como los orgánicos",
+      "paid_mobile_compounding_waste": "Tu tráfico pago en móvil está perdiendo dinero en dos frentes a la vez",
+      "mobile_conversion_gap": "Los compradores en móvil convierten muchísimo menos que los de escritorio",
+      "mobile_form_friction_elevated": "Tus formularios son un dolor de llenar en el celular",
+      "mobile_cta_timing_degraded": "Tus botones de compra tardan demasiado en responder en el celular",
+      "funnel_step_friction_cost": "Cada paso de tu embudo cuesta más de lo que debería",
+      "oscillation_decision_cost": "Los compradores van y vienen antes de decidir — y muchos nunca deciden",
+      "checkout_entry_friction": "Algo al inicio del checkout está trabando al comprador",
+      "trust_deficit_conversion_drag": "El comprador quiere convertir pero las brechas de confianza lo están arrastrando hacia atrás",
+      "reassurance_seeking_elevated": "Los compradores revisan políticas y reseñas una y otra vez — necesitan más seguridad para sentirse confiados",
+      "sensitive_input_trust_gap": "Los compradores abandonan en el momento en que tienen que escribir su tarjeta o datos personales",
+      "path_length_exceeds_efficient": "El camino desde el interés hasta la compra es demasiado largo para que el comprador aguante",
+      "intent_absorber_detected": "Algunas páginas están robando la atención del comprador sin llevarlo a la venta",
+      "intent_decay_time_excessive": "Pasa demasiado tiempo entre que el comprador quiere comprar y puede comprar de verdad"
+    },
+    "maps": {
+      "names": {
+        "revenue_leakage": "Dónde estás perdiendo ingresos",
+        "chargeback_risk": "Dónde se está acumulando el riesgo de chargeback",
+        "root_cause": "Qué está causando realmente los problemas"
+      },
+      "categories": {
+        "policy": "Tus políticas",
+        "support": "Cómo te encuentran los clientes",
+        "trust": "Señales de confianza"
+      }
     }
   }
 }

@@ -843,6 +843,12 @@ model Evidence {
   collectionMethod String
   qualityScore     Int       @default(50)
   payload          String    @db.Text
+  // Wave 5 Fase 3 — content hash of the source asset this evidence was
+  // derived from (e.g. SHA-1 of the normalized HTML body for HttpResponse
+  // evidence). Null for non-HTML-derived evidence. Incremental cycles
+  // lookup by (environmentRef, subjectRef, contentHash) to decide whether
+  // to re-parse or carry forward the evidence row from the previous cycle.
+  contentHash      String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -854,6 +860,7 @@ model Evidence {
   @@index([evidenceType, createdAt])
   @@index([cycleRef])
   @@index([subjectRef])
+  @@index([environmentRef, subjectRef, evidenceType]) // Fase 3 reuse lookup
 }
 
 // ──────────────────────────────────────────────

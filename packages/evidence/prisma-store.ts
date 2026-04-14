@@ -31,6 +31,9 @@ function toPrismaData(e: Evidence): Record<string, unknown> {
     collectionMethod: e.collection_method,
     qualityScore: e.quality_score,
     payload: JSON.stringify(e.payload),
+    // Wave 5 Fase 3 — null for evidence types that don't have a source
+    // body (anything besides HttpResponse today).
+    contentHash: e.content_hash ?? null,
     createdAt: e.created_at,
     updatedAt: e.updated_at,
   };
@@ -62,6 +65,8 @@ function fromPrismaRow(row: any): Evidence {
     collection_method: row.collectionMethod,
     quality_score: row.qualityScore,
     payload: typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload,
+    // Wave 5 Fase 3 — roundtrip for incremental reuse lookups.
+    content_hash: row.contentHash ?? null,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
   };

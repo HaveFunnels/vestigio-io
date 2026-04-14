@@ -47,7 +47,12 @@ import {
 // behavioral inferences when there aren't enough sessions.
 // ──────────────────────────────────────────────
 
-const WINDOW_DAYS = 30;
+// Wave 5 Fase 3 — cycle-mode-aware windowing. Hot cycles look at the
+// last hour (short tail, fresh friction signal). Warm looks at the last
+// day. Cold holds the legacy 30-day baseline for cohort statistics.
+// Callers that don't pass a window fall back to the 30-day default so
+// the legacy full-audit path is unchanged.
+const DEFAULT_WINDOW_HOURS = 24 * 30;
 const MAX_SESSIONS_PER_RUN = 10_000; // safety cap
 const QUALITY_SCORE = 80; // first-party data, no inference — high trust
 
@@ -77,8 +82,12 @@ export async function processBehavioralEventsForEnv(
   envId: string,
   scoping: Scoping,
   cycleRef: string,
+  // Wave 5 Fase 3 — allow the runner to scope the behavioral window
+  // per cycleType. Optional for backwards compat; defaults to 30d.
+  windowHours?: number,
 ): Promise<ProcessBehavioralResult> {
-  const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const hours = windowHours && windowHours > 0 ? windowHours : DEFAULT_WINDOW_HOURS;
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000);
 
   let rows;
   try {

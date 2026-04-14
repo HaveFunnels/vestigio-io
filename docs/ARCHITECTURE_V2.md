@@ -415,7 +415,18 @@ Redis is optional — the system gracefully falls back to in-memory when `REDIS_
 
 **Deployment topology:** add a second Railway service (Custom Start Command: `npm run start:worker`) sharing `REDIS_URL` + `DATABASE_URL` with the web. See [DEPLOY.md § 15.3.1](DEPLOY.md) for the procedure.
 
-**Still pending (Fase 3):** real `cycleType: 'incremental'` semantics in the engine + scheduler cron with cadence per plan. The infra above is the foundation that those build on.
+**Fase 3 shipped 2026-04-14:** real `cycleType` branching + scheduler cron + content hash.
+- [apps/audit-runner/cycle-modes.ts](../apps/audit-runner/cycle-modes.ts) — hot/warm/cold config (behavioral window, min sessions, budget, carry-forward flag) + critical surface classifier (regex + auto-promotion from recent high-severity findings) + URL allow-list builder (hot = critical only, warm = critical + 30% rotating sample, cold = null/all) + `carryEvidenceForward` helper that clones evidence rows from the previous cycle when carrying hot/warm URLs forward.
+- [apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) — maps `cycle.cycleType` to a `CycleMode`, resolves previous cycle + critical set + allow-list, calls carry-forward, runs staged pipeline with `url_filter` + per-mode budget. Hot/warm use `pipelineMode: 'shallow_plus'` (Stage D stays cold-only).
+- [workers/ingestion/staged-pipeline.ts](../workers/ingestion/staged-pipeline.ts) — accepts optional `url_filter: string[]` in `StagedPipelineInput`; when present, intersects discovered candidates with the allow-list (homepage always retained).
+- `Evidence.contentHash` — SHA-1 of the normalized HTML body for HttpResponse evidence; indexed `(environmentRef, subjectRef, evidenceType)` for Fase-3-plus-1 work that will pre-check hash before fetching.
+- [apps/audit-runner/process-behavioral.ts](../apps/audit-runner/process-behavioral.ts) — `windowHours` param (hot=1h, warm=24h, cold=30d).
+- [apps/audit-runner/scheduler.ts](../apps/audit-runner/scheduler.ts) — hourly leader-elected pass; reads `PLAN_CADENCE` from plan-config, resolves due cycleType per env (cold > warm > hot priority), creates `AuditCycle` row, enqueues with matching queue priority. Demo orgs included.
+- [src/libs/plan-config.ts](../src/libs/plan-config.ts) — `PLAN_CADENCE` table (Starter: 1/week cold; Pro: 1h hot / 4h warm / 3d cold; Max: 15min hot / 1h warm / 1d cold).
+
+Remaining for post-Fase-3:
+- `FindingEvidenceDep` index — engine recompute is still atomic over full evidence set; hot/warm speedup comes from crawl selectivity + carry-forward. Adding the index would let the engine skip re-running findings whose upstream evidence didn't change. Open work.
+- Pre-fetch hash comparison — today the allow-listed URLs still get fetched even if hash would match. The win is carry-forward on parse/signal extraction; a HEAD-request gate (or a hash-only endpoint) would skip the fetch entirely. Open work.
 
 ### Payment providers (implemented)
 

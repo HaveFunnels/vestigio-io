@@ -22,6 +22,12 @@ export interface Evidence extends Timestamped {
   collection_method: CollectionMethod;
   payload: EvidencePayload;
   quality_score: number; // 0..100
+  // Wave 5 Fase 3 — SHA-1 of the source asset (currently only set for
+  // HttpResponse evidence, where it's the hash of the normalized HTML
+  // body). Null for everything else. Incremental cycles consult this
+  // to decide whether to re-parse a page or carry the previous cycle's
+  // evidence forward. Optional so existing evidence producers don't break.
+  content_hash?: string | null;
 }
 
 // Typed payload — never loose JSON as source of truth

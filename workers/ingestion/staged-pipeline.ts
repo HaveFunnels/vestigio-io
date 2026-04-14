@@ -83,6 +83,14 @@ export interface StagedPipelineInput {
   onboarding_conversion_model?: string;
   crawl_constraints?: Partial<CrawlConstraints>;
   mode?: PipelineMode;
+  // Wave 5 Fase 3 — Optional URL allow-list. When provided, the Stage C
+  // crawl loop only fetches URLs that appear in this set (the home/
+  // critical-path seeds are still added by discovery, so this acts as a
+  // filter, not a replacement). Used by hot + warm cycles to scope the
+  // crawl to critical surfaces (hot) or critical + a rotating sample
+  // (warm). Leaving this undefined means "crawl everything the
+  // discovery finds", which is the cold cycle behavior.
+  url_filter?: string[];
 }
 
 // Constraint overrides per mode. Anything not set falls back to
@@ -325,6 +333,22 @@ export async function runStagedPipeline(
     candidates = candidates.slice(0, 5);
   }
 
+  // Wave 5 Fase 3 — incremental URL filter. The audit-runner resolves
+  // which URLs this cycle is allowed to crawl (critical set for hot,
+  // critical + rotating sample for warm, everything for cold) and
+  // passes the list through `input.url_filter`. When present, the
+  // filter intersects with discovered candidates — we don't crawl
+  // anything outside the allow-list, but we also don't add new URLs
+  // (the critical set is already covered by discovery's critical
+  // paths). The homepage is always retained even if it's not in the
+  // allow-list because it's the entry point for all downstream
+  // structure + inventory reconciliation.
+  if (input.url_filter && input.url_filter.length > 0) {
+    const allow = new Set<string>(input.url_filter);
+    const homepageUrl = rootUrl;
+    candidates = candidates.filter((c) => allow.has(c) || c === homepageUrl);
+  }
+
   // Mark all candidates in coverage
   for (const url of candidates) {
     const path = safePathname(url);
@@ -375,7 +399,11 @@ export async function runStagedPipeline(
       const isHtml = response.content_type?.includes('text/html');
       if (isHtml) {
         const parsed = parsePage(response.body, response.final_url);
-        addHttpEvidence(evidence, response, url, scoping, input.cycle_ref);
+        // Wave 5 Fase 3: attach the content hash the session already
+        // computed so the evidence row carries it to Postgres. The
+        // incremental runner reads this to decide whether to re-parse
+        // the page or carry forward the previous cycle's evidence.
+        addHttpEvidence(evidence, response, url, scoping, input.cycle_ref, cHash);
         addPageContentEvidence(evidence, parsed, response.final_url, scoping, input.cycle_ref);
         addScriptEvidence(evidence, parsed, response.final_url, scoping, input.cycle_ref);
         addFormEvidence(evidence, parsed, response.final_url, scoping, input.cycle_ref);
@@ -389,7 +417,7 @@ export async function runStagedPipeline(
           emit({ type: 'step', stage: 'crawl', data: { message: 'Detected JavaScript-heavy page — headless verification may be needed', index: stepIndex }, timestamp: new Date() });
         }
       } else {
-        addHttpEvidence(evidence, response, url, scoping, input.cycle_ref);
+        addHttpEvidence(evidence, response, url, scoping, input.cycle_ref, cHash);
         coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: 50 });
       }
 
@@ -490,12 +518,18 @@ export async function runStagedPipeline(
 // Evidence builders (reuse pipeline patterns)
 // ──────────────────────────────────────────────
 
-function addHttpEvidence(evidence: Evidence[], response: HttpResponse, url: string, scoping: Scoping, cycleRef: string): void {
-  evidence.push(createEvidence(EvidenceType.HttpResponse, url, scoping, cycleRef, {
+function addHttpEvidence(evidence: Evidence[], response: HttpResponse, url: string, scoping: Scoping, cycleRef: string, contentHash?: string): void {
+  const ev = createEvidence(EvidenceType.HttpResponse, url, scoping, cycleRef, {
     type: 'http_response', url: response.url, status_code: response.status_code,
     headers: response.headers, response_time_ms: response.response_time_ms,
     content_type: response.content_type, content_length: response.content_length,
-  } as HttpResponsePayload));
+  } as HttpResponsePayload);
+  // Wave 5 Fase 3 — attach the body hash so the incremental runner can
+  // look up "did this page change since the last cycle?" without having
+  // to re-parse. Only attached to HttpResponse evidence (the only type
+  // where we actually have the body).
+  if (contentHash) ev.content_hash = contentHash;
+  evidence.push(ev);
 
   if (response.redirect_chain.length > 0) {
     evidence.push(createEvidence(EvidenceType.Redirect, url, scoping, cycleRef, {

@@ -30,6 +30,10 @@ const RATE_PRUNE_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 // late is invisible to the user.
 const INACTIVITY_PAUSE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const INACTIVITY_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+// Wave 5 Fase 3 — scheduler runs once per hour. Enough to cover every
+// plan cadence (Max's 15min hot cycles will sample 4x per hot window;
+// Starter's weekly cold lands within 1h of due time).
+const SCHEDULER_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 export async function registerNodeInstrumentation(): Promise<void> {
 	const { healStuckCycles, redispatchOrphanedPending } = await import(
@@ -273,4 +277,29 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	runInactivityPause();
 	setInterval(runInactivityPause, INACTIVITY_PAUSE_INTERVAL_MS);
 	console.log("✓ Inactivity pause cron registered (1h interval, 14d threshold)");
+
+	// ── Audit scheduler cron (Wave 5 Fase 3) ──
+	// Hourly leader-elected pass. Walks every activated env, checks
+	// plan cadence, enqueues hot/warm/cold cycles as they come due.
+	// See apps/audit-runner/scheduler.ts for the per-env decision logic.
+	const { runSchedulerPass } = await import("../apps/audit-runner/scheduler");
+	const runScheduler = async () => {
+		await withLeadership("audit-scheduler", { ttlSec: 90 }, async () => {
+			try {
+				const result = await runSchedulerPass();
+				if (result.cyclesEnqueued > 0) {
+					console.log(
+						`[audit-scheduler] pass: evaluated=${result.envsEvaluated} enqueued=${result.cyclesEnqueued} hot=${result.enqueuedByType.hot} warm=${result.enqueuedByType.warm} cold=${result.enqueuedByType.cold}`,
+					);
+				}
+			} catch (err) {
+				console.error("[audit-scheduler] pass failed:", err);
+			}
+		});
+	};
+	// Boot pass — catch anything that was due while the process was
+	// down, but do it async so we don't block startup.
+	runScheduler();
+	setInterval(runScheduler, SCHEDULER_INTERVAL_MS);
+	console.log("✓ Audit scheduler cron registered (1h interval)");
 }

@@ -169,6 +169,105 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			.findUnique({ where: { organizationId: cycle.organizationId } })
 			.catch(() => null);
 
+		// ── Wave 5 Fase 3 — incremental cycle prep ──
+		// Resolve cycleType into a runtime CycleMode. Legacy DB rows use
+		// "full"; new scheduler-produced rows use "hot"/"warm"/"cold".
+		// Any unknown value falls back to cold so we always do the safe
+		// thing (full pipeline, no carry-forward).
+		const {
+			CYCLE_MODE_CONFIG,
+			resolveCriticalSurfaces,
+			buildUrlAllowList,
+			carryEvidenceForward,
+			getPreviousCompletedCycle,
+			getPreviousContentHash,
+		} = await import("./cycle-modes");
+		const declaredType = (cycle.cycleType || "cold").toLowerCase();
+		const cycleMode: "hot" | "warm" | "cold" =
+			declaredType === "hot"
+				? "hot"
+				: declaredType === "warm"
+					? "warm"
+					: "cold";
+		const modeConfig = CYCLE_MODE_CONFIG[cycleMode];
+
+		// For hot/warm: build allow-list from critical surfaces + rotating
+		// sample. For cold: null → pipeline crawls everything.
+		let urlFilter: string[] | null = null;
+		let prevCycle: Awaited<ReturnType<typeof getPreviousCompletedCycle>> = null;
+		let carryForwardSummary = { carriedUrls: 0, uncoveredUrls: 0, rowsCarried: 0 };
+
+		if (cycleMode !== "cold") {
+			prevCycle = await getPreviousCompletedCycle(prisma, env.id, cycleId);
+			if (!prevCycle) {
+				// No prior baseline → this "hot" or "warm" request is the
+				// first cycle for this env. Treat it as cold so we don't
+				// skip pages we've never seen. The next hot/warm request
+				// will then have a real baseline to compare against.
+				console.log(
+					`[audit-runner ${cycleId}] no prior cycle found — treating ${cycleMode} as cold for this first run`,
+				);
+			} else {
+				const criticalSet = await resolveCriticalSurfaces(prisma, env.id);
+				const inventoryUrls = await prisma.pageInventoryItem
+					.findMany({
+						where: { environmentRef: env.id },
+						select: { normalizedUrl: true },
+						take: 500,
+					})
+					.then((rows) => rows.map((r) => r.normalizedUrl))
+					.catch(() => [] as string[]);
+				urlFilter = buildUrlAllowList({
+					mode: cycleMode,
+					critical: criticalSet,
+					allInventoryUrls: inventoryUrls,
+				});
+
+				// Evidence carry-forward: for every allow-listed URL, look
+				// up the previous cycle's content hash. If it matches what
+				// the staged-pipeline will fetch, we'd waste time parsing
+				// it — but we don't have a hash to compare against BEFORE
+				// fetching. So we don't skip the fetch entirely; we just
+				// pre-populate the new cycle with the previous cycle's
+				// evidence for these URLs. If the live fetch's hash turns
+				// out to match, the fresh evidence replaces the carried
+				// one via the upsert key (cycleRef + evidenceKey won't
+				// match — different cycleRef — so we actually end up with
+				// both. This is harmless today because recompute dedupes
+				// by evidence_key within the cycle. A real delta-path is
+				// Wave 5 future work.)
+				//
+				// For the current scope what carry-forward DOES give us:
+				// if the staged-pipeline errors for a hot page (timeout,
+				// 503, whatever), we still have the previous cycle's
+				// evidence carried forward so the engine sees continuity
+				// instead of a phantom "page disappeared" regression.
+				if (!modeConfig.disableCarryForward && urlFilter && urlFilter.length > 0) {
+					const cf = await carryEvidenceForward(prisma, {
+						previousCycleRef: prevCycle.cycleRef,
+						newCycleRef: `audit_cycle:${cycleId}`,
+						environmentRef: env.id,
+						urls: urlFilter,
+					});
+					carryForwardSummary = {
+						carriedUrls: cf.carriedUrls.length,
+						uncoveredUrls: cf.uncoveredUrls.length,
+						rowsCarried: cf.rowsCarried,
+					};
+					console.log(
+						`[audit-runner ${cycleId}] ${cycleMode} carry-forward: ${cf.rowsCarried} rows across ${cf.carriedUrls.length} urls (${cf.uncoveredUrls.length} uncovered)`,
+					);
+				}
+			}
+		}
+
+		// Stage D (Selective Headless) gates on `mode === 'full'`. Hot/warm
+		// cycles are time-budgeted and skipping Stage D on them is
+		// deliberate — browser verification is the most expensive step
+		// and only pays off in a full-baseline context. Cold runs
+		// everything; hot/warm run the crawl + engine but skip Playwright.
+		const pipelineMode: "full" | "shallow_plus" = cycleMode === "cold" ? "full" : "shallow_plus";
+
 		const result = await runStagedPipeline(
 			{
 				domain,
@@ -176,15 +275,19 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				environment_ref: `environment:${env.id}`,
 				website_ref: `website:${website.id}`,
 				cycle_ref: `audit_cycle:${cycleId}`,
-				// Wave 1: explicit mode = full so Stage D's gate (mode === 'full')
-				// passes. The default is 'full' anyway, but being explicit makes
-				// the intent obvious to readers.
-				mode: 'full',
-				// Stage D's business-aware scenario picker reads this. Falls back
-				// to 'hybrid' scenarios when null (e.g. orgs that haven't completed
-				// onboarding yet — those still get a useful generic probe).
+				mode: pipelineMode,
 				onboarding_business_model: businessProfileForPipeline?.businessModel ?? undefined,
 				onboarding_conversion_model: businessProfileForPipeline?.conversionModel ?? undefined,
+				// Wave 5 Fase 3 — url_filter scopes the crawl to the
+				// cycle's allow-list. Cold cycles pass null/undefined here
+				// and crawl everything.
+				url_filter: urlFilter ?? undefined,
+				crawl_constraints: {
+					// Honor the per-mode wall-clock budget. Cold uses the
+					// default 60s; hot caps at 60s anyway but warm gets
+					// 4min to cover its sample.
+					global_timeout_ms: modeConfig.cycleBudgetMs,
+				},
 			},
 			noopEmit,
 		);
@@ -321,6 +424,9 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						path_scope: null,
 					},
 					cycleRefStr,
+					// Wave 5 Fase 3 — scope the behavioral window to the
+					// current cycle mode (hot=1h, warm=24h, cold=30d).
+					modeConfig.behavioralWindowHours,
 				);
 				if (behavioral.evidence.length > 0) {
 					result.evidence.push(...behavioral.evidence);

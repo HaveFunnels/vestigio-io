@@ -29,6 +29,54 @@ export interface PlanConfig {
   features?: PlanFeature[]; // Admin-configurable feature list for pricing table
 }
 
+/**
+ * Wave 5 Fase 3 — cycle cadence by plan.
+ *
+ * Cold is mandatory for every plan (weekly minimum) so no env ever
+ * drifts without a baseline reset. Hot + warm are the incremental
+ * tiers that Pro/Max pay for.
+ *
+ * minIntervalMs = 0 means "not scheduled for this plan". The scheduler
+ * skips tiers at 0 rather than emitting cycles at infinity.
+ *
+ * Intentionally kept out of `PlanConfig` itself (which is admin-
+ * configurable via /app/admin/pricing) because exposing cadence as a
+ * tunable would let an admin silently dial down engine-level behavior
+ * without understanding downstream costs. Cadence is code-defined and
+ * requires a deploy to change.
+ */
+export interface CycleCadence {
+  hotMs: number;  // 0 = no hot cycles
+  warmMs: number; // 0 = no warm cycles
+  coldMs: number; // cold is always >0 (weekly floor for Starter)
+}
+
+export const PLAN_CADENCE: Record<string, CycleCadence> = {
+  vestigio: {
+    hotMs: 0,
+    warmMs: 0,
+    coldMs: 7 * 24 * 60 * 60 * 1000, // 1 week
+  },
+  pro: {
+    hotMs: 60 * 60 * 1000,      // 1h
+    warmMs: 4 * 60 * 60 * 1000, // 4h
+    coldMs: 3 * 24 * 60 * 60 * 1000, // 3 days
+  },
+  max: {
+    hotMs: 15 * 60 * 1000,      // 15min
+    warmMs: 60 * 60 * 1000,     // 1h
+    coldMs: 24 * 60 * 60 * 1000, // 1 day
+  },
+};
+
+/** Fallback cadence for plans not in PLAN_CADENCE (unknown plan key).
+ *  Same as Starter — conservative weekly baseline only. */
+export const DEFAULT_CADENCE: CycleCadence = PLAN_CADENCE.vestigio;
+
+export function getCadenceForPlan(planKey: string): CycleCadence {
+  return PLAN_CADENCE[planKey] || DEFAULT_CADENCE;
+}
+
 const DEFAULT_FEATURES: Record<string, PlanFeature[]> = {
   vestigio: [
     { name: "1 environment", included: true },

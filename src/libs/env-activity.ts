@@ -96,16 +96,28 @@ export async function resumeIfPaused(envId: string): Promise<boolean> {
 			},
 		});
 
-		// Fire-and-forget (same pattern as webhook dispatch). Heal cron
-		// recovers if this process dies mid-run.
-		import("../../apps/audit-runner/run-cycle")
-			.then((m) => m.runAuditCycle(cycle.id))
-			.catch((err) => {
-				console.error(
-					`[env-activity.resume] audit dispatch failed for cycle ${cycle.id}:`,
-					err,
-				);
-			});
+		// Dispatch (Wave 5 Fase 1A): Redis queue → worker service, with
+		// in-process fallback for Redis-less deploys. Catch-up runs as
+		// "cold" priority since this is a post-inactivity baseline.
+		const { enqueueAuditCycle } = await import(
+			"../../apps/platform/audit-cycle-queue"
+		);
+		const enqueued = await enqueueAuditCycle({
+			cycleId: cycle.id,
+			environmentId: env.id,
+			organizationId: env.organizationId,
+			priority: "cold",
+		});
+		if (!enqueued) {
+			import("../../apps/audit-runner/run-cycle")
+				.then((m) => m.runAuditCycle(cycle.id))
+				.catch((err) => {
+					console.error(
+						`[env-activity.resume] audit dispatch failed for cycle ${cycle.id}:`,
+						err,
+					);
+				});
+		}
 
 		return true;
 	} catch (err) {

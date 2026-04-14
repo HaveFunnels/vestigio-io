@@ -1,6 +1,7 @@
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { VerificationStep, VerificationScenario, BROWSER_LIMITS, classifyNetworkRequest, isCommercialPage, buildNetworkAnalysisSummary } from './browser-types';
 import type { StepResult, CapturedNetworkRequest, NetworkAnalysisSummary } from './browser-types';
+import { acquireBrowserSlot, releaseBrowserSlot } from './chromium-pool';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
@@ -85,7 +86,13 @@ export class PlaywrightRuntime {
     const requestStartTimes = new Map<string, number>();
     const rootDomain = this.extractRootDomain(targetUrl);
 
+    // Wave 5 Fase 1A: cap concurrent Chromium launches per process so a
+    // burst of cycles can't OOM the worker. Slot is released in the
+    // finally{} block at the bottom of this method (see browser?.close()).
+    let slotHeld = false;
     try {
+      await acquireBrowserSlot();
+      slotHeld = true;
       browser = await chromium.launch({ headless: true });
       const vp = VIEWPORT_PRESETS[this.options.viewport];
       const isMobile = this.options.viewport === 'mobile';
@@ -226,6 +233,10 @@ export class PlaywrightRuntime {
       if (browser) {
         try { await browser.close(); } catch { /* best effort */ }
       }
+      // Wave 5 Fase 1A: release the concurrency slot regardless of
+      // success/failure path. Guarded by slotHeld so a release can't
+      // sneak through when acquireBrowserSlot() itself threw.
+      if (slotHeld) releaseBrowserSlot();
     }
 
     // Phase 2D: Build network analysis summary

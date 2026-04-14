@@ -9,6 +9,7 @@
 		"dev": "next dev --turbopack",
 		"build": "prisma generate && next build",
 		"start": "next start",
+		"start:worker": "tsx apps/audit-runner/worker-loop.ts",
 		"stripe:listen": "stripe listen --forward-to http://localhost:3000/api/stripe/webhook",
 		"check-format": "prettier --check .",
 		"check-lint": "eslint . --ext ts --ext tsx --ext js",
@@ -64,6 +65,7 @@
 		"stripe": "^14.13.0",
 		"styled-components": "^6.1.13",
 		"tailwind-merge": "^3.0.1",
+		"tsx": "^4.21.0",
 		"zod": "^3.23.8"
 	},
 	"devDependencies": {

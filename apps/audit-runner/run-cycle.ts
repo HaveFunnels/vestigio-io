@@ -532,6 +532,21 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			`[audit-runner ${cycleId}] complete — ${pagesDiscovered} pages, ${evidenceCount} evidence, ${durationMs}ms`,
 		);
 
+		// Wave 5 Fase 1B — pay-as-you-go meter. Best-effort write of
+		// cycles_run + pages_crawled + compute_seconds for this org. Failure
+		// here must NOT change the cycle outcome; the helper swallows.
+		try {
+			const { recordCycleUsage } = await import("@/libs/usage-meter");
+			await recordCycleUsage({
+				organizationId: cycle.organizationId,
+				cycleId,
+				pagesCrawled: pagesDiscovered,
+				computeSeconds: Math.round(durationMs / 1000),
+			});
+		} catch (err) {
+			console.warn(`[audit-runner ${cycleId}] usage meter write failed:`, err);
+		}
+
 		return { cycleId, status: "complete", pagesDiscovered, evidenceCount, durationMs };
 	} catch (err) {
 		const errorMsg = err instanceof Error ? err.message : String(err);
@@ -584,19 +599,50 @@ export async function healStuckCycles(): Promise<number> {
  * Re-dispatch any AuditCycle that has been `pending` longer than the
  * orphan threshold. This catches cycles whose webhook fired but whose
  * worker died (process restart between create + dispatch).
+ *
+ * Wave 5 Fase 1A: prefers the Redis queue (re-enqueues at "cold"
+ * priority — orphan recovery isn't latency-sensitive) so the dedicated
+ * worker service picks it up. Falls back to in-process dispatch when
+ * Redis isn't configured, preserving the original behavior for Redis-
+ * less deploys.
  */
 export async function redispatchOrphanedPending(): Promise<number> {
 	const cutoff = new Date(Date.now() - ORPHANED_PENDING_AFTER_MS);
 	const orphans = await prisma.auditCycle.findMany({
 		where: { status: "pending", createdAt: { lt: cutoff } },
-		select: { id: true },
+		select: { id: true, organizationId: true, environmentId: true },
 		take: 10, // safety cap per heal pass
 	});
+
+	let enqueueModule: { enqueueAuditCycle: (i: any) => Promise<boolean> } | null = null;
+	try {
+		enqueueModule = await import("../platform/audit-cycle-queue");
+	} catch {
+		enqueueModule = null;
+	}
+
 	for (const o of orphans) {
-		console.warn(`[audit-runner heal] re-dispatching orphan cycle ${o.id}`);
-		runAuditCycle(o.id).catch((err) => {
-			console.error(`[audit-runner heal] re-dispatch failed for ${o.id}:`, err);
-		});
+		let enqueued = false;
+		if (enqueueModule) {
+			try {
+				enqueued = await enqueueModule.enqueueAuditCycle({
+					cycleId: o.id,
+					environmentId: o.environmentId,
+					organizationId: o.organizationId,
+					priority: "cold",
+				});
+			} catch {
+				enqueued = false;
+			}
+		}
+		if (enqueued) {
+			console.warn(`[audit-runner heal] re-enqueued orphan cycle ${o.id} → queue`);
+		} else {
+			console.warn(`[audit-runner heal] re-dispatching orphan cycle ${o.id} in-process`);
+			runAuditCycle(o.id).catch((err) => {
+				console.error(`[audit-runner heal] re-dispatch failed for ${o.id}:`, err);
+			});
+		}
 	}
 	return orphans.length;
 }

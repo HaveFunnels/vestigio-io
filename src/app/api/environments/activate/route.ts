@@ -208,17 +208,32 @@ export const POST = withErrorTracking(
 				},
 			});
 
-			// Fire-and-forget — do NOT await. The heal cron in
-			// src/instrumentation-node.ts will recover orphaned pending cycles
-			// after 5 minutes if this process dies mid-run.
-			import("../../../../../apps/audit-runner/run-cycle")
-				.then((m) => m.runAuditCycle(cycle.id))
-				.catch((err) => {
-					console.error(
-						`[environments.activate] audit dispatch failed for cycle ${cycle.id}:`,
-						err,
-					);
-				});
+			// Dispatch path (Wave 5 Fase 1A): prefer the Redis queue so a
+			// dedicated worker service drains the cycle, surviving web
+			// process restarts and multi-replica deploys. Fall back to
+			// legacy in-process Promise.then() when Redis isn't configured
+			// (local dev, early production before the worker service ships)
+			// so demos don't silently stall.
+			const { enqueueAuditCycle } = await import(
+				"../../../../../apps/platform/audit-cycle-queue"
+			);
+			// First activation is a cold full baseline, so tier "cold".
+			const enqueued = await enqueueAuditCycle({
+				cycleId: cycle.id,
+				environmentId: env.id,
+				organizationId: org.id,
+				priority: "cold",
+			});
+			if (!enqueued) {
+				import("../../../../../apps/audit-runner/run-cycle")
+					.then((m) => m.runAuditCycle(cycle.id))
+					.catch((err) => {
+						console.error(
+							`[environments.activate] audit dispatch failed for cycle ${cycle.id}:`,
+							err,
+						);
+					});
+			}
 
 			return NextResponse.json(
 				{

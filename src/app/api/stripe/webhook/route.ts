@@ -122,12 +122,25 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 						cycleType: "full",
 					},
 				});
-				// Fire-and-forget — do NOT await. Webhook must return fast.
-				import("../../../../../apps/audit-runner/run-cycle")
-					.then((m) => m.runAuditCycle(cycle.id))
-					.catch((err) => {
-						console.error(`[stripe-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
-					});
+				// Dispatch (Wave 5 Fase 1A): prefer Redis queue → worker
+				// service. Falls back to in-process fire-and-forget when
+				// Redis isn't configured so single-box deploys still work.
+				const { enqueueAuditCycle } = await import(
+					"../../../../../apps/platform/audit-cycle-queue"
+				);
+				const enqueued = await enqueueAuditCycle({
+					cycleId: cycle.id,
+					environmentId: env.id,
+					organizationId: orgId,
+					priority: "cold",
+				});
+				if (!enqueued) {
+					import("../../../../../apps/audit-runner/run-cycle")
+						.then((m) => m.runAuditCycle(cycle.id))
+						.catch((err) => {
+							console.error(`[stripe-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
+						});
+				}
 			}
 		}
 	}

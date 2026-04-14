@@ -494,13 +494,24 @@ async function handleOnboardingActivation(
 				cycleType: "full",
 			},
 		});
-		// Fire-and-forget — do NOT await. Webhook must return fast.
-		// Heal cron in instrumentation.ts re-dispatches orphans on restart.
-		import("../../../../../apps/audit-runner/run-cycle")
-			.then((m) => m.runAuditCycle(cycle.id))
-			.catch((err) => {
-				console.error(`[paddle-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
-			});
+		// Dispatch (Wave 5 Fase 1A): Redis queue → worker service.
+		// Falls back to in-process when Redis not configured.
+		const { enqueueAuditCycle } = await import(
+			"../../../../../apps/platform/audit-cycle-queue"
+		);
+		const enqueued = await enqueueAuditCycle({
+			cycleId: cycle.id,
+			environmentId: env.id,
+			organizationId: orgId,
+			priority: "cold",
+		});
+		if (!enqueued) {
+			import("../../../../../apps/audit-runner/run-cycle")
+				.then((m) => m.runAuditCycle(cycle.id))
+				.catch((err) => {
+					console.error(`[paddle-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
+				});
+		}
 	}
 
 	logEvent("onboarding", `Org ${orgId} activated with plan ${plan}`);

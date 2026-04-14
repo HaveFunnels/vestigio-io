@@ -398,15 +398,24 @@ Redis provides:
 
 Redis is optional — the system gracefully falls back to in-memory when `REDIS_URL` is not set.
 
-### Known gap: audit-runner dispatch (fire-and-forget, not queued)
+### Audit-runner dispatch (Wave 5 Fase 1 — shipped 2026-04-14)
 
-[apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) is dispatched **in-process** via dynamic-import + `Promise.then()` without `await` from Stripe ([src/app/api/stripe/webhook/route.ts](../src/app/api/stripe/webhook/route.ts) lines 125-130) and Paddle webhooks. Three consequences:
+[apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) is now dispatched through a Redis-backed priority queue + standalone worker process. The legacy in-process `Promise.then()` path is retained as a graceful fallback for deploys without `REDIS_URL`.
 
-1. **Process restart orphans cycles.** If the Next.js container recycles while `runAuditCycle()` is running, the Promise dies silently. The cycle stays in `status: "running"` until the heal cron (60s interval, 10-minute stuck threshold) fails it, or in `status: "pending"` until the 5-minute orphan re-dispatch sweeps it up. Evidence partially written in a killed cycle is not rolled back.
-2. **Multi-replica Railway runs heal N times.** The `setInterval` in [src/instrumentation-node.ts](../src/instrumentation-node.ts) runs on every replica independently; three replicas = three concurrent orphan re-dispatches of the same pending cycles. There is no leader election today.
-3. **No backpressure on bursts.** A webhook burst or a scheduler with 50 orgs firing concurrently launches 50 `runAuditCycle()` promises that all enter the event loop at once, each potentially launching Chromium (200-500MB each). Memory is the first thing to fail.
+**Components:**
+- [apps/platform/audit-cycle-queue.ts](../apps/platform/audit-cycle-queue.ts) — three-tier priority queue (hot > warm > cold), per-env locking via `SET NX EX`, attempt counter, DLQ on 3 consecutive failures, observability snapshot via `getQueueDepth()`.
+- [apps/audit-runner/worker-loop.ts](../apps/audit-runner/worker-loop.ts) — standalone consumer (`npm run start:worker`). Per-worker concurrency cap (`AUDIT_WORKER_CONCURRENCY`, default 2). Env-contention requeue without retry penalty. Exponential-backoff retry (5s → 60s capped). Graceful SIGTERM drain (5min timeout). Tiny HTTP health server on `WORKER_HEALTH_PORT` (default 3001) returning queue depth + chromium pool + Redis status for Railway probes. Structured JSON logs with `worker_id` correlation.
+- [src/libs/leader-election.ts](../src/libs/leader-election.ts) — `SET NX EX` based, fail-open on Redis blip. Wraps the heal cron, lead-cleanup cron, and inactivity-pause cron in [src/instrumentation-node.ts](../src/instrumentation-node.ts) so multi-replica Railway deploys don't N-fold the work.
+- [workers/verification/chromium-pool.ts](../workers/verification/chromium-pool.ts) — in-process semaphore (`CHROMIUM_POOL_SIZE`, default 3) wrapping every `chromium.launch()` call site. Caps RAM around 1GB even under burst.
+- [src/libs/structured-log.ts](../src/libs/structured-log.ts) — JSON line emitter with cycle_id/org_id/env_id/worker_id correlation, snake_case keys for log aggregator parsing.
+- [src/libs/usage-meter.ts](../src/libs/usage-meter.ts) + hook in `runAuditCycle` finally{} block — records `cycles_run`, `pages_crawled`, `compute_seconds` to the existing `Usage` table by period, foundation for pay-as-you-go billing.
+- [/api/admin/metrics/audit-runner](../src/app/api/admin/metrics/audit-runner/route.ts) — single-call admin metrics endpoint: queue depth (per tier + DLQ), cycles-by-status last-24h, p50/p95 cycle duration, recent failures, top-10 orgs by cycles_run.
 
-The redis-job-queue at `apps/platform/redis-job-queue.ts` already has the right primitives — per-env `SET NX EX` lock, FIFO queue, TTL, `MAX_CONCURRENT_JOBS` ceiling — it simply wasn't the dispatch path audit-runner took. Wave 5 Fase 1 wires it in and adds a separate worker service on Railway so audit compute is isolated from web request spikes. See [ROADMAP.md § Wave 5](ROADMAP.md) for the full rearchitecture plan.
+**Dispatch sites** that now enqueue first (with in-process fallback): Stripe webhook ([src/app/api/stripe/webhook/route.ts](../src/app/api/stripe/webhook/route.ts)), Paddle webhook ([src/app/api/paddle/webhook/route.ts](../src/app/api/paddle/webhook/route.ts)), activation endpoint ([src/app/api/environments/activate/route.ts](../src/app/api/environments/activate/route.ts)), env-activity resume hook ([src/libs/env-activity.ts](../src/libs/env-activity.ts)), orphan-redispatch heal cron ([apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts)).
+
+**Deployment topology:** add a second Railway service (Custom Start Command: `npm run start:worker`) sharing `REDIS_URL` + `DATABASE_URL` with the web. See [DEPLOY.md § 15.3.1](DEPLOY.md) for the procedure.
+
+**Still pending (Fase 3):** real `cycleType: 'incremental'` semantics in the engine + scheduler cron with cadence per plan. The infra above is the foundation that those build on.
 
 ### Payment providers (implemented)
 

@@ -17,6 +17,7 @@ import {
 } from '../../apps/platform/saas-prerequisites';
 import { decryptSecret } from '../../apps/platform/secret-service';
 import { BROWSER_LIMITS } from './browser-types';
+import { acquireBrowserSlot, releaseBrowserSlot } from './chromium-pool';
 
 // ──────────────────────────────────────────────
 // Authenticated Journey Runtime
@@ -259,7 +260,12 @@ async function attemptLogin(
   const consoleErrors: string[] = [];
   let stepsExecuted = 0;
 
+  // Wave 5 Fase 1A: in-process semaphore caps concurrent Chromium
+  // launches per worker so an auth-runtime burst can't OOM the worker.
+  let slotHeld = false;
   try {
+    await acquireBrowserSlot();
+    slotHeld = true;
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({
       viewport: { width: 1280, height: 720 },
@@ -359,6 +365,7 @@ async function attemptLogin(
     };
 
   } finally {
+    if (slotHeld) releaseBrowserSlot();
     if (browser) {
       try { await browser.close(); } catch { /* best effort */ }
     }

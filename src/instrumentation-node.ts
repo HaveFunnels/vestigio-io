@@ -39,23 +39,30 @@ export async function registerNodeInstrumentation(): Promise<void> {
 		"../apps/audit-runner/run-prospect-scan"
 	);
 	const { prisma } = await import("@/libs/prismaDb");
+	// Wave 5 Fase 1A — every cron below is gated by a Redis-backed leader
+	// lock so multi-replica Railway deploys don't N-fold the work. When
+	// Redis isn't configured, the helper returns true unconditionally
+	// (single-process behavior is preserved).
+	const { withLeadership } = await import("@/libs/leader-election");
 
 	// ── Audit-runner heal cron ──
 	// Covers both customer audit cycles AND admin prospect scans (which
 	// share the same staleness pattern: stuck >10min in 'running').
 	const runHealPass = async () => {
-		try {
-			const healed = await healStuckCycles();
-			const redispatched = await redispatchOrphanedPending();
-			const prospectsHealed = await healStuckProspectScans();
-			if (healed > 0 || redispatched > 0 || prospectsHealed > 0) {
-				console.log(
-					`[heal] cycles healed=${healed} redispatched=${redispatched} prospects=${prospectsHealed}`,
-				);
+		await withLeadership("heal", { ttlSec: 90 }, async () => {
+			try {
+				const healed = await healStuckCycles();
+				const redispatched = await redispatchOrphanedPending();
+				const prospectsHealed = await healStuckProspectScans();
+				if (healed > 0 || redispatched > 0 || prospectsHealed > 0) {
+					console.log(
+						`[heal] cycles healed=${healed} redispatched=${redispatched} prospects=${prospectsHealed}`,
+					);
+				}
+			} catch (err) {
+				console.error("[heal] pass failed:", err);
 			}
-		} catch (err) {
-			console.error("[heal] pass failed:", err);
-		}
+		});
 	};
 
 	// Boot pass — non-blocking. Catches any orphans from a previous
@@ -69,6 +76,7 @@ export async function registerNodeInstrumentation(): Promise<void> {
 
 	// ── AnonymousLead + behavioral pixel cleanup cron ──
 	const runLeadCleanup = async () => {
+		await withLeadership("lead-cleanup", { ttlSec: 90 }, async () => {
 		try {
 			const result = await prisma.anonymousLead.deleteMany({
 				where: {
@@ -108,6 +116,7 @@ export async function registerNodeInstrumentation(): Promise<void> {
 		} catch (err) {
 			console.error("[lead-cleanup] pass failed:", err);
 		}
+		});
 	};
 
 	// Boot pass — clears any leftovers from previous downtime
@@ -137,6 +146,7 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	// Demo orgs are exempt — they must stay live so sales surfaces don't
 	// fall back to empty state.
 	const runInactivityPause = async () => {
+		await withLeadership("inactivity-pause", { ttlSec: 90 }, async () => {
 		try {
 			const cutoff = new Date(Date.now() - INACTIVITY_THRESHOLD_MS);
 			// Find candidate envs (activated, not already paused, idle past
@@ -204,6 +214,7 @@ export async function registerNodeInstrumentation(): Promise<void> {
 		} catch (err) {
 			console.error("[inactivity-pause] pass failed:", err);
 		}
+		});
 	};
 
 	// Boot pass — catch anything missed while the process was down.

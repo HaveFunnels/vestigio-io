@@ -1,3 +1,8 @@
+// React import needed so this file is loadable from non-Next runtimes
+// (e.g. the audit-runner worker process under tsx) — JSX compiles down
+// to React.createElement which fails with "React is not defined" without it.
+import * as React from "react";
+
 const integrations = {
 	isSanityEnabled: !!(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID && process.env.NEXT_PUBLIC_SANITY_PROJECT_ID !== "disabled"),
 	isOpenAIEnabled: true,

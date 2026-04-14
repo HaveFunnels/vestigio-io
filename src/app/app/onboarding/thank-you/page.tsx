@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Onboarding Thank-You / Bridge Page
@@ -19,13 +20,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 const REDIRECT_AFTER_MS = 4000;
 
 const STAGES = [
-	"Payment confirmed",
-	"Spinning up your workspace",
-	"Queueing your first audit",
-	"Opening your inventory",
+	"stage_payment",
+	"stage_workspace",
+	"stage_audit",
+	"stage_inventory",
 ] as const;
 
 export default function OnboardThankYouPage() {
+	const t = useTranslations("console.onboarding_thanks");
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const orgId = searchParams.get("org");
@@ -78,11 +80,10 @@ export default function OnboardThankYouPage() {
 				</div>
 
 				<h1 className="text-2xl font-semibold text-zinc-100">
-					You&rsquo;re in.
+					{t("title")}
 				</h1>
 				<p className="mt-2 text-sm text-zinc-400">
-					Vestigio is already scanning your site. You&rsquo;ll see pages appear
-					as they&rsquo;re discovered &mdash; no need to refresh.
+					{t("description")}
 				</p>
 
 				{/* Progress bar + countdown */}
@@ -93,17 +94,17 @@ export default function OnboardThankYouPage() {
 					/>
 				</div>
 				<p className="mt-2 text-xs text-zinc-500">
-					Redirecting in {countdown}s&hellip;
+					{t("redirecting", { countdown })}
 				</p>
 
 				{/* Stage progression */}
 				<ul className="mt-6 space-y-2.5 text-left">
-					{STAGES.map((label, idx) => {
+					{STAGES.map((key, idx) => {
 						const isDone = idx < activeStage;
 						const isActive = idx === activeStage;
 						return (
 							<li
-								key={label}
+								key={key}
 								className={`flex items-center gap-3 rounded-md border px-3.5 py-2.5 text-sm transition-colors ${
 									isDone
 										? "border-emerald-500/20 bg-emerald-500/5 text-zinc-300"
@@ -130,7 +131,7 @@ export default function OnboardThankYouPage() {
 								) : (
 									<span className="h-3.5 w-3.5 rounded-full border border-zinc-700" />
 								)}
-								<span>{label}</span>
+								<span>{t(key)}</span>
 							</li>
 						);
 					})}
@@ -142,7 +143,7 @@ export default function OnboardThankYouPage() {
 					onClick={() => router.replace("/app/inventory")}
 					className="mt-8 text-xs text-zinc-500 underline-offset-4 transition-colors hover:text-zinc-300 hover:underline"
 				>
-					Skip and go to inventory now
+					{t("skip")}
 				</button>
 
 				{orgId && (

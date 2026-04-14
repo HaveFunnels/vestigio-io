@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import InviteMemberModal from "@/components/app/InviteMemberModal";
 
 // ──────────────────────────────────────────────
@@ -27,6 +28,7 @@ interface Invite {
 }
 
 export default function MembersPage() {
+  const t = useTranslations("console.members");
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +91,7 @@ export default function MembersPage() {
   }
 
   async function handleRemoveMember(membershipId: string) {
-    if (!confirm("Are you sure you want to remove this member?")) return;
+    if (!confirm(t("confirm_remove"))) return;
     setActionLoading(membershipId);
     try {
       const res = await fetch("/api/organization/members", {
@@ -138,6 +140,9 @@ export default function MembersPage() {
   }
 
   function roleLabel(role: string) {
+    if (role === "admin") return t("roles.admin");
+    if (role === "member") return t("roles.member");
+    if (role === "viewer") return t("roles.viewer");
     return role.charAt(0).toUpperCase() + role.slice(1);
   }
 
@@ -158,9 +163,9 @@ export default function MembersPage() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-content">Members</h1>
+          <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
           <p className="mt-1 text-sm text-content-muted">
-            Manage team members and roles.
+            {t("subtitle")}
           </p>
         </div>
         {canManage && (
@@ -168,7 +173,7 @@ export default function MembersPage() {
             onClick={() => setShowInviteModal(true)}
             className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
           >
-            Invite Member
+            {t("invite_member")}
           </button>
         )}
       </div>
@@ -179,17 +184,17 @@ export default function MembersPage() {
           <thead>
             <tr className="border-b border-edge bg-surface-card">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                Member
+                {t("col_member")}
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                Role
+                {t("col_role")}
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                Joined
+                {t("col_joined")}
               </th>
               {canManage && (
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                  Actions
+                  {t("col_actions")}
                 </th>
               )}
             </tr>
@@ -198,13 +203,13 @@ export default function MembersPage() {
             {loading ? (
               <tr>
                 <td colSpan={canManage ? 4 : 3} className="px-4 py-8 text-center text-content-muted">
-                  Loading members...
+                  {t("loading")}
                 </td>
               </tr>
             ) : members.length === 0 ? (
               <tr>
                 <td colSpan={canManage ? 4 : 3} className="px-4 py-8 text-center text-content-muted">
-                  No members yet.
+                  {t("no_members")}
                 </td>
               </tr>
             ) : (
@@ -225,7 +230,7 @@ export default function MembersPage() {
                       )}
                       <div>
                         <div className="font-medium text-content">
-                          {member.name || "Unnamed"}
+                          {member.name || t("unnamed")}
                         </div>
                         <div className="text-xs text-content-muted">
                           {member.email}
@@ -254,17 +259,17 @@ export default function MembersPage() {
                             className="rounded border border-edge bg-surface px-2 py-1 text-xs text-content focus:border-emerald-500 focus:outline-none"
                           >
                             {currentUserRole === "owner" && (
-                              <option value="admin">Admin</option>
+                              <option value="admin">{t("roles.admin")}</option>
                             )}
-                            <option value="member">Member</option>
-                            <option value="viewer">Viewer</option>
+                            <option value="member">{t("roles.member")}</option>
+                            <option value="viewer">{t("roles.viewer")}</option>
                           </select>
                           <button
                             onClick={() => handleRemoveMember(member.id)}
                             disabled={actionLoading === member.id}
                             className="rounded px-2 py-1 text-xs text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                           >
-                            Remove
+                            {t("remove")}
                           </button>
                         </div>
                       ) : (
@@ -283,23 +288,23 @@ export default function MembersPage() {
       {canManage && pendingInvites.length > 0 && (
         <div className="mt-8">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-content-muted">
-            Pending Invites
+            {t("pending_invites")}
           </h2>
           <div className="overflow-x-auto rounded-md border border-edge">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-edge bg-surface-card">
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                    Email
+                    {t("col_email")}
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                    Role
+                    {t("col_role")}
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                    Expires
+                    {t("col_expires")}
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                    Actions
+                    {t("col_actions")}
                   </th>
                 </tr>
               </thead>
@@ -323,7 +328,7 @@ export default function MembersPage() {
                         disabled={actionLoading === invite.id}
                         className="rounded px-2 py-1 text-xs text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                       >
-                        Revoke
+                        {t("revoke")}
                       </button>
                     </td>
                   </tr>

@@ -39,6 +39,8 @@ interface OrgDetail {
   ownerId: string;
   plan: string;
   status: string;
+  orgType: "customer" | "demo" | "trial";
+  trialEndsAt: string | null;
   createdAt: string;
   updatedAt: string;
   members: OrgMember[];
@@ -62,6 +64,11 @@ interface OrgDetail {
     priceId: string | null;
     currentPeriodEnd: string | null;
   } | null;
+}
+
+interface PlanOption {
+  key: string;
+  label: string;
 }
 
 /* ---------- Helpers ---------- */
@@ -263,6 +270,15 @@ export default function AdminOrganizationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Plan/type editor state
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [planOptions, setPlanOptions] = useState<PlanOption[]>([]);
+  const [editPlan, setEditPlan] = useState("");
+  const [editStatus, setEditStatus] = useState<"active" | "pending" | "suspended">("active");
+  const [editOrgType, setEditOrgType] = useState<"customer" | "demo" | "trial">("customer");
+  const [editTrialEndsAt, setEditTrialEndsAt] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const fetchOrg = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/organizations/${orgId}`);
@@ -307,6 +323,83 @@ export default function AdminOrganizationDetailPage() {
       }
     } catch {
       alert(`Failed to ${action} organization.`);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  function openEditor() {
+    if (!org) return;
+    setEditPlan(org.plan);
+    setEditStatus((org.status as any) || "active");
+    setEditOrgType(org.orgType || "customer");
+    setEditTrialEndsAt(
+      org.trialEndsAt ? org.trialEndsAt.slice(0, 10) : "",
+    );
+    setSaveError(null);
+    setEditorOpen(true);
+
+    // Lazy-load plan options the first time the editor is opened.
+    if (planOptions.length === 0) {
+      fetch("/api/admin/pricing")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.plans) {
+            setPlanOptions(
+              data.plans.map((p: any) => ({ key: p.key, label: p.label })),
+            );
+          }
+        })
+        .catch(() => {
+          /* ignore — the select falls back to whatever plan the org currently has */
+        });
+    }
+  }
+
+  async function handleSaveEdits() {
+    if (!org) return;
+    setSaveError(null);
+
+    const payload: Record<string, any> = {};
+    if (editPlan && editPlan !== org.plan) payload.plan = editPlan;
+    if (editStatus && editStatus !== org.status) payload.status = editStatus;
+    if (editOrgType && editOrgType !== org.orgType) payload.orgType = editOrgType;
+
+    // Trial date: only send when orgType is trial, or when clearing
+    const currentTrialIso = org.trialEndsAt ? org.trialEndsAt.slice(0, 10) : "";
+    if (editOrgType === "trial") {
+      if (!editTrialEndsAt) {
+        setSaveError("Trial end date is required for trial orgs");
+        return;
+      }
+      if (editTrialEndsAt !== currentTrialIso) {
+        payload.trialEndsAt = new Date(editTrialEndsAt).toISOString();
+      }
+    } else if (org.orgType === "trial" && editOrgType !== "trial") {
+      payload.trialEndsAt = null;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      setEditorOpen(false);
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/admin/organizations/${orgId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSaveError(data.message || "Failed to update organization");
+        return;
+      }
+      await fetchOrg();
+      setEditorOpen(false);
+    } catch {
+      setSaveError("Failed to update organization");
     } finally {
       setActionLoading(false);
     }
@@ -417,6 +510,13 @@ export default function AdminOrganizationDetailPage() {
         {!loading && org && (
           <div className="flex shrink-0 items-center gap-2">
             <button
+              onClick={openEditor}
+              disabled={actionLoading}
+              className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
+            >
+              Edit plan &amp; type
+            </button>
+            <button
               onClick={handleSuspend}
               disabled={actionLoading}
               className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
@@ -437,6 +537,110 @@ export default function AdminOrganizationDetailPage() {
           </div>
         )}
       </div>
+
+      {/* ── Plan / Type Editor (inline) ── */}
+      {editorOpen && org && (
+        <div className="rounded-lg border border-edge bg-surface-card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-content">
+              Edit plan &amp; type
+            </h2>
+            <p className="text-xs text-content-faint">
+              Changes bypass the Stripe/Paddle flow and are audit-logged.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
+                Plan
+              </label>
+              <select
+                value={editPlan}
+                onChange={(e) => setEditPlan(e.target.value)}
+                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+              >
+                {/* Fallback to the current plan so we don't render an empty
+                    select while plan options are still loading. */}
+                {planOptions.length === 0 ? (
+                  <option value={org.plan}>{org.plan}</option>
+                ) : (
+                  planOptions.map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.label}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
+                Status
+              </label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value as any)}
+                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+              >
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
+                Org type
+              </label>
+              <select
+                value={editOrgType}
+                onChange={(e) => setEditOrgType(e.target.value as any)}
+                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+              >
+                <option value="customer">Customer</option>
+                <option value="trial">Trial</option>
+                <option value="demo">Demo</option>
+              </select>
+            </div>
+
+            {editOrgType === "trial" && (
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
+                  Trial ends at
+                </label>
+                <input
+                  type="date"
+                  value={editTrialEndsAt}
+                  onChange={(e) => setEditTrialEndsAt(e.target.value)}
+                  className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+                />
+              </div>
+            )}
+          </div>
+
+          {saveError && (
+            <p className="mt-3 text-xs text-red-400">{saveError}</p>
+          )}
+
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              onClick={() => setEditorOpen(false)}
+              disabled={actionLoading}
+              className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveEdits}
+              disabled={actionLoading}
+              className="rounded-lg bg-accent/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent/30 disabled:opacity-50"
+            >
+              {actionLoading ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

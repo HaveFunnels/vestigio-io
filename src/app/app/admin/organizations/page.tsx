@@ -378,13 +378,21 @@ export default function AdminOrganizationsPage() {
             filename="organizations"
           />
         </div>
-        <input
-          type="text"
-          placeholder="Search organizations..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search organizations..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
+          />
+          <Link
+            href="/app/admin/organizations/new"
+            className="rounded-lg bg-accent/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent/30"
+          >
+            New Organization
+          </Link>
+        </div>
       </div>
 
       {/* Stat Cards */}

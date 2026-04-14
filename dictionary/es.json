@@ -3704,5 +3704,86 @@
 		"s19_cnpj": "CNPJ: 65.445.297/0001-44",
 		"s19_address": "Dirección: Av. Prefeito Osmar Cunha, 416, Sala 1108, Centro, Florianópolis/SC, CEP 88.015-100, Brasil",
 		"s19_email": "support@vestigio.io"
+	},
+	"refund_policy": {
+		"meta_title": "Política de Reembolso — Vestigio",
+		"meta_description": "Política de Reembolso de Vestigio. Conozca cómo se tratan las solicitudes de reembolso, cancelación y disputas de facturación.",
+		"heading": "Política de Reembolso",
+		"last_updated": "Última actualización: 14 de abril de 2026",
+		"translation_disclaimer": "Esta es una traducción de cortesía de nuestra Política de Reembolso en portugués. En caso de conflicto o inconsistencia entre versiones, prevalece la versión en portugués.",
+		"intro": "Esta Política de Reembolso rige las solicitudes de reverso, reembolso, cancelación financiera y tratamiento de cobros relativos a los Servicios de VESTIGIO TECNOLOGIA LTDA.",
+		"s1_title": "1. Regla general",
+		"s1_body": "Vestigio ofrece servicios SaaS recurrentes, free trial, planes pagos y créditos de IA. Como regla general:",
+		"s1_items": [
+			"los valores relativos a períodos ya iniciados, utilizados, puestos a disposición o efectivamente disfrutados no son reembolsables;",
+			"lo que fue utilizado, fue utilizado;",
+			"la cancelación no equivale automáticamente a reembolso;",
+			"los créditos de IA se tratan según reglas específicas de esta Política."
+		],
+		"s2_title": "2. Reembolso de planes mensuales y anuales",
+		"s2_body_1": "El Cliente solo podrá ser elegible a reembolso de suscripción cuando todas las condiciones siguientes sean cumulativamente atendidas:",
+		"s2_items": [
+			"haya un problema material, defecto relevante o indisponibilidad imputable a la propia Vestigio;",
+			"el problema comprometa sustancialmente el uso normal del Servicio contratado;",
+			"el problema sea reportado al soporte por el correo support@vestigio.io con detalles suficientes para análisis;",
+			"Vestigio confirme la existencia del problema;",
+			"Vestigio no logre resolver el problema en hasta 72 (setenta y dos) horas a partir de la validación inicial por el soporte;",
+			"el Cliente colabore de buena fe con la investigación, incluso proporcionando información, logs, capturas, evidencias y, cuando sea razonablemente necesario, medios técnicos para reproducción."
+		],
+		"s2_body_2": "Incluso cuando haya elegibilidad, el reembolso quedará limitado únicamente al período aún no disfrutado de la suscripción.",
+		"s2_body_3": "No habrá reembolso de la parte del período ya utilizada, puesta a disposición o efectivamente aprovechada por el Cliente.",
+		"s3_title": "3. Situaciones en que no habrá reembolso",
+		"s3_body": "No habrá reembolso cuando el problema derive, total o parcialmente, de:",
+		"s3_items": [
+			"error operativo del Cliente;",
+			"mala configuración;",
+			"uso incompatible con la documentación;",
+			"entorno, dominio, tienda, cuenta, integración, píxel o snippet controlado por el Cliente o por terceros;",
+			"indisponibilidad, limitación, cambio o bloqueo causado por terceros;",
+			"caída, falla o limitación de integraciones, plataformas o APIs externas;",
+			"uso abusivo, fraudulento o no autorizado de la plataforma;",
+			"expectativa comercial frustrada sin defecto real del Servicio;",
+			"interpretación subjetiva de outputs generados por IA o automatización;",
+			"intento de uso de la plataforma en activos sin la debida autorización."
+		],
+		"s4_title": "4. Créditos de IA",
+		"s4_body_1": "Los créditos de IA:",
+		"s4_items": [
+			"están vinculados al plan pago, salvo información expresa en contrario;",
+			"pueden ser adquiridos, acumulados o consumidos conforme a las reglas del producto;",
+			"no son reembolsables, incluso cuando no sean utilizados, salvo cobro indebido o exigencia legal obligatoria en contrario."
+		],
+		"s4_body_2": "Una vez puestos a disposición en la cuenta, los créditos de IA no serán devueltos en dinero, reintegrados proporcionalmente ni convertidos en reembolso automático.",
+		"s5_title": "5. Free trial",
+		"s5_body": "Períodos de free trial, liberaciones promocionales, créditos promocionales, pruebas gratuitas o accesos concedidos de forma experimental no generan derecho a reembolso.",
+		"s6_title": "6. Cancelación",
+		"s6_body": "La cancelación de la suscripción impide cobros futuros relacionados con la renovación recurrente, pero no genera automáticamente el reembolso de valores ya cobrados.",
+		"s7_title": "7. Cobro indebido o duplicado",
+		"s7_body": "Si hay un cobro comprobadamente indebido, duplicado o incorrecto, Vestigio podrá, a su criterio y según el caso:",
+		"s7_items": [
+			"realizar reverso;",
+			"conceder crédito;",
+			"compensar el valor en ciclo futuro;",
+			"corregir administrativamente el cobro."
+		],
+		"s8_title": "8. Procedimiento para solicitud",
+		"s8_body": "Las solicitudes de reembolso o disputa de cobro deben enviarse a support@vestigio.io con:",
+		"s8_items": [
+			"nombre de la cuenta o empresa;",
+			"correo electrónico registrado;",
+			"comprobante o referencia del cobro;",
+			"descripción objetiva del problema;",
+			"fecha aproximada de la ocurrencia;",
+			"evidencias razonables, cuando corresponda."
+		],
+		"s9_title": "9. Forma de procesamiento",
+		"s9_body_1": "Cuando sea aprobado, el reembolso podrá ser procesado por el mismo método de pago utilizado originalmente, por crédito, reverso, descuento u otro medio operativamente viable, incluso a través del procesador de pagos aplicable, como Paddle.",
+		"s9_body_2": "Los plazos finales de liquidación pueden depender de bancos, marcas, instituciones financieras y procesadores de terceros.",
+		"s10_title": "10. Chargebacks y disputas",
+		"s10_body_1": "Antes de abrir chargeback, disputa bancaria o contestación ante el procesador de pagos, el Cliente debe buscar solución administrativa con Vestigio.",
+		"s10_body_2": "Chargebacks abusivos, indebidos o incompatibles con esta Política podrán resultar en suspensión de la cuenta, terminación del acceso y adopción de las medidas correspondientes.",
+		"s11_title": "11. Contacto",
+		"s11_body": "Correo para soporte, reembolso y disputa de cobro:",
+		"s11_email": "support@vestigio.io"
 	}
 }

@@ -4046,5 +4046,85 @@
 		"s19_cnpj": "CNPJ: 65.445.297/0001-44",
 		"s19_address": "Endereço: Av. Prefeito Osmar Cunha, 416, Sala 1108, Centro, Florianópolis/SC, CEP 88.015-100",
 		"s19_email": "support@vestigio.io"
+	},
+	"refund_policy": {
+		"meta_title": "Política de Reembolso — Vestigio",
+		"meta_description": "Política de Reembolso da Vestigio. Entenda como são tratados pedidos de reembolso, cancelamento e contestação de cobrança.",
+		"heading": "Política de Reembolso",
+		"last_updated": "Última atualização: 14 de abril de 2026",
+		"intro": "Esta Política de Reembolso rege os pedidos de estorno, reembolso, cancelamento financeiro e tratamento de cobranças relativos aos Serviços da VESTIGIO TECNOLOGIA LTDA.",
+		"s1_title": "1. Regra geral",
+		"s1_body": "A Vestigio oferece serviços SaaS recorrentes, free trial, planos pagos e créditos de IA. Como regra geral:",
+		"s1_items": [
+			"valores referentes a períodos já iniciados, utilizados, disponibilizados ou efetivamente usufruídos não são reembolsáveis;",
+			"o que foi utilizado, foi utilizado;",
+			"cancelamento não equivale automaticamente a reembolso;",
+			"créditos de IA são tratados conforme regras específicas desta Política."
+		],
+		"s2_title": "2. Reembolso de planos mensais e anuais",
+		"s2_body_1": "O Cliente somente poderá ser elegível a reembolso de assinatura quando todas as condições abaixo forem cumulativamente atendidas:",
+		"s2_items": [
+			"houver problema material, defeito relevante ou indisponibilidade imputável à própria Vestigio;",
+			"o problema comprometer substancialmente o uso normal do Serviço contratado;",
+			"o problema for reportado ao suporte pelo email support@vestigio.io com detalhes suficientes para análise;",
+			"a Vestigio confirmar a existência do problema;",
+			"a Vestigio não conseguir resolver o problema em até 72 (setenta e duas) horas a partir da validação inicial pelo suporte;",
+			"o Cliente colaborar de boa-fé com a investigação, inclusive fornecendo informações, logs, prints, evidências e, quando razoavelmente necessário, meios técnicos para reprodução."
+		],
+		"s2_body_2": "Mesmo quando houver elegibilidade, o reembolso ficará limitado apenas ao período ainda não usufruído da assinatura.",
+		"s2_body_3": "Não haverá reembolso da parte do período já utilizada, disponibilizada ou efetivamente aproveitada pelo Cliente.",
+		"s3_title": "3. Situações em que não haverá reembolso",
+		"s3_body": "Não haverá reembolso quando o problema decorrer, total ou parcialmente, de:",
+		"s3_items": [
+			"erro operacional do Cliente;",
+			"má configuração;",
+			"uso incompatível com a documentação;",
+			"ambiente, domínio, loja, conta, integração, pixel ou snippet controlado pelo Cliente ou por terceiros;",
+			"indisponibilidade, limitação, mudança ou bloqueio causado por terceiros;",
+			"queda, falha ou limitação de integrações, plataformas ou APIs externas;",
+			"uso abusivo, fraudulento ou não autorizado da plataforma;",
+			"expectativa comercial frustrada sem defeito real do Serviço;",
+			"interpretação subjetiva de outputs gerados por IA ou automação;",
+			"tentativa de uso da plataforma em ativos sem autorização adequada."
+		],
+		"s4_title": "4. Créditos de IA",
+		"s4_body_1": "Os créditos de IA:",
+		"s4_items": [
+			"são vinculados ao plano pago, salvo informação expressa em contrário;",
+			"podem ser adquiridos, acumulados ou consumidos conforme regras do produto;",
+			"não são reembolsáveis, inclusive quando não utilizados, salvo cobrança indevida ou exigência legal obrigatória em contrário."
+		],
+		"s4_body_2": "Uma vez disponibilizados para a conta, créditos de IA não serão devolvidos em dinheiro, estornados proporcionalmente nem convertidos em reembolso automático.",
+		"s5_title": "5. Free trial",
+		"s5_body": "Períodos de free trial, liberações promocionais, créditos promocionais, testes gratuitos ou acessos concedidos de forma experimental não geram direito a reembolso.",
+		"s6_title": "6. Cancelamento",
+		"s6_body": "O cancelamento da assinatura impede cobranças futuras relacionadas à renovação recorrente, mas não gera automaticamente reembolso de valores já cobrados.",
+		"s7_title": "7. Cobrança indevida ou duplicada",
+		"s7_body": "Se houver cobrança comprovadamente indevida, duplicada ou incorreta, a Vestigio poderá, a seu critério e conforme o caso:",
+		"s7_items": [
+			"realizar estorno;",
+			"conceder crédito;",
+			"compensar o valor em ciclo futuro;",
+			"corrigir administrativamente a cobrança."
+		],
+		"s8_title": "8. Procedimento para solicitação",
+		"s8_body": "Pedidos de reembolso ou contestação de cobrança devem ser enviados para support@vestigio.io com:",
+		"s8_items": [
+			"nome da conta ou empresa;",
+			"email cadastrado;",
+			"comprovante ou referência da cobrança;",
+			"descrição objetiva do problema;",
+			"data aproximada da ocorrência;",
+			"evidências razoáveis, quando aplicável."
+		],
+		"s9_title": "9. Forma de processamento",
+		"s9_body_1": "Quando aprovado, o reembolso poderá ser processado por meio do mesmo método de pagamento utilizado originalmente, por crédito, estorno, abatimento ou outro meio operacionalmente viável, inclusive via processador de pagamentos aplicável, como a Paddle.",
+		"s9_body_2": "Os prazos finais de liquidação podem depender de bancos, bandeiras, instituições financeiras e processadores terceiros.",
+		"s10_title": "10. Chargebacks e disputas",
+		"s10_body_1": "Antes de abrir chargeback, disputa bancária ou contestação junto ao processador de pagamento, o Cliente deve buscar solução administrativa com a Vestigio.",
+		"s10_body_2": "Chargebacks abusivos, indevidos ou incompatíveis com esta Política poderão resultar em suspensão da conta, encerramento do acesso e adoção das medidas cabíveis.",
+		"s11_title": "11. Contato",
+		"s11_body": "Email para suporte, reembolso e contestação de cobrança:",
+		"s11_email": "support@vestigio.io"
 	}
 }

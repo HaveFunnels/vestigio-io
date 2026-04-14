@@ -3294,5 +3294,86 @@
 		"s19_cnpj": "CNPJ: 65.445.297/0001-44",
 		"s19_address": "Adresse: Av. Prefeito Osmar Cunha, 416, Sala 1108, Centro, Florianópolis/SC, PLZ 88.015-100, Brasilien",
 		"s19_email": "support@vestigio.io"
+	},
+	"refund_policy": {
+		"meta_title": "Rückerstattungsrichtlinie — Vestigio",
+		"meta_description": "Rückerstattungsrichtlinie von Vestigio. Erfahren Sie, wie Rückerstattungsanträge, Kündigungen und Abrechnungsstreitigkeiten behandelt werden.",
+		"heading": "Rückerstattungsrichtlinie",
+		"last_updated": "Zuletzt aktualisiert: 14. April 2026",
+		"translation_disclaimer": "Dies ist eine unverbindliche deutsche Übersetzung unserer portugiesischen Rückerstattungsrichtlinie. Bei Widersprüchen oder Abweichungen zwischen den Fassungen ist die portugiesische Fassung maßgeblich.",
+		"intro": "Diese Rückerstattungsrichtlinie regelt Anträge auf Stornierung, Rückerstattung, finanzielle Kündigung und die Behandlung von Abrechnungen im Zusammenhang mit den Diensten der VESTIGIO TECNOLOGIA LTDA.",
+		"s1_title": "1. Allgemeine Regel",
+		"s1_body": "Vestigio bietet wiederkehrende SaaS-Dienste, Free Trial, kostenpflichtige Tarife und KI-Credits. Als allgemeine Regel gilt:",
+		"s1_items": [
+			"Beträge für bereits begonnene, genutzte, bereitgestellte oder effektiv in Anspruch genommene Zeiträume sind nicht erstattungsfähig;",
+			"was genutzt wurde, ist genutzt;",
+			"Kündigung entspricht nicht automatisch einer Rückerstattung;",
+			"KI-Credits werden nach spezifischen Regeln dieser Richtlinie behandelt."
+		],
+		"s2_title": "2. Rückerstattung von Monats- und Jahrestarifen",
+		"s2_body_1": "Der Kunde kann nur dann Anspruch auf Rückerstattung eines Abonnements haben, wenn alle folgenden Bedingungen kumulativ erfüllt sind:",
+		"s2_items": [
+			"es liegt ein wesentliches Problem, ein relevanter Mangel oder eine Nichtverfügbarkeit vor, die Vestigio selbst zuzurechnen ist;",
+			"das Problem beeinträchtigt die normale Nutzung des beauftragten Dienstes wesentlich;",
+			"das Problem wird dem Support per E-Mail an support@vestigio.io mit ausreichenden Details zur Analyse gemeldet;",
+			"Vestigio bestätigt das Vorliegen des Problems;",
+			"Vestigio kann das Problem nicht innerhalb von 72 (zweiundsiebzig) Stunden ab der ersten Validierung durch den Support lösen;",
+			"der Kunde arbeitet in gutem Glauben bei der Untersuchung mit, einschließlich durch Bereitstellung von Informationen, Logs, Screenshots, Nachweisen und, soweit angemessen erforderlich, technischen Mitteln zur Reproduktion."
+		],
+		"s2_body_2": "Auch bei Anspruchsberechtigung ist die Rückerstattung auf den noch nicht in Anspruch genommenen Teil des Abonnements beschränkt.",
+		"s2_body_3": "Für den bereits genutzten, bereitgestellten oder vom Kunden effektiv in Anspruch genommenen Teil des Zeitraums erfolgt keine Rückerstattung.",
+		"s3_title": "3. Situationen, in denen keine Rückerstattung erfolgt",
+		"s3_body": "Eine Rückerstattung erfolgt nicht, wenn das Problem ganz oder teilweise auf Folgendes zurückzuführen ist:",
+		"s3_items": [
+			"operativer Fehler des Kunden;",
+			"Fehlkonfiguration;",
+			"Nutzung, die mit der Dokumentation unvereinbar ist;",
+			"Umgebung, Domain, Shop, Konto, Integration, Pixel oder Snippet, die vom Kunden oder von Dritten kontrolliert werden;",
+			"Nichtverfügbarkeit, Einschränkung, Änderung oder Sperrung durch Dritte;",
+			"Ausfall, Fehler oder Einschränkung externer Integrationen, Plattformen oder APIs;",
+			"missbräuchliche, betrügerische oder unbefugte Nutzung der Plattform;",
+			"enttäuschte kommerzielle Erwartung ohne tatsächlichen Mangel des Dienstes;",
+			"subjektive Interpretation von Outputs, die durch KI oder Automatisierung erzeugt wurden;",
+			"Versuch, die Plattform an Assets ohne angemessene Autorisierung zu nutzen."
+		],
+		"s4_title": "4. KI-Credits",
+		"s4_body_1": "KI-Credits:",
+		"s4_items": [
+			"sind an den kostenpflichtigen Tarif gebunden, sofern nicht ausdrücklich anders angegeben;",
+			"können gemäß den Produktregeln erworben, akkumuliert oder verbraucht werden;",
+			"sind nicht erstattungsfähig, auch nicht, wenn sie nicht genutzt wurden, außer bei unzulässiger Abrechnung oder zwingender gesetzlicher Anforderung."
+		],
+		"s4_body_2": "Einmal dem Konto zur Verfügung gestellte KI-Credits werden weder in bar zurückerstattet noch anteilig erstattet oder automatisch in Rückerstattungen umgewandelt.",
+		"s5_title": "5. Free Trial",
+		"s5_body": "Free-Trial-Zeiträume, aktionsbedingte Freigaben, aktionsbedingte Credits, kostenlose Tests oder experimentell gewährte Zugänge begründen keinen Anspruch auf Rückerstattung.",
+		"s6_title": "6. Kündigung",
+		"s6_body": "Die Kündigung des Abonnements verhindert zukünftige Abrechnungen im Zusammenhang mit der wiederkehrenden Verlängerung, generiert jedoch nicht automatisch eine Rückerstattung bereits gezahlter Beträge.",
+		"s7_title": "7. Unzulässige oder doppelte Abrechnung",
+		"s7_body": "Bei einer nachweislich unzulässigen, doppelten oder fehlerhaften Abrechnung kann Vestigio nach eigenem Ermessen und je nach Fall:",
+		"s7_items": [
+			"eine Rückbuchung vornehmen;",
+			"ein Guthaben gewähren;",
+			"den Betrag in einem zukünftigen Zyklus verrechnen;",
+			"die Abrechnung administrativ korrigieren."
+		],
+		"s8_title": "8. Vorgehen bei Anträgen",
+		"s8_body": "Rückerstattungsanträge oder Abrechnungsbeanstandungen sind an support@vestigio.io zu senden, mit:",
+		"s8_items": [
+			"Konto- oder Unternehmensname;",
+			"registrierte E-Mail-Adresse;",
+			"Nachweis oder Referenz der Abrechnung;",
+			"sachliche Beschreibung des Problems;",
+			"ungefähres Datum des Vorfalls;",
+			"angemessene Nachweise, soweit zutreffend."
+		],
+		"s9_title": "9. Art der Abwicklung",
+		"s9_body_1": "Bei Genehmigung kann die Rückerstattung über dieselbe ursprünglich verwendete Zahlungsmethode, als Guthaben, Rückbuchung, Abzug oder auf andere betrieblich realisierbare Weise erfolgen, einschließlich über den jeweils anwendbaren Zahlungsabwickler, etwa Paddle.",
+		"s9_body_2": "Endgültige Abwicklungszeiträume können von Banken, Kreditkartenmarken, Finanzinstituten und Drittabwicklern abhängen.",
+		"s10_title": "10. Chargebacks und Streitfälle",
+		"s10_body_1": "Bevor ein Chargeback, eine Bankdisput oder eine Beanstandung beim Zahlungsabwickler eröffnet wird, muss der Kunde eine administrative Lösung mit Vestigio suchen.",
+		"s10_body_2": "Missbräuchliche, unzulässige oder mit dieser Richtlinie unvereinbare Chargebacks können zur Sperrung des Kontos, Beendigung des Zugangs und Ergreifung geeigneter Maßnahmen führen.",
+		"s11_title": "11. Kontakt",
+		"s11_body": "E-Mail für Support, Rückerstattung und Abrechnungsbeanstandungen:",
+		"s11_email": "support@vestigio.io"
 	}
 }

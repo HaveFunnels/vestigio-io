@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // CycleProgressBanner  (Wave 5 Fase 2)
@@ -43,6 +44,7 @@ export default function CycleProgressBanner({ hidden = false }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cycleFromQuery = searchParams.get("cycle");
+  const t = useTranslations("console.cycle_banner");
 
   const [cycleId, setCycleId] = useState<string | null>(cycleFromQuery);
   const [snap, setSnap] = useState<CycleSnapshot | null>(null);
@@ -114,11 +116,11 @@ export default function CycleProgressBanner({ hidden = false }: Props) {
   const isRunning = snap.status === "running" || snap.status === "pending";
   const label = done
     ? done === "failed"
-      ? "Audit failed"
-      : "Audit complete"
+      ? t("failed")
+      : t("complete")
     : snap.status === "pending"
-      ? "Audit queued"
-      : `Auditing your ${snap.cycleType === "full" ? "site" : snap.cycleType} — live`;
+      ? t("queued")
+      : t("running");
 
   const barColor =
     done === "failed"
@@ -143,11 +145,16 @@ export default function CycleProgressBanner({ hidden = false }: Props) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-content">{label}</p>
           <p className="mt-0.5 truncate text-xs text-content-faint">
-            {snap.pagesDiscovered} page{snap.pagesDiscovered === 1 ? "" : "s"}{" "}
-            discovered &middot; {snap.findingsCount} finding
-            {snap.findingsCount === 1 ? "" : "s"}{" "}
-            {isRunning ? "so far" : "in total"} &middot;{" "}
-            {Math.round(snap.durationMs / 1000)}s elapsed
+            {snap.pagesDiscovered === 1
+              ? t("pages_one")
+              : t("pages_other", { count: snap.pagesDiscovered })}
+            {" · "}
+            {snap.findingsCount === 1
+              ? t("findings_one")
+              : t("findings_other", { count: snap.findingsCount })}{" "}
+            {isRunning ? t("so_far") : t("in_total")}
+            {" · "}
+            {t("elapsed", { seconds: Math.round(snap.durationMs / 1000) })}
           </p>
         </div>
         {done && (
@@ -155,7 +162,7 @@ export default function CycleProgressBanner({ hidden = false }: Props) {
             onClick={() => setHiddenLocal(true)}
             className="rounded-md border border-edge px-2 py-1 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
           >
-            Dismiss
+            {t("dismiss")}
           </button>
         )}
       </div>

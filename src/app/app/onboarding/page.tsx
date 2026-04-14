@@ -1122,15 +1122,10 @@ export default function OnboardPage() {
 								>
 									{loading
 										? t("plan.opening_checkout")
-										: t("review.activate_environment", {
-												default: "Activate environment",
-											})}
+										: t("review.activate_environment")}
 								</button>
 								<p className='text-center text-xs text-content-faint'>
-									{t("review.activate_hint", {
-										default:
-											"Your first audit starts immediately. Follow progress live on the inventory page.",
-									})}
+									{t("review.activate_hint")}
 								</p>
 							</>
 						)}

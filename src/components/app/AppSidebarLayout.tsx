@@ -321,6 +321,7 @@ export default function AppSidebarLayout({
 	const pathnameForBanner = usePathname();
 	const showCycleBanner =
 		!isAdmin && shouldShowCycleBanner(pathnameForBanner);
+	const pausedBannerT = useTranslations("console.paused_banner");
 
 	return (
 		<div className="flex h-screen bg-surface-shell text-content">
@@ -389,13 +390,21 @@ export default function AppSidebarLayout({
 				<div className="relative mx-2 mb-2 flex min-h-0 flex-1 flex-col rounded-xl bg-surface shadow-lg ring-1 ring-edge/50">
 					{/* Wave 5 Fase 2 — paused banner. The resume-on-access hook
 					    in the layout server component already dispatched a
-					    catch-up cycle, so we just communicate what happened
-					    rather than offer a "Resume audits" button. */}
-					{!isAdmin && orgCtx.environments.some((e) => e.continuousPaused) && (
+					    catch-up cycle for the CURRENT env, so we just
+					    communicate what happened rather than offer a
+					    "Resume audits" button.
+					    Fix #13: scope to the active env only — without this,
+					    a user with multiple envs where only one is paused
+					    sees the banner on every env, and the copy
+					    "Resuming now" was misleading because resumeIfPaused
+					    only fires for orgCtx.envId. */}
+					{!isAdmin && orgCtx.environments.some(
+						(e) => e.id === orgCtx.envId && e.continuousPaused,
+					) && (
 						<div className="mx-6 mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
-							<p className="font-medium">Audits were paused after 14 days without access.</p>
+							<p className="font-medium">{pausedBannerT("title")}</p>
 							<p className="mt-0.5 text-xs text-amber-700/80 dark:text-amber-400/80">
-								Resuming now — a catch-up audit is running against your site. You&apos;ll see updated findings shortly.
+								{pausedBannerT("body")}
 							</p>
 						</div>
 					)}

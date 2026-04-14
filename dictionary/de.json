@@ -1977,7 +1977,9 @@
         "saas_access": "__TODO__",
         "not_provided": "__TODO__",
         "saas_skipped": "__TODO__",
-        "saas_not_configured": "__TODO__"
+        "saas_not_configured": "__TODO__",
+        "activate_environment": "Umgebung aktivieren",
+        "activate_hint": "Dein erstes Audit startet sofort. Verfolge den Fortschritt live auf der Inventar-Seite."
       },
       "plan": {
         "title": "__TODO__",
@@ -2173,6 +2175,24 @@
       "eyebrow": "Insgesamt mit Vestigio zurückgewonnen",
       "seven_days": "7 Tage",
       "thirty_days": "30 Tage"
+    },
+    "cycle_banner": {
+      "queued": "Audit in Warteschlange",
+      "running": "Dein Shop wird geprüft — live",
+      "complete": "Audit abgeschlossen",
+      "failed": "Audit fehlgeschlagen",
+      "pages_one": "1 Seite gefunden",
+      "pages_other": "{count} Seiten gefunden",
+      "findings_one": "1 Befund",
+      "findings_other": "{count} Befunde",
+      "so_far": "bisher",
+      "in_total": "insgesamt",
+      "elapsed": "{seconds}s vergangen",
+      "dismiss": "Ausblenden"
+    },
+    "paused_banner": {
+      "title": "Audits wurden nach 14 Tagen ohne Zugriff pausiert.",
+      "body": "Wird jetzt fortgesetzt — ein Nachhol-Audit läuft gegen deinen Shop. Aktualisierte Befunde erscheinen in Kürze."
     },
     "organization": {
       "title": "Organisation",

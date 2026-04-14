@@ -2308,6 +2308,24 @@
 			"seven_days": "7 dias",
 			"thirty_days": "30 dias"
 		},
+		"cycle_banner": {
+			"queued": "Auditoria na fila",
+			"running": "Auditando seu site — ao vivo",
+			"complete": "Auditoria concluída",
+			"failed": "Auditoria falhou",
+			"pages_one": "1 página descoberta",
+			"pages_other": "{count} páginas descobertas",
+			"findings_one": "1 finding",
+			"findings_other": "{count} findings",
+			"so_far": "até agora",
+			"in_total": "no total",
+			"elapsed": "{seconds}s decorridos",
+			"dismiss": "Dispensar"
+		},
+		"paused_banner": {
+			"title": "Auditorias pausadas após 14 dias sem acesso.",
+			"body": "Retomando agora — uma auditoria de recuperação está rodando no seu site. Os findings atualizados aparecem em instantes."
+		},
 		"organization": {
 			"title": "Organização",
 			"subtitle": "Gerencie sua organização, plano e ambientes.",
@@ -2841,7 +2859,9 @@
 				"saas_skipped": "Pulado — configure depois em Fontes de Dados",
 				"saas_not_configured": "Não configurado — configure depois em Fontes de Dados",
 				"no_email_yet": "sem e-mail ainda",
-				"email_only": "Somente e-mail"
+				"email_only": "Somente e-mail",
+				"activate_environment": "Ativar ambiente",
+				"activate_hint": "Sua primeira auditoria começa imediatamente. Acompanhe o progresso ao vivo na página de inventário."
 			},
 			"plan": {
 				"title": "Escolha seu plano",

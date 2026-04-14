@@ -44,6 +44,43 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	// Redis isn't configured, the helper returns true unconditionally
 	// (single-process behavior is preserved).
 	const { withLeadership } = await import("@/libs/leader-election");
+	// Wave 5 Fase 1A fix (C1): explicitly initialize the Redis client at
+	// boot. Without this call, getRedis() (the sync getter used by the
+	// queue + leader-election + chromium pool) returns null indefinitely
+	// because nothing else triggers the lazy connect. Net effect of
+	// missing this: queue is a no-op, every dispatch falls back to in-
+	// process Promise.then(), leader election always returns true on every
+	// replica → N-fold heal/inactivity-pause work. Discovered by Fase 1
+	// audit agent (issue C1).
+	const { initRedis } = await import("@/libs/redis");
+	await initRedis().catch((err) => {
+		console.warn("[instrumentation] initRedis failed:", err);
+	});
+
+	// Wave 5 Fase 2 fix (#15): legacy backfill. Pre-Fase-2 envs don't
+	// have Environment.activated=true even though they have completed
+	// audit cycles. Without this, the JWT.hasActivatedEnv stays false
+	// for existing customers and they get bounced into onboarding on
+	// next login. One-shot idempotent updateMany at boot — once all envs
+	// are flipped, subsequent runs are zero-row no-ops.
+	try {
+		const backfilled = await prisma.environment.updateMany({
+			where: {
+				activated: false,
+				auditCycles: {
+					some: { status: "complete" },
+				},
+			},
+			data: { activated: true },
+		});
+		if (backfilled.count > 0) {
+			console.log(
+				`[instrumentation] backfilled activated=true on ${backfilled.count} legacy envs`,
+			);
+		}
+	} catch (err) {
+		console.warn("[instrumentation] activated backfill failed:", err);
+	}
 
 	// ── Audit-runner heal cron ──
 	// Covers both customer audit cycles AND admin prospect scans (which
@@ -154,6 +191,12 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			// lastAccessedAt counts as "never accessed" → also eligible after
 			// creation + threshold. We gate on activated=true so we never
 			// pause something that hasn't had a real cycle yet.
+			//
+			// Wave 5 Fase 2 fix (#11): use an explicit `in` list instead of
+			// `not: "demo"`. Prisma `not` semantics include null rows, so
+			// any legacy org with `orgType=null` would be auto-paused. The
+			// schema default is "customer" but pre-migration rows may be
+			// null. Listing only the orgTypes we DO want to pause is safer.
 			const candidates = await prisma.environment.findMany({
 				where: {
 					activated: true,
@@ -163,7 +206,7 @@ export async function registerNodeInstrumentation(): Promise<void> {
 						{ lastAccessedAt: null, createdAt: { lt: cutoff } },
 					],
 					organization: {
-						orgType: { not: "demo" },
+						orgType: { in: ["customer", "trial"] },
 					},
 				},
 				select: {
@@ -180,6 +223,15 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			if (candidates.length === 0) return;
 
 			for (const env of candidates) {
+				// Wave 5 Fase 2 fix (H4): skip rows whose organization
+				// relation is somehow null (stale FK, soft-delete artifact)
+				// — otherwise `recipient: "unknown"` poisons NotificationLog.
+				if (!env.organization?.ownerId) {
+					console.warn(
+						`[inactivity-pause] skipping env=${env.id} (no owner resolvable)`,
+					);
+					continue;
+				}
 				try {
 					await prisma.environment.update({
 						where: { id: env.id },
@@ -192,10 +244,10 @@ export async function registerNodeInstrumentation(): Promise<void> {
 					// from it. Keeps this cron fast and idempotent.
 					await prisma.notificationLog.create({
 						data: {
-							userId: env.organization?.ownerId ?? null,
+							userId: env.organization.ownerId,
 							channel: "email",
 							event: "inactivity_pause",
-							recipient: env.organization?.ownerId ?? "unknown",
+							recipient: env.organization.ownerId,
 							subject: `Audits paused for ${env.domain}`,
 							status: "skipped", // actual send is handled downstream
 							provider: "internal",

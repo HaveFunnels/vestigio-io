@@ -162,6 +162,19 @@ export async function releaseEnvLock(envId: string): Promise<void> {
  * lock (another worker already running it), the worker is expected to
  * call requeueForEnvContention() — the queue itself doesn't touch DB
  * to check lock state.
+ *
+ * Wave 5 Fase 1A fix (C3): the `attempt` field returned here is the
+ * CURRENT counter value WITHOUT incrementing. The counter only bumps
+ * when the worker confirms it actually started doing work via
+ * markDispatchAttempted() — env-contention requeues don't burn the
+ * retry budget, and crashes between LPOP and lock-acquire don't leave
+ * a counter prematurely incremented.
+ *
+ * Wave 5 Fase 1A fix (M1): if the meta hash has been evicted (Redis
+ * memory pressure with `allkeys-lru`), `envId` would be null and the
+ * worker would skip the env lock entirely → two workers could run the
+ * same env concurrently. The worker fallback is to look up envId from
+ * the AuditCycle row in Postgres before dispatch — see worker-loop.ts.
  */
 export async function dequeueAuditCycle(): Promise<DequeueResult | null> {
 	const redis = getRedis();
@@ -176,8 +189,10 @@ export async function dequeueAuditCycle(): Promise<DequeueResult | null> {
 			const envId = meta?.environmentId ?? null;
 			const orgId = meta?.organizationId ?? null;
 
-			const attempt = await redis.incr(attemptsKey(cycleId));
-			await redis.expire(attemptsKey(cycleId), 24 * 60 * 60);
+			// Fix C3: read counter without modifying. Default to 0 (first
+			// attempt) when no counter exists yet.
+			const raw = await redis.get(attemptsKey(cycleId));
+			const attempt = raw ? parseInt(raw, 10) : 0;
 
 			return {
 				cycleId,
@@ -195,9 +210,33 @@ export async function dequeueAuditCycle(): Promise<DequeueResult | null> {
 }
 
 /**
+ * Mark that the worker has acquired the env lock and is about to call
+ * runAuditCycle. This is the canonical "attempt incremented" point —
+ * called only after lock acquisition succeeds. Returns the post-INCR
+ * attempt number for the worker to log + decide retry/DLQ.
+ *
+ * Wave 5 Fase 1A fix (C3): separating the increment from dequeue means
+ * env-contention requeues (no lock acquired) cost nothing against the
+ * retry budget, and a worker crash between dequeue and dispatch leaves
+ * the counter untouched.
+ */
+export async function markDispatchAttempted(cycleId: string): Promise<number> {
+	const redis = getRedis();
+	if (!redis) return 1;
+	try {
+		const attempt = await redis.incr(attemptsKey(cycleId));
+		await redis.expire(attemptsKey(cycleId), 24 * 60 * 60);
+		return attempt;
+	} catch {
+		return 1;
+	}
+}
+
+/**
  * Requeue a cycle that couldn't acquire its env lock. Pushes it to the
- * back of its tier so other cycles get a chance first. Does not count
- * against the retry budget — env contention isn't a failure.
+ * back of its tier so other cycles get a chance first. Does not touch
+ * the attempt counter — env contention isn't a failure (post-C3 fix the
+ * counter wasn't bumped during dequeue anyway).
  */
 export async function requeueForEnvContention(
 	cycleId: string,
@@ -207,8 +246,6 @@ export async function requeueForEnvContention(
 	if (!redis) return;
 	try {
 		await redis.rpush(priorityKey(priority), cycleId);
-		const v = await redis.decr(attemptsKey(cycleId));
-		if (v < 0) await redis.set(attemptsKey(cycleId), "0");
 	} catch {
 		// best-effort
 	}

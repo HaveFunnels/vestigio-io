@@ -2253,6 +2253,24 @@
 			"seven_days": "7 days",
 			"thirty_days": "30 days"
 		},
+		"cycle_banner": {
+			"queued": "Audit queued",
+			"running": "Auditing your site — live",
+			"complete": "Audit complete",
+			"failed": "Audit failed",
+			"pages_one": "1 page discovered",
+			"pages_other": "{count} pages discovered",
+			"findings_one": "1 finding",
+			"findings_other": "{count} findings",
+			"so_far": "so far",
+			"in_total": "in total",
+			"elapsed": "{seconds}s elapsed",
+			"dismiss": "Dismiss"
+		},
+		"paused_banner": {
+			"title": "Audits were paused after 14 days without access.",
+			"body": "Resuming now — a catch-up audit is running against your site. You'll see updated findings shortly."
+		},
 		"organization": {
 			"title": "Organization",
 			"subtitle": "Manage your organization, plan, and environments.",
@@ -2786,7 +2804,9 @@
 				"saas_skipped": "Skipped — configure later in Data Sources",
 				"saas_not_configured": "Not configured — configure later in Data Sources",
 				"no_email_yet": "no email yet",
-				"email_only": "Email only"
+				"email_only": "Email only",
+				"activate_environment": "Activate environment",
+				"activate_hint": "Your first audit starts immediately. Follow progress live on the inventory page."
 			},
 			"plan": {
 				"title": "Choose your plan",

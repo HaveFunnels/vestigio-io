@@ -38,20 +38,46 @@ export async function GET(request: Request) {
 		);
 	}
 
-	const membership = await prisma.membership.findFirst({
-		where: { userId: user.id },
-		select: { organizationId: true },
-		orderBy: { createdAt: "desc" },
-	});
+	// Wave 5 Fase 2 fix (#9): a user belonging to multiple orgs (e.g. via
+	// invites) shouldn't see cycles from the wrong tenant. We resolve the
+	// org via the same path resolveOrgContext uses on the server layout,
+	// honoring the active_env cookie when present.
+	const cookieStore = await import("next/headers").then((m) => m.cookies());
+	const activeEnvId = cookieStore.get("active_env")?.value;
 
-	if (!membership) {
-		return NextResponse.json({ cycle: null });
+	let membershipOrgId: string | null = null;
+	if (activeEnvId) {
+		// Look up the org via the active env's membership relation. Belt-
+		// and-suspenders: also re-verify the membership exists.
+		const env = await prisma.environment.findUnique({
+			where: { id: activeEnvId },
+			select: { organizationId: true },
+		});
+		if (env) {
+			const m = await prisma.membership.findFirst({
+				where: { userId: user.id, organizationId: env.organizationId },
+				select: { organizationId: true },
+			});
+			if (m) membershipOrgId = m.organizationId;
+		}
+	}
+	if (!membershipOrgId) {
+		// Fallback: most-recently-joined membership (matches resolveOrgContext
+		// behavior when no active_env cookie is present).
+		const m = await prisma.membership.findFirst({
+			where: { userId: user.id },
+			select: { organizationId: true },
+			orderBy: { createdAt: "desc" },
+		});
+		if (!m) return NextResponse.json({ cycle: null });
+		membershipOrgId = m.organizationId;
 	}
 
 	const cycle = await prisma.auditCycle.findFirst({
 		where: {
-			organizationId: membership.organizationId,
+			organizationId: membershipOrgId,
 			status: { in: statuses },
+			...(activeEnvId ? { environmentId: activeEnvId } : {}),
 		},
 		orderBy: { createdAt: "desc" },
 		select: {

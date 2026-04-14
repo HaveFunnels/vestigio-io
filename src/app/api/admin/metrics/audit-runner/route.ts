@@ -72,14 +72,25 @@ export const GET = withErrorTracking(
 
 		// Duration percentiles from completed cycles in last 24h. Cheap
 		// because we cap to the last 24h and read only what we need.
+		// Wave 5 Fase 1A fix (M6): explicit `orderBy: completedAt desc`
+		// + 500 cap means percentiles always reflect the MOST RECENT 500
+		// cycles (truncated tail). Without orderBy, Postgres returned an
+		// undefined sample order and the percentiles were random subsets.
+		// Also exposes `truncated: true` so a dashboard can disclose that
+		// older samples were dropped.
+		const SAMPLE_CAP = 500;
 		const recentCompleted = await prisma.auditCycle.findMany({
 			where: {
 				status: "complete",
 				completedAt: { gte: last24hCutoff },
 			},
 			select: { createdAt: true, completedAt: true },
-			take: 500,
+			orderBy: { completedAt: "desc" },
+			take: SAMPLE_CAP,
 		});
+		const totalCompletedLast24h =
+			(cyclesByStatus.find((r) => r.status === "complete")?._count._all) ?? 0;
+		const truncated = totalCompletedLast24h > SAMPLE_CAP;
 		const durations = recentCompleted
 			.map((c) =>
 				c.completedAt ? c.completedAt.getTime() - c.createdAt.getTime() : 0,
@@ -114,6 +125,8 @@ export const GET = withErrorTracking(
 				last24h: {
 					byStatus: cyclesByStatusMap,
 					completedSampleSize: durations.length,
+					completedTotalLast24h: totalCompletedLast24h,
+					sampleTruncated: truncated,
 					avgDurationMs,
 					p50DurationMs,
 					p95DurationMs,

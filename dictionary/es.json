@@ -2149,6 +2149,24 @@
       "seven_days": "7 días",
       "thirty_days": "30 días"
     },
+    "cycle_banner": {
+      "queued": "Auditoría en cola",
+      "running": "Auditando tu sitio — en vivo",
+      "complete": "Auditoría completada",
+      "failed": "La auditoría falló",
+      "pages_one": "1 página descubierta",
+      "pages_other": "{count} páginas descubiertas",
+      "findings_one": "1 hallazgo",
+      "findings_other": "{count} hallazgos",
+      "so_far": "hasta ahora",
+      "in_total": "en total",
+      "elapsed": "{seconds}s transcurridos",
+      "dismiss": "Descartar"
+    },
+    "paused_banner": {
+      "title": "Las auditorías se pausaron tras 14 días sin acceso.",
+      "body": "Reanudando ahora — una auditoría de recuperación se está ejecutando sobre tu sitio. Verás los hallazgos actualizados en breve."
+    },
     "organization": {
       "title": "Organización",
       "subtitle": "Administra tu organización, plan y entornos.",
@@ -2682,7 +2700,9 @@
         "saas_skipped": "Omitido — configura después en Fuentes de Datos",
         "saas_not_configured": "No configurado — configura después en Fuentes de Datos",
         "no_email_yet": "sin email todavía",
-        "email_only": "Solo email"
+        "email_only": "Solo email",
+        "activate_environment": "Activar entorno",
+        "activate_hint": "Tu primera auditoría comienza inmediatamente. Sigue el progreso en vivo en la página de inventario."
       },
       "plan": {
         "title": "Elige tu plan",

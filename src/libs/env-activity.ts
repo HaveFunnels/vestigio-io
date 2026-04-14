@@ -80,12 +80,38 @@ export async function resumeIfPaused(envId: string): Promise<boolean> {
 		});
 		if (!env || !env.continuousPaused || !env.activated) return false;
 
-		// Clear the pause flag first so a concurrent request doesn't try to
-		// dispatch a second cycle. The write is tiny and idempotent.
-		await prisma.environment.update({
-			where: { id: envId },
+		// Wave 5 Fase 1A fix (C2): atomic conditional update — only one
+		// concurrent caller wins the flip from paused → active and dispatches
+		// the catch-up cycle. Without this guard, two near-simultaneous
+		// /app/* loads from the same owner each pass the read above and
+		// each create a duplicate cycle. updateMany returns the row count
+		// matched WHERE continuousPaused: true; non-winners get count=0.
+		const claim = await prisma.environment.updateMany({
+			where: { id: envId, continuousPaused: true },
 			data: { continuousPaused: false },
 		});
+		if (claim.count === 0) {
+			// Lost the race — another request already cleared the flag and
+			// is dispatching the catch-up. Don't double-fire.
+			return false;
+		}
+
+		// Wave 5 Fase 2 fix (#12): if there's already a pending/running
+		// cycle for this env (rare — pause implies idle, but possible if
+		// the inactivity cron fired during a long-running cycle), skip
+		// creating a duplicate. The worker's env lock would block actual
+		// concurrent execution, but an extra "pending" row pollutes the
+		// queue + heal cron + admin metrics.
+		const existing = await prisma.auditCycle.findFirst({
+			where: {
+				environmentId: env.id,
+				status: { in: ["pending", "running"] },
+			},
+			select: { id: true },
+		});
+		if (existing) {
+			return false;
+		}
 
 		const cycle = await prisma.auditCycle.create({
 			data: {

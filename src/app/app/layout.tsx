@@ -7,6 +7,8 @@ import { syncUserLocale } from "@/libs/sync-locale";
 import { loadEngineTranslations } from "@/lib/engine-translations";
 import { startHealthCheckTimer } from "@/libs/health-checker";
 import { touchEnvActivity, resumeIfPaused } from "@/libs/env-activity";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/auth";
 
 export const metadata = {
 	title: "Vestigio",
@@ -38,7 +40,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
 		// Wave 5 Fase 2 — activity tracking + auto-resume. Non-blocking best
 		// effort; if DB is unreachable the layout still renders.
-		if (orgCtx.envId && orgCtx.envId !== "default" && orgCtx.envId !== "env_1") {
+		// Wave 5 Fase 2 fix (#10): skip when an admin is impersonating the
+		// owner — otherwise an ops/sales session keeps resetting the
+		// owner's lastAccessedAt and indefinitely defers the inactivity
+		// pause for an org the customer hasn't actually opened.
+		const session = await getServerSession(authOptions);
+		const isImpersonating = (session?.user as any)?.isImpersonating === true;
+		if (
+			orgCtx.envId &&
+			orgCtx.envId !== "default" &&
+			orgCtx.envId !== "env_1" &&
+			!isImpersonating
+		) {
 			await touchEnvActivity(orgCtx.envId);
 			await resumeIfPaused(orgCtx.envId);
 		}

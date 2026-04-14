@@ -1,8 +1,11 @@
 # ──────────────────────────────────────────────
 # Vestigio.io — Production Dockerfile
 #
-# Next.js app with Playwright/Chromium for
-# authenticated SaaS verification workers.
+# Next.js app + audit-runner worker with
+# Playwright/Chromium for authenticated SaaS
+# verification workers. A single image serves
+# both roles; SERVICE_ROLE env var at runtime
+# selects the process (web vs worker).
 # ──────────────────────────────────────────────
 
 FROM node:20-slim AS base
@@ -75,15 +78,34 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
+
+# Overlay full production node_modules over Next.js standalone's minimal set.
+# Reason: standalone mode only bundles what Next.js statically analyzes as
+# needed. The audit worker runs `tsx apps/audit-runner/worker-loop.ts` at
+# runtime — tsx + ioredis + the rest of `dependencies` must be present.
+# Using --from=deps (prod-only install) keeps image tight (no devDeps).
+# Web service continues to work: standalone's node_modules is a subset
+# of deps's node_modules, so the superset satisfies Next.js too.
+COPY --from=deps /app/node_modules ./node_modules
+
+# Generated Prisma client sits in the builder (runs `prisma generate`);
+# copy AFTER the deps overlay so the generated .prisma + @prisma versions
+# win (deps stage only has the unpopulated client package).
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /root/.cache/ms-playwright /root/.cache/ms-playwright
 
-# Copy worker files (they're imported at runtime)
+# Worker source files — imported at runtime by tsx.
 COPY --from=builder /app/workers ./workers
 COPY --from=builder /app/apps ./apps
 COPY --from=builder /app/packages ./packages
 
-EXPOSE 3000
+# Worker loop health server (overridable via WORKER_HEALTH_PORT env).
+EXPOSE 3000 3001
 
-CMD ["node", "server.js"]
+# Unified entry point:
+#   SERVICE_ROLE=worker  →  audit-runner worker loop (queue consumer).
+#   anything else (including unset)  →  Next.js standalone server.
+# `exec` ensures the child process becomes PID 1 so SIGTERM from Railway
+# reaches Next.js / worker directly for graceful drain.
+CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else exec node server.js; fi"]

@@ -544,6 +544,56 @@ railway add --plugin redis
 
 Use para: fila de jobs distribuida, cache de sessoes, rate limiting distribuido.
 
+### 15.3.1 Worker service dedicado para audit-runner (Wave 5)
+
+**Quando precisar.** O web service roda o Next.js e responde HTTP. Ele tambem hospeda o audit-runner hoje via `Promise.then()` fire-and-forget (veja [ARCHITECTURE_V2.md § Known gap: audit-runner dispatch](./ARCHITECTURE_V2.md)). Isso funciona para <20 ciclos/dia, mas quebra quando:
+
+- Ha burst de webhooks (lancamentos do Chromium competem com HTTP handlers por CPU/RAM).
+- O scheduler continuo (Wave 5 Fase 3) entrar em producao (Max = 1x/hora × N orgs).
+- Railway rodar mais de 1 replica do web service (o `setInterval` do heal cron duplica sem leader election ate a Wave 5 Fase 1 landar).
+
+A saida e separar o worker num segundo service Railway compartilhando Redis + DB:
+
+**1. Adicionar o entry point do worker loop**
+
+Crie `apps/audit-runner/worker-loop.ts` que:
+- Faz `BLPOP` na queue key de `apps/platform/redis-job-queue.ts`
+- Chama `runAuditCycle(cycleId)` com concorrencia limitada (semaforo N = 3 por worker instance)
+- Respeita `per_env_lock` para impedir double-run do mesmo env
+
+**2. Script no `package.json`**
+
+```json
+{
+  "scripts": {
+    "start": "next start",
+    "start:worker": "tsx apps/audit-runner/worker-loop.ts"
+  }
+}
+```
+
+**3. Segundo service no Railway apontando para o mesmo repo**
+
+- Railway Dashboard > projeto > **"+ New"** > **"GitHub Repo"** (mesmo repo)
+- Settings > Deploy > **Custom Start Command**: `npm run start:worker`
+- Settings > Variables: nao duplique o Postgres — clique **"Add Reference"** e referencie `DATABASE_URL` + `REDIS_URL` do web service
+- Settings > Scaling: 1 replica, 1 vCPU, 1-2GB RAM (Chromium eats memory)
+- Health check: desative (worker nao tem HTTP listener)
+
+**4. Leader election nos crons (Wave 5 Fase 1)**
+
+O `setInterval` do heal cron em `src/instrumentation-node.ts` precisa virar leader-elected para nao rodar N vezes se o web service escalar. Padrao: `SET NX EX {replica_id} 90` no Redis antes do body do interval; so o holder executa. Sem isso, nao escale o web acima de 1 replica.
+
+**5. Monitoramento do worker**
+
+- Railway > worker service > Metrics (CPU, RAM, restart count)
+- `/app/admin/overview` mostra ciclos stuck + backlog Redis (Wave 5 Fase 1 adiciona esses tiles)
+- `railway logs --service worker` para logs
+
+**Custo extra estimado.** Railway cobra por service independente. Um worker rodando 1 vCPU / 1GB ≈ $5-10/mes alem do web. Justifica-se assim que continuous scheduling entrar ou >50 ciclos/dia.
+
+**Ate a Wave 5 Fase 1 landar**, mantenha 1 replica no web e nao ative scheduler. O fire-and-forget via webhook aguenta volume de onboarding organico, mas nao aguenta scheduler.
+
 ### 15.4. Monitoramento
 
 - **Railway Metrics**: CPU, memoria, rede

@@ -391,12 +391,22 @@ The in-memory `EvidenceStore` remains for fast access; Prisma store provides dur
 
 Redis provides:
 
-- **Job queue**: `apps/platform/redis-job-queue.ts` — persistent job state with TTL, FIFO queue, and per-environment locks
+- **Job queue**: `apps/platform/redis-job-queue.ts` — persistent job state with TTL, FIFO queue, and per-environment locks. Currently consumed by `/api/analysis/*` (Stage 0.1 wave intelligence jobs) only. **Not yet wired into audit-runner** — see "Known gap" below.
 - **Rate limiting**: `src/libs/limiter.ts` — Redis-backed fixed-window counters with in-memory fallback
 - **MCP rate limiting**: `apps/mcp/llm/rate-limiter.ts`
 - **Session support**: shared across instances
 
 Redis is optional — the system gracefully falls back to in-memory when `REDIS_URL` is not set.
+
+### Known gap: audit-runner dispatch (fire-and-forget, not queued)
+
+[apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) is dispatched **in-process** via dynamic-import + `Promise.then()` without `await` from Stripe ([src/app/api/stripe/webhook/route.ts](../src/app/api/stripe/webhook/route.ts) lines 125-130) and Paddle webhooks. Three consequences:
+
+1. **Process restart orphans cycles.** If the Next.js container recycles while `runAuditCycle()` is running, the Promise dies silently. The cycle stays in `status: "running"` until the heal cron (60s interval, 10-minute stuck threshold) fails it, or in `status: "pending"` until the 5-minute orphan re-dispatch sweeps it up. Evidence partially written in a killed cycle is not rolled back.
+2. **Multi-replica Railway runs heal N times.** The `setInterval` in [src/instrumentation-node.ts](../src/instrumentation-node.ts) runs on every replica independently; three replicas = three concurrent orphan re-dispatches of the same pending cycles. There is no leader election today.
+3. **No backpressure on bursts.** A webhook burst or a scheduler with 50 orgs firing concurrently launches 50 `runAuditCycle()` promises that all enter the event loop at once, each potentially launching Chromium (200-500MB each). Memory is the first thing to fail.
+
+The redis-job-queue at `apps/platform/redis-job-queue.ts` already has the right primitives — per-env `SET NX EX` lock, FIFO queue, TTL, `MAX_CONCURRENT_JOBS` ceiling — it simply wasn't the dispatch path audit-runner took. Wave 5 Fase 1 wires it in and adds a separate worker service on Railway so audit compute is isolated from web request spikes. See [ROADMAP.md § Wave 5](ROADMAP.md) for the full rearchitecture plan.
 
 ### Payment providers (implemented)
 
@@ -426,10 +436,23 @@ The product surfaces are ordered by operational priority:
 
 ### Flow 2. Incremental refresh
 
-- heartbeat/pixel/integration event arrives
-- entitlement gate checks `continuous_audits_is_enabled`
-- incremental evidence updates freshness-bound slices
-- only affected decisions are recomputed
+> **Current state (2026-04-14):** cosmetic. `continuous_audits_is_enabled` is a label on `PlanConfig` with no scheduler reading it, and `AuditCycle.cycleType` is a column `run-cycle.ts` never branches on. Every cycle today is `full`, fired by Stripe/Paddle webhook or heal-cron re-dispatch. Making this flow load-bearing is the scope of Wave 5 in [ROADMAP.md](ROADMAP.md).
+
+Target semantics (Wave 5 Fase 3):
+
+- **Ternary cycle modes** — `hot` (revenue-critical surfaces only, short wall-clock budget, last-1h behavioral window, revalidates `severity >= high` active findings), `warm` (rotating sample of periphery with coverage guarantee per window, last-24h behavioral, revalidates `severity >= medium`), `cold` (full pipeline, last-30d behavioral, revalidates everything). The existing `cycleType` string column becomes load-bearing.
+- **Evidence diff via content hash** — `EvidenceSnapshot.contentHash` (SHA-1 of normalized HTML) lets hot/warm cycles skip re-parse on unchanged pages. Engine still always writes the evidence row so freshness is honest.
+- **Finding → evidence dependency index** — `FindingEvidenceDep` table lets the engine identify which findings an evidence delta could affect, so only those recompute instead of the full set.
+- **Regression detection at engine write, not aggregator read** — today the dashboard `ChangeReport` diffs findings at read time; incremental demands `new | updated | resolved | regressed` emitted at engine write so cycles can skip re-checking already-resolved findings.
+- **Critical surface selection** — hybrid of heuristic regex (`checkout|cart|pricing|product|home`), mixed-weight scoring (recent high-severity findings + traffic share), and explicit user marks via the inventory surface sidedrawer (max 10 per env, stored in `CriticalSurface` table).
+- **Entitlement gate** — `continuousAudits` in `PlanConfig` gates warm/hot scheduling; `cold` runs at least weekly for every plan including Starter so no environment drifts without a baseline reset.
+- **Demo org exception** — `orgType=demo` is never paused by the inactivity cron.
+- **Progress surfacing** — the existing `/api/analysis/stream` SSE endpoint (already emits `stage_complete`, `findings`, `score`, `complete` with `Last-Event-ID` reconnect + 5min cache + 15s heartbeat) is consumed by `/app/inventory`, `/app/analysis`, `/app/actions` to turn a pending cycle into live UI.
+
+Pre-existing primitives used:
+- Pixel ingest at `POST /api/behavioral/ingest` + `process-behavioral.ts` — landed in Wave 0.2/0.3.
+- Integration deltas via `packages/integrations/reconcile.ts` — already incremental natively (adapter-by-adapter `since` params).
+- `VersionedSnapshot` baselines + `change-detection` package — provide the diff substrate.
 
 ### Flow 3. Verification on demand
 

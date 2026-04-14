@@ -1,7 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-12
+> Last updated: 2026-04-14
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
+>
+> **2026-04-14 Admin org provisioning + continuous-incremental engine plan (Wave 5 spec):** Two outputs from this session. **(1) Admin org provisioning shipped (commit `4431774`).** New `POST /api/admin/organizations` creates Org + owner User (null password — admin enters via impersonation) + Membership + Environment + BusinessProfile in one transaction, audit-logged. New `PATCH /api/admin/organizations/[id]` for manual plan/status/orgType/trialEndsAt overrides (bypasses Stripe/Paddle flow, for demos/trials/comp'd accounts; captures before/after in `AuditLog.metadata.changes`). New `/app/admin/organizations/new` form UI with success state that links straight into impersonation. Org detail page gained inline "Edit plan & type" panel. "New Organization" button added to admin orgs list. **Paddle webhook parity confirmed** — [src/app/api/paddle/webhook/route.ts](../src/app/api/paddle/webhook/route.ts) already updates `Organization.plan` + `status` on `subscription.created/updated/canceled/paused/resumed` and `transaction.completed` via `resolvePlanFromPriceId()`; full parity with Stripe. **(2) Wave 5 — Continuous Incremental Engine specified.** Infrastructure audit revealed three existential gaps for scaling audits to "continuous intelligence" as the pitch promises: (a) `continuousAudits` flag in [src/libs/plan-config.ts](../src/libs/plan-config.ts) is cosmetic — no scheduler exists, the only cycle creators today are Stripe/Paddle webhooks and the heal cron; (b) `cycleType` values `full | incremental | verification` in [prisma/schema.prisma](../prisma/schema.prisma) are cosmetic — [apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) never reads `cycle.cycleType` and always runs the full pipeline; (c) audit-runner dispatch is in-process `Promise.then()` fire-and-forget from webhooks, meaning process restart silently loses in-flight cycles (5-10min recovery window via heal cron) and multi-replica Railway deploys run the heal `setInterval` N times in parallel with no leader election, causing duplicate re-dispatches. Wave 5 architecture: **hot/warm/cold ternary mode** (hot = revenue-critical surfaces every 15min-6h depending on plan, warm = rotating sampling of periphery, cold = full baseline weekly minimum regardless of plan) + **critical surface hybrid model** (heuristic auto-detection + user-marks up to 10 surfaces as critical from inventory sidedrawer with mixed-weight scoring from finding severity + traffic volume) + **warm guarantee** (every surface visited at least once per warm cycle window) + **demo org exception** (`orgType=demo` never pauses) + **infra rearchitecture**: wire `runAuditCycle` into existing but unused `apps/platform/redis-job-queue.ts` (has lock + TTL + retry, just not consumed by audit-runner), separate worker service on Railway (`start:worker` deploy sharing image + Redis + DB), Redis `SET NX EX` leader election for the heal/scheduler crons, Chromium browser pool with semaphore of 3 (~1GB RAM ceiling) + context reuse. Rollout staged as **Fase 1 (Foundation infra)** → **Fase 2 (Activation flow: admin create simplified + onboarding refactor + SSE wiring on inventory/analysis/actions + lastAccessedAt + inactivity pause)** → **Fase 3 (Incremental engine: EvidenceSnapshot.contentHash + FindingEvidenceDep index + CriticalSurface table + cycleType branching in pipeline + regression detection moved from aggregator to engine + hot/warm/cold scheduler)** → **Fase 4 (Feature-flag rollout: demo org first, then 1-2 real customers, metrics on Redis backlog + p95 duration + memory per worker + DB pool saturation)**. See § Wave 5 below for the full spec.
 >
 > **2026-04-12 Engine expansion + marketing polish continued:** Four major engine streams completed over 2026-04-11/12. **(1) Wave 3.3 Cybersecurity Pack — fully shipped.** Grew from the original 4 findings to **12 findings** across security headers, mixed content, redirects, sensitive endpoints, CORS, rate limiting, cookies, error pages, and predictable URLs. All findings reframed with commercial language ("Browsers signal your site as unsafe to buyers" instead of "Security Headers Weak"). Nuclei and Katana enrichment passes wired into the pipeline runner (`workers/ingestion/enrichment/runner.ts`). Dedicated `SecurityWorkspace` with aggregation logic (`packages/workspace/security-workspace.ts`). New `money_moment_exposure` decision pack. **(2) Wave 3.1 LLM Enrichment — extended to 7 findings.** Beyond the original policy page analysis (Tier 1), added 4 new enrichment types: `checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing` with Haiku LLM calls per page type. Then Tier 2 added 3 more: `social_proof_quality`, `form_error_quality`, `onboarding_quality` — signals + inferences wired but semantic enrichment pass not yet extended to produce their evidence. **(3) Wave 3.11 Workspace Redesign — partially shipped.** Pulse Summary API endpoint (`/api/workspace/pulse-summary`) with Haiku briefings + 1h in-memory cache. Frontend redesign: 5 perspectives (Panorama, Receita, Confiança, Comportamento, Copy) with 4 transversal lenses (Pulse Summary, Revenue Map, Cycle Delta, Bragging Rights). Perspective detail pages at `/workspaces/perspective/[slug]`. Needs browser verification. **(4) Wave 2.2 Members & Invite — partially shipped.** OrgInvite Prisma model, API routes (`/api/organization/invites`, `/api/organization/invites/accept`), InviteMemberModal component, accept-invite page. **(5) Homepage polish continued:** replaced counter stats with Chargeflow-inspired bento grid (4X ROI Guarantee hero card, Vestigio Pulse orbit visual, Quick Start/Visibilidade Completa/Monitoramento Contínuo/Integrações cards), fixed FAQ mobile accordion (max-height transition), added trust headline above client gallery, receita→faturamento i18n fix, MiniCalculator domain regex validation + currency localization, white bold headline above ProductTour. Complete German (de) engine translations added. **(6) ROADMAP expansion:** Added Wave 3.7 (Copy Analysis Pack, 16-item A-P spec), 3.8 (Shopify completion), 3.9 (Stripe Revenue Intelligence), 3.10 (Ad Platform Integrations), 3.11 (Workspace Redesign spec).
 >
@@ -118,6 +120,11 @@ See [DEV_PROGRESS.md](../DEV_PROGRESS.md) for the full build history. Key milest
 | Nuvemshop Integration (full) | ✅ **Done — 2026-04-12** | Wave 3.7B | OAuth callback, adapter package, poller, reconciliation, audit runner, Data Sources UI, KB guide, LGPD webhooks |
 | Conversation export/branching | Not started | Wave 4 | unchanged |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2 | unchanged |
+| Admin-driven org provisioning (Org + Owner + Membership + Env + BusinessProfile + plan override, impersonation-ready) | ✅ **Done — 2026-04-14** (commit `4431774`) | — | `POST /api/admin/organizations`, `PATCH /api/admin/organizations/[id]`, `/app/admin/organizations/new`, inline "Edit plan & type" panel on detail page, audit-logged |
+| `cycleType: 'incremental'` actually implemented in engine | **Cosmetic today** — planned | Wave 5 | [apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) never reads `cycle.cycleType`; always runs full pipeline. See § Wave 5 Fase 3 |
+| `continuousAudits` scheduler | **Cosmetic today** — planned | Wave 5 | Flag exists in plan-config but no code creates recurring cycles. See § Wave 5 Fase 3 |
+| Audit-runner persistence (queue + worker service + leader election) | **Risk today** — planned | Wave 5 | In-process `Promise.then()` from webhooks; restart silently orphans cycles; multi-replica `setInterval` duplicates heal work. See § Wave 5 Fase 1 |
+| Activation flow (owner-driven env creation + first-cycle trigger + SSE progress on inventory/analysis/actions + inactivity pause after 14d) | Planned | Wave 5 | See § Wave 5 Fase 2 |
 
 ---
 
@@ -952,6 +959,137 @@ Maturity stage influences: which findings appear first, how Pulse Summary frames
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | **Done — 2026-04-11** ✅ |
 | **3** | Semantic Enrichment & New Lenses | LLM on policy pages, CTA/trust language, cybersecurity Phase 1, composite findings, journey narrative, **copy analysis pack**, **Shopify completion**, **Stripe revenue intelligence**, **workspace redesign (perspectives + lenses)** | All open |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
+
+---
+
+## Wave 5 — Continuous Incremental Engine
+
+**Goal:** Deliver the "continuous intelligence" pitch for real. Today `continuousAudits` and `cycleType` are cosmetic labels — this wave makes them load-bearing. It's two jobs in one: (A) harden the dispatch/scheduler infra so we can safely run hundreds of cycles/day without process-restart orphaning, multi-replica duplication, or burst OOM; and (B) implement incremental cycle semantics in the engine so hot sweeps can run every 15min on Max without saturating infra or re-doing cold work.
+
+**Guiding decisions made in the 2026-04-14 session:**
+- **Hybrid critical-surface model** — heuristic auto-detection (regex on `checkout|cart|pricing|product|home`) as fallback, with user opt-in to mark up to 10 surfaces as critical from a "Mark as critical" CTA in the inventory surface sidedrawer. Hot entry also triggered by a **mixed weight** of recent finding severity + traffic volume (page with `severity >= high` within last 7d enters hot; top-traffic-share pages enter hot via percentile).
+- **Cold full weekly minimum for every plan** including Starter — otherwise Starter drifts uncontrollably without a baseline reset.
+- **First post-activation cycle is cold full obligatorily** — incremental makes no sense without a baseline.
+- **Warm guarantee** — every surface is visited at least once per warm-cycle window (prevents a page silently regressing between colds when it happens to be outside consecutive warm samples).
+- **Demo org exception** — `orgType=demo` is never paused by the inactivity cron; demo account must always be alive for sales surfaces.
+- **First cycle is fire-and-forget, progress via SSE** — reuse the existing `/api/analysis/stream` endpoint (already has `stage_complete`, `findings`, `score`, `complete` events + Last-Event-ID reconnect + 5min cache + 15s heartbeat — just never consumed by a frontend). Wire `EventSource` in `/app/inventory`, `/app/analysis`, `/app/actions`. Redirect to `/app/inventory` after activation button.
+- **No "Resume Audits" button** — just a banner at the top of `/app/*` when `Environment.continuousPaused=true`. Access automatically clears the flag and triggers a catch-up cycle.
+- **Max = 1x/hour incremental is the aspirational target** but only with real incremental semantics in place (Fase 3); Fase 1+2 will run on `full` cycles at slower cadence until Fase 3 lands.
+
+**Cadence plan once incremental is live (Fase 3 complete):**
+
+| Plan | Hot sweep | Warm sweep | Cold full |
+|---|---|---|---|
+| Starter | 1x / 6h | 1x / day (20% rotating) | 1x / week |
+| Pro | 1x / hour | 1x / 4h (30% rotating) | 1x / 3 days |
+| Max | 1x / 15min | 1x / hour (40% rotating) | 1x / day |
+
+The Max differentiator is not just frequency — it's **scope**: Max cold audits also run regression checks on **all** active findings, not only `severity >= high`.
+
+**Incremental mechanics that need to exist:**
+1. `EvidenceSnapshot.contentHash` per page — if HTML SHA matches previous cycle, skip re-parse (saves engine time, not bandwidth).
+2. `FindingEvidenceDep` index — maps which finding depends on which evidence row; when evidence changes (hash diff), invalidate and re-run only affected findings.
+3. Behavioral session window — parametric per `cycleType` (hot = last 1h, warm = last 24h, cold = last 30d). Keep the `session_count >= 20` gate from [packages/behavioral/](../packages/behavioral/) so hot sweeps with low volume skip behavioral inferences gracefully.
+4. `cycle_budget` — per-cycleType wall-clock cap (hot ≤ 30s, warm ≤ 2min, cold ≤ 10min). Pages timed out get queued for the next cycle of the same type.
+5. Engine `merge semantics` at write — today `recomputeAll()` overwrites the finding set; incremental needs `new | updated | resolved | regressed` diff at engine write time, not only at aggregator/projection read time (the `ChangeReport` in the dashboard aggregator today does this at read time, needs to move one layer in so incrementals can avoid re-running resolved findings to confirm they stayed resolved).
+
+**Infra rearchitecture that needs to exist:**
+1. **Wire `apps/platform/redis-job-queue.ts` into `runAuditCycle`** — the queue already has per-env locks via `SET NX EX`, TTL, FIFO, retry; it just wasn't the path audit-runner used. Change the webhook dispatch from `Promise.then()` to `redisEnqueueJob()`; add a consumer loop in the worker process.
+2. **Separate worker service on Railway** — add `"start:worker": "tsx apps/audit-runner/worker-loop.ts"` to `package.json`, deploy a second Railway service pointing at the same image with `CMD` override, share `REDIS_URL` + `DATABASE_URL`. ~$5-10/month extra on Railway, isolates audit compute from web request spikes (Chromium launches don't starve HTTP handlers). See updated § 15 in [DEPLOY.md](DEPLOY.md) for the procedure.
+3. **Leader election on the heal / scheduler crons** — `SET NX EX {replica_id} 90` in [src/instrumentation-node.ts](../src/instrumentation-node.ts) before running the 60s interval body; only the holder runs it. Prevents 3-replica Railway deploys from firing 3× heal passes and 3× concurrent orphan re-dispatches.
+4. **Chromium browser pool** — replace per-page `chromium.launch()` with a pool-of-3 in [workers/verification/playwright-runtime.ts](../workers/verification/playwright-runtime.ts), context reuse instead of fresh launches. Caps memory at ~1GB even under burst.
+5. **Per-environment concurrency lock** — already in the queue abstraction; just enforce it in the new consumer.
+
+**Schema additions (Fase 1 + Fase 2):**
+```prisma
+model Environment {
+  // ... existing fields
+  lastAccessedAt    DateTime?
+  activated         Boolean   @default(false)   // true after first cold full cycle
+  continuousPaused  Boolean   @default(false)   // true if >14d without access; cleared on next access
+}
+
+model CriticalSurface {
+  id              String      @id @default(cuid())
+  environmentId   String
+  url             String
+  markedBy        String      // userId
+  createdAt       DateTime    @default(now())
+  environment     Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  @@unique([environmentId, url])
+  @@index([environmentId])
+}
+```
+
+**Schema additions (Fase 3):**
+```prisma
+model EvidenceSnapshot {
+  // existing VersionedSnapshot or a new sibling, depending on final design
+  contentHash   String?     // SHA-1 of normalized HTML; null for non-HTML evidence
+  @@index([contentHash])
+}
+
+model FindingEvidenceDep {
+  id            String   @id @default(cuid())
+  findingId     String
+  evidenceId    String
+  @@unique([findingId, evidenceId])
+  @@index([evidenceId])  // hot path: "which findings depend on this evidence?"
+}
+```
+
+### Fase 1 — Foundation infra
+
+| Item | Tag | Output |
+|---|---|---|
+| Redis queue wire for `runAuditCycle` | `platform` `infra` | Webhook dispatch uses `redisEnqueueJob`; worker consumes |
+| Separate worker service on Railway | `infra` | `start:worker` script + second Railway service + docs update |
+| Leader election on heal + scheduler crons | `platform` | `SET NX EX` before `setInterval` body |
+| Chromium pool + semaphore | `collection` | Pool-of-3 + context reuse; RAM ceiling ~1GB |
+| Metrics: Redis backlog, p95 cycle duration, memory, DB pool saturation | `platform` | Admin dashboard tile + PlatformError linkage |
+
+**Zero UX change at the end of Fase 1.** Just makes the current fire-and-forget dispatch safe for higher volume.
+
+### Fase 2 — Activation flow
+
+| Item | Tag | Output |
+|---|---|---|
+| Admin org-create simplified | `platform` | Form at [/app/admin/organizations/new](../src/app/app/admin/organizations/new/) drops domain/env/profile fields; only creates Org + Owner + Membership + plan |
+| Onboarding refactor | `platform` `frontend` | Remove inline `/api/onboard` env+profile creation; last step is "Activate Environment" button |
+| `POST /api/environments/activate` | `platform` | Creates Environment + BusinessProfile + first AuditCycle with `cycleType='full'` + sets `activated=true`; returns SSE URL |
+| `/app/layout.tsx` gate | `frontend` | Redirect to `/app/onboarding` when membership exists but no env has `activated=true` |
+| SSE wiring on inventory/analysis/actions | `frontend` | `EventSource` against `/api/analysis/stream`; progress banner during cycle |
+| `lastAccessedAt` tracking | `platform` | Server component in `/app/layout.tsx` with 1h debounce write |
+| Inactivity pause cron | `platform` | Daily check for envs >14d without access (excluding `orgType=demo`); set `continuousPaused=true`; log NotificationLog event `inactivity_pause`; send email |
+| Paused banner + auto-resume | `frontend` | Banner in `/app/*` when `continuousPaused=true`; access clears flag and triggers catch-up cycle |
+
+**End of Fase 2 deliverable:** admin → create org → impersonate → onboarding → Activate → first audit runs → inventory shows live progress → dashboard populates. Demo-ready for prospects. Cycles still `full` at webhook-triggered cadence (no scheduler yet).
+
+### Fase 3 — Incremental engine
+
+| Item | Tag | Output |
+|---|---|---|
+| `EvidenceSnapshot.contentHash` | `engine` `collection` | SHA-1 per page in crawler output; stored in evidence row |
+| `FindingEvidenceDep` index | `engine` | Write-side index; engine populates during `recomputeAll()` |
+| `CriticalSurface` model + marking UI | `frontend` `engine` | Inventory surface sidedrawer gets "Mark as critical" CTA (max 10/env); ranking service reads it + heuristic fallback |
+| `cycleType` branching in `staged-pipeline.ts` | `engine` | Hot = critical surfaces only + last-1h events; warm = rotating sample + last-24h events; cold = full |
+| Regression detection moved to engine | `engine` | `new/updated/resolved/regressed` emitted at engine write time, not aggregator read time |
+| Finding revalidation scope | `engine` | Hot → `severity >= high` only; warm → `severity >= medium`; cold → all |
+| Scheduler cron | `platform` | Reads `Environment.activated + continuousPaused + plan`; enqueues hot/warm/cold cycles on cadence; leader-elected |
+| Plan gating | `platform` | Pro unlocks warm + daily scheduling; Max unlocks hot + hourly scheduling; Starter stays cold-weekly |
+| Cycle budget enforcement | `engine` | Wall-clock caps per cycleType; timed-out pages queued for next same-type cycle |
+
+**End of Fase 3 deliverable:** continuous intelligence for real. `continuousAudits` flag becomes load-bearing. `cycleType` drives actual pipeline branching. Max customers get a new cycle every 15min without saturating infra.
+
+### Fase 4 — Rollout gradual
+
+Feature-flag gated rollout with a kill switch. Order:
+1. Internal demo org first (7 days soak)
+2. 1-2 real customers opted-in, with a phone-call-able escalation path
+3. Metrics gate before broad rollout: Redis backlog p95 < 10s, cycle p95 duration within plan budget, memory per worker < 1.2GB, DB pool saturation < 70%
+4. Broad rollout per plan tier; Starter last (highest relative risk if incremental mis-gates something)
+
+**Kill switch:** a `VESTIGIO_CONTINUOUS_SCHEDULER_ENABLED` env flag that short-circuits the scheduler cron if flipped off; cycles still run on webhook trigger.
 
 ---
 

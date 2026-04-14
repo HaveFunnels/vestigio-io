@@ -1,8 +1,11 @@
 # Architecture V2
 
+> Last updated: 2026-04-14
+> Companion to: [ROADMAP.md](ROADMAP.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [DEPLOY.md](DEPLOY.md)
+
 ## Goal
 
-Transformar o sistema atual em:
+Transformar o sistema em:
 
 **um decision-first intelligence engine para digital business assurance**
 
@@ -12,53 +15,45 @@ com:
 - phased enrichment
 - MCP como interface cognitiva
 - control plane separado do engine
+- **continuous incremental audits** sob cadência por plano
 
 ## Architectural principles
 
 ### 1. Single collection owner
 
-Preservar a diretiva:
-
-- coleta ativa pertence ao audit pipeline
-- radars e modules de intelligence nao fazem rede, shell ou probe ad hoc
-
-Isso segue `AUDIT_INTELLIGENCE_DIRECTIVES.md`.
+Coleta ativa pertence ao audit pipeline (`apps/audit-runner/` + `workers/ingestion/`). Radars, módulos de intelligence e MCP não fazem rede, shell ou probe ad hoc. Segue `AUDIT_INTELLIGENCE_DIRECTIVES.md`.
 
 ### 2. Evidence first
 
-Toda logica downstream consome evidence normalizado, nunca blobs heterogeneos como truth principal.
+Toda lógica downstream consome evidence normalizado (`packages/evidence/`), nunca blobs heterogêneos como verdade primária.
 
 ### 3. Decisions are first-class
 
-`decision` e a unidade principal de produto.
+`decision` é a unidade primária de produto; findings, ações, incidents, opportunities são projeções.
 
 ### 4. Reuse before execution
 
-O sistema tenta responder com evidence existente antes de:
+O sistema responde com evidence existente antes de:
 
 - probe leve
-- browser verification
-- integracao externa
+- browser verification (Stage D, Playwright)
+- integração externa
+
+Cold cycles quebram reuse intencionalmente (baseline reset). Hot/warm cycles maximizam reuse via content-hash + evidence carry-forward.
 
 ### 5. Environment-aware intelligence
 
-Nenhuma decisao material deve misturar:
+Nenhuma decisão material mistura:
 
 - production com staging
 - checkout de uma business unit com landing de outra
-- root domain institucional com superficie comercial sem scoping explicito
+- root domain institucional com surface comercial sem scoping explícito
+
+Todo material object carrega `workspace_ref`, `environment_ref`, `subject_ref`, `path_scope`.
 
 ### 6. Control plane separate from product brain
 
-SaaS boilerplate pode operar:
-
-- auth
-- tenants/workspaces
-- billing
-- jobs registry
-- notifications
-
-Mas nao deve conter:
+SaaS boilerplate (auth, tenants, billing, jobs, notifications) não contém:
 
 - rules de discovery
 - decision logic
@@ -69,32 +64,32 @@ Mas nao deve conter:
 
 ```text
 Control Plane
-  -> Engine Orchestration
-    -> Ingestion Layer
-      -> Evidence Layer
-        -> Intelligence Layer
-          -> Decision Layer
-            -> Output Layer
-              -> MCP / Chat / UI Surfaces
+  → Engine Orchestration (scheduler + worker loop + Redis queue)
+    → Ingestion Layer (staged pipeline + Playwright pool)
+      → Evidence Layer (Postgres + content-hash + graph)
+        → Intelligence Layer (signals, inferences, shared services)
+          → Decision Layer (decisions, risk, value case)
+            → Output Layer (findings, actions, workspaces, maps)
+              → MCP / Chat / UI Surfaces
 ```
 
 ## Control Plane
 
-### Responsibilities (implemented in `apps/platform/` and `src/app/`)
+### Responsibilities (`apps/platform/` + `src/app/api/`)
 
-- workspace and user management (Organization, Membership with full CRUD)
-- plan entitlements (`packages/plans/`, `PlatformConfig` model)
-- environment registry (Environment model with domain, landing URL, production flag)
-- onboarding and business profile capture (BusinessProfile + BusinessProfileVersion)
-- SaaS access configuration (SaasAccessConfig created during onboarding, per-environment)
-- scheduling policy (`apps/platform/audit-scheduler.ts`)
-- billing integration (Paddle primary, Stripe fallback)
-- Redis-backed job queue with in-memory fallback
-- rate limiting (Redis-backed with in-memory fallback)
-- notifications and workflow states
-- platform error tracking and observability (`PlatformError` model)
-- auth event logging (`AuthEvent` model)
-- token cost ledger and usage tracking
+- workspace, user, membership CRUD
+- plan entitlements (`packages/plans/`, `PlatformConfig` model, `src/libs/plan-config.ts` para cadência)
+- environment registry (`Environment` com `activated`, `continuousPaused`, `lastAccessedAt`)
+- onboarding + business profile capture (`BusinessProfile` + `BusinessProfileVersion`)
+- SaaS access config (`SaasAccessConfig` por ambiente)
+- admin org provisioning (`POST /api/admin/organizations`, `/app/admin/organizations/new`)
+- impersonation (`apps/platform/impersonation.ts` + `/api/admin/impersonate/*`)
+- billing (Paddle primário, Stripe fallback)
+- Redis-backed job queue + rate limiter com fallback in-memory
+- leader election (`src/libs/leader-election.ts`)
+- usage metering para pay-as-you-go (`src/libs/usage-meter.ts`)
+- notifications + workflow states (`NotificationLog`)
+- platform error tracking, auth event logging, token cost ledger
 
 ### Must not own
 
@@ -107,83 +102,92 @@ Control Plane
 
 ### Responsibilities
 
-- create `audit_cycle`
-- route collection jobs
-- enforce plan gates such as `continuous_audits_is_enabled`
-- drain outbox and projection jobs
-- orchestrate verification requests
+- criar `AuditCycle` com `cycleType` correto (hot/warm/cold)
+- enfileirar em prioridade na Redis queue
+- resolver critical surfaces + URL allow-list + carry-forward
+- invocar staged pipeline com `pipelineMode` + `url_filter` + `cycleBudgetMs`
+- processar behavioral payload no window correto
+- acionar verification sob demanda
+- emitir structured logs com correlação (`cycle_id/org_id/env_id/worker_id`)
+- gravar usage meter no final do cycle
 
-### Current grounding to preserve
+### Current grounding
 
-- `cron/audits` remains the primary operational worker
-- event-driven incremental refresh preferred over radar polling
+- **Worker separado:** `apps/audit-runner/worker-loop.ts` é o processo canônico (rodando via `npm run start:worker` em um Railway service dedicado). Consome `apps/platform/audit-cycle-queue.ts` (priority Redis list).
+- **Scheduler horário:** `apps/audit-runner/scheduler.ts` roda de hora em hora sob `withLeadership("audit-scheduler", ttlSec:90)` em `src/instrumentation-node.ts`. Enumera envs `activated=true, continuousPaused=false, org.status != suspended`, resolve cycleType devido via `PLAN_CADENCE`, cria `AuditCycle` + enfileira.
+- **Inactivity pause cron:** hourly, pausa envs sem acesso por 14d (exceto `orgType=demo`).
+- **Heal cron:** minutely, redispatcha cycles órfãos (`pending/running` > 10min) via queue.
+- **Fallback in-process:** quando `REDIS_URL` não está configurado, todos os dispatch sites caem para `Promise.then(runAuditCycle)` — single-box deploys continuam funcionando.
+
+### Deprecated
+
+- `apps/platform/audit-scheduler.ts` — scheduler in-memory legacy, nenhum consumidor vivo. O scheduler vivo é `apps/audit-runner/scheduler.ts`.
 
 ## 1. Ingestion Layer
 
 ### Responsibilities
 
 - core audit collection
-- domain discovery and crawl
-- heartbeat ingestion
-- pixel ingestion
+- domain discovery + crawl seletivo via `url_filter`
+- heartbeat + pixel ingestion
 - external adapter pulls
-- browser verification execution when explicitly requested
+- browser verification (cold-only, gated em `pipelineMode='full'`)
 
-### Preserve conceptually
+### Preserved
 
-- `AuditHttpClient`
-- `AuditPipelineProbe`
-- `DomainInventoryCrawler`
-- `DomainCrawlPlanner`
-- `PixelTrack`
-- heartbeat ingestion
+- `AuditHttpClient`, `AuditPipelineProbe`, `DomainInventoryCrawler`, `DomainCrawlPlanner`
+- `PixelTrack` + heartbeat ingestion
+- Chromium semaphore (`workers/verification/chromium-pool.ts`, default 3, env `CHROMIUM_POOL_SIZE`) envolvendo todo `chromium.launch()` call site — teto de RAM ~1GB sob burst.
 
-### Replace
+### Pipeline modes
 
-- direct writes of heterogeneous payload into `audits.data`
+- `full` — todas as stages A-D (Stage D = Playwright browser verification). Apenas cold cycles.
+- `shallow_plus` — stages A-C sem Stage D. Hot/warm cycles. Agora respeita `url_filter`: intersect antes do slice (o slice de 5 URLs só aplica quando nenhum filter é passado).
+- `shallow` — stage A somente. Usado pelo funil `/lp` e admin surface scans.
 
 ## 2. Evidence Layer
 
 ### Responsibilities
 
-- typed storage of evidence per cycle/environment
+- typed storage de evidence por cycle/environment
 - evidence graph persistence
-- freshness and provenance tracking
-- structural and behavioral overlays
+- freshness + provenance
+- behavioral overlays
 - integration snapshot storage
+- content-hash para change detection
 
-### Canonical stores (implemented)
+### Canonical stores
 
 - cycle store (`packages/evidence/cycle-store.ts`)
-- evidence store — in-memory (`packages/evidence/store.ts`) + PostgreSQL (`packages/evidence/prisma-store.ts`)
+- evidence store — in-memory (`packages/evidence/store.ts`) + Postgres (`packages/evidence/prisma-store.ts`)
 - graph store (`packages/graph/`)
 - quality scoring (`packages/evidence/quality.ts`)
 - confidence adjuster (`packages/evidence/confidence-adjuster.ts`)
 
-### Implemented in Prisma
+### Prisma models
 
-- `Evidence` model with full scoping, freshness, quality metadata
-- `Website` model with pages and surface relations
-- `PageInventoryItem` model with type, tier, criticality, freshness
-- `SurfaceRelation` model with relation types and cross-domain tracking
-- `AuditCycle` model with status, type, timestamps
-- `VersionedSnapshot` for change detection baselines
+- `Evidence` — com `contentHash String?` + índice `(environmentRef, subjectRef, evidenceType)`
+- `Website` + `PageInventoryItem` (type, tier, criticality, freshness) + `SurfaceRelation`
+- `AuditCycle` (status, cycleType, timestamps) + `CycleSnapshot` + `Finding`
+- `VersionedSnapshot` para change-detection baselines
+- `RawBehavioralEvent` para pixel ingest
+
+### Evidence carry-forward
+
+Hot/warm cycles clonam evidence rows do cycle anterior **apenas** para URLs fora do allow-list (páginas que o cycle não vai re-crawlar), via `carryEvidenceForward()` em `apps/audit-runner/cycle-modes.ts`. Rows carregam `CollectionMethod.CarriedForward` ("carried_forward") para downstream quality-scoring discriminar. Evita duplicação de evidence e preserva continuidade para o engine atomic recompute.
 
 ### Preserve
 
-- `website_page_inventory` (now `PageInventoryItem` in Prisma)
-- `website_surface_relations` (now `SurfaceRelation` in Prisma)
-- behavioral session intelligence (`packages/behavioral/`)
-- cycle model
+- `website_page_inventory`, `website_surface_relations`, behavioral session intelligence (`packages/behavioral/`), cycle model.
 
 ## 3. Intelligence Layer
 
 ### Responsibilities
 
-- compute signals
-- compute local inferences
-- expose shared domain services
-- apply suppression and allowlist context
+- extrair signals
+- computar inferences locais
+- expor shared domain services
+- aplicar suppression + allowlist context
 
 ### Shared domain services
 
@@ -198,288 +202,333 @@ Control Plane
 
 ### Modules
 
-- revenue intelligence
-- chargeback intelligence
-- readiness intelligence
-- brand/fraud intelligence
-- measurement intelligence
-
-Modules consume shared services; they do not reconstruct topology independently.
+- revenue, chargeback, readiness, brand/fraud, measurement, security, behavioral.
+- Módulos consomem shared services; não reconstroem topologia independentemente.
 
 ## 4. Decision Layer
 
 ### Responsibilities
 
-- answer business questions
-- normalize risk and upside
-- apply confidence, freshness and gates
-- create `decision`
-- promote to `incident` or `opportunity`
-- prioritize actions
+- responder business questions
+- normalizar risk e upside
+- aplicar confidence, freshness, gates
+- criar `decision`, promover a `incident` ou `opportunity`
+- priorizar actions
 
 ### Central contracts
 
-- `decision`
-- `risk_evaluation`
-- `value_case`
-- `verification_request`
-- `suppression_rule`
+- `decision`, `risk_evaluation`, `value_case`, `verification_request`, `suppression_rule`.
 
 ## 5. Output Layer
 
 ### Responsibilities
 
-- findings table projection
+- findings projection (`packages/projections/`)
 - preflight projection
-- incident board
-- opportunity board
-- workspace summary
-- use-case maps
-- explainability payloads for chat/MCP
+- incident + opportunity boards
+- workspace summary (7 behavioral workspaces + core packs)
+- use-case maps (`packages/maps/`)
+- explainability payloads para chat/MCP
+- change-detection deltas (`new | updated | resolved | regressed`)
 
-Rule:
-
-Outputs are projections from canonical decisions and evidence, never parallel truth sources.
+Regra: outputs são **projeções** de decisions canônicas + evidence, nunca fontes paralelas de verdade.
 
 ## 6. MCP / Chat Surface
 
 ### Responsibilities
 
-- consume read models and evidence refs
-- answer business questions conversationally
-- request verification when needed
-- keep token/cost discipline
-- surface explainability and confidence clearly
+- consumir read models + evidence refs
+- responder conversacionalmente
+- pedir verification quando necessário
+- disciplina de token/cost
+- exibir explainability + verification stage (nunca confidence percentage numérico — ver Wave 2.4)
 
-### Must not do
+### Components (`apps/mcp/`)
 
-- invent business logic outside decision contracts
-- bypass freshness and suppression policy
-- run unrestricted probing without engine approval
+- `server.ts`, `tools.ts`, `resources.ts`
+- `playbooks.ts` + `playbook-prompts.ts`
+- `suggestion-engine-v2.ts`, `suggestions.ts`
+- `context.ts` + `context-chaining.ts`
+- `session.ts`, `usage.ts`, `observability.ts`
+- `saas-awareness.ts`, `verification.ts`, `audit-lifecycle.ts`, `maintenance.ts`
+- `llm/` — pipeline, rate limiter, prompt gate
 
-## Core cross-cutting contracts
+### Must not
+
+- inventar business logic fora de decision contracts
+- bypassar freshness + suppression policy
+- probar sem aprovação do engine
+
+## Cross-cutting contracts
 
 ### Freshness
 
-Every layer must carry:
-
-- `observed_at`
-- `fresh_until`
-- `freshness_state`
-- `staleness_reason`
+Todo layer carrega: `observed_at`, `fresh_until`, `freshness_state`, `staleness_reason`.
 
 ### Environment scoping
 
-Every material object must carry:
+Todo material object carrega: `workspace_ref`, `environment_ref`, `subject_ref`, `path_scope`.
 
-- `workspace_ref`
-- `environment_ref`
-- `subject_ref`
-- `path_scope`
+### URL canonicalization
+
+Para comparações de set-membership (critical surfaces, allow-list intersect), URLs passam por `canonicalizeUrl()` em `apps/audit-runner/cycle-modes.ts`: drop query/fragment, lowercase host, strip trailing slash exceto root. Evita drift silencioso entre `Finding.surface` (às vezes path) e `PageInventoryItem.normalizedUrl` (sempre URL completa).
 
 ### False-positive governance
 
-Centralize:
-
-- suppressions
-- allowlists
-- evidence dispute
-- override audit trail
+Centralizado em `packages/suppression/`: suppressions, allowlists, evidence dispute, override audit trail.
 
 ### Value estimation
 
-Centralize:
+Centralizado em `packages/impact/`: range-based estimation, confidence bands, business profile calibration, guardrails.
 
-- range-based estimation
-- confidence bands
-- business profile calibration
-- guardrails against overpromising
+## Continuous incremental engine
 
-## What stays
+> Foundation shipada em 2026-04-14 (Wave 5 Fase 1 + Fase 2 + Fase 3). Detalhes por commit em [ROADMAP.md](ROADMAP.md) e [DEV_PROGRESS.md](../DEV_PROGRESS.md).
 
-- cycle model
-- evidence graph concept
-- hybrid discovery
-- confidence and gating
-- operational enrichment mindset
-- composite risk logic
-- preflight profiles
-- phased enrichment
+### Cycle modes
 
-## What is replaced
+Ternário em `apps/audit-runner/cycle-modes.ts`:
 
-- `audits.data` as main intelligence container
-- duplicate risk ontologies
-- per-radar bespoke topology reconstruction
-- UI fallback semantics
-- fragmented freshness handling
+| Mode | Behavioral window | Budget | Pipeline mode | Carry-forward | Escopo de crawl |
+|------|-------------------|--------|---------------|---------------|-----------------|
+| hot  | 1h                | 60s    | shallow_plus  | ON            | Critical surfaces apenas |
+| warm | 24h               | 4min   | shallow_plus  | ON            | Critical + 30% rotating sample (Fisher-Yates) |
+| cold | 30d               | 10min  | full          | OFF (baseline reset) | Todas as páginas |
 
-## Current repo/modules shape
+### Critical surface selection
+
+Hybrid em `resolveCriticalSurfaces()`:
+
+- **Heuristic regex** sobre path: `/checkout|cart|carrinho|comprar|pay|payment|billing/`, `/pricing|preco|planos|plans/`, `/product|produto|item|p\//`, mais home (`/`) sempre.
+- **Auto-promotion:** URLs que tiveram severity ≥ high finding nos últimos 7 dias — surfaces ativamente quebrando revenue entram no hot loop até serem resolvidas.
+- UI para user-marks explícitos é trabalho futuro (fora de escopo de Fase 3).
+
+### Plan cadence
+
+`PLAN_CADENCE` em `src/libs/plan-config.ts`:
+
+| Plan    | Cold   | Warm | Hot    |
+|---------|--------|------|--------|
+| Starter | 1/semana | —    | —      |
+| Pro     | 3 dias | 4h   | 1h     |
+| Max     | 1 dia  | 1h   | 15 min |
+
+`getCadenceForPlan(planKey)` resolve. Scheduler consulta + emite cycles a cada hora. Cadence não é admin-tunable por UI — mudar exige commit (o custo de misconfig em produção é alto demais).
+
+### Redis queue + worker
+
+- **`apps/platform/audit-cycle-queue.ts`** — queue com prioridade (hot > warm > cold), lock por env via `SET NX EX` (TTL 15min), attempts counter, DLQ em 3 falhas, `getQueueDepth()` para observability.
+- **`apps/audit-runner/worker-loop.ts`** — consumer standalone (`npm run start:worker`). Concorrência por worker (default 2, env `AUDIT_WORKER_CONCURRENCY`). Requeue sem penalidade em contenção de env. Backoff exponencial (5s→60s). SIGTERM graceful (5min timeout + lock-release sweep). HTTP health server em `WORKER_HEALTH_PORT` (default 3001). Locks tracked em `heldEnvLocks: Set<string>` para cleanup.
+- **Leader election** — `src/libs/leader-election.ts` com `SET NX EX`, fail-open em Redis blip. Envolve scheduler, heal, lead-cleanup, inactivity-pause.
+- **Chromium pool** — `workers/verification/chromium-pool.ts`, semaphore in-process.
+
+### Dispatch sites
+
+Todos enfileiram via `enqueueAuditCycle()` primeiro, com fallback in-process:
+
+- Stripe webhook (`src/app/api/stripe/webhook/route.ts`)
+- Paddle webhook (`src/app/api/paddle/webhook/route.ts`)
+- Activation endpoint (`src/app/api/environments/activate/route.ts`)
+- Env-activity resume hook (`src/libs/env-activity.ts`)
+- Heal cron (`src/instrumentation-node.ts`)
+- Scheduler (`apps/audit-runner/scheduler.ts`)
+
+### Activation + inactivity lifecycle
+
+- `Environment.activated` — flipped true quando owner completa onboarding + clica "Activate environment". `/api/environments/activate` cria env + BusinessProfile + primeiro AuditCycle em uma transação e enfileira.
+- `Environment.lastAccessedAt` — 1h-debounced write em `src/libs/env-activity.ts`, chamado no `/app/*` server layout (pulado quando `isImpersonating`, para não resetar o relógio do owner).
+- `Environment.continuousPaused` — seteado pelo inactivity cron após 14d sem acesso, exceto `orgType=demo`. Banner âmbar subdued em `/app/*`.
+- Auto-resume — primeiro acesso após pausa dispara `resumeIfPaused()` (atomic `updateMany` com gate) que enfileira catch-up cycle.
+
+### SSE progress
+
+- `GET /api/cycles/[id]/stream` — observer puro, poll de cycle status + finding count + page count a cada 2s, eventos `status/complete/error`, 15s heartbeat, 10min guardrail.
+- `GET /api/cycles/latest` — discovery endpoint (respeita cookie `active_env`).
+- `CycleProgressBanner` em `src/components/app/` monta em `/app/inventory`, `/app/analysis`, `/app/actions` via `EventSource`.
+
+### Observability
+
+- `src/libs/structured-log.ts` — JSON line com correlation IDs (`cycle_id/org_id/env_id/worker_id`), keys em snake_case para parsers.
+- `src/libs/usage-meter.ts` — hook no finally{} block de `runAuditCycle` gravando `cycles_run`, `pages_crawled`, `compute_seconds` na tabela `Usage` por período `YYYY-MM`.
+- `GET /api/admin/metrics/audit-runner` — endpoint single-call: queue depth por tier + DLQ, cycles-by-status últimas 24h, p50/p95 duration com `sampleTruncated` flag, falhas recentes, top-10 orgs por usage.
+
+### Known limitations / deferred
+
+- **`FindingEvidenceDep` index não existe** — engine `recomputeAll()` ainda é atomic sobre o evidence set completo. Speedup de hot/warm vem de crawl selectivity + carry-forward (não-fetch). Adicionar o index permitiria skip de findings cujo upstream evidence não mudou.
+- **Pre-fetch hash comparison** — hoje URLs no allow-list ainda são fetchadas mesmo que o hash fosse bater. Carry-forward economiza parse + signal extraction, não o fetch. HEAD-request gate ou hash-only endpoint seria o próximo ganho.
+- **`minSessionsForInferences` hardcoded** — `MIN_SESSIONS=20` em `packages/signals/engine.ts`. Plumbing dinâmico por cycle mode é cross-cutting e ficou fora de escopo.
+- **Priority inversion** — scheduler pula env com cycle in-flight. Se um cold está rodando e um hot fica due, o hot espera o cold completar. Heal cron + tick horário mitigam; redesign é out of scope da Fase 3.
+- **Plan cadence admin UI** — cadência definida em código. UI para tunar por customer é risky (misconfig em produção derruba SLO); `continuousAudits` flag em `PlanConfig` existe mas não é lido (legacy).
+- **DB load em scheduler** — enumera até 500 envs por tick. Cursor pagination quando passar de ~1k envs.
+
+## Current repo shape
 
 ```text
 apps/
-  platform/          — control plane services (job queue, billing safety, auth logging,
-                       Redis job queue, SaaS access store, token ledger, env validation)
-  mcp/               — cognitive layer (LLM pipeline, tools, resources, playbooks,
-                       context chaining, suggestion engine, session management)
+  audit-runner/     — cycle orchestration, worker loop, scheduler, cycle-modes,
+                      behavioral processing
+  platform/         — control plane (audit-cycle-queue, job-queue, billing-safety,
+                      auth-logging, SaaS access store, token ledger, env validation,
+                      impersonation, conversation-store, cost-guardrails)
+  mcp/              — cognitive layer (LLM pipeline, tools, resources, playbooks,
+                      context chaining, suggestion engine v2, session, usage,
+                      observability, saas-awareness, verification hooks)
 
 packages/
-  domain/            — canonical contracts (evidence, signal, inference, decision, action,
-                       incident, opportunity, value-case, suppression, verification,
-                       saas-access, business-profile-lifecycle, workspace, website)
-  evidence/          — typed evidence persistence (in-memory store + PrismaEvidenceStore
-                       backed by PostgreSQL), cycle store, quality scoring, confidence adjuster
-  graph/             — evidence graph model and query layer
-  signals/           — signal extraction
-  inference/         — inference synthesis
-  decision/          — decision engine, conflict resolver
-  risk/              — risk evaluation
-  intelligence/      — shared domain services, root cause analysis, global actions
-  classification/    — pack eligibility, route classification
-  projections/       — projection engine: findings, actions, workspaces, change reports,
-                       verification maturity, change class, evidence quality
-  workspace/         — workspace orchestration (preflight, revenue, chargeback packs),
-                       recompute engine, confidence audit, behavioral validation
-  impact/            — quantified value cases, impact summaries
-  plans/             — plan entitlements and limits
-  maps/              — use-case maps
-  suppression/       — suppression governance
-  truth/             — truth resolution, contradiction detection
-  change-detection/  — cycle-to-cycle change detection, versioned snapshots
-  verification-lifecycle/ — verification request lifecycle
+  actions/          — action derivation from decisions
+  behavioral/       — behavioral intelligence aggregates, session cohorts
+  brand-adapter/    — brand impersonation detection
+  change-detection/ — cycle-to-cycle diff, versioned snapshots, change_class emit
+  classification/   — pack eligibility, route classification
+  composites/       — blast-radius regression, opportunity compression,
+                      trust-surface score
+  decision/         — decision engine, conflict resolver
+  domain/           — canonical contracts (evidence, signal, inference, decision,
+                      action, incident, opportunity, value-case, suppression,
+                      verification, saas-access, business-profile-lifecycle,
+                      workspace, website)
+  evidence/         — typed evidence (in-memory + PrismaEvidenceStore + Postgres),
+                      cycle store, quality scoring, confidence adjuster
+  graph/            — evidence graph model + query layer
+  impact/           — quantified value cases, impact summaries
+  inference/        — inference synthesis
+  integrations/     — commerce-context, reconcile (since-param incremental),
+                      revenue-recovery, shared types
+  intelligence/     — shared domain services, root cause analysis, global actions,
+                      linking
+  katana-adapter/   — katana deep discovery integration
+  knowledge/        — foundation-articles (160 programmatic articles), translations,
+                      guides
+  maps/             — use-case maps (engine maps findings → map nodes)
+  nuclei-adapter/   — nuclei scan integration
+  nuvemshop-adapter/— Nuvemshop integration
+  plans/            — plan entitlements + limits
+  projections/      — projection engine: findings, actions, workspaces,
+                      change reports, verification maturity, change class,
+                      evidence quality
+  risk/             — risk evaluation
+  shopify-adapter/  — Shopify integration
+  signals/          — signal extraction
+  suppression/      — suppression governance
+  technology-registry/ — technology + provider fingerprinting
+  truth/            — truth resolution, contradiction detection
   verification-economics/ — cost/benefit analysis for verification
-  behavioral/        — behavioral intelligence aggregates
-  technology-registry/ — technology/provider fingerprinting
-  brand-adapter/     — brand impersonation detection
-  nuclei-adapter/    — nuclei scan integration
-  katana-adapter/    — katana deep discovery
-  shopify-adapter/   — Shopify integration
-  actions/           — action derivation from decisions
+  verification-lifecycle/ — verification request lifecycle
+  workspace/        — workspace orchestration (preflight, revenue, chargeback,
+                      security packs), recompute engine, confidence audit,
+                      behavioral validation
 
 workers/
-  ingestion/         — HTTP client, parser, crawl pipeline, staged pipeline
-  verification/      — browser verification (Playwright runtime), authenticated runtime
-  brand-intel/       — brand intelligence worker
-  nuclei/            — nuclei scan worker
-  katana/            — katana discovery worker
-  shopify/           — Shopify data sync worker
+  brand-intel/      — brand intelligence worker
+  ingestion/        — HTTP client, parser, crawl pipeline, staged pipeline
+                      (com url_filter + canon + contentHash), enrichment runner
+  katana/           — katana discovery worker
+  nuclei/           — nuclei scan worker
+  nuvemshop/        — Nuvemshop sync worker
+  shopify/          — Shopify sync worker
+  verification/     — Playwright runtime, authenticated runtime, chromium-pool
 
-src/app/             — Next.js application
-  (site)/            — marketing site (vestigio.io): homepage, pricing, auth, blog
-  (console)/         — legacy console routes (onboard)
-  app/               — authenticated app (app.vestigio.io): actions, workspaces, chat,
-                       analysis, inventory, maps, billing, settings, admin, onboarding,
-                       members, organization
-  api/               — API routes: analysis, chat, conversations, admin, paddle, stripe,
-                       onboard, usage, inventory, data-sources, validate-domain
+src/
+  app/
+    (site)/         — marketing site (vestigio.io): homepage, pricing, auth, lp,
+                      scans, pricing, support, thank-you, privacy, terms
+    (blog)/         — blog routes
+    (studio)/       — Sanity Studio
+    app/            — authenticated console (app.vestigio.io): actions, workspaces,
+                      chat, analysis, inventory, maps, billing, customer-center,
+                      dashboard, knowledge-base, members, organization,
+                      onboarding, settings, admin
+    api/            — analysis, analytics, api-key, auth, behavioral, billing,
+                      branding, chat, conversations, cycles, dashboard,
+                      data-sources, environments, feedback, forgot-password,
+                      generate-content, integrations, inventory, knowledge-base,
+                      lead, lemon-squeezy, maps, newsletter, onboard,
+                      organization, paddle, pricing, revalidate, scans, stripe,
+                      support-tickets, usage, user, user-journey, validate-domain,
+                      verification, whatsapp, workspace, admin/*
+  libs/             — auth, prismaDb, redis, leader-election, structured-log,
+                      usage-meter, env-activity, plan-config, behavioral-ingest,
+                      notifications, email, brevo, alert-evaluator, audit-log,
+                      integration-crypto, limiter, health-checker, error-tracker
+  components/       — UI primitives + app-layer components (CycleProgressBanner,
+                      AppSidebarLayout with paused banner, etc.)
+  paddle/ stripe/   — payment provider adapters
+  middleware.ts     — hostname-based routing (vestigio.io vs app.vestigio.io)
+                      + session-based onboarding gate
+
+prisma/             — schema.prisma, migrations, seed
+workers/            — see above
 ```
 
 ### Dual domain model
 
-- `vestigio.io` — marketing site (homepage, pricing, auth, blog, support)
-- `app.vestigio.io` — authenticated application (actions, workspaces, chat, analysis, admin)
+- `vestigio.io` — marketing site (homepage, pricing, auth, blog, support, /lp funnel, /scans prospect audits).
+- `app.vestigio.io` — authenticated application (actions, workspaces, chat, analysis, inventory, maps, admin).
 
-Routing is enforced in `src/middleware.ts` via hostname detection.
+Routing enforced em `src/middleware.ts` via hostname detection + session-based `needsOnboarding` gate (`hasOrganization === false || hasActivatedEnv === false`).
 
-### Evidence persistence (implemented)
+### Payment providers
 
-Evidence is now persisted in PostgreSQL via `PrismaEvidenceStore` (`packages/evidence/prisma-store.ts`).
-The Prisma `Evidence` model stores typed evidence with full scoping, freshness, and quality metadata.
-The in-memory `EvidenceStore` remains for fast access; Prisma store provides durability across restarts.
-
-### Redis integration (implemented)
-
-Redis provides:
-
-- **Job queue**: `apps/platform/redis-job-queue.ts` — persistent job state with TTL, FIFO queue, and per-environment locks. Currently consumed by `/api/analysis/*` (Stage 0.1 wave intelligence jobs) only. **Not yet wired into audit-runner** — see "Known gap" below.
-- **Rate limiting**: `src/libs/limiter.ts` — Redis-backed fixed-window counters with in-memory fallback
-- **MCP rate limiting**: `apps/mcp/llm/rate-limiter.ts`
-- **Session support**: shared across instances
-
-Redis is optional — the system gracefully falls back to in-memory when `REDIS_URL` is not set.
-
-### Audit-runner dispatch (Wave 5 Fase 1 — shipped 2026-04-14)
-
-[apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) is now dispatched through a Redis-backed priority queue + standalone worker process. The legacy in-process `Promise.then()` path is retained as a graceful fallback for deploys without `REDIS_URL`.
-
-**Components:**
-- [apps/platform/audit-cycle-queue.ts](../apps/platform/audit-cycle-queue.ts) — three-tier priority queue (hot > warm > cold), per-env locking via `SET NX EX`, attempt counter, DLQ on 3 consecutive failures, observability snapshot via `getQueueDepth()`.
-- [apps/audit-runner/worker-loop.ts](../apps/audit-runner/worker-loop.ts) — standalone consumer (`npm run start:worker`). Per-worker concurrency cap (`AUDIT_WORKER_CONCURRENCY`, default 2). Env-contention requeue without retry penalty. Exponential-backoff retry (5s → 60s capped). Graceful SIGTERM drain (5min timeout). Tiny HTTP health server on `WORKER_HEALTH_PORT` (default 3001) returning queue depth + chromium pool + Redis status for Railway probes. Structured JSON logs with `worker_id` correlation.
-- [src/libs/leader-election.ts](../src/libs/leader-election.ts) — `SET NX EX` based, fail-open on Redis blip. Wraps the heal cron, lead-cleanup cron, and inactivity-pause cron in [src/instrumentation-node.ts](../src/instrumentation-node.ts) so multi-replica Railway deploys don't N-fold the work.
-- [workers/verification/chromium-pool.ts](../workers/verification/chromium-pool.ts) — in-process semaphore (`CHROMIUM_POOL_SIZE`, default 3) wrapping every `chromium.launch()` call site. Caps RAM around 1GB even under burst.
-- [src/libs/structured-log.ts](../src/libs/structured-log.ts) — JSON line emitter with cycle_id/org_id/env_id/worker_id correlation, snake_case keys for log aggregator parsing.
-- [src/libs/usage-meter.ts](../src/libs/usage-meter.ts) + hook in `runAuditCycle` finally{} block — records `cycles_run`, `pages_crawled`, `compute_seconds` to the existing `Usage` table by period, foundation for pay-as-you-go billing.
-- [/api/admin/metrics/audit-runner](../src/app/api/admin/metrics/audit-runner/route.ts) — single-call admin metrics endpoint: queue depth (per tier + DLQ), cycles-by-status last-24h, p50/p95 cycle duration, recent failures, top-10 orgs by cycles_run.
-
-**Dispatch sites** that now enqueue first (with in-process fallback): Stripe webhook ([src/app/api/stripe/webhook/route.ts](../src/app/api/stripe/webhook/route.ts)), Paddle webhook ([src/app/api/paddle/webhook/route.ts](../src/app/api/paddle/webhook/route.ts)), activation endpoint ([src/app/api/environments/activate/route.ts](../src/app/api/environments/activate/route.ts)), env-activity resume hook ([src/libs/env-activity.ts](../src/libs/env-activity.ts)), orphan-redispatch heal cron ([apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts)).
-
-**Deployment topology:** add a second Railway service (Custom Start Command: `npm run start:worker`) sharing `REDIS_URL` + `DATABASE_URL` with the web. See [DEPLOY.md § 15.3.1](DEPLOY.md) for the procedure.
-
-**Fase 3 shipped 2026-04-14:** real `cycleType` branching + scheduler cron + content hash.
-- [apps/audit-runner/cycle-modes.ts](../apps/audit-runner/cycle-modes.ts) — hot/warm/cold config (behavioral window, min sessions, budget, carry-forward flag) + critical surface classifier (regex + auto-promotion from recent high-severity findings) + URL allow-list builder (hot = critical only, warm = critical + 30% rotating sample, cold = null/all) + `carryEvidenceForward` helper that clones evidence rows from the previous cycle when carrying hot/warm URLs forward.
-- [apps/audit-runner/run-cycle.ts](../apps/audit-runner/run-cycle.ts) — maps `cycle.cycleType` to a `CycleMode`, resolves previous cycle + critical set + allow-list, calls carry-forward, runs staged pipeline with `url_filter` + per-mode budget. Hot/warm use `pipelineMode: 'shallow_plus'` (Stage D stays cold-only).
-- [workers/ingestion/staged-pipeline.ts](../workers/ingestion/staged-pipeline.ts) — accepts optional `url_filter: string[]` in `StagedPipelineInput`; when present, intersects discovered candidates with the allow-list (homepage always retained).
-- `Evidence.contentHash` — SHA-1 of the normalized HTML body for HttpResponse evidence; indexed `(environmentRef, subjectRef, evidenceType)` for Fase-3-plus-1 work that will pre-check hash before fetching.
-- [apps/audit-runner/process-behavioral.ts](../apps/audit-runner/process-behavioral.ts) — `windowHours` param (hot=1h, warm=24h, cold=30d).
-- [apps/audit-runner/scheduler.ts](../apps/audit-runner/scheduler.ts) — hourly leader-elected pass; reads `PLAN_CADENCE` from plan-config, resolves due cycleType per env (cold > warm > hot priority), creates `AuditCycle` row, enqueues with matching queue priority. Demo orgs included.
-- [src/libs/plan-config.ts](../src/libs/plan-config.ts) — `PLAN_CADENCE` table (Starter: 1/week cold; Pro: 1h hot / 4h warm / 3d cold; Max: 15min hot / 1h warm / 1d cold).
-
-Remaining for post-Fase-3:
-- `FindingEvidenceDep` index — engine recompute is still atomic over full evidence set; hot/warm speedup comes from crawl selectivity + carry-forward. Adding the index would let the engine skip re-running findings whose upstream evidence didn't change. Open work.
-- Pre-fetch hash comparison — today the allow-listed URLs still get fetched even if hash would match. The win is carry-forward on parse/signal extraction; a HEAD-request gate (or a hash-only endpoint) would skip the fetch entirely. Open work.
-
-### Payment providers (implemented)
-
-- **Paddle** is the primary payment provider (`src/paddle/`, `src/app/api/paddle/`)
-- **Stripe** is the fallback provider (`src/stripe/`, `src/app/api/stripe/`)
-- Plan configuration is managed via `PlatformConfig` model in Prisma and `src/libs/plan-config.ts`
+- Paddle (primário) — `src/paddle/`, `src/app/api/paddle/`. Webhook atualiza `Organization.plan/status` em `subscription.created/updated/canceled/paused/resumed` e `transaction.completed` via `resolvePlanFromPriceId()`.
+- Stripe (fallback) — `src/stripe/`, `src/app/api/stripe/`.
+- Plan config em `PlatformConfig` (DB) + `src/libs/plan-config.ts` (code).
 
 ### UX hierarchy
 
-The product surfaces are ordered by operational priority:
-
-1. **Actions** — primary surface, decision-derived prioritized actions (`src/app/app/actions/`)
-2. **Workspaces** — pack-level decision aggregation with workspace detail (`src/app/app/workspaces/[id]/`)
-3. **Chat** — conversational intelligence interface (`src/app/app/chat/`)
-4. **Analysis** — deep analysis and evidence exploration (`src/app/app/analysis/`)
+1. **Actions** — primary surface, decision-derived prioritized actions.
+2. **Workspaces** — pack-level decision aggregation com workspace detail (7 behavioral + core packs).
+3. **Chat** — conversational intelligence (MCP).
+4. **Analysis** — deep analysis + evidence exploration + change-class badges.
 
 ## Primary flows
 
-### Flow 1. Full audit cycle
+### Flow 1. Full cycle (cold)
 
-- orchestrator creates cycle
-- ingestion collects
-- evidence normalizes
-- intelligence derives signals/inferences
-- decision layer answers questions
-- projections update UI/chat surfaces
+- scheduler (ou webhook/activation) cria `AuditCycle` com `cycleType='cold'` + enfileira na queue
+- worker draina, resolve critical surfaces + allow-list (cold → null, tudo)
+- staged pipeline roda em `pipelineMode='full'` (A→D)
+- behavioral processor processa janela de 30d
+- engine recompute atomic sobre evidence set completo
+- projections emitidas (findings, actions, workspaces, change deltas)
+- MCP + UI consomem
 
-### Flow 2. Incremental refresh
+### Flow 2. Incremental refresh (hot/warm)
 
-> **Current state (2026-04-14):** cosmetic. `continuous_audits_is_enabled` is a label on `PlanConfig` with no scheduler reading it, and `AuditCycle.cycleType` is a column `run-cycle.ts` never branches on. Every cycle today is `full`, fired by Stripe/Paddle webhook or heal-cron re-dispatch. Making this flow load-bearing is the scope of Wave 5 in [ROADMAP.md](ROADMAP.md).
+> **Estado atual (2026-04-14):** load-bearing. Wave 5 Fase 3 fez `cycleType` ser read-significant em `run-cycle.ts`.
 
-Target semantics (Wave 5 Fase 3):
+- scheduler/webhook emite cycle hot ou warm conforme `PLAN_CADENCE`
+- `resolveCriticalSurfaces` computa set (heurística regex + auto-promotion de severity ≥ high findings dos últimos 7d)
+- `buildUrlAllowList` gera allow-list: hot = critical only, warm = critical + 30% rotating sample via Fisher-Yates
+- `carryEvidenceForward` clona evidence rows do cycle anterior **apenas para URLs fora do allow-list** (páginas que o cycle não re-crawla)
+- staged pipeline roda com `url_filter` + `max_pages_per_domain = urlFilter.length + 1`, `pipelineMode='shallow_plus'` (skip Stage D)
+- behavioral processor usa janela apropriada (hot=1h, warm=24h)
+- engine recompute (ainda atomic; `FindingEvidenceDep` index é trabalho futuro)
+- projections com change-class emit
 
-- **Ternary cycle modes** — `hot` (revenue-critical surfaces only, short wall-clock budget, last-1h behavioral window, revalidates `severity >= high` active findings), `warm` (rotating sample of periphery with coverage guarantee per window, last-24h behavioral, revalidates `severity >= medium`), `cold` (full pipeline, last-30d behavioral, revalidates everything). The existing `cycleType` string column becomes load-bearing.
-- **Evidence diff via content hash** — `EvidenceSnapshot.contentHash` (SHA-1 of normalized HTML) lets hot/warm cycles skip re-parse on unchanged pages. Engine still always writes the evidence row so freshness is honest.
-- **Finding → evidence dependency index** — `FindingEvidenceDep` table lets the engine identify which findings an evidence delta could affect, so only those recompute instead of the full set.
-- **Regression detection at engine write, not aggregator read** — today the dashboard `ChangeReport` diffs findings at read time; incremental demands `new | updated | resolved | regressed` emitted at engine write so cycles can skip re-checking already-resolved findings.
-- **Critical surface selection** — hybrid of heuristic regex (`checkout|cart|pricing|product|home`), mixed-weight scoring (recent high-severity findings + traffic share), and explicit user marks via the inventory surface sidedrawer (max 10 per env, stored in `CriticalSurface` table).
-- **Entitlement gate** — `continuousAudits` in `PlanConfig` gates warm/hot scheduling; `cold` runs at least weekly for every plan including Starter so no environment drifts without a baseline reset.
-- **Demo org exception** — `orgType=demo` is never paused by the inactivity cron.
-- **Progress surfacing** — the existing `/api/analysis/stream` SSE endpoint (already emits `stage_complete`, `findings`, `score`, `complete` with `Last-Event-ID` reconnect + 5min cache + 15s heartbeat) is consumed by `/app/inventory`, `/app/analysis`, `/app/actions` to turn a pending cycle into live UI.
-
-Pre-existing primitives used:
-- Pixel ingest at `POST /api/behavioral/ingest` + `process-behavioral.ts` — landed in Wave 0.2/0.3.
-- Integration deltas via `packages/integrations/reconcile.ts` — already incremental natively (adapter-by-adapter `since` params).
-- `VersionedSnapshot` baselines + `change-detection` package — provide the diff substrate.
+Primitives pré-existentes que esse flow consome:
+- Pixel ingest em `POST /api/behavioral/ingest` + `process-behavioral.ts` — Wave 0.2/0.3.
+- Integration deltas via `packages/integrations/reconcile.ts` — já incremental por adapter (`since` params).
+- `VersionedSnapshot` + `change-detection` package — substrato do diff.
 
 ### Flow 3. Verification on demand
 
-- chat/UI asks for stronger confidence
-- decision layer emits `verification_request`
-- orchestrator decides `light_probe`, `browser_verification`, `integration_pull` or defer
-- results return as new evidence/cycle fragment
+- Chat/UI pede stronger confidence
+- Decision layer emite `verification_request`
+- Orchestrator decide `light_probe`, `browser_verification`, `integration_pull` ou defer
+- Resultados retornam como evidence/cycle fragment novos
+- Recompute dispara, projections atualizam
+
+### Flow 4. Activation lifecycle
+
+- Admin cria org shell (Owner + Membership, sem env) via `POST /api/admin/organizations`
+- Admin impersona via `/api/admin/impersonate/*` (apps/platform/impersonation.ts)
+- Owner completa onboarding + preenche BusinessProfile
+- "Activate environment" CTA → `/api/environments/activate` cria env + profile + primeiro cold cycle + `activated=true`
+- Middleware libera `/app/*`
+- SSE banner mostra progresso real-time via `/api/cycles/[id]/stream`
+- Cycle completa → findings populam → workspaces + actions renderizam
+- Env idle 14d → inactivity cron pausa (exceto demo) → banner âmbar subdued
+- Owner volta → `resumeIfPaused()` dispara catch-up cycle
 
 ## Anti-patterns the rewrite must avoid
 
@@ -489,9 +538,14 @@ Pre-existing primitives used:
 - environment scope inferred too late
 - economic estimates without confidence bands
 - MCP bypassing engine contracts
+- numeric confidence percentages surfaced in UI (Wave 2.4: `confidence_tier` com low filtrado fora da projection)
+- verification lifecycle vocabulary que sugere finding é falso (Wave 2.4: `static_evidence → confirming → confirmed`, não `unverified → verified`)
 
-## Resolved Questions
+## Resolved design questions
 
-- **Repo structure**: The system lives in a single monorepo with strong logical boundaries (`packages/`, `apps/`, `workers/`, `src/`). No physical separation needed.
-- **Browser verification**: Runs in a dedicated worker pool (`workers/verification/`) with Playwright runtime, separate from the audit pipeline.
-- **Primary read model**: Actions page is the primary surface. Workspace summary is the second. Chat is the third. Analysis/findings is the fourth.
+- **Repo structure:** monorepo único com boundaries lógicas (`packages/`, `apps/`, `workers/`, `src/`). Nenhuma separação física necessária.
+- **Browser verification:** dedicated worker (`workers/verification/`) com Playwright runtime + chromium pool. Stage D cold-only.
+- **Primary read model:** Actions > Workspaces > Chat > Analysis.
+- **Cadence governance:** `PLAN_CADENCE` em código, não UI admin-tunável. Custo de misconfig em produção > benefício de flexibilidade.
+- **Cycle type storage:** `AuditCycle.cycleType` é a autoridade. Legacy rows com `cycleType='full'` contam como cold para freshness.
+- **Worker topology:** processo separado (`npm run start:worker`) em Railway service dedicado sharing `REDIS_URL` + `DATABASE_URL` com o web. Ver [DEPLOY.md § 15.3.1](DEPLOY.md).

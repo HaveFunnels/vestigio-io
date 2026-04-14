@@ -1,12 +1,13 @@
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
+import { getTranslations } from "next-intl/server";
 import { withErrorTracking } from "@/libs/error-tracker";
 import {
 	computeDashboardData,
 	emptyDashboardData,
 } from "@/lib/dashboard/aggregator";
-import { MOCK_DASHBOARD_DATA } from "@/lib/dashboard/mock-data";
+import { buildMockDashboardData } from "@/lib/dashboard/mock-data";
 import { isDemoOrg } from "@/lib/demo-account";
 
 // ──────────────────────────────────────────────
@@ -39,14 +40,19 @@ export const GET = withErrorTracking(
 			include: { organization: { select: { id: true, orgType: true } } },
 		});
 
+		// Mock dashboard text routes through the user's locale so the
+		// placeholder copy doesn't render in English when the rest of
+		// the app is in pt-BR / es / de.
+		const tMock = await getTranslations("console.dashboard.mock_data");
+
 		if (!membership?.organization) {
-			return NextResponse.json(MOCK_DASHBOARD_DATA);
+			return NextResponse.json(buildMockDashboardData(tMock));
 		}
 
 		// Demo org gets the mock fixture so the dashboard tells a
 		// coherent story even though the seed has no audit cycles.
 		if (isDemoOrg(membership.organization)) {
-			return NextResponse.json(MOCK_DASHBOARD_DATA);
+			return NextResponse.json(buildMockDashboardData(tMock));
 		}
 
 		const environment = await prisma.environment.findFirst({

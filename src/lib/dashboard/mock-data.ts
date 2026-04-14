@@ -84,6 +84,120 @@ function generateHeatmap() {
 	return days;
 }
 
+// Translator type narrow enough that we can call buildMockDashboardData
+// with anything next-intl returns from getTranslations (server) or
+// useTranslations (client). Keeping this loose avoids leaking a
+// next-intl import into a file that's reused from many surfaces.
+type MockTranslator = (key: string) => string;
+
+/**
+ * Build a localized MOCK_DASHBOARD_DATA payload.
+ *
+ * Why a function instead of a constant: the demo / no-env fallback used
+ * to ship hardcoded English strings ("Refund policy missing again on
+ * checkout") that leaked into the dashboard regardless of the user's
+ * preferred language. The titles here are not real findings — they're
+ * placeholder copy until the real audit data shows up — but they
+ * still need to read in the user's voice.
+ *
+ * Pass `t` from `getTranslations({ namespace: "console.dashboard.mock_data" })`
+ * (server) or `useTranslations("console.dashboard.mock_data")` (client).
+ * If translations are not available, callers can use `MOCK_DASHBOARD_DATA`
+ * which is the English fallback exposed below.
+ */
+export function buildMockDashboardData(t: MockTranslator): DashboardData {
+	const moneyRecovered: MoneyRecoveredData = {
+		totalCents: 4_728_310,
+		last7dCents: 142_300,
+		last30dCents: 340_290,
+		currency: "USD",
+		lastUpdatedAt: new Date().toISOString(),
+		caption: "",
+	};
+	moneyRecovered.caption = captionForMoneyRecovered(moneyRecovered);
+
+	const healthScore: HealthScoreData = {
+		current: 82,
+		deltaVsLastCycle: 5,
+		trend30d: HEALTH_TREND_30D,
+		components: { structural: 86, actionQuality: 78, verification: 81 },
+		caption: "",
+	};
+	healthScore.caption = captionForHealthScore(healthScore);
+
+	const exposure: ExposureData = {
+		monthlyCents: 4_724_000,
+		deltaVsLastCycleCents: -320_000,
+		currency: "USD",
+		byPack: [
+			{ pack: "revenue_integrity", cents: 2_140_000, colorClass: "bg-emerald-500" },
+			{ pack: "scale_readiness", cents: 1_180_000, colorClass: "bg-amber-500" },
+			{ pack: "chargeback_resilience", cents: 880_000, colorClass: "bg-red-500" },
+			{ pack: "behavioral", cents: 524_000, colorClass: "bg-blue-500" },
+		],
+		criticalOpenCount: 3,
+		criticalDeltaVsLastCycle: -1,
+		criticalOpenItems: [
+			{
+				id: "f_demo_payment_intent_loss",
+				inferenceKey: "payment_intent_loss",
+				title: t("payment_intent_loss"),
+				surface: "/checkout/3ds",
+				impactCents: 880_000,
+			},
+			{
+				id: "f_demo_chargeback_proof_gap",
+				inferenceKey: "chargeback_proof_gap",
+				title: t("chargeback_proof_gap"),
+				surface: "/admin/orders",
+				impactCents: 540_000,
+			},
+			{
+				id: "f_demo_refund_loop",
+				inferenceKey: "refund_recursive_trigger",
+				title: t("refund_loop"),
+				surface: "/api/webhooks/payment",
+				impactCents: 410_000,
+			},
+		],
+		caption: "",
+	};
+	exposure.caption = captionForExposure(exposure);
+
+	const changeReport: ChangeReportData = {
+		newFindings: [
+			{ id: "f_trust_boundary_crossed", title: t("trust_boundary_crossed"), impactCents: 420_000, severity: "high" },
+			{ id: "f_mobile_checkout_drag", title: t("mobile_checkout_drag"), impactCents: 210_000, severity: "medium" },
+			{ id: "f_pricing_page_outdated", title: t("pricing_page_outdated"), impactCents: 85_000, severity: "medium" },
+		],
+		regressions: [
+			{ id: "f_refund_policy_reverted", title: t("refund_policy_reverted"), severity: "high" },
+		],
+		resolved: [
+			{ id: "f_og_image_stale", title: t("og_image_stale"), impactCents: 60_000 },
+			{ id: "f_trust_seals_missing", title: t("trust_seals_missing"), impactCents: 180_000 },
+		],
+		verificationsConfirmed: 4,
+		caption: "",
+	};
+	changeReport.caption = captionForChangeReport(changeReport);
+
+	const activityHeatmap: ActivityHeatmapData = {
+		days: generateHeatmap(),
+		currentStreak: 14,
+		caption: "",
+	};
+	activityHeatmap.caption = captionForActivityHeatmap(activityHeatmap);
+
+	return {
+		moneyRecovered,
+		healthScore,
+		exposure,
+		changeReport,
+		activityHeatmap,
+	};
+}
+
 // Build the mock by populating the slices then injecting captions
 // from the same helpers the real aggregator uses — so the mock and
 // the prod path always agree on wording rules.
@@ -126,21 +240,21 @@ const exposure: ExposureData = {
 		{
 			id: "f_demo_payment_intent_loss",
 			inferenceKey: "payment_intent_loss",
-			title: "Payment intents dropping at 3DS challenge",
+			title: "Buyers are dropping out at the 3DS security step",
 			surface: "/checkout/3ds",
 			impactCents: 880_000,
 		},
 		{
 			id: "f_demo_chargeback_proof_gap",
 			inferenceKey: "chargeback_proof_gap",
-			title: "Chargeback evidence missing on disputed orders",
+			title: "You are losing chargebacks because the proof is missing",
 			surface: "/admin/orders",
 			impactCents: 540_000,
 		},
 		{
 			id: "f_demo_refund_loop",
 			inferenceKey: "refund_recursive_trigger",
-			title: "Refund webhook re-firing on retried captures",
+			title: "Refunds are firing twice on retried payments",
 			surface: "/api/webhooks/payment",
 			impactCents: 410_000,
 		},
@@ -153,19 +267,19 @@ const changeReport: ChangeReportData = {
 	newFindings: [
 		{
 			id: "f_trust_boundary_crossed",
-			title: "Trust boundary crossed at checkout",
+			title: "Buyers are getting bounced to a different domain at checkout",
 			impactCents: 420_000,
 			severity: "high",
 		},
 		{
 			id: "f_mobile_checkout_drag",
-			title: "Mobile checkout takes 4.8s to first interaction",
+			title: "Your mobile checkout takes 4.8s before the buyer can do anything",
 			impactCents: 210_000,
 			severity: "medium",
 		},
 		{
 			id: "f_pricing_page_outdated",
-			title: "Pricing page references retired tier",
+			title: "Your pricing page is showing a plan that no longer exists",
 			impactCents: 85_000,
 			severity: "medium",
 		},
@@ -173,19 +287,19 @@ const changeReport: ChangeReportData = {
 	regressions: [
 		{
 			id: "f_refund_policy_reverted",
-			title: "Refund policy missing again on checkout",
+			title: "Your refund policy disappeared from checkout again",
 			severity: "high",
 		},
 	],
 	resolved: [
 		{
 			id: "f_og_image_stale",
-			title: "Stale OG image on homepage",
+			title: "Your homepage was sharing an outdated preview image",
 			impactCents: 60_000,
 		},
 		{
 			id: "f_trust_seals_missing",
-			title: "Missing trust seals at payment step",
+			title: "The trust seals were missing at the payment step",
 			impactCents: 180_000,
 		},
 	],

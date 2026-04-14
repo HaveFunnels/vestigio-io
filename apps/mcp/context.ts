@@ -156,7 +156,7 @@ export function getChangeReport(ctx: EngineContext): ChangeReportProjection | nu
 
 export function getMaps(ctx: EngineContext): MapDefinition[] {
   const projections = projectAll(ctx.result, ctx.translations);
-  return buildAllMaps(projections, ctx.result);
+  return buildAllMaps(projections, ctx.result, ctx.translations);
 }
 
 export function getMap(ctx: EngineContext, mapType: string): MapDefinition | null {

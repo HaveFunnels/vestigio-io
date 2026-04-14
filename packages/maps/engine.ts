@@ -1,8 +1,32 @@
 import { FindingProjection, ActionProjection, ProjectionResult } from '../projections';
+import type { EngineTranslations } from '../projections/types';
 import { RootCause, GlobalAction } from '../intelligence';
 import { MultiPackResult } from '../workspace';
 import { makeRef } from '../domain';
 import { MapNode, MapEdge, MapDefinition, MapNodeType } from './types';
+
+// English source-of-truth for map names + category labels. Translation
+// lookups fall back to these when no localized string is provided, so
+// English users always see the same text they did before i18n landed.
+const MAP_NAMES: Record<string, string> = {
+  revenue_leakage: 'Revenue Leakage Map',
+  chargeback_risk: 'Chargeback Risk Map',
+  root_cause: 'Root Cause Map',
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  policy: 'Policy Surface',
+  support: 'Support Surface',
+  trust: 'Trust Surface',
+};
+
+function mapName(key: string, translations?: EngineTranslations): string {
+  return translations?.maps?.names?.[key] ?? MAP_NAMES[key] ?? key;
+}
+
+function categoryLabel(key: string, translations?: EngineTranslations): string {
+  return translations?.maps?.categories?.[key] ?? CATEGORY_LABELS[key] ?? key;
+}
 
 // ──────────────────────────────────────────────
 // Map Engine — derive visualization data
@@ -14,6 +38,7 @@ import { MapNode, MapEdge, MapDefinition, MapNodeType } from './types';
 export function buildRevenueLeakageMap(
   projections: ProjectionResult,
   result: MultiPackResult,
+  translations?: EngineTranslations,
 ): MapDefinition {
   const nodes: MapNode[] = [];
   const edges: MapEdge[] = [];
@@ -98,7 +123,7 @@ export function buildRevenueLeakageMap(
 
   return {
     id: 'revenue_leakage',
-    name: 'Revenue Leakage Map',
+    name: mapName('revenue_leakage', translations),
     type: 'revenue_leakage',
     nodes,
     edges,
@@ -108,6 +133,7 @@ export function buildRevenueLeakageMap(
 export function buildChargebackRiskMap(
   projections: ProjectionResult,
   result: MultiPackResult,
+  translations?: EngineTranslations,
 ): MapDefinition {
   const nodes: MapNode[] = [];
   const edges: MapEdge[] = [];
@@ -119,9 +145,9 @@ export function buildChargebackRiskMap(
 
   // Layout: categories in a column, findings branching right
   const categoryNodes: Record<string, { type: MapNodeType; label: string }> = {
-    policy: { type: 'policy', label: 'Policy Surface' },
-    support: { type: 'support', label: 'Support Surface' },
-    trust: { type: 'trust', label: 'Trust Surface' },
+    policy: { type: 'policy', label: categoryLabel('policy', translations) },
+    support: { type: 'support', label: categoryLabel('support', translations) },
+    trust: { type: 'trust', label: categoryLabel('trust', translations) },
   };
 
   // Map root causes to category
@@ -207,7 +233,7 @@ export function buildChargebackRiskMap(
 
   return {
     id: 'chargeback_risk',
-    name: 'Chargeback Risk Map',
+    name: mapName('chargeback_risk', translations),
     type: 'chargeback_risk',
     nodes,
     edges,
@@ -217,6 +243,7 @@ export function buildChargebackRiskMap(
 export function buildRootCauseMap(
   projections: ProjectionResult,
   result: MultiPackResult,
+  translations?: EngineTranslations,
 ): MapDefinition {
   const nodes: MapNode[] = [];
   const edges: MapEdge[] = [];
@@ -302,7 +329,7 @@ export function buildRootCauseMap(
 
   return {
     id: 'root_cause',
-    name: 'Root Cause Map',
+    name: mapName('root_cause', translations),
     type: 'root_cause',
     nodes,
     edges,
@@ -312,11 +339,12 @@ export function buildRootCauseMap(
 export function buildAllMaps(
   projections: ProjectionResult,
   result: MultiPackResult,
+  translations?: EngineTranslations,
 ): MapDefinition[] {
   return [
-    buildRevenueLeakageMap(projections, result),
-    buildChargebackRiskMap(projections, result),
-    buildRootCauseMap(projections, result),
+    buildRevenueLeakageMap(projections, result, translations),
+    buildChargebackRiskMap(projections, result, translations),
+    buildRootCauseMap(projections, result, translations),
   ];
 }
 

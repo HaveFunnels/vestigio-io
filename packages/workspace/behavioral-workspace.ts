@@ -68,9 +68,9 @@ const WORKSPACE_DEFS: Record<string, WorkspaceDef> = {
       'first_session_cta_timing_gap',
     ]),
     issueLabels: {
-      first_session_milestone_stall: 'First-time visitors stall before intent',
-      first_session_trust_barrier: 'Trust barrier for new visitors',
-      first_session_cta_timing_gap: 'Slow commercial entry for newcomers',
+      first_session_milestone_stall: 'First-time visitors are leaving before they show intent to buy',
+      first_session_trust_barrier: 'New visitors hit a trust wall before they engage',
+      first_session_cta_timing_gap: 'It takes too long for new visitors to see what to do',
     },
   },
   action_value: {
@@ -81,9 +81,9 @@ const WORKSPACE_DEFS: Record<string, WorkspaceDef> = {
       'dead_weight_surface_traffic',
     ]),
     issueLabels: {
-      low_value_action_dominates: 'Low-value actions dominate user attention',
-      high_value_action_underexposed: 'Revenue-positive actions underexposed',
-      dead_weight_surface_traffic: 'Dead-weight surface traffic',
+      low_value_action_dominates: 'Visitors are spending attention on actions that do not make money',
+      high_value_action_underexposed: 'The actions that make you money are too hard to find',
+      dead_weight_surface_traffic: 'Pages that bring no revenue are eating your traffic',
     },
   },
   acquisition_integrity: {
@@ -94,9 +94,9 @@ const WORKSPACE_DEFS: Record<string, WorkspaceDef> = {
       'paid_mobile_compounding_waste',
     ]),
     issueLabels: {
-      paid_traffic_friction_elevated: 'Paid traffic faces elevated friction',
-      paid_traffic_trust_gap: 'Trust gap for paid visitors',
-      paid_mobile_compounding_waste: 'Paid + mobile compounding waste',
+      paid_traffic_friction_elevated: 'Visitors from your ads are hitting more friction than the average buyer',
+      paid_traffic_trust_gap: 'Visitors from ads do not trust your site as fast as organic visitors',
+      paid_mobile_compounding_waste: 'Your paid mobile traffic is leaking money on two fronts at once',
     },
   },
   mobile_revenue: {
@@ -107,9 +107,9 @@ const WORKSPACE_DEFS: Record<string, WorkspaceDef> = {
       'mobile_cta_timing_degraded',
     ]),
     issueLabels: {
-      mobile_conversion_gap: 'Mobile vs desktop conversion gap',
-      mobile_form_friction_elevated: 'Mobile form friction elevated',
-      mobile_cta_timing_degraded: 'Mobile CTA timing degraded',
+      mobile_conversion_gap: 'Mobile buyers convert way less than desktop buyers',
+      mobile_form_friction_elevated: 'Your forms are painful to fill out on a phone',
+      mobile_cta_timing_degraded: 'Your buy buttons take too long to react on mobile',
     },
   },
   friction_tax: {
@@ -120,9 +120,9 @@ const WORKSPACE_DEFS: Record<string, WorkspaceDef> = {
       'checkout_entry_friction',
     ]),
     issueLabels: {
-      funnel_step_friction_cost: 'Funnel friction tax',
-      oscillation_decision_cost: 'Decision oscillation cost',
-      checkout_entry_friction: 'Checkout entry friction',
+      funnel_step_friction_cost: 'Each step in your funnel is costing you more than it should',
+      oscillation_decision_cost: 'Buyers are bouncing back and forth before deciding — and many never decide',
+      checkout_entry_friction: 'Something at the start of checkout is making buyers stall',
     },
   },
   trust_gap: {
@@ -133,9 +133,9 @@ const WORKSPACE_DEFS: Record<string, WorkspaceDef> = {
       'sensitive_input_trust_gap',
     ]),
     issueLabels: {
-      trust_deficit_conversion_drag: 'Trust deficit drags conversion',
-      reassurance_seeking_elevated: 'Elevated reassurance-seeking behavior',
-      sensitive_input_trust_gap: 'Sensitive input trust gap',
+      trust_deficit_conversion_drag: 'Buyers want to convert but trust gaps are pulling them away',
+      reassurance_seeking_elevated: 'Buyers keep checking policies and reviews — they need more reassurance to feel safe',
+      sensitive_input_trust_gap: 'Buyers are abandoning the moment they have to type their card or personal data',
     },
   },
   path_efficiency: {
@@ -146,9 +146,9 @@ const WORKSPACE_DEFS: Record<string, WorkspaceDef> = {
       'intent_decay_time_excessive',
     ]),
     issueLabels: {
-      path_length_exceeds_efficient: 'Path length exceeds efficient conversion',
-      intent_absorber_detected: 'Intent absorber surfaces detected',
-      intent_decay_time_excessive: 'Excessive intent-to-conversion time',
+      path_length_exceeds_efficient: 'The path from interest to purchase is too long for buyers to stick with',
+      intent_absorber_detected: 'Some pages are stealing attention from buyers without moving them toward a sale',
+      intent_decay_time_excessive: 'Too much time passes between when a buyer wants to buy and when they can actually buy',
     },
   },
 };
@@ -161,6 +161,11 @@ export function createBehavioralWorkspace(
   decision: Decision,
   actions: Action[],
   inferences: Inference[],
+  // Translations are optional — when provided, the issue title is
+  // looked up by inference_key in `engine.behavioral_issues` so the
+  // workspace card renders in the user's language. Without it, we
+  // fall back to the hardcoded English label from WORKSPACE_DEFS.
+  behavioralIssueTranslations?: Record<string, string>,
 ): BehavioralWorkspaceResult {
   const def = WORKSPACE_DEFS[workspaceType];
   const ids = new IdGenerator(def.idPrefix);
@@ -173,7 +178,9 @@ export function createBehavioralWorkspace(
   const keyIssues: BehavioralIssue[] = relevant
     .filter(i => i.severity_hint !== 'low' || i.conclusion_value !== 'low')
     .map(inf => ({
-      title: def.issueLabels[inf.inference_key] || inf.inference_key.replace(/_/g, ' '),
+      title: behavioralIssueTranslations?.[inf.inference_key]
+        ?? def.issueLabels[inf.inference_key]
+        ?? inf.inference_key.replace(/_/g, ' '),
       description: inf.reasoning,
       severity: inf.severity_hint || 'medium',
       inference_ref: makeRef('inference', inf.id),

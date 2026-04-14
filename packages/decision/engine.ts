@@ -562,6 +562,13 @@ function buildSecurityPostureActions(
   inferences: Inference[],
   translations?: EngineTranslations,
 ): { primary: string; secondary: string[]; verification: string[] } {
+  // Localize-or-fallback helper: route every action string through the
+  // translations map keyed by `security_posture.<key>`. Missing keys
+  // fall back to the English source so adding a translation is purely
+  // additive — never breaks the engine.
+  const ts = translations?.actions?.security_posture;
+  const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
+
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -571,54 +578,54 @@ function buildSecurityPostureActions(
   const sensitiveEndpoint = inferences.find(i => i.inference_key === 'sensitive_endpoint_exposed');
 
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = 'Critical security exposures detected. Fix before processing any customer transactions.';
+    const primary = tr('incident_primary', 'You have critical security holes that buyers can see. Fix these before taking another payment.');
 
     if (sensitiveEndpoint && sensitiveEndpoint.conclusion_value !== 'low') {
-      secondary.push('Remove or restrict access to exposed sensitive endpoints (admin panels, config files, backup archives).');
+      secondary.push(tr('incident_sensitive_endpoint', 'Lock down or remove the admin pages, config files, and backups that are currently public.'));
     }
     if (mixedContent && mixedContent.conclusion_value !== 'low') {
-      secondary.push('Eliminate mixed content on commercial pages: serve all resources over HTTPS to prevent interception.');
+      secondary.push(tr('incident_mixed_content', 'Stop loading insecure content on your sale pages — every resource needs to come over HTTPS or buyers see broken padlocks.'));
     }
     if (openRedirect && openRedirect.conclusion_value !== 'low') {
-      secondary.push('Close open redirect vectors that could be used for phishing or traffic hijacking.');
+      secondary.push(tr('incident_open_redirect', 'Close the open redirects on your site — attackers can use them to send your customers to fake checkout pages.'));
     }
     if (headerWeak && headerWeak.conclusion_value !== 'low') {
-      secondary.push('Deploy security headers (CSP, HSTS, X-Frame-Options) to harden the trust posture.');
+      secondary.push(tr('incident_security_headers', 'Add the basic security headers (CSP, HSTS, X-Frame-Options) so the browser stops flagging your site as risky.'));
     }
 
-    verification.push('Re-run security analysis after fixes to confirm exposures are resolved.');
-    verification.push('Verify sensitive endpoints are no longer publicly accessible.');
+    verification.push(tr('incident_verify_rerun', 'Run a new audit after the fixes so we can confirm the holes are closed.'));
+    verification.push(tr('incident_verify_endpoints', 'Double-check that the previously exposed pages are no longer reachable from the open internet.'));
     return { primary, secondary, verification };
   }
 
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = 'Security posture has significant gaps. Address before scaling traffic.';
+    const primary = tr('fix_primary', 'Your security has gaps that will hurt you at scale. Close them before pushing more traffic.');
 
     if (headerWeak && headerWeak.conclusion_value !== 'low') {
-      secondary.push('Strengthen security headers to reduce exposure to injection and clickjacking.');
+      secondary.push(tr('fix_security_headers', 'Tighten your security headers so the site is less exposed to injection and clickjacking attacks.'));
     }
     if (openRedirect && openRedirect.conclusion_value !== 'low') {
-      secondary.push('Fix open redirect endpoints to prevent abuse.');
+      secondary.push(tr('fix_open_redirect', 'Fix the open redirect endpoints — they are easy to abuse.'));
     }
 
-    verification.push('Re-run analysis after implementing security improvements.');
+    verification.push(tr('fix_verify_rerun', 'Run a new audit after the changes to confirm they took effect.'));
     return { primary, secondary, verification };
   }
 
   if (risk.decision_impact === DecisionImpact.Optimize) {
     return {
-      primary: 'Security posture is functional but has hardening opportunities.',
+      primary: tr('optimize_primary', 'Your security holds up. There are still some hardening wins available.'),
       secondary: [
-        ...(headerWeak ? ['Consider adding stricter Content-Security-Policy and Permissions-Policy headers.'] : []),
+        ...(headerWeak ? [tr('optimize_csp', 'Consider stricter Content-Security-Policy and Permissions-Policy headers for extra defense.')] : []),
       ],
-      verification: ['Schedule periodic security posture review.'],
+      verification: [tr('optimize_verify', 'Re-check security posture every few months to catch regressions.')],
     };
   }
 
   return {
-    primary: 'Security posture is adequate. No significant exposures detected.',
+    primary: tr('observe_primary', 'Your security is in good shape. No significant exposures right now.'),
     secondary: [],
-    verification: ['Schedule periodic security posture assessment.'],
+    verification: [tr('observe_verify', 'Schedule a periodic security check to keep this clean.')],
   };
 }
 

@@ -450,8 +450,30 @@ export interface EngineTranslations {
     scale_readiness: Record<string, string>;
     revenue_integrity: Record<string, string>;
     chargeback: Record<string, string>;
+    /**
+     * Security-posture decision pack actions. Optional because earlier
+     * cycles ran without this lookup wired up — the engine falls back
+     * to the hardcoded English text when missing.
+     */
+    security_posture?: Record<string, string>;
   };
   summaries: Record<string, string>;
   confidence_narrative: Record<string, string>;
   workspace_names: Record<string, string>;
+  /**
+   * Behavioral workspace issue labels keyed by inference_key. These
+   * appear as the title of each "key issue" inside a behavioral
+   * workspace card. Without translation here, the labels render in
+   * English even when the rest of the UI is localized.
+   */
+  behavioral_issues?: Record<string, string>;
+  /**
+   * Causal map names ("Revenue Leakage Map", etc.) and their internal
+   * category labels ("Policy Surface", "Support Surface", "Trust
+   * Surface"). All optional — engine falls back to English when missing.
+   */
+  maps?: {
+    names?: Record<string, string>;
+    categories?: Record<string, string>;
+  };
 }

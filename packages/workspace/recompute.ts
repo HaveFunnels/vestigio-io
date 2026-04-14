@@ -451,6 +451,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
         bq.type,
         { name: bq.name, scoping, landing_url, cycle_ref },
         bResult.decision, bActions, inferences,
+        translations?.behavioral_issues,
       );
       (behavioralPacks as any)[bq.type] = {
         decision: bResult.decision,

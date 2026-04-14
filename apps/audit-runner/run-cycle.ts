@@ -180,16 +180,21 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			buildUrlAllowList,
 			carryEvidenceForward,
 			getPreviousCompletedCycle,
-			getPreviousContentHash,
+			canonicalizeUrl,
 		} = await import("./cycle-modes");
 		const declaredType = (cycle.cycleType || "cold").toLowerCase();
-		const cycleMode: "hot" | "warm" | "cold" =
+		// Mutable: the first-cycle fallback downgrades hot/warm → cold
+		// because we have nothing to carry forward from. Keeping it `let`
+		// means `pipelineMode` + `behavioralWindowHours` + `modeConfig`
+		// all follow the downgrade automatically instead of running a
+		// half-broken shallow_plus baseline.
+		let cycleMode: "hot" | "warm" | "cold" =
 			declaredType === "hot"
 				? "hot"
 				: declaredType === "warm"
 					? "warm"
 					: "cold";
-		const modeConfig = CYCLE_MODE_CONFIG[cycleMode];
+		let modeConfig = CYCLE_MODE_CONFIG[cycleMode];
 
 		// For hot/warm: build allow-list from critical surfaces + rotating
 		// sample. For cold: null → pipeline crawls everything.
@@ -200,22 +205,31 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		if (cycleMode !== "cold") {
 			prevCycle = await getPreviousCompletedCycle(prisma, env.id, cycleId);
 			if (!prevCycle) {
-				// No prior baseline → this "hot" or "warm" request is the
-				// first cycle for this env. Treat it as cold so we don't
-				// skip pages we've never seen. The next hot/warm request
-				// will then have a real baseline to compare against.
+				// Wave 5 Fase 3 fix (#3): no prior baseline → this hot/warm
+				// request is the first cycle for this env. Actually downgrade
+				// to cold (not just log) so pipelineMode, budget, and
+				// behavioral window all follow. Without this the cycle
+				// would run as shallow_plus with a 1h behavioral window,
+				// producing a garbage baseline that the next real hot
+				// would diff against and emit false regressions.
 				console.log(
-					`[audit-runner ${cycleId}] no prior cycle found — treating ${cycleMode} as cold for this first run`,
+					`[audit-runner ${cycleId}] no prior cycle found — downgrading ${cycleMode} → cold for this first run`,
 				);
+				cycleMode = "cold";
+				modeConfig = CYCLE_MODE_CONFIG.cold;
 			} else {
 				const criticalSet = await resolveCriticalSurfaces(prisma, env.id);
+				// Fase 3 fix #7: canonicalize inventory URLs before the
+				// allow-list intersect so trailing-slash / query-string
+				// drift doesn't silently exclude valid pages. The set
+				// produced by resolveCriticalSurfaces is already canonical.
 				const inventoryUrls = await prisma.pageInventoryItem
 					.findMany({
 						where: { environmentRef: env.id },
 						select: { normalizedUrl: true },
 						take: 500,
 					})
-					.then((rows) => rows.map((r) => r.normalizedUrl))
+					.then((rows) => rows.map((r) => canonicalizeUrl(r.normalizedUrl)))
 					.catch(() => [] as string[]);
 				urlFilter = buildUrlAllowList({
 					mode: cycleMode,
@@ -223,40 +237,34 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					allInventoryUrls: inventoryUrls,
 				});
 
-				// Evidence carry-forward: for every allow-listed URL, look
-				// up the previous cycle's content hash. If it matches what
-				// the staged-pipeline will fetch, we'd waste time parsing
-				// it — but we don't have a hash to compare against BEFORE
-				// fetching. So we don't skip the fetch entirely; we just
-				// pre-populate the new cycle with the previous cycle's
-				// evidence for these URLs. If the live fetch's hash turns
-				// out to match, the fresh evidence replaces the carried
-				// one via the upsert key (cycleRef + evidenceKey won't
-				// match — different cycleRef — so we actually end up with
-				// both. This is harmless today because recompute dedupes
-				// by evidence_key within the cycle. A real delta-path is
-				// Wave 5 future work.)
-				//
-				// For the current scope what carry-forward DOES give us:
-				// if the staged-pipeline errors for a hot page (timeout,
-				// 503, whatever), we still have the previous cycle's
-				// evidence carried forward so the engine sees continuity
-				// instead of a phantom "page disappeared" regression.
-				if (!modeConfig.disableCarryForward && urlFilter && urlFilter.length > 0) {
-					const cf = await carryEvidenceForward(prisma, {
-						previousCycleRef: prevCycle.cycleRef,
-						newCycleRef: `audit_cycle:${cycleId}`,
-						environmentRef: env.id,
-						urls: urlFilter,
-					});
-					carryForwardSummary = {
-						carriedUrls: cf.carriedUrls.length,
-						uncoveredUrls: cf.uncoveredUrls.length,
-						rowsCarried: cf.rowsCarried,
-					};
-					console.log(
-						`[audit-runner ${cycleId}] ${cycleMode} carry-forward: ${cf.rowsCarried} rows across ${cf.carriedUrls.length} urls (${cf.uncoveredUrls.length} uncovered)`,
-					);
+				// Wave 5 Fase 3 fix (#2): carry evidence forward ONLY for
+				// URLs OUTSIDE the allow-list (i.e. pages this cycle won't
+				// re-crawl). Those pages still need representation in the
+				// recompute evidence set or the engine sees them as "page
+				// disappeared" and emits phantom regressions. Pages INSIDE
+				// the allow-list will be freshly crawled and produce new
+				// evidence — carrying forward for them would double-count
+				// (duplicate rows with different evidence_key but same
+				// URL), biasing averages in signal extraction.
+				if (!modeConfig.disableCarryForward && urlFilter) {
+					const allowSet = new Set<string>(urlFilter);
+					const urlsToCarry = inventoryUrls.filter((u) => !allowSet.has(u));
+					if (urlsToCarry.length > 0) {
+						const cf = await carryEvidenceForward(prisma, {
+							previousCycleRef: prevCycle.cycleRef,
+							newCycleRef: `audit_cycle:${cycleId}`,
+							environmentRef: env.id,
+							urls: urlsToCarry,
+						});
+						carryForwardSummary = {
+							carriedUrls: cf.carriedUrls.length,
+							uncoveredUrls: cf.uncoveredUrls.length,
+							rowsCarried: cf.rowsCarried,
+						};
+						console.log(
+							`[audit-runner ${cycleId}] ${cycleMode} carry-forward: ${cf.rowsCarried} rows across ${cf.carriedUrls.length} non-allowlisted urls (${cf.uncoveredUrls.length} uncovered)`,
+						);
+					}
 				}
 			}
 		}
@@ -287,6 +295,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					// default 60s; hot caps at 60s anyway but warm gets
 					// 4min to cover its sample.
 					global_timeout_ms: modeConfig.cycleBudgetMs,
+					// Fase 3 fix #4 cont. — override shallow_plus's default
+					// 6-page cap when the allow-list exceeds it. +1 for the
+					// homepage which the pipeline always retains.
+					...(urlFilter && urlFilter.length > 0
+						? { max_pages_per_domain: urlFilter.length + 1 }
+						: {}),
 				},
 			},
 			noopEmit,

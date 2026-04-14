@@ -37,36 +37,37 @@ export interface CycleModeConfig {
 	 *  (last hour) so we surface fresh friction quickly; cold uses
 	 *  the full 30d baseline. */
 	behavioralWindowHours: number;
-	/** Minimum session count per cohort before behavioral inferences
-	 *  are allowed to fire. Hot cycles have fewer sessions in-window,
-	 *  so we lower the bar (but not to zero — noise still matters). */
-	minSessionsForInferences: number;
 	/** Hard wall-clock budget for the cycle. Hot cycles must complete
 	 *  fast so Max-tier 15min-cadence doesn't pile up. Cold can take
 	 *  the full pipeline budget. Milliseconds. */
 	cycleBudgetMs: number;
 	/** Whether to disable evidence carry-forward. Cold cycles always
-	 *  re-parse (baseline reset); hot/warm carry forward when hash
-	 *  matches. */
+	 *  re-parse (baseline reset); hot/warm carry forward evidence for
+	 *  pages outside the current cycle's allow-list. */
 	disableCarryForward: boolean;
 }
+
+// Note: a per-mode `minSessionsForInferences` knob existed in an
+// earlier draft of this config but was deleted (2026-04-14 audit #6).
+// The threshold lives hardcoded in `packages/signals/engine.ts`
+// (`MIN_SESSIONS = 20`); plumbing a dynamic value through recomputeAll
+// + extractSignals is a cross-cutting change that needs its own spec.
+// Dead config here would have been worse than no config — it implied
+// a behavior we weren't actually delivering.
 
 export const CYCLE_MODE_CONFIG: Record<CycleMode, CycleModeConfig> = {
 	hot: {
 		behavioralWindowHours: 1,
-		minSessionsForInferences: 5,
 		cycleBudgetMs: 60_000,
 		disableCarryForward: false,
 	},
 	warm: {
 		behavioralWindowHours: 24,
-		minSessionsForInferences: 10,
 		cycleBudgetMs: 4 * 60_000,
 		disableCarryForward: false,
 	},
 	cold: {
 		behavioralWindowHours: 24 * 30,
-		minSessionsForInferences: 20,
 		cycleBudgetMs: 10 * 60_000,
 		disableCarryForward: true,
 	},
@@ -93,6 +94,37 @@ const CRITICAL_SURFACE_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
 	{ pattern: /\/(pricing|preco|planos|plans)/i, label: "pricing" },
 	{ pattern: /\/(product|produto|item|p\/)/i, label: "product" },
 ];
+
+/**
+ * Canonicalize a URL for set-membership comparisons. The pipeline
+ * stores inventory URLs produced by `new URL(path, rootUrl).toString()`
+ * which preserves trailing slashes and whatever path casing the origin
+ * returned. Findings store `surface` as either a path or a full URL
+ * depending on origin. Without normalization, set intersections
+ * silently exclude valid critical surfaces. (Fase 3 audit issue #7.)
+ *
+ * Normalizes by: parsing, dropping query/fragment, lowercasing host,
+ * stripping trailing slash (except on the root path), and serializing
+ * back. Non-URL strings are returned lowercased with edges trimmed.
+ */
+export function canonicalizeUrl(raw: string): string {
+	if (!raw) return raw;
+	try {
+		const u = new URL(raw);
+		u.search = "";
+		u.hash = "";
+		u.hostname = u.hostname.toLowerCase();
+		let out = u.toString();
+		// Drop trailing slash on non-root paths so "/checkout" ==
+		// "/checkout/" for membership comparison purposes.
+		if (u.pathname !== "/" && out.endsWith("/")) {
+			out = out.slice(0, -1);
+		}
+		return out;
+	} catch {
+		return raw.trim().toLowerCase();
+	}
+}
 
 /**
  * Does the URL match a revenue-critical pattern or is it the landing
@@ -133,8 +165,13 @@ export async function resolveCriticalSurfaces(
 			           // will catch them via warm sweeps
 		});
 		for (const row of inventory) {
-			if (isCriticalSurfaceUrl(row.normalizedUrl)) {
-				out.add(row.normalizedUrl);
+			// Fase 3 fix #7: canonicalize so a URL stored with trailing
+			// slash matches the same URL without. The allow-list intersect
+			// on the pipeline side will compare against the same
+			// canonicalized form (see run-cycle.ts).
+			const canon = canonicalizeUrl(row.normalizedUrl);
+			if (isCriticalSurfaceUrl(canon)) {
+				out.add(canon);
 			}
 		}
 	} catch {
@@ -176,7 +213,9 @@ export async function resolveCriticalSurfaces(
 				: origin
 					? `${origin}${f.surface.startsWith("/") ? "" : "/"}${f.surface}`
 					: null;
-			if (fullUrl) out.add(fullUrl);
+			// Fase 3 fix #7: canonicalize before adding so promoted
+			// surfaces match the inventory set membership check.
+			if (fullUrl) out.add(canonicalizeUrl(fullUrl));
 		}
 	} catch {
 		// ignore — just won't auto-promote
@@ -216,10 +255,17 @@ export function buildUrlAllowList(input: AllowListInput): string[] | null {
 	);
 	const ratio = input.warmSampleRatio ?? 0.3;
 	const sampleSize = Math.max(1, Math.floor(nonCritical.length * ratio));
-	// Fisher-Yates-lite: shuffle and take — the sample is small (~dozens)
-	// so a full shuffle isn't worth the allocation. slice+sort+take is
-	// O(n log n) but n is bounded by inventory.take=500.
-	const shuffled = [...nonCritical].sort(() => Math.random() - 0.5);
+	// Fase 3 fix #10: proper Fisher-Yates. The previous
+	// `sort(() => Math.random() - 0.5)` is biased (the sort comparator
+	// must be a transitive ordering; returning random breaks that
+	// contract and real engines produce skewed distributions — tail
+	// URLs get consistently under-represented across cycles, breaking
+	// the "warm guarantee: every surface seen ~1x per window" claim).
+	const shuffled = [...nonCritical];
+	for (let i = shuffled.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+	}
 	const sample = shuffled.slice(0, sampleSize);
 	return [...criticalList, ...sample];
 }
@@ -306,7 +352,8 @@ export async function carryEvidenceForward(
 					freshnessState: r.freshnessState,
 					stalenessReason: r.stalenessReason,
 					sourceKind: r.sourceKind,
-					collectionMethod: "reused", // marker for future debugging
+					// Fase 3 fix #19: valid CollectionMethod enum value.
+					collectionMethod: "carried_forward",
 					qualityScore: r.qualityScore,
 					payload: r.payload,
 					contentHash: r.contentHash,

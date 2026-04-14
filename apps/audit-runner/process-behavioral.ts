@@ -218,8 +218,8 @@ export async function processBehavioralEventsForEnv(
   // payload.type. The signal extractors discriminate on payload.type:
   // the env-level extractor reads 'behavioral_session', the cohort
   // extractor reads 'behavioral_cohort'.
-  const sessionEvidence = wrapAsEvidence(sessionPayload, scoping, cycleRef);
-  const cohortEvidence = wrapAsEvidence(cohortPayload, scoping, cycleRef);
+  const sessionEvidence = wrapAsEvidence(sessionPayload, scoping, cycleRef, hours);
+  const cohortEvidence = wrapAsEvidence(cohortPayload, scoping, cycleRef, hours);
   return {
     evidence: [sessionEvidence, cohortEvidence],
     sessionCount: aggregates.length,
@@ -569,12 +569,17 @@ function wrapAsEvidence(
   payload: BehavioralSessionPayload | BehavioralCohortPayload,
   scoping: Scoping,
   cycleRef: string,
+  windowHours: number,
 ): Evidence {
   const id = nextEvidenceId();
   const now = new Date();
+  // Wave 5 Fase 3 fix (#1): use the parameterized window instead of the
+  // dropped WINDOW_DAYS constant. Without this, `fresh_until` throws
+  // ReferenceError and the cycle-level try/catch swallows ALL behavioral
+  // evidence silently. Discovered by Fase 3 audit agent.
   const fresh: Evidence["freshness"] = {
     observed_at: now,
-    fresh_until: new Date(now.getTime() + WINDOW_DAYS * 24 * 60 * 60 * 1000),
+    fresh_until: new Date(now.getTime() + windowHours * 60 * 60 * 1000),
     freshness_state: FreshnessState.Fresh,
     staleness_reason: null,
   };

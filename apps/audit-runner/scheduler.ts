@@ -1,6 +1,7 @@
 import { prisma } from "../../src/libs/prismaDb";
 import { getCadenceForPlan } from "../../src/libs/plan-config";
 import { enqueueAuditCycle } from "../platform/audit-cycle-queue";
+import type { CycleMode } from "./cycle-modes";
 
 // ──────────────────────────────────────────────
 // Audit scheduler  (Wave 5 Fase 3)
@@ -27,7 +28,10 @@ import { enqueueAuditCycle } from "../platform/audit-cycle-queue";
 // reasoning about emergent behavior harder.
 // ──────────────────────────────────────────────
 
-export type CycleMode = "hot" | "warm" | "cold";
+// Fase 3 fix #17: CycleMode is defined in cycle-modes.ts — re-exported
+// here so callers that only import from scheduler.ts still get the type,
+// but there's a single source of truth.
+export type { CycleMode };
 
 /**
  * Decide which cycleType is due for an environment given the cadence

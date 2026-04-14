@@ -325,14 +325,6 @@ export async function runStagedPipeline(
 
   let candidates = discoverHighValueCandidates(homepageParsed!, rootDomain, rootUrl, criticalPaths);
 
-  // shallow_plus mode: only fetch the top 5 candidates (already prioritized
-  // by discoverHighValueCandidates, so the most critical commercial paths
-  // get picked). Combined with max_pages_per_domain=6 in MODE_CONSTRAINTS
-  // this caps the run at 1 + 5 = 6 fetches max.
-  if (mode === 'shallow_plus') {
-    candidates = candidates.slice(0, 5);
-  }
-
   // Wave 5 Fase 3 — incremental URL filter. The audit-runner resolves
   // which URLs this cycle is allowed to crawl (critical set for hot,
   // critical + rotating sample for warm, everything for cold) and
@@ -343,10 +335,52 @@ export async function runStagedPipeline(
   // paths). The homepage is always retained even if it's not in the
   // allow-list because it's the entry point for all downstream
   // structure + inventory reconciliation.
+  //
+  // IMPORTANT (Fase 3 fix #4): the filter runs BEFORE the shallow_plus
+  // slice. Otherwise the slice caps candidates at 5 regardless of how
+  // many promoted critical URLs we want to cover, silently dropping
+  // them. With the filter applied first, the slice only trims the
+  // tail if the allow-list is larger than the per-mode page cap —
+  // and even then the allow-list is ordered (hot = all critical first,
+  // warm = critical first then rotation sample) so the most important
+  // URLs survive.
   if (input.url_filter && input.url_filter.length > 0) {
-    const allow = new Set<string>(input.url_filter);
-    const homepageUrl = rootUrl;
-    candidates = candidates.filter((c) => allow.has(c) || c === homepageUrl);
+    // Fase 3 fix #7 — compare in canonical form. Callers are expected
+    // to pass a canonical allow-list (run-cycle.ts canonicalizes); we
+    // canonicalize the candidates here so trailing slash / query-string
+    // variation doesn't silently drop matches. Kept inline to avoid
+    // cross-package dependency from workers/ingestion → apps/audit-runner.
+    const canon = (u: string): string => {
+      try {
+        const parsed = new URL(u);
+        parsed.search = "";
+        parsed.hash = "";
+        parsed.hostname = parsed.hostname.toLowerCase();
+        let out = parsed.toString();
+        if (parsed.pathname !== "/" && out.endsWith("/")) out = out.slice(0, -1);
+        return out;
+      } catch {
+        return u.trim().toLowerCase();
+      }
+    };
+    const allow = new Set<string>(input.url_filter.map(canon));
+    const homepageUrl = canon(rootUrl);
+    candidates = candidates.filter((c) => {
+      const cc = canon(c);
+      return allow.has(cc) || cc === homepageUrl;
+    });
+  }
+
+  // shallow_plus mode: only fetch the top 5 candidates (already prioritized
+  // by discoverHighValueCandidates, so the most critical commercial paths
+  // get picked). Combined with max_pages_per_domain=6 in MODE_CONSTRAINTS
+  // this caps the run at 1 + 5 = 6 fetches max.
+  // When url_filter is set we honor the full allow-list size + homepage
+  // instead of the 5-URL slice — the runner is responsible for keeping
+  // the allow-list within a reasonable bound per cycle (hot critical
+  // set is already bounded, warm samples at 30% of inventory).
+  if (mode === 'shallow_plus' && !input.url_filter) {
+    candidates = candidates.slice(0, 5);
   }
 
   // Mark all candidates in coverage

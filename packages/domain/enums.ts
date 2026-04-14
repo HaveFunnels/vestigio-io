@@ -190,6 +190,13 @@ export enum CollectionMethod {
   PassiveCollection = 'passive_collection',
   ManualInput = 'manual_input',
   ExternalToolScan = 'external_tool_scan',
+  // Wave 5 Fase 3 — evidence rows cloned from the previous completed
+  // cycle's evidence when the new cycle didn't re-crawl the page (hot/
+  // warm allow-lists exclude non-critical pages). Downstream quality
+  // scoring + signal extraction treat these the same as the original
+  // collection, but the marker lets operators see at a glance which
+  // rows came from carry-forward when debugging cycle output.
+  CarriedForward = 'carried_forward',
 }
 
 export enum PageType {

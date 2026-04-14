@@ -93,6 +93,11 @@ COPY --from=deps /app/node_modules ./node_modules
 # win (deps stage only has the unpopulated client package).
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Prisma CLI (devDep, not in deps stage). Needed at runtime for the
+# auto-migrate step in the web CMD (`prisma db push`). Without this,
+# `npx prisma` would fetch the latest CLI from npm on each boot and
+# pull breaking-change versions (Prisma 7 dropped schema `url`).
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /root/.cache/ms-playwright /root/.cache/ms-playwright
 
 # Worker source files — imported at runtime by tsx.
@@ -125,4 +130,4 @@ EXPOSE 3000 3001
 # is the intended safety net.
 # `exec` ensures the child process becomes PID 1 so SIGTERM from Railway
 # reaches Next.js / worker directly for graceful drain.
-CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else npx prisma db push && exec node server.js; fi"]
+CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else node node_modules/prisma/build/index.js db push && exec node server.js; fi"]

@@ -27,7 +27,32 @@ export interface LocaleTranslations {
   inference_titles: Record<string, string>;
   root_cause_titles: Record<string, string>;
   root_cause_descriptions: Record<string, string>;
+  positive_check_titles: Record<string, string>;
+  positive_check_descriptions: Record<string, string>;
 }
+
+// Extract positive check title/description maps from a dictionary.
+// The dictionary stores them as { key: { title, description } } objects;
+// we flatten them into two parallel records to match the inference / root
+// cause translation shape so downstream lookups stay symmetric.
+function extractPositiveChecks(dict: any): { titles: Record<string, string>; descriptions: Record<string, string> } {
+  const raw = dict.engine?.positive_checks ?? {};
+  const titles: Record<string, string> = {};
+  const descriptions: Record<string, string> = {};
+  for (const [key, val] of Object.entries(raw)) {
+    if (val && typeof val === 'object') {
+      const obj = val as { title?: string; description?: string };
+      if (obj.title) titles[key] = obj.title;
+      if (obj.description) descriptions[key] = obj.description;
+    }
+  }
+  return { titles, descriptions };
+}
+
+const ptBRPositive = extractPositiveChecks(ptBRDict);
+const esPositive = extractPositiveChecks(esDict);
+const dePositive = extractPositiveChecks(deDict);
+const enPositive = extractPositiveChecks(enDict);
 
 // ── Extract engine sections from each dictionary ───────────────
 
@@ -36,21 +61,29 @@ const LOCALE_MAP: Record<string, LocaleTranslations> = {
     inference_titles: (ptBRDict as any).engine?.inference_titles ?? {},
     root_cause_titles: (ptBRDict as any).engine?.root_cause_titles ?? {},
     root_cause_descriptions: (ptBRDict as any).engine?.root_cause_descriptions ?? {},
+    positive_check_titles: ptBRPositive.titles,
+    positive_check_descriptions: ptBRPositive.descriptions,
   },
   es: {
     inference_titles: (esDict as any).engine?.inference_titles ?? {},
     root_cause_titles: (esDict as any).engine?.root_cause_titles ?? {},
     root_cause_descriptions: (esDict as any).engine?.root_cause_descriptions ?? {},
+    positive_check_titles: esPositive.titles,
+    positive_check_descriptions: esPositive.descriptions,
   },
   de: {
     inference_titles: (deDict as any).engine?.inference_titles ?? {},
     root_cause_titles: (deDict as any).engine?.root_cause_titles ?? {},
     root_cause_descriptions: (deDict as any).engine?.root_cause_descriptions ?? {},
+    positive_check_titles: dePositive.titles,
+    positive_check_descriptions: dePositive.descriptions,
   },
   en: {
     inference_titles: (enDict as any).engine?.inference_titles ?? {},
     root_cause_titles: (enDict as any).engine?.root_cause_titles ?? {},
     root_cause_descriptions: (enDict as any).engine?.root_cause_descriptions ?? {},
+    positive_check_titles: enPositive.titles,
+    positive_check_descriptions: enPositive.descriptions,
   },
 };
 
@@ -90,4 +123,20 @@ export function getTranslatedRootCauseTitle(locale: string, key: string): string
  */
 export function getTranslatedRootCauseDescription(locale: string, key: string): string | undefined {
   return LOCALE_MAP[locale]?.root_cause_descriptions[key];
+}
+
+/**
+ * Look up a translated positive check title.
+ * Returns `undefined` if no translation exists for the key in the given locale.
+ */
+export function getTranslatedPositiveCheckTitle(locale: string, key: string): string | undefined {
+  return LOCALE_MAP[locale]?.positive_check_titles[key];
+}
+
+/**
+ * Look up a translated positive check description.
+ * Returns `undefined` if no translation exists for the key in the given locale.
+ */
+export function getTranslatedPositiveCheckDescription(locale: string, key: string): string | undefined {
+  return LOCALE_MAP[locale]?.positive_check_descriptions[key];
 }

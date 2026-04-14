@@ -27,7 +27,7 @@ import { PrismaEvidenceStore } from "../../packages/evidence";
 import { PrismaSnapshotStore } from "../../packages/change-detection";
 import { PrismaFindingStore, projectAll } from "../../packages/projections";
 import { recomputeAll } from "../../packages/workspace";
-import { loadEngineTranslations } from "@/lib/engine-translations";
+import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
 import { processBehavioralEventsForEnv } from "./process-behavioral";
 import { pollShopifyData } from "../../workers/shopify/poller";
 import { mapPollResultToSnapshotData as mapShopifyPollResult } from "../../packages/shopify-adapter/snapshot-mapper";
@@ -286,9 +286,21 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			const businessProfile = businessProfileForPipeline;
 
 			// Engine translations (locale-aware finding titles, root cause titles, etc.)
+			//
+			// We're in a worker context with no request cookie, so we can't read
+			// the locale via Next's cookies() — instead we look up the org
+			// owner's `User.locale` and pass it explicitly. Without this, the
+			// audit always wrote findings in English regardless of the user's
+			// preferred language, which is exactly what the user noticed in the
+			// app: positive checks rendering "Conversion intent is clear and
+			// unambiguous" instead of the translated equivalent.
 			let translations;
 			try {
-				translations = await loadEngineTranslations();
+				const owner = await prisma.user.findUnique({
+					where: { id: cycle.organization.ownerId },
+					select: { locale: true },
+				});
+				translations = loadEngineTranslationsForLocale(owner?.locale);
 			} catch {
 				translations = undefined;
 			}

@@ -3085,44 +3085,44 @@
     },
     "positive_checks": {
       "strong_cta_clarity": {
-        "title": "Conversion intent is clear and unambiguous",
-        "description": "The primary conversion path is identifiable and free of competing calls-to-action. Visitors can find how to purchase."
+        "title": "Customers know exactly how to buy",
+        "description": "Your buy button is clear and there is no competing call-to-action stealing attention. Visitors do not have to think twice about how to purchase."
       },
       "trust_continuity_good": {
-        "title": "Trust continuity maintained through checkout",
-        "description": "The conversion flow stays on-domain with no trust boundary breaks. Users are not redirected to unknown domains during purchase."
+        "title": "Customers stay on your domain through checkout",
+        "description": "The buyer never gets bounced to a strange domain during payment. The whole flow happens where they expect it — no surprise redirects, no broken trust."
       },
       "policy_coverage_complete": {
-        "title": "Consumer protection policies in place",
-        "description": "Privacy, terms, and refund policies are present and accessible. This supports buyer confidence and regulatory compliance."
+        "title": "Your policies are in place and easy to find",
+        "description": "Privacy, terms, and refund policies are visible and accessible. Buyers can find what they need before clicking buy — and that builds trust."
       },
       "low_friction_checkout": {
-        "title": "Revenue path free of structural friction",
-        "description": "No broken forms, excessive redirects, or slow-loading pages detected on the conversion path. The path from intent to purchase is clean."
+        "title": "Your purchase path runs clean",
+        "description": "No broken forms, no redirect chains, no slow pages between cart and confirmation. The buyer who wants to buy can actually buy."
       },
       "measurement_covered": {
-        "title": "Measurement infrastructure covers commercial paths",
-        "description": "Analytics tools are present at sufficient depth to support attribution, optimization, and conversion measurement."
+        "title": "You can see what is happening in your funnel",
+        "description": "Analytics are in place across the buying path. You can track where buyers come from, where they convert, and where they drop off."
       },
       "support_reachable": {
-        "title": "Support channels visible and accessible",
-        "description": "Contact methods are available and discoverable. Customers can resolve issues through support rather than filing disputes."
+        "title": "Customers can find you when they have a problem",
+        "description": "Contact options are visible and reachable. When something goes wrong, the buyer talks to you instead of opening a chargeback."
       },
       "smooth_activation": {
-        "title": "Activation flow is clear and low-friction",
-        "description": "The onboarding path has clear next steps, progress indicators, and manageable complexity. New users can reach value quickly."
+        "title": "New users can get to value fast",
+        "description": "Your onboarding shows clear next steps and does not pile complexity on day one. Users get to the \"aha\" moment without getting stuck."
       },
       "navigation_clean": {
-        "title": "App navigation is clean and navigable",
-        "description": "Navigation structure is manageable in depth and breadth. Users can find core features without being overwhelmed."
+        "title": "Your app is easy to navigate",
+        "description": "Users can find features without getting lost in menus. Nothing is buried behind layers of nesting or hidden behind confusing labels."
       },
       "upgrade_path_visible": {
-        "title": "Upgrade path is visible with clear value context",
-        "description": "Upgrade surfaces are present, prominent, and include value propositions. Users can discover and evaluate paid plans."
+        "title": "Users can see how to upgrade and why",
+        "description": "Upgrade options are visible and explain what the user gets. People who want to pay you more can actually find the path to do so."
       },
       "empty_states_guided": {
-        "title": "Empty states provide clear guidance",
-        "description": "Empty screens include direction, sample data options, or next-step guidance. New users are not left staring at blank interfaces."
+        "title": "New users are not left staring at blank screens",
+        "description": "Empty screens guide the user toward a first action — sample data, suggestions, or clear next steps. No one opens your app and feels lost."
       }
     },
     "field_kind_labels": {

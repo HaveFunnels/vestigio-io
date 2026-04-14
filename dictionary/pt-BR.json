@@ -3140,44 +3140,44 @@
     },
     "positive_checks": {
       "strong_cta_clarity": {
-        "title": "Intenção de conversão é clara e inequívoca",
-        "description": "O caminho principal de conversão é identificável e livre de chamadas para ação concorrentes. Visitantes conseguem encontrar como comprar."
+        "title": "Seus clientes sabem exatamente como comprar",
+        "description": "Seu botão de compra é claro e não tem outra ação competindo pela atenção. O visitante não precisa pensar duas vezes em como comprar."
       },
       "trust_continuity_good": {
-        "title": "Continuidade de confiança mantida durante o Checkout",
-        "description": "O fluxo de conversão permanece no domínio sem quebras de limite de confiança. Usuários não são redirecionados a domínios desconhecidos durante a compra."
+        "title": "O cliente fica no seu domínio durante o checkout",
+        "description": "O comprador nunca é jogado pra um domínio estranho na hora do pagamento. Tudo acontece onde ele espera — sem redirecionamento surpresa, sem confiança quebrada."
       },
       "policy_coverage_complete": {
-        "title": "Políticas de proteção ao consumidor implementadas",
-        "description": "Políticas de privacidade, termos e reembolso estão presentes e acessíveis. Isso sustenta a confiança do comprador e a conformidade regulatória."
+        "title": "Suas políticas estão visíveis e fáceis de encontrar",
+        "description": "Política de privacidade, termos e reembolso estão presentes e acessíveis. O comprador encontra o que precisa antes de clicar em comprar — e isso constrói confiança."
       },
       "low_friction_checkout": {
-        "title": "Caminho de faturamento livre de fricção estrutural",
-        "description": "Nenhum formulário quebrado, redirecionamento excessivo ou página de carregamento lento detectado no caminho de conversão. O caminho da intenção até a compra está limpo."
+        "title": "Seu caminho de compra está livre de fricção",
+        "description": "Sem formulários quebrados, sem cadeia de redirecionamentos, sem páginas lentas entre carrinho e confirmação. Quem quer comprar consegue comprar."
       },
       "measurement_covered": {
-        "title": "Infraestrutura de medição cobre caminhos comerciais",
-        "description": "Ferramentas de analytics estão presentes em profundidade suficiente para suportar atribuição, otimização e medição de conversão."
+        "title": "Você consegue ver o que está acontecendo no seu funil",
+        "description": "Analytics estão configurados em todo o caminho de compra. Você consegue rastrear de onde vem o cliente, onde ele converte e onde desiste."
       },
       "support_reachable": {
-        "title": "Canais de suporte visíveis e acessíveis",
-        "description": "Métodos de contato estão disponíveis e descobríveis. Clientes podem resolver problemas através do suporte em vez de registrar disputas."
+        "title": "O cliente te encontra quando tem problema",
+        "description": "Canais de contato estão visíveis e acessíveis. Quando algo dá errado, o comprador fala com você em vez de abrir um chargeback."
       },
       "smooth_activation": {
-        "title": "Fluxo de ativação é claro e de baixa fricção",
-        "description": "O caminho de onboarding possui próximos passos claros, indicadores de progresso e complexidade gerenciável. Novos usuários podem alcançar valor rapidamente."
+        "title": "Novos usuários chegam ao valor rápido",
+        "description": "Seu onboarding mostra próximos passos claros e não acumula complexidade no primeiro dia. O usuário chega ao momento \"aha\" sem travar no meio do caminho."
       },
       "navigation_clean": {
-        "title": "Navegação do app é limpa e navegável",
-        "description": "A estrutura de navegação é gerenciável em profundidade e amplitude. Usuários conseguem encontrar funcionalidades principais sem ficarem sobrecarregados."
+        "title": "Seu app é fácil de navegar",
+        "description": "Usuários encontram funcionalidades sem se perder em menus. Nada está enterrado em camadas de navegação ou escondido atrás de rótulos confusos."
       },
       "upgrade_path_visible": {
-        "title": "Caminho de upgrade é visível com contexto de valor claro",
-        "description": "Superfícies de upgrade estão presentes, em destaque e incluem propostas de valor. Usuários podem descobrir e avaliar planos pagos."
+        "title": "Usuários veem como fazer upgrade e por quê",
+        "description": "Opções de upgrade estão visíveis e explicam o que o usuário ganha. Quem quer pagar mais consegue achar o caminho pra fazer isso."
       },
       "empty_states_guided": {
-        "title": "Estados vazios fornecem orientação clara",
-        "description": "Telas vazias incluem direcionamento, opções de dados de exemplo ou orientação de próximos passos. Novos usuários não ficam olhando para interfaces em branco."
+        "title": "Novos usuários não ficam olhando pra telas vazias",
+        "description": "Telas vazias guiam o usuário pra uma primeira ação — dados de exemplo, sugestões ou próximos passos claros. Ninguém abre o app e se sente perdido."
       }
     },
     "field_kind_labels": {

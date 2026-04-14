@@ -39,6 +39,8 @@ import {
   getTranslatedInferenceTitle,
   getTranslatedRootCauseTitle,
   getTranslatedRootCauseDescription,
+  getTranslatedPositiveCheckTitle,
+  getTranslatedPositiveCheckDescription,
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from './article-translations';
@@ -171,11 +173,25 @@ function buildFoundationArticleForFinding(inferenceKey: string, locale: string =
   if (!title && !positive) return null;
 
   const isPositive = !!positive;
-  // For non-English locales, try the translated title first
+  // For non-English locales, try the translated title first.
+  // Positive checks have their own translation namespace, so route them
+  // through the dedicated lookup instead of inference_titles (which only
+  // covers negative findings).
   const englishTitle = positive?.title ?? title;
   const finalTitle = (locale !== 'en'
-    ? getTranslatedInferenceTitle(locale, inferenceKey) ?? englishTitle
+    ? (isPositive
+        ? getTranslatedPositiveCheckTitle(locale, inferenceKey) ?? englishTitle
+        : getTranslatedInferenceTitle(locale, inferenceKey) ?? englishTitle)
     : englishTitle);
+
+  // For positive findings, the description that ends up in the excerpt
+  // and body must also be translated — before this fix it always used
+  // the hardcoded English text from POSITIVE_CHECKS.
+  const positiveDescription = isPositive
+    ? (locale !== 'en'
+        ? getTranslatedPositiveCheckDescription(locale, inferenceKey) ?? positive!.description
+        : positive!.description)
+    : null;
   const packKey = positive?.pack ?? INFERENCE_TO_PACK[inferenceKey] ?? 'unknown';
   const pack = PACK_LABELS[packKey] ?? PACK_LABELS.unknown;
 
@@ -194,7 +210,7 @@ function buildFoundationArticleForFinding(inferenceKey: string, locale: string =
 
   // ── Excerpt ──
   const excerpt = isPositive
-    ? `${positive!.description} Part of the ${pack.name} pack.`
+    ? `${positiveDescription} Part of the ${pack.name} pack.`
     : rootCauseDescription
       ? `${rootCauseDescription.split('.').slice(0, 1).join('.')}. Part of the ${pack.name} pack.`
       : `Detected in the ${pack.name} pack — ${pack.lens}.`;
@@ -206,7 +222,7 @@ function buildFoundationArticleForFinding(inferenceKey: string, locale: string =
   body.push(h2(isPositive ? 'What this confirms' : 'What this finding means'));
   body.push(p(finalTitle));
   if (isPositive) {
-    body.push(p(positive!.description));
+    body.push(p(positiveDescription!));
   } else if (rootCauseDescription) {
     body.push(p(rootCauseDescription));
   } else {

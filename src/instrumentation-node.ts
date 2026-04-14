@@ -30,6 +30,12 @@ const RATE_PRUNE_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 // late is invisible to the user.
 const INACTIVITY_PAUSE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const INACTIVITY_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+// Dispatcher drains NotificationLog rows queued as status="skipped".
+// Email delivery isn't time-critical (inactivity-pause tolerates minutes
+// of latency) but we don't want rows piling up either. 5min keeps the
+// queue age low enough that operators won't file a "why didn't I get
+// an email" ticket before the first tick fires.
+const NOTIFICATION_DISPATCHER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 // Wave 5 Fase 3 — scheduler runs once per hour. Enough to cover every
 // plan cadence (Max's 15min hot cycles will sample 4x per hot window;
 // Starter's weekly cold lands within 1h of due time).
@@ -224,6 +230,29 @@ export async function registerNodeInstrumentation(): Promise<void> {
 				take: 50, // batch cap — long tail catches up on the next hour
 			});
 
+			// Second round-trip: resolve owner emails. Organization.ownerId is
+			// a plain string field, not a Prisma relation, so we can't nest
+			// the select. A single IN query is fine at batch=50 and gives us
+			// the email needed on NotificationLog.recipient so the dispatcher
+			// has something real to send to.
+			const ownerIds = Array.from(
+				new Set(
+					candidates
+						.map((c) => c.organization?.ownerId)
+						.filter((id): id is string => Boolean(id)),
+				),
+			);
+			const ownerEmailsById = new Map<string, string | null>();
+			if (ownerIds.length > 0) {
+				const owners = await prisma.user.findMany({
+					where: { id: { in: ownerIds } },
+					select: { id: true, email: true },
+				});
+				for (const u of owners) {
+					ownerEmailsById.set(u.id, u.email);
+				}
+			}
+
 			if (candidates.length === 0) return;
 
 			for (const env of candidates) {
@@ -236,29 +265,36 @@ export async function registerNodeInstrumentation(): Promise<void> {
 					);
 					continue;
 				}
+				const ownerEmail = ownerEmailsById.get(env.organization.ownerId) ?? null;
 				try {
 					await prisma.environment.update({
 						where: { id: env.id },
 						data: { continuousPaused: true },
 					});
-					// Record the event via NotificationLog so the messaging
-					// cron (or a downstream job) can deliver a real email.
-					// We don't send the email inline here — NotificationLog is
-					// the queue/record, and the notification dispatcher reads
-					// from it. Keeps this cron fast and idempotent.
+					// Record the event via NotificationLog so the dispatcher
+					// cron (notification-dispatcher.ts) can deliver a real
+					// email. We don't send inline here — NotificationLog is
+					// the queue/record, the dispatcher drains it. Keeps this
+					// cron fast and idempotent.
+					//
+					// If ownerEmail is null (user deleted their email or the
+					// owner is a platform shell without email) we still write
+					// the row as `skipped` but the dispatcher will fail-fast
+					// on the invalid recipient and surface the bad data via
+					// errorMsg instead of burning API calls on null sends.
 					await prisma.notificationLog.create({
 						data: {
 							userId: env.organization.ownerId,
 							channel: "email",
 							event: "inactivity_pause",
-							recipient: env.organization.ownerId,
+							recipient: ownerEmail || "",
 							subject: `Audits paused for ${env.domain}`,
 							status: "skipped", // actual send is handled downstream
 							provider: "internal",
 						},
 					});
 					console.log(
-						`[inactivity-pause] paused env=${env.id} domain=${env.domain} org=${env.organizationId}`,
+						`[inactivity-pause] paused env=${env.id} domain=${env.domain} org=${env.organizationId} notify=${ownerEmail ? "queued" : "skipped-no-email"}`,
 					);
 				} catch (err) {
 					console.error(
@@ -302,4 +338,33 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	runScheduler();
 	setInterval(runScheduler, SCHEDULER_INTERVAL_MS);
 	console.log("✓ Audit scheduler cron registered (1h interval)");
+
+	// ── Notification dispatcher cron ──
+	// Drains NotificationLog rows queued with status="skipped". The only
+	// current producer is the inactivity-pause cron above; future producers
+	// (trial ending warnings, plan downgrades, etc.) plug in via the
+	// buildEmailBody switch in notification-dispatcher.ts.
+	const { runNotificationDispatcher } = await import("./libs/notification-dispatcher");
+	const runDispatcher = async () => {
+		await withLeadership(
+			"notification-dispatcher",
+			{ ttlSec: 60 },
+			async () => {
+				try {
+					const result = await runNotificationDispatcher();
+					if (result.sent > 0 || result.failed > 0 || result.dropped > 0) {
+						console.log(
+							`[notification-dispatcher] pass: evaluated=${result.evaluated} sent=${result.sent} failed=${result.failed} dropped=${result.dropped}`,
+						);
+					}
+				} catch (err) {
+					console.error("[notification-dispatcher] pass failed:", err);
+				}
+			},
+		);
+	};
+	// Boot pass — drain anything queued while the process was down.
+	runDispatcher();
+	setInterval(runDispatcher, NOTIFICATION_DISPATCHER_INTERVAL_MS);
+	console.log("✓ Notification dispatcher cron registered (5m interval)");
 }

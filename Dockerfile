@@ -106,6 +106,9 @@ COPY --from=builder /app/apps ./apps
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+# Root-level config files imported via ../../ from src/ (i18n, engine translations).
+COPY --from=builder /app/integrations.config.tsx ./integrations.config.tsx
+COPY --from=builder /app/dictionary ./dictionary
 
 # Worker loop health server (overridable via WORKER_HEALTH_PORT env).
 EXPOSE 3000 3001

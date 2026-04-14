@@ -116,6 +116,13 @@ EXPOSE 3000 3001
 # Unified entry point:
 #   SERVICE_ROLE=worker  →  audit-runner worker loop (queue consumer).
 #   anything else (including unset)  →  Next.js standalone server.
+# Web service runs `prisma db push` on boot so Prisma schema changes
+# land without a separate migration step (fixes drift like wave-5
+# `Environment.activated` that previously required manual intervention).
+# `db push` is idempotent — a no-op when schema already matches, so
+# replica races are safe. Without `--accept-data-loss`, destructive
+# changes (dropped cols) fail the start and Railway rolls back; this
+# is the intended safety net.
 # `exec` ensures the child process becomes PID 1 so SIGTERM from Railway
 # reaches Next.js / worker directly for graceful drain.
-CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else exec node server.js; fi"]
+CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else npx prisma db push --skip-generate && exec node server.js; fi"]

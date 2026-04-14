@@ -544,55 +544,56 @@ railway add --plugin redis
 
 Use para: fila de jobs distribuida, cache de sessoes, rate limiting distribuido.
 
-### 15.3.1 Worker service dedicado para audit-runner (Wave 5)
+### 15.3.1 Worker service dedicado para audit-runner (Wave 5 Fase 1 — shipped 2026-04-14)
 
-**Quando precisar.** O web service roda o Next.js e responde HTTP. Ele tambem hospeda o audit-runner hoje via `Promise.then()` fire-and-forget (veja [ARCHITECTURE_V2.md § Known gap: audit-runner dispatch](./ARCHITECTURE_V2.md)). Isso funciona para <20 ciclos/dia, mas quebra quando:
+**Quando precisar.** O web service roda o Next.js e responde HTTP. Ele ainda hospeda o audit-runner via `Promise.then()` fire-and-forget como **fallback** quando `REDIS_URL` nao esta configurado. Quando Redis esta presente (caso default em producao Railway), o dispatch passa pelo `apps/platform/audit-cycle-queue.ts` e um worker dedicado deve drenar a fila. Sem o worker:
 
-- Ha burst de webhooks (lancamentos do Chromium competem com HTTP handlers por CPU/RAM).
-- O scheduler continuo (Wave 5 Fase 3) entrar em producao (Max = 1x/hora × N orgs).
-- Railway rodar mais de 1 replica do web service (o `setInterval` do heal cron duplica sem leader election ate a Wave 5 Fase 1 landar).
+- A fila acumula ciclos pending mas ninguem os pega.
+- Web continua aceitando webhooks; ciclos vao pra fila e ficam la.
+- Heal cron (60s) re-tenta orphans, mas no-op se o worker nunca rodar.
 
-A saida e separar o worker num segundo service Railway compartilhando Redis + DB:
+**Procedimento.**
 
-**1. Adicionar o entry point do worker loop**
+**1. O entry point ja existe** em [`apps/audit-runner/worker-loop.ts`](../apps/audit-runner/worker-loop.ts). Ele:
+- Roda `dequeueAuditCycle` em loop honrando prioridade hot > warm > cold
+- Adquire env lock antes de despachar (impede double-run do mesmo env)
+- Concorrencia per-worker via env `AUDIT_WORKER_CONCURRENCY` (default 2)
+- Retry com backoff exponencial (5s → 60s capped) ate 3 tentativas, depois DLQ
+- Graceful drain em SIGTERM/SIGINT/SIGUSR2 (5min timeout)
+- HTTP health server em `WORKER_HEALTH_PORT` (default 3001) com `/healthz` retornando queue depth + chromium pool stats + Redis status
 
-Crie `apps/audit-runner/worker-loop.ts` que:
-- Faz `BLPOP` na queue key de `apps/platform/redis-job-queue.ts`
-- Chama `runAuditCycle(cycleId)` com concorrencia limitada (semaforo N = 3 por worker instance)
-- Respeita `per_env_lock` para impedir double-run do mesmo env
-
-**2. Script no `package.json`**
+**2. Script `start:worker` ja existe** no `package.json`:
 
 ```json
-{
-  "scripts": {
-    "start": "next start",
-    "start:worker": "tsx apps/audit-runner/worker-loop.ts"
-  }
-}
+"start:worker": "tsx apps/audit-runner/worker-loop.ts"
 ```
+
+`tsx` esta listado como dep regular (nao devDep) entao o `npm ci --omit=dev` do Dockerfile o instala.
 
 **3. Segundo service no Railway apontando para o mesmo repo**
 
 - Railway Dashboard > projeto > **"+ New"** > **"GitHub Repo"** (mesmo repo)
 - Settings > Deploy > **Custom Start Command**: `npm run start:worker`
-- Settings > Variables: nao duplique o Postgres — clique **"Add Reference"** e referencie `DATABASE_URL` + `REDIS_URL` do web service
-- Settings > Scaling: 1 replica, 1 vCPU, 1-2GB RAM (Chromium eats memory)
-- Health check: desative (worker nao tem HTTP listener)
+- Settings > Variables: nao duplique o Postgres — clique **"Add Reference"** e referencie `DATABASE_URL` + `REDIS_URL` do web service. Tambem referencie `VESTIGIO_SECRET_KEY` e `ANTHROPIC_API_KEY` se algum estagio do pipeline usar (ex: Stage D LLM).
+- Settings > Scaling: 1 replica inicial, 1 vCPU, 1.5-2GB RAM (Chromium pool de 3 = 900MB-1.5GB ceiling)
+- Settings > Health check: ative com path `/healthz` na porta `3001` (ou no `WORKER_HEALTH_PORT` que voce configurar)
 
-**4. Leader election nos crons (Wave 5 Fase 1)**
+**4. Leader election ja esta wireada** nos crons. Os 3 crons em `src/instrumentation-node.ts` (heal, lead-cleanup, inactivity-pause) sao envolvidos por `withLeadership(...)` de `src/libs/leader-election.ts`. Multi-replica do web e seguro hoje. O worker so precisa de leader election se voce escalar acima de 1 replica de worker — atualmente cada worker drena queue independentemente sem coordenacao (e seguro por causa do LPOP atomico).
 
-O `setInterval` do heal cron em `src/instrumentation-node.ts` precisa virar leader-elected para nao rodar N vezes se o web service escalar. Padrao: `SET NX EX {replica_id} 90` no Redis antes do body do interval; so o holder executa. Sem isso, nao escale o web acima de 1 replica.
+**5. Monitoramento**
 
-**5. Monitoramento do worker**
+- Worker `/healthz` retorna JSON com queue depth (per tier + DLQ), in-flight count, chromium pool utilization, Redis status. Railway logs ja saem em JSON estruturado com `worker_id` correlation.
+- Admin endpoint `GET /api/admin/metrics/audit-runner` retorna queue + cycles-by-status last-24h + p50/p95 cycle duration + recent failures + top-10 orgs por cycles_run no periodo. Cheap o suficiente pra pollar de 30s em 30s num tile de dashboard.
+- `railway logs --service worker` para logs estruturados; `jq` parse direto.
 
-- Railway > worker service > Metrics (CPU, RAM, restart count)
-- `/app/admin/overview` mostra ciclos stuck + backlog Redis (Wave 5 Fase 1 adiciona esses tiles)
-- `railway logs --service worker` para logs
+**Custo extra estimado.** Railway cobra por service independente. Worker 1 vCPU / 1.5GB ≈ $5-10/mes alem do web. Justifica-se assim que `REDIS_URL` esta configurado — sem o worker, a fila acumula.
 
-**Custo extra estimado.** Railway cobra por service independente. Um worker rodando 1 vCPU / 1GB ≈ $5-10/mes alem do web. Justifica-se assim que continuous scheduling entrar ou >50 ciclos/dia.
+**Tunaveis via env:**
+- `AUDIT_WORKER_CONCURRENCY` — quantos ciclos um worker drena em paralelo (default 2)
+- `CHROMIUM_POOL_SIZE` — semaforo de browsers Chromium concurrentes por processo (default 3)
+- `WORKER_HEALTH_PORT` — porta do health server (default 3001)
 
-**Ate a Wave 5 Fase 1 landar**, mantenha 1 replica no web e nao ative scheduler. O fire-and-forget via webhook aguenta volume de onboarding organico, mas nao aguenta scheduler.
+**Sem `REDIS_URL`**, o worker boota, loga warning ("nothing to do") e fica idle ate SIGTERM. Webhooks continuam despachando in-process via `Promise.then()` legacy. Util pra single-box deploys.
 
 ### 15.4. Monitoramento
 

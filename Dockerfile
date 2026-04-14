@@ -96,9 +96,16 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /root/.cache/ms-playwright /root/.cache/ms-playwright
 
 # Worker source files — imported at runtime by tsx.
+# `src/` is needed because worker-loop.ts has imports like
+# `import { prisma } from "../../src/libs/prismaDb"` that tsx resolves
+# against the raw on-disk source. Web service doesn't need src/ at
+# runtime (Next.js standalone pre-compiles everything into server.js)
+# but including it here is cheap (~MB) and keeps one image for both.
 COPY --from=builder /app/workers ./workers
 COPY --from=builder /app/apps ./apps
 COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Worker loop health server (overridable via WORKER_HEALTH_PORT env).
 EXPOSE 3000 3001

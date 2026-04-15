@@ -77,6 +77,20 @@ model User {
   locale                String?                 @default("en") // en | de | pt-BR | es
   phone                 String? // E.164 format e.g. +5511999999999
   phoneVerified         DateTime?
+  // ─── Paddle activation flow ───────────────────
+  // billingEmail is the Paddle customer email and is set on /lp
+  // conversion (promote-lead.ts). It's separate from `email` so the
+  // customer can later link an OAuth account with a DIFFERENT email
+  // without losing the invoicing address. Think of `email` as
+  // "login email" and `billingEmail` as "invoice email".
+  billingEmail          String?
+  // activationToken is minted by promote-lead.ts on /lp conversion.
+  // The user is "pending" until they visit /activate/:token and pick
+  // an auth method (Google, GitHub, or password). Token is consumed
+  // (set to null) on activation. One-time use.
+  activationToken       String?                 @unique
+  activationTokenExpiresAt DateTime?
+  activatedAt           DateTime?
   createdAt             DateTime                @default(now())
   accounts              Account[]
   sessions              Session[]

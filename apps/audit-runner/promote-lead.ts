@@ -1,6 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
-import { sendMagicLink } from "@/libs/notification-triggers";
-import { randomBytes, createHash } from "node:crypto";
+import { sendActivationEmail } from "@/libs/notification-triggers";
+import { randomBytes } from "node:crypto";
 
 // ──────────────────────────────────────────────
 // Lead → Customer Promotion
@@ -8,18 +8,24 @@ import { randomBytes, createHash } from "node:crypto";
 // Called from the Paddle webhook (handleOnboardingActivation) when
 // custom_data.leadId is present on a transaction.completed or
 // subscription.created event. Converts an AnonymousLead row into a
-// real authenticated customer:
+// pending User + real Organization, and emails an activation link.
+//
+// Flow (post-2026-04-15 rewrite — replaces the old magic-link path):
 //
 //   1. Look up the lead → must be in audit_complete or checkout_started
-//   2. Resolve / create the User (reuse if email already exists)
+//   2. Resolve / create a pending User. Reuse existing email matches.
+//      For NEW users we mint a 32-byte activation token with 24h TTL.
+//      Password + OAuth linkage both happen later at /activate/:token
+//      — the User row starts with NO password and NO Account link.
 //   3. Create the Organization (status='active', plan from price)
 //   4. Create the Membership (User as owner)
 //   5. Create the Environment from lead.domain
 //   6. Create the BusinessProfile from lead fields
-//   7. Mint a magic-link token + send via Brevo so the visitor can
-//      log in without setting a password
-//   8. Create an AuditCycle and fire-and-forget runAuditCycle for
+//   7. Create an AuditCycle and fire-and-forget runAuditCycle for
 //      a real (full mode) audit on the new env
+//   8. Send activation email via Brevo → link lands on /activate/:token
+//      where the visitor picks Google / GitHub / password. NO magic
+//      link — we want a deliberate auth-method choice.
 //   9. Mark lead status='converted' + record promotedToUserId/OrgId
 //
 // Idempotency: if called twice for the same lead (Paddle retries),
@@ -28,8 +34,10 @@ import { randomBytes, createHash } from "node:crypto";
 // Email collision policy (decided 2026-04-07): reuse existing User.
 // If the email is already in our system (from a previous signup or
 // a previous /lp purchase), the new Org gets attached to the same
-// User and the magic link goes to the same address. Multi-org support
-// is already in the schema (User → Membership[] → Organization[]).
+// User and the activation email goes to the same address. Existing
+// users that already have a password or OAuth linked skip the
+// activation step — we still send the email but the link says
+// "your account is already active, sign in".
 // ──────────────────────────────────────────────
 
 export interface PromoteLeadInput {
@@ -47,33 +55,13 @@ export interface PromoteLeadResult {
 	wasNewUser: boolean;
 }
 
-const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const ACTIVATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-function generateMagicLinkToken(): { token: string; hashed: string } {
-	const token = randomBytes(32).toString("hex");
-	// NextAuth's email provider hashes the token with sha256(token + secret)
-	// before storing in VerificationToken. We mirror that exactly so the
-	// /api/auth/callback/email handler can verify the token we minted.
-	// Source: node_modules/next-auth/src/core/lib/utils.ts:hashToken()
-	// Vestigio's auth.ts uses process.env.SECRET (see src/libs/auth.ts:58)
-	const secret = process.env.SECRET || "";
-	const hashed = createHash("sha256")
-		.update(`${token}${secret}`)
-		.digest("hex");
-	return { token, hashed };
-}
-
-function buildMagicLinkUrl(email: string, token: string): string {
-	const base =
-		process.env.NEXTAUTH_URL ||
-		process.env.NEXT_PUBLIC_APP_URL ||
-		"https://vestigio.io";
-	const params = new URLSearchParams({
-		callbackUrl: `${base}/app/inventory`,
-		token,
-		email,
-	});
-	return `${base}/api/auth/callback/email?${params.toString()}`;
+function generateActivationToken(): string {
+	// 32 random bytes → 64 hex chars. The token is the path segment
+	// in /activate/:token so URL-safe chars only. Hex is plenty random
+	// (≈128 bits after we consume it) and easier to log/debug than b64.
+	return randomBytes(32).toString("hex");
 }
 
 export async function promoteLeadToOrg(
@@ -130,26 +118,47 @@ export async function promoteLeadToOrg(
 	let user = await prisma.user.findUnique({ where: { email } });
 	const wasNewUser = !user;
 
+	// activationToken is minted only for NEW users. Returning users
+	// (existing password or OAuth linked) already have a way to sign
+	// in — we reuse them and skip the activation step.
+	let activationToken: string | null = null;
+	let activationSkipReason: "existing_user" | null = null;
+
 	if (!user) {
+		activationToken = generateActivationToken();
 		user = await prisma.user.create({
 			data: {
 				email,
 				name: orgName,
-				password: "", // empty — magic link is the only way in
+				billingEmail: email,
+				activationToken,
+				activationTokenExpiresAt: new Date(
+					Date.now() + ACTIVATION_TOKEN_TTL_MS,
+				),
 				customerId: input.stripeCustomerId || null,
+				// No password, no Account — user is pending until they
+				// visit /activate/:token and pick Google/GitHub/password.
 			},
 		});
-		console.log(`[promote-lead] created new user ${user.id} (${email})`);
+		console.log(`[promote-lead] created pending user ${user.id} (${email})`);
 	} else {
-		// Update customer id if it's not set yet (e.g. existing free
-		// user converting via /lp)
+		activationSkipReason = "existing_user";
+		const patch: Record<string, unknown> = {};
 		if (input.stripeCustomerId && !user.customerId) {
+			patch.customerId = input.stripeCustomerId;
+		}
+		if (!user.billingEmail) {
+			patch.billingEmail = email;
+		}
+		if (Object.keys(patch).length > 0) {
 			await prisma.user.update({
 				where: { id: user.id },
-				data: { customerId: input.stripeCustomerId },
+				data: patch,
 			});
 		}
-		console.log(`[promote-lead] reusing existing user ${user.id} (${email})`);
+		console.log(
+			`[promote-lead] reusing existing user ${user.id} (${email}) — skipping activation`,
+		);
 	}
 
 	// 2. Create the Organization
@@ -250,26 +259,25 @@ export async function promoteLeadToOrg(
 			);
 		});
 
-	// 8. Mint magic link + send email. Brevo path is preferred (uses
-	//    no-reply@vestigio.io sender). Failure to send is non-fatal —
-	//    user can still log in via /auth/signin if they know the email.
-	try {
-		const { token, hashed } = generateMagicLinkToken();
-		const expires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
-
-		await prisma.verificationToken.create({
-			data: {
-				identifier: email,
-				token: hashed,
-				expires,
-			},
-		});
-
-		const magicUrl = buildMagicLinkUrl(email, token);
-		await sendMagicLink(email, magicUrl);
-		console.log(`[promote-lead] magic link sent to ${email}`);
-	} catch (err) {
-		console.error(`[promote-lead] magic link send failed:`, err);
+	// 8. Send activation email. For NEW users, the link lands on
+	//    /activate/:token and offers Google/GitHub/password. For
+	//    existing users (returning buyers), we skip — they already
+	//    have a working auth method; they can sign in at /auth/signin
+	//    using whatever they set up originally.
+	//    Failure to send is non-fatal: Admin can regenerate the token
+	//    manually from /app/admin/users if a lead ever reports they
+	//    didn't receive anything.
+	if (activationToken && !activationSkipReason) {
+		try {
+			await sendActivationEmail(email, activationToken, normalizedDomain);
+			console.log(`[promote-lead] activation email sent to ${email}`);
+		} catch (err) {
+			console.error(`[promote-lead] activation email send failed:`, err);
+		}
+	} else {
+		console.log(
+			`[promote-lead] activation email skipped for ${email} — user already has auth set up`,
+		);
 	}
 
 	// 9. Mark lead converted

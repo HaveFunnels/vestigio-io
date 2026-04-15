@@ -50,11 +50,99 @@ function clearFailedAttempts(email: string): void {
 // Generic error message to prevent email enumeration
 const INVALID_CREDENTIALS = "Invalid email or password";
 
+// ──────────────────────────────────────────────
+// Activation-aware adapter wrapper
+//
+// Standard PrismaAdapter: on OAuth signin, NextAuth calls
+//   1. getUserByAccount() — check if we've seen this OAuth id before
+//   2. getUserByEmail() — fallback to email match (returns null unless
+//      allowDangerousEmailAccountLinking is set)
+//   3. createUser() — mint a new User when nothing matched
+//
+// For the /lp activation flow we want the OAuth account to link to
+// the PENDING user (the one we pre-created in promote-lead.ts with
+// a specific activationToken), NOT a fresh User minted from the
+// OAuth profile. We detect "this is an activation flow" by reading
+// the `vestigio_activation_token` httpOnly cookie that /api/activate/
+// oauth-prepare set before the OAuth redirect.
+//
+// The override is narrow: ONLY when the cookie is present AND matches
+// a pending user. Normal OAuth signups (home-page freemium flow,
+// future) keep stock behavior.
+// ──────────────────────────────────────────────
+
+function wrapAdapterForActivation(
+	base: ReturnType<typeof PrismaAdapter>,
+): ReturnType<typeof PrismaAdapter> {
+	async function findPendingUserFromCookie() {
+		try {
+			// Imported lazily so module load doesn't fail in non-Next
+			// environments (scripts, tests) that import auth.ts.
+			const { cookies } = await import("next/headers");
+			const jar = await cookies();
+			const token = jar.get("vestigio_activation_token")?.value;
+			if (!token) return null;
+			return await prisma.user.findFirst({
+				where: {
+					activationToken: token,
+					activationTokenExpiresAt: { gt: new Date() },
+					activatedAt: null,
+				},
+			});
+		} catch {
+			return null;
+		}
+	}
+
+	return {
+		...base,
+		async createUser(data: any) {
+			const pending = await findPendingUserFromCookie();
+			if (pending) {
+				// Don't create a new User — update the pending one with the
+				// OAuth profile fields and mark it activated. NextAuth will
+				// then call linkAccount() which attaches the Account row to
+				// this same User id (the id we return here).
+				const updated = await prisma.user.update({
+					where: { id: pending.id },
+					data: {
+						// Prefer OAuth email for login (user explicitly chose
+						// this identity). billingEmail stays as the Paddle
+						// email — invoices keep going there.
+						email: data.email ?? pending.email,
+						name: data.name ?? pending.name ?? undefined,
+						image: data.image ?? pending.image ?? undefined,
+						emailVerified: new Date(),
+						activatedAt: new Date(),
+						activationToken: null,
+						activationTokenExpiresAt: null,
+					},
+				});
+				return updated as any;
+			}
+			return base.createUser!(data);
+		},
+		async getUserByEmail(email: string) {
+			const pending = await findPendingUserFromCookie();
+			if (pending) {
+				// Suppress email-match during activation so NextAuth falls
+				// through to createUser(), where our override redirects the
+				// flow to the pending user. Without this, if OAuth email
+				// happened to equal billingEmail, NextAuth would short-
+				// circuit here and skip createUser — and with it our
+				// linkage logic.
+				return null;
+			}
+			return base.getUserByEmail!(email);
+		},
+	} as ReturnType<typeof PrismaAdapter>;
+}
+
 export const authOptions: NextAuthOptions = {
 	pages: {
 		signIn: "/auth/signin",
 	},
-	adapter: PrismaAdapter(prisma),
+	adapter: wrapAdapterForActivation(PrismaAdapter(prisma)),
 	secret: process.env.SECRET,
 	session: {
 		strategy: "jwt",

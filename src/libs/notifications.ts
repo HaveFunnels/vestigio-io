@@ -31,6 +31,7 @@ export type NotificationEvent =
 	| "improvement"
 	| "newsletter"
 	| "magic_link"
+	| "activation_link"
 	| "password_reset"
 	| "support_reply"
 	| "billing"
@@ -450,6 +451,7 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 		case "newsletter": return prefs.newsletterSubscribed;
 		case "system":
 		case "magic_link":
+		case "activation_link":
 		case "password_reset":
 		case "support_reply":
 		case "billing":

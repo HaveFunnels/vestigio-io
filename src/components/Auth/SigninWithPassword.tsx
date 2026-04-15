@@ -3,8 +3,8 @@ import { rateLimitByIp } from "@/libs/limiter";
 import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import z from "zod";
 import { integrations, messages } from "../../../integrations.config";
@@ -20,8 +20,12 @@ const schema = z.object({
 });
 
 export default function SigninWithPassword() {
+	const searchParams = useSearchParams();
+	const prefilledEmail = searchParams?.get("email") || "";
+	const justActivated = searchParams?.get("activated") === "1";
+
 	const [data, setData] = useState({
-		email: "",
+		email: prefilledEmail,
 		password: "",
 		remember: false,
 	});
@@ -30,6 +34,17 @@ export default function SigninWithPassword() {
 
 	const router = useRouter();
 	const t = useTranslations("signInPage.form");
+
+	// Show a one-shot toast when arriving from /activate/:token so the
+	// user knows the password was saved and they just need to log in.
+	useEffect(() => {
+		if (justActivated) {
+			toast.success(
+				"Conta ativada. Entre com o email e a senha que você acabou de criar.",
+			);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setData({

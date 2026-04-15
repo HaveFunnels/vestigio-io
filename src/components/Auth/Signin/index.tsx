@@ -3,6 +3,7 @@ import { useBranding } from "@/components/BrandingProvider";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import GithubSigninButton from "../GithubSigninButton";
 import GoogleSigninButton from "../GoogleSigninButton";
@@ -11,7 +12,14 @@ import SigninWithPassword from "../SigninWithPassword";
 import DemoSignin from "./DemoSignin";
 
 export default function Signin() {
-	const [signinOption, setSigninOption] = useState("magic-link");
+	const searchParams = useSearchParams();
+	// /activate/:token → password flow redirects here with activated=1
+	// so we default to the password tab instead of the magic-link tab
+	// that the rest of the site uses.
+	const justActivated = searchParams?.get("activated") === "1";
+	const [signinOption, setSigninOption] = useState(
+		justActivated ? "password" : "magic-link",
+	);
 	const t = useTranslations("signInPage");
 	const branding = useBranding();
 	const logoSrc = branding.logo_dark?.dataUrl; // dark bg → dark variant

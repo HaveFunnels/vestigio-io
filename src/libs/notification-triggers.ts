@@ -202,6 +202,52 @@ export async function sendMagicLink(email: string, link: string): Promise<void> 
 	});
 }
 
+/**
+ * Post-purchase activation email for /lp buyers. Sent once per lead
+ * conversion — does NOT deliver a magic link. The link lands the user
+ * on /activate/:token where they pick Google, GitHub, or a password.
+ *
+ * Kept separate from sendMagicLink because:
+ *   1. Wording is different ("your audit is ready" vs. "sign in")
+ *   2. TTL is 24h here, 10min for magic links
+ *   3. We NEVER want /lp buyers to receive an autologin link — the
+ *      activation token is the authority, but it must be consumed
+ *      through a deliberate auth-method choice, not a one-click
+ *      signin that bypasses password/OAuth setup entirely.
+ */
+export async function sendActivationEmail(
+	email: string,
+	token: string,
+	domain: string,
+): Promise<void> {
+	const base =
+		process.env.NEXTAUTH_URL ||
+		process.env.NEXT_PUBLIC_APP_URL ||
+		"https://app.vestigio.io";
+	const link = `${base}/activate/${encodeURIComponent(token)}`;
+
+	const safeDomain = domain.replace(/[<>&"']/g, "");
+
+	const html = renderBrandedEmail({
+		headline: "Seu diagnóstico completo está pronto",
+		intro: `Bem-vindo ao Vestigio. Ativamos sua conta para <strong>${safeDomain}</strong> e o diagnóstico completo já está esperando no seu painel. Clique abaixo para escolher como quer fazer login.`,
+		ctaLabel: "Ativar minha conta",
+		ctaUrl: link,
+		footerNote:
+			"Este link expira em 24 horas e só pode ser usado uma vez. Se não foi você que comprou, responda este email para cancelarmos.",
+	});
+
+	const { notifyDirect } = await import("@/libs/notifications");
+	await notifyDirect({
+		event: "activation_link",
+		to: { email },
+		subject: `Seu diagnóstico de ${safeDomain} está pronto — ative sua conta`,
+		bodyHtml: html,
+		bodyText: `Ative sua conta Vestigio: ${link}\n\nO link expira em 24 horas.`,
+		tag: "activation_link",
+	});
+}
+
 export async function sendPasswordResetEmail(userId: string, email: string, link: string): Promise<void> {
 	const html = renderBrandedEmail({
 		headline: "Reset your password",

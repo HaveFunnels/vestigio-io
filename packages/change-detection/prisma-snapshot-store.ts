@@ -1,5 +1,4 @@
 import {
-	type SnapshotStore,
 	type VersionedSnapshot,
 	type SnapshotMetadata,
 	SNAPSHOT_SCHEMA_VERSION,
@@ -8,34 +7,47 @@ import {
 import type { CycleSnapshot } from "./engine";
 
 // ──────────────────────────────────────────────
-// PrismaSnapshotStore — DB-backed SnapshotStore
+// PrismaSnapshotStore — DB-backed snapshot persistence
 //
-// Implements the SnapshotStore interface from snapshot-store.ts using
-// Prisma to persist `decisions[]` and `signals[]` JSON blobs into the
-// CycleSnapshot table. This is what makes change detection survive
-// process restarts: every cycle saves its snapshot here, and the next
-// cycle reads the most recent one to feed `previous_snapshot` into
-// recomputeAll().
+// Persists `decisions[]` + `signals[]` snapshots into the CycleSnapshot
+// table. This is what makes change detection survive process restarts:
+// every cycle saves its snapshot here, and the next cycle reads the
+// most recent one to feed `previous_snapshot` into recomputeAll().
 //
-// Note: SnapshotStore.save / setBaseline are synchronous in the
-// interface (legacy in-memory contract) but Prisma calls are async.
-// This adapter uses fire-and-forget for save/setBaseline and the
-// asyncSave/asyncSetBaseline alternatives for callers that need to
-// await the write. The audit-runner always uses the async variants
-// to guarantee durability before marking the cycle complete.
+// Async-only by design. The legacy SnapshotStore interface has sync
+// methods (save/getLatest/prune/etc) that are fine for InMemory use
+// but can't honestly be implemented over Prisma — a sync method that
+// fires-and-forgets a DB write is just a silent data-loss source.
+//
+// Deliberately does NOT `implements SnapshotStore`. Callers that still
+// think they have a sync store (e.g. selectComparisonSnapshot) will
+// fail to compile when given a PrismaSnapshotStore, which is the
+// intended behavior — they must await the async variants explicitly.
+//
+// Accepts an optional Prisma transaction client in each write method
+// so a caller can group snapshot save + finding save + cycle mark
+// complete into a single atomic transaction (see apps/audit-runner).
 // ──────────────────────────────────────────────
 
-export class PrismaSnapshotStore implements SnapshotStore {
-	constructor(private prisma: any) {}
+type PrismaLike = any;
 
-	private scopeKey(workspaceRef: string, environmentRef: string): string {
-		return `${workspaceRef}::${environmentRef}`;
-	}
+export class PrismaSnapshotStore {
+	constructor(private prisma: PrismaLike) {}
 
-	// ── Save (async preferred) ──
+	// ── Writes ──
 
-	async asyncSave(snapshot: VersionedSnapshot, cycleId?: string): Promise<string> {
-		await this.prisma.cycleSnapshot.create({
+	/**
+	 * Persist a snapshot. Awaits the DB write so callers can reason
+	 * about durability. Pass `tx` to run inside an existing transaction
+	 * (e.g. the audit-runner's finish-cycle transaction).
+	 */
+	async asyncSave(
+		snapshot: VersionedSnapshot,
+		cycleId?: string,
+		tx?: PrismaLike,
+	): Promise<string> {
+		const client = tx ?? this.prisma;
+		await client.cycleSnapshot.create({
 			data: {
 				cycleRef: snapshot.cycle_ref,
 				cycleId: cycleId || null,
@@ -54,74 +66,35 @@ export class PrismaSnapshotStore implements SnapshotStore {
 		return snapshot.id;
 	}
 
-	save(snapshot: VersionedSnapshot): string {
-		// Sync interface — fire and forget. Callers that need durability
-		// must use asyncSave() instead.
-		this.asyncSave(snapshot).catch((err) => {
-			console.error("[prisma-snapshot-store] async save failed:", err);
-		});
-		return snapshot.id;
-	}
-
-	// ── Lookups ──
-
-	async asyncGetLatest(
-		workspaceRef: string,
-		environmentRef: string,
-	): Promise<VersionedSnapshot | null> {
-		const row = await this.prisma.cycleSnapshot.findFirst({
-			where: { workspaceRef, environmentRef },
-			orderBy: { createdAt: "desc" },
-		});
-		return row ? this.rowToVersioned(row) : null;
-	}
-
-	getLatest(_workspaceRef: string, _environmentRef: string): VersionedSnapshot | null {
-		// Legacy sync interface — not supported in DB store. Callers
-		// should migrate to asyncGetLatest().
-		throw new Error(
-			"PrismaSnapshotStore.getLatest is not implemented (sync). Use asyncGetLatest().",
-		);
-	}
-
-	async asyncGetById(id: string): Promise<VersionedSnapshot | null> {
-		// In the DB representation, the cuid `id` column is the row id.
-		// VersionedSnapshot.id from in-memory store has the form
-		// `snap_${cycleRef}_${ts}` — these don't collide because callers
-		// only ever pass back ids returned by save() (which we override).
-		const row = await this.prisma.cycleSnapshot.findUnique({ where: { id } });
-		return row ? this.rowToVersioned(row) : null;
-	}
-
-	getById(_id: string): VersionedSnapshot | null {
-		throw new Error(
-			"PrismaSnapshotStore.getById is not implemented (sync). Use asyncGetById().",
-		);
-	}
-
-	async asyncGetBaseline(
-		workspaceRef: string,
-		environmentRef: string,
-	): Promise<VersionedSnapshot | null> {
-		const row = await this.prisma.cycleSnapshot.findFirst({
-			where: { workspaceRef, environmentRef, isBaseline: true },
-			orderBy: { createdAt: "desc" },
-		});
-		return row ? this.rowToVersioned(row) : null;
-	}
-
-	getBaseline(_workspaceRef: string, _environmentRef: string): VersionedSnapshot | null {
-		throw new Error(
-			"PrismaSnapshotStore.getBaseline is not implemented (sync). Use asyncGetBaseline().",
-		);
-	}
-
-	async asyncSetBaseline(snapshotId: string): Promise<void> {
-		const row = await this.prisma.cycleSnapshot.findUnique({
+	/**
+	 * Promote a snapshot to baseline for its workspace/environment.
+	 * Clears any existing baseline atomically.
+	 */
+	async asyncSetBaseline(snapshotId: string, tx?: PrismaLike): Promise<void> {
+		const client = tx ?? this.prisma;
+		const row = await client.cycleSnapshot.findUnique({
 			where: { id: snapshotId },
 		});
 		if (!row) return;
-		// Clear any existing baseline for the same scope, then set this one.
+
+		if (tx) {
+			// Already inside a transaction — do both updates on the same
+			// tx client, no nested $transaction.
+			await tx.cycleSnapshot.updateMany({
+				where: {
+					workspaceRef: row.workspaceRef,
+					environmentRef: row.environmentRef,
+					isBaseline: true,
+				},
+				data: { isBaseline: false },
+			});
+			await tx.cycleSnapshot.update({
+				where: { id: snapshotId },
+				data: { isBaseline: true },
+			});
+			return;
+		}
+
 		await this.prisma.$transaction([
 			this.prisma.cycleSnapshot.updateMany({
 				where: {
@@ -138,10 +111,33 @@ export class PrismaSnapshotStore implements SnapshotStore {
 		]);
 	}
 
-	setBaseline(snapshotId: string): void {
-		this.asyncSetBaseline(snapshotId).catch((err) => {
-			console.error("[prisma-snapshot-store] setBaseline failed:", err);
+	// ── Reads ──
+
+	async asyncGetLatest(
+		workspaceRef: string,
+		environmentRef: string,
+	): Promise<VersionedSnapshot | null> {
+		const row = await this.prisma.cycleSnapshot.findFirst({
+			where: { workspaceRef, environmentRef },
+			orderBy: { createdAt: "desc" },
 		});
+		return row ? this.rowToVersioned(row) : null;
+	}
+
+	async asyncGetById(id: string): Promise<VersionedSnapshot | null> {
+		const row = await this.prisma.cycleSnapshot.findUnique({ where: { id } });
+		return row ? this.rowToVersioned(row) : null;
+	}
+
+	async asyncGetBaseline(
+		workspaceRef: string,
+		environmentRef: string,
+	): Promise<VersionedSnapshot | null> {
+		const row = await this.prisma.cycleSnapshot.findFirst({
+			where: { workspaceRef, environmentRef, isBaseline: true },
+			orderBy: { createdAt: "desc" },
+		});
+		return row ? this.rowToVersioned(row) : null;
 	}
 
 	async asyncGetNthRecent(
@@ -157,16 +153,6 @@ export class PrismaSnapshotStore implements SnapshotStore {
 		return row ? this.rowToVersioned(row) : null;
 	}
 
-	getNthRecent(
-		_workspaceRef: string,
-		_environmentRef: string,
-		_n: number,
-	): VersionedSnapshot | null {
-		throw new Error(
-			"PrismaSnapshotStore.getNthRecent is not implemented (sync). Use asyncGetNthRecent().",
-		);
-	}
-
 	async asyncList(
 		workspaceRef: string,
 		environmentRef: string,
@@ -178,12 +164,6 @@ export class PrismaSnapshotStore implements SnapshotStore {
 			take: limit,
 		});
 		return rows.map((r: any) => this.rowToVersioned(r));
-	}
-
-	list(_workspaceRef: string, _environmentRef: string, _limit?: number): VersionedSnapshot[] {
-		throw new Error(
-			"PrismaSnapshotStore.list is not implemented (sync). Use asyncList().",
-		);
 	}
 
 	// ── Pruning ──
@@ -205,12 +185,6 @@ export class PrismaSnapshotStore implements SnapshotStore {
 			where: { id: { in: toDelete } },
 		});
 		return result.count;
-	}
-
-	prune(_workspaceRef: string, _environmentRef: string, _retainCount: number): number {
-		throw new Error(
-			"PrismaSnapshotStore.prune is not implemented (sync). Use asyncPrune().",
-		);
 	}
 
 	// ── Internal: row → VersionedSnapshot ──

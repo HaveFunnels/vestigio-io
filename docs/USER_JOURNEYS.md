@@ -1,6 +1,6 @@
 # User Journeys — Launch Readiness Audit
 
-> Last updated: 2026-04-14
+> Last updated: 2026-04-15
 > Companion to: [ARCHITECTURE_V2.md](ARCHITECTURE_V2.md), [ROADMAP.md](ROADMAP.md), [DEPLOY.md](DEPLOY.md)
 
 ## Purpose
@@ -15,6 +15,11 @@ Este documento descreve as **jornadas de usuário reais** — não o que está p
 
 Cada seção tem **file:line references** para verificação. Nada aqui é speculation — é leitura de código.
 
+> **Estado atual:** os 4 blockers documentados na versão anterior deste arquivo
+> (2026-04-14) foram todos resolvidos entre 2026-04-14 e 2026-04-15. Ver
+> [§ Resolved blockers](#resolved-blockers-histórico) abaixo para o histórico
+> com SHAs de commit. Launch-readiness sem blockers conhecidos.
+
 ---
 
 ## TL;DR — Launch readiness
@@ -22,15 +27,15 @@ Cada seção tem **file:line references** para verificação. Nada aqui é specu
 | Jornada | Estado | Blocker para launch? |
 |---------|--------|----------------------|
 | Self-serve signup (Stripe) | **WORKS** | Não |
-| Self-serve signup (Paddle) | **BROKEN** | **SIM** — se Paddle é primário |
-| /lp lead funnel | **PARTIAL** | SIM se Paddle for caminho de conversão |
+| Self-serve signup (Paddle) | **WORKS** | Não |
+| /lp lead funnel | **WORKS** | Não |
 | Login (email+senha, OAuth, magic link) | **WORKS** | Não |
 | Admin provisioning | **WORKS** | Não |
 | Impersonation | **WORKS** (com gaps de UX) | Não |
 | Owner onboarding → activation | **WORKS** | Não |
 | First audit cycle + SSE banner | **WORKS** | Não |
-| Continuous audits (hot/warm/cold) | **WORKS** se worker deployado | **SIM** — worker não está no Railway config |
-| Inactivity pause + email | **PARTIAL** — pausa funciona, email não | Não (mas UX quebrada) |
+| Continuous audits (hot/warm/cold) | **WORKS** — worker deploy live no Railway | Não |
+| Inactivity pause + email | **WORKS** — dispatcher drena NotificationLog a cada 5min | Não |
 | Auto-resume após acesso | **WORKS** | Não |
 | Pixel → behavioral findings | **WORKS** | Não |
 | Shopify integration | **WORKS** | Não |
@@ -41,13 +46,10 @@ Cada seção tem **file:line references** para verificação. Nada aqui é specu
 | Actions surface + verify/resolve | **WORKS** (mesma ressalva) | Não |
 | Workspaces / Analysis / Maps / Inventory | **WORKS** | Não |
 | Knowledge base (160 foundation articles) | **WORKS** | Não |
-| Notificações (email/WhatsApp) | **MIXED** — infra existe, dispatcher de NotificationLog não | Não |
+| Notificações (email/WhatsApp) | **WORKS** — dispatcher cobre NotificationLog; direct-call paths continuam | Não |
+| Credit packs (Max overage) | **WORKS** — 3 packs em PlatformConfig, checkout via Paddle | Não |
 
-**Blockers críticos para launch** (ordenados):
-
-1. **Paddle checkout client-side quebrado** (`src/paddle/paddleLoader.tsx:31,44`) — bloqueia o funil Paddle primário e a monetização /lp. Se decidir ir Stripe-only, não é blocker.
-2. **Worker não configurado no Railway** (`Dockerfile:89` roda web, não há serviço separado para `npm run start:worker`) — sem isso, cycles são enfileirados mas ninguém drena, audits contínuos efetivamente não rodam.
-3. **Notification dispatcher não existe** — `NotificationLog` é escrito em pausa por inatividade e outros eventos, mas nenhum cron/job lê e envia email. Emails são silenciosamente dropados.
+**Blockers conhecidos:** nenhum.
 
 Tudo mais é operacionalmente OK.
 
@@ -75,33 +77,30 @@ Tudo mais é operacionalmente OK.
 
 ---
 
-## 2. Self-serve signup → Paddle → first audit — **BROKEN**
+## 2. Self-serve signup → Paddle → first audit — **WORKS**
 
-**Blocker identificado:** o cliente Paddle no browser está quebrado em dois pontos.
+> Resolvido em 2026-04-14 (commit e55433b). Versão anterior deste documento listava este fluxo como BROKEN — os dois defeitos do cliente Paddle (sandbox hardcoded + `signIn("fetchSession")` morto) foram reescritos.
 
-**Onde quebra:**
+**Jornada:** visitor → `/auth/signup` → email+senha → `/onboarding` → `Paddle.Checkout.open({ priceId })` → webhook ativa Org/Env → magic link ou sessão refrescada.
 
-- `src/paddle/paddleLoader.tsx:31` hardcoda `window?.Paddle?.Environment.set("sandbox")` — produção nunca é inicializada.
-- `src/paddle/paddleLoader.tsx:44`: em `checkout.completed`, chama `signIn("fetchSession", ...)`. Esse provider foi **removido intencionalmente** como vulnerabilidade de segurança — ver comentário em `src/libs/auth.ts:162` *"fetchSession provider REMOVED — was a security vulnerability"*. Chamada silenciosamente falha; usuário vê toast genérico mas sessão nunca é criada.
+**O que FUNCIONA:**
 
-**O que FUNCIONA no lado Paddle:**
-
+- Client loader (`src/paddle/paddleLoader.tsx:33-37`): ambiente lido de `NEXT_PUBLIC_PADDLE_ENV` (default sandbox para dev, production em prod). Post-checkout invoca `useSession().update()` + `router.refresh()` (linhas 61-84) — substitui o antigo `signIn("fetchSession")` que era vulnerabilidade de segurança removida em `src/libs/auth.ts:162`.
+- Preços em `PlatformConfig.plan_configs` (seeded via script): Starter `pri_01kp7h4garad36phv7668p4xxp`, Pro `pri_01kp7h85t1g2qsjb426ymjst67`, Max `pri_01kp7hawtykgm1yfnarnbc3cm0`. Multi-moeda via Paddle custom price overrides (USD base + BRL override per Price).
 - Webhook handler (`src/app/api/paddle/webhook/route.ts`) é sólido: cobre `subscription.created/updated/canceled/paused/resumed/past_due/activated/trialing`, `transaction.completed/payment_failed/updated`, `customer.*`, `adjustment.*`. HMAC verification ativo (linhas 18-35). Chama `resolvePlanFromPriceId()` e atualiza `Organization.plan/status`. Cria AuditCycle + enfileira (linhas 489-515).
-- O problema é que o **cliente nunca chega ao webhook** — `Paddle.Checkout.open()` nunca dispara corretamente porque o loader está quebrado.
+- Credit-pack branch do webhook (linhas 318-351): se `priceId` bate um pack, invoca `addPurchasedCredits()` com `paddleTransactionId UNIQUE` → idempotente contra retry (ver seção 19).
 
-**Config que precisaria ser setada mesmo depois do fix:**
-- `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`
-- `NEXT_PUBLIC_PADDLE_ENV=production` (e paddleLoader tem que ler esse env, hoje ignora)
-- `NEXT_PUBLIC_PADDLE_VESTIGIO_PRICE_ID` / `NEXT_PUBLIC_PADDLE_LP_PRICE_ID`
-- `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`
-
-**Fix necessário:**
-1. Trocar `Environment.set("sandbox")` por `Environment.set(process.env.NEXT_PUBLIC_PADDLE_ENV || "sandbox")`.
-2. Substituir `signIn("fetchSession")` por outra estratégia de post-checkout redirect (ex.: webhook cria user + magic link via Brevo + redireciona para `/auth/check-email`).
+**Config em produção (Railway):**
+- `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=live_0f8d67ad2951637b8fb89170b10`
+- `NEXT_PUBLIC_PADDLE_ENV=production`
+- `NEXT_PUBLIC_PADDLE_LP_PRICE_ID=pri_01kp7h4garad36phv7668p4xxp` (Starter, usado pelo funnel /lp/audit)
+- `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_API_URL`
 
 ---
 
-## 3. /lp lead funnel → paid conversion — **PARTIAL**
+## 3. /lp lead funnel → paid conversion — **WORKS**
+
+> Atualizado 2026-04-15 após fix do Paddle checkout. Versão anterior (PARTIAL) citava o Paddle loader como bloqueio — já resolvido (seção 2). Permanecem dois gaps não críticos abaixo.
 
 **Jornada:** visitor → `/lp/audit` → 4-step form → mini-audit dispara → `/lp/audit/result/[leadId]` → "Unlock full audit" → Paddle checkout → webhook promove lead a Org real → magic link por email.
 
@@ -111,16 +110,14 @@ Tudo mais é operacionalmente OK.
 - Lead creation: `POST /api/lead/start` (`src/app/api/lead/start/route.ts:60-70`) cria `AnonymousLead` status=draft com `expiresAt` a 14d.
 - Mini-audit: `apps/audit-runner/run-mini-audit.ts:37-207` — pipeline shallow (1 fetch, 5s budget), cacheado 14d por domain hash.
 - Result page: `src/app/(site)/lp/audit/result/[leadId]/page.tsx` faz polling a cada 3s em `/api/lead/[leadId]`, renderiza 5 findings visíveis + 10 blurred.
-- Lead promotion: `apps/audit-runner/promote-lead.ts:79-297` — on Paddle webhook com `custom_data.leadId`, cria User + Organization + Environment + BusinessProfile + envia magic link + cria primeiro AuditCycle. Marca lead como `converted`. **Lógica é sólida e completa.**
+- Paddle checkout: `Paddle.Checkout.open({ items: [{ priceId: DEFAULT_LP_PRICE_ID }], customData: { leadId, lpFunnel: "true" } })` (result page linhas 161-170) — `DEFAULT_LP_PRICE_ID` vem de `NEXT_PUBLIC_PADDLE_LP_PRICE_ID` (Starter price, baked no client bundle no Railway build).
+- Lead promotion: `apps/audit-runner/promote-lead.ts:79-297` — on Paddle webhook com `custom_data.leadId`, cria User + Organization + Environment + BusinessProfile + envia magic link + cria primeiro AuditCycle. Marca lead como `converted`. Lógica é sólida e completa.
+- Cleanup cron: `AnonymousLead` com `expiresAt < now` e `status != "converted"` é deletado pelo `lead-cleanup` cron em `src/instrumentation-node.ts:126-147` (1h interval). Tabela fica bounded.
 
-**O que QUEBRA:**
+**Gaps não críticos (pós-launch):**
 
-- **Mesmo defeito de paddleLoader** — o botão "Unlock full audit" abre `Paddle.Checkout.open()` mas o cliente Paddle está em sandbox e signIn pós-checkout está morto (ver seção 2).
-- **Stripe não tem equivalente /lp** — o webhook Stripe só cobre `/onboard` com `metadata.organizationId` pré-criado. Não há path para lead → Stripe checkout.
-- **Cleanup de leads stale:** leads têm `expiresAt` mas **não há cron** lendo esse campo + marcando `status=expired` ou deletando. Tabela cresce indefinidamente.
+- **Stripe não tem equivalente /lp** — o webhook Stripe só cobre `/onboard` com `metadata.organizationId` pré-criado. Não há path para lead → Stripe checkout. Só importa se você quiser dual-provider no funnel /lp; por ora o /lp é Paddle-only.
 - **Phone field é coletado mas não usado:** `promote-lead.ts:209-230` cria notification prefs mas nenhum SMS é enviado. Brevo suporta SMS, integração não é chamada.
-
-**Para ir live com /lp:** ou consertar Paddle checkout (seção 2), ou adicionar path Stripe para LP.
 
 ---
 
@@ -199,11 +196,11 @@ Tudo mais é operacionalmente OK.
 
 ---
 
-## 7. Continuous audits (hot/warm/cold por plano) — **WORKS SE WORKER DEPLOYADO** ⚠
+## 7. Continuous audits (hot/warm/cold por plano) — **WORKS**
+
+> Deploy do worker resolvido em 2026-04-14. Versão anterior deste arquivo listava como ⚠ SE WORKER DEPLOYADO; o segundo serviço Railway (`audit-worker`) está live e drenando a queue.
 
 **Jornada:** cada hora, scheduler enumera envs → resolve due cycleType por plano → enfileira → worker drena.
-
-**Verdict: código 100% pronto, deployment 0% pronto para produção.**
 
 **O que FUNCIONA no código:**
 
@@ -223,52 +220,43 @@ Tudo mais é operacionalmente OK.
 - Usage meter escreve tabela `Usage` no finally{} (`src/libs/usage-meter.ts:51-85`).
 - `GET /api/admin/metrics/audit-runner` retorna queue depth + cycles-by-status + p50/p95 + DLQ + top orgs.
 
-**O que QUEBRA em deploy:**
+**Deploy (já ativo):**
 
-- **`Dockerfile:89` tem `CMD ["node", "server.js"]`** — roda só o web server.
-- **`nixpacks.toml:11`** `[start] cmd` idem.
-- **Não há definição de segundo serviço Railway** rodando `npm run start:worker`.
-- Consequência: scheduler enfileira cycles no Redis, mas ninguém drena. Queue cresce. Audits **não rodam** exceto quando caem no fallback in-process durante dispatch de webhook/activation — e mesmo aí rodam no processo web.
+- **Dockerfile unificado** (`Dockerfile:CMD`): `if [ "$SERVICE_ROLE" = "worker" ]; then exec npm run start:worker; else node node_modules/prisma/build/index.js db push && exec node server.js; fi`. Mesma imagem serve web (default) e worker (quando `SERVICE_ROLE=worker`). Web roda Prisma `db push` idempotente no boot para auto-migrar schema.
+- **Dois serviços Railway** no projeto `vestigio`:
+  - `vestigio-io` (web) — roda Next.js, responde HTTP.
+  - `audit-worker` — mesmo repo, `SERVICE_ROLE=worker` setado. Drena Redis queue (`vestigio:auditq:priority:{hot,warm,cold}`), roda cycles, persiste Findings.
+- **Smoke validado** 2026-04-14: scheduler enfileirou → worker drenou → 13 pages crawled → 4 findings persistidos → CycleSnapshot + Usage escritos → status=complete em 12.25s.
 
-**Gotchas adicionais:**
+**Gotchas de boot (observáveis nos logs):**
 
-- **Instrumentation hook só boota com `NEXT_RUNTIME === 'nodejs'`** (`src/instrumentation.ts:25`). Se Railway Next.js edge runtime estiver ativo no web process, cron nunca sobe.
-- **`initRedis()` falha silenciosa** (`src/instrumentation-node.ts:59-62`): se Redis falhar ao conectar, `getRedis()` retorna null, `enqueueAuditCycle()` retorna false, scheduler cai em fallback in-process → cycles rodam no web process, bloqueando requests HTTP.
-
-**Para launch:**
-
-1. Confirmar `REDIS_URL` está setado e `[Redis] Connected` aparece nos logs de boot.
-2. Adicionar segundo serviço Railway:
-   - **Source**: mesmo repo.
-   - **Custom Start Command**: `npx prisma db push --skip-generate && npm run start:worker`.
-   - **Env**: mesmos `DATABASE_URL`, `REDIS_URL`, `ANTHROPIC_API_KEY`, etc.
-   - **Memory**: 512MB+ (Chromium pool usa ~300MB por instance × 3 = 900MB).
-3. Smoke test: criar env Pro → aguardar 1h → verificar `redis-cli LLEN vestigio:auditq:priority:hot` cresce → verificar `AuditCycle.status` transiciona pending → running → complete → `Finding` table popula.
+- **Instrumentation hook só boota com `NEXT_RUNTIME === 'nodejs'`** (`src/instrumentation.ts:25`). Se Railway Next.js edge runtime estiver ativo no web process, cron nunca sobe. Railway default Next runtime é node; ok.
+- **`initRedis()` falha silenciosa** (`src/instrumentation-node.ts:59-62`): se Redis falhar ao conectar, `getRedis()` retorna null, `enqueueAuditCycle()` retorna false, scheduler cai em fallback in-process → cycles rodam no web process. Monitorar `[Redis] Connected` no boot de ambos serviços.
 
 Ver [DEPLOY.md § 15.3.1](DEPLOY.md).
 
 ---
 
-## 8. Inactivity pause → email → resume — **PARTIAL**
+## 8. Inactivity pause → email → resume — **WORKS**
 
-**Jornada:** env sem acesso 14d → cron pausa → email deveria avisar owner → owner volta → `resumeIfPaused` enfileira catch-up cycle.
+> Dispatcher de NotificationLog entregue em 2026-04-14 (commit b12555a). Versão anterior listava como PARTIAL porque o email nunca chegava; agora o cron de 5min drena rows `status="skipped"` via Brevo/Nodemailer.
+
+**Jornada:** env sem acesso 14d → cron pausa → dispatcher envia email avisando owner → owner volta → `resumeIfPaused` enfileira catch-up cycle.
 
 **O que FUNCIONA:**
 
-- Pause cron em `src/instrumentation-node.ts:189-274`: hourly, leader-elected, filtra `activated=true, continuousPaused=false, orgType in (customer,trial)` (excludes demo), `lastAccessedAt < now - 14d`, seta `continuousPaused=true`.
-- Cria `NotificationLog` row com `event='inactivity_pause'`, `status='skipped'` (linhas 249-258).
+- Pause cron em `src/instrumentation-node.ts:195-314`: hourly, leader-elected, filtra `activated=true, continuousPaused=false, orgType in (customer,trial)` (excludes demo), `lastAccessedAt < now - 14d`, seta `continuousPaused=true`.
+- Owner email resolution: segunda round-trip via `prisma.user.findMany({ where: { id: { in: ownerIds } } })` (linhas 238-254) porque `Organization.ownerId` é string plano, não relation Prisma. Grava `ownerEmail` em `NotificationLog.recipient` — antes gravava `ownerId`, que falharia o guard de formato de email no dispatcher.
+- Cria `NotificationLog` row com `event='inactivity_pause'`, `status='skipped'`, `recipient=<email>`, `subject='Audits paused for <domain>'`.
+- **Dispatcher cron** (`src/instrumentation-node.ts:342-369`, lib em `src/libs/notification-dispatcher.ts`): 5min interval, leader-elected via `withLeadership("notification-dispatcher")`. Lê até 50 rows `status="skipped"` por tick, resolve body via per-event template map (só `inactivity_pause` wired hoje), envia via Brevo (preferido) ou Nodemailer (fallback), atualiza a row original em place com `status=sent|failed|dropped`, `provider`, `providerId`, `errorMsg`. Updating row em vez de criar nova preserva `createdAt` para medir queue age.
+- **Idempotência + cap de retry:** rows com `createdAt > 7 days` viram `dropped` para evitar spam sobre eventos stale. Rows com recipient inválido falham imediato em vez de queimar API credits.
 - Resume (`src/libs/env-activity.ts:69-153`): atomic `updateMany` com `where: { continuousPaused: true }` para evitar double-resume race (linhas 89-97). Checa pending/running cycles antes de criar novo (linhas 105-114). Enfileira catch-up.
 - Touch (`src/libs/env-activity.ts:36-58`): 1h-debounced, chamado do layout (`src/app/app/layout.tsx:55-56`), pulado quando impersonating.
 - Banner amarelo pause: `src/components/app/AppSidebarLayout.tsx` scopado ao env atual via `orgCtx.envId` (fix #13).
 
-**O que QUEBRA:**
+**Gap residual (pós-launch):**
 
-- **Notification dispatcher não existe.** NotificationLog é escrito mas **nenhum cron/job lê e despacha email**. Comentário em `src/instrumentation-node.ts:247` declara *"dispatcher reads from it"* — esse dispatcher não está implementado. Owner nunca é avisado.
-- **Toast de resume não é mostrado.** `resumeIfPaused()` retorna `boolean` indicando se reativou, mas `src/app/app/layout.tsx:55-56` ignora o return value. Owner volta, vê página normal, não sabe que catch-up cycle está rodando.
-
-**Para consertar email de inatividade:**
-- Adicionar cron em `src/instrumentation-node.ts` que lê `NotificationLog` status=skipped de `inactivity_pause` event + chama `notifyOrganization()` (função existe em `src/libs/notifications.ts` com Brevo+Nodemailer) + marca row como `sent`.
-- Dispositivos similares provavelmente existem para outros eventos (pause, incidents) — mesma ausência de dispatcher pode afetar mais notificações. **Ver seção 16**.
+- **Toast de resume não é mostrado.** `resumeIfPaused()` retorna `boolean` indicando se reativou, mas `src/app/app/layout.tsx:55-56` ignora o return value. Owner volta, vê página normal, não sabe que catch-up cycle está rodando. UX polish, não afeta pipeline.
 
 ---
 
@@ -423,7 +411,9 @@ Se customer perguntar "vocês integram com Stripe?", a resposta honesta é: **"p
 
 ---
 
-## 16. Notificações (email + WhatsApp) — **MIXED**
+## 16. Notificações (email + WhatsApp) — **WORKS**
+
+> Dispatcher central de `NotificationLog` entregue em 2026-04-14 (commit b12555a). Versão anterior deste arquivo marcava esse canal como MIXED/MISSING.
 
 **Mapeamento real:**
 
@@ -432,14 +422,21 @@ Se customer perguntar "vocês integram com Stripe?", a resposta honesta é: **"p
 | Magic link login (Brevo/SMTP) | **WORKS** (`src/libs/auth.ts:165-200`) |
 | Password reset email | **WORKS** (`src/app/api/forgot-password/*`) |
 | Lead promotion magic link | **WORKS** (`apps/audit-runner/promote-lead.ts`) |
-| Incident notification (audit-runner) | **WORKS** — `triggerIncidentNotifications` chamado em `run-cycle.ts:620-627`, usa `src/libs/notifications.ts` (Brevo/Nodemailer) |
-| Inactivity pause email | **BROKEN** — `NotificationLog` escrito, nenhum dispatcher lê |
+| Incident notification (audit-runner) | **WORKS** — `triggerIncidentNotifications` em `run-cycle.ts:620-627`, usa `src/libs/notifications.ts` (Brevo/Nodemailer) |
+| Inactivity pause email | **WORKS** — queue via NotificationLog, drenado em 5min pelo dispatcher |
 | WhatsApp outbound templates | **WORKS** (`src/libs/whatsapp-meta.ts`, `src/libs/whatsapp-templates.ts`) |
 | WhatsApp inbound webhook | **WORKS** (`src/app/api/whatsapp/webhook/route.ts`) |
 | Notification preferences UI | **WORKS** (capturado em onboarding) |
-| Generic `NotificationLog` dispatcher | **MISSING** — sem cron lendo `status=skipped` |
+| Generic `NotificationLog` dispatcher | **WORKS** (`src/libs/notification-dispatcher.ts` + cron 5min) |
 
-**Gap crítico:** há um padrão de escrita em `NotificationLog` para vários eventos esperando um dispatcher central. Esse dispatcher nunca foi escrito. Eventos que usam chamada direta (`notifyOrganization` inline) funcionam; eventos que só escrevem log (`inactivity_pause`) são dropados.
+**Arquitetura de notificações:**
+
+Duas estratégias coexistem:
+
+- **Direct-call** (`notifyOrganization()` inline): usada para eventos onde a latência importa (magic link, password reset, incident). Chamador aguarda o send.
+- **Queue** (via `NotificationLog` + dispatcher): usada para eventos que podem tolerar minutos de delay (inactivity pause; futuros: trial ending, plan downgrade, etc.). Chamador escreve row `status="skipped"` e o cron drena — isolate failure modes do chamador do provider.
+
+O dispatcher atual só reconhece `event="inactivity_pause"` via switch em `buildEmailBody()` (`src/libs/notification-dispatcher.ts:56-80`). Novos eventos plugam adicionando branches — o padrão está documentado no arquivo.
 
 **Config:**
 - `BREVO_API_KEY` preferível, senão `EMAIL_SERVER_*`.
@@ -462,6 +459,43 @@ Se customer perguntar "vocês integram com Stripe?", a resposta honesta é: **"p
 
 ---
 
+## 19. Credit packs (Max overage) — **WORKS**
+
+> Adicionado 2026-04-15 (commit 9a8e71e). Blocker latente identificado quando o pricing de planos foi fechado: Max inclui 200 verificações/mês e `canAffordVerification` bloqueia execução acima disso — até esse commit, não havia caminho de compra.
+
+**Jornada:** owner Max excede quota → billing UI mostra saldo → clica "Buy credits" → modal com 3 packs → Paddle checkout → webhook credita a org → verificações voltam a passar.
+
+**O que FUNCIONA:**
+
+- **Schema** (`prisma/schema.prisma:489-537`):
+  - `OrgCredits` — `purchasedBalance` (carry-over entre ciclos) + `planConsumedThisCycle` (reset a cada 30d).
+  - `CreditTransaction` — audit trail com `paddleTransactionId UNIQUE` → re-delivery de webhook é idempotente.
+- **Engine** (`apps/platform/credits.ts`):
+  - `canAffordVerification(orgId, plan, cost)` — gate antes da execução. Vestigio plan sempre bloqueado (mensagem "requires Pro or Max"); Pro vê "upgrade to Max to purchase"; Max vê "purchase X more credits to continue".
+  - `consumeCredits(orgId, amount, plan)` — queima plan-included primeiro, depois purchased. Caller passa `plan` para evitar DB round-trip.
+  - `addPurchasedCredits(orgId, amount, { packKey, paddleTransactionId })` — idempotente via `CreditTransaction.paddleTransactionId` unique constraint; retorno `{ credited, alreadyProcessed }`.
+  - Cycle rollover em `ensureOrgCredits()` — snap forward por `Math.floor(age / 30d)` de ciclos, nunca perde purchased.
+- **Catálogo de packs** (`PlatformConfig.credit_packs`, cache 60s em `src/libs/credit-packs.ts`):
+
+| Pack | Créditos | USD | BRL | Paddle Price ID |
+|---|---|---|---|---|
+| Small | 50 | $99 | R$349 | `pri_01kp7j2mdm1kf48pprgwwpbzq9` |
+| Medium | 200 | $299 | R$899 | `pri_01kp7j4170kweezv1pgkvhqe45` |
+| Large | 500 | $599 | R$1.699 | `pri_01kp7j5q8m7ypthbqcdtaws9qj` |
+
+  Pricing é ≥ Max's implicit $2/credit rate (200 credits / $399 = $1.99) → sem arbitragem reversa.
+- **API**:
+  - `GET /api/credit-packs` — pack catalog (público).
+  - `GET /api/credits/balance` — saldo autenticado com `canPurchase` flag (true só para Max).
+- **Webhook** (`src/app/api/paddle/webhook/route.ts:318-351`): `transaction.completed` primeiro checa `findPackByPriceId(priceId)` — se bate, credita e short-circuita (pack não é subscription event).
+- **UI** (`src/components/app/BuyCreditsModal.tsx` + `/app/billing`): seção "Verification Credits" visível para Pro+Max, CTA "Buy credits" só para Max, modal com 3 packs side-by-side, preço localizado (BRL em pt-BR, USD nos demais). i18n em 4 locales.
+
+**Gap residual (pós-launch):**
+
+- **Nenhum "running low" banner** — usuário só descobre que estourou quando clica em algo que precisa de crédito. Modal é o único entry point. Contextual nudge em /app/analysis ou similares pode vir depois.
+
+---
+
 ## 18. Dead code / featureless listings
 
 Items que aparecem no repo mas não são features vivas:
@@ -472,26 +506,48 @@ Items que aparecem no repo mas não são features vivas:
 
 ---
 
-## Critical blockers for launch day — ordenados
+## Resolved blockers (histórico)
 
-### BLOCKER 1: Worker não deployado no Railway
-**Impact:** audits contínuos não rodam. Custom de Pro paga mas só recebe o cycle inicial de activation. Depois, nada.
-**Fix:** adicionar segundo Railway service com `Custom Start Command: npm run start:worker` (seção 7).
+Os 4 blockers que bloqueavam o launch na versão 2026-04-14 deste arquivo
+foram todos resolvidos. Documentados aqui para auditoria futura — o texto
+abaixo descreve o estado antes + fix shipado + commit de referência.
 
-### BLOCKER 2 (se Paddle for primário): Paddle checkout quebrado
-**Impact:** customer clica "Assinar Pro" → nada acontece → nunca vira subscription. /lp funnel idem.
-**Fix:** arrumar `src/paddle/paddleLoader.tsx:31,44` (seção 2).
-**Alternativa:** declarar Stripe-only no launch e esconder/desabilitar Paddle. Webhook Paddle continua instalado para o dia que consertar.
+### BLOCKER 1 ✅ Worker não deployado no Railway — `7f35110` → `cc47e89`
+**Antes:** `Dockerfile` rodava só o web server. Scheduler enfileirava cycles no Redis, ninguém drenava. Audits contínuos efetivamente não rodavam.
+**Depois:** Dockerfile unificado com `SERVICE_ROLE` branching, segundo serviço Railway `audit-worker` mirror do env do web. Smoke validado: cycle completo em 12.25s, 4 findings persistidos.
 
-### BLOCKER 3 (UX): NotificationLog dispatcher missing
-**Impact:** inactivity pause silencioso, outros eventos que esperam dispatcher também silenciosos.
-**Fix:** cron em `src/instrumentation-node.ts` que lê `NotificationLog` status=skipped + chama `notifyOrganization()` + marca sent.
+### BLOCKER 2 ✅ Paddle checkout client-side quebrado — `e55433b`
+**Antes:** `paddleLoader.tsx:31` hardcodava sandbox, `:44` chamava `signIn("fetchSession")` (provider removido por segurança). Customer clicava "Assinar" → nada acontecia.
+**Depois:** `detectPaddleEnvironment()` lê `NEXT_PUBLIC_PADDLE_ENV` (default sandbox); post-checkout usa `useSession().update()` + `router.refresh()` com fallback `window.location.reload()`. Testado com live token em produção.
 
-### Pós-launch (não bloqueia):
+### BLOCKER 3 ✅ NotificationLog dispatcher missing — `b12555a`
+**Antes:** inactivity-pause cron escrevia rows `status="skipped"` esperando um dispatcher downstream — que não existia. Comment "actual send is handled downstream" era promessa quebrada.
+**Depois:** `src/libs/notification-dispatcher.ts` + cron 5min. Lê até 50 rows por tick, resolve body via template map, envia Brevo/Nodemailer, atualiza a row in-place com status final. 7-day drop cap, recipient validation, webhook retry idempotency via providerId.
+
+### BLOCKER 4 ✅ Max overage sem caminho de compra — `9a8e71e`
+**Antes:** `creditStore = new Map()` em memória. `addPurchasedCredits()` existia mas zero callers production. Max exceeded → verificação bloqueada sem saída.
+**Depois:** `OrgCredits` + `CreditTransaction` DB-backed, 3 packs em `PlatformConfig.credit_packs` com priceIDs Paddle, webhook branch que credita org via `paddleTransactionId UNIQUE`, BuyCreditsModal integrado em `/app/billing` com i18n 4 locales. Ver seção 19.
+
+### Bonus: pre-existing TSC bugs — `0ab7300`
+33 erros de tsc em 9 arquivos (mascarados por `next.config.js:ignoreBuildErrors`) foram eliminados. Os que mais importavam:
+- **Open-redirect finding** (`packages/signals/engine.ts:4147`) — `scoping.environment_id` undefined → feature silenciosamente desativada. Dead code removido.
+- **Dashboard pulse summary** (`src/app/api/workspace/pulse-summary/route.ts`) — acessava `f.packKey/category/data/title` que não existem no `Finding` row. Reescrito para ler `projection` + colunas scalar.
+- **Nuvemshop OAuth callback** (`src/app/api/integrations/nuvemshop/callback/route.ts:135`) — `integrationConnections` → `integrations`. OAuth callback agora completa.
+- **Cycles stream progress** (`src/app/api/cycles/[id]/stream/route.ts:121`) — `environmentId` → `environmentRef`. Progress bar agora conta páginas de verdade.
+- **Enrichment workers** (katana/nuclei/semantic) — `PipelineStage` widened, enums corrigidos, Evidence com `subject_ref` + `quality_score` + `FreshnessState.Fresh`. Evidence gerado agora é bem-formado.
+
+`npx tsc --noEmit -p tsconfig.json` emite zero diagnostics.
+
+---
+
+## Pós-launch (não bloqueia)
+
 - Persistence de `VerificationRequest` (seção 14) — evita UX estranha em restart.
 - Banner stop-impersonate (seção 5).
 - Katana/Nuclei binaries no Dockerfile (se enrichment faz parte do pitch).
-- Lead expiration cron (seção 3).
+- Toast de resume pós-inatividade (seção 8).
+- "Running low" banner para credit packs (seção 19).
+- Phone-field SMS path (seção 3) — fallback canal de magic link/reminders.
 
 ---
 
@@ -504,9 +560,10 @@ Items que aparecem no repo mas não são features vivas:
 - `ANTHROPIC_API_KEY` — sem isso, MCP chat retorna 503.
 - `VESTIGIO_LLM_ENABLED=true`.
 
-### Billing (Stripe se for primário, Paddle se for — ou ambos)
+### Billing (Stripe, Paddle, ou ambos)
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — Stripe checkout + webhook.
-- `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `NEXT_PUBLIC_PADDLE_ENV=production`, `NEXT_PUBLIC_PADDLE_VESTIGIO_PRICE_ID`, `NEXT_PUBLIC_PADDLE_LP_PRICE_ID` — Paddle (depois que consertar loader).
+- `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `NEXT_PUBLIC_PADDLE_ENV=production`, `NEXT_PUBLIC_PADDLE_API_URL=https://api.paddle.com`, `NEXT_PUBLIC_PADDLE_LP_PRICE_ID` (Starter price — usado pelo /lp funnel).
+- Plan + pack catalogs vivem em `PlatformConfig` (chaves `plan_configs`, `credit_packs`) — seeded via scripts, não env vars. Admin UI em `/app/admin/pricing` pode editar.
 
 ### Email
 - `BREVO_API_KEY` (preferível) ou `EMAIL_SERVER_HOST/PORT/USER/PASSWORD` + `EMAIL_FROM` — magic link, password reset, incident notifications, lead magic link.
@@ -550,8 +607,9 @@ Items que aparecem no repo mas não são features vivas:
 6. Testar pixel: instalar snippet em domínio real, gerar ~25 sessions, rodar cold cycle, verificar behavioral workspace sai do locked state.
 7. Testar MCP chat: perguntar sobre findings, receber resposta LLM real.
 8. Testar Shopify: conectar store de dev, verificar no próximo cycle que commerce signals aparecem.
-9. Testar billing: completar Stripe checkout, ver Org.plan atualizar via webhook.
-10. (Pós-fix) testar Paddle checkout end-to-end.
+9. Testar billing (Stripe): completar Stripe checkout, ver Org.plan atualizar via webhook.
+10. Testar billing (Paddle): completar checkout de plan + checkout de credit pack; verificar `Organization.plan` atualiza (plan) e `OrgCredits.purchasedBalance` incrementa (pack). Webhook retry test: invocar `POST /api/paddle/webhook` duas vezes com mesmo payload → segunda vez no-ops via `paddleTransactionId UNIQUE`.
+11. Testar notification dispatcher: forçar `NotificationLog` com `status="skipped"` e `event="inactivity_pause"` (via seed ou pg_console) → esperar ≤5min → row deve virar `status="sent"` com providerId populado.
 ```
 
 Se tudo isso passa, está pronto para receber customers pagantes.

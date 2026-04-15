@@ -27,6 +27,20 @@ import { migrateLegacyVerificationMaturity, type FindingProjection } from "./typ
 // upserts cleanly.
 // ──────────────────────────────────────────────
 
+/**
+ * Structured result of a saveForCycle() call. Written count + per-row
+ * failures so the caller can decide whether to mark the cycle complete,
+ * complete-with-warnings, or failed.
+ */
+export interface SaveForCycleResult {
+	/** Number of findings successfully persisted. */
+	written: number;
+	/** Total findings attempted (== args.findings.length). */
+	attempted: number;
+	/** Findings that failed to persist, with the inference_key + error text. */
+	failed: Array<{ inference_key: string; error: string }>;
+}
+
 export class PrismaFindingStore {
 	constructor(private prisma: any) {}
 
@@ -37,24 +51,47 @@ export class PrismaFindingStore {
 	 * (cycleId, inferenceKey) so re-runs of the same cycle don't
 	 * leave dangling rows.
 	 *
-	 * Returns the number of findings written.
+	 * Returns a structured {written, attempted, failed[]} result. The
+	 * caller is expected to:
+	 *
+	 *   - Log failed.length > 0 as a LOUD error (monitoring picks up)
+	 *   - Treat failed.length === attempted (catastrophic loss) as a
+	 *     cycle failure, not a "complete with partial data" — the UI
+	 *     would show an empty dashboard which is worse than showing
+	 *     "audit failed, retry".
+	 *   - Continue with complete when it's a minority failure; the
+	 *     next cycle will re-run the full projection anyway.
+	 *
+	 * Accepts an optional `tx` (Prisma transaction client) so the caller
+	 * can group findings save + snapshot save + cycle complete into a
+	 * single atomic transaction. When `tx` is passed, no nested
+	 * transaction is opened — upserts run on the provided client.
 	 */
-	async saveForCycle(args: {
-		cycleId: string;
-		environmentId: string;
-		cycleRef: string;
-		findings: FindingProjection[];
-	}): Promise<number> {
+	async saveForCycle(
+		args: {
+			cycleId: string;
+			environmentId: string;
+			cycleRef: string;
+			findings: FindingProjection[];
+		},
+		tx?: any,
+	): Promise<SaveForCycleResult> {
 		const { cycleId, environmentId, cycleRef, findings } = args;
-		if (findings.length === 0) return 0;
+		const result: SaveForCycleResult = {
+			written: 0,
+			attempted: findings.length,
+			failed: [],
+		};
+		if (findings.length === 0) return result;
 
-		// Use individual upserts so partial failure doesn't lose data.
-		// Could be optimized to a single createMany + onConflictDoUpdate
-		// but Prisma 5 doesn't support upsertMany cleanly across DBs.
-		let written = 0;
+		const client = tx ?? this.prisma;
+
+		// Individual upserts so a single bad row doesn't poison the batch.
+		// Could be optimized to createMany + onConflictDoUpdate but Prisma 5
+		// doesn't expose upsertMany cleanly across DBs.
 		for (const f of findings) {
 			try {
-				await this.prisma.finding.upsert({
+				await client.finding.upsert({
 					where: {
 						cycleId_inferenceKey: { cycleId, inferenceKey: f.inference_key },
 					},
@@ -91,15 +128,17 @@ export class PrismaFindingStore {
 						projection: JSON.stringify(f),
 					},
 				});
-				written++;
+				result.written++;
 			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				result.failed.push({ inference_key: f.inference_key, error: msg });
 				console.error(
 					`[prisma-finding-store] upsert failed for ${f.inference_key}:`,
 					err,
 				);
 			}
 		}
-		return written;
+		return result;
 	}
 
 	// ── Load latest cycle for an environment ──

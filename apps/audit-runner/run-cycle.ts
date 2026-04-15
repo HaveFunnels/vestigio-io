@@ -601,15 +601,32 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 
 			// (e) Save findings
+			//
+			// saveForCycle returns a structured {written, failed[], attempted}
+			// so partial-failure is visible instead of silently logged. The
+			// transactional completion (step h below) rolls back + fails the
+			// cycle if ALL attempted findings failed to persist — that's the
+			// catastrophic case where the dashboard would otherwise show an
+			// empty state. Partial failures stay as a loud error log + the
+			// cycle still marks complete since the majority is queryable.
+			let findingSaveResult: Awaited<
+				ReturnType<typeof findingStore.saveForCycle>
+			> = { written: 0, attempted: 0, failed: [] };
 			try {
-				const written = await findingStore.saveForCycle({
+				findingSaveResult = await findingStore.saveForCycle({
 					cycleId,
 					environmentId: env.id,
 					cycleRef: cycleRefStr,
 					findings: projections.findings,
 				});
+				if (findingSaveResult.failed.length > 0) {
+					console.error(
+						`[audit-runner ${cycleId}] findings persistence had ${findingSaveResult.failed.length}/${findingSaveResult.attempted} failures`,
+						findingSaveResult.failed.slice(0, 5),
+					);
+				}
 				console.log(
-					`[audit-runner ${cycleId}] persisted ${written}/${projections.findings.length} findings`,
+					`[audit-runner ${cycleId}] persisted ${findingSaveResult.written}/${findingSaveResult.attempted} findings`,
 				);
 			} catch (err) {
 				console.error(`[audit-runner ${cycleId}] findings save failed:`, err);

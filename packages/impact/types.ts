@@ -15,7 +15,31 @@ export interface QuantifiedValueCase {
   basis_type: 'heuristic' | 'mixed' | 'data_driven';
   confidence: number; // 0..100
   inference_key: string;
+
+  /**
+   * Whether the monetary impact is a LOSS (negative finding — revenue
+   * slipping through a broken or weak surface) or RETAINED value
+   * (positive finding — a working control, structural check, or
+   * operational practice keeping money on the table).
+   *
+   * Phase 1.2 introduces this distinction so the impact engine can
+   * quantify positive findings as upside ("you're retaining R$ X/mo
+   * via trust-surface completeness") instead of silently filtering
+   * them out. UIs that want to show a loss-only total should sum
+   * only `impact_role === 'loss'` entries; dashboards that want to
+   * show "retained value" should sum `impact_role === 'retention'`.
+   */
+  impact_role: ImpactRole;
 }
+
+/**
+ * Distinguishes loss-modeled impact (existing default — revenue
+ * leaving the business) from retention-modeled impact (value the
+ * business is actively keeping because a control is in place). The
+ * monetary range is always positive regardless of role; the role
+ * tells the UI how to frame it ("custo" vs "retido").
+ */
+export type ImpactRole = 'loss' | 'retention';
 
 export type ImpactCategory =
   | 'revenue_loss'

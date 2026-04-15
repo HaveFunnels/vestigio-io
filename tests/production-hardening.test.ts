@@ -99,7 +99,7 @@ function mockFinding(key: string, polarity: 'negative' | 'positive' | 'neutral' 
     severity: 'medium',
     confidence,
     confidence_tier: deriveConfidenceTier(confidence),
-    impact: { monthly_range: { min: 50, max: 150 }, midpoint, impact_type: 'revenue_loss', percentage_delta: null, currency: 'USD' },
+    impact: { monthly_range: { min: 50, max: 150 }, midpoint, impact_type: 'revenue_loss', percentage_delta: null, currency: 'USD', role: polarity === 'positive' ? 'retention' : 'loss' },
     pack: 'scale_readiness',
     surface: '/',
     freshness: 'fresh',

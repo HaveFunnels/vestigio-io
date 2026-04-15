@@ -189,6 +189,23 @@ export class PrismaFindingStore {
 				parsed.verification_maturity = migrateLegacyVerificationMaturity(
 					parsed.verification_maturity as string | null,
 				);
+				// Phase 1.1: default remediation_steps + estimated_effort_hours
+				// to null for projections persisted before the fields existed.
+				// Next cycle re-projection overwrites with real values if
+				// Phase 2 has backfilled the GlobalAction template.
+				if (parsed.remediation_steps === undefined) {
+					parsed.remediation_steps = null;
+				}
+				if (parsed.estimated_effort_hours === undefined) {
+					parsed.estimated_effort_hours = null;
+				}
+				// Phase 1.2: default impact.role to 'loss' for legacy
+				// projections. Positive findings written after Phase 1.2
+				// carry role='retention' explicitly; everything older was
+				// loss-modeled because retention wasn't a concept yet.
+				if (parsed.impact && (parsed.impact as any).role === undefined) {
+					(parsed.impact as any).role = 'loss';
+				}
 				findings.push(parsed);
 			} catch (err) {
 				console.warn(

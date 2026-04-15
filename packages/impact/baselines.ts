@@ -1543,3 +1543,85 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     base_metric: 'revenue',
   },
 };
+
+// ──────────────────────────────────────────────
+// Positive Impact Baselines (retention)
+//
+// Mirror of IMPACT_BASELINES for positive findings. When an inference
+// concludes "this control is in place / this surface is healthy" and
+// the inference_key has an entry here, the impact engine emits a
+// QuantifiedValueCase with impact_role='retention' and a monetary
+// range representing the approximate value the business is keeping
+// because the control is working.
+//
+// These are CONSERVATIVE counterfactuals: "if this control were
+// absent, we'd expect the same percentage loss as the corresponding
+// IMPACT_BASELINES entry." The math is intentionally symmetric —
+// trust_boundary_crossed negative says "10-25% revenue at risk on
+// high severity"; trust_boundary_crossed positive (retention) says
+// "10-25% revenue retained on high severity."
+//
+// Phase 1.2 seeds a small starter set. Phase 2.3 populates the rest
+// of the catalog as part of the "positive findings with upside"
+// content backfill. Inferences without a positive baseline here
+// simply don't emit a retention case — they still appear as
+// positive findings in the UI, just without a monetary number.
+//
+// See also: packages/impact/engine.ts — the engine checks this map
+// when conclusion_value indicates absence of a problem.
+// ──────────────────────────────────────────────
+
+export const POSITIVE_IMPACT_BASELINES: Record<string, BaselineEntry> = {
+  // Phase 1.2 starter set — the most common controls that are worth
+  // quantifying as retained value. Phase 2.3 expands this.
+  trust_boundary_crossed: {
+    inference_key: 'trust_boundary_crossed',
+    impact_category: 'conversion_loss',
+    cause: 'Checkout trust continuity is intact',
+    effect: 'Buyers stay on-domain through the purchase moment — trust breaks that typically erode checkout completion are not happening here',
+    high: { min: 0.10, max: 0.25 },
+    medium: { min: 0.05, max: 0.12 },
+    low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  policy_gap: {
+    inference_key: 'policy_gap',
+    impact_category: 'conversion_loss',
+    cause: 'Consumer protection policies in place and discoverable',
+    effect: 'Privacy, terms, and refund policies are present where buyers look for them — the hesitation typically caused by policy absence is not eroding your conversion',
+    high: { min: 0.05, max: 0.15 },
+    medium: { min: 0.02, max: 0.07 },
+    low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  measurement_coverage: {
+    inference_key: 'measurement_coverage',
+    impact_category: 'traffic_waste',
+    cause: 'Measurement infrastructure adequate for optimization',
+    effect: 'Ad spend is attributable, conversion funnels are observable, and revenue leakage can be identified — retained optimization leverage that would otherwise be invisible',
+    high: { min: 0.10, max: 0.25 },
+    medium: { min: 0.05, max: 0.10 },
+    low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  checkout_integrity: {
+    inference_key: 'checkout_integrity',
+    impact_category: 'conversion_loss',
+    cause: 'Checkout structural integrity holding',
+    effect: 'On-domain handoffs, adequate policy coverage, and stable checkout architecture keep completion rate predictable under traffic — the loss pattern typical of degraded integrity is not present',
+    high: { min: 0.15, max: 0.35 },
+    medium: { min: 0.05, max: 0.15 },
+    low: { min: 0.02, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  refund_policy_gap: {
+    inference_key: 'refund_policy_gap',
+    impact_category: 'chargeback_risk',
+    cause: 'Refund policy clear and accessible',
+    effect: 'Buyers who would otherwise dispute via their card issuer find a resolution path on your site first — retained chargeback headroom that protects processor standing',
+    high: { min: 0.05, max: 0.15 },
+    medium: { min: 0.02, max: 0.07 },
+    low: { min: 0.01, max: 0.03 },
+    base_metric: 'chargeback_rate',
+  },
+};

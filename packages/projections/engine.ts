@@ -707,6 +707,7 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
         impact_type: vc.impact_type,
         percentage_delta: vc.estimated_impact.percentage_delta,
         currency: vc.estimated_impact.currency,
+        role: vc.impact_role,
       },
       pack: packKey,
       surface: INFERENCE_SURFACES[vc.inference_key] || '/',
@@ -1394,7 +1395,14 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         severity: 'none',
         confidence: 60,
         confidence_tier: 'medium',
-        impact: { monthly_range: { min: 0, max: 0 }, midpoint: 0, impact_type: 'none', percentage_delta: null, currency: 'USD' },
+        // Positive findings without a matching POSITIVE_IMPACT_BASELINES
+        // entry still render here with zero monetary range — Phase 1.2
+        // shipped a starter set of baselines covering the most common
+        // controls (trust, policy, measurement, checkout integrity,
+        // refund policy). Inferences outside that set emit retention
+        // cases through the value_cases path; positive_checks is a
+        // catalog of qualitative "health checks" separate from impact.
+        impact: { monthly_range: { min: 0, max: 0 }, midpoint: 0, impact_type: 'none', percentage_delta: null, currency: 'USD', role: 'retention' },
         pack: check.pack,
         surface: '/',
         freshness: 'fresh',

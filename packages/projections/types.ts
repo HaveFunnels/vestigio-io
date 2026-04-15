@@ -120,6 +120,15 @@ export interface FindingProjection {
     impact_type: string;
     percentage_delta: number | null;
     currency: string;
+    /**
+     * Whether the monetary range is LOSS (money leaving the business
+     * through this finding) or RETENTION (money the business is
+     * keeping because a control is in place). Defaults to 'loss' on
+     * legacy persisted projections that predate Phase 1.2. UI should
+     * frame retained value as "retido" / "retained" rather than
+     * "custo" / "cost".
+     */
+    role: 'loss' | 'retention';
   };
 
   pack: string;

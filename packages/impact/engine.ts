@@ -5,7 +5,7 @@ import {
   BusinessInputs,
   ImpactSummary,
 } from './types';
-import { IMPACT_BASELINES, BaselineEntry } from './baselines';
+import { IMPACT_BASELINES, POSITIVE_IMPACT_BASELINES, BaselineEntry } from './baselines';
 
 // ──────────────────────────────────────────────
 // Impact Estimation Engine
@@ -108,11 +108,33 @@ export function estimateImpact(
   const valueCases: QuantifiedValueCase[] = [];
 
   for (const inf of inferences) {
-    const baseline = IMPACT_BASELINES[inf.inference_key];
+    // Skip inferences that yielded no conclusion — nothing to quantify.
+    if (inf.conclusion_value === 'none') continue;
+
+    const isPositive =
+      inf.conclusion_value === 'false' || inf.conclusion_value === 'absent';
+
+    // Phase 1.2: positive findings can emit a retention case when we
+    // have a counterfactual baseline for this inference_key. Without
+    // a baseline, fall through without emitting (the projection layer
+    // still renders the positive check qualitatively).
+    const baseline = isPositive
+      ? POSITIVE_IMPACT_BASELINES[inf.inference_key]
+      : IMPACT_BASELINES[inf.inference_key];
     if (!baseline) continue;
 
-    if (inf.conclusion_value === 'false' || inf.conclusion_value === 'none') continue;
-    if (inf.conclusion_value === 'true' && inf.severity_hint === null && inf.confidence < 40) continue;
+    // Loss path keeps the existing low-confidence filter; retention
+    // findings bypass it because the original filter was specifically
+    // about noise in weak-positive loss signals, which doesn't apply
+    // when we're quantifying a control that's reported as working.
+    if (
+      !isPositive &&
+      inf.conclusion_value === 'true' &&
+      inf.severity_hint === null &&
+      inf.confidence < 40
+    ) {
+      continue;
+    }
 
     const severity = mapSeverity(inf);
     const pctRange = baseline[severity];
@@ -120,13 +142,19 @@ export function estimateImpact(
     const isFallback = inputQuality.basis_type === 'heuristic';
     const estimated = computeEstimate(pctRange, baseline.base_metric, business, isFallback);
 
-    // Phase 4A.1: Apply operational amplifier if available for this inference
-    const ampKey = AMPLIFIER_MAPPING[inf.inference_key];
-    const ampValue = ampKey && amplifiers ? (amplifiers[ampKey] ?? 1.0) : 1.0;
-    if (ampValue !== 1.0) {
-      estimated.range.min = Math.round(estimated.range.min * ampValue);
-      estimated.range.max = Math.round(estimated.range.max * ampValue);
-      estimated.monthly_revenue_delta = Math.round((estimated.range.min + estimated.range.max) / 2);
+    // Phase 4A.1: Apply operational amplifier if available for this
+    // inference — only on loss-modeled findings. A working control
+    // isn't amplified by an operational signal like "high cancellation
+    // rate" — that signal makes the problem you still have worse, not
+    // the problem you solved worth more.
+    if (!isPositive) {
+      const ampKey = AMPLIFIER_MAPPING[inf.inference_key];
+      const ampValue = ampKey && amplifiers ? (amplifiers[ampKey] ?? 1.0) : 1.0;
+      if (ampValue !== 1.0) {
+        estimated.range.min = Math.round(estimated.range.min * ampValue);
+        estimated.range.max = Math.round(estimated.range.max * ampValue);
+        estimated.monthly_revenue_delta = Math.round((estimated.range.min + estimated.range.max) / 2);
+      }
     }
 
     // Adjust confidence based on data quality + profile freshness
@@ -143,6 +171,7 @@ export function estimateImpact(
       basis_type: inputQuality.basis_type,
       confidence: finalConfidence,
       inference_key: inf.inference_key,
+      impact_role: isPositive ? 'retention' : 'loss',
     });
   }
 

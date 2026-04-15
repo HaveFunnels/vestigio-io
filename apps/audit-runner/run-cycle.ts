@@ -381,6 +381,14 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		// Per-step failures are caught individually so a single store
 		// hiccup can't fail the whole cycle (audit results in DB are
 		// still useful even if the projection cache is stale).
+		// persistenceInProgress distinguishes "transactional completion
+		// failed — fatal" from "prep step threw — non-fatal" inside the
+		// shared catch. cycleMarkedComplete tracks whether the transaction
+		// already landed the completion so the fallback mark-complete
+		// below doesn't double-update.
+		let persistenceInProgress = false;
+		let cycleMarkedComplete = false;
+		let projectionsForNotifications: any[] = [];
 		try {
 			const workspaceRef = `workspace:${cycle.organizationId}`;
 			const environmentRef = `environment:${env.id}`;
@@ -588,81 +596,140 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			// (c) Project for the UI
 			const projections = projectAll(multiPackResult, translations);
 
-			// (d) Save snapshot — must be awaited so prune in step (f) sees it
-			if (multiPackResult.current_snapshot) {
-				try {
-					await snapshotStore.asyncSave(multiPackResult.current_snapshot, cycleId);
-					console.log(
-						`[audit-runner ${cycleId}] snapshot saved (${multiPackResult.current_snapshot.metadata.decision_count} decisions, ${multiPackResult.current_snapshot.metadata.signal_count} signals, recompute ${recomputeMs}ms)`,
-					);
-				} catch (err) {
-					console.error(`[audit-runner ${cycleId}] snapshot save failed:`, err);
-				}
-			}
-
-			// (e) Save findings
+			// (d+e+complete) Transactional persistence.
 			//
-			// saveForCycle returns a structured {written, failed[], attempted}
-			// so partial-failure is visible instead of silently logged. The
-			// transactional completion (step h below) rolls back + fails the
-			// cycle if ALL attempted findings failed to persist — that's the
-			// catastrophic case where the dashboard would otherwise show an
-			// empty state. Partial failures stay as a loud error log + the
-			// cycle still marks complete since the majority is queryable.
-			let findingSaveResult: Awaited<
-				ReturnType<typeof findingStore.saveForCycle>
-			> = { written: 0, attempted: 0, failed: [] };
-			try {
-				findingSaveResult = await findingStore.saveForCycle({
-					cycleId,
-					environmentId: env.id,
-					cycleRef: cycleRefStr,
-					findings: projections.findings,
-				});
-				if (findingSaveResult.failed.length > 0) {
-					console.error(
-						`[audit-runner ${cycleId}] findings persistence had ${findingSaveResult.failed.length}/${findingSaveResult.attempted} failures`,
-						findingSaveResult.failed.slice(0, 5),
-					);
-				}
-				console.log(
-					`[audit-runner ${cycleId}] persisted ${findingSaveResult.written}/${findingSaveResult.attempted} findings`,
-				);
-			} catch (err) {
-				console.error(`[audit-runner ${cycleId}] findings save failed:`, err);
-			}
+			// Before this block existed, snapshot save, findings save, and
+			// cycle.status='complete' ran in three separate awaits. A crash
+			// between them (or a catastrophic finding-upsert loss) left the
+			// DB in a half-written state: cycle marked complete with 0
+			// findings persisted, dashboard showed stale data from a
+			// previous cycle, and the user had no signal anything was wrong.
+			//
+			// Now the three writes go in a single Prisma interactive tx.
+			// If ANY fails — including the explicit catastrophic-loss
+			// throw when 0/N findings upserted — the tx rolls back
+			// atomically and the error propagates to the outer catch,
+			// which marks the cycle FAILED instead of complete. Heal cron
+			// will pick that up and the next scheduled audit retries.
+			//
+			// Partial loss (some written, some failed) is still treated as
+			// complete — majority findings are queryable and the next
+			// cycle re-persists everything anyway. The failed rows are
+			// logged at ERROR level for monitoring.
+			//
+			// persistenceInProgress flag lets the outer try's catch
+			// distinguish "the transaction failed — fatal" from "behavioral
+			// processing threw earlier — non-fatal". Without it, the same
+			// catch would swallow both.
+			persistenceInProgress = true;
+			await prisma.$transaction(
+				async (tx: any) => {
+					if (multiPackResult.current_snapshot) {
+						await snapshotStore.asyncSave(
+							multiPackResult.current_snapshot,
+							cycleId,
+							tx,
+						);
+						console.log(
+							`[audit-runner ${cycleId}] snapshot saved (${multiPackResult.current_snapshot.metadata.decision_count} decisions, ${multiPackResult.current_snapshot.metadata.signal_count} signals, recompute ${recomputeMs}ms)`,
+						);
+					}
 
-			// (e2) Trigger notifications for critical findings
+					const saveResult = await findingStore.saveForCycle(
+						{
+							cycleId,
+							environmentId: env.id,
+							cycleRef: cycleRefStr,
+							findings: projections.findings,
+						},
+						tx,
+					);
+					if (saveResult.failed.length > 0) {
+						console.error(
+							`[audit-runner ${cycleId}] findings persistence had ${saveResult.failed.length}/${saveResult.attempted} failures`,
+							saveResult.failed.slice(0, 5),
+						);
+					}
+					if (saveResult.attempted > 0 && saveResult.written === 0) {
+						throw new Error(
+							`catastrophic findings persistence loss: 0/${saveResult.attempted} written — aborting cycle completion`,
+						);
+					}
+					console.log(
+						`[audit-runner ${cycleId}] persisted ${saveResult.written}/${saveResult.attempted} findings`,
+					);
+
+					await tx.auditCycle.update({
+						where: { id: cycleId },
+						data: {
+							status: "complete",
+							completedAt: new Date(),
+						},
+					});
+				},
+				// Default 5s is tight for cycles with hundreds of findings
+				// on a loaded DB. 30s gives headroom without hiding a
+				// genuinely stuck connection.
+				{ timeout: 30_000 },
+			);
+			persistenceInProgress = false;
+			cycleMarkedComplete = true;
+
+			projectionsForNotifications = projections.findings;
+
+			// (f) Retention prune — best-effort, outside the transaction
+			try {
+				await snapshotStore.asyncPrune(workspaceRef, environmentRef);
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] snapshot prune failed:`, err);
+			}
+		} catch (err) {
+			if (persistenceInProgress) {
+				// Transactional cycle completion failed — bail to the outer
+				// catch so the cycle is marked FAILED. Dashboard showing
+				// "audit failed, retry" is strictly better than an empty
+				// state from half-written data.
+				console.error(
+					`[audit-runner ${cycleId}] transactional cycle completion failed:`,
+					err,
+				);
+				throw err;
+			}
+			// Prep/recompute failure upstream of the transaction — the
+			// cycle can still complete because evidence + inventory are
+			// already in DB and ensureContext() will recompute lazily on
+			// next request.
+			console.error(
+				`[audit-runner ${cycleId}] recompute/persist block failed (non-fatal):`,
+				err,
+			);
+		}
+
+		// (e2) Trigger notifications for critical findings — best-effort,
+		// outside the transaction so a SMTP hiccup can't rollback data.
+		if (projectionsForNotifications.length > 0) {
 			try {
 				await triggerIncidentNotifications({
 					userId: cycle.organization.ownerId,
 					domain: env.domain,
-					findings: projections.findings,
+					findings: projectionsForNotifications,
 				});
 			} catch {
 				// Non-fatal: notification failure shouldn't block the audit
 			}
-
-			// (f) Retention prune — keep last 10 snapshots per env
-			try {
-				await snapshotStore.asyncPrune(workspaceRef, environmentRef);
-			} catch (err) {
-				// Pruning is best-effort
-				console.warn(`[audit-runner ${cycleId}] snapshot prune failed:`, err);
-			}
-		} catch (err) {
-			// Recompute/persist failure is non-fatal — the cycle still
-			// completes because evidence + inventory are already in DB.
-			// On next request, ensureContext() will run a fresh recompute
-			// from the persisted evidence.
-			console.error(`[audit-runner ${cycleId}] recompute/persist block failed (non-fatal):`, err);
 		}
 
-		// 8. Mark complete
-		await prisma.auditCycle.update({
-			where: { id: cycleId },
-			data: { status: "complete", completedAt: new Date() },
-		});
+		// Fallback mark-complete for the non-transactional path. If we
+		// reached the transaction and it succeeded, cycleMarkedComplete is
+		// true and this is a no-op. If prep threw before the transaction
+		// started, we still want the cycle to land in `complete` (evidence
+		// + inventory are in DB, ensureContext() will recompute lazily).
+		if (!cycleMarkedComplete) {
+			await prisma.auditCycle.update({
+				where: { id: cycleId },
+				data: { status: "complete", completedAt: new Date() },
+			});
+		}
 
 		const durationMs = Date.now() - startedAt;
 		console.log(

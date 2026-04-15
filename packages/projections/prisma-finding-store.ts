@@ -157,11 +157,17 @@ export class PrismaFindingStore {
 		findings: FindingProjection[];
 	} | null> {
 		// Find the most recent cycle that has at least one finding row
-		// (skips cycles that completed before Wave 0.7 shipped — those
-		// have evidence but no findings, and ensureContext should still
-		// work for them via the legacy recompute path).
+		// AND whose parent AuditCycle is `status=complete`. The status
+		// filter is defense-in-depth: the audit runner now writes
+		// findings + snapshot + cycle.status in a single transaction, so
+		// partial landings shouldn't exist — but a cycle that was later
+		// marked `failed` (e.g. by healStuckCycles after a crash) must
+		// not surface its orphan findings to /api/inventory.
 		const latest = await this.prisma.finding.findFirst({
-			where: { environmentId },
+			where: {
+				environmentId,
+				cycle: { status: "complete" },
+			},
 			orderBy: { createdAt: "desc" },
 			select: { cycleId: true, cycleRef: true },
 		});
@@ -214,8 +220,14 @@ export class PrismaFindingStore {
 	): Promise<Map<string, number>> {
 		const counts = new Map<string, number>();
 
+		// Same status=complete filter as loadLatestForEnvironment —
+		// inventory counts must not reflect findings from a cycle that
+		// was later healed to `failed`.
 		const latest = await this.prisma.finding.findFirst({
-			where: { environmentId },
+			where: {
+				environmentId,
+				cycle: { status: "complete" },
+			},
 			orderBy: { createdAt: "desc" },
 			select: { cycleId: true },
 		});

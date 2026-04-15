@@ -159,6 +159,16 @@ export interface FindingProjection {
     corroboration: number;
     composite: number;
   } | null;
+
+  /**
+   * Ordered remediation steps for the finding. Surface-level cards
+   * show step[0] as a preview; expanded view renders the full list.
+   * Null when the backing Action has no backfilled template yet —
+   * Phase 2 populates per action_key.
+   */
+  remediation_steps: string[] | null;
+  /** Quantitative effort estimate in dev-hours. Null when uncalibrated. */
+  estimated_effort_hours: number | null;
 }
 
 export interface FindingTruthContext {
@@ -210,8 +220,15 @@ export interface ActionProjection {
   operational_status: string | null;
   /** Phase 1B UX: Decision lifecycle status */
   decision_status: string | null;
-  /** Phase 1B UX: Effort hint from domain action or global action */
+  /** Phase 1B UX: Effort hint from domain action or global action (qualitative). */
   effort_hint: string | null;
+  /**
+   * Ordered remediation steps. See FindingProjection.remediation_steps.
+   * Null for actions without a backfilled template.
+   */
+  remediation_steps: string[] | null;
+  /** Quantitative effort estimate in dev-hours. Null when uncalibrated. */
+  estimated_effort_hours: number | null;
   /** Phase 1B UX: Change class from cycle-to-cycle change detection */
   change_class: 'regression' | 'improvement' | 'new_issue' | 'resolved' | 'stable_risk' | null;
   /** Verification lifecycle stage — see FindingProjection.verification_maturity. */

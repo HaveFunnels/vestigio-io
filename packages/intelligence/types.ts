@@ -92,6 +92,20 @@ export interface GlobalAction {
   severity: string;
   cross_pack_impact: number;  // how many packs this action helps (1 or 2)
   merged_from: Ref[];         // original action refs that were deduplicated into this
+
+  /**
+   * Ordered, actionable remediation steps — pulled through from the
+   * merged source Action(s). When multiple actions merged, the first
+   * non-null `remediation_steps` wins; Phase 2 backfills templates
+   * keyed by action_key so that merged actions converge on identical
+   * steps. See docs/REMEDIATION_FORMAT.md.
+   */
+  remediation_steps: string[] | null;
+  /**
+   * Dev-hours estimate carried over from the source Action. Median
+   * across merged actions when multiple contribute.
+   */
+  estimated_effort_hours: number | null;
 }
 
 // ──────────────────────────────────────────────

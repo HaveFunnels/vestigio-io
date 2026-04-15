@@ -166,6 +166,8 @@ export function createPreflightWorkspace(
       confidence: decision.confidence_score,
       evidence_refs: action.evidence_refs,
       remediation: action.title,
+      remediation_steps: action.remediation_steps,
+      estimated_effort_hours: action.estimated_effort_hours,
       page_url: config.landing_url,
       journey_stage: null,
       created_at: now,

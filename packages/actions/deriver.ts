@@ -129,6 +129,12 @@ function createAction(
     id: ids.next(),
     ...params,
     effort_hint: null,
+    // Phase 1 defaults — Phase 2 backfills templates per action_key.
+    // Decision packs that already have a concrete fix recipe can
+    // override via the createAction params once deriver.ts accepts
+    // them; for now every action ships with null here.
+    remediation_steps: null,
+    estimated_effort_hours: null,
     status: 'pending',
     created_at: now,
     updated_at: now,

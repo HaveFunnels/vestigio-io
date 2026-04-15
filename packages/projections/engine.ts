@@ -727,6 +727,10 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       verification_method: verificationCtx.method,
       change_class: changeClass,
       evidence_quality: evidenceQualityCtx,
+      // Phase 1.1: shape-only. Phase 2 will resolve these from the
+      // matching GlobalAction by root_cause_ref + pack lookup.
+      remediation_steps: null,
+      estimated_effort_hours: null,
     });
   }
 
@@ -852,6 +856,11 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       operational_status: operationalStatus,
       decision_status: decisionStatus,
       effort_hint: effortHint,
+      // Phase 1.1: pass structured remediation through from the
+      // GlobalAction. Null until Phase 2 backfills templates per
+      // action_key; UI is already shape-tolerant of null.
+      remediation_steps: action.remediation_steps,
+      estimated_effort_hours: action.estimated_effort_hours,
       change_class: changeClass,
       verification_maturity: verificationMaturity,
       resolve_path: resolvePath,
@@ -1402,6 +1411,9 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         verification_method: 'unknown',
         change_class: null,
         evidence_quality: null,
+        // Positive findings don't carry remediation — nothing to fix.
+        remediation_steps: null,
+        estimated_effort_hours: null,
       });
     }
   }

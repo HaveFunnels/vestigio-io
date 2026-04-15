@@ -194,6 +194,26 @@ export function prioritizeActions(
       return idx < bestIdx ? g.action.severity : best;
     }, 'none' as string);
 
+    // Phase 1.1: carry remediation_steps + estimated_effort_hours
+    // through the merge. When multiple actions merge into one
+    // GlobalAction, the first non-null remediation_steps wins — by
+    // the Phase 2 backfill rule, actions sharing an action_key
+    // converge on identical steps, so "first non-null" is stable.
+    // For effort hours, take the median of the non-null values
+    // across the group to smooth outliers.
+    const mergedRemediationSteps =
+      group
+        .map((g) => g.action.remediation_steps)
+        .find((steps) => steps != null && steps.length > 0) ?? null;
+    const effortHours = group
+      .map((g) => g.action.estimated_effort_hours)
+      .filter((h): h is number => h != null)
+      .sort((a, b) => a - b);
+    const mergedEffortHours =
+      effortHours.length === 0
+        ? null
+        : effortHours[Math.floor(effortHours.length / 2)];
+
     globalActions.push({
       id: ids.next(),
       action_key: first.action.action_key,
@@ -208,6 +228,8 @@ export function prioritizeActions(
       severity: bestSeverity,
       cross_pack_impact: crossPackImpact,
       merged_from: mergedFrom,
+      remediation_steps: mergedRemediationSteps,
+      estimated_effort_hours: mergedEffortHours,
     });
   }
 

@@ -133,11 +133,50 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 			rawHtml: response.body,
 		});
 
+		// 5b. Optional checkout probe — only for leads that declared
+		// their conversion happens in an on-path checkout. We do a
+		// single HEAD-like GET (no redirect follow beyond what http-client
+		// already does) to /checkout and /cart. This is the cheapest
+		// possible "critical path broken" detector: if the rote commerce
+		// URL returns 4xx/5xx, that's a finding. Skip for whatsapp/form/
+		// external conversion models — probing /checkout on a lead-gen
+		// site just yields a 404 we'd have to filter out.
+		let probes: Parameters<typeof deriveMiniAuditFindings>[0]["probes"];
+		if (lead.conversionModel === "checkout") {
+			probes = {};
+			const base = response.final_url.replace(/\/$/, "");
+			for (const path of ["/checkout", "/cart"]) {
+				try {
+					// Cap timeout tight — any slow /checkout is its own signal
+					// but we shouldn't hold the whole mini-audit for it.
+					const probe = await httpFetch(`${base}${path}`);
+					// Record the first one that either loads OR errors — we
+					// care about "what does /checkout respond with?" and the
+					// first hop is already meaningful.
+					probes.checkout_status = probe.status_code;
+					probes.checkout_final_url = probe.final_url;
+					break;
+				} catch {
+					// Network/DNS error on probe — record as unreachable
+					probes.checkout_status = 0;
+					probes.checkout_final_url = null;
+					break;
+				}
+			}
+		}
+
 		// 6. Derive findings
+		const business = {
+			monthly_revenue: lead.monthlyRevenue ?? null,
+			average_ticket: lead.averageTicket ?? null,
+		};
 		const findings = deriveMiniAuditFindings({
 			parsed,
 			response,
 			rawHtml: response.body,
+			business,
+			probes,
+			domain: normalized,
 		});
 
 		// 7. Persist MiniAuditResult (upsert by domainHash so the same

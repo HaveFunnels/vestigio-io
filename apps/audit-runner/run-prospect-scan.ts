@@ -101,10 +101,18 @@ export async function runProspectScan(scanId: string): Promise<RunProspectScanRe
 			rawHtml: response.body,
 		});
 
+		// Prospect scans don't have lead-declared revenue/AOV — pass
+		// empty business inputs so findings fall back to the heuristic
+		// SMB Brazilian e-commerce baseline (still derives a BRL range,
+		// just with wider uncertainty bounds). Admin outreach reviewers
+		// read this to spot commercial hook, not to sell with the
+		// numbers, so heuristic basis is fine.
 		const findings = deriveMiniAuditFindings({
 			parsed,
 			response,
 			rawHtml: response.body,
+			business: { monthly_revenue: null, average_ticket: null },
+			domain: normalized,
 		});
 
 		const durationMs = Date.now() - startedAt;

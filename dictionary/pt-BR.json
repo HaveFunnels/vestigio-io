@@ -2404,7 +2404,28 @@
 				"network_error": "Erro de rede. Tente novamente.",
 				"subscription_canceled": "Assinatura cancelada. Você manterá acesso até o final do período de cobrança.",
 				"cancel_failed": "Falha ao cancelar assinatura.",
-				"plan_unavailable": "Este plano ainda não está disponível para compra. Entre em contato com o suporte."
+				"plan_unavailable": "Este plano ainda não está disponível para compra. Entre em contato com o suporte.",
+				"packs_unavailable": "Os pacotes de crédito ainda não estão disponíveis. Tente novamente em instantes."
+			},
+			"credits": {
+				"section_title": "Créditos de Verificação",
+				"section_subtitle": "Créditos extras são usados quando você excede o limite mensal do seu plano. Não expiram.",
+				"balance_included": "Incluídos no plano",
+				"balance_purchased": "Comprados",
+				"balance_available": "Disponíveis",
+				"balance_consumed": "Consumidos neste ciclo",
+				"buy_more": "Comprar créditos",
+				"pack_heading": "Escolha um pacote",
+				"pack_subheading": "Pagamento único. Os créditos são adicionados automaticamente na sua conta após a confirmação.",
+				"pack_credits": "{credits} créditos",
+				"pack_small_desc": "Para meses com pico esporádico.",
+				"pack_medium_desc": "Melhor custo-benefício para uso recorrente.",
+				"pack_large_desc": "Para equipes que dependem de verificações contínuas.",
+				"pack_cta": "Comprar por {price}",
+				"only_max": "Pacotes de crédito extras estão disponíveis apenas no plano Max. Faça upgrade para desbloquear.",
+				"close": "Fechar",
+				"pricing_note": "Os preços são cobrados em USD fora do Brasil e em BRL no Brasil, definidos automaticamente pelo seu endereço de cobrança.",
+				"processing": "Abrindo checkout…"
 			}
 		},
 		"members": {

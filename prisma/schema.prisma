@@ -198,6 +198,7 @@ model Organization {
   conversations           Conversation[]
   tokenLedger             TokenCostLedger[]
   orgInvites              OrgInvite[]
+  credits                 OrgCredits?
 
   @@index([orgType, status])
 }
@@ -484,6 +485,56 @@ model PlatformConfig {
   configKey String   @unique
   value     String   @db.Text
   updatedAt DateTime @updatedAt
+}
+
+// ──────────────────────────────────────────────
+// Credits — per-org verification budget
+//
+// Two buckets tracked separately so monthly rollover only clears the
+// plan-included portion:
+//   purchasedBalance        — credits bought via Credit Packs. Never
+//                             expire (carry across billing cycles).
+//                             Decrements only after plan-included is
+//                             exhausted for the cycle.
+//   planConsumedThisCycle   — count of verifications paid for by the
+//                             active subscription's monthly quota.
+//                             Resets when cycleStartAt rolls over.
+//
+// PLAN_CREDITS (apps/platform/credits.ts) defines the plan-included
+// quota by plan key; it's intentionally NOT on this model so admin
+// can't silently change costs downstream of the entitlements code.
+//
+// CreditTransaction below is the audit trail for purchases and
+// consumption; the unique paddleTransactionId column makes webhook
+// re-delivery idempotent.
+// ──────────────────────────────────────────────
+
+model OrgCredits {
+  id                    String   @id @default(cuid())
+  organizationId        String   @unique
+  purchasedBalance      Int      @default(0)
+  planConsumedThisCycle Int      @default(0)
+  cycleStartAt          DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transactions CreditTransaction[]
+}
+
+model CreditTransaction {
+  id                  String   @id @default(cuid())
+  orgCreditsId        String
+  kind                String // "purchase" | "consume" | "refund" | "grant"
+  amount              Int // positive delta; direction inferred from kind
+  packKey             String? // "pack-50" | "pack-200" | "pack-500" — null for non-purchase rows
+  paddleTransactionId String?  @unique
+  note                String?
+  createdAt           DateTime @default(now())
+
+  orgCredits OrgCredits @relation(fields: [orgCreditsId], references: [id], onDelete: Cascade)
+
+  @@index([orgCreditsId, createdAt])
 }
 
 // ──────────────────────────────────────────────

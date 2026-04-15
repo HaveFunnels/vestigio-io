@@ -277,7 +277,7 @@ export class AuthenticatedJourneyExecutor implements VerificationExecutor {
     authLog.info('auth_attempt_started', `Auth verification started for ${input.subject_url}`);
 
     // Credit enforcement — check before execution
-    const creditCheck = canAffordVerification(orgId, this.plan, AUTH_VERIFICATION_CREDIT_COST);
+    const creditCheck = await canAffordVerification(orgId, this.plan, AUTH_VERIFICATION_CREDIT_COST);
     if (!creditCheck.allowed) {
       authLog.error('auth_prerequisite_blocked', `Insufficient credits: ${creditCheck.message}`);
       logs.push({ timestamp: new Date(), level: 'error', message: `Credit check failed: ${creditCheck.message}` });
@@ -330,7 +330,7 @@ export class AuthenticatedJourneyExecutor implements VerificationExecutor {
     }
 
     // Consume credits after execution (charged regardless of outcome)
-    consumeCredits(orgId, AUTH_VERIFICATION_CREDIT_COST);
+    await consumeCredits(orgId, AUTH_VERIFICATION_CREDIT_COST, this.plan);
     authLog.info('auth_attempt_started', `Credits consumed: ${AUTH_VERIFICATION_CREDIT_COST} for org ${orgId}`);
 
     const isSuccess = result.outcome === 'authenticated_success';

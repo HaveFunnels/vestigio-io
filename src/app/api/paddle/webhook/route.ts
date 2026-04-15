@@ -303,7 +303,7 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 		// ──────────────────────────────────────────────
 
 		if (eventType === "transaction.completed") {
-			const { subscription_id, customer_id, items, billing_period, custom_data } = data;
+			const { id: transactionId, subscription_id, customer_id, items, billing_period, custom_data } = data;
 			if (!customer_id) {
 				logEvent(eventType, "No customer_id — skipping");
 				return NextResponse.json({ message: "OK" }, { status: 200 });
@@ -311,6 +311,39 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 
 			const customer = await getCustomer(customer_id);
 			const priceId = items?.[0]?.price?.id || items?.[0]?.price_id;
+
+			// ── Credit pack purchase? ──
+			// If the priceId matches a known credit pack, this transaction
+			// is a top-up rather than a subscription event. Credit the org
+			// and short-circuit — packs don't touch User.subscriptionId or
+			// Organization.plan.
+			const { findPackByPriceId } = await import("@/libs/credit-packs");
+			const pack = priceId ? await findPackByPriceId(priceId) : null;
+			if (pack) {
+				const orgId = custom_data?.organizationId;
+				if (!orgId) {
+					logEvent(
+						eventType,
+						`credit-pack purchase but no organizationId in custom_data (txn=${transactionId}) — logged, not credited`,
+					);
+				} else {
+					const { addPurchasedCredits } = await import(
+						"../../../../../apps/platform/credits"
+					);
+					const result = await addPurchasedCredits(orgId, pack.credits, {
+						packKey: pack.key,
+						paddleTransactionId: transactionId,
+						note: `Paddle ${transactionId} · ${pack.label}`,
+					});
+					logEvent(
+						eventType,
+						result.alreadyProcessed
+							? `credit-pack ${pack.key} txn=${transactionId} already credited (webhook retry)`
+							: `credit-pack ${pack.key} · +${pack.credits} credits → org ${orgId}`,
+					);
+				}
+				return NextResponse.json({ message: "OK" }, { status: 200 });
+			}
 
 			// Create or update user
 			let user = await findUser(customer_id, customer?.email);

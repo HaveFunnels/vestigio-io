@@ -352,7 +352,7 @@ await runAsyncSuite('AuthenticatedJourneyExecutor — Simulated Mode', async () 
 
   await testAsync('executor succeeds with valid config', async () => {
     const { resetAllCredits: resetCreds } = require('../apps/platform/credits');
-    resetCreds();
+    await resetCreds();
     const store = getSaasAccessStore();
     const executor2 = new AuthenticatedJourneyExecutor();
     executor2.setOrgContext('org_test2', 'pro');

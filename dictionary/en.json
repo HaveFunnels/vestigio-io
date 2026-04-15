@@ -2349,7 +2349,28 @@
 				"network_error": "Network error. Please try again.",
 				"subscription_canceled": "Subscription canceled. You'll retain access until the end of your billing period.",
 				"cancel_failed": "Failed to cancel subscription.",
-				"plan_unavailable": "This plan is not yet available for purchase. Please contact support."
+				"plan_unavailable": "This plan is not yet available for purchase. Please contact support.",
+				"packs_unavailable": "Credit packs are not available right now. Please try again in a moment."
+			},
+			"credits": {
+				"section_title": "Verification Credits",
+				"section_subtitle": "Extra credits kick in when you exceed your plan's monthly allowance. They never expire.",
+				"balance_included": "Included in plan",
+				"balance_purchased": "Purchased",
+				"balance_available": "Available",
+				"balance_consumed": "Consumed this cycle",
+				"buy_more": "Buy credits",
+				"pack_heading": "Pick a pack",
+				"pack_subheading": "One-time payment. Credits are added to your account automatically once the purchase clears.",
+				"pack_credits": "{credits} credits",
+				"pack_small_desc": "For months with an occasional spike.",
+				"pack_medium_desc": "Best value for recurring heavy usage.",
+				"pack_large_desc": "For teams that rely on continuous verification.",
+				"pack_cta": "Buy for {price}",
+				"only_max": "Credit packs are available on the Max plan only. Upgrade to unlock.",
+				"close": "Close",
+				"pricing_note": "Charged in USD outside Brazil and in BRL within Brazil, set automatically based on your billing address.",
+				"processing": "Opening checkout…"
 			}
 		},
 		"members": {

@@ -7,7 +7,7 @@
  */
 
 import {
-  test, assert, assertEqual, assertGreater,
+  test, testAsync, assert, assertEqual, assertGreater,
   testScoping, pageContentEvidence, checkoutIndicatorEvidence, policyEvidence,
   resetCounters, printResults, getResults,
 } from './helpers';
@@ -154,62 +154,67 @@ runSuite('Cost Estimation', () => {
 // 3. CREDIT SYSTEM
 // ══════════════════════════════════════════════════
 
+// Credit system tests require a live DB connection (post-Wave 5 Fase 5:
+// credits persisted via OrgCredits + CreditTransaction). Set DATABASE_URL
+// to a test/dev Postgres before running — otherwise these suites throw.
 runSuite('Credit System', () => {
-  test('vestigio plan has zero credits', () => {
-    resetAllCredits();
-    const balance = getCreditBalance('org_1', 'vestigio');
+  testAsync('vestigio plan has zero credits', async () => {
+    await resetAllCredits();
+    const balance = await getCreditBalance('org_1', 'vestigio');
     assertEqual(balance.plan_included, 0);
     assertEqual(balance.available, 0);
   });
 
-  test('pro plan has included credits', () => {
-    resetAllCredits();
-    const balance = getCreditBalance('org_1', 'pro');
+  testAsync('pro plan has included credits', async () => {
+    await resetAllCredits();
+    const balance = await getCreditBalance('org_1', 'pro');
     assertGreater(balance.plan_included, 0);
     assertEqual(balance.available, balance.plan_included);
   });
 
-  test('max plan has most credits', () => {
-    resetAllCredits();
-    const pro = getCreditBalance('org_1', 'pro');
-    const max = getCreditBalance('org_1', 'max');
+  testAsync('max plan has most credits', async () => {
+    await resetAllCredits();
+    const pro = await getCreditBalance('org_1', 'pro');
+    const max = await getCreditBalance('org_2', 'max');
     assert(max.plan_included > pro.plan_included, 'max > pro credits');
   });
 
-  test('vestigio cannot afford any verification', () => {
-    resetAllCredits();
-    const check = canAffordVerification('org_1', 'vestigio', 5);
+  testAsync('vestigio cannot afford any verification', async () => {
+    await resetAllCredits();
+    const check = await canAffordVerification('org_1', 'vestigio', 5);
     assertEqual(check.allowed, false);
     assert(check.message!.includes('Pro or Max'), 'should suggest upgrade');
   });
 
-  test('pro can afford within limit', () => {
-    resetAllCredits();
-    const check = canAffordVerification('org_1', 'pro', 10);
+  testAsync('pro can afford within limit', async () => {
+    await resetAllCredits();
+    const check = await canAffordVerification('org_1', 'pro', 10);
     assertEqual(check.allowed, true);
   });
 
-  test('pro blocked when exceeding credits', () => {
-    resetAllCredits();
-    const balance = getCreditBalance('org_1', 'pro');
-    const check = canAffordVerification('org_1', 'pro', balance.plan_included + 100);
+  testAsync('pro blocked when exceeding credits', async () => {
+    await resetAllCredits();
+    const balance = await getCreditBalance('org_1', 'pro');
+    const check = await canAffordVerification('org_1', 'pro', balance.plan_included + 100);
     assertEqual(check.allowed, false);
     assert(check.message!.includes('Max'), 'pro should suggest Max upgrade');
   });
 
-  test('max can purchase additional credits', () => {
-    resetAllCredits();
-    const balance = getCreditBalance('org_1', 'max');
-    addPurchasedCredits('org_1', 500);
-    const newBalance = getCreditBalance('org_1', 'max');
+  testAsync('max can purchase additional credits', async () => {
+    await resetAllCredits();
+    const balance = await getCreditBalance('org_1', 'max');
+    await addPurchasedCredits('org_1', 500);
+    const newBalance = await getCreditBalance('org_1', 'max');
     assertEqual(newBalance.available, balance.plan_included + 500);
   });
 
-  test('consumeCredits reduces balance', () => {
-    resetAllCredits();
-    addPurchasedCredits('org_1', 100);
-    consumeCredits('org_1', 30);
-    const balance = getCreditBalance('org_1', 'max');
+  testAsync('consumeCredits reduces balance', async () => {
+    await resetAllCredits();
+    await addPurchasedCredits('org_1', 100);
+    await consumeCredits('org_1', 30, 'max');
+    const balance = await getCreditBalance('org_1', 'max');
+    // consumed reflects plan-included consumption only; org_1 has
+    // max plan (200 included) so 30 lands entirely in the plan bucket.
     assertEqual(balance.consumed, 30);
     assertEqual(balance.available, balance.plan_included + 100 - 30);
   });
@@ -330,22 +335,22 @@ runSuite('MCP Verification Integration', () => {
 // ══════════════════════════════════════════════════
 
 runSuite('Plan Gating', () => {
-  test('vestigio plan cannot verify', () => {
-    resetAllCredits();
-    const check = canAffordVerification('org_gate', 'vestigio', 1);
+  testAsync('vestigio plan cannot verify', async () => {
+    await resetAllCredits();
+    const check = await canAffordVerification('org_gate', 'vestigio', 1);
     assertEqual(check.allowed, false);
   });
 
-  test('pro plan can verify within credits', () => {
-    resetAllCredits();
-    const check = canAffordVerification('org_gate', 'pro', 10);
+  testAsync('pro plan can verify within credits', async () => {
+    await resetAllCredits();
+    const check = await canAffordVerification('org_gate', 'pro', 10);
     assertEqual(check.allowed, true);
   });
 
-  test('max plan can verify + buy more', () => {
-    resetAllCredits();
-    addPurchasedCredits('org_gate', 1000);
-    const check = canAffordVerification('org_gate', 'max', 500);
+  testAsync('max plan can verify + buy more', async () => {
+    await resetAllCredits();
+    await addPurchasedCredits('org_gate', 1000);
+    const check = await canAffordVerification('org_gate', 'max', 500);
     assertEqual(check.allowed, true);
   });
 });

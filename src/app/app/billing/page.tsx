@@ -11,6 +11,7 @@ import PricingComponent, {
   type PriceTier,
 } from "@/components/ui/pricing-card";
 import { PaddleLoader } from "@/paddle/paddleLoader";
+import { BuyCreditsModal } from "@/components/app/BuyCreditsModal";
 
 // ──────────────────────────────────────────────
 // Types
@@ -31,6 +32,17 @@ interface BillingData {
     mcpQueries: number;
     maxMcpQueries: number;
   };
+}
+
+interface CreditBalanceData {
+  orgId: string | null;
+  plan: string;
+  planIncluded: number;
+  remaining: number;
+  purchased: number;
+  consumed: number;
+  available: number;
+  canPurchase: boolean;
 }
 
 interface PricingPlan {
@@ -69,6 +81,9 @@ export default function BillingPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showManageMenu, setShowManageMenu] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [credits, setCredits] = useState<CreditBalanceData | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
 
   // Fetch billing data
   const fetchBilling = useCallback(async () => {
@@ -101,6 +116,26 @@ export default function BillingPage() {
     fetchBilling();
     loadPricing();
   }, [fetchBilling]);
+
+  // Credit balance — refreshed alongside billing so a post-checkout
+  // refresh (from PaddleLoader's session update + router.refresh)
+  // picks up newly credited packs without a manual reload.
+  const fetchCredits = useCallback(async () => {
+    try {
+      const res = await fetch("/api/credits/balance");
+      if (res.ok) {
+        const data = (await res.json()) as CreditBalanceData;
+        setCredits(data);
+        setOrgId(data.orgId);
+      }
+    } catch {
+      // Silent — credits card just stays hidden
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCredits();
+  }, [fetchCredits]);
 
   const currentPlanId = billing?.plan || "vestigio";
   const basePlans = fetchedPlans || FALLBACK_PLANS;
@@ -413,6 +448,82 @@ export default function BillingPage() {
           </div>
         </section>
       </div>
+
+      {/* Verification Credits — shown for Pro + Max, since both have
+          plan-included credits. Buy CTA only for Max (gated inside the
+          modal) — Pro sees the balance but gets the upgrade nudge when
+          they try to purchase. Starter has 0 credits so we hide the
+          whole section. */}
+      {credits && credits.planIncluded > 0 && (
+        <section className="mt-6 rounded-lg border border-edge bg-surface-card p-5">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-content-muted">
+                {t("credits.section_title")}
+              </h2>
+              <p className="mt-1 text-sm text-content-muted">
+                {t("credits.section_subtitle")}
+              </p>
+            </div>
+            {credits.canPurchase && (
+              <button
+                onClick={() => setShowCreditsModal(true)}
+                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
+              >
+                {t("credits.buy_more")}
+              </button>
+            )}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-4">
+            <div>
+              <div className="text-xs text-content-muted">
+                {t("credits.balance_available")}
+              </div>
+              <div className="mt-1 text-xl font-semibold text-content">
+                {credits.available.toLocaleString()}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-content-muted">
+                {t("credits.balance_included")}
+              </div>
+              <div className="mt-1 text-xl font-semibold text-content-secondary">
+                {credits.planIncluded.toLocaleString()}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-content-muted">
+                {t("credits.balance_purchased")}
+              </div>
+              <div className="mt-1 text-xl font-semibold text-content-secondary">
+                {credits.purchased.toLocaleString()}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-content-muted">
+                {t("credits.balance_consumed")}
+              </div>
+              <div className="mt-1 text-xl font-semibold text-content-secondary">
+                {credits.consumed.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <BuyCreditsModal
+        open={showCreditsModal}
+        onClose={() => {
+          setShowCreditsModal(false);
+          // Re-pull balance shortly after close — catches both the
+          // "user bought something" case and the "user canceled" case
+          // equivalently. Deferred 1.5s so the Paddle checkout.completed
+          // webhook has time to land before we refetch.
+          setTimeout(() => fetchCredits(), 1500);
+        }}
+        planKey={credits?.plan || "vestigio"}
+        orgId={orgId}
+      />
 
       {/* Cancel Confirmation Modal */}
       {showCancelConfirm && (

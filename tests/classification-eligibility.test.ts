@@ -317,32 +317,35 @@ runSuite('Eligibility — Authenticated Verification', () => {
 
 (async () => {
 
-runSuite('Credit Enforcement', () => {
-  resetAllCredits();
+// Post-Wave 5 Fase 5: credits are DB-backed. These tests require a live
+// DATABASE_URL. The outer IIFE (`(async () => { ... })()`) already lets us
+// await inside; we convert individual tests to testAsync.
+await runAsyncSuite('Credit Enforcement', async () => {
+  await resetAllCredits();
 
-  test('vestigio plan blocks verification', () => {
-    const result = canAffordVerification('org_1', 'vestigio', 10);
+  await testAsync('vestigio plan blocks verification', async () => {
+    const result = await canAffordVerification('org_1', 'vestigio', 10);
     assertEqual(result.allowed, false, 'should block vestigio');
   });
 
-  test('pro plan with credits allows verification', () => {
-    const result = canAffordVerification('org_2', 'pro', 10);
+  await testAsync('pro plan with credits allows verification', async () => {
+    const result = await canAffordVerification('org_2', 'pro', 10);
     assertEqual(result.allowed, true, 'should allow pro');
   });
 
-  test('pro plan blocks when credits exhausted', () => {
-    consumeCredits('org_3', 50); // exhaust all pro credits
-    const result = canAffordVerification('org_3', 'pro', 10);
+  await testAsync('pro plan blocks when credits exhausted', async () => {
+    await consumeCredits('org_3', 50, 'pro'); // exhaust all pro credits
+    const result = await canAffordVerification('org_3', 'pro', 10);
     assertEqual(result.allowed, false, 'should block after exhaustion');
   });
 
-  resetAllCredits();
+  await resetAllCredits();
 });
 
 await runAsyncSuite('Executor Credit Enforcement', async () => {
   setAuthPlaywrightMode('simulated');
   resetSaasAccessStore();
-  resetAllCredits();
+  await resetAllCredits();
 
   const store = getSaasAccessStore();
   await store.save('env_1', {
@@ -375,7 +378,7 @@ await runAsyncSuite('Executor Credit Enforcement', async () => {
   });
 
   await testAsync('executor succeeds and consumes credits with pro plan', async () => {
-    resetAllCredits();
+    await resetAllCredits();
     const executor = new AuthenticatedJourneyExecutor();
     executor.setOrgContext('org_pro', 'pro');
 
@@ -392,12 +395,12 @@ await runAsyncSuite('Executor Credit Enforcement', async () => {
     });
     assertEqual(output.status, 'completed', 'should succeed');
     // Credits should have been consumed
-    const balance = canAffordVerification('org_pro', 'pro', 1);
+    const balance = await canAffordVerification('org_pro', 'pro', 1);
     assert(balance.balance.consumed > 0, 'credits should be consumed');
   });
 
   resetSaasAccessStore();
-  resetAllCredits();
+  await resetAllCredits();
   setAuthPlaywrightMode('auto');
 });
 

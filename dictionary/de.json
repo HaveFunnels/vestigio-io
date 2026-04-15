@@ -2361,7 +2361,28 @@
 				"network_error": "Netzwerkfehler. Bitte versuche es erneut.",
 				"subscription_canceled": "Abonnement gekündigt. Du behältst Zugriff bis zum Ende des Abrechnungszeitraums.",
 				"cancel_failed": "Abonnement konnte nicht gekündigt werden.",
-				"plan_unavailable": "Dieser Plan ist noch nicht zum Kauf verfügbar. Bitte kontaktiere den Support."
+				"plan_unavailable": "Dieser Plan ist noch nicht zum Kauf verfügbar. Bitte kontaktiere den Support.",
+				"packs_unavailable": "Credit-Pakete sind derzeit nicht verfügbar. Bitte versuchen Sie es gleich erneut."
+			},
+			"credits": {
+				"section_title": "Verifizierungs-Credits",
+				"section_subtitle": "Zusätzliche Credits greifen, wenn Sie Ihr monatliches Kontingent überschreiten. Sie verfallen nicht.",
+				"balance_included": "Im Plan enthalten",
+				"balance_purchased": "Gekauft",
+				"balance_available": "Verfügbar",
+				"balance_consumed": "In diesem Zyklus verbraucht",
+				"buy_more": "Credits kaufen",
+				"pack_heading": "Paket auswählen",
+				"pack_subheading": "Einmalige Zahlung. Credits werden Ihrem Konto nach der Bestätigung automatisch gutgeschrieben.",
+				"pack_credits": "{credits} Credits",
+				"pack_small_desc": "Für Monate mit gelegentlichen Spitzen.",
+				"pack_medium_desc": "Bestes Preis-Leistungs-Verhältnis bei regelmäßigem Bedarf.",
+				"pack_large_desc": "Für Teams mit dauerhaft hohem Verifizierungsbedarf.",
+				"pack_cta": "Für {price} kaufen",
+				"only_max": "Credit-Pakete sind nur im Max-Plan verfügbar. Upgrade zum Freischalten.",
+				"close": "Schließen",
+				"pricing_note": "Abrechnung in USD außerhalb Brasiliens und in BRL innerhalb Brasiliens — automatisch anhand Ihrer Rechnungsadresse gesetzt.",
+				"processing": "Checkout wird geöffnet…"
 			}
 		},
 		"members": {

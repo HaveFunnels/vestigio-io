@@ -316,7 +316,7 @@ await runAsyncSuite('Executor — Async Store Integration', async () => {
 
   await testAsync('executor succeeds and persists verified status', async () => {
     const { resetAllCredits: rc } = require('../apps/platform/credits');
-    rc();
+    await rc();
     const store = getSaasAccessStore();
     await store.save('env_1', makeInput());
 

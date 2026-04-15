@@ -10,6 +10,7 @@ import {
   EvidenceType,
   SourceKind,
   CollectionMethod,
+  FreshnessState,
   KatanaDiscoveryPayload,
   IdGenerator,
   PageContentPayload,
@@ -42,8 +43,11 @@ export const katanaDiscoveryPass: EnrichmentPass = {
       const p = e.payload as PageContentPayload;
       return sum + (p.body_word_count || 0);
     }, 0);
+    // CoverageEntry no longer tracks pageType — we infer commercial intent
+    // from the URL itself. This matches how Stage C's criticality flag is
+    // derived upstream, so the heuristic stays aligned across stages.
     const commercialPages = [...ctx.coverage.values()].filter(
-      (c) => c.pageType && /checkout|cart|pricing|product/i.test(c.pageType),
+      (c) => c.critical || /checkout|cart|pricing|product/i.test(c.url),
     ).length;
     const hasRouterPatterns = scripts.some((e) => {
       const p = e.payload as ScriptPayload;
@@ -84,7 +88,8 @@ export const katanaDiscoveryPass: EnrichmentPass = {
       ctx.emit({
         type: "stage_progress",
         stage: "enrichment",
-        message: "Running deep JS route discovery...",
+        data: { message: "Running deep JS route discovery..." },
+        timestamp: new Date(),
       });
 
       const scanResult = await runKatanaScan({
@@ -94,6 +99,9 @@ export const katanaDiscoveryPass: EnrichmentPass = {
         timeout_seconds: 120,
         rate_limit: 10,
         same_host_only: true,
+        // Empty — the commercial classifier downstream already filters by
+        // route intent; we don't need Katana-level priority biasing.
+        priority_patterns: [],
       });
 
       const knownUrls = new Set([...ctx.coverage.keys()]);
@@ -113,15 +121,20 @@ export const katanaDiscoveryPass: EnrichmentPass = {
       const ids = new IdGenerator("kat");
       const evidence: Evidence[] = normalized.classified_routes.map((route) => ({
         id: ids.next(),
-        evidence_key: `katana_${route.discovery_family}_${route.discovered_url}`,
+        // KatanaClassifiedRoute exposes `url` (the discovered URL) — the
+        // payload field is also just `url` on the classified side. Evidence
+        // row keeps `subject_ref` + `discovered_url` for ergonomic indexing
+        // downstream.
+        evidence_key: `katana_${route.discovery_family}_${route.url}`,
         evidence_type: EvidenceType.KatanaDiscovery,
-        source_kind: SourceKind.ActiveProbe,
-        collection_method: CollectionMethod.ToolExecution,
+        subject_ref: route.url,
+        source_kind: SourceKind.KatanaCrawl,
+        collection_method: CollectionMethod.ExternalToolScan,
         scoping: ctx.scoping,
         cycle_ref: ctx.cycle_ref,
         payload: {
           type: "katana_discovery",
-          discovered_url: route.discovered_url,
+          discovered_url: route.url,
           discovery_method: route.discovery_method,
           route_intent: route.route_intent,
           discovery_family: route.discovery_family,
@@ -132,9 +145,12 @@ export const katanaDiscoveryPass: EnrichmentPass = {
         freshness: {
           observed_at: new Date(),
           fresh_until: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          freshness_state: "fresh" as const,
+          freshness_state: FreshnessState.Fresh,
           staleness_reason: null,
         },
+        // Quality score reflects the classifier's confidence in the route
+        // being a real commercial surface (scale 0-100 matches other producers).
+        quality_score: Math.max(50, Math.min(95, route.confidence)),
         created_at: new Date(),
         updated_at: new Date(),
       }));

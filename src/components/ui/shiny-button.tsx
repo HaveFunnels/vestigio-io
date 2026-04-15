@@ -1,7 +1,11 @@
 "use client";
 
 import React from "react";
-import { motion, type AnimationProps } from "framer-motion";
+// framer-motion v12 removed the standalone `AnimationProps` export; the
+// superset type is `MotionProps` (which carries initial/animate/transition
+// alongside variants/drag/etc.). The object we build below only uses the
+// animation-relevant keys — MotionProps is the right shape.
+import { motion, type MotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // ──────────────────────────────────────────────
@@ -14,7 +18,7 @@ import { cn } from "@/lib/utils";
 //              Matches dashboard visual language. Used inside /app.
 // ──────────────────────────────────────────────
 
-const consoleAnimationProps: AnimationProps = {
+const consoleAnimationProps: MotionProps = {
   initial: { "--x": "100%", scale: 0.8 } as any,
   animate: { "--x": "-100%", scale: 1 } as any,
   whileTap: { scale: 0.95 },

@@ -66,10 +66,17 @@ function screenshot(alt: string) {
 // ── Guide ────────────────────────────────────────────────────────
 
 export const nuvemshopIntegrationSetupGuide: GuideArticle = {
-  slug: 'nuvemshop-integration-setup',
+  // GuideArticle extends FoundationArticle — requires _id, slug-as-object,
+  // locale, excerpt (not description), publishedAt, is_foundation. Shape
+  // matched against shopify-integration-setup.ts so the registry accepts
+  // both entries uniformly.
+  _id: 'guide:nuvemshop-integration-setup',
   title: 'Como Conectar a Nuvemshop à Vestigio',
-  description: 'Guia passo a passo para conectar sua loja Nuvemshop à Vestigio e importar dados reais de faturamento, pedidos, clientes e produtos.',
-  category: 'integrations',
+  slug: { current: 'nuvemshop-integration-setup' },
+  locale: 'pt-BR',
+  category: 'guide',
+  excerpt:
+    'Guia passo a passo para conectar sua loja Nuvemshop à Vestigio e importar dados reais de faturamento, pedidos, clientes e produtos.',
   body: [
     h2('Visão Geral'),
     p(
@@ -172,4 +179,6 @@ export const nuvemshopIntegrationSetupGuide: GuideArticle = {
       'pode ser que outro app esteja consumindo a cota. Tente sincronizar novamente em alguns minutos.',
     ),
   ],
+  publishedAt: null,
+  is_foundation: true,
 };

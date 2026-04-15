@@ -10,6 +10,7 @@ import {
   EvidenceType,
   SourceKind,
   CollectionMethod,
+  FreshnessState,
   NucleiMatchPayload,
   IdGenerator,
 } from "../../../packages/domain";
@@ -55,7 +56,8 @@ export const nucleiScanPass: EnrichmentPass = {
       ctx.emit({
         type: "stage_progress",
         stage: "enrichment",
-        message: "Running curated security scan...",
+        data: { message: "Running curated security scan..." },
+        timestamp: new Date(),
       });
 
       const scanResult = await runNucleiScan({
@@ -84,8 +86,9 @@ export const nucleiScanPass: EnrichmentPass = {
         id: ids.next(),
         evidence_key: `nuclei_${match.check_id}_${match.matched_at}`,
         evidence_type: EvidenceType.NucleiMatch,
-        source_kind: SourceKind.ActiveProbe,
-        collection_method: CollectionMethod.ToolExecution,
+        subject_ref: match.matched_at,
+        source_kind: SourceKind.NucleiScan,
+        collection_method: CollectionMethod.ExternalToolScan,
         scoping: ctx.scoping,
         cycle_ref: ctx.cycle_ref,
         payload: {
@@ -102,9 +105,12 @@ export const nucleiScanPass: EnrichmentPass = {
         freshness: {
           observed_at: new Date(),
           fresh_until: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          freshness_state: "fresh" as const,
+          freshness_state: FreshnessState.Fresh,
           staleness_reason: null,
         },
+        // Nuclei confidence already lives on 0–100; cap within the quality
+        // band other producers use so downstream scoring stays comparable.
+        quality_score: Math.max(50, Math.min(95, match.confidence)),
         created_at: new Date(),
         updated_at: new Date(),
       }));

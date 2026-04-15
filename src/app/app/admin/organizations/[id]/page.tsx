@@ -375,7 +375,9 @@ export default function AdminOrganizationDetailPage() {
       if (editTrialEndsAt !== currentTrialIso) {
         payload.trialEndsAt = new Date(editTrialEndsAt).toISOString();
       }
-    } else if (org.orgType === "trial" && editOrgType !== "trial") {
+    } else if (org.orgType === "trial") {
+      // Dropping out of trial — clear the end date. (editOrgType is
+      // already narrowed to "demo" | "customer" by the enclosing if.)
       payload.trialEndsAt = null;
     }
 

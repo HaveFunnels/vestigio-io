@@ -130,9 +130,12 @@ async function saveNuvemshopCredentials(
   if (!environmentId) {
     // Fallback: find any environment without a nuvemshop connection.
     // This handles the no-session case and single-tenant setups.
+    // Relation is named `integrations` on Environment (Prisma schema), not
+    // `integrationConnections` — the filter is "no existing connected
+    // Nuvemshop row", which maps to the `none` filter on the relation.
     const env = await prisma.environment.findFirst({
       where: {
-        integrationConnections: {
+        integrations: {
           none: { provider: "nuvemshop", status: "connected" },
         },
       },

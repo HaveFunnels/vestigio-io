@@ -184,7 +184,7 @@ const PRODUCT_URL_PATTERNS = /\/(product|item|p|produto|produit)\//i;
 const PRICING_URL_PATTERNS = /\/(pricing|plans|precos|prices|planos)/i;
 const COMMERCIAL_URL_PATTERNS = /\/(checkout|cart|payment|product|item|p|pricing|plans|precos|homepage|$)/i;
 
-function isCheckoutPage(url: string, evidence: Evidence[]): boolean {
+function isCheckoutPage(url: string, evidence: readonly Evidence[]): boolean {
   if (CHECKOUT_URL_PATTERNS.test(url)) return true;
   // Check if any form on this page has payment fields
   return evidence.some(

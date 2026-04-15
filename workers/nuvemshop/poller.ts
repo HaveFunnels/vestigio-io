@@ -233,6 +233,10 @@ function buildFailResult(
       economic_leakage_amplifier: 1.0,
       payment_concentration_amplifier: 1.0,
       transaction_failure_amplifier: 1.0,
+      // Nuvemshop-specific amplifiers — also default to neutral when we
+      // can't compute them yet (empty poll result / connection error).
+      fraud_signal_amplifier: 1.0,
+      coupon_abuse_amplifier: 1.0,
     },
     orders_fetched: 0,
     cursor,

@@ -4144,7 +4144,12 @@ function extractSecurityPostureSignals(
 
   const openRedirectCandidates: Evidence[] = [];
   const crossDomainRedirects: Evidence[] = [];
-  const rootHost = scoping.environment_id ? secRootDomain(secHostOf(scoping.environment_id)) : '';
+  // Note: an earlier version computed a `rootHost` from scoping.environment_id
+  // to filter redirects that left the env's own domain. That field was
+  // renamed to environment_ref (now a "environment:xxx" ref string, not a URL),
+  // so the host-derivation was dead code. The cross-domain check below
+  // compares source→target roots from the redirect evidence itself — it
+  // doesn't need the env-level root.
 
   for (const e of redirects) {
     const p = e.payload as RedirectPayload;

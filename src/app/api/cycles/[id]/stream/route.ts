@@ -117,12 +117,14 @@ export async function GET(
 				})
 			)?.environmentId;
 			if (envId) {
+				// PageInventoryItem carries `environmentRef` (plain string column
+				// set to the env's id) — not a Prisma relation via environmentId.
 				pagesDiscovered = await prisma.pageInventoryItem.count({
-					where: { environmentId: envId },
+					where: { environmentRef: envId },
 				});
 			}
 		} catch {
-			// schema drift / missing relation — progress bar still works
+			// defensive — progress bar still works with pagesDiscovered=0
 		}
 
 		const durationMs =

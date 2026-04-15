@@ -45,10 +45,13 @@ function setCache(key: string, summary: string): void {
 
 // ── Perspective classification ────────────────
 
-function classifyFindingPerspective(packKey: string, category: string): string {
-  if (category === "behavioral") return "behavior";
-  if (packKey === "revenue_integrity" || packKey === "chargeback_resilience") return "revenue";
-  if (packKey === "scale_readiness" || packKey === "money_moment_exposure") return "trust";
+function classifyFindingPerspective(pack: string): string {
+  // Behavioral findings are emitted with pack="behavioral" today; the
+  // older code took a separate `category` arg but Finding.category was
+  // removed when we consolidated classification onto pack.
+  if (pack === "behavioral") return "behavior";
+  if (pack === "revenue_integrity" || pack === "chargeback_resilience") return "revenue";
+  if (pack === "scale_readiness" || pack === "money_moment_exposure") return "trust";
   return "trust";
 }
 
@@ -197,22 +200,30 @@ export async function POST(request: Request) {
   }
 
   // ── Filter by perspective ──
+  // Finding rows carry the scalar columns directly; the rich projection
+  // (title, impact breakdown, reasoning, …) lives serialised in `projection`.
+  // Parse on demand — failing gracefully to the scalar columns if the JSON
+  // is missing or malformed (shouldn't happen, but LLM output should never
+  // crash the dashboard).
   const perspectiveFindings = perspective === "panorama"
     ? findings
-    : findings.filter(f => {
-        const p = classifyFindingPerspective(f.packKey || "", f.category || "core");
-        return p === perspective;
-      });
+    : findings.filter(f => classifyFindingPerspective(f.pack || "") === perspective);
 
   // ── Build context ──
   let totalExposure = 0;
   let improved = 0, worsened = 0, newIssues = 0, resolved = 0, positiveChecks = 0;
 
   const mappedFindings = perspectiveFindings.map(f => {
-    const data = f.data as any || {};
-    const impactMid = data.impact?.midpoint || 0;
-    const polarity = data.polarity || "negative";
-    const changeClass = data.change_class || null;
+    let proj: { title?: string; severity?: string } = {};
+    try {
+      if (f.projection) proj = JSON.parse(f.projection) as typeof proj;
+    } catch {
+      // fall through to column fallbacks
+    }
+
+    const impactMid = f.impactMidpoint || 0;
+    const polarity = f.polarity || "negative";
+    const changeClass = f.changeClass || null;
 
     if (polarity === "negative") totalExposure += impactMid;
     if (polarity === "positive") positiveChecks++;
@@ -222,9 +233,9 @@ export async function POST(request: Request) {
     if (changeClass === "resolved") resolved++;
 
     return {
-      title: f.title || data.title || "Untitled",
-      severity: data.severity || "medium",
-      pack: f.packKey || "",
+      title: proj.title || "Untitled",
+      severity: proj.severity || f.severity || "medium",
+      pack: f.pack || "",
       impact_mid: impactMid,
       change_class: changeClass,
       polarity,

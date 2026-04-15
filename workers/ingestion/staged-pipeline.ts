@@ -30,10 +30,30 @@ import { runEnrichmentPasses } from './enrichment/runner';
 // Emits events via callback for SSE streaming.
 // ──────────────────────────────────────────────
 
-export type PipelineStage = 'bootstrap' | 'first_value' | 'crawl' | 'headless' | 'complete';
+export type PipelineStage =
+  | 'bootstrap'
+  | 'first_value'
+  | 'crawl'
+  | 'headless'
+  // Enrichment passes (katana, nuclei, semantic) run after crawl + headless
+  // and emit progress events via EnrichmentContext.emit — adding the stage
+  // here keeps their events well-typed.
+  | 'enrichment'
+  | 'complete';
 
 export interface PipelineEvent {
-  type: 'step' | 'finding_ready' | 'score_update' | 'coverage_update' | 'stage_complete' | 'challenge_detected' | 'complete';
+  type:
+    | 'step'
+    | 'finding_ready'
+    | 'score_update'
+    | 'coverage_update'
+    | 'stage_complete'
+    // Emitted by enrichment passes for "running X…" status updates in the
+    // streaming progress UI. Distinct from `step` (bound to the fixed
+    // staged-pipeline step sequence).
+    | 'stage_progress'
+    | 'challenge_detected'
+    | 'complete';
   stage: PipelineStage;
   data: any;
   timestamp: Date;

@@ -214,6 +214,25 @@ export function prioritizeActions(
         ? null
         : effortHours[Math.floor(effortHours.length / 2)];
 
+    // Phase 1.5 verification metadata merge — same first-non-null
+    // policy as remediation. Actions sharing an action_key converge
+    // on one VerificationStrategy per the Phase 2.5 backfill rule.
+    // ETA picks the MAX of the group so the UI's estimate doesn't
+    // undershoot when strategies with different time budgets merge.
+    const mergedVerificationStrategy =
+      group
+        .map((g) => g.action.verification_strategy)
+        .find((s) => s != null) ?? null;
+    const mergedVerificationNotes =
+      group
+        .map((g) => g.action.verification_notes)
+        .find((n) => n != null && n.length > 0) ?? null;
+    const verificationEtas = group
+      .map((g) => g.action.verification_eta_seconds)
+      .filter((s): s is number => s != null);
+    const mergedVerificationEta =
+      verificationEtas.length === 0 ? null : Math.max(...verificationEtas);
+
     globalActions.push({
       id: ids.next(),
       action_key: first.action.action_key,
@@ -230,6 +249,9 @@ export function prioritizeActions(
       merged_from: mergedFrom,
       remediation_steps: mergedRemediationSteps,
       estimated_effort_hours: mergedEffortHours,
+      verification_strategy: mergedVerificationStrategy,
+      verification_notes: mergedVerificationNotes,
+      verification_eta_seconds: mergedVerificationEta,
     });
   }
 

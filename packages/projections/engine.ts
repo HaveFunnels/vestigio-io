@@ -732,6 +732,13 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       // matching GlobalAction by root_cause_ref + pack lookup.
       remediation_steps: null,
       estimated_effort_hours: null,
+      // Phase 1.5: verification strategy left null at the finding
+      // projection layer until Phase 2.5 wires the inference_key →
+      // action_key → GlobalAction resolution. ActionProjection gets
+      // the real strategy today because it's 1:1 with GlobalAction.
+      verification_strategy: null,
+      verification_notes: null,
+      verification_eta_seconds: null,
     });
   }
 
@@ -862,6 +869,12 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       // action_key; UI is already shape-tolerant of null.
       remediation_steps: action.remediation_steps,
       estimated_effort_hours: action.estimated_effort_hours,
+      // Phase 1.5: verification metadata mirrors the GlobalAction.
+      // Phase 2.5 backfills per action_key; Phase 3.2 extends the
+      // MCP verification tool to dispatch based on strategy.
+      verification_strategy: action.verification_strategy,
+      verification_notes: action.verification_notes,
+      verification_eta_seconds: action.verification_eta_seconds,
       change_class: changeClass,
       verification_maturity: verificationMaturity,
       resolve_path: resolvePath,
@@ -1422,6 +1435,12 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         // Positive findings don't carry remediation — nothing to fix.
         remediation_steps: null,
         estimated_effort_hours: null,
+        // Positive findings still need a verification path — the user
+        // should be able to click "Verify this is still good" and the
+        // MCP should re-check it. Phase 2.5 backfills per check.key.
+        verification_strategy: null,
+        verification_notes: null,
+        verification_eta_seconds: null,
       });
     }
   }

@@ -178,6 +178,27 @@ export interface FindingProjection {
   remediation_steps: string[] | null;
   /** Quantitative effort estimate in dev-hours. Null when uncalibrated. */
   estimated_effort_hours: number | null;
+  /**
+   * How this finding is re-verified when the user clicks Verify.
+   * Null for findings without a backfilled classification yet —
+   * Phase 2.5 populates per inference_key. See Action.verification_strategy
+   * for the taxonomy + what each strategy dispatches.
+   */
+  verification_strategy:
+    | 'http_static'
+    | 'browser_runtime'
+    | 'integration_pull'
+    | 'external_scan'
+    | 'pixel_accumulation'
+    | 'heuristic_recompute'
+    | 'not_verifiable_explain'
+    | null;
+  /** User-facing copy describing the verification action. */
+  verification_notes: string | null;
+  /** Expected seconds the verification will take. Null for strategies
+   * without a time-bounded dispatch (pixel_accumulation reports session
+   * progress via verification_notes instead). */
+  verification_eta_seconds: number | null;
 }
 
 export interface FindingTruthContext {
@@ -238,6 +259,20 @@ export interface ActionProjection {
   remediation_steps: string[] | null;
   /** Quantitative effort estimate in dev-hours. Null when uncalibrated. */
   estimated_effort_hours: number | null;
+  /** How this action is re-verified. See FindingProjection.verification_strategy. */
+  verification_strategy:
+    | 'http_static'
+    | 'browser_runtime'
+    | 'integration_pull'
+    | 'external_scan'
+    | 'pixel_accumulation'
+    | 'heuristic_recompute'
+    | 'not_verifiable_explain'
+    | null;
+  /** User-facing copy describing the verification action. */
+  verification_notes: string | null;
+  /** Expected seconds the verification will take. */
+  verification_eta_seconds: number | null;
   /** Phase 1B UX: Change class from cycle-to-cycle change detection */
   change_class: 'regression' | 'improvement' | 'new_issue' | 'resolved' | 'stable_risk' | null;
   /** Verification lifecycle stage — see FindingProjection.verification_maturity. */

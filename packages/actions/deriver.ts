@@ -135,6 +135,11 @@ function createAction(
     // them; for now every action ships with null here.
     remediation_steps: null,
     estimated_effort_hours: null,
+    // Phase 1.5 verification metadata. Phase 2.5 classifies every
+    // action_key into a VerificationStrategy + writes the notes.
+    verification_strategy: null,
+    verification_notes: null,
+    verification_eta_seconds: null,
     status: 'pending',
     created_at: now,
     updated_at: now,

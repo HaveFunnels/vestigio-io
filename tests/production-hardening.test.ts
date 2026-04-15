@@ -118,6 +118,9 @@ function mockFinding(key: string, polarity: 'negative' | 'positive' | 'neutral' 
     evidence_quality: null,
     remediation_steps: null,
     estimated_effort_hours: null,
+    verification_strategy: null,
+    verification_notes: null,
+    verification_eta_seconds: null,
   };
 }
 

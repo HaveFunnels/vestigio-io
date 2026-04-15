@@ -1,5 +1,6 @@
 import { EffectiveSeverity } from './enums';
 import { Ref, Scoping, Timestamped } from './common';
+import type { VerificationStrategy } from './actions';
 
 // ──────────────────────────────────────────────
 // Finding — projected detail (NEVER source of truth)
@@ -32,6 +33,12 @@ export interface Finding extends Timestamped {
   remediation_steps: string[] | null;
   /** Quantitative effort estimate in dev-hours. See Action.estimated_effort_hours. */
   estimated_effort_hours: number | null;
+  /** How this finding is re-verified. See Action.verification_strategy. */
+  verification_strategy: VerificationStrategy | null;
+  /** Copy the UI / MCP show when user asks how verification works. */
+  verification_notes: string | null;
+  /** ETA in seconds for the verification dispatch. Null when not time-bounded. */
+  verification_eta_seconds: number | null;
   page_url: string | null;
   journey_stage: string | null;
 }

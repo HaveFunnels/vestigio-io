@@ -206,6 +206,20 @@ export class PrismaFindingStore {
 				if (parsed.impact && (parsed.impact as any).role === undefined) {
 					(parsed.impact as any).role = 'loss';
 				}
+				// Phase 1.5: default verification metadata to null for
+				// projections written before the fields existed. Phase 2.5
+				// backfill will populate them on next cycle; until then the
+				// UI / MCP treat null as "not yet classified" and fall back
+				// to the legacy generic verify flow.
+				if (parsed.verification_strategy === undefined) {
+					parsed.verification_strategy = null;
+				}
+				if (parsed.verification_notes === undefined) {
+					parsed.verification_notes = null;
+				}
+				if (parsed.verification_eta_seconds === undefined) {
+					parsed.verification_eta_seconds = null;
+				}
 				findings.push(parsed);
 			} catch (err) {
 				console.warn(

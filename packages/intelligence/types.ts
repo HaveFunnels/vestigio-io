@@ -1,4 +1,5 @@
 import { Ref } from '../domain';
+import type { VerificationStrategy } from '../domain/actions';
 
 // ──────────────────────────────────────────────
 // Root Cause — a shared underlying issue that manifests
@@ -106,6 +107,18 @@ export interface GlobalAction {
    * across merged actions when multiple contribute.
    */
   estimated_effort_hours: number | null;
+
+  /**
+   * How the finding is re-verified. Carried from the source Action
+   * during the merge — all actions sharing an action_key converge
+   * on the same strategy per Phase 2.5 backfill rules, so the
+   * merge picks the first non-null.
+   */
+  verification_strategy: VerificationStrategy | null;
+  /** User-facing copy describing the verification. See Action.verification_notes. */
+  verification_notes: string | null;
+  /** ETA in seconds for the verification. See Action.verification_eta_seconds. */
+  verification_eta_seconds: number | null;
 }
 
 // ──────────────────────────────────────────────

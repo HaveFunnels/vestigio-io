@@ -345,9 +345,16 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 				return NextResponse.json({ message: "OK" }, { status: 200 });
 			}
 
-			// Create or update user
+			// Create or update user.
+			//
+			// DO NOT pre-create when custom_data.leadId is present. The
+			// /lp funnel owns User creation inside promoteLeadToOrg() so
+			// it can mint the activation token + send the activation
+			// email. If we pre-create here, promoteLeadToOrg() sees an
+			// "existing user" and skips activation entirely — buyer
+			// never receives their "ative sua conta" email.
 			let user = await findUser(customer_id, customer?.email);
-			if (!user && customer?.email) {
+			if (!user && customer?.email && !custom_data?.leadId) {
 				user = await prisma.user.create({
 					data: {
 						name: customer.name || "guest",

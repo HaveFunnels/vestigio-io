@@ -12,18 +12,19 @@ import Link from "next/link";
 // the background; here we:
 //
 //   1. Confirm payment landed
-//   2. Tell the user to check their email for the magic link
+//   2. Tell the user to check their email for the activation link
 //   3. Poll /api/lead/[id] until status flips to 'converted', so we
-//      can show "you can now log in" instead of "wait a moment"
-//   4. Offer a manual "open my email" hint when conversion is slow
+//      can show "you can now activate" instead of "wait a moment"
+//   4. Offer a manual hint when conversion is slow
 //
 // This is intentionally calm — no extra CTAs, no upsells. The visitor
 // just paid; we want them to feel taken care of and to know the next
-// step is "click the magic link in your inbox".
+// step is "click the activation link in your inbox and pick how you
+// want to log in".
 //
-// Note: we DO NOT trigger the magic link from here. The webhook does
-// that server-side as part of handleLeadConversion (Sprint 3.11).
-// We only poll to surface status to the user.
+// Note: we DO NOT trigger the activation email from here. The webhook
+// does that server-side as part of promoteLeadToOrg. We only poll to
+// surface status to the user.
 // ──────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 3000;
@@ -108,10 +109,10 @@ export default function LeadThankYouPage() {
 					</div>
 
 					<h1 className="text-3xl font-semibold text-zinc-100 sm:text-4xl">
-						You&rsquo;re in.
+						Pagamento recebido.
 					</h1>
 					<p className="mt-3 text-base text-zinc-400">
-						Payment received. We&rsquo;re setting up your workspace right now.
+						Estamos preparando seu workspace e disparando o diagnóstico completo.
 					</p>
 
 					{/* Email block */}
@@ -124,16 +125,17 @@ export default function LeadThankYouPage() {
 							</div>
 							<div className="min-w-0 flex-1">
 								<div className="text-sm font-semibold text-zinc-100">
-									Check your inbox
+									Cheque seu inbox
 								</div>
 								<div className="mt-1 text-sm text-zinc-400">
-									We sent a magic link to{" "}
+									Enviamos um link de ativação para{" "}
 									{emailMasked ? (
 										<span className="font-mono text-zinc-200">{emailMasked}</span>
 									) : (
-										<span className="text-zinc-500">your email</span>
+										<span className="text-zinc-500">seu email</span>
 									)}
-									. Click it to sign in — no password to remember.
+									. Clique para escolher como quer fazer login —
+									Google, GitHub ou uma senha.
 								</div>
 							</div>
 						</div>
@@ -146,7 +148,7 @@ export default function LeadThankYouPage() {
 								<svg className="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
 									<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
 								</svg>
-								<span className="text-emerald-400">Workspace ready · magic link sent</span>
+								<span className="text-emerald-400">Workspace pronto · link de ativação enviado</span>
 							</>
 						) : (
 							<>
@@ -155,7 +157,7 @@ export default function LeadThankYouPage() {
 									<span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
 								</span>
 								<span className="text-zinc-500">
-									Setting up your workspace…
+									Preparando seu workspace…
 								</span>
 							</>
 						)}
@@ -164,21 +166,21 @@ export default function LeadThankYouPage() {
 					{/* Slow-path manual help */}
 					{pollAttempts >= POLL_MAX_ATTEMPTS && !converted && (
 						<div className="mt-6 rounded-md border border-amber-800/50 bg-amber-500/10 px-4 py-3 text-left text-xs text-amber-300">
-							This is taking longer than usual. The magic link should still
-							arrive — check your spam folder if you don&rsquo;t see it
-							within a minute. If nothing comes,{" "}
+							Isso está demorando mais que o normal. O link de ativação ainda
+							deve chegar — cheque a caixa de spam se não aparecer em um
+							minuto. Se nada vier,{" "}
 							<a
-								href="mailto:support@vestigio.io"
+								href="mailto:suporte@vestigio.io"
 								className="font-semibold underline underline-offset-2 hover:text-amber-200"
 							>
-								contact support
+								fale com o suporte
 							</a>
 							.
 						</div>
 					)}
 
 					<p className="mt-10 text-xs text-zinc-700">
-						You can close this tab once you receive the email.
+						Você pode fechar essa aba depois que receber o email.
 					</p>
 				</div>
 			</main>

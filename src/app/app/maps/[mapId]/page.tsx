@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { useRouter, useParams, notFound } from "next/navigation";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
 	ReactFlow,
@@ -223,6 +223,8 @@ function JourneyCommercialNode({ data }: { data: any }) {
 		icon: "Page",
 	};
 	const pageTypeLabel = t(`page_types.${data.pageType || "page"}` as never);
+	const conversionRate =
+		typeof data.conversionRate === "number" ? data.conversionRate : null;
 	return (
 		<div
 			className={`min-w-[180px] max-w-[220px] rounded-lg border-2 px-4 py-3 ${style.border} ${style.bg}`}
@@ -233,9 +235,14 @@ function JourneyCommercialNode({ data }: { data: any }) {
 				className='!bg-content-muted'
 			/>
 			<div
-				className={`text-[10px] font-semibold uppercase tracking-wider ${style.text}`}
+				className={`flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider ${style.text}`}
 			>
-				{pageTypeLabel}
+				<span>{pageTypeLabel}</span>
+				{conversionRate !== null && (
+					<span className='font-mono text-[11px] tabular-nums'>
+						{conversionRate}%
+					</span>
+				)}
 			</div>
 			<div
 				className='mt-1 truncate text-sm font-medium text-content'
@@ -253,6 +260,76 @@ function JourneyCommercialNode({ data }: { data: any }) {
 				position={Position.Right}
 				className='!bg-content-muted'
 			/>
+		</div>
+	);
+}
+
+// Pseudo-nodes (Amplitude-style): "Other events" + "Drop-off" between
+// consecutive commercial steps. Rendered with a hatched background to
+// communicate "this is aggregate traffic, not a real page" so users
+// don't mistake them for regular journey steps.
+const HATCH_STYLE: React.CSSProperties = {
+	backgroundImage:
+		"repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 1px, transparent 6px)",
+	backgroundBlendMode: "normal",
+	opacity: 0.9,
+};
+
+function JourneyOtherEventsNode({ data }: { data: any }) {
+	const t = useTranslations("console.maps");
+	const rate = typeof data.conversionRate === "number" ? data.conversionRate : null;
+	return (
+		<div className='relative min-w-[140px] max-w-[180px] overflow-hidden rounded-md border border-dashed border-content-muted/60 bg-surface-card/60 px-3 py-2 text-content-muted'>
+			<div
+				aria-hidden
+				className='pointer-events-none absolute inset-0 text-content-muted/15'
+				style={HATCH_STYLE}
+			/>
+			<Handle
+				type='target'
+				position={Position.Left}
+				className='!bg-content-faint'
+			/>
+			<div className='relative text-[10px] font-semibold uppercase tracking-wider text-content-muted'>
+				{t("journey.other_events")}
+			</div>
+			{rate !== null && (
+				<div className='relative mt-0.5 font-mono text-xs tabular-nums text-content-secondary'>
+					{rate}%
+				</div>
+			)}
+			<Handle
+				type='source'
+				position={Position.Right}
+				className='!bg-content-faint'
+			/>
+		</div>
+	);
+}
+
+function JourneyDropoffNode({ data }: { data: any }) {
+	const t = useTranslations("console.maps");
+	const rate = typeof data.conversionRate === "number" ? data.conversionRate : null;
+	return (
+		<div className='relative min-w-[140px] max-w-[180px] overflow-hidden rounded-md border border-dashed border-red-500/40 bg-red-500/5 px-3 py-2 text-red-500'>
+			<div
+				aria-hidden
+				className='pointer-events-none absolute inset-0 text-red-500/20'
+				style={HATCH_STYLE}
+			/>
+			<Handle
+				type='target'
+				position={Position.Left}
+				className='!bg-red-400'
+			/>
+			<div className='relative text-[10px] font-semibold uppercase tracking-wider text-red-600 dark:text-red-400'>
+				{t("journey.dropoff")}
+			</div>
+			{rate !== null && (
+				<div className='relative mt-0.5 font-mono text-xs tabular-nums text-red-600 dark:text-red-400'>
+					{rate}%
+				</div>
+			)}
 		</div>
 	);
 }
@@ -295,6 +372,8 @@ const nodeTypes: NodeTypes = {
 	checkout: CategoryNode,
 	journey_commercial: JourneyCommercialNode,
 	journey_support: JourneySupportNode,
+	journey_other_events: JourneyOtherEventsNode,
+	journey_dropoff: JourneyDropoffNode,
 };
 
 const edgeStyles: Record<string, any> = {
@@ -329,6 +408,8 @@ const NODE_SWATCH_CLASS: Record<string, string> = {
 	journey_checkout: "border-red-500 bg-red-500/10",
 	journey_confirmation: "border-emerald-500 bg-emerald-500/10",
 	journey_support: "border-dashed border-content-muted bg-surface-inset",
+	journey_other_events: "border-dashed border-content-muted bg-surface-card/60",
+	journey_dropoff: "border-dashed border-red-500/40 bg-red-500/5",
 };
 
 const EDGE_SWATCH_CLASS: Record<string, string> = {
@@ -365,6 +446,19 @@ function toReactFlowEdges(mapDef: MapDefinition): Edge[] {
 		type: "default",
 		style: edgeStyles[e.type] || edgeStyles.causal,
 		animated: e.type === "causal",
+		// Compact pill-style label at mid-edge (drop-off / conversion %).
+		labelStyle: {
+			fill: "var(--color-content-secondary, #a1a1aa)",
+			fontSize: 10,
+			fontFamily:
+				"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+		},
+		labelBgStyle: {
+			fill: "var(--color-surface-card, rgba(24,24,27,0.85))",
+			fillOpacity: 0.9,
+		},
+		labelBgPadding: [4, 2] as [number, number],
+		labelBgBorderRadius: 4,
 	}));
 }
 
@@ -813,34 +907,8 @@ export default function MapCanvasPage() {
 	const dataState =
 		mcpData.maps.status !== "not_ready" ? mcpData.maps : loadAllMaps();
 
-	// User Journey lives outside the MCP projections — fetch on mount
-	// so we can resolve /app/maps/user_journey without the engine.
-	const [journeyMap, setJourneyMap] = useState<MapDefinition | null>(null);
-	const [journeyLoaded, setJourneyLoaded] = useState(false);
-
-	useEffect(() => {
-		if (mapId !== JOURNEY_MAP_ID) return;
-		fetch("/api/maps/user-journey")
-			.then((r) => r.json())
-			.then((data) => {
-				if (data?.map) setJourneyMap(data.map as MapDefinition);
-			})
-			.catch(() => {})
-			.finally(() => setJourneyLoaded(true));
-	}, [mapId]);
-
-	// Resolve the concrete map. For engine maps we wait on MCP data;
-	// for user_journey we wait on the fetch above.
 	if (mapId === JOURNEY_MAP_ID) {
-		if (!journeyLoaded) {
-			return <MapLoadingShell label={t("loading")} />;
-		}
-		if (!journeyMap) {
-			return <MapNotFound backLabel={t("back_to_gallery")} />;
-		}
-		return (
-			<MapCanvasShell mapDef={journeyMap} t={t} tc={tc} />
-		);
+		return <JourneyCanvasView t={t} tc={tc} />;
 	}
 
 	// Engine maps
@@ -859,6 +927,429 @@ export default function MapCanvasPage() {
 					return <MapCanvasShell mapDef={found} t={t} tc={tc} />;
 				}}
 			</ConsoleState>
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
+// Journey canvas view — flagship map.
+// Owns filter state (URL-synced) + refetch lifecycle. Wraps the shared
+// canvas shell with the filter bar above the board.
+// ──────────────────────────────────────────────
+
+const JOURNEY_STAGES = [
+	"any",
+	"homepage",
+	"landing",
+	"category",
+	"product",
+	"pricing",
+	"cart",
+	"checkout",
+	"thank_you",
+] as const;
+type JourneyStage = (typeof JOURNEY_STAGES)[number];
+
+const JOURNEY_RANGES = ["7d", "30d", "90d", "all_time"] as const;
+type JourneyRange = (typeof JOURNEY_RANGES)[number];
+
+interface JourneyFilters {
+	start: JourneyStage;
+	end: JourneyStage;
+	range: JourneyRange;
+}
+
+function pickStage(v: string | null | undefined): JourneyStage {
+	return (JOURNEY_STAGES as readonly string[]).includes(v || "")
+		? (v as JourneyStage)
+		: "any";
+}
+
+function pickRange(v: string | null | undefined): JourneyRange {
+	return (JOURNEY_RANGES as readonly string[]).includes(v || "")
+		? (v as JourneyRange)
+		: "30d";
+}
+
+function JourneyCanvasView({
+	t,
+	tc,
+}: {
+	t: ReturnType<typeof useTranslations>;
+	tc: ReturnType<typeof useTranslations>;
+}) {
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	const filters: JourneyFilters = useMemo(
+		() => ({
+			start: pickStage(searchParams?.get("start")),
+			end: pickStage(searchParams?.get("end")),
+			range: pickRange(searchParams?.get("range")),
+		}),
+		[searchParams],
+	);
+
+	const [journeyMap, setJourneyMap] = useState<MapDefinition | null>(null);
+	const [loaded, setLoaded] = useState(false);
+
+	useEffect(() => {
+		setLoaded(false);
+		const qs = new URLSearchParams({
+			start: filters.start,
+			end: filters.end,
+			range: filters.range,
+		}).toString();
+		fetch(`/api/maps/user-journey?${qs}`)
+			.then((r) => r.json())
+			.then((data) => {
+				setJourneyMap(data?.map ? (data.map as MapDefinition) : null);
+			})
+			.catch(() => setJourneyMap(null))
+			.finally(() => setLoaded(true));
+	}, [filters.start, filters.end, filters.range]);
+
+	const updateFilter = useCallback(
+		(patch: Partial<JourneyFilters>) => {
+			const next = { ...filters, ...patch };
+			const qs = new URLSearchParams();
+			if (next.start !== "any") qs.set("start", next.start);
+			if (next.end !== "any") qs.set("end", next.end);
+			if (next.range !== "30d") qs.set("range", next.range);
+			const suffix = qs.toString();
+			router.replace(
+				`/app/maps/${JOURNEY_MAP_ID}${suffix ? `?${suffix}` : ""}`,
+				{ scroll: false },
+			);
+		},
+		[filters, router],
+	);
+
+	const mode =
+		(journeyMap?.metadata as Record<string, unknown> | undefined)?.mode;
+
+	return (
+		<div className='flex h-full flex-col'>
+			<MapCanvasHeader mapDef={journeyMap} t={t} tc={tc} />
+			<JourneyFiltersBar filters={filters} onChange={updateFilter} mode={mode} />
+			<div className='flex-1'>
+				{!loaded ? (
+					<MapLoadingShell label={t("loading")} />
+				) : !journeyMap ? (
+					<JourneyEmptyState onReset={() => updateFilter({ start: "any", end: "any" })} />
+				) : (
+					<MapsContent mapDef={journeyMap} />
+				)}
+			</div>
+		</div>
+	);
+}
+
+function JourneyEmptyState({ onReset }: { onReset: () => void }) {
+	const t = useTranslations("console.maps");
+	return (
+		<div className='flex h-full flex-col items-center justify-center gap-3 px-6 text-center'>
+			<div className='text-sm font-medium text-content'>{t("journey.empty_title")}</div>
+			<div className='max-w-sm text-xs text-content-muted'>
+				{t("journey.empty_body")}
+			</div>
+			<button
+				onClick={onReset}
+				className='mt-2 rounded-md border border-edge px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:border-edge-strong hover:bg-surface-card-hover'
+			>
+				{t("journey.reset_filters")}
+			</button>
+		</div>
+	);
+}
+
+// Shared header extracted out of MapCanvasShell so the journey view
+// can render its own filter bar between the header and the canvas.
+function MapCanvasHeader({
+	mapDef,
+	t,
+	tc,
+}: {
+	mapDef: MapDefinition | null;
+	t: ReturnType<typeof useTranslations>;
+	tc: ReturnType<typeof useTranslations>;
+}) {
+	return (
+		<div className='flex items-center justify-between gap-4 border-b border-edge px-6 py-4'>
+			<div className='flex min-w-0 items-center gap-3'>
+				<Link
+					href='/app/maps'
+					className='shrink-0 rounded-md border border-edge p-1.5 text-content-muted transition-colors hover:border-edge-strong hover:text-content-secondary'
+					aria-label={t("back_to_gallery")}
+				>
+					<svg
+						className='h-4 w-4'
+						fill='none'
+						viewBox='0 0 24 24'
+						strokeWidth={2}
+						stroke='currentColor'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							d='M15.75 19.5L8.25 12l7.5-7.5'
+						/>
+					</svg>
+				</Link>
+				<div className='[&>div]:mb-0'>
+					<PageHeader
+						title={mapDef?.name || t("title")}
+						subtitle={
+							mapDef
+								? (t(`descriptions.${mapDef.type}` as never) as string)
+								: (t("subtitle") as string)
+						}
+						tooltip={tc("page_tooltips.maps")}
+					/>
+				</div>
+			</div>
+			{mapDef && (
+				<ShinyButton
+					variant='console'
+					onClick={() =>
+						(window.location.href = `/app/chat?context=map:${encodeURIComponent(mapDef.id)}`)
+					}
+				>
+					{t("useAsContext")}
+				</ShinyButton>
+			)}
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
+// Journey filters bar — Amplitude-style "Starting / Ending / Users In
+// / Time" pills. Each pill opens a lightweight dropdown on click.
+// Cohort is locked to "All users" for now (no cohort infra yet); we
+// still render the pill so the bar matches the final visual language.
+// ──────────────────────────────────────────────
+
+interface PillOption<V extends string> {
+	value: V;
+	label: string;
+	disabled?: boolean;
+	hint?: string;
+}
+
+function FilterPill<V extends string>({
+	prefix,
+	connector,
+	label,
+	value,
+	options,
+	onChange,
+	disabled,
+	disabledHint,
+}: {
+	prefix: string;
+	connector?: string;
+	label: string;
+	value: V;
+	options: PillOption<V>[];
+	onChange: (v: V) => void;
+	disabled?: boolean;
+	disabledHint?: string;
+}) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!open) return;
+		function handleClick(e: MouseEvent) {
+			const target = e.target as HTMLElement | null;
+			if (ref.current && target && !ref.current.contains(target)) {
+				setOpen(false);
+			}
+		}
+		function handleKey(e: KeyboardEvent) {
+			if (e.key === "Escape") setOpen(false);
+		}
+		document.addEventListener("mousedown", handleClick);
+		document.addEventListener("keydown", handleKey);
+		return () => {
+			document.removeEventListener("mousedown", handleClick);
+			document.removeEventListener("keydown", handleKey);
+		};
+	}, [open]);
+
+	return (
+		<div className='flex items-center gap-2'>
+			{connector && (
+				<span className='text-xs lowercase text-content-muted'>{connector}</span>
+			)}
+			<div className='relative' ref={ref}>
+				<button
+					type='button'
+					onClick={() => !disabled && setOpen((x) => !x)}
+					disabled={disabled}
+					title={disabled ? disabledHint : undefined}
+					className={`flex min-w-[140px] items-start gap-3 rounded-lg border px-3 py-1.5 text-left transition-colors ${
+						disabled
+							? "cursor-not-allowed border-edge/40 bg-surface-inset/30 opacity-70"
+							: open
+								? "border-blue-500/50 bg-blue-500/5"
+								: "border-edge bg-surface-card hover:border-edge-strong hover:bg-surface-card-hover"
+					}`}
+				>
+					<div className='flex flex-col leading-tight'>
+						<span className='text-[10px] font-semibold uppercase tracking-wider text-content-muted'>
+							{prefix}
+						</span>
+						<span className='text-sm font-medium text-blue-600 dark:text-blue-400'>
+							{label}
+						</span>
+					</div>
+					{!disabled && (
+						<svg
+							className={`mt-1 h-3 w-3 shrink-0 text-content-muted transition-transform ${open ? "rotate-180" : ""}`}
+							fill='none'
+							viewBox='0 0 12 12'
+						>
+							<path
+								d='M3 4.5l3 3 3-3'
+								stroke='currentColor'
+								strokeWidth='1.5'
+								strokeLinecap='round'
+								strokeLinejoin='round'
+							/>
+						</svg>
+					)}
+				</button>
+				{open && (
+					<div className='absolute left-0 top-full z-50 mt-1 min-w-[200px] overflow-hidden rounded-lg border border-edge bg-surface-card shadow-xl'>
+						<div className='max-h-[320px] overflow-auto py-1'>
+							{options.map((opt) => (
+								<button
+									key={opt.value}
+									type='button'
+									disabled={opt.disabled}
+									onClick={() => {
+										if (opt.disabled) return;
+										onChange(opt.value);
+										setOpen(false);
+									}}
+									className={`flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-xs transition-colors ${
+										opt.disabled
+											? "cursor-not-allowed text-content-faint"
+											: opt.value === value
+												? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+												: "text-content-secondary hover:bg-surface-card-hover hover:text-content"
+									}`}
+								>
+									<span>{opt.label}</span>
+									{opt.hint && (
+										<span className='text-[10px] text-content-faint'>
+											{opt.hint}
+										</span>
+									)}
+								</button>
+							))}
+						</div>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+function JourneyFiltersBar({
+	filters,
+	onChange,
+	mode,
+}: {
+	filters: JourneyFilters;
+	onChange: (patch: Partial<JourneyFilters>) => void;
+	mode: unknown;
+}) {
+	const t = useTranslations("console.maps.journey");
+	const tStages = useTranslations("console.maps.page_types");
+
+	const stageOptions: PillOption<JourneyStage>[] = JOURNEY_STAGES.map((s) => ({
+		value: s,
+		label:
+			s === "any"
+				? (t("any_page") as string)
+				: (tStages(s as never) as string),
+	}));
+	const rangeOptions: PillOption<JourneyRange>[] = JOURNEY_RANGES.map((r) => ({
+		value: r,
+		label: t(`ranges.${r}` as never) as string,
+	}));
+	const cohortOptions: PillOption<"all">[] = [
+		{ value: "all", label: t("cohorts.all") as string },
+	];
+
+	return (
+		<div className='flex flex-wrap items-center gap-3 border-b border-edge bg-surface-card/30 px-6 py-3'>
+			<FilterPill
+				prefix={t("starting") as string}
+				label={
+					filters.start === "any"
+						? (t("any_page") as string)
+						: (tStages(filters.start as never) as string)
+				}
+				value={filters.start}
+				options={stageOptions}
+				onChange={(v) => onChange({ start: v })}
+			/>
+			<FilterPill
+				prefix={t("ending") as string}
+				connector={t("to") as string}
+				label={
+					filters.end === "any"
+						? (t("any_page") as string)
+						: (tStages(filters.end as never) as string)
+				}
+				value={filters.end}
+				options={stageOptions}
+				onChange={(v) => onChange({ end: v })}
+			/>
+			<FilterPill<"all">
+				prefix={t("users_in") as string}
+				connector={t("for") as string}
+				label={t("cohorts.all") as string}
+				value='all'
+				options={cohortOptions}
+				onChange={() => {}}
+				disabled
+				disabledHint={t("cohorts.coming_soon") as string}
+			/>
+			<FilterPill
+				prefix={t("time") as string}
+				connector={t("in") as string}
+				label={t(`ranges.${filters.range}` as never) as string}
+				value={filters.range}
+				options={rangeOptions}
+				onChange={(v) => onChange({ range: v })}
+			/>
+			{mode === "inferred" && (
+				<span className='ml-auto flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/5 px-2 py-1 text-[11px] text-amber-600 dark:text-amber-400'>
+					<svg
+						className='h-3 w-3'
+						fill='none'
+						viewBox='0 0 24 24'
+						strokeWidth={2}
+						stroke='currentColor'
+					>
+						<path
+							strokeLinecap='round'
+							strokeLinejoin='round'
+							d='M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z'
+						/>
+					</svg>
+					{t("inferred_notice")}
+				</span>
+			)}
+			{mode === "demo" && (
+				<span className='ml-auto flex items-center gap-1.5 rounded-md border border-violet-500/30 bg-violet-500/5 px-2 py-1 text-[11px] text-violet-600 dark:text-violet-400'>
+					{t("demo_notice")}
+				</span>
+			)}
 		</div>
 	);
 }
@@ -900,44 +1391,7 @@ function MapCanvasShell({
 }) {
 	return (
 		<div className='flex h-full flex-col'>
-			<div className='flex items-center justify-between gap-4 border-b border-edge px-6 py-4'>
-				<div className='flex min-w-0 items-center gap-3'>
-					<Link
-						href='/app/maps'
-						className='shrink-0 rounded-md border border-edge p-1.5 text-content-muted transition-colors hover:border-edge-strong hover:text-content-secondary'
-						aria-label={t("back_to_gallery")}
-					>
-						<svg
-							className='h-4 w-4'
-							fill='none'
-							viewBox='0 0 24 24'
-							strokeWidth={2}
-							stroke='currentColor'
-						>
-							<path
-								strokeLinecap='round'
-								strokeLinejoin='round'
-								d='M15.75 19.5L8.25 12l7.5-7.5'
-							/>
-						</svg>
-					</Link>
-					<div className='[&>div]:mb-0'>
-						<PageHeader
-							title={mapDef.name}
-							subtitle={t(`descriptions.${mapDef.type}` as never)}
-							tooltip={tc("page_tooltips.maps")}
-						/>
-					</div>
-				</div>
-				<ShinyButton
-					variant='console'
-					onClick={() =>
-						(window.location.href = `/app/chat?context=map:${encodeURIComponent(mapDef.id)}`)
-					}
-				>
-					{t("useAsContext")}
-				</ShinyButton>
-			</div>
+			<MapCanvasHeader mapDef={mapDef} t={t} tc={tc} />
 			<MapsContent mapDef={mapDef} />
 		</div>
 	);

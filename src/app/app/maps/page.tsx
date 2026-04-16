@@ -206,6 +206,8 @@ const NODE_FILL: Record<MapNodeType, string> = {
 	checkout: "#3b82f6",
 	journey_commercial: "#6366f1",
 	journey_support: "#94a3b8",
+	journey_other_events: "#a1a1aa",
+	journey_dropoff: "#ef4444",
 };
 
 const EDGE_STROKE: Record<MapEdgeType, string> = {

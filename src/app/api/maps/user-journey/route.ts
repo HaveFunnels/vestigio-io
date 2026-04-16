@@ -20,11 +20,55 @@ import type {
  * Mode 2 (Pixel-enhanced): When behavioral session data exists,
  *   adds real conversion rates and dropoff percentages.
  */
-export async function GET() {
+// Filters accepted by the journey API. "any" / "all_time" encode the
+// "no filter" state so the client can always send a value instead of
+// branching on undefined. The page-stage filters map to the same stage
+// keys used by the commercial funnel layout below.
+const JOURNEY_STAGE_KEYS = [
+  "any",
+  "homepage",
+  "landing",
+  "category",
+  "product",
+  "pricing",
+  "cart",
+  "checkout",
+  "thank_you",
+] as const;
+type JourneyStageKey = (typeof JOURNEY_STAGE_KEYS)[number];
+const JOURNEY_RANGE_KEYS = ["7d", "30d", "90d", "all_time"] as const;
+type JourneyRangeKey = (typeof JOURNEY_RANGE_KEYS)[number];
+
+interface JourneyFilters {
+  start: JourneyStageKey;
+  end: JourneyStageKey;
+  range: JourneyRangeKey;
+}
+
+function parseFilters(url: URL): JourneyFilters {
+  const raw = (key: string) => url.searchParams.get(key) || "";
+  const pickStage = (v: string): JourneyStageKey =>
+    (JOURNEY_STAGE_KEYS as readonly string[]).includes(v)
+      ? (v as JourneyStageKey)
+      : "any";
+  const pickRange = (v: string): JourneyRangeKey =>
+    (JOURNEY_RANGE_KEYS as readonly string[]).includes(v)
+      ? (v as JourneyRangeKey)
+      : "30d";
+  return {
+    start: pickStage(raw("start")),
+    end: pickStage(raw("end")),
+    range: pickRange(raw("range")),
+  };
+}
+
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+
+  const filters = parseFilters(new URL(request.url));
 
   try {
     const { prisma } = await import("@/libs/prismaDb");
@@ -40,7 +84,7 @@ export async function GET() {
     // the flagship map populated instead of an empty state. Metadata
     // flags it as `demo` so the UI can badge it if we want to later.
     if (orgCtx.orgId === "demo") {
-      return NextResponse.json({ map: buildDemoJourneyMap() });
+      return NextResponse.json({ map: buildDemoJourneyMap(filters) });
     }
 
     // Get the latest environment
@@ -105,8 +149,20 @@ export async function GET() {
       cart: 4, checkout: 5, login: 5, account: 6, thank_you: 7,
     };
 
-    const journeyPages = [...commercialPages]
+    const sortedCommercial = [...commercialPages]
       .sort((a, b) => (stageOrder[a.pageType?.toLowerCase() || ""] ?? 99) - (stageOrder[b.pageType?.toLowerCase() || ""] ?? 99));
+
+    // Apply start/end filters: narrow the commercial funnel to the
+    // window [start..end] by stage order. "any" endpoints are open,
+    // so { start: "any", end: "any" } returns the whole funnel.
+    const startStage =
+      filters.start === "any" ? -Infinity : (stageOrder[filters.start] ?? -Infinity);
+    const endStage =
+      filters.end === "any" ? Infinity : (stageOrder[filters.end] ?? Infinity);
+    const journeyPages = sortedCommercial.filter((p) => {
+      const stage = stageOrder[p.pageType?.toLowerCase() || ""] ?? 99;
+      return stage >= startStage && stage <= endStage;
+    });
 
     // Also include important non-commercial pages that appear in relations
     const supportPages = pages.filter((p) =>
@@ -291,6 +347,7 @@ export async function GET() {
         mode: "inferred",
         pageCount: pages.length,
         relationCount: relations.length,
+        filters,
       },
     };
 
@@ -307,24 +364,63 @@ export async function GET() {
 // context that has no backing Prisma rows at all (see resolve-org.ts).
 // ──────────────────────────────────────────────
 
-function buildDemoJourneyMap(): MapDefinition & { metadata: Record<string, unknown> } {
+function buildDemoJourneyMap(
+  filters: JourneyFilters,
+): MapDefinition & { metadata: Record<string, unknown> } {
   const NODE_SPACING_X = 280;
   const COMMERCIAL_Y = 200;
-  const SUPPORT_Y = COMMERCIAL_Y + 240;
+  const PSEUDO_Y = COMMERCIAL_Y + 160;
+  const SUPPORT_Y = COMMERCIAL_Y + 340;
 
-  const commercial: Array<{
+  // Stage key → display order. Matches the live-flow stageOrder so
+  // filter semantics are identical across demo + real data.
+  const demoStageOrder: Record<string, number> = {
+    homepage: 0,
+    landing: 1,
+    category: 2,
+    product: 3,
+    pricing: 3,
+    cart: 4,
+    checkout: 5,
+    thank_you: 7,
+  };
+
+  // Full funnel. Conversion rates are synthetic but proportioned to
+  // match how a real ecommerce funnel shapes up — each step carries
+  // forward ~half the volume of the previous one.
+  const fullFunnel: Array<{
     id: string;
     pageType: string;
     label: string;
     path: string;
+    /** % of the initial cohort that reaches this step */
+    conversionRate: number;
   }> = [
-    { id: "home", pageType: "homepage", label: "Homepage", path: "/" },
-    { id: "product", pageType: "product", label: "Product Detail", path: "/products/sample" },
-    { id: "pricing", pageType: "pricing", label: "Pricing", path: "/pricing" },
-    { id: "cart", pageType: "cart", label: "Cart", path: "/cart" },
-    { id: "checkout", pageType: "checkout", label: "Checkout", path: "/checkout" },
-    { id: "confirmation", pageType: "thank_you", label: "Confirmation", path: "/thank-you" },
+    { id: "home", pageType: "homepage", label: "Homepage", path: "/", conversionRate: 100 },
+    { id: "product", pageType: "product", label: "Product Detail", path: "/products/sample", conversionRate: 62 },
+    { id: "pricing", pageType: "pricing", label: "Pricing", path: "/pricing", conversionRate: 38 },
+    { id: "cart", pageType: "cart", label: "Cart", path: "/cart", conversionRate: 21 },
+    { id: "checkout", pageType: "checkout", label: "Checkout", path: "/checkout", conversionRate: 14 },
+    { id: "confirmation", pageType: "thank_you", label: "Confirmation", path: "/thank-you", conversionRate: 9 },
   ];
+
+  const startStage =
+    filters.start === "any" ? -Infinity : (demoStageOrder[filters.start] ?? -Infinity);
+  const endStage =
+    filters.end === "any" ? Infinity : (demoStageOrder[filters.end] ?? Infinity);
+  const commercial = fullFunnel.filter((p) => {
+    const stage = demoStageOrder[p.pageType] ?? 99;
+    return stage >= startStage && stage <= endStage;
+  });
+
+  // Reprojection: re-index conversion so the first visible step is 100%
+  // and subsequent rates are relative to it. Keeps the visual in sync
+  // with what "Starting at X" means to the user.
+  const anchor = commercial[0]?.conversionRate ?? 100;
+  const commercialAdjusted = commercial.map((p) => ({
+    ...p,
+    conversionRateOfVisible: Math.round((p.conversionRate / anchor) * 100),
+  }));
 
   const support: Array<{ id: string; pageType: string; label: string; path: string }> = [
     { id: "help", pageType: "support", label: "Help Center", path: "/help" },
@@ -333,7 +429,7 @@ function buildDemoJourneyMap(): MapDefinition & { metadata: Record<string, unkno
 
   const nodes: MapNode[] = [];
 
-  commercial.forEach((p, idx) => {
+  commercialAdjusted.forEach((p, idx) => {
     nodes.push({
       id: `demo_${p.id}`,
       type: "journey_commercial",
@@ -347,11 +443,64 @@ function buildDemoJourneyMap(): MapDefinition & { metadata: Record<string, unkno
         url: `https://shop.com${p.path}`,
         statusCode: 200,
         tier: "core",
-        stage: idx,
+        stage: demoStageOrder[p.pageType] ?? idx,
+        conversionRate: p.conversionRateOfVisible,
       },
       position: { x: idx * NODE_SPACING_X, y: COMMERCIAL_Y },
     });
   });
+
+  // "Other events" + "Drop-off" pseudo-nodes between each pair of
+  // consecutive commercial steps (Amplitude-style hatched boxes).
+  // These communicate where traffic goes that ISN'T continuing on
+  // the happy path. Only emitted when we have ≥2 steps visible.
+  for (let i = 0; i < commercialAdjusted.length - 1; i++) {
+    const prev = commercialAdjusted[i];
+    const next = commercialAdjusted[i + 1];
+    // Drop-off: users that didn't continue to the next step
+    const dropoff = Math.max(0, prev.conversionRateOfVisible - next.conversionRateOfVisible);
+    // Split the drop-off into "explored other things" (~⅔) and
+    // "left the site" (~⅓) so both pseudo-nodes have something
+    // to show. This mirrors how Amplitude presents the same slice.
+    const otherShare = Math.round(dropoff * 0.6);
+    const dropShare = Math.max(0, dropoff - otherShare);
+
+    const pseudoX = i * NODE_SPACING_X + NODE_SPACING_X / 2;
+
+    if (otherShare > 0) {
+      nodes.push({
+        id: `demo_other_${i}`,
+        type: "journey_other_events",
+        label: "Other events",
+        severity: null,
+        impact: null,
+        pack: null,
+        metadata: {
+          pseudo: true,
+          kind: "other_events",
+          conversionRate: otherShare,
+        },
+        position: { x: pseudoX, y: PSEUDO_Y },
+      });
+    }
+
+    if (dropShare > 0) {
+      nodes.push({
+        id: `demo_drop_${i}`,
+        type: "journey_dropoff",
+        label: "Drop-off",
+        severity: null,
+        impact: null,
+        pack: null,
+        metadata: {
+          pseudo: true,
+          kind: "dropoff",
+          conversionRate: dropShare,
+        },
+        position: { x: pseudoX, y: PSEUDO_Y + 80 },
+      });
+    }
+  }
 
   support.forEach((p, idx) => {
     nodes.push({
@@ -373,23 +522,89 @@ function buildDemoJourneyMap(): MapDefinition & { metadata: Record<string, unkno
   });
 
   const edges: MapEdge[] = [];
-  for (let i = 0; i < commercial.length - 1; i++) {
+  for (let i = 0; i < commercialAdjusted.length - 1; i++) {
+    const prev = commercialAdjusted[i];
+    const next = commercialAdjusted[i + 1];
+    const keep = prev.conversionRateOfVisible > 0
+      ? Math.round((next.conversionRateOfVisible / prev.conversionRateOfVisible) * 100)
+      : 0;
     edges.push({
       id: `demo_edge_${i}`,
-      source: `demo_${commercial[i].id}`,
-      target: `demo_${commercial[i + 1].id}`,
+      source: `demo_${prev.id}`,
+      target: `demo_${next.id}`,
       type: "transition",
+      label: `${keep}%`,
+    });
+    // Edge from the commercial node to its "Other events" + "Drop-off"
+    // pseudo-nodes, so the visual reads as a proper Sankey-style fork.
+    if (nodes.some((n) => n.id === `demo_other_${i}`)) {
+      edges.push({
+        id: `demo_edge_other_${i}`,
+        source: `demo_${prev.id}`,
+        target: `demo_other_${i}`,
+        type: "contributes_to",
+        label: null,
+      });
+    }
+    if (nodes.some((n) => n.id === `demo_drop_${i}`)) {
+      edges.push({
+        id: `demo_edge_drop_${i}`,
+        source: `demo_${prev.id}`,
+        target: `demo_drop_${i}`,
+        type: "contributes_to",
+        label: null,
+      });
+    }
+  }
+
+  // One redirect link to exercise the new edge type — only when both
+  // endpoints are still in the filtered set.
+  const hasPricing = commercialAdjusted.some((p) => p.id === "pricing");
+  const hasCheckout = commercialAdjusted.some((p) => p.id === "checkout");
+  if (hasPricing && hasCheckout) {
+    edges.push({
+      id: "demo_edge_redirect",
+      source: "demo_pricing",
+      target: "demo_checkout",
+      type: "redirect",
       label: null,
     });
   }
-  // One redirect link to exercise the new edge type (e.g. pricing → cart).
-  edges.push({
-    id: "demo_edge_redirect",
-    source: "demo_pricing",
-    target: "demo_checkout",
-    type: "redirect",
-    label: null,
-  });
+
+  const legendNodes: { labelKey: string; swatch: string }[] = [];
+  const swatchByPageType: Record<string, string> = {
+    homepage: "journey_homepage",
+    product: "journey_product",
+    pricing: "journey_pricing",
+    cart: "journey_cart",
+    checkout: "journey_checkout",
+    thank_you: "journey_confirmation",
+  };
+  const seen = new Set<string>();
+  for (const p of commercialAdjusted) {
+    const swatch = swatchByPageType[p.pageType];
+    if (swatch && !seen.has(swatch)) {
+      seen.add(swatch);
+      legendNodes.push({ labelKey: swatch, swatch });
+    }
+  }
+  if (nodes.some((n) => n.type === "journey_other_events")) {
+    legendNodes.push({ labelKey: "journey_other_events", swatch: "journey_other_events" });
+  }
+  if (nodes.some((n) => n.type === "journey_dropoff")) {
+    legendNodes.push({ labelKey: "journey_dropoff", swatch: "journey_dropoff" });
+  }
+  if (nodes.some((n) => n.type === "journey_support")) {
+    legendNodes.push({ labelKey: "journey_support", swatch: "journey_support" });
+  }
+
+  const legendEdges: { labelKey: string; swatch: string }[] = [];
+  if (edges.some((e) => e.type === "transition")) {
+    legendEdges.push({ labelKey: "transition", swatch: "transition" });
+  }
+  if (edges.some((e) => e.type === "redirect")) {
+    legendEdges.push({ labelKey: "redirect", swatch: "redirect" });
+  }
 
   return {
     id: "user_journey",
@@ -398,24 +613,14 @@ function buildDemoJourneyMap(): MapDefinition & { metadata: Record<string, unkno
     nodes,
     edges,
     legend: {
-      nodes: [
-        { labelKey: "journey_homepage", swatch: "journey_homepage" },
-        { labelKey: "journey_product", swatch: "journey_product" },
-        { labelKey: "journey_pricing", swatch: "journey_pricing" },
-        { labelKey: "journey_cart", swatch: "journey_cart" },
-        { labelKey: "journey_checkout", swatch: "journey_checkout" },
-        { labelKey: "journey_confirmation", swatch: "journey_confirmation" },
-        { labelKey: "journey_support", swatch: "journey_support" },
-      ],
-      edges: [
-        { labelKey: "transition", swatch: "transition" },
-        { labelKey: "redirect", swatch: "redirect" },
-      ],
+      nodes: legendNodes as MapDefinition["legend"]["nodes"],
+      edges: legendEdges as MapDefinition["legend"]["edges"],
     },
     metadata: {
       mode: "demo",
-      pageCount: commercial.length + support.length,
+      pageCount: commercialAdjusted.length + support.length,
       relationCount: edges.length,
+      filters,
     },
   };
 }

@@ -2846,7 +2846,9 @@
 				"journey_cart": "Carrinho",
 				"journey_checkout": "Checkout",
 				"journey_confirmation": "Confirmação",
-				"journey_support": "Suporte"
+				"journey_support": "Suporte",
+				"journey_other_events": "Outros eventos",
+				"journey_dropoff": "Saída"
 			},
 			"drawer": {
 				"summary": "Resumo",
@@ -2901,6 +2903,33 @@
 			"not_found": {
 				"title": "Mapa não encontrado",
 				"body": "Este mapa ainda não está disponível — a análise pode estar rodando ou a URL pode estar desatualizada."
+			},
+			"journey": {
+				"starting": "Partindo de",
+				"ending": "Até",
+				"users_in": "Para",
+				"time": "No período",
+				"to": "até",
+				"for": "para",
+				"in": "nos",
+				"any_page": "Qualquer página",
+				"other_events": "Outros eventos",
+				"dropoff": "Saída",
+				"empty_title": "Sem jornada para esta janela",
+				"empty_body": "Nenhuma página cai dentro dos filtros selecionados. Tente abrir mais o recorte ou voltar ao funil completo.",
+				"reset_filters": "Resetar filtros",
+				"inferred_notice": "Funil estrutural — instale o pixel de tracking para desbloquear taxas de conversão.",
+				"demo_notice": "Dados de demo",
+				"cohorts": {
+					"all": "Todos os usuários",
+					"coming_soon": "Coortes customizadas em breve"
+				},
+				"ranges": {
+					"7d": "Últimos 7 dias",
+					"30d": "Últimos 30 dias",
+					"90d": "Últimos 90 dias",
+					"all_time": "Todo o período"
+				}
 			}
 		},
 		"onboard": {

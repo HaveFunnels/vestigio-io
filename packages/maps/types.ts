@@ -15,7 +15,9 @@ export type MapNodeType =
   | 'trust'
   | 'measurement'
   | 'journey_commercial'
-  | 'journey_support';
+  | 'journey_support'
+  | 'journey_other_events'
+  | 'journey_dropoff';
 
 export interface MapNode {
   id: string;
@@ -66,7 +68,9 @@ export type LegendNodeSwatch =
   | 'journey_cart'
   | 'journey_checkout'
   | 'journey_confirmation'
-  | 'journey_support';
+  | 'journey_support'
+  | 'journey_other_events'
+  | 'journey_dropoff';
 
 export type LegendEdgeSwatch =
   | 'causal'
@@ -97,4 +101,8 @@ export interface MapDefinition {
   nodes: MapNode[];
   edges: MapEdge[];
   legend: MapLegend;
+  /** Builder-scoped metadata (mode, applied filters, counts, etc.).
+   *  The shape is intentionally open — consumers destructure on a
+   *  best-effort basis. User Journey sets { mode, pageCount, … }. */
+  metadata?: Record<string, unknown>;
 }

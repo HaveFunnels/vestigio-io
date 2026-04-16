@@ -2740,7 +2740,18 @@
 				"category": "Categoría",
 				"causal": "Causal",
 				"contributes": "Contribuye",
-				"addresses": "Aborda"
+				"addresses": "Aborda",
+				"transition": "Navegación",
+				"redirect": "Redirección",
+				"journey_homepage": "Entrada",
+				"journey_product": "Producto",
+				"journey_pricing": "Precios",
+				"journey_cart": "Carrito",
+				"journey_checkout": "Checkout",
+				"journey_confirmation": "Confirmación",
+				"journey_support": "Soporte",
+				"journey_other_events": "Otros eventos",
+				"journey_dropoff": "Abandono"
 			},
 			"drawer": {
 				"summary": "Resumen",
@@ -2795,6 +2806,33 @@
 			"not_found": {
 				"title": "Mapa no encontrado",
 				"body": "Este mapa aún no está disponible — el análisis podría estar en curso o la URL estar obsoleta."
+			},
+			"journey": {
+				"starting": "Inicio",
+				"ending": "Fin",
+				"users_in": "Usuarios",
+				"time": "Período",
+				"to": "hasta",
+				"for": "para",
+				"in": "en",
+				"any_page": "Cualquier página",
+				"other_events": "Otros eventos",
+				"dropoff": "Abandono",
+				"empty_title": "Sin jornada para esta ventana",
+				"empty_body": "Ninguna página cae dentro de los filtros seleccionados. Amplía la ventana o vuelve al embudo completo.",
+				"reset_filters": "Restablecer filtros",
+				"inferred_notice": "Embudo estructural — instala el píxel de seguimiento para ver tasas de conversión.",
+				"demo_notice": "Datos de demo",
+				"cohorts": {
+					"all": "Todos los usuarios",
+					"coming_soon": "Cohortes personalizadas próximamente"
+				},
+				"ranges": {
+					"7d": "Últimos 7 días",
+					"30d": "Últimos 30 días",
+					"90d": "Últimos 90 días",
+					"all_time": "Todo el período"
+				}
 			}
 		},
 		"onboard": {

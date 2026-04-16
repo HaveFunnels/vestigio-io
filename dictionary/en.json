@@ -2791,7 +2791,9 @@
 				"journey_cart": "Cart",
 				"journey_checkout": "Checkout",
 				"journey_confirmation": "Confirmation",
-				"journey_support": "Support"
+				"journey_support": "Support",
+				"journey_other_events": "Other events",
+				"journey_dropoff": "Drop-off"
 			},
 			"edge_types": {
 				"causal": "Causal",
@@ -2846,6 +2848,33 @@
 			"not_found": {
 				"title": "Map not found",
 				"body": "This map isn't available yet — the analysis may still be running, or the URL may be stale."
+			},
+			"journey": {
+				"starting": "Starting",
+				"ending": "Ending",
+				"users_in": "Users in",
+				"time": "Time",
+				"to": "to",
+				"for": "for",
+				"in": "in",
+				"any_page": "Any page",
+				"other_events": "Other events",
+				"dropoff": "Drop-off",
+				"empty_title": "No journey for this window",
+				"empty_body": "No pages fall inside the selected filters. Try widening the window or resetting to the full funnel.",
+				"reset_filters": "Reset filters",
+				"inferred_notice": "Structural funnel — install the tracking pixel to unlock conversion rates.",
+				"demo_notice": "Demo data",
+				"cohorts": {
+					"all": "All users",
+					"coming_soon": "Custom cohorts coming soon"
+				},
+				"ranges": {
+					"7d": "Last 7 days",
+					"30d": "Last 30 days",
+					"90d": "Last 90 days",
+					"all_time": "All time"
+				}
 			}
 		},
 		"onboard": {

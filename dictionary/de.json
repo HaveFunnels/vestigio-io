@@ -2027,7 +2027,9 @@
 				"journey_cart": "Warenkorb",
 				"journey_checkout": "Checkout",
 				"journey_confirmation": "Bestätigung",
-				"journey_support": "Support"
+				"journey_support": "Support",
+				"journey_other_events": "Andere Ereignisse",
+				"journey_dropoff": "Absprung"
 			},
 			"drawer": {
 				"summary": "Zusammenfassung",
@@ -2082,6 +2084,33 @@
 			"not_found": {
 				"title": "Karte nicht gefunden",
 				"body": "Diese Karte ist noch nicht verfügbar — die Analyse läuft eventuell noch, oder die URL ist veraltet."
+			},
+			"journey": {
+				"starting": "Start",
+				"ending": "Ziel",
+				"users_in": "Nutzer",
+				"time": "Zeitraum",
+				"to": "bis",
+				"for": "für",
+				"in": "in",
+				"any_page": "Beliebige Seite",
+				"other_events": "Andere Ereignisse",
+				"dropoff": "Absprung",
+				"empty_title": "Keine Journey für dieses Fenster",
+				"empty_body": "Keine Seite fällt in die gewählten Filter. Weite das Fenster aus oder setze auf den vollständigen Funnel zurück.",
+				"reset_filters": "Filter zurücksetzen",
+				"inferred_notice": "Struktureller Funnel — installiere das Tracking-Pixel, um Konversionsraten zu sehen.",
+				"demo_notice": "Demo-Daten",
+				"cohorts": {
+					"all": "Alle Nutzer",
+					"coming_soon": "Eigene Kohorten folgen in Kürze"
+				},
+				"ranges": {
+					"7d": "Letzte 7 Tage",
+					"30d": "Letzte 30 Tage",
+					"90d": "Letzte 90 Tage",
+					"all_time": "Gesamter Zeitraum"
+				}
 			}
 		},
 		"onboard": {

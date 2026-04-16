@@ -25,6 +25,7 @@ import {
   deriveConfidenceTier,
 } from './types';
 import type { DecisionChange, CycleChangeReport } from '../change-detection/types';
+import { lookupRemediation, lookupRemediationForAction } from './remediation-catalog';
 
 // ──────────────────────────────────────────────
 // Projection Engine
@@ -728,17 +729,20 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       verification_method: verificationCtx.method,
       change_class: changeClass,
       evidence_quality: evidenceQualityCtx,
-      // Phase 1.1: shape-only. Phase 2 will resolve these from the
-      // matching GlobalAction by root_cause_ref + pack lookup.
-      remediation_steps: null,
-      estimated_effort_hours: null,
-      // Phase 1.5: verification strategy left null at the finding
-      // projection layer until Phase 2.5 wires the inference_key →
-      // action_key → GlobalAction resolution. ActionProjection gets
-      // the real strategy today because it's 1:1 with GlobalAction.
-      verification_strategy: null,
-      verification_notes: null,
-      verification_eta_seconds: null,
+      // Phase 2.5: resolve remediation + verification from the
+      // catalog keyed by inference_key. Null when the entry hasn't
+      // been authored yet — UI / MCP fall back to the legacy generic
+      // response gracefully.
+      ...(() => {
+        const entry = lookupRemediation(vc.inference_key);
+        return {
+          remediation_steps: entry?.remediation_steps ?? null,
+          estimated_effort_hours: entry?.estimated_effort_hours ?? null,
+          verification_strategy: entry?.verification_strategy ?? null,
+          verification_notes: entry?.verification_notes ?? null,
+          verification_eta_seconds: entry?.verification_eta_seconds ?? null,
+        };
+      })(),
     });
   }
 
@@ -864,17 +868,33 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       operational_status: operationalStatus,
       decision_status: decisionStatus,
       effort_hint: effortHint,
-      // Phase 1.1: pass structured remediation through from the
-      // GlobalAction. Null until Phase 2 backfills templates per
-      // action_key; UI is already shape-tolerant of null.
-      remediation_steps: action.remediation_steps,
-      estimated_effort_hours: action.estimated_effort_hours,
-      // Phase 1.5: verification metadata mirrors the GlobalAction.
-      // Phase 2.5 backfills per action_key; Phase 3.2 extends the
-      // MCP verification tool to dispatch based on strategy.
-      verification_strategy: action.verification_strategy,
-      verification_notes: action.verification_notes,
-      verification_eta_seconds: action.verification_eta_seconds,
+      // Phase 2.5: prefer the GlobalAction's carried-through fields
+      // (set by the Action deriver when a catalog entry exists for
+      // the source decision). Fall back to a catalog lookup by
+      // action_key so actions whose deriver path doesn't populate
+      // directly still get content. Nulls all the way down only
+      // when the catalog has no entry for this inference_key.
+      ...(() => {
+        const fallback = lookupRemediationForAction(action.action_key);
+        return {
+          remediation_steps:
+            action.remediation_steps ?? fallback?.remediation_steps ?? null,
+          estimated_effort_hours:
+            action.estimated_effort_hours ??
+            fallback?.estimated_effort_hours ??
+            null,
+          verification_strategy:
+            action.verification_strategy ??
+            fallback?.verification_strategy ??
+            null,
+          verification_notes:
+            action.verification_notes ?? fallback?.verification_notes ?? null,
+          verification_eta_seconds:
+            action.verification_eta_seconds ??
+            fallback?.verification_eta_seconds ??
+            null,
+        };
+      })(),
       change_class: changeClass,
       verification_maturity: verificationMaturity,
       resolve_path: resolvePath,
@@ -1432,15 +1452,20 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         verification_method: 'unknown',
         change_class: null,
         evidence_quality: null,
-        // Positive findings don't carry remediation — nothing to fix.
+        // Positive findings skip remediation (nothing to fix) but
+        // still get verification metadata from the catalog so users
+        // can click "Verify this is still good" — Phase 2.5 authors
+        // positive entries with verification_strategy + notes.
         remediation_steps: null,
         estimated_effort_hours: null,
-        // Positive findings still need a verification path — the user
-        // should be able to click "Verify this is still good" and the
-        // MCP should re-check it. Phase 2.5 backfills per check.key.
-        verification_strategy: null,
-        verification_notes: null,
-        verification_eta_seconds: null,
+        ...(() => {
+          const entry = lookupRemediation(check.key);
+          return {
+            verification_strategy: entry?.verification_strategy ?? null,
+            verification_notes: entry?.verification_notes ?? null,
+            verification_eta_seconds: entry?.verification_eta_seconds ?? null,
+          };
+        })(),
       });
     }
   }

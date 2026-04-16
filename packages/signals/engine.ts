@@ -35,6 +35,10 @@ import {
 import type { BehavioralCohortPayload } from '../behavioral';
 import type { CommerceContext } from '../integrations/commerce-context';
 import { BuiltGraph, GraphQuery } from '../graph';
+import {
+  extractCommerceHeuristicSignals,
+  type CommerceHeuristicSignals,
+} from './commerce-heuristic';
 
 // ──────────────────────────────────────────────
 // Signal Engine — extracts signals from evidence + graph
@@ -170,6 +174,17 @@ export function extractSignals(
   // Phase 4A: Commerce context signals from Shopify integration data
   if (commerce_context) {
     extractCommerceContextSignals(commerce_context, scoping, cycle_ref, signals, ids);
+  }
+
+  // Phase 2.4: Commerce heuristics — fallback path when integration absent.
+  // Emits the same signal_keys as the data-driven path with lower confidence,
+  // so inference consumers light up for non-integrated stores. Suppressed
+  // when commerce_context is present to avoid duplicate signals.
+  const heuristics = extractCommerceHeuristicSignals(evidence, {
+    has_commerce_integration: commerce_context != null,
+  });
+  if (!heuristics.suppressed_by_integration) {
+    emitCommerceHeuristicSignals(heuristics, scoping, cycle_ref, signals, ids);
   }
 
   return signals;
@@ -5437,6 +5452,66 @@ function extractCommerceContextSignals(
       scoping, cycle_ref, ids,
       evidence_refs: integrationRefs,
       description: `${count} product(s) haven't sold in 30 days${total > count ? ` (${Math.round(ratio * 100)}% of catalog)` : ''}. Dead inventory dilutes search, clutters navigation, and wastes operational effort on items that generate no revenue.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 2.4: Commerce heuristic signal emission
+//
+// Converts heuristic-extractor output into the same signal_keys the
+// data-driven commerce path emits, at lower confidence. Inference
+// engine consumers read these without caring whether they came from
+// integration data or heuristics — the confidence differential is how
+// we surface the quality gap in the UI.
+// ──────────────────────────────────────────────
+
+function emitCommerceHeuristicSignals(
+  heuristics: CommerceHeuristicSignals,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  // Single-payment-gateway risk — heuristic confidence 65 (vs 90 data-driven).
+  // Only emit when heuristic found exactly one gateway across multiple pages;
+  // the extractor itself enforces the 2-page floor.
+  const pg = heuristics.payment_gateway;
+  if (pg && pg.gateway_count === 1) {
+    const detected = pg.detected_gateways[0] ?? 'unknown';
+    signals.push(createSignal({
+      signal_key: 'payment_gateway_concentrated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.payment_gateway_concentration',
+      value: 'medium',
+      numeric_value: 100,
+      confidence: 65,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `Only ${detected} was detected across ${pg.sample_size} commerce-surface page(s). A single gateway is a single point of failure — one outage stops every transaction, and no fallback path exists. Heuristic detection; connect your commerce platform for a full-confidence reading.`,
+    }));
+  }
+
+  // Discount abuse pattern — heuristic confidence 60. Emits when the
+  // extractor found publicly-exposed promo codes across the scanned
+  // pages; exposure>=0.05 means at least 1-in-20 pages carries a code.
+  const da = heuristics.discount_abuse;
+  if (da && da.exposure >= 0.05) {
+    const severity = da.exposure > 0.30 ? 'high' : da.exposure > 0.15 ? 'medium' : 'low';
+    const codeList = (da.exposed_codes ?? []).slice(0, 3).join(', ');
+    const codeSuffix = da.exposed_codes && da.exposed_codes.length > 3
+      ? ` (+${da.exposed_codes.length - 3} more)`
+      : '';
+    signals.push(createSignal({
+      signal_key: 'discount_usage_elevated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.discount_usage_rate',
+      value: severity,
+      numeric_value: Math.round(da.exposure * 100),
+      confidence: 60,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `Promo codes surfaced publicly on ${Math.round(da.exposure * 100)}% of ${da.sample_size} scanned pages${codeList ? ` (${codeList}${codeSuffix})` : ''}. When discounts are the default purchase path, full-price sales become the exception and margin erodes every month. Heuristic detection from visible marketing copy; connect your commerce platform for real usage rates.`,
     }));
   }
 }

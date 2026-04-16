@@ -825,6 +825,282 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos navegar da landing até primeiro login em headless, comparando elementos visuais e copy principais.',
 		verification_eta_seconds: 55,
 	},
+
+	// ─────────────────────────────────────────────
+	// Copy Analysis (Tier 1)
+	// ─────────────────────────────────────────────
+
+	checkout_trust_language_absent: {
+		remediation_steps: [
+			'Adicione copy próximo ao botão de pagar reforçando segurança: "Pagamento criptografado", "Certificado SSL", "Seus dados não são compartilhados".',
+			'Inclua microcopy explicando próximos passos: "Após o pagamento você receberá email com nota fiscal e rastreio".',
+			'Evite copy genérico ("Seguro e rápido") — use frases específicas ao contexto da compra.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar o checkout e procurar por keywords de trust language próximo aos campos de pagamento.',
+		verification_eta_seconds: 5,
+	},
+
+	cta_clarity_weak_on_commercial: {
+		remediation_steps: [
+			'Substitua CTAs vagos ("Saiba mais", "Clique aqui") por verbos de ação específicos ("Comprar", "Ver preços", "Agendar demo").',
+			'Cada página comercial deve ter 1 CTA primário dominante — secundários em estilo outline/link.',
+			'O texto do CTA deve comunicar o que acontece no próximo clique: "Adicionar ao carrinho" ≠ "Ir pro pagamento".',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-parsear HTML e auditar texto de cada CTA contra lista de padrões vagos.',
+		verification_eta_seconds: 6,
+	},
+
+	product_page_copy_generic: {
+		remediation_steps: [
+			'Reescreva descrição de produto focando em benefícios específicos, não features genéricas.',
+			'Substitua copy de templates ("Produto de alta qualidade") por claims verificáveis ("Algodão 100% orgânico certificado GOTS").',
+			'Inclua contexto de uso: quem é o comprador ideal, quando usa, qual problema resolve.',
+			'Teste A/B headlines — copy genérico geralmente perde 10-20% de conversão vs copy específico.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de produto e rodar análise de densidade semântica + comparação com templates genéricos conhecidos.',
+		verification_eta_seconds: 10,
+	},
+
+	pricing_page_framing_unclear: {
+		remediation_steps: [
+			'Clarifique o que diferencia cada plano — features específicas, não apenas limites numéricos.',
+			'Destaque visualmente o plano recomendado (badge "Mais popular", cor diferente).',
+			'Responda as 5 dúvidas mais comuns direto na pricing: "Posso trocar de plano?", "Tem fidelidade?", "Tem período de teste?".',
+			'Remova pricing com "Entre em contato" se possível — preços transparentes convertem melhor em SMB.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar a página de pricing e auditar estrutura: planos distinguíveis, plano recomendado marcado, FAQ presente.',
+		verification_eta_seconds: 8,
+	},
+
+	// ─────────────────────────────────────────────
+	// Wave 3.1 Tier 2 — LLM Enrichment (dormant findings)
+	// ─────────────────────────────────────────────
+
+	social_proof_generic: {
+		remediation_steps: [
+			'Substitua depoimentos genéricos por depoimentos com nome completo, foto, empresa/contexto.',
+			'Adicione números concretos: "12.000 clientes", "4.8 estrelas em 3.200 avaliações", "reduzimos X em Y%".',
+			'Inclua logos de clientes conhecidos (com permissão) — social proof visual impacta mais que texto.',
+			'Evite badges genéricos sem fundamento ("Nº 1 em qualidade") que enfraquecem em vez de fortalecer.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Phase 3 ativa LLM enrichment pra avaliar qualidade de social proof. Hoje a verificação é estrutural: conta quantos depoimentos têm atributos concretos.',
+		verification_eta_seconds: 10,
+	},
+
+	form_error_messages_unhelpful: {
+		remediation_steps: [
+			'Audite mensagens de erro de cada form crítico (signup, checkout) — devem explicar o problema específico, não só "Erro".',
+			'Erros devem indicar como corrigir: "Email já cadastrado — fazer login?" em vez de "Email inválido".',
+			'Destaque visualmente o campo com erro (borda vermelha, ícone) e foca automaticamente pro usuário corrigir.',
+			'Valide client-side em real-time — não espere submit pra mostrar que o email tá com typo.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Phase 3 ativa LLM enrichment. Hoje vamos navegar headless submetendo forms com dados inválidos e capturar as mensagens de erro.',
+		verification_eta_seconds: 45,
+	},
+
+	onboarding_no_quick_win: {
+		remediation_steps: [
+			'Defina o "aha moment" do produto — qual é a menor demonstração de valor que o novo usuário pode experimentar em <5min?',
+			'Redesign o primeiro login pra entregar esse aha moment na primeira sessão — não na terceira.',
+			'Se for necessário setup (importação, integração), mostre preview com sample data primeiro.',
+			'Meça taxa de "aha moment completion" e otimize pra subir essa métrica — é o melhor preditor de retenção.',
+		],
+		estimated_effort_hours: 24,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Phase 3 ativa LLM enrichment. Hoje vamos executar signup+primeiro uso em headless e cronometrar até primeiro valor.',
+		verification_eta_seconds: 90,
+	},
+
+	// ─────────────────────────────────────────────
+	// Security Posture (Wave 3.3)
+	// ─────────────────────────────────────────────
+
+	security_header_weakness: {
+		remediation_steps: [
+			'Implemente HSTS: header `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`.',
+			'Configure CSP restritivo no checkout: apenas domínios whitelisted (seu site, gateway, GA/Pixel oficiais).',
+			'Adicione X-Content-Type-Options: nosniff, X-Frame-Options: DENY (ou SAMEORIGIN se legítimo), Referrer-Policy: strict-origin.',
+			'Valide em securityheaders.com — target é score A ou A+ em domínios de commerce.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar os headers das URLs críticas e comparar com baseline de segurança esperado.',
+		verification_eta_seconds: 5,
+	},
+
+	mixed_content_exposure: {
+		remediation_steps: [
+			'Liste recursos HTTP carregados em páginas HTTPS — use DevTools Console que reporta mixed content warnings.',
+			'Migre todos os recursos pra HTTPS: imagens, scripts, CSS, fonts, iframes.',
+			'Configure Content-Security-Policy com `upgrade-insecure-requests` pra forçar browser a tentar HTTPS automaticamente.',
+			'Corrija links internos hardcoded com http:// — migre pra protocol-relative (//) ou https://.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos carregar URLs críticas em headless e capturar mixed content warnings do console.',
+		verification_eta_seconds: 40,
+	},
+
+	sensitive_endpoint_exposed: {
+		remediation_steps: [
+			'Remova URLs administrativas de paths previsíveis (/admin, /wp-admin, /.env, /api/debug) — 404 ou redirect pra home.',
+			'Adicione autenticação em todos endpoints administrativos — não confie em obscuridade.',
+			'Configure robots.txt pra disallow rotas sensíveis (mas saiba que robots.txt não é mecanismo de segurança).',
+			'Rode scanner regular (Nuclei, Katana) pra detectar endpoints expostos em produção.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos disparar o scanner Nuclei + Katana na infraestrutura pública pra confirmar se endpoints sensíveis seguem expostos.',
+		verification_eta_seconds: 180,
+	},
+
+	checkout_script_hijack_risk: {
+		remediation_steps: [
+			'Audite todos scripts carregados no checkout — elimine third-parties não-essenciais.',
+			'Para third-parties essenciais, implemente Subresource Integrity (SRI): `<script integrity="sha384-...">` previne injeção se o CDN for comprometido.',
+			'Configure CSP restritivo no checkout: apenas hashes/nonces de scripts conhecidos.',
+			'Monitore mudanças no script inventário — alerta se script novo aparecer em produção sem deploy.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos carregar o checkout em headless, extrair lista de scripts, e comparar com whitelist conhecido.',
+		verification_eta_seconds: 50,
+	},
+
+	buyer_session_theft_risk: {
+		remediation_steps: [
+			'Cookies de sessão: configure `HttpOnly`, `Secure`, `SameSite=Lax` ou `Strict`.',
+			'Tokens CSRF em todos os forms sensíveis — signup, checkout, password change.',
+			'Implemente rotação de session ID após login pra prevenir session fixation.',
+			'Configure session timeout razoável (30-60min de inatividade) e renovação em ação do usuário.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar em headless e inspecionar atributos de cookies de sessão + presença de CSRF tokens em forms.',
+		verification_eta_seconds: 45,
+	},
+
+	checkout_clickjack_risk: {
+		remediation_steps: [
+			'Configure X-Frame-Options: DENY (ou SAMEORIGIN se você embute o checkout em legítimo iframe próprio).',
+			'Ou use CSP `frame-ancestors \'none\'` pra bloquear qualquer site externo de colocar seu checkout em iframe.',
+			'Teste em clickjack testers (como /teste-clickjacking tools) pra confirmar que o checkout não renderiza em iframe externo.',
+			'Revise páginas de ação sensível (mudança de senha, delete account) — apliquem mesma proteção.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar headers da URL do checkout e validar presença de X-Frame-Options ou CSP frame-ancestors.',
+		verification_eta_seconds: 4,
+	},
+
+	error_page_information_leak: {
+		remediation_steps: [
+			'Customize páginas 404 e 500 — não expor stack traces, versões de framework, ou paths do servidor.',
+			'Configure error handler genérico em produção que loga detalhes server-side mas retorna mensagem amigável.',
+			'Audite respostas JSON de APIs — não incluir detalhes de exception em produção.',
+			'Remova comentários HTML com informações sensíveis (versões, paths internos) do output.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos requisitar URLs de erro conhecidas (404, 500) e analisar conteúdo retornado pra vazamentos.',
+		verification_eta_seconds: 8,
+	},
+
+	payment_data_unencrypted: {
+		remediation_steps: [
+			'Verifique se forms de pagamento enviam dados via HTTPS — target do form deve ser https://.',
+			'Nunca receba PAN (número do cartão) direto em seu backend — use tokenização do gateway.',
+			'Se necessário mostrar mask do cartão (últimos 4 dígitos), armazene apenas token + mask, nunca PAN completo.',
+			'Configure PCI-DSS SAQ A ou A-EP conforme integração com gateway — documente o escopo.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos submeter dados teste em headless e inspecionar tráfego de rede pra confirmar criptografia + tokenização.',
+		verification_eta_seconds: 60,
+	},
+
+	email_deliverability_risk: {
+		remediation_steps: [
+			'Configure SPF, DKIM, e DMARC corretos no DNS do domínio de envio.',
+			'Use subdomínio dedicado pra transacional (ex: mail.dominio.com) separado de marketing.',
+			'Monitore bounce rate + spam complaint rate — target é <5% bounce e <0.1% complaint.',
+			'Use provedor reputado (SendGrid, AWS SES, Postmark) em vez de SMTP próprio pra melhor deliverability.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos consultar DNS do domínio (SPF/DKIM/DMARC) + análise de reputação via MX Toolbox.',
+		verification_eta_seconds: 30,
+	},
+
+	cors_misconfiguration_risk: {
+		remediation_steps: [
+			'Audite Access-Control-Allow-Origin em APIs — nunca usar `*` em endpoints com cookies/auth.',
+			'Whitelist explícita de origens permitidas — use lista ao invés de wildcard em produção.',
+			'Configure Access-Control-Allow-Credentials apenas quando necessário + origem específica.',
+			'Nunca exponha endpoints sensíveis (mudança de senha, payment) via CORS pra origem externa.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos fazer requests OPTIONS/GET contra APIs críticas e analisar headers CORS retornados.',
+		verification_eta_seconds: 10,
+	},
+
+	rate_limiting_absent_on_commerce: {
+		remediation_steps: [
+			'Implemente rate limit nas APIs críticas: login (5/min), signup (3/hora), checkout (10/min por IP).',
+			'Use WAF (Cloudflare, AWS WAF) como primeira camada — rate limit + bot protection.',
+			'Configure alertas para picos anômalos: 100 tentativas/min em login = ataque de credential stuffing.',
+			'Retorne HTTP 429 com Retry-After header — clientes legítimos entendem, bots desistem.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos disparar bursts controlados contra endpoints de login/signup pra validar presença de rate limiting.',
+		verification_eta_seconds: 30,
+	},
+
+	predictable_order_urls: {
+		remediation_steps: [
+			'Substitua IDs sequenciais em URLs de pedido (/order/123) por UUIDs ou tokens opacos (/order/a7f3...).',
+			'Valide authorization em toda request — usuário só pode ver pedidos próprios, não por conhecer URL.',
+			'Rote audit logs de acesso a pedidos — detecta enumeração / IDOR attacks.',
+			'Configure tokens temporários pra links públicos (rastreio, confirmação) com expiração curta.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos analisar estrutura de URLs de pedido e testar se mudar ID retorna dados de outro usuário.',
+		verification_eta_seconds: 15,
+	},
 };
 
 /**

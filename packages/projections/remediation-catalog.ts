@@ -594,6 +594,237 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos re-crawlar os checkouts dos fluxos conhecidos e identificar quantos gateways distintos aparecem.',
 		verification_eta_seconds: 20,
 	},
+
+	// ─────────────────────────────────────────────
+	// Chargeback Resilience pack
+	// ─────────────────────────────────────────────
+
+	refund_policy_gap: {
+		remediation_steps: [
+			'Publique política de reembolso com prazo (7 dias CDC), processo, e email de contato explícito.',
+			'Vincule a política no footer do checkout e no email de confirmação pós-compra.',
+			'Mencione a política na página do produto próxima ao botão de compra — reduz dispute rate.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar o footer + URLs /reembolso /reembolsos /politica-devolucao pra confirmar presença e densidade mínima.',
+		verification_eta_seconds: 5,
+	},
+
+	support_unreachable: {
+		remediation_steps: [
+			'Exponha pelo menos 2 canais de suporte no footer de toda página: email + WhatsApp (ou telefone).',
+			'Configure resposta automática em <5min úteis nos canais principais — buyer não deve esperar mais que isso pra primeiro contato.',
+			'Publique horário de atendimento ("seg-sex 9h-18h") pra setar expectativa clara.',
+			'Meça tempo médio até primeira resposta e first-contact-resolution — use como KPI de suporte.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-parsear footer + páginas de contato pra detectar canais disponíveis (email, WhatsApp, telefone, chat).',
+		verification_eta_seconds: 8,
+	},
+
+	expectation_misalignment: {
+		remediation_steps: [
+			'Revise prazos de entrega declarados no produto vs prazos reais — desalinhamento gera chargeback.',
+			'Se o prazo varia por região (frete), exiba calculadora de CEP na página do produto antes do checkout.',
+			'Comunique delays proativamente por email quando descobertos — não deixe buyer perceber sozinho e reclamar.',
+			'Inclua "prazo de entrega estimado" na página de confirmação pós-compra com base real de logística.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de produto buscando claims de prazo/garantia vs comparar com dados reais de logística.',
+		verification_eta_seconds: 10,
+	},
+
+	dispute_risk_elevated: {
+		remediation_steps: [
+			'Priorize fix em TODAS as frentes simultaneamente: refund_policy + support_unreachable + expectation_misalignment não podem ficar abertas juntas.',
+			'Monitore chargeback rate semanalmente — alert se exceder 0.9% do volume (limiar de atenção do gateway).',
+			'Implemente pre-dispute: antes do cliente abrir chargeback, emita uma comunicação proativa "teve algum problema? Nós resolvemos".',
+			'Se o gateway suspender processamento por chargeback alto, tenha plano B (outro gateway) já implementado.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Risco composto — a verificação é re-projetar sobre a evidência após você fechar as frentes individuais (refund, support, expectations).',
+		verification_eta_seconds: 3,
+	},
+
+	refund_terms_too_thin: {
+		remediation_steps: [
+			'Expanda a política de reembolso pra incluir: prazo exato, processo passo-a-passo, exceções explícitas, canal de contato.',
+			'Evite linguagem legalesa — escreva como você explicaria pra um amigo o que fazer em caso de problema.',
+			'Adicione exemplos concretos ("Se o produto chegou quebrado, envie email X com foto").',
+			'Vincule a FAQ com as 5 dúvidas mais comuns sobre reembolso direto no checkout.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar a política de reembolso e medir densidade de conteúdo + presença de elementos estruturais chave.',
+		verification_eta_seconds: 5,
+	},
+
+	support_hidden_at_purchase: {
+		remediation_steps: [
+			'No checkout, adicione microcopy ou banner: "Dúvidas? Fale com nosso time: WhatsApp XXXX-XXXX".',
+			'Chat widget (se houver) deve estar visível no canto sem bloquear os campos de pagamento.',
+			'Botão de suporte deve abrir o canal PRIMÁRIO, não uma página de FAQ genérica.',
+			'Configure handover automático pra humano quando o buyer está no checkout — intent de compra > intent de auto-serviço.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar até o checkout em headless e detectar presença de canal de suporte visível acima da dobra.',
+		verification_eta_seconds: 35,
+	},
+
+	// ─────────────────────────────────────────────
+	// SaaS Growth Readiness pack
+	// ─────────────────────────────────────────────
+
+	activation_blocked: {
+		remediation_steps: [
+			'Mapeie o fluxo de ativação: signup → primeiro login → primeiro valor entregue. Cronometre cada etapa.',
+			'Elimine bloqueadores técnicos: email verification obrigatório que pode ser deferido, setup wizard com steps opcionais demais.',
+			'Garanta que o primeiro login entrega valor imediato — dashboard com sample data, tour guiado, ou wizard curto.',
+			'Meça taxa de ativação (% usuários que chegam ao "aha moment") e configure alerta se cair abaixo de baseline.',
+		],
+		estimated_effort_hours: 24,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos executar signup + primeiro login sintéticos em headless e medir tempo até primeiro valor percebido.',
+		verification_eta_seconds: 90,
+	},
+
+	activation_friction_high: {
+		remediation_steps: [
+			'Reduza campos obrigatórios no signup — idealmente apenas email + senha ou OAuth.',
+			'Dados adicionais (empresa, cargo, tamanho) peça progressivamente depois que o usuário já experimentou o produto.',
+			'Permita signup via OAuth (Google, GitHub) pra reduzir barreira de entrada.',
+			'Se setup wizard é necessário, mostre progresso e permita "pular por enquanto" em steps opcionais.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos executar signup em headless e contar campos obrigatórios + steps até primeiro acesso ao produto.',
+		verification_eta_seconds: 45,
+	},
+
+	unclear_next_step: {
+		remediation_steps: [
+			'Audite a primeira tela pós-login: há um CTA primário claro indicando o próximo passo?',
+			'Implemente onboarding checklist visível (ex: "Complete seu perfil", "Adicione seu primeiro item") com progresso.',
+			'Empty states (listas vazias, dashboard sem dados) devem ter CTA específico para preencher aquele contexto.',
+			'Evite dashboards densos na primeira sessão — apresente o produto em camadas conforme o usuário demonstra intent.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos logar como novo usuário em headless e identificar se há CTA primário claro nos primeiros 3 segundos.',
+		verification_eta_seconds: 40,
+	},
+
+	empty_state_without_guidance: {
+		remediation_steps: [
+			'Para cada lista/dashboard que pode ficar vazio, desenhe empty state com: ilustração, copy explicativo, CTA específico.',
+			'Empty states devem guiar para a ação certa ("Adicionar primeiro item", "Convidar time", "Conectar integração").',
+			'Se o empty state é comum (ex: novo usuário), considere pre-popular com sample data removível.',
+			'Teste em sessão sintética: o novo usuário consegue sair do empty state em <30s?',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar surfaces principais como usuário sem dados e verificar se cada empty state tem CTA funcional.',
+		verification_eta_seconds: 50,
+	},
+
+	navigation_overcomplex: {
+		remediation_steps: [
+			'Conte quantos itens top-level sua navegação tem — se >7, simplifique agrupando sob categorias.',
+			'Organize navegação por frequência de uso — itens mais usados acima, raramente usados atrás de "Mais" ou settings.',
+			'Implemente busca global (Cmd+K) pra compensar navegação profunda — atalho reduz clicks para features escondidas.',
+			'Remova itens órfãos: analytics mostra features nunca acessadas? Esconda ou remova.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-parsear a estrutura de navegação e contar profundidade + número de itens top-level.',
+		verification_eta_seconds: 8,
+	},
+
+	feature_discovery_poor: {
+		remediation_steps: [
+			'Liste features premium/avançadas e verifique se cada uma tem um entry point descobrível na UI.',
+			'Adicione hints contextuais: quando o usuário faz X, tooltip sugere feature Y que complementa.',
+			'Configure product tours (Appcues, Intro.js) para features introduzidas recentemente.',
+			'Meça via analytics % de usuários que usam cada feature em 30 dias — features com <5% podem precisar de reposicionamento.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos logar como usuário sintético e explorar cada menu pra ver se features premium aparecem em entry points descobríveis.',
+		verification_eta_seconds: 60,
+	},
+
+	upgrade_invisible: {
+		remediation_steps: [
+			'Adicione CTA de upgrade visível em pontos de contato com features gated (ex: badge "Premium" no item bloqueado).',
+			'Na settings/pricing page, exiba comparação de planos com feature-by-feature matrix clara.',
+			'Configure prompts contextuais: quando o usuário atinge limite do plano, modal oferece upgrade direto daquela ação.',
+			'Evite paywalls agressivos no primeiro contato — dá valor primeiro, upgrade depois.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar settings + pricing + features gated pra confirmar presença e clareza dos CTAs de upgrade.',
+		verification_eta_seconds: 10,
+	},
+
+	upgrade_timing_wrong: {
+		remediation_steps: [
+			'Revise quando os prompts de upgrade aparecem — não devem interromper task crítica (ex: durante fluxo de criação).',
+			'Timing ideal: após o usuário ter experimentado valor, estar próximo ao limite do plano atual, ou ter tentado feature premium.',
+			'Evite upgrade popups aleatórios — use triggers comportamentais (limite atingido, feature acessada, 30 dias ativos).',
+			'Meça taxa de conversão de cada trigger de upgrade — desative os com <1% de CR.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Timing de upgrade é signal comportamental + produto — re-projetar sobre evidência após você ajustar triggers.',
+		verification_eta_seconds: 3,
+	},
+
+	no_expansion_path: {
+		remediation_steps: [
+			'Para cada plano atual, defina o próximo degrau natural: "Pro: 10 users → Business: 50 users" é um exemplo de expansion clara.',
+			'Configure signal de expansion readiness: uso próximo ao limite, novos users adicionados, features avançadas adotadas.',
+			'Implemente self-service upgrade (não exigir sales call) pra expansion automática.',
+			'Meça Net Revenue Retention mensal — healthy SaaS tem NRR >110%.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Expansion é uma estratégia de produto — verificação é re-projetar após você definir caminho claro e instrumentar.',
+		verification_eta_seconds: 3,
+	},
+
+	landing_app_mismatch: {
+		remediation_steps: [
+			'Compare a landing page com o produto real: prometem a mesma coisa? Tom, layout, e value prop devem se alinhar.',
+			'Se a landing promete "simples e rápido", o primeiro login do app deve entregar essa sensação — não uma wizard de 15 steps.',
+			'Faça teste com 5 novos usuários: peça feedback específico sobre "o que a landing prometeu vs o que o app entregou".',
+			'Revise mensalmente — landing evolui rápido em SaaS, app às vezes não acompanha.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar da landing até primeiro login em headless, comparando elementos visuais e copy principais.',
+		verification_eta_seconds: 55,
+	},
 };
 
 /**

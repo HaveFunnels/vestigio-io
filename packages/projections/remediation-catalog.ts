@@ -1825,6 +1825,274 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Re-pull Shopify + cross-check de venda por SKU nos últimos 30d.',
 		verification_eta_seconds: 30,
 	},
+
+	// ─────────────────────────────────────────────
+	// Behavioral (Phase 4B — pixel-dependent)
+	// ─────────────────────────────────────────────
+	// All entries use pixel_accumulation strategy — verification
+	// reports current vs required session count rather than triggering
+	// a point-in-time re-check. eta_seconds is null because there is
+	// no dispatch — the re-check happens naturally as traffic accumulates.
+
+	policy_view_then_abandonment: {
+		remediation_steps: [
+			'Revise a copy das políticas (refund, privacidade, termos) — leitura deve reforçar confiança, não criar dúvida.',
+			'Adicione CTA sutil na política de refund: "Qualquer dúvida? Fale com nosso time" com link pra suporte.',
+			'Se buyers visitam política e abandonam, inclua reassurance pós-política (modal ou banner) sugerindo que a política é favorável.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando acúmulo de sessões pós-ajuste pra re-avaliar. Sessões atuais na janela: {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	high_intent_detour_before_abandonment: {
+		remediation_steps: [
+			'Detecte páginas visitadas por high-intent buyers antes do abandono — geralmente FAQ, comparação, reviews.',
+			'Identifique objeção específica nessas pages e resolva direto no fluxo principal.',
+			'Teste redirecionar parte do tráfego direto pro fluxo principal sem detour — vê se conversão sobe.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra re-medir padrão de detour. Atual: {current}/{required} sessões.',
+		verification_eta_seconds: null,
+	},
+
+	support_discovered_too_late_to_convert: {
+		remediation_steps: [
+			'Mova canal de suporte pra posição proeminente no fluxo de compra — footer persistente ou chat visível.',
+			'Proativamente ofereça chat quando buyer passa >60s no checkout sem progredir.',
+			'Meça First Response Time — <5min úteis no chat reduz friction significativamente.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando tráfego pós-ajuste pra medir se support discovery subiu. Sessões: {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	cta_visible_but_behaviorally_dead: {
+		remediation_steps: [
+			'CTA aparece no viewport mas ninguém clica — revise copy, contraste, e proximity com value prop.',
+			'Teste variantes (A/B) de cor, tamanho, e copy do CTA — pequenas mudanças geram grandes swings.',
+			'Garanta que CTA está acima da dobra em desktop E mobile — mobile tende a enterrar o CTA.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra medir CTR do CTA ajustado. {current}/{required} sessões.',
+		verification_eta_seconds: null,
+	},
+
+	purchase_hesitation_with_backtrack: {
+		remediation_steps: [
+			'Buyers voltam pro carrinho múltiplas vezes — objeção tá nos dados mostrados ali (preço? frete? entrega?).',
+			'Exponha TODOS custos (frete + impostos) antes do checkout — surpresa no total é causa top de abandono.',
+			'Adicione "por que escolher" recap próximo ao botão de pagar pra reforçar decisão.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pós-mudança pra validar redução de backtracks. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	critical_step_retries_before_abandonment: {
+		remediation_steps: [
+			'Identifique qual step retry mais antes do abandono — geralmente é cartão rejeitado ou CEP sem entrega.',
+			'Melhore mensagens de erro nesses steps — explique CAUSA + PRÓXIMO PASSO.',
+			'Ofereça caminhos alternativos: cartão rejeitado → oferece PIX; CEP sem entrega → oferece retirada.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pós-fix pra medir retry rate por step. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	mobile_fails_first_commercial_action: {
+		remediation_steps: [
+			'Primeira ação comercial em mobile (add-to-cart, inicia checkout) falha mais que desktop — teste em iOS + Android reais.',
+			'Valide tamanho de botões (≥44px), viewport, teclado não cobrindo input ativo.',
+			'Elimine modais/overlays que em mobile ficam scroll-trapped ou sem close button visível.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões mobile novas pra validar fix. {current}/{required} sessões mobile.',
+		verification_eta_seconds: null,
+	},
+
+	funnel_step_alive_but_not_advancing: {
+		remediation_steps: [
+			'Step tem atividade (clicks, form fills) mas não avança — há bloqueador técnico ou UX silencioso.',
+			'Revise validações: mensagens de erro escondidas, submit button desabilitado sem feedback claro.',
+			'Adicione analytics de form validation failures pra ver qual campo mais bloqueia.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra re-medir taxa de avanço por step. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	hesitation_before_conversion_missing_trust: {
+		remediation_steps: [
+			'Buyer hesita perto do botão de pagar — trust markers não estão onde precisa.',
+			'Adicione selos (SSL, bandeiras, gateway) VISÍVEIS no viewport do pagamento.',
+			'Inclua microcopy de reassurance próximo ao botão: "Pagamento seguro via [gateway]".',
+		],
+		estimated_effort_hours: 5,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pós-trust markers pra medir redução de hesitação. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	pricing_hesitation_unclear_value: {
+		remediation_steps: [
+			'Buyer revisita pricing multiple times — indicador de que value prop não tá clara.',
+			'Re-escreva cada plano em termos de OUTCOME ("economize X horas/semana"), não features.',
+			'Adicione comparativo visual pros-cons ou ROI calculator ajudando buyer decidir.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pós-pricing rewrite pra medir tempo de decisão. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	policy_detour_before_conversion: {
+		remediation_steps: [
+			'Buyer visita política antes de converter — preocupação tá na mente. Endereça proativamente.',
+			'Destaque a política de reembolso favorável DIRETO no checkout (não escondida no footer).',
+			'Use linguagem positiva: "30 dias pra trocar de ideia" em vez de "política de reembolso".',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra medir se detour rate caiu. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	cta_viewed_not_engaged: {
+		remediation_steps: [
+			'CTA aparece mas engagement é baixo — copy não compele ação.',
+			'Use verbos específicos: "Comprar agora" > "Saiba mais". Urgência real: "Restam 3 em estoque".',
+			'Teste variantes diferentes — small copy changes geram 5-20% swings em CTR.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra re-medir CTA engagement rate. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	sensitive_input_abandonment: {
+		remediation_steps: [
+			'Buyer abandona ao ver campo sensível (CPF, cartão, endereço) — trust deficit naquele campo específico.',
+			'Adicione microcopy explicando POR QUE precisa do dado: "CPF usado apenas pra nota fiscal".',
+			'Mostre ícone de cadeado + selo SSL próximo ao campo sensível pra reforçar segurança.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra re-medir abandonment rate nesses campos. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	form_excessive_fields_before_conversion: {
+		remediation_steps: [
+			'Form tem >8 campos obrigatórios antes da conversão — cada campo extra reduz completion em ~5%.',
+			'Elimine campos opcionais que podem ser pedidos depois (ex: NPS, pesquisa de perfil).',
+			'Use auto-preenchimento agressivo: ViaCEP pra endereço, mask pra CPF/telefone.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra re-medir form completion rate. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	form_submission_retry_friction: {
+		remediation_steps: [
+			'Form retorna erro e buyer retenta múltiplas vezes — validação não tá clara ou UX trava.',
+			'Valide em real-time (inline) em vez de só no submit — buyer sabe na hora o que tá errado.',
+			'Quando submit falha, preserve TODOS os dados preenchidos — não force retyping.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra re-medir retry rate pós-fix. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	surface_oscillation_before_dropoff: {
+		remediation_steps: [
+			'Buyer oscila entre surfaces (home ↔ produto ↔ cart) antes de abandonar — decision paralysis.',
+			'Reduza paths alternativos no fluxo comercial — one clear path from product to purchase.',
+			'Adicione comparativo direto no produto pra reduzir necessidade de voltar pra categoria.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra medir oscillation pattern. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	conversion_final_step_retry: {
+		remediation_steps: [
+			'Último step (submit pagamento) retry frequente — cartão rejeita ou anti-fraude bloqueia.',
+			'Melhore mensagem pós-rejeição: explique causa provável + sugira ação (novo cartão, PIX).',
+			'Adicione fallback automático pra outros métodos quando primário falha.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra re-medir taxa de retry no último step. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	cta_late_availability_delays_action: {
+		remediation_steps: [
+			'CTA aparece depois de render completo — scripts atrasam interatividade.',
+			'Pré-renderize CTAs críticos no HTML inicial, sem depender de JS.',
+			'Meça Time To Interactive especificamente pra botão de conversão — deve ser <2s.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pós-fix pra medir timing do primeiro clique no CTA. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	checkout_abandon_no_feedback: {
+		remediation_steps: [
+			'Buyer abandona checkout sem deixar sinal (não preencheu nada, saiu silencioso).',
+			'Adicione exit-intent modal perguntando "o que faltou?" com campo livre — captura objections.',
+			'Configure recovery email pra quem iniciou checkout mas não finalizou, com link direto pro carrinho.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra medir taxa de feedback capturado. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	sensitive_input_perceived_risk_dropoff: {
+		remediation_steps: [
+			'Campos sensíveis causam drop direto — perceção de risco é mais forte que benefício percebido.',
+			'Adicione trust signals CONTÍGUOS ao campo: selo SSL, explicação de uso, política de privacidade link.',
+			'Teste reordenar: peça dados sensíveis DEPOIS de criar conta ou adicionar ao carrinho — drops menos.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra medir drop rate pós-ajustes. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
 };
 
 /**

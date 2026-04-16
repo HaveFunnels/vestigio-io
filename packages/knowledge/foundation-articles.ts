@@ -35,6 +35,9 @@ import {
   ROOT_CAUSE_DESCRIPTIONS,
 } from '../intelligence/root-causes';
 import { shopifyIntegrationSetup } from './guides/shopify-integration-setup';
+import { nuvemshopIntegrationSetupGuide } from './guides/nuvemshop-integration-setup';
+import { metaAdsIntegrationSetup } from './guides/meta-ads-integration-setup';
+import { googleAdsIntegrationSetup } from './guides/google-ads-integration-setup';
 import {
   getTranslatedInferenceTitle,
   getTranslatedRootCauseTitle,
@@ -71,6 +74,9 @@ export interface GuideArticle extends Omit<FoundationArticle, 'category' | 'find
 
 const GUIDE_ARTICLES: GuideArticle[] = [
   shopifyIntegrationSetup,
+  nuvemshopIntegrationSetupGuide,
+  metaAdsIntegrationSetup,
+  googleAdsIntegrationSetup,
 ];
 
 interface PortableTextBlock {

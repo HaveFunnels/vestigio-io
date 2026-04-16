@@ -906,6 +906,9 @@ export default function DataSourcesPage() {
 											<p style={{ color: "#71717a", fontSize: 12, lineHeight: 1.6 }}>
 												Você vai ser redirecionado pro Facebook, autoriza Vestigio com escopo <strong style={{ color: "#a1a1aa" }}>ads_read</strong> + <strong style={{ color: "#a1a1aa" }}>business_management</strong> (ambos read-only) e volta aqui conectado. Sem copy-paste de token.
 											</p>
+											<a href="/app/knowledge-base/meta-ads-integration-setup" style={{ color: "#6366f1", fontSize: 12, marginTop: 8, display: "inline-block", textDecoration: "none" }}>
+												Passo a passo com screenshots + troubleshooting →
+											</a>
 										</div>
 
 										{metaAdsError && (
@@ -995,6 +998,9 @@ export default function DataSourcesPage() {
 											<p style={{ color: "#71717a", fontSize: 12, lineHeight: 1.6 }}>
 												Você vai ser redirecionado pra Google, autoriza Vestigio com escopo <strong style={{ color: "#a1a1aa" }}>adwords</strong> (read-only) e volta aqui conectado. O developer token é Vestigio-side, você não precisa aplicar pelo seu.
 											</p>
+											<a href="/app/knowledge-base/google-ads-integration-setup" style={{ color: "#6366f1", fontSize: 12, marginTop: 8, display: "inline-block", textDecoration: "none" }}>
+												Passo a passo com screenshots + troubleshooting →
+											</a>
 										</div>
 
 										{googleAdsError && (

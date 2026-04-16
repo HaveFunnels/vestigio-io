@@ -8,6 +8,7 @@ import { selectiveHeadlessPass } from "./selective-headless";
 import { semanticEnrichmentPass } from "./semantic-enrichment";
 import { nucleiScanPass } from "./nuclei-scan";
 import { katanaDiscoveryPass } from "./katana-discovery";
+import { brandIntelScanPass } from "./brand-intel-scan";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -35,6 +36,7 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   selectiveHeadlessPass,
   katanaDiscoveryPass,
   nucleiScanPass,
+  brandIntelScanPass,
   semanticEnrichmentPass,
 ];
 

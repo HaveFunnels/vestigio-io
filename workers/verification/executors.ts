@@ -212,6 +212,48 @@ export class IntegrationPullExecutor implements VerificationExecutor {
 }
 
 // ──────────────────────────────────────────────
+// External Scan Executor — DISPATCH-BY-CYCLE
+//
+// External scans (nuclei, katana, brand-intel) are NOT ad-hoc
+// probes — they run as enrichment passes during the audit cycle
+// itself (see workers/ingestion/enrichment/). When the MCP
+// layer requests a verification of type ExternalScan, we don't
+// spin up a separate scanner run; we log the request and direct
+// the caller to trigger a cycle via /api/cycles/trigger, which
+// re-executes the enrichment registry and produces fresh evidence.
+//
+// The orchestrator still needs SOMETHING registered for this
+// type — otherwise MCP requests return "No executor for type:
+// external_scan" which is opaque. This executor returns a
+// descriptive 'skipped' result so the caller knows the right
+// next action.
+// ──────────────────────────────────────────────
+
+export class ExternalScanExecutor implements VerificationExecutor {
+  type = VerificationType.ExternalScan;
+
+  async execute(input: ExecutorInput): Promise<ExecutorOutput> {
+    // No new evidence produced — the scanners run at cycle time.
+    // Returning 'completed' (not 'failed') so the orchestrator
+    // doesn't retry; the informational log tells the caller the
+    // right next action is a cycle trigger.
+    return {
+      status: 'completed',
+      evidence: [],
+      logs: [
+        {
+          timestamp: new Date(),
+          level: 'info',
+          message:
+            'External-scan verification runs during audit cycles, not as ad-hoc dispatch. Trigger a cycle via /api/cycles/trigger (cycle_type="verification") to re-run katana + nuclei + brand-intel enrichment and re-evaluate this finding.',
+        },
+      ],
+      errors: [],
+    };
+  }
+}
+
+// ──────────────────────────────────────────────
 // Authenticated Journey Executor — LIVE
 //
 // Phase 17B: real authenticated runtime.

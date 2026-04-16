@@ -21,6 +21,7 @@ import {
   BrowserVerificationExecutor,
   IntegrationPullExecutor,
   AuthenticatedJourneyExecutor,
+  ExternalScanExecutor,
 } from './executors';
 
 // ──────────────────────────────────────────────
@@ -62,6 +63,7 @@ export class VerificationOrchestrator {
     this.executors.set(VerificationType.BrowserVerification, new BrowserVerificationExecutor());
     this.executors.set(VerificationType.IntegrationPull, new IntegrationPullExecutor());
     this.executors.set(VerificationType.AuthenticatedJourneyVerification, new AuthenticatedJourneyExecutor());
+    this.executors.set(VerificationType.ExternalScan, new ExternalScanExecutor());
   }
 
   // Submit a verification request

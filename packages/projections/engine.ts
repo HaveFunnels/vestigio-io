@@ -220,6 +220,10 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   discount_abuse_pattern: 'channel_integrity',
   ad_spend_platform_concentration_risk: 'channel_integrity',
   ads_without_conversion_visibility: 'revenue_integrity',
+  ad_creative_dead_destination: 'money_moment_exposure',
+  ad_creative_landing_trust_gap: 'trust_revenue_gap',
+  ad_creative_form_friction_waste: 'revenue_integrity',
+  ad_creative_mobile_checkout_degraded: 'mobile_revenue_exposure',
   low_repeat_purchase_rate: 'revenue_integrity',
   dead_weight_products: 'revenue_integrity',
 };
@@ -387,6 +391,10 @@ const INFERENCE_SURFACES: Record<string, string> = {
   discount_abuse_pattern: '/cart, /checkout (discounts)',
   ad_spend_platform_concentration_risk: 'Meta Ads / Google Ads (acquisition)',
   ads_without_conversion_visibility: 'Meta Ads / Google Ads (attribution)',
+  ad_creative_dead_destination: 'Meta Ads / Google Ads (dead link)',
+  ad_creative_landing_trust_gap: 'Meta Ads / Google Ads → checkout/landing',
+  ad_creative_form_friction_waste: 'Meta Ads / Google Ads → checkout/forms',
+  ad_creative_mobile_checkout_degraded: 'Meta Ads / Google Ads → mobile path',
   low_repeat_purchase_rate: '/store (retention)',
   dead_weight_products: '/products (catalog)',
 };
@@ -558,6 +566,10 @@ export const INFERENCE_TITLES: Record<string, string> = {
   discount_abuse_pattern: 'Discount overuse is leaking margin on most orders',
   ad_spend_platform_concentration_risk: 'Most of your ad budget lives on one platform — one policy change halts acquisition',
   ads_without_conversion_visibility: "You're spending on ads without the commerce data to prove they work",
+  ad_creative_dead_destination: 'An ad creative is spending money sending buyers to a dead page',
+  ad_creative_landing_trust_gap: 'An ad sends buyers to a page that asks for card data but shows no trust signals',
+  ad_creative_form_friction_waste: 'An ad sends buyers to a form so long they abandon before converting',
+  ad_creative_mobile_checkout_degraded: 'An ad sends mobile buyers to a page where checkout is broken or too slow',
   low_repeat_purchase_rate: "Buyers aren't coming back — acquisition cost isn't being recovered",
   dead_weight_products: "Listed products haven't sold in 30 days — dead weight",
 };

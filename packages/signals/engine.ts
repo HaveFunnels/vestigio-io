@@ -180,6 +180,12 @@ export function extractSignals(
     extractAdsContextSignals(commerce_context, scoping, cycle_ref, signals, ids);
   }
 
+  // Phase 4A++: Ads creative × crawl evidence compound signals.
+  // Traverses ad_targets edges in the graph to correlate each creative's
+  // destination URL with on-page evidence. Only fires when the graph has
+  // ad nodes (i.e. ads integration is connected).
+  extractAdsCreativeContextSignals(graph, evidence, scoping, cycle_ref, signals, ids);
+
   // Phase 2.4: Commerce heuristics — fallback path when integration absent.
   // Emits the same signal_keys as the data-driven path with lower confidence,
   // so inference consumers light up for non-integrated stores. Suppressed
@@ -5459,6 +5465,185 @@ function extractCommerceContextSignals(
     }));
   }
 }
+
+// ──────────────────────────────────────────────
+// Phase 4A++: Ads Creative × Crawl Evidence Compound Signals
+//
+// Traverses ad_targets edges in the graph. For each ad node, resolves
+// the target page node, then checks on-page evidence for known issues:
+//   - Dead destination (HTTP 4xx/5xx, timeout, long redirect chain)
+//   - Trust gap (sensitive inputs + < 2 trust signals)
+//   - Form friction (payment form with 10+ fields)
+//   - Mobile degraded (mobile verification shows failures/slow load)
+//
+// Each compound signal carries the ad's spend so downstream
+// inferences can quantify waste in real dollars.
+// ──────────────────────────────────────────────
+
+function extractAdsCreativeContextSignals(
+  graph: BuiltGraph,
+  evidence: Evidence[],
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  // Collect ad nodes from graph.
+  const adNodes: GraphNode[] = [];
+  for (const node of graph.nodes.values()) {
+    if (node.node_type === 'ad_creative' || node.node_type === 'ad_campaign') {
+      adNodes.push(node);
+    }
+  }
+  if (adNodes.length === 0) return;
+
+  // Build page-level evidence index for fast lookup.
+  const httpByUrl = new Map<string, { status: number; redirect_hops: number; response_time_ms: number }>();
+  const formsByUrl = new Map<string, { max_fields: number; has_payment: boolean; has_sensitive: boolean }>();
+  const trustByUrl = new Map<string, number>();
+  const mobileByUrl = new Map<string, { duration_ms: number; steps_failed: number; reachable: boolean }>();
+
+  for (const e of evidence) {
+    switch (e.evidence_type) {
+      case EvidenceType.HttpResponse: {
+        const p = e.payload as HttpResponsePayload;
+        const url = p.url;
+        const existing = httpByUrl.get(url);
+        if (!existing || p.status_code >= 400) {
+          httpByUrl.set(url, {
+            status: p.status_code,
+            redirect_hops: 0,
+            response_time_ms: p.response_time_ms,
+          });
+        }
+        break;
+      }
+      case EvidenceType.Redirect: {
+        const p = e.payload as RedirectPayload;
+        const existing = httpByUrl.get(p.source_url);
+        if (existing) existing.redirect_hops = p.hop_count;
+        else httpByUrl.set(p.source_url, { status: 301, redirect_hops: p.hop_count, response_time_ms: 0 });
+        break;
+      }
+      case EvidenceType.Form: {
+        const p = e.payload as FormPayload;
+        const existing = formsByUrl.get(p.page_url);
+        const hasSensitive = p.has_payment_fields || p.field_names.some(f => {
+          const n = f.toLowerCase().replace(/[_\-\s]/g, '');
+          return ['card', 'cvv', 'cvc', 'cpf', 'cnpj', 'ssn', 'password', 'senha'].some(t => n.includes(t));
+        });
+        const newMax = Math.max(existing?.max_fields ?? 0, p.field_names.length);
+        formsByUrl.set(p.page_url, {
+          max_fields: newMax,
+          has_payment: (existing?.has_payment ?? false) || p.has_payment_fields,
+          has_sensitive: (existing?.has_sensitive ?? false) || hasSensitive,
+        });
+        break;
+      }
+      case EvidenceType.StructuredDataItem: {
+        const p = e.payload as StructuredDataItemPayload;
+        if (p.is_trust_signal) {
+          trustByUrl.set(p.page_url, (trustByUrl.get(p.page_url) ?? 0) + 1);
+        }
+        break;
+      }
+      case EvidenceType.MobileVerificationResult: {
+        const p = e.payload as MobileVerificationResultPayload;
+        mobileByUrl.set(p.target_url, {
+          duration_ms: p.duration_ms,
+          steps_failed: p.steps_failed,
+          reachable: p.checkout_reachable,
+        });
+        break;
+      }
+    }
+  }
+
+  // For each ad node, traverse ad_targets edge → check target page.
+  for (const adNode of adNodes) {
+    const edges = graph.edgeIndex.get(adNode.id) ?? [];
+    const targetEdges = edges.filter(e => e.edge_type === 'ad_targets');
+    if (targetEdges.length === 0) continue;
+
+    const meta = adNode.metadata as Record<string, any>;
+    const spend = (meta.spend_30d as number) ?? 0;
+    const platform = (meta.platform as string) ?? 'unknown';
+    const adLabel = adNode.label || `Ad ${adNode.id}`;
+    if (spend <= 0) continue;
+
+    for (const edge of targetEdges) {
+      const pageNode = graph.nodes.get(edge.target_id);
+      if (!pageNode || !pageNode.url) continue;
+      const pageUrl = pageNode.url;
+
+      // 1. Dead destination — 4xx/5xx or redirect chain > 3 hops
+      const http = httpByUrl.get(pageUrl);
+      if (http && (http.status >= 400 || http.redirect_hops > 3)) {
+        signals.push(createSignal({
+          signal_key: 'ad_creative_dead_destination',
+          category: SignalCategory.Commerce,
+          attribute: 'commerce.ad_creative_dead_destination',
+          value: http.status >= 400 ? 'high' : 'medium',
+          numeric_value: Math.round(spend),
+          confidence: 95,
+          scoping, cycle_ref, ids,
+          evidence_refs: [],
+          description: `Ad "${adLabel}" (${platform}) spends $${spend.toFixed(0)}/mo targeting ${pageUrl} which ${http.status >= 400 ? `returns HTTP ${http.status}` : `redirects through ${http.redirect_hops} hops`}. 100% of this spend reaches a dead end.`,
+        }));
+      }
+
+      // 2. Trust gap — page has sensitive inputs but < 2 trust signals
+      const forms = formsByUrl.get(pageUrl);
+      const trust = trustByUrl.get(pageUrl) ?? 0;
+      if (forms?.has_sensitive && trust < 2) {
+        signals.push(createSignal({
+          signal_key: 'ad_creative_landing_trust_gap',
+          category: SignalCategory.Commerce,
+          attribute: 'commerce.ad_creative_trust_gap',
+          value: trust === 0 ? 'high' : 'medium',
+          numeric_value: Math.round(spend),
+          confidence: 85,
+          scoping, cycle_ref, ids,
+          evidence_refs: [],
+          description: `Ad "${adLabel}" (${platform}, $${spend.toFixed(0)}/mo) sends buyers to ${pageUrl} where sensitive data is collected but only ${trust} trust signal(s) are present. Buyers entering payment or personal data without visible reassurance abandon at elevated rates.`,
+        }));
+      }
+
+      // 3. Form friction — page has form with 10+ fields
+      if (forms && forms.max_fields >= 10) {
+        signals.push(createSignal({
+          signal_key: 'ad_creative_form_friction_waste',
+          category: SignalCategory.Commerce,
+          attribute: 'commerce.ad_creative_form_friction',
+          value: forms.max_fields >= 15 ? 'high' : 'medium',
+          numeric_value: Math.round(spend),
+          confidence: 80,
+          scoping, cycle_ref, ids,
+          evidence_refs: [],
+          description: `Ad "${adLabel}" (${platform}, $${spend.toFixed(0)}/mo) sends buyers to ${pageUrl} which has a form with ${forms.max_fields} fields. Every field past 6 measurably increases abandonment — a portion of this spend converts to friction instead of revenue.`,
+        }));
+      }
+
+      // 4. Mobile degraded — page has mobile verification failures or slow load
+      const mobile = mobileByUrl.get(pageUrl);
+      if (mobile && mobile.reachable && (mobile.steps_failed >= 1 || mobile.duration_ms >= 8000)) {
+        signals.push(createSignal({
+          signal_key: 'ad_creative_mobile_checkout_degraded',
+          category: SignalCategory.Commerce,
+          attribute: 'commerce.ad_creative_mobile_degraded',
+          value: mobile.steps_failed >= 2 || mobile.duration_ms >= 15000 ? 'high' : 'medium',
+          numeric_value: Math.round(spend),
+          confidence: 75,
+          scoping, cycle_ref, ids,
+          evidence_refs: [],
+          description: `Ad "${adLabel}" (${platform}, $${spend.toFixed(0)}/mo) sends mobile buyers to ${pageUrl} where the commercial path takes ${Math.round(mobile.duration_ms / 1000)}s and ${mobile.steps_failed} step(s) fail. Mobile traffic from this ad hits a degraded experience.`,
+        }));
+      }
+    }
+  }
+}
+
+import type { GraphNode } from '../graph/types';
 
 // ──────────────────────────────────────────────
 // Phase 4A+: Ad Context Signals

@@ -234,6 +234,10 @@ export function computeInferences(
   inferences.push(...inferDiscountAbusePattern(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferAdSpendPlatformConcentrationRisk(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferAdsWithoutConversionVisibility(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAdCreativeDeadDestination(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAdCreativeLandingTrustGap(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAdCreativeFormFrictionWaste(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAdCreativeMobileCheckoutDegraded(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferLowRepeatPurchaseRate(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferDeadWeightProducts(byKey, scoping, cycle_ref, ids));
 
@@ -3380,6 +3384,74 @@ function inferAdsWithoutConversionVisibility(byKey: Map<string, Signal>, scoping
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Ad spend of $${sig.numeric_value}/month is running without a commerce platform connected to measure its return. Every dollar of ad spend without conversion tracking is a dollar that cannot be attributed, compared against the next dollar, or defended as worth the spend. ROAS is not low — it's literally unknown.`,
+  })];
+}
+
+function inferAdCreativeDeadDestination(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('ad_creative_dead_destination');
+  if (!sig) return [];
+  return [createInference({
+    inference_key: 'ad_creative_dead_destination',
+    category: InferenceCategory.AdCreativeDeadDestination,
+    conclusion: 'ad_creative_dead_destination',
+    conclusion_value: sig.value,
+    severity_hint: sig.value,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `$${sig.numeric_value}/month of ad spend is directed at a URL that returns an error or redirects through too many hops. Every dollar of this spend reaches a dead end — buyers who click the ad cannot complete the intended action. This is 100% waste, recoverable immediately by updating the creative's destination URL.`,
+  })];
+}
+
+function inferAdCreativeLandingTrustGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('ad_creative_landing_trust_gap');
+  if (!sig) return [];
+  return [createInference({
+    inference_key: 'ad_creative_landing_trust_gap',
+    category: InferenceCategory.AdCreativeLandingTrustGap,
+    conclusion: 'ad_creative_landing_trust_gap',
+    conclusion_value: sig.value,
+    severity_hint: sig.value,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `$${sig.numeric_value}/month of ad spend sends buyers to a page that collects sensitive data (payment, password, identity) but shows fewer than 2 trust signals (badges, reviews, certificates). The gap between what the ad promises and what the landing page reassures drives abandonment — buyers who were ready to convert decide the risk is not worth it at the moment they are asked for sensitive information.`,
+  })];
+}
+
+function inferAdCreativeFormFrictionWaste(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('ad_creative_form_friction_waste');
+  if (!sig) return [];
+  return [createInference({
+    inference_key: 'ad_creative_form_friction_waste',
+    category: InferenceCategory.AdCreativeFormFrictionWaste,
+    conclusion: 'ad_creative_form_friction_waste',
+    conclusion_value: sig.value,
+    severity_hint: sig.value,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `$${sig.numeric_value}/month of ad spend sends buyers to a page with a form that demands excessive input. Every field past six measurably increases abandonment — the ad brought a buyer to the conversion step, and the form pushed them away. A portion of this spend converts to friction instead of revenue.`,
+  })];
+}
+
+function inferAdCreativeMobileCheckoutDegraded(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('ad_creative_mobile_checkout_degraded');
+  if (!sig) return [];
+  return [createInference({
+    inference_key: 'ad_creative_mobile_checkout_degraded',
+    category: InferenceCategory.AdCreativeMobileCheckoutDegraded,
+    conclusion: 'ad_creative_mobile_checkout_degraded',
+    conclusion_value: sig.value,
+    severity_hint: sig.value,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `$${sig.numeric_value}/month of ad spend sends mobile buyers to a page where the commercial path shows step failures or extended load times. Mobile users who arrive from the ad encounter a degraded experience — CTAs load late, forms fail, or the checkout path stalls. The ad did its job getting the click; the landing page fails to convert it.`,
   })];
 }
 

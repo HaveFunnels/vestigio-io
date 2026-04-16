@@ -464,6 +464,10 @@ export enum InferenceCategory {
   DiscountAbusePattern = 'discount_abuse_pattern',
   AdSpendPlatformConcentrationRisk = 'ad_spend_platform_concentration_risk',
   AdsWithoutConversionVisibility = 'ads_without_conversion_visibility',
+  AdCreativeDeadDestination = 'ad_creative_dead_destination',
+  AdCreativeLandingTrustGap = 'ad_creative_landing_trust_gap',
+  AdCreativeFormFrictionWaste = 'ad_creative_form_friction_waste',
+  AdCreativeMobileCheckoutDegraded = 'ad_creative_mobile_checkout_degraded',
   LowRepeatPurchaseRate = 'low_repeat_purchase_rate',
   DeadWeightProducts = 'dead_weight_products',
 }

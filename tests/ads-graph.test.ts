@@ -14,9 +14,13 @@ import {
 	testEvidence,
 	testScoping,
 	pageContentEvidence,
+	httpResponseEvidence,
+	formEvidence,
 } from "./helpers";
 
+import { EvidenceType, type Evidence, type FormPayload, type StructuredDataItemPayload, type MobileVerificationResultPayload } from "../packages/domain";
 import { buildGraph } from "../packages/graph";
+import { extractSignals } from "../packages/signals";
 import type { IntegrationSnapshot, MetaAdsSnapshotData, GoogleAdsSnapshotData } from "../packages/integrations/types";
 import type { GraphNode } from "../packages/graph/types";
 
@@ -208,6 +212,147 @@ runSuite("ad_targets edge carries spend metadata for downstream consumers", () =
 	const target = edges.find(e => e.edge_type === "ad_targets");
 	assert(target !== undefined, "edge exists");
 	assertEqual((target!.metadata as any).spend_30d, 800, "spend on edge");
+});
+
+// ══════════════════════════════════════════════════
+// Compound Findings — signal emission via graph traversal
+// ══════════════════════════════════════════════════
+
+console.log("\nAds Graph — Compound Signals");
+
+runSuite("emits ad_creative_dead_destination when creative targets 404 page", () => {
+	const destUrl = "https://shop.example.com/gone";
+	const ev = [
+		pageContentEvidence("https://shop.example.com/", "Home"),
+		httpResponseEvidence(destUrl, 404),
+	];
+	const snap = metaSnapshot([
+		{ id: "dead_1", headline: "Buy now", body: "", cta: "", destination_url: destUrl, status: "ACTIVE", spend_30d: 1000 },
+	]);
+	const graph = buildGraph(ev, "shop.example.com", "cycle:1", [snap]);
+	const signals = extractSignals(ev, graph, testScoping(), "cycle:1");
+
+	const sig = signals.find(s => s.signal_key === "ad_creative_dead_destination");
+	assert(sig !== undefined, "signal emitted");
+	assertEqual(sig!.numeric_value, 1000, "spend carried");
+	assertEqual(sig!.value, "high", "4xx → high");
+});
+
+runSuite("emits ad_creative_landing_trust_gap when creative targets page with sensitive fields + no trust", () => {
+	const destUrl = "https://shop.example.com/checkout";
+	const ev: Evidence[] = [
+		pageContentEvidence(destUrl, "Checkout"),
+		testEvidence(EvidenceType.Form, {
+			type: "form",
+			page_url: destUrl,
+			action: "/submit",
+			method: "POST",
+			target_host: null,
+			is_external: false,
+			field_names: ["card_number", "cvv", "name"],
+			has_payment_fields: true,
+		} as FormPayload),
+	];
+	const snap = metaSnapshot([
+		{ id: "trust_1", headline: "Pay here", body: "", cta: "BUY", destination_url: destUrl, status: "ACTIVE", spend_30d: 2000 },
+	]);
+	const graph = buildGraph(ev, "shop.example.com", "cycle:1", [snap]);
+	const signals = extractSignals(ev, graph, testScoping(), "cycle:1");
+
+	const sig = signals.find(s => s.signal_key === "ad_creative_landing_trust_gap");
+	assert(sig !== undefined, "signal emitted");
+	assertEqual(sig!.numeric_value, 2000, "spend carried");
+});
+
+runSuite("does NOT emit trust gap when page has 2+ trust signals", () => {
+	const destUrl = "https://shop.example.com/checkout";
+	const ev: Evidence[] = [
+		pageContentEvidence(destUrl, "Checkout"),
+		testEvidence(EvidenceType.Form, {
+			type: "form", page_url: destUrl, action: "/submit", method: "POST",
+			target_host: null, is_external: false, field_names: ["card_number", "cvv"], has_payment_fields: true,
+		} as FormPayload),
+		testEvidence(EvidenceType.StructuredDataItem, {
+			type: "structured_data_item", page_url: destUrl, schema_type: "Organization",
+			name: "Shop", is_trust_signal: true, is_commerce_signal: false,
+		} as StructuredDataItemPayload),
+		testEvidence(EvidenceType.StructuredDataItem, {
+			type: "structured_data_item", page_url: destUrl, schema_type: "LocalBusiness",
+			name: "Shop Local", is_trust_signal: true, is_commerce_signal: false,
+		} as StructuredDataItemPayload),
+	];
+	const snap = metaSnapshot([
+		{ id: "trustok", headline: "Safe", body: "", cta: "", destination_url: destUrl, status: "ACTIVE", spend_30d: 500 },
+	]);
+	const graph = buildGraph(ev, "shop.example.com", "cycle:1", [snap]);
+	const signals = extractSignals(ev, graph, testScoping(), "cycle:1");
+
+	assertEqual(
+		signals.find(s => s.signal_key === "ad_creative_landing_trust_gap"),
+		undefined,
+		"no gap signal when trust present",
+	);
+});
+
+runSuite("emits ad_creative_form_friction_waste when creative targets form with 12+ fields", () => {
+	const destUrl = "https://shop.example.com/signup";
+	const fields = Array.from({ length: 14 }, (_, i) => `field_${i}`);
+	const ev: Evidence[] = [
+		pageContentEvidence(destUrl, "Signup"),
+		testEvidence(EvidenceType.Form, {
+			type: "form", page_url: destUrl, action: "/signup", method: "POST",
+			target_host: null, is_external: false, field_names: fields, has_payment_fields: false,
+		} as FormPayload),
+	];
+	const snap = googleSnapshot([
+		{ id: "fric_1", name: "Lead Gen", headlines: ["Join"], descriptions: ["Free"], final_url: destUrl, spend_30d: 1500 },
+	]);
+	const graph = buildGraph(ev, "shop.example.com", "cycle:1", [snap]);
+	const signals = extractSignals(ev, graph, testScoping(), "cycle:1");
+
+	const sig = signals.find(s => s.signal_key === "ad_creative_form_friction_waste");
+	assert(sig !== undefined, "signal emitted");
+	assertEqual(sig!.numeric_value, 1500, "spend carried");
+});
+
+runSuite("emits ad_creative_mobile_checkout_degraded when creative targets slow mobile page", () => {
+	const destUrl = "https://shop.example.com/mobile-checkout";
+	const ev: Evidence[] = [
+		pageContentEvidence(destUrl, "Mobile Checkout"),
+		testEvidence(EvidenceType.MobileVerificationResult, {
+			type: "mobile_verification_result",
+			target_url: destUrl,
+			commercial_path_reachable: true,
+			checkout_reachable: true,
+			steps_succeeded: 3,
+			steps_failed: 2,
+			commercial_errors_count: 0,
+			trust_degraded_vs_desktop: false,
+			duration_ms: 12000,
+			final_url: destUrl,
+		} as MobileVerificationResultPayload),
+	];
+	const snap = metaSnapshot([
+		{ id: "mob_1", headline: "Shop Mobile", body: "", cta: "", destination_url: destUrl, status: "ACTIVE", spend_30d: 800 },
+	]);
+	const graph = buildGraph(ev, "shop.example.com", "cycle:1", [snap]);
+	const signals = extractSignals(ev, graph, testScoping(), "cycle:1");
+
+	const sig = signals.find(s => s.signal_key === "ad_creative_mobile_checkout_degraded");
+	assert(sig !== undefined, "signal emitted");
+	assertEqual(sig!.numeric_value, 800, "spend carried");
+});
+
+runSuite("no compound signals emitted when no ads integration present", () => {
+	const ev = [
+		pageContentEvidence("https://shop.example.com/", "Home"),
+		httpResponseEvidence("https://shop.example.com/gone", 404),
+	];
+	const graph = buildGraph(ev, "shop.example.com", "cycle:1");
+	const signals = extractSignals(ev, graph, testScoping(), "cycle:1");
+
+	const adSignals = signals.filter(s => s.signal_key.startsWith("ad_creative_"));
+	assertEqual(adSignals.length, 0, "no ad signals without integration");
 });
 
 // ──────────────────────────────────────────────

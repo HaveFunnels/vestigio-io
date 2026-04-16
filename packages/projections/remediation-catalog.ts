@@ -1826,6 +1826,62 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 20,
 	},
 
+	ad_creative_dead_destination: {
+		remediation_steps: [
+			'Identifique o criativo no Ads Manager que aponta pra URL morta — o finding carrega o nome do criativo + plataforma.',
+			'Atualize a destination URL do criativo pra uma página viva e relevante pro mesmo público.',
+			'Se a página foi removida intencionalmente, pause o criativo imediatamente — cada hora ligado é gasto perdido.',
+			'Configure redirect 301 da URL antiga pra nova se outras fontes também linkam (SEO, email, etc.).',
+		],
+		estimated_effort_hours: 1,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-fetch a destination URL pra confirmar HTTP 200 sem redirect chain excessiva.',
+		verification_eta_seconds: 10,
+	},
+
+	ad_creative_landing_trust_gap: {
+		remediation_steps: [
+			'Adicione trust badge (SSL seal, reviews widget, logo de segurança) na landing page que o anúncio direciona.',
+			'Coloque depoimentos/reviews próximo ao formulário de dados sensíveis — proximity é o que importa.',
+			'Garanta que a política de privacidade esteja linkada no mesmo viewport do campo de dados.',
+			'Se possível, adicione structured data tipo Organization/LocalBusiness pra confiança via rich snippets.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-crawl a landing page pra confirmar presença de >= 2 trust signals co-locados com campos sensíveis.',
+		verification_eta_seconds: 15,
+	},
+
+	ad_creative_form_friction_waste: {
+		remediation_steps: [
+			'Reduza o formulário da landing page pra 6 campos ou menos — remova tudo que não é essencial pra primeira conversão.',
+			'Se precisa de mais dados, divida em steps (guest checkout → coleta pós-conversão) em vez de um form monolítico.',
+			'Remova campos como "confirme o email" ou "telefone fixo" que geram atrito sem valor real pra conversão.',
+			'A/B test: versão curta vs versão atual. Meça conversion rate por variante durante 14 dias.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-crawl a landing page pra confirmar que o form principal tem <= 8 campos.',
+		verification_eta_seconds: 15,
+	},
+
+	ad_creative_mobile_checkout_degraded: {
+		remediation_steps: [
+			'Teste a landing page no mobile real (Chrome DevTools mobile viewport não substitui device real).',
+			'Identifique scripts que bloqueiam render — lazy-load tudo que não é above-the-fold.',
+			'Garanta que CTA principal ("Comprar", "Assinar") seja visible sem scroll no mobile viewport.',
+			'Se possível, use AMP ou otimize critical rendering path pra < 3s first meaningful paint.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Re-run mobile verification pra confirmar que commercial path completa sem step failures e em < 8s.',
+		verification_eta_seconds: 30,
+	},
+
 	low_repeat_purchase_rate: {
 		remediation_steps: [
 			'Configure email de re-engagement 30/60/90 dias pós-compra com recomendações personalizadas.',

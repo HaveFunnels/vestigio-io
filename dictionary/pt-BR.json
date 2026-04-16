@@ -1609,7 +1609,14 @@
 			"verification_tooltip": "A maturidade de verificação mostra como as evidências desta descoberta foram validadas. Não verificado = apenas análise estática. Verificado = confirmado pelo navegador.",
 			"learn_more": "Saiba mais",
 			"browse_related_docs": "Ver artigos relacionados",
-			"docs_coming_soon": "A documentação para esta descoberta está sendo escrita."
+			"docs_coming_soon": "A documentação para esta descoberta está sendo escrita.",
+			"remediation": "Como corrigir",
+			"remediation_empty": "A receita de correção deste finding está sendo escrita.",
+			"estimated_effort": "Esforço estimado",
+			"estimated_effort_hours": "~{hours}h de dev",
+			"verification_strategy_label": "Método de verificação",
+			"verification_strategy_notes": "Ao clicar em Verificar",
+			"verification_strategy_eta": "~{seconds}s"
 		},
 		"customer_center": {
 			"title": "Central do Cliente",
@@ -2177,6 +2184,13 @@
 					"workspace": "Espaço de trabalho",
 					"surface": "Superfície"
 				},
+				"island": {
+					"scoped_to_one": "Esta conversa está focada em 1 {kind}",
+					"scoped_to_many": "Esta conversa está focada em {count} itens",
+					"total_impact": "Impacto est. {amount}/mês",
+					"show": "Mostrar",
+					"hide": "Esconder"
+				},
 				"remove_aria_label": "Remover {kind} do contexto",
 				"prompts": {
 					"empty": "Me dê um resumo do que você está vendo.",
@@ -2547,6 +2561,10 @@
 				"priorityScore": "Score de Prioridade",
 				"rootCause": "Causa Raiz",
 				"operationalStatus": "Status Operacional",
+				"remediation": "Como corrigir",
+				"remediationEmpty": "A receita de correção desta ação está sendo escrita.",
+				"estimatedEffort": "Esforço estimado",
+				"estimatedEffortHours": "~{hours}h de dev",
 				"verification": "Verificação",
 				"verificationRequested": "Verificação solicitada",
 				"verificationRunning": "Executando verificação…",

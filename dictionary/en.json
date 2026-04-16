@@ -1600,7 +1600,14 @@
 			"verification_tooltip": "Verification maturity shows how this finding's evidence has been validated. Unverified = static analysis only. Verified = confirmed by browser.",
 			"learn_more": "Learn more",
 			"browse_related_docs": "Browse related docs",
-			"docs_coming_soon": "Documentation for this finding is being written."
+			"docs_coming_soon": "Documentation for this finding is being written.",
+			"remediation": "How to fix",
+			"remediation_empty": "A remediation recipe for this finding is being drafted.",
+			"estimated_effort": "Estimated effort",
+			"estimated_effort_hours": "~{hours}h dev time",
+			"verification_strategy_label": "Verification method",
+			"verification_strategy_notes": "When you click Verify",
+			"verification_strategy_eta": "~{seconds}s"
 		},
 		"customer_center": {
 			"title": "Customer Center",
@@ -2122,6 +2129,13 @@
 					"workspace": "Workspace",
 					"surface": "Surface"
 				},
+				"island": {
+					"scoped_to_one": "This conversation is focused on 1 {kind}",
+					"scoped_to_many": "This conversation is focused on {count} items",
+					"total_impact": "Est. impact {amount}/mo",
+					"show": "Show",
+					"hide": "Hide"
+				},
 				"remove_aria_label": "Remove {kind} from context",
 				"prompts": {
 					"empty": "Give me a summary of what you see.",
@@ -2492,6 +2506,10 @@
 				"priorityScore": "Priority Score",
 				"rootCause": "Root Cause",
 				"operationalStatus": "Operational Status",
+				"remediation": "How to fix",
+				"remediationEmpty": "A remediation recipe for this action is being drafted.",
+				"estimatedEffort": "Estimated effort",
+				"estimatedEffortHours": "~{hours}h dev time",
 				"verification": "Verification",
 				"verificationRequested": "Verification requested",
 				"verificationRunning": "Running verification…",

@@ -1022,6 +1022,52 @@ function FindingDrawerContent({
 				</DrawerSection>
 			)}
 
+			{/* Remediation Steps + Estimated Effort
+			    Phase 3: structured fix recipe populated from the catalog
+			    (packages/projections/remediation-catalog.ts). Null means
+			    the inference_key hasn't been authored yet — we render a
+			    placeholder so operators see work-in-progress instead of
+			    an empty drawer. */}
+			{finding.polarity !== "positive" && (
+				<DrawerSection title={td("remediation")} accent={severityAccent}>
+					<DrawerStatBox accent={severityAccent}>
+						{finding.remediation_steps && finding.remediation_steps.length > 0 ? (
+							<ol className='list-none space-y-2 px-4 py-3'>
+								{finding.remediation_steps.map((step, i) => (
+									<li
+										key={i}
+										className='flex items-start gap-3 text-sm leading-relaxed text-content-secondary'
+									>
+										<span className='mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset text-[10px] font-semibold text-content-muted'>
+											{i + 1}
+										</span>
+										<span>{step}</span>
+									</li>
+								))}
+							</ol>
+						) : (
+							<div className='px-4 py-3 text-sm text-content-faint italic'>
+								{td("remediation_empty")}
+							</div>
+						)}
+						{finding.estimated_effort_hours != null && (
+							<div className='border-t border-edge/50 px-4 py-2.5'>
+								<div className='flex items-center justify-between text-xs'>
+									<span className='uppercase tracking-wider text-content-faint'>
+										{td("estimated_effort")}
+									</span>
+									<span className='font-mono font-medium text-content-secondary'>
+										{td("estimated_effort_hours", {
+											hours: finding.estimated_effort_hours,
+										})}
+									</span>
+								</div>
+							</div>
+						)}
+					</DrawerStatBox>
+				</DrawerSection>
+			)}
+
 			{/* Impact Breakdown */}
 			{finding.polarity !== "positive" && (
 				<DrawerSection title={td("impact_breakdown")} accent={severityAccent}>

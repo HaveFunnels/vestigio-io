@@ -840,6 +840,52 @@ function ActionDrawerContent({
 				</DrawerSection>
 			)}
 
+			{/* Remediation Steps + Estimated Effort
+			    Structured fix recipe from the catalog
+			    (packages/projections/remediation-catalog.ts). When the
+			    ActionProjection has no steps populated, we show a
+			    placeholder rather than hide the section — signals work-
+			    in-progress instead of an empty drawer. */}
+			{action.category !== "verification" && (
+				<DrawerSection title={t("drawer.remediation")} accent={severityAccent}>
+					<DrawerStatBox accent={severityAccent}>
+						{action.remediation_steps && action.remediation_steps.length > 0 ? (
+							<ol className='list-none space-y-2 px-4 py-3'>
+								{action.remediation_steps.map((step, i) => (
+									<li
+										key={i}
+										className='flex items-start gap-3 text-sm leading-relaxed text-content-secondary'
+									>
+										<span className='mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset text-[10px] font-semibold text-content-muted'>
+											{i + 1}
+										</span>
+										<span>{step}</span>
+									</li>
+								))}
+							</ol>
+						) : (
+							<div className='px-4 py-3 text-sm italic text-content-faint'>
+								{t("drawer.remediationEmpty")}
+							</div>
+						)}
+						{action.estimated_effort_hours != null && (
+							<div className='border-t border-edge/50 px-4 py-2.5'>
+								<div className='flex items-center justify-between text-xs'>
+									<span className='uppercase tracking-wider text-content-faint'>
+										{t("drawer.estimatedEffort")}
+									</span>
+									<span className='font-mono font-medium text-content-secondary'>
+										{t("drawer.estimatedEffortHours", {
+											hours: action.estimated_effort_hours,
+										})}
+									</span>
+								</div>
+							</div>
+						)}
+					</DrawerStatBox>
+				</DrawerSection>
+			)}
+
 			{/* Verification Lifecycle Panel */}
 			<DrawerSection title={t("drawer.verification")} accent='info'>
 				<VerificationPanel

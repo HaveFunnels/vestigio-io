@@ -1003,6 +1003,20 @@ export default function ChatPage() {
 							</button>
 						</div>
 
+						{/* Context island — top-of-chat prominent indicator when
+						    one or more findings/actions/workspaces/surfaces are
+						    scoped into this conversation. Ensures the user
+						    always sees what the MCP is grounding on. The
+						    similar chip bar above the editor (below messages)
+						    was too subtle — users didn't notice it. */}
+						{contextItems.length > 0 && (
+							<ContextIsland
+								items={contextItems}
+								onRemove={handleRemoveContextItem}
+								onClearAll={handleClearAllContext}
+							/>
+						)}
+
 						{/* Messages */}
 						<div className='relative min-h-0 flex-1'>
 							<div
@@ -1356,6 +1370,162 @@ function ContextKindIcon({
 	);
 }
 
+// ContextIsland — prominent top-of-chat scope indicator.
+//
+// Renders when one or more findings/actions/workspaces/surfaces are
+// hydrated into the conversation via URL params (discuss / use as
+// context flows). Collapsed by default showing just count + headline
+// impact — expand to see the full chip list with per-item remove.
+//
+// Distinct from ContextIndicator (which sits above the input as an
+// editor-attached chip bar). The island makes the conversation scope
+// visible throughout the chat scroll, not just when the user is about
+// to type.
+function ContextIsland({
+	items,
+	onRemove,
+	onClearAll,
+}: {
+	items: ChatContextItem[];
+	onRemove: (id: string, kind: ChatContextKind) => void;
+	onClearAll: () => void;
+}) {
+	const t = useTranslations("console.chat.context");
+	const [expanded, setExpanded] = useState(false);
+
+	const kindLabels: Record<ChatContextKind, string> = {
+		finding: t("kinds.finding"),
+		action: t("kinds.action"),
+		workspace: t("kinds.workspace"),
+		surface: t("kinds.surface"),
+	};
+
+	// Aggregate monthly impact across items that carry it — findings +
+	// actions typically do, workspaces/surfaces don't. Displayed as a
+	// single value next to the scope headline.
+	const totalImpactMid = items.reduce(
+		(sum, item) => sum + (item.impact_mid || 0),
+		0,
+	);
+	const showImpact = totalImpactMid > 0;
+
+	// Headline copy: "focused on 1 finding" vs "focused on 3 items"
+	// (keep it multi-kind aware when ≥2 items).
+	const headline =
+		items.length === 1
+			? t("island.scoped_to_one", { kind: kindLabels[items[0].kind] })
+			: t("island.scoped_to_many", { count: items.length });
+
+	// Primary accent color picks the first item's kind — consistent
+	// visual identity when user deep-links a single finding / action.
+	const primaryKind = items[0].kind;
+	const accentClass = CONTEXT_KIND_STYLES[primaryKind].icon;
+
+	return (
+		<div className='border-b border-edge bg-gradient-to-r from-emerald-500/5 via-surface-card to-surface-card px-4 py-2.5 sm:px-6'>
+			<div className='flex items-center gap-3'>
+				{/* Accent indicator + headline */}
+				<div className='flex min-w-0 flex-1 items-center gap-2.5'>
+					<span className={`flex h-2 w-2 shrink-0 rounded-full ${accentClass.replace('text-', 'bg-')}`} />
+					<ContextKindIcon
+						kind={primaryKind}
+						className={`h-4 w-4 shrink-0 ${accentClass}`}
+					/>
+					<span className='truncate text-sm font-medium text-content'>
+						{headline}
+					</span>
+					{showImpact && (
+						<span className='hidden shrink-0 rounded-md border border-edge bg-surface-inset px-2 py-0.5 font-mono text-[11px] text-content-secondary sm:inline-flex'>
+							{t("island.total_impact", {
+								amount: `$${Math.round(totalImpactMid).toLocaleString()}`,
+							})}
+						</span>
+					)}
+				</div>
+
+				{/* Expand / collapse toggle */}
+				<button
+					type='button'
+					onClick={() => setExpanded((x) => !x)}
+					className='flex shrink-0 items-center gap-1 rounded-md border border-edge bg-surface-card px-2 py-1 text-[11px] font-medium text-content-secondary transition-colors hover:border-edge-strong hover:bg-surface-card-hover'
+				>
+					{expanded ? t("island.hide") : t("island.show")}
+					<svg
+						className={`h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`}
+						fill='none'
+						viewBox='0 0 16 16'
+					>
+						<path
+							d='M4 6l4 4 4-4'
+							stroke='currentColor'
+							strokeWidth='1.5'
+							strokeLinecap='round'
+							strokeLinejoin='round'
+						/>
+					</svg>
+				</button>
+
+				{items.length > 1 && (
+					<button
+						type='button'
+						onClick={onClearAll}
+						className='shrink-0 rounded-md px-2 py-1 text-[11px] text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary'
+					>
+						{t("clear_all")}
+					</button>
+				)}
+			</div>
+
+			{/* Expanded chip list — same styling family as the bottom
+			    ContextIndicator so users recognize it as the same concept
+			    (scoped context), just at a different scroll position. */}
+			{expanded && (
+				<div className='mt-2.5 flex flex-wrap gap-1.5'>
+					{items.map((item) => {
+						const styles = CONTEXT_KIND_STYLES[item.kind];
+						const label = kindLabels[item.kind];
+						return (
+							<div
+								key={`island:${item.kind}:${item.id}`}
+								className={`group flex max-w-[320px] items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors ${styles.chip}`}
+								title={`${label}: ${item.title}`}
+							>
+								<ContextKindIcon
+									kind={item.kind}
+									className={`h-3 w-3 shrink-0 ${styles.icon}`}
+								/>
+								<span className='truncate font-medium'>{item.title}</span>
+								{item.impact_mid != null && item.impact_mid > 0 && (
+									<span className='shrink-0 rounded bg-surface-card/60 px-1 font-mono text-[10px] text-content-muted'>
+										${Math.round(item.impact_mid / 1000)}k
+									</span>
+								)}
+								<button
+									type='button'
+									onClick={() => onRemove(item.id, item.kind)}
+									className='-mr-0.5 ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded text-current opacity-60 transition-opacity hover:opacity-100'
+									aria-label={t("remove_aria_label", {
+										kind: label.toLowerCase(),
+									})}
+								>
+									<svg className='h-2.5 w-2.5' viewBox='0 0 16 16' fill='none'>
+										<path
+											d='M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5'
+											stroke='currentColor'
+											strokeWidth='1.75'
+											strokeLinecap='round'
+										/>
+									</svg>
+								</button>
+							</div>
+						);
+					})}
+				</div>
+			)}
+		</div>
+	);
+}
+
 function ContextIndicator({
 	items,
 	onRemove,
@@ -1389,7 +1559,7 @@ function ContextIndicator({
 						d='M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244'
 					/>
 				</svg>
-				{t("title")}
+				{t("title") /* legacy label */}
 			</div>
 			<div className='flex min-w-0 flex-1 flex-wrap gap-1.5'>
 				{items.map((item) => {

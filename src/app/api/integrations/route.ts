@@ -4,6 +4,8 @@ import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { encryptConfig, decryptConfig } from "@/libs/integration-crypto";
+import { verifyMetaAdsConnection } from "../../../../workers/meta-ads/poller";
+import { verifyGoogleAdsConnection } from "../../../../workers/google-ads/poller";
 import { z } from "zod";
 
 // ──────────────────────────────────────────────
@@ -121,6 +123,51 @@ async function verifyNuvemshopConnection(config: Record<string, string>): Promis
   }
 }
 
+// ── Meta Ads connection verification ─────────
+
+async function verifyMetaAdsConnectionWrapper(
+  config: Record<string, string>,
+): Promise<{ ok: boolean; error?: string }> {
+  const { access_token, ad_account_id } = config;
+
+  if (!access_token || !ad_account_id) {
+    return {
+      ok: false,
+      error: "access_token and ad_account_id are required for Meta Ads",
+    };
+  }
+
+  return verifyMetaAdsConnection({ access_token, ad_account_id });
+}
+
+// ── Google Ads connection verification ───────
+
+async function verifyGoogleAdsConnectionWrapper(
+  config: Record<string, string>,
+): Promise<{ ok: boolean; error?: string }> {
+  const required = [
+    "developer_token",
+    "client_id",
+    "client_secret",
+    "refresh_token",
+    "customer_id",
+  ];
+  for (const key of required) {
+    if (!config[key]) {
+      return { ok: false, error: `${key} is required for Google Ads` };
+    }
+  }
+
+  return verifyGoogleAdsConnection({
+    developer_token: config.developer_token,
+    client_id: config.client_id,
+    client_secret: config.client_secret,
+    refresh_token: config.refresh_token,
+    customer_id: config.customer_id,
+    login_customer_id: config.login_customer_id || undefined,
+  });
+}
+
 // ── Schemas ──────────────────────────────────
 
 const connectSchema = z.object({
@@ -195,8 +242,12 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     verificationResult = await verifyShopifyConnection(config);
   } else if (provider === "nuvemshop") {
     verificationResult = await verifyNuvemshopConnection(config);
+  } else if (provider === "meta_ads") {
+    verificationResult = await verifyMetaAdsConnectionWrapper(config);
+  } else if (provider === "google_ads") {
+    verificationResult = await verifyGoogleAdsConnectionWrapper(config);
   }
-  // Future: add verification for stripe, meta_ads, google_ads
+  // Future: add verification for stripe
 
   // Update status based on verification
   const updatedConnection = await prisma.integrationConnection.update({

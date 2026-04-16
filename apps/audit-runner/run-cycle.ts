@@ -33,6 +33,8 @@ import { pollShopifyData } from "../../workers/shopify/poller";
 import { mapPollResultToSnapshotData as mapShopifyPollResult } from "../../packages/shopify-adapter/snapshot-mapper";
 import { pollNuvemshopData } from "../../workers/nuvemshop/poller";
 import { mapPollResultToSnapshotData as mapNuvemshopPollResult } from "../../packages/nuvemshop-adapter/snapshot-mapper";
+import { pollMetaAdsData } from "../../workers/meta-ads/poller";
+import { pollGoogleAdsData } from "../../workers/google-ads/poller";
 import { decryptConfig } from "@/libs/integration-crypto";
 import type { IntegrationSnapshot } from "../../packages/integrations/types";
 import type { Evidence } from "../../packages/domain";
@@ -561,6 +563,91 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 							console.warn(`[audit-runner ${cycleId}] Nuvemshop integration sync failed:`, err);
 							await prisma.integrationConnection.update({
 								where: { id: nuvemshopConn.id },
+								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
+							}).catch(() => { /* swallow secondary error */ });
+						}
+					}
+
+					// Meta Ads integration — ad spend + creatives from Marketing API.
+					// Poller returns MetaAdsSnapshotData directly; no adapter needed.
+					const metaAdsConn = integrationConnections.find(c => c.provider === 'meta_ads');
+					if (metaAdsConn) {
+						try {
+							const config = decryptConfig(metaAdsConn.config);
+							const metaPollResult = await pollMetaAdsData({
+								access_token: config.access_token,
+								ad_account_id: config.ad_account_id,
+							});
+
+							if (metaPollResult.errors.length === 0 || metaPollResult.data.ad_spend_30d > 0) {
+								integrationSnapshots.push({
+									provider: 'meta_ads',
+									fetched_at: new Date().toISOString(),
+									window: '30d',
+									data: metaPollResult.data,
+								});
+							}
+
+							await prisma.integrationConnection.update({
+								where: { id: metaAdsConn.id },
+								data: {
+									lastSyncedAt: new Date(),
+									status: metaPollResult.errors.length > 0 ? 'error' : 'connected',
+									syncError: metaPollResult.errors[0] ?? null,
+								},
+							});
+
+							console.log(
+								`[audit-runner ${cycleId}] Meta Ads integration synced (spend_30d=${metaPollResult.data.ad_spend_30d} ${metaPollResult.data.currency}, creatives=${metaPollResult.data.creatives.length}, errors=${metaPollResult.errors.length})`,
+							);
+						} catch (err) {
+							console.warn(`[audit-runner ${cycleId}] Meta Ads integration sync failed:`, err);
+							await prisma.integrationConnection.update({
+								where: { id: metaAdsConn.id },
+								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
+							}).catch(() => { /* swallow secondary error */ });
+						}
+					}
+
+					// Google Ads integration — spend + campaigns + RSA creative text.
+					const googleAdsConn = integrationConnections.find(c => c.provider === 'google_ads');
+					if (googleAdsConn) {
+						try {
+							const config = decryptConfig(googleAdsConn.config);
+							const googlePollResult = await pollGoogleAdsData({
+								developer_token: config.developer_token,
+								client_id: config.client_id,
+								client_secret: config.client_secret,
+								refresh_token: config.refresh_token,
+								customer_id: config.customer_id,
+								login_customer_id: config.login_customer_id || undefined,
+							});
+
+							if (googlePollResult.errors.length === 0 || googlePollResult.data.ad_spend_30d > 0) {
+								integrationSnapshots.push({
+									provider: 'google_ads',
+									fetched_at: new Date().toISOString(),
+									window: '30d',
+									data: googlePollResult.data,
+								});
+							}
+
+							await prisma.integrationConnection.update({
+								where: { id: googleAdsConn.id },
+								data: {
+									lastSyncedAt: new Date(),
+									status: googlePollResult.errors.length > 0 ? 'error' : 'connected',
+									syncError: googlePollResult.errors[0] ?? null,
+								},
+							});
+
+							console.log(
+								`[audit-runner ${cycleId}] Google Ads integration synced (spend_30d=${googlePollResult.data.ad_spend_30d} ${googlePollResult.data.currency}, campaigns=${googlePollResult.data.campaigns.length}, errors=${googlePollResult.errors.length})`,
+							);
+						} catch (err) {
+							console.warn(`[audit-runner ${cycleId}] Google Ads integration sync failed:`, err);
+							await prisma.integrationConnection.update({
+								where: { id: googleAdsConn.id },
 								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
 							}).catch(() => { /* swallow secondary error */ });
 						}

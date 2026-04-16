@@ -355,6 +355,184 @@ export default function DataSourcesPage() {
 		finally { setNuvemshopSyncing(false); }
 	};
 
+	// ── Meta Ads state ──
+	const [metaAdsStatus, setMetaAdsStatus] = useState<SourceStatus>("not_configured");
+	const [metaAdsAccountId, setMetaAdsAccountId] = useState("");
+	const [metaAdsToken, setMetaAdsToken] = useState("");
+	const [metaAdsSaving, setMetaAdsSaving] = useState(false);
+	const [metaAdsLastSync, setMetaAdsLastSync] = useState<string | null>(null);
+	const [metaAdsError, setMetaAdsError] = useState<string | null>(null);
+
+	const fetchMetaAdsStatus = useCallback(async () => {
+		try {
+			const res = await fetch(`/api/integrations?environment_id=${environmentId}`);
+			if (!res.ok) return;
+			const { integrations } = await res.json();
+			const metaAds = integrations?.find((i: any) => i.provider === "meta_ads");
+			if (metaAds) {
+				setMetaAdsStatus(mapStatus(metaAds.status));
+				setMetaAdsLastSync(metaAds.lastSyncedAt);
+				setMetaAdsError(metaAds.syncError);
+			}
+		} catch { /* silent */ }
+	}, [environmentId]);
+
+	useEffect(() => { fetchMetaAdsStatus(); }, [fetchMetaAdsStatus]);
+
+	const handleConnectMetaAds = async () => {
+		if (!metaAdsAccountId.trim() || !metaAdsToken.trim()) {
+			setMetaAdsError("Ad Account ID e Access Token são obrigatórios.");
+			return;
+		}
+		setMetaAdsSaving(true);
+		setMetaAdsError(null);
+		try {
+			const res = await fetch("/api/integrations", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					environmentId,
+					provider: "meta_ads",
+					config: {
+						ad_account_id: metaAdsAccountId.trim(),
+						access_token: metaAdsToken.trim(),
+					},
+				}),
+			});
+			const data = await res.json();
+			if (!res.ok && res.status !== 200) {
+				setMetaAdsError(data.message || "Falha ao conectar Meta Ads.");
+				return;
+			}
+			if (data.status === "error") {
+				setMetaAdsError(data.message || "Credenciais inválidas.");
+				return;
+			}
+			setMetaAdsStatus("configured");
+			setMetaAdsToken("");
+			await fetchMetaAdsStatus();
+		} catch {
+			setMetaAdsError("Erro de rede. Tente novamente.");
+		} finally {
+			setMetaAdsSaving(false);
+		}
+	};
+
+	const handleDisconnectMetaAds = async () => {
+		if (!confirm("Desconectar Meta Ads? Insights de spend e creative voltarão a ficar indisponíveis.")) return;
+		try {
+			await fetch("/api/integrations", {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ environmentId, provider: "meta_ads" }),
+			});
+			setMetaAdsStatus("not_configured");
+			setMetaAdsAccountId("");
+			setMetaAdsToken("");
+			setMetaAdsLastSync(null);
+			setMetaAdsError(null);
+		} catch { /* silent */ }
+	};
+
+	// ── Google Ads state ──
+	const [googleAdsStatus, setGoogleAdsStatus] = useState<SourceStatus>("not_configured");
+	const [googleAdsDeveloperToken, setGoogleAdsDeveloperToken] = useState("");
+	const [googleAdsClientId, setGoogleAdsClientId] = useState("");
+	const [googleAdsClientSecret, setGoogleAdsClientSecret] = useState("");
+	const [googleAdsRefreshToken, setGoogleAdsRefreshToken] = useState("");
+	const [googleAdsCustomerId, setGoogleAdsCustomerId] = useState("");
+	const [googleAdsLoginCustomerId, setGoogleAdsLoginCustomerId] = useState("");
+	const [googleAdsSaving, setGoogleAdsSaving] = useState(false);
+	const [googleAdsLastSync, setGoogleAdsLastSync] = useState<string | null>(null);
+	const [googleAdsError, setGoogleAdsError] = useState<string | null>(null);
+
+	const fetchGoogleAdsStatus = useCallback(async () => {
+		try {
+			const res = await fetch(`/api/integrations?environment_id=${environmentId}`);
+			if (!res.ok) return;
+			const { integrations } = await res.json();
+			const googleAds = integrations?.find((i: any) => i.provider === "google_ads");
+			if (googleAds) {
+				setGoogleAdsStatus(mapStatus(googleAds.status));
+				setGoogleAdsLastSync(googleAds.lastSyncedAt);
+				setGoogleAdsError(googleAds.syncError);
+			}
+		} catch { /* silent */ }
+	}, [environmentId]);
+
+	useEffect(() => { fetchGoogleAdsStatus(); }, [fetchGoogleAdsStatus]);
+
+	const handleConnectGoogleAds = async () => {
+		const missing = [
+			["developer_token", googleAdsDeveloperToken],
+			["client_id", googleAdsClientId],
+			["client_secret", googleAdsClientSecret],
+			["refresh_token", googleAdsRefreshToken],
+			["customer_id", googleAdsCustomerId],
+		].filter(([, v]) => !String(v).trim());
+		if (missing.length > 0) {
+			setGoogleAdsError(`Campos obrigatórios: ${missing.map(m => m[0]).join(", ")}.`);
+			return;
+		}
+		setGoogleAdsSaving(true);
+		setGoogleAdsError(null);
+		try {
+			const res = await fetch("/api/integrations", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					environmentId,
+					provider: "google_ads",
+					config: {
+						developer_token: googleAdsDeveloperToken.trim(),
+						client_id: googleAdsClientId.trim(),
+						client_secret: googleAdsClientSecret.trim(),
+						refresh_token: googleAdsRefreshToken.trim(),
+						customer_id: googleAdsCustomerId.trim(),
+						...(googleAdsLoginCustomerId.trim() && { login_customer_id: googleAdsLoginCustomerId.trim() }),
+					},
+				}),
+			});
+			const data = await res.json();
+			if (!res.ok && res.status !== 200) {
+				setGoogleAdsError(data.message || "Falha ao conectar Google Ads.");
+				return;
+			}
+			if (data.status === "error") {
+				setGoogleAdsError(data.message || "Credenciais inválidas.");
+				return;
+			}
+			setGoogleAdsStatus("configured");
+			setGoogleAdsClientSecret("");
+			setGoogleAdsRefreshToken("");
+			await fetchGoogleAdsStatus();
+		} catch {
+			setGoogleAdsError("Erro de rede. Tente novamente.");
+		} finally {
+			setGoogleAdsSaving(false);
+		}
+	};
+
+	const handleDisconnectGoogleAds = async () => {
+		if (!confirm("Desconectar Google Ads? Insights de campanhas e spend voltarão a ficar indisponíveis.")) return;
+		try {
+			await fetch("/api/integrations", {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ environmentId, provider: "google_ads" }),
+			});
+			setGoogleAdsStatus("not_configured");
+			setGoogleAdsDeveloperToken("");
+			setGoogleAdsClientId("");
+			setGoogleAdsClientSecret("");
+			setGoogleAdsRefreshToken("");
+			setGoogleAdsCustomerId("");
+			setGoogleAdsLoginCustomerId("");
+			setGoogleAdsLastSync(null);
+			setGoogleAdsError(null);
+		} catch { /* silent */ }
+	};
+
 	const [pixelCopied, setPixelCopied] = useState(false);
 	const pixelSnippet = `<script async src="https://app.vestigio.io/snippet/vestigio.js" data-env="${environmentId}"></script>`;
 
@@ -412,6 +590,24 @@ export default function DataSourcesPage() {
 			status: nuvemshopStatus,
 			configurable: true,
 			unlocks: "Dados reais de faturamento, analytics de produtos, métricas de clientes",
+		},
+		{
+			id: "meta_ads",
+			title: "Meta Ads",
+			description: "Importe ad spend e criativos do Facebook / Instagram Ads pra medir ROAS real e detectar concentração de plataforma.",
+			icon: "M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM9.75 16.5V9l5.25 3.75L9.75 16.5z",
+			status: metaAdsStatus,
+			configurable: true,
+			unlocks: "Ad spend real, criativos, ROAS measurable, platform concentration risk",
+		},
+		{
+			id: "google_ads",
+			title: "Google Ads",
+			description: "Importe spend, campanhas e creative text do Google Ads pra cross-reference com revenue e detectar waste.",
+			icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z",
+			status: googleAdsStatus,
+			configurable: true,
+			unlocks: "Ad spend real, campanhas, creative text, ROAS measurable, conversion visibility",
 		},
 	];
 
@@ -673,6 +869,145 @@ export default function DataSourcesPage() {
 
 										<button onClick={handleConnectNuvemshop} disabled={nuvemshopSaving} style={buttonStyle}>
 											{nuvemshopSaving ? "Conectando..." : "Conectar Nuvemshop"}
+										</button>
+									</div>
+								)}
+							</div>
+						)}
+
+						{/* Expanded Meta Ads form */}
+						{source.id === "meta_ads" && expandedCard === "meta_ads" && (
+							<div style={{ padding: "0 20px 20px", borderTop: "1px solid #27272a" }}>
+								{metaAdsStatus === "configured" || metaAdsStatus === "verified" ? (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+										<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+											<div>
+												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Connected</p>
+												{metaAdsLastSync && (
+													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last sync: {new Date(metaAdsLastSync).toLocaleString()}</p>
+												)}
+											</div>
+											<button onClick={handleDisconnectMetaAds} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
+												Disconnect
+											</button>
+										</div>
+										{metaAdsError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{metaAdsError}
+											</div>
+										)}
+									</div>
+								) : (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+										<div style={{ padding: "12px 14px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>How to get your Meta Ads credentials:</p>
+											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
+												<li>Em <a href="https://business.facebook.com/settings" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Business Settings</a> &rarr; <strong style={{ color: "#a1a1aa" }}>Users &rarr; System Users</strong>, crie um System User</li>
+												<li>Assign o System User ao seu <strong style={{ color: "#a1a1aa" }}>Ad Account</strong> com permissão <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>ads_read</code></li>
+												<li>Click <strong style={{ color: "#a1a1aa" }}>Generate New Token</strong> &rarr; selecione seu Meta App &rarr; scope <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>ads_read</code> &rarr; copie o token (permanente pra business assets)</li>
+												<li>Pegue o Ad Account ID em <strong style={{ color: "#a1a1aa" }}>Ads Manager &rarr; Account Settings</strong> (formato <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>act_XXXXXXXXXXXXX</code>)</li>
+											</ol>
+										</div>
+
+										<Field label="Ad Account ID" hint="act_XXXXXXXXXXXXX — o 'act_' é opcional, a gente normaliza">
+											<input type="text" value={metaAdsAccountId} onChange={(e) => setMetaAdsAccountId(e.target.value)} placeholder="act_123456789012345" style={inputStyle} />
+										</Field>
+										<Field label="System User Access Token" hint="Permanente pra business assets (ou long-lived user token)">
+											<input type="password" value={metaAdsToken} onChange={(e) => setMetaAdsToken(e.target.value)} placeholder="EAAG..." style={inputStyle} />
+										</Field>
+
+										<div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#71717a", fontSize: 11, lineHeight: 1.5 }}>
+												Apenas escopo <strong style={{ color: "#a1a1aa" }}>ads_read</strong>. Sem permissão de modificar campanhas. Credenciais criptografadas com AES-256-GCM.
+											</p>
+										</div>
+
+										{metaAdsError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{metaAdsError}
+											</div>
+										)}
+
+										<button onClick={handleConnectMetaAds} disabled={metaAdsSaving} style={buttonStyle}>
+											{metaAdsSaving ? "Conectando..." : "Conectar Meta Ads"}
+										</button>
+									</div>
+								)}
+							</div>
+						)}
+
+						{/* Expanded Google Ads form */}
+						{source.id === "google_ads" && expandedCard === "google_ads" && (
+							<div style={{ padding: "0 20px 20px", borderTop: "1px solid #27272a" }}>
+								{googleAdsStatus === "configured" || googleAdsStatus === "verified" ? (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+										<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+											<div>
+												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Connected</p>
+												{googleAdsLastSync && (
+													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last sync: {new Date(googleAdsLastSync).toLocaleString()}</p>
+												)}
+											</div>
+											<button onClick={handleDisconnectGoogleAds} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
+												Disconnect
+											</button>
+										</div>
+										{googleAdsError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{googleAdsError}
+											</div>
+										)}
+									</div>
+								) : (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+										<div style={{ padding: "12px 14px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>How to get your Google Ads credentials:</p>
+											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
+												<li>Apply for a <strong style={{ color: "#a1a1aa" }}>Developer Token</strong> em <a href="https://ads.google.com/aw/apicenter" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Google Ads API Center</a> (basic access serve)</li>
+												<li>Em <a href="https://console.cloud.google.com/apis/credentials" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Google Cloud Console</a> crie um <strong style={{ color: "#a1a1aa" }}>OAuth 2.0 Client ID</strong> do tipo Desktop App</li>
+												<li>Gere um <strong style={{ color: "#a1a1aa" }}>Refresh Token</strong> via <a href="https://developers.google.com/oauthplayground" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">OAuth Playground</a> com scope <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>https://www.googleapis.com/auth/adwords</code></li>
+												<li>Pegue o <strong style={{ color: "#a1a1aa" }}>Customer ID</strong> em Google Ads (formato <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>123-456-7890</code> — remova os hífens)</li>
+												<li>Se você usa MCC, preencha também o <strong style={{ color: "#a1a1aa" }}>Login Customer ID</strong> (o id da MCC manager)</li>
+											</ol>
+										</div>
+
+										<Field label="Developer Token" hint="Aprovado pelo Google Ads API Center">
+											<input type="password" value={googleAdsDeveloperToken} onChange={(e) => setGoogleAdsDeveloperToken(e.target.value)} placeholder="XXXXXXXXXXXXXXXXXXXXXX" style={inputStyle} />
+										</Field>
+										<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+											<Field label="OAuth Client ID">
+												<input type="text" value={googleAdsClientId} onChange={(e) => setGoogleAdsClientId(e.target.value)} placeholder="xxx.apps.googleusercontent.com" style={inputStyle} />
+											</Field>
+											<Field label="OAuth Client Secret">
+												<input type="password" value={googleAdsClientSecret} onChange={(e) => setGoogleAdsClientSecret(e.target.value)} placeholder="GOCSPX-..." style={inputStyle} />
+											</Field>
+										</div>
+										<Field label="Refresh Token" hint="Gerado via OAuth Playground com scope adwords">
+											<input type="password" value={googleAdsRefreshToken} onChange={(e) => setGoogleAdsRefreshToken(e.target.value)} placeholder="1//0e..." style={inputStyle} />
+										</Field>
+										<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+											<Field label="Customer ID" hint="Só dígitos, sem hífens">
+												<input type="text" value={googleAdsCustomerId} onChange={(e) => setGoogleAdsCustomerId(e.target.value)} placeholder="1234567890" style={inputStyle} />
+											</Field>
+											<Field label="Login Customer ID (opcional)" hint="Id da MCC manager se você usar">
+												<input type="text" value={googleAdsLoginCustomerId} onChange={(e) => setGoogleAdsLoginCustomerId(e.target.value)} placeholder="9876543210" style={inputStyle} />
+											</Field>
+										</div>
+
+										<div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#71717a", fontSize: 11, lineHeight: 1.5 }}>
+												Apenas leitura — scope <strong style={{ color: "#a1a1aa" }}>adwords</strong>. Vestigio nunca modifica campanhas. Credenciais criptografadas com AES-256-GCM.
+											</p>
+										</div>
+
+										{googleAdsError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{googleAdsError}
+											</div>
+										)}
+
+										<button onClick={handleConnectGoogleAds} disabled={googleAdsSaving} style={buttonStyle}>
+											{googleAdsSaving ? "Conectando..." : "Conectar Google Ads"}
 										</button>
 									</div>
 								)}

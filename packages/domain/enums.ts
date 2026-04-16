@@ -110,6 +110,12 @@ export enum VerificationType {
   BrowserVerification = 'browser_verification',
   IntegrationPull = 'integration_pull',
   AuthenticatedJourneyVerification = 'authenticated_journey_verification',
+  /**
+   * Dispatch a heavy external scanner (Katana deep discovery, Nuclei
+   * vuln scan, brand-intelligence lookup). Used for findings whose
+   * detection depends on external scan coverage. Minutes, not seconds.
+   */
+  ExternalScan = 'external_scan',
 }
 
 export enum EvidenceType {

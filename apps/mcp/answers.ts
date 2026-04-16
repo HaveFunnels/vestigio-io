@@ -30,6 +30,7 @@ import {
 } from './types';
 import { buildSuggestions, buildFindingChatContext, buildMultiFindingContext, composeFindingAnswer, composeMultiFindingAnswer } from './suggestions';
 import { createEmptySession } from './session';
+import { planVerification } from './verification';
 
 // ──────────────────────────────────────────────
 // Answer Composition Layer
@@ -222,16 +223,18 @@ export function composeFindingChatAnswer(
   }
 
   const answer = composeFindingAnswer(chatCtx, projections);
+  const finding = projections.findings.find(f => f.id === findingId) ?? null;
+  const verification = finding ? suggestVerificationFromFinding(finding) : null;
 
   return {
     direct_answer: answer.direct_answer,
-    confidence: projections.findings.find(f => f.id === findingId)?.confidence || 0,
+    confidence: finding?.confidence || 0,
     freshness,
     staleness_reason: null,
     why: answer.why,
     recommended_next_step: answer.recommended_next_step,
     supporting_refs: [],
-    optional_verification: null,
+    optional_verification: verification,
     impact_summary: buildImpactSummary(ctx),
     navigation: buildNavigation(ctx, null, 'root_cause'),
     suggestions: buildSuggestions(ctx, sess, 'finding'),
@@ -276,6 +279,17 @@ export function composeMultiFindingChatAnswer(
     ? Math.round(matchedFindings.reduce((s, f) => s + f.confidence, 0) / matchedFindings.length)
     : 0;
 
+  // For multi-finding analysis, pick the highest-impact finding as the
+  // verification anchor — user "verify all" is ambiguous so we anchor
+  // on the biggest-impact one; the UI can expose per-finding verify
+  // separately when the user picks a specific card.
+  const anchorFinding =
+    matchedFindings.sort((a, b) => b.impact.midpoint - a.impact.midpoint)[0] ??
+    null;
+  const verification = anchorFinding
+    ? suggestVerificationFromFinding(anchorFinding)
+    : null;
+
   return {
     direct_answer: answer.direct_answer,
     confidence: avgConf,
@@ -284,7 +298,7 @@ export function composeMultiFindingChatAnswer(
     why: answer.why,
     recommended_next_step: answer.recommended_next_step,
     supporting_refs: [],
-    optional_verification: null,
+    optional_verification: verification,
     impact_summary: buildImpactSummary(ctx),
     navigation: buildNavigation(ctx, null, 'root_cause'),
     suggestions: buildSuggestions(ctx, sess, 'multi_finding'),
@@ -365,6 +379,64 @@ function buildNavigation(
     suggested_map: suggestedMap,
     suggestions,
   };
+}
+
+/**
+ * Build a VerificationSuggestion from a finding's verification strategy.
+ * Replaces the previous null-always behavior in discuss_finding and
+ * analyze_findings — now every finding surfaces a verification plan,
+ * even if the plan is "can't be re-verified, here's why".
+ *
+ * The suggestion's `verification_type` + `reason` + `expected_benefit`
+ * are derived from the strategy taxonomy (planVerification above).
+ * For strategies that don't dispatch a request (pixel_accumulation,
+ * heuristic_recompute, not_verifiable_explain) we still return a
+ * VerificationSuggestion — the UI knows to render a non-clickable
+ * status chip rather than a Verify button.
+ */
+function suggestVerificationFromFinding(
+  finding: import('../../packages/projections').FindingProjection,
+): VerificationSuggestion | null {
+  const plan = planVerification(
+    finding.verification_strategy,
+    finding.verification_notes,
+    finding.verification_eta_seconds,
+  );
+  switch (plan.kind) {
+    case 'dispatch':
+      return {
+        verification_type: plan.verification_type,
+        reason:
+          finding.verification_notes ||
+          `Re-verification for this finding dispatches ${plan.verification_type}.`,
+        expected_benefit:
+          plan.expected_eta_seconds != null
+            ? `Completes in approximately ${plan.expected_eta_seconds}s and returns fresh evidence.`
+            : 'Returns fresh evidence for this specific finding.',
+      };
+    case 'status':
+      // No request created, but still surface the explanation so the
+      // UI / user sees why verification can't be dispatched.
+      return {
+        verification_type: VerificationType.ReuseOnly,
+        reason: plan.message,
+        expected_benefit:
+          plan.reason === 'pixel_accumulation'
+            ? 'Re-check happens automatically as sessions accumulate.'
+            : 'This finding is documented as not re-verifiable from public surfaces.',
+      };
+    case 'recompute':
+      return {
+        verification_type: VerificationType.ReuseOnly,
+        reason: plan.message,
+        expected_benefit: 'Refreshes projection immediately over current evidence.',
+      };
+    case 'unclassified':
+      // Legacy findings whose inference_key isn't yet in the catalog.
+      // Return null so the UI falls back to the generic freshness-based
+      // suggestion path.
+      return null;
+  }
 }
 
 function suggestVerification(

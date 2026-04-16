@@ -5514,4 +5514,42 @@ function emitCommerceHeuristicSignals(
       description: `Promo codes surfaced publicly on ${Math.round(da.exposure * 100)}% of ${da.sample_size} scanned pages${codeList ? ` (${codeList}${codeSuffix})` : ''}. When discounts are the default purchase path, full-price sales become the exception and margin erodes every month. Heuristic detection from visible marketing copy; connect your commerce platform for real usage rates.`,
     }));
   }
+
+  // Checkout abandonment — heuristic confidence 60. The extractor enforces
+  // the rate>=0.65 floor itself (only emits when payment forms carry 10+
+  // fields), so any result here is above the inference engine's 0.60
+  // activation threshold.
+  const ca = heuristics.checkout_abandonment;
+  if (ca) {
+    const severity = ca.rate > 0.72 ? 'high' : ca.rate > 0.65 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'checkout_abandonment_rate_high',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.checkout_abandonment_rate',
+      value: severity,
+      numeric_value: Math.round(ca.rate * 100),
+      confidence: 60,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `Payment form friction implies ~${Math.round(ca.rate * 100)}% abandonment on ${ca.sample_size} payment surface(s). Long / multi-step payment forms drive buyers to abandon at the final step — every additional field past six adds measurable dropoff. Heuristic detection from form-field analysis; connect your commerce platform for the true rate.`,
+    }));
+  }
+
+  // Refund rate — heuristic confidence 55. Rate pinned at 0.08 (just
+  // above the inference engine's 0.05 activation threshold) because the
+  // policy-friction proxy can't quantify magnitude, only signal presence.
+  const rr = heuristics.refund_rate;
+  if (rr) {
+    signals.push(createSignal({
+      signal_key: 'refund_rate_elevated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.refund_rate',
+      value: 'low',
+      numeric_value: Math.round(rr.rate * 100),
+      confidence: 55,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `Refund policy friction across ${rr.sample_size} policy page(s) — missing return-window or refund-process language, or policy word-counts outside the normal 150–2000 range. Hostile or buried refund paths correlate with higher actual refund rates because frustrated buyers escalate to chargebacks instead of returns. Heuristic detection from policy structure; connect your commerce platform for the true rate.`,
+    }));
+  }
 }

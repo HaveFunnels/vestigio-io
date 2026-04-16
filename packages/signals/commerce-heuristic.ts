@@ -1,9 +1,11 @@
 import {
 	Evidence,
 	EvidenceType,
+	type FormPayload,
 	type IframePayload,
 	type MetaPayload,
 	type PageContentPayload,
+	type PolicyPagePayload,
 	type ProviderIndicatorPayload,
 	type ScriptPayload,
 	type TechnologyDetectedPayload,
@@ -101,20 +103,12 @@ export interface ExtractHeuristicsOptions {
 // ──────────────────────────────────────────────
 
 const KNOWN_PAYMENT_GATEWAYS: Record<string, string> = {
+	// Global acquirers / PSPs
 	stripe: 'Stripe',
 	paypal: 'PayPal',
 	braintree: 'Braintree',
 	adyen: 'Adyen',
 	square: 'Square',
-	mercadopago: 'Mercado Pago',
-	mercado_pago: 'Mercado Pago',
-	pagseguro: 'PagSeguro',
-	pagarme: 'Pagar.me',
-	ebanx: 'EBANX',
-	cielo: 'Cielo',
-	rede: 'Rede',
-	stone: 'Stone',
-	getnet: 'GetNet',
 	klarna: 'Klarna',
 	afterpay: 'Afterpay',
 	affirm: 'Affirm',
@@ -127,25 +121,87 @@ const KNOWN_PAYMENT_GATEWAYS: Record<string, string> = {
 	checkout_com: 'Checkout.com',
 	worldpay: 'Worldpay',
 	authorize_net: 'Authorize.net',
+	nuvei: 'Nuvei',
+	// LATAM — Mercado Pago + EBANX work BR + regional
+	mercadopago: 'Mercado Pago',
+	mercado_pago: 'Mercado Pago',
+	ebanx: 'EBANX',
+	// Brazilian acquirers & sub-acquirers
+	cielo: 'Cielo',
+	rede: 'Rede',
+	stone: 'Stone',
+	getnet: 'GetNet',
+	pagseguro: 'PagSeguro',
+	pagarme: 'Pagar.me',
+	pagbank: 'PagBank',
+	picpay: 'Picpay',
+	vindi: 'Vindi',
+	iugu: 'Iugu',
+	asaas: 'Asaas',
+	efi: 'Efí',
+	gerencianet: 'Efí',
+	appmax: 'Appmax',
+	yampi: 'Yampi',
+	zoop: 'Zoop',
+	koin: 'Koin',
+	adiq: 'Adiq',
+	// BR infoproduct / digital checkout marketplaces
+	hotmart: 'Hotmart',
+	eduzz: 'Eduzz',
+	monetizze: 'Monetizze',
+	braip: 'Braip',
+	kiwify: 'Kiwify',
+	cartpanda: 'CartPanda',
+	abmex: 'Abmex',
+	ticto: 'Ticto',
+	perfectpay: 'PerfectPay',
+	perfect_pay: 'PerfectPay',
 };
 
 const PAYMENT_HINT_REGEXES: { regex: RegExp; canonical: string }[] = [
+	// Global
 	{ regex: /\bstripe\b/i, canonical: 'Stripe' },
 	{ regex: /\bpaypal\b/i, canonical: 'PayPal' },
 	{ regex: /\bbraintree\b/i, canonical: 'Braintree' },
 	{ regex: /\badyen\b/i, canonical: 'Adyen' },
-	{ regex: /\bmercadopag/i, canonical: 'Mercado Pago' },
-	{ regex: /\bpagseguro\b/i, canonical: 'PagSeguro' },
-	{ regex: /\bpagar\.?me\b/i, canonical: 'Pagar.me' },
-	{ regex: /\bebanx\b/i, canonical: 'EBANX' },
-	{ regex: /\bcielo\b/i, canonical: 'Cielo' },
-	{ regex: /\bgetnet\b/i, canonical: 'GetNet' },
 	{ regex: /\bklarna\b/i, canonical: 'Klarna' },
 	{ regex: /\bafterpay\b/i, canonical: 'Afterpay' },
 	{ regex: /\baffirm\b/i, canonical: 'Affirm' },
 	{ regex: /\bshop[\s_-]?pay\b/i, canonical: 'Shop Pay' },
 	{ regex: /\bcheckout\.com\b/i, canonical: 'Checkout.com' },
 	{ regex: /\bworldpay\b/i, canonical: 'Worldpay' },
+	{ regex: /\bnuvei\b/i, canonical: 'Nuvei' },
+	// LATAM
+	{ regex: /\bmercadopag/i, canonical: 'Mercado Pago' },
+	{ regex: /\bebanx\b/i, canonical: 'EBANX' },
+	// BR acquirers
+	{ regex: /\bpagseguro\b/i, canonical: 'PagSeguro' },
+	{ regex: /\bpagar\.?me\b/i, canonical: 'Pagar.me' },
+	{ regex: /\bpagbank\b/i, canonical: 'PagBank' },
+	{ regex: /\bpicpay\b/i, canonical: 'Picpay' },
+	{ regex: /\bcielo\b/i, canonical: 'Cielo' },
+	{ regex: /\bgetnet\b/i, canonical: 'GetNet' },
+	{ regex: /\bstone\.com\.br\b/i, canonical: 'Stone' },
+	{ regex: /\bvindi\b/i, canonical: 'Vindi' },
+	{ regex: /\biugu\b/i, canonical: 'Iugu' },
+	{ regex: /\basaas\b/i, canonical: 'Asaas' },
+	{ regex: /\bgerencianet\b/i, canonical: 'Efí' },
+	{ regex: /\bef[ií]\b/i, canonical: 'Efí' },
+	{ regex: /\bappmax\b/i, canonical: 'Appmax' },
+	{ regex: /\byampi\b/i, canonical: 'Yampi' },
+	{ regex: /\bzoop\b/i, canonical: 'Zoop' },
+	{ regex: /\bkoin\b/i, canonical: 'Koin' },
+	{ regex: /\badiq\b/i, canonical: 'Adiq' },
+	// Infoproduct
+	{ regex: /\bhotmart\b/i, canonical: 'Hotmart' },
+	{ regex: /\beduzz\b/i, canonical: 'Eduzz' },
+	{ regex: /\bmonetizze\b/i, canonical: 'Monetizze' },
+	{ regex: /\bbraip\b/i, canonical: 'Braip' },
+	{ regex: /\bkiwify\b/i, canonical: 'Kiwify' },
+	{ regex: /\bcartpanda\b/i, canonical: 'CartPanda' },
+	{ regex: /\babmex\b/i, canonical: 'Abmex' },
+	{ regex: /\bticto\b/i, canonical: 'Ticto' },
+	{ regex: /\bperfect[\s_-]?pay\b/i, canonical: 'PerfectPay' },
 ];
 
 function normaliseProviderName(raw: string | null | undefined): string | null {
@@ -327,11 +383,115 @@ function extractDiscountAbuse(
 	};
 }
 
+// ──────────────────────────────────────────────
+// Checkout-abandonment heuristic
+//
+// Proxies cart abandonment via form friction on payment surfaces.
+// Research benchmarks: every additional field beyond 6 on a payment
+// form lifts abandonment ~2%; forms with 15+ fields routinely see
+// 70%+ abandonment. We count payment-field forms and pick the highest-
+// friction one as the worst-case abandonment surface.
+//
+// Signal is conservative: we ONLY emit when the proxy implies a rate
+// above the inference-engine threshold (0.60). Marginal friction
+// (<10 fields) returns undefined rather than emitting a weak signal
+// that just-barely crosses the threshold.
+// ──────────────────────────────────────────────
+
+function extractCheckoutAbandonment(
+	evidence: Evidence[],
+): CheckoutAbandonmentHeuristic | undefined {
+	const paymentForms: FormPayload[] = [];
+
+	for (const e of evidence) {
+		if (e.evidence_type !== EvidenceType.Form) continue;
+		const p = e.payload as FormPayload;
+		if (!p.has_payment_fields) continue;
+		paymentForms.push(p);
+	}
+
+	if (paymentForms.length === 0) return undefined;
+
+	// Worst-case friction: pick the payment form with the most fields.
+	// A single bloated form dominates real abandonment because every
+	// checkout eventually funnels through it.
+	const maxFields = Math.max(
+		...paymentForms.map((f) => f.field_names.length),
+	);
+
+	// Rate buckets tuned to published cart-abandonment research:
+	// - 15+ fields → ~0.75 (critical friction, Baymard-style long forms)
+	// - 10-14 fields → ~0.68 (moderate friction, above the 0.60 threshold)
+	// - 6-9 fields → skip. Would just-barely cross threshold but the
+	//   heuristic isn't precise enough to earn the finding at that edge.
+	let rate: number;
+	if (maxFields >= 15) rate = 0.75;
+	else if (maxFields >= 10) rate = 0.68;
+	else return undefined;
+
+	return {
+		rate,
+		basis: 'form_submit_failure_ratio',
+		sample_size: paymentForms.length,
+	};
+}
+
+// ──────────────────────────────────────────────
+// Refund-rate heuristic
+//
+// Proxies refund rate via policy-surface friction. Deterministic fields
+// on PolicyPagePayload (has_return_window, has_refund_process,
+// word_count) capture the three friction modes that correlate with
+// higher actual refund rates: hostile/vague policies drive disputes,
+// over-long policies bury resolution paths, missing refund-process
+// language means buyers escalate to chargebacks.
+//
+// Emits when >= 2 friction indicators fire across the detected refund
+// policy pages. Rate pinned at 0.08 — just above the inference-engine
+// threshold (0.05) — because the proxy can't precisely estimate magnitude,
+// only "friction present vs not". Confidence low (55) to reflect this.
+// ──────────────────────────────────────────────
+
+function extractRefundRate(
+	evidence: Evidence[],
+): RefundRateHeuristic | undefined {
+	const refundPolicies: PolicyPagePayload[] = [];
+
+	for (const e of evidence) {
+		if (e.evidence_type !== EvidenceType.PolicyPage) continue;
+		const p = e.payload as PolicyPagePayload;
+		if (!p.detected) continue;
+		if (p.policy_type !== 'refund' && p.policy_type !== 'terms') continue;
+		refundPolicies.push(p);
+	}
+
+	if (refundPolicies.length === 0) return undefined;
+
+	// Friction scoring: accumulate indicators across all refund policies.
+	// Treat nullish fields as neutral (unknown), not as positive friction.
+	let frictionCount = 0;
+	for (const p of refundPolicies) {
+		if (p.has_return_window === false) frictionCount++;
+		if (p.has_refund_process === false) frictionCount++;
+		if (p.word_count != null && p.word_count < 150) frictionCount++;
+		if (p.word_count != null && p.word_count > 2000) frictionCount++;
+	}
+
+	if (frictionCount < 2) return undefined;
+
+	return {
+		rate: 0.08,
+		basis: 'policy_mention_density',
+		sample_size: refundPolicies.length,
+	};
+}
+
 /**
- * Phase 2.4 implementation: ships two extractors — payment gateway
- * detection and discount-abuse exposure. The other three heuristic
- * fields (checkout_abandonment, refund_rate, repeat_purchase) stay
- * unpopulated until their probe stacks land; consumers null-check.
+ * Phase 2.4 Wave 2: ships four extractors — payment gateway detection,
+ * discount-abuse exposure, checkout-abandonment friction, and refund-
+ * rate policy friction. Only `repeat_purchase` stays unpopulated — no
+ * reliable heuristic proxy exists without transactional data; consumers
+ * null-check.
  *
  * Short-circuits to `{ suppressed_by_integration: true }` when the
  * caller signals that a commerce integration is already covering the
@@ -352,6 +512,12 @@ export function extractCommerceHeuristicSignals(
 
 	const discountAbuse = extractDiscountAbuse(evidence);
 	if (discountAbuse) result.discount_abuse = discountAbuse;
+
+	const checkoutAbandonment = extractCheckoutAbandonment(evidence);
+	if (checkoutAbandonment) result.checkout_abandonment = checkoutAbandonment;
+
+	const refundRate = extractRefundRate(evidence);
+	if (refundRate) result.refund_rate = refundRate;
 
 	return result;
 }

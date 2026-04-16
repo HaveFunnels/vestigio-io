@@ -342,6 +342,69 @@ runSuite("Commerce Heuristics — Payment Gateway", () => {
 			"canonical BR name",
 		);
 	});
+
+	test("covers BR infoproduct marketplaces (Hotmart, Kiwify, CartPanda)", () => {
+		const ev = [
+			providerEvidence("https://curso.com.br/", "Hotmart"),
+			providerEvidence("https://curso.com.br/checkout", "Kiwify"),
+			providerEvidence("https://curso.com.br/upsell", "CartPanda"),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.payment_gateway !== undefined, "emitted");
+		assertEqual(result.payment_gateway!.gateway_count, 3, "three distinct");
+		assert(
+			result.payment_gateway!.detected_gateways.includes("Hotmart"),
+			"Hotmart",
+		);
+		assert(
+			result.payment_gateway!.detected_gateways.includes("Kiwify"),
+			"Kiwify",
+		);
+		assert(
+			result.payment_gateway!.detected_gateways.includes("CartPanda"),
+			"CartPanda",
+		);
+	});
+
+	test("covers BR acquirers via hint regex on iframe hosts", () => {
+		const ev = [
+			iframeEvidence(
+				"https://loja.com.br/checkout",
+				"https://checkout.appmax.com.br/finalizar",
+				null,
+			),
+			iframeEvidence(
+				"https://loja.com.br/cart",
+				"https://secure.vindi.com.br/subscribe",
+				null,
+			),
+			providerEvidence("https://loja.com.br/cart", "Iugu"),
+			providerEvidence("https://loja.com.br/checkout", "Asaas"),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.payment_gateway !== undefined, "emitted");
+		const detected = result.payment_gateway!.detected_gateways;
+		assert(detected.includes("Appmax"), "Appmax via hint regex");
+		assert(detected.includes("Vindi"), "Vindi via hint regex");
+		assert(detected.includes("Iugu"), "Iugu");
+		assert(detected.includes("Asaas"), "Asaas");
+	});
+
+	test("covers Nuvei + Efí (gerencianet alias)", () => {
+		const ev = [
+			providerEvidence("https://example.com/", "Nuvei"),
+			providerEvidence("https://example.com/cart", "gerencianet"),
+			providerEvidence("https://example.com/checkout", "Nuvei"),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.payment_gateway !== undefined, "emitted");
+		const detected = result.payment_gateway!.detected_gateways;
+		assert(detected.includes("Nuvei"), "Nuvei canonical");
+		assert(
+			detected.includes("Efí"),
+			"gerencianet collapses to Efí canonical",
+		);
+	});
 });
 
 // ══════════════════════════════════════════════════
@@ -502,6 +565,225 @@ runSuite("Commerce Heuristics — Discount Abuse", () => {
 });
 
 // ══════════════════════════════════════════════════
+// Checkout-abandonment extractor
+// ══════════════════════════════════════════════════
+
+import { formEvidence } from "./helpers";
+
+function paymentFormEvidence(
+	pageUrl: string,
+	fieldCount: number,
+): Evidence {
+	const fields = Array.from({ length: fieldCount }, (_, i) => `field_${i}`);
+	return testEvidence(EvidenceType.Form, {
+		type: "form",
+		page_url: pageUrl,
+		action: `${pageUrl}/submit`,
+		method: "POST",
+		target_host: "example.com",
+		is_external: false,
+		field_names: fields,
+		has_payment_fields: true,
+	} as any);
+}
+
+runSuite("Commerce Heuristics — Checkout Abandonment", () => {
+	test("emits high-abandonment rate for 15+ field payment form", () => {
+		const ev = [paymentFormEvidence("https://example.com/checkout", 18)];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(
+			result.checkout_abandonment !== undefined,
+			"emitted",
+		);
+		assertEqual(
+			result.checkout_abandonment!.rate,
+			0.75,
+			"critical friction rate",
+		);
+		assertEqual(
+			result.checkout_abandonment!.basis,
+			"form_submit_failure_ratio",
+			"basis",
+		);
+	});
+
+	test("emits moderate abandonment for 10-14 field payment form", () => {
+		const ev = [paymentFormEvidence("https://example.com/checkout", 12)];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.checkout_abandonment !== undefined, "emitted");
+		assertEqual(
+			result.checkout_abandonment!.rate,
+			0.68,
+			"moderate friction rate",
+		);
+	});
+
+	test("skips when payment form has <10 fields", () => {
+		const ev = [paymentFormEvidence("https://example.com/checkout", 8)];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.checkout_abandonment,
+			undefined,
+			"below 10-field floor",
+		);
+	});
+
+	test("skips when no payment forms detected", () => {
+		const ev = [formEvidence("https://example.com/contact", "/submit", false, false)];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.checkout_abandonment,
+			undefined,
+			"no payment forms",
+		);
+	});
+
+	test("picks worst-case form when multiple payment forms present", () => {
+		const ev = [
+			paymentFormEvidence("https://example.com/cart", 8),
+			paymentFormEvidence("https://example.com/checkout", 16),
+			paymentFormEvidence("https://example.com/confirmation", 5),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.checkout_abandonment !== undefined, "emitted");
+		assertEqual(
+			result.checkout_abandonment!.rate,
+			0.75,
+			"picked worst-case (16 fields)",
+		);
+		assertEqual(
+			result.checkout_abandonment!.sample_size,
+			3,
+			"all payment forms in sample",
+		);
+	});
+});
+
+// ══════════════════════════════════════════════════
+// Refund-rate extractor
+// ══════════════════════════════════════════════════
+
+function refundPolicyEvidence(
+	url: string,
+	overrides: Partial<{
+		has_return_window: boolean | null;
+		has_refund_process: boolean | null;
+		word_count: number | null;
+		policy_type: string;
+	}> = {},
+): Evidence {
+	return testEvidence(EvidenceType.PolicyPage, {
+		type: "policy_page",
+		url,
+		policy_type: overrides.policy_type ?? "refund",
+		detected: true,
+		confidence: 75,
+		word_count: overrides.word_count ?? 500,
+		has_return_window: overrides.has_return_window ?? true,
+		has_refund_process: overrides.has_refund_process ?? true,
+		has_contact_info: true,
+		has_shipping_info: null,
+		has_cancellation_terms: null,
+		section_count: 3,
+	} as any);
+}
+
+runSuite("Commerce Heuristics — Refund Rate", () => {
+	test("emits elevated rate when return-window AND refund-process missing", () => {
+		const ev = [
+			refundPolicyEvidence("https://example.com/refund", {
+				has_return_window: false,
+				has_refund_process: false,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.refund_rate !== undefined, "emitted");
+		assertEqual(result.refund_rate!.rate, 0.08, "just-above-threshold rate");
+		assertEqual(
+			result.refund_rate!.basis,
+			"policy_mention_density",
+			"basis",
+		);
+	});
+
+	test("emits when word_count extremes compound with missing return window", () => {
+		const ev = [
+			refundPolicyEvidence("https://example.com/refund", {
+				has_return_window: false,
+				word_count: 80,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(
+			result.refund_rate !== undefined,
+			"emitted — short policy + missing window",
+		);
+	});
+
+	test("skips when only one friction indicator present", () => {
+		const ev = [
+			refundPolicyEvidence("https://example.com/refund", {
+				has_return_window: false,
+				has_refund_process: true,
+				word_count: 600,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.refund_rate,
+			undefined,
+			"single indicator insufficient",
+		);
+	});
+
+	test("skips when refund policy fields are all nullish (not crawled)", () => {
+		const ev = [
+			refundPolicyEvidence("https://example.com/refund", {
+				has_return_window: null,
+				has_refund_process: null,
+				word_count: null,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.refund_rate,
+			undefined,
+			"null fields → neutral, not friction",
+		);
+	});
+
+	test("skips when no refund/terms policy detected", () => {
+		const ev = [
+			refundPolicyEvidence("https://example.com/privacy", {
+				has_return_window: false,
+				has_refund_process: false,
+				policy_type: "privacy",
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.refund_rate,
+			undefined,
+			"non-refund policy ignored",
+		);
+	});
+
+	test("over-long policy (>2000 words) + missing process triggers", () => {
+		const ev = [
+			refundPolicyEvidence("https://example.com/refund", {
+				has_refund_process: false,
+				word_count: 3500,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(
+			result.refund_rate !== undefined,
+			"emitted — buried policy + missing process",
+		);
+	});
+});
+
+// ══════════════════════════════════════════════════
 // Signal-engine end-to-end wiring
 // ══════════════════════════════════════════════════
 
@@ -560,6 +842,44 @@ runSuite("Commerce Heuristics — Signal Engine Wiring", () => {
 		);
 		assert(sig !== undefined, "signal emitted");
 		assertEqual(sig!.confidence, 60, "heuristic confidence");
+	});
+
+	test("extractSignals emits checkout_abandonment_rate_high at heuristic confidence", () => {
+		const ev = [paymentFormEvidence("https://example.com/checkout", 16)];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "checkout_abandonment_rate_high",
+		);
+		assert(sig !== undefined, "signal emitted");
+		assertEqual(sig!.confidence, 60, "heuristic confidence");
+		assertEqual(sig!.value, "high", "high severity for 75% rate");
+	});
+
+	test("extractSignals emits refund_rate_elevated at heuristic confidence", () => {
+		const ev = [
+			refundPolicyEvidence("https://example.com/refund", {
+				has_return_window: false,
+				has_refund_process: false,
+			}),
+		];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "refund_rate_elevated",
+		);
+		assert(sig !== undefined, "signal emitted");
+		assertEqual(sig!.confidence, 55, "heuristic confidence");
 	});
 
 	test("does not double-emit when commerce_context provided", () => {

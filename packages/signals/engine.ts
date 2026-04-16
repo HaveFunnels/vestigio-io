@@ -5552,4 +5552,27 @@ function emitCommerceHeuristicSignals(
       description: `Refund policy friction across ${rr.sample_size} policy page(s) — missing return-window or refund-process language, or policy word-counts outside the normal 150–2000 range. Hostile or buried refund paths correlate with higher actual refund rates because frustrated buyers escalate to chargebacks instead of returns. Heuristic detection from policy structure; connect your commerce platform for the true rate.`,
     }));
   }
+
+  // Form-excessive-fields — heuristic confidence 55. Crawl-only fallback
+  // for a signal the behavioral path emits at confidence 60. The
+  // extractor itself suppresses when BehavioralSession evidence exists,
+  // so this branch never double-emits against the pixel path.
+  const ff = heuristics.form_excessive_fields;
+  if (ff) {
+    const severity =
+      ff.form_count >= 3 ? 'high' : ff.form_count >= 2 ? 'medium' : 'low';
+    const urlPreview = ff.form_urls.slice(0, 2).join(', ');
+    const urlSuffix = ff.form_urls.length > 2 ? ` (+${ff.form_urls.length - 2} more)` : '';
+    signals.push(createSignal({
+      signal_key: 'form_excessive_fields_before_conversion',
+      category: SignalCategory.Behavioral,
+      attribute: 'behavioral.form_excessive',
+      value: severity,
+      numeric_value: ff.form_count,
+      confidence: 55,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `${ff.form_count} conversion-proximate form(s) demand excessive input (up to ${ff.max_field_count} fields on ${urlPreview}${urlSuffix}). Long forms before the conversion step reduce completion rate measurably — every field past six adds dropoff. Heuristic detection from crawl evidence; instrument pixel tracking for behavior-confirmed rates.`,
+    }));
+  }
 }

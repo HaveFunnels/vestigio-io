@@ -784,6 +784,185 @@ runSuite("Commerce Heuristics — Refund Rate", () => {
 });
 
 // ══════════════════════════════════════════════════
+// Form-excessive-fields extractor
+// ══════════════════════════════════════════════════
+
+function longForm(
+	pageUrl: string,
+	action: string,
+	fieldCount: number,
+	hasPaymentFields: boolean = false,
+): Evidence {
+	const fields = Array.from({ length: fieldCount }, (_, i) => `f_${i}`);
+	return testEvidence(EvidenceType.Form, {
+		type: "form",
+		page_url: pageUrl,
+		action,
+		method: "POST",
+		target_host: null,
+		is_external: false,
+		field_names: fields,
+		has_payment_fields: hasPaymentFields,
+	} as any);
+}
+
+runSuite("Commerce Heuristics — Form Excessive Fields", () => {
+	test("emits when 2+ conversion-proximate forms exceed field floor", () => {
+		const ev = [
+			longForm(
+				"https://example.com/checkout",
+				"https://example.com/checkout/submit",
+				12,
+				true,
+			),
+			longForm(
+				"https://example.com/signup",
+				"https://example.com/signup/submit",
+				9,
+				false,
+			),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.form_excessive_fields !== undefined, "emitted");
+		assertEqual(result.form_excessive_fields!.form_count, 2, "2 forms");
+		assertEqual(
+			result.form_excessive_fields!.max_field_count,
+			12,
+			"max field count",
+		);
+	});
+
+	test("skips when only 1 excessive form found", () => {
+		const ev = [
+			longForm(
+				"https://example.com/checkout",
+				"https://example.com/checkout/submit",
+				12,
+				true,
+			),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.form_excessive_fields,
+			undefined,
+			"single form insufficient",
+		);
+	});
+
+	test("ignores non-conversion-proximate forms (e.g. admin/search)", () => {
+		const ev = [
+			longForm(
+				"https://example.com/admin/settings",
+				"/admin/save",
+				15,
+				false,
+			),
+			longForm(
+				"https://example.com/search",
+				"/search",
+				10,
+				false,
+			),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.form_excessive_fields,
+			undefined,
+			"non-conversion URLs skipped",
+		);
+	});
+
+	test("classifies payment form as conversion-proximate regardless of URL", () => {
+		const ev = [
+			longForm("https://example.com/pay", "/api/pay", 6, true),
+			longForm("https://example.com/finalize", "/api/go", 6, true),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(
+			result.form_excessive_fields !== undefined,
+			"payment forms classify as proximate",
+		);
+		assertEqual(result.form_excessive_fields!.form_count, 2, "both counted");
+	});
+
+	test("payment forms use lower 5-field threshold", () => {
+		const ev = [
+			longForm("https://example.com/cart", "/cart/submit", 4, true),
+			longForm("https://example.com/checkout", "/submit", 4, true),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.form_excessive_fields,
+			undefined,
+			"4 fields below payment floor",
+		);
+	});
+
+	test("non-payment forms require 7+ fields", () => {
+		const ev = [
+			longForm("https://example.com/signup", "/signup", 6, false),
+			longForm("https://example.com/contact", "/contact", 6, false),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.form_excessive_fields,
+			undefined,
+			"6 fields below non-payment floor",
+		);
+	});
+
+	test("detects pt-BR conversion URLs (cadastro, orcamento, pagamento)", () => {
+		const ev = [
+			longForm("https://loja.com.br/cadastro", "/api/cadastro", 9),
+			longForm("https://loja.com.br/orcamento", "/api/orcamento", 8),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(
+			result.form_excessive_fields !== undefined,
+			"BR tokens recognized",
+		);
+	});
+
+	test("suppresses when BehavioralSession evidence present", () => {
+		const ev = [
+			longForm("https://example.com/checkout", "/submit", 12, true),
+			longForm("https://example.com/signup", "/signup", 9, false),
+			testEvidence(EvidenceType.BehavioralSession, {
+				type: "behavioral_session",
+				session_count: 50,
+				form_excessive_field_count: 0,
+			} as any),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.form_excessive_fields,
+			undefined,
+			"behavioral path takes priority",
+		);
+	});
+
+	test("collects urls deduped + sorted", () => {
+		const ev = [
+			longForm("https://example.com/checkout", "/submit", 12, true),
+			longForm("https://example.com/checkout", "/submit-v2", 11, true),
+			longForm("https://example.com/signup", "/signup", 9, false),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.form_excessive_fields !== undefined, "emitted");
+		assertEqual(
+			result.form_excessive_fields!.form_urls.length,
+			2,
+			"deduped urls",
+		);
+		assertEqual(
+			result.form_excessive_fields!.form_urls[0],
+			"https://example.com/checkout",
+			"sorted — checkout first",
+		);
+	});
+});
+
+// ══════════════════════════════════════════════════
 // Signal-engine end-to-end wiring
 // ══════════════════════════════════════════════════
 
@@ -859,6 +1038,28 @@ runSuite("Commerce Heuristics — Signal Engine Wiring", () => {
 		assert(sig !== undefined, "signal emitted");
 		assertEqual(sig!.confidence, 60, "heuristic confidence");
 		assertEqual(sig!.value, "high", "high severity for 75% rate");
+	});
+
+	test("extractSignals emits form_excessive_fields_before_conversion at heuristic confidence", () => {
+		const ev = [
+			longForm("https://example.com/checkout", "/submit", 14, true),
+			longForm("https://example.com/signup", "/signup", 8, false),
+			longForm("https://example.com/contact", "/contact", 9, false),
+		];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "form_excessive_fields_before_conversion",
+		);
+		assert(sig !== undefined, "signal emitted");
+		assertEqual(sig!.confidence, 55, "heuristic confidence (below behavioral 60)");
+		assertEqual(sig!.value, "high", "3 forms → high severity");
+		assertEqual(sig!.numeric_value, 3, "numeric_value = form count");
 	});
 
 	test("extractSignals emits refund_rate_elevated at heuristic confidence", () => {

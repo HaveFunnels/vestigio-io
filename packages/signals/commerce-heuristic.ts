@@ -80,12 +80,32 @@ export interface RepeatPurchaseHeuristic {
 	sample_size: number;
 }
 
+/**
+ * Crawl-only fallback for `form_excessive_fields_before_conversion`.
+ * Counts conversion-proximate forms (payment, signup, lead, contact)
+ * whose field list exceeds the friction threshold, then mirrors the
+ * behavioral path's numeric_value/severity encoding so the inference
+ * engine consumer doesn't branch on source.
+ *
+ * Suppressed when BehavioralSessionPayload evidence is present —
+ * behavioral data is always preferred when available.
+ */
+export interface FormExcessiveFieldsHeuristic {
+	/** Count of conversion-proximate forms exceeding the field floor. */
+	form_count: number;
+	/** The URLs where those forms were found — helps authors locate them. */
+	form_urls: string[];
+	/** Max field count observed — tells the story of the worst offender. */
+	max_field_count: number;
+}
+
 export interface CommerceHeuristicSignals {
 	checkout_abandonment?: CheckoutAbandonmentHeuristic;
 	refund_rate?: RefundRateHeuristic;
 	payment_gateway?: PaymentGatewayHeuristic;
 	discount_abuse?: DiscountAbuseHeuristic;
 	repeat_purchase?: RepeatPurchaseHeuristic;
+	form_excessive_fields?: FormExcessiveFieldsHeuristic;
 	suppressed_by_integration?: boolean;
 }
 
@@ -486,16 +506,119 @@ function extractRefundRate(
 	};
 }
 
+// ──────────────────────────────────────────────
+// Form-excessive-fields heuristic
+//
+// Crawl-only fallback for `form_excessive_fields_before_conversion`,
+// today only emitted from BehavioralSessionPayload.form_excessive_
+// field_count (pixel). Stores without instrumentation never saw the
+// finding.
+//
+// Logic:
+//   1. Classify each FormPayload as conversion-proximate via URL tokens
+//      (checkout/cart/signup/register/subscribe/trial/contact/quote)
+//      OR has_payment_fields === true (overrides URL).
+//   2. A form is "excessive" when field_names.length >= 7 (matches the
+//      behavioral evidence definition: >6 fields OR sensitive mix).
+//      Payment forms get a lower gate of 5+ fields because the sensitive
+//      mix alone justifies the finding.
+//   3. Emit when the count reaches >= 2 — matches the behavioral path's
+//      activation (formStartRate < 0.30 OR count >= 2).
+//
+// Auto-suppressed when any BehavioralSession evidence is present.
+// Behavioral is always preferred — it knows which forms users actually
+// reach, we only know which forms exist.
+// ──────────────────────────────────────────────
+
+const CONVERSION_URL_TOKENS = [
+	'checkout',
+	'cart',
+	'payment',
+	'pagamento',
+	'finalizar',
+	'signup',
+	'sign-up',
+	'register',
+	'registration',
+	'cadastro',
+	'subscribe',
+	'assinar',
+	'trial',
+	'start-free',
+	'get-started',
+	'join',
+	'apply',
+	'contact',
+	'contato',
+	'quote',
+	'orcamento',
+	'orçamento',
+	'estimate',
+	'demo',
+];
+
+function isConversionProximate(form: FormPayload): boolean {
+	if (form.has_payment_fields) return true;
+	const haystack = `${form.page_url} ${form.action}`.toLowerCase();
+	return CONVERSION_URL_TOKENS.some((t) => haystack.includes(t));
+}
+
+function isExcessiveFieldCount(form: FormPayload): boolean {
+	const n = form.field_names.length;
+	if (form.has_payment_fields) return n >= 5;
+	return n >= 7;
+}
+
+function extractFormExcessiveFields(
+	evidence: Evidence[],
+): FormExcessiveFieldsHeuristic | undefined {
+	// Suppression: behavioral data is always preferred. If any session
+	// evidence exists, trust that path — don't duplicate.
+	const hasBehavioral = evidence.some(
+		(e) => e.evidence_type === EvidenceType.BehavioralSession,
+	);
+	if (hasBehavioral) return undefined;
+
+	const excessiveForms: FormPayload[] = [];
+	for (const e of evidence) {
+		if (e.evidence_type !== EvidenceType.Form) continue;
+		const p = e.payload as FormPayload;
+		if (!isConversionProximate(p)) continue;
+		if (!isExcessiveFieldCount(p)) continue;
+		excessiveForms.push(p);
+	}
+
+	// Activation floor: 2+ excessive forms (matches behavioral path).
+	// A single excessive form could be a contact form with a legitimate
+	// long application — pattern needs to be systemic.
+	if (excessiveForms.length < 2) return undefined;
+
+	const urls = Array.from(new Set(excessiveForms.map((f) => f.page_url))).sort();
+	const maxFieldCount = Math.max(
+		...excessiveForms.map((f) => f.field_names.length),
+	);
+
+	return {
+		form_count: excessiveForms.length,
+		form_urls: urls,
+		max_field_count: maxFieldCount,
+	};
+}
+
 /**
- * Phase 2.4 Wave 2: ships four extractors — payment gateway detection,
- * discount-abuse exposure, checkout-abandonment friction, and refund-
- * rate policy friction. Only `repeat_purchase` stays unpopulated — no
- * reliable heuristic proxy exists without transactional data; consumers
- * null-check.
+ * Phase 2.4 Wave 3: five extractors shipped — payment gateway,
+ * discount abuse, checkout abandonment, refund rate, and
+ * form-excessive-fields friction (crawl fallback for the behavioral
+ * path). Only `repeat_purchase` stays unpopulated — no reliable
+ * heuristic proxy without transactional data; consumers null-check.
  *
  * Short-circuits to `{ suppressed_by_integration: true }` when the
  * caller signals that a commerce integration is already covering the
  * same signals at full confidence.
+ *
+ * Form-excessive-fields suppresses itself internally when behavioral
+ * session evidence is present — separate concern from the commerce
+ * integration flag.
  */
 export function extractCommerceHeuristicSignals(
 	evidence: Evidence[],
@@ -518,6 +641,9 @@ export function extractCommerceHeuristicSignals(
 
 	const refundRate = extractRefundRate(evidence);
 	if (refundRate) result.refund_rate = refundRate;
+
+	const formExcessive = extractFormExcessiveFields(evidence);
+	if (formExcessive) result.form_excessive_fields = formExcessive;
 
 	return result;
 }

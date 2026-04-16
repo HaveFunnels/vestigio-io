@@ -2127,7 +2127,8 @@
 					"finding": "Finding",
 					"action": "Action",
 					"workspace": "Workspace",
-					"surface": "Surface"
+					"surface": "Surface",
+					"map": "Map"
 				},
 				"island": {
 					"scoped_to_one": "This conversation is focused on 1 {kind}",
@@ -2143,6 +2144,7 @@
 					"single_action": "Discuss action \"{title}\" ({id}). Why does it matter, what's the expected lift, and how should I sequence it?",
 					"single_workspace": "Discuss the \"{title}\" workspace. Walk me through what's happening there and what to do about it.",
 					"single_surface": "Discuss surface {title}. What findings touch it and what should I prioritise?",
+					"single_map": "I'm looking at the {title} map ({id}) in the Maps page. Use your available tools to pull the underlying data when you need it, then walk me through the most important relationships it shows and what I should focus on first.",
 					"group_findings": "{count} findings ({titles})",
 					"group_actions": "{count} actions ({titles})",
 					"group_workspaces": "{count} workspaces ({titles})",
@@ -2780,7 +2782,16 @@
 				"category": "Category",
 				"causal": "Causal",
 				"contributes": "Contributes",
-				"addresses": "Addresses"
+				"addresses": "Addresses",
+				"transition": "Navigation",
+				"redirect": "Redirect",
+				"journey_homepage": "Entry",
+				"journey_product": "Product",
+				"journey_pricing": "Pricing",
+				"journey_cart": "Cart",
+				"journey_checkout": "Checkout",
+				"journey_confirmation": "Confirmation",
+				"journey_support": "Support"
 			},
 			"edge_types": {
 				"causal": "Causal",

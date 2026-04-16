@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { resolveOrgContext } from "@/libs/resolve-org";
+import type {
+	MapDefinition,
+	MapNode,
+	MapEdge,
+	MapEdgeType,
+	MapNodeType,
+} from "../../../../../packages/maps";
 
 /**
  * GET /api/maps/user-journey — Authenticated.
@@ -23,8 +30,17 @@ export async function GET() {
     const { prisma } = await import("@/libs/prismaDb");
     const orgCtx = await resolveOrgContext();
 
-    if (!orgCtx.orgId || orgCtx.orgId === "demo") {
+    if (!orgCtx.orgId) {
       return NextResponse.json({ map: null });
+    }
+
+    // Demo org has no backing Prisma records (see src/libs/resolve-org.ts
+    // — demo is the fallback context when no membership exists). Return
+    // a small synthetic journey so evaluators on the demo account see
+    // the flagship map populated instead of an empty state. Metadata
+    // flags it as `demo` so the UI can badge it if we want to later.
+    if (orgCtx.orgId === "demo") {
+      return NextResponse.json({ map: buildDemoJourneyMap() });
     }
 
     // Get the latest environment
@@ -103,18 +119,7 @@ export async function GET() {
     const allJourneyPages = [...journeyPages, ...supportPages];
     const usedPageIds = new Set<string>();
 
-    interface JourneyNode {
-      id: string;
-      type: string;
-      label: string;
-      severity: string | null;
-      impact: { min: number; max: number; midpoint: number } | null;
-      pack: string | null;
-      metadata: Record<string, unknown>;
-      position: { x: number; y: number };
-    }
-
-    const nodes: JourneyNode[] = [];
+    const nodes: MapNode[] = [];
 
     // Position commercial pages in a horizontal flow
     let x = 0;
@@ -124,9 +129,12 @@ export async function GET() {
       usedPageIds.add(page.id);
       const pageType = page.pageType?.toLowerCase() || "other";
 
+      const nodeType: MapNodeType = commercialTypes.has(pageType)
+        ? "journey_commercial"
+        : "journey_support";
       nodes.push({
         id: `page_${page.id}`,
-        type: commercialTypes.has(pageType) ? "journey_commercial" : "journey_support",
+        type: nodeType,
         label: page.title || page.path || page.normalizedUrl,
         severity: null,
         impact: null,
@@ -179,16 +187,8 @@ export async function GET() {
       }
     }
 
-    interface JourneyEdge {
-      id: string;
-      source: string;
-      target: string;
-      type: string;
-      label: string | null;
-    }
-
     const edgeSet = new Set<string>();
-    const edges: JourneyEdge[] = [];
+    const edges: MapEdge[] = [];
 
     for (const rel of relations) {
       const sourceId = nodeIdByUrl.get(rel.sourceUrl) || nodeIdByUrl.get(new URL(rel.sourceUrl).pathname);
@@ -199,11 +199,13 @@ export async function GET() {
         if (edgeSet.has(edgeKey)) continue;
         edgeSet.add(edgeKey);
 
+        const edgeType: MapEdgeType =
+          rel.relationType === "redirect" ? "redirect" : "transition";
         edges.push({
           id: `edge_${edges.length}`,
           source: sourceId,
           target: targetId,
-          type: rel.relationType === "redirect" ? "redirect" : "transition",
+          type: edgeType,
           label: null,
         });
       }
@@ -226,12 +228,65 @@ export async function GET() {
       }
     }
 
-    const map = {
+    // Legend is derived from what's actually in the map. We include every
+    // commercial page-type swatch we emitted plus support if present, and
+    // transition/redirect edge entries only if we actually drew any.
+    const hasSupport = nodes.some((n) => n.type === "journey_support");
+    const journeyPageTypes = new Set(
+      nodes
+        .filter((n) => n.type === "journey_commercial")
+        .map((n) => (n.metadata.pageType as string) || ""),
+    );
+    const legendSwatchByPageType: Record<string, string> = {
+      homepage: "journey_homepage",
+      landing: "journey_homepage",
+      product: "journey_product",
+      category: "journey_product",
+      pricing: "journey_pricing",
+      cart: "journey_cart",
+      checkout: "journey_checkout",
+      thank_you: "journey_confirmation",
+    };
+    const legendLabelKeyByPageType: Record<string, string> = {
+      homepage: "journey_homepage",
+      landing: "journey_homepage",
+      product: "journey_product",
+      category: "journey_product",
+      pricing: "journey_pricing",
+      cart: "journey_cart",
+      checkout: "journey_checkout",
+      thank_you: "journey_confirmation",
+    };
+    const seenSwatches = new Set<string>();
+    const legendNodes: { labelKey: string; swatch: string }[] = [];
+    for (const pageType of journeyPageTypes) {
+      const swatch = legendSwatchByPageType[pageType];
+      const labelKey = legendLabelKeyByPageType[pageType];
+      if (swatch && labelKey && !seenSwatches.has(swatch)) {
+        seenSwatches.add(swatch);
+        legendNodes.push({ labelKey, swatch });
+      }
+    }
+    if (hasSupport) {
+      legendNodes.push({ labelKey: "journey_support", swatch: "journey_support" });
+    }
+
+    const hasTransition = edges.some((e) => e.type === "transition");
+    const hasRedirect = edges.some((e) => e.type === "redirect");
+    const legendEdges: { labelKey: string; swatch: string }[] = [];
+    if (hasTransition) legendEdges.push({ labelKey: "transition", swatch: "transition" });
+    if (hasRedirect) legendEdges.push({ labelKey: "redirect", swatch: "redirect" });
+
+    const map: MapDefinition & { metadata?: Record<string, unknown> } = {
       id: "user_journey",
       name: "User Journey",
       type: "user_journey",
       nodes,
       edges,
+      legend: {
+        nodes: legendNodes as MapDefinition["legend"]["nodes"],
+        edges: legendEdges as MapDefinition["legend"]["edges"],
+      },
       metadata: {
         mode: "inferred",
         pageCount: pages.length,
@@ -244,4 +299,123 @@ export async function GET() {
     console.error("[User Journey API]", err);
     return NextResponse.json({ map: null });
   }
+}
+
+// ──────────────────────────────────────────────
+// Demo journey — synthetic, representative of a small ecommerce site.
+// Kept in-route (not in a seed script) because the demo org is a fake
+// context that has no backing Prisma rows at all (see resolve-org.ts).
+// ──────────────────────────────────────────────
+
+function buildDemoJourneyMap(): MapDefinition & { metadata: Record<string, unknown> } {
+  const NODE_SPACING_X = 280;
+  const COMMERCIAL_Y = 200;
+  const SUPPORT_Y = COMMERCIAL_Y + 240;
+
+  const commercial: Array<{
+    id: string;
+    pageType: string;
+    label: string;
+    path: string;
+  }> = [
+    { id: "home", pageType: "homepage", label: "Homepage", path: "/" },
+    { id: "product", pageType: "product", label: "Product Detail", path: "/products/sample" },
+    { id: "pricing", pageType: "pricing", label: "Pricing", path: "/pricing" },
+    { id: "cart", pageType: "cart", label: "Cart", path: "/cart" },
+    { id: "checkout", pageType: "checkout", label: "Checkout", path: "/checkout" },
+    { id: "confirmation", pageType: "thank_you", label: "Confirmation", path: "/thank-you" },
+  ];
+
+  const support: Array<{ id: string; pageType: string; label: string; path: string }> = [
+    { id: "help", pageType: "support", label: "Help Center", path: "/help" },
+    { id: "refunds", pageType: "policy", label: "Refund Policy", path: "/policies/refunds" },
+  ];
+
+  const nodes: MapNode[] = [];
+
+  commercial.forEach((p, idx) => {
+    nodes.push({
+      id: `demo_${p.id}`,
+      type: "journey_commercial",
+      label: p.label,
+      severity: null,
+      impact: null,
+      pack: null,
+      metadata: {
+        pageType: p.pageType,
+        path: p.path,
+        url: `https://shop.com${p.path}`,
+        statusCode: 200,
+        tier: "core",
+        stage: idx,
+      },
+      position: { x: idx * NODE_SPACING_X, y: COMMERCIAL_Y },
+    });
+  });
+
+  support.forEach((p, idx) => {
+    nodes.push({
+      id: `demo_${p.id}`,
+      type: "journey_support",
+      label: p.label,
+      severity: null,
+      impact: null,
+      pack: null,
+      metadata: {
+        pageType: p.pageType,
+        path: p.path,
+        url: `https://shop.com${p.path}`,
+        statusCode: 200,
+        tier: "extended",
+      },
+      position: { x: (idx + 1) * NODE_SPACING_X, y: SUPPORT_Y },
+    });
+  });
+
+  const edges: MapEdge[] = [];
+  for (let i = 0; i < commercial.length - 1; i++) {
+    edges.push({
+      id: `demo_edge_${i}`,
+      source: `demo_${commercial[i].id}`,
+      target: `demo_${commercial[i + 1].id}`,
+      type: "transition",
+      label: null,
+    });
+  }
+  // One redirect link to exercise the new edge type (e.g. pricing → cart).
+  edges.push({
+    id: "demo_edge_redirect",
+    source: "demo_pricing",
+    target: "demo_checkout",
+    type: "redirect",
+    label: null,
+  });
+
+  return {
+    id: "user_journey",
+    name: "User Journey",
+    type: "user_journey",
+    nodes,
+    edges,
+    legend: {
+      nodes: [
+        { labelKey: "journey_homepage", swatch: "journey_homepage" },
+        { labelKey: "journey_product", swatch: "journey_product" },
+        { labelKey: "journey_pricing", swatch: "journey_pricing" },
+        { labelKey: "journey_cart", swatch: "journey_cart" },
+        { labelKey: "journey_checkout", swatch: "journey_checkout" },
+        { labelKey: "journey_confirmation", swatch: "journey_confirmation" },
+        { labelKey: "journey_support", swatch: "journey_support" },
+      ],
+      edges: [
+        { labelKey: "transition", swatch: "transition" },
+        { labelKey: "redirect", swatch: "redirect" },
+      ],
+    },
+    metadata: {
+      mode: "demo",
+      pageCount: commercial.length + support.length,
+      relationCount: edges.length,
+    },
+  };
 }

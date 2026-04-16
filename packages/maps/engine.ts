@@ -127,6 +127,13 @@ export function buildRevenueLeakageMap(
     type: 'revenue_leakage',
     nodes,
     edges,
+    legend: {
+      nodes: [
+        { labelKey: 'rootCause', swatch: 'root_cause' },
+        { labelKey: 'finding', swatch: 'finding' },
+      ],
+      edges: [{ labelKey: 'causal', swatch: 'causal' }],
+    },
   };
 }
 
@@ -237,6 +244,17 @@ export function buildChargebackRiskMap(
     type: 'chargeback_risk',
     nodes,
     edges,
+    legend: {
+      nodes: [
+        { labelKey: 'category', swatch: 'category' },
+        { labelKey: 'rootCause', swatch: 'root_cause' },
+        { labelKey: 'finding', swatch: 'finding' },
+      ],
+      edges: [
+        { labelKey: 'contributes', swatch: 'contributes_to' },
+        { labelKey: 'causal', swatch: 'causal' },
+      ],
+    },
   };
 }
 
@@ -333,6 +351,17 @@ export function buildRootCauseMap(
     type: 'root_cause',
     nodes,
     edges,
+    legend: {
+      nodes: [
+        { labelKey: 'finding', swatch: 'finding' },
+        { labelKey: 'rootCause', swatch: 'root_cause' },
+        { labelKey: 'action', swatch: 'action' },
+      ],
+      edges: [
+        { labelKey: 'contributes', swatch: 'contributes_to' },
+        { labelKey: 'addresses', swatch: 'addresses' },
+      ],
+    },
   };
 }
 

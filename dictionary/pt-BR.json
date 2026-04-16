@@ -2182,7 +2182,8 @@
 					"finding": "Descoberta",
 					"action": "Ação",
 					"workspace": "Espaço de trabalho",
-					"surface": "Superfície"
+					"surface": "Superfície",
+					"map": "Mapa"
 				},
 				"island": {
 					"scoped_to_one": "Esta conversa está focada em 1 {kind}",
@@ -2198,6 +2199,7 @@
 					"single_action": "Discuta a ação \"{title}\" ({id}). Por que ela importa, qual é o ganho esperado e como devo priorizá-la?",
 					"single_workspace": "Discuta o espaço de trabalho \"{title}\" ({id}). Me explique o que está acontecendo ali e o que fazer a respeito.",
 					"single_surface": "Discuta a superfície {title} ({id}). Quais descobertas a afetam e o que devo priorizar?",
+					"single_map": "Estou olhando o mapa {title} ({id}) na página de Mapas. Use suas ferramentas disponíveis para puxar os dados por trás quando precisar, depois me explique as relações mais importantes que ele mostra e no que devo focar primeiro.",
 					"group_findings": "{count} descobertas ({titles})",
 					"group_actions": "{count} ações ({titles})",
 					"group_workspaces": "{count} espaços de trabalho ({titles})",
@@ -2835,7 +2837,16 @@
 				"category": "Categoria",
 				"causal": "Causal",
 				"contributes": "Contribui",
-				"addresses": "Endereça"
+				"addresses": "Endereça",
+				"transition": "Navegação",
+				"redirect": "Redirecionamento",
+				"journey_homepage": "Entrada",
+				"journey_product": "Produto",
+				"journey_pricing": "Preços",
+				"journey_cart": "Carrinho",
+				"journey_checkout": "Checkout",
+				"journey_confirmation": "Confirmação",
+				"journey_support": "Suporte"
 			},
 			"drawer": {
 				"summary": "Resumo",

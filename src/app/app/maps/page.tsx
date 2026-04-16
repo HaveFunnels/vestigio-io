@@ -306,6 +306,37 @@ const edgeStyles: Record<string, any> = {
 	},
 	addresses: { stroke: "#10b981", strokeWidth: 2 },
 	transition: { stroke: "#3b82f6", strokeWidth: 1.5 },
+	redirect: {
+		stroke: "#a78bfa",
+		strokeWidth: 1.5,
+		strokeDasharray: "2 4",
+	},
+};
+
+// Legend swatch tokens → Tailwind classes. The engine emits semantic
+// tokens (journey_product, root_cause, causal, …) so the legend stays
+// aligned with what's actually drawn on the canvas per-map. This is
+// the one place where those tokens get translated into CSS.
+const NODE_SWATCH_CLASS: Record<string, string> = {
+	root_cause: "border-red-400 bg-red-400/10",
+	finding: "border-amber-400 bg-amber-400/10",
+	action: "border-emerald-500 bg-emerald-500/10",
+	category: "border-blue-500 bg-blue-500/10",
+	journey_homepage: "border-emerald-500 bg-emerald-500/10",
+	journey_product: "border-blue-500 bg-blue-500/10",
+	journey_pricing: "border-violet-500 bg-violet-500/10",
+	journey_cart: "border-amber-500 bg-amber-500/10",
+	journey_checkout: "border-red-500 bg-red-500/10",
+	journey_confirmation: "border-emerald-500 bg-emerald-500/10",
+	journey_support: "border-dashed border-content-muted bg-surface-inset",
+};
+
+const EDGE_SWATCH_CLASS: Record<string, string> = {
+	causal: "bg-red-500",
+	addresses: "bg-emerald-500",
+	contributes_to: "border-t border-dashed border-content-muted",
+	transition: "bg-blue-500",
+	redirect: "bg-violet-400 [mask-image:linear-gradient(to_right,black_33%,transparent_33%,transparent_66%,black_66%)]",
 };
 
 function toReactFlowNodes(mapDef: MapDefinition): Node[] {
@@ -716,6 +747,53 @@ function RootCauseDrawerContent({ node }: { node: MapNode }) {
 }
 
 // ──────────────────────────────────────────────
+// Legend — reads the per-map legend declared by the builder so it
+// always matches the nodes/edges that are actually on screen.
+// ──────────────────────────────────────────────
+
+function MapLegend({ legend }: { legend: MapDefinition["legend"] }) {
+	const t = useTranslations("console.maps.legend");
+
+	if (
+		(!legend?.nodes || legend.nodes.length === 0) &&
+		(!legend?.edges || legend.edges.length === 0)
+	) {
+		return null;
+	}
+
+	return (
+		<div className='border-t border-edge px-6 py-3'>
+			<div className='flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-content-muted'>
+				{legend.nodes.map((entry) => (
+					<span key={`n:${entry.swatch}`} className='flex items-center gap-1.5'>
+						<span
+							className={`inline-block h-3 w-3 rounded border-2 ${
+								NODE_SWATCH_CLASS[entry.swatch] ||
+								"border-content-muted bg-surface-inset"
+							}`}
+						/>
+						{t(entry.labelKey)}
+					</span>
+				))}
+				{legend.edges.length > 0 && legend.nodes.length > 0 && (
+					<span className='hidden h-4 w-px bg-edge sm:block' aria-hidden />
+				)}
+				{legend.edges.map((entry) => (
+					<span key={`e:${entry.swatch}`} className='flex items-center gap-1.5'>
+						<span
+							className={`inline-block h-0.5 w-4 ${
+								EDGE_SWATCH_CLASS[entry.swatch] || "bg-content-muted"
+							}`}
+						/>
+						{t(entry.labelKey)}
+					</span>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
 // Page
 // ──────────────────────────────────────────────
 
@@ -736,14 +814,6 @@ export default function MapsPage() {
 						tooltip={tc("page_tooltips.maps")}
 					/>
 				</div>
-				{dataState.status === "ready" && (
-					<ShinyButton
-						variant="console"
-						onClick={() => (window.location.href = "/app/chat?context=maps")}
-					>
-						{t("useAsContext")}
-					</ShinyButton>
-				)}
 			</div>
 
 			<div className='flex-1'>
@@ -911,8 +981,8 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
         }
       `}</style>
 
-			{/* Map selector */}
-			<div className='border-b border-edge px-6 py-2'>
+			{/* Map selector + Use-as-Context */}
+			<div className='flex items-center justify-between gap-3 border-b border-edge px-6 py-2'>
 				<div className='flex gap-2'>
 					{allMaps.map((m) => (
 						<button
@@ -927,6 +997,14 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
 						</button>
 					))}
 				</div>
+				<ShinyButton
+					variant='console'
+					onClick={() =>
+						(window.location.href = `/app/chat?context=map:${encodeURIComponent(activeMap.id)}`)
+					}
+				>
+					{t("useAsContext")}
+				</ShinyButton>
 			</div>
 
 			{/* Canvas */}
@@ -965,39 +1043,9 @@ function MapsContent({ maps }: { maps: MapDefinition[] }) {
 				<NodeTooltip tooltip={tooltip} />
 			</div>
 
-			{/* Legend */}
-			<div className='border-t border-edge px-6 py-3'>
-				<div className='flex items-center gap-6 text-xs text-content-muted'>
-					<span className='flex items-center gap-1.5'>
-						<span className='inline-block h-3 w-3 rounded border-2 border-red-400 bg-red-400/10' />{" "}
-						{t("legend.rootCause")}
-					</span>
-					<span className='flex items-center gap-1.5'>
-						<span className='inline-block h-3 w-3 rounded border-2 border-amber-400 bg-amber-400/10' />{" "}
-						{t("legend.finding")}
-					</span>
-					<span className='flex items-center gap-1.5'>
-						<span className='inline-block h-3 w-3 rounded border-2 border-emerald-500 bg-emerald-500/10' />{" "}
-						{t("legend.action")}
-					</span>
-					<span className='flex items-center gap-1.5'>
-						<span className='inline-block h-3 w-3 rounded border-2 border-blue-500 bg-blue-500/10' />{" "}
-						{t("legend.category")}
-					</span>
-					<span className='ml-4 flex items-center gap-1.5'>
-						<span className='inline-block h-0.5 w-4 bg-red-500' />{" "}
-						{t("legend.causal")}
-					</span>
-					<span className='flex items-center gap-1.5'>
-						<span className='inline-block h-0.5 w-4 border-t border-dashed border-content-muted' />{" "}
-						{t("legend.contributes")}
-					</span>
-					<span className='flex items-center gap-1.5'>
-						<span className='inline-block h-0.5 w-4 bg-emerald-500' />{" "}
-						{t("legend.addresses")}
-					</span>
-				</div>
-			</div>
+			{/* Legend — per-map so it actually matches what's drawn */}
+			<MapLegend legend={activeMap.legend} />
+
 
 			{/* Side Drawer for node details */}
 			<SideDrawer

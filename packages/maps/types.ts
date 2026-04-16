@@ -13,7 +13,9 @@ export type MapNodeType =
   | 'support'
   | 'policy'
   | 'trust'
-  | 'measurement';
+  | 'measurement'
+  | 'journey_commercial'
+  | 'journey_support';
 
 export interface MapNode {
   id: string;
@@ -26,7 +28,12 @@ export interface MapNode {
   position: { x: number; y: number };
 }
 
-export type MapEdgeType = 'causal' | 'transition' | 'contributes_to' | 'addresses';
+export type MapEdgeType =
+  | 'causal'
+  | 'transition'
+  | 'contributes_to'
+  | 'addresses'
+  | 'redirect';
 
 export interface MapEdge {
   id: string;
@@ -36,7 +43,52 @@ export interface MapEdge {
   label: string | null;
 }
 
-export type MapType = 'revenue_leakage' | 'chargeback_risk' | 'root_cause';
+export type MapType =
+  | 'revenue_leakage'
+  | 'chargeback_risk'
+  | 'root_cause'
+  | 'user_journey';
+
+// Legend entries are declared by the builder so the UI can render a
+// legend that actually matches the nodes/edges on screen. Each entry
+// references a translation key (resolved in the UI) plus a swatch
+// token that maps to a pre-defined visual treatment. Keeping the
+// visual treatment as a token (not a raw class string) keeps the
+// engine package free of Tailwind / CSS assumptions.
+export type LegendNodeSwatch =
+  | 'root_cause'
+  | 'finding'
+  | 'action'
+  | 'category'
+  | 'journey_homepage'
+  | 'journey_product'
+  | 'journey_pricing'
+  | 'journey_cart'
+  | 'journey_checkout'
+  | 'journey_confirmation'
+  | 'journey_support';
+
+export type LegendEdgeSwatch =
+  | 'causal'
+  | 'transition'
+  | 'contributes_to'
+  | 'addresses'
+  | 'redirect';
+
+export interface MapLegendNodeEntry {
+  labelKey: string;
+  swatch: LegendNodeSwatch;
+}
+
+export interface MapLegendEdgeEntry {
+  labelKey: string;
+  swatch: LegendEdgeSwatch;
+}
+
+export interface MapLegend {
+  nodes: MapLegendNodeEntry[];
+  edges: MapLegendEdgeEntry[];
+}
 
 export interface MapDefinition {
   id: string;
@@ -44,4 +96,5 @@ export interface MapDefinition {
   type: MapType;
   nodes: MapNode[];
   edges: MapEdge[];
+  legend: MapLegend;
 }

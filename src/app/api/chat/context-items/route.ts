@@ -72,8 +72,21 @@ type ContextKind =
   | "action"
   | "workspace"
   | "surface"
+  | "map"
   | "kb_finding"
   | "kb_root_cause";
+
+// Canonical human-readable map titles. The engine builders already
+// carry translated names when projections are loaded, but the chat
+// hydrator runs without forcing a full MCP bootstrap just to decorate
+// a context chip — so we keep a small translation-agnostic fallback
+// here. The LLM pulls the real map contents on demand via its tools.
+const MAP_TITLES: Record<string, string> = {
+  user_journey: "User Journey",
+  revenue_leakage: "Revenue Leakage Map",
+  chargeback_risk: "Chargeback Risk Map",
+  root_cause: "Root Cause Map",
+};
 
 interface ContextItemRequest {
   items?: Array<{ kind?: string; id?: string }>;
@@ -106,6 +119,7 @@ function normalizeKind(raw: string | undefined): ContextKind | null {
     raw === "action" ||
     raw === "workspace" ||
     raw === "surface" ||
+    raw === "map" ||
     raw === "kb_finding" ||
     raw === "kb_root_cause"
   ) {
@@ -354,6 +368,12 @@ export const POST = withErrorTracking(
           id,
           title: id,
         });
+      } else if (kind === "map") {
+        // Maps resolve to a known title only. The LLM pulls the full
+        // map on demand via the `get_map` tool — we don't want to pay
+        // for a full MCP bootstrap just to decorate the chip.
+        const title = MAP_TITLES[id] || id;
+        resolved.push({ kind: "map", id, title });
       } else if (kind === "kb_finding") {
         const article = kbFindingByKey.get(id);
         if (!article) continue;

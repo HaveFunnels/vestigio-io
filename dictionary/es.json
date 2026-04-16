@@ -2096,7 +2096,8 @@
 					"finding": "Hallazgo",
 					"action": "Acción",
 					"workspace": "Workspace",
-					"surface": "Superficie"
+					"surface": "Superficie",
+					"map": "Mapa"
 				},
 				"remove_aria_label": "Quitar {kind} del contexto",
 				"prompts": {
@@ -2105,6 +2106,7 @@
 					"single_action": "Analiza la acción \"{title}\" ({id}). ¿Por qué importa, cuál es el impacto esperado y cómo debería priorizarla?",
 					"single_workspace": "Analiza el workspace \"{title}\" ({id}). Explícame qué está pasando allí y qué debería hacer.",
 					"single_surface": "Analiza la superficie {title} ({id}). ¿Qué hallazgos la afectan y qué debería priorizar?",
+					"single_map": "Estoy viendo el mapa {title} ({id}) en la página de Mapas. Usa tus herramientas disponibles para cargar los datos subyacentes cuando los necesites y explícame las relaciones más importantes que muestra y en qué debería enfocarme primero.",
 					"group_findings": "{count} hallazgos ({titles})",
 					"group_actions": "{count} acciones ({titles})",
 					"group_workspaces": "{count} workspaces ({titles})",

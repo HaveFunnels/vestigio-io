@@ -53,7 +53,7 @@ interface UsageState {
 // MCP projections so we get titles + severity + impact in one batched
 // round trip. Items that don't resolve are dropped silently (the user
 // just won't see them in the bar).
-type ChatContextKind = "finding" | "action" | "workspace" | "surface";
+type ChatContextKind = "finding" | "action" | "workspace" | "surface" | "map";
 interface ChatContextItem {
 	kind: ChatContextKind;
 	id: string;
@@ -522,12 +522,20 @@ export default function ChatPage() {
 			}
 		}
 		if (context) {
-			// Two flavours: `?context=workspaces:id1,id2` (workspaces page)
-			// and `?context=id1,id2` (inventory page, plain finding IDs).
-			// The `?context=maps` literal from the maps page has no items
-			// to hydrate — it just opens the chat with no specific context.
+			// Flavours supported:
+			//   `?context=workspaces:id1,id2` — workspaces page
+			//   `?context=map:<mapId>`        — maps page "Use as context"
+			//   `?context=id1,id2`            — inventory page (bare finding IDs)
+			//   `?context=maps`               — legacy no-op from the pre-map
+			//                                   hydrator; still supported silently
+			//                                   so bookmarked URLs don't error.
 			if (context === "maps") {
-				// No items, no hydration — fall through.
+				// Legacy pre-hydration link — nothing to hydrate.
+			} else if (context.startsWith("map:")) {
+				const mapId = context.slice("map:".length).trim();
+				if (mapId) {
+					raw.push({ kind: "map", id: mapId });
+				}
 			} else if (context.startsWith("workspaces:")) {
 				const list = context.slice("workspaces:".length);
 				for (const id of list
@@ -1431,6 +1439,10 @@ const CONTEXT_KIND_STYLES: Record<
 		chip: "border-cyan-500/40 bg-cyan-500/10 text-cyan-700 hover:border-cyan-500/70 dark:text-cyan-300",
 		icon: "text-cyan-600 dark:text-cyan-400",
 	},
+	map: {
+		chip: "border-amber-500/40 bg-amber-500/10 text-amber-700 hover:border-amber-500/70 dark:text-amber-300",
+		icon: "text-amber-600 dark:text-amber-400",
+	},
 };
 
 function ContextKindIcon({
@@ -1491,6 +1503,23 @@ function ContextKindIcon({
 			</svg>
 		);
 	}
+	if (kind === "map") {
+		return (
+			<svg
+				className={className}
+				fill='none'
+				viewBox='0 0 24 24'
+				strokeWidth={2}
+				stroke='currentColor'
+			>
+				<path
+					strokeLinecap='round'
+					strokeLinejoin='round'
+					d='M9 6.75V15m0 0l-4.28-1.427a2.25 2.25 0 01-1.534-2.134V6.75A2.25 2.25 0 015.468 4.645l3.53 1.175 5.998-2 4.282 1.427A2.25 2.25 0 0121 7.38v7.115M9 15l6-2m-6 2v4.5m6-6.5v4.5m0-4.5l3.532 1.175A2.25 2.25 0 0121 16.505V19.5'
+				/>
+			</svg>
+		);
+	}
 	return (
 		<svg
 			className={className}
@@ -1536,6 +1565,7 @@ function ContextIsland({
 		action: t("kinds.action"),
 		workspace: t("kinds.workspace"),
 		surface: t("kinds.surface"),
+		map: t("kinds.map"),
 	};
 
 	// Aggregate monthly impact across items that carry it — findings +
@@ -1817,6 +1847,7 @@ function ContextIndicator({
 		action: t("kinds.action"),
 		workspace: t("kinds.workspace"),
 		surface: t("kinds.surface"),
+		map: t("kinds.map"),
 	};
 
 	return (
@@ -1910,6 +1941,9 @@ function buildContextPrompt(items: ChatContextItem[], t: any): string {
 		}
 		if (it.kind === "workspace") {
 			return prompt("single_workspace", { title: it.title, id: it.id });
+		}
+		if (it.kind === "map") {
+			return prompt("single_map", { title: it.title, id: it.id });
 		}
 		return prompt("single_surface", { title: it.title, id: it.id });
 	}

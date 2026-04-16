@@ -119,3 +119,48 @@ const LOCALE_NAMES: Record<string, string> = {
   'de': 'German',
   'en': 'English',
 };
+
+// ──────────────────────────────────────────────
+// Verify-mode detection + system prompt block
+//
+// When the user enters chat via the "Verify" button on a finding
+// (see src/app/app/chat/page.tsx → buildVerifyPrompt), the first
+// user message starts with a deterministic seed phrase. We scan
+// just the first turn — if it matches, we append a verify-mode
+// block to the system prompt so the LLM stays anchored on the
+// plan across many turns instead of drifting back to generic
+// "discuss finding" behavior.
+//
+// The detection regex is intentionally loose on the prefix so
+// either English or Portuguese seed triggers it. We don't try to
+// parse out the finding_id / steps — the seed prompt already
+// carries them, so the LLM can re-read them from conversation
+// history. Our block just codifies the MODE (walk the plan,
+// nudge toward Create Action).
+// ──────────────────────────────────────────────
+
+const VERIFY_SEED_PATTERNS = [
+  /^I want to verify the finding/i,
+  /^Quero verificar o finding/i,
+];
+
+export function isVerifyModeConversation(firstUserMessage: string | undefined): boolean {
+  if (!firstUserMessage) return false;
+  return VERIFY_SEED_PATTERNS.some((re) => re.test(firstUserMessage.trim()));
+}
+
+const VERIFY_MODE_BLOCK = `VERIFY MODE — ACTIVE:
+The user arrived via the "Verify" button on a finding. A VerificationPlanIsland is pinned at the top of their chat showing a 4-5 step plan (goal + numbered checklist + terminal "Create Action" CTA). Stay anchored on this plan:
+
+- At the start of each response, briefly name which plan step you're working on (e.g. "Step 2 — confirming the signal:"). This keeps the island's progress aligned with the conversation.
+- Work the steps in order. Don't jump ahead — each step is an investigation beat, not a header. Use the tool data to actually confirm/refute, not just to narrate.
+- After the penultimate step is covered, explicitly nudge the user to click the "Create Action" button in the island above. Do NOT emit $$CREATEACTION{...}$$ markers — the island button is the canonical terminal CTA for this flow.
+- If the plan doesn't fit the finding's reality, call it out and propose adjusting rather than silently ignoring a step.
+- The user authored remediation steps are part of the seed — reference them by number when you draft the remediation.`;
+
+export function buildVerifyModeContext(): { type: 'text'; text: string } {
+  return {
+    type: 'text' as const,
+    text: VERIFY_MODE_BLOCK,
+  };
+}

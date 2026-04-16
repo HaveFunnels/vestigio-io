@@ -84,17 +84,46 @@ async function computeMoneyRecovered(
 		const now = new Date();
 		const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-		const resolved = await prisma.finding.findMany({
-			where: {
-				environmentId: envId,
-				changeClass: "resolved",
-				createdAt: { gte: ninetyDaysAgo },
-			},
-			select: {
-				impactMidpoint: true,
-				createdAt: true,
-			},
-		});
+		// Two attribution sources, summed into one headline:
+		//
+		//   1. auto-resolved — a previously open finding showed
+		//      changeClass='resolved' in a cycle. Credit: Vestigio
+		//      detected the recovery.
+		//   2. user-verified — a UserAction the operator created
+		//      from the chat Verify flow was marked `status='done'`.
+		//      Credit: the operator actually did the work, backed
+		//      by the baseline impact frozen at action creation.
+		//
+		// We sum both because each represents a distinct signal and
+		// the user's pay-off mechanic is the total "money clawed back"
+		// regardless of path. Small overcount risk (if a single
+		// remediation is counted in both tables) is acceptable at v1
+		// — directional accuracy beats zero attribution.
+		const [resolved, doneActions] = await Promise.all([
+			prisma.finding.findMany({
+				where: {
+					environmentId: envId,
+					changeClass: "resolved",
+					createdAt: { gte: ninetyDaysAgo },
+				},
+				select: {
+					impactMidpoint: true,
+					createdAt: true,
+				},
+			}),
+			prisma.userAction.findMany({
+				where: {
+					environmentId: envId,
+					status: "done",
+					doneAt: { gte: ninetyDaysAgo },
+				},
+				select: {
+					baselineImpactMidpoint: true,
+					doneAt: true,
+					createdAt: true,
+				},
+			}),
+		]);
 
 		const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
 		const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
@@ -112,6 +141,19 @@ async function computeMoneyRecovered(
 			if (ts >= thirtyDaysAgo) last30dCents += cents;
 			if (!lastUpdatedAt || f.createdAt > lastUpdatedAt) {
 				lastUpdatedAt = f.createdAt;
+			}
+		}
+
+		for (const a of doneActions) {
+			if (a.baselineImpactMidpoint == null) continue;
+			const cents = dollarsToCents(a.baselineImpactMidpoint);
+			totalCents += cents;
+			const when = a.doneAt ?? a.createdAt;
+			const ts = when.getTime();
+			if (ts >= sevenDaysAgo) last7dCents += cents;
+			if (ts >= thirtyDaysAgo) last30dCents += cents;
+			if (!lastUpdatedAt || when > lastUpdatedAt) {
+				lastUpdatedAt = when;
 			}
 		}
 

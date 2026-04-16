@@ -25,7 +25,12 @@ import { TIER_TO_MODEL, LlmError } from './types';
 import { sanitizeInput } from './sanitizer';
 import { checkAndRecordRateLimit, cleanupStaleWindows } from './rate-limiter';
 import { evaluatePromptDraft, type PromptContext } from '../prompt-gate';
-import { buildCacheableSystemPrompt, SYSTEM_PROMPT_CANARY } from './system-prompt';
+import {
+  buildCacheableSystemPrompt,
+  SYSTEM_PROMPT_CANARY,
+  isVerifyModeConversation,
+  buildVerifyModeContext,
+} from './system-prompt';
 import { buildClaudeTools, executeToolCall, buildToolCallRecord, isExpensiveTool } from './tool-adapter';
 import { buildMessagesArray } from './context-manager';
 import { callModel } from './client';
@@ -196,6 +201,19 @@ export async function executePipeline(
       systemPromptBlocks.push({ type: 'text' as const, text: memoryContext });
     }
   } catch { /* continue without memory */ }
+
+  // Verify-mode detection: find the seed user message. On the first
+  // turn the seed is the current user_message (not yet in history);
+  // on follow-up turns it's the first user message in
+  // conversation.messages. Either way we want the LLM to stay in
+  // verify mode, so check both sources.
+  const firstHistoricalUserMessage = request.conversation.messages.find(
+    (m) => m.role === 'user',
+  )?.content;
+  const seedCandidate = firstHistoricalUserMessage ?? request.user_message;
+  if (isVerifyModeConversation(seedCandidate)) {
+    systemPromptBlocks.push(buildVerifyModeContext());
+  }
 
   const systemPrompt = systemPromptBlocks;
 

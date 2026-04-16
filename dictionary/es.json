@@ -2112,6 +2112,57 @@
 					"combined": "Analiza estos elementos en conjunto: {parts}. ¿Qué tienen en común? ¿Cuál es el impacto combinado y cuál es la corrección de mayor palanca?"
 				}
 			},
+			"verify": {
+				"plan": {
+					"title": "Plan de verificación",
+					"up_next": "A continuación",
+					"create_action_cta": "Crear Action desde esta verificación",
+					"creating_action": "Creando Action…",
+					"create_action_success": "Action creada — remediación en seguimiento.",
+					"create_action_failed": "No se pudo crear la Action. Intenta de nuevo.",
+					"dismiss_aria": "Cerrar plan de verificación",
+					"goals": {
+						"http_static": "Vista basada en evidencia: ¿el problema está realmente presente en la página en vivo?",
+						"browser_runtime": "Vista basada en evidencia: ¿el problema sigue afectando sesiones reales?",
+						"integration_pull": "Vista basada en evidencia: ¿los datos del backend confirman el problema?",
+						"external_scan": "Vista basada en evidencia sobre la superficie externa y su exposición",
+						"pixel_accumulation": "Vista basada en evidencia usando sesiones de comportamiento para confirmar el patrón",
+						"heuristic_recompute": "Recalcular la proyección sobre la evidencia actual y diagnosticar la desviación",
+						"not_verifiable_explain": "Recorrer el camino de verificación manual, ya que la auto-verificación no está disponible",
+						"fallback": "Recorrer este hallazgo y producir una remediación accionable"
+					},
+					"steps": {
+						"fetch_html": "Obtener el HTML actual de la página",
+						"confirm_signal": "Confirmar la señal (ausente / presente)",
+						"measure_radius": "Medir el radio de exposición",
+						"draft_remediation": "Redactar el plan de remediación",
+						"create_action": "Crear Action",
+						"launch_browser": "Ejecutar un navegador headless en la página",
+						"execute_scenario": "Ejecutar el escenario de usuario",
+						"confirm_rendering": "Confirmar el comportamiento en runtime",
+						"pull_data": "Extraer datos de la integración",
+						"verify_metric": "Verificar la métrica contra el umbral",
+						"diagnose_cause": "Diagnosticar la causa raíz",
+						"kickoff_scan": "Disparar el escaneo externo",
+						"review_findings": "Revisar hallazgos del escaneo",
+						"assess_severity": "Evaluar severidad y exposición",
+						"check_sessions": "Revisar sesiones acumuladas",
+						"evaluate_confidence": "Evaluar confianza de la señal",
+						"decide_wait_or_act": "Decidir: esperar o actuar ahora",
+						"recompute": "Recalcular sobre la evidencia existente",
+						"compare_baseline": "Comparar contra el baseline",
+						"diagnose_drift": "Diagnosticar la desviación",
+						"explain_no_auto": "Explicar por qué la auto-verificación no está disponible",
+						"map_manual_path": "Mapear el camino de verificación manual",
+						"confirm_intent": "Confirmar la intención del usuario",
+						"understand_hypothesis": "Entender la hipótesis",
+						"gather_evidence": "Reunir evidencia de apoyo"
+					}
+				},
+				"prompts": {
+					"seed": "Quiero verificar el hallazgo \"{title}\" (id: {id}). Estrategia de verificación: {strategy}. Pasos de remediación redactados:\n{steps}\n\nGuíame en la verificación de este hallazgo paso a paso, siguiendo el plan en la isla de arriba. Cuando cubramos el plan, recuérdame hacer clic en \"Crear Action\" para dar seguimiento a la remediación."
+				}
+			},
 			"create_action": {
 				"saved": "Acción guardada: {title}",
 				"suggested": "Acción sugerida",
@@ -2413,7 +2464,8 @@
 				"incidents": "Incidentes",
 				"opportunities": "Oportunidades",
 				"verifications": "Verificaciones",
-				"observations": "Observaciones"
+				"observations": "Observaciones",
+				"mine": "Verificadas por ti"
 			},
 			"columns": {
 				"priority": "#",
@@ -2424,7 +2476,13 @@
 				"severity": "Severidad",
 				"effort": "Esfuerzo",
 				"resolve": "Resolver",
-				"nextStep": "Siguiente Paso"
+				"nextStep": "Siguiente Paso",
+				"baselineImpact": "Baseline",
+				"created": "Creada"
+			},
+			"mineEmpty": {
+				"title": "Aún no has verificado ningún hallazgo.",
+				"description": "Haz clic en \"Verify\" en un hallazgo para recorrer un plan guiado y dar seguimiento a la remediación aquí."
 			},
 			"categories": {
 				"incident": "Incidente",
@@ -2484,7 +2542,26 @@
 				"requestVerification": "Solicitar Verificación",
 				"learnMore": "Saber más",
 				"browseRelatedDocs": "Ver artículos relacionados",
-				"docsComingSoon": "La documentación para esta causa raíz se está escribiendo."
+				"docsComingSoon": "La documentación para esta causa raíz se está escribiendo.",
+				"mine": {
+					"status": "Estado",
+					"created": "Creada",
+					"doneAt": "Completada",
+					"lifecycle": "Ciclo de vida",
+					"description": "Descripción",
+					"remediation": "Pasos de remediación",
+					"origin": "Origen de la verificación",
+					"sourceFinding": "Hallazgo de origen",
+					"markInProgress": "Marcar en progreso",
+					"markDone": "Marcar como hecha",
+					"reopen": "Reabrir",
+					"dismiss": "Descartar",
+					"updating": "Actualizando…",
+					"updated": "Action actualizada",
+					"updateFailed": "No se pudo actualizar. Intenta de nuevo.",
+					"reopenConversation": "Reabrir conversación de verificación",
+					"reopenConversationHint": "Regresa al chat donde se verificó esto."
+				}
 			}
 		},
 		"data_sources": {

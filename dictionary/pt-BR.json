@@ -2557,7 +2557,8 @@
 				"incidents": "Incidentes",
 				"opportunities": "Oportunidades",
 				"verifications": "Verificações",
-				"observations": "Observações"
+				"observations": "Observações",
+				"mine": "Verificadas por você"
 			},
 			"columns": {
 				"priority": "#",
@@ -2568,7 +2569,13 @@
 				"severity": "Severidade",
 				"effort": "Esforço",
 				"resolve": "Resolver",
-				"nextStep": "Próximo Passo"
+				"nextStep": "Próximo Passo",
+				"baselineImpact": "Baseline",
+				"created": "Criada em"
+			},
+			"mineEmpty": {
+				"title": "Você ainda não verificou nenhum finding.",
+				"description": "Clique em \"Verify\" em um finding pra passar pelo plano guiado e acompanhar a remediação aqui."
 			},
 			"categories": {
 				"incident": "Incidente",
@@ -2632,7 +2639,26 @@
 				"requestVerification": "Solicitar Verificação",
 				"learnMore": "Saiba mais",
 				"browseRelatedDocs": "Ver artigos relacionados",
-				"docsComingSoon": "A documentação para esta causa raiz está sendo escrita."
+				"docsComingSoon": "A documentação para esta causa raiz está sendo escrita.",
+				"mine": {
+					"status": "Status",
+					"created": "Criada em",
+					"doneAt": "Concluída em",
+					"lifecycle": "Ciclo de vida",
+					"description": "Descrição",
+					"remediation": "Passos de remediação",
+					"origin": "Origem da verificação",
+					"sourceFinding": "Finding de origem",
+					"markInProgress": "Marcar em progresso",
+					"markDone": "Marcar como feita",
+					"reopen": "Reabrir",
+					"dismiss": "Dispensar",
+					"updating": "Atualizando…",
+					"updated": "Action atualizada",
+					"updateFailed": "Não foi possível atualizar. Tente de novo.",
+					"reopenConversation": "Reabrir conversa de verificação",
+					"reopenConversationHint": "Volta pro chat onde isto foi verificado."
+				}
 			}
 		},
 		"data_sources": {

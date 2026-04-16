@@ -2502,7 +2502,8 @@
 				"incidents": "Incidents",
 				"opportunities": "Opportunities",
 				"verifications": "Verifications",
-				"observations": "Observations"
+				"observations": "Observations",
+				"mine": "Verified by you"
 			},
 			"columns": {
 				"priority": "#",
@@ -2513,7 +2514,13 @@
 				"severity": "Severity",
 				"effort": "Effort",
 				"resolve": "Resolve",
-				"nextStep": "Next Step"
+				"nextStep": "Next Step",
+				"baselineImpact": "Baseline",
+				"created": "Created"
+			},
+			"mineEmpty": {
+				"title": "You haven't verified any findings yet.",
+				"description": "Click \"Verify\" on a finding to walk through a guided plan and track the remediation here."
 			},
 			"categories": {
 				"incident": "Incident",
@@ -2577,7 +2584,26 @@
 				"requestVerification": "Request Verification",
 				"learnMore": "Learn more",
 				"browseRelatedDocs": "Browse related docs",
-				"docsComingSoon": "Documentation for this root cause is being written."
+				"docsComingSoon": "Documentation for this root cause is being written.",
+				"mine": {
+					"status": "Status",
+					"created": "Created",
+					"doneAt": "Completed",
+					"lifecycle": "Lifecycle",
+					"description": "Description",
+					"remediation": "Remediation steps",
+					"origin": "Verification origin",
+					"sourceFinding": "Source finding",
+					"markInProgress": "Mark in progress",
+					"markDone": "Mark done",
+					"reopen": "Reopen",
+					"dismiss": "Dismiss",
+					"updating": "Updating…",
+					"updated": "Action updated",
+					"updateFailed": "Couldn't update. Try again.",
+					"reopenConversation": "Reopen the verification conversation",
+					"reopenConversationHint": "Goes back to the chat where this was verified."
+				}
 			}
 		},
 		"data_sources": {

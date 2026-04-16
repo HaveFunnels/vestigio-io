@@ -41,7 +41,31 @@ type CategoryTab =
 	| "incident"
 	| "opportunity"
 	| "verification"
-	| "observation";
+	| "observation"
+	| "mine";
+
+// Persisted UserAction (chat-Verify flow terminal). Shape mirrors
+// the JSON returned by /api/actions/user — mapped to camelCase
+// locally to match the rest of this file.
+interface UserActionRow {
+	id: string;
+	title: string;
+	description: string | null;
+	remediation_steps: string[] | null;
+	estimated_effort_hours: number | null;
+	status: "pending" | "in_progress" | "done" | "dismissed";
+	finding_id: string;
+	verified_via_conversation_id: string | null;
+	verified_at: string | null;
+	done_at: string | null;
+	notes: string | null;
+	baseline_impact_midpoint: number | null;
+	baseline_impact_min: number | null;
+	baseline_impact_max: number | null;
+	baseline_cycle_ref: string | null;
+	created_at: string;
+	updated_at: string;
+}
 
 const categoryConfig: Record<
 	string,
@@ -184,7 +208,81 @@ function ActionsContent({
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [selected, setSelected] = useState<ActionProjection | null>(null);
+	const [selectedUserAction, setSelectedUserAction] = useState<UserActionRow | null>(null);
 	const [activeTab, setActiveTab] = useState<CategoryTab>("all");
+	const [userActions, setUserActions] = useState<UserActionRow[]>([]);
+	const [mutatingUserActionId, setMutatingUserActionId] = useState<string | null>(null);
+
+	// Fetch persisted UserActions once on mount. These come from the
+	// chat Verify flow (POST /api/actions/from-finding) and aren't
+	// part of the MCP projection layer, so we pull them from the DB
+	// directly. Silent failure is acceptable — the tab count will
+	// just stay at 0 and the existing projected actions keep working.
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const res = await fetch("/api/actions/user");
+				if (!res.ok) return;
+				const data = await res.json();
+				if (cancelled) return;
+				setUserActions(Array.isArray(data.items) ? data.items : []);
+			} catch {
+				/* silent */
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	async function updateUserActionStatus(
+		action: UserActionRow,
+		nextStatus: UserActionRow["status"],
+	) {
+		if (mutatingUserActionId) return;
+		setMutatingUserActionId(action.id);
+		try {
+			const res = await fetch(`/api/actions/user/${action.id}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ status: nextStatus }),
+			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}));
+				toast.error(body?.message || t("drawer.mine.updateFailed"));
+				return;
+			}
+			const updated = await res.json();
+			setUserActions((prev) =>
+				prev.map((a) =>
+					a.id === action.id
+						? {
+								...a,
+								status: updated.status,
+								done_at: updated.done_at,
+								updated_at: updated.updated_at,
+							}
+						: a,
+				),
+			);
+			setSelectedUserAction((prev) =>
+				prev && prev.id === action.id
+					? {
+							...prev,
+							status: updated.status,
+							done_at: updated.done_at,
+							updated_at: updated.updated_at,
+						}
+					: prev,
+			);
+			toast.success(t("drawer.mine.updated"));
+		} catch {
+			toast.error(t("drawer.mine.updateFailed"));
+		} finally {
+			setMutatingUserActionId(null);
+		}
+	}
 
 	// Deep-link support: when the URL carries `?selected=<key>`, find the
 	// matching action and open its drawer. Triggered by the dashboard's
@@ -357,6 +455,14 @@ function ActionsContent({
 			count: counts.observation,
 			dotColor: "bg-zinc-500",
 		},
+		{
+			key: "mine",
+			label: t("tabs.mine"),
+			count: userActions.filter(
+				(a) => a.status === "pending" || a.status === "in_progress",
+			).length,
+			dotColor: "bg-amber-500",
+		},
 	];
 
 	// Table columns
@@ -513,15 +619,26 @@ function ActionsContent({
 				))}
 			</div>
 
-			{/* Data Table */}
-			<DataTable
-				columns={columns}
-				data={filtered}
-				onRowClick={(row) => setSelected(row)}
-				getRowKey={(row) => row.id}
-			/>
+			{/* Data Table — dispatches on active tab. The "mine" tab
+			    renders a distinct table shape for UserActions (chat
+			    Verify outcomes) since those carry lifecycle state and
+			    baseline impact rather than operational_status/resolve
+			    fields. Every other tab filters the MCP projections. */}
+			{activeTab === "mine" ? (
+				<UserActionsTable
+					actions={userActions}
+					onRowClick={(row) => setSelectedUserAction(row)}
+				/>
+			) : (
+				<DataTable
+					columns={columns}
+					data={filtered}
+					onRowClick={(row) => setSelected(row)}
+					getRowKey={(row) => row.id}
+				/>
+			)}
 
-			{/* Side Drawer */}
+			{/* Side Drawer — projected action */}
 			<SideDrawer
 				open={selected !== null}
 				onClose={() => setSelected(null)}
@@ -533,6 +650,26 @@ function ActionsContent({
 						onNavigateChat={(id) => router.push(`/chat?action=${id}`)}
 						onRunVerification={(intent) => runVerification(selected, intent)}
 						isVerifying={verifyingId === selected.id}
+					/>
+				)}
+			</SideDrawer>
+
+			{/* Side Drawer — user-verified action */}
+			<SideDrawer
+				open={selectedUserAction !== null}
+				onClose={() => setSelectedUserAction(null)}
+				title={selectedUserAction?.title || ""}
+			>
+				{selectedUserAction && (
+					<UserActionDrawerContent
+						action={selectedUserAction}
+						mutating={mutatingUserActionId === selectedUserAction.id}
+						onUpdateStatus={(next) =>
+							updateUserActionStatus(selectedUserAction, next)
+						}
+						onReopenConversation={(convId) =>
+							router.push(`/app/chat?conversation=${convId}`)
+						}
 					/>
 				)}
 			</SideDrawer>
@@ -1079,6 +1216,320 @@ function OperationalTimeline({
 					);
 				})}
 			</div>
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
+// UserActions table + drawer — chat-Verify flow surface
+// ──────────────────────────────────────────────
+
+const USER_ACTION_STATUS_STYLES: Record<
+	UserActionRow["status"],
+	{ label: string; chip: string; dot: string }
+> = {
+	pending: {
+		label: "Pending",
+		chip: "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400",
+		dot: "bg-amber-500",
+	},
+	in_progress: {
+		label: "In progress",
+		chip: "bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400",
+		dot: "bg-sky-500",
+	},
+	done: {
+		label: "Done",
+		chip: "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
+		dot: "bg-emerald-500",
+	},
+	dismissed: {
+		label: "Dismissed",
+		chip: "bg-zinc-500/10 border-zinc-500/30 text-content-muted",
+		dot: "bg-zinc-500",
+	},
+};
+
+function UserActionsTable({
+	actions,
+	onRowClick,
+}: {
+	actions: UserActionRow[];
+	onRowClick: (row: UserActionRow) => void;
+}) {
+	const t = useTranslations("console.actions");
+
+	if (actions.length === 0) {
+		return (
+			<div className='rounded-lg border border-dashed border-edge bg-surface-card/50 px-6 py-10 text-center'>
+				<p className='text-sm text-content-muted'>{t("mineEmpty.title")}</p>
+				<p className='mt-1 text-xs text-content-faint'>
+					{t("mineEmpty.description")}
+				</p>
+			</div>
+		);
+	}
+
+	const columns: Column<UserActionRow>[] = [
+		{
+			key: "title",
+			label: t("columns.action"),
+			render: (row) => (
+				<div>
+					<div className='text-sm text-content-secondary'>{row.title}</div>
+					{row.description && (
+						<div className='mt-0.5 line-clamp-1 text-xs text-content-muted'>
+							{row.description}
+						</div>
+					)}
+				</div>
+			),
+		},
+		{
+			key: "status",
+			label: t("columns.status"),
+			className: "w-32",
+			render: (row) => {
+				const cfg = USER_ACTION_STATUS_STYLES[row.status];
+				return (
+					<span
+						className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${cfg.chip}`}
+					>
+						<span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+						{cfg.label}
+					</span>
+				);
+			},
+		},
+		{
+			key: "baseline",
+			label: t("columns.baselineImpact"),
+			className: "w-36",
+			render: (row) =>
+				row.baseline_impact_midpoint !== null ? (
+					<span className='font-mono text-xs text-content-secondary'>
+						{formatCurrency(row.baseline_impact_midpoint)}/mo
+					</span>
+				) : (
+					<span className='text-xs text-content-faint'>--</span>
+				),
+		},
+		{
+			key: "effort",
+			label: t("columns.effort"),
+			className: "w-20",
+			render: (row) =>
+				row.estimated_effort_hours !== null ? (
+					<span className='text-xs text-content-muted'>
+						~{row.estimated_effort_hours}h
+					</span>
+				) : (
+					<span className='text-xs text-content-faint'>--</span>
+				),
+		},
+		{
+			key: "created",
+			label: t("columns.created"),
+			className: "w-28",
+			render: (row) => (
+				<span className='font-mono text-xs text-content-muted'>
+					{new Date(row.created_at).toLocaleDateString()}
+				</span>
+			),
+		},
+	];
+
+	return (
+		<DataTable
+			columns={columns}
+			data={actions}
+			onRowClick={onRowClick}
+			getRowKey={(row) => row.id}
+		/>
+	);
+}
+
+function UserActionDrawerContent({
+	action,
+	mutating,
+	onUpdateStatus,
+	onReopenConversation,
+}: {
+	action: UserActionRow;
+	mutating: boolean;
+	onUpdateStatus: (next: UserActionRow["status"]) => void;
+	onReopenConversation: (conversationId: string) => void;
+}) {
+	const t = useTranslations("console.actions.drawer.mine");
+	const tcols = useTranslations("console.actions.columns");
+	const cfg = USER_ACTION_STATUS_STYLES[action.status];
+	const steps = Array.isArray(action.remediation_steps)
+		? action.remediation_steps
+		: [];
+
+	const transitions: Array<{
+		key: UserActionRow["status"];
+		label: string;
+		hidden?: boolean;
+		emphasize?: boolean;
+	}> = [
+		{
+			key: "in_progress",
+			label: t("markInProgress"),
+			hidden: action.status === "in_progress" || action.status === "done",
+			emphasize: action.status === "pending",
+		},
+		{
+			key: "done",
+			label: t("markDone"),
+			hidden: action.status === "done",
+			emphasize: action.status === "in_progress",
+		},
+		{
+			key: "pending",
+			label: t("reopen"),
+			hidden: action.status === "pending" || action.status === "in_progress",
+		},
+		{
+			key: "dismissed",
+			label: t("dismiss"),
+			hidden: action.status === "dismissed" || action.status === "done",
+		},
+	];
+
+	return (
+		<div className='space-y-6'>
+			{/* Status + Created */}
+			<DrawerSection title={t("status")} accent='info'>
+				<DrawerStatBox accent='info'>
+					<div className='space-y-2 px-4 py-3 text-sm'>
+						<div className='flex items-center gap-2'>
+							<span
+								className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${cfg.chip}`}
+							>
+								<span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+								{cfg.label}
+							</span>
+						</div>
+						<DrawerStatRow
+							label={t("created")}
+							value={
+								<span className='font-mono text-xs text-content-muted'>
+									{new Date(action.created_at).toLocaleString()}
+								</span>
+							}
+						/>
+						{action.done_at && (
+							<DrawerStatRow
+								label={t("doneAt")}
+								value={
+									<span className='font-mono text-xs text-content-muted'>
+										{new Date(action.done_at).toLocaleString()}
+									</span>
+								}
+							/>
+						)}
+						{action.baseline_impact_midpoint !== null && (
+							<DrawerStatRow
+								label={tcols("baselineImpact")}
+								value={
+									<span className='font-mono text-xs text-content-secondary'>
+										{formatCurrency(action.baseline_impact_midpoint)}/mo
+									</span>
+								}
+							/>
+						)}
+						{action.estimated_effort_hours !== null && (
+							<DrawerStatRow
+								label={tcols("effort")}
+								value={
+									<span className='text-xs text-content-muted'>
+										~{action.estimated_effort_hours}h
+									</span>
+								}
+							/>
+						)}
+					</div>
+				</DrawerStatBox>
+			</DrawerSection>
+
+			{/* Lifecycle transitions */}
+			<DrawerSection title={t("lifecycle")} accent='info'>
+				<div className='flex flex-wrap gap-2'>
+					{transitions
+						.filter((x) => !x.hidden)
+						.map((x) => (
+							<button
+								key={x.key}
+								type='button'
+								onClick={() => onUpdateStatus(x.key)}
+								disabled={mutating}
+								className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+									x.emphasize
+										? "border-amber-500/40 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400"
+										: "border-edge bg-surface-card text-content-secondary hover:bg-surface-card-hover"
+								}`}
+							>
+								{mutating ? t("updating") : x.label}
+							</button>
+						))}
+				</div>
+			</DrawerSection>
+
+			{/* Description */}
+			{action.description && (
+				<DrawerSection title={t("description")}>
+					<p className='rounded-md border border-edge bg-surface-card px-4 py-3 text-sm leading-relaxed text-content-muted'>
+						{action.description}
+					</p>
+				</DrawerSection>
+			)}
+
+			{/* Remediation steps */}
+			{steps.length > 0 && (
+				<DrawerSection title={t("remediation")} accent='info'>
+					<DrawerStatBox accent='info'>
+						<ol className='space-y-2 px-4 py-3 text-sm leading-relaxed text-content-secondary'>
+							{steps.map((step, idx) => (
+								<li key={idx} className='flex items-start gap-2'>
+									<span className='mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-edge text-[10px] font-semibold text-content-muted'>
+										{idx + 1}
+									</span>
+									<span>{step}</span>
+								</li>
+							))}
+						</ol>
+					</DrawerStatBox>
+				</DrawerSection>
+			)}
+
+			{/* Link back to the verification conversation */}
+			{action.verified_via_conversation_id && (
+				<DrawerSection title={t("origin")}>
+					<button
+						type='button'
+						onClick={() =>
+							onReopenConversation(action.verified_via_conversation_id!)
+						}
+						className='w-full rounded-md border border-edge bg-surface-card px-4 py-2.5 text-left text-sm text-content-secondary transition-colors hover:border-amber-500/30 hover:bg-amber-500/5 hover:text-content'
+					>
+						<span className='font-medium'>{t("reopenConversation")}</span>
+						<span className='mt-0.5 block text-xs text-content-muted'>
+							{t("reopenConversationHint")}
+						</span>
+					</button>
+				</DrawerSection>
+			)}
+
+			{/* Finding link — for navigation back to the source finding */}
+			<DrawerSection title={t("sourceFinding")}>
+				<a
+					href={`/app/analysis?finding=${encodeURIComponent(action.finding_id)}`}
+					className='inline-flex items-center gap-1 text-xs text-content-muted hover:text-content-secondary hover:underline'
+				>
+					{action.finding_id}
+				</a>
+			</DrawerSection>
 		</div>
 	);
 }

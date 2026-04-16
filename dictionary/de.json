@@ -1776,6 +1776,57 @@
 					"combined": "Analysiere diese gemeinsam: {parts}. Was haben sie gemeinsam? Was ist der kombinierte Impact und welche Maßnahme hat den größten Hebel?"
 				}
 			},
+			"verify": {
+				"plan": {
+					"title": "Verifizierungsplan",
+					"up_next": "Als Nächstes",
+					"create_action_cta": "Action aus dieser Verifizierung erstellen",
+					"creating_action": "Action wird erstellt…",
+					"create_action_success": "Action erstellt — Remediation wird verfolgt.",
+					"create_action_failed": "Action konnte nicht erstellt werden. Bitte erneut versuchen.",
+					"dismiss_aria": "Verifizierungsplan schließen",
+					"goals": {
+						"http_static": "Evidenzbasierte Sicht: Ist das Problem tatsächlich auf der Live-Seite vorhanden?",
+						"browser_runtime": "Evidenzbasierte Sicht: Betrifft das Problem noch echte Nutzersitzungen?",
+						"integration_pull": "Evidenzbasierte Sicht: Bestätigen die Backend-Daten das Problem?",
+						"external_scan": "Evidenzbasierte Sicht auf die externe Oberfläche und ihre Exposition",
+						"pixel_accumulation": "Evidenzbasierte Sicht mit Verhaltenssitzungen zur Bestätigung des Musters",
+						"heuristic_recompute": "Projektion über aktuelle Evidenz neu berechnen und Drift diagnostizieren",
+						"not_verifiable_explain": "Manuellen Verifizierungspfad durchgehen, da Auto-Verify nicht verfügbar ist",
+						"fallback": "Diesen Befund durchgehen und umsetzbare Remediation erstellen"
+					},
+					"steps": {
+						"fetch_html": "Aktuellen HTML der Seite abrufen",
+						"confirm_signal": "Signal bestätigen (abwesend / vorhanden)",
+						"measure_radius": "Expositionsradius messen",
+						"draft_remediation": "Remediation-Plan entwerfen",
+						"create_action": "Action erstellen",
+						"launch_browser": "Headless-Browser auf der Seite starten",
+						"execute_scenario": "Nutzerszenario ausführen",
+						"confirm_rendering": "Laufzeit-Rendering-Verhalten bestätigen",
+						"pull_data": "Integrationsdaten abrufen",
+						"verify_metric": "Metrik gegen Schwelle prüfen",
+						"diagnose_cause": "Ursache diagnostizieren",
+						"kickoff_scan": "Externen Scan starten",
+						"review_findings": "Scan-Ergebnisse prüfen",
+						"assess_severity": "Schweregrad und Exposition bewerten",
+						"check_sessions": "Akkumulierte Sitzungen prüfen",
+						"evaluate_confidence": "Signal-Vertrauen bewerten",
+						"decide_wait_or_act": "Entscheiden: warten oder handeln",
+						"recompute": "Über vorhandene Evidenz neu berechnen",
+						"compare_baseline": "Gegen Baseline vergleichen",
+						"diagnose_drift": "Drift diagnostizieren",
+						"explain_no_auto": "Erklären, warum Auto-Verify nicht verfügbar ist",
+						"map_manual_path": "Manuellen Verifizierungspfad abbilden",
+						"confirm_intent": "Nutzerabsicht bestätigen",
+						"understand_hypothesis": "Hypothese verstehen",
+						"gather_evidence": "Unterstützende Evidenz sammeln"
+					}
+				},
+				"prompts": {
+					"seed": "Ich möchte den Befund „{title}“ (id: {id}) verifizieren. Verifizierungsstrategie: {strategy}. Verfasste Remediation-Schritte:\n{steps}\n\nFühre mich Schritt für Schritt durch die Verifizierung dieses Befunds, gemäß dem Plan in der Insel oben. Wenn wir den Plan abgeschlossen haben, erinnere mich daran, auf „Action erstellen“ zu klicken, damit wir die Remediation verfolgen können."
+				}
+			},
 			"create_action": {
 				"saved": "Aktion gespeichert: {title}",
 				"suggested": "Vorgeschlagene Aktion",

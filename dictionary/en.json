@@ -2150,6 +2150,57 @@
 					"combined": "Analyze these together: {parts}. What do they have in common? What's the combined impact and the single highest-leverage fix?"
 				}
 			},
+			"verify": {
+				"plan": {
+					"title": "Verification plan",
+					"up_next": "Up next",
+					"create_action_cta": "Create Action from this verification",
+					"creating_action": "Creating Action…",
+					"create_action_success": "Action created — tracking this remediation.",
+					"create_action_failed": "Couldn't create Action. Please try again.",
+					"dismiss_aria": "Dismiss verification plan",
+					"goals": {
+						"http_static": "Evidence-based view of whether this issue is really present on the live page",
+						"browser_runtime": "Evidence-based view of whether this issue still affects real user sessions",
+						"integration_pull": "Evidence-based view of whether the backend data confirms this issue",
+						"external_scan": "Evidence-based view of the external surface and its exposure",
+						"pixel_accumulation": "Evidence-based view using behavioral sessions to confirm the pattern",
+						"heuristic_recompute": "Re-run the projection over current evidence and diagnose the drift",
+						"not_verifiable_explain": "Walk through manual verification paths since auto-verify isn't available",
+						"fallback": "Walk through this finding and produce an actionable remediation"
+					},
+					"steps": {
+						"fetch_html": "Fetch the current page HTML",
+						"confirm_signal": "Confirm the signal (absent / present)",
+						"measure_radius": "Measure the exposure radius",
+						"draft_remediation": "Draft the remediation plan",
+						"create_action": "Create Action",
+						"launch_browser": "Launch a headless browser on the page",
+						"execute_scenario": "Execute the user scenario",
+						"confirm_rendering": "Confirm the runtime rendering behavior",
+						"pull_data": "Pull integration data",
+						"verify_metric": "Verify the metric against the threshold",
+						"diagnose_cause": "Diagnose the root cause",
+						"kickoff_scan": "Kick off the external scan",
+						"review_findings": "Review scan findings",
+						"assess_severity": "Assess severity and exposure",
+						"check_sessions": "Check accumulated sessions",
+						"evaluate_confidence": "Evaluate signal confidence",
+						"decide_wait_or_act": "Decide: wait or act now",
+						"recompute": "Recompute over existing evidence",
+						"compare_baseline": "Compare against the baseline",
+						"diagnose_drift": "Diagnose the drift",
+						"explain_no_auto": "Explain why auto-verification isn't available",
+						"map_manual_path": "Map the manual verification path",
+						"confirm_intent": "Confirm the user intent",
+						"understand_hypothesis": "Understand the hypothesis",
+						"gather_evidence": "Gather supporting evidence"
+					}
+				},
+				"prompts": {
+					"seed": "I want to verify the finding \"{title}\" (id: {id}). Verification strategy: {strategy}. Authored remediation steps:\n{steps}\n\nWalk me through verifying this finding step by step, following the plan in the island above. When we've covered the plan, nudge me to click \"Create Action\" so we can track the remediation."
+				}
+			},
 			"create_action": {
 				"saved": "Action saved: {title}",
 				"suggested": "Suggested action",

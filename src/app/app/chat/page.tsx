@@ -22,6 +22,11 @@ import type {
 	ModelId,
 	Conversation,
 } from "@/lib/chat-types";
+import {
+	buildBaseVerificationPlan,
+	type VerificationStrategyKey,
+} from "../../../../packages/projections/verification-plan-template";
+import { toast } from "react-hot-toast";
 
 // ──────────────────────────────────────────────
 // Chat Page — Claude LLM + MCP Tools
@@ -56,6 +61,33 @@ interface ChatContextItem {
 	severity?: string;
 	impact_mid?: number;
 	pack?: string;
+	// Verify flow extras — populated only for findings hydrated via
+	// /api/chat/context-items. The plan island uses these to render
+	// a base plan + carry the remediation steps into the "Create
+	// Action" terminal CTA.
+	verification_strategy?: string | null;
+	verification_notes?: string | null;
+	remediation_steps?: string[] | null;
+	estimated_effort_hours?: number | null;
+	inference_key?: string;
+}
+
+// Plan island state — driven by the verify-intent entry point.
+// Reset to null when the user dismisses the island or successfully
+// creates the terminal UserAction. Survives across user messages
+// (sticky until action creation / dismissal).
+interface VerificationPlanState {
+	findingId: string;
+	findingTitle: string;
+	strategy: string | null;
+	remediationSteps: string[] | null;
+	effortHours: number | null;
+	goalKey: string;
+	steps: Array<{ id: string; labelKey: string }>;
+	// User-message count captured when the plan was created, so we
+	// can diff against live messages to compute progress without
+	// counting the seed prompt.
+	baselineUserMessageCount: number;
 }
 
 export default function ChatPage() {
@@ -89,6 +121,9 @@ export default function ChatPage() {
 	const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
 	const [playbooksOpen, setPlaybooksOpen] = useState(false);
 	const [contextItems, setContextItems] = useState<ChatContextItem[]>([]);
+	const [verificationPlan, setVerificationPlan] =
+		useState<VerificationPlanState | null>(null);
+	const [creatingAction, setCreatingAction] = useState(false);
 	// Smart auto-scroll: only follow the bottom when the user is
 	// already near the bottom. The pre-fix behaviour was an
 	// unconditional `scrollIntoView({ behavior: "smooth" })` on every
@@ -443,6 +478,13 @@ export default function ChatPage() {
 		const action = searchParams.get("action");
 		const context = searchParams.get("context");
 		const surfaces = searchParams.get("surfaces");
+		// Verify-flow entry point: FindingDrawer / VerificationPanel Verify
+		// buttons navigate here with `?intent=verify&finding=<id>`. Triggers
+		// the VerificationPlanIsland once the finding is hydrated and seeds
+		// the chat with a verify-flavoured prompt instead of the generic
+		// "Discuss" prompt.
+		const intent = searchParams.get("intent");
+		const isVerifyIntent = intent === "verify";
 
 		const raw: Array<{ kind: ChatContextKind; id: string }> = [];
 		if (finding) {
@@ -532,7 +574,15 @@ export default function ChatPage() {
 										title: r.id,
 									}) as ChatContextItem
 							);
-				handleSend(buildContextPrompt(items, t));
+				const verifyTarget =
+					isVerifyIntent &&
+					items.find((it) => it.kind === "finding");
+				if (verifyTarget) {
+					initVerificationPlan(verifyTarget);
+					handleSend(buildVerifyPrompt(verifyTarget, t));
+				} else {
+					handleSend(buildContextPrompt(items, t));
+				}
 			} catch {
 				// Hydration unavailable — fall back to the legacy behaviour
 				// so the user still gets a response. The indicator just stays
@@ -544,7 +594,19 @@ export default function ChatPage() {
 					title: r.id,
 				}));
 				setContextItems(placeholders);
-				handleSend(buildContextPrompt(placeholders, t));
+				// Verify intent without hydration → we don't know the
+				// strategy, so fall back to the fallback plan and a
+				// generic verify prompt. The MCP will still have the
+				// finding ID to pull context.
+				const verifyTarget =
+					isVerifyIntent &&
+					placeholders.find((it) => it.kind === "finding");
+				if (verifyTarget) {
+					initVerificationPlan(verifyTarget);
+					handleSend(buildVerifyPrompt(verifyTarget, t));
+				} else {
+					handleSend(buildContextPrompt(placeholders, t));
+				}
 			}
 		})();
 
@@ -873,6 +935,61 @@ export default function ChatPage() {
 		setContextItems([]);
 	}
 
+	// ── Verify flow — plan lifecycle ─────────────
+	function initVerificationPlan(item: ChatContextItem) {
+		if (item.kind !== "finding") return;
+		const strategy = (item.verification_strategy ?? null) as VerificationStrategyKey;
+		const template = buildBaseVerificationPlan(strategy);
+		const currentUserMessageCount = messages.filter((m) => m.role === "user").length;
+		setVerificationPlan({
+			findingId: item.id,
+			findingTitle: item.title,
+			strategy: item.verification_strategy ?? null,
+			remediationSteps: item.remediation_steps ?? null,
+			effortHours: item.estimated_effort_hours ?? null,
+			goalKey: template.goal_key,
+			steps: template.steps.map((s) => ({ id: s.id, labelKey: s.label_key })),
+			baselineUserMessageCount: currentUserMessageCount,
+		});
+	}
+
+	function handleDismissVerificationPlan() {
+		setVerificationPlan(null);
+	}
+
+	async function handleCreateActionFromFinding() {
+		if (!verificationPlan) return;
+		if (creatingAction) return;
+		setCreatingAction(true);
+		try {
+			const res = await fetch("/api/actions/from-finding", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					finding_id: verificationPlan.findingId,
+					title: verificationPlan.findingTitle,
+					remediation_steps: verificationPlan.remediationSteps ?? [],
+					estimated_effort_hours: verificationPlan.effortHours ?? undefined,
+					verified_via_conversation_id: activeConversationId ?? undefined,
+				}),
+			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}));
+				toast.error(
+					body?.message ||
+						t("verify.plan.create_action_failed"),
+				);
+				return;
+			}
+			toast.success(t("verify.plan.create_action_success"));
+			setVerificationPlan(null);
+		} catch {
+			toast.error(t("verify.plan.create_action_failed"));
+		} finally {
+			setCreatingAction(false);
+		}
+	}
+
 	return (
 		<div
 			className='flex overflow-hidden'
@@ -1003,19 +1120,28 @@ export default function ChatPage() {
 							</button>
 						</div>
 
-						{/* Context island — top-of-chat prominent indicator when
-						    one or more findings/actions/workspaces/surfaces are
-						    scoped into this conversation. Ensures the user
-						    always sees what the MCP is grounding on. The
-						    similar chip bar above the editor (below messages)
-						    was too subtle — users didn't notice it. */}
-						{contextItems.length > 0 && (
+						{/* Top-of-chat island. Two mutually exclusive shapes:
+						    - VerificationPlanIsland when the user arrived via
+						      the Verify button (intent=verify). Shows a
+						      goal-oriented checklist + progress + "Create
+						      Action" terminal CTA.
+						    - ContextIsland otherwise — generic scope indicator
+						      for discuss / use-as-context flows. */}
+						{verificationPlan ? (
+							<VerificationPlanIsland
+								plan={verificationPlan}
+								userMessageCount={messages.filter((m) => m.role === "user").length}
+								creating={creatingAction}
+								onCreateAction={handleCreateActionFromFinding}
+								onDismiss={handleDismissVerificationPlan}
+							/>
+						) : contextItems.length > 0 ? (
 							<ContextIsland
 								items={contextItems}
 								onRemove={handleRemoveContextItem}
 								onClearAll={handleClearAllContext}
 							/>
-						)}
+						) : null}
 
 						{/* Messages */}
 						<div className='relative min-h-0 flex-1'>
@@ -1526,6 +1652,144 @@ function ContextIsland({
 	);
 }
 
+// VerificationPlanIsland — verify-flow variant of ContextIsland.
+//
+// Renders at the top of the messages area when the user arrived via
+// a Verify button (`?intent=verify&finding=<id>`). Shows goal +
+// numbered checklist + progress + "Up next" teaser + terminal
+// "Create Action" CTA. Progress auto-advances with each user
+// message (baseline = count at plan creation, subtracted off).
+function VerificationPlanIsland({
+	plan,
+	userMessageCount,
+	creating,
+	onCreateAction,
+	onDismiss,
+}: {
+	plan: VerificationPlanState;
+	userMessageCount: number;
+	creating: boolean;
+	onCreateAction: () => void;
+	onDismiss: () => void;
+}) {
+	const t = useTranslations();
+
+	const rawProgress = Math.max(
+		0,
+		userMessageCount - plan.baselineUserMessageCount - 1,
+	);
+	const currentIndex = Math.min(rawProgress, plan.steps.length - 1);
+	const isTerminal = currentIndex >= plan.steps.length - 1;
+	const percentDone = Math.round(
+		(currentIndex / Math.max(1, plan.steps.length - 1)) * 100,
+	);
+	const nextStep = !isTerminal ? plan.steps[currentIndex + 1] : null;
+
+	return (
+		<div className='border-b border-edge bg-gradient-to-r from-amber-500/5 via-surface-card to-surface-card px-4 py-3 sm:px-6'>
+			<div className='flex items-start gap-3'>
+				<span className='mt-1.5 flex h-2 w-2 shrink-0 rounded-full bg-amber-400' />
+				<div className='min-w-0 flex-1'>
+					<div className='flex items-baseline gap-2'>
+						<span className='font-mono text-[11px] uppercase tracking-wider text-amber-500/80'>
+							{t("console.chat.verify.plan.title")}
+						</span>
+						<span className='truncate text-[11px] text-content-muted'>
+							{plan.findingTitle}
+						</span>
+					</div>
+					<h3 className='mt-0.5 truncate text-sm font-semibold text-content'>
+						{t(plan.goalKey)}
+					</h3>
+
+					<div className='mt-2 h-[3px] w-full overflow-hidden rounded-full bg-surface-inset'>
+						<div
+							className='h-full rounded-full bg-amber-400 transition-all duration-300'
+							style={{ width: `${percentDone}%` }}
+						/>
+					</div>
+
+					<ol className='mt-2.5 space-y-1.5'>
+						{plan.steps.map((step, idx) => {
+							const done = idx < currentIndex;
+							const active = idx === currentIndex;
+							return (
+								<li
+									key={step.id}
+									className={`flex items-start gap-2 text-[12px] leading-snug transition-colors ${
+										done
+											? "text-content-muted"
+											: active
+												? "text-content"
+												: "text-content-faint"
+									}`}
+								>
+									<span
+										className={`mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[9px] font-bold ${
+											done
+												? "border-amber-400/50 bg-amber-400/20 text-amber-400"
+												: active
+													? "border-amber-400 bg-amber-400/10 text-amber-400"
+													: "border-edge text-content-faint"
+										}`}
+									>
+										{done ? "✓" : idx + 1}
+									</span>
+									<span className={done ? "line-through" : ""}>
+										{t(step.labelKey)}
+									</span>
+								</li>
+							);
+						})}
+					</ol>
+
+					{nextStep && (
+						<div className='mt-2.5 flex items-center gap-2 border-t border-edge/50 pt-2 text-[11px]'>
+							<span className='text-content-faint'>
+								{t("console.chat.verify.plan.up_next")}
+							</span>
+							<span className='truncate text-content-secondary'>
+								{t(nextStep.labelKey)}
+							</span>
+						</div>
+					)}
+
+					{isTerminal && (
+						<div className='mt-3'>
+							<button
+								type='button'
+								onClick={onCreateAction}
+								disabled={creating}
+								className='w-full rounded-md border border-amber-400/50 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-500 transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60'
+							>
+								{creating
+									? t("console.chat.verify.plan.creating_action")
+									: t("console.chat.verify.plan.create_action_cta")}
+							</button>
+						</div>
+					)}
+				</div>
+
+				<button
+					type='button'
+					onClick={onDismiss}
+					aria-label={t("console.chat.verify.plan.dismiss_aria")}
+					className='shrink-0 rounded p-1 text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary'
+				>
+					<svg className='h-3.5 w-3.5' viewBox='0 0 16 16' fill='none'>
+						<path
+							d='M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5'
+							stroke='currentColor'
+							strokeWidth='1.75'
+							strokeLinecap='round'
+						/>
+					</svg>
+				</button>
+			</div>
+		</div>
+	);
+}
+
 function ContextIndicator({
 	items,
 	onRemove,
@@ -1678,6 +1942,26 @@ function buildContextPrompt(items: ChatContextItem[], t: any): string {
 	}
 
 	return prompt("combined", { parts: parts.join(", ") });
+}
+
+// Verify-flavoured seed prompt. Kicks the MCP into "walk the user
+// through verifying this finding and produce an Action" mode. The
+// strategy hint gives the LLM a playbook anchor; the remediation
+// steps give it authored remediation to narrate rather than
+// inventing new guidance. The final "When the user is ready..." line
+// nudges the LLM to direct them toward the terminal Create Action
+// CTA in the island instead of trailing off.
+function buildVerifyPrompt(item: ChatContextItem, t: any): string {
+	const strategy = item.verification_strategy || "unclassified";
+	const steps = Array.isArray(item.remediation_steps) && item.remediation_steps.length > 0
+		? item.remediation_steps.map((s, i) => `  ${i + 1}. ${s}`).join("\n")
+		: "  (none authored yet — propose remediation from first principles)";
+	return t("verify.prompts.seed", {
+		title: item.title,
+		id: item.id,
+		strategy,
+		steps,
+	});
 }
 
 // Preset visual metadata — color accent per question topic

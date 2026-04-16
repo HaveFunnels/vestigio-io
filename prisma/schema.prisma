@@ -103,6 +103,7 @@ model User {
   notificationPrefs     NotificationPreference?
   prospectScans         ProspectScan[]
   dashboardLayouts      DashboardLayout[]
+  userActions           UserAction[]
 }
 
 // ──────────────────────────────────────────────
@@ -213,6 +214,7 @@ model Organization {
   tokenLedger             TokenCostLedger[]
   orgInvites              OrgInvite[]
   credits                 OrgCredits?
+  userActions             UserAction[]
 
   @@index([orgType, status])
 }
@@ -268,6 +270,7 @@ model Environment {
   integrations     IntegrationConnection[]
   // Wave 0.2: Raw behavioral events from the snippet for this env
   behavioralEvents RawBehavioralEvent[]
+  userActions      UserAction[]
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
@@ -385,8 +388,9 @@ model Finding {
   projection           String   @db.Text
   createdAt            DateTime @default(now())
 
-  cycle       AuditCycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  cycle       AuditCycle   @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  environment Environment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  userActions UserAction[]
 
   @@unique([cycleId, inferenceKey])
   @@index([environmentId, cycleId])
@@ -820,9 +824,10 @@ model Conversation {
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
 
-  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  messages     ConversationMessage[]
-  tokenLedger  TokenCostLedger[]
+  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages        ConversationMessage[]
+  tokenLedger     TokenCostLedger[]
+  verifiedActions UserAction[]
 
   @@index([organizationId, status, updatedAt])
   @@index([userId, status, updatedAt])
@@ -1329,4 +1334,60 @@ model DashboardLayout {
 
   @@unique([userId, organizationId])
   @@index([userId])
+}
+
+// ──────────────────────────────────────────────
+// UserAction — persisted remediation actions created from findings
+//
+// Born when a user completes the Verify-via-chat flow. The Action
+// carries the remediation plan + a snapshot of the finding's impact
+// at creation time so we can later compute attribution deltas
+// ("since you fixed X, monthly revenue +$Y") against subsequent
+// audit cycles.
+//
+// status lifecycle: pending → in_progress → done (or dismissed).
+// verifiedViaConversationId points back at the chat where the
+// verification happened — enables the product to show "verified
+// via conversation N on date D" and reopen that thread.
+// ──────────────────────────────────────────────
+model UserAction {
+  id                        String    @id @default(cuid())
+  organizationId            String
+  environmentId             String
+  findingId                 String
+  createdByUserId           String
+
+  title                     String
+  description               String?   @db.Text
+  // JSON string[] — numbered remediation steps copied from the plan
+  remediationSteps          String?   @db.Text
+  estimatedEffortHours      Float?
+
+  status                    String    @default("pending") // pending | in_progress | done | dismissed
+
+  verifiedViaConversationId String?
+  verifiedAt                DateTime?
+  doneAt                    DateTime?
+  notes                     String?   @db.Text
+
+  // Attribution baseline — snapshotted at creation so later cycles
+  // can compute the delta ("this Action recovered $X/mo").
+  baselineImpactMidpoint    Float?
+  baselineImpactMin         Float?
+  baselineImpactMax         Float?
+  baselineCycleRef          String?
+
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  environment  Environment   @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  finding      Finding       @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  verifiedVia  Conversation? @relation(fields: [verifiedViaConversationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([environmentId, status])
+  @@index([findingId])
+  @@index([createdByUserId])
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
 	ReactFlow,
 	Background,
@@ -400,6 +401,7 @@ function RichFindingDrawer({
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
 	const tm = useTranslations("console.maps");
+	const router = useRouter();
 
 	if (!finding) {
 		// Fallback for nodes without matching finding projection
@@ -516,7 +518,9 @@ function RichFindingDrawer({
 					reTriggerReason={null}
 					decisionStatus={null}
 					onRequestVerification={() =>
-						toast.success(td("verification_requested"))
+						router.push(
+							`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
+						)
 					}
 				/>
 			</section>

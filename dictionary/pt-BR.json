@@ -2205,6 +2205,57 @@
 					"combined": "Analise estes itens em conjunto: {parts}. O que eles têm em comum? Qual é o impacto combinado e qual é a correção de maior alavancagem?"
 				}
 			},
+			"verify": {
+				"plan": {
+					"title": "Plano de verificação",
+					"up_next": "A seguir",
+					"create_action_cta": "Criar Action a partir desta verificação",
+					"creating_action": "Criando Action…",
+					"create_action_success": "Action criada — remediação em acompanhamento.",
+					"create_action_failed": "Não foi possível criar a Action. Tente novamente.",
+					"dismiss_aria": "Fechar plano de verificação",
+					"goals": {
+						"http_static": "Visão baseada em evidência: o problema está mesmo presente na página ao vivo?",
+						"browser_runtime": "Visão baseada em evidência: o problema ainda afeta sessões reais?",
+						"integration_pull": "Visão baseada em evidência: os dados do backend confirmam o problema?",
+						"external_scan": "Visão baseada em evidência sobre a superfície externa e sua exposição",
+						"pixel_accumulation": "Visão baseada em evidência usando sessões comportamentais para confirmar o padrão",
+						"heuristic_recompute": "Re-rodar a projeção sobre a evidência atual e diagnosticar o desvio",
+						"not_verifiable_explain": "Percorrer o caminho de verificação manual, já que a auto-verificação não está disponível",
+						"fallback": "Percorrer este finding e produzir uma remediação acionável"
+					},
+					"steps": {
+						"fetch_html": "Buscar o HTML atual da página",
+						"confirm_signal": "Confirmar o sinal (ausente / presente)",
+						"measure_radius": "Medir o raio de exposição",
+						"draft_remediation": "Rascunhar o plano de remediação",
+						"create_action": "Criar Action",
+						"launch_browser": "Rodar um browser headless na página",
+						"execute_scenario": "Executar o cenário de usuário",
+						"confirm_rendering": "Confirmar o comportamento em runtime",
+						"pull_data": "Puxar dados da integração",
+						"verify_metric": "Verificar a métrica contra o limiar",
+						"diagnose_cause": "Diagnosticar a causa raiz",
+						"kickoff_scan": "Disparar o scan externo",
+						"review_findings": "Revisar achados do scan",
+						"assess_severity": "Avaliar severidade e exposição",
+						"check_sessions": "Checar sessões acumuladas",
+						"evaluate_confidence": "Avaliar confiança do sinal",
+						"decide_wait_or_act": "Decidir: esperar ou agir agora",
+						"recompute": "Recalcular sobre a evidência existente",
+						"compare_baseline": "Comparar contra o baseline",
+						"diagnose_drift": "Diagnosticar o desvio",
+						"explain_no_auto": "Explicar por que a auto-verificação não está disponível",
+						"map_manual_path": "Mapear o caminho de verificação manual",
+						"confirm_intent": "Confirmar a intenção do usuário",
+						"understand_hypothesis": "Entender a hipótese",
+						"gather_evidence": "Reunir evidência de apoio"
+					}
+				},
+				"prompts": {
+					"seed": "Quero verificar o finding \"{title}\" (id: {id}). Estratégia de verificação: {strategy}. Passos de remediação autorados:\n{steps}\n\nMe guie na verificação deste finding passo a passo, seguindo o plano na ilha acima. Quando cobrirmos o plano, me lembre de clicar em \"Criar Action\" para acompanharmos a remediação."
+				}
+			},
 			"create_action": {
 				"saved": "Ação salva: {title}",
 				"suggested": "Ação sugerida",

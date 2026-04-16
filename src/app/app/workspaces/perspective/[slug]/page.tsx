@@ -315,6 +315,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
 function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjection; onDiscuss: () => void }) {
   const td = useTranslations("console.finding_drawer");
   const tc = useTranslations("console.common");
+  const router = useRouter();
 
   return (
     <div className="space-y-6">
@@ -373,7 +374,9 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
           expiresAt={null}
           reTriggerReason={null}
           decisionStatus={null}
-          onRequestVerification={() => toast.success(td("verification_requested"))}
+          onRequestVerification={() =>
+            router.push(`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`)
+          }
         />
       </section>
 

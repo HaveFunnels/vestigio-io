@@ -90,6 +90,13 @@ interface ContextItemResponse {
   slug?: string;
   /** Sanity excerpt — only set for kb_* kinds */
   excerpt?: string | null;
+  /** Verify flow (findings only) — enables the plan island to render
+   *  a base plan + populate remediation steps immediately. */
+  verification_strategy?: string | null;
+  verification_notes?: string | null;
+  remediation_steps?: string[] | null;
+  estimated_effort_hours?: number | null;
+  inference_key?: string;
 }
 
 function normalizeKind(raw: string | undefined): ContextKind | null {
@@ -311,6 +318,13 @@ export const POST = withErrorTracking(
           severity: f.severity,
           impact_mid: f.impact?.midpoint || 0,
           pack: f.pack,
+          verification_strategy: f.verification_strategy ?? null,
+          verification_notes: f.verification_notes ?? null,
+          remediation_steps: Array.isArray(f.remediation_steps) ? f.remediation_steps : null,
+          estimated_effort_hours: typeof f.estimated_effort_hours === "number"
+            ? f.estimated_effort_hours
+            : null,
+          inference_key: f.inference_key,
         });
       } else if (kind === "action") {
         const a = actionsById.get(id);

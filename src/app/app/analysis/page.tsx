@@ -911,6 +911,7 @@ function FindingDrawerContent({
 }) {
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
+	const router = useRouter();
 	const [kbLink, setKbLink] = useState<{
 		slug: string;
 		title: string;
@@ -1142,7 +1143,9 @@ function FindingDrawerContent({
 					reTriggerReason={null}
 					decisionStatus={null}
 					onRequestVerification={() =>
-						toast.success(td("verification_requested"))
+						router.push(
+							`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
+						)
 					}
 				/>
 			</DrawerSection>

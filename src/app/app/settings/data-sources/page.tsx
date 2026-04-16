@@ -362,6 +362,7 @@ export default function DataSourcesPage() {
 	const [metaAdsSaving, setMetaAdsSaving] = useState(false);
 	const [metaAdsLastSync, setMetaAdsLastSync] = useState<string | null>(null);
 	const [metaAdsError, setMetaAdsError] = useState<string | null>(null);
+	const [metaAdsAdvanced, setMetaAdsAdvanced] = useState(false);
 
 	const fetchMetaAdsStatus = useCallback(async () => {
 		try {
@@ -445,6 +446,7 @@ export default function DataSourcesPage() {
 	const [googleAdsSaving, setGoogleAdsSaving] = useState(false);
 	const [googleAdsLastSync, setGoogleAdsLastSync] = useState<string | null>(null);
 	const [googleAdsError, setGoogleAdsError] = useState<string | null>(null);
+	const [googleAdsAdvanced, setGoogleAdsAdvanced] = useState(false);
 
 	const fetchGoogleAdsStatus = useCallback(async () => {
 		try {
@@ -897,10 +899,33 @@ export default function DataSourcesPage() {
 											</div>
 										)}
 									</div>
+								) : !metaAdsAdvanced ? (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+										<div style={{ padding: "14px 16px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#e4e4e7", fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Connect via Meta OAuth</p>
+											<p style={{ color: "#71717a", fontSize: 12, lineHeight: 1.6 }}>
+												Você vai ser redirecionado pro Facebook, autoriza Vestigio com escopo <strong style={{ color: "#a1a1aa" }}>ads_read</strong> + <strong style={{ color: "#a1a1aa" }}>business_management</strong> (ambos read-only) e volta aqui conectado. Sem copy-paste de token.
+											</p>
+										</div>
+
+										{metaAdsError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{metaAdsError}
+											</div>
+										)}
+
+										<a href={`/api/integrations/meta-ads/authorize?environment_id=${encodeURIComponent(environmentId)}`} style={{ ...buttonStyle, textAlign: "center" as const, textDecoration: "none", backgroundColor: "#1877f2", color: "#fff" }}>
+											Conectar com Meta
+										</a>
+
+										<button onClick={() => setMetaAdsAdvanced(true)} style={{ background: "none", border: "none", color: "#71717a", fontSize: 11, cursor: "pointer", padding: 0, textAlign: "left" as const }}>
+											Advanced: colar System User token manualmente →
+										</button>
+									</div>
 								) : (
 									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
 										<div style={{ padding: "12px 14px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
-											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>How to get your Meta Ads credentials:</p>
+											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Manual (System User token) — for technical users:</p>
 											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
 												<li>Em <a href="https://business.facebook.com/settings" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Business Settings</a> &rarr; <strong style={{ color: "#a1a1aa" }}>Users &rarr; System Users</strong>, crie um System User</li>
 												<li>Assign o System User ao seu <strong style={{ color: "#a1a1aa" }}>Ad Account</strong> com permissão <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>ads_read</code></li>
@@ -928,9 +953,14 @@ export default function DataSourcesPage() {
 											</div>
 										)}
 
-										<button onClick={handleConnectMetaAds} disabled={metaAdsSaving} style={buttonStyle}>
-											{metaAdsSaving ? "Conectando..." : "Conectar Meta Ads"}
-										</button>
+										<div style={{ display: "flex", gap: 10 }}>
+											<button onClick={handleConnectMetaAds} disabled={metaAdsSaving} style={buttonStyle}>
+												{metaAdsSaving ? "Conectando..." : "Conectar Meta Ads"}
+											</button>
+											<button onClick={() => setMetaAdsAdvanced(false)} style={{ ...buttonStyle, backgroundColor: "transparent", color: "#a1a1aa", border: "1px solid #27272a" }}>
+												Voltar pro OAuth
+											</button>
+										</div>
 									</div>
 								)}
 							</div>
@@ -958,10 +988,33 @@ export default function DataSourcesPage() {
 											</div>
 										)}
 									</div>
+								) : !googleAdsAdvanced ? (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+										<div style={{ padding: "14px 16px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#e4e4e7", fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Connect via Google OAuth</p>
+											<p style={{ color: "#71717a", fontSize: 12, lineHeight: 1.6 }}>
+												Você vai ser redirecionado pra Google, autoriza Vestigio com escopo <strong style={{ color: "#a1a1aa" }}>adwords</strong> (read-only) e volta aqui conectado. O developer token é Vestigio-side, você não precisa aplicar pelo seu.
+											</p>
+										</div>
+
+										{googleAdsError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{googleAdsError}
+											</div>
+										)}
+
+										<a href={`/api/integrations/google-ads/authorize?environment_id=${encodeURIComponent(environmentId)}`} style={{ ...buttonStyle, textAlign: "center" as const, textDecoration: "none", backgroundColor: "#4285f4", color: "#fff" }}>
+											Conectar com Google
+										</a>
+
+										<button onClick={() => setGoogleAdsAdvanced(true)} style={{ background: "none", border: "none", color: "#71717a", fontSize: 11, cursor: "pointer", padding: 0, textAlign: "left" as const }}>
+											Advanced: colar credenciais manualmente (próprio developer token) →
+										</button>
+									</div>
 								) : (
 									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
 										<div style={{ padding: "12px 14px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
-											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>How to get your Google Ads credentials:</p>
+											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Manual (own developer token) — for technical users:</p>
 											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
 												<li>Apply for a <strong style={{ color: "#a1a1aa" }}>Developer Token</strong> em <a href="https://ads.google.com/aw/apicenter" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Google Ads API Center</a> (basic access serve)</li>
 												<li>Em <a href="https://console.cloud.google.com/apis/credentials" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Google Cloud Console</a> crie um <strong style={{ color: "#a1a1aa" }}>OAuth 2.0 Client ID</strong> do tipo Desktop App</li>
@@ -1006,9 +1059,14 @@ export default function DataSourcesPage() {
 											</div>
 										)}
 
-										<button onClick={handleConnectGoogleAds} disabled={googleAdsSaving} style={buttonStyle}>
-											{googleAdsSaving ? "Conectando..." : "Conectar Google Ads"}
-										</button>
+										<div style={{ display: "flex", gap: 10 }}>
+											<button onClick={handleConnectGoogleAds} disabled={googleAdsSaving} style={buttonStyle}>
+												{googleAdsSaving ? "Conectando..." : "Conectar Google Ads"}
+											</button>
+											<button onClick={() => setGoogleAdsAdvanced(false)} style={{ ...buttonStyle, backgroundColor: "transparent", color: "#a1a1aa", border: "1px solid #27272a" }}>
+												Voltar pro OAuth
+											</button>
+										</div>
 									</div>
 								)}
 							</div>

@@ -310,6 +310,290 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos navegar em headless pelas páginas de alto intent e confirmar quais eventos disparam vs esperados.',
 		verification_eta_seconds: 45,
 	},
+
+	// ─────────────────────────────────────────────
+	// Revenue Integrity pack
+	// ─────────────────────────────────────────────
+
+	conversion_flow_fragmented: {
+		remediation_steps: [
+			'Mapeie o funil atual: home → produto → carrinho → checkout → confirmação. Identifique onde há mais de um caminho possível.',
+			'Consolide CTAs duplicados na home e produto — um CTA primário claro por página.',
+			'Remova etapas opcionais que quebram o momentum (newsletter popup antes do checkout, survey pós-add-to-cart).',
+			'Padronize o layout do checkout: uma coluna em mobile, campos agrupados logicamente, indicador de progresso se multi-step.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar o funil completo e contar paths alternativos + CTAs competindo por atenção.',
+		verification_eta_seconds: 50,
+	},
+
+	friction_on_critical_path: {
+		remediation_steps: [
+			'Conte quantos campos de formulário existem entre "ver produto" e "pagar" — reduza pra ≤ 8 obrigatórios.',
+			'Elimine logins forçados antes do checkout — ofereça checkout como convidado com opção de criar conta depois.',
+			'Remova modais, popups e overlays no caminho de compra — apenas o necessário pra efetivar o pagamento.',
+			'Se há múltiplos steps no checkout, garanta que volta e edita cada step sem perder dados já preenchidos.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos executar o caminho crítico em headless e contar fricções: campos, modais, redirects, logins forçados.',
+		verification_eta_seconds: 50,
+	},
+
+	revenue_leakage: {
+		remediation_steps: [
+			'Revise a lista de findings de maior impacto — priorize os que têm confidence ≥ 70% e severity ≥ high.',
+			'Para cada finding prioritário, marque o owner responsável e a janela de implementação.',
+			'Bloqueie deploys que impactem o caminho de receita até que os findings críticos sejam resolvidos.',
+			'Crie um dashboard semanal com sum of monthly_range.mid dos findings abertos pra rastrear leakage acumulado.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Re-projetar sobre a evidência atual pra recalcular o leakage agregado — sem novo data, apenas a soma atual.',
+		verification_eta_seconds: 3,
+	},
+
+	trust_break_in_checkout: {
+		remediation_steps: [
+			'Abra o checkout e identifique cada momento onde o buyer poderia hesitar (mudança de domínio, selo faltando, política escondida).',
+			'Adicione selo SSL explícito ("Conexão segura") próximo ao campo de cartão de crédito.',
+			'Exiba política de reembolso em 1 clique a partir do checkout — não esconda em footer genérico.',
+			'Mostre logos das bandeiras de cartão aceitas + logo do gateway (Stripe, Mercado Pago, etc.) para reforçar credibilidade.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar até o checkout em headless e contar trust markers visíveis no viewport do pagamento.',
+		verification_eta_seconds: 40,
+	},
+
+	measurement_blindspot: {
+		remediation_steps: [
+			'Identifique surfaces comerciais sem tag analítica — páginas de produto órfãs, URLs legadas, landing pages de campanha.',
+			'Adicione GA4 + Pixel nessas surfaces específicas — pode ser via GTM ou tag direta.',
+			'Configure eventos customizados pro contexto daquela surface (view_item em produto, generate_lead em landing).',
+			'Valide em GA4 DebugView que eventos chegam com o contexto correto (product_id, value, etc.).',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos carregar as surfaces identificadas em headless e confirmar presença de tags + disparos de eventos.',
+		verification_eta_seconds: 35,
+	},
+
+	unclear_conversion_intent: {
+		remediation_steps: [
+			'Identifique o CTA primário de cada página comercial — deve ser explícito e único no viewport.',
+			'Reescreva textos de CTA vagos ("Saiba mais", "Clique aqui") pra verbos de ação claros ("Comprar agora", "Ver preços", "Agendar demo").',
+			'Teste se o CTA comunica a próxima etapa: "Adicionar ao carrinho" vs "Prosseguir pra pagamento" têm intents diferentes.',
+			'Use cor de destaque contrastante apenas no CTA primário — CTAs secundários em estilo outline / ghost.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-parsear HTML das páginas comerciais e auditar text + styling dos CTAs contra lista de padrões vagos.',
+		verification_eta_seconds: 8,
+	},
+
+	redirect_chain_erodes_checkout_trust: {
+		remediation_steps: [
+			'Audite a cadeia de redirects do /checkout — use curl -L -I ou DevTools Network pra listar cada hop.',
+			'Elimine redirects desnecessários (http→https→www→subdomain) — idealmente um único redirect ou zero.',
+			'Se o gateway requer saída de domínio, garanta que o redirect final é direto e não passa por intermediários.',
+			'Configure HSTS no domínio raiz pra forçar HTTPS sem round-trip de redirect.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar /checkout seguindo redirects e contar hops — relatório inclui cada URL intermediária.',
+		verification_eta_seconds: 10,
+	},
+
+	commercial_journey_language_break: {
+		remediation_steps: [
+			'Audite se todas as surfaces comerciais (home, produto, checkout, confirmação) estão no mesmo idioma.',
+			'Resolva mixes: produto em pt-BR mas checkout em inglês é um trust-break imediato pro buyer brasileiro.',
+			'Configure `<html lang="pt-BR">` em todas as páginas comerciais pra sinalizar aos buscadores e leitores de tela.',
+			'Se você tem versão multi-idioma, implemente hreflang pra evitar que o Google indexe a versão errada por região.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-parsear HTML das surfaces comerciais e extrair atributo lang + amostra de copy pra detectar mix de idiomas.',
+		verification_eta_seconds: 8,
+	},
+
+	commercial_pages_disconnected: {
+		remediation_steps: [
+			'Audite a navegação: a partir da home, quantos cliques são necessários pra chegar numa página de produto?',
+			'Garanta que categorias / produtos principais estão linkados da home em até 2 cliques.',
+			'Revise o footer — links pra produtos-chave e políticas devem aparecer em toda página comercial.',
+			'Adicione breadcrumbs nas páginas de produto e categoria pra melhorar navegação e SEO.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos crawlar a home e mapear a profundidade de links até cada página de produto.',
+		verification_eta_seconds: 15,
+	},
+
+	post_purchase_confirmation_absent: {
+		remediation_steps: [
+			'Audite a página de confirmação pós-compra: deve ter número do pedido, resumo do que foi comprado, e prazo estimado de entrega.',
+			'Configure email transacional de confirmação disparado imediatamente após o purchase event.',
+			'Inclua no email: nota fiscal (ou prazo de envio dela), canal de suporte, e link de rastreio quando disponível.',
+			'Configure retry + fallback no envio do email — não dependa de um único provider sem backup.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos carregar a URL de confirmação em headless e verificar presença dos elementos essenciais (order ID, resumo, prazo).',
+		verification_eta_seconds: 35,
+	},
+
+	refund_process_unclear: {
+		remediation_steps: [
+			'Reescreva a página de política de reembolso com estrutura: prazo → processo → canal de contato → exceções.',
+			'Inclua exemplos concretos ("Se você recebeu produto errado, envie email X com foto") — não deixe só regras abstratas.',
+			'Adicione FAQ de refund no checkout ou próximo ao botão de pagar, com link pra política completa.',
+			'Meça tempo médio até primeiro contato do cliente via canal de refund — menos que 2h úteis é benchmark bom.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar a página de política de reembolso e analisar estrutura + densidade de conteúdo.',
+		verification_eta_seconds: 5,
+	},
+
+	post_purchase_proof_too_weak: {
+		remediation_steps: [
+			'Configure email de confirmação profissional (template branded, não texto plano) disparado em <1min após compra.',
+			'Inclua nota fiscal eletrônica / recibo PDF anexado ou linkado pra download.',
+			'Adicione código de rastreio assim que disponível (webhook do transportador → email automático).',
+			'Envie email de follow-up pós-entrega pedindo avaliação — reforça o fechamento do ciclo de trust.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'not_verifiable_explain',
+		verification_notes:
+			'Post-purchase proof acontece via email/SMS externo ao site — não dá pra verificar via crawl. Phase 3 explora integração com ESP pra validar templates de transacional.',
+		verification_eta_seconds: null,
+	},
+
+	support_reassurance_too_late: {
+		remediation_steps: [
+			'Posicione canal de suporte visível antes do checkout — footer com WhatsApp/chat em toda página comercial.',
+			'Adicione microcopy próximo ao botão de pagamento: "Dúvidas? Fale com nosso time via WhatsApp".',
+			'Se você tem chat widget, garanta que ele carrega rápido (sem bloquear o render do checkout) e responde em <5min úteis.',
+			'Inclua FAQ de compra direto na página de produto e checkout — responda as 5 dúvidas mais comuns antes que o buyer precise perguntar.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-parsear home + produto + checkout e detectar canais de suporte visíveis em cada surface.',
+		verification_eta_seconds: 8,
+	},
+
+	reassurance_routes_disconnected: {
+		remediation_steps: [
+			'Teste cada rota de reassurance: clicar "Política de reembolso" do checkout abre em nova aba ou leva pra footer genérico?',
+			'Garanta que cada trust marker (política, contato, depoimentos) abre CONTEXTUAL — modal ou página dedicada com link de volta.',
+			'Evite políticas em URLs soltas do footer — ancore-as no contexto da compra (link direto do checkout pra política de reembolso).',
+			'Meça a taxa de retorno pós-clique nesses links — se >50% dos cliques não voltam, o link está desviando o buyer.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar a partir do checkout clicando em cada link de reassurance e conferir destino + comportamento.',
+		verification_eta_seconds: 40,
+	},
+
+	alternate_flows_unmeasured: {
+		remediation_steps: [
+			'Liste todos os fluxos alternativos de compra: WhatsApp, email, ligação, formulário de orçamento, marketplace.',
+			'Para cada fluxo, garanta que o evento de conversão é capturado (mesmo que manualmente — registrar no CRM + evento customizado no GA4).',
+			'Configure UTMs + custom source/medium pra separar conversões desses fluxos das do site principal.',
+			'Crie dashboard no GA4 que consolide todas as fontes de conversão pra você enxergar o funil completo.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Fluxos alternativos acontecem fora do site — verificação é re-projetar depois que você marca os eventos.',
+		verification_eta_seconds: 3,
+	},
+
+	runtime_breaking_reassurance: {
+		remediation_steps: [
+			'Audite se componentes de reassurance (política, chat widget, trust badges) disparam erro JS que quebra a página.',
+			'Garanta que chat widgets carregam de forma async/defer — não bloqueiam o render do conteúdo principal.',
+			'Se um trust badge falha ao carregar (imagem 404, script externo timeout), tenha fallback que não mostra espaço quebrado.',
+			'Configure alerta de erro JS no checkout pra detectar regressões antes do buyer chegar.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos abrir o checkout em headless com console capture e conferir se componentes de trust renderizam sem erros.',
+		verification_eta_seconds: 45,
+	},
+
+	checkout_provider_path_weak: {
+		remediation_steps: [
+			'Se você usa um único provedor de checkout, tenha contingência: gateway backup configurado + processo manual documentado.',
+			'Revise o contrato com o provedor pra entender SLA e compensação em downtime.',
+			'Configure monitoring externo (UptimeRobot) especificamente contra a URL do checkout — não confie apenas no status page do provedor.',
+			'Tenha checklist escrito pra quando o provedor ficar fora: comunicar time, ativar backup, atender buyers por WhatsApp temporariamente.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Risco estrutural de provider único — verificação é re-projetar após você diversificar ou documentar contingência.',
+		verification_eta_seconds: 3,
+	},
+
+	trust_and_measurement_both_absent: {
+		remediation_steps: [
+			'Resolva primeiro o trust — é barato e tem impacto imediato (políticas publicadas + selos visíveis em ≤1 dia).',
+			'Em paralelo, configure GA4 + Pixel básicos na home + checkout pra ter pelo menos 1 camada de medição.',
+			'Não deploy nenhuma campanha paga enquanto esses dois gaps estão abertos — você paga ads sem medir e sem fechar vendas.',
+			'Crie checkpoint semanal com o time revisando progresso em ambas frentes — trust + measurement não devem divergir.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-verificar presença de políticas, selos, tags de medição em paralelo e retornar progresso conjunto.',
+		verification_eta_seconds: 15,
+	},
+
+	consent_undermining_measurement: {
+		remediation_steps: [
+			'Revise seu banner de consent: está bloqueando GA4 / Pixel ANTES mesmo do buyer responder? Troque pra bloqueio condicional.',
+			'Configure Google Consent Mode v2 — permite medição com dados agregados mesmo sem consent total.',
+			'No Meta, ative Conversions API server-side como fallback quando o Pixel no browser é bloqueado.',
+			'Valide em ambientes opt-in e opt-out: em ambos casos, alguma medição deve chegar (mesmo que limitada em opt-out).',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar em headless com consent rejeitado e consent aceito, conferindo quais tags disparam em cada cenário.',
+		verification_eta_seconds: 60,
+	},
+
+	checkout_provider_fragmented: {
+		remediation_steps: [
+			'Liste quantos gateways / checkouts diferentes seus fluxos usam (site, mobile app, marketplace, WhatsApp).',
+			'Consolide: idealmente 1-2 gateways cobrindo 95% do volume — fragmentação aumenta custo + complexidade.',
+			'Para fluxos remanescentes que precisam de gateway dedicado, documente o motivo (regulatório, geográfico) pra justificar.',
+			'Padronize a experiência visual do checkout mesmo quando o backend varia — consumidor não deveria perceber a fragmentação.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar os checkouts dos fluxos conhecidos e identificar quantos gateways distintos aparecem.',
+		verification_eta_seconds: 20,
+	},
 };
 
 /**

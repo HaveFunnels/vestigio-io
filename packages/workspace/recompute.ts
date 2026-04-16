@@ -282,7 +282,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   }
 
   // ─── Shared pipeline: graph + signals + inferences ───
-  const graph = buildGraph(evidence, root_domain, cycle_ref);
+  const graph = buildGraph(evidence, root_domain, cycle_ref, integrationSnapshots);
   const graphStats = summarizeGraph(graph);
   const rawSignals = extractSignals(evidence, graph, scoping, cycle_ref, commerceContext);
 

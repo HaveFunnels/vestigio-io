@@ -16,6 +16,7 @@ import {
   PolicyPagePayload,
 } from '../domain';
 import { GraphNode, GraphEdge, GraphEdgeType } from './types';
+import type { IntegrationSnapshot, MetaAdsSnapshotData, GoogleAdsSnapshotData } from '../integrations/types';
 
 // ──────────────────────────────────────────────
 // Graph Builder — constructs graph from evidence
@@ -35,6 +36,7 @@ export function buildGraph(
   evidenceItems: Evidence[],
   rootDomain: string,
   cycle_ref: string,
+  integrationSnapshots?: IntegrationSnapshot[],
 ): BuiltGraph {
   const nodeIds = new IdGenerator('gn');
   const edgeIds = new IdGenerator('ge');
@@ -75,6 +77,16 @@ export function buildGraph(
         processPolicyPage(graph, e, rootDomain, cycle_ref, nodeIds, edgeIds);
         break;
     }
+  }
+
+  // Paid acquisition nodes — ads become first-class graph citizens.
+  // Created AFTER evidence so destination URLs resolve to existing
+  // page nodes when the page was crawled. Unknown destinations get
+  // their own page node (external or on-domain) — this is intentional
+  // because it surfaces "creative targets a page we never found in
+  // the crawl" as a distinct graph pattern.
+  if (integrationSnapshots) {
+    processAdsIntegrations(graph, integrationSnapshots, rootDomain, cycle_ref, nodeIds, edgeIds);
   }
 
   return graph;
@@ -422,6 +434,143 @@ function processPolicyPage(
   );
 
   addEdge(graph, 'references_policy', policyNode.id, policyNode.id, payload.confidence, cycle_ref, ref, edgeIds);
+}
+
+// ──────────────────────────────────────────────
+// Paid Acquisition Graph — ads as first-class nodes
+//
+// Each Meta creative and Google campaign becomes a graph node. An
+// `ad_targets` edge connects the ad node to the destination page
+// node (resolved via nodesByUrl or created fresh). Metadata on the
+// ad node carries: platform, spend, headline, body, cta, status.
+//
+// This foundation enables:
+//   - Maps: visualize spend flowing into site topology
+//   - MCP: "this page receives $X from 3 Meta creatives"
+//   - Compound findings: "creative targets page with trust gap"
+//   - Workspaces: "Paid Acquisition Health" grouping
+//   - Copy Pack (future): LLM creative→page alignment scoring
+// ──────────────────────────────────────────────
+
+function processAdsIntegrations(
+  graph: BuiltGraph,
+  snapshots: IntegrationSnapshot[],
+  rootDomain: string,
+  cycle_ref: string,
+  nodeIds: IdGenerator,
+  edgeIds: IdGenerator,
+): void {
+  for (const snap of snapshots) {
+    if (snap.provider === 'meta_ads') {
+      processMetaAdsSnapshot(graph, snap.data as MetaAdsSnapshotData, rootDomain, cycle_ref, nodeIds, edgeIds);
+    } else if (snap.provider === 'google_ads') {
+      processGoogleAdsSnapshot(graph, snap.data as GoogleAdsSnapshotData, rootDomain, cycle_ref, nodeIds, edgeIds);
+    }
+  }
+}
+
+function processMetaAdsSnapshot(
+  graph: BuiltGraph,
+  data: MetaAdsSnapshotData,
+  rootDomain: string,
+  cycle_ref: string,
+  nodeIds: IdGenerator,
+  edgeIds: IdGenerator,
+): void {
+  for (const creative of data.creatives) {
+    if (!creative.destination_url) continue;
+    const key = `ad_creative:meta_ads:${creative.id}`;
+    const existing = graph.nodesByKey.get(key);
+    if (existing) continue;
+
+    const adNode: GraphNode = {
+      id: nodeIds.next(),
+      node_type: 'ad_creative',
+      label: creative.headline || `Meta Ad ${creative.id}`,
+      url: creative.destination_url,
+      host: null,
+      is_external: true,
+      metadata: {
+        platform: 'meta_ads',
+        creative_id: creative.id,
+        headline: creative.headline,
+        body: creative.body,
+        cta: creative.cta,
+        status: creative.status,
+        spend_30d: creative.spend_30d,
+        currency: data.currency,
+      },
+      evidence_refs: [],
+    };
+
+    graph.nodes.set(adNode.id, adNode);
+    graph.nodesByKey.set(key, adNode.id);
+
+    const destUrl = normaliseUrl(creative.destination_url);
+    if (destUrl) {
+      const pageNode = getOrCreatePageNode(graph, destUrl, rootDomain, '', nodeIds);
+      addEdge(graph, 'ad_targets', adNode.id, pageNode.id, 95, cycle_ref, null, edgeIds, {
+        spend_30d: creative.spend_30d,
+        platform: 'meta_ads',
+      });
+    }
+  }
+}
+
+function processGoogleAdsSnapshot(
+  graph: BuiltGraph,
+  data: GoogleAdsSnapshotData,
+  rootDomain: string,
+  cycle_ref: string,
+  nodeIds: IdGenerator,
+  edgeIds: IdGenerator,
+): void {
+  for (const campaign of data.campaigns) {
+    if (!campaign.final_url) continue;
+    const key = `ad_campaign:google_ads:${campaign.id}`;
+    const existing = graph.nodesByKey.get(key);
+    if (existing) continue;
+
+    const adNode: GraphNode = {
+      id: nodeIds.next(),
+      node_type: 'ad_campaign',
+      label: campaign.name || `Google Campaign ${campaign.id}`,
+      url: campaign.final_url,
+      host: null,
+      is_external: true,
+      metadata: {
+        platform: 'google_ads',
+        campaign_id: campaign.id,
+        campaign_name: campaign.name,
+        headlines: campaign.headlines,
+        descriptions: campaign.descriptions,
+        spend_30d: campaign.spend_30d,
+        currency: data.currency,
+      },
+      evidence_refs: [],
+    };
+
+    graph.nodes.set(adNode.id, adNode);
+    graph.nodesByKey.set(key, adNode.id);
+
+    const destUrl = normaliseUrl(campaign.final_url);
+    if (destUrl) {
+      const pageNode = getOrCreatePageNode(graph, destUrl, rootDomain, '', nodeIds);
+      addEdge(graph, 'ad_targets', adNode.id, pageNode.id, 95, cycle_ref, null, edgeIds, {
+        spend_30d: campaign.spend_30d,
+        platform: 'google_ads',
+      });
+    }
+  }
+}
+
+function normaliseUrl(raw: string): string | null {
+  try {
+    const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`);
+    return u.href;
+  } catch {
+    return null;
+  }
 }
 
 function safeHostname(url: string): string {

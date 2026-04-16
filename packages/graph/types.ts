@@ -14,7 +14,11 @@ export type GraphNodeType =
   | 'provider'
   | 'policy_document'
   | 'asset'
-  | 'critical_route';
+  | 'critical_route'
+  // Paid acquisition — ads are first-class graph citizens so that
+  // maps, MCP, and workspaces can reason about spend flowing into pages.
+  | 'ad_creative'
+  | 'ad_campaign';
 
 export type GraphEdgeType =
   // Structural
@@ -32,7 +36,10 @@ export type GraphEdgeType =
   | 'in_path_scope'
   | 'uses_provider'
   | 'references_policy'
-  | 'affects_critical_route';
+  | 'affects_critical_route'
+  // Paid acquisition
+  | 'ad_targets'
+  | 'ad_funds';
 
 export interface GraphNode {
   id: string;

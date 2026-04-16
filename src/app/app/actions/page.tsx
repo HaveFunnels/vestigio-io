@@ -63,6 +63,12 @@ interface UserActionRow {
 	baseline_impact_min: number | null;
 	baseline_impact_max: number | null;
 	baseline_cycle_ref: string | null;
+	// Attribution confirmation (PR attribution-loop) — stamped by the
+	// post-cycle job when a subsequent cycle confirms the linked
+	// finding is resolved. Drives the "Confirmed" drawer state and
+	// gates the "Run verification now" CTA.
+	verified_resolved_at: string | null;
+	verification_cycle_ref: string | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -279,6 +285,99 @@ function ActionsContent({
 			toast.success(t("drawer.mine.updated"));
 		} catch {
 			toast.error(t("drawer.mine.updateFailed"));
+		} finally {
+			setMutatingUserActionId(null);
+		}
+	}
+
+	// "Run verification now" — the credit-gated impatience escape.
+	// Marks the UserAction done (if not already) AND triggers an
+	// on-demand audit cycle so the attribution job (post-cycle)
+	// can stamp `verifiedResolvedAt` within minutes instead of
+	// waiting for the next scheduled sweep. The celebration email
+	// fires automatically on confirmation.
+	async function runVerificationForUserAction(action: UserActionRow) {
+		if (mutatingUserActionId) return;
+		setMutatingUserActionId(action.id);
+		const pendingToast = toast.loading(t("drawer.mine.triggeringCycle"));
+		try {
+			// Step 1: mark done if it isn't already — the attribution job
+			// only scans status='done' rows, so skipping this silently
+			// would waste the credit burn.
+			if (action.status !== "done") {
+				const patchRes = await fetch(`/api/actions/user/${action.id}`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ status: "done" }),
+				});
+				if (!patchRes.ok) {
+					const body = await patchRes.json().catch(() => ({}));
+					toast.dismiss(pendingToast);
+					toast.error(body?.message || t("drawer.mine.updateFailed"));
+					return;
+				}
+				const updated = await patchRes.json();
+				setUserActions((prev) =>
+					prev.map((a) =>
+						a.id === action.id
+							? {
+									...a,
+									status: updated.status,
+									done_at: updated.done_at,
+									updated_at: updated.updated_at,
+								}
+							: a,
+					),
+				);
+				setSelectedUserAction((prev) =>
+					prev && prev.id === action.id
+						? {
+								...prev,
+								status: updated.status,
+								done_at: updated.done_at,
+								updated_at: updated.updated_at,
+							}
+						: prev,
+				);
+			}
+
+			// Step 2: kick off the verification cycle.
+			const cycleRes = await fetch("/api/cycles/trigger", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					cycle_type: "verification",
+					reason: `user_action:${action.id}`,
+				}),
+			});
+			toast.dismiss(pendingToast);
+			if (!cycleRes.ok) {
+				const body = await cycleRes.json().catch(() => ({}));
+				// Insufficient credits → tell the user how many they need.
+				if (body?.error === "insufficient_credits") {
+					toast.error(body.message || t("drawer.mine.insufficientCredits"));
+					return;
+				}
+				// Already running → soft-success. The existing cycle will
+				// pick up the attribution stamp when it completes.
+				if (body?.error === "cycle_already_running") {
+					toast.success(
+						body.message || t("drawer.mine.cycleAlreadyRunning"),
+					);
+					return;
+				}
+				toast.error(body?.message || t("drawer.mine.cycleTriggerFailed"));
+				return;
+			}
+			const json = await cycleRes.json();
+			toast.success(
+				t("drawer.mine.cycleQueued", {
+					credits: json.credits_charged ?? 0,
+				}),
+			);
+		} catch {
+			toast.dismiss(pendingToast);
+			toast.error(t("drawer.mine.cycleTriggerFailed"));
 		} finally {
 			setMutatingUserActionId(null);
 		}
@@ -666,6 +765,9 @@ function ActionsContent({
 						mutating={mutatingUserActionId === selectedUserAction.id}
 						onUpdateStatus={(next) =>
 							updateUserActionStatus(selectedUserAction, next)
+						}
+						onRunVerification={() =>
+							runVerificationForUserAction(selectedUserAction)
 						}
 						onReopenConversation={(convId) =>
 							router.push(`/app/chat?conversation=${convId}`)
@@ -1353,11 +1455,13 @@ function UserActionDrawerContent({
 	action,
 	mutating,
 	onUpdateStatus,
+	onRunVerification,
 	onReopenConversation,
 }: {
 	action: UserActionRow;
 	mutating: boolean;
 	onUpdateStatus: (next: UserActionRow["status"]) => void;
+	onRunVerification: () => void;
 	onReopenConversation: (conversationId: string) => void;
 }) {
 	const t = useTranslations("console.actions.drawer.mine");
@@ -1475,6 +1579,40 @@ function UserActionDrawerContent({
 						))}
 				</div>
 			</DrawerSection>
+
+			{/* Run verification cycle now — the credit-gated impatience
+			    escape. Only shown while the action is actionable (not
+			    already confirmed or dismissed). Clicking marks done +
+			    kicks off a hot-tier cycle. Attribution job stamps the
+			    confirmation + fires the celebration email when done. */}
+			{action.status !== "dismissed" && !action.verified_resolved_at && (
+				<DrawerSection title={t("runVerificationTitle")} accent='info'>
+					<button
+						type='button'
+						onClick={onRunVerification}
+						disabled={mutating}
+						className='w-full rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400'
+					>
+						{mutating
+							? t("triggeringCycle")
+							: t("runVerificationCta")}
+					</button>
+					<p className='mt-1.5 text-[11px] leading-snug text-content-muted'>
+						{t("runVerificationHint")}
+					</p>
+				</DrawerSection>
+			)}
+
+			{/* Already confirmed badge — no CTA here, just closure. */}
+			{action.verified_resolved_at && (
+				<DrawerSection title={t("confirmedTitle")} accent='success'>
+					<div className='rounded-md border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-xs text-emerald-600 dark:text-emerald-400'>
+						{t("confirmedBody", {
+							when: new Date(action.verified_resolved_at).toLocaleString(),
+						})}
+					</div>
+				</DrawerSection>
+			)}
 
 			{/* Description */}
 			{action.description && (

@@ -156,7 +156,21 @@ The user arrived via the "Verify" button on a finding. A VerificationPlanIsland 
 - Work the steps in order. Don't jump ahead — each step is an investigation beat, not a header. Use the tool data to actually confirm/refute, not just to narrate.
 - After the penultimate step is covered, explicitly nudge the user to click the "Create Action" button in the island above. Do NOT emit $$CREATEACTION{...}$$ markers — the island button is the canonical terminal CTA for this flow.
 - If the plan doesn't fit the finding's reality, call it out and propose adjusting rather than silently ignoring a step.
-- The user authored remediation steps are part of the seed — reference them by number when you draft the remediation.`;
+- The user authored remediation steps are part of the seed — reference them by number when you draft the remediation.
+
+COMPLETION-SIGNAL DETECTION:
+After the Action is created, the conversation continues — the user may come back later saying they shipped the fix. Watch for completion signals in user messages:
+- English: "I fixed it", "done", "shipped", "implemented it", "pushed", "deployed", "it's live"
+- Portuguese: "terminei", "implementei", "subi", "deployei", "tá no ar", "mandei pra produção"
+- Spanish: "lo arreglé", "terminé", "subí", "está en producción", "lo desplegué"
+- German: "erledigt", "gefixt", "ausgerollt", "deployed", "ist live"
+
+When you detect one, do NOT silently mark anything. Instead:
+1. Confirm out loud: "Nice — that was the [finding.title] fix, right?"
+2. Tell them exactly what to do next: open the Action drawer on /app/actions under the "Verified by you" tab, and click either "Mark done" (free, attribution confirmed on next scheduled cycle) or "Run verification cycle now" (5 credits, attribution lands in minutes + celebration email when confirmed).
+3. Explain the payoff concretely: once confirmed, the baseline impact shows up as confirmed in the money recovered widget and you'll get an email.
+
+Never pretend you can mark it done for them — the buttons are user-owned actions. Your job is to route them to the right button at the right moment.`;
 
 export function buildVerifyModeContext(): { type: 'text'; text: string } {
   return {

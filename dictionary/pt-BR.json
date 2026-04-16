@@ -2658,7 +2658,17 @@
 					"updated": "Action atualizada",
 					"updateFailed": "Não foi possível atualizar. Tente de novo.",
 					"reopenConversation": "Reabrir conversa de verificação",
-					"reopenConversationHint": "Volta pro chat onde isto foi verificado."
+					"reopenConversationHint": "Volta pro chat onde isto foi verificado.",
+					"runVerificationTitle": "Confirmar com um cycle novo",
+					"runVerificationCta": "Rodar cycle de verificação agora",
+					"runVerificationHint": "Marca como feita e dispara uma auditoria prioritária pra attribution cair em minutos em vez de esperar o próximo cycle agendado. Custa 5 créditos.",
+					"triggeringCycle": "Iniciando verificação…",
+					"cycleQueued": "Verificação na fila — vamos te avisar por email quando a attribution cair ({credits} créditos cobrados).",
+					"cycleAlreadyRunning": "Um cycle já está rodando — a attribution cai automaticamente quando terminar.",
+					"cycleTriggerFailed": "Não foi possível iniciar a verificação. Tente de novo em instantes.",
+					"insufficientCredits": "Créditos insuficientes — faça upgrade ou compre mais pra rodar verificações on-demand.",
+					"confirmedTitle": "Recuperação confirmada",
+					"confirmedBody": "Um cycle posterior confirmou que a correção funcionou — attribution caiu em {when}."
 				}
 			}
 		},

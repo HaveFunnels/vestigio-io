@@ -2603,7 +2603,17 @@
 					"updated": "Action updated",
 					"updateFailed": "Couldn't update. Try again.",
 					"reopenConversation": "Reopen the verification conversation",
-					"reopenConversationHint": "Goes back to the chat where this was verified."
+					"reopenConversationHint": "Goes back to the chat where this was verified.",
+					"runVerificationTitle": "Confirm with a fresh cycle",
+					"runVerificationCta": "Run verification cycle now",
+					"runVerificationHint": "Marks as done and kicks off a priority audit so attribution lands within minutes instead of waiting for the next scheduled cycle. Costs 5 credits.",
+					"triggeringCycle": "Starting verification…",
+					"cycleQueued": "Verification queued — we'll email you when attribution lands ({credits} credits charged).",
+					"cycleAlreadyRunning": "A cycle is already running — attribution will land automatically when it finishes.",
+					"cycleTriggerFailed": "Couldn't start a verification cycle. Try again in a moment.",
+					"insufficientCredits": "Insufficient credits — upgrade or buy more to run on-demand verifications.",
+					"confirmedTitle": "Recovery confirmed",
+					"confirmedBody": "A later cycle confirmed this fix stuck — attribution landed on {when}."
 				}
 			}
 		},

@@ -218,6 +218,8 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   high_refund_rate_eroding_revenue: 'chargeback_resilience',
   single_payment_gateway_risk: 'money_moment_exposure',
   discount_abuse_pattern: 'channel_integrity',
+  ad_spend_platform_concentration_risk: 'channel_integrity',
+  ads_without_conversion_visibility: 'revenue_integrity',
   low_repeat_purchase_rate: 'revenue_integrity',
   dead_weight_products: 'revenue_integrity',
 };
@@ -383,6 +385,8 @@ const INFERENCE_SURFACES: Record<string, string> = {
   high_refund_rate_eroding_revenue: '/orders (refunds)',
   single_payment_gateway_risk: '/checkout (payments)',
   discount_abuse_pattern: '/cart, /checkout (discounts)',
+  ad_spend_platform_concentration_risk: 'Meta Ads / Google Ads (acquisition)',
+  ads_without_conversion_visibility: 'Meta Ads / Google Ads (attribution)',
   low_repeat_purchase_rate: '/store (retention)',
   dead_weight_products: '/products (catalog)',
 };
@@ -552,6 +556,8 @@ export const INFERENCE_TITLES: Record<string, string> = {
   high_refund_rate_eroding_revenue: 'Refund rate is eating into your revenue',
   single_payment_gateway_risk: 'One payment gateway outage stops all your revenue',
   discount_abuse_pattern: 'Discount overuse is leaking margin on most orders',
+  ad_spend_platform_concentration_risk: 'Most of your ad budget lives on one platform — one policy change halts acquisition',
+  ads_without_conversion_visibility: "You're spending on ads without the commerce data to prove they work",
   low_repeat_purchase_rate: "Buyers aren't coming back — acquisition cost isn't being recovered",
   dead_weight_products: "Listed products haven't sold in 30 days — dead weight",
 };

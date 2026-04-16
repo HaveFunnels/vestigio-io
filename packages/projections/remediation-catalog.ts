@@ -1798,6 +1798,34 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 30,
 	},
 
+	ad_spend_platform_concentration_risk: {
+		remediation_steps: [
+			'Identifique a segunda melhor plataforma pro seu ICP — testar não precisa esperar a primeira quebrar.',
+			'Desloque 15-25% do budget pra segunda plataforma em campanhas espelho (mesmo creative, mesma audiência).',
+			'Documente a posta-em-pé de um novo ad account: credenciais, tags, pixel, aprovação — tempo esperado pra standup é 1-3 semanas.',
+			'Configure alertas de account health em ambas plataformas (disable, policy warning, spend anomaly).',
+		],
+		estimated_effort_hours: 24,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull ad platform snapshots pra confirmar que spend distribui em >= 2 plataformas sem queda de ROAS.',
+		verification_eta_seconds: 40,
+	},
+
+	ads_without_conversion_visibility: {
+		remediation_steps: [
+			'Conecte sua plataforma de commerce (Shopify, Nuvemshop ou Stripe) em Settings → Data Sources — o wizard faz OAuth e reconcilia histórico em minutos.',
+			'Valide que orders dos últimos 30 dias estão sendo importadas — ROAS calculável vai aparecer no dashboard imediatamente.',
+			'Configure UTM tagging nas campanhas (utm_source, utm_campaign) pra attribution por criativo, não só por plataforma.',
+			'Depois de 30 dias com conversion tracking ativo, revise criativos: pause os bottom 20% ROAS, dobre budget no top 10%.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull commerce integration pra confirmar que orders estão flowing; checar total_ad_spend_monthly vs revenue attribuída.',
+		verification_eta_seconds: 20,
+	},
+
 	low_repeat_purchase_rate: {
 		remediation_steps: [
 			'Configure email de re-engagement 30/60/90 dias pós-compra com recomendações personalizadas.',

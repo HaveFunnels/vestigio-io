@@ -1526,6 +1526,22 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.06, max: 0.08 }, medium: { min: 0.04, max: 0.06 }, low: { min: 0.03, max: 0.04 },
     base_metric: 'revenue',
   },
+  ad_spend_platform_concentration_risk: {
+    inference_key: 'ad_spend_platform_concentration_risk',
+    impact_category: 'revenue_loss',
+    cause: 'Most of your ad budget lives on one platform — a single policy change halts acquisition',
+    effect: 'When one platform concentrates acquisition spend, any account disable, policy shift, or pricing change halts new-customer inflow while you scramble to stand up an alternative. Competitors on diversified stacks keep acquiring during the gap',
+    high: { min: 0.04, max: 0.06 }, medium: { min: 0.03, max: 0.04 }, low: { min: 0.02, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  ads_without_conversion_visibility: {
+    inference_key: 'ads_without_conversion_visibility',
+    impact_category: 'revenue_loss',
+    cause: "You're spending on ads without the commerce data to prove they work",
+    effect: 'Ad spend without conversion tracking is capital deployed blind. You cannot compare creatives, cannot shift budget to winners, cannot defend the spend in a board meeting. A fraction of that budget is, statistically, being wasted — you just have no way to find which fraction',
+    high: { min: 0.05, max: 0.08 }, medium: { min: 0.03, max: 0.05 }, low: { min: 0.02, max: 0.03 },
+    base_metric: 'revenue',
+  },
   low_repeat_purchase_rate: {
     inference_key: 'low_repeat_purchase_rate',
     impact_category: 'revenue_loss',

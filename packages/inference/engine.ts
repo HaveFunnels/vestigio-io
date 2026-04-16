@@ -232,6 +232,8 @@ export function computeInferences(
   inferences.push(...inferHighRefundRateErodingRevenue(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferSinglePaymentGatewayRisk(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferDiscountAbusePattern(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAdSpendPlatformConcentrationRisk(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAdsWithoutConversionVisibility(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferLowRepeatPurchaseRate(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferDeadWeightProducts(byKey, scoping, cycle_ref, ids));
 
@@ -3342,6 +3344,42 @@ function inferDiscountAbusePattern(byKey: Map<string, Signal>, scoping: Scoping,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value}% of orders use discount codes. When most orders are discounted, full-price purchases become the exception — buyers learn to wait for codes, share them freely, and never pay the listed price. Margin erosion compounds every month.`,
+  })];
+}
+
+function inferAdSpendPlatformConcentrationRisk(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('ad_spend_platform_concentrated');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'ad_spend_platform_concentration_risk',
+    category: InferenceCategory.AdSpendPlatformConcentrationRisk,
+    conclusion: 'ad_spend_platform_concentration_risk',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${sig.numeric_value}% of monthly ad spend is concentrated on a single platform. An account disable, policy change, or platform outage would halt acquisition — standing up an alternative channel typically takes weeks, and revenue drops during the gap. Single-platform dependency is the acquisition-side analogue of single-payment-gateway risk.`,
+  })];
+}
+
+function inferAdsWithoutConversionVisibility(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('ads_active_without_conversion_tracking');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'ads_without_conversion_visibility',
+    category: InferenceCategory.AdsWithoutConversionVisibility,
+    conclusion: 'ads_without_conversion_visibility',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Ad spend of $${sig.numeric_value}/month is running without a commerce platform connected to measure its return. Every dollar of ad spend without conversion tracking is a dollar that cannot be attributed, compared against the next dollar, or defended as worth the spend. ROAS is not low — it's literally unknown.`,
   })];
 }
 

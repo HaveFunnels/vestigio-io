@@ -260,6 +260,8 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   high_refund_rate_eroding_revenue:   { root_cause_key: 'dispute_defenses_absent', category: 'dispute_exposure', impact_types: ['revenue_loss', 'chargeback_risk'] },
   single_payment_gateway_risk:        { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss', 'scale_risk'] },
   discount_abuse_pattern:             { root_cause_key: 'commerce_abuse_exposure', category: 'abuse_exposure', impact_types: ['revenue_loss'] },
+  ad_spend_platform_concentration_risk: { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss', 'scale_risk'] },
+  ads_without_conversion_visibility:  { root_cause_key: 'weak_conversion_signal', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
   low_repeat_purchase_rate:           { root_cause_key: 'weak_conversion_signal', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
   dead_weight_products:               { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
 };

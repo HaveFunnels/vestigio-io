@@ -1506,6 +1506,112 @@ runSuite("Commerce Heuristics — Signal Engine Wiring", () => {
 		assertEqual(sig!.confidence, 55, "heuristic confidence");
 	});
 
+	test("ads context: emits ad_spend_platform_concentrated when one platform dominates", () => {
+		const ev: Evidence[] = [];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+			emptyCommerceContext({
+				total_ad_spend_monthly: 10000,
+				ad_spend_by_platform: { meta_ads: 9500, google_ads: 500 },
+				sources: ['shopify'],
+			}),
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "ad_spend_platform_concentrated",
+		);
+		assert(sig !== undefined, "signal emitted");
+		assertEqual(sig!.confidence, 90, "data-driven confidence");
+		assertEqual(sig!.value, "high", "95% concentration → high severity");
+	});
+
+	test("ads context: does NOT emit concentration when spend is balanced", () => {
+		const ev: Evidence[] = [];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+			emptyCommerceContext({
+				total_ad_spend_monthly: 10000,
+				ad_spend_by_platform: { meta_ads: 6000, google_ads: 4000 },
+				sources: ['shopify'],
+			}),
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "ad_spend_platform_concentrated",
+		);
+		assertEqual(sig, undefined, "60% concentration below 70% floor");
+	});
+
+	test("ads context: emits ads_active_without_conversion_tracking when no commerce source", () => {
+		const ev: Evidence[] = [];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+			emptyCommerceContext({
+				total_ad_spend_monthly: 5000,
+				ad_spend_by_platform: { meta_ads: 3000, google_ads: 2000 },
+				sources: ['meta_ads', 'google_ads'],
+			}),
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "ads_active_without_conversion_tracking",
+		);
+		assert(sig !== undefined, "signal emitted");
+		assertEqual(sig!.confidence, 95, "binary detection → high confidence");
+		assertEqual(sig!.numeric_value, 5000, "spend carried as numeric");
+	});
+
+	test("ads context: DOES NOT emit conversion-gap when Shopify connected", () => {
+		const ev: Evidence[] = [];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+			emptyCommerceContext({
+				total_ad_spend_monthly: 5000,
+				ad_spend_by_platform: { meta_ads: 3000, google_ads: 2000 },
+				sources: ['meta_ads', 'google_ads', 'shopify'],
+			}),
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "ads_active_without_conversion_tracking",
+		);
+		assertEqual(sig, undefined, "shopify source → conversion tracking present");
+	});
+
+	test("ads context: silent when no ad spend data", () => {
+		const ev: Evidence[] = [];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+			emptyCommerceContext({ sources: ['shopify'] }),
+		);
+		assertEqual(
+			signals.find((s) => s.signal_key === "ad_spend_platform_concentrated"),
+			undefined,
+			"no spend → no concentration signal",
+		);
+		assertEqual(
+			signals.find((s) => s.signal_key === "ads_active_without_conversion_tracking"),
+			undefined,
+			"no spend → no conversion-gap signal",
+		);
+	});
+
 	test("does not double-emit when commerce_context provided", () => {
 		const ev = [
 			providerEvidence("https://example.com/", "Stripe"),

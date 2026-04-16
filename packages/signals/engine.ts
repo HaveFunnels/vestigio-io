@@ -174,6 +174,10 @@ export function extractSignals(
   // Phase 4A: Commerce context signals from Shopify integration data
   if (commerce_context) {
     extractCommerceContextSignals(commerce_context, scoping, cycle_ref, signals, ids);
+    // Phase 4A+: Ad platform context signals (data-driven when ad platform
+    // snapshots are reconciled into commerce_context; no heuristic fallback
+    // available — ad spend is unobservable from crawl evidence).
+    extractAdsContextSignals(commerce_context, scoping, cycle_ref, signals, ids);
   }
 
   // Phase 2.4: Commerce heuristics — fallback path when integration absent.
@@ -5452,6 +5456,91 @@ function extractCommerceContextSignals(
       scoping, cycle_ref, ids,
       evidence_refs: integrationRefs,
       description: `${count} product(s) haven't sold in 30 days${total > count ? ` (${Math.round(ratio * 100)}% of catalog)` : ''}. Dead inventory dilutes search, clutters navigation, and wastes operational effort on items that generate no revenue.`,
+    }));
+  }
+}
+
+// ──────────────────────────────────────────────
+// Phase 4A+: Ad Context Signals
+//
+// Reads `total_ad_spend_monthly` + `ad_spend_by_platform` from the
+// reconciled CommerceContext. These fields are populated by
+// `reconcileCommerceContext()` in packages/integrations/reconcile.ts
+// when an IntegrationSnapshot for provider='meta_ads' or 'google_ads'
+// is present. No heuristic fallback — ad spend cannot be derived from
+// crawl evidence.
+//
+// Two signals emitted:
+//   - `ad_spend_platform_concentrated` — when a single platform holds
+//     >= 70% of total spend (platform-risk pattern, analogous to
+//     payment gateway concentration).
+//   - `ads_active_without_conversion_tracking` — when any ad spend is
+//     present but NO commerce integration is reconciled (sources
+//     array lacks shopify/nuvemshop). ROAS is unmeasurable.
+// ──────────────────────────────────────────────
+
+function extractAdsContextSignals(
+  commerce: CommerceContext,
+  scoping: Scoping,
+  cycle_ref: string,
+  signals: Signal[],
+  ids: IdGenerator,
+): void {
+  const totalSpend = commerce.total_ad_spend_monthly;
+  const byPlatform = commerce.ad_spend_by_platform || {};
+  const platforms = Object.keys(byPlatform);
+
+  // Guard: nothing to say if no ad spend data available.
+  if (totalSpend == null || totalSpend <= 0 || platforms.length === 0) {
+    return;
+  }
+
+  // 1. Ad-platform concentration risk. Fires when one platform is
+  //    responsible for >= 70% of total spend. Severity escalates for
+  //    very concentrated spend (>= 90%).
+  const maxPlatformSpend = Math.max(...platforms.map((p) => byPlatform[p]));
+  const concentrationRatio = maxPlatformSpend / totalSpend;
+  if (concentrationRatio >= 0.70) {
+    const dominantPlatform = platforms.find(
+      (p) => byPlatform[p] === maxPlatformSpend,
+    ) ?? 'unknown';
+    const platformLabel = dominantPlatform === 'meta_ads' ? 'Meta Ads' : dominantPlatform === 'google_ads' ? 'Google Ads' : dominantPlatform;
+    const severity =
+      concentrationRatio >= 0.95 ? 'high' : concentrationRatio >= 0.85 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'ad_spend_platform_concentrated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.ad_spend_concentration',
+      value: severity,
+      numeric_value: Math.round(concentrationRatio * 100),
+      confidence: 90,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `${Math.round(concentrationRatio * 100)}% of ad spend ($${totalSpend.toFixed(0)}/mo) flows through ${platformLabel}. A policy change, account disable, or platform outage would halt traffic acquisition until a new channel is stood up — which takes weeks.`,
+    }));
+  }
+
+  // 2. Ads active without conversion tracking. Fires when spend is
+  //    present but no commerce integration is reconciled — operator
+  //    literally cannot measure ROAS. Confidence pinned high because
+  //    the determination is binary: either conversion data exists or
+  //    it doesn't.
+  const conversionSources = new Set(commerce.sources || []);
+  const hasCommerceData =
+    conversionSources.has('shopify') ||
+    conversionSources.has('nuvemshop') ||
+    conversionSources.has('stripe');
+  if (!hasCommerceData) {
+    signals.push(createSignal({
+      signal_key: 'ads_active_without_conversion_tracking',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.ads_without_conversion_visibility',
+      value: 'high',
+      numeric_value: Math.round(totalSpend),
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `$${totalSpend.toFixed(0)}/mo of ad spend is running across ${platforms.length} platform(s) (${platforms.join(', ')}) with no commerce platform connected. ROAS is literally unmeasurable — every dollar spent is a dollar you can't attribute, optimize, or prove was worth the cost.`,
     }));
   }
 }

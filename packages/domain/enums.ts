@@ -462,6 +462,8 @@ export enum InferenceCategory {
   HighRefundRateErodingRevenue = 'high_refund_rate_eroding_revenue',
   SinglePaymentGatewayRisk = 'single_payment_gateway_risk',
   DiscountAbusePattern = 'discount_abuse_pattern',
+  AdSpendPlatformConcentrationRisk = 'ad_spend_platform_concentration_risk',
+  AdsWithoutConversionVisibility = 'ads_without_conversion_visibility',
   LowRepeatPurchaseRate = 'low_repeat_purchase_rate',
   DeadWeightProducts = 'dead_weight_products',
 }

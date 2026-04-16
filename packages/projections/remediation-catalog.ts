@@ -1101,6 +1101,266 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos analisar estrutura de URLs de pedido e testar se mudar ID retorna dados de outro usuário.',
 		verification_eta_seconds: 15,
 	},
+
+	// ─────────────────────────────────────────────
+	// Channel Integrity (Phase 3A)
+	// ─────────────────────────────────────────────
+
+	payment_surface_compromised: {
+		remediation_steps: [
+			'Investigue imediatamente: revise commits recentes, scripts carregados, e logs de acesso no checkout.',
+			'Rote todas as credenciais de gateway + API keys expostas — comprometimento de payment surface vaza dados de buyers.',
+			'Desative temporariamente o checkout até forensics completo — fraude em andamento compounds rápido.',
+			'Notifique o gateway + autoridades (se LGPD breach) + buyers afetados — requerido por lei.',
+		],
+		estimated_effort_hours: 40,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Incidente crítico — dispara Nuclei + Katana full scan + análise de scripts + diff com baseline conhecido limpo.',
+		verification_eta_seconds: 300,
+	},
+
+	channel_traffic_divertible: {
+		remediation_steps: [
+			'Audite links externos na home e páginas de produto — cada link externo é oportunidade de diversão de tráfego.',
+			'Se você tem afiliados, use link shorteners oficiais (não redirects genéricos que podem ser sequestrados).',
+			'Configure CSP restritivo pra prevenir injeção de links externos via scripts comprometidos.',
+			'Monitore outbound traffic analytics — picos anormais podem indicar redirect malicioso injetado.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar o site em headless coletando todos outbound links e comparar com allowlist esperado.',
+		verification_eta_seconds: 60,
+	},
+
+	commerce_operations_exposed: {
+		remediation_steps: [
+			'Identifique endpoints de operação comercial expostos publicamente: painéis, APIs internas, webhooks.',
+			'Implemente autenticação + IP allowlist em todos endpoints administrativos.',
+			'Remova referências a endpoints internos de HTML/JS públicos — operators não devem aparecer em robots.txt nem em source.',
+			'Segmente rede: endpoints operacionais em VPC privada, não no mesmo cluster do site público.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos disparar Katana + Nuclei na infraestrutura pública pra detectar endpoints operacionais expostos.',
+		verification_eta_seconds: 180,
+	},
+
+	traffic_landing_low_trust_posture: {
+		remediation_steps: [
+			'Landing pages de campanha devem herdar trust markers do site principal — políticas, contato, selos visíveis.',
+			'Evite landing pages em subdomínios ou domínios separados sem trust markers — buyer não sabe que é você.',
+			'Se necessário usar domínio separado (ex: campanha Black Friday), replique visual identity + trust markers do principal.',
+			'Audite landings ativas trimestralmente — algumas ficam órfãs sem manutenção e regridem em trust.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar landings conhecidas e medir presença de trust markers em cada.',
+		verification_eta_seconds: 20,
+	},
+
+	channel_compromise_visible: {
+		remediation_steps: [
+			'Incidente ativo — escale pra time de security + resposta imediata.',
+			'Identifique vetor: script injetado, DNS hijack, certificado comprometido, ou credencial vazada.',
+			'Isole o vetor (remova script, rote credencial, revogue cert) e documente timeline do incidente.',
+			'Comunique buyers afetados com transparência — silêncio durante incidente piora reputação mais que o incidente em si.',
+		],
+		estimated_effort_hours: 40,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Crítico — dispara scan completo (Nuclei + Katana + brand-intel) pra mapear extensão do comprometimento.',
+		verification_eta_seconds: 300,
+	},
+
+	commercial_path_abuse_friendly: {
+		remediation_steps: [
+			'Audite endpoints de compra/promoção pra padrões abusáveis: IDs sequenciais, promos sem validação, price override aceito.',
+			'Implemente validação server-side em todos pricing — nunca confie no preço vindo do cliente.',
+			'Rate limit agressivo em endpoints críticos: checkout, apply_coupon, add_to_cart.',
+			'Configure fraud detection: padrões suspeitos (mesmo card, mesmo IP, múltiplos emails) bloqueiam com review manual.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos disparar Katana deep discovery pra mapear endpoints abusáveis + revalidar após seus fixes.',
+		verification_eta_seconds: 240,
+	},
+
+	economic_exploitation_active: {
+		remediation_steps: [
+			'Incidente financeiro ativo — investigue immediatamente quais compras/promos foram exploradas.',
+			'Bloqueie o vetor específico (cupom abusado, preço manipulado, checkout bypass).',
+			'Calcule perda acumulada e decida se rollback de transações fraudulentas é viável ou se chargeback é mais barato.',
+			'Audite todas promoções ativas com a mesma lógica — exploit tipicamente funciona em múltiplas campanhas.',
+		],
+		estimated_effort_hours: 30,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Re-disparar Katana contra os endpoints comprometidos pra confirmar patch + monitorar padrões de abuso.',
+		verification_eta_seconds: 240,
+	},
+
+	checkout_trust_brittle_infrastructure: {
+		remediation_steps: [
+			'Audite certificados SSL: expiração, autoridade, algoritmo. Renove antes de 30 dias da expiração.',
+			'Configure auto-renovação (Let\'s Encrypt, AWS ACM) pra evitar cert expirado em produção.',
+			'Monitore chain de confiança: certs intermediários + root trust.',
+			'Configure HSTS preload pra mitigar downgrade attacks.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos validar cert + cadeia do checkout via scan SSL (openssl s_client / Qualys SSL Labs).',
+		verification_eta_seconds: 15,
+	},
+
+	// ─────────────────────────────────────────────
+	// Deep Discovery (Phase 3B — Katana)
+	// ─────────────────────────────────────────────
+
+	promotion_logic_exposed: {
+		remediation_steps: [
+			'Migre lógica de desconto pro backend — cliente nunca deve calcular promoções.',
+			'Valide server-side: coupon code existe, não expirou, aplica a esses produtos, não excedeu limite.',
+			'Logue cada aplicação de cupom com user_id + IP pra detectar padrões de abuso.',
+			'Revise cupons ativos trimestralmente — remova os que não geram receita mas ainda podem ser abusados.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos dispatch Katana em endpoints de cart/coupon pra revalidar superfície abusável.',
+		verification_eta_seconds: 180,
+	},
+
+	cart_variant_weak_control: {
+		remediation_steps: [
+			'Toda validação de estoque + preço deve ocorrer server-side no checkout — nunca confie no cart do cliente.',
+			'Implemente token de segurança por sessão de cart — invalida se detectar manipulação.',
+			'Revise endpoints PATCH/PUT de cart: devem autenticar user e validar ownership antes de mudar.',
+			'Logue divergências entre cart client e server pra detectar tentativas de manipulação.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos probe endpoints de cart manipulation (alterar preço/qty via request direto) e confirmar rejeição.',
+		verification_eta_seconds: 120,
+	},
+
+	hidden_discount_refund_route: {
+		remediation_steps: [
+			'Audite URLs /refund, /discount, /coupon, /comp — são acessíveis publicamente? Devem exigir autenticação.',
+			'Rotas administrativas de reembolso/desconto devem estar atrás de staff auth + audit log.',
+			'Remove query strings que aceitam override de preço (?discount=50, ?price=1) — vulnerabilidade comum.',
+			'Monitore logs pra padrões de exploração — picos em /refund sem transação correspondente = abuso.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Dispatch Katana contra paths de discount/refund pra confirmar ocultação + autenticação.',
+		verification_eta_seconds: 150,
+	},
+
+	guessable_business_endpoint: {
+		remediation_steps: [
+			'Substitua IDs sequenciais em endpoints críticos por UUIDs opacos: /api/order/abc-123-def em vez de /api/order/1.',
+			'Implemente authorization por endpoint — user só acessa seus próprios recursos (IDOR protection).',
+			'Audite APIs públicas: quais expõem enumeração de recursos? Adicione rate limit + auth.',
+			'Rode scanner de IDOR regular — test if changing ID returns other user data.',
+		],
+		estimated_effort_hours: 18,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Katana dispatch com foco em endpoints numericamente enumeráveis + tentativa de IDOR.',
+		verification_eta_seconds: 180,
+	},
+
+	alternate_pricing_safeguard_bypass: {
+		remediation_steps: [
+			'Identifique variantes de pricing (BRL, USD, promo region, B2B) e consolidar validação server-side única.',
+			'Elimine rotas de pricing alternativas sem controle — buyer não deve escolher qual preço paga.',
+			'Configure feature flag com lista de clientes autorizados pra pricing especial — não via URL exposta.',
+			'Logue transações fora do pricing padrão — alert pra review manual.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Probe paths de pricing alternativo + comparar preço final com esperado pelo pricing público.',
+		verification_eta_seconds: 150,
+	},
+
+	js_discovered_purchase_variant: {
+		remediation_steps: [
+			'Revise bundles JS públicos — removem paths/endpoints sensíveis que podem ser descobertos via crawl.',
+			'Use source maps em dev, desabilite em produção.',
+			'Obfusque (não security, mas raise bar) código crítico de pricing/checkout no build de produção.',
+			'Audite trimestralmente: quais endpoints estão referenciados em JS público?',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Katana discovery em JS bundles pra mapear endpoints referenciados + comparar com surfaces autorizadas.',
+		verification_eta_seconds: 150,
+	},
+
+	dynamic_route_weak_control: {
+		remediation_steps: [
+			'Audite rotas dinâmicas (regex routes, wildcard routes) — fácil introduzir ACL gap.',
+			'Use framework de autorização centralizado (policies/guards) em vez de checks inline por route.',
+			'Rode test automatizado de autorização: cada route protegida com lista de quem pode acessar.',
+			'Revise após cada deploy que adiciona ou modifica rotas dinâmicas.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Katana exploration de rotas dinâmicas com tentativas de auth bypass.',
+		verification_eta_seconds: 180,
+	},
+
+	hidden_support_burden: {
+		remediation_steps: [
+			'Meça tempo médio de resolução de suporte separado por categoria — identifique qual tipo de ticket consome mais recursos.',
+			'Resolva root cause dos tickets recorrentes — cada ticket evitado é redução de custo + buyer satisfaction.',
+			'Automatize respostas para dúvidas frequentes via FAQ + chatbot — escale suporte sem aumentar headcount.',
+			'Revise mensalmente: quais produtos/features geram mais suporte? Priorize UX aí.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Suporte é métrica operacional externa ao site — re-projetar após você documentar tickets + tempo de resolução.',
+		verification_eta_seconds: 3,
+	},
+
+	alternate_variant_control_breakdown: {
+		remediation_steps: [
+			'Audite lógica de variantes (tamanho, cor, região) no checkout — garante que cada variante tem preço + estoque distintos validados.',
+			'Implemente validação consistente server-side: qty, variant, price devem bater com catalog real.',
+			'Teste edge cases: comprar variante sem estoque, variante inexistente, variante de produto arquivado.',
+			'Logue divergências — tentativa de comprar variante inválida é signal de probe automatizado.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Katana + probe de variant manipulation (IDs inexistentes, mix de produto + variante órfã).',
+		verification_eta_seconds: 180,
+	},
+
+	deep_commerce_exploitation_risk: {
+		remediation_steps: [
+			'Incidente composto — múltiplos vetores de exploração ativos simultaneamente. Escale pra security team.',
+			'Rode full scan (Katana + Nuclei) pra mapear extensão do problema.',
+			'Priorize patch pelos vetores de maior impacto financeiro (preço, cupom, checkout) primeiro.',
+			'Configure monitoramento contínuo pós-remediação — exploração composta geralmente tem tentativas de re-entrada.',
+		],
+		estimated_effort_hours: 40,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Full scan Katana + Nuclei + revalidação de cada vetor identificado.',
+		verification_eta_seconds: 300,
+	},
 };
 
 /**

@@ -963,6 +963,390 @@ runSuite("Commerce Heuristics — Form Excessive Fields", () => {
 });
 
 // ══════════════════════════════════════════════════
+// Sensitive-input trust-gap extractor
+// ══════════════════════════════════════════════════
+
+function sensitiveForm(
+	pageUrl: string,
+	options: {
+		payment?: boolean;
+		sensitiveFieldName?: string;
+		extraFields?: string[];
+	} = {},
+): Evidence {
+	const fields = [...(options.extraFields ?? ['email'])];
+	if (options.sensitiveFieldName) fields.push(options.sensitiveFieldName);
+	return testEvidence(EvidenceType.Form, {
+		type: "form",
+		page_url: pageUrl,
+		action: `${pageUrl}/submit`,
+		method: "POST",
+		target_host: null,
+		is_external: false,
+		field_names: fields,
+		has_payment_fields: options.payment ?? false,
+	} as any);
+}
+
+function structuredDataTrustEvidence(pageUrl: string): Evidence {
+	return testEvidence(EvidenceType.StructuredDataItem, {
+		type: "structured_data_item",
+		page_url: pageUrl,
+		schema_type: "Organization",
+		name: "Example Org",
+		is_trust_signal: true,
+		is_commerce_signal: false,
+	} as any);
+}
+
+function trustScriptEvidence(pageUrl: string, src: string): Evidence {
+	return testEvidence(EvidenceType.Script, {
+		type: "script",
+		page_url: pageUrl,
+		src,
+		host: (() => {
+			try {
+				return new URL(src).hostname;
+			} catch {
+				return src;
+			}
+		})(),
+		is_external: true,
+		known_provider: null,
+	} as any);
+}
+
+runSuite("Commerce Heuristics — Sensitive Input Trust Gap", () => {
+	test("emits gap when payment form has no co-located trust signals", () => {
+		const ev = [sensitiveForm("https://example.com/checkout", { payment: true })];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(
+			result.sensitive_input_trust_gap !== undefined,
+			"emitted",
+		);
+		assertEqual(
+			result.sensitive_input_trust_gap!.gap_page_count,
+			1,
+			"one gap page",
+		);
+		assertEqual(
+			result.sensitive_input_trust_gap!.has_zero_trust_page,
+			true,
+			"zero trust → high severity",
+		);
+	});
+
+	test("detects sensitive fields by name tokens (password, cpf, card)", () => {
+		const ev = [
+			sensitiveForm("https://example.com/login", {
+				sensitiveFieldName: "password",
+			}),
+			sensitiveForm("https://example.com/cadastro", {
+				sensitiveFieldName: "cpf",
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.sensitive_input_trust_gap !== undefined, "emitted");
+		assertEqual(
+			result.sensitive_input_trust_gap!.gap_page_count,
+			2,
+			"both pages flagged",
+		);
+	});
+
+	test("suppresses emission when page has 2+ trust signals", () => {
+		const ev = [
+			sensitiveForm("https://example.com/checkout", { payment: true }),
+			structuredDataTrustEvidence("https://example.com/checkout"),
+			trustScriptEvidence(
+				"https://example.com/checkout",
+				"https://widget.trustpilot.com/bootstrap.js",
+			),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.sensitive_input_trust_gap,
+			undefined,
+			"enough trust signals → no gap",
+		);
+	});
+
+	test("emits medium when page has exactly 1 trust signal", () => {
+		const ev = [
+			sensitiveForm("https://example.com/checkout", { payment: true }),
+			structuredDataTrustEvidence("https://example.com/checkout"),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.sensitive_input_trust_gap !== undefined, "emitted");
+		assertEqual(
+			result.sensitive_input_trust_gap!.has_zero_trust_page,
+			false,
+			"has one signal → not zero-trust",
+		);
+	});
+
+	test("ignores non-sensitive forms (contact with only name+email)", () => {
+		const ev = [
+			testEvidence(EvidenceType.Form, {
+				type: "form",
+				page_url: "https://example.com/contact",
+				action: "/contact",
+				method: "POST",
+				target_host: null,
+				is_external: false,
+				field_names: ["name", "email", "message"],
+				has_payment_fields: false,
+			} as any),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.sensitive_input_trust_gap,
+			undefined,
+			"contact form not sensitive",
+		);
+	});
+
+	test("counts trust signals from technology detections", () => {
+		const ev = [
+			sensitiveForm("https://example.com/checkout", { payment: true }),
+			technologyDetectedEvidence(
+				"reviews",
+				"trustpilot",
+				"Trustpilot",
+				["https://example.com/checkout"],
+			),
+			technologyDetectedEvidence(
+				"trust_seal",
+				"norton_seal",
+				"Norton Secured",
+				["https://example.com/checkout"],
+			),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.sensitive_input_trust_gap,
+			undefined,
+			"2 trust techs → no gap",
+		);
+	});
+
+	test("counts trust iframe (Trustpilot widget)", () => {
+		const ev = [
+			sensitiveForm("https://example.com/checkout", { payment: true }),
+			iframeEvidence(
+				"https://example.com/checkout",
+				"https://widget.trustpilot.com/trustboxes/v1",
+				"trustpilot",
+			),
+			structuredDataTrustEvidence("https://example.com/checkout"),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.sensitive_input_trust_gap,
+			undefined,
+			"trust iframe + structured data → enough",
+		);
+	});
+
+	test("trust signal on different URL does NOT count", () => {
+		const ev = [
+			sensitiveForm("https://example.com/checkout", { payment: true }),
+			structuredDataTrustEvidence("https://example.com/about"),
+			structuredDataTrustEvidence("https://example.com/policies"),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(
+			result.sensitive_input_trust_gap !== undefined,
+			"emitted — signals on other pages don't count",
+		);
+	});
+
+	test("suppresses when BehavioralSession evidence present", () => {
+		const ev = [
+			sensitiveForm("https://example.com/checkout", { payment: true }),
+			testEvidence(EvidenceType.BehavioralSession, {
+				type: "behavioral_session",
+				session_count: 50,
+			} as any),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.sensitive_input_trust_gap,
+			undefined,
+			"behavioral takes priority",
+		);
+	});
+
+	test("deduplicates multiple forms on same page", () => {
+		const ev = [
+			sensitiveForm("https://example.com/checkout", { payment: true }),
+			sensitiveForm("https://example.com/checkout", {
+				sensitiveFieldName: "cpf",
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.sensitive_input_trust_gap !== undefined, "emitted");
+		assertEqual(
+			result.sensitive_input_trust_gap!.sensitive_page_count,
+			1,
+			"single page despite 2 forms",
+		);
+	});
+});
+
+// ══════════════════════════════════════════════════
+// Mobile-CTA-timing extractor
+// ══════════════════════════════════════════════════
+
+function mobileVerificationEvidence(
+	targetUrl: string,
+	overrides: Partial<{
+		commercial_path_reachable: boolean;
+		checkout_reachable: boolean;
+		steps_succeeded: number;
+		steps_failed: number;
+		trust_degraded_vs_desktop: boolean;
+		duration_ms: number;
+	}> = {},
+): Evidence {
+	return testEvidence(EvidenceType.MobileVerificationResult, {
+		type: "mobile_verification_result",
+		target_url: targetUrl,
+		commercial_path_reachable: overrides.commercial_path_reachable ?? true,
+		checkout_reachable: overrides.checkout_reachable ?? true,
+		steps_succeeded: overrides.steps_succeeded ?? 4,
+		steps_failed: overrides.steps_failed ?? 0,
+		commercial_errors_count: 0,
+		trust_degraded_vs_desktop: overrides.trust_degraded_vs_desktop ?? false,
+		duration_ms: overrides.duration_ms ?? 3000,
+		final_url: targetUrl,
+	} as any);
+}
+
+runSuite("Commerce Heuristics — Mobile CTA Timing", () => {
+	test("emits when mobile journey has step failures", () => {
+		const ev = [
+			mobileVerificationEvidence("https://example.com/checkout", {
+				steps_failed: 2,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.mobile_cta_timing !== undefined, "emitted");
+		assertEqual(
+			result.mobile_cta_timing!.total_steps_failed,
+			2,
+			"2 failures",
+		);
+	});
+
+	test("emits when mobile duration exceeds 8000ms", () => {
+		const ev = [
+			mobileVerificationEvidence("https://example.com/checkout", {
+				duration_ms: 12000,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.mobile_cta_timing !== undefined, "emitted");
+		assertEqual(
+			result.mobile_cta_timing!.max_duration_ms,
+			12000,
+			"captured duration",
+		);
+	});
+
+	test("skips when mobile journey is fast and clean", () => {
+		const ev = [
+			mobileVerificationEvidence("https://example.com/checkout", {
+				duration_ms: 4500,
+				steps_failed: 0,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.mobile_cta_timing,
+			undefined,
+			"no friction → skip",
+		);
+	});
+
+	test("skips when checkout unreachable (different signal fires)", () => {
+		const ev = [
+			mobileVerificationEvidence("https://example.com/checkout", {
+				checkout_reachable: false,
+				steps_failed: 3,
+				duration_ms: 20000,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.mobile_cta_timing,
+			undefined,
+			"blocked path → mobile_commercial_path_blocked handles this",
+		);
+	});
+
+	test("aggregates across multiple mobile results", () => {
+		const ev = [
+			mobileVerificationEvidence("https://example.com/checkout", {
+				steps_failed: 1,
+				duration_ms: 5000,
+			}),
+			mobileVerificationEvidence("https://example.com/cart", {
+				steps_failed: 2,
+				duration_ms: 11000,
+			}),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assert(result.mobile_cta_timing !== undefined, "emitted");
+		assertEqual(
+			result.mobile_cta_timing!.result_count,
+			2,
+			"both triggered",
+		);
+		assertEqual(
+			result.mobile_cta_timing!.total_steps_failed,
+			3,
+			"summed failures",
+		);
+		assertEqual(
+			result.mobile_cta_timing!.max_duration_ms,
+			11000,
+			"max duration",
+		);
+	});
+
+	test("suppresses when BehavioralSession evidence present", () => {
+		const ev = [
+			mobileVerificationEvidence("https://example.com/checkout", {
+				steps_failed: 2,
+			}),
+			testEvidence(EvidenceType.BehavioralSession, {
+				type: "behavioral_session",
+				session_count: 50,
+			} as any),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.mobile_cta_timing,
+			undefined,
+			"behavioral takes priority",
+		);
+	});
+
+	test("no emission when no mobile verification evidence", () => {
+		const ev = [
+			pageContentEvidence("https://example.com/"),
+		];
+		const result = extractCommerceHeuristicSignals(ev);
+		assertEqual(
+			result.mobile_cta_timing,
+			undefined,
+			"no mobile evidence → skip",
+		);
+	});
+});
+
+// ══════════════════════════════════════════════════
 // Signal-engine end-to-end wiring
 // ══════════════════════════════════════════════════
 
@@ -1060,6 +1444,45 @@ runSuite("Commerce Heuristics — Signal Engine Wiring", () => {
 		assertEqual(sig!.confidence, 55, "heuristic confidence (below behavioral 60)");
 		assertEqual(sig!.value, "high", "3 forms → high severity");
 		assertEqual(sig!.numeric_value, 3, "numeric_value = form count");
+	});
+
+	test("extractSignals emits mobile_cta_timing_degraded at lowest heuristic confidence", () => {
+		const ev = [
+			mobileVerificationEvidence("https://example.com/checkout", {
+				steps_failed: 2,
+				duration_ms: 16000,
+			}),
+		];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "mobile_cta_timing_degraded",
+		);
+		assert(sig !== undefined, "signal emitted");
+		assertEqual(sig!.confidence, 50, "lowest heuristic confidence");
+		assertEqual(sig!.value, "high", "2+ failures → high severity");
+	});
+
+	test("extractSignals emits sensitive_input_trust_gap at heuristic confidence", () => {
+		const ev = [sensitiveForm("https://example.com/checkout", { payment: true })];
+		const graph = buildGraph(ev, "example.com", "audit_cycle:c1");
+		const signals = extractSignals(
+			ev,
+			graph,
+			testScoping(),
+			"audit_cycle:c1",
+		);
+		const sig = signals.find(
+			(s) => s.signal_key === "sensitive_input_trust_gap",
+		);
+		assert(sig !== undefined, "signal emitted");
+		assertEqual(sig!.confidence, 55, "heuristic confidence (below behavioral 65)");
+		assertEqual(sig!.value, "high", "zero-trust page → high severity");
 	});
 
 	test("extractSignals emits refund_rate_elevated at heuristic confidence", () => {

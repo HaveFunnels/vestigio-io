@@ -5575,4 +5575,49 @@ function emitCommerceHeuristicSignals(
       description: `${ff.form_count} conversion-proximate form(s) demand excessive input (up to ${ff.max_field_count} fields on ${urlPreview}${urlSuffix}). Long forms before the conversion step reduce completion rate measurably — every field past six adds dropoff. Heuristic detection from crawl evidence; instrument pixel tracking for behavior-confirmed rates.`,
     }));
   }
+
+  // Sensitive-input trust gap — heuristic confidence 55 (below behavioral
+  // cohort's 65). Severity high when any sensitive page has ZERO trust
+  // signals, medium otherwise. Extractor auto-suppresses when behavioral
+  // session evidence is present.
+  const tg = heuristics.sensitive_input_trust_gap;
+  if (tg) {
+    const severity = tg.has_zero_trust_page ? 'high' : 'medium';
+    const urlPreview = tg.example_urls.slice(0, 2).join(', ');
+    const urlSuffix = tg.example_urls.length > 2 ? ` (+more)` : '';
+    signals.push(createSignal({
+      signal_key: 'sensitive_input_trust_gap',
+      category: SignalCategory.Behavioral,
+      attribute: 'cohort.trust.sensitive_input',
+      value: severity,
+      numeric_value: tg.gap_page_count,
+      confidence: 55,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `${tg.gap_page_count} of ${tg.sensitive_page_count} page(s) asking for sensitive data (payment, password, ID) show fewer than 2 co-located trust signals (${urlPreview}${urlSuffix}). Buyers entering card numbers or personal data need visible reassurance — absent trust badges, reviews, or security seals drive abandonment at the most sensitive step. Heuristic detection from page-level proximity; instrument pixel tracking for behavior-confirmed abandonment rates.`,
+    }));
+  }
+
+  // Mobile CTA timing — heuristic confidence 50 (lowest). The proxy
+  // (journey friction vs late CTA render) is indirect, so we flag it as
+  // weaker than other heuristics. Severity escalates on step failures,
+  // which are stronger evidence than duration alone.
+  const mct = heuristics.mobile_cta_timing;
+  if (mct) {
+    const severity =
+      mct.total_steps_failed >= 2 || mct.max_duration_ms >= 15000
+        ? 'high'
+        : 'medium';
+    signals.push(createSignal({
+      signal_key: 'mobile_cta_timing_degraded',
+      category: SignalCategory.Behavioral,
+      attribute: 'cohort.mobile.cta_timing',
+      value: severity,
+      numeric_value: Math.round(mct.max_duration_ms / 1000),
+      confidence: 50,
+      scoping, cycle_ref, ids,
+      evidence_refs: [],
+      description: `Mobile commercial journey shows friction across ${mct.result_count} verification run(s): up to ${Math.round(mct.max_duration_ms / 1000)}s duration and ${mct.total_steps_failed} step failure(s) on reachable paths. Late-rendering or slow-to-interact CTAs are a likely cause. Heuristic proxy from mobile verification journeys; instrument pixel tracking for direct CTA render timing.`,
+    }));
+  }
 }

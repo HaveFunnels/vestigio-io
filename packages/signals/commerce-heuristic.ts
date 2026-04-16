@@ -4,10 +4,12 @@ import {
 	type FormPayload,
 	type IframePayload,
 	type MetaPayload,
+	type MobileVerificationResultPayload,
 	type PageContentPayload,
 	type PolicyPagePayload,
 	type ProviderIndicatorPayload,
 	type ScriptPayload,
+	type StructuredDataItemPayload,
 	type TechnologyDetectedPayload,
 } from '../domain';
 
@@ -99,6 +101,46 @@ export interface FormExcessiveFieldsHeuristic {
 	max_field_count: number;
 }
 
+/**
+ * Crawl-only fallback for `sensitive_input_trust_gap`. Flags pages
+ * that ask for sensitive data (password / card / CPF / etc.) but lack
+ * co-located trust signals (structured data, review widgets, security
+ * badges, policy references). Page-level proximity is our best
+ * approximation — we don't observe DOM coordinates.
+ *
+ * Suppressed when BehavioralSessionPayload evidence is present (the
+ * cohort path's `sensitive_input_abandon_rate` is more precise).
+ */
+export interface SensitiveInputTrustGapHeuristic {
+	/** Pages that collect sensitive data AND show fewer than 2 trust signals. */
+	gap_page_count: number;
+	/** Total number of sensitive-input pages scanned. */
+	sensitive_page_count: number;
+	/** Up to 3 gap-page URLs — helps authors see which surfaces to fix. */
+	example_urls: string[];
+	/** True when at least one gap page has zero trust signals at all. */
+	has_zero_trust_page: boolean;
+}
+
+/**
+ * Crawl-only proxy for `mobile_cta_timing_degraded`. Works from the
+ * MobileVerificationResultPayload: when the mobile commercial path is
+ * technically reachable but shows step failures or extended duration
+ * (vs desktop baseline), we infer CTA timing degradation. This is a
+ * journey-level proxy — not the pixel-measured CTA render timing the
+ * behavioral cohort path observes directly — so confidence stays low.
+ *
+ * Suppressed when BehavioralSessionPayload evidence is present.
+ */
+export interface MobileCtaTimingHeuristic {
+	/** Max mobile journey duration in ms observed across results. */
+	max_duration_ms: number;
+	/** Step failure count summed across mobile verification runs. */
+	total_steps_failed: number;
+	/** Number of mobile verification runs that triggered the proxy. */
+	result_count: number;
+}
+
 export interface CommerceHeuristicSignals {
 	checkout_abandonment?: CheckoutAbandonmentHeuristic;
 	refund_rate?: RefundRateHeuristic;
@@ -106,6 +148,8 @@ export interface CommerceHeuristicSignals {
 	discount_abuse?: DiscountAbuseHeuristic;
 	repeat_purchase?: RepeatPurchaseHeuristic;
 	form_excessive_fields?: FormExcessiveFieldsHeuristic;
+	sensitive_input_trust_gap?: SensitiveInputTrustGapHeuristic;
+	mobile_cta_timing?: MobileCtaTimingHeuristic;
 	suppressed_by_integration?: boolean;
 }
 
@@ -605,20 +649,253 @@ function extractFormExcessiveFields(
 	};
 }
 
+// ──────────────────────────────────────────────
+// Sensitive-input trust-gap heuristic
+//
+// Crawl-only fallback for `sensitive_input_trust_gap`, today only fires
+// from BehavioralCohortPayload.sensitive_input_abandon_rate (pixel).
+// Logic:
+//   1. Identify pages with sensitive form fields — either has_payment_
+//      fields=true (high-priority override) or field_names matching
+//      SENSITIVE_FIELD_TOKENS (password, card, cpf, ssn, pin, etc.)
+//   2. For each sensitive-input page, count trust-adjacent evidence
+//      attached to the SAME page_url. Page-level proximity is a weak
+//      proxy for DOM proximity but it's the best deterministic signal
+//      we can build from evidence as-is.
+//   3. Trust signals counted:
+//      - StructuredDataItem with is_trust_signal=true
+//      - Script/Iframe with known_provider matching TRUST_PROVIDER
+//      - TechnologyDetected with trust-relevant category
+//   4. A page is "gap" when trust_count < 2 on that specific page.
+//      Activation: at least one gap page.
+//
+// Auto-suppressed when any BehavioralSession evidence exists — the
+// cohort path is more precise (actual abandonment rate vs inferred gap).
+// ──────────────────────────────────────────────
+
+const SENSITIVE_FIELD_TOKENS = [
+	// Payment
+	'card',
+	'cvv',
+	'cvc',
+	'ccv',
+	'credit',
+	'cartao',
+	'cardnumber',
+	'numerocartao',
+	'creditcard',
+	'debitcard',
+	// Identity (US + BR common)
+	'cpf',
+	'cnpj',
+	'ssn',
+	'passport',
+	'nationalid',
+	'rg',
+	'taxid',
+	// Auth
+	'password',
+	'senha',
+	'passwd',
+	'passphrase',
+	'pin',
+	// Sensitive personal
+	'dob',
+	'birthday',
+	'birthdate',
+	'dateofbirth',
+	'nascimento',
+];
+
+const TRUST_PROVIDER_REGEX =
+	/trustpilot|yotpo|judge\.?me|stamped|reviews\.?io|ekomi|trustedshops|bazaarvoice|verisign|norton|mcafee|thawte|letsbuy|sealofapproval|shopify_secure|shopify_trust|google_customer_reviews/i;
+
+const TRUST_TECHNOLOGY_CATEGORIES = new Set([
+	'reviews',
+	'trust_seal',
+	'security_badge',
+	'ssl_seal',
+	'testimonials',
+	'compliance',
+	'trust',
+	'security',
+]);
+
+function fieldLooksSensitive(fieldName: string): boolean {
+	const normalised = fieldName.toLowerCase().replace(/[_\-\s]/g, '');
+	return SENSITIVE_FIELD_TOKENS.some((tok) => normalised.includes(tok));
+}
+
+function hasSensitiveFields(form: FormPayload): boolean {
+	if (form.has_payment_fields) return true;
+	return form.field_names.some(fieldLooksSensitive);
+}
+
+function countTrustSignalsOnPage(
+	evidence: Evidence[],
+	pageUrl: string,
+): number {
+	let count = 0;
+
+	for (const e of evidence) {
+		switch (e.evidence_type) {
+			case EvidenceType.StructuredDataItem: {
+				const p = e.payload as StructuredDataItemPayload;
+				if (p.page_url === pageUrl && p.is_trust_signal) count++;
+				break;
+			}
+			case EvidenceType.Script: {
+				const p = e.payload as ScriptPayload;
+				if (p.page_url !== pageUrl) break;
+				const hay = `${p.known_provider ?? ''} ${p.host} ${p.src}`;
+				if (TRUST_PROVIDER_REGEX.test(hay)) count++;
+				break;
+			}
+			case EvidenceType.Iframe: {
+				const p = e.payload as IframePayload;
+				if (p.page_url !== pageUrl) break;
+				const hay = `${p.known_provider ?? ''} ${p.host} ${p.src}`;
+				if (TRUST_PROVIDER_REGEX.test(hay)) count++;
+				break;
+			}
+			case EvidenceType.TechnologyDetected: {
+				const p = e.payload as TechnologyDetectedPayload;
+				if (!TRUST_TECHNOLOGY_CATEGORIES.has(p.category)) break;
+				if (p.detected_on.includes(pageUrl)) count++;
+				break;
+			}
+		}
+	}
+
+	return count;
+}
+
+function extractSensitiveInputTrustGap(
+	evidence: Evidence[],
+): SensitiveInputTrustGapHeuristic | undefined {
+	// Suppression: behavioral cohort is the authoritative path. Skip if
+	// any session evidence is present in the cycle.
+	const hasBehavioral = evidence.some(
+		(e) => e.evidence_type === EvidenceType.BehavioralSession,
+	);
+	if (hasBehavioral) return undefined;
+
+	// Deduplicate by page_url — multiple forms on the same page count
+	// as one "surface with sensitive inputs".
+	const sensitivePageUrls = new Set<string>();
+	for (const e of evidence) {
+		if (e.evidence_type !== EvidenceType.Form) continue;
+		const p = e.payload as FormPayload;
+		if (!hasSensitiveFields(p)) continue;
+		sensitivePageUrls.add(p.page_url);
+	}
+
+	if (sensitivePageUrls.size === 0) return undefined;
+
+	const gapUrls: string[] = [];
+	let zeroTrust = false;
+
+	for (const url of sensitivePageUrls) {
+		const trustCount = countTrustSignalsOnPage(evidence, url);
+		if (trustCount < 2) {
+			gapUrls.push(url);
+			if (trustCount === 0) zeroTrust = true;
+		}
+	}
+
+	if (gapUrls.length === 0) return undefined;
+
+	return {
+		gap_page_count: gapUrls.length,
+		sensitive_page_count: sensitivePageUrls.size,
+		example_urls: gapUrls.slice(0, 3).sort(),
+		has_zero_trust_page: zeroTrust,
+	};
+}
+
+// ──────────────────────────────────────────────
+// Mobile-CTA-timing heuristic
+//
+// Crawl proxy for `mobile_cta_timing_degraded`, today fired only from
+// BehavioralCohortPayload's cta_rendered_late_count (pixel). We can't
+// observe render timing from crawl evidence directly, but
+// MobileVerificationResultPayload lets us identify a WEAKER proxy:
+// mobile commercial journeys that succeed reachability but show step
+// failures or protracted duration imply CTA/interaction issues.
+//
+// Constraints:
+//   - Only triggers when checkout is reachable — if the commercial path
+//     is blocked entirely, `mobile_commercial_path_blocked` already
+//     fires, different signal.
+//   - Duration threshold: 8000ms. Typical mobile commercial journeys
+//     complete in 3-6s; 8s+ is the degraded zone.
+//   - Step-failure threshold: 1+. Any step failure on a reachable path
+//     is a CTA/interaction issue surfacing.
+//   - Confidence is pinned at 50 — lower than other heuristics because
+//     the proxy is indirect (journey friction ≠ late CTA render).
+//
+// Auto-suppressed when BehavioralSession evidence exists — cohort
+// observes CTA render timing directly.
+// ──────────────────────────────────────────────
+
+const MOBILE_DURATION_DEGRADATION_MS = 8000;
+
+function extractMobileCtaTiming(
+	evidence: Evidence[],
+): MobileCtaTimingHeuristic | undefined {
+	const hasBehavioral = evidence.some(
+		(e) => e.evidence_type === EvidenceType.BehavioralSession,
+	);
+	if (hasBehavioral) return undefined;
+
+	const mobileResults: MobileVerificationResultPayload[] = [];
+	for (const e of evidence) {
+		if (e.evidence_type !== EvidenceType.MobileVerificationResult) continue;
+		mobileResults.push(e.payload as MobileVerificationResultPayload);
+	}
+
+	if (mobileResults.length === 0) return undefined;
+
+	let maxDuration = 0;
+	let totalFailures = 0;
+	let triggeringResults = 0;
+
+	for (const p of mobileResults) {
+		// Only consider journeys where the commercial path was at least
+		// reachable — full blocks are already captured by
+		// mobile_commercial_path_blocked.
+		if (!p.checkout_reachable) continue;
+
+		const isDegradedDuration = p.duration_ms >= MOBILE_DURATION_DEGRADATION_MS;
+		const hasFailures = p.steps_failed >= 1;
+
+		if (!isDegradedDuration && !hasFailures) continue;
+
+		maxDuration = Math.max(maxDuration, p.duration_ms);
+		totalFailures += p.steps_failed;
+		triggeringResults++;
+	}
+
+	if (triggeringResults === 0) return undefined;
+
+	return {
+		max_duration_ms: maxDuration,
+		total_steps_failed: totalFailures,
+		result_count: triggeringResults,
+	};
+}
+
 /**
- * Phase 2.4 Wave 3: five extractors shipped — payment gateway,
- * discount abuse, checkout abandonment, refund rate, and
- * form-excessive-fields friction (crawl fallback for the behavioral
- * path). Only `repeat_purchase` stays unpopulated — no reliable
- * heuristic proxy without transactional data; consumers null-check.
+ * Phase 2.4 Wave 5: seven extractors shipped — payment gateway,
+ * discount abuse, checkout abandonment, refund rate, form-excessive-
+ * fields, sensitive-input trust gap, mobile CTA timing. Only
+ * `repeat_purchase` stays unpopulated (no viable crawl proxy).
  *
  * Short-circuits to `{ suppressed_by_integration: true }` when the
- * caller signals that a commerce integration is already covering the
- * same signals at full confidence.
- *
- * Form-excessive-fields suppresses itself internally when behavioral
- * session evidence is present — separate concern from the commerce
- * integration flag.
+ * caller signals a commerce integration covers the commerce-family
+ * signals. The three behavioral-path heuristics (form_excessive_fields,
+ * sensitive_input_trust_gap, mobile_cta_timing) suppress themselves
+ * internally when BehavioralSession evidence is present.
  */
 export function extractCommerceHeuristicSignals(
 	evidence: Evidence[],
@@ -644,6 +921,12 @@ export function extractCommerceHeuristicSignals(
 
 	const formExcessive = extractFormExcessiveFields(evidence);
 	if (formExcessive) result.form_excessive_fields = formExcessive;
+
+	const trustGap = extractSensitiveInputTrustGap(evidence);
+	if (trustGap) result.sensitive_input_trust_gap = trustGap;
+
+	const mobileCta = extractMobileCtaTiming(evidence);
+	if (mobileCta) result.mobile_cta_timing = mobileCta;
 
 	return result;
 }

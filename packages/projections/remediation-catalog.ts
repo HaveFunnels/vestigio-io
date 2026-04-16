@@ -2369,15 +2369,94 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 };
 
 /**
+ * Default floor for the session-accumulation threshold the behavioral
+ * signal extractor uses (see packages/signals/engine.ts MIN_SESSIONS).
+ * Surfaced in the fallback copy when the projection layer can't supply
+ * live counts — so users get "~20 sessões na janela" instead of the
+ * raw placeholder literal.
+ */
+const DEFAULT_SESSION_FLOOR = 20;
+
+/**
+ * Resolve `{current}/{required}` placeholders in a verification_notes
+ * string. Called by the projection layer and MCP answer composer so
+ * consumers never see raw template syntax.
+ *
+ *   - When both `current` and `required` are provided, interpolate
+ *     real counts (e.g. "7/20 sessões").
+ *   - When neither is provided (the common case today — the signal
+ *     layer doesn't yet expose per-finding session counts), strip
+ *     the placeholder entirely and substitute a truthful generic
+ *     phrase that makes the copy readable without lying about
+ *     having live data.
+ *
+ * Future: once the signal extractor populates verification_session_*
+ * on FindingProjection, callers pass them in and the user sees the
+ * actual progress in the drawer / MCP response.
+ */
+export function resolveVerificationNotes(
+	notes: string | null,
+	opts?: { current?: number | null; required?: number | null },
+): string | null {
+	if (!notes) return null;
+	if (!notes.includes("{current}") && !notes.includes("{required}")) {
+		return notes;
+	}
+	const current = opts?.current;
+	const required = opts?.required;
+	if (current != null && required != null) {
+		return notes
+			.replace(/\{current\}/g, String(current))
+			.replace(/\{required\}/g, String(required));
+	}
+	// Fallback: collapse any "Sessões atuais na janela: {current}/{required}"
+	// style phrase to a clean generic, and strip the bare "{current}/{required}"
+	// token to the session floor.
+	return notes
+		.replace(
+			/\.?\s*Sessões atuais na janela:\s*\{current\}\/\{required\}\.?/g,
+			".",
+		)
+		.replace(
+			/\.?\s*Atual:\s*\{current\}\/\{required\}\s*sessões?\.?/g,
+			".",
+		)
+		.replace(
+			/\s*\{current\}\/\{required\}\s*sessões\s*mobile/g,
+			` ~${DEFAULT_SESSION_FLOOR} sessões mobile`,
+		)
+		.replace(
+			/\s*\{current\}\/\{required\}\s*sessões/g,
+			` ~${DEFAULT_SESSION_FLOOR} sessões`,
+		)
+		.replace(
+			/\s*\{current\}\/\{required\}\.?/g,
+			` ~${DEFAULT_SESSION_FLOOR} sessões na janela comportamental.`,
+		)
+		.replace(/\s{2,}/g, " ")
+		.replace(/\s+\./g, ".")
+		.trim();
+}
+
+/**
  * Look up remediation + verification metadata for a finding.
  * Returns null when the inference_key hasn't been authored yet —
  * callers are expected to degrade gracefully (leave the projection
  * fields null and let the MCP fall back to its generic response).
+ *
+ * verification_notes are passed through `resolveVerificationNotes`
+ * so `{current}/{required}` placeholders never leak into downstream
+ * consumers (MCP answers, projection JSON, UI).
  */
 export function lookupRemediation(
 	inferenceKey: string,
 ): CatalogEntry | null {
-	return REMEDIATION_CATALOG[inferenceKey] ?? null;
+	const entry = REMEDIATION_CATALOG[inferenceKey];
+	if (!entry) return null;
+	return {
+		...entry,
+		verification_notes: resolveVerificationNotes(entry.verification_notes) ?? entry.verification_notes,
+	};
 }
 
 /**

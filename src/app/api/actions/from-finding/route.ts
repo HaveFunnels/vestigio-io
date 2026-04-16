@@ -10,6 +10,16 @@ import { prisma } from "@/libs/prismaDb";
 // of the chat Verify flow. Snapshots the finding's impact so that
 // later cycles can compute attribution deltas.
 //
+// `finding_id` can be either:
+//   - an engine id of the form `finding_<inference_key>` (what the
+//     MCP projection layer emits and the chat UI carries around), or
+//   - a Prisma Finding.id cuid (for internal callers that already
+//     resolved to a specific cycle's row).
+//
+// Engine ids are resolved to the most recent Prisma Finding row for
+// the caller's active environment + the embedded inference_key —
+// that row carries the impact the baseline snapshot is taken from.
+//
 // Body:
 //   {
 //     finding_id: string (required)
@@ -21,6 +31,8 @@ import { prisma } from "@/libs/prismaDb";
 //     verified_via_conversation_id?: string
 //   }
 // ──────────────────────────────────────────────
+
+const ENGINE_ID_PREFIX = "finding_";
 
 const MAX_TITLE = 300;
 const MAX_DESCRIPTION = 5_000;
@@ -72,33 +84,114 @@ export async function POST(request: Request) {
 		? body.verified_via_conversation_id.trim()
 		: null;
 
-	// Load the finding to resolve org/env + snapshot impact baseline.
-	const finding = await prisma.finding.findUnique({
-		where: { id: findingId },
-		select: {
-			id: true,
-			environmentId: true,
-			cycleRef: true,
-			impactMidpoint: true,
-			impactMin: true,
-			impactMax: true,
-			environment: { select: { organizationId: true } },
-		},
-	});
+	// Resolve the caller's active environment first so we can narrow
+	// engine-id lookups (which need an env scope to disambiguate the
+	// inference_key). Mirrors the pattern used by /api/cycles/latest
+	// and /api/actions/user.
+	const cookieStore = await import("next/headers").then((m) => m.cookies());
+	const activeEnvId = cookieStore.get("active_env")?.value;
+	let scopedEnv: { id: string; organizationId: string } | null = null;
+
+	if (activeEnvId) {
+		const env = await prisma.environment.findUnique({
+			where: { id: activeEnvId },
+			select: { id: true, organizationId: true },
+		});
+		if (env) {
+			const m = await prisma.membership.findFirst({
+				where: { userId, organizationId: env.organizationId },
+				select: { id: true },
+			});
+			if (m) scopedEnv = env;
+		}
+	}
+	if (!scopedEnv) {
+		// Fallback: most-recent membership (same convention as
+		// /api/cycles/latest). Picks an env from that org.
+		const m = await prisma.membership.findFirst({
+			where: { userId },
+			orderBy: { createdAt: "desc" },
+			select: { organizationId: true },
+		});
+		if (!m) {
+			return NextResponse.json(
+				{ message: "No environment available" },
+				{ status: 403 },
+			);
+		}
+		const env = await prisma.environment.findFirst({
+			where: { organizationId: m.organizationId },
+			select: { id: true, organizationId: true },
+			orderBy: { createdAt: "asc" },
+		});
+		if (!env) {
+			return NextResponse.json(
+				{ message: "No environment available" },
+				{ status: 403 },
+			);
+		}
+		scopedEnv = env;
+	}
+
+	// Resolve the finding. Engine ids (`finding_<inference_key>`) come
+	// from the MCP projection layer, which is what the chat UI carries
+	// through. We look up the most recent Prisma Finding row for this
+	// env + inferenceKey. Prisma cuids are looked up directly, then
+	// cross-checked against scopedEnv to prevent cross-tenant access.
+	let finding: {
+		id: string;
+		environmentId: string;
+		cycleRef: string;
+		impactMidpoint: number;
+		impactMin: number;
+		impactMax: number;
+	} | null = null;
+
+	if (findingId.startsWith(ENGINE_ID_PREFIX)) {
+		const inferenceKey = findingId.slice(ENGINE_ID_PREFIX.length);
+		if (!inferenceKey) {
+			return NextResponse.json(
+				{ message: "Empty inference_key in finding id" },
+				{ status: 400 },
+			);
+		}
+		finding = await prisma.finding.findFirst({
+			where: { environmentId: scopedEnv.id, inferenceKey },
+			orderBy: { createdAt: "desc" },
+			select: {
+				id: true,
+				environmentId: true,
+				cycleRef: true,
+				impactMidpoint: true,
+				impactMin: true,
+				impactMax: true,
+			},
+		});
+	} else {
+		finding = await prisma.finding.findUnique({
+			where: { id: findingId },
+			select: {
+				id: true,
+				environmentId: true,
+				cycleRef: true,
+				impactMidpoint: true,
+				impactMin: true,
+				impactMax: true,
+			},
+		});
+		if (finding && finding.environmentId !== scopedEnv.id) {
+			// Finding exists but belongs to another env — treat as not
+			// found rather than leaking its existence via a different
+			// error code.
+			finding = null;
+		}
+	}
+
 	if (!finding) {
 		return NextResponse.json({ message: "Finding not found" }, { status: 404 });
 	}
 
-	const organizationId = finding.environment.organizationId;
-
-	// Verify caller is a member of the finding's org.
-	const membership = await prisma.membership.findFirst({
-		where: { userId, organizationId },
-		select: { id: true },
-	});
-	if (!membership) {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-	}
+	const organizationId = scopedEnv.organizationId;
 
 	// If a conversation ref is provided, sanity-check it belongs to the
 	// same org so a stray ID from another tenant can't be stitched in.

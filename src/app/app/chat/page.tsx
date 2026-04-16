@@ -403,6 +403,17 @@ export default function ChatPage() {
 	useEffect(() => {
 		fetchUsage();
 		fetchConversations();
+		// Deep-link support: `?conversation=<id>` overrides localStorage,
+		// used by the "Reopen verification conversation" CTA in the
+		// UserAction drawer (src/app/app/actions/page.tsx). We want the
+		// user to land exactly on the thread where they verified the
+		// finding, not on whatever conversation happens to be most
+		// recent in localStorage.
+		const explicitConv = searchParams.get("conversation");
+		if (explicitConv) {
+			loadConversation(explicitConv);
+			return;
+		}
 		const stored = localStorage.getItem("vestigio_active_conv");
 		if (stored && messages.length === 0) {
 			loadConversation(stored);
@@ -435,7 +446,8 @@ export default function ChatPage() {
 			searchParams.get("findings") ||
 			searchParams.get("action") ||
 			searchParams.get("context") ||
-			searchParams.get("surfaces")
+			searchParams.get("surfaces") ||
+			searchParams.get("conversation")
 		) {
 			return;
 		}

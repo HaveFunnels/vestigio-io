@@ -78,12 +78,48 @@
     checkout_billing: /\/(checkout|billing|payment|pricing|pagamento|pago|planos|planes|precos|pre[cç]os|precios|factura[cç][aã]o|facturaci[oó]n|assinatura|suscripci[oó]n|subscription)/i,
   };
 
+  // ── GDPR Consent ──
+  //
+  // Customers can control consent in two ways:
+  //   1. data-consent="granted" on the script tag (opt-in by default)
+  //   2. window.vestigio.setConsent(true|false) at runtime (for CMP integration)
+  //
+  // When consent is not granted, the snippet still initializes but does
+  // NOT capture or transmit events. Calling setConsent(true) later
+  // activates tracking from that moment. setConsent(false) pauses it.
+  var consentGranted = true;
+
+  function checkInitialConsent(script) {
+    var attr = script.getAttribute('data-consent');
+    if (attr && attr !== 'granted') {
+      consentGranted = false;
+    }
+  }
+
+  // Public API: window.vestigio = { setConsent, deleteSession }
+  window.vestigio = window.vestigio || {};
+  window.vestigio.setConsent = function(granted) {
+    consentGranted = !!granted;
+    if (!consentGranted) {
+      queue = [];
+    }
+  };
+  window.vestigio.deleteSession = function() {
+    try { sessionStorage.removeItem('vg_sid'); } catch(e) {}
+    try { sessionStorage.removeItem('vg_milestone'); } catch(e) {}
+    queue = [];
+    sessionId = '';
+    consentGranted = false;
+  };
+
   // ── Init ──
   function init() {
     var script = document.querySelector('script[data-env]');
     if (!script) return;
     envId = script.getAttribute('data-env') || '';
     if (!envId) return;
+
+    checkInitialConsent(script);
 
     var customEndpoint = script.getAttribute('data-endpoint');
     if (customEndpoint) ENDPOINT = customEndpoint;
@@ -782,6 +818,7 @@
 
   // ── Event Emission ──
   function emit(type, data) {
+    if (!consentGranted) return;
     queue.push({
       type: type,
       ts: Date.now(),

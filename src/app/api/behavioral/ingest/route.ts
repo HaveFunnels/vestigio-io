@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { enqueue } from "@/libs/ingest-buffer";
 import {
   hashClientIp,
   extractClientIp,
@@ -142,17 +142,9 @@ export const POST = withErrorTracking(
       userAgent,
     }));
 
-    try {
-      await prisma.rawBehavioralEvent.createMany({
-        data: rows,
-        skipDuplicates: true,
-      });
-    } catch (err) {
-      // DB write failed — log but stay silent. The snippet has a
-      // .catch(() => {}) on its fetch so the user experience is unaffected.
-      console.warn("[api/behavioral/ingest] write failed:", err);
-    }
-
+    // Enqueue for async write — the HTTP response returns immediately.
+    // The buffer drains to Prisma every 2s with automatic retry.
+    enqueue(rows);
     return silentOk();
   },
   { endpoint: "/api/behavioral/ingest", method: "POST" },

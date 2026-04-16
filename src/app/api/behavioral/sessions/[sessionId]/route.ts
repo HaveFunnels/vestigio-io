@@ -1,0 +1,71 @@
+import { NextResponse } from "next/server";
+import { isAuthorized } from "@/libs/isAuthorized";
+import { prisma } from "@/libs/prismaDb";
+
+// ──────────────────────────────────────────────
+// GDPR Data Subject Deletion — DELETE /api/behavioral/sessions/:sessionId
+//
+// Removes all RawBehavioralEvent rows for a given session within the
+// authenticated user's organization. Enables customers to respond
+// to data-subject deletion requests without touching the database
+// directly. The session ID is client-generated (vg_… prefix), so
+// the customer needs to know which session to purge — typically from
+// a cookie consent dashboard or a support ticket.
+//
+// Auth: requires a logged-in Vestigio user (admin or member) whose
+// org owns the environment the session was sent to. The endpoint
+// validates env ownership before deleting, so one org cannot purge
+// another org's sessions.
+// ──────────────────────────────────────────────
+
+export const runtime = "nodejs";
+
+export async function DELETE(
+	request: Request,
+	{ params }: { params: Promise<{ sessionId: string }> },
+) {
+	const user = await isAuthorized();
+	if (!user) {
+		return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+	}
+
+	const { sessionId } = await params;
+	if (!sessionId || sessionId.length < 5 || sessionId.length > 120) {
+		return NextResponse.json(
+			{ message: "Invalid session ID" },
+			{ status: 400 },
+		);
+	}
+
+	// Resolve the caller's org so we can scope the delete.
+	const membership = await prisma.membership.findFirst({
+		where: { userId: user.id },
+		select: { organizationId: true },
+	});
+	if (!membership) {
+		return NextResponse.json(
+			{ message: "No organization" },
+			{ status: 403 },
+		);
+	}
+
+	// Get all envIds belonging to this org.
+	const envs = await prisma.environment.findMany({
+		where: { organizationId: membership.organizationId },
+		select: { id: true },
+	});
+	const orgEnvIds = envs.map((e) => e.id);
+	if (orgEnvIds.length === 0) {
+		return NextResponse.json({ deleted: 0 });
+	}
+
+	// Delete events scoped to (sessionId ∩ org's environments).
+	const result = await prisma.rawBehavioralEvent.deleteMany({
+		where: {
+			sessionId,
+			envId: { in: orgEnvIds },
+		},
+	});
+
+	return NextResponse.json({ deleted: result.count });
+}

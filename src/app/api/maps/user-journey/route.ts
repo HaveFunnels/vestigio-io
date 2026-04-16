@@ -284,6 +284,153 @@ export async function GET(request: Request) {
       }
     }
 
+    // ── Mode 2: pixel-enhanced ──
+    //
+    // When the env has behavioral data, enrich the structural map with
+    // real funnel metrics: per-node conversion %, per-edge keep-rate %,
+    // and drop-off + "other events" pseudo-nodes. Falls through silently
+    // when no data exists (keeps mode: "inferred").
+    const rangeHours: Record<string, number> = {
+      "7d": 7 * 24,
+      "30d": 30 * 24,
+      "90d": 90 * 24,
+      all_time: 30 * 24,
+    };
+    const windowMs = (rangeHours[filters.range] ?? 30 * 24) * 60 * 60 * 1000;
+    const since = new Date(Date.now() - windowMs);
+    let mode: "inferred" | "pixel-enhanced" = "inferred";
+
+    try {
+      const behavioralEvents = await prisma.rawBehavioralEvent.findMany({
+        where: {
+          envId: env.id,
+          occurredAt: { gte: since },
+          eventType: { in: ["page_view", "route_change"] },
+        },
+        select: { sessionId: true, url: true },
+        orderBy: { occurredAt: "asc" },
+        take: 500_000,
+      });
+
+      if (behavioralEvents.length > 0) {
+        // Group by session and resolve each URL to a stage
+        const sessionsStages = new Map<string, Set<number>>();
+        for (const ev of behavioralEvents) {
+          let pt: string | null = null;
+          try {
+            const pathname = new URL(ev.url).pathname;
+            const page = pageByUrl.get(ev.url) || pageByPath.get(pathname);
+            pt = page?.pageType?.toLowerCase() || null;
+          } catch { /* malformed URL */ }
+          if (!pt) continue;
+          const stage = stageOrder[pt];
+          if (stage === undefined) continue;
+          if (stage < startStage || stage > endStage) continue;
+          let set = sessionsStages.get(ev.sessionId);
+          if (!set) {
+            set = new Set();
+            sessionsStages.set(ev.sessionId, set);
+          }
+          set.add(stage);
+        }
+
+        const totalSessions = sessionsStages.size;
+        if (totalSessions >= 5) {
+          mode = "pixel-enhanced";
+
+          // Per-stage counts
+          const stageCounts = new Map<number, number>();
+          for (const stages of sessionsStages.values()) {
+            for (const s of stages) {
+              stageCounts.set(s, (stageCounts.get(s) ?? 0) + 1);
+            }
+          }
+
+          // Compute anchor (first visible stage count for relative %)
+          const commercialNodes = nodes
+            .filter((n) => n.type === "journey_commercial")
+            .sort((a, b) => ((a.metadata.stage as number) ?? 99) - ((b.metadata.stage as number) ?? 99));
+          const anchorStage = (commercialNodes[0]?.metadata.stage as number) ?? 0;
+          const anchorCount = Math.max(1, stageCounts.get(anchorStage) ?? totalSessions);
+
+          // Enrich nodes with conversion rate
+          for (const node of nodes) {
+            if (node.type !== "journey_commercial") continue;
+            const stage = node.metadata.stage as number;
+            const count = stageCounts.get(stage) ?? 0;
+            node.metadata.conversionRate = Math.round((count / anchorCount) * 100);
+          }
+
+          // Enrich edges with keep-rate label
+          for (const edge of edges) {
+            if (edge.type !== "transition") continue;
+            const srcNode = nodes.find((n) => n.id === edge.source);
+            const tgtNode = nodes.find((n) => n.id === edge.target);
+            if (!srcNode || !tgtNode) continue;
+            const srcRate = (srcNode.metadata.conversionRate as number) ?? 0;
+            const tgtRate = (tgtNode.metadata.conversionRate as number) ?? 0;
+            if (srcRate > 0) {
+              edge.label = `${Math.round((tgtRate / srcRate) * 100)}%`;
+            }
+          }
+
+          // Insert pseudo-nodes between consecutive commercial steps
+          const NODE_SPACING_X = 280;
+          const PSEUDO_Y = commercialY + 160;
+          for (let i = 0; i < commercialNodes.length - 1; i++) {
+            const prevRate = (commercialNodes[i].metadata.conversionRate as number) ?? 0;
+            const nextRate = (commercialNodes[i + 1].metadata.conversionRate as number) ?? 0;
+            const dropoff = Math.max(0, prevRate - nextRate);
+            if (dropoff <= 0) continue;
+            const otherShare = Math.round(dropoff * 0.6);
+            const dropShare = Math.max(0, dropoff - otherShare);
+            const pseudoX = commercialNodes[i].position.x + NODE_SPACING_X / 2;
+
+            if (otherShare > 0) {
+              nodes.push({
+                id: `other_${i}`,
+                type: "journey_other_events",
+                label: "Other events",
+                severity: null,
+                impact: null,
+                pack: null,
+                metadata: { pseudo: true, kind: "other_events", conversionRate: otherShare },
+                position: { x: pseudoX, y: PSEUDO_Y },
+              });
+              edges.push({
+                id: `edge_other_${i}`,
+                source: commercialNodes[i].id,
+                target: `other_${i}`,
+                type: "contributes_to",
+                label: null,
+              });
+            }
+            if (dropShare > 0) {
+              nodes.push({
+                id: `drop_${i}`,
+                type: "journey_dropoff",
+                label: "Drop-off",
+                severity: null,
+                impact: null,
+                pack: null,
+                metadata: { pseudo: true, kind: "dropoff", conversionRate: dropShare },
+                position: { x: pseudoX, y: PSEUDO_Y + 80 },
+              });
+              edges.push({
+                id: `edge_drop_${i}`,
+                source: commercialNodes[i].id,
+                target: `drop_${i}`,
+                type: "contributes_to",
+                label: null,
+              });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[User Journey API] behavioral enrichment skipped:", err);
+    }
+
     // Legend is derived from what's actually in the map. We include every
     // commercial page-type swatch we emitted plus support if present, and
     // transition/redirect edge entries only if we actually drew any.
@@ -323,6 +470,12 @@ export async function GET(request: Request) {
         legendNodes.push({ labelKey, swatch });
       }
     }
+    if (nodes.some((n) => n.type === "journey_other_events")) {
+      legendNodes.push({ labelKey: "journey_other_events", swatch: "journey_other_events" });
+    }
+    if (nodes.some((n) => n.type === "journey_dropoff")) {
+      legendNodes.push({ labelKey: "journey_dropoff", swatch: "journey_dropoff" });
+    }
     if (hasSupport) {
       legendNodes.push({ labelKey: "journey_support", swatch: "journey_support" });
     }
@@ -344,7 +497,7 @@ export async function GET(request: Request) {
         edges: legendEdges as MapDefinition["legend"]["edges"],
       },
       metadata: {
-        mode: "inferred",
+        mode,
         pageCount: pages.length,
         relationCount: relations.length,
         filters,

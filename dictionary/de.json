@@ -2060,7 +2060,29 @@
 				"contributes": "Trägt bei",
 				"addresses": "Behebt"
 			},
-			"impact_unlocks": "schaltet {amount}/Monat frei"
+			"impact_unlocks": "schaltet {amount}/Monat frei",
+			"back_to_gallery": "Zurück zu den Karten",
+			"descriptions": {
+				"user_journey": "Der kommerzielle Funnel deiner Seite — wie Besucher von der Startseite über Produkt, Preise, Warenkorb und Checkout zur Bestätigung gelangen.",
+				"revenue_leakage": "Befunde rund um Umsatzverluste und Skalierungsrisiken, gruppiert nach der gemeinsamen Ursache.",
+				"chargeback_risk": "Policy-, Support- und Trust-Oberflächen, die Disputes auslösen, mit den daraus entstehenden Befunden.",
+				"root_cause": "Alle vom Motor inferierten Ursachen mit den beitragenden Befunden und den Maßnahmen, die sie beheben."
+			},
+			"gallery": {
+				"standard": "Standard",
+				"stat_nodes": "{count, plural, one {# Knoten} other {# Knoten}}",
+				"stat_edges": "{count, plural, one {# Verbindung} other {# Verbindungen}}",
+				"types": {
+					"user_journey": "Journey",
+					"revenue_leakage": "Umsatz",
+					"chargeback_risk": "Chargeback",
+					"root_cause": "Ursache"
+				}
+			},
+			"not_found": {
+				"title": "Karte nicht gefunden",
+				"body": "Diese Karte ist noch nicht verfügbar — die Analyse läuft eventuell noch, oder die URL ist veraltet."
+			}
 		},
 		"onboard": {
 			"step_indicator": "__TODO__",

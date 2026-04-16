@@ -2824,7 +2824,29 @@
 				"thank_you": "Confirmation",
 				"page": "Page"
 			},
-			"impact_unlocks": "unlocks {amount}/mo"
+			"impact_unlocks": "unlocks {amount}/mo",
+			"back_to_gallery": "Back to maps",
+			"descriptions": {
+				"user_journey": "The commercial funnel of your site — how visitors move from homepage through product, pricing, cart and checkout to confirmation.",
+				"revenue_leakage": "Findings tied to revenue loss or scale risk, grouped by the root cause they share.",
+				"chargeback_risk": "Policy, support and trust surfaces that drive disputes, with the findings they produce.",
+				"root_cause": "Every root cause the engine inferred, with the findings that contribute to it and the actions that address it."
+			},
+			"gallery": {
+				"standard": "Standard",
+				"stat_nodes": "{count, plural, one {# node} other {# nodes}}",
+				"stat_edges": "{count, plural, one {# link} other {# links}}",
+				"types": {
+					"user_journey": "Journey",
+					"revenue_leakage": "Revenue",
+					"chargeback_risk": "Chargeback",
+					"root_cause": "Causal"
+				}
+			},
+			"not_found": {
+				"title": "Map not found",
+				"body": "This map isn't available yet — the analysis may still be running, or the URL may be stale."
+			}
 		},
 		"onboard": {
 			"step_indicator": "Step {current}/{total}",

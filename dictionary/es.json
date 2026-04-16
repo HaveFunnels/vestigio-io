@@ -2773,7 +2773,29 @@
 				"contributes": "Contribuye",
 				"addresses": "Aborda"
 			},
-			"impact_unlocks": "desbloquea {amount}/mes"
+			"impact_unlocks": "desbloquea {amount}/mes",
+			"back_to_gallery": "Volver a los mapas",
+			"descriptions": {
+				"user_journey": "El embudo comercial de tu sitio — cómo los visitantes pasan del home por producto, precios, carrito y checkout hasta la confirmación.",
+				"revenue_leakage": "Hallazgos ligados a pérdida de ingresos o riesgo de escala, agrupados por la causa raíz que comparten.",
+				"chargeback_risk": "Superficies de política, soporte y confianza que generan disputas, con los hallazgos que producen.",
+				"root_cause": "Cada causa raíz que el motor infirió, con los hallazgos que contribuyen y las acciones que la abordan."
+			},
+			"gallery": {
+				"standard": "Estándar",
+				"stat_nodes": "{count, plural, one {# nodo} other {# nodos}}",
+				"stat_edges": "{count, plural, one {# enlace} other {# enlaces}}",
+				"types": {
+					"user_journey": "Jornada",
+					"revenue_leakage": "Ingresos",
+					"chargeback_risk": "Chargeback",
+					"root_cause": "Causal"
+				}
+			},
+			"not_found": {
+				"title": "Mapa no encontrado",
+				"body": "Este mapa aún no está disponible — el análisis podría estar en curso o la URL estar obsoleta."
+			}
 		},
 		"onboard": {
 			"step_indicator": "Paso {current}/{total}",

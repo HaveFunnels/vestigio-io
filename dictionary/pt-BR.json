@@ -2879,7 +2879,29 @@
 				"contributes": "Contribui",
 				"addresses": "Endereça"
 			},
-			"impact_unlocks": "desbloqueia {amount}/mês"
+			"impact_unlocks": "desbloqueia {amount}/mês",
+			"back_to_gallery": "Voltar aos mapas",
+			"descriptions": {
+				"user_journey": "O funil comercial do seu site — como os visitantes passam da home pelos produtos, preços, carrinho e checkout até a confirmação.",
+				"revenue_leakage": "Descobertas ligadas a perda de receita ou risco de escala, agrupadas pela causa raiz que compartilham.",
+				"chargeback_risk": "Superfícies de política, suporte e confiança que geram disputas, com as descobertas que produzem.",
+				"root_cause": "Toda causa raiz que o motor inferiu, com as descobertas que contribuem pra ela e as ações que endereçam."
+			},
+			"gallery": {
+				"standard": "Padrão",
+				"stat_nodes": "{count, plural, one {# nó} other {# nós}}",
+				"stat_edges": "{count, plural, one {# ligação} other {# ligações}}",
+				"types": {
+					"user_journey": "Jornada",
+					"revenue_leakage": "Receita",
+					"chargeback_risk": "Chargeback",
+					"root_cause": "Causal"
+				}
+			},
+			"not_found": {
+				"title": "Mapa não encontrado",
+				"body": "Este mapa ainda não está disponível — a análise pode estar rodando ou a URL pode estar desatualizada."
+			}
 		},
 		"onboard": {
 			"step_indicator": "Passo {current}/{total}",

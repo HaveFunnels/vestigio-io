@@ -104,6 +104,88 @@ needs a `paddlePriceId` matching a Paddle price ID.
 
 ---
 
+## Meta Ads Integration
+
+Reuses `META_APP_ID` + `META_APP_SECRET` from the WhatsApp Cloud API setup
+above — same Meta App can serve both products. No extra env vars needed.
+
+| Env var | Description | Where to get it |
+|---------|-------------|-----------------|
+| `META_APP_ID` | Facebook App ID (shared with WhatsApp) | Meta for Developers → App Dashboard |
+| `META_APP_SECRET` | Facebook App Secret (shared with WhatsApp) | Same → Settings → Basic |
+
+**Meta App Review required.** Ads needs two permissions our WhatsApp scope
+doesn't cover, so you must submit a separate review:
+
+- `ads_read` — read campaign spend + creative (Advanced Access)
+- `business_management` — list ad accounts user has access to (Advanced Access)
+
+**OAuth setup in Meta for Developers → App → Use cases / Products:**
+
+1. Add the **Facebook Login for Business** product
+2. **Valid OAuth Redirect URIs**: `https://app.vestigio.io/api/integrations/meta-ads/callback`
+3. **App Domains**: `vestigio.io`
+4. **Privacy Policy URL**: `https://vestigio.io/privacy`
+5. **Terms of Service URL**: `https://vestigio.io/terms`
+6. **User data deletion** — required for App Review. Point to our callback:
+   - **Data Deletion Request URL**: `https://app.vestigio.io/api/integrations/meta-ads/deletion`
+   - **Deauthorize Callback URL**: `https://app.vestigio.io/api/integrations/meta-ads/deauthorize`
+7. Submit App Review for `ads_read` + `business_management`
+   - Hardest parts: demo video (screencast of the connect flow + how we
+     use the data) + scope justification text
+   - Timeline: 1-4 weeks depending on review queue
+
+Once approved, the Vestigio UI shows "Conectar com Meta" as the default
+path — clients click once and authorize. Manual System User token path
+remains as an "Advanced" fallback for technical users.
+
+---
+
+## Google Ads Integration
+
+| Env var | Description | Where to get it |
+|---------|-------------|-----------------|
+| `GOOGLE_OAUTH_CLIENT_ID` | OAuth 2.0 Client ID (Web application) | Google Cloud Console → APIs & Services → Credentials |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | OAuth client secret | Same — download or copy after creation |
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | Vestigio-owned developer token (shared across all tenants) | ads.google.com/aw/apicenter — apply under our MCC manager account |
+
+Unlike the static-token/manual path, with OAuth the developer token is
+**Vestigio-side** — clients never apply for their own. Vestigio's one
+approved token polls each client's account using their refresh token.
+
+**Google Cloud OAuth setup:**
+
+1. Create (or select) a Google Cloud project dedicated to Vestigio
+2. **APIs & Services → Library** → enable **Google Ads API**
+3. **APIs & Services → OAuth consent screen**:
+   - User Type: **External**
+   - Privacy Policy URL: `https://vestigio.io/privacy`
+   - Terms of Service URL: `https://vestigio.io/terms`
+   - Authorized domains: `vestigio.io`
+   - Scopes: add `https://www.googleapis.com/auth/adwords` (sensitive — requires verification)
+4. **APIs & Services → Credentials** → Create Credentials → **OAuth client ID**:
+   - Application type: **Web application**
+   - Authorized redirect URIs: `https://app.vestigio.io/api/integrations/google-ads/callback`
+   - Copy Client ID + Client Secret to env vars
+5. Submit OAuth consent screen for **verification**:
+   - Required because the `adwords` scope is sensitive
+   - Demo video required (screencast of entire connect + data use flow)
+   - Privacy policy must disclose how the data is used
+   - Timeline: 2-6 weeks
+6. **Google Ads Developer Token** (in parallel):
+   - Apply at ads.google.com/aw/apicenter under a MCC (manager) account
+   - Basic access (15k ops/day): typically 1-5 business days
+   - Include the Vestigio product description + intended use case
+   - Paste approved token into `GOOGLE_ADS_DEVELOPER_TOKEN`
+
+Google Ads does **not** have a data deletion webhook — client revocation
+happens user-side via Google Account settings. When a user revokes
+Vestigio's access, the next poll fails; we auto-mark the integration as
+`error` status. The existing DELETE `/api/integrations` endpoint covers
+Vestigio-initiated removal.
+
+---
+
 ## Database
 
 | Env var | Description |
@@ -142,7 +224,7 @@ BREVO_SENDER_EMAIL=notifications@vestigio.io
 BREVO_SENDER_NAME=Vestigio
 BREVO_SMS_SENDER=Vestigio
 
-# WhatsApp (Meta Cloud API)
+# WhatsApp (Meta Cloud API) — shared with Meta Ads
 META_APP_ID=...
 META_APP_SECRET=...
 META_SYSTEM_USER_TOKEN=...
@@ -153,6 +235,11 @@ META_WEBHOOK_VERIFY_TOKEN=...
 # Nuvemshop
 NUVEMSHOP_APP_ID=29656
 NUVEMSHOP_CLIENT_SECRET=...
+
+# Google Ads (OAuth + shared developer token)
+GOOGLE_OAUTH_CLIENT_ID=...
+GOOGLE_OAUTH_CLIENT_SECRET=...
+GOOGLE_ADS_DEVELOPER_TOKEN=...
 
 # AI
 ANTHROPIC_API_KEY=sk-ant-...

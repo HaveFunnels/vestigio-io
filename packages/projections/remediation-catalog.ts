@@ -1361,6 +1361,178 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Full scan Katana + Nuclei + revalidação de cada vetor identificado.',
 		verification_eta_seconds: 300,
 	},
+
+	// ─────────────────────────────────────────────
+	// Performance & Network (Phase 2D)
+	// ─────────────────────────────────────────────
+
+	checkout_api_latency_degraded: {
+		remediation_steps: [
+			'Meça latência dos endpoints críticos do checkout em produção — identifique P95 e P99.',
+			'Otimize queries do backend do checkout: indexes, caching, n+1 query removal.',
+			'Configure CDN pra assets estáticos do checkout (CSS, JS, imagens) — reduz TTFB.',
+			'Implemente timeout graceful: se API demora >5s, mostre mensagem ao usuário em vez de travar.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar checkout em headless capturando timing de cada request + retornar P50/P95.',
+		verification_eta_seconds: 50,
+	},
+
+	commercial_pages_slow: {
+		remediation_steps: [
+			'Rode Lighthouse em páginas de produto e categoria — target LCP <2.5s, TTFB <600ms.',
+			'Otimize imagens: formato WebP/AVIF, lazy loading, responsive sizes.',
+			'Remova scripts third-party não-essenciais ou mova pra async/defer.',
+			'Configure cache agressivo de assets estáticos (1 ano via Cache-Control) + ETag pra HTML.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos executar Lighthouse em headless contra páginas comerciais e comparar com baseline anterior.',
+		verification_eta_seconds: 60,
+	},
+
+	paid_landing_overloaded: {
+		remediation_steps: [
+			'Landing pages de campanha devem ser minimalistas — remova widgets, chats, analytics não-essenciais.',
+			'Mantenha apenas 1 CTA primário acima da dobra + seção de benefícios + prova social.',
+			'Teste com PageSpeed Insights — landing de ads deve ter LCP <2s pra maximizar quality score.',
+			'Hospede landings em infra otimizada (Vercel, Netlify) em vez do mesmo stack do app principal.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Lighthouse + análise de peso de recursos carregados nas landings de paid.',
+		verification_eta_seconds: 50,
+	},
+
+	third_party_weight_delays_trust: {
+		remediation_steps: [
+			'Liste third-party scripts no checkout: analytics, chat, pixel, A/B testing. Peso total?',
+			'Elimine não-essenciais (A/B testing no checkout é risco, chat pode carregar depois).',
+			'Para essenciais (GA, Pixel), carregue async + depois do main content render.',
+			'Configure timeout — se third-party não responde em 3s, desiste e não bloqueia render.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Capturar network trace do checkout + classificar requests por origem (próprio vs third-party).',
+		verification_eta_seconds: 45,
+	},
+
+	checkout_brittle_third_party: {
+		remediation_steps: [
+			'Identifique dependências críticas do checkout em third-parties — gateway, anti-fraude, tax calc.',
+			'Configure fallback: se anti-fraude não responde, permita compra com flag de review manual pós-facto.',
+			'Para gateway, tenha backup configurado (Stripe + Mercado Pago) e switchover automático via feature flag.',
+			'Monitore status pages dos providers + configure alerta no seu lado se detectar degradation.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Navegar checkout headless + simular falha de third-party pra ver se graceful degradation funciona.',
+		verification_eta_seconds: 60,
+	},
+
+	purchase_blocked_failing_requests: {
+		remediation_steps: [
+			'Capture os 10 últimos erros de network no checkout — dê priority pelos que afetam pagamento.',
+			'Configure retry automático em requests não-idempotentes com backoff exponential.',
+			'Para requests críticos (payment_intent), garanta idempotency key pra evitar duplicação em retry.',
+			'Logue taxa de sucesso por endpoint no checkout — alert se cair abaixo de 98%.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Navegar checkout múltiplas vezes em headless + coletar requests failed + estatística de sucesso.',
+		verification_eta_seconds: 60,
+	},
+
+	measurement_breaks_revenue_path: {
+		remediation_steps: [
+			'Se tag analítica bloqueia ou atrasa o checkout, reconfigure pra load async/defer.',
+			'Se GA/Pixel quebra a página quando bloqueado por adblocker, envolva em try/catch + fallback silencioso.',
+			'Configure tags com performance budget — se ultrapassar X ms de exec, aborta.',
+			'Use Tag Manager com triggers condicionais pra medir sem bloquear interação.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Carregar checkout headless com/sem adblocker + medir impacto no tempo de render.',
+		verification_eta_seconds: 50,
+	},
+
+	purchase_before_deps_ready: {
+		remediation_steps: [
+			'Audite ordem de carregamento: botão de pagamento não deve estar clicável antes de scripts críticos (anti-fraude, tokenizer) carregarem.',
+			'Desabilite botão de submit até scripts essenciais estarem prontos — mostre loading state.',
+			'Configure eventos `DOMContentLoaded` + check de deps antes de ativar o fluxo de compra.',
+			'Teste em conexão slow 3G — deps devem carregar dentro de 5s ou o fluxo falha graciosamente.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Carregar checkout em throttle 3G + testar clique em submit antes de completar load.',
+		verification_eta_seconds: 55,
+	},
+
+	trust_assets_late_load: {
+		remediation_steps: [
+			'Trust markers (selos SSL, logos de pagamento, política) devem estar no HTML inicial — não carregados via JS.',
+			'Evite carregar logos via CDN externo que pode ser lento ou bloquear — hospede internally.',
+			'Priorize LCP — selos de trust acima da dobra devem aparecer em <2.5s.',
+			'Use preload hints pra imagens críticas de trust: `<link rel="preload" as="image">`.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Capturar timing de load de trust markers no checkout + compare com LCP target.',
+		verification_eta_seconds: 45,
+	},
+
+	mobile_heavy_runtime_chain: {
+		remediation_steps: [
+			'Mobile tem CPU/network mais limitado — agressivamente reduza JS executado no primeiro paint.',
+			'Use code splitting: carregue apenas código necessário pra rota atual, lazy-load o resto.',
+			'Remova polyfills desnecessários — modern browsers em mobile não precisam de suporte IE.',
+			'Meça JS main thread blocking em mobile simulation — target <200ms de long tasks.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Lighthouse mobile + análise de JS bundle size + long tasks no main thread.',
+		verification_eta_seconds: 60,
+	},
+
+	mobile_trust_payment_deps_failing: {
+		remediation_steps: [
+			'Teste payment deps (gateway scripts, tokenizer) especificamente em mobile — deps web às vezes falham em WebView.',
+			'Configure fallback de payment method quando script primário falha (ex: fallback de Stripe Elements pra redirect flow).',
+			'Monitore erros JS específicos de mobile — alertar quando divergem do desktop.',
+			'Teste em iOS Safari + Chrome Android reais, não só emulator — cada tem quirks diferentes.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Headless mobile viewport + capturar falhas de payment scripts + taxa de sucesso por browser.',
+		verification_eta_seconds: 60,
+	},
+
+	trust_surfaces_unstable_deps: {
+		remediation_steps: [
+			'Mapeie quais trust surfaces dependem de third-parties (selos dinâmicos, reviews widgets).',
+			'Para cada dep third-party, mensure uptime + configure fallback estático se falhar.',
+			'Prefira trust markers servidos do seu próprio domínio — selos self-hosted não dependem de provider externo.',
+			'Configure monitoring específico pra trust surfaces — queda de provider = queda de conversão imediata.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Carregar home + produto + checkout + medir % de trust markers que renderizam sem falha.',
+		verification_eta_seconds: 50,
+	},
 };
 
 /**

@@ -1847,10 +1847,17 @@
 				"high_severity": "__TODO__"
 			},
 			"tabs": {
-				"observations": "Beobachtungen"
+				"observations": "Beobachtungen",
+				"mine": "Von dir validiert"
 			},
 			"columns": {
-				"nextStep": "Nächster Schritt"
+				"nextStep": "Nächster Schritt",
+				"baselineImpact": "Baseline",
+				"created": "Erstellt"
+			},
+			"mineEmpty": {
+				"title": "Du hast noch keine Befunde verifiziert.",
+				"description": "Klicke bei einem Befund auf „Verify“, um einen geführten Plan durchzugehen und die Remediation hier zu verfolgen."
 			},
 			"resolve": {
 				"fix": "Als Gelöst markieren",
@@ -1875,7 +1882,36 @@
 				"request_verification": "__TODO__",
 				"learnMore": "Mehr erfahren",
 				"browseRelatedDocs": "Verwandte Dokumente durchsuchen",
-				"docsComingSoon": "Die Dokumentation für diese Ursache wird gerade geschrieben."
+				"docsComingSoon": "Die Dokumentation für diese Ursache wird gerade geschrieben.",
+				"mine": {
+					"status": "Status",
+					"created": "Erstellt",
+					"doneAt": "Abgeschlossen",
+					"lifecycle": "Lebenszyklus",
+					"description": "Beschreibung",
+					"remediation": "Remediation-Schritte",
+					"origin": "Herkunft der Verifizierung",
+					"sourceFinding": "Ursprungs-Befund",
+					"markInProgress": "In Arbeit markieren",
+					"markDone": "Als erledigt markieren",
+					"reopen": "Wiedereröffnen",
+					"dismiss": "Verwerfen",
+					"updating": "Wird aktualisiert…",
+					"updated": "Action aktualisiert",
+					"updateFailed": "Aktualisierung fehlgeschlagen. Bitte erneut versuchen.",
+					"reopenConversation": "Verifizierungs-Konversation wiedereröffnen",
+					"reopenConversationHint": "Öffnet den Chat, in dem das verifiziert wurde.",
+					"runVerificationTitle": "Deinen Fix validieren",
+					"runVerificationCta": "Fix jetzt validieren",
+					"runVerificationHint": "Markiert als erledigt und startet einen priorisierten Audit, um zu bestätigen, dass dein Fix funktioniert hat — Attribution erfolgt in Minuten statt auf den nächsten geplanten Zyklus zu warten. Kostet 5 Credits.",
+					"triggeringCycle": "Validierung wird gestartet…",
+					"cycleQueued": "Validierung in Warteschlange — wir senden dir eine E-Mail, wenn die Attribution eingeht ({credits} Credits berechnet).",
+					"cycleAlreadyRunning": "Ein Zyklus läuft bereits — Attribution erfolgt automatisch, wenn er fertig ist.",
+					"cycleTriggerFailed": "Validierung konnte nicht gestartet werden. Bitte gleich erneut versuchen.",
+					"insufficientCredits": "Nicht genug Credits — upgrade oder kaufe mehr, um Fixes on-demand zu validieren.",
+					"confirmedTitle": "Wiederherstellung bestätigt",
+					"confirmedBody": "Ein späterer Zyklus hat bestätigt, dass dieser Fix gegriffen hat — Attribution erfolgte am {when}."
+				}
 			}
 		},
 		"data_sources": {

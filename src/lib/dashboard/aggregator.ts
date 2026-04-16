@@ -99,11 +99,17 @@ async function computeMoneyRecovered(
 		//      headline doesn't lie when the remediation didn't
 		//      actually take.
 		//
-		// totalCents = confirmed + claimed (for the hero number).
-		// Small overcount risk when (1) and (2) cover the same
-		// finding is accepted — the UserAction path carries the
-		// frozen baseline while the auto-resolved path uses the
-		// current impact midpoint. Future pass can dedup on findingId.
+		// Dedup rule: a single remediation can show up in BOTH bucket 1
+		// (the cycle detected the auto-resolution) and bucket 2 (the
+		// UserAction got its verifiedResolvedAt stamp from the same
+		// cycle). Counting both would double the recovery for that
+		// one fix. We prefer the UserAction baseline when both exist
+		// because it was frozen at the moment the user committed to
+		// the work — more accurate than the residual impact the
+		// auto-resolved finding row happens to carry.
+		//
+		// We dedup by inferenceKey (stable per-finding-concept, shared
+		// across cycles) rather than findingId (unique per cycle row).
 		const [resolved, doneActions] = await Promise.all([
 			prisma.finding.findMany({
 				where: {
@@ -114,6 +120,7 @@ async function computeMoneyRecovered(
 				select: {
 					impactMidpoint: true,
 					createdAt: true,
+					inferenceKey: true,
 				},
 			}),
 			prisma.userAction.findMany({
@@ -127,6 +134,7 @@ async function computeMoneyRecovered(
 					doneAt: true,
 					createdAt: true,
 					verifiedResolvedAt: true,
+					finding: { select: { inferenceKey: true } },
 				},
 			}),
 		]);
@@ -140,8 +148,17 @@ async function computeMoneyRecovered(
 		let last30dCents = 0;
 		let lastUpdatedAt: Date | null = null;
 
-		// Bucket 1: auto-resolved findings → confirmed.
+		// Build the dedup set first so Bucket 1 can skip overlaps.
+		const coveredByUserAction = new Set<string>();
+		for (const a of doneActions) {
+			const key = a.finding?.inferenceKey;
+			if (key) coveredByUserAction.add(key);
+		}
+
+		// Bucket 1: auto-resolved findings → confirmed, except when a
+		// UserAction already accounts for this inferenceKey.
 		for (const f of resolved) {
+			if (coveredByUserAction.has(f.inferenceKey)) continue;
 			const cents = dollarsToCents(f.impactMidpoint);
 			confirmedCents += cents;
 			const ts = f.createdAt.getTime();

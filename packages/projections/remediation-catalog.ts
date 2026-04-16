@@ -2093,6 +2093,279 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Aguardando sessões pra medir drop rate pós-ajustes. {current}/{required}.',
 		verification_eta_seconds: null,
 	},
+
+	first_session_milestone_stall: {
+		remediation_steps: [
+			'Primeira sessão empaca antes de atingir marco de valor — reduza fricção nos primeiros 60s.',
+			'Defina o "aha moment" do primeiro uso e otimize o caminho direto pra ele.',
+			'Ofereça tour guiado opcional que demonstra valor em <2min.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra medir milestone completion rate. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	first_session_trust_barrier: {
+		remediation_steps: [
+			'Novos visitantes encontram trust barrier — exponha social proof + credenciais mais proeminentemente.',
+			'Logos de clientes, depoimentos com foto, awards visíveis na home above-the-fold.',
+			'Para produto novo, inclua "como funciona" explicativo + garantia explícita pra reduzir risk percebido.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra re-medir bounce rate de novos visitantes. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	first_session_cta_timing_gap: {
+		remediation_steps: [
+			'CTA aparece tarde demais na primeira sessão — visitante sai antes de ver a oferta.',
+			'Mostre CTA primário visível no primeiro paint, sem depender de scroll.',
+			'Configure exit-intent modal pra capturar visitante saindo sem ter tomado ação.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra medir CTA exposure timing. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	low_value_action_dominates: {
+		remediation_steps: [
+			'Ações de baixo valor (scroll, leitura de blog) dominam vs ações de alto valor (add-to-cart, signup).',
+			'Revise CTAs em páginas de tráfego — muitos levam pra conteúdo ao invés de conversão.',
+			'Adicione CTA de conversão em páginas de conteúdo populares (blog, ajuda).',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra re-medir ratio de high-value vs low-value actions. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	high_value_action_underexposed: {
+		remediation_steps: [
+			'Ações de alto valor (compra, upgrade) não recebem exposure suficiente — posicione em surfaces de alto tráfego.',
+			'Home deve ter CTA principal apontando pra ação de maior valor comercial.',
+			'Evite esconder features premium atrás de múltiplos cliques — expõe direto com paywall contextual.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra medir exposure rate das high-value actions. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	dead_weight_surface_traffic: {
+		remediation_steps: [
+			'Páginas com tráfego mas zero conversão drenam budget de ads e dividem análise.',
+			'Audite top 10 páginas de tráfego por conversion rate — priorize fix nas de 0% CR.',
+			'Se página não converte estruturalmente (ex: post de blog genérico), reduz paid spend direcionado a ela.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra re-medir conversion rate por surface. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	paid_traffic_friction_elevated: {
+		remediation_steps: [
+			'Tráfego pago encontra mais friction que orgânico — landing pages de ads precisam ser dedicadas.',
+			'Crie landing pages específicas por campanha, sem navegação que distrai do CTA.',
+			'Valide message match: ad promete X, landing entrega X (não a home genérica).',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões de paid traffic pra re-medir friction. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	paid_traffic_trust_gap: {
+		remediation_steps: [
+			'Tráfego pago tem trust menor que orgânico — reforce credenciais nas landings de ads.',
+			'Social proof (reviews, número de clientes, mídia) visível no primeiro viewport.',
+			'Garantia forte e explícita ("30 dias pra devolver sem perguntas") reduz risk percebido.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões paid pra medir trust-related bounce rate. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	paid_mobile_compounding_waste: {
+		remediation_steps: [
+			'Paid + mobile = waste composto. Fricção mobile + cold traffic compram 2x menos.',
+			'Separe campaign mobile vs desktop e otimize landings separadamente pra cada canal.',
+			'Mobile landing deve ter ≤3 elementos above-the-fold: headline + benefício + CTA.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões paid-mobile pra re-medir conversion rate. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	mobile_conversion_gap: {
+		remediation_steps: [
+			'Conversion rate em mobile significativamente abaixo de desktop — UX mobile precisa de attention dedicada.',
+			'Audite form completion em mobile: campos muito pequenos, teclado cobrindo input, submit inacessível.',
+			'Simplifique fluxo em mobile: uma única coluna, steps numerados, salve progresso.',
+		],
+		estimated_effort_hours: 18,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões mobile pra re-medir conversion gap. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	mobile_form_friction_elevated: {
+		remediation_steps: [
+			'Forms em mobile têm abandonment rate mais alto — campos + teclado causam friction.',
+			'Use input types corretos (tel, email, number) pra ativar teclados otimizados.',
+			'Auto-avance entre campos quando possível (ex: CEP preenche cidade/UF automaticamente).',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões mobile com form interaction. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	mobile_cta_timing_degraded: {
+		remediation_steps: [
+			'CTA em mobile demora a ficar interativo — scripts pesados bloqueiam main thread.',
+			'Priorize TTI (Time To Interactive) em mobile — target <3s em 4G simulado.',
+			'Reduza JS bundle inicial, lazy-load o resto.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões mobile pós-otimização pra medir timing real. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	funnel_step_friction_cost: {
+		remediation_steps: [
+			'Cada step do funnel tem custo de conversão — conte os steps atuais e elimine redundantes.',
+			'Consolide "step 1: adicionar endereço" + "step 2: confirmar endereço" em um único step.',
+			'Teste one-page checkout vs multi-step — pra carrinhos simples, one-page converte melhor.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pós-consolidação pra medir step completion. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	oscillation_decision_cost: {
+		remediation_steps: [
+			'Buyer oscila entre opções (planos, variantes, métodos de pagamento) = decision fatigue.',
+			'Destaque default recomendado pra reduzir carga cognitiva — "escolha mais popular" funciona bem.',
+			'Limite opções — 3 planos é sweet spot pra SaaS, 2-3 variantes por produto pra e-commerce.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra medir oscillation pattern. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	checkout_entry_friction: {
+		remediation_steps: [
+			'Entrada no checkout já tem friction — botão escondido, modal interrompendo, login forçado.',
+			'Garanta CTA de "Finalizar compra" visível no carrinho e em todas as páginas de produto.',
+			'Guest checkout como default — opção de criar conta pós-compra.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra medir entry rate no checkout. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	trust_deficit_conversion_drag: {
+		remediation_steps: [
+			'Trust deficit generalizado está puxando conversion geral pra baixo — não é fix pontual, é reforço sistêmico.',
+			'Adicione trust markers em TODAS surfaces comerciais: home, produto, carrinho, checkout, confirmação.',
+			'Social proof concreto (números, nomes, logos) reduz trust deficit mais que badges genéricos.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pós-trust-reinforcement pra medir conversion uplift. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	reassurance_seeking_elevated: {
+		remediation_steps: [
+			'Buyers procuram reassurance (FAQ, reviews, contato) antes de decidir — atenda essa necessidade proativamente.',
+			'Coloque FAQ relevante direto nas páginas de produto — não force buyer a navegar pra achar.',
+			'Adicione badges de "quantidade vendida" ou "avaliação média" pra social proof explícito.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra medir reassurance visits pré-conversão. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	sensitive_input_trust_gap: {
+		remediation_steps: [
+			'Trust gap específico em campos sensíveis — perceção de risco supera trust genérico do site.',
+			'Adicione microcopy explicando coleta + link pra política de privacidade próximo ao campo.',
+			'Use ícones de cadeado + selo SSL CONTÍGUOS ao campo — trust precisa ser percebido onde o risk é sentido.',
+		],
+		estimated_effort_hours: 5,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra medir completion rate em sensitive fields. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	path_length_exceeds_efficient: {
+		remediation_steps: [
+			'Path médio do buyer até conversão é longo demais — cada página extra dilui intent.',
+			'Identifique atalhos: produto destacado na home, CTA direto sem categoria intermediária, quick-add na categoria.',
+			'Minimize pageviews necessários pra compra — ideal <5 pageviews do ponto de entrada ao pagamento.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pra medir path length médio pós-otimização. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	intent_absorber_detected: {
+		remediation_steps: [
+			'Alguma surface está absorvendo intent sem converter — blog post, FAQ genérico, categoria rica.',
+			'Identifique as intent absorbers via analytics e adicione CTAs de conversão relevantes naquelas pages.',
+			'Ou: reduza exposure dessas pages em navegação principal se não são conversível.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões pós-adição de CTAs nas absorbers. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
+
+	intent_decay_time_excessive: {
+		remediation_steps: [
+			'Intent decay muito rápido — buyer esfria se sessão passa de X minutos sem conversão.',
+			'Use urgency/scarcity real (estoque baixo, promo com timer) pra acelerar decisão.',
+			'Se buyer retorna em nova sessão, re-engage com email lembrando onde parou + incentivo pequeno.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Aguardando sessões novas pra medir intent decay curve. {current}/{required}.',
+		verification_eta_seconds: null,
+	},
 };
 
 /**

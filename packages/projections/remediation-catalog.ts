@@ -1533,6 +1533,298 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Carregar home + produto + checkout + medir % de trust markers que renderizam sem falha.',
 		verification_eta_seconds: 50,
 	},
+
+	// ─────────────────────────────────────────────
+	// Discoverability (Phase 3E)
+	// ─────────────────────────────────────────────
+
+	commercial_pages_weak_search_representation: {
+		remediation_steps: [
+			'Reescreva title tags das páginas comerciais: 50-60 chars, incluindo marca + produto + benefício.',
+			'Meta description: 140-160 chars descrevendo produto + call-to-action. Evite duplicatas entre páginas.',
+			'Garanta que title e H1 da página estão alinhados mas não idênticos — title otimizado pra search, H1 pra humano.',
+			'Audite trimestralmente quais títulos rankam e quais não aparecem no top 10 — ajuste copy do que underperforma.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-parsear HTML + extrair title/meta/H1 das páginas comerciais e comparar com best-practice.',
+		verification_eta_seconds: 10,
+	},
+
+	social_previews_fail_commercial_value: {
+		remediation_steps: [
+			'Configure Open Graph tags: og:title, og:description, og:image (1200x630), og:url em todas páginas comerciais.',
+			'Twitter Card: summary_large_image com imagem otimizada pra compartilhamento.',
+			'Teste previews em debuggers oficiais: developers.facebook.com/tools/debug + cards-dev.twitter.com.',
+			'Customize preview image por categoria de produto — genérico de logo é desperdício de share.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-parsear HTML + extrair og/twitter meta tags + validar URLs de imagem retornam 200.',
+		verification_eta_seconds: 10,
+	},
+
+	brand_inconsistent_across_surfaces: {
+		remediation_steps: [
+			'Defina brand guide curto: logo, paleta, tipografia, tom de voz. Publique internamente.',
+			'Audite surfaces existentes (home, app, email, landing, redes sociais) — elemina divergências de logo/cor/copy.',
+			'Centralize assets de marca em CDN próprio — evita versões antigas circulando.',
+			'Configure checklist pré-deploy pra revisar mudanças visuais contra brand guide.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-crawlar surfaces principais + extrair logo + paleta + comparar com baseline brand assets.',
+		verification_eta_seconds: 20,
+	},
+
+	commercial_pages_unlikely_indexed: {
+		remediation_steps: [
+			'Verifique robots.txt + meta robots das páginas comerciais — não devem ter noindex acidental.',
+			'Configure canonical tags corretos — aponte pra versão preferida da página (sem query params ruido).',
+			'Envie sitemap.xml atualizado pro Google Search Console + Bing Webmaster Tools.',
+			'Gere links internos pra páginas comerciais da home/blog — pages sem backlinks internos raramente rankam.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-parsear HTML + robots.txt + sitemap.xml + validar presença/ausência de noindex.',
+		verification_eta_seconds: 12,
+	},
+
+	weak_semantic_intent_signals: {
+		remediation_steps: [
+			'Adicione JSON-LD Schema em páginas comerciais: Product (preço, estoque), Offer, Organization, BreadcrumbList.',
+			'Use schema.org vocab correto — Product em páginas de produto, Article em blog, Review em depoimentos.',
+			'Valide com Rich Results Test do Google — schema inválido não ajuda SEO.',
+			'Monitore rich results no Search Console — tickets pra schema errors aparecem lá.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-parsear HTML + extrair JSON-LD + validar schema vs expectativa (Product em produto, etc.).',
+		verification_eta_seconds: 10,
+	},
+
+	previews_disconnected_from_conversion: {
+		remediation_steps: [
+			'Social preview images devem enfatizar produto + benefício, não só logo.',
+			'Title do preview deve comunicar valor comercial — "50% OFF" ou "Frete grátis" funciona melhor que título genérico.',
+			'Teste A/B images diferentes pra mesma URL — mede qual gera mais CTR de compartilhamento.',
+			'Cada campanha de ads/social deve ter preview otimizado pro contexto — não usa o default da página.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Re-crawlar + analisar relevância de og:title + og:image vs copy comercial da página.',
+		verification_eta_seconds: 10,
+	},
+
+	commercial_pages_not_exposed_for_discovery: {
+		remediation_steps: [
+			'Adicione páginas comerciais ao sitemap.xml — priorize produto e categoria com priority > 0.8.',
+			'Gere internal linking: home → categorias → produtos (3 cliques máx).',
+			'Se você tem filtros (cor, tamanho), use canonical pra variantes e evita duplicação.',
+			'Solicite reindexing no Search Console após mudanças significativas de estrutura.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Crawlar internal links a partir da home + validar sitemap.xml + comparar cobertura vs pages críticas.',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Brand Integrity (Phase 3E)
+	// ─────────────────────────────────────────────
+
+	lookalike_domain_competing_for_traffic: {
+		remediation_steps: [
+			'Registre domínios defensivos comuns: typos (.com.br, .net, .shop), variantes (com hífen, sem hífen).',
+			'Configure redirect 301 dos domínios defensivos pra domínio principal — recupera tráfego de erro de digitação.',
+			'Para lookalikes ativamente competindo: registre trademark e envie takedown notice via registrar.',
+			'Monitore SERPs regularmente — detecta lookalikes novos e age antes que ganhem tração.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Re-disparar brand intelligence scan pra listar domínios similares ainda ativos.',
+		verification_eta_seconds: 240,
+	},
+
+	external_sites_mimicking_brand: {
+		remediation_steps: [
+			'Identifique sites que copiam visual/copy — capture screenshots como evidência.',
+			'Envie DMCA takedown (EUA) ou notificação LGPD/CDC (BR) ao host do site clonado.',
+			'Se clone vende produto falsificado, acione Polícia Federal / Procon + plataforma onde vende (ML, Shopee).',
+			'Configure Google Alerts pra menções não-autorizadas da marca.',
+		],
+		estimated_effort_hours: 24,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Brand intelligence scan revalidando sites clones conhecidos + busca ativa de novos.',
+		verification_eta_seconds: 240,
+	},
+
+	brand_traffic_exposed_to_deceptive_surfaces: {
+		remediation_steps: [
+			'Audite ads pagos usando sua marca — competidores podem estar fazendo branded search em cima do seu nome.',
+			'Registre trademark pra protegê-lo em Google Ads + Facebook Ads.',
+			'Configure bid defensivo em branded keywords — não deixe competidor roubar tráfego barato.',
+			'Monitore search suggestions no Google — "marca X reclamação" ou "marca X golpe" indica problema reputacional.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Brand intel scan em SERPs + análise de bids em branded keywords + search suggestions.',
+		verification_eta_seconds: 180,
+	},
+
+	suspicious_domains_capturing_purchase_intent: {
+		remediation_steps: [
+			'Identifique domínios suspeitos que aparecem em search results quando user busca sua marca + "comprar".',
+			'Envie takedown aos registrars + hosts de cada domínio suspeito identificado.',
+			'Se domínio rank organicamente acima do seu, invista em SEO pra recuperar posição.',
+			'Configure Google Ads bidding em branded + "buy" queries pra dominar SERP legitimamente.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Brand intel re-scan de branded purchase queries + ranking check vs domínio oficial.',
+		verification_eta_seconds: 240,
+	},
+
+	customers_exposed_to_phishing_surfaces: {
+		remediation_steps: [
+			'Alerte buyers via email / redes sociais sobre sites phishing identificados.',
+			'Configure DMARC strict (p=reject) no domínio pra prevenir spoofing de emails.',
+			'Reporte phishing pages a Google Safe Browsing + Microsoft Defender SmartScreen — removem do browsing.',
+			'Crie página /seguranca ou /phishing no site oficial documentando golpes conhecidos e como identificar.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Brand intel scan + phishing URL reporter (Google/Microsoft APIs) pra confirmar remoção.',
+		verification_eta_seconds: 180,
+	},
+
+	brand_presence_diluted_across_variants: {
+		remediation_steps: [
+			'Consolide domínios e subdomínios: elimina variantes desnecessárias ou configure canonical + redirect.',
+			'Unifique o branding em todas as surfaces ativas — inconsistência confunde buyer.',
+			'Defina domínio master único para ads, emails, social — evita dispersão de tráfego.',
+			'Audite trimestralmente quais variantes de domínio estão ativas e por quê.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Brand intel mapeando variantes de domínio/subdomínio e reconciliando com master.',
+		verification_eta_seconds: 120,
+	},
+
+	// ─────────────────────────────────────────────
+	// Shopify Commerce (Phase 4A — integration-driven)
+	// ─────────────────────────────────────────────
+
+	checkout_abandonment_revenue_leak: {
+		remediation_steps: [
+			'Configure recovery email sequence pra carrinho abandonado: 1h, 24h, 72h após abandono.',
+			'Simplifique checkout: reduza campos, ofereça guest checkout, mostre progresso.',
+			'Adicione urgency/scarcity quando apropriado (estoque limitado real, não fake).',
+			'Oferecer desconto pequeno (5-10%) no último email de recovery recupera 5-15% dos abandonos.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Shopify metrics pra confirmar mudança em abandonment rate + recovery rate.',
+		verification_eta_seconds: 30,
+	},
+
+	promoted_product_out_of_stock: {
+		remediation_steps: [
+			'Configure sync real-time de estoque entre Shopify e canais de promoção (ads, email, afiliados).',
+			'Pause automaticamente campanhas de ads quando produto fica out-of-stock.',
+			'Adicione "Notify when available" nos produtos esgotados pra capturar demanda.',
+			'Priorize replenishment dos produtos mais promovidos — estoque perdido durante campanha é receita perdida.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Shopify + cross-reference com campanhas ativas.',
+		verification_eta_seconds: 30,
+	},
+
+	high_refund_rate_eroding_revenue: {
+		remediation_steps: [
+			'Audite top 10 razões de refund no Shopify — identifique padrões por produto / SKU.',
+			'Melhore fotos + descrições dos produtos mais reembolsados — misalinhamento de expectativa é causa comum.',
+			'Se produto específico tem >15% refund rate, considere delistar ou renegociar com fornecedor.',
+			'Configure pré-sale checklist: FAQs visíveis, sizing guide, política de reembolso clara.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Shopify pra confirmar refund rate trend + breakdown por produto.',
+		verification_eta_seconds: 30,
+	},
+
+	single_payment_gateway_risk: {
+		remediation_steps: [
+			'Integre gateway secundário (Stripe + Mercado Pago, por exemplo) pra ter redundância.',
+			'Configure roteamento inteligente: PIX pra BR (mais barato), cartão pra internacional.',
+			'Tenha plano de contingência documentado: se gateway primário cai, como switchar em <15min.',
+			'Negocie contratos com SLA — gateway sem garantia de uptime é aposta.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Shopify payment config + validar presença de gateways alternativos ativos.',
+		verification_eta_seconds: 20,
+	},
+
+	discount_abuse_pattern: {
+		remediation_steps: [
+			'Audite cupons ativos — limite uso por customer (1x), por email, por IP.',
+			'Configure fraud detection: mesmo CPF comprando 10x com cupom = abuso.',
+			'Expire cupons regularmente — cupons permanentes são convite pra compartilhamento em sites tipo Cuponeria.',
+			'Meça margem pós-desconto por campanha — alguns cupons podem estar negativos.',
+		],
+		estimated_effort_hours: 14,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Shopify discount analytics + cross-reference com padrões de uso suspeitos.',
+		verification_eta_seconds: 30,
+	},
+
+	low_repeat_purchase_rate: {
+		remediation_steps: [
+			'Configure email de re-engagement 30/60/90 dias pós-compra com recomendações personalizadas.',
+			'Implemente programa de loyalty/pontos — reduz atrito pra segunda compra.',
+			'Analise LTV por cohort — qual canal de aquisição traz customers que recompram?',
+			'Crie subscription option pra produtos consumíveis — recurring revenue é o maior leverage.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Shopify pra confirmar repeat purchase rate trend + cohort analysis.',
+		verification_eta_seconds: 40,
+	},
+
+	dead_weight_products: {
+		remediation_steps: [
+			'Liste produtos com zero venda em 30 dias — delista ou reposicione.',
+			'Mova SKUs dead-weight pra categoria "clearance" com desconto real pra girar estoque.',
+			'Analise se dead weight é por preço, posicionamento, ou demanda — ação varia.',
+			'Mensalmente, faça purge de SKUs sem venda em 90 dias — polui busca e dilui inventário.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Shopify + cross-check de venda por SKU nos últimos 30d.',
+		verification_eta_seconds: 30,
+	},
 };
 
 /**

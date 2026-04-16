@@ -108,6 +108,8 @@ type MockTranslator = (key: string) => string;
 export function buildMockDashboardData(t: MockTranslator): DashboardData {
 	const moneyRecovered: MoneyRecoveredData = {
 		totalCents: 4_728_310,
+		confirmedCents: 4_230_000,
+		claimedCents: 498_310,
 		last7dCents: 142_300,
 		last30dCents: 340_290,
 		currency: "USD",
@@ -203,6 +205,8 @@ export function buildMockDashboardData(t: MockTranslator): DashboardData {
 // the prod path always agree on wording rules.
 const moneyRecovered: MoneyRecoveredData = {
 	totalCents: 4_728_310, // $47,283.10
+	confirmedCents: 4_230_000, // $42,300 evidence-backed
+	claimedCents: 498_310, // $4,983.10 awaiting cycle confirmation
 	last7dCents: 142_300, // $1,423.00
 	last30dCents: 340_290, // $3,402.90
 	currency: "USD",

@@ -719,6 +719,39 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 		}
 
+		// (e3) Attribution confirmation job — scans UserActions the
+		// operator marked as done and stamps `verifiedResolvedAt` when
+		// the current cycle confirms the underlying finding is resolved
+		// (or no longer present under its inferenceKey). Fires a
+		// celebration email per confirmation. Non-fatal: we're
+		// observing/rewarding, not persisting state the rest of the
+		// audit depends on.
+		try {
+			const { runAttributionConfirmation } = await import(
+				"@/libs/attribution-confirmation"
+			);
+			const attribResult = await runAttributionConfirmation({
+				cycleId,
+				environmentId: env.id,
+				// cycleRef is synthesized deterministically throughout
+				// this file (see line ~395) — Finding.cycleRef and
+				// UserAction.baselineCycleRef use the same pattern.
+				cycleRef: `audit_cycle:${cycleId}`,
+				organizationId: cycle.organizationId,
+				domain: env.domain,
+			});
+			if (attribResult.confirmed > 0) {
+				console.log(
+					`[audit-runner ${cycleId}] attribution: confirmed ${attribResult.confirmed}/${attribResult.scanned} user actions (${attribResult.errors} errors)`,
+				);
+			}
+		} catch (err) {
+			console.warn(
+				`[audit-runner ${cycleId}] attribution confirmation failed (non-fatal):`,
+				err,
+			);
+		}
+
 		// Fallback mark-complete for the non-transactional path. If we
 		// reached the transaction and it succeeded, cycleMarkedComplete is
 		// true and this is a no-op. If prep threw before the transaction

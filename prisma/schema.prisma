@@ -1377,6 +1377,16 @@ model UserAction {
   baselineImpactMax         Float?
   baselineCycleRef          String?
 
+  // Attribution confirmation — stamped by the post-cycle job when a
+  // later cycle confirms the linked finding is resolved (either
+  // changeClass='resolved' or the finding no longer appears with
+  // its inference_key). Separates "claimed recovered" from
+  // "confirmed recovered" in the money_recovered widget so the
+  // headline doesn't inflate when a done status doesn't match
+  // reality.
+  verifiedResolvedAt        DateTime?
+  verificationCycleRef      String?
+
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
 
@@ -1388,6 +1398,7 @@ model UserAction {
 
   @@index([organizationId, status, createdAt])
   @@index([environmentId, status])
+  @@index([environmentId, status, verifiedResolvedAt])
   @@index([findingId])
   @@index([createdByUserId])
 }

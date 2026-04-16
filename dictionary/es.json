@@ -2281,7 +2281,8 @@
 		"money_recovered": {
 			"eyebrow": "Total recuperado con Vestigio",
 			"seven_days": "7 días",
-			"thirty_days": "30 días"
+			"thirty_days": "30 días",
+			"awaiting_confirmation": "esperando confirmación del próximo ciclo"
 		},
 		"cycle_banner": {
 			"queued": "Auditoría en cola",

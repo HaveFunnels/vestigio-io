@@ -35,7 +35,12 @@ export type NotificationEvent =
 	| "password_reset"
 	| "support_reply"
 	| "billing"
-	| "system";
+	| "system"
+	// Fired by the post-cycle attribution job when a UserAction the
+	// operator marked as done is confirmed resolved by a subsequent
+	// cycle. Celebration moment — delivers the "since you fixed X,
+	// you recovered $Y/mo" payoff.
+	| "verified_resolved";
 
 interface BaseNotification {
 	event: NotificationEvent;
@@ -456,6 +461,13 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 		case "support_reply":
 		case "billing":
 			return true; // critical / transactional always sent
+		case "verified_resolved":
+			// Celebration / attribution event — treated as always-send
+			// at v1. The copy is positive ("we confirmed your fix
+			// recovered $X"), so this isn't a spam vector like regular
+			// alerts. A dedicated preference toggle can come later
+			// once we see real engagement.
+			return true;
 	}
 }
 

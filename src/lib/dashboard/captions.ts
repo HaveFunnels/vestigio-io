@@ -67,8 +67,18 @@ export function captionForMoneyRecovered(d: MoneyRecoveredData): string {
 	if (d.totalCents === 0) {
 		return "First cycle still computing — recoveries will appear here";
 	}
+	// Honest-accounting captions — prefer language that reflects
+	// the split between evidence-backed confirmed recoveries and
+	// claimed-but-not-yet-verified UserActions. Falls back to the
+	// rolling-delta copy when there's nothing to distinguish.
+	if (d.claimedCents > 0 && d.confirmedCents === 0) {
+		return `${formatUSD(d.claimedCents)} marked done — next cycle will confirm`;
+	}
+	if (d.claimedCents > 0 && d.confirmedCents > 0) {
+		return `${formatUSD(d.confirmedCents)} confirmed, ${formatUSD(d.claimedCents)} awaiting verification`;
+	}
 	if (d.last7dCents === 0 && d.last30dCents === 0) {
-		return `${formatUSD(d.totalCents)} cleared all-time — quiet stretch this month`;
+		return `${formatUSD(d.confirmedCents)} cleared all-time — quiet stretch this month`;
 	}
 	if (d.last7dCents > d.last30dCents * 0.5) {
 		return `Strong week — ${formatUSD(d.last7dCents)} reclaimed in the last 7 days`;

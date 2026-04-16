@@ -43,9 +43,16 @@ function formatSignedCents(cents: number, currency: string): string {
 
 function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 	const t = useTranslations("console.money_recovered");
-	const { totalCents, last7dCents, last30dCents, currency, caption } =
-		data.moneyRecovered;
+	const {
+		confirmedCents,
+		claimedCents,
+		last7dCents,
+		last30dCents,
+		currency,
+		caption,
+	} = data.moneyRecovered;
 	const sevenDayPositive = last7dCents > 0;
+	const hasClaimed = claimedCents > 0;
 
 	return (
 		<div className='relative flex h-full flex-col p-5'>
@@ -61,12 +68,28 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 				<span>{t("eyebrow")}</span>
 			</div>
 
-			{/* Hero number */}
+			{/* Hero number — CONFIRMED only. The headline is what we can
+			    defend with evidence; claimed lives below. Splitting these
+			    two prevents the number from inflating when the user
+			    optimistically marks done and the next cycle shows the
+			    finding is still present. */}
 			<div className='relative mt-2 flex items-end gap-3'>
 				<span className='font-mono text-5xl font-medium tabular-nums leading-none tracking-tight text-emerald-400'>
-					{formatCurrency(totalCents, currency)}
+					{formatCurrency(confirmedCents, currency)}
 				</span>
 			</div>
+
+			{/* Claimed — secondary line, only renders when there's
+			    something pending. Gray/amber to signal "not confirmed
+			    yet, awaiting next cycle". */}
+			{hasClaimed && (
+				<div className='relative mt-1.5 flex items-center gap-1.5 text-[11px] text-amber-500/80'>
+					<span className='font-mono tabular-nums'>
+						+{formatCurrency(claimedCents, currency)}
+					</span>
+					<span>{t("awaiting_confirmation")}</span>
+				</div>
+			)}
 
 			{/* Deltas — twin rows under the hero */}
 			<div className='relative mt-3 flex items-baseline gap-5'>

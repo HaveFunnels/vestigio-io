@@ -84,21 +84,26 @@ async function computeMoneyRecovered(
 		const now = new Date();
 		const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-		// Two attribution sources, summed into one headline:
+		// Three attribution buckets, honest accounting:
 		//
-		//   1. auto-resolved — a previously open finding showed
-		//      changeClass='resolved' in a cycle. Credit: Vestigio
-		//      detected the recovery.
-		//   2. user-verified — a UserAction the operator created
-		//      from the chat Verify flow was marked `status='done'`.
-		//      Credit: the operator actually did the work, backed
-		//      by the baseline impact frozen at action creation.
+		//   1. CONFIRMED (auto-resolved) — a previously open finding
+		//      showed `changeClass='resolved'` in a recent cycle.
+		//      Vestigio detected the recovery. Solid signal.
+		//   2. CONFIRMED (verified UserAction) — UserAction marked
+		//      `done` AND the post-cycle attribution job stamped
+		//      `verifiedResolvedAt`. The user's work was proven by
+		//      a subsequent cycle. Strongest signal.
+		//   3. CLAIMED (unverified UserAction) — UserAction marked
+		//      `done` but no cycle has confirmed yet. Shown as a
+		//      secondary "+$X awaiting confirmation" line so the
+		//      headline doesn't lie when the remediation didn't
+		//      actually take.
 		//
-		// We sum both because each represents a distinct signal and
-		// the user's pay-off mechanic is the total "money clawed back"
-		// regardless of path. Small overcount risk (if a single
-		// remediation is counted in both tables) is acceptable at v1
-		// — directional accuracy beats zero attribution.
+		// totalCents = confirmed + claimed (for the hero number).
+		// Small overcount risk when (1) and (2) cover the same
+		// finding is accepted — the UserAction path carries the
+		// frozen baseline while the auto-resolved path uses the
+		// current impact midpoint. Future pass can dedup on findingId.
 		const [resolved, doneActions] = await Promise.all([
 			prisma.finding.findMany({
 				where: {
@@ -121,6 +126,7 @@ async function computeMoneyRecovered(
 					baselineImpactMidpoint: true,
 					doneAt: true,
 					createdAt: true,
+					verifiedResolvedAt: true,
 				},
 			}),
 		]);
@@ -128,14 +134,16 @@ async function computeMoneyRecovered(
 		const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
 		const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
 
-		let totalCents = 0;
+		let confirmedCents = 0;
+		let claimedCents = 0;
 		let last7dCents = 0;
 		let last30dCents = 0;
 		let lastUpdatedAt: Date | null = null;
 
+		// Bucket 1: auto-resolved findings → confirmed.
 		for (const f of resolved) {
 			const cents = dollarsToCents(f.impactMidpoint);
-			totalCents += cents;
+			confirmedCents += cents;
 			const ts = f.createdAt.getTime();
 			if (ts >= sevenDaysAgo) last7dCents += cents;
 			if (ts >= thirtyDaysAgo) last30dCents += cents;
@@ -144,10 +152,15 @@ async function computeMoneyRecovered(
 			}
 		}
 
+		// Buckets 2 and 3: UserAction done. Split on verifiedResolvedAt.
 		for (const a of doneActions) {
 			if (a.baselineImpactMidpoint == null) continue;
 			const cents = dollarsToCents(a.baselineImpactMidpoint);
-			totalCents += cents;
+			if (a.verifiedResolvedAt) {
+				confirmedCents += cents;
+			} else {
+				claimedCents += cents;
+			}
 			const when = a.doneAt ?? a.createdAt;
 			const ts = when.getTime();
 			if (ts >= sevenDaysAgo) last7dCents += cents;
@@ -158,7 +171,9 @@ async function computeMoneyRecovered(
 		}
 
 		const result: MoneyRecoveredData = {
-			totalCents,
+			totalCents: confirmedCents + claimedCents,
+			confirmedCents,
+			claimedCents,
 			last7dCents,
 			last30dCents,
 			currency: DEFAULT_CURRENCY,
@@ -171,6 +186,8 @@ async function computeMoneyRecovered(
 		console.warn("[dashboard/aggregator] money_recovered failed:", err);
 		const fallback: MoneyRecoveredData = {
 			totalCents: 0,
+			confirmedCents: 0,
+			claimedCents: 0,
 			last7dCents: 0,
 			last30dCents: 0,
 			currency: DEFAULT_CURRENCY,
@@ -756,6 +773,8 @@ export function emptyDashboardData(): DashboardData {
 	}
 	const moneyRecovered: MoneyRecoveredData = {
 		totalCents: 0,
+		confirmedCents: 0,
+		claimedCents: 0,
 		last7dCents: 0,
 		last30dCents: 0,
 		currency: DEFAULT_CURRENCY,

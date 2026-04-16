@@ -16,8 +16,20 @@
 export type DeltaDirection = "up" | "down" | "flat";
 
 export interface MoneyRecoveredData {
-	/** Total cents recovered since the user joined Vestigio */
+	/** Total cents recovered since the user joined Vestigio. Sum of
+	 *  `confirmedCents + claimedCents`. The widget shows this as the
+	 *  hero number; the split below is the honest breakdown. */
 	totalCents: number;
+	/** Cents whose recovery is evidence-backed — either an auto-
+	 *  resolved finding (the cycle detected it went away) or a
+	 *  UserAction whose `verifiedResolvedAt` was stamped by the
+	 *  post-cycle attribution job. This is the "real" number. */
+	confirmedCents: number;
+	/** Cents the user marked as done via UserAction.status='done'
+	 *  but no cycle has yet confirmed the remediation took. Shown
+	 *  as a secondary line ("+$X awaiting confirmation") so the
+	 *  headline doesn't inflate with optimistic claims. */
+	claimedCents: number;
 	/** Cents recovered in the last 7 days — used for the headline delta */
 	last7dCents: number;
 	/** Cents recovered in the last 30 days — used for the secondary delta */

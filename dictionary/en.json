@@ -2319,7 +2319,8 @@
 		"money_recovered": {
 			"eyebrow": "Total recovered with Vestigio",
 			"seven_days": "7 days",
-			"thirty_days": "30 days"
+			"thirty_days": "30 days",
+			"awaiting_confirmation": "awaiting cycle confirmation"
 		},
 		"cycle_banner": {
 			"queued": "Audit queued",

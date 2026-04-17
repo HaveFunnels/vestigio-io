@@ -19,6 +19,10 @@ import { parseSignedRequest, extractMetaUserId } from "@/libs/meta-signed-reques
 
 const META_APP_SECRET = process.env.META_ADS_APP_SECRET || process.env.META_APP_SECRET || "";
 
+export async function GET() {
+	return NextResponse.json({ status: "active", service: "vestigio-deauthorize" });
+}
+
 export async function POST(request: Request) {
 	if (!META_APP_SECRET) {
 		return NextResponse.json(

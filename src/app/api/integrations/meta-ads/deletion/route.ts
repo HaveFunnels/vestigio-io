@@ -37,6 +37,10 @@ function makeConfirmationCode(userId: string): string {
 		.slice(0, 24);
 }
 
+export async function GET() {
+	return NextResponse.json({ status: "active", service: "vestigio-data-deletion" });
+}
+
 export async function POST(request: Request) {
 	if (!META_APP_SECRET) {
 		return NextResponse.json(

@@ -1230,11 +1230,17 @@ function JourneyCanvasView({
 			range: filters.range,
 		}).toString();
 		fetch(`/api/maps/user-journey?${qs}`)
-			.then((r) => r.json())
+			.then((r) => {
+				if (!r.ok) throw new Error(`Journey API ${r.status}`);
+				return r.json();
+			})
 			.then((data) => {
 				setJourneyMap(data?.map ? (data.map as MapDefinition) : null);
 			})
-			.catch(() => setJourneyMap(null))
+			.catch((err) => {
+				console.error("[JourneyCanvasView]", err);
+				setJourneyMap(null);
+			})
 			.finally(() => setLoaded(true));
 	}, [filters.start, filters.end, filters.range]);
 

@@ -43,11 +43,12 @@ export function isDemoMode(): boolean { return _demoMode; }
 export async function ensureContext(orgCtx: {
   orgId: string;
   orgName: string;
+  orgType?: string;
   envId: string;
   domain: string;
   engineTranslations?: import('../../packages/projections/types').EngineTranslations;
 }): Promise<void> {
-  if (orgCtx.orgId === 'demo') {
+  if (orgCtx.orgType === 'demo') {
     _demoMode = true;
     return;
   }

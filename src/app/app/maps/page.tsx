@@ -36,11 +36,14 @@ export default function MapsGalleryPage() {
 	const [customMaps, setCustomMaps] = useState<MapDefinition[]>([]);
 	useEffect(() => {
 		fetch("/api/maps/user-journey")
-			.then((r) => r.json())
+			.then((r) => {
+				if (!r.ok) throw new Error(`Journey API ${r.status}`);
+				return r.json();
+			})
 			.then((data) => {
 				if (data?.map) setJourneyMap(data.map as MapDefinition);
 			})
-			.catch(() => {});
+			.catch((err) => console.error("[MapsGallery] journey fetch:", err));
 		fetch("/api/maps/custom")
 			.then((r) => r.json())
 			.then((data) => {

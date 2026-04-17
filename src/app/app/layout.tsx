@@ -33,6 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 		await ensureContext({
 			orgId: orgCtx.orgId,
 			orgName: orgCtx.orgName,
+			orgType: orgCtx.orgType,
 			envId: orgCtx.envId,
 			domain: orgCtx.domain,
 			engineTranslations,

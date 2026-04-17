@@ -20,6 +20,7 @@ export interface OrgEnvironment {
 export interface OrgContext {
 	orgId: string;
 	orgName: string;
+	orgType: string;
 	envId: string;
 	domain: string;
 	plan: string;
@@ -31,6 +32,7 @@ export interface OrgContext {
 const DEMO_CONTEXT: OrgContext = {
 	orgId: "demo",
 	orgName: "Demo Org",
+	orgType: "demo",
 	envId: "env_1",
 	domain: "shop.com",
 	plan: "vestigio",
@@ -86,6 +88,7 @@ export async function resolveOrgContext(): Promise<OrgContext> {
 		return {
 			orgId: org.id,
 			orgName: org.name,
+			orgType: org.orgType || "customer",
 			envId: defaultEnv?.id || "default",
 			domain: defaultEnv?.domain || "unknown",
 			plan: org.plan || "vestigio",

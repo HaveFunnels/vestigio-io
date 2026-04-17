@@ -8,6 +8,7 @@
 	"scripts": {
 		"dev": "next dev --turbopack",
 		"build": "prisma generate && next build",
+		"db:setup": "prisma db push && tsx scripts/setup-timescaledb.ts",
 		"start": "next start",
 		"start:worker": "tsx apps/audit-runner/worker-loop.ts",
 		"stripe:listen": "stripe listen --forward-to http://localhost:3000/api/stripe/webhook",

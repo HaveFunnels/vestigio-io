@@ -2807,6 +2807,13 @@
 				"title": "Mapa no encontrado",
 				"body": "Este mapa aún no está disponible — el análisis podría estar en curso o la URL estar obsoleta."
 			},
+			"insights": {
+				"finding_count": "{count, plural, one {# hallazgo afectando} other {# hallazgos afectando}} este paso",
+				"root_cause": "Causa raíz",
+				"recommended_action": "Acción recomendada",
+				"other_findings": "Otros hallazgos",
+				"discuss_in_chat": "Discutir en el chat"
+			},
 			"journey": {
 				"starting": "Inicio",
 				"ending": "Fin",

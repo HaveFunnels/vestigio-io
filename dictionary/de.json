@@ -2085,6 +2085,13 @@
 				"title": "Karte nicht gefunden",
 				"body": "Diese Karte ist noch nicht verfügbar — die Analyse läuft eventuell noch, oder die URL ist veraltet."
 			},
+			"insights": {
+				"finding_count": "{count, plural, one {# Befund betrifft} other {# Befunde betreffen}} diesen Schritt",
+				"root_cause": "Ursache",
+				"recommended_action": "Empfohlene Maßnahme",
+				"other_findings": "Weitere Befunde",
+				"discuss_in_chat": "Im Chat besprechen"
+			},
 			"journey": {
 				"starting": "Start",
 				"ending": "Ziel",

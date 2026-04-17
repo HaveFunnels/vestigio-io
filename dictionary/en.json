@@ -2849,6 +2849,13 @@
 				"title": "Map not found",
 				"body": "This map isn't available yet — the analysis may still be running, or the URL may be stale."
 			},
+			"insights": {
+				"finding_count": "{count, plural, one {# finding} other {# findings}} affecting this step",
+				"root_cause": "Root cause",
+				"recommended_action": "Recommended action",
+				"other_findings": "Other findings",
+				"discuss_in_chat": "Discuss these findings in chat"
+			},
 			"journey": {
 				"starting": "Starting",
 				"ending": "Ending",

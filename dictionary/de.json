@@ -1679,6 +1679,36 @@
 				"improvements_plural": "{count} Verbesserungen",
 				"stable": "stabil",
 				"mixed": "gemischte Änderungen"
+			},
+			"detail": {
+				"loading": "Loading workspace...",
+				"not_found": "Workspace not found",
+				"back_to_workspaces": "Back to Workspaces",
+				"change_summary": "What Changed",
+				"no_changes": "No significant changes since last cycle.",
+				"findings": "Findings",
+				"preflight_checklist": "Readiness Checklist",
+				"no_findings": "No findings in this workspace.",
+				"coherence": "Coherence",
+				"coherence_score": "Coherence Score",
+				"suppressed_by_pack": "This workspace is suppressed by a higher-priority pack.",
+				"quick_stats": "Quick Stats",
+				"negative_findings": "Issues",
+				"positive_findings": "Healthy",
+				"top_severity": "Top Severity",
+				"trend": {
+					"regressions": "{count} worsened",
+					"improvements": "{count} improved",
+					"resolved": "{count} resolved",
+					"stable": "Stable",
+					"mixed": "Mixed",
+					"no_significant_changes": "No significant changes"
+				},
+				"readiness": {
+					"ready": "Ready to scale",
+					"ready_with_risks": "Ready with risks",
+					"blocker": "Blockers found"
+				}
 			}
 		},
 		"chat": {
@@ -2055,6 +2085,9 @@
 				"cart": "Warenkorb",
 				"checkout": "Checkout",
 				"thank_you": "Bestätigung",
+				"support": "Support",
+				"policy": "Richtlinie",
+				"blog": "Blog",
 				"page": "Seite"
 			},
 			"edge_types": {

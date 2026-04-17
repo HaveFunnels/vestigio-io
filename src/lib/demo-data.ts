@@ -336,29 +336,40 @@ export function buildDemoWorkspaces(): WorkspaceProjection[] {
 
 export const DEMO_WORKSPACES: WorkspaceProjection[] = buildDemoWorkspaces();
 
+function buildDemoChange(f: FindingProjection, changeClass: string): any {
+	return {
+		decision_key: `${f.pack}_decision`,
+		title: f.title,
+		change_class: changeClass,
+		change_severity: f.severity,
+		risk_score_delta: changeClass === "regression" ? 15 : changeClass === "improvement" ? -10 : 5,
+		previous_severity: changeClass === "new_issue" ? null : f.severity,
+		current_severity: f.severity,
+		previous_impact: null,
+		current_impact: f.severity,
+		contributing_factors: [f.root_cause || ""],
+	};
+}
+
+const demoRegressions = DEMO_FINDINGS.filter((f) => f.change_class === "regression").map((f) => buildDemoChange(f, "regression"));
+const demoImprovements = DEMO_FINDINGS.filter((f) => f.change_class === "improvement").map((f) => buildDemoChange(f, "improvement"));
+const demoNewIssues = DEMO_FINDINGS.filter((f) => f.change_class === "new_issue").map((f) => buildDemoChange(f, "new_issue"));
+
 export const DEMO_CHANGE_REPORT: ChangeReportProjection = {
-	cycle_ref: "demo_cycle:latest",
+	headline: `${demoRegressions.length} regressions, ${demoImprovements.length} improvements, ${demoNewIssues.length} new issues`,
+	overall_trend: demoRegressions.length > demoImprovements.length ? "degrading" : "mixed",
+	regression_count: demoRegressions.length,
+	improvement_count: demoImprovements.length,
+	new_issue_count: demoNewIssues.length,
+	resolved_count: 0,
+	stable_risk_count: DEMO_FINDINGS.filter((f) => f.change_class === "stable_risk").length,
+	regressions: demoRegressions,
+	improvements: demoImprovements,
+	new_issues: demoNewIssues,
+	resolved: [],
 	previous_cycle_ref: "demo_cycle:previous",
-	total_findings: DEMO_FINDINGS.length,
-	regressions: DEMO_FINDINGS.filter((f) => f.change_class === "regression").map((f) => ({
-		finding_key: f.inference_key,
-		title: f.title,
-		severity: f.severity,
-		change_detail: "New regression since last cycle",
-	})),
-	improvements: DEMO_FINDINGS.filter((f) => f.change_class === "improvement").map((f) => ({
-		finding_key: f.inference_key,
-		title: f.title,
-		severity: f.severity,
-		change_detail: "Improved since last cycle",
-	})),
-	new_findings: DEMO_FINDINGS.filter((f) => f.change_class === "new_issue").map((f) => ({
-		finding_key: f.inference_key,
-		title: f.title,
-		severity: f.severity,
-	})),
-	resolved_findings: [],
-} as unknown as ChangeReportProjection;
+	current_cycle_ref: "demo_cycle:latest",
+};
 
 export function buildDemoEngineMaps(): MapDefinition[] {
 	const { projections, result } = buildDemoProjectionResult();

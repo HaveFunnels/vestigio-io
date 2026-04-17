@@ -1800,6 +1800,36 @@
 				"unconfigured": "Pixel no configurado",
 				"collecting": "Recopilando datos ({current} / {required} sesiones)",
 				"active": "Activo"
+			},
+			"detail": {
+				"loading": "Loading workspace...",
+				"not_found": "Workspace not found",
+				"back_to_workspaces": "Back to Workspaces",
+				"change_summary": "What Changed",
+				"no_changes": "No significant changes since last cycle.",
+				"findings": "Findings",
+				"preflight_checklist": "Readiness Checklist",
+				"no_findings": "No findings in this workspace.",
+				"coherence": "Coherence",
+				"coherence_score": "Coherence Score",
+				"suppressed_by_pack": "This workspace is suppressed by a higher-priority pack.",
+				"quick_stats": "Quick Stats",
+				"negative_findings": "Issues",
+				"positive_findings": "Healthy",
+				"top_severity": "Top Severity",
+				"trend": {
+					"regressions": "{count} worsened",
+					"improvements": "{count} improved",
+					"resolved": "{count} resolved",
+					"stable": "Stable",
+					"mixed": "Mixed",
+					"no_significant_changes": "No significant changes"
+				},
+				"readiness": {
+					"ready": "Ready to scale",
+					"ready_with_risks": "Ready with risks",
+					"blocker": "Blockers found"
+				}
 			}
 		},
 		"dashboard": {
@@ -2781,6 +2811,9 @@
 				"cart": "Carrito",
 				"checkout": "Checkout",
 				"thank_you": "Confirmación",
+				"support": "Soporte",
+				"policy": "Política",
+				"blog": "Blog",
 				"page": "Página"
 			},
 			"edge_types": {

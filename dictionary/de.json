@@ -2090,7 +2090,9 @@
 				"root_cause": "Ursache",
 				"recommended_action": "Empfohlene Maßnahme",
 				"other_findings": "Weitere Befunde",
-				"discuss_in_chat": "Im Chat besprechen"
+				"discuss_in_chat": "Im Chat besprechen",
+				"view_in_root_cause_map": "In der Ursachenkarte anzeigen",
+				"view_in_journey": "In der User Journey anzeigen"
 			},
 			"journey": {
 				"starting": "Start",

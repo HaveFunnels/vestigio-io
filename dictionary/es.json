@@ -2812,7 +2812,9 @@
 				"root_cause": "Causa raíz",
 				"recommended_action": "Acción recomendada",
 				"other_findings": "Otros hallazgos",
-				"discuss_in_chat": "Discutir en el chat"
+				"discuss_in_chat": "Discutir en el chat",
+				"view_in_root_cause_map": "Ver en el mapa de Causas Raíz",
+				"view_in_journey": "Ver en la User Journey"
 			},
 			"journey": {
 				"starting": "Inicio",

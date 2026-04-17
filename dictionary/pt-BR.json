@@ -2909,7 +2909,9 @@
 				"root_cause": "Causa raiz",
 				"recommended_action": "Ação recomendada",
 				"other_findings": "Outras descobertas",
-				"discuss_in_chat": "Discutir no chat"
+				"discuss_in_chat": "Discutir no chat",
+				"view_in_root_cause_map": "Ver no mapa de Causas Raiz",
+				"view_in_journey": "Ver no User Journey"
 			},
 			"journey": {
 				"starting": "Partindo de",

@@ -2854,7 +2854,9 @@
 				"root_cause": "Root cause",
 				"recommended_action": "Recommended action",
 				"other_findings": "Other findings",
-				"discuss_in_chat": "Discuss these findings in chat"
+				"discuss_in_chat": "Discuss these findings in chat",
+				"view_in_root_cause_map": "View in Root Cause map",
+				"view_in_journey": "View in User Journey"
 			},
 			"journey": {
 				"starting": "Starting",

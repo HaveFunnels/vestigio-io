@@ -220,10 +220,10 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   discount_abuse_pattern: 'channel_integrity',
   ad_spend_platform_concentration_risk: 'channel_integrity',
   ads_without_conversion_visibility: 'revenue_integrity',
-  ad_creative_dead_destination: 'money_moment_exposure',
-  ad_creative_landing_trust_gap: 'trust_revenue_gap',
+  ad_creative_dead_destination: 'revenue_integrity',
+  ad_creative_landing_trust_gap: 'revenue_integrity',
   ad_creative_form_friction_waste: 'revenue_integrity',
-  ad_creative_mobile_checkout_degraded: 'mobile_revenue_exposure',
+  ad_creative_mobile_checkout_degraded: 'revenue_integrity',
   low_repeat_purchase_rate: 'revenue_integrity',
   dead_weight_products: 'revenue_integrity',
 };

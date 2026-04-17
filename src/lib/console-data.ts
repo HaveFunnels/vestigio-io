@@ -35,6 +35,11 @@ export type DataState<T> =
  * Call from server components / API routes BEFORE any synchronous
  * MCP tool calls. No-ops if context is already loaded.
  */
+// Demo mode flag — set by ensureContext when orgId === "demo" so
+// downstream loaders return rich demo data instead of empty state.
+let _demoMode = false;
+export function isDemoMode(): boolean { return _demoMode; }
+
 export async function ensureContext(orgCtx: {
   orgId: string;
   orgName: string;
@@ -42,6 +47,11 @@ export async function ensureContext(orgCtx: {
   domain: string;
   engineTranslations?: import('../../packages/projections/types').EngineTranslations;
 }): Promise<void> {
+  if (orgCtx.orgId === 'demo') {
+    _demoMode = true;
+    return;
+  }
+  _demoMode = false;
   try {
     // initMcpServer uses `await import()` to handle the async McpServer module.
     // A synchronous require() fails silently because webpack wraps McpServer
@@ -95,6 +105,10 @@ export async function ensureContext(orgCtx: {
 }
 
 export function loadFindings(): DataState<FindingProjection[]> {
+  if (_demoMode) {
+    const { DEMO_FINDINGS } = require('./demo-data');
+    return { status: 'ready', data: DEMO_FINDINGS };
+  }
   try {
     const server = getMcpServer();
     if (!server.getContext()) {
@@ -115,6 +129,10 @@ export function loadFindings(): DataState<FindingProjection[]> {
 }
 
 export function loadActions(): DataState<ActionProjection[]> {
+  if (_demoMode) {
+    const { DEMO_ACTIONS } = require('./demo-data');
+    return { status: 'ready', data: DEMO_ACTIONS };
+  }
   try {
     const server = getMcpServer();
     if (!server.getContext()) {
@@ -195,6 +213,12 @@ export function loadMap(mapType: string): DataState<MapDefinition> {
 }
 
 export function loadAllMaps(): DataState<MapDefinition[]> {
+  if (_demoMode) {
+    const { buildDemoEngineMaps } = require('./demo-data');
+    const maps = buildDemoEngineMaps();
+    return maps.length > 0 ? { status: 'ready', data: maps } : { status: 'empty' };
+  }
+
   const types = ['revenue_leakage', 'chargeback_risk', 'root_cause'];
   const maps: MapDefinition[] = [];
 

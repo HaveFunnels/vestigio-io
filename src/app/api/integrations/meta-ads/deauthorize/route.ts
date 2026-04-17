@@ -17,7 +17,7 @@ import { parseSignedRequest, extractMetaUserId } from "@/libs/meta-signed-reques
 // webhook. Meta expects a 200 response — no body required.
 // ──────────────────────────────────────────────
 
-const META_APP_SECRET = process.env.META_APP_SECRET || "";
+const META_APP_SECRET = process.env.META_ADS_APP_SECRET || process.env.META_APP_SECRET || "";
 
 export async function POST(request: Request) {
 	if (!META_APP_SECRET) {

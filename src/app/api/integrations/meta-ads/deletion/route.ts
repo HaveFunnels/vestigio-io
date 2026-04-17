@@ -23,7 +23,7 @@ import { parseSignedRequest, extractMetaUserId } from "@/libs/meta-signed-reques
 // status URL works even after we've deleted all per-user rows.
 // ──────────────────────────────────────────────
 
-const META_APP_SECRET = process.env.META_APP_SECRET || "";
+const META_APP_SECRET = process.env.META_ADS_APP_SECRET || process.env.META_APP_SECRET || "";
 
 function getBaseUrl(): string {
 	return process.env.SITE_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";

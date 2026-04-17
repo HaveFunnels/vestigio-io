@@ -18,7 +18,7 @@ import { encodeOAuthState } from "@/libs/oauth-state";
 // to). Both are read-only.
 // ──────────────────────────────────────────────
 
-const META_APP_ID = process.env.META_APP_ID || process.env.NEXT_PUBLIC_META_APP_ID || "";
+const META_APP_ID = process.env.META_ADS_APP_ID || process.env.META_APP_ID || "";
 const META_OAUTH_DIALOG = "https://www.facebook.com/v21.0/dialog/oauth";
 
 function getBaseUrl(): string {

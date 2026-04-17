@@ -15,8 +15,8 @@ import { decodeOAuthState } from "@/libs/oauth-state";
 // webhooks back to the env.
 // ──────────────────────────────────────────────
 
-const META_APP_ID = process.env.META_APP_ID || "";
-const META_APP_SECRET = process.env.META_APP_SECRET || "";
+const META_APP_ID = process.env.META_ADS_APP_ID || process.env.META_APP_ID || "";
+const META_APP_SECRET = process.env.META_ADS_APP_SECRET || process.env.META_APP_SECRET || "";
 const GRAPH_BASE = "https://graph.facebook.com/v21.0";
 
 function getBaseUrl(): string {

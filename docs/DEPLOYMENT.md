@@ -106,16 +106,19 @@ needs a `paddlePriceId` matching a Paddle price ID.
 
 ## Meta Ads Integration
 
-Reuses `META_APP_ID` + `META_APP_SECRET` from the WhatsApp Cloud API setup
-above — same Meta App can serve both products. No extra env vars needed.
+Uses a **separate Meta App** from WhatsApp to keep OAuth scopes clean — the
+WhatsApp app uses server-side System User tokens (never shown to the client),
+while the Ads app uses client-facing OAuth (the user sees the consent screen).
+Mixing them in one app would expose WhatsApp permissions to the user's OAuth flow.
 
 | Env var | Description | Where to get it |
 |---------|-------------|-----------------|
-| `META_APP_ID` | Facebook App ID (shared with WhatsApp) | Meta for Developers → App Dashboard |
-| `META_APP_SECRET` | Facebook App Secret (shared with WhatsApp) | Same → Settings → Basic |
+| `META_ADS_APP_ID` | Facebook App ID for the Ads integration app | Meta for Developers → App Dashboard |
+| `META_ADS_APP_SECRET` | Facebook App Secret for the Ads integration app | Same → Settings → Basic |
 
-**Meta App Review required.** Ads needs two permissions our WhatsApp scope
-doesn't cover, so you must submit a separate review:
+Falls back to `META_APP_ID` / `META_APP_SECRET` if the dedicated vars aren't set (backwards compat).
+
+**Meta App Review required.** Ads needs two permissions:
 
 - `ads_read` — read campaign spend + creative (Advanced Access)
 - `business_management` — list ad accounts user has access to (Advanced Access)
@@ -224,13 +227,17 @@ BREVO_SENDER_EMAIL=notifications@vestigio.io
 BREVO_SENDER_NAME=Vestigio
 BREVO_SMS_SENDER=Vestigio
 
-# WhatsApp (Meta Cloud API) — shared with Meta Ads
+# WhatsApp (Meta Cloud API — internal, server-to-server)
 META_APP_ID=...
 META_APP_SECRET=...
 META_SYSTEM_USER_TOKEN=...
 META_WABA_ID=...
 META_PHONE_NUMBER_ID=...
 META_WEBHOOK_VERIFY_TOKEN=...
+
+# Meta Ads (separate app — client-facing OAuth)
+META_ADS_APP_ID=...
+META_ADS_APP_SECRET=...
 
 # Nuvemshop
 NUVEMSHOP_APP_ID=29656

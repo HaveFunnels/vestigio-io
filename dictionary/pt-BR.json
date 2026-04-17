@@ -2820,7 +2820,17 @@
 				"rootCause": "Causa Raiz",
 				"finding": "Descoberta",
 				"action": "Ação",
-				"category": "Categoria"
+				"category": "Categoria",
+				"root_cause": "Causa Raiz",
+				"checkout": "Checkout",
+				"support": "Suporte",
+				"policy": "Política",
+				"trust": "Confiança",
+				"measurement": "Medição",
+				"journey_commercial": "Página Comercial",
+				"journey_support": "Página de Suporte",
+				"journey_other_events": "Outros Eventos",
+				"journey_dropoff": "Abandono"
 			},
 			"node_types": {
 				"root_cause": "Causa Raiz",

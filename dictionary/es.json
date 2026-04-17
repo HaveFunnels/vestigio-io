@@ -2759,7 +2759,17 @@
 				"rootCause": "Causa Raíz",
 				"finding": "Hallazgo",
 				"action": "Acción",
-				"category": "Categoría"
+				"category": "Categoría",
+				"root_cause": "Causa Raíz",
+				"checkout": "Checkout",
+				"support": "Soporte",
+				"policy": "Política",
+				"trust": "Confianza",
+				"measurement": "Medición",
+				"journey_commercial": "Página Comercial",
+				"journey_support": "Página de Soporte",
+				"journey_other_events": "Otros Eventos",
+				"journey_dropoff": "Abandono"
 			},
 			"node_types": {
 				"root_cause": "Causa Raíz",

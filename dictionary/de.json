@@ -2033,7 +2033,17 @@
 				"rootCause": "Ursache",
 				"finding": "Befund",
 				"action": "Aktion",
-				"category": "Kategorie"
+				"category": "Kategorie",
+				"root_cause": "Ursache",
+				"checkout": "Kasse",
+				"support": "Support",
+				"policy": "Richtlinie",
+				"trust": "Vertrauen",
+				"measurement": "Messung",
+				"journey_commercial": "Kommerzielle Seite",
+				"journey_support": "Support-Seite",
+				"journey_other_events": "Andere Events",
+				"journey_dropoff": "Absprung"
 			},
 			"node_types": {
 				"root_cause": "Ursache",

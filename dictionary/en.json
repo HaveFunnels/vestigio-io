@@ -2801,7 +2801,17 @@
 				"rootCause": "Root Cause",
 				"finding": "Finding",
 				"action": "Action",
-				"category": "Category"
+				"category": "Category",
+				"root_cause": "Root Cause",
+				"checkout": "Checkout",
+				"support": "Support",
+				"policy": "Policy",
+				"trust": "Trust",
+				"measurement": "Measurement",
+				"journey_commercial": "Commercial Page",
+				"journey_support": "Support Page",
+				"journey_other_events": "Other Events",
+				"journey_dropoff": "Drop-off"
 			},
 			"node_types": {
 				"root_cause": "Root Cause",

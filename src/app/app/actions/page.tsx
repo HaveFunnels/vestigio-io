@@ -663,10 +663,12 @@ function ActionsContent({
 				<SummaryCards cards={cards} />
 			</div>
 
-			{/* Change Summary Banner */}
-			<div className='mb-4'>
-				<ChangeSummaryBanner report={changeReport} />
-			</div>
+			{/* Change Summary Banner — only shown when there are actual changes */}
+			{changeReport && (changeReport.regression_count > 0 || changeReport.improvement_count > 0 || changeReport.new_issue_count > 0 || changeReport.resolved_count > 0) && (
+				<div className='mb-4'>
+					<ChangeSummaryBanner report={changeReport} />
+				</div>
+			)}
 
 			{/* Tab Bar */}
 			<div className='mb-4 flex items-center gap-1 overflow-x-auto rounded-lg border border-edge bg-surface-card p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
@@ -792,21 +794,10 @@ const trendConfig: Record<
 function ChangeSummaryBanner({
 	report,
 }: {
-	report: ChangeReportProjection | null;
+	report: ChangeReportProjection;
 }) {
 	const t = useTranslations("console.actions");
 	const [expanded, setExpanded] = useState(false);
-
-	// No change report — first analysis
-	if (!report) {
-		return (
-			<div className='rounded-lg border border-edge bg-surface-card px-4 py-3'>
-				<span className='text-sm text-content-muted'>
-					{t("changeBanner.firstAnalysis")}
-				</span>
-			</div>
-		);
-	}
 
 	const trend = trendConfig[report.overall_trend] || trendConfig.stable;
 	const allChanges = [

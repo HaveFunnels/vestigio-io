@@ -48,7 +48,11 @@ export async function ensureContext(orgCtx: {
   domain: string;
   engineTranslations?: import('../../packages/projections/types').EngineTranslations;
 }): Promise<void> {
-  if (orgCtx.orgType === 'demo') {
+  const isDemo =
+    orgCtx.orgType === 'demo' ||
+    orgCtx.orgId === 'demo' ||
+    orgCtx.orgId === 'demo_org';
+  if (isDemo) {
     _demoMode = true;
     return;
   }

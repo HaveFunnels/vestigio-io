@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Suspense, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -1100,7 +1100,11 @@ export default function MapCanvasPage() {
 		mcpData.maps.status !== "not_ready" ? mcpData.maps : loadAllMaps();
 
 	if (mapId === JOURNEY_MAP_ID) {
-		return <JourneyCanvasView t={t} tc={tc} />;
+		return (
+			<Suspense fallback={<MapLoadingShell label={t("loading")} />}>
+				<JourneyCanvasView t={t} tc={tc} />
+			</Suspense>
+		);
 	}
 
 	// Custom maps (IDs prefixed with "custom_")

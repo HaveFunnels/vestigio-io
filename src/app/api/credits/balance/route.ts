@@ -20,7 +20,11 @@ export const GET = withErrorTracking(
 		}
 
 		const orgCtx = await resolveOrgContext();
-		if (!orgCtx.orgId || orgCtx.orgType === "demo") {
+		const isDemo =
+			orgCtx.orgType === "demo" ||
+			orgCtx.orgId === "demo" ||
+			orgCtx.orgId === "demo_org";
+		if (!orgCtx.orgId || isDemo) {
 			return NextResponse.json(
 				{
 					orgId: null,

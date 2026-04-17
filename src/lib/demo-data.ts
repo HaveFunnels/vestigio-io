@@ -3,6 +3,8 @@ import type { MapDefinition } from "../../packages/maps";
 import type {
 	FindingProjection,
 	ActionProjection,
+	WorkspaceProjection,
+	ChangeReportProjection,
 	ProjectionResult,
 } from "../../packages/projections";
 import type { MultiPackResult } from "../../packages/workspace";
@@ -263,6 +265,100 @@ function buildDemoProjectionResult(): {
 		} as unknown as MultiPackResult,
 	};
 }
+
+// ── Demo Workspaces ────────────────────────────
+
+function buildDemoWorkspace(
+	id: string, name: string, type: string, packKey: string,
+	impact: string, findings: FindingProjection[],
+	changeSummary?: WorkspaceProjection["change_summary"],
+): WorkspaceProjection {
+	const totalMin = findings.reduce((s, f) => s + f.impact.monthly_range.min, 0);
+	const totalMax = findings.reduce((s, f) => s + f.impact.monthly_range.max, 0);
+	const totalMid = findings.reduce((s, f) => s + (f.impact as any).midpoint, 0);
+	return {
+		id,
+		name,
+		type: type as any,
+		pack_key: packKey,
+		decision_key: `${packKey}_decision`,
+		decision_impact: impact,
+		category: "core",
+		pixel_status: null,
+		pixel_progress: null,
+		summary: {
+			total_loss_range: { min: totalMin, max: totalMax },
+			total_loss_mid: totalMid,
+			top_issues: findings.slice(0, 3).map((f) => f.title),
+			confidence: Math.round(findings.reduce((s, f) => s + f.confidence, 0) / (findings.length || 1)),
+			issue_count: findings.filter((f) => f.polarity === "negative").length,
+			currency: "USD",
+		},
+		findings,
+		coherence: null,
+		confidence_narrative: null,
+		change_summary: changeSummary ?? null,
+	};
+}
+
+export function buildDemoWorkspaces(): WorkspaceProjection[] {
+	const revenue = DEMO_FINDINGS.filter((f) =>
+		f.pack === "revenue_integrity",
+	);
+	const chargeback = DEMO_FINDINGS.filter((f) =>
+		f.pack === "chargeback_resilience",
+	);
+	const scale = DEMO_FINDINGS.filter((f) =>
+		f.pack === "scale_readiness",
+	);
+
+	return [
+		buildDemoWorkspace("preflight", "Scale Readiness", "preflight", "scale_readiness_pack", "high", scale, {
+			trend: "mixed",
+			regression_count: 1,
+			improvement_count: 1,
+			resolved_count: 0,
+		}),
+		buildDemoWorkspace("revenue", "Revenue Analysis", "revenue", "revenue_integrity_pack", "critical", revenue, {
+			trend: "degrading",
+			regression_count: 2,
+			improvement_count: 0,
+			resolved_count: 0,
+		}),
+		buildDemoWorkspace("chargeback", "Chargeback Analysis", "chargeback", "chargeback_resilience_pack", "high", chargeback, {
+			trend: "stable",
+			regression_count: 0,
+			improvement_count: 0,
+			resolved_count: 0,
+		}),
+	];
+}
+
+export const DEMO_WORKSPACES: WorkspaceProjection[] = buildDemoWorkspaces();
+
+export const DEMO_CHANGE_REPORT: ChangeReportProjection = {
+	cycle_ref: "demo_cycle:latest",
+	previous_cycle_ref: "demo_cycle:previous",
+	total_findings: DEMO_FINDINGS.length,
+	regressions: DEMO_FINDINGS.filter((f) => f.change_class === "regression").map((f) => ({
+		finding_key: f.inference_key,
+		title: f.title,
+		severity: f.severity,
+		change_detail: "New regression since last cycle",
+	})),
+	improvements: DEMO_FINDINGS.filter((f) => f.change_class === "improvement").map((f) => ({
+		finding_key: f.inference_key,
+		title: f.title,
+		severity: f.severity,
+		change_detail: "Improved since last cycle",
+	})),
+	new_findings: DEMO_FINDINGS.filter((f) => f.change_class === "new_issue").map((f) => ({
+		finding_key: f.inference_key,
+		title: f.title,
+		severity: f.severity,
+	})),
+	resolved_findings: [],
+} as unknown as ChangeReportProjection;
 
 export function buildDemoEngineMaps(): MapDefinition[] {
 	const { projections, result } = buildDemoProjectionResult();

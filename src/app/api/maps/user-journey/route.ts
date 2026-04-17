@@ -83,7 +83,11 @@ export async function GET(request: Request) {
     // a small synthetic journey so evaluators on the demo account see
     // the flagship map populated instead of an empty state. Metadata
     // flags it as `demo` so the UI can badge it if we want to later.
-    if (orgCtx.orgType === "demo") {
+    const isDemo =
+      orgCtx.orgType === "demo" ||
+      orgCtx.orgId === "demo" ||
+      orgCtx.orgId === "demo_org";
+    if (isDemo) {
       return NextResponse.json({ map: buildDemoJourneyMap(filters) });
     }
 

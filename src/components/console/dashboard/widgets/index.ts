@@ -26,3 +26,5 @@ import "./OpenCriticalKpi";
 import "./VerificationRateKpi";
 import "./StreakKpi";
 import "./TopPackKpi";
+// Paid acquisition — ad spend from Meta/Google integration
+import "./AdSpendKpi";

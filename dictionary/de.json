@@ -2704,6 +2704,10 @@
 				"top_pack": {
 					"name": "Top-Risiko-Pack",
 					"description": "Welches Pack derzeit das größte monatliche Risiko trägt."
+				},
+				"ad_spend": {
+					"name": "Werbeausgaben",
+					"description": "Monatliche Werbeausgaben nach verbundener Plattform (Meta Ads, Google Ads)."
 				}
 			},
 			"mock_data": {

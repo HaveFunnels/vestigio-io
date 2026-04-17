@@ -26,6 +26,7 @@ import type { PrismaClient } from "@prisma/client";
 import type {
 	ActivityHeatmapData,
 	ActivityHeatmapDay,
+	AdSpendData,
 	ChangeReportData,
 	ChangeReportEntry,
 	DashboardData,
@@ -843,24 +844,96 @@ export function emptyDashboardData(): DashboardData {
 		exposure,
 		changeReport,
 		activityHeatmap,
+		adSpend: { totalMonthly: 0, currency: "USD", byPlatform: [], hasData: false, caption: "" },
 	};
 }
 
 // ──────────────────────────────────────────────
 // Top-level orchestrator
 // ──────────────────────────────────────────────
+// ── Ad Spend KPI ───────────────────────────────
+// Reads IntegrationConnection status for meta_ads + google_ads.
+// CommerceContext (which carries ad_spend_30d) is ephemeral — computed
+// in-memory during the audit cycle and not persisted to DB. So the
+// widget shows connection status + last sync timestamp per platform.
+// Actual spend amounts surface in the Revenue workspace via compound
+// findings (ad_creative_dead_destination, etc.) where numeric_value
+// carries the spend.
+
+const PLATFORM_LABELS: Record<string, string> = {
+	meta_ads: "Meta Ads",
+	google_ads: "Google Ads",
+};
+
+async function computeAdSpend(
+	prisma: PrismaClient,
+	envId: string,
+): Promise<AdSpendData> {
+	try {
+		const connections = await prisma.integrationConnection.findMany({
+			where: {
+				environmentId: envId,
+				provider: { in: ["meta_ads", "google_ads"] },
+			},
+			select: { provider: true, status: true, lastSyncedAt: true, syncError: true },
+		});
+
+		if (connections.length === 0) {
+			return { totalMonthly: 0, currency: "USD", byPlatform: [], hasData: false, caption: "" };
+		}
+
+		const connected = connections.filter((c) => c.status === "connected");
+		const byPlatform = connections.map((c) => ({
+			platform: c.provider,
+			label: PLATFORM_LABELS[c.provider] || c.provider,
+			spend: 0,
+		}));
+
+		const syncedAt = connected
+			.filter((c) => c.lastSyncedAt)
+			.map((c) => c.lastSyncedAt!.toISOString())
+			.sort()
+			.pop();
+
+		let caption = "";
+		if (connected.length === 0) {
+			const errored = connections.filter((c) => c.status === "error");
+			caption = errored.length > 0
+				? `${errored.map((c) => PLATFORM_LABELS[c.provider]).join(" + ")} — sync error. Check Data Sources.`
+				: "Pending connection. Complete setup in Data Sources.";
+		} else if (!syncedAt) {
+			caption = `${connected.map((c) => PLATFORM_LABELS[c.provider]).join(" + ")} connected — awaiting first audit cycle.`;
+		} else {
+			const ago = Math.round((Date.now() - new Date(syncedAt).getTime()) / 3600000);
+			const agoLabel = ago < 1 ? "< 1h ago" : ago < 24 ? `${ago}h ago` : `${Math.round(ago / 24)}d ago`;
+			caption = `${connected.map((c) => PLATFORM_LABELS[c.provider]).join(" + ")} synced ${agoLabel}. Spend details in Revenue workspace.`;
+		}
+
+		return {
+			totalMonthly: 0,
+			currency: "USD",
+			byPlatform,
+			hasData: connected.length > 0,
+			caption,
+		};
+	} catch {
+		return { totalMonthly: 0, currency: "USD", byPlatform: [], hasData: false, caption: "" };
+	}
+}
+
 export async function computeDashboardData(
 	prisma: PrismaClient,
 	orgId: string,
 	envId: string
 ): Promise<DashboardData> {
-	const [moneyRecovered, healthScore, exposure, changeReport, activityHeatmap] =
+	const [moneyRecovered, healthScore, exposure, changeReport, activityHeatmap, adSpend] =
 		await Promise.all([
 			computeMoneyRecovered(prisma, envId),
 			computeHealthScore(prisma, orgId, envId),
 			computeExposure(prisma, envId),
 			computeChangeReport(prisma, envId),
 			computeActivityHeatmap(prisma, orgId, envId),
+			computeAdSpend(prisma, envId),
 		]);
 
 	return {
@@ -869,5 +942,6 @@ export async function computeDashboardData(
 		exposure,
 		changeReport,
 		activityHeatmap,
+		adSpend,
 	};
 }

@@ -136,12 +136,21 @@ export interface ActivityHeatmapData {
  * active in the user's layout (so the server only computes what's
  * displayed). Phase 1 ships with all keys filled from mock data.
  */
+export interface AdSpendData {
+	totalMonthly: number;
+	currency: string;
+	byPlatform: { platform: string; label: string; spend: number }[];
+	hasData: boolean;
+	caption: string;
+}
+
 export interface DashboardData {
 	moneyRecovered: MoneyRecoveredData;
 	healthScore: HealthScoreData;
 	exposure: ExposureData;
 	changeReport: ChangeReportData;
 	activityHeatmap: ActivityHeatmapData;
+	adSpend: AdSpendData;
 }
 
 /** Type-safe key list — used by the registry to declare data dependencies */

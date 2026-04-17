@@ -197,6 +197,16 @@ export function buildMockDashboardData(t: MockTranslator): DashboardData {
 		exposure,
 		changeReport,
 		activityHeatmap,
+		adSpend: {
+			totalMonthly: 12500,
+			currency: "USD",
+			byPlatform: [
+				{ platform: "meta_ads", label: "Meta Ads", spend: 8500 },
+				{ platform: "google_ads", label: "Google Ads", spend: 4000 },
+			],
+			hasData: true,
+			caption: "Meta Ads leads with $8,500/mo (68% of total).",
+		},
 	};
 }
 
@@ -325,4 +335,14 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
 	exposure,
 	changeReport,
 	activityHeatmap,
+	adSpend: {
+		totalMonthly: 12500,
+		currency: "USD",
+		byPlatform: [
+			{ platform: "meta_ads", label: "Meta Ads", spend: 8500 },
+			{ platform: "google_ads", label: "Google Ads", spend: 4000 },
+		],
+		hasData: true,
+		caption: "Meta Ads leads with $8,500/mo (68% of total).",
+	},
 };

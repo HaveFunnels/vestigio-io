@@ -1967,6 +1967,10 @@
 					"regressions": "regressões",
 					"resolved": "resolvidas",
 					"verifications_confirmed": "verificações confirmadas"
+				},
+				"ad_spend": {
+					"name": "Ad Spend",
+					"description": "Gasto mensal de ads total por plataforma conectada (Meta Ads, Google Ads)."
 				}
 			},
 			"editing_subtitle": "Arraste widgets para reorganizar. Redimensione pelo canto. Adicione ou remova pelo catálogo.",

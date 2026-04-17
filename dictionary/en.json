@@ -1912,6 +1912,10 @@
 					"regressions": "regressions",
 					"resolved": "resolved",
 					"verifications_confirmed": "verifications confirmed"
+				},
+				"ad_spend": {
+					"name": "Ad Spend",
+					"description": "Total monthly ad spend across connected platforms with per-platform breakdown."
 				}
 			},
 			"editing_subtitle": "Drag widgets to rearrange. Resize from the corner. Add or remove from the catalog.",

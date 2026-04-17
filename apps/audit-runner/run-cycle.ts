@@ -594,6 +594,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 									lastSyncedAt: new Date(),
 									status: metaPollResult.errors.length > 0 ? 'error' : 'connected',
 									syncError: metaPollResult.errors[0] ?? null,
+									syncMetadata: JSON.stringify({
+										ad_spend_30d: metaPollResult.data.ad_spend_30d,
+										currency: metaPollResult.data.currency,
+										creative_count: metaPollResult.data.creatives.length,
+										synced_at: new Date().toISOString(),
+									}),
 								},
 							});
 
@@ -638,6 +644,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 									lastSyncedAt: new Date(),
 									status: googlePollResult.errors.length > 0 ? 'error' : 'connected',
 									syncError: googlePollResult.errors[0] ?? null,
+									syncMetadata: JSON.stringify({
+										ad_spend_30d: googlePollResult.data.ad_spend_30d,
+										currency: googlePollResult.data.currency,
+										campaign_count: googlePollResult.data.campaigns.length,
+										synced_at: new Date().toISOString(),
+									}),
 								},
 							});
 

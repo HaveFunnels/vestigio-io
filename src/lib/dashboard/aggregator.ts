@@ -875,7 +875,7 @@ async function computeAdSpend(
 				environmentId: envId,
 				provider: { in: ["meta_ads", "google_ads"] },
 			},
-			select: { provider: true, status: true, lastSyncedAt: true, syncError: true },
+			select: { provider: true, status: true, lastSyncedAt: true, syncError: true, syncMetadata: true },
 		});
 
 		if (connections.length === 0) {
@@ -883,11 +883,30 @@ async function computeAdSpend(
 		}
 
 		const connected = connections.filter((c) => c.status === "connected");
-		const byPlatform = connections.map((c) => ({
-			platform: c.provider,
-			label: PLATFORM_LABELS[c.provider] || c.provider,
-			spend: 0,
-		}));
+
+		// Read cached spend from syncMetadata (written by run-cycle after each poll)
+		let totalSpend = 0;
+		let currency = "USD";
+		const byPlatform: AdSpendData["byPlatform"] = [];
+
+		for (const c of connections) {
+			let meta: { ad_spend_30d?: number; currency?: string } = {};
+			try {
+				if (c.syncMetadata) meta = JSON.parse(c.syncMetadata);
+			} catch { /* corrupt metadata — skip */ }
+
+			const spend = meta.ad_spend_30d ?? 0;
+			totalSpend += spend;
+			if (meta.currency) currency = meta.currency;
+
+			byPlatform.push({
+				platform: c.provider,
+				label: PLATFORM_LABELS[c.provider] || c.provider,
+				spend,
+			});
+		}
+
+		byPlatform.sort((a, b) => b.spend - a.spend);
 
 		const syncedAt = connected
 			.filter((c) => c.lastSyncedAt)
@@ -901,17 +920,23 @@ async function computeAdSpend(
 			caption = errored.length > 0
 				? `${errored.map((c) => PLATFORM_LABELS[c.provider]).join(" + ")} — sync error. Check Data Sources.`
 				: "Pending connection. Complete setup in Data Sources.";
+		} else if (totalSpend > 0 && byPlatform.length > 1) {
+			const top = byPlatform[0];
+			const pct = Math.round((top.spend / totalSpend) * 100);
+			caption = `${top.label} leads with $${top.spend.toLocaleString()}/mo (${pct}% of total).`;
+		} else if (totalSpend > 0) {
+			caption = `All spend on ${byPlatform[0]?.label ?? "one platform"}.`;
 		} else if (!syncedAt) {
 			caption = `${connected.map((c) => PLATFORM_LABELS[c.provider]).join(" + ")} connected — awaiting first audit cycle.`;
 		} else {
 			const ago = Math.round((Date.now() - new Date(syncedAt).getTime()) / 3600000);
 			const agoLabel = ago < 1 ? "< 1h ago" : ago < 24 ? `${ago}h ago` : `${Math.round(ago / 24)}d ago`;
-			caption = `${connected.map((c) => PLATFORM_LABELS[c.provider]).join(" + ")} synced ${agoLabel}. Spend details in Revenue workspace.`;
+			caption = `Synced ${agoLabel}. No spend data in latest cycle.`;
 		}
 
 		return {
-			totalMonthly: 0,
-			currency: "USD",
+			totalMonthly: totalSpend,
+			currency,
 			byPlatform,
 			hasData: connected.length > 0,
 			caption,

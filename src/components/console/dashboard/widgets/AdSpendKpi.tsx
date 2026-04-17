@@ -30,7 +30,7 @@ function fmt(value: number, currency: string): string {
 }
 
 function AdSpendKpiComponent({ data }: WidgetProps) {
-	const { byPlatform, hasData, caption } = data.adSpend;
+	const { totalMonthly, currency, byPlatform, hasData, caption } = data.adSpend;
 
 	if (!hasData) {
 		return (
@@ -52,30 +52,55 @@ function AdSpendKpiComponent({ data }: WidgetProps) {
 	return (
 		<div className="flex h-full flex-col p-5">
 			{/* Header */}
-			<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
-				Ad Spend
+			<div className="mb-1 flex items-baseline justify-between">
+				<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
+					Ad Spend
+				</span>
+				<span className="font-mono text-[10px] tabular-nums text-content-faint">/ mo</span>
 			</div>
 
-			{/* Per-platform status */}
-			<div className="flex-1 space-y-2.5">
-				{byPlatform.map((p) => {
-					const colors = PLATFORM_COLORS[p.platform] || { dot: "bg-zinc-500", text: "text-zinc-400" };
-					return (
-						<div key={p.platform} className="flex items-center gap-2.5">
-							<div className={`h-2 w-2 shrink-0 rounded-full ${colors.dot}`} />
-							<span className={`text-[13px] font-medium ${colors.text}`}>{p.label}</span>
-						</div>
-					);
-				})}
+			{/* Hero number */}
+			<div className="mb-3 font-mono text-2xl font-medium tabular-nums leading-none text-content">
+				{totalMonthly > 0 ? fmt(totalMonthly, currency) : "—"}
 			</div>
+
+			{/* Per-platform breakdown */}
+			{byPlatform.length > 0 && (
+				<div className="flex-1 space-y-2">
+					{byPlatform.slice(0, 4).map((p) => {
+						const colors = PLATFORM_COLORS[p.platform] || { dot: "bg-zinc-500", text: "text-zinc-400" };
+						const pct = totalMonthly > 0 ? Math.round((p.spend / totalMonthly) * 100) : 0;
+						return (
+							<div key={p.platform} className="flex items-center justify-between">
+								<div className="flex items-center gap-2">
+									<div className={`h-2 w-2 rounded-full ${colors.dot}`} />
+									<span className="text-xs text-content-secondary">{p.label}</span>
+								</div>
+								{p.spend > 0 ? (
+									<div className="flex items-baseline gap-2">
+										<span className="font-mono text-[10px] tabular-nums text-content-faint">
+											{pct}%
+										</span>
+										<span className={`font-mono text-sm font-medium tabular-nums ${colors.text}`}>
+											{fmt(p.spend, currency)}
+										</span>
+									</div>
+								) : (
+									<span className="text-[10px] text-content-faint">awaiting sync</span>
+								)}
+							</div>
+						);
+					})}
+				</div>
+			)}
 
 			{/* Caption + link */}
 			{caption && (
-				<div className="mt-auto border-t border-edge/40 pt-2.5">
+				<div className="mt-2 border-t border-edge/40 pt-2">
 					<p className="text-[10px] leading-relaxed text-content-faint">{caption}</p>
 					<a
 						href="/app/workspaces/perspective/revenue"
-						className="mt-1.5 inline-block text-[10px] text-indigo-400 hover:underline"
+						className="mt-1 inline-block text-[10px] text-indigo-400 hover:underline"
 					>
 						View spend findings in Revenue →
 					</a>

@@ -513,6 +513,7 @@ model IntegrationConnection {
   config          String    @db.Text // encrypted JSON (store URL, access token, etc.)
   status          String    @default("pending") // pending | connected | error | disconnected
   syncError       String?   // last sync error message
+  syncMetadata    String?   @db.Text // non-sensitive JSON cached by poller (ad_spend_30d, currency, creative_count, etc.)
   installedAt     DateTime  @default(now())
   lastSyncedAt    DateTime?
   createdAt       DateTime  @default(now())

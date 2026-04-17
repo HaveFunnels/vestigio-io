@@ -2042,8 +2042,11 @@ function MapsContent({ mapDef }: { mapDef: MapDefinition }) {
         }
       `}</style>
 
-			{/* Canvas */}
-			<div className='relative flex-1' style={{ minHeight: 500 }}>
+			{/* Canvas — ReactFlow requires explicit dimensions on its container.
+			   The outer div uses flex-1 + min-h for layout; the inner absolute
+			   div gives ReactFlow real width/height values. */}
+			<div className='relative flex-1 min-h-[500px]'>
+				<div className='absolute inset-0'>
 				<ReactFlow
 					key={activeMap.id}
 					nodes={nodes}
@@ -2073,6 +2076,7 @@ function MapsContent({ mapDef }: { mapDef: MapDefinition }) {
 						className='!rounded-lg !border-edge !bg-surface-card !p-1'
 					/>
 				</ReactFlow>
+				</div>
 
 				{/* Tooltip overlay */}
 				<NodeTooltip tooltip={tooltip} />

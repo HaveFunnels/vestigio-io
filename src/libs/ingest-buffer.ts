@@ -100,8 +100,10 @@ async function flush(): Promise<void> {
 				);
 				ingestCounters.dropped += batch.length;
 			} else {
-				// Brief pause before retry (exponential-ish: 200ms, 600ms)
-				await new Promise((r) => setTimeout(r, 200 * attempt));
+				// Exponential backoff with jitter to prevent retry storms
+				const base = 200 * Math.pow(2, attempt - 1);
+				const jitter = Math.random() * base;
+				await new Promise((r) => setTimeout(r, base + jitter));
 			}
 		}
 	}

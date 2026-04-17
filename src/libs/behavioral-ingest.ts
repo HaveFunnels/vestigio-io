@@ -92,62 +92,104 @@ export function hashClientIp(ip: string | null): string | null {
 }
 
 /**
- * Best-effort client IP extraction from a fetch Request. Order:
- *   1. x-forwarded-for first hop (Railway / proxy)
- *   2. x-real-ip
- *   3. cf-connecting-ip
- *   4. null (no IP available — local dev with no proxy)
+ * Best-effort client IP extraction. Prefer platform-set headers that
+ * cannot be spoofed (cf-connecting-ip from Cloudflare, x-real-ip set
+ * by Railway/nginx). x-forwarded-for is attacker-controllable when no
+ * trusted proxy strips it, so we use it only as a last resort.
  */
 export function extractClientIp(headers: Headers): string | null {
-  const xff = headers.get("x-forwarded-for");
-  if (xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  return headers.get("x-real-ip") || headers.get("cf-connecting-ip") || null;
+  return (
+    headers.get("cf-connecting-ip") ||
+    headers.get("x-real-ip") ||
+    (() => {
+      const xff = headers.get("x-forwarded-for");
+      if (xff) {
+        const first = xff.split(",")[0]?.trim();
+        if (first) return first;
+      }
+      return null;
+    })() ||
+    null
+  );
 }
 
 // ── Environment-id validation cache ───────────────
 
 interface EnvCacheEntry {
-  /** true = exists, false = does not exist (negative cache, shorter TTL) */
   exists: boolean;
+  domain: string | null;
   cachedAt: number;
 }
 
 const envCache = new Map<string, EnvCacheEntry>();
 
 /**
- * Validates that an env_id corresponds to a real Environment row.
- * Positive results live for 5 minutes; negative results for 1 minute
- * so a freshly-created environment doesn't get rejected for too long.
- *
- * Returns true if the env exists. False otherwise. Errors are
- * conservative: on Prisma failure we return true so we don't black-hole
- * legitimate traffic during DB hiccups.
+ * Validates that an env_id corresponds to a real Environment row and
+ * returns the associated domain. Positive results live for 5 minutes;
+ * negative results for 1 minute.
  */
-export async function isKnownEnvironment(envId: string): Promise<boolean> {
-  if (!envId || typeof envId !== "string" || envId.length > 64) return false;
+export async function resolveEnvironment(
+  envId: string,
+): Promise<{ exists: boolean; domain: string | null }> {
+  if (!envId || typeof envId !== "string" || envId.length > 64) {
+    return { exists: false, domain: null };
+  }
 
   const cached = envCache.get(envId);
   const now = Date.now();
   if (cached) {
     const ttl = cached.exists ? ENV_CACHE_TTL_MS : 60_000;
-    if (now - cached.cachedAt < ttl) return cached.exists;
+    if (now - cached.cachedAt < ttl) {
+      return { exists: cached.exists, domain: cached.domain };
+    }
   }
 
   try {
     const row = await prisma.environment.findUnique({
       where: { id: envId },
-      select: { id: true },
+      select: { id: true, domain: true },
     });
     const exists = row !== null;
-    envCache.set(envId, { exists, cachedAt: now });
-    return exists;
+    const domain = row?.domain ?? null;
+    envCache.set(envId, { exists, domain, cachedAt: now });
+    return { exists, domain };
   } catch (err) {
-    // DB hiccup — let traffic through rather than drop it. Wave 0.3
-    // will simply skip events whose env_id no longer resolves.
     console.warn("[behavioral-ingest] env validation failed:", err);
+    return { exists: true, domain: null };
+  }
+}
+
+/** @deprecated Use resolveEnvironment instead */
+export async function isKnownEnvironment(envId: string): Promise<boolean> {
+  const { exists } = await resolveEnvironment(envId);
+  return exists;
+}
+
+/**
+ * Checks whether the request origin matches the environment's registered
+ * domain. Used to reject events sent from a domain other than the one
+ * the environment belongs to (e.g., attacker spoofing a valid env_id on
+ * their own site). Returns true when origin cannot be determined (local
+ * dev, sendBeacon without origin header) so legitimate traffic isn't
+ * black-holed.
+ */
+export function isOriginAllowed(
+  headers: Headers,
+  envDomain: string | null,
+): boolean {
+  if (!envDomain) return true;
+
+  const origin = headers.get("origin");
+  const referer = headers.get("referer");
+  const raw = origin || referer;
+  if (!raw) return true;
+
+  try {
+    const hostname = new URL(raw).hostname;
+    const normalized = hostname.replace(/^www\./, "");
+    const envNormalized = envDomain.replace(/^www\./, "").replace(/^https?:\/\//, "");
+    return normalized === envNormalized || normalized.endsWith(`.${envNormalized}`);
+  } catch {
     return true;
   }
 }

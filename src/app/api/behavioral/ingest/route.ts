@@ -4,7 +4,8 @@ import { enqueue } from "@/libs/ingest-buffer";
 import {
   hashClientIp,
   extractClientIp,
-  isKnownEnvironment,
+  resolveEnvironment,
+  isOriginAllowed,
   isWithinRateLimit,
   sanitizeEvent,
   safeUserAgent,
@@ -104,9 +105,10 @@ export const POST = withErrorTracking(
       eventsRaw.length = MAX_BATCH_SIZE;
     }
 
-    // Env existence check (cached)
-    const envOk = await isKnownEnvironment(envId);
-    if (!envOk) return silentOk();
+    // Env existence + domain validation (cached)
+    const env = await resolveEnvironment(envId);
+    if (!env.exists) return silentOk();
+    if (!isOriginAllowed(request.headers, env.domain)) return silentOk();
 
     // IP + rate limit
     const ip = extractClientIp(request.headers);

@@ -626,8 +626,8 @@
           persistSessionState();
         }
 
-        // Bind submit tracking with retry detection
-        form.addEventListener('submit', function() {
+        // Bind submit tracking with retry detection + error capture
+        form.addEventListener('submit', function(e) {
           var key = formKey(form);
           formSubmitCounts[key] = (formSubmitCounts[key] || 0) + 1;
           if (formSubmitCounts[key] > 1) {
@@ -639,6 +639,17 @@
             emit('form_submit', { url: canonicalUrl() });
           }
         });
+
+        // Capture client-side validation errors (HTML5 constraint API)
+        form.addEventListener('invalid', function(e) {
+          if (e.target && e.target.validationMessage) {
+            emit('form_error', {
+              url: canonicalUrl(),
+              error_source: 'validation',
+              field_kind: classifyFieldKind(e.target),
+            });
+          }
+        }, true);
       }
 
       // Track input focus abandon for sensitive fields

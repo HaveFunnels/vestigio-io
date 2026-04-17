@@ -149,16 +149,55 @@ export async function registerNodeInstrumentation(): Promise<void> {
 				console.log(`[lead-cleanup] purged ${purged.count} stale mini-audits`);
 			}
 
-			// Wave 0.3: prune behavioral pixel events older than the
-			// 30-day aggregation window. The processor re-aggregates the
-			// last 30 days every cycle, so older events are dead weight.
+			// Plan-based behavioral event retention:
+			//   vestigio (starter) + pro → 30 days
+			//   max                      → 90 days
+			// Walks each plan tier separately so an org on "max" keeps
+			// 90 days while "vestigio" orgs get pruned at 30 days.
 			// Indexed by receivedAt for fast deleteMany.
-			const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-			const prunedEvents = await prisma.rawBehavioralEvent.deleteMany({
-				where: { receivedAt: { lt: thirtyDaysAgo } },
+			const RETENTION_DAYS: Record<string, number> = {
+				vestigio: 30,
+				pro: 30,
+				max: 90,
+			};
+			const DEFAULT_RETENTION_DAYS = 30;
+
+			// Group environments by their org's plan to apply per-plan retention.
+			const orgsWithPlan = await prisma.organization.findMany({
+				select: { id: true, plan: true },
 			});
-			if (prunedEvents.count > 0) {
-				console.log(`[lead-cleanup] pruned ${prunedEvents.count} stale behavioral events`);
+			const planByOrgId = new Map(orgsWithPlan.map((o) => [o.id, o.plan || "vestigio"]));
+
+			const envRows = await prisma.environment.findMany({
+				select: { id: true, organizationId: true },
+			});
+
+			// Bucket env IDs by retention window.
+			const envsByRetention = new Map<number, string[]>();
+			for (const env of envRows) {
+				const plan = planByOrgId.get(env.organizationId) || "vestigio";
+				const days = RETENTION_DAYS[plan] ?? DEFAULT_RETENTION_DAYS;
+				let arr = envsByRetention.get(days);
+				if (!arr) {
+					arr = [];
+					envsByRetention.set(days, arr);
+				}
+				arr.push(env.id);
+			}
+
+			let totalPruned = 0;
+			for (const [days, envIds] of envsByRetention) {
+				const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+				const result = await prisma.rawBehavioralEvent.deleteMany({
+					where: {
+						envId: { in: envIds },
+						receivedAt: { lt: cutoff },
+					},
+				});
+				totalPruned += result.count;
+			}
+			if (totalPruned > 0) {
+				console.log(`[lead-cleanup] pruned ${totalPruned} stale behavioral events (plan-based)`);
 			}
 		} catch (err) {
 			console.error("[lead-cleanup] pass failed:", err);

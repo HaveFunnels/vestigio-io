@@ -432,6 +432,12 @@ model RawBehavioralEvent {
   @@index([envId, sessionId, processedAt])
   @@index([envId, sessionId, occurredAt])
   @@index([receivedAt])
+  // Serves plan-based prune (WHERE envId IN ... AND receivedAt < ...)
+  // and Mode 2 funnel query (WHERE envId = ... AND occurredAt >= ...).
+  // When scaling past ~50M rows, convert to a TimescaleDB hypertable
+  // partitioned on receivedAt with envId as a partition key.
+  @@index([envId, receivedAt])
+  @@index([envId, occurredAt, eventType])
 }
 
 model Usage {

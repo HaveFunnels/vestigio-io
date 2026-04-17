@@ -601,12 +601,16 @@
       if (form && !trackedForms[formKey(form)]) {
         trackedForms[formKey(form)] = true;
 
-        // Emit field inventory (structural only, no values)
+        // Emit field inventory: counts and boolean flags only.
+        // field_kinds is intentionally omitted to prevent leaking
+        // the customer's form schema (which fields they collect).
         var inventory = buildFieldInventory(form);
         emit('field_inventory', {
           url: canonicalUrl(),
           field_count: inventory.field_count,
-          field_kinds: inventory.field_kinds,
+          sensitive_field_count: inventory.field_kinds.filter(function(k) {
+            return k === 'email' || k === 'phone' || k === 'cpf_cnpj_like' || k === 'card_like';
+          }).length,
           has_sensitive: inventory.has_sensitive_fields,
           has_password: inventory.has_password,
           has_card_like: inventory.has_card_like,
@@ -841,8 +845,92 @@
     if (queue.length >= MAX_BATCH_SIZE) flush();
   }
 
+  // ── IndexedDB Offline Queue ──
+  //
+  // When a flush fails (network down, server error), the batch is
+  // persisted to IndexedDB so it can be retried later. On the next
+  // successful flush, any queued batches are drained first.
+  var IDB_NAME = 'vestigio_offline';
+  var IDB_STORE = 'batches';
+  var IDB_VERSION = 1;
+  var offlineDb = null;
+
+  function openOfflineDb(cb) {
+    if (offlineDb) return cb(offlineDb);
+    if (!window.indexedDB) return cb(null);
+    try {
+      var req = indexedDB.open(IDB_NAME, IDB_VERSION);
+      req.onupgradeneeded = function(e) {
+        e.target.result.createObjectStore(IDB_STORE, { autoIncrement: true });
+      };
+      req.onsuccess = function(e) { offlineDb = e.target.result; cb(offlineDb); };
+      req.onerror = function() { cb(null); };
+    } catch(e) { cb(null); }
+  }
+
+  function saveToOffline(payload) {
+    openOfflineDb(function(db) {
+      if (!db) return;
+      try {
+        var tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).add(payload);
+      } catch(e) {}
+    });
+  }
+
+  function drainOffline() {
+    openOfflineDb(function(db) {
+      if (!db) return;
+      try {
+        var tx = db.transaction(IDB_STORE, 'readwrite');
+        var store = tx.objectStore(IDB_STORE);
+        var req = store.getAll();
+        req.onsuccess = function() {
+          var items = req.result || [];
+          if (items.length === 0) return;
+          store.clear();
+          for (var i = 0; i < items.length; i++) {
+            sendPayload(items[i], 0);
+          }
+        };
+      } catch(e) {}
+    });
+  }
+
   // ── Batch Flush ──
+  var MAX_RETRIES = 3;
+
+  function sendPayload(payload, attempt) {
+    try {
+      fetch(ENDPOINT, {
+        method: 'POST',
+        body: payload,
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+      }).then(function(resp) {
+        if (resp.ok || resp.status === 204) {
+          drainOffline();
+        } else if (attempt < MAX_RETRIES) {
+          var delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+          setTimeout(function() { sendPayload(payload, attempt + 1); }, delay);
+        } else {
+          saveToOffline(payload);
+        }
+      }).catch(function() {
+        if (attempt < MAX_RETRIES) {
+          var delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+          setTimeout(function() { sendPayload(payload, attempt + 1); }, delay);
+        } else {
+          saveToOffline(payload);
+        }
+      });
+    } catch(e) {
+      saveToOffline(payload);
+    }
+  }
+
   function flush(sync) {
+    if (!consentGranted) return;
     if (queue.length === 0) return;
     var batch = queue.splice(0, MAX_BATCH_SIZE);
     var payload = JSON.stringify({
@@ -855,14 +943,7 @@
     if (sync && navigator.sendBeacon) {
       navigator.sendBeacon(ENDPOINT, payload);
     } else {
-      try {
-        fetch(ENDPOINT, {
-          method: 'POST',
-          body: payload,
-          headers: { 'Content-Type': 'application/json' },
-          keepalive: true,
-        }).catch(function() {});
-      } catch(e) {}
+      sendPayload(payload, 0);
     }
   }
 

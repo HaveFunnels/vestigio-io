@@ -1,5 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
 import { checkRateLimit } from "@/libs/limiter";
+import { hashClientIp } from "@/libs/behavioral-ingest";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
           city,
           lat,
           lng,
-          ip: ip ? ip.slice(0, 45) : null,
+          ip: hashClientIp(ip),
           device: device ? String(device).slice(0, 20) : null,
           browser: browser ? String(browser).slice(0, 50) : null,
           os: os ? String(os).slice(0, 50) : null,

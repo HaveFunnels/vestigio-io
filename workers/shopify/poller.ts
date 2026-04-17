@@ -167,10 +167,18 @@ export async function pollShopifyData(
     ? aggregateCustomers(customerResult.customers)
     : null;
 
-  // For product metrics, we would need order line items.
-  // Use an empty array as placeholder — full implementation requires line_items in order fetch.
+  // Extract line items from fetched orders for product-level analytics.
+  // Each order now includes line_items (added to the fields query).
+  const orderLineItems = orders.flatMap((o: any) =>
+    (o.line_items || []).map((li: any) => ({
+      product_id: Number(li.product_id),
+      quantity: Number(li.quantity) || 1,
+      total: parseFloat(li.price || '0') * (Number(li.quantity) || 1),
+    })),
+  );
+
   const productMetrics = productResult.products.length > 0
-    ? aggregateProducts(productResult.products, [])
+    ? aggregateProducts(productResult.products, orderLineItems)
     : null;
 
   const inventoryMetrics = (productResult.products.length > 0 && inventoryResult.levels.length > 0)

@@ -118,7 +118,7 @@ export async function fetchOrders(
   const untilISO = until.toISOString();
 
   let pageUrl: string | null =
-    `/orders.json?status=any&created_at_min=${sinceISO}&created_at_max=${untilISO}&limit=${Math.min(limit, 250)}&fields=id,created_at,total_price,currency,financial_status,fulfillment_status,cancelled_at,landing_site,referring_site,total_discounts,discount_codes,gateway,refunds,transactions`;
+    `/orders.json?status=any&created_at_min=${sinceISO}&created_at_max=${untilISO}&limit=${Math.min(limit, 250)}&fields=id,created_at,total_price,currency,financial_status,fulfillment_status,cancelled_at,landing_site,referring_site,total_discounts,discount_codes,gateway,refunds,transactions,line_items`;
 
   let pageCount = 0;
   const MAX_PAGES = 10; // safety limit

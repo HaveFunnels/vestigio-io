@@ -1103,6 +1103,11 @@ export default function MapCanvasPage() {
 		return <JourneyCanvasView t={t} tc={tc} />;
 	}
 
+	// Custom maps (IDs prefixed with "custom_")
+	if (mapId.startsWith("custom_")) {
+		return <CustomMapView mapId={mapId} t={t} tc={tc} />;
+	}
+
 	// Engine maps
 	return (
 		<div className='flex h-full flex-col'>
@@ -1121,6 +1126,38 @@ export default function MapCanvasPage() {
 			</ConsoleState>
 		</div>
 	);
+}
+
+function CustomMapView({
+	mapId,
+	t,
+	tc,
+}: {
+	mapId: string;
+	t: ReturnType<typeof useTranslations>;
+	tc: ReturnType<typeof useTranslations>;
+}) {
+	const [mapDef, setMapDef] = useState<MapDefinition | null>(null);
+	const [loaded, setLoaded] = useState(false);
+
+	useEffect(() => {
+		const dbId = mapId.replace(/^custom_/, "");
+		fetch(`/api/maps/custom/${dbId}`)
+			.then((r) => r.json())
+			.then((data) => {
+				if (data?.map) setMapDef(data.map as MapDefinition);
+			})
+			.catch(() => {})
+			.finally(() => setLoaded(true));
+	}, [mapId]);
+
+	if (!loaded) {
+		return <MapLoadingShell label={t("loading")} />;
+	}
+	if (!mapDef) {
+		return <MapNotFound backLabel={t("back_to_gallery")} />;
+	}
+	return <MapCanvasShell mapDef={mapDef} t={t} tc={tc} />;
 }
 
 // ──────────────────────────────────────────────

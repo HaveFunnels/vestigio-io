@@ -1,4 +1,4 @@
-import { EngineContext, getFindingProjections, getActionProjections, getWorkspaceProjections, getChangeReport, getMap, getMaps } from './context';
+import { EngineContext, getFindingProjections, getActionProjections, getWorkspaceProjections, getChangeReport, getMap, getMaps, getProjections } from './context';
 import {
   McpToolDefinition,
   McpAnswer,
@@ -35,6 +35,7 @@ import {
 import { VerificationRequest, VerificationType } from '../../packages/domain';
 import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection } from '../../packages/projections';
 import type { MapDefinition } from '../../packages/maps';
+import { buildCustomMap } from '../../packages/maps';
 
 // ──────────────────────────────────────────────
 // MCP Tool Registry
@@ -151,6 +152,15 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
     description: 'Analyze multiple findings together. Detects shared root causes, compounding effects, and combined impact.',
     input_schema: { finding_ids: { type: 'array', items: { type: 'string' } } },
   },
+  {
+    name: 'create_custom_map',
+    description: 'Create a custom causal map from a subset of findings. The map shows the selected findings, their root causes, and recommended actions. Appears in the Maps gallery under "Created by you". Use when the user asks to focus on specific findings, create a visualization, or isolate a problem area.',
+    input_schema: {
+      name: { type: 'string', description: 'Short name for the map (e.g., "Checkout Trust Issues")' },
+      description: { type: 'string', description: 'One-sentence description of what the map shows' },
+      finding_ids: { type: 'array', items: { type: 'string' }, description: 'IDs of findings to include. Use get_finding_projections first to get IDs.' },
+    },
+  },
 ];
 
 // ──────────────────────────────────────────────
@@ -185,6 +195,7 @@ export type ToolResult =
   | { type: 'workspace_projections'; data: WorkspaceProjection[] }
   | { type: 'change_report'; data: ChangeReportProjection | null }
   | { type: 'map'; data: MapDefinition | null }
+  | { type: 'custom_map_created'; data: { mapId: string; name: string; nodeCount: number; edgeCount: number; url: string; mapDefinition: MapDefinition } }
   | { type: 'verification_skipped'; data: VerificationSkippedView }
   | { type: 'error'; data: { message: string } };
 
@@ -284,6 +295,27 @@ export function executeTool(
       const findingIds = params.finding_ids as string[];
       if (!findingIds || findingIds.length === 0) return { type: 'error', data: { message: 'finding_ids is required' } };
       return { type: 'answer', data: composeMultiFindingChatAnswer(ctx, findingIds) };
+    }
+
+    case 'create_custom_map': {
+      const name = params.name as string;
+      const description = (params.description as string) || null;
+      const findingIds = params.finding_ids as string[];
+      if (!name) return { type: 'error', data: { message: 'name is required' } };
+      if (!findingIds || findingIds.length === 0) return { type: 'error', data: { message: 'finding_ids is required' } };
+      const projections = getProjections(ctx);
+      const mapDef = buildCustomMap(name, description, findingIds, projections, ctx.result);
+      return {
+        type: 'custom_map_created',
+        data: {
+          mapId: mapDef.id,
+          name,
+          nodeCount: mapDef.nodes.length,
+          edgeCount: mapDef.edges.length,
+          url: '/app/maps',
+          mapDefinition: mapDef,
+        },
+      };
     }
 
     // Verification status tools — these are dispatched via the server

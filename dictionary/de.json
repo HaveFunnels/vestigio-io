@@ -2072,6 +2072,7 @@
 			},
 			"gallery": {
 				"standard": "Standard",
+				"created_by_you": "Von dir erstellt",
 				"stat_nodes": "{count, plural, one {# Knoten} other {# Knoten}}",
 				"stat_edges": "{count, plural, one {# Verbindung} other {# Verbindungen}}",
 				"types": {

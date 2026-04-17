@@ -2891,6 +2891,7 @@
 			},
 			"gallery": {
 				"standard": "Padrão",
+				"created_by_you": "Criados por você",
 				"stat_nodes": "{count, plural, one {# nó} other {# nós}}",
 				"stat_edges": "{count, plural, one {# ligação} other {# ligações}}",
 				"types": {

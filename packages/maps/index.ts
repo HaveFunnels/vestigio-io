@@ -1,2 +1,2 @@
-export { buildRevenueLeakageMap, buildChargebackRiskMap, buildRootCauseMap, buildAllMaps } from './engine';
+export { buildRevenueLeakageMap, buildChargebackRiskMap, buildRootCauseMap, buildCustomMap, buildAllMaps } from './engine';
 export * from './types';

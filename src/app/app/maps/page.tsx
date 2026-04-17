@@ -33,11 +33,18 @@ export default function MapsGalleryPage() {
 
 	// User Journey lives outside MCP — load on mount.
 	const [journeyMap, setJourneyMap] = useState<MapDefinition | null>(null);
+	const [customMaps, setCustomMaps] = useState<MapDefinition[]>([]);
 	useEffect(() => {
 		fetch("/api/maps/user-journey")
 			.then((r) => r.json())
 			.then((data) => {
 				if (data?.map) setJourneyMap(data.map as MapDefinition);
+			})
+			.catch(() => {});
+		fetch("/api/maps/custom")
+			.then((r) => r.json())
+			.then((data) => {
+				if (Array.isArray(data?.maps)) setCustomMaps(data.maps);
 			})
 			.catch(() => {});
 	}, []);
@@ -63,6 +70,7 @@ export default function MapsGalleryPage() {
 					{(engineMaps) => (
 						<GalleryGrid
 							maps={journeyMap ? [journeyMap, ...engineMaps] : engineMaps}
+							customMaps={customMaps}
 						/>
 					)}
 				</ConsoleState>
@@ -71,18 +79,37 @@ export default function MapsGalleryPage() {
 	);
 }
 
-function GalleryGrid({ maps }: { maps: MapDefinition[] }) {
+function GalleryGrid({
+	maps,
+	customMaps,
+}: {
+	maps: MapDefinition[];
+	customMaps: MapDefinition[];
+}) {
 	const t = useTranslations("console.maps");
-
-	const standard = useMemo(() => maps, [maps]);
 
 	return (
 		<div className='px-6 py-6'>
+			{/* Custom maps first — "Created by you" */}
+			{customMaps.length > 0 && (
+				<>
+					<div className='mb-3 text-[11px] font-semibold uppercase tracking-wider text-content-muted'>
+						{t("gallery.created_by_you")}
+					</div>
+					<div className='mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
+						{customMaps.map((m) => (
+							<MapCard key={m.id} mapDef={m} />
+						))}
+					</div>
+				</>
+			)}
+
+			{/* Standard maps */}
 			<div className='mb-3 text-[11px] font-semibold uppercase tracking-wider text-content-muted'>
 				{t("gallery.standard")}
 			</div>
 			<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
-				{standard.map((m) => (
+				{maps.map((m) => (
 					<MapCard key={m.id} mapDef={m} />
 				))}
 			</div>

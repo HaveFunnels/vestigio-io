@@ -365,6 +365,141 @@ export function buildRootCauseMap(
   };
 }
 
+export function buildCustomMap(
+  name: string,
+  description: string | null,
+  selectedFindingIds: string[],
+  projections: ProjectionResult,
+  result: MultiPackResult,
+): MapDefinition {
+  const nodes: MapNode[] = [];
+  const edges: MapEdge[] = [];
+
+  const findingIdSet = new Set(selectedFindingIds);
+  const selectedFindings = projections.findings.filter(f => findingIdSet.has(f.id));
+
+  // Collect root causes referenced by selected findings
+  const rootCauseTitles = new Set(
+    selectedFindings.map(f => f.root_cause).filter((rc): rc is string => rc !== null),
+  );
+  const rootCauses = result.intelligence.root_causes.filter(rc =>
+    rootCauseTitles.has(rc.title),
+  );
+
+  // Build root cause nodes + edges
+  for (const rc of rootCauses) {
+    const rcNodeId = `rc_${rc.root_cause_key}`;
+    const rcImpact = computeRCImpact(rc, selectedFindings);
+
+    nodes.push({
+      id: rcNodeId,
+      type: 'root_cause',
+      label: rc.title,
+      severity: rc.severity,
+      impact: rcImpact,
+      pack: null,
+      metadata: { category: rc.category, confidence: rc.confidence },
+      position: { x: 0, y: 0 },
+    });
+
+    const linked = selectedFindings.filter(f => f.root_cause === rc.title);
+    for (const f of linked) {
+      const fNodeId = `finding_${f.inference_key}`;
+      if (!nodes.find(n => n.id === fNodeId)) {
+        nodes.push({
+          id: fNodeId,
+          type: 'finding',
+          label: f.title,
+          severity: f.severity,
+          impact: { min: f.impact.monthly_range.min, max: f.impact.monthly_range.max, midpoint: f.impact.midpoint },
+          pack: f.pack,
+          metadata: { confidence: f.confidence, surface: f.surface },
+          position: { x: 0, y: 0 },
+        });
+      }
+      edges.push({
+        id: `edge_${fNodeId}_${rcNodeId}`,
+        source: fNodeId,
+        target: rcNodeId,
+        type: 'contributes_to',
+        label: null,
+      });
+    }
+
+    // Actions that address this root cause
+    const linkedActions = projections.actions.filter(a => a.root_cause === rc.title);
+    for (const a of linkedActions) {
+      const aNodeId = `action_${a.id}`;
+      if (!nodes.find(n => n.id === aNodeId)) {
+        nodes.push({
+          id: aNodeId,
+          type: 'action',
+          label: a.title,
+          severity: a.severity,
+          impact: a.impact ? { min: a.impact.monthly_range.min, max: a.impact.monthly_range.max, midpoint: a.impact.midpoint } : null,
+          pack: null,
+          metadata: { cross_pack: a.cross_pack, action_type: a.action_type },
+          position: { x: 0, y: 0 },
+        });
+      }
+      edges.push({
+        id: `edge_${rcNodeId}_${aNodeId}`,
+        source: rcNodeId,
+        target: aNodeId,
+        type: 'addresses',
+        label: null,
+      });
+    }
+  }
+
+  // Unlinked findings (no root cause)
+  for (const f of selectedFindings) {
+    const fNodeId = `finding_${f.inference_key}`;
+    if (!nodes.find(n => n.id === fNodeId)) {
+      nodes.push({
+        id: fNodeId,
+        type: 'finding',
+        label: f.title,
+        severity: f.severity,
+        impact: { min: f.impact.monthly_range.min, max: f.impact.monthly_range.max, midpoint: f.impact.midpoint },
+        pack: f.pack,
+        metadata: { confidence: f.confidence, surface: f.surface },
+        position: { x: 0, y: 0 },
+      });
+    }
+  }
+
+  applyHierarchicalLayout(nodes, {
+    findings: { x: 0, nodeTypes: ['finding'] },
+    rootCauses: { x: 400, nodeTypes: ['root_cause'] },
+    actions: { x: 800, nodeTypes: ['action'] },
+  });
+
+  const hasFindings = nodes.some(n => n.type === 'finding');
+  const hasRCs = nodes.some(n => n.type === 'root_cause');
+  const hasActions = nodes.some(n => n.type === 'action');
+
+  return {
+    id: `custom_${Date.now()}`,
+    name,
+    type: 'root_cause',
+    nodes,
+    edges,
+    legend: {
+      nodes: [
+        ...(hasFindings ? [{ labelKey: 'finding' as const, swatch: 'finding' as const }] : []),
+        ...(hasRCs ? [{ labelKey: 'rootCause' as const, swatch: 'root_cause' as const }] : []),
+        ...(hasActions ? [{ labelKey: 'action' as const, swatch: 'action' as const }] : []),
+      ],
+      edges: [
+        ...(edges.some(e => e.type === 'contributes_to') ? [{ labelKey: 'contributes' as const, swatch: 'contributes_to' as const }] : []),
+        ...(edges.some(e => e.type === 'addresses') ? [{ labelKey: 'addresses' as const, swatch: 'addresses' as const }] : []),
+      ],
+    },
+    metadata: { description, custom: true, findingCount: selectedFindings.length },
+  };
+}
+
 export function buildAllMaps(
   projections: ProjectionResult,
   result: MultiPackResult,

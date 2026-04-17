@@ -2836,6 +2836,7 @@
 			},
 			"gallery": {
 				"standard": "Standard",
+				"created_by_you": "Created by you",
 				"stat_nodes": "{count, plural, one {# node} other {# nodes}}",
 				"stat_edges": "{count, plural, one {# link} other {# links}}",
 				"types": {

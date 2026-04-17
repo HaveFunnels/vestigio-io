@@ -257,8 +257,8 @@ function buildDemoProjectionResult(): {
 		projections: {
 			findings: DEMO_FINDINGS,
 			actions: DEMO_ACTIONS,
-			workspaces: [],
-			change_report: null,
+			workspaces: DEMO_WORKSPACES,
+			change_report: DEMO_CHANGE_REPORT,
 		} as unknown as ProjectionResult,
 		result: {
 			intelligence: { root_causes: rootCauses, global_actions: [] },

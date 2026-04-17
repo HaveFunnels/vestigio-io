@@ -158,6 +158,10 @@ export function loadActions(): DataState<ActionProjection[]> {
 }
 
 export function loadWorkspaces(): DataState<WorkspaceProjection[]> {
+  if (_demoMode) {
+    const { DEMO_WORKSPACES } = require('./demo-data');
+    return DEMO_WORKSPACES.length > 0 ? { status: 'ready', data: DEMO_WORKSPACES } : { status: 'empty' };
+  }
   try {
     const server = getMcpServer();
     if (!server.getContext()) {
@@ -178,6 +182,10 @@ export function loadWorkspaces(): DataState<WorkspaceProjection[]> {
 }
 
 export function loadChangeReport(): DataState<ChangeReportProjection> {
+  if (_demoMode) {
+    const { DEMO_CHANGE_REPORT } = require('./demo-data');
+    return DEMO_CHANGE_REPORT ? { status: 'ready', data: DEMO_CHANGE_REPORT } : { status: 'empty' };
+  }
   try {
     const server = getMcpServer();
     if (!server.getContext()) {

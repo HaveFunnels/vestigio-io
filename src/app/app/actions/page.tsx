@@ -182,7 +182,6 @@ export default function ActionsPage() {
 		<div className='p-4 sm:p-6'>
 			<PageHeader
 				title={t("title")}
-				subtitle={t("subtitle")}
 				tooltip={tc("page_tooltips.actions")}
 			/>
 
@@ -605,9 +604,11 @@ function ActionsContent({
 				const status = row.operational_status || row.decision_status;
 				if (!status)
 					return <span className='text-xs text-content-faint'>--</span>;
+				const label = status.replace(/_/g, " ");
+				const capitalized = label.charAt(0).toUpperCase() + label.slice(1);
 				return (
 					<span className='inline-flex items-center rounded-full border border-edge px-2 py-0.5 text-xs text-content-secondary'>
-						{status.replace(/_/g, " ")}
+						{capitalized}
 					</span>
 				);
 			},
@@ -631,23 +632,6 @@ function ActionsContent({
 			label: t("columns.severity"),
 			className: "w-24",
 			render: (row) => <SeverityBadge value={row.severity} />,
-		},
-		{
-			key: "effort",
-			label: t("columns.effort"),
-			className: "w-20",
-			render: (row) => {
-				if (!row.effort_hint)
-					return <span className='text-xs text-content-faint'>--</span>;
-				const cfg = effortConfig[row.effort_hint];
-				return (
-					<span
-						className={`text-xs font-medium ${cfg?.style || "text-content-muted"}`}
-					>
-						{cfg?.label || row.effort_hint}
-					</span>
-				);
-			},
 		},
 		{
 			key: "resolve",
@@ -1079,34 +1063,25 @@ function ActionDrawerContent({
 				</DrawerSection>
 			)}
 
-			{/* Remediation Steps + Estimated Effort
-			    Structured fix recipe from the catalog
-			    (packages/projections/remediation-catalog.ts). When the
-			    ActionProjection has no steps populated, we show a
-			    placeholder rather than hide the section — signals work-
-			    in-progress instead of an empty drawer. */}
-			{action.category !== "verification" && (
+			{/* Remediation Steps — only shown when the action has concrete steps */}
+			{action.category !== "verification" &&
+				action.remediation_steps &&
+				action.remediation_steps.length > 0 && (
 				<DrawerSection title={t("drawer.remediation")} accent={severityAccent}>
 					<DrawerStatBox accent={severityAccent}>
-						{action.remediation_steps && action.remediation_steps.length > 0 ? (
-							<ol className='list-none space-y-2 px-4 py-3'>
-								{action.remediation_steps.map((step, i) => (
-									<li
-										key={i}
-										className='flex items-start gap-3 text-sm leading-relaxed text-content-secondary'
-									>
-										<span className='mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset text-[10px] font-semibold text-content-muted'>
-											{i + 1}
-										</span>
-										<span>{step}</span>
-									</li>
-								))}
-							</ol>
-						) : (
-							<div className='px-4 py-3 text-sm italic text-content-faint'>
-								{t("drawer.remediationEmpty")}
-							</div>
-						)}
+						<ol className='list-none space-y-2 px-4 py-3'>
+							{action.remediation_steps.map((step, i) => (
+								<li
+									key={i}
+									className='flex items-start gap-3 text-sm leading-relaxed text-content-secondary'
+								>
+									<span className='mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset text-[10px] font-semibold text-content-muted'>
+										{i + 1}
+									</span>
+									<span>{step}</span>
+								</li>
+							))}
+						</ol>
 						{action.estimated_effort_hours != null && (
 							<div className='border-t border-edge/50 px-4 py-2.5'>
 								<div className='flex items-center justify-between text-xs'>

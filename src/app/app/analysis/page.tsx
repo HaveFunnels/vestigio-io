@@ -235,11 +235,6 @@ export default function AnalysisPage() {
 		<div className='p-4 sm:p-6'>
 			<PageHeader
 				title={t("title")}
-				subtitle={
-					analysisState === "ongoing"
-						? t("subtitle_ongoing")
-						: t("subtitle_complete")
-				}
 				tooltip={tTooltip("page_tooltips.analysis")}
 			/>
 

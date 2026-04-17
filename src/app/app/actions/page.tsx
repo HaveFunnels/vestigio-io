@@ -668,13 +668,6 @@ function ActionsContent({
 				<ChangeSummaryBanner report={changeReport} />
 			</div>
 
-			{/* Explainer */}
-			<div className='mb-4 rounded-lg border border-edge bg-surface-card/50 px-4 py-2.5'>
-				<p className='text-xs leading-relaxed text-content-muted'>
-					{t("explainer")}
-				</p>
-			</div>
-
 			{/* Tab Bar */}
 			<div className='mb-4 flex items-center gap-1 overflow-x-auto rounded-lg border border-edge bg-surface-card p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
 				{tabs.map((tab) => (

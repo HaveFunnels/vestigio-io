@@ -70,26 +70,25 @@ export async function GET(request: Request) {
 
   const filters = parseFilters(new URL(request.url));
 
+  // Resolve org context BEFORE prisma import — the demo org has no
+  // backing DB rows, so a prisma failure must not block the synthetic
+  // journey from being returned.
+  const orgCtx = await resolveOrgContext();
+
+  if (!orgCtx.orgId) {
+    return NextResponse.json({ map: null });
+  }
+
+  const isDemo =
+    orgCtx.orgType === "demo" ||
+    orgCtx.orgId === "demo" ||
+    orgCtx.orgId === "demo_org";
+  if (isDemo) {
+    return NextResponse.json({ map: buildDemoJourneyMap(filters) });
+  }
+
   try {
     const { prisma } = await import("@/libs/prismaDb");
-    const orgCtx = await resolveOrgContext();
-
-    if (!orgCtx.orgId) {
-      return NextResponse.json({ map: null });
-    }
-
-    // Demo org has no backing Prisma records (see src/libs/resolve-org.ts
-    // — demo is the fallback context when no membership exists). Return
-    // a small synthetic journey so evaluators on the demo account see
-    // the flagship map populated instead of an empty state. Metadata
-    // flags it as `demo` so the UI can badge it if we want to later.
-    const isDemo =
-      orgCtx.orgType === "demo" ||
-      orgCtx.orgId === "demo" ||
-      orgCtx.orgId === "demo_org";
-    if (isDemo) {
-      return NextResponse.json({ map: buildDemoJourneyMap(filters) });
-    }
 
     // Get the latest environment
     const env = await prisma.environment.findFirst({

@@ -100,8 +100,6 @@ export function ChatInputBar({
     e.target.value = "";
   }
 
-  const model = MODELS[selectedModel];
-
   return (
     <div className="shrink-0 px-4 pb-4 pt-2 sm:px-8">
       <div className="mx-auto max-w-3xl rounded-2xl border border-content-faint/25 bg-surface-card px-3 py-2.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:border-content-faint/40 focus-within:shadow-[0_0_24px_-4px_rgba(255,255,255,0.12)] sm:px-4 sm:py-3">
@@ -251,14 +249,6 @@ export function ChatInputBar({
             <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
             <ModelSelector selected={selectedModel} onSelect={onModelChange} plan={plan} />
           </div>
-
-          {/* ── Mobile: model badge (informational, taps into + menu) ── */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="mb-1 shrink-0 rounded-md border border-edge/30 px-1.5 py-0.5 text-[10px] font-medium text-content-faint sm:hidden"
-          >
-            {model.label}
-          </button>
 
           {/* Send / Stop — always visible */}
           {isStreaming && onStop ? (

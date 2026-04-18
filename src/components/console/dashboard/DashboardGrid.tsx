@@ -120,20 +120,26 @@ export function DashboardGrid({
 		const bi = mobileOrder.indexOf(b.instanceId);
 		return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
 	});
+	const compactOnMobile: Record<string, number> = {
+		"default-streak": 2,
+		"default-verification": 2,
+		"default-toppack": 2,
+	};
 	let cumulativeY = 0;
 	const smLayout: Layout = sortedForMobile.map(
 		(inst): LayoutItem => {
+			const h = compactOnMobile[inst.instanceId] ?? inst.h;
 			const item: LayoutItem = {
 				i: inst.instanceId,
 				x: 0,
 				y: cumulativeY,
 				w: 1,
-				h: inst.h,
+				h,
 				static: true,
 				isResizable: false,
 				isDraggable: false,
 			};
-			cumulativeY += inst.h;
+			cumulativeY += h;
 			return item;
 		}
 	);

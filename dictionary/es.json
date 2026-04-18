@@ -1876,12 +1876,12 @@
 					"description": "Qué pack concentra la mayor exposición mensual ahora mismo."
 				},
 				"top_pack_card": {
-					"label": "Pack principal",
+					"label": "Mayor Riesgo",
 					"empty_caption": "Todavía no hay exposición registrada",
 					"caption": "{amount}{perMonth} concentrados en este pack"
 				},
 				"verification_rate_card": {
-					"label": "Verificado",
+					"label": "Tasa de Verificación",
 					"caption_strong": "Evidencia sólida — la mayoría de los hallazgos está confirmada",
 					"caption_healthy": "La cola de confirmación está saludable",
 					"caption_waiting": "Algunos hallazgos siguen esperando verificación",

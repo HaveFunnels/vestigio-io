@@ -1926,12 +1926,12 @@
 					"description": "Qual pack concentra mais exposição mensal agora."
 				},
 				"top_pack_card": {
-					"label": "Pack no topo",
+					"label": "Maior Risco",
 					"empty_caption": "Ainda não há exposição registrada",
 					"caption": "{amount}{perMonth} concentrados neste pack"
 				},
 				"verification_rate_card": {
-					"label": "Verificado",
+					"label": "Taxa de Verificação",
 					"caption_strong": "Evidência forte — a maioria das descobertas está confirmada",
 					"caption_healthy": "A fila de confirmação está saudável",
 					"caption_waiting": "Algumas descobertas ainda aguardam verificação",

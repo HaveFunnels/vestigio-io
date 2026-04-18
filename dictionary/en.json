@@ -1907,12 +1907,12 @@
 					"description": "Which pack carries the most monthly exposure right now."
 				},
 				"top_pack_card": {
-					"label": "Top pack",
+					"label": "Top Risk Area",
 					"empty_caption": "No exposure recorded yet",
 					"caption": "{amount}{perMonth} concentrated in this pack"
 				},
 				"verification_rate_card": {
-					"label": "Verified",
+					"label": "Verification Rate",
 					"caption_strong": "Strong evidence — most findings are confirmed",
 					"caption_healthy": "Confirmation queue is healthy",
 					"caption_waiting": "Some findings still waiting on verification",

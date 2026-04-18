@@ -3,7 +3,7 @@ import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { generateAPIKeyPayloadSchema } from "./schema";
 

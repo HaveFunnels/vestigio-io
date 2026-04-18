@@ -2,7 +2,7 @@ import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { isDemoEmail } from "@/lib/demo-account";
 import { prisma } from "@/libs/prismaDb";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { changePasswordSchema } from "./schema";

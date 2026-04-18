@@ -3,7 +3,7 @@ import { withErrorTracking } from "@/libs/error-tracker";
 import { checkRateLimit } from "@/libs/limiter";
 import { prisma } from "@/libs/prismaDb";
 import { excludeFields } from "@/utils/exclude-fields";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { registerSchema } from "./schema";
 

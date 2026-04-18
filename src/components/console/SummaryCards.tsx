@@ -249,10 +249,9 @@ function MobileCarousel({ cards }: { cards: SummaryCard[] }) {
 			<div
 				ref={scrollRef}
 				className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto"
-				style={{ paddingInline: "10%" }}
-			>
+				>
 				{cards.map((card) => (
-					<div key={card.label} className="w-[80%] shrink-0 snap-center px-1.5">
+					<div key={card.label} className="w-full shrink-0 snap-center px-1">
 						<div className="h-full">
 							<CardContent card={card} />
 						</div>

@@ -1455,7 +1455,8 @@
 				"analysis": "Alle Befunde mit vollständigen Evidenzdetails. Tiefer eintauchen.",
 				"inventory": "Alle Seiten und Oberflächen, die Vestigio auf Ihrer Website entdeckt hat.",
 				"maps": "Visuelle Ursache-Wirkungs-Ketten von Befunden zu Aktionen.",
-				"knowledge_base": "Dokumentation zu Befunden, Packs und Plattformkonzepten."
+				"knowledge_base": "Dokumentation zu Befunden, Packs und Plattformkonzepten.",
+				"data_sources": "Integrationen und Zugriffsquellen für die Vestigio-Analyse konfigurieren."
 			}
 		},
 		"analysis": {
@@ -2623,6 +2624,7 @@
 			"skip": "Überspringen und jetzt zum Inventar"
 		},
 		"data_sources_extra": {
+			"title": "Datenquellen",
 			"close": "Schließen",
 			"configure": "Konfigurieren"
 		},

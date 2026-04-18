@@ -1475,7 +1475,8 @@
 				"analysis": "Todas as descobertas com detalhe completo de evidências. Aprofunde-se.",
 				"inventory": "Todas as páginas e superfícies que o Vestigio descobriu no seu site.",
 				"maps": "Cadeias visuais de causa e efeito das descobertas às ações.",
-				"knowledge_base": "Documentação sobre descobertas, packs e conceitos da plataforma."
+				"knowledge_base": "Documentação sobre descobertas, packs e conceitos da plataforma.",
+				"data_sources": "Configure integrações e fontes de acesso para análise do Vestigio."
 			}
 		},
 		"verification_badge": {
@@ -2528,6 +2529,7 @@
 			"skip": "Pular e ir para o inventário agora"
 		},
 		"data_sources_extra": {
+			"title": "Fontes de Dados",
 			"close": "Fechar",
 			"configure": "Configurar"
 		},

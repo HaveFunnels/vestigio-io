@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
+import PageHeader from "@/components/console/PageHeader";
 
 // ──────────────────────────────────────────────
 // Data Sources Settings
@@ -72,6 +73,52 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 	coming_soon: { label: "Coming soon", color: "#6366f1" },
 };
 
+// ── Brand Logo Components ───────────────────────────
+const SOURCE_LOGOS: Record<string, React.ReactNode> = {
+	surface_audit: (
+		<svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+			<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+		</svg>
+	),
+	saas_access: (
+		<svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+			<path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+		</svg>
+	),
+	pixel: (
+		<svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+			<path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+		</svg>
+	),
+	stripe: (
+		<svg className="w-5 h-5" viewBox="0 0 24 24" fill="#635BFF">
+			<path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-7.076-2.19l-.9 5.555C5.747 22.975 8.938 24 12.469 24c2.6 0 4.735-.64 6.246-1.83 1.657-1.302 2.528-3.22 2.528-5.567 0-4.118-2.508-5.823-7.267-7.453z" />
+		</svg>
+	),
+	shopify: (
+		<svg className="w-5 h-5" viewBox="0 0 24 24" fill="#95BF47">
+			<path d="M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.73c-.018-.116-.125-.192-.21-.192s-1.765-.124-1.765-.124-1.16-1.16-1.298-1.282a.294.294 0 00-.168-.085l-.949 21.053-.201-.079zM12.726 7.134c-.2-.068-.406-.14-.621-.198a5.07 5.07 0 00-.148-1.534c-.566-1.06-1.2-1.46-1.86-1.536.068.092.123.192.18.3a4.998 4.998 0 01.429 2.36c-.347-.1-.717-.2-1.104-.3.288-1.24.086-2.088-.388-2.652a1.468 1.468 0 00-.314-.278c-.656.304-1.155 1.058-1.478 2.09a19.27 19.27 0 00-.608 2.832l-1.77-.544c-.212-.064-.366-.224-.4-.388C4.294 5.394 5.592.484 5.634.32c.024-.096-.008-.2-.096-.264a.313.313 0 00-.272-.044S3.648.348 3.59.364c-.056.016-.164.048-.164.048S1.21 7.476 1.07 8.168c-.14.692 2.236 18.676 2.236 18.676l9.42-2.016V7.134z" />
+		</svg>
+	),
+	nuvemshop: (
+		<svg className="w-5 h-5" fill="#2B35AF" viewBox="0 0 24 24" stroke="none">
+			<path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" strokeWidth={1.5} stroke="#2B35AF" fill="none" />
+		</svg>
+	),
+	meta_ads: (
+		<svg className="w-5 h-5" viewBox="0 0 24 24" fill="#0081FB">
+			<path d="M6.915 4.03c-1.968 0-3.683 1.28-4.871 3.113C.704 9.208 0 11.883 0 14.449c0 .706.07 1.369.21 1.973a4.892 4.892 0 001.12 2.15c.55.586 1.3.928 2.196.928 1.027 0 1.937-.44 2.78-1.19.717-.637 1.383-1.493 2.014-2.545.69-1.15 1.335-2.532 1.933-4.11l.12-.322a30.1 30.1 0 011.914 4.143c.636 1.067 1.311 1.941 2.036 2.588.853.762 1.777 1.21 2.828 1.21.895 0 1.636-.342 2.187-.928a4.856 4.856 0 001.12-2.15c.14-.604.21-1.267.21-1.973 0-2.566-.704-5.241-2.044-7.306C20.768 5.31 19.053 4.03 17.085 4.03c-1.042 0-1.968.44-2.81 1.19-.661.589-1.282 1.38-1.87 2.344-.437.716-.85 1.504-1.242 2.36a27.59 27.59 0 00-1.242-2.36c-.588-.964-1.209-1.755-1.87-2.344-.842-.75-1.768-1.19-2.81-1.19h-.226z" />
+		</svg>
+	),
+	google_ads: (
+		<svg className="w-5 h-5" viewBox="0 0 24 24">
+			<path d="M12 17.75a2.75 2.75 0 100 5.5 2.75 2.75 0 000-5.5z" fill="#FBBC04" />
+			<path d="M3.29 6.56l5.33 9.24c.33.57.1 1.3-.47 1.63l-1.06.61c-.57.33-1.3.1-1.63-.47L.13 8.33c-.33-.57-.1-1.3.47-1.63l1.06-.61c.57-.33 1.3-.13 1.63.47z" fill="#34A853" />
+			<path d="M14.59 6.56l5.33 9.24c.33.57.97.77 1.54.44l1.06-.61c.57-.33.77-.97.44-1.54l-5.33-9.24c-.33-.57-.97-.77-1.54-.44l-1.06.61c-.57.33-.77.97-.44 1.54z" fill="#4285F4" />
+		</svg>
+	),
+};
+
 // TODO: Replace with real environment ID from context/session
 function getEnvironmentId(): string {
 	if (typeof window !== "undefined") {
@@ -83,6 +130,7 @@ function getEnvironmentId(): string {
 
 export default function DataSourcesPage() {
 	const t = useTranslations("console.data_sources_extra");
+	const tc = useTranslations("console.common");
 	const [expandedCard, setExpandedCard] = useState<string | null>(null);
 	const [saasForm, setSaasForm] = useState<SaasFormData>(defaultSaasForm);
 	const [saasStatus, setSaasStatus] = useState<SourceStatus>("not_configured");
@@ -543,7 +591,6 @@ export default function DataSourcesPage() {
 			id: "surface_audit",
 			title: "Surface Audit",
 			description: "Automated surface-level audit of your public pages. Runs once, stays active.",
-			icon: "M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z",
 			status: (surfaces_audit_active ? "verified" : "not_configured") as SourceStatus,
 			configurable: false,
 			unlocks: "Surface inventory, page health, SEO signals",
@@ -552,7 +599,6 @@ export default function DataSourcesPage() {
 			id: "saas_access",
 			title: "SaaS Authenticated Access",
 			description: "Configure test account credentials for authenticated SaaS analysis.",
-			icon: "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z",
 			status: saasStatus,
 			configurable: true,
 			unlocks: "SaaS Growth Pack, activation analysis, upgrade path insights",
@@ -561,7 +607,6 @@ export default function DataSourcesPage() {
 			id: "pixel",
 			title: "Vestigio Pixel",
 			description: "Install the tracking snippet to collect real user behavior data.",
-			icon: "M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5",
 			status: "not_configured" as SourceStatus,
 			configurable: true,
 			unlocks: "Real user behavior data, conversion tracking",
@@ -570,7 +615,6 @@ export default function DataSourcesPage() {
 			id: "stripe",
 			title: "Stripe",
 			description: "Transaction data, chargeback metrics, and revenue tracking via webhooks.",
-			icon: "M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z",
 			status: "not_configured" as SourceStatus,
 			configurable: false,
 			unlocks: "Revenue data, chargeback rates, transaction metrics",
@@ -579,7 +623,6 @@ export default function DataSourcesPage() {
 			id: "shopify",
 			title: "Shopify",
 			description: "Import real revenue, orders, customers, and product data to replace heuristic estimates with data-driven insights.",
-			icon: "M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z",
 			status: shopifyStatus,
 			configurable: true,
 			unlocks: "Real revenue data, abandoned cart insights, product analytics, customer metrics",
@@ -588,7 +631,6 @@ export default function DataSourcesPage() {
 			id: "nuvemshop",
 			title: "Nuvemshop",
 			description: "Importe dados reais de faturamento, pedidos, clientes e produtos da sua loja Nuvemshop.",
-			icon: "M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z",
 			status: nuvemshopStatus,
 			configurable: true,
 			unlocks: "Dados reais de faturamento, analytics de produtos, métricas de clientes",
@@ -597,7 +639,6 @@ export default function DataSourcesPage() {
 			id: "meta_ads",
 			title: "Meta Ads",
 			description: "Importe ad spend e criativos do Facebook / Instagram Ads pra medir ROAS real e detectar concentração de plataforma.",
-			icon: "M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM9.75 16.5V9l5.25 3.75L9.75 16.5z",
 			status: metaAdsStatus,
 			configurable: true,
 			unlocks: "Ad spend real, criativos, ROAS measurable, platform concentration risk",
@@ -606,7 +647,6 @@ export default function DataSourcesPage() {
 			id: "google_ads",
 			title: "Google Ads",
 			description: "Importe spend, campanhas e creative text do Google Ads pra cross-reference com revenue e detectar waste.",
-			icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z",
 			status: googleAdsStatus,
 			configurable: true,
 			unlocks: "Ad spend real, campanhas, creative text, ROAS measurable, conversion visibility",
@@ -614,29 +654,27 @@ export default function DataSourcesPage() {
 	];
 
 	return (
-		<div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem 1rem" }}>
-			<h1 style={{ fontSize: "1.5rem", fontWeight: 600, marginBottom: 4, color: "#e4e4e7" }}>
-				Data Sources
-			</h1>
-			<p style={{ color: "#71717a", marginBottom: 24, fontSize: 14 }}>
-				Configure integrations and access sources for Vestigio analysis.
-			</p>
+		<div className="p-4 sm:p-6">
+			<PageHeader
+				title={t("title")}
+				tooltip={tc("page_tooltips.data_sources")}
+			/>
 
 			{error && (
-				<div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 8, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 13 }}>
+				<div className="mb-4 rounded-lg border border-red-900 bg-red-950/20 px-3.5 py-2.5 text-[13px] text-red-300">
 					{error}
 				</div>
 			)}
 
 			{/* SaaS Setup Required Banner */}
 			{saasStatus === "not_configured" && (
-				<div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 10, border: "1px solid #854d0e", backgroundColor: "#422006", display: "flex", alignItems: "flex-start", gap: 12 }}>
-					<svg style={{ width: 20, height: 20, color: "#fbbf24", flexShrink: 0, marginTop: 1 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+				<div className="mb-4 flex items-start gap-3 rounded-[10px] border border-yellow-800 bg-yellow-950 px-[18px] py-3.5">
+					<svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
 					</svg>
 					<div>
-						<p style={{ color: "#fde68a", fontWeight: 600, fontSize: 14, marginBottom: 2 }}>SaaS Setup Required</p>
-						<p style={{ color: "#d97706", fontSize: 13 }}>
+						<p className="mb-0.5 text-sm font-semibold text-amber-200">SaaS Setup Required</p>
+						<p className="text-[13px] text-amber-600">
 							Configure SaaS Authenticated Access below to unlock SaaS Growth analysis. Without credentials, Vestigio cannot analyze your authenticated product experience.
 						</p>
 					</div>
@@ -645,13 +683,13 @@ export default function DataSourcesPage() {
 
 			{/* Verification Failed Banner */}
 			{saasStatus === "failed" && lastFailure && (
-				<div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 10, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", display: "flex", alignItems: "flex-start", gap: 12 }}>
-					<svg style={{ width: 20, height: 20, color: "#f87171", flexShrink: 0, marginTop: 1 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+				<div className="mb-4 flex items-start gap-3 rounded-[10px] border border-red-900 bg-red-950/20 px-[18px] py-3.5">
+					<svg className="mt-0.5 h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
 					</svg>
 					<div>
-						<p style={{ color: "#fca5a5", fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Verification Failed</p>
-						<p style={{ color: "#dc2626", fontSize: 13 }}>
+						<p className="mb-0.5 text-sm font-semibold text-red-300">Verification Failed</p>
+						<p className="text-[13px] text-red-600">
 							{lastFailure}. Please review your credentials and try again. SaaS Growth features are paused until verification succeeds.
 						</p>
 					</div>
@@ -660,49 +698,50 @@ export default function DataSourcesPage() {
 
 			{/* MFA Awaiting Banner */}
 			{saasStatus === "awaiting_manual_mfa" && (
-				<div style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 10, border: "1px solid #854d0e", backgroundColor: "#422006", display: "flex", alignItems: "flex-start", gap: 12 }}>
-					<svg style={{ width: 20, height: 20, color: "#fbbf24", flexShrink: 0, marginTop: 1 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+				<div className="mb-4 flex items-start gap-3 rounded-[10px] border border-yellow-800 bg-yellow-950 px-[18px] py-3.5">
+					<svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 					</svg>
 					<div>
-						<p style={{ color: "#fde68a", fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Manual MFA Required</p>
-						<p style={{ color: "#d97706", fontSize: 13 }}>
+						<p className="mb-0.5 text-sm font-semibold text-amber-200">Manual MFA Required</p>
+						<p className="text-[13px] text-amber-600">
 							Your application requires multi-factor authentication that cannot be automated. Please complete MFA manually, or configure the account with MFA disabled for testing.
 						</p>
 					</div>
 				</div>
 			)}
 
-			<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{sources.map((source) => (
-					<div key={source.id} style={{ border: "1px solid #27272a", borderRadius: 12, backgroundColor: "#18181b", overflow: "hidden", gridColumn: expandedCard === source.id ? "1 / -1" : undefined, transition: "all 200ms ease", display: "flex", flexDirection: "column" }}>
+					<div
+						key={source.id}
+						className={`rounded-xl border border-edge bg-surface-card overflow-hidden flex flex-col transition-all ${expandedCard === source.id ? "md:col-span-2 lg:col-span-3" : ""}`}
+					>
 						{/* Card */}
 						<div
-							style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "20px", cursor: source.configurable ? "pointer" : "default", flex: 1 }}
+							className={`flex items-start gap-3.5 p-5 flex-1 ${source.configurable ? "cursor-pointer" : ""}`}
 							onClick={() => source.configurable && setExpandedCard(expandedCard === source.id ? null : source.id)}
 						>
-							<div style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-								<svg style={{ width: 20, height: 20, color: "#a1a1aa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-									<path strokeLinecap="round" strokeLinejoin="round" d={source.icon} />
-								</svg>
+							<div className="w-10 h-10 rounded-lg bg-surface-inset flex items-center justify-center shrink-0">
+								{SOURCE_LOGOS[source.id]}
 							</div>
-							<div style={{ flex: 1, minWidth: 0 }}>
-								<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-									<span style={{ fontWeight: 600, color: "#e4e4e7", fontSize: 14 }}>{source.title}</span>
+							<div className="flex-1 min-w-0">
+								<div className="flex items-center gap-2 mb-1">
+									<span className="text-sm font-semibold text-content">{source.title}</span>
 									<StatusBadge status={source.status} />
 								</div>
-								<p style={{ color: "#71717a", fontSize: 13, lineHeight: 1.5, marginBottom: 0 }}>{source.description}</p>
+								<p className="text-xs text-content-muted leading-relaxed">{source.description}</p>
 								{source.status !== "verified" && source.status !== "coming_soon" && (
-									<p style={{ color: "#6366f1", fontSize: 11, marginTop: 6 }}>Unlocks: {source.unlocks}</p>
+									<p className="text-indigo-500 text-[11px] mt-1.5">Unlocks: {source.unlocks}</p>
 								)}
 								{source.id === "saas_access" && lastVerified && saasStatus === "verified" && (
-									<p style={{ color: "#52525b", fontSize: 11, marginTop: 4 }}>Last verified: {new Date(lastVerified).toLocaleString()}</p>
+									<p className="text-zinc-600 text-[11px] mt-1">Last verified: {new Date(lastVerified).toLocaleString()}</p>
 								)}
 								{source.id === "saas_access" && lastFailure && saasStatus === "failed" && (
-									<p style={{ color: "#ef4444", fontSize: 11, marginTop: 4 }}>Failure: {lastFailure}</p>
+									<p className="text-red-500 text-[11px] mt-1">Failure: {lastFailure}</p>
 								)}
 								{source.configurable && (
-									<p style={{ fontSize: 12, color: "#52525b", marginTop: 8 }}>
+									<p className="text-xs text-zinc-600 mt-2">
 										{expandedCard === source.id ? t("close") : t("configure")} &rarr;
 									</p>
 								)}

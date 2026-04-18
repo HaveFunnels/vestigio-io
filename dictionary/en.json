@@ -1474,7 +1474,8 @@
 				"analysis": "All findings with full evidence detail. Dig deeper.",
 				"inventory": "Every page and surface Vestigio discovered on your site.",
 				"maps": "Visual cause-and-effect chains from findings to actions.",
-				"knowledge_base": "Documentation on findings, packs, and platform concepts."
+				"knowledge_base": "Documentation on findings, packs, and platform concepts.",
+				"data_sources": "Configure integrations and access sources for Vestigio analysis."
 			}
 		},
 		"verification_badge": {
@@ -2509,6 +2510,7 @@
 			"skip": "Skip and go to inventory now"
 		},
 		"data_sources_extra": {
+			"title": "Data Sources",
 			"close": "Close",
 			"configure": "Configure"
 		},

@@ -1524,7 +1524,7 @@ function JourneyFiltersBar({
 	];
 
 	return (
-		<div className='flex flex-wrap items-center gap-3 border-b border-edge bg-surface-card/30 px-6 py-3'>
+		<div className='no-scrollbar flex items-center gap-2 overflow-x-auto border-b border-edge bg-surface-card/30 px-4 py-3 sm:flex-wrap sm:gap-3 sm:px-6'>
 			<FilterPill
 				prefix={t("starting") as string}
 				label={

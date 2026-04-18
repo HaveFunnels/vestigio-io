@@ -861,7 +861,7 @@ export default function InventoryPage() {
 							onClear={clearSelection}
 						/>
 
-						<div className='mb-4 flex flex-wrap items-center gap-3'>
+						<div className='no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:gap-3'>
 							<FilterDropdown
 								value={liveFilter}
 								onChange={setLiveFilter}

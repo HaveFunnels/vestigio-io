@@ -597,6 +597,7 @@ function AnalysisContent({
 		{
 			key: "title",
 			label: tc("columns.finding"),
+			className: "min-w-[240px]",
 			render: (row) => {
 				const isDimmed = row.suppression_context?.visibility === "dimmed";
 				const isAnnotated = row.suppression_context?.visibility === "annotated";

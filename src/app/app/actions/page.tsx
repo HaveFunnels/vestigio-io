@@ -579,6 +579,7 @@ function ActionsContent({
 		{
 			key: "title",
 			label: t("columns.action"),
+			className: "min-w-[240px]",
 			render: (row) => (
 				<div>
 					<div className='text-sm text-content-secondary'>{row.title}</div>
@@ -1335,6 +1336,7 @@ function UserActionsTable({
 		{
 			key: "title",
 			label: t("columns.action"),
+			className: "min-w-[240px]",
 			render: (row) => (
 				<div>
 					<div className='text-sm text-content-secondary'>{row.title}</div>

@@ -1983,7 +1983,7 @@
 			"no_context": "No hay contexto de análisis cargado. Completa el onboarding primero.",
 			"step_failed": "No se pudo completar el paso.",
 			"emptyState": {
-				"title": "Análisis Vestigio",
+				"title": "Vestigio Pulse",
 				"description": "Pregunta sobre ingresos, riesgos, chargebacks o qué arreglar primero. Cada respuesta se basa en los datos de tu auditoría.",
 				"playbooksHint": "Abre Playbooks para prompts de análisis experto",
 				"tips_toggle": "Cómo aprovechar al máximo el chat de Vestigio",
@@ -2297,7 +2297,7 @@
 			"attach_file": "Adjuntar archivo"
 		},
 		"chat_input": {
-			"placeholder": "Pregunta sobre ingresos, riesgos o qué corregir primero...",
+			"placeholder": "Pregunta a Vestigio...",
 			"stop": "Detener",
 			"used": "{used}/{limit} usados",
 			"hint_send": "Enter envía · Shift+Enter nueva línea",

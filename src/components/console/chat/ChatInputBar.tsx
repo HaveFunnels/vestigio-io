@@ -112,13 +112,13 @@ export function ChatInputBar({
           </div>
         )}
 
-        <div className="flex items-end gap-1.5 sm:gap-2">
+        <div className="flex items-end gap-2">
           {/* ── Mobile: "+" menu button ── */}
           <div className="relative sm:hidden" ref={menuRef}>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               disabled={disabled}
-              className={`mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-30 ${
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-30 ${
                 mobileMenuOpen
                   ? "bg-surface-inset text-content-secondary"
                   : "text-content-faint hover:text-content-muted"
@@ -216,7 +216,7 @@ export function ChatInputBar({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="mb-0.5 hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30 sm:flex"
+            className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30 sm:flex"
             title={t("attach_file")}
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
@@ -245,7 +245,7 @@ export function ChatInputBar({
           />
 
           {/* ── Desktop: inline right-side controls ── */}
-          <div className="mb-0.5 hidden shrink-0 items-center gap-1.5 sm:flex">
+          <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
             <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
             <ModelSelector selected={selectedModel} onSelect={onModelChange} plan={plan} />
           </div>
@@ -256,7 +256,7 @@ export function ChatInputBar({
               onClick={onStop}
               title={stopLabel || t("stop")}
               aria-label={stopLabel || t("stop")}
-              className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition-colors hover:bg-red-500"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition-colors hover:bg-red-500"
             >
               <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
                 <rect x="3" y="3" width="10" height="10" rx="1" />
@@ -266,7 +266,7 @@ export function ChatInputBar({
             <button
               onClick={handleSubmit}
               disabled={disabled || !input.trim()}
-              className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
             >
               <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
                 <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

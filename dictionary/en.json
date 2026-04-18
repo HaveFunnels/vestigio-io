@@ -2014,7 +2014,7 @@
 			"no_context": "No analysis context loaded. Complete onboarding first.",
 			"step_failed": "Step could not be completed.",
 			"emptyState": {
-				"title": "Vestigio Analysis",
+				"title": "Vestigio Pulse",
 				"description": "Ask about your revenue, risks, chargebacks, or what to fix first. Every answer is grounded in your audit data.",
 				"playbooksHint": "Open Playbooks for expert analysis prompts",
 				"tips_toggle": "How to get the most out of Vestigio chat",
@@ -2335,7 +2335,7 @@
 			"attach_file": "Attach file"
 		},
 		"chat_input": {
-			"placeholder": "Ask about your revenue, risks, or what to fix first...",
+			"placeholder": "Ask Vestigio...",
 			"stop": "Stop",
 			"used": "{used}/{limit} used",
 			"hint_send": "Enter send · Shift+Enter new line",

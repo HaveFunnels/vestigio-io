@@ -1713,7 +1713,7 @@
 			}
 		},
 		"chat": {
-			"title": "__TODO__",
+			"title": "Vestigio Pulse",
 			"subtitle": "__TODO__",
 			"placeholder": "__TODO__",
 			"send": "__TODO__",
@@ -2449,7 +2449,7 @@
 			"attach_file": "Datei anhängen"
 		},
 		"chat_input": {
-			"placeholder": "Frage zu Umsatz, Risiken oder was zuerst zu beheben ist...",
+			"placeholder": "Frag Vestigio...",
 			"stop": "Stopp",
 			"used": "{used}/{limit} verwendet",
 			"hint_send": "Enter senden · Shift+Enter neue Zeile",

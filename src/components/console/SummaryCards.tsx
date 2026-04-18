@@ -199,7 +199,7 @@ function CardContent({ card }: { card: SummaryCard }) {
 							</span>
 						)}
 						<span
-							className={`font-mono text-2xl font-medium tabular-nums leading-none ${valueColor}`}
+							className={`font-mono text-lg font-medium tabular-nums leading-none sm:text-2xl ${valueColor}`}
 						>
 							{valueDisplay}
 						</span>

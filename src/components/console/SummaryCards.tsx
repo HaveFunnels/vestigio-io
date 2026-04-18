@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
+
 // ──────────────────────────────────────────────
 // SummaryCards — KPI strip used across the console
 //
@@ -171,7 +173,7 @@ function CardContent({ card }: { card: SummaryCard }) {
 
 	return (
 		<div
-			className={`relative overflow-hidden rounded-xl border border-edge bg-surface-card p-5 transition-colors ${variantShadow[variant]}`}
+			className={`relative h-full overflow-hidden rounded-xl border border-edge bg-surface-card p-5 transition-colors ${variantShadow[variant]}`}
 		>
 			<div
 				className={`pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br ${variantGradient[variant]} via-transparent to-transparent`}
@@ -218,17 +220,69 @@ function CardContent({ card }: { card: SummaryCard }) {
 	);
 }
 
-export default function SummaryCards({ cards }: { cards: SummaryCard[] }) {
+function MobileCarousel({ cards }: { cards: SummaryCard[] }) {
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const [activeIndex, setActiveIndex] = useState(0);
+
+	useEffect(() => {
+		const el = scrollRef.current;
+		if (!el) return;
+		function handleScroll() {
+			if (!el) return;
+			const cardWidth = el.scrollWidth / cards.length;
+			const idx = Math.round(el.scrollLeft / cardWidth);
+			setActiveIndex(Math.min(idx, cards.length - 1));
+		}
+		el.addEventListener("scroll", handleScroll, { passive: true });
+		return () => el.removeEventListener("scroll", handleScroll);
+	}, [cards.length]);
+
+	function scrollTo(idx: number) {
+		const el = scrollRef.current;
+		if (!el) return;
+		const cardWidth = el.scrollWidth / cards.length;
+		el.scrollTo({ left: cardWidth * idx, behavior: "smooth" });
+	}
+
 	return (
-		<>
-			{/* Mobile: horizontal carousel with snap scrolling */}
-			<div className='no-scrollbar flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory sm:hidden'>
+		<div className="sm:hidden">
+			<div
+				ref={scrollRef}
+				className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto"
+				style={{ paddingInline: "10%" }}
+			>
 				{cards.map((card) => (
-					<div key={card.label} className='min-w-[80%] shrink-0 snap-start'>
-						<CardContent card={card} />
+					<div key={card.label} className="w-[80%] shrink-0 snap-center px-1.5">
+						<div className="h-full">
+							<CardContent card={card} />
+						</div>
 					</div>
 				))}
 			</div>
+			{cards.length > 1 && (
+				<div className="mt-3 flex justify-center gap-1.5">
+					{cards.map((card, i) => (
+						<button
+							key={card.label}
+							onClick={() => scrollTo(i)}
+							aria-label={`Go to card ${i + 1}`}
+							className={`h-1.5 rounded-full transition-all duration-200 ${
+								i === activeIndex
+									? "w-4 bg-accent"
+									: "w-1.5 bg-content-faint/40"
+							}`}
+						/>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+export default function SummaryCards({ cards }: { cards: SummaryCard[] }) {
+	return (
+		<>
+			<MobileCarousel cards={cards} />
 
 			{/* Desktop: grid layout */}
 			<div

@@ -813,21 +813,21 @@ function ChangeSummaryBanner({
 			{/* Compact header */}
 			<button
 				onClick={() => setExpanded(!expanded)}
-				className='flex w-full items-center justify-between px-4 py-3 text-left'
+				className='flex w-full items-center justify-between gap-3 px-4 py-3 text-left'
 			>
-				<div className='flex items-center gap-3'>
-					{/* Trend arrow */}
-					<span className={`text-lg font-bold ${trend.textColor}`}>
-						{trend.arrow}
-					</span>
-
-					{/* Headline text */}
-					<span className='text-sm text-content-secondary'>
-						{report.headline}
-					</span>
+				<div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3'>
+					{/* Trend arrow + headline */}
+					<div className='flex items-center gap-2'>
+						<span className={`text-lg font-bold ${trend.textColor}`}>
+							{trend.arrow}
+						</span>
+						<span className='text-sm text-content-secondary'>
+							{report.headline}
+						</span>
+					</div>
 
 					{/* Count pills */}
-					<div className='flex items-center gap-2'>
+					<div className='flex flex-wrap items-center gap-1.5 sm:gap-2'>
 						{report.regression_count > 0 && (
 							<span className='rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-semibold text-red-600 dark:text-red-400'>
 								{report.regression_count}{" "}
@@ -859,7 +859,7 @@ function ChangeSummaryBanner({
 
 				{/* Chevron */}
 				<svg
-					className={`h-4 w-4 text-content-muted transition-transform ${expanded ? "rotate-180" : ""}`}
+					className={`h-4 w-4 shrink-0 text-content-muted transition-transform ${expanded ? "rotate-180" : ""}`}
 					fill='none'
 					viewBox='0 0 24 24'
 					stroke='currentColor'

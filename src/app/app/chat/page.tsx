@@ -1260,9 +1260,6 @@ export default function ChatPage() {
 							onRemoveFile={(idx) =>
 								setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))
 							}
-							mcpPct={usage?.mcp_pct ?? 0}
-							mcpUsed={usage?.mcp_used ?? 0}
-							mcpLimit={usage?.mcp_limit ?? 0}
 							isStreaming={isStreaming}
 							onStop={abort}
 							stopLabel={t("stop_generating")}

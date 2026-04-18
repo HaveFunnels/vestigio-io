@@ -120,7 +120,8 @@ export function DashboardGrid({
 		const bi = mobileOrder.indexOf(b.instanceId);
 		return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
 	});
-	const compactOnMobile: Record<string, number> = {
+	const mobileHeightOverrides: Record<string, number> = {
+		"default-changed": 5,
 		"default-streak": 2,
 		"default-verification": 2,
 		"default-toppack": 2,
@@ -128,7 +129,7 @@ export function DashboardGrid({
 	let cumulativeY = 0;
 	const smLayout: Layout = sortedForMobile.map(
 		(inst): LayoutItem => {
-			const h = compactOnMobile[inst.instanceId] ?? inst.h;
+			const h = mobileHeightOverrides[inst.instanceId] ?? inst.h;
 			const item: LayoutItem = {
 				i: inst.instanceId,
 				x: 0,

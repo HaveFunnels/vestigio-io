@@ -160,83 +160,86 @@ function Sparkline({ data, variant }: { data: number[]; variant: Variant }) {
 	);
 }
 
-export default function SummaryCards({ cards }: { cards: SummaryCard[] }) {
+function CardContent({ card }: { card: SummaryCard }) {
+	const variant: Variant = card.variant || "default";
+	const valueColor = card.negative
+		? "text-red-600 dark:text-red-400"
+		: variantValueColor[variant];
+	const valueDisplay = card.negative
+		? `−${String(card.value)}`
+		: card.value;
+
 	return (
 		<div
-			className={`grid grid-cols-2 gap-4 ${
-				cards.length === 5 ? "sm:grid-cols-5" : "sm:grid-cols-4"
-			}`}
+			className={`relative overflow-hidden rounded-xl border border-edge bg-surface-card p-5 transition-colors ${variantShadow[variant]}`}
 		>
-			{cards.map((card) => {
-				const variant: Variant = card.variant || "default";
-				// Negative-number rule: when `negative` is set, force the
-				// value color to red and prefix with a minus character.
-				const valueColor = card.negative
-					? "text-red-600 dark:text-red-400"
-					: variantValueColor[variant];
-				const valueDisplay = card.negative
-					? `−${String(card.value)}`
-					: card.value;
+			<div
+				className={`pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br ${variantGradient[variant]} via-transparent to-transparent`}
+				aria-hidden
+			/>
 
-				return (
-					<div
-						key={card.label}
-						className={`relative overflow-hidden rounded-xl border border-edge bg-surface-card p-5 transition-colors ${variantShadow[variant]}`}
-					>
-						{/* Subtle gradient highlight in the top-left corner */}
-						<div
-							className={`pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br ${variantGradient[variant]} via-transparent to-transparent`}
+			<div className='relative flex h-full items-start justify-between gap-3'>
+				<div className='min-w-0 flex-1'>
+					<div className='flex items-center gap-1.5'>
+						<span
+							className={`h-1.5 w-1.5 shrink-0 rounded-full ${variantDotColor[variant]}`}
 							aria-hidden
 						/>
-
-						<div className='relative flex h-full items-start justify-between gap-3'>
-							<div className='min-w-0 flex-1'>
-								{/* Eyebrow: dot + uppercase label */}
-								<div className='flex items-center gap-1.5'>
-									<span
-										className={`h-1.5 w-1.5 shrink-0 rounded-full ${variantDotColor[variant]}`}
-										aria-hidden
-									/>
-									<span className='truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
-										{card.label}
-									</span>
-								</div>
-
-								{/* Hero value — JetBrains Mono with tabular-nums so
-								    digits never jitter when values change. Optional
-								    prefix sits inline, faint. */}
-								<div className='mt-2 flex items-baseline gap-1'>
-									{card.prefix && (
-										<span className='font-mono text-xs text-content-faint'>
-											{card.prefix}
-										</span>
-									)}
-									<span
-										className={`font-mono text-2xl font-medium tabular-nums leading-none ${valueColor}`}
-									>
-										{valueDisplay}
-									</span>
-								</div>
-
-								{/* Caption strip — same role as the dashboard's caption,
-								    just shorter (consumers pass interpretation as
-								    `subtext`). Pushed slightly down so the hero
-								    breathes. */}
-								{card.subtext && (
-									<p className='mt-2 line-clamp-2 text-[11px] leading-snug text-content-muted'>
-										{card.subtext}
-									</p>
-								)}
-							</div>
-
-							{/* Optional sparkline — fills the right side */}
-							{card.sparkData && card.sparkData.length > 1 && (
-								<Sparkline data={card.sparkData} variant={variant} />
-							)}
-						</div>
+						<span className='truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
+							{card.label}
+						</span>
 					</div>
-				);
-			})}
+
+					<div className='mt-2 flex items-baseline gap-1'>
+						{card.prefix && (
+							<span className='font-mono text-xs text-content-faint'>
+								{card.prefix}
+							</span>
+						)}
+						<span
+							className={`font-mono text-2xl font-medium tabular-nums leading-none ${valueColor}`}
+						>
+							{valueDisplay}
+						</span>
+					</div>
+
+					{card.subtext && (
+						<p className='mt-2 line-clamp-2 text-[11px] leading-snug text-content-muted'>
+							{card.subtext}
+						</p>
+					)}
+				</div>
+
+				{card.sparkData && card.sparkData.length > 1 && (
+					<Sparkline data={card.sparkData} variant={variant} />
+				)}
+			</div>
 		</div>
+	);
+}
+
+export default function SummaryCards({ cards }: { cards: SummaryCard[] }) {
+	return (
+		<>
+			{/* Mobile: horizontal carousel with snap scrolling */}
+			<div className='no-scrollbar flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory sm:hidden'>
+				{cards.map((card) => (
+					<div key={card.label} className='min-w-[80%] shrink-0 snap-start'>
+						<CardContent card={card} />
+					</div>
+				))}
+			</div>
+
+			{/* Desktop: grid layout */}
+			<div
+				className={`hidden gap-4 sm:grid ${
+					cards.length === 5 ? "sm:grid-cols-5" : "sm:grid-cols-4"
+				}`}
+			>
+				{cards.map((card) => (
+					<CardContent key={card.label} card={card} />
+				))}
+			</div>
+		</>
 	);
 }

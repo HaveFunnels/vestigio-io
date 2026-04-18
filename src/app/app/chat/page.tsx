@@ -1082,15 +1082,16 @@ export default function ChatPage() {
 							{sidebarCollapsed && (
 								<button
 									onClick={() => setSidebarCollapsed(false)}
-									className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-edge text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-secondary'
+									className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-edge text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-secondary'
 									title='Show conversations'
 								>
-									<svg className='h-3.5 w-3.5' viewBox='0 0 16 16' fill='none'>
+									<svg className='h-4 w-4' viewBox='0 0 24 24' fill='none'>
 										<path
-											d='M3 5h10M3 8h10M3 11h10'
+											d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
 											stroke='currentColor'
-											strokeWidth='1.5'
+											strokeWidth='1.75'
 											strokeLinecap='round'
+											strokeLinejoin='round'
 										/>
 									</svg>
 								</button>

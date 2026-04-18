@@ -1,6 +1,6 @@
 import { BrandingProvider } from "@/components/BrandingProvider";
 import JsonLd from "@/components/SEO/JsonLd";
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -30,6 +30,10 @@ const geist = Geist({
 	variable: "--font-display",
 	display: "swap",
 });
+
+export const viewport: Viewport = {
+	viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
 	metadataBase: new URL("https://vestigio.io"),

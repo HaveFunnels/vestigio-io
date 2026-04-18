@@ -713,7 +713,7 @@ function AnalysisContent({
 				<SummaryCards cards={summaryCards} />
 			</div>
 
-			<div className='mb-4 flex flex-wrap items-center gap-3'>
+			<div className='mb-4 flex flex-wrap items-center gap-2 sm:gap-3'>
 				<select
 					value={polarityFilter}
 					onChange={(e) => setPolarityFilter(e.target.value as PolarityFilter)}

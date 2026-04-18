@@ -1171,7 +1171,7 @@ export default function ChatPage() {
 								onScroll={handleScroll}
 								className='absolute inset-0 overflow-y-auto px-4 py-4 sm:px-6'
 							>
-								<div className='mx-auto max-w-3xl space-y-4'>
+								<div className='mx-auto max-w-xl space-y-4 sm:max-w-3xl'>
 									{allMessages.length === 0 && !isStreaming && (
 										<EmptyState onSuggest={handleSend} />
 									)}
@@ -1218,7 +1218,7 @@ export default function ChatPage() {
 							{!isAtBottom && allMessages.length > 0 && (
 								<button
 									onClick={jumpToLatest}
-									className='absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-edge bg-surface-card px-3 py-1.5 text-[11px] font-medium text-content-secondary shadow-lg backdrop-blur transition-all hover:border-emerald-600/50 hover:text-emerald-400'
+									className='absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-edge bg-surface-card px-4 py-2 text-xs font-medium text-content-secondary shadow-lg backdrop-blur transition-all hover:border-emerald-600/50 hover:text-emerald-400 sm:bottom-4 sm:px-3 sm:py-1.5 sm:text-[11px]'
 									aria-label={t("jump_to_latest")}
 								>
 									{t("jump_to_latest")}
@@ -1653,7 +1653,7 @@ function ContextIsland({
 						return (
 							<div
 								key={`island:${item.kind}:${item.id}`}
-								className={`group flex max-w-[320px] items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors ${styles.chip}`}
+								className={`group flex max-w-[calc(100vw-6rem)] items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors sm:max-w-[320px] sm:text-[11px] ${styles.chip}`}
 								title={`${label}: ${item.title}`}
 							>
 								<ContextKindIcon
@@ -1873,7 +1873,7 @@ function ContextIndicator({
 					return (
 						<div
 							key={`${item.kind}:${item.id}`}
-							className={`group flex max-w-[260px] items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors ${styles.chip}`}
+							className={`group flex max-w-[calc(100vw-6rem)] items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors sm:max-w-[260px] sm:text-[11px] ${styles.chip}`}
 							title={`${label}: ${item.title}`}
 						>
 							<ContextKindIcon

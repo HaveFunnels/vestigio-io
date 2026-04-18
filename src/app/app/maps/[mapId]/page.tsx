@@ -1427,7 +1427,7 @@ function FilterPill<V extends string>({
 					onClick={() => !disabled && setOpen((x) => !x)}
 					disabled={disabled}
 					title={disabled ? disabledHint : undefined}
-					className={`flex min-w-[140px] items-start gap-3 rounded-lg border px-3 py-1.5 text-left transition-colors ${
+					className={`flex min-w-0 items-start gap-3 rounded-lg border px-3 py-1.5 text-left transition-colors sm:min-w-[140px] ${
 						disabled
 							? "cursor-not-allowed border-edge/40 bg-surface-inset/30 opacity-70"
 							: open
@@ -1460,7 +1460,7 @@ function FilterPill<V extends string>({
 					)}
 				</button>
 				{open && (
-					<div className='absolute left-0 top-full z-50 mt-1 min-w-[200px] overflow-hidden rounded-lg border border-edge bg-surface-card shadow-xl'>
+					<div className='absolute left-0 top-full z-50 mt-1 min-w-[200px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-edge bg-surface-card shadow-xl'>
 						<div className='max-h-[320px] overflow-auto py-1'>
 							{options.map((opt) => (
 								<button

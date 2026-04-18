@@ -654,7 +654,7 @@ export default function InventoryPage() {
 						toggleSelect(row.surface_id);
 					}}
 					onClick={(e) => e.stopPropagation()}
-					className='h-3.5 w-3.5 cursor-pointer rounded border-edge bg-surface-inset accent-accent'
+					className='h-4 w-4 cursor-pointer rounded border-edge bg-surface-inset accent-accent'
 				/>
 			),
 		},
@@ -979,13 +979,13 @@ export default function InventoryPage() {
 							<div className='overflow-x-auto rounded-md border border-edge'>
 								<table className='w-full text-left text-sm'>
 									<thead>
-										<tr className='border-b border-edge bg-surface-inset/60'>
+										<tr className='sticky top-0 z-10 border-b border-edge bg-surface-inset/95 backdrop-blur-sm'>
 											<th className='w-10 px-4 py-3'>
 												<input
 													type='checkbox'
 													checked={isAllSelected}
 													onChange={toggleSelectAll}
-													className='h-3.5 w-3.5 cursor-pointer rounded border-edge bg-surface-inset accent-accent'
+													className='h-4 w-4 cursor-pointer rounded border-edge bg-surface-inset accent-accent'
 												/>
 											</th>
 											{columns.slice(1).map((col) => (

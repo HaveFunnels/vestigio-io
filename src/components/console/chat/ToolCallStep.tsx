@@ -85,7 +85,7 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
       {/* Expanded result preview */}
       {expanded && block.resultPreview && (
         <div className="ml-6 mt-1 rounded-md border border-edge bg-surface px-3 py-2">
-          <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-content-muted">
+          <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-content-muted">
             {block.resultPreview}
           </pre>
         </div>

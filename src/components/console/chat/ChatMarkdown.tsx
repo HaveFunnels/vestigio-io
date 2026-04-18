@@ -44,7 +44,7 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
               <span className="font-mono text-[10px] text-content-muted">{lang}</span>
             </div>
           )}
-          <pre className={`overflow-x-auto ${lang ? "rounded-b-md border border-t-0" : "rounded-md border"} border-edge bg-surface px-3 py-2 font-mono text-xs leading-relaxed text-content-secondary`}>
+          <pre className={`overflow-x-auto ${lang ? "rounded-b-md border border-t-0" : "rounded-md border"} border-edge bg-surface px-3 py-2 font-mono text-[13px] leading-relaxed text-content-secondary sm:text-xs`}>
             {codeLines.join("\n")}
           </pre>
         </div>,

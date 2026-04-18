@@ -101,7 +101,7 @@ export function ChatInputBar({
   }
 
   return (
-    <div className="shrink-0 px-4 pb-4 pt-2 sm:px-8">
+    <div className="shrink-0 px-4 pt-2 sm:px-8" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}>
       <div className="mx-auto max-w-3xl rounded-2xl border border-content-faint/25 bg-surface-card px-3 py-2.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:border-content-faint/40 focus-within:shadow-[0_0_24px_-4px_rgba(255,255,255,0.12)] sm:px-4 sm:py-3">
         {/* Attached files */}
         {attachedFiles.length > 0 && (

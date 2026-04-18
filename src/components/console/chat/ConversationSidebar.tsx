@@ -127,7 +127,7 @@ export function ConversationSidebar({
   }
 
   return (
-    <div className="flex w-64 flex-col border-r border-edge bg-surface-inset">
+    <div className="flex w-[min(16rem,85vw)] flex-col border-r border-edge bg-surface-inset">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-edge px-3 py-2.5">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-content-muted">{t("title")}</span>
@@ -178,7 +178,7 @@ export function ConversationSidebar({
                 key={conv.id}
                 onMouseEnter={() => setHoveredId(conv.id)}
                 onMouseLeave={() => setHoveredId(null)}
-                className={`group flex w-full items-center gap-1 rounded-md px-2.5 py-1.5 transition-colors ${
+                className={`group flex w-full items-center gap-1 rounded-md px-2.5 py-2.5 transition-colors ${
                   activeId === conv.id ? "bg-surface-card text-content" : "text-content-tertiary hover:bg-surface-card/50 hover:text-content-secondary"
                 }`}
               >
@@ -192,7 +192,7 @@ export function ConversationSidebar({
                     className="min-w-0 flex-1 rounded bg-surface-card px-1 py-0.5 text-xs text-content outline-none ring-1 ring-emerald-600"
                   />
                 ) : (
-                  <button onClick={() => onSelect(conv.id)} className="min-w-0 flex-1 truncate text-left text-xs">
+                  <button onClick={() => onSelect(conv.id)} className="min-w-0 flex-1 truncate text-left text-[13px]">
                     {conv.title || t("untitled")}
                   </button>
                 )}

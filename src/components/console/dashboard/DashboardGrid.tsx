@@ -104,17 +104,38 @@ export function DashboardGrid({
 		})
 	);
 
-	const smLayout: Layout = instances.map(
-		(inst, idx): LayoutItem => ({
-			i: inst.instanceId,
-			x: 0,
-			y: idx * 3,
-			w: 1,
-			h: inst.h,
-			static: true,
-			isResizable: false,
-			isDraggable: false,
-		})
+	const mobileOrder = [
+		"default-money",
+		"default-exposure",
+		"default-critical",
+		"default-changed",
+		"default-health",
+		"default-heatmap",
+		"default-streak",
+		"default-verification",
+		"default-toppack",
+	];
+	const sortedForMobile = [...instances].sort((a, b) => {
+		const ai = mobileOrder.indexOf(a.instanceId);
+		const bi = mobileOrder.indexOf(b.instanceId);
+		return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+	});
+	let cumulativeY = 0;
+	const smLayout: Layout = sortedForMobile.map(
+		(inst): LayoutItem => {
+			const item: LayoutItem = {
+				i: inst.instanceId,
+				x: 0,
+				y: cumulativeY,
+				w: 1,
+				h: inst.h,
+				static: true,
+				isResizable: false,
+				isDraggable: false,
+			};
+			cumulativeY += inst.h;
+			return item;
+		}
 	);
 
 	// Translate the grid's Layout back into WidgetInstance[] so the

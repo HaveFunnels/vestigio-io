@@ -127,7 +127,7 @@ export function ChatInputBar({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30"
+            className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30"
             title={t("attach_file")}
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
@@ -183,7 +183,7 @@ export function ChatInputBar({
                 onClick={onStop}
                 title={stopLabel || t("stop")}
                 aria-label={stopLabel || t("stop")}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white transition-colors hover:bg-red-500"
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 text-white transition-colors hover:bg-red-500"
               >
                 <svg className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
                   <rect x="3" y="3" width="10" height="10" rx="1" />
@@ -193,7 +193,7 @@ export function ChatInputBar({
               <button
                 onClick={handleSubmit}
                 disabled={disabled || !input.trim()}
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
               >
                 <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
                   <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

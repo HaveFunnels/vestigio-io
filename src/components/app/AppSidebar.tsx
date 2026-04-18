@@ -126,7 +126,7 @@ export default function AppSidebar({
 		const isMenuOpen = expandedMenus.has(item.id);
 
 		const itemClasses = cn(
-			"flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-200",
+			"flex items-center gap-3 rounded-lg px-3 py-3 text-[13px] font-medium transition-all duration-200",
 			active
 				? "bg-sidebar-active-bg text-sidebar-active-text font-semibold"
 				: "text-content-muted hover:bg-surface-card-hover hover:text-content-secondary"
@@ -201,7 +201,7 @@ export default function AppSidebar({
 										key={child.id}
 										href={child.href!}
 										className={cn(
-											"flex items-center gap-3 rounded-lg py-1.5 pl-10 pr-3 text-[13px] font-medium transition-all duration-200",
+											"flex items-center gap-3 rounded-lg py-2.5 pl-10 pr-3 text-[13px] font-medium transition-all duration-200",
 											childActive
 												? "font-semibold text-accent-text"
 												: "text-content-faint hover:text-content-muted"

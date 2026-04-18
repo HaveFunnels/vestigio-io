@@ -38,7 +38,7 @@ export default function SideDrawer({
 			{/* Drawer */}
 			<div
 				ref={drawerRef}
-				className='fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col border-l border-edge bg-surface shadow-2xl'
+				className='fixed right-0 top-0 z-50 flex h-full w-full flex-col border-l border-edge bg-surface shadow-2xl sm:max-w-lg'
 			>
 				{/* Header */}
 				<div className='flex items-center justify-between border-b border-edge px-4 py-4 sm:px-6'>
@@ -47,7 +47,7 @@ export default function SideDrawer({
 					</h2>
 					<button
 						onClick={onClose}
-						className='ml-3 shrink-0 rounded p-1 text-content-faint hover:bg-surface-card-hover hover:text-content-tertiary'
+						className='ml-3 shrink-0 rounded-lg p-2 text-content-faint hover:bg-surface-card-hover hover:text-content-tertiary'
 						aria-label='Close drawer'
 					>
 						<svg

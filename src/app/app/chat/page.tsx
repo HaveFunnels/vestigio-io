@@ -1278,11 +1278,11 @@ export default function ChatPage() {
 
 					{/* Playbooks Right Drawer */}
 					<div
-						className={`shrink-0 overflow-hidden border-l border-edge bg-surface-inset transition-all duration-300 ${
-							playbooksOpen ? "w-80" : "w-0 border-l-0"
+						className={`fixed inset-y-0 right-0 z-40 overflow-hidden border-l border-edge bg-surface-inset transition-all duration-300 sm:static sm:inset-auto sm:z-auto ${
+							playbooksOpen ? "w-full sm:w-80" : "w-0 border-l-0"
 						}`}
 					>
-						<div className='flex h-full w-80 flex-col'>
+						<div className='flex h-full w-full sm:w-80 flex-col'>
 							{/* Drawer header */}
 							<div className='flex items-center justify-between border-b border-edge px-4 py-2.5'>
 								<span className='text-[11px] font-semibold uppercase tracking-wider text-content-muted'>

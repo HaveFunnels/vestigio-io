@@ -238,7 +238,7 @@ export default function CommandPalette() {
     <>
       {/* ── Command Palette Modal ── */}
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh]">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[15vh] sm:px-0 sm:pt-[20vh]">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -249,7 +249,7 @@ export default function CommandPalette() {
           />
 
           {/* Modal */}
-          <div className="relative w-full max-w-lg overflow-hidden rounded-xl border border-white/10 bg-[#181822] shadow-2xl shadow-black/50">
+          <div className="relative w-full max-w-sm overflow-hidden rounded-xl border border-white/10 bg-[#181822] shadow-2xl shadow-black/50 sm:max-w-lg">
             {/* Search input */}
             <div className="flex items-center gap-3 border-b border-white/[0.06] px-4">
               <svg
@@ -280,7 +280,7 @@ export default function CommandPalette() {
             </div>
 
             {/* Results */}
-            <div ref={listRef} className="max-h-[320px] overflow-y-auto py-2">
+            <div ref={listRef} className="max-h-[min(320px,50vh)] overflow-y-auto py-2">
               {filtered.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-white/30">
                   No results for &ldquo;{query}&rdquo;

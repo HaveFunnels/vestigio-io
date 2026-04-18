@@ -90,11 +90,11 @@ const SOURCE_LOGOS: Record<string, React.ReactNode> = {
 			<path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
 		</svg>
 	),
-	stripe: <img src="/logos/stripe.svg" alt="Stripe" className="w-5 h-5 object-contain" />,
-	shopify: <img src="/logos/shopify.svg" alt="Shopify" className="w-5 h-5 object-contain" />,
-	nuvemshop: <img src="/logos/nuvemshop.svg" alt="Nuvemshop" className="w-5 h-5 object-contain" />,
-	meta_ads: <img src="/logos/meta.svg" alt="Meta" className="w-5 h-5 object-contain" />,
-	google_ads: <img src="/logos/google-ads.svg" alt="Google Ads" className="w-5 h-5 object-contain" />,
+	stripe: <img src="/logos/stripe.svg" alt="Stripe" className="w-full h-full object-cover" />,
+	shopify: <img src="/logos/shopify.svg" alt="Shopify" className="w-full h-full object-cover" />,
+	nuvemshop: <img src="/logos/nuvemshop.svg" alt="Nuvemshop" className="w-full h-full object-cover" />,
+	meta_ads: <img src="/logos/meta.svg" alt="Meta" className="w-full h-full object-cover" />,
+	google_ads: <img src="/logos/google-ads.svg" alt="Google Ads" className="w-full h-full object-cover" />,
 };
 
 // TODO: Replace with real environment ID from context/session
@@ -700,7 +700,7 @@ export default function DataSourcesPage() {
 							className={`flex items-start gap-3.5 p-5 flex-1 ${source.configurable ? "cursor-pointer" : ""}`}
 							onClick={() => source.configurable && setExpandedCard(expandedCard === source.id ? null : source.id)}
 						>
-							<div className="w-10 h-10 rounded-lg bg-surface-inset flex items-center justify-center shrink-0">
+							<div className={`w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0 ${["stripe", "shopify", "nuvemshop", "meta_ads", "google_ads"].includes(source.id) ? "" : "bg-surface-inset"}`}>
 								{SOURCE_LOGOS[source.id]}
 							</div>
 							<div className="flex-1 min-w-0">

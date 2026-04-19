@@ -816,13 +816,18 @@ function ChangeSummaryBanner({
 				className='flex w-full items-center justify-between gap-3 px-4 py-3 text-left'
 			>
 				<div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3'>
-					{/* Trend arrow + headline */}
+					{/* Trend arrow + headline (built from i18n keys, not engine string) */}
 					<div className='flex items-center gap-2'>
 						<span className={`text-lg font-bold ${trend.textColor}`}>
 							{trend.arrow}
 						</span>
 						<span className='text-sm text-content-secondary'>
-							{report.headline}
+							{[
+								report.regression_count > 0 && `${report.regression_count} ${t("changeBanner.regression", { count: report.regression_count })}`,
+								report.improvement_count > 0 && `${report.improvement_count} ${t("changeBanner.improvement", { count: report.improvement_count })}`,
+								report.new_issue_count > 0 && `${report.new_issue_count} ${t("changeBanner.new")}`,
+								report.resolved_count > 0 && `${report.resolved_count} ${t("changeBanner.resolved")}`,
+							].filter(Boolean).join(", ")}
 						</span>
 					</div>
 

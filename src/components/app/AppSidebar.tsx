@@ -456,26 +456,25 @@ export default function AppSidebar({
 							const chatItem = allItems.find((item) => item.id === "chat");
 							const gridItems = allItems.filter((item) => item.id !== "chat");
 
+							const tileClass = (active: boolean) => cn(
+								"flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4 text-center transition-all duration-200 active:scale-95",
+								active
+									? "text-content"
+									: "text-content-muted"
+							);
+
+							const iconPillClass = (active: boolean) => cn(
+								"flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+								active ? "bg-content/10 dark:bg-white/10" : "bg-surface-card/80"
+							);
+
 							const renderTile = (item: NavItem) => {
 								const active = item.href
 									? pathname === item.href || pathname.startsWith(item.href + "/")
 									: false;
 								return (
-									<Link
-										key={item.id}
-										href={item.href!}
-										onClick={() => setMobileOpen(false)}
-										className={cn(
-											"flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4 text-center transition-all duration-200",
-											active
-												? "bg-accent/10 text-accent-text shadow-[0_0_12px_-4px_rgba(16,185,129,0.3)]"
-												: "text-content-muted active:scale-95"
-										)}
-									>
-										<div className={cn(
-											"flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
-											active ? "bg-accent/20" : "bg-surface-card/80"
-										)}>
+									<Link key={item.id} href={item.href!} onClick={() => setMobileOpen(false)} className={tileClass(active)}>
+										<div className={iconPillClass(active)}>
 											<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 												<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
 											</svg>
@@ -495,21 +494,8 @@ export default function AppSidebar({
 														? pathname === child.href || pathname.startsWith(child.href + "/")
 														: false;
 													return (
-														<Link
-															key={child.id}
-															href={child.href!}
-															onClick={() => setMobileOpen(false)}
-															className={cn(
-																"flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4 text-center transition-all duration-200",
-																childActive
-																	? "bg-accent/10 text-accent-text shadow-[0_0_12px_-4px_rgba(16,185,129,0.3)]"
-																	: "text-content-muted active:scale-95"
-															)}
-														>
-															<div className={cn(
-																"flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
-																childActive ? "bg-accent/20" : "bg-surface-card/80"
-															)}>
+														<Link key={child.id} href={child.href!} onClick={() => setMobileOpen(false)} className={tileClass(childActive)}>
+															<div className={iconPillClass(childActive)}>
 																<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 																	<path strokeLinecap="round" strokeLinejoin="round" d={child.icon} />
 																</svg>
@@ -523,36 +509,26 @@ export default function AppSidebar({
 										})}
 									</div>
 
-									{/* Vestigio AI — hero CTA */}
-									{chatItem && (() => {
-										const active = pathname === chatItem.href || pathname.startsWith(chatItem.href + "/");
-										return (
-											<Link
-												href={chatItem.href!}
-												onClick={() => setMobileOpen(false)}
-												className={cn(
-													"group relative mt-4 flex items-center gap-3 overflow-hidden rounded-2xl px-5 py-4 transition-all duration-200 active:scale-[0.98]",
-													active
-														? "bg-emerald-600 text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.5)]"
-														: "bg-gradient-to-r from-emerald-600/90 to-emerald-500/80 text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.35)]"
-												)}
-											>
-												<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.08),transparent_60%)]" />
-												<div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-													<svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-														<path strokeLinecap="round" strokeLinejoin="round" d={chatItem.icon} />
-													</svg>
-												</div>
-												<div className="relative flex-1">
-													<span className="text-sm font-semibold">{t(chatItem.labelKey)}</span>
-													<p className="mt-0.5 text-[11px] font-normal text-white/70">Ask, investigate, validate</p>
-												</div>
-												<svg className="relative h-4 w-4 text-white/50 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-													<path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-												</svg>
-											</Link>
-										);
-									})()}
+									{/* Vestigio AI — ShinyButton-style outline */}
+									{chatItem && (
+										<Link
+											href={chatItem.href!}
+											onClick={() => setMobileOpen(false)}
+											className="relative mt-4 flex items-center justify-center gap-2.5 overflow-hidden rounded-lg px-5 py-3.5 transition-all duration-200 active:scale-[0.98] dark:bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/10%)_0%,transparent_60%)]"
+										>
+											<span
+												style={{
+													mask: "linear-gradient(rgb(0,0,0), rgb(0,0,0)) content-box,linear-gradient(rgb(0,0,0), rgb(0,0,0))",
+													maskComposite: "exclude",
+												}}
+												className="pointer-events-none absolute inset-0 block rounded-[inherit] bg-[linear-gradient(-75deg,hsl(var(--primary)/10%)_calc(var(--x,100%)+20%),hsl(var(--primary)/50%)_calc(var(--x,100%)+25%),hsl(var(--primary)/10%)_calc(var(--x,100%)+100%))] p-px"
+											/>
+											<svg className="h-5 w-5 text-content-secondary dark:text-content-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+												<path strokeLinecap="round" strokeLinejoin="round" d={chatItem.icon} />
+											</svg>
+											<span className="text-sm font-medium text-[rgb(0,0,0,70%)] dark:text-[rgb(255,255,255,90%)]">{t(chatItem.labelKey)}</span>
+										</Link>
+									)}
 								</>
 							);
 						})()}

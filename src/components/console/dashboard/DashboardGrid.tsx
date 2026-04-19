@@ -121,7 +121,7 @@ export function DashboardGrid({
 		return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
 	});
 	const mobileHeightOverrides: Record<string, number> = {
-		"default-changed": 6,
+		"default-changed": 8,
 		"default-streak": 2,
 		"default-verification": 2,
 		"default-toppack": 2,

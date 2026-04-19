@@ -448,59 +448,84 @@ export default function AppSidebar({
 
 					{/* Tile grid */}
 					<nav className="flex-1 overflow-y-auto px-4 pb-6 pt-2" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))" }}>
-						<div className="grid grid-cols-3 gap-2.5">
-							{(isAdmin ? adminNav : productNav.filter((item) => {
+						{(() => {
+							const allItems = isAdmin ? adminNav : productNav.filter((item) => {
 								if (item.id === "chat" && !flags.ai_chat_enabled) return false;
 								return true;
-							})).flatMap((item) => {
-								if (item.children) {
-									return item.children.map((child) => {
-										const childActive = child.href
-											? pathname === child.href || pathname.startsWith(child.href + "/")
-											: false;
-										return (
-											<Link
-												key={child.id}
-												href={child.href!}
-												onClick={() => setMobileOpen(false)}
-												className={cn(
-													"flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-colors",
-													childActive
-														? "border-accent/50 bg-accent/10 text-accent-text"
-														: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
-												)}
-											>
-												<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-													<path strokeLinecap="round" strokeLinejoin="round" d={child.icon} />
-												</svg>
-												<span className="text-[11px] font-medium leading-tight">{t(child.labelKey)}</span>
-											</Link>
-										);
-									});
-								}
+							});
+							const chatItem = allItems.find((item) => item.id === "chat");
+							const gridItems = allItems.filter((item) => item.id !== "chat");
+
+							const renderTile = (item: NavItem, isFeatured = false) => {
 								const active = item.href
 									? pathname === item.href || pathname.startsWith(item.href + "/")
 									: false;
-								return [(
+								return (
 									<Link
 										key={item.id}
 										href={item.href!}
 										onClick={() => setMobileOpen(false)}
 										className={cn(
-											"flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-colors",
+											"flex items-center gap-2.5 rounded-xl border px-3 py-4 transition-colors",
+											isFeatured ? "flex-row justify-center" : "flex-col text-center",
 											active
 												? "border-accent/50 bg-accent/10 text-accent-text"
-												: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
+												: isFeatured
+													? "border-emerald-500/30 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10"
+													: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
 										)}
 									>
-										<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+										<svg className={isFeatured ? "h-5 w-5" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 											<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
 										</svg>
-										<span className="text-[11px] font-medium leading-tight">{t(item.labelKey)}</span>
+										<span className={cn("font-medium leading-tight", isFeatured ? "text-sm" : "text-[11px]")}>{t(item.labelKey)}</span>
 									</Link>
-								)];
-							})}
-						</div>
+								);
+							};
+
+							return (
+								<>
+									<div className="grid grid-cols-3 gap-2.5">
+										{gridItems.flatMap((item) => {
+											if (item.children) {
+												return item.children.map((child) => {
+													const childActive = child.href
+														? pathname === child.href || pathname.startsWith(child.href + "/")
+														: false;
+													return (
+														<Link
+															key={child.id}
+															href={child.href!}
+															onClick={() => setMobileOpen(false)}
+															className={cn(
+																"flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-colors",
+																childActive
+																	? "border-accent/50 bg-accent/10 text-accent-text"
+																	: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
+															)}
+														>
+															<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+																<path strokeLinecap="round" strokeLinejoin="round" d={child.icon} />
+															</svg>
+															<span className="text-[11px] font-medium leading-tight">{t(child.labelKey)}</span>
+														</Link>
+													);
+												});
+											}
+											return [renderTile(item)];
+										})}
+									</div>
+
+									{/* Chat — featured full-width tile */}
+									{chatItem && (
+										<div className="mt-2.5">
+											{renderTile(chatItem, true)}
+										</div>
+									)}
+								</>
+							);
+						})()}
+
 
 						{/* Bottom items */}
 						{!isAdmin && (

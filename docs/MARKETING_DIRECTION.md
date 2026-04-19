@@ -279,14 +279,18 @@ You're either finding the leaks or funding them.
 | Clarity | The emotional benefit of our product |
 | In 24 hours / this week | Speed and urgency |
 | Your funnel / your checkout / your revenue | Make it personal |
+| Diagnostic / cycle | Product-appropriate term for what we deliver (not "report") |
+| Vestigio Pulse AI | Named product surface, not generic "AI" |
 
 ### Avoid
 
 | Word/Phrase | Why | Replace with |
 |-------------|-----|--------------|
+| Report | Implies static deliverable, undermines "decision engine" | "Diagnostic" or "cycle" |
 | Audit | Sounds like compliance, passive | "Diagnose" or "Find" |
 | Analytics | Positions us as GA4 competitor | "Decision engine" or "Intelligence" |
-| Insights | Vague, every tool claims this | "Findings with dollar amounts" |
+| Insights / Agentic insights | Vague, every tool claims this; "agentic" is internal jargon | "Findings with dollar amounts" or "Vestigio Pulse AI" |
+| MCP calls | Internal protocol jargon, meaningless to users | "Vestigio Pulse AI interactions" |
 | Optimize / Streamline | Empty buzzwords | Specific outcome ("fix", "recover") |
 | Innovative / AI-powered | Overused, means nothing | Show the AI working, don't label it |
 | Platform | Generic SaaS word | "Decision engine" or just "Vestigio" |

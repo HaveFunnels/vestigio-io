@@ -3,7 +3,8 @@ import { useBranding } from "@/components/BrandingProvider";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import GithubSigninButton from "../GithubSigninButton";
 import GoogleSigninButton from "../GoogleSigninButton";
 import SigninWithMagicLink from "../SigninWithMagicLink";
@@ -14,6 +15,16 @@ export default function Signup() {
 	const t = useTranslations("signUpPage");
 	const branding = useBranding();
 	const logoSrc = branding.logo_dark?.dataUrl;
+	const searchParams = useSearchParams();
+
+	// Persist domain from MiniCalc so onboarding can pre-fill it
+	// (OAuth redirects lose query params, so we use localStorage)
+	useEffect(() => {
+		const domain = searchParams.get("domain");
+		if (domain) {
+			try { localStorage.setItem("vestigio_onboard_domain", domain); } catch {}
+		}
+	}, [searchParams]);
 
 	return (
 		<div className='flex min-h-screen items-center justify-center bg-[#090911] px-4 py-16'>
@@ -77,7 +88,21 @@ export default function Signup() {
 					</div>
 				</div>
 
-				<p className='mt-6 text-center text-sm text-gray-500'>
+				{/* Trust signals */}
+				<div className='mt-6 flex flex-col items-center gap-2'>
+					<div className='flex items-center gap-4 text-[11px] text-gray-600'>
+						<span className='flex items-center gap-1'>
+							<svg className='h-3 w-3 text-emerald-500' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' d='M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z' /></svg>
+							No credit card required
+						</span>
+						<span className='flex items-center gap-1'>
+							<svg className='h-3 w-3 text-emerald-500' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' d='M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z' /></svg>
+							First diagnostic in 24h
+						</span>
+					</div>
+				</div>
+
+				<p className='mt-4 text-center text-sm text-gray-500'>
 					{t.rich("alreadyHaveAccount", {
 						link: (chunk) => (
 							<Link href='/auth/signin' className='text-emerald-400 hover:text-emerald-300'>

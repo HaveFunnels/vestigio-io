@@ -438,12 +438,12 @@ function buildFeatures(
 		{
 			name:
 				tierIndex === 0
-					? "Agentic insights"
+					? "Vestigio Pulse AI"
 					: tierIndex === 1
-						? "5x more agentic insights"
-						: "20x more agentic insights",
+						? "5x Vestigio Pulse AI"
+						: "20x Vestigio Pulse AI",
 			isIncluded: true,
-			tooltip: "AI-powered conversations with Vestigio Pulse about your data",
+			tooltip: "AI-powered interactions per month with Vestigio Pulse about your data",
 		},
 		{
 			name: isTop
@@ -522,7 +522,7 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 			{ name: "Up to 1 team member", isIncluded: true },
 			{ name: "Weekly audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
 			{ name: "Core findings & actions", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
-			{ name: "Agentic insights", isIncluded: true, tooltip: "AI-powered conversations with Vestigio Pulse about your data" },
+			{ name: "Vestigio Pulse AI", isIncluded: true, tooltip: "AI-powered interactions per month with Vestigio Pulse about your data" },
 			{ name: "Email support", isIncluded: true },
 			{ name: "AI Chat assistant", isIncluded: false, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
 			{ name: "Revenue integrity maps", isIncluded: false, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
@@ -544,7 +544,7 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 			{ name: "Up to 3 team members", isIncluded: true },
 			{ name: "Daily audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
 			{ name: "Advanced findings & actions", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
-			{ name: "5x more agentic insights", isIncluded: true, tooltip: "AI-powered conversations with Vestigio Pulse about your data" },
+			{ name: "5x Vestigio Pulse AI", isIncluded: true, tooltip: "AI-powered interactions per month with Vestigio Pulse about your data" },
 			{ name: "Priority support", isIncluded: true },
 			{ name: "AI Chat assistant", isIncluded: true, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
 			{ name: "Revenue integrity maps", isIncluded: true, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
@@ -566,7 +566,7 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 			{ name: "Up to 10 team members", isIncluded: true },
 			{ name: "Daily audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
 			{ name: "Full analysis suite", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
-			{ name: "20x more agentic insights", isIncluded: true, tooltip: "AI-powered conversations with Vestigio Pulse about your data" },
+			{ name: "20x Vestigio Pulse AI", isIncluded: true, tooltip: "AI-powered interactions per month with Vestigio Pulse about your data" },
 			{ name: "Dedicated account manager", isIncluded: true },
 			{ name: "AI Chat assistant", isIncluded: true, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
 			{ name: "Revenue integrity maps", isIncluded: true, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },

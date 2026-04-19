@@ -1,6 +1,6 @@
 # Execution Blueprint — Homepage, Landing Page & Funnel
 
-*Last updated: 2026-04-19*
+*Last updated: 2026-04-19 (rev 2 — CRO skill audit applied)*
 *Reference: MARKETING_DIRECTION.md, product-marketing-context.md*
 
 ---
@@ -42,7 +42,7 @@ DIRECTIVE: Exact change with before→after copy
 |---------|-----------|-------|
 | Headline L1 | "Skip the analytics." | "Your funnel is leaking." |
 | Headline L2 | "What matters is the decision." | "Vestigio shows you where — and how much." |
-| Subtitle | "Vestigio audits your digital operation automatically and ranks what to fix so you stop leaving money on the table..." | "Every revenue leak ranked by financial impact, with browser-verified evidence. First report in 24 hours." |
+| Subtitle | "Vestigio audits your digital operation automatically and ranks what to fix so you stop leaving money on the table..." | "Every revenue leak ranked by financial impact, with browser-verified evidence. First diagnostic in 24 hours." |
 | Microcopy | "Perfect for ecommerce, SaaS, lead gen, infoproducts, services and apps." | Remove entirely. The visitor doesn't care about categories here. |
 
 **Pills:** Keep current format (problem → solution), but sharpen:
@@ -67,7 +67,7 @@ DIRECTIVE: Exact change with before→after copy
 **DIRECTIVE:** Single line, centered, subtle. No logos. Just a number.
 
 ```
-Average first report: 9 findings, $41k/month in recoverable revenue.
+Average first diagnostic: 9 findings, $41k/month in recoverable revenue.
 ```
 
 **Visual:** `text-sm text-zinc-500`, no border, no card. Just a line of text. The understatement IS the design — it reads like a footnote that happens to be devastating.
@@ -106,9 +106,9 @@ Average first report: 9 findings, $41k/month in recoverable revenue.
 
 | Element | Instead of | Write |
 |---------|-----------|-------|
-| Section headline pill | "Explore the platform" | "See your first report" |
+| Section headline pill | "Explore the platform" | "Inside your decision engine" |
 | Title | "Not a dashboard. A queue of decisions." | Keep — this is excellent. |
-| Subtitle | "Every tab is a different lens on the same revenue picture — ranked, evidenced, and ready to act on." | "This is what you'll see after entering your domain." |
+| Subtitle | "Every tab is a different lens on the same revenue picture — ranked, evidenced, and ready to act on." | "Your action queue, your evidence trail, your financial clarity — from day one." |
 | CTA | "Run Free Audit" | "Run Free Diagnostic" |
 
 **Tab content:** Keep all 6 tabs. The interactive browser mockup is strong.
@@ -237,7 +237,7 @@ Vestigio traces chargeback risk to specific surfaces, policies, and trust gaps. 
 **DIRECTIVE:** Keep only the most compelling:
 
 ```
-[4X ROI Guarantee]     [First report in 24h]     [15,000+ signals per audit]
+[4X ROI Guarantee]     [First diagnostic in 24h]     [15,000+ signals per cycle]
 You literally can't     Enter your domain,        Automated. Continuous.
 lose.                   see results tomorrow.     No manual review needed.
 ```
@@ -286,7 +286,7 @@ A real counter is more honest and more compelling than fake success stories.
 
 Keep only:
 1. "How is this different from Google Analytics?" → One-line answer: "GA tells you *what* happened. Vestigio tells you *why*, how much it costs, and what to fix first."
-2. "Can I try before paying?" → "Yes. Enter your domain, see your first report in 60 seconds. No signup, no card."
+2. "Can I try before paying?" → "Yes. Enter your domain, see your first diagnostic in 60 seconds. No signup, no card."
 3. "How accurate are the financial estimates?" → "Every finding uses confidence ranges, not guesses. Evidence is browser-verified and timestamped."
 
 Remove: Technical questions about verification pipelines, pricing plan details (belongs on /pricing).
@@ -307,7 +307,7 @@ Every day without visibility is revenue you don't recover.
 
 [Run Free Diagnostic]
 
-You can be looking at your first report in 60 seconds.
+You can be looking at your first diagnostic in 60 seconds.
 ```
 
 **Visual:** Full-width, dark bg, centered. Emerald CTA button. No secondary CTA — one action only.
@@ -350,7 +350,7 @@ Same component as homepage. No changes needed — the calculator IS the landing 
 **DIRECTIVE:**
 
 ```
-Title: "Your first report includes:"
+Title: "Your first diagnostic shows:"
 3 items (icon + one line each):
 - A ranked queue of what's costing you money
 - Dollar amounts on every finding (not severity colors)
@@ -415,7 +415,7 @@ You're either finding the leaks or funding them.
 
 **Step 1: Domain** (most important — gets them invested)
 ```
-What domain do you want to audit?
+What domain should we diagnose?
 [________________________] ← full-width input
 [Continue]
 "We only crawl public pages. No access to your code or data."
@@ -575,4 +575,110 @@ The `deepmerge` with English fallback means untranslated keys will show English 
 | MiniCalc → Signup conversion | Measure | +40% |
 | /lp bounce rate | Measure | −25% |
 | Onboarding completion rate | Measure | +50% (fewer steps) |
-| Time from CTA click to first report | Measure | <2 minutes |
+| Time from CTA click to first diagnostic | Measure | <2 minutes |
+
+---
+
+# PART 5 — CRO SKILL AUDIT CORRECTIONS
+
+*Added 2026-04-19 after running `/onboarding-cro`, `/signup-flow-cro`, `/form-cro`, `/paywall-upgrade-cro` against actual codebase.*
+
+---
+
+## Funnel Corrections
+
+### Onboarding: Conversion Model Must Stay
+
+**Blueprint originally said:** "Infer conversion model from business type" (remove the field).
+
+**CRO finding:** The audit engine actively uses `conversionModel` in `run-cycle.ts:290` and `run-mini-audit.ts:145` to decide whether to probe `/checkout`, WhatsApp links, or forms. The mapping isn't 1:1 — an ecommerce site could use WhatsApp checkout (common in LATAM).
+
+**Corrected directive:** Keep `conversionModel` but merge it INTO the business type step as a follow-up selector. Business type shows 4 large cards (tap to select), then a sub-question appears: "How do customers complete a purchase?" with conversion model options. Same screen, no extra step.
+
+**Corrected step count: 7→4 (domain → business type + conversion model → revenue → plan)**
+
+### Onboarding: Ownership Checkbox Must Stay
+
+**Blueprint originally:** Did not mention the ownership checkbox.
+
+**CRO finding:** This is a legal/compliance requirement for crawling third-party domains. Currently required to advance past the domain step.
+
+**Corrected directive:** Keep the ownership checkbox bundled with the domain field in Step 1. Render as a small-print inline confirmation below the domain input.
+
+### LP Lead Form: Conversion Model Can Be Dropped Here
+
+**Blueprint said:** Keep conversion model but simplify.
+
+**CRO finding:** The LP mini-audit uses crawl data to detect checkout pages, WhatsApp links, and forms, so it's less dependent on explicit user input. For a cold lead from paid traffic, even asking "conversion model" adds cognitive load that contradicts removing org name and business type for the same reason.
+
+**Corrected directive:** LP form goes from 4 to 3 steps (domain → revenue → email). Conversion model is inferred from crawl signals on the LP path.
+
+### Onboarding: Add Annual Discount Toggle
+
+**CRO finding:** The billing page and marketing pricing page offer a 20% annual discount, but onboarding plan selection only shows monthly pricing. This leaves revenue on the table.
+
+**Directive:** Add a Monthly/Annual toggle to the plan selection step. Pre-select Monthly (lower perceived commitment) but show annual savings.
+
+---
+
+## Pricing Copy Corrections
+
+### Feature Labels — Jargon Eliminated
+
+| Current (fixed in code) | New |
+|-------------------------|-----|
+| "Agentic insights" / "5x more agentic insights" | "Vestigio Pulse AI" / "5x Vestigio Pulse AI" |
+| "50 MCP calls/mo" / "250 MCP calls/mo" | "Vestigio Pulse AI interactions/mo" / "5x Vestigio Pulse AI interactions/mo" |
+| "AI Chat assistant" | Keep (clear enough) |
+
+### Plan Descriptions — Outcome-Oriented (fixed in code)
+
+| Plan | Old | New |
+|------|-----|-----|
+| Vestigio | "Essential intelligence for small teams getting started" | "See what's costing you money. Fix the top 3." |
+| Pro | "Full analysis suite for growing businesses that need an edge" | "Full financial clarity across 3 environments. Daily." |
+| Max | "Unlimited scale with dedicated support for large organizations" | "Enterprise-grade. 10 environments. Dedicated support. SLA." |
+
+---
+
+## Auth Flow Corrections
+
+### Trust Signals (fixed in code)
+
+Added to `/auth/signup`: "No credit card required" + "First diagnostic in 24h" trust strip below the form card.
+
+### Domain Persistence (fixed in code)
+
+MiniCalc now passes `?domain=` to `/auth/signup`. Signup page persists domain to `localStorage` (survives OAuth redirect). Onboarding reads and pre-fills the domain field.
+
+### OAuth Callbacks (fixed in code)
+
+Google and GitHub sign-in buttons now redirect to `/app` instead of `/admin`.
+
+### Pre-Selected Plan (fixed in code)
+
+Onboarding plan step now pre-selects the recommended plan (Pro) instead of the first plan (Starter).
+
+---
+
+## Known Bugs (fixed in code)
+
+| Bug | File | Fix |
+|-----|------|-----|
+| Name field `maxlength="10"` truncated real names | `SignupWithPassword.tsx:121` | Changed to `maxlength="100"` |
+| OAuth callbacks hardcoded to `/admin` | `GoogleSigninButton.tsx:11`, `GithubSigninButton.tsx:11` | Changed to `/app` |
+| Lorem Ipsum in i18n pricing/testimonials/FAQ sections | `dictionary/en.json` | Replaced with proper copy |
+| "MCP calls" jargon in user-facing pricing | `pricing-card.tsx`, `en.json`, `pt-BR.json`, `es.json`, `de.json` | Replaced with "Vestigio Pulse AI" |
+
+## Known Issues (not yet fixed)
+
+| Issue | Impact | Effort |
+|-------|--------|--------|
+| Magic Link signup doesn't collect user name | Users created via magic link have no name | Medium — needs SignupWithMagicLink component |
+| Apple Sign-in provider configured but no UI button | Dead code | Low — either add button or remove provider |
+| LP result page mixes English and Portuguese | Confusing for non-Portuguese visitors | Medium — needs full i18n pass on LP |
+| Blurred findings don't show financial impact | Missed FOMO amplification opportunity | Low — add blurred dollar range |
+| No upgrade triggers for Maps/AI Chat/Integrations | Starter users don't see upgrade nudges for Pro features | Medium — add feature gates |
+| Onboarding form state not persisted (useState only) | Abandon at step 5 = lose all data | Low priority after 7→4 reduction |
+| Thank-you page uses hardcoded zinc colors | Broken in light mode | Low |
+| Paddle checkout double-open race condition | `setTimeout(1500ms)` is fragile | Low |

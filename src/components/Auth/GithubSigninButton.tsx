@@ -8,7 +8,7 @@ export default function GithubSigninButton({ text }: { text: string }) {
 			return toast.error(messages.auth);
 		}
 
-		signIn("github", { callbackUrl: "/admin" });
+		signIn("github", { callbackUrl: "/app" });
 	};
 
 	return (

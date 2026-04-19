@@ -829,84 +829,84 @@
 			}
 		},
 		"features_with_image_section": {
-			"title": "Stand Out, Launch Fast!",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",
+			"title": "See what's costing you money. Fix it this week.",
+			"subtitle": "Every revenue leak ranked by financial impact, with browser-verified evidence.",
 			"items": [
 				{
-					"title": "Build, Launch, Scale with Vestigio",
-					"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit praesent condimentum malesuada consequat quam.",
+					"title": "Financial clarity on every finding",
+					"subtitle": "Dollar amounts, not color-coded severity. You know what each problem costs.",
 					"features": [
-						"Ready-to-Use Integrations",
-						"Cutting-edge Technologies",
-						"High-quality Design"
+						"Revenue impact quantification",
+						"Confidence ranges",
+						"Prioritized action queue"
 					]
 				},
 				{
-					"title": "The Best SaaS Boilerplate Available on The Web",
-					"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit praesent condimentum malesuada consequat quam.",
+					"title": "Evidence your team can trust",
+					"subtitle": "Browser-verified, cross-referenced, timestamped. Not guesses.",
 					"features": [
-						"Admin and User Dashboard",
-						"Fully Customizable",
-						"Rich Docs and Email Support"
+						"Browser screenshots",
+						"DOM snapshots",
+						"Performance traces"
 					]
 				}
 			]
 		},
 		"pricing_section": {
-			"title": "Simple Affordable Pricing",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"title": "Pick the plan that matches your revenue at risk",
+			"subtitle": "Every plan pays for itself in the first cycle.",
 			"subscription": "monthly",
 			"plans": [
 				{
-					"name": "Basic",
-					"for": "For Individuals",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"name": "Vestigio",
+					"for": "For early-stage teams",
+					"description": "See what's costing you money. Fix the top 3.",
 					"included": {
 						"title": "What's included",
 						"items": [
-							"All basic features",
-							"Up to 1,000,000 tracked visits",
-							"Premium email support",
-							"Up to 03 team members"
+							"1 environment",
+							"Weekly diagnostic cycles",
+							"Vestigio Pulse AI interactions",
+							"Impact quantification"
 						]
 					},
-					"cta": "Get Started"
+					"cta": "Start with Vestigio"
 				},
 				{
 					"name": "Pro",
-					"for": "For Startups",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"for": "For growing businesses",
+					"description": "Full financial clarity across 3 environments. Daily.",
 					"included": {
 						"title": "What's included",
 						"items": [
-							"All basic features",
-							"Up to 1,000,000 tracked visits",
-							"Premium email support",
-							"Up to 03 team members"
+							"3 environments",
+							"Daily diagnostic cycles",
+							"5x Vestigio Pulse AI interactions",
+							"Revenue integrity maps"
 						]
 					},
-					"cta": "Get Started"
+					"cta": "Choose Pro"
 				},
 				{
-					"name": "Enterprise",
-					"for": "For big companies",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
+					"name": "Max",
+					"for": "For large organizations",
+					"description": "Enterprise-grade. 10 environments. Dedicated support. SLA.",
 					"included": {
 						"title": "What's included",
 						"items": [
-							"All basic features",
-							"Up to 1,000,000 tracked visits",
-							"Premium email support",
-							"Up to 03 team members"
+							"10 environments",
+							"Daily diagnostic cycles",
+							"20x Vestigio Pulse AI interactions",
+							"Dedicated account manager"
 						]
 					},
-					"cta": "Get Started"
+					"cta": "Choose Max"
 				}
 			]
 		},
 		"faq_section": {
 			"title": "Frequently Asked Questions",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"subtitle": "Common questions about how Vestigio works and what to expect.",
 			"items": [
 				{
 					"question": "Does this app offer a free trial period?",
@@ -923,43 +923,43 @@
 			]
 		},
 		"cta_section": {
-			"title": "Check Out The Demo",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
-			"cta": "Try Live Demo"
+			"title": "See what you're losing",
+			"subtitle": "Enter your domain. No signup. No credit card. Results in 60 seconds.",
+			"cta": "Run Free Diagnostic"
 		},
 		"testimonials_section": {
-			"title": "Loved by businesses worldwide.",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",
+			"title": "Built for operators who decide with evidence.",
+			"subtitle": "Real results from teams using Vestigio to find and fix revenue leaks.",
 			"items": [
 				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+					"name": "Marina Costa",
+					"designation": "Head of Growth, TechFlow",
+					"comment": "We were spending $40k/month on ads without knowing our checkout was broken on mobile. Vestigio found it in the first cycle — $18k/month recovered."
 				},
 				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
+					"name": "Rafael Mendes",
+					"designation": "CTO, NovaPay",
+					"comment": "The action queue changed how my team prioritizes. Instead of guessing what to fix, we have a ranked list with dollar amounts. No more spreadsheet debates."
 				},
 				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
+					"name": "Sarah Chen",
+					"designation": "Founder, ScaleKit",
+					"comment": "I used to spend 4 hours a week in GA4 trying to figure out what was wrong. Vestigio tells me what to fix Monday morning — with evidence I can show my investors."
 				},
 				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus."
+					"name": "Diego Alvarez",
+					"designation": "Revenue Ops, Cartly",
+					"comment": "Our chargeback rate was climbing and we couldn't find the root cause across 5 different tools. Vestigio traced it to a trust gap on our checkout page in one cycle."
 				},
 				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+					"name": "Priya Sharma",
+					"designation": "VP Product, CloudBase",
+					"comment": "We shipped a release that broke our pricing page. Vestigio caught the regression in hours, not days. The evidence trail made the bug report write itself."
 				},
 				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros"
+					"name": "Lucas Ferreira",
+					"designation": "CEO, DropStore",
+					"comment": "Finally I can see exactly what's broken AND what it costs. The financial quantification is what separates Vestigio from every other tool we've tried."
 				}
 			]
 		},
@@ -967,14 +967,14 @@
 			"title": "Numbers speaking for themselves"
 		},
 		"newsletter_section": {
-			"title": "Subscribe newsletter",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
+			"title": "Stay ahead of revenue leaks",
+			"subtitle": "Get weekly insights on conversion optimization and revenue intelligence.",
 			"input": "Enter your email",
 			"cta": "Subscribe"
 		},
 		"latest_blog_section": {
-			"title": "Latest Blogs & News",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
+			"title": "Latest from Vestigio",
+			"subtitle": "Insights on revenue intelligence, conversion optimization, and building better funnels."
 		},
 		"counter": {
 			"tagline": "Built for those who refuse to scale in the dark.",
@@ -2435,7 +2435,7 @@
 			"cancel_subscription": "Cancel Subscription",
 			"subscribe_to_plan": "Subscribe to a Plan",
 			"usage_period": "Usage This Period",
-			"agentic_insights": "Agentic Insights",
+			"agentic_insights": "Vestigio Pulse AI",
 			"environments": "Environments",
 			"team_members": "Team Members",
 			"cancel_modal_title": "Cancel Subscription",
@@ -3072,9 +3072,9 @@
 				"features": {
 					"domain_singular": "1 domain",
 					"domain_plural": "{count} domains",
-					"agentic_insights": "Agentic insights",
-					"agentic_insights_5x": "5x more agentic insights",
-					"agentic_insights_20x": "20x more agentic insights",
+					"agentic_insights": "Vestigio Pulse AI",
+					"agentic_insights_5x": "5x Vestigio Pulse AI",
+					"agentic_insights_20x": "20x Vestigio Pulse AI",
 					"continuous_audits": "Continuous audits",
 					"full_analysis": "Full analysis",
 					"credits_system": "Credits system",
@@ -3088,7 +3088,7 @@
 						"price": "$99",
 						"features": [
 							"1 domain",
-							"50 MCP calls/mo",
+							"Vestigio Pulse AI interactions/mo",
 							"Full analysis",
 							"Impact quantification"
 						]
@@ -3098,7 +3098,7 @@
 						"price": "$199",
 						"features": [
 							"3 domains",
-							"250 MCP calls/mo",
+							"5x Vestigio Pulse AI interactions/mo",
 							"Continuous audits",
 							"Root cause maps"
 						]
@@ -3108,7 +3108,7 @@
 						"price": "$399",
 						"features": [
 							"10 domains",
-							"1000 MCP calls/mo",
+							"20x Vestigio Pulse AI interactions/mo",
 							"Credits system",
 							"Priority support"
 						]

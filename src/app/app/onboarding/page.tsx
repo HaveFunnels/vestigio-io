@@ -258,7 +258,8 @@ export default function OnboardPage() {
 						recommended: p.key === "pro",
 					}));
 					setPlans(mapped);
-					setSelectedPlan(mapped[0]);
+					const recommended = mapped.find((p) => p.recommended);
+					setSelectedPlan(recommended || mapped[0]);
 				}
 			} catch {
 				// Keep default plans on error
@@ -325,9 +326,19 @@ export default function OnboardPage() {
 			);
 		}
 	}, [session, paymentSuccess, router, searchParams]);
+	// Pre-fill domain from MiniCalc (persisted in localStorage through auth redirect)
+	const prefillDomain = (() => {
+		if (typeof window === "undefined") return "";
+		try {
+			const saved = localStorage.getItem("vestigio_onboard_domain");
+			if (saved) { localStorage.removeItem("vestigio_onboard_domain"); return saved; }
+		} catch {}
+		return "";
+	})();
+
 	const [form, setForm] = useState<OnboardState>({
 		organizationName: "",
-		domain: "",
+		domain: prefillDomain,
 		ownershipConfirmed: false,
 		businessType: "ecommerce",
 		monthlyRevenue: "",

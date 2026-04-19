@@ -577,7 +577,7 @@ const MiniCalculator = ({
 										{t("cta_question")}
 									</p>
 									<div className='mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
-										<Link href={primaryCtaHref} className='inline-block'>
+										<Link href={domain ? `${primaryCtaHref}?domain=${encodeURIComponent(domain)}` : primaryCtaHref} className='inline-block'>
 											<ShinyButton className='w-full sm:w-auto'>
 												{t("cta_signup")}
 											</ShinyButton>

@@ -8,7 +8,7 @@ export default function GoogleSigninButton({ text }: { text: string }) {
 			return toast.error(messages.auth);
 		}
 
-		signIn("google", { callbackUrl: "/admin" });
+		signIn("google", { callbackUrl: "/app" });
 	};
 
 	return (

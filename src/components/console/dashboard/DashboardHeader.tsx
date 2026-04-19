@@ -48,11 +48,11 @@ export function DashboardHeader({
 				<h1 className='text-xl font-semibold tracking-tight text-content sm:text-2xl'>
 					{t("title")}
 				</h1>
-				<p className='text-xs text-content-muted'>
-					{editing
-						? t("editing_subtitle")
-						: t("subtitle")}
-				</p>
+				{editing && (
+					<p className='text-xs text-content-muted'>
+						{t("editing_subtitle")}
+					</p>
+				)}
 			</div>
 
 			<div className='flex flex-wrap items-center gap-2 sm:flex-nowrap'>

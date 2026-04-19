@@ -58,7 +58,6 @@ export default function MapsGalleryPage() {
 				<div className='[&>div]:mb-0'>
 					<PageHeader
 						title={t("title")}
-						subtitle={t("subtitle")}
 						tooltip={tc("page_tooltips.maps")}
 					/>
 				</div>

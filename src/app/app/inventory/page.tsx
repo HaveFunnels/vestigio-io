@@ -794,7 +794,6 @@ export default function InventoryPage() {
 		<div className='space-y-6 p-4 sm:p-6'>
 			<PageHeader
 				title={t("title")}
-				subtitle={t("subtitle")}
 				tooltip={tTooltip("page_tooltips.inventory")}
 			/>
 

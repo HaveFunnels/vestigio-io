@@ -49,7 +49,6 @@ export default function WorkspacesPage() {
     <div className="p-6">
       <PageHeader
         title={t("panorama_title")}
-        subtitle={t("panorama_subtitle")}
         tooltip={tc("page_tooltips.workspaces")}
       />
       <ConsoleState

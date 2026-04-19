@@ -1338,12 +1338,11 @@ function MapCanvasHeader({
 				<div className='[&>div]:mb-0'>
 					<PageHeader
 						title={mapDef?.name || t("title")}
-						subtitle={
+						tooltip={
 							mapDef
 								? (t(`descriptions.${mapDef.type}` as never) as string)
-								: (t("subtitle") as string)
+								: (tc("page_tooltips.maps") as string)
 						}
-						tooltip={tc("page_tooltips.maps")}
 					/>
 				</div>
 			</div>

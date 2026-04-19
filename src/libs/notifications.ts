@@ -2,9 +2,9 @@ import { prisma } from "@/libs/prismaDb";
 import {
 	isBrevoConfigured,
 	sendBrevoEmail,
-	sendBrevoSms,
 	sendBrevoWhatsApp,
 } from "@/libs/brevo";
+import { isTwilioConfigured, sendTwilioSms } from "@/libs/twilio-sms";
 import { sendEmail as sendNodemailerEmail } from "@/libs/email";
 import {
 	isMetaWhatsAppConfigured,
@@ -320,13 +320,12 @@ async function sendOneSms(args: {
 	userId?: string;
 	event: NotificationEvent;
 }): Promise<{ sent: boolean; error?: string }> {
-	if (!isBrevoConfigured()) {
-		return { sent: false, error: "Brevo not configured" };
+	if (!isTwilioConfigured()) {
+		return { sent: false, error: "Twilio not configured" };
 	}
-	const res = await sendBrevoSms({
+	const res = await sendTwilioSms({
 		to: args.to,
 		message: args.message,
-		tag: args.tag,
 	});
 	await logNotification({
 		userId: args.userId,
@@ -334,7 +333,7 @@ async function sendOneSms(args: {
 		event: args.event,
 		recipient: args.to,
 		status: res.ok ? "sent" : "failed",
-		provider: "brevo",
+		provider: "twilio",
 		providerId: res.messageId,
 		errorMsg: res.error,
 	});

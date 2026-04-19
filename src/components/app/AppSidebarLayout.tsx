@@ -360,21 +360,23 @@ export default function AppSidebarLayout({
 						)}
 					</div>
 					<div className="flex items-center gap-2.5">
-						{/* Cmd+K search hint */}
-						<button
-							onClick={() => {
-								window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
-							}}
-							className="flex items-center justify-center rounded-lg p-2 text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted sm:gap-2 sm:border sm:border-edge-subtle sm:bg-surface-card/50 sm:px-3 sm:py-1 sm:text-xs"
-						>
-							<svg className="h-4 w-4 sm:h-3.5 sm:w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-							</svg>
-							<span className="hidden sm:inline">Search...</span>
-							<kbd className="hidden rounded border border-edge px-1 py-0.5 text-[10px] font-medium sm:inline">
-								&#8984;K
-							</kbd>
-						</button>
+						{/* Cmd+K search — admin only (CommandPalette routes are admin pages) */}
+						{isAdmin && (
+							<button
+								onClick={() => {
+									window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+								}}
+								className="flex items-center justify-center rounded-lg p-2 text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted sm:gap-2 sm:border sm:border-edge-subtle sm:bg-surface-card/50 sm:px-3 sm:py-1 sm:text-xs"
+							>
+								<svg className="h-4 w-4 sm:h-3.5 sm:w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+								</svg>
+								<span className="hidden sm:inline">Search...</span>
+								<kbd className="hidden rounded border border-edge px-1 py-0.5 text-[10px] font-medium sm:inline">
+									&#8984;K
+								</kbd>
+							</button>
+						)}
 						<ThemeToggle />
 						<Link
 							href="/app/billing"

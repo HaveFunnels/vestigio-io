@@ -151,7 +151,7 @@ function PageFade({ children }: { children: React.ReactNode }) {
 
 // ── User menu with logout ──
 function UserMenu() {
-	const { data: session } = useSession();
+	const { data: session, status } = useSession();
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 	const t = useTranslations("console.navigation");
@@ -173,8 +173,9 @@ function UserMenu() {
 				onClick={() => setOpen(!open)}
 				className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/20 text-[11px] font-bold text-accent-text transition-colors hover:bg-accent/30"
 				title={email}
+				suppressHydrationWarning
 			>
-				{initials}
+				{status === "loading" ? "" : initials}
 			</button>
 			{open && (
 				<div className="absolute right-0 top-full z-50 mt-1.5 w-56 rounded-lg border border-edge bg-surface-card p-1 shadow-xl">

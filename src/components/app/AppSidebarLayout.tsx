@@ -326,7 +326,7 @@ export default function AppSidebarLayout({
 	return (
 		<div className="flex h-screen bg-surface-shell text-content">
 			<TopProgressBar />
-			<CommandPalette />
+			<CommandPalette enabled={isAdmin} />
 
 			{/* ── Shell layer: sidebar + topbar sit behind the content ── */}
 			<AppSidebar

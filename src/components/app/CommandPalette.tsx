@@ -97,7 +97,7 @@ const SHORTCUTS = [
   { keys: ["?"], description: "Show keyboard shortcuts" },
 ];
 
-export default function CommandPalette() {
+export default function CommandPalette({ enabled = true }: { enabled?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -135,6 +135,7 @@ export default function CommandPalette() {
   const pendingGTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     function handleKeyDown(e: KeyboardEvent) {
       // Ignore if user is typing in an input/textarea (except our palette input)
       const tag = (e.target as HTMLElement)?.tagName;
@@ -195,7 +196,7 @@ export default function CommandPalette() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, router]);
+  }, [open, router, enabled]);
 
   // ── Focus input when palette opens ──
   useEffect(() => {
@@ -233,6 +234,8 @@ export default function CommandPalette() {
       setQuery("");
     }
   }
+
+  if (!enabled) return null;
 
   return (
     <>

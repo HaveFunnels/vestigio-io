@@ -420,7 +420,7 @@ export default function AppSidebar({
 				</aside>
 			</div>
 
-			{/* ── Mobile sidebar ── */}
+			{/* ── Mobile bottom sheet ── */}
 			<div
 				className={cn(
 					"fixed inset-0 z-40 md:hidden",
@@ -434,16 +434,107 @@ export default function AppSidebar({
 					)}
 					onClick={() => setMobileOpen(false)}
 				/>
-				<aside
+				<div
 					className={cn(
-						"absolute left-0 top-0 flex h-full w-64 flex-col",
-						"bg-surface-shell",
+						"absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-surface-shell ring-1 ring-edge/40",
 						"transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-						mobileOpen ? "translate-x-0" : "-translate-x-full"
+						mobileOpen ? "translate-y-0" : "translate-y-full"
 					)}
 				>
-					{sidebarContent}
-				</aside>
+					{/* Drag handle */}
+					<div className="flex justify-center pb-1 pt-3" onClick={() => setMobileOpen(false)}>
+						<div className="h-1 w-8 rounded-full bg-content-faint/40" />
+					</div>
+
+					{/* Tile grid */}
+					<nav className="flex-1 overflow-y-auto px-4 pb-6 pt-2" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))" }}>
+						<div className="grid grid-cols-3 gap-2.5">
+							{(isAdmin ? adminNav : productNav.filter((item) => {
+								if (item.id === "chat" && !flags.ai_chat_enabled) return false;
+								return true;
+							})).flatMap((item) => {
+								if (item.children) {
+									return item.children.map((child) => {
+										const childActive = child.href
+											? pathname === child.href || pathname.startsWith(child.href + "/")
+											: false;
+										return (
+											<Link
+												key={child.id}
+												href={child.href!}
+												onClick={() => setMobileOpen(false)}
+												className={cn(
+													"flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-colors",
+													childActive
+														? "border-accent/50 bg-accent/10 text-accent-text"
+														: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
+												)}
+											>
+												<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+													<path strokeLinecap="round" strokeLinejoin="round" d={child.icon} />
+												</svg>
+												<span className="text-[11px] font-medium leading-tight">{t(child.labelKey)}</span>
+											</Link>
+										);
+									});
+								}
+								const active = item.href
+									? pathname === item.href || pathname.startsWith(item.href + "/")
+									: false;
+								return [(
+									<Link
+										key={item.id}
+										href={item.href!}
+										onClick={() => setMobileOpen(false)}
+										className={cn(
+											"flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-colors",
+											active
+												? "border-accent/50 bg-accent/10 text-accent-text"
+												: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
+										)}
+									>
+										<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+											<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+										</svg>
+										<span className="text-[11px] font-medium leading-tight">{t(item.labelKey)}</span>
+									</Link>
+								)];
+							})}
+						</div>
+
+						{/* Bottom items */}
+						{!isAdmin && (
+							<>
+								<div className="mx-2 my-3 h-px bg-edge/30" />
+								<div className="grid grid-cols-2 gap-2.5">
+									{bottomNav.map((item) => {
+										const active = item.href
+											? pathname === item.href || pathname.startsWith(item.href + "/")
+											: false;
+										return (
+											<Link
+												key={item.id}
+												href={item.href!}
+												onClick={() => setMobileOpen(false)}
+												className={cn(
+													"flex items-center gap-2.5 rounded-xl border px-3 py-3 transition-colors",
+													active
+														? "border-accent/50 bg-accent/10 text-accent-text"
+														: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
+												)}
+											>
+												<svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+													<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+												</svg>
+												<span className="text-xs font-medium">{t(item.labelKey)}</span>
+											</Link>
+										);
+									})}
+								</div>
+							</>
+						)}
+					</nav>
+				</div>
 			</div>
 		</>
 	);

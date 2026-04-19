@@ -695,15 +695,15 @@ function AnalysisContent({
 			className: "w-20",
 			render: (row) =>
 				row.polarity !== "positive" ? (
-					<button
+					<ShinyButton
+						variant='console'
 						onClick={(e) => {
 							e.stopPropagation();
 							router.push(`/chat?finding=${row.id}`);
 						}}
-						className='rounded border border-edge px-2 py-1 text-xs text-content-muted transition-colors hover:border-emerald-600 hover:text-emerald-400'
 					>
 						{t("discuss")}
-					</button>
+					</ShinyButton>
 				) : null,
 		},
 	];

@@ -26,7 +26,7 @@ import ChangeBadge from "@/components/console/ChangeBadge";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { loadAllMaps } from "@/lib/console-data";
-import { useMcpData } from "@/components/app/McpDataProvider";
+import { useMcpData } from "@/components/app/McpDataProvider";import { ShinyButton } from "@/components/ui/shiny-button";
 import { useTranslations } from "next-intl";
 import type { MapDefinition, MapNode } from "../../../../../packages/maps";
 import type {
@@ -1346,14 +1346,14 @@ function MapCanvasHeader({
 				</div>
 			</div>
 			{mapDef && (
-				<button
+				<ShinyButton
+					variant='console'
 					onClick={() =>
 						(window.location.href = `/app/chat?context=map:${encodeURIComponent(mapDef.id)}`)
 					}
-					className='rounded border border-edge px-3 py-1.5 text-xs text-content-muted transition-colors hover:border-emerald-600 hover:text-emerald-400'
 				>
 					{t("useAsContext")}
-				</button>
+				</ShinyButton>
 			)}
 		</div>
 	);

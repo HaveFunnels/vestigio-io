@@ -1,7 +1,7 @@
 import { prisma } from "@/libs/prismaDb";
 import { isBrevoConfigured, sendBrevoEmail } from "@/libs/brevo";
 import { sendEmail as sendNodemailerEmail } from "@/libs/email";
-import { renderBrandedEmail } from "@/libs/notifications";
+import { renderEmailFromTemplate } from "@/libs/notification-templates";
 
 // ──────────────────────────────────────────────
 // Notification dispatcher — drains queued messages
@@ -58,25 +58,14 @@ function buildEmailBody(
 	subject: string | null,
 	ctx: { domain?: string; appUrl: string },
 ): { html: string; text: string; subject: string } | null {
-	switch (event) {
-		case "inactivity_pause": {
-			const domain = ctx.domain || "your environment";
-			return {
-				subject: subject || `Audits paused for ${domain}`,
-				html: renderBrandedEmail({
-					headline: "Your continuous audits are paused",
-					intro: `We haven't seen activity on <strong>${escapeHtml(domain)}</strong> for 14 days, so continuous audits on this environment have been automatically paused. This keeps scanning cost and cycle noise down while the account is dormant — no data has been deleted.`,
-					ctaLabel: "Resume audits",
-					ctaUrl: `${ctx.appUrl}/app`,
-					footerNote:
-						"Audits resume automatically the next time you sign in. You can also change inactivity settings from your account preferences.",
-				}),
-				text: `Your continuous audits for ${domain} have been paused after 14 days of inactivity. Sign in at ${ctx.appUrl}/app to resume them.`,
-			};
-		}
-		default:
-			return null;
-	}
+	const vars = { domain: ctx.domain || "your environment" };
+	const rendered = renderEmailFromTemplate(event, vars, ctx.appUrl);
+	if (!rendered) return null;
+	return {
+		subject: subject || rendered.subject,
+		html: rendered.html,
+		text: rendered.text,
+	};
 }
 
 export async function runNotificationDispatcher(): Promise<DispatcherResult> {
@@ -249,11 +238,3 @@ function extractDomainFromSubject(subject: string | null): string | undefined {
 	return m?.[1]?.trim();
 }
 
-function escapeHtml(s: string): string {
-	return s
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#39;");
-}

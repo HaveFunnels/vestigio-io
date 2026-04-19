@@ -1,5 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
-import { notifyOrganization, notifyUser, renderBrandedEmail } from "@/libs/notifications";
+import { notifyOrganization, notifyUser } from "@/libs/notifications";
+import { renderSmsFromTemplate, renderEmailFromTemplate } from "@/libs/notification-templates";
 
 // ──────────────────────────────────────────────
 // Notification triggers — high-level events that fan out
@@ -51,24 +52,21 @@ export async function triggerIncidentNotifications(args: {
 	const dedupeKey = `incident:${headline.id}`;
 	if (await wasRecentlySent(dedupeKey, args.userId)) return;
 
-	const summary = `${critical.length} critical issue${critical.length > 1 ? "s" : ""} detected on ${args.domain}`;
-	const intro = `<strong>${escapeHtml(headline.title)}</strong>${
-		headline.root_cause ? ` — ${escapeHtml(headline.root_cause)}` : ""
-	}.<br/><br/>Vestigio just finished an analysis of <strong>${escapeHtml(args.domain)}</strong> and flagged ${critical.length} issue${critical.length > 1 ? "s" : ""} that need attention.`;
+	const vars = {
+		count: String(critical.length),
+		domain: args.domain,
+		headline: headline.title,
+		rootCauseSuffix: headline.root_cause ? ` — ${escapeHtml(headline.root_cause)}` : "",
+	};
 
-	const html = renderBrandedEmail({
-		headline: "Incident detected",
-		intro,
-		ctaLabel: "View in Vestigio",
-		ctaUrl: `${getBaseUrl()}/app/analysis`,
-		footerNote: `Triggered by audit of ${args.domain}.`,
-	});
+	const email = renderEmailFromTemplate("incident", vars, getBaseUrl())!;
+	const smsText = renderSmsFromTemplate("incident", vars)!;
 
 	await notifyOrganization(membership.organizationId, {
 		event: "incident",
-		subject: `[Vestigio] Incident: ${headline.title}`,
-		bodyHtml: html,
-		bodyText: summary,
+		subject: email.subject,
+		bodyHtml: email.html,
+		bodyText: smsText,
 		tag: dedupeKey,
 		// Meta WhatsApp template params for "vestigio_incident":
 		// {{1}} = domain, {{2}} = headline, {{3}} = root_cause_summary
@@ -104,24 +102,21 @@ export async function triggerRegressionNotifications(args: {
 	const dedupeKey = `regression:${headline.id}`;
 	if (await wasRecentlySent(dedupeKey, args.userId)) return;
 
-	const summary = `Regression detected on ${args.domain}: ${headline.title}`;
-	const intro = `<strong>${escapeHtml(headline.title)}</strong> got worse since your last audit.${
-		headline.root_cause ? `<br/><br/>${escapeHtml(headline.root_cause)}` : ""
-	}<br/><br/>Total regressions in this cycle: <strong>${args.regressions.length}</strong>.`;
+	const vars = {
+		count: String(args.regressions.length),
+		domain: args.domain,
+		headline: headline.title,
+		rootCauseSuffix: headline.root_cause ? `<br/><br/>${escapeHtml(headline.root_cause)}` : "",
+	};
 
-	const html = renderBrandedEmail({
-		headline: "Regression detected",
-		intro,
-		ctaLabel: "Open change report",
-		ctaUrl: `${getBaseUrl()}/app/analysis`,
-		footerNote: `Compared against the previous audit of ${args.domain}.`,
-	});
+	const email = renderEmailFromTemplate("regression", vars, getBaseUrl())!;
+	const smsText = renderSmsFromTemplate("regression", vars)!;
 
 	await notifyOrganization(membership.organizationId, {
 		event: "regression",
-		subject: `[Vestigio] Regression: ${headline.title}`,
-		bodyHtml: html,
-		bodyText: summary,
+		subject: email.subject,
+		bodyHtml: email.html,
+		bodyText: smsText,
 		tag: dedupeKey,
 		// Meta WhatsApp template params for "vestigio_regression":
 		// {{1}} = domain, {{2}} = headline, {{3}} = count
@@ -150,24 +145,21 @@ export async function triggerPageDownNotification(args: {
 	const dedupeKey = `page_down:${args.organizationId}:${args.pageUrl}`;
 	if (await wasRecentlySent(dedupeKey)) return;
 
-	const summary = `Page down: ${args.pageUrl}${args.statusCode ? ` (HTTP ${args.statusCode})` : ""}`;
-	const intro = `Vestigio just detected that <strong>${escapeHtml(args.pageUrl)}</strong> is unreachable.${
-		args.statusCode ? `<br/><br/>HTTP status: <strong>${args.statusCode}</strong>` : ""
-	}${args.errorMessage ? `<br/><br/>${escapeHtml(args.errorMessage)}` : ""}`;
+	const vars = {
+		pageUrl: args.pageUrl,
+		statusSuffix: args.statusCode ? ` (HTTP ${args.statusCode})` : "",
+		statusDetail: args.statusCode ? `<br/><br/>HTTP status: <strong>${args.statusCode}</strong>` : "",
+		errorDetail: args.errorMessage ? `<br/><br/>${escapeHtml(args.errorMessage)}` : "",
+	};
 
-	const html = renderBrandedEmail({
-		headline: "A page on your site is down",
-		intro,
-		ctaLabel: "View incident",
-		ctaUrl: `${getBaseUrl()}/app/analysis`,
-		footerNote: "We'll notify you again when the page recovers.",
-	});
+	const email = renderEmailFromTemplate("page_down", vars, getBaseUrl())!;
+	const smsText = renderSmsFromTemplate("page_down", vars)!;
 
 	await notifyOrganization(args.organizationId, {
 		event: "page_down",
-		subject: `[Vestigio] Page down: ${args.pageUrl}`,
-		bodyHtml: html,
-		bodyText: summary,
+		subject: email.subject,
+		bodyHtml: email.html,
+		bodyText: smsText,
 		tag: dedupeKey,
 		// Meta WhatsApp template params for "vestigio_page_down":
 		// {{1}} = page_url, {{2}} = status_code
@@ -183,21 +175,17 @@ export async function triggerPageDownNotification(args: {
 // ──────────────────────────────────────────────
 
 export async function sendMagicLink(email: string, link: string): Promise<void> {
-	const html = renderBrandedEmail({
-		headline: "Sign in to Vestigio",
-		intro: "Click the button below to sign in. This link expires in 10 minutes.",
-		ctaLabel: "Sign in",
-		ctaUrl: link,
-		footerNote: "If you did not request this, you can safely ignore this email.",
-	});
+	const vars = { link };
+	const rendered = renderEmailFromTemplate("magic_link", vars, getBaseUrl())!;
+	const smsText = renderSmsFromTemplate("magic_link", vars)!;
 
 	const { notifyDirect } = await import("@/libs/notifications");
 	await notifyDirect({
 		event: "magic_link",
 		to: { email },
-		subject: "Sign in to Vestigio",
-		bodyHtml: html,
-		bodyText: `Sign in to Vestigio: ${link}`,
+		subject: rendered.subject,
+		bodyHtml: rendered.html,
+		bodyText: smsText,
 		tag: "magic_link",
 	});
 }
@@ -225,44 +213,33 @@ export async function sendActivationEmail(
 		process.env.NEXT_PUBLIC_APP_URL ||
 		"https://app.vestigio.io";
 	const link = `${base}/activate/${encodeURIComponent(token)}`;
+	const vars = { domain: domain.replace(/[<>&"']/g, ""), link };
 
-	const safeDomain = domain.replace(/[<>&"']/g, "");
-
-	const html = renderBrandedEmail({
-		headline: "Seu diagnóstico completo está pronto",
-		intro: `Bem-vindo ao Vestigio. Ativamos sua conta para <strong>${safeDomain}</strong> e o diagnóstico completo já está esperando no seu painel. Clique abaixo para escolher como quer fazer login.`,
-		ctaLabel: "Ativar minha conta",
-		ctaUrl: link,
-		footerNote:
-			"Este link expira em 24 horas e só pode ser usado uma vez. Se não foi você que comprou, responda este email para cancelarmos.",
-	});
+	const rendered = renderEmailFromTemplate("activation_link", vars, getBaseUrl())!;
+	const smsText = renderSmsFromTemplate("activation_link", vars)!;
 
 	const { notifyDirect } = await import("@/libs/notifications");
 	await notifyDirect({
 		event: "activation_link",
 		to: { email },
-		subject: `Seu diagnóstico de ${safeDomain} está pronto — ative sua conta`,
-		bodyHtml: html,
-		bodyText: `Ative sua conta Vestigio: ${link}\n\nO link expira em 24 horas.`,
+		subject: rendered.subject,
+		bodyHtml: rendered.html,
+		bodyText: smsText,
 		tag: "activation_link",
 	});
 }
 
 export async function sendPasswordResetEmail(userId: string, email: string, link: string): Promise<void> {
-	const html = renderBrandedEmail({
-		headline: "Reset your password",
-		intro: "Click the button below to choose a new password. This link expires in 1 hour.",
-		ctaLabel: "Reset password",
-		ctaUrl: link,
-		footerNote: "If you did not request this, you can safely ignore this email.",
-	});
+	const vars = { link };
+	const rendered = renderEmailFromTemplate("password_reset", vars, getBaseUrl())!;
+	const smsText = renderSmsFromTemplate("password_reset", vars)!;
 
 	await notifyUser({
 		userId,
 		event: "password_reset",
-		subject: "Reset your Vestigio password",
-		bodyHtml: html,
-		bodyText: `Reset your Vestigio password: ${link}`,
+		subject: rendered.subject,
+		bodyHtml: rendered.html,
+		bodyText: smsText,
 		tag: "password_reset",
 	});
 }

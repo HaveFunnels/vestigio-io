@@ -446,8 +446,8 @@ export default function AppSidebar({
 						<div className="h-1 w-8 rounded-full bg-content-faint/40" />
 					</div>
 
-					{/* Tile grid */}
-					<nav className="flex-1 overflow-y-auto px-4 pb-6 pt-2" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))" }}>
+					{/* Navigation grid */}
+					<nav className="flex-1 overflow-y-auto px-5 pb-6 pt-3" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))" }}>
 						{(() => {
 							const allItems = isAdmin ? adminNav : productNav.filter((item) => {
 								if (item.id === "chat" && !flags.ai_chat_enabled) return false;
@@ -456,7 +456,7 @@ export default function AppSidebar({
 							const chatItem = allItems.find((item) => item.id === "chat");
 							const gridItems = allItems.filter((item) => item.id !== "chat");
 
-							const renderTile = (item: NavItem, isFeatured = false) => {
+							const renderTile = (item: NavItem) => {
 								const active = item.href
 									? pathname === item.href || pathname.startsWith(item.href + "/")
 									: false;
@@ -466,26 +466,28 @@ export default function AppSidebar({
 										href={item.href!}
 										onClick={() => setMobileOpen(false)}
 										className={cn(
-											"flex items-center gap-2.5 rounded-xl border px-3 py-4 transition-colors",
-											isFeatured ? "flex-row justify-center" : "flex-col text-center",
+											"flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4 text-center transition-all duration-200",
 											active
-												? "border-accent/50 bg-accent/10 text-accent-text"
-												: isFeatured
-													? "border-emerald-500/30 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10"
-													: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
+												? "bg-accent/10 text-accent-text shadow-[0_0_12px_-4px_rgba(16,185,129,0.3)]"
+												: "text-content-muted active:scale-95"
 										)}
 									>
-										<svg className={isFeatured ? "h-5 w-5" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-											<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-										</svg>
-										<span className={cn("font-medium leading-tight", isFeatured ? "text-sm" : "text-[11px]")}>{t(item.labelKey)}</span>
+										<div className={cn(
+											"flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+											active ? "bg-accent/20" : "bg-surface-card/80"
+										)}>
+											<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+												<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+											</svg>
+										</div>
+										<span className="text-[11px] font-medium leading-tight">{t(item.labelKey)}</span>
 									</Link>
 								);
 							};
 
 							return (
 								<>
-									<div className="grid grid-cols-3 gap-2.5">
+									<div className="grid grid-cols-3 gap-1">
 										{gridItems.flatMap((item) => {
 											if (item.children) {
 												return item.children.map((child) => {
@@ -498,15 +500,20 @@ export default function AppSidebar({
 															href={child.href!}
 															onClick={() => setMobileOpen(false)}
 															className={cn(
-																"flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-colors",
+																"flex flex-col items-center gap-2.5 rounded-2xl px-2 py-4 text-center transition-all duration-200",
 																childActive
-																	? "border-accent/50 bg-accent/10 text-accent-text"
-																	: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
+																	? "bg-accent/10 text-accent-text shadow-[0_0_12px_-4px_rgba(16,185,129,0.3)]"
+																	: "text-content-muted active:scale-95"
 															)}
 														>
-															<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-																<path strokeLinecap="round" strokeLinejoin="round" d={child.icon} />
-															</svg>
+															<div className={cn(
+																"flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+																childActive ? "bg-accent/20" : "bg-surface-card/80"
+															)}>
+																<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+																	<path strokeLinecap="round" strokeLinejoin="round" d={child.icon} />
+																</svg>
+															</div>
 															<span className="text-[11px] font-medium leading-tight">{t(child.labelKey)}</span>
 														</Link>
 													);
@@ -516,22 +523,45 @@ export default function AppSidebar({
 										})}
 									</div>
 
-									{/* Chat — featured full-width tile */}
-									{chatItem && (
-										<div className="mt-2.5">
-											{renderTile(chatItem, true)}
-										</div>
-									)}
+									{/* Vestigio AI — hero CTA */}
+									{chatItem && (() => {
+										const active = pathname === chatItem.href || pathname.startsWith(chatItem.href + "/");
+										return (
+											<Link
+												href={chatItem.href!}
+												onClick={() => setMobileOpen(false)}
+												className={cn(
+													"group relative mt-4 flex items-center gap-3 overflow-hidden rounded-2xl px-5 py-4 transition-all duration-200 active:scale-[0.98]",
+													active
+														? "bg-emerald-600 text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.5)]"
+														: "bg-gradient-to-r from-emerald-600/90 to-emerald-500/80 text-white shadow-[0_8px_24px_-8px_rgba(16,185,129,0.35)]"
+												)}
+											>
+												<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.08),transparent_60%)]" />
+												<div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
+													<svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+														<path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+													</svg>
+												</div>
+												<div className="relative flex-1">
+													<span className="text-sm font-semibold">{t(chatItem.labelKey)}</span>
+													<p className="mt-0.5 text-[11px] font-normal text-white/70">Ask, investigate, validate</p>
+												</div>
+												<svg className="relative h-4 w-4 text-white/50 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+													<path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+												</svg>
+											</Link>
+										);
+									})()}
 								</>
 							);
 						})()}
 
-
-						{/* Bottom items */}
+						{/* Secondary items */}
 						{!isAdmin && (
 							<>
-								<div className="mx-2 my-3 h-px bg-edge/30" />
-								<div className="grid grid-cols-2 gap-2.5">
+								<div className="mx-4 my-4 h-px bg-edge/20" />
+								<div className="flex items-center justify-center gap-6">
 									{bottomNav.map((item) => {
 										const active = item.href
 											? pathname === item.href || pathname.startsWith(item.href + "/")
@@ -542,16 +572,14 @@ export default function AppSidebar({
 												href={item.href!}
 												onClick={() => setMobileOpen(false)}
 												className={cn(
-													"flex items-center gap-2.5 rounded-xl border px-3 py-3 transition-colors",
-													active
-														? "border-accent/50 bg-accent/10 text-accent-text"
-														: "border-edge/40 bg-surface-card/50 text-content-muted hover:bg-surface-card-hover"
+													"flex items-center gap-2 py-1 text-xs transition-colors",
+													active ? "text-accent-text" : "text-content-faint"
 												)}
 											>
-												<svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+												<svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 													<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
 												</svg>
-												<span className="text-xs font-medium">{t(item.labelKey)}</span>
+												<span className="font-medium">{t(item.labelKey)}</span>
 											</Link>
 										);
 									})}

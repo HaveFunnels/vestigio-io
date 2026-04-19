@@ -104,7 +104,7 @@
 				"analysis": "Analyse",
 				"inventory": "Inventar",
 				"workspaces": "Workspaces",
-				"chat": "Chat",
+				"chat": "Vestigio AI",
 				"maps": "Karten"
 			},
 			"user_label": "Vestigio Pro",
@@ -2328,7 +2328,7 @@
 			"onboard": "Ersteinrichtung",
 			"actions": "Aktionen",
 			"workspaces": "Arbeitsbereiche",
-			"chat": "Chat",
+			"chat": "Vestigio AI",
 			"analysis": "Analyse",
 			"findings": "Erkenntnisse",
 			"inventory": "Inventar",

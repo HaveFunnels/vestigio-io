@@ -104,7 +104,7 @@
 				"analysis": "Analysis",
 				"inventory": "Inventory",
 				"workspaces": "Workspaces",
-				"chat": "Chat",
+				"chat": "Vestigio AI",
 				"maps": "Maps"
 			},
 			"user_label": "Vestigio Pro",
@@ -3132,7 +3132,7 @@
 			"perspective_trust": "Confiança",
 			"perspective_behavior": "Comportamento",
 			"perspective_copy": "Copy",
-			"chat": "Chat",
+			"chat": "Vestigio AI",
 			"analysis": "Analysis",
 			"findings": "Findings",
 			"inventory": "Inventory",

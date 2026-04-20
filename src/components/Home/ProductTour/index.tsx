@@ -906,41 +906,43 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 
 						{/* Desktop sidebar */}
 						<div className="hidden w-[200px] shrink-0 border-r border-white/[0.06] bg-[#0a0a12]/60 md:block lg:w-[220px]">
-							<div className="p-4 lg:p-5">
-								{/* App logo */}
-								<div className="mb-5 flex items-center gap-2 px-2 py-2">
-									<div className="grid h-7 w-7 place-items-center rounded-md bg-violet-500/15">
-										<div className="h-2.5 w-2.5 rounded-sm bg-violet-400" />
+							<div className="flex h-full flex-col p-4 lg:p-5">
+								{/* Top: logo + nav */}
+								<div>
+									{/* App logo */}
+									<div className="mb-5 flex items-center gap-2 px-2 py-2">
+										<div className="grid h-7 w-7 place-items-center rounded-md bg-violet-500/15">
+											<div className="h-2.5 w-2.5 rounded-sm bg-violet-400" />
+										</div>
+										<span className="text-sm font-semibold text-zinc-300">Vestigio</span>
 									</div>
-									<span className="text-sm font-semibold text-zinc-300">Vestigio</span>
+
+									{/* Nav items */}
+									<nav className="space-y-1">
+										{TABS.map((tabId) => (
+											<button
+												key={tabId}
+												onClick={() => setActiveTab(tabId)}
+												className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[13px] font-medium transition-all ${
+													activeTab === tabId
+														? "bg-white/[0.06] text-white"
+														: "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
+												}`}
+											>
+												<span className={activeTab === tabId ? "text-violet-400" : "text-zinc-600"}>
+													{TAB_ICONS[tabId]}
+												</span>
+												{t(`tabs.${tabId}`)}
+											</button>
+										))}
+									</nav>
 								</div>
 
-								{/* Nav items */}
-								<nav className="space-y-1">
-									{TABS.map((tabId) => (
-										<button
-											key={tabId}
-											onClick={() => setActiveTab(tabId)}
-											className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[13px] font-medium transition-all ${
-												activeTab === tabId
-													? "bg-white/[0.06] text-white"
-													: "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
-											}`}
-										>
-											<span className={activeTab === tabId ? "text-violet-400" : "text-zinc-600"}>
-												{TAB_ICONS[tabId]}
-											</span>
-											{t(`tabs.${tabId}`)}
-										</button>
-									))}
-								</nav>
-
-								{/* Recovery card pinned at bottom of sidebar — was the
-								    floating overlay in the previous iteration. Removed
-								    PII (no real user names on a public marketing page).
-								    See SidebarRecoveryCard component above. */}
-								<SidebarRecoveryCard />
-								<SidebarDataSourcesCard />
+								{/* Bottom: cards pinned to bottom */}
+								<div className="mt-auto">
+									<SidebarRecoveryCard />
+									<SidebarDataSourcesCard />
+								</div>
 							</div>
 						</div>
 

@@ -90,6 +90,17 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							animation: `vhero-float-up 0.8s cubic-bezier(0.16,1,0.3,1) ${0.15 + i * 0.07}s both`,
 						}}
 					>
+						{/* Icon badge — overlapping top-left corner */}
+						<span
+							aria-hidden
+							className={[
+								"absolute -left-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-md sm:h-6 sm:w-6",
+								isOn ? "bg-white text-emerald-700 shadow-sm" : "bg-emerald-500/15 text-emerald-300",
+							].join(" ")}
+						>
+							{PILL_ICONS[i]?.()}
+						</span>
+
 						{/* Liquid fill layer */}
 						<div
 							aria-hidden
@@ -102,38 +113,32 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							].join(" ")}
 						/>
 
-						{/* IDLE FACE — single horizontal row on all sizes, vertically centered */}
+						{/* IDLE FACE — text + checkbox, vertically centered */}
 						<div
 							className={[
 								"relative z-10",
-								"flex items-center gap-2.5 px-3 py-2.5",
+								"flex items-center justify-between gap-2 px-3 py-2.5",
 								"sm:flex-1 sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
 								isOn ? "opacity-0" : "opacity-100",
 							].join(" ")}
 						>
-							<span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300'>
-								{PILL_ICONS[i]?.()}
-							</span>
 							<div className='min-w-0 flex-1 truncate text-[12px] leading-tight text-zinc-300 sm:text-[13px]'>
 								{pill.impact}
 							</div>
 							<span className='flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02]' />
 						</div>
 
-						{/* SELECTED FACE — same horizontal layout */}
+						{/* SELECTED FACE — text + checked checkbox, vertically centered */}
 						<div
 							className={[
 								"absolute inset-0 z-10",
-								"flex items-center gap-2.5 px-3 py-2.5",
+								"flex items-center justify-between gap-2 px-3 py-2.5",
 								"sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
 								isOn ? "opacity-100 delay-200" : "pointer-events-none opacity-0",
 							].join(" ")}
 						>
-							<span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-emerald-700 shadow-sm'>
-								{PILL_ICONS[i]?.()}
-							</span>
 							<div className='min-w-0 flex-1 truncate text-[12px] leading-tight text-[#0a1a14] sm:text-[13px]'>
 								{pill.solution}
 							</div>

@@ -561,12 +561,12 @@
 		"use_cases": {
 			"eyebrow": "Was Vestigio macht",
 			"title": "Auditieren, priorisieren, zurückgewinnen — auf jeder Funnel-Ebene",
-			"subtitle": "Fünf Produktflächen, eine Entscheidungs-Engine. Vom ersten Scan bis zur kontinuierlichen Regressions-Überwachung verwandelt Vestigio verstreute Signale in eine einzige priorisierte Warteschlange.",
+			"subtitle": "",
 			"items": [
 				{
 					"tag": "Aktionswarteschlange",
 					"title": "Priorisieren Sie Fixes, die Umsatz wirklich bewegen",
-					"description": "Jeder Fund nach Impact, Dringlichkeit und Aufwand sortiert. Keine Tabellen mehr — nur die nächste Entscheidung, bereit zum Versand.",
+					"description": "",
 					"cta": "Aktionen erkunden"
 				},
 				{
@@ -578,7 +578,7 @@
 				{
 					"tag": "Beweis-Spur",
 					"title": "Jeder Fund führt zurück zu Multi-Source-Beweis",
-					"description": "Browser-verifiziert, gegengeprüft, mit Zeitstempel. Hören Sie auf zu streiten, ob ein Fund echt ist — sehen Sie den Beweis.",
+					"description": "",
 					"cta": "Beweise erkunden"
 				},
 				{
@@ -651,7 +651,7 @@
 		"success_stories": {
 			"title": "Erfolgs-",
 			"title_accent": "geschichten",
-			"subtitle": "Echte Ergebnisse von Marken, die ihr Geschäft mit Vestigio transformiert haben.",
+			"subtitle": "",
 			"stories": [
 				{
 					"industry": "Outdoor-Freizeit",
@@ -709,19 +709,19 @@
 					"eyebrow": "Schicht 1",
 					"title": "Entdecke vor anderen",
 					"body": "Erkenne Risiken, Lecks und Chancen, bevor sie zu Kosten werden.",
-					"support": "Befunde, Analyse und initialer Kontext, um zu verstehen, was bricht, was übersehen wird und was die Skalierung gefährden könnte."
+					"support": ""
 				},
 				{
 					"eyebrow": "Schicht 2",
 					"title": "Priorisiere und handle präzise",
 					"body": "Verwandle Signale in eine kontinuierliche Aktionswarteschlange mit Kontext und Priorität.",
-					"support": "Aktionen und Workspaces helfen zu organisieren, was korrigiert, verfolgt und erkundet werden soll."
+					"support": ""
 				},
 				{
 					"eyebrow": "Schicht 3",
 					"title": "Validiere mit Vertrauen",
 					"body": "Bestätige, ob es bereit ist, ob es schlimmer wurde oder ob die Korrektur abgeschlossen wurde.",
-					"support": "Preflight, Regressionen und Verifizierung helfen bei Entscheidungen vor der Skalierung."
+					"support": ""
 				}
 			],
 			"tools": [
@@ -792,11 +792,11 @@
 			"eyebrow": "Was wird passieren?",
 			"title_part1": "Schluss mit dem Raten.",
 			"title_part2": "Fang an zu entscheiden.",
-			"subtitle": "Vier Antworten, eine Entscheidungs-Engine. Finden Sie heraus, wo Sie Geld verlieren, beheben Sie zuerst, was zählt, prüfen Sie mit Beweisen und erkennen Sie Regressionen, bevor sie Sie etwas kosten.",
+			"subtitle": "",
 			"action_queue": {
 				"eyebrow": "Vestigio priorisiert",
 				"title": "Eine klare Liste — was zuerst behoben gehört",
-				"description": "Jeder Befund nach Wirkung, Dringlichkeit und Aufwand sortiert. Keine Tabellen mehr — nur die nächste Entscheidung, einsatzbereit.",
+				"description": "",
 				"rows": [
 					{
 						"title": "Checkout-Abbrüche steigen",
@@ -819,7 +819,7 @@
 			"revenue_leaks": {
 				"eyebrow": "Vestigio diagnostiziert",
 				"title": "Finden Sie, wo das Geld blutet",
-				"description": "Vestigio quantifiziert jedes Leck in Ihrem Funnel — mit Konfidenzbereichen, nicht mit Bauchgefühl. Wissen Sie genau, was jede defekte Oberfläche Sie kostet.",
+				"description": "",
 				"confidence_label": "Konfidenz",
 				"leaking_label": "Leck",
 				"rows": [
@@ -843,7 +843,7 @@
 			"continuous_watch": {
 				"eyebrow": "Sie gewinnen zurück",
 				"title": "Stoppen Sie das Leck, bevor es sich aufstaut",
-				"description": "Vestigio verfolgt jedes Leck von der Erkennung bis zur Behebung. Sehen Sie, wie Ihre monatlichen Verluste sinken, sobald Befunde geschlossen werden — und entdecken Sie neue Regressionen im Moment ihres Auftretens.",
+				"description": "",
 				"axis_label": "Verlorene Einnahmen / Monat",
 				"before_label": "Vor Vestigio",
 				"after_label": "Nach Vestigio",
@@ -853,7 +853,7 @@
 			"evidence_orbit": {
 				"eyebrow": "Vestigio prüft",
 				"title": "Jeder Befund führt zurück zum Beweis",
-				"description": "Browser-verifiziert, mehrfach geprüft, mit Zeitstempel. Vestigio reichert jeden Befund mit Multi-Source-Beweisen an — damit Ihr Team der Diagnose vertraut.",
+				"description": "",
 				"center_label": "Befund",
 				"evidence_types": {
 					"browser": "Browser",

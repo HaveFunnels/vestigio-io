@@ -561,12 +561,12 @@
 		"use_cases": {
 			"eyebrow": "What Vestigio does",
 			"title": "Audit, prioritize, recover — every layer of your funnel",
-			"subtitle": "Five product surfaces, one decision engine. From the first scan to continuous regression watch, Vestigio turns scattered signals into a single ranked queue.",
+			"subtitle": "",
 			"items": [
 				{
 					"tag": "Action Queue",
 					"title": "Prioritize the fixes that actually move revenue",
-					"description": "Every finding ranked by impact, urgency and effort. No more spreadsheets — just the next decision, ready to ship.",
+					"description": "",
 					"cta": "Explore Actions"
 				},
 				{
@@ -578,7 +578,7 @@
 				{
 					"tag": "Evidence Trail",
 					"title": "Every finding traces back to multi-source proof",
-					"description": "Browser-verified, cross-checked, timestamped. Stop arguing about whether a finding is real — see the evidence.",
+					"description": "",
 					"cta": "Explore Evidence"
 				},
 				{
@@ -651,7 +651,7 @@
 		"success_stories": {
 			"title": "Success",
 			"title_accent": "Stories",
-			"subtitle": "Real results from brands that transformed their business with Vestigio.",
+			"subtitle": "",
 			"stories": [
 				{
 					"industry": "Outdoor leisure industry",
@@ -709,19 +709,19 @@
 					"eyebrow": "Layer 1",
 					"title": "Discover before others",
 					"body": "See where the risks, leaks, and opportunities are before they become costs.",
-					"support": "Findings, analysis, and initial context to understand what's breaking, what's going unnoticed, and what could compromise scale."
+					"support": ""
 				},
 				{
 					"eyebrow": "Layer 2",
 					"title": "Prioritize and act with precision",
 					"body": "Turn signals into a continuous queue of action, with context and priority.",
-					"support": "Actions and workspaces help organize what to fix, track, and explore by route, journey, campaign, or environment."
+					"support": ""
 				},
 				{
 					"eyebrow": "Layer 3",
 					"title": "Validate with confidence",
 					"body": "Confirm if it's ready, if it got worse, or if the fix actually closed.",
-					"support": "Preflight, regressions, and verification help decide before scaling and track changes over time."
+					"support": ""
 				}
 			],
 			"tools": [
@@ -792,11 +792,11 @@
 			"eyebrow": "What will happen?",
 			"title_part1": "Stop guessing.",
 			"title_part2": "Start deciding.",
-			"subtitle": "Four answers, one decision engine. Find where you're losing money, fix what matters first, verify with evidence, and catch regressions before they cost you.",
+			"subtitle": "",
 			"action_queue": {
 				"eyebrow": "Vestigio prioritizes",
 				"title": "A clear queue of what to fix first",
-				"description": "Every finding ranked by impact, urgency, and effort. No more spreadsheets — just the next decision, ready to ship.",
+				"description": "",
 				"rows": [
 					{
 						"title": "Checkout abandons spike",
@@ -819,7 +819,7 @@
 			"revenue_leaks": {
 				"eyebrow": "Vestigio diagnoses",
 				"title": "Find where money is bleeding",
-				"description": "Vestigio quantifies every leak across your funnel — with confidence ranges, not vibes. Know what each broken surface is costing you.",
+				"description": "",
 				"confidence_label": "confidence",
 				"leaking_label": "Leaking",
 				"rows": [
@@ -843,7 +843,7 @@
 			"continuous_watch": {
 				"eyebrow": "You recover",
 				"title": "Stop the bleed before it compounds",
-				"description": "Vestigio tracks every leak from detection to resolution. Watch your monthly losses drop as findings get closed — and catch new regressions the moment they appear.",
+				"description": "",
 				"axis_label": "Revenue lost / mo",
 				"before_label": "Before Vestigio",
 				"after_label": "After Vestigio",
@@ -853,7 +853,7 @@
 			"evidence_orbit": {
 				"eyebrow": "Vestigio audits",
 				"title": "Every finding traces back to evidence",
-				"description": "Browser-verified, cross-checked, timestamped. Vestigio enriches every finding with multi-source proof — so your team trusts the call.",
+				"description": "",
 				"center_label": "Finding",
 				"evidence_types": {
 					"browser": "Browser",

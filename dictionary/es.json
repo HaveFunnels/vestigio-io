@@ -561,12 +561,12 @@
 		"use_cases": {
 			"eyebrow": "Qué hace Vestigio",
 			"title": "Audita, prioriza, recupera — en cada capa de tu funnel",
-			"subtitle": "Cinco superficies de producto, un motor de decisión. Del primer escaneo a la vigilancia continua, Vestigio convierte señales dispersas en una sola cola priorizada.",
+			"subtitle": "",
 			"items": [
 				{
 					"tag": "Cola de Acciones",
 					"title": "Prioriza las correcciones que mueven ingresos",
-					"description": "Cada hallazgo clasificado por impacto, urgencia y esfuerzo. Sin más planillas — solo la próxima decisión, lista para ejecutar.",
+					"description": "",
 					"cta": "Explorar Acciones"
 				},
 				{
@@ -578,7 +578,7 @@
 				{
 					"tag": "Rastro de Evidencia",
 					"title": "Cada hallazgo se rastrea hasta prueba multi-fuente",
-					"description": "Verificado en navegador, contrastado, con timestamp. Deja de discutir si un hallazgo es real — mira la evidencia.",
+					"description": "",
 					"cta": "Explorar Evidencia"
 				},
 				{
@@ -651,7 +651,7 @@
 		"success_stories": {
 			"title": "Historias de",
 			"title_accent": "Éxito",
-			"subtitle": "Resultados reales de marcas que transformaron su negocio con Vestigio.",
+			"subtitle": "",
 			"stories": [
 				{
 					"industry": "Ocio al aire libre",
@@ -709,19 +709,19 @@
 					"eyebrow": "Capa 1",
 					"title": "Descubre antes que otros",
 					"body": "Detecta riesgos, fugas y oportunidades antes de que se conviertan en costos.",
-					"support": "Hallazgos, análisis y contexto inicial para entender qué se está rompiendo, qué pasa desapercibido y qué puede comprometer la escala."
+					"support": ""
 				},
 				{
 					"eyebrow": "Capa 2",
 					"title": "Prioriza y actúa con precisión",
 					"body": "Convierte señales en una cola continua de acción, con contexto y prioridad.",
-					"support": "Acciones y workspaces ayudan a organizar qué corregir, rastrear y explorar por ruta, jornada, campaña o entorno."
+					"support": ""
 				},
 				{
 					"eyebrow": "Capa 3",
 					"title": "Valida con confianza",
 					"body": "Confirma si está listo, si empeoró o si la corrección realmente cerró.",
-					"support": "Preflight, regresiones y verificación ayudan a decidir antes de escalar y seguir cambios a lo largo del tiempo."
+					"support": ""
 				}
 			],
 			"tools": [
@@ -792,11 +792,11 @@
 			"eyebrow": "Qué va a pasar?",
 			"title_part1": "Deja de adivinar.",
 			"title_part2": "Empieza a decidir.",
-			"subtitle": "Cuatro respuestas, un motor de decisión. Descubre dónde estás perdiendo dinero, arregla lo que importa primero, valida con evidencia y detecta regresiones antes de que te cuesten caro.",
+			"subtitle": "",
 			"action_queue": {
 				"eyebrow": "Vestigio prioriza",
 				"title": "Una cola clara de qué arreglar primero",
-				"description": "Cada hallazgo clasificado por impacto, urgencia y esfuerzo. No más hojas de cálculo — solo la próxima decisión, lista para ejecutar.",
+				"description": "",
 				"rows": [
 					{
 						"title": "Pico de abandono en checkout",
@@ -819,7 +819,7 @@
 			"revenue_leaks": {
 				"eyebrow": "Vestigio diagnostica",
 				"title": "Encuentra dónde sangra el dinero",
-				"description": "Vestigio cuantifica cada fuga en tu embudo — con rangos de confianza, no con corazonadas. Sabe exactamente cuánto te cuesta cada superficie rota.",
+				"description": "",
 				"confidence_label": "confianza",
 				"leaking_label": "Fuga",
 				"rows": [
@@ -843,7 +843,7 @@
 			"continuous_watch": {
 				"eyebrow": "Tú recuperas",
 				"title": "Detén la fuga antes de que se acumule",
-				"description": "Vestigio rastrea cada fuga desde la detección hasta la resolución. Mira cómo tus pérdidas mensuales caen a medida que los hallazgos se cierran — y detecta nuevas regresiones en el momento en que aparecen.",
+				"description": "",
 				"axis_label": "Ingresos perdidos / mes",
 				"before_label": "Antes de Vestigio",
 				"after_label": "Después de Vestigio",
@@ -853,7 +853,7 @@
 			"evidence_orbit": {
 				"eyebrow": "Vestigio audita",
 				"title": "Cada hallazgo se rastrea hasta la evidencia",
-				"description": "Verificado en navegador, contrastado entre fuentes, con marca de tiempo. Vestigio enriquece cada hallazgo con pruebas multi-fuente — para que tu equipo confíe en el diagnóstico.",
+				"description": "",
 				"center_label": "Hallazgo",
 				"evidence_types": {
 					"browser": "Navegador",
@@ -2102,7 +2102,7 @@
 				}
 			},
 			"playbook_prompts": {
-				"revenue_leak_full_audit": "Ejecuta un análisis completo de fugas de ingresos. Muestra cada hallazgo que causa pérdida de ingresos, clasificado por impacto mensual en dólares de mayor a menor. Para los 5 principales, explica la causa raíz y qué recuperaría corregir cada uno. Luego muestra la pérdida mensual combinada total y la recuperación estimada si corrijo los 3 principales.",
+				"revenue_leak_full_audit": "",
 				"conversion_bottleneck": "Mapea mi embudo de conversión desde el landing hasta la compra/registro. En cada etapa, muestra qué hallazgos crean fricción. ¿Dónde está la mayor caída? ¿Cuál es la causa raíz de esa caída? Si solo pudiera corregir una cosa para mejorar la conversión, ¿qué debería ser y cuánto movería la aguja?",
 				"trust_signal_audit": "Evalúa las señales de confianza de mi sitio en estas dimensiones: SSL y sellos de seguridad, reseñas y testimonios, información de la empresa (sobre, equipo, dirección), opciones de contacto (teléfono, chat, email), políticas (devoluciones, privacidad, términos), confianza en pagos (logos, garantías), prueba social (número de clientes, menciones en medios). Para cada dimensión, califica del 1 al 10 y explica qué falta. ¿Cuál es mi puntuación general de confianza y qué la mejoraría más rápido?",
 				"executive_summary": "Crea un resumen ejecutivo adecuado para una reunión de directorio. Incluye: ingresos mensuales totales en riesgo (suma de todos los hallazgos), 3 principales problemas críticos con impacto en dólares, hoja de ruta de prioridades para 90 días (semana 1-2: victorias rápidas, mes 1: correcciones críticas, mes 2-3: mejoras estratégicas), ROI esperado del plan completo de remediación y una puntuación de salud de 0-100 para el negocio.",
@@ -2137,7 +2137,7 @@
 			"featured_playbooks": {
 				"revenue_leak_full_audit": {
 					"title": "Auditoría Completa de Fugas de Ingresos",
-					"description": "Análisis completo de dónde el dinero escapa de tu embudo, clasificado por impacto en $.",
+					"description": "",
 					"category": "Ingresos"
 				},
 				"conversion_bottleneck": {

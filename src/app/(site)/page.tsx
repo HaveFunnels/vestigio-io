@@ -1,7 +1,7 @@
 import Home from "@/components/Home";
 import { Metadata } from "next";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
 	title: "Vestigio — SaaS Intelligence & Decision Engine | Automated Audits, Monitoring & Optimization",

@@ -181,10 +181,9 @@ const Hero = async () => {
 
 			{/* ─────────── Headline + subtitle + pills + CTAs ─────────── */}
 			<div className='relative mx-auto w-full max-w-[1000px] px-4 text-center sm:px-8 xl:px-0'>
-				<h1 className='mb-5 font-display text-[2.5rem] font-bold leading-[1.05] tracking-tighter text-white sm:mb-6 sm:text-[3.25rem] lg:text-[4.75rem] xl:text-[5.5rem]'>
+				<h1 className='mb-5 font-display text-[2rem] font-semibold leading-[1.1] tracking-tight text-white sm:mb-6 sm:text-[2.75rem] lg:text-[3.5rem] xl:text-[4rem]'>
 					<span className='block'>{t("headline_part1")}</span>
-					<span className='block'>{t("headline_part2")}</span>
-					<span className='block'>{t("headline_part3")}</span>
+					<span className='block'>{t("headline_part2")} {t("headline_part3")}</span>
 				</h1>
 
 				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>

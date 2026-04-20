@@ -120,23 +120,22 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 								"relative z-10",
 								// Mobile: single row (text + checkbox)
 								"flex items-center justify-between px-3 py-2.5",
-								// Desktop: two-row layout, grow to fill button height
-								"sm:flex-1 sm:flex-col sm:items-stretch sm:justify-between sm:px-3.5 sm:py-3",
+								// Desktop: vertical layout, center everything
+								"sm:flex-1 sm:flex-col sm:items-center sm:justify-center sm:gap-2.5 sm:px-3.5 sm:py-3.5",
 								"transition-opacity duration-500",
 								isOn ? "opacity-0" : "opacity-100",
 							].join(" ")}
 						>
-							{/* Desktop icon + checkbox row (hidden on mobile) */}
-							<div className='hidden items-center justify-between sm:flex'>
-								<span className='flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300'>
-									{PILL_ICONS[i]?.()}
-								</span>
-								<span className='flex h-4 w-4 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02]' />
-							</div>
+							{/* Desktop icon (hidden on mobile) */}
+							<span className='hidden h-6 w-6 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300 sm:flex'>
+								{PILL_ICONS[i]?.()}
+							</span>
 							{/* Text */}
-							<div className='truncate text-[12px] leading-tight text-zinc-300 sm:mt-2 sm:text-[13px]'>
+							<div className='truncate text-[12px] leading-tight text-zinc-300 sm:whitespace-normal sm:overflow-visible sm:text-center sm:text-[13px] sm:leading-snug'>
 								{pill.impact}
 							</div>
+							{/* Desktop checkbox (hidden on mobile) */}
+							<span className='hidden h-4 w-4 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02] sm:flex' />
 							{/* Mobile checkbox (hidden on desktop) */}
 							<span className='ml-2 flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02] sm:hidden' />
 						</div>
@@ -146,26 +145,25 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							className={[
 								"absolute inset-0 z-10",
 								"flex items-center justify-between px-3 py-2.5",
-								"sm:flex-col sm:items-stretch sm:justify-between sm:px-3.5 sm:py-3",
+								"sm:flex-col sm:items-center sm:justify-center sm:gap-2.5 sm:px-3.5 sm:py-3.5",
 								"transition-opacity duration-500",
 								isOn ? "opacity-100 delay-200" : "pointer-events-none opacity-0",
 							].join(" ")}
 						>
-							{/* Desktop icon + checkbox row (hidden on mobile) */}
-							<div className='hidden items-center justify-between sm:flex'>
-								<span className='flex h-6 w-6 items-center justify-center rounded-md bg-white text-emerald-700 shadow-sm'>
-									{PILL_ICONS[i]?.()}
-								</span>
-								<span className='flex h-4 w-4 items-center justify-center rounded-[3px] border border-[#0a1a14]/30 bg-[#0a1a14]'>
-									<svg viewBox='0 0 12 12' fill='none' stroke='currentColor' strokeWidth='2.2' className='h-2.5 w-2.5 text-emerald-300'>
-										<path d='M2.5 6.5l2.5 2.5L9.5 3.5' strokeLinecap='round' strokeLinejoin='round' />
-									</svg>
-								</span>
-							</div>
+							{/* Desktop icon (hidden on mobile) */}
+							<span className='hidden h-6 w-6 items-center justify-center rounded-md bg-white text-emerald-700 shadow-sm sm:flex'>
+								{PILL_ICONS[i]?.()}
+							</span>
 							{/* Text */}
-							<div className='truncate text-[12px] leading-tight text-[#0a1a14] sm:mt-2 sm:text-[13px]'>
+							<div className='truncate text-[12px] leading-tight text-[#0a1a14] sm:whitespace-normal sm:overflow-visible sm:text-center sm:text-[13px] sm:leading-snug'>
 								{pill.solution}
 							</div>
+							{/* Desktop checkbox with check (hidden on mobile) */}
+							<span className='hidden h-4 w-4 items-center justify-center rounded-[3px] border border-[#0a1a14]/30 bg-[#0a1a14] sm:flex'>
+								<svg viewBox='0 0 12 12' fill='none' stroke='currentColor' strokeWidth='2.2' className='h-2.5 w-2.5 text-emerald-300'>
+									<path d='M2.5 6.5l2.5 2.5L9.5 3.5' strokeLinecap='round' strokeLinejoin='round' />
+								</svg>
+							</span>
 							{/* Mobile checkbox with check (hidden on desktop) */}
 							<span className='ml-2 flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-[#0a1a14]/30 bg-[#0a1a14] sm:hidden'>
 								<svg viewBox='0 0 12 12' fill='none' stroke='currentColor' strokeWidth='2.2' className='h-2.5 w-2.5 text-emerald-300'>

@@ -209,7 +209,20 @@ export default function OnboardPage() {
 		[t]
 	);
 
-	const [stepIndex, setStepIndex] = useState(0);
+	// ---------------------------------------------------------------------------
+	// Session-persisted draft — survives reload, clears on tab close
+	// ---------------------------------------------------------------------------
+	const DRAFT_KEY = "vestigio_onboard_draft";
+	const savedDraft = useMemo(() => {
+		if (typeof window === "undefined") return null;
+		try {
+			const raw = sessionStorage.getItem(DRAFT_KEY);
+			return raw ? JSON.parse(raw) : null;
+		} catch { return null; }
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	const [stepIndex, setStepIndex] = useState(savedDraft?.stepIndex ?? 0);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>(defaultPlans);
@@ -285,6 +298,7 @@ export default function OnboardPage() {
 				.then((data) => {
 					setHasExistingDomain(!!data?.domain);
 					if (!paymentSuccess && data?.domain && envActivated) {
+						try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
 						router.replace("/app/analysis");
 					}
 				})
@@ -318,6 +332,7 @@ export default function OnboardPage() {
 	useEffect(() => {
 		if (paymentSuccess && (session?.user as any)?.hasOrganization === true) {
 			setActivating(false);
+			try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
 			// Hand off to the thank-you bridge page, which will then redirect
 			// to /app/inventory where the audit progress banner is visible.
 			const orgId = searchParams.get("org") || "";
@@ -336,7 +351,7 @@ export default function OnboardPage() {
 		return "";
 	})();
 
-	const [form, setForm] = useState<OnboardState>({
+	const defaultForm: OnboardState = {
 		organizationName: "",
 		domain: prefillDomain,
 		ownershipConfirmed: false,
@@ -353,7 +368,18 @@ export default function OnboardPage() {
 		notifyEmail: true,
 		notifySms: false,
 		notifyWhatsapp: false,
+	};
+	const [form, setForm] = useState<OnboardState>({
+		...defaultForm,
+		...(savedDraft?.form ?? {}),
+		// MiniCalc domain takes priority over draft if present
+		...(prefillDomain ? { domain: prefillDomain } : {}),
 	});
+
+	// Persist draft to sessionStorage on every change
+	useEffect(() => {
+		try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ form, stepIndex })); } catch {}
+	}, [form, stepIndex]);
 
 	const [phoneError, setPhoneError] = useState<string | null>(null);
 
@@ -489,6 +515,7 @@ export default function OnboardPage() {
 				// on the next navigation even though the env is activated.
 				await updateSession();
 
+				try { sessionStorage.removeItem(DRAFT_KEY); } catch {}
 				// Hand off to inventory where the first-cycle progress banner
 				// (wired via SSE) takes over. If the redirect arrived in the
 				// response we honor it; otherwise default to inventory.

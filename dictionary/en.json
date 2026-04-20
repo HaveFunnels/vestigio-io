@@ -63,11 +63,11 @@
 				"message": "Continuous, evidence-backed answers on what's bleeding revenue right now.",
 				"cta": "See how"
 			},
-			"headline_part1": "Your funnel is leaking.",
-			"headline_part2": "Vestigio shows you where —",
-			"headline_part3": "and how much.",
-			"headline_brush_word": "leaking",
-			"subtitle": "Every revenue leak ranked by financial impact, with real-time evidence captured from your site. First diagnostic in 24 hours.",
+			"headline_part1": "There's money leaking from your operation.",
+			"headline_part2": "You just don't know how much.",
+			"headline_part3": "",
+			"headline_brush_word": "",
+			"subtitle": "Problems identified and ranked. Decisions ready to execute. Real evidence.",
 			"pills": [
 				{
 					"impact": "Leads not converting?",

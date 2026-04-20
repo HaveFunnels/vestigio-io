@@ -773,11 +773,11 @@ function SidebarDataSourcesCard() {
 			<div className="flex items-center gap-2">
 				{DATA_SOURCES.map((ds) => (
 					<div key={ds.alt} className="relative">
-						<div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-white/[0.08] bg-white/[0.04]">
+						<div className="h-7 w-7 overflow-hidden rounded-full border border-white/[0.08]">
 							<img
 								src={ds.src}
 								alt={ds.alt}
-								className="h-4 w-4 object-contain"
+								className="h-full w-full object-cover"
 								loading="lazy"
 							/>
 						</div>

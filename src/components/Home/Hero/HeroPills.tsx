@@ -90,18 +90,6 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							animation: `vhero-float-up 0.8s cubic-bezier(0.16,1,0.3,1) ${0.15 + i * 0.07}s both`,
 						}}
 					>
-						{/* Icon badge — on mobile: centered on top-left corner border.
-						    On desktop: hidden (icon renders inside the card instead). */}
-						<span
-							aria-hidden
-							className={[
-								"absolute -left-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-md sm:hidden",
-								isOn ? "bg-white text-emerald-700 shadow-sm" : "bg-emerald-500/15 text-emerald-300",
-							].join(" ")}
-						>
-							{PILL_ICONS[i]?.()}
-						</span>
-
 						{/* Liquid fill layer */}
 						<div
 							aria-hidden
@@ -114,58 +102,42 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							].join(" ")}
 						/>
 
-						{/* IDLE FACE */}
+						{/* IDLE FACE — single horizontal row on all sizes, vertically centered */}
 						<div
 							className={[
 								"relative z-10",
-								// Mobile: single row (text + checkbox)
-								"flex items-center justify-between px-3 py-2.5",
-								// Desktop: vertical layout, center everything
-								"sm:flex-1 sm:flex-col sm:items-center sm:justify-center sm:gap-2.5 sm:px-3.5 sm:py-3.5",
+								"flex items-center gap-2.5 px-3 py-2.5",
+								"sm:flex-1 sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
 								isOn ? "opacity-0" : "opacity-100",
 							].join(" ")}
 						>
-							{/* Desktop icon (hidden on mobile) */}
-							<span className='hidden h-6 w-6 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300 sm:flex'>
+							<span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300'>
 								{PILL_ICONS[i]?.()}
 							</span>
-							{/* Text */}
-							<div className='truncate text-[12px] leading-tight text-zinc-300 sm:whitespace-normal sm:overflow-visible sm:text-center sm:text-[13px] sm:leading-snug'>
+							<div className='min-w-0 flex-1 truncate text-[12px] leading-tight text-zinc-300 sm:text-[13px]'>
 								{pill.impact}
 							</div>
-							{/* Desktop checkbox (hidden on mobile) */}
-							<span className='hidden h-4 w-4 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02] sm:flex' />
-							{/* Mobile checkbox (hidden on desktop) */}
-							<span className='ml-2 flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02] sm:hidden' />
+							<span className='flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-white/25 bg-white/[0.02]' />
 						</div>
 
-						{/* SELECTED FACE */}
+						{/* SELECTED FACE — same horizontal layout */}
 						<div
 							className={[
 								"absolute inset-0 z-10",
-								"flex items-center justify-between px-3 py-2.5",
-								"sm:flex-col sm:items-center sm:justify-center sm:gap-2.5 sm:px-3.5 sm:py-3.5",
+								"flex items-center gap-2.5 px-3 py-2.5",
+								"sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
 								isOn ? "opacity-100 delay-200" : "pointer-events-none opacity-0",
 							].join(" ")}
 						>
-							{/* Desktop icon (hidden on mobile) */}
-							<span className='hidden h-6 w-6 items-center justify-center rounded-md bg-white text-emerald-700 shadow-sm sm:flex'>
+							<span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-emerald-700 shadow-sm'>
 								{PILL_ICONS[i]?.()}
 							</span>
-							{/* Text */}
-							<div className='truncate text-[12px] leading-tight text-[#0a1a14] sm:whitespace-normal sm:overflow-visible sm:text-center sm:text-[13px] sm:leading-snug'>
+							<div className='min-w-0 flex-1 truncate text-[12px] leading-tight text-[#0a1a14] sm:text-[13px]'>
 								{pill.solution}
 							</div>
-							{/* Desktop checkbox with check (hidden on mobile) */}
-							<span className='hidden h-4 w-4 items-center justify-center rounded-[3px] border border-[#0a1a14]/30 bg-[#0a1a14] sm:flex'>
-								<svg viewBox='0 0 12 12' fill='none' stroke='currentColor' strokeWidth='2.2' className='h-2.5 w-2.5 text-emerald-300'>
-									<path d='M2.5 6.5l2.5 2.5L9.5 3.5' strokeLinecap='round' strokeLinejoin='round' />
-								</svg>
-							</span>
-							{/* Mobile checkbox with check (hidden on desktop) */}
-							<span className='ml-2 flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-[#0a1a14]/30 bg-[#0a1a14] sm:hidden'>
+							<span className='flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border border-[#0a1a14]/30 bg-[#0a1a14]'>
 								<svg viewBox='0 0 12 12' fill='none' stroke='currentColor' strokeWidth='2.2' className='h-2.5 w-2.5 text-emerald-300'>
 									<path d='M2.5 6.5l2.5 2.5L9.5 3.5' strokeLinecap='round' strokeLinejoin='round' />
 								</svg>

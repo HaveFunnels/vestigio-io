@@ -63,31 +63,31 @@
 				"message": "Continuous, evidence-backed answers on what's bleeding revenue right now.",
 				"cta": "See how"
 			},
-			"headline_part1": "Skip the analytics.",
-			"headline_part2": "What matters is the decision.",
-			"headline_brush_word": "analytics",
-			"subtitle": "Vestigio audits your digital operation automatically and ranks what to fix so you stop leaving money on the table — you skip the analytics and go straight to the decision.",
+			"headline_part1": "Your funnel is leaking.",
+			"headline_part2": "Vestigio shows you where — and how much.",
+			"headline_brush_word": "leaking",
+			"subtitle": "Every revenue leak ranked by financial impact, with real-time evidence captured from your site. First diagnostic in 24 hours.",
 			"pills": [
 				{
-					"impact": "Traffic but no leads",
-					"solution": "We find the block"
+					"impact": "Leads not converting?",
+					"solution": "We show you why"
 				},
 				{
-					"impact": "Ads without return",
-					"solution": "We show the leak"
+					"impact": "Ad spend not returning?",
+					"solution": "We reveal the leak"
 				},
 				{
-					"impact": "Pretty site, low sales",
-					"solution": "Focus what converts"
+					"impact": "Nice site, no sales?",
+					"solution": "We find the bottleneck"
 				},
 				{
-					"impact": "Don't know what to fix",
-					"solution": "Ranked queue, ready"
+					"impact": "Deciding in the dark?",
+					"solution": "Impact in dollars"
 				}
 			],
 			"cta_primary": "Run free diagnostic",
 			"cta_secondary": "Watch product tour",
-			"cta_micro": "Perfect for ecommerce, SaaS, lead gen, infoproducts, services and apps.",
+			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			}

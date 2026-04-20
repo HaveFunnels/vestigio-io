@@ -63,31 +63,31 @@
 				"message": "Kontinuierliche, evidenzbasierte Antworten darauf, was gerade Umsatz blutet.",
 				"cta": "So funktioniert's"
 			},
-			"headline_part1": "Überspring das Analytics.",
-			"headline_part2": "Was zählt, ist die Entscheidung.",
-			"headline_brush_word": "Analytics",
-			"subtitle": "Vestigio prüft deine digitale Operation automatisch und priorisiert, was zu beheben ist, damit du kein Geld mehr liegen lässt — du überspringst das Analytics und gehst direkt zur Entscheidung.",
+			"headline_part1": "Dein Funnel verliert Geld.",
+			"headline_part2": "Vestigio zeigt dir wo — und wie viel.",
+			"headline_brush_word": "verliert",
+			"subtitle": "Jedes Umsatzleck nach finanziellem Impact sortiert, mit Echtzeit-Beweisen direkt von deiner Seite. Erste Diagnose in 24 Stunden.",
 			"pills": [
 				{
-					"impact": "Traffic, keine Leads",
-					"solution": "Wir finden das Leck"
+					"impact": "Leads konvertieren nicht?",
+					"solution": "Wir zeigen warum"
 				},
 				{
-					"impact": "Ads ohne Rendite",
+					"impact": "Werbebudget ohne Return?",
 					"solution": "Wir zeigen das Leck"
 				},
 				{
-					"impact": "Schöne Seite, wenig Umsatz",
-					"solution": "Fokus auf Conversion"
+					"impact": "Schöne Seite, kein Umsatz?",
+					"solution": "Wir finden den Engpass"
 				},
 				{
-					"impact": "Weiß nicht, was beheben",
-					"solution": "Sortierte Liste, fertig"
+					"impact": "Im Dunkeln entscheiden?",
+					"solution": "Impact in Euro"
 				}
 			],
 			"cta_primary": "Kostenlose Diagnose starten",
 			"cta_secondary": "Produkt-Tour ansehen",
-			"cta_micro": "Perfekt für E-Commerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",
+			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			}

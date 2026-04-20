@@ -63,31 +63,31 @@
 				"message": "Respostas contínuas e baseadas em evidência sobre o que está vazando faturamento agora.",
 				"cta": "Como funciona"
 			},
-			"headline_part1": "Pule o analytics.",
-			"headline_part2": "O que importa é a decisão.",
-			"headline_brush_word": "analytics",
-			"subtitle": "A Vestigio audita sua operação digital automaticamente e prioriza o que corrigir para você não deixar mais dinheiro na mesa — você pula o analytics e vai direto pra decisão.",
+			"headline_part1": "Seu funil está vazando.",
+			"headline_part2": "A Vestigio mostra onde — e quanto custa.",
+			"headline_brush_word": "vazando",
+			"subtitle": "Cada vazamento de receita ranqueado por impacto financeiro, com evidências capturadas do seu site em tempo real. Primeiro diagnóstico em 24 horas.",
 			"pills": [
 				{
-					"impact": "Tráfego mas sem leads",
-					"solution": "Achamos o bloqueio"
+					"impact": "Leads não convertem?",
+					"solution": "Mostramos o porquê"
 				},
 				{
-					"impact": "Ads sem retorno",
-					"solution": "Mostramos o vazamento"
+					"impact": "Investimento sem retorno?",
+					"solution": "Revelamos o ralo"
 				},
 				{
-					"impact": "Site bonito, pouca venda",
-					"solution": "Foco no que converte"
+					"impact": "Site bonito sem vendas?",
+					"solution": "Achamos o gargalo"
 				},
 				{
-					"impact": "Sem saber o que corrigir",
-					"solution": "Fila pronta pra agir"
+					"impact": "Decidindo no escuro?",
+					"solution": "Impacto em reais"
 				}
 			],
 			"cta_primary": "Rodar diagnóstico gratuito",
 			"cta_secondary": "Ver tour do produto",
-			"cta_micro": "Perfeito para E-commerces, SaaS, captação de leads, infoprodutos, serviços e apps.",
+			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			}

@@ -63,31 +63,31 @@
 				"message": "Respuestas continuas y respaldadas por evidencia sobre lo que está sangrando ingresos ahora mismo.",
 				"cta": "Cómo funciona"
 			},
-			"headline_part1": "Salta el analytics.",
-			"headline_part2": "Lo que importa es la decisión.",
-			"headline_brush_word": "analytics",
-			"subtitle": "Vestigio audita tu operación digital automáticamente y prioriza qué arreglar para que no dejes más dinero sobre la mesa — saltas el analytics y vas directo a la decisión.",
+			"headline_part1": "Tu embudo está perdiendo.",
+			"headline_part2": "Vestigio te muestra dónde — y cuánto cuesta.",
+			"headline_brush_word": "perdiendo",
+			"subtitle": "Cada fuga de ingresos clasificada por impacto financiero, con evidencia capturada de tu sitio en tiempo real. Primer diagnóstico en 24 horas.",
 			"pills": [
 				{
-					"impact": "Tráfico, sin leads",
-					"solution": "Encontramos el bloqueo"
+					"impact": "Leads no convierten?",
+					"solution": "Te mostramos por qué"
 				},
 				{
-					"impact": "Ads sin retorno",
-					"solution": "Mostramos la fuga"
+					"impact": "Inversión sin retorno?",
+					"solution": "Revelamos la fuga"
 				},
 				{
-					"impact": "Bonito, poca venta",
-					"solution": "Foco en convertir"
+					"impact": "Sitio bonito, sin ventas?",
+					"solution": "Hallamos el cuello"
 				},
 				{
-					"impact": "Sin saber qué arreglar",
-					"solution": "Cola lista para actuar"
+					"impact": "Decidiendo a ciegas?",
+					"solution": "Impacto en dólares"
 				}
 			],
 			"cta_primary": "Hacer diagnóstico gratis",
 			"cta_secondary": "Ver tour del producto",
-			"cta_micro": "Perfecto para ecommerce, SaaS, captación de leads, infoproductos, servicios y apps.",
+			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			}

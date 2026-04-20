@@ -1,5 +1,6 @@
 import Hero from "./Hero";
 import HomeBigCard from "./HomeBigCard";
+import SocialProofStrip from "./SocialProofStrip";
 import ProductTour from "./ProductTour";
 import ClientGallery from "./ClientGallery";
 import SolutionLayers from "./SolutionLayers";
@@ -36,6 +37,7 @@ const Home = () => {
 		<>
 			<HomeBigCard>
 				<Hero />
+				<SocialProofStrip />
 				<ProductTour />
 				<ClientGallery />
 			</HomeBigCard>

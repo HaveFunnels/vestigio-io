@@ -57,6 +57,11 @@
 				"description": "Creado por el mismo equipo detrás de numerosos productos SaaS y digitales exitosos"
 			}
 		},
+		"social_proof_strip": {
+			"before_highlight": "Empresas como la tuya encuentran en promedio 9 fugas críticas y ",
+			"highlight": "−$81k/mes",
+			"after_highlight": " en su primer diagnóstico Vestigio."
+		},
 		"hero_v2": {
 			"banner": {
 				"label": "Vestigio Pulse",

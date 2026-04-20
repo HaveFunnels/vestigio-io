@@ -73,12 +73,14 @@ Pills should sharpen toward financial specificity:
 **DIRECTIVE:** Single line, centered, subtle. No logos. Just a number.
 
 ```
-Average first diagnostic: 9 findings, $41k/month in recoverable revenue.
+Empresas como a sua encontram em média 9 vazamentos críticos e −R$81k/mês no primeiro diagnóstico Vestigio.
 ```
 
-**Visual:** `text-sm text-zinc-500`, no border, no card. Just a line of text. The understatement IS the design — it reads like a footnote that happens to be devastating.
+The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` — the financial impact pops without breaking the understated tone.
 
-**STATUS:** 🔲 Not started
+**Visual:** `text-[13px] text-zinc-500`, centered, no border, no card. The `−R$81k/mês` highlight is the only color accent. Loss-frame maintained from hero.
+
+**STATUS:** ✅ Done
 
 ---
 

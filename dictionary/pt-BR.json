@@ -57,6 +57,11 @@
 				"description": "Criado pela mesma equipe por trás de diversos produtos digitais e SaaS de sucesso"
 			}
 		},
+		"social_proof_strip": {
+			"before_highlight": "Empresas como a sua encontram em média 9 vazamentos críticos e ",
+			"highlight": "−R$81k/mês",
+			"after_highlight": " no primeiro diagnóstico Vestigio."
+		},
 		"hero_v2": {
 			"banner": {
 				"label": "Vestigio Pulse",

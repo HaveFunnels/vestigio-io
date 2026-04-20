@@ -57,6 +57,11 @@
 				"description": "Entwickelt vom selben Team, das hinter zahlreichen erfolgreichen SaaS- und digitalen Produkten steht"
 			}
 		},
+		"social_proof_strip": {
+			"before_highlight": "Unternehmen wie Ihres finden durchschnittlich 9 kritische Lecks und ",
+			"highlight": "−81.000 €/Monat",
+			"after_highlight": " in ihrer ersten Vestigio-Diagnose."
+		},
 		"hero_v2": {
 			"banner": {
 				"label": "Vestigio Pulse",

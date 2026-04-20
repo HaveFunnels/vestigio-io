@@ -1,5 +1,6 @@
 import Hero from "@/components/Home/Hero";
 import HomeBigCard from "@/components/Home/HomeBigCard";
+import SocialProofStrip from "@/components/Home/SocialProofStrip";
 import ProductTour from "@/components/Home/ProductTour";
 import ClientGallery from "@/components/Home/ClientGallery";
 import SolutionLayers from "@/components/Home/SolutionLayers";
@@ -34,6 +35,7 @@ const HomeLp = () => {
 		<>
 			<HomeBigCard>
 				<Hero i18nNamespace="homepage.hero_lp" />
+				<SocialProofStrip />
 				<ProductTour primaryCtaHref={LP_CTA_HREF} />
 				<ClientGallery />
 			</HomeBigCard>

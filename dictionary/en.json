@@ -57,6 +57,11 @@
 				"description": "Built by the same team behind numerous successful SaaS and digital products"
 			}
 		},
+		"social_proof_strip": {
+			"before_highlight": "Companies like yours find an average of 9 critical leaks and ",
+			"highlight": "−$81k/mo",
+			"after_highlight": " in their first Vestigio diagnostic."
+		},
 		"hero_v2": {
 			"banner": {
 				"label": "Vestigio Pulse",

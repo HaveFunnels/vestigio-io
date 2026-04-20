@@ -156,64 +156,64 @@
 				"rows": [
 					{
 						"priority": "P1",
-						"title": "Ihr Checkout dauert 2,4s länger als nötig",
-						"desc": "Kunden warten extra zwischen Warenkorb und Zahlung — 68% brechen auf Mobilgeräten ab",
+						"title": "Beschleunigen Sie Ihren Checkout — kostet Sie −€16k–38k/Monat",
+						"desc": "68% Ihrer mobilen Käufer brechen ab, während Ihre Zahlungsseite lädt",
 						"impact": "−€16k–38k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P2",
-						"title": "Kauf-Button auf Mobilgeräten unsichtbar",
-						"desc": "Käufer müssen scrollen, um den Button auf 68% der Sessions zu finden",
+						"title": "Verschieben Sie Ihren Kauf-Button über den Fold auf Mobilgeräten",
+						"desc": "68% Ihrer mobilen Sessions erfordern Scrollen, um den Kauf-Button zu finden",
 						"impact": "−€11k–25k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P3",
-						"title": "'Nicht sicher'-Warnung erscheint bei der Zahlung",
-						"desc": "12% der Käufer sehen eine Sicherheitswarnung bei der Karteneingabe",
+						"title": "Beheben Sie die Sicherheitswarnung auf Ihrer Zahlungsseite",
+						"desc": "12% Ihrer Käufer sehen eine 'Nicht sicher'-Warnung bei der Karteneingabe",
 						"impact": "−€7k–19k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P4",
-						"title": "Produktfilter werden bei jeder Navigation zurückgesetzt",
-						"desc": "Käufer verlieren ihre Auswahl und müssen neu anfangen",
+						"title": "Stoppen Sie das Zurücksetzen Ihrer Produktfilter beim Navigieren",
+						"desc": "Ihre Käufer verlieren ihre Auswahl bei jedem Klick — und fangen neu an",
 						"impact": "−€4.5k–13k",
 						"severity": "high"
 					},
 					{
 						"priority": "P5",
-						"title": "Keine Rückgaberichtlinie während des Kaufs sichtbar",
-						"desc": "Chargeback-Rate 2,1x über Marktdurchschnitt ohne sichtbare Richtlinie",
+						"title": "Fügen Sie Ihre Rückgaberichtlinie zum Checkout-Flow hinzu",
+						"desc": "Ihre Chargeback-Rate liegt 2,1x über dem Markt wenn die Richtlinie fehlt",
 						"impact": "−€3.2k–8k",
 						"severity": "high"
 					},
 					{
 						"priority": "P6",
-						"title": "Mehr als die Hälfte der Anmeldungen brechen bei Schritt 3 ab",
-						"desc": "Konversion fällt von 78% → 41% in den letzten 2 Zyklen",
+						"title": "Vereinfachen Sie Schritt 3 Ihrer Anmeldung — Sie verlieren die Hälfte",
+						"desc": "Ihre Konversion fällt von 78% auf 41% bei diesem Schritt in den letzten 2 Zyklen",
 						"impact": "−€3.6k–10k",
 						"severity": "high"
 					},
 					{
 						"priority": "P7",
-						"title": "Keine Sicht zwischen Warenkorb und Kauf",
-						"desc": "Sie können nicht sehen, wo Käufer in den letzten Schritten abbrechen",
+						"title": "Fügen Sie Tracking zwischen Warenkorb und Kauf hinzu",
+						"desc": "Sie haben keine Sicht darauf, wo Ihre Käufer in den letzten Schritten abbrechen",
 						"impact": "−€8k–22k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P8",
-						"title": "9% der Leads brechen beim E-Mail-Feld ab",
-						"desc": "Keine Vertrauenssignale beim Formular — Besucher fühlen sich unsicher",
+						"title": "Fügen Sie Vertrauenssignale bei Ihrem E-Mail-Feld hinzu",
+						"desc": "9% Ihrer Leads brechen bei diesem Feld ab — sie fühlen sich unsicher",
 						"impact": "−€1.8k–5k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P9",
-						"title": "Haupt-Button auf dunklen Hintergründen schwer zu sehen",
-						"desc": "Geschätzt 4% der Besucher finden den Button nicht",
+						"title": "Erhöhen Sie den Kontrast Ihres Haupt-Buttons",
+						"desc": "4% Ihrer Besucher finden ihn auf dunklen Hintergründen nicht",
 						"impact": "−€1.3k–3.5k",
 						"severity": "low"
 					}
@@ -256,52 +256,52 @@
 				],
 				"rows": [
 					{
-						"title": "Checkout dauert 2,4s länger als nötig",
+						"title": "Ihr Checkout lädt in 4,2s — Benchmark ist 1,8s",
 						"severity": "critical",
 						"impact": "−€16k–38k"
 					},
 					{
-						"title": "Kauf-Button auf Mobilgeräten unsichtbar",
+						"title": "Ihr Kauf-Button ist unter dem Fold bei 68% der mobilen Sessions",
 						"severity": "critical",
 						"impact": "−€11k–25k"
 					},
 					{
-						"title": "'Nicht sicher'-Warnung erscheint bei der Zahlung",
+						"title": "Ihre Zahlungsseite löst eine 'Nicht sicher'-Warnung im Browser aus",
 						"severity": "critical",
 						"impact": "−€7k–19k"
 					},
 					{
-						"title": "Produktfilter werden bei Navigation zurückgesetzt",
+						"title": "Ihre Produktfilter verlieren den Status bei jedem Navigationsklick",
 						"severity": "high",
 						"impact": "−€4.5k–13k"
 					},
 					{
-						"title": "Keine Rückgaberichtlinie während des Kaufs sichtbar",
+						"title": "Ihr Checkout hat keine sichtbare Rückgaberichtlinie — Chargeback 2,1x über Markt",
 						"severity": "high",
 						"impact": "−€3.2k–8k"
 					},
 					{
-						"title": "Mehr als die Hälfte der Anmeldungen brechen bei Schritt 3 ab",
+						"title": "Ihre Anmeldekonversion fällt von 78% auf 41% bei Schritt 3",
 						"severity": "high",
 						"impact": "−€3.6k–10k"
 					},
 					{
-						"title": "Keine Sicht zwischen Warenkorb und Kauf",
+						"title": "Ihr Warenkorb-Kauf-Funnel hat kein Tracking — Blindspot erkannt",
 						"severity": "medium",
 						"impact": "−€8k–22k"
 					},
 					{
-						"title": "9% der Leads brechen beim E-Mail-Feld ab",
+						"title": "Ihr E-Mail-Feld hat keine Vertrauenssignale — 9% Abbruchrate",
 						"severity": "medium",
 						"impact": "−€1.8k–5k"
 					},
 					{
-						"title": "Haupt-Button auf dunklen Hintergründen schwer zu sehen",
+						"title": "Ihr Haupt-CTA hat 1.2:1 Kontrastverhältnis auf dunklen Hintergründen",
 						"severity": "low",
 						"impact": "−€1.3k–3.5k"
 					},
 					{
-						"title": "Keine Vertrauens-Siegel im Footer",
+						"title": "Ihr Footer hat keine Vertrauens-Siegel — SSL, Zahlung, Garantie fehlen",
 						"severity": "low",
 						"impact": "−€0.7k–1.8k"
 					}

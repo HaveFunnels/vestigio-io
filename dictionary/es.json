@@ -156,64 +156,64 @@
 				"rows": [
 					{
 						"priority": "P1",
-						"title": "Tu checkout tarda 2,4s más de lo que debería",
-						"desc": "Clientes esperan tiempo extra entre carrito y pago — 68% abandonan en móvil",
+						"title": "Acelera tu checkout — te está costando −$18k–42k/mes",
+						"desc": "68% de tus compradores móviles abandonan esperando que tu página de pago cargue",
 						"impact": "−$18k–42k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P2",
-						"title": "Botón de compra invisible en móvil",
-						"desc": "El comprador necesita desplazarse para encontrar el botón en 68% de las sesiones",
+						"title": "Mueve tu botón de compra arriba del pliegue en móvil",
+						"desc": "68% de tus sesiones móviles requieren scroll para encontrar el botón de compra",
 						"impact": "−$12k–28k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P3",
-						"title": "Aviso de 'No seguro' aparece al momento del pago",
-						"desc": "12% de compradores ven alerta de seguridad al ingresar la tarjeta",
+						"title": "Corrige la alerta de seguridad en tu página de pago",
+						"desc": "12% de tus compradores ven un aviso de 'No seguro' al ingresar su tarjeta",
 						"impact": "−$8k–21k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P4",
-						"title": "Filtros de producto se reinician al navegar",
-						"desc": "El comprador pierde su selección y debe empezar de nuevo",
+						"title": "Deja de resetear tus filtros de producto al navegar",
+						"desc": "Tus compradores pierden su selección cada vez que hacen clic — y empiezan de nuevo",
 						"impact": "−$5k–14k",
 						"severity": "high"
 					},
 					{
 						"priority": "P5",
-						"title": "Sin política de devolución visible durante la compra",
-						"desc": "Tasa de chargeback 2,1x sobre el mercado cuando la política no está visible",
+						"title": "Agrega tu política de devolución al flujo de checkout",
+						"desc": "Tu tasa de chargeback está 2,1x sobre el mercado cuando la política no aparece",
 						"impact": "−$3.6k–9k",
 						"severity": "high"
 					},
 					{
 						"priority": "P6",
-						"title": "Más de la mitad de los registros abandonan en el paso 3",
-						"desc": "Conversión cae de 78% → 41% en los últimos 2 ciclos",
+						"title": "Simplifica el paso 3 de tu registro — estás perdiendo la mitad",
+						"desc": "Tu conversión cae de 78% a 41% en ese paso en los últimos 2 ciclos",
 						"impact": "−$4k–11k",
 						"severity": "high"
 					},
 					{
 						"priority": "P7",
-						"title": "Estás ciego entre el carrito y la compra",
-						"desc": "Sin visibilidad de dónde abandonan los compradores en los últimos pasos",
+						"title": "Agrega rastreo entre tu carrito y la compra",
+						"desc": "No tienes visibilidad de dónde tus compradores abandonan en los pasos finales",
 						"impact": "−$9k–24k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P8",
-						"title": "9% de leads abandonan en el campo de email",
-						"desc": "Sin señales de confianza cerca del formulario — el visitante no se siente seguro",
+						"title": "Agrega señales de confianza cerca de tu campo de email",
+						"desc": "9% de tus leads abandonan en ese campo — no se sienten seguros para enviar",
 						"impact": "−$2k–6k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P9",
-						"title": "Botón principal difícil de ver en fondos oscuros",
-						"desc": "Estimación de 4% de visitantes no encuentran el botón",
+						"title": "Aumenta el contraste de tu botón principal",
+						"desc": "4% de tus visitantes no lo encuentran en fondos oscuros",
 						"impact": "−$1.5k–4k",
 						"severity": "low"
 					}
@@ -256,52 +256,52 @@
 				],
 				"rows": [
 					{
-						"title": "Checkout tarda 2,4s más de lo que debería",
+						"title": "Tu checkout carga en 4,2s — el benchmark es 1,8s",
 						"severity": "critical",
 						"impact": "−$18k–42k"
 					},
 					{
-						"title": "Botón de compra invisible en móvil",
+						"title": "Tu botón de compra está debajo del pliegue en 68% de sesiones móviles",
 						"severity": "critical",
 						"impact": "−$12k–28k"
 					},
 					{
-						"title": "Aviso de 'No seguro' aparece al momento del pago",
+						"title": "Tu página de pago muestra alerta de 'No seguro' en el navegador",
 						"severity": "critical",
 						"impact": "−$8k–21k"
 					},
 					{
-						"title": "Filtros de producto se reinician al navegar",
+						"title": "Tus filtros de producto pierden estado en cada clic de navegación",
 						"severity": "high",
 						"impact": "−$5k–14k"
 					},
 					{
-						"title": "Sin política de devolución visible durante la compra",
+						"title": "Tu checkout no tiene política de devolución visible — chargeback 2,1x sobre el mercado",
 						"severity": "high",
 						"impact": "−$3.6k–9k"
 					},
 					{
-						"title": "Más de la mitad de los registros abandonan en el paso 3",
+						"title": "Tu conversión de registro cae de 78% a 41% en el paso 3",
 						"severity": "high",
 						"impact": "−$4k–11k"
 					},
 					{
-						"title": "Sin visibilidad entre carrito y compra",
+						"title": "Tu embudo carrito-compra no tiene rastreo — punto ciego detectado",
 						"severity": "medium",
 						"impact": "−$9k–24k"
 					},
 					{
-						"title": "9% de leads abandonan en el campo de email",
+						"title": "Tu campo de email no tiene señales de confianza — 9% de abandono",
 						"severity": "medium",
 						"impact": "−$2k–6k"
 					},
 					{
-						"title": "Botón principal difícil de ver en fondos oscuros",
+						"title": "Tu CTA principal tiene ratio de contraste 1.2:1 en fondos oscuros",
 						"severity": "low",
 						"impact": "−$1.5k–4k"
 					},
 					{
-						"title": "Sin sellos de confianza en el footer",
+						"title": "Tu footer no tiene sellos de confianza — SSL, pago, garantía ausentes",
 						"severity": "low",
 						"impact": "−$0.8k–2k"
 					}

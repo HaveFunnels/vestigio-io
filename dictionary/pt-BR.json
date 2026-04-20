@@ -156,65 +156,65 @@
 				"rows": [
 					{
 						"priority": "P1",
-						"title": "Seu checkout demora 2,4s a mais do que deveria",
-						"desc": "Clientes esperam tempo extra entre carrinho e pagamento — 68% desistem no mobile",
-						"impact": "−R$ 91k–210k",
+						"title": "Acelere seu checkout — está te custando −R$91k–210k/mês",
+						"desc": "68% dos seus compradores mobile desistem esperando sua página de pagamento carregar",
+						"impact": "−R$91k–210k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P2",
-						"title": "Botão de compra invisível no celular",
-						"desc": "O comprador precisa rolar a tela pra encontrar o botão em 68% das sessões",
-						"impact": "−R$ 60k–140k",
+						"title": "Coloque seu botão de compra acima da dobra no mobile",
+						"desc": "68% das suas sessões mobile exigem scroll pra encontrar o botão de compra",
+						"impact": "−R$60k–140k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P3",
-						"title": "Aviso de 'Não seguro' aparece na hora do pagamento",
-						"desc": "12% dos compradores veem alerta de segurança ao digitar o cartão",
-						"impact": "−R$ 40k–105k",
+						"title": "Corrija o alerta de segurança na sua página de pagamento",
+						"desc": "12% dos seus compradores veem um aviso de 'Não seguro' na hora de digitar o cartão",
+						"impact": "−R$40k–105k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P4",
-						"title": "Filtros de produto resetam toda vez que o cliente navega",
-						"desc": "O comprador perde a seleção e precisa recomeçar a busca",
-						"impact": "−R$ 25k–70k",
+						"title": "Pare de resetar seus filtros de produto na navegação",
+						"desc": "Seus compradores perdem a seleção toda vez que clicam — e recomeçam do zero",
+						"impact": "−R$25k–70k",
 						"severity": "high"
 					},
 					{
 						"priority": "P5",
-						"title": "Nenhuma política de devolução visível durante a compra",
-						"desc": "Taxa de chargeback 2,1x acima do mercado quando política está ausente",
-						"impact": "−R$ 18k–45k",
+						"title": "Adicione sua política de devolução ao fluxo de checkout",
+						"desc": "Sua taxa de chargeback está 2,1x acima do mercado quando a política não aparece",
+						"impact": "−R$18k–45k",
 						"severity": "high"
 					},
 					{
 						"priority": "P6",
-						"title": "Mais da metade dos cadastros desistem no passo 3",
-						"desc": "Conversão despenca de 78% → 41% nos últimos 2 ciclos",
-						"impact": "−R$ 20k–55k",
+						"title": "Simplifique o passo 3 do seu cadastro — você está perdendo metade",
+						"desc": "Sua conversão despenca de 78% pra 41% nesse passo nos últimos 2 ciclos",
+						"impact": "−R$20k–55k",
 						"severity": "high"
 					},
 					{
 						"priority": "P7",
-						"title": "Você está cego entre o carrinho e a compra",
-						"desc": "Sem visibilidade de onde compradores desistem nos últimos passos",
-						"impact": "−R$ 45k–120k",
+						"title": "Adicione rastreamento entre seu carrinho e a compra",
+						"desc": "Você não tem visibilidade de onde seus compradores desistem nos passos finais",
+						"impact": "−R$45k–120k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P8",
-						"title": "9% dos leads abandonam no campo de e-mail",
-						"desc": "Sem sinais de confiança perto do formulário — visitante não se sente seguro",
-						"impact": "−R$ 10k–30k",
+						"title": "Adicione sinais de confiança perto do seu campo de e-mail",
+						"desc": "9% dos seus leads abandonam nesse campo — não se sentem seguros pra enviar",
+						"impact": "−R$10k–30k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P9",
-						"title": "Botão principal difícil de ver em fundos escuros",
-						"desc": "Estimativa de 4% dos visitantes não conseguem encontrar o botão",
-						"impact": "−R$ 7k–20k",
+						"title": "Aumente o contraste do seu botão principal",
+						"desc": "4% dos seus visitantes não conseguem encontrar ele em fundos escuros",
+						"impact": "−R$7k–20k",
 						"severity": "low"
 					}
 				]
@@ -256,54 +256,54 @@
 				],
 				"rows": [
 					{
-						"title": "Checkout demora 2,4s a mais do que deveria",
+						"title": "Seu checkout carrega em 4,2s — o benchmark é 1,8s",
 						"severity": "critical",
-						"impact": "−R$ 91k–210k"
+						"impact": "−R$91k–210k"
 					},
 					{
-						"title": "Botão de compra invisível no celular",
+						"title": "Seu botão de compra está abaixo da dobra em 68% das sessões mobile",
 						"severity": "critical",
-						"impact": "−R$ 60k–140k"
+						"impact": "−R$60k–140k"
 					},
 					{
-						"title": "Aviso de 'Não seguro' aparece na hora do pagamento",
+						"title": "Sua página de pagamento exibe alerta de 'Não seguro' no navegador",
 						"severity": "critical",
-						"impact": "−R$ 40k–105k"
+						"impact": "−R$40k–105k"
 					},
 					{
-						"title": "Filtros de produto resetam ao navegar",
+						"title": "Seus filtros de produto perdem o estado a cada clique de navegação",
 						"severity": "high",
-						"impact": "−R$ 25k–70k"
+						"impact": "−R$25k–70k"
 					},
 					{
-						"title": "Nenhuma política de devolução visível durante a compra",
+						"title": "Seu checkout não tem política de devolução visível — chargeback 2,1x acima do mercado",
 						"severity": "high",
-						"impact": "−R$ 18k–45k"
+						"impact": "−R$18k–45k"
 					},
 					{
-						"title": "Mais da metade dos cadastros desistem no passo 3",
+						"title": "Sua conversão de cadastro cai de 78% pra 41% no passo 3",
 						"severity": "high",
-						"impact": "−R$ 20k–55k"
+						"impact": "−R$20k–55k"
 					},
 					{
-						"title": "Sem visibilidade entre carrinho e compra",
+						"title": "Seu funil carrinho-compra não tem rastreamento — ponto cego detectado",
 						"severity": "medium",
-						"impact": "−R$ 45k–120k"
+						"impact": "−R$45k–120k"
 					},
 					{
-						"title": "9% dos leads abandonam no campo de e-mail",
+						"title": "Seu campo de e-mail não tem sinais de confiança — 9% de abandono",
 						"severity": "medium",
-						"impact": "−R$ 10k–30k"
+						"impact": "−R$10k–30k"
 					},
 					{
-						"title": "Botão principal difícil de ver em fundos escuros",
+						"title": "Seu CTA principal tem contraste 1.2:1 em fundos escuros",
 						"severity": "low",
-						"impact": "−R$ 7k–20k"
+						"impact": "−R$7k–20k"
 					},
 					{
-						"title": "Sem selos de confiança no rodapé",
+						"title": "Seu rodapé não tem selos de confiança — SSL, pagamento, garantia ausentes",
 						"severity": "low",
-						"impact": "−R$ 4k–10k"
+						"impact": "−R$4k–10k"
 					}
 				]
 			},

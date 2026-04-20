@@ -556,7 +556,8 @@
 				"value": "+$67.2k",
 				"unit": "/mo",
 				"sub": "across 9 ranked actions"
-			}
+			},
+			"data_sources_label": "Data Sources"
 		},
 		"client_gallery": {
 			"eyebrow": "Trusted by digital operators",

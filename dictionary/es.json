@@ -556,7 +556,8 @@
 				"value": "+$67.2k",
 				"unit": "/mes",
 				"sub": "en 9 acciones priorizadas"
-			}
+			},
+			"data_sources_label": "Fuentes de Datos"
 		},
 		"client_gallery": {
 			"eyebrow": "Confianza de operadores digitales",

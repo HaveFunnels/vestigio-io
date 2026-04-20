@@ -750,6 +750,51 @@ function SidebarRecoveryCard() {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Sidebar Data Sources Card — shows connected integration logos with
+// a green active indicator dot overlapping the top-right corner of
+// each circular icon.
+// ─────────────────────────────────────────────────────────────────────
+
+const DATA_SOURCES = [
+	{ src: "/logos/shopify.svg", alt: "Shopify" },
+	{ src: "/logos/stripe.svg", alt: "Stripe" },
+	{ src: "/logos/meta.svg", alt: "Meta Ads" },
+	{ src: "/logos/google-ads.svg", alt: "Google Ads" },
+	{ src: "/logos/nuvemshop.svg", alt: "Nuvemshop" },
+];
+
+function SidebarDataSourcesCard() {
+	const t = useTranslations("homepage.product_tour");
+	return (
+		<div className="mt-3 overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+			<div className="mb-2.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+				{t("data_sources_label")}
+			</div>
+			<div className="flex items-center gap-2">
+				{DATA_SOURCES.map((ds) => (
+					<div key={ds.alt} className="relative">
+						<div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-white/[0.08] bg-white/[0.04]">
+							<img
+								src={ds.src}
+								alt={ds.alt}
+								className="h-4 w-4 object-contain"
+								loading="lazy"
+							/>
+						</div>
+						{/* Active indicator */}
+						<div className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center rounded-full border-2 border-[#0a0a12] bg-emerald-400">
+							<svg viewBox="0 0 8 8" fill="none" className="h-1.5 w-1.5 text-[#0a0a12]">
+								<path d="M1.5 4L3.5 6L6.5 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+							</svg>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────────────
 
@@ -895,6 +940,7 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 								    PII (no real user names on a public marketing page).
 								    See SidebarRecoveryCard component above. */}
 								<SidebarRecoveryCard />
+								<SidebarDataSourcesCard />
 							</div>
 						</div>
 

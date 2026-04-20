@@ -184,6 +184,7 @@ const Hero = async () => {
 				<h1 className='mb-5 font-display text-[2.5rem] font-bold leading-[1.05] tracking-tighter text-white sm:mb-6 sm:text-[3.25rem] lg:text-[4.75rem] xl:text-[5.5rem]'>
 					<span className='block'>{t("headline_part1")}</span>
 					<span className='block'>{t("headline_part2")}</span>
+					<span className='block'>{t("headline_part3")}</span>
 				</h1>
 
 				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>

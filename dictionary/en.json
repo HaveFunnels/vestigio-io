@@ -64,7 +64,8 @@
 				"cta": "See how"
 			},
 			"headline_part1": "Your funnel is leaking.",
-			"headline_part2": "Vestigio shows you where — and how much.",
+			"headline_part2": "Vestigio shows you where —",
+			"headline_part3": "and how much.",
 			"headline_brush_word": "leaking",
 			"subtitle": "Every revenue leak ranked by financial impact, with real-time evidence captured from your site. First diagnostic in 24 hours.",
 			"pills": [

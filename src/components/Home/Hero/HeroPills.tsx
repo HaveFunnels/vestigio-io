@@ -120,8 +120,8 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 								"relative z-10",
 								// Mobile: single row (text + checkbox)
 								"flex items-center justify-between px-3 py-2.5",
-								// Desktop: two-row layout
-								"sm:flex-col sm:items-stretch sm:px-3.5 sm:py-3",
+								// Desktop: two-row layout, fill button height
+								"sm:flex-col sm:items-stretch sm:justify-between sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
 								isOn ? "opacity-0" : "opacity-100",
 							].join(" ")}
@@ -146,7 +146,7 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 							className={[
 								"absolute inset-0 z-10",
 								"flex items-center justify-between px-3 py-2.5",
-								"sm:flex-col sm:items-stretch sm:px-3.5 sm:py-3",
+								"sm:flex-col sm:items-stretch sm:justify-between sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
 								isOn ? "opacity-100 delay-200" : "pointer-events-none opacity-0",
 							].join(" ")}

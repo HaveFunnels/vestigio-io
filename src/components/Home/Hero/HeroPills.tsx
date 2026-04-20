@@ -79,7 +79,7 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 						aria-pressed={isOn}
 						className={[
 							"vhero-pill group/pill",
-							"relative isolate w-full overflow-visible rounded-xl",
+							"relative isolate w-full overflow-visible rounded-xl sm:flex sm:flex-col",
 							"border transition-all duration-500 ease-out",
 							"hover:-translate-y-0.5",
 							isOn
@@ -120,8 +120,8 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 								"relative z-10",
 								// Mobile: single row (text + checkbox)
 								"flex items-center justify-between px-3 py-2.5",
-								// Desktop: two-row layout, fill button height
-								"sm:flex-col sm:items-stretch sm:justify-between sm:px-3.5 sm:py-3",
+								// Desktop: two-row layout, grow to fill button height
+								"sm:flex-1 sm:flex-col sm:items-stretch sm:justify-between sm:px-3.5 sm:py-3",
 								"transition-opacity duration-500",
 								isOn ? "opacity-0" : "opacity-100",
 							].join(" ")}

@@ -98,8 +98,8 @@ const TrailLayer = () => (
  * Section
  * ──────────────────────────────────────────────────────────────── */
 
-const Hero = async () => {
-	const t = await getTranslations("homepage.hero_v2");
+const Hero = async ({ i18nNamespace = "homepage.hero_v2" }: { i18nNamespace?: string } = {}) => {
+	const t = await getTranslations(i18nNamespace);
 	const pills = t.raw("pills") as Pill[];
 
 	// No brush underline — removed per user feedback ("não está

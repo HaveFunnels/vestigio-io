@@ -93,6 +93,42 @@
 				"_deprecated": "moved to product_tour"
 			}
 		},
+		"hero_lp": {
+			"banner": {
+				"label": "Vestigio Pulse",
+				"message": "Respuestas continuas y basadas en evidencia sobre lo que está sangrando ingresos ahora.",
+				"cta": "Cómo funciona"
+			},
+			"headline_part1": "Tiendas online pierden en promedio $81k/mes en fugas invisibles.",
+			"headline_part2": "Ingresa tu dominio. Descubre en 60 segundos",
+			"headline_part3": "cuánto pierdes TÚ.",
+			"headline_brush_word": "",
+			"subtitle": "Cada fuga de ingresos ranqueada por impacto financiero, con evidencia capturada de tu sitio en tiempo real. Primer diagnóstico en 24 horas.",
+			"pills": [
+				{
+					"impact": "¿Leads que no convierten?",
+					"solution": "Te mostramos por qué"
+				},
+				{
+					"impact": "¿Inversión sin retorno?",
+					"solution": "Revelamos la fuga"
+				},
+				{
+					"impact": "¿Sitio bonito sin ventas?",
+					"solution": "Encontramos el cuello de botella"
+				},
+				{
+					"impact": "¿Decidiendo a ciegas?",
+					"solution": "Impacto en dólares"
+				}
+			],
+			"cta_primary": "Hacer diagnóstico gratis",
+			"cta_secondary": "Ver tour del producto",
+			"cta_micro": "",
+			"shell": {
+				"_deprecated": "moved to product_tour"
+			}
+		},
 		"product_tour": {
 			"eyebrow": "Tour del Producto",
 			"title": "No es un dashboard. Es una cola de decisiones.",

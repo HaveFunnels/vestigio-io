@@ -33,7 +33,7 @@ const HomeLp = () => {
 	return (
 		<>
 			<HomeBigCard>
-				<Hero />
+				<Hero i18nNamespace="homepage.hero_lp" />
 				<ProductTour primaryCtaHref={LP_CTA_HREF} />
 				<ClientGallery />
 			</HomeBigCard>

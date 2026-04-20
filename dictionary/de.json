@@ -93,6 +93,42 @@
 				"_deprecated": "moved to product_tour"
 			}
 		},
+		"hero_lp": {
+			"banner": {
+				"label": "Vestigio Pulse",
+				"message": "Kontinuierliche, evidenzbasierte Antworten darüber, was gerade Umsatz kostet.",
+				"cta": "So funktioniert's"
+			},
+			"headline_part1": "Online-Shops verlieren durchschnittlich $81k/Monat durch unsichtbare Lecks.",
+			"headline_part2": "Geben Sie Ihre Domain ein. Finden Sie in 60 Sekunden heraus,",
+			"headline_part3": "wie viel SIE verlieren.",
+			"headline_brush_word": "",
+			"subtitle": "Jedes Umsatzleck nach finanziellem Impact gerankt, mit Echtzeit-Evidenz von Ihrer Website. Erste Diagnose in 24 Stunden.",
+			"pills": [
+				{
+					"impact": "Leads konvertieren nicht?",
+					"solution": "Wir zeigen warum"
+				},
+				{
+					"impact": "Werbebudget ohne Rendite?",
+					"solution": "Wir decken das Leck auf"
+				},
+				{
+					"impact": "Schöne Seite, keine Verkäufe?",
+					"solution": "Wir finden den Engpass"
+				},
+				{
+					"impact": "Entscheidungen im Dunkeln?",
+					"solution": "Impact in Euro"
+				}
+			],
+			"cta_primary": "Kostenlose Diagnose starten",
+			"cta_secondary": "Produkt-Tour ansehen",
+			"cta_micro": "",
+			"shell": {
+				"_deprecated": "moved to product_tour"
+			}
+		},
 		"product_tour": {
 			"eyebrow": "Produkt-Tour",
 			"title": "Kein Dashboard. Eine Warteschlange von Entscheidungen.",

@@ -93,6 +93,42 @@
 				"_deprecated": "moved to product_tour"
 			}
 		},
+		"hero_lp": {
+			"banner": {
+				"label": "Vestigio Pulse",
+				"message": "Continuous, evidence-backed answers on what's bleeding revenue right now.",
+				"cta": "See how"
+			},
+			"headline_part1": "Online stores lose an average of $81k/mo to invisible leaks.",
+			"headline_part2": "Enter your domain. Find out in 60 seconds",
+			"headline_part3": "how much YOU lose.",
+			"headline_brush_word": "",
+			"subtitle": "Every revenue leak ranked by financial impact, with real-time evidence captured from your site. First diagnostic in 24 hours.",
+			"pills": [
+				{
+					"impact": "Leads not converting?",
+					"solution": "We show you why"
+				},
+				{
+					"impact": "Ad spend not returning?",
+					"solution": "We reveal the leak"
+				},
+				{
+					"impact": "Nice site, no sales?",
+					"solution": "We find the bottleneck"
+				},
+				{
+					"impact": "Deciding in the dark?",
+					"solution": "Impact in dollars"
+				}
+			],
+			"cta_primary": "Run free diagnostic",
+			"cta_secondary": "Watch product tour",
+			"cta_micro": "",
+			"shell": {
+				"_deprecated": "moved to product_tour"
+			}
+		},
 		"product_tour": {
 			"eyebrow": "Product Tour",
 			"title": "Not a dashboard. A queue of decisions.",

@@ -93,6 +93,42 @@
 				"_deprecated": "moved to product_tour"
 			}
 		},
+		"hero_lp": {
+			"banner": {
+				"label": "Vestigio Pulse",
+				"message": "Respostas contínuas e baseadas em evidência sobre o que está vazando faturamento agora.",
+				"cta": "Como funciona"
+			},
+			"headline_part1": "Lojas online perdem em média R$81k/mês em vazamentos invisíveis.",
+			"headline_part2": "Digite seu domínio. Descubra em 60 segundos",
+			"headline_part3": "quanto VOCÊ perde.",
+			"headline_brush_word": "",
+			"subtitle": "Cada vazamento de receita ranqueado por impacto financeiro, com evidências capturadas do seu site em tempo real. Primeiro diagnóstico em 24 horas.",
+			"pills": [
+				{
+					"impact": "Leads não convertem?",
+					"solution": "Mostramos por quê"
+				},
+				{
+					"impact": "Investimento sem retorno?",
+					"solution": "Revelamos o vazamento"
+				},
+				{
+					"impact": "Site bonito sem vendas?",
+					"solution": "Achamos o gargalo"
+				},
+				{
+					"impact": "Decidindo no escuro?",
+					"solution": "Impacto em reais"
+				}
+			],
+			"cta_primary": "Rodar diagnóstico gratuito",
+			"cta_secondary": "Ver tour do produto",
+			"cta_micro": "",
+			"shell": {
+				"_deprecated": "moved to product_tour"
+			}
+		},
 		"product_tour": {
 			"eyebrow": "Tour do Produto",
 			"title": "Não é um dashboard. É uma fila de decisões.",

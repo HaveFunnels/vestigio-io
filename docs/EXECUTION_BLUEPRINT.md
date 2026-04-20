@@ -84,38 +84,14 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 ---
 
-## Section 3: MiniCalculator (MOVED UP)
-
-**CURRENT:** Position 11 (second to last, before CallToAction). Component: `MiniCalculator/index.tsx`
-
-**VERDICT:** Move to position 3. Before the Product Tour, not after features.
-
-**DIRECTIVE:**
-
-| Element | Current | Write |
-|---------|---------|-------|
-| Eyebrow | "Free instant diagnostic" | "FREE DIAGNOSTIC" |
-| Tagline | "Try Vestigio on your own domain — no signup, no card." | Remove — the title does this job. |
-| Title | "See what you're leaving on the table" | "How much are you losing right now?" |
-| Subtitle | "Enter your website URL to get a free snapshot of potential revenue leaks." | "Enter your domain. No signup. No card. 60 seconds." |
-| CTA | "Run Free Diagnostic" | Keep |
-
-**Why move up:** After the hero creates the question ("am I leaking?"), the calculator lets them answer it immediately. The Product Tour becomes proof AFTER the visitor has emotional investment.
-
-**Results state — keep as-is.** The findings table with dollar amounts is the strongest element on the site.
-
-**STATUS:** 🔲 Not started (position change + copy rewrite)
-
----
-
-## Section 4: Product Tour
+## Section 3: Product Tour
 
 **CURRENT:** Position 2. Component: `ProductTour/index.tsx`
 - Title: "Not a dashboard. A queue of decisions."
 - Subtitle: "Every tab is a different lens on the same revenue picture — ranked, evidenced, and ready to act on."
 - Eyebrow: "Product Tour"
 
-**VERDICT:** Keep position (becomes position 4 after MiniCalc moves up). Change header copy.
+**VERDICT:** Keep position (stays at 3, after social proof strip). Change header copy. AIDA role: **Interest** — show how it works.
 
 **DIRECTIVE:**
 
@@ -133,11 +109,77 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 ---
 
-## Section 5: Problem Statement (REPLACES Solution Layers)
+## Section 4: Outcomes (REPLACES Features Bento)
+
+**CURRENT:** Position 6. Component: `Features/index.tsx`. Four bento cards: Action Queue, Revenue Leaks, Continuous Watch, Evidence Orbit.
+
+**VERDICT:** Move to position 4 (after Product Tour). Keep the bento visual layout (visually stunning). Reframe each card from "what the product does" to "what happens to your business." AIDA role: **Desire** — concrete dollar amounts make the visitor want this for themselves.
+
+**DIRECTIVE:**
+
+**Card 1 (Action Queue, amber):**
+
+| Current | Write |
+|---------|-------|
+| "A clear queue of what to fix first" | "Know what to fix Monday morning" |
+| "Every finding ranked by impact, urgency, and effort. No more spreadsheets..." | "A ranked queue. Impact in dollars, not color codes. The first item is worth $42k/month. The ninth is worth $1.5k. You know where to start." |
+
+**Card 2 (Revenue Leaks, red):**
+
+| Current | Write |
+|---------|-------|
+| "Find where money is bleeding" | "See exactly what each problem costs" |
+| "Vestigio quantifies every leak across your funnel — with confidence ranges, not vibes." | "Not 'high severity'. Not a red dot. A dollar amount: −$18,420/month, 94% confidence. You know what to tell your team." |
+
+**Card 3 (Continuous Watch, emerald):**
+
+| Current | Write |
+|---------|-------|
+| "Catch regressions before your customers do" | "Last week's deploy broke checkout. You'd know in hours, not days." |
+| "Each deploy and campaign creates new vectors. Vestigio re-audits continuously..." | "Continuous cycles compare every surface against the last. When something degrades, it shows up in your queue before a customer complains." |
+
+**Card 4 (Evidence Orbit, sky):**
+
+| Current | Write |
+|---------|-------|
+| "Every finding traces back to multi-source proof" | "Show your team proof, not your opinion" |
+| "Browser-verified, cross-checked, timestamped..." | "Every finding: browser screenshot, DOM snapshot, performance trace, timestamp. Your CTO sees evidence, not a dashboard." |
+
+**Visual:** Keep the animated orbit, chart, action rows, leak rows. They're the best graphics on the site.
+
+**STATUS:** 🔲 Not started
+
+---
+
+## Section 5: MiniCalculator (MOVED UP)
+
+**CURRENT:** Position 11 (second to last, before CallToAction). Component: `MiniCalculator/index.tsx`
+
+**VERDICT:** Move to position 5 — after Outcomes, before safety net sections. AIDA role: **Action** — the visitor has seen the problem (hero), the proof (product tour), and the desire (outcomes with dollar amounts). Now they're Solution-Aware and ready to act.
+
+**Why position 5, not position 3:** Moving MiniCalc before Product Tour (as originally proposed) optimizes for MiniCalc entries but hurts signup conversion. At position 3, the visitor enters the MiniCalc with only hero + social proof — no understanding of what Vestigio does, no trust built, no objections addressed. BJ Fogg model: Ability is high (free, 60s) but Motivation is low (haven't seen value). At position 5, the visitor has seen Interest (product tour) and Desire (outcomes with $42k/month examples) — Motivation is high. Second-order effect: fewer total MiniCalc entries, but higher conversion downstream.
+
+**DIRECTIVE:**
+
+| Element | Current | Write |
+|---------|---------|-------|
+| Eyebrow | "Free instant diagnostic" | "FREE DIAGNOSTIC" |
+| Tagline | "Try Vestigio on your own domain — no signup, no card." | Remove — the title does this job. |
+| Title | "See what you're leaving on the table" | "How much are you losing right now?" |
+| Subtitle | "Enter your website URL to get a free snapshot of potential revenue leaks." | "Enter your domain. No signup. No card. 60 seconds." |
+| CTA | "Run Free Diagnostic" | Keep |
+
+**Results state — keep as-is.** The findings table with dollar amounts is the strongest element on the site.
+
+**STATUS:** 🔲 Not started (position change + copy rewrite)
+
+---
+
+## Section 6: Problem Statement (REPLACES Solution Layers)
 
 **CURRENT:** Position 4. Component: `SolutionLayers/index.tsx`. Three sticky-stack cards explaining Discover → Prioritize → Validate. Uses `homepage.solution_layers` i18n.
 
-**VERDICT:** Replace content. Keep the sticky-stack visual treatment (great pattern) but change from product process to user consequence.
+**VERDICT:** Replace content. Keep the sticky-stack visual treatment (great pattern) but change from product process to user consequence. Moves to position 6 — safety net for visitors who scrolled past MiniCalc without converting.
 
 **DIRECTIVE:**
 
@@ -174,48 +216,6 @@ This is what "scaling in the dark" looks like. And it costs money every day.
 ```
 
 **Visual:** Keep the sticky-stack animation. Remove the agentic chat flow diagram — it's too product-oriented for this section.
-
-**STATUS:** 🔲 Not started
-
----
-
-## Section 6: Outcomes (REPLACES Features Bento)
-
-**CURRENT:** Position 6. Component: `Features/index.tsx`. Four bento cards: Action Queue, Revenue Leaks, Continuous Watch, Evidence Orbit.
-
-**VERDICT:** Keep the bento visual layout (visually stunning). Reframe each card from "what the product does" to "what happens to your business."
-
-**DIRECTIVE:**
-
-**Card 1 (Action Queue, amber):**
-
-| Current | Write |
-|---------|-------|
-| "A clear queue of what to fix first" | "Know what to fix Monday morning" |
-| "Every finding ranked by impact, urgency, and effort. No more spreadsheets..." | "A ranked queue. Impact in dollars, not color codes. The first item is worth $42k/month. The ninth is worth $1.5k. You know where to start." |
-
-**Card 2 (Revenue Leaks, red):**
-
-| Current | Write |
-|---------|-------|
-| "Find where money is bleeding" | "See exactly what each problem costs" |
-| "Vestigio quantifies every leak across your funnel — with confidence ranges, not vibes." | "Not 'high severity'. Not a red dot. A dollar amount: −$18,420/month, 94% confidence. You know what to tell your team." |
-
-**Card 3 (Continuous Watch, emerald):**
-
-| Current | Write |
-|---------|-------|
-| "Catch regressions before your customers do" | "Last week's deploy broke checkout. You'd know in hours, not days." |
-| "Each deploy and campaign creates new vectors. Vestigio re-audits continuously..." | "Continuous cycles compare every surface against the last. When something degrades, it shows up in your queue before a customer complains." |
-
-**Card 4 (Evidence Orbit, sky):**
-
-| Current | Write |
-|---------|-------|
-| "Every finding traces back to multi-source proof" | "Show your team proof, not your opinion" |
-| "Browser-verified, cross-checked, timestamped..." | "Every finding: browser screenshot, DOM snapshot, performance trace, timestamp. Your CTO sees evidence, not a dashboard." |
-
-**Visual:** Keep the animated orbit, chart, action rows, leak rows. They're the best graphics on the site.
 
 **STATUS:** 🔲 Not started
 
@@ -379,18 +379,18 @@ Remove secondary CTA ("Try live demo"). One action only.
 11. MiniCalculator ← wrong position
 12. CallToAction
 
-**TARGET ORDER:**
-1. Hero ✅
-2. Social Proof Strip (NEW)
-3. MiniCalculator (MOVED from 11)
-4. ProductTour
-5. ClientGallery
-6. Problem Statement (rewritten SolutionLayers)
-7. Outcomes (rewritten Features bento)
-8. Use Cases (rewritten FeaturesWithImage as persona cards)
-9. Counter (reduced to 3 items)
-10. FAQ (reduced to 3 questions)
-11. CallToAction (rewritten)
+**TARGET ORDER (AIDA-aligned):**
+1. Hero ✅ — **Attention**: loss-frame, curiosity gap
+2. Social Proof Strip ✅ — **Attention** reinforcement: −R$81k/mês
+3. Product Tour — **Interest**: "this is how it works"
+4. Outcomes (Features bento) — **Desire**: dollar amounts, concrete impact
+5. MiniCalculator (MOVED from 11) — **Action**: "now test on your domain"
+6. ClientGallery — social proof strip (quiet)
+7. Problem Statement (rewritten SolutionLayers) — safety net: consequence of inaction
+8. Use Cases (rewritten FeaturesWithImage) — safety net: persona scenarios
+9. Counter (reduced to 3 items) — safety net: value props
+10. FAQ (reduced to 3 questions) — safety net: objection handling
+11. CallToAction (rewritten) — final action
 
 **Removed until real content available:**
 - VideoTestimonials (placeholder from another product)
@@ -650,7 +650,7 @@ All copy changes must be made in this order:
 | **1** | Rewrite hero copy (both pages) | `/`, `/lp` | ✅ Done |
 | **2** | Full i18n migration (all homepage sections) | `/` | ✅ Done |
 | **3** | MiniCalc → Signup domain persistence | `/auth/signup`, onboarding | ✅ Done |
-| **4** | Move MiniCalc to position 3 | `/` | 🔲 |
+| **4** | Move MiniCalc to position 5 (after Outcomes) | `/` | 🔲 |
 | **5** | Add social proof strip | `/` | 🔲 |
 | **6** | Rewrite final CTA section | `/` | 🔲 |
 | **7** | Reframe feature bento cards (copy only) | `/` | 🔲 |

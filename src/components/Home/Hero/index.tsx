@@ -182,8 +182,20 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2" }: { i18nNamespace?: st
 			{/* ─────────── Headline + subtitle + pills + CTAs ─────────── */}
 			<div className='relative mx-auto w-full max-w-[1000px] px-4 text-center sm:px-8 xl:px-0'>
 				<h1 className='mb-5 font-display text-[2rem] font-semibold leading-[1.1] tracking-tight text-white sm:mb-6 sm:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.5rem]'>
-					<span className='block'>{t("headline_part1")}</span>
-					<span className='block'>{t("headline_part2")}{t("headline_part3") ? ` ${t("headline_part3")}` : ""}</span>
+					{(() => {
+						const gradientParts = t("headline_gradient_parts") ? t("headline_gradient_parts").split(",").map(Number) : [];
+						const gradientClass = "bg-gradient-to-r from-emerald-300 via-white/90 to-emerald-300 bg-clip-text text-transparent";
+						const parts = [
+							{ text: t("headline_part1"), num: 1 },
+							{ text: t("headline_part2"), num: 2 },
+							{ text: t("headline_part3"), num: 3 },
+						].filter(p => p.text);
+						return parts.map((p, i) => (
+							<span key={i} className={`block ${gradientParts.includes(p.num) ? gradientClass : ""}`}>
+								{p.text}
+							</span>
+						));
+					})()}
 				</h1>
 
 				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>

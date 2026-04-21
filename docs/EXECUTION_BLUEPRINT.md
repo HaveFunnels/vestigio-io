@@ -1,6 +1,6 @@
 # Execution Blueprint — Homepage, Landing Page & Funnel
 
-*Last updated: 2026-04-20 (rev 3 — post-audit alignment pass)*
+*Last updated: 2026-04-21 (rev 5 — AIDA reorder + product tour audit + LP headline)*
 *Reference: MARKETING_DIRECTION.md*
 
 ---
@@ -40,8 +40,9 @@ STATUS: ✅ Done / 🔲 Not started / 🟡 Partial
 ## Section 1: Hero
 
 **CURRENT:** Position 1. Component: `Hero/index.tsx`
-- Headline L1: "There's money leaking from your operation." (en) / "Tem dinheiro vazando na sua operação." (pt-BR)
-- Headline L2: "You just don't know how much." (en) / "Você só não sabe quanto." (pt-BR)
+- Headline L1: "There's money leaking" (en) / "Tem dinheiro vazando" (pt-BR)
+- Headline L2: "from your operation." (en) / "na sua operação." (pt-BR)
+- Headline L3: "You just don't know how much." (en) / "Você só não sabe quanto." (pt-BR)
 - Subtitle: "Problems identified and ranked. Decisions ready to execute. Real evidence." (en) / "Problemas identificados e ranqueados. Decisões prontas pra executar. Evidência real." (pt-BR)
 - Pills: 4 problem→solution pairs
 - CTA: "Run free diagnostic"
@@ -412,13 +413,17 @@ Remove secondary CTA ("Try live demo"). One action only.
 
 **CURRENT (implemented):**
 ```
-Headline L1: "Online stores lose an average of $81k/mo to invisible leaks." (en)
-             "Lojas online perdem em média R$81k/mês em vazamentos invisíveis." (pt-BR)
-Headline L2: "Enter your domain. Find out in 60 seconds how much YOU lose." (en)
-             "Digite seu domínio. Descubra em 60 segundos quanto VOCÊ perde." (pt-BR)
+Headline L1: "How much money is" (en) / "Quanto dinheiro está" (pt-BR)
+Headline L2: "leaking from your operation" (en) / "vazando da sua operação" (pt-BR)  ← emerald gradient
+Headline L3: "without you knowing?" (en) / "sem você perceber?" (pt-BR)  ← emerald gradient
+Subtitle L1: "Enter your domain." (en) / "Digite seu domínio." (pt-BR)
+Subtitle L2: "Find out in 60 seconds how much YOU lose." (en) / "Descubra em 60 segundos quanto VOCÊ perde." (pt-BR)
 ```
 
-**STATUS:** ✅ Done (separate `hero_lp` i18n namespace, all 4 locales)
+Gradient on L2+L3 controlled by `headline_gradient_parts: "2,3"`. "YOU"/"VOCÊ" rendered in bold.
+Desktop: subtitle on single line. Mobile: two lines (break after "Digite seu domínio.").
+
+**STATUS:** ✅ Done (separate `hero_lp` i18n namespace, all 4 locales, emerald gradient)
 
 **REMAINING:** The /lp currently renders the full homepage (all sections). It should be stripped to 5 sections only:
 

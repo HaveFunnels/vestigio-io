@@ -2,6 +2,7 @@
 import logoStatic from "@/../public/images/logo/logo-light.png";
 import { useBranding } from "@/components/BrandingProvider";
 import { onScroll } from "@/libs/scrollActive";
+import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -50,6 +51,7 @@ const Header = () => {
 	const logoSrc = branding.logo_light?.dataUrl || logoStatic;
 
 	const pathUrl = usePathname();
+	const t = useTranslations("header");
 
 	// Navbar toggle (mobile hamburger)
 	const [navbarOpen, setNavbarOpen] = useState(false);
@@ -98,13 +100,6 @@ const Header = () => {
 			window.removeEventListener("scroll", onScroll);
 		};
 	}, []);
-
-	const navLabels: Record<string, string> = {
-		product: "Product",
-		solutions: "Solutions",
-		pricing: "Pricing",
-		resources: "Resources",
-	};
 
 	return (
 		<header
@@ -219,7 +214,7 @@ const Header = () => {
 												: "text-gray-400 hover:bg-white/5 hover:text-white"
 										} ${item?.path?.startsWith("#") ? "menu-scroll" : ""}`}
 									>
-										{navLabels[item?.titleKey] || item?.titleKey}
+										{t(`nav.${item?.titleKey}`)}
 									</Link>
 								</li>
 							))}
@@ -237,16 +232,16 @@ const Header = () => {
 										compact ? "px-3 py-1" : "px-4 py-2"
 									}`}
 								>
-									Login
+									{t("login")}
 								</Link>
 
 								<Link
 									href='/auth/signup'
-									className={`whitespace-nowrap rounded-full border border-white/20 bg-white text-center text-sm font-medium text-black transition-all duration-300 hover:bg-gray-100 ${
+									className={`whitespace-nowrap rounded-full border border-white/20 bg-white text-center text-sm font-medium text-black transition-all duration-300 hover:bg-zinc-100 ${
 										compact ? "px-4 py-1.5" : "px-5 py-2"
 									}`}
 								>
-									Get started
+									{t("get_started")}
 								</Link>
 							</>
 						)}

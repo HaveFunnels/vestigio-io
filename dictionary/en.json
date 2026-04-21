@@ -48,6 +48,16 @@
 			"see_all": "See All Notifications"
 		}
 	},
+	"header": {
+		"nav": {
+			"product": "Product",
+			"solutions": "Solutions",
+			"pricing": "Pricing",
+			"resources": "Resources"
+		},
+		"login": "Login",
+		"get_started": "Get started"
+	},
 	"homepage": {
 		"hero_section": {
 			"title": "Full-Stack <marker>SaaS Boilerplate</marker> Built on Next.js",

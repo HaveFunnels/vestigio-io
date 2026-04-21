@@ -109,7 +109,8 @@
 			"headline_part3": "",
 			"headline_brush_word": "",
 			"subtitle": "",
-			"subtitle_before_bold": "Geben Sie Ihre Domain ein. Finden Sie in 60 Sekunden heraus, wie viel ",
+			"subtitle_line1": "Geben Sie Ihre Domain ein.",
+			"subtitle_before_bold": "Finden Sie in 60 Sekunden heraus, wie viel ",
 			"subtitle_bold": "SIE",
 			"subtitle_after_bold": " verlieren.",
 			"pills": [

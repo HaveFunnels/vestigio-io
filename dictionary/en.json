@@ -109,7 +109,8 @@
 			"headline_part3": "",
 			"headline_brush_word": "",
 			"subtitle": "",
-			"subtitle_before_bold": "Enter your domain. Find out in 60 seconds how much ",
+			"subtitle_line1": "Enter your domain.",
+			"subtitle_before_bold": "Find out in 60 seconds how much ",
 			"subtitle_bold": "YOU",
 			"subtitle_after_bold": " lose.",
 			"pills": [

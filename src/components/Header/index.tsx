@@ -113,17 +113,15 @@ const Header = () => {
 			}`}
 		>
 			<div
-				className={`relative mx-auto flex flex-col will-change-[transform,opacity] xl:flex-row xl:items-center xl:justify-between ${
+				className={`relative mx-auto flex flex-col overflow-hidden will-change-[transform,opacity] xl:flex-row xl:items-center xl:justify-between transition-[border-radius,background,border-color,box-shadow,max-width,padding] duration-500 ease-out ${
 					compact
-						? // Compact liquid-glass pill
-							navbarOpen
-								? "max-w-[620px] rounded-[1.25rem] border border-white/[0.12] bg-[#0c0c14]/95 px-5 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] transition-[border-radius,background,border-color,box-shadow,max-width,padding] duration-500 ease-out"
-								: "h-12 max-w-[620px] rounded-full border border-white/[0.12] bg-[#0c0c14]/95 px-5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)] transition-[border-radius,background,border-color,box-shadow,max-width,padding] duration-500 ease-out"
-						: // Default — full width, transparent, no border
-							"max-w-[1170px] rounded-full border border-transparent bg-transparent px-4 py-4 shadow-none sm:px-8 transition-[border-radius,background,border-color,box-shadow,max-width,padding] duration-500 ease-out"
+						? navbarOpen
+							? "max-w-[620px] rounded-[1.25rem] border border-white/[0.12] bg-[#0c0c14]/95 px-5 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)]"
+							: "max-w-[620px] rounded-full border border-white/[0.12] bg-[#0c0c14]/95 px-5 py-2.5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)]"
+						: "max-w-[1170px] rounded-full border border-transparent bg-transparent px-4 py-4 shadow-none sm:px-8"
 				}`}
 			>
-				<div className={`flex w-full shrink-0 items-center justify-between xl:w-auto ${compact && !navbarOpen ? "h-12" : ""}`}>
+				<div className="flex w-full shrink-0 items-center justify-between xl:w-auto">
 					<Link href='/' className='flex shrink-0 items-center'>
 						{typeof logoSrc === "string" ? (
 							<img
@@ -184,12 +182,18 @@ const Header = () => {
 					</button>
 				</div>
 
+				{/* Mobile menu — animated open/close via grid rows */}
 				<div
-					className={`w-full items-center justify-between ${
+					className="grid transition-[grid-template-rows] duration-300 ease-out xl:flex xl:w-full xl:items-center xl:justify-between"
+					style={{ gridTemplateRows: navbarOpen ? "1fr" : "0fr" }}
+				>
+				<div
+					className={`overflow-hidden xl:!overflow-visible ${
 						navbarOpen
-							? "mt-4 block max-h-[70vh] overflow-y-auto rounded-[1rem] bg-[#181822] p-5 shadow-lg sm:max-h-[60vh] sm:p-6 xl:mt-0 xl:bg-transparent xl:p-0 xl:shadow-none"
-							: "hidden xl:flex"
+							? "mt-4 rounded-[1rem] bg-[#181822] p-5 shadow-lg sm:p-6 xl:mt-0 xl:bg-transparent xl:p-0 xl:shadow-none"
+							: "xl:flex"
 					} xl:flex xl:h-auto`}
+					style={{ minHeight: 0 }}
 				>
 					{/* Nav — collapses to width 0 in compact mode. Items stay
 					    in the DOM, just visually gone, so the transition keeps
@@ -254,7 +258,7 @@ const Header = () => {
 						)}
 					</div>
 				</div>
-			</div>
+tttt</div>			</div>
 		</header>
 	);
 };

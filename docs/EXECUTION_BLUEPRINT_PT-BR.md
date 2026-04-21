@@ -93,7 +93,28 @@ O `−R$81k/mês` está destacado em `font-mono font-semibold text-red-400` — 
 
 ---
 
-## Seção 3: Product Tour
+## Seção 3: VSL (Video Sales Letter)
+
+**ATUAL:** Não existe.
+
+**VEREDICTO:** Novo. Inserir entre Social Proof Strip e Product Tour. Papel AIDA: ponte **Attention → Interest** — o vídeo explica a proposta de valor num formato que não exige scroll.
+
+**DIRETIVA:** Player de vídeo único, centralizado, full-width dentro do container HomeBigCard. Sem título, sem descrição — apenas o vídeo. O social proof strip acima dá o contexto; o vídeo dá profundidade.
+
+**Visual:**
+- Container arredondado (`rounded-2xl`) com borda sutil
+- Poster/thumbnail carrega imediatamente; vídeo carrega no play (`preload="none"`)
+- Overlay de play button (mesmo padrão do VideoTestimonials)
+- Aspect ratio 16:9
+- Sem autoplay — usuário inicia
+
+**Asset:** Vídeo em `/videos/vsl.mp4`, poster em `/videos/vsl-poster.webp`. Placeholder até o vídeo real estar pronto.
+
+**STATUS:** 🔲 Not started (aguardando asset de vídeo)
+
+---
+
+## Seção 4: Product Tour
 
 **ATUAL:** Posição 2. Componente: `ProductTour/index.tsx`
 - Título: "Not a dashboard. A queue of decisions." (en) / "Não é um painel. É uma fila de decisões." (pt-BR)
@@ -138,7 +159,7 @@ Depois: "Seu checkout carrega em 4,2s — o benchmark é 1,8s" (evidência)
 
 ---
 
-## Seção 4: Outcomes (SUBSTITUI Features Bento)
+## Seção 5: Outcomes (SUBSTITUI Features Bento)
 
 **ATUAL:** Posição 6. Componente: `Features/index.tsx`. Quatro cards bento: Action Queue, Revenue Leaks, Continuous Watch, Evidence Orbit.
 
@@ -180,7 +201,7 @@ Depois: "Seu checkout carrega em 4,2s — o benchmark é 1,8s" (evidência)
 
 ---
 
-## Seção 5: MiniCalculator (MOVIDO PRA CIMA)
+## Seção 6: MiniCalculator (MOVIDO PRA CIMA)
 
 **ATUAL:** Posição 11 (penúltimo, antes do CallToAction). Componente: `MiniCalculator/index.tsx`
 
@@ -204,7 +225,7 @@ Depois: "Seu checkout carrega em 4,2s — o benchmark é 1,8s" (evidência)
 
 ---
 
-## Seção 6: Declaração do Problema (SUBSTITUI Solution Layers)
+## Seção 7: Declaração do Problema (SUBSTITUI Solution Layers)
 
 **ATUAL:** Posição 4. Componente: `SolutionLayers/index.tsx`. Três cards sticky-stack explicando Descobrir → Priorizar → Validar. Usa i18n `homepage.solution_layers`.
 
@@ -254,7 +275,7 @@ PT-BR: "É assim que 'escalar no escuro' se parece. E custa dinheiro todo dia."
 
 ---
 
-## Seção 7: Casos de Uso (SUBSTITUI FeaturesWithImage)
+## Seção 8: Casos de Uso (SUBSTITUI FeaturesWithImage)
 
 **ATUAL:** Posição 5. Componente: `FeaturesWithImage/index.tsx`. Escondido no mobile. 5 cards explicando superfícies do produto.
 
@@ -299,7 +320,7 @@ PT-BR: "Chargebacks estão subindo. Onde está a causa raiz?"
 
 ---
 
-## Seção 8: Counter / Proposta de Valor
+## Seção 9: Counter / Proposta de Valor
 
 **ATUAL:** Posição 7. Componente: `Counter/index.tsx`. Grid bento com 6 itens: Quick Start, Visibilidade Completa, 4X ROI, Vestigio Pulse, Monitoramento Contínuo, Integrações.
 
@@ -325,7 +346,7 @@ Remover: Quick Start (redundante com "60s"), Vestigio Pulse (guardar pra depois)
 
 ---
 
-## Seção 9: Depoimentos em Vídeo
+## Seção 10: Depoimentos em Vídeo
 
 **ATUAL:** Posição 8. Componente: `VideoTestimonials/index.tsx`. Vídeos portrait com conteúdo placeholder de outro produto.
 
@@ -337,7 +358,7 @@ Remover: Quick Start (redundante com "60s"), Vestigio Pulse (guardar pra depois)
 
 ---
 
-## Seção 10: Cards de Depoimentos / Success Stories
+## Seção 11: Cards de Depoimentos / Success Stories
 
 **ATUAL:** Posição 9. Componente: `Testimonials/index.tsx`. Carrossel com 5 cards genéricos de indústria (stats placeholder sem relação com a Vestigio).
 
@@ -365,7 +386,7 @@ Um contador real é mais honesto e mais convincente do que success stories falsa
 
 ---
 
-## Seção 11: FAQ
+## Seção 12: FAQ
 
 **ATUAL:** Posição 10. Componente: `FAQ/index.tsx`. 4 perguntas (genérica "o que a Vestigio faz", verificação técnica, experimentar antes de pagar, planos de preço).
 
@@ -390,7 +411,7 @@ Um contador real é mais honesto e mais convincente do que success stories falsa
 
 ---
 
-## Seção 12: CTA Final
+## Seção 13: CTA Final
 
 **ATUAL:** Renderizado na homepage. Componente: `CallToAction/index.tsx`.
 - Título: "Ready to put your platform on autopilot?" ← usa palavra PROIBIDA "autopilot" e "platform"
@@ -443,15 +464,16 @@ Remover CTA secundário ("Try live demo"). Uma ação apenas.
 **ORDEM ALVO (alinhada ao AIDA):**
 1. Hero ✅ — **Attention**: loss-frame, curiosity gap
 2. Social Proof Strip ✅ — **Attention** reforço: −R$81k/mês
-3. Product Tour — **Interest**: "é assim que funciona"
-4. Outcomes (Features bento) — **Desire**: valores em reais, impacto concreto
-5. MiniCalculator (MOVIDO da posição 11) — **Action**: "agora testa no teu domínio"
-6. ClientGallery — social proof strip (sutil)
-7. Problem Statement (SolutionLayers reescrito) — rede de segurança: consequência da inação
-8. Use Cases (FeaturesWithImage reescrito) — rede de segurança: cenários de persona
-9. Counter (reduzido para 3 itens) — rede de segurança: proposta de valor
-10. FAQ (reduzido para 3 perguntas) — rede de segurança: tratamento de objeções
-11. CallToAction (reescrito) — ação final
+3. VSL (NOVO) — ponte **Attention → Interest**: explicação em vídeo
+4. Product Tour — **Interest**: "é assim que funciona"
+5. Outcomes (Features bento) — **Desire**: valores em reais, impacto concreto
+6. MiniCalculator (MOVIDO da posição 11) — **Action**: "agora testa no teu domínio"
+7. ClientGallery — social proof strip (sutil)
+8. Problem Statement (SolutionLayers reescrito) — rede de segurança: consequência da inação
+9. Use Cases (FeaturesWithImage reescrito) — rede de segurança: cenários de persona
+10. Counter (reduzido para 3 itens) — rede de segurança: proposta de valor
+11. FAQ (reduzido para 3 perguntas) — rede de segurança: tratamento de objeções
+12. CallToAction (reescrito) — ação final
 
 **Removidos até ter conteúdo real:**
 - VideoTestimonials (placeholder de outro produto)

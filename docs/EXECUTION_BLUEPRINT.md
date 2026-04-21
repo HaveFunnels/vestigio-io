@@ -85,7 +85,28 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 ---
 
-## Section 3: Product Tour
+## Section 3: VSL (Video Sales Letter)
+
+**CURRENT:** Does not exist.
+
+**VERDICT:** New. Insert between Social Proof Strip and Product Tour. AIDA role: **Attention → Interest** bridge — the video explains the value proposition in a format that doesn't require scrolling.
+
+**DIRECTIVE:** Single video player, centered, full-width within the HomeBigCard container. No title, no description — just the video. The social proof strip above provides context; the video provides depth.
+
+**Visual:**
+- Rounded container (`rounded-2xl`) with subtle border
+- Poster/thumbnail loads immediately; video fetches on play (`preload="none"`)
+- Play button overlay (same pattern as VideoTestimonials)
+- Aspect ratio 16:9
+- No autoplay — user initiates
+
+**Asset:** Video file at `/videos/vsl.mp4`, poster at `/videos/vsl-poster.webp`. Placeholder until real video is ready.
+
+**STATUS:** 🔲 Not started (awaiting video asset)
+
+---
+
+## Section 4: Product Tour
 
 **CURRENT:** Position 2. Component: `ProductTour/index.tsx`
 - Title: "Not a dashboard. A queue of decisions."
@@ -110,7 +131,7 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 ---
 
-## Section 4: Outcomes (REPLACES Features Bento)
+## Section 5: Outcomes (REPLACES Features Bento)
 
 **CURRENT:** Position 6. Component: `Features/index.tsx`. Four bento cards: Action Queue, Revenue Leaks, Continuous Watch, Evidence Orbit.
 
@@ -152,7 +173,7 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 ---
 
-## Section 5: MiniCalculator (MOVED UP)
+## Section 6: MiniCalculator (MOVED UP)
 
 **CURRENT:** Position 11 (second to last, before CallToAction). Component: `MiniCalculator/index.tsx`
 
@@ -176,7 +197,7 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 ---
 
-## Section 6: Problem Statement (REPLACES Solution Layers)
+## Section 7: Problem Statement (REPLACES Solution Layers)
 
 **CURRENT:** Position 4. Component: `SolutionLayers/index.tsx`. Three sticky-stack cards explaining Discover → Prioritize → Validate. Uses `homepage.solution_layers` i18n.
 
@@ -222,7 +243,7 @@ This is what "scaling in the dark" looks like. And it costs money every day.
 
 ---
 
-## Section 7: Use Cases (REPLACES FeaturesWithImage)
+## Section 8: Use Cases (REPLACES FeaturesWithImage)
 
 **CURRENT:** Position 5. Component: `FeaturesWithImage/index.tsx`. Hidden on mobile. 5 cards explaining product surfaces.
 
@@ -261,7 +282,7 @@ Vestigio traces chargeback risk to specific surfaces, policies, and trust gaps. 
 
 ---
 
-## Section 8: Counter / Value Props
+## Section 9: Counter / Value Props
 
 **CURRENT:** Position 7. Component: `Counter/index.tsx`. Bento grid with 6 items: Quick Start, Full Visibility, 4X ROI, Vestigio Pulse, Continuous Monitoring, Integrations.
 
@@ -281,7 +302,7 @@ Remove: Quick Start (redundant with "60s"), Vestigio Pulse (save for later), Int
 
 ---
 
-## Section 9: Video Testimonials
+## Section 10: Video Testimonials
 
 **CURRENT:** Position 8. Component: `VideoTestimonials/index.tsx`. Portrait videos with placeholder content from another product.
 
@@ -293,7 +314,7 @@ Remove: Quick Start (redundant with "60s"), Vestigio Pulse (save for later), Int
 
 ---
 
-## Section 10: Testimonial Cards / Success Stories
+## Section 11: Testimonial Cards / Success Stories
 
 **CURRENT:** Position 9. Component: `Testimonials/index.tsx`. Carousel with 5 generic industry cards (placeholder stats unrelated to Vestigio).
 
@@ -318,7 +339,7 @@ A real counter is more honest and more compelling than fake success stories. Gen
 
 ---
 
-## Section 11: FAQ
+## Section 12: FAQ
 
 **CURRENT:** Position 10. Component: `FAQ/index.tsx`. 4 questions (generic "what does Vestigio do", technical verification, try before buying, pricing plans).
 
@@ -337,7 +358,7 @@ A real counter is more honest and more compelling than fake success stories. Gen
 
 ---
 
-## Section 12: Final CTA
+## Section 13: Final CTA
 
 **CURRENT:** Rendered on homepage. Component: `CallToAction/index.tsx`.
 - Title: "Ready to put your platform on autopilot?" ← uses AVOID word "autopilot" and "platform"
@@ -383,15 +404,16 @@ Remove secondary CTA ("Try live demo"). One action only.
 **TARGET ORDER (AIDA-aligned):**
 1. Hero ✅ — **Attention**: loss-frame, curiosity gap
 2. Social Proof Strip ✅ — **Attention** reinforcement: −R$81k/mês
-3. Product Tour — **Interest**: "this is how it works"
-4. Outcomes (Features bento) — **Desire**: dollar amounts, concrete impact
-5. MiniCalculator (MOVED from 11) — **Action**: "now test on your domain"
-6. ClientGallery — social proof strip (quiet)
-7. Problem Statement (rewritten SolutionLayers) — safety net: consequence of inaction
-8. Use Cases (rewritten FeaturesWithImage) — safety net: persona scenarios
-9. Counter (reduced to 3 items) — safety net: value props
-10. FAQ (reduced to 3 questions) — safety net: objection handling
-11. CallToAction (rewritten) — final action
+3. VSL (NEW) — **Attention → Interest** bridge: video explanation
+4. Product Tour — **Interest**: "this is how it works"
+5. Outcomes (Features bento) — **Desire**: dollar amounts, concrete impact
+6. MiniCalculator (MOVED from 11) — **Action**: "now test on your domain"
+7. ClientGallery — social proof strip (quiet)
+8. Problem Statement (rewritten SolutionLayers) — safety net: consequence of inaction
+9. Use Cases (rewritten FeaturesWithImage) — safety net: persona scenarios
+10. Counter (reduced to 3 items) — safety net: value props
+11. FAQ (reduced to 3 questions) — safety net: objection handling
+12. CallToAction (rewritten) — final action
 
 **Removed until real content available:**
 - VideoTestimonials (placeholder from another product)

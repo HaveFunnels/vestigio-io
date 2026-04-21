@@ -113,7 +113,7 @@ const Header = () => {
 			}`}
 		>
 			<div
-				className={`relative mx-auto flex flex-col will-change-[transform,opacity] xl:flex-row xl:items-center xl:justify-between transition-[border-radius,background,border-color,box-shadow,max-width,padding] duration-500 ease-out ${
+				className={`relative mx-auto flex flex-col will-change-[transform,opacity] xl:flex-row xl:items-center xl:justify-between transition-[background,border-color,box-shadow,max-width,padding] duration-500 ease-out ${
 					compact
 						? navbarOpen
 							? "max-w-[620px] rounded-[1.25rem] border border-white/[0.12] bg-[#0c0c14]/95 px-5 py-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.55),0_8px_24px_-12px_rgba(16,185,129,0.18)]"

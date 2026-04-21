@@ -108,7 +108,10 @@
 			"headline_part2": "sem você perceber?",
 			"headline_part3": "",
 			"headline_brush_word": "",
-			"subtitle": "Cada vazamento de receita ranqueado por impacto financeiro, com evidências capturadas do seu site em tempo real. Primeiro diagnóstico em 24 horas.",
+			"subtitle": "",
+			"subtitle_before_bold": "A Vestigio mostra onde sua receita está escapando ",
+			"subtitle_bold": "e exatamente o que fazer",
+			"subtitle_after_bold": " para otimizar. Chega de deixar dinheiro na mesa.",
 			"pills": [
 				{
 					"impact": "Leads não convertem?",

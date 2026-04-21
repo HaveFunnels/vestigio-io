@@ -108,7 +108,10 @@
 			"headline_part2": "sin que lo sepas?",
 			"headline_part3": "",
 			"headline_brush_word": "",
-			"subtitle": "Cada fuga de ingresos ranqueada por impacto financiero, con evidencia capturada de tu sitio en tiempo real. Primer diagnóstico en 24 horas.",
+			"subtitle": "",
+			"subtitle_before_bold": "Vestigio muestra dónde se escapa tu ingreso ",
+			"subtitle_bold": "y exactamente qué hacer",
+			"subtitle_after_bold": " para optimizar. Deja de dejar dinero sobre la mesa.",
 			"pills": [
 				{
 					"impact": "¿Leads que no convierten?",

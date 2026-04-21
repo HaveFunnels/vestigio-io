@@ -108,7 +108,10 @@
 			"headline_part2": "ohne dass Sie es merken?",
 			"headline_part3": "",
 			"headline_brush_word": "",
-			"subtitle": "Jedes Umsatzleck nach finanziellem Impact gerankt, mit Echtzeit-Evidenz von Ihrer Website. Erste Diagnose in 24 Stunden.",
+			"subtitle": "",
+			"subtitle_before_bold": "Vestigio zeigt, wo Ihr Umsatz entweicht ",
+			"subtitle_bold": "und genau, was zu tun ist",
+			"subtitle_after_bold": ", um zu optimieren. Schluss mit Geld auf dem Tisch.",
 			"pills": [
 				{
 					"impact": "Leads konvertieren nicht?",

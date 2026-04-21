@@ -108,7 +108,10 @@
 			"headline_part2": "without you knowing?",
 			"headline_part3": "",
 			"headline_brush_word": "",
-			"subtitle": "Every revenue leak ranked by financial impact, with real-time evidence captured from your site. First diagnostic in 24 hours.",
+			"subtitle": "",
+			"subtitle_before_bold": "Vestigio shows where your revenue is leaking ",
+			"subtitle_bold": "and exactly what to do",
+			"subtitle_after_bold": " to fix it. Stop leaving money on the table.",
 			"pills": [
 				{
 					"impact": "Leads not converting?",

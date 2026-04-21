@@ -187,7 +187,15 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2" }: { i18nNamespace?: st
 				</h1>
 
 				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>
-					{t("subtitle")}
+					{t("subtitle_before_bold") ? (
+						<>
+							{t("subtitle_before_bold")}
+							<strong className='font-semibold text-zinc-300'>{t("subtitle_bold")}</strong>
+							{t("subtitle_after_bold")}
+						</>
+					) : (
+						t("subtitle")
+					)}
 				</p>
 
 				{/* 5 interactive impact / solution pills — client component.

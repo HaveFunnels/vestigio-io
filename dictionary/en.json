@@ -73,6 +73,10 @@
 			"headline_part3": "",
 			"headline_brush_word": "",
 			"subtitle": "Problems identified and ranked. Decisions ready to execute. Real evidence.",
+			"subtitle_line1": "",
+			"subtitle_before_bold": "",
+			"subtitle_bold": "",
+			"subtitle_after_bold": "",
 			"pills": [
 				{
 					"impact": "Leads not converting?",

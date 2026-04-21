@@ -189,7 +189,7 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2" }: { i18nNamespace?: st
 				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>
 					{t("subtitle_before_bold") ? (
 						<>
-							{t("subtitle_line1") && <><span>{t("subtitle_line1")}</span><br /></>}
+							{t("subtitle_line1") && <><span>{t("subtitle_line1")}</span><br className='sm:hidden' />{" "}</>}
 							{t("subtitle_before_bold")}
 							<strong className='font-semibold text-zinc-300'>{t("subtitle_bold")}</strong>
 							{t("subtitle_after_bold")}

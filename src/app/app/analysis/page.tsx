@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTrack } from "@/hooks/useProductTrack";
 import toast from "react-hot-toast";
@@ -24,6 +24,7 @@ import {
 import { loadFindings } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { ShinyButton } from "@/components/ui/shiny-button";
+import FindingDetailPanel from "@/components/console/FindingDetailPanel";
 import type { FindingProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
@@ -111,7 +112,6 @@ const polarityColors: Record<string, string> = {
 export default function AnalysisPage() {
 	const t = useTranslations("console.analysis");
 	const tTooltip = useTranslations("console.common");
-	const { track } = useTrack();
 	const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
 	const [currentStep, setCurrentStep] = useState<string | null>(null);
 	const [findings, setFindings] = useState<FindingProjection[]>([]);
@@ -350,23 +350,74 @@ function AnalysisContent({
 	challengeInfo: { type: string; url: string } | null;
 }) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const t = useTranslations("console.analysis");
 	const tc = useTranslations("console.common");
-	const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
-	const [packFilter, setPackFilter] = useState<PackFilter>("all");
-	const [polarityFilter, setPolarityFilter] = useState<PolarityFilter>("all");
-	const [verificationFilter, setVerificationFilter] =
-		useState<VerificationFilter>("all");
-	const [impactRangeFilter, setImpactRangeFilter] =
-		useState<ImpactRangeFilter>("all");
-	const [surfaceFilter, setSurfaceFilter] = useState<string>("all");
-	const [changeClassFilter, setChangeClassFilter] =
-		useState<ChangeClassFilter>("all");
-	const [searchText, setSearchText] = useState("");
-	const [hidePositive, setHidePositive] = useState(false);
+	const { track } = useTrack();
+
+	// 3.20: Initialize filters from URL params (persist across navigation)
+	const [severityFilter, setSeverityFilter] = useState<SeverityFilter>(
+		(searchParams.get("severity") as SeverityFilter) || "all",
+	);
+	const [packFilter, setPackFilter] = useState<PackFilter>(
+		(searchParams.get("pack") as PackFilter) || "all",
+	);
+	const [polarityFilter, setPolarityFilter] = useState<PolarityFilter>(
+		(searchParams.get("polarity") as PolarityFilter) || "all",
+	);
+	const [verificationFilter, setVerificationFilter] = useState<VerificationFilter>(
+		(searchParams.get("verification") as VerificationFilter) || "all",
+	);
+	const [impactRangeFilter, setImpactRangeFilter] = useState<ImpactRangeFilter>(
+		(searchParams.get("impact") as ImpactRangeFilter) || "all",
+	);
+	const [surfaceFilter, setSurfaceFilter] = useState<string>(
+		searchParams.get("surface") || "all",
+	);
+	const [changeClassFilter, setChangeClassFilter] = useState<ChangeClassFilter>(
+		(searchParams.get("change") as ChangeClassFilter) || "all",
+	);
+	const [searchText, setSearchText] = useState(
+		searchParams.get("search") || "",
+	);
+	const [hidePositive, setHidePositive] = useState(
+		searchParams.get("hidePositive") === "1",
+	);
 	const [selectedFinding, setSelectedFinding] =
 		useState<FindingProjection | null>(null);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+	// 3.20: Sync filter changes to URL (silent, no history entry)
+	function updateUrlFilter(key: string, value: string) {
+		if (typeof window === "undefined") return;
+		const url = new URL(window.location.href);
+		if (value === "all" || value === "" || value === "0") {
+			url.searchParams.delete(key);
+		} else {
+			url.searchParams.set(key, value);
+		}
+		window.history.replaceState({}, "", url.toString());
+	}
+
+	// Wrapped setters that sync to URL
+	const setFilterSeverity = (v: SeverityFilter) => { setSeverityFilter(v); updateUrlFilter("severity", v); };
+	const setFilterPack = (v: PackFilter) => { setPackFilter(v); updateUrlFilter("pack", v); };
+	const setFilterPolarity = (v: PolarityFilter) => { setPolarityFilter(v); updateUrlFilter("polarity", v); };
+	const setFilterVerification = (v: VerificationFilter) => { setVerificationFilter(v); updateUrlFilter("verification", v); };
+	const setFilterImpactRange = (v: ImpactRangeFilter) => { setImpactRangeFilter(v); updateUrlFilter("impact", v); };
+	const setFilterSurface = (v: string) => { setSurfaceFilter(v); updateUrlFilter("surface", v); };
+	const setFilterChangeClass = (v: ChangeClassFilter) => { setChangeClassFilter(v); updateUrlFilter("change", v); };
+	const setFilterSearch = (v: string) => { setSearchText(v); updateUrlFilter("search", v); };
+	const setFilterHidePositive = (v: boolean) => { setHidePositive(v); updateUrlFilter("hidePositive", v ? "1" : "0"); };
+
+	// 3.20: Auto-open drawer from ?finding= URL param
+	useEffect(() => {
+		const findingId = searchParams.get("finding");
+		if (findingId && findings.length > 0 && !selectedFinding) {
+			const match = findings.find((f) => f.id === findingId);
+			if (match) setSelectedFinding(match);
+		}
+	}, [findings.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const severityLabels: Record<SeverityFilter, string> = {
 		all: tc("severity.all"),
@@ -719,7 +770,7 @@ function AnalysisContent({
 			<div className='no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:gap-3'>
 				<select
 					value={polarityFilter}
-					onChange={(e) => setPolarityFilter(e.target.value as PolarityFilter)}
+					onChange={(e) => setFilterPolarity(e.target.value as PolarityFilter)}
 					className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600'
 				>
 					{polarityValues.map((v) => (
@@ -730,7 +781,7 @@ function AnalysisContent({
 				</select>
 				<select
 					value={severityFilter}
-					onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
+					onChange={(e) => setFilterSeverity(e.target.value as SeverityFilter)}
 					className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600'
 				>
 					{severityValues.map((v) => (
@@ -741,7 +792,7 @@ function AnalysisContent({
 				</select>
 				<select
 					value={packFilter}
-					onChange={(e) => setPackFilter(e.target.value as PackFilter)}
+					onChange={(e) => setFilterPack(e.target.value as PackFilter)}
 					className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600'
 				>
 					{packValues.map((v) => (
@@ -753,7 +804,7 @@ function AnalysisContent({
 				<select
 					value={verificationFilter}
 					onChange={(e) =>
-						setVerificationFilter(e.target.value as VerificationFilter)
+						setFilterVerification(e.target.value as VerificationFilter)
 					}
 					className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600'
 				>
@@ -766,7 +817,7 @@ function AnalysisContent({
 				<select
 					value={changeClassFilter}
 					onChange={(e) =>
-						setChangeClassFilter(e.target.value as ChangeClassFilter)
+						setFilterChangeClass(e.target.value as ChangeClassFilter)
 					}
 					className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600'
 				>
@@ -779,7 +830,7 @@ function AnalysisContent({
 				<select
 					value={impactRangeFilter}
 					onChange={(e) =>
-						setImpactRangeFilter(e.target.value as ImpactRangeFilter)
+						setFilterImpactRange(e.target.value as ImpactRangeFilter)
 					}
 					className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600'
 				>
@@ -791,7 +842,7 @@ function AnalysisContent({
 				</select>
 				<select
 					value={surfaceFilter}
-					onChange={(e) => setSurfaceFilter(e.target.value)}
+					onChange={(e) => setFilterSurface(e.target.value)}
 					className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600'
 				>
 					{surfaceOptions.map((opt) => (
@@ -803,7 +854,7 @@ function AnalysisContent({
 				<input
 					type='text'
 					value={searchText}
-					onChange={(e) => setSearchText(e.target.value)}
+					onChange={(e) => setFilterSearch(e.target.value)}
 					placeholder={t("search_placeholder")}
 					className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600'
 				/>
@@ -812,7 +863,7 @@ function AnalysisContent({
 					<input
 						type='checkbox'
 						checked={hidePositive}
-						onChange={(e) => setHidePositive(e.target.checked)}
+						onChange={(e) => setFilterHidePositive(e.target.checked)}
 						className='h-3 w-3 rounded border-edge bg-surface-inset text-emerald-500 focus:ring-0'
 					/>
 					{tc("hide_positive_signals")}
@@ -828,14 +879,14 @@ function AnalysisContent({
 					searchText !== "") && (
 					<button
 						onClick={() => {
-							setSeverityFilter("all");
-							setPackFilter("all");
-							setPolarityFilter("all");
-							setVerificationFilter("all");
-							setImpactRangeFilter("all");
-							setSurfaceFilter("all");
-							setChangeClassFilter("all");
-							setSearchText("");
+							setFilterSeverity("all");
+							setFilterPack("all");
+							setFilterPolarity("all");
+							setFilterVerification("all");
+							setFilterImpactRange("all");
+							setFilterSurface("all");
+							setFilterChangeClass("all");
+							setFilterSearch("");
 						}}
 						className='rounded-md px-3 py-1.5 text-xs text-content-muted transition-colors hover:text-content-secondary'
 					>
@@ -879,20 +930,24 @@ function AnalysisContent({
 			<DataTable
 				columns={columns}
 				data={filtered}
-				onRowClick={(row) => { setSelectedFinding(row); track("drawer_open", { entity_type: "finding", entity_id: row.id }); }}
+				onRowClick={(row) => {
+					setSelectedFinding(row);
+					track("drawer_open", { entity_type: "finding", entity_id: row.id });
+					updateUrlFilter("finding", row.id);
+				}}
 				getRowKey={(row) => row.id}
 				emptyMessage={t("no_match")}
 			/>
 
 			<SideDrawer
 				open={selectedFinding !== null}
-				onClose={() => setSelectedFinding(null)}
+				onClose={() => { setSelectedFinding(null); updateUrlFilter("finding", ""); }}
 				title={selectedFinding?.title || ""}
 			>
 				{selectedFinding && (
-					<FindingDrawerContent
+					<FindingDetailPanel
 						finding={selectedFinding}
-						onDiscuss={() => router.push(`/chat?finding=${selectedFinding.id}`)}
+						variant="full"
 					/>
 				)}
 			</SideDrawer>

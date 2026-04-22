@@ -121,6 +121,9 @@ function mockFinding(key: string, polarity: 'negative' | 'positive' | 'neutral' 
     verification_strategy: null,
     verification_notes: null,
     verification_eta_seconds: null,
+    workspace_refs: [],
+    action_refs: [],
+    opportunity_ref: null,
   };
 }
 

@@ -59,6 +59,9 @@ const BASE: Omit<
 		composite: 81,
 	},
 	verification_eta_seconds: null,
+	workspace_refs: [],
+	action_refs: [],
+	opportunity_ref: null,
 };
 
 function f(

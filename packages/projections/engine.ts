@@ -1,4 +1,4 @@
-import { Inference, makeRef } from '../domain';
+import { Inference, makeRef, parseRef } from '../domain';
 import { MultiPackResult } from '../workspace';
 import { QuantifiedValueCase, ImpactSummary } from '../impact';
 import { RootCause, GlobalAction } from '../intelligence';
@@ -618,10 +618,151 @@ export function projectAll(result: MultiPackResult, translations?: EngineTransla
   const findings = projectFindings(result, translations);
   const actions = projectActions(result, translations);
   const workspaces = projectWorkspaces(result, findings, translations);
+
+  // 3.20: Resolve cross-references after all projections are available
+  const enrichedFindings = enrichFindingsWithCrossRefs(findings, actions, workspaces, result);
+
   const coherenceScore = result.conflict_report?.resolved_decisions?.coherence_score ?? 100;
   const systemHealth = buildSystemHealth(result);
   const changeReport = projectChangeReport(result);
-  return { findings, actions, workspaces, coherence_score: coherenceScore, system_health: systemHealth, change_report: changeReport };
+  return { findings: enrichedFindings, actions, workspaces, coherence_score: coherenceScore, system_health: systemHealth, change_report: changeReport };
+}
+
+// ──────────────────────────────────────────────
+// Cross-reference resolution (3.20 Unified Entity Architecture)
+//
+// Wires workspace_refs, action_refs, and opportunity_ref onto each
+// FindingProjection after all three projection types are available.
+// Runs once per cycle recompute — not on hot paths.
+// ──────────────────────────────────────────────
+
+function enrichFindingsWithCrossRefs(
+  findings: FindingProjection[],
+  actions: ActionProjection[],
+  workspaces: WorkspaceProjection[],
+  result: MultiPackResult,
+): FindingProjection[] {
+  const rootCauses = result.intelligence.root_causes;
+  const globalActions = result.intelligence.global_actions;
+  const inferences = result.inferences;
+
+  // 1. Build inference.id → inference_key lookup
+  const inferenceIdToKey = new Map<string, string>();
+  for (const inf of inferences) {
+    inferenceIdToKey.set(inf.id, inf.inference_key);
+  }
+
+  // 2. Build inference_key → action_refs map
+  //    Path: GlobalAction.root_cause_ref → RootCause → contributing_inferences → inference.id → inference_key
+  const inferenceKeyToActions = new Map<string, { id: string; title: string; status: string | null; category: string }[]>();
+
+  for (const ga of globalActions) {
+    if (!ga.root_cause_ref) continue;
+    const rc = rootCauses.find(r => makeRef('root_cause', r.id) === ga.root_cause_ref);
+    if (!rc) continue;
+
+    // Find the matching ActionProjection for this GlobalAction
+    const actionProj = actions.find(a => a.id === ga.action_key);
+    if (!actionProj) continue;
+
+    const actionRef = {
+      id: actionProj.id,
+      title: actionProj.title,
+      status: actionProj.operational_status,
+      category: actionProj.category,
+    };
+
+    for (const infRef of rc.contributing_inferences) {
+      try {
+        const parsed = parseRef(infRef);
+        const inferenceKey = inferenceIdToKey.get(parsed.id);
+        if (!inferenceKey) continue;
+
+        const existing = inferenceKeyToActions.get(inferenceKey) || [];
+        // Avoid duplicates (same action linked via multiple paths)
+        if (!existing.some(a => a.id === actionRef.id)) {
+          existing.push(actionRef);
+          inferenceKeyToActions.set(inferenceKey, existing);
+        }
+      } catch {
+        // Invalid ref format — skip silently
+      }
+    }
+  }
+
+  // 3. Build pack → workspace_ref map
+  const packToWorkspace = new Map<string, { id: string; name: string; type: string }>();
+  for (const ws of workspaces) {
+    // Extract pack name from pack_key (e.g., 'scale_readiness_pack' → 'scale_readiness')
+    const packName = ws.pack_key.replace(/_pack$/, '');
+    packToWorkspace.set(packName, { id: ws.id, name: ws.name, type: ws.type });
+  }
+
+  // 4. Build inference_key → opportunity_ref map
+  //    Path: Opportunity.decision_refs → Decision → pack → INFERENCE_TO_PACK → inference_key
+  const inferenceKeyToOpportunity = new Map<string, { id: string; hypothesis: string; value_range: { min: number; max: number } }>();
+
+  if (result.opportunities?.opportunities) {
+    // Build decision_key → pack mapping from all decisions
+    const decisionKeyToPack = new Map<string, string>();
+    const allDecisions = [
+      result.scale_readiness?.decision,
+      result.revenue_integrity?.decision,
+      result.chargeback_resilience?.decision,
+      result.saas_growth_readiness?.decision,
+    ].filter(Boolean);
+    for (const d of allDecisions) {
+      if (d) decisionKeyToPack.set(d.decision_key, d.decision_key.replace(/^is_/, ''));
+    }
+
+    for (const opp of result.opportunities.opportunities) {
+      const valueRange = opp.value_case?.range
+        ? { min: opp.value_case.range.low ?? 0, max: opp.value_case.range.mid ?? 0 }
+        : { min: 0, max: 0 };
+
+      const oppRef = {
+        id: opp.opportunity_key,
+        hypothesis: opp.uplift_hypothesis,
+        value_range: valueRange,
+      };
+
+      // For each decision this opportunity references, find which inferences belong to that pack
+      for (const dref of opp.decision_refs) {
+        try {
+          const parsed = parseRef(dref);
+          // Find matching decision to get the pack
+          const decision = allDecisions.find(d => d && d.id === parsed.id);
+          if (!decision) continue;
+
+          // Find root causes that contributed to this decision's pack
+          for (const rc of rootCauses) {
+            if (!rc.affected_packs.some(p => decision.decision_key.includes(p))) continue;
+
+            for (const infRef of rc.contributing_inferences) {
+              try {
+                const infParsed = parseRef(infRef);
+                const inferenceKey = inferenceIdToKey.get(infParsed.id);
+                if (inferenceKey && !inferenceKeyToOpportunity.has(inferenceKey)) {
+                  inferenceKeyToOpportunity.set(inferenceKey, oppRef);
+                }
+              } catch { /* skip */ }
+            }
+          }
+        } catch { /* skip */ }
+      }
+    }
+  }
+
+  // 5. Enrich each finding with cross-references
+  return findings.map(f => {
+    const wsRef = packToWorkspace.get(f.pack);
+    return {
+      ...f,
+      workspace_refs: wsRef ? [wsRef] : [],
+      action_refs: inferenceKeyToActions.get(f.inference_key) || [],
+      opportunity_ref: inferenceKeyToOpportunity.get(f.inference_key) || null,
+    };
+  });
 }
 
 export function projectFindings(result: MultiPackResult, translations?: EngineTranslations): FindingProjection[] {
@@ -761,6 +902,10 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
           verification_eta_seconds: entry?.verification_eta_seconds ?? null,
         };
       })(),
+      // Cross-references — populated later by enrichFindingsWithCrossRefs() in projectAll()
+      workspace_refs: [],
+      action_refs: [],
+      opportunity_ref: null,
     });
   }
 
@@ -1484,6 +1629,10 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
             verification_eta_seconds: entry?.verification_eta_seconds ?? null,
           };
         })(),
+        // Cross-references — populated later by enrichFindingsWithCrossRefs() in projectAll()
+        workspace_refs: [],
+        action_refs: [],
+        opportunity_ref: null,
       });
     }
   }

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTrack } from "@/hooks/useProductTrack";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
+import FindingDetailPanel from "@/components/console/FindingDetailPanel";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import VerificationBadge from "@/components/console/VerificationBadge";
 import ChangeBadge from "@/components/console/ChangeBadge";
@@ -97,6 +98,7 @@ export default function WorkspaceDetailPage({
 
 function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const mcpData = useMcpData();
 	const t = useTranslations("console.workspaces");
 	const tc = useTranslations("console.common");
@@ -110,6 +112,33 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 		track("workspace_drill", { workspace_type: workspace.type, perspective: perspective.slug });
 		track("feature_first_use", { feature: "workspace_drill" });
 	}, [workspace.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// 3.20: Auto-open drawer from ?finding= URL param
+	useEffect(() => {
+		const findingId = searchParams.get("finding");
+		if (findingId && workspace.findings.length > 0 && !selectedFinding) {
+			const match = workspace.findings.find((f) => f.id === findingId);
+			if (match) setSelectedFinding(match);
+		}
+	}, [workspace.findings.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// 3.20: Finding-in-URL helpers
+	const openFinding = (f: FindingProjection) => {
+		setSelectedFinding(f);
+		if (typeof window !== "undefined") {
+			const url = new URL(window.location.href);
+			url.searchParams.set("finding", f.id);
+			window.history.replaceState({}, "", url.toString());
+		}
+	};
+	const closeFinding = () => {
+		setSelectedFinding(null);
+		if (typeof window !== "undefined") {
+			const url = new URL(window.location.href);
+			url.searchParams.delete("finding");
+			window.history.replaceState({}, "", url.toString());
+		}
+	};
 
 	const changeReportState =
 		mcpData.changeReport.status !== "not_ready"
@@ -256,14 +285,14 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 								<PreflightChecklist
 									findings={workspace.findings}
 									readiness={preflightReadiness}
-									onFindingClick={(f) => setSelectedFinding(f)}
+									onFindingClick={(f) => openFinding(f)}
 								/>
 							</div>
 						) : (
 							<DataTable
 								columns={findingColumns}
 								data={workspace.findings}
-								onRowClick={(row) => setSelectedFinding(row)}
+								onRowClick={(row) => openFinding(row)}
 								getRowKey={(row) => row.id}
 								emptyMessage={t("detail.no_findings")}
 							/>
@@ -339,11 +368,11 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			</div>
 
 			{/* ── Finding Drawer ── */}
-			<SideDrawer open={selectedFinding !== null} onClose={() => setSelectedFinding(null)} title={selectedFinding?.title || ""}>
+			<SideDrawer open={selectedFinding !== null} onClose={closeFinding} title={selectedFinding?.title || ""}>
 				{selectedFinding && (
-					<FindingDrawerContent
+					<FindingDetailPanel
 						finding={selectedFinding}
-						onDiscuss={() => router.push(`/app/chat?finding=${selectedFinding.id}`)}
+						variant="compact"
 					/>
 				)}
 			</SideDrawer>

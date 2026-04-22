@@ -170,7 +170,6 @@ function formatCurrency(value: number): string {
 export default function ActionsPage() {
 	const t = useTranslations("console.actions");
 	const tc = useTranslations("console.common");
-	const { track } = useTrack();
 	const mcpData = useMcpData();
 	const dataState =
 		mcpData.actions.status !== "not_ready" ? mcpData.actions : loadActions();
@@ -212,6 +211,7 @@ function ActionsContent({
 	changeReport: ChangeReportProjection | null;
 }) {
 	const t = useTranslations("console.actions");
+	const { track } = useTrack();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [selected, setSelected] = useState<ActionProjection | null>(null);

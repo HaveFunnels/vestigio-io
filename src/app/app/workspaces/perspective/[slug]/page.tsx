@@ -1,13 +1,14 @@
 "use client";
 
 import { use, useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTrack } from "@/hooks/useProductTrack";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
+import FindingDetailPanel from "@/components/console/FindingDetailPanel";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import VerificationBadge from "@/components/console/VerificationBadge";
 import ChangeBadge from "@/components/console/ChangeBadge";
@@ -110,11 +111,30 @@ export default function PerspectivePage({ params }: { params: Promise<{ slug: st
 
 function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: WorkspaceProjection[] }) {
   const router = useRouter();
+  const searchParamsPerspective = useSearchParams();
   const t = useTranslations("console.workspaces");
   const tc = useTranslations("console.common");
   const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
 
   const meta = PERSPECTIVE_META[slug] || PERSPECTIVE_META.trust;
+
+  // 3.20: Finding-in-URL helpers
+  const openFinding = (f: FindingProjection) => {
+    setSelectedFinding(f);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("finding", f.id);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+  const closeFinding = () => {
+    setSelectedFinding(null);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("finding");
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   const perspectiveWorkspaces = useMemo(
     () => workspaces.filter((ws) => classifyWorkspacePerspective(ws) === slug),
@@ -272,7 +292,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
             <DataTable
               columns={findingColumns}
               data={allFindings}
-              onRowClick={(row) => setSelectedFinding(row)}
+              onRowClick={(row) => openFinding(row)}
               getRowKey={(row) => row.id}
               emptyMessage={t("empty")}
             />
@@ -310,9 +330,9 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       )}
 
       {/* Finding drawer */}
-      <SideDrawer open={selectedFinding !== null} onClose={() => setSelectedFinding(null)} title={selectedFinding?.title || ""}>
+      <SideDrawer open={selectedFinding !== null} onClose={closeFinding} title={selectedFinding?.title || ""}>
         {selectedFinding && (
-          <FindingDrawerContent finding={selectedFinding} onDiscuss={() => router.push(`/chat?finding=${selectedFinding.id}`)} />
+          <FindingDetailPanel finding={selectedFinding} variant="compact" />
         )}
       </SideDrawer>
     </>

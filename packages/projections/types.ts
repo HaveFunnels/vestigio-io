@@ -199,6 +199,14 @@ export interface FindingProjection {
    * without a time-bounded dispatch (pixel_accumulation reports session
    * progress via verification_notes instead). */
   verification_eta_seconds: number | null;
+
+  // ── Cross-references (3.20 Unified Entity Architecture) ──
+  /** Workspaces where this finding appears (resolved from pack → workspace mapping). */
+  workspace_refs: { id: string; name: string; type: string }[];
+  /** Actions linked to this finding (resolved via root_cause → global_action chain). */
+  action_refs: { id: string; title: string; status: string | null; category: string }[];
+  /** Opportunity linked to this finding, if one exists. */
+  opportunity_ref: { id: string; hypothesis: string; value_range: { min: number; max: number } } | null;
 }
 
 export interface FindingTruthContext {

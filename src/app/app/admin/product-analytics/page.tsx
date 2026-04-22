@@ -103,7 +103,7 @@ export default function ProductAnalyticsPage() {
 						))}
 					</div>
 					<ExportButton
-						data={data}
+						data={data ? [data as unknown as Record<string, any>] : []}
 						filename={`product-analytics-${period}`}
 					/>
 				</div>

@@ -74,7 +74,7 @@ export default function CopilotQuickActions({
 	const actions = getQuickActionsForPage(pageContext);
 
 	return (
-		<div className={`flex flex-wrap ${compact ? "gap-1.5" : "gap-2"}`}>
+		<div className={`flex flex-wrap justify-center ${compact ? "gap-1.5" : "gap-2"}`}>
 			{actions.map((action) => (
 				<button
 					key={action.id}

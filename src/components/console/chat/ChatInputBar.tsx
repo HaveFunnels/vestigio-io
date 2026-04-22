@@ -29,6 +29,8 @@ interface ChatInputBarProps {
   isStreaming?: boolean;
   onStop?: () => void;
   stopLabel?: string;
+  /** Force mobile island layout regardless of viewport width */
+  compact?: boolean;
 }
 
 export function ChatInputBar({
@@ -44,6 +46,7 @@ export function ChatInputBar({
   isStreaming = false,
   onStop,
   stopLabel,
+  compact = false,
 }: ChatInputBarProps) {
   const t = useTranslations("console.chat_input");
   const [input, setInput] = useState("");
@@ -101,8 +104,8 @@ export function ChatInputBar({
   }
 
   return (
-    <div className="shrink-0 px-4 pt-2 sm:px-8" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}>
-      <div className="mx-auto max-w-3xl rounded-2xl border border-content-faint/25 bg-surface-card px-3 py-2.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:border-content-faint/40 focus-within:shadow-[0_0_24px_-4px_rgba(255,255,255,0.12)] sm:px-4 sm:py-3">
+    <div className={`shrink-0 px-4 pt-2 ${compact ? "" : "sm:px-8"}`} style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}>
+      <div className={`mx-auto max-w-3xl rounded-2xl border border-content-faint/25 bg-surface-card px-3 py-2.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:border-content-faint/40 focus-within:shadow-[0_0_24px_-4px_rgba(255,255,255,0.12)] ${compact ? "" : "sm:px-4 sm:py-3"}`}>
         {/* Attached files */}
         {attachedFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
@@ -113,8 +116,8 @@ export function ChatInputBar({
         )}
 
         <div className="flex items-end gap-2">
-          {/* ── Mobile: "+" menu button ── */}
-          <div className="relative sm:hidden" ref={menuRef}>
+          {/* ── Mobile / compact: "+" menu button ── */}
+          <div className={`relative ${compact ? "" : "sm:hidden"}`} ref={menuRef}>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               disabled={disabled}
@@ -216,7 +219,7 @@ export function ChatInputBar({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30 sm:flex"
+            className={`h-10 w-10 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30 ${compact ? "hidden" : "hidden sm:flex"}`}
             title={t("attach_file")}
           >
             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
@@ -245,7 +248,7 @@ export function ChatInputBar({
           />
 
           {/* ── Desktop: inline right-side controls ── */}
-          <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
+          <div className={`shrink-0 items-center gap-1.5 ${compact ? "hidden" : "hidden sm:flex"}`}>
             <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
             <ModelSelector selected={selectedModel} onSelect={onModelChange} plan={plan} />
           </div>
@@ -278,7 +281,7 @@ export function ChatInputBar({
 
       {/* Hints — outside the island */}
       <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between px-1">
-        <p className="hidden text-[9px] text-content-faint sm:block">
+        <p className={`text-[9px] text-content-faint ${compact ? "hidden" : "hidden sm:block"}`}>
           {t("hint_send")}
         </p>
         {input.length > 1500 && (

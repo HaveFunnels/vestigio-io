@@ -65,6 +65,8 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Cross-Signal Surface — making the moat visible | **Not started** — correlate findings across perspectives by shared URL/temporal pattern. ~1-2 weeks. | Wave 3.15 |
 | Product Telemetry — measure before you change | **Not started** — self-hosted product events, engagement score, feature adoption funnels. ~1 week. | Wave 3.16 |
 | Workspace Upgrade Moments — monetize value | **Not started** — blurred previews, copilot nudge, cadence nudge. ~3-5 days. | Wave 3.17 |
+| First-Audit Experience — value before data | **Not started** — rich progress feed, heuristic preview, first-findings celebration. ~1 week. | Wave 3.18 |
+| Cancel Flow & Save Offers — reduce voluntary churn | **Not started** — exit survey, dynamic offers, pause, win-back sequence. ~2 weeks. | Wave 3.19 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
@@ -840,6 +842,8 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 
 ### 3.17 Workspace Upgrade Moments — Monetize the Value Created
 
+> **See also:** 3.18 (First-Audit Experience) and 3.19 (Cancel Flow & Save Offers) below.
+
 | | |
 |---|---|
 | **Tag** | `frontend` `platform` |
@@ -864,6 +868,60 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 - Blurred previews show WHAT the user would get, not empty states.
 - Upgrade CTAs are inline text or subtle badges, never modals or banners.
 - Copy is value-framing ("Unlock daily insights") not fear-framing ("You're missing out").
+
+---
+
+### 3.18 First-Audit Experience — Value Before Data
+
+| | |
+|---|---|
+| **Tag** | `frontend` |
+| **Priority** | P2 |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** After onboarding, the first audit cycle takes 5-10 minutes. During this time, users see empty pages with a "Audit in progress" banner and page count ticking up. First contact with value only happens when findings appear. This is the highest-churn window — users who don't see value in their first session rarely return.
+
+**Competitors:** Semrush shows a partial Health Score immediately. Contentsquare shows an onboarding tutorial. ProfitWell shows revenue data within seconds (different category but same principle: instant value).
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Rich progress feed** | Replace the minimal CycleProgressBanner with a richer progress view on the empty workspace/analysis pages during first audit. Instead of "42 pages crawled", show a narrative feed: "Analyzing checkout security... Found 3 trust signals", "Checking refund policy... Policy found at /refund", "Scanning payment page... Detecting 3D Secure..." Each step corresponds to actual pipeline stages (Stage A discovery, Stage B classification, Stage C analysis, Stage D enrichment). Feed uses real data from the SSE stream, not fake data. | Medium |
+| B | **Heuristic preview briefing** | While the audit runs, generate a heuristic briefing from onboarding data (business type, revenue range, conversion model) + domain surface analysis (which was completed in seconds by Stage A). "Based on your ecommerce site with ~$50k/mo revenue, here's what we typically find..." with 3-5 common finding categories for that business type. Marked clearly as "Preview — full results in a few minutes." Disappears once real findings load. | Low |
+| C | **First-findings celebration** | When the first batch of findings loads (SSE `status: complete`), animate the transition from progress feed to real workspaces. Brief celebration: "Audit complete. 27 findings across 4 perspectives. Your Health Score: 62/100." Then fade into the normal workspace view. Sets the baseline for future "what changed" comparisons. | Low |
+
+**Total estimate:** ~1 week. Item A is the bulk (needs SSE message enrichment). B and C are lightweight UI.
+
+---
+
+### 3.19 Cancel Flow & Save Offers — Reduce Voluntary Churn
+
+| | |
+|---|---|
+| **Tag** | `platform` `frontend` |
+| **Priority** | P2 |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** No cancel flow exists. Cancellation via Paddle is instant — no exit survey, no save offer, no pause option, no win-back sequence. Industry benchmarks show that even a minimal cancel flow (survey + one save offer) recovers 10-15% of cancellations. A well-designed flow with dynamic offers recovers 25-35%.
+
+**Current state:** Paddle webhook handles `subscription.canceled` → sets org status. No interception before the Paddle cancel action. The billing page has "Manage Subscription" → direct Paddle portal.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Custom cancel flow (intercept)** | Instead of linking directly to Paddle's cancel portal, route "Cancel subscription" through a custom page `/app/billing/cancel`. This page runs the flow below BEFORE calling `paddle.subscriptions.cancel()`. If the user accepts a save offer, the cancel never reaches Paddle. | Medium |
+| B | **Exit survey (1 question)** | Single-select with optional free text. Reasons: "Too expensive", "Not using it enough", "Missing a feature I need", "Switching to another tool", "Technical issues", "Temporary / don't need right now", "Other." Stored as `CancelSurvey` Prisma model (`{ orgId, reason, freeText, offeredSave, acceptedSave, cancelledAt }`). Data feeds admin dashboard for churn reason analysis. | Low |
+| C | **Dynamic save offer** | Offer mapped to reason: **Too expensive** → 25% off for 3 months (via Paddle discount API) or downgrade to lower plan. **Not using it enough** → Pause subscription for 1-3 months (Paddle `subscription.pause`). **Missing feature** → Show relevant roadmap item + "notify me" toggle. **Switching** → Comparison point + discount. **Technical** → Escalate to priority support. **Temporary** → Pause. **Other** → Generic "we'd love to keep you" + small discount. One primary offer + one fallback per reason. | Medium |
+| D | **Pause subscription** | Paddle supports native pause. User selects 1, 2, or 3 months. Auto-resume with 7-day advance email notification. Data/settings preserved. Paused environments skip audit scheduling but resume automatically. 60-80% of pausers reactivate (industry benchmark). | Low |
+| E | **Post-cancel win-back sequence** | If user completes cancellation: immediate confirmation email with reactivation link + "what you'll lose" summary. Day 7: "Here's what changed on your site since you left" (run one final audit, email the summary). Day 30: "We've improved [feature they cited]" (if applicable based on survey reason). Via Brevo (already configured). | Medium |
+| F | **Admin churn dashboard** | New admin tab: cancel reason distribution (pie chart), save offer acceptance rate, pause reactivation rate, churn by plan tier, churn by tenure cohort, monthly churn trend. Sourced from `CancelSurvey` + Paddle webhook events. | Medium |
+
+**Total estimate:** ~2 weeks. A-D are the critical path (~1 week). E-F are follow-up (~1 week).
+
+**Metrics to track (via 3.16 telemetry):**
+- Cancel flow save rate (target: 25-35%)
+- Offer acceptance rate by reason (target: 15-25%)
+- Pause reactivation rate (target: 60-80%)
+- Win-back email conversion rate
+- Time from first churn signal (engagement score drop) to cancel
 
 ---
 
@@ -955,7 +1013,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | 2.1-2.4 ✅ — **2.5 (Prisma Migrate) open** |
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
-| **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.17 open** |
+| **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.19 open** |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
 

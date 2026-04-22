@@ -15,6 +15,54 @@ import { ChatMessageRenderer } from "@/components/console/chat/ChatMessageRender
 import { ChatInputBar } from "@/components/console/chat/ChatInputBar";
 import CopilotQuickActions from "./CopilotQuickActions";
 
+function BudgetExhaustedCard({
+	onUpgrade,
+	onDismiss,
+}: {
+	onUpgrade: () => void;
+	onDismiss: () => void;
+}) {
+	return (
+		<div className="flex flex-col items-center rounded-xl border border-amber-800/30 bg-amber-500/5 px-4 py-5 text-center">
+			<div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10">
+				<svg
+					className="h-5 w-5 text-amber-400"
+					fill="none"
+					viewBox="0 0 24 24"
+					strokeWidth={1.5}
+					stroke="currentColor"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+					/>
+				</svg>
+			</div>
+			<p className="text-sm font-medium text-content-secondary">
+				You&apos;ve used all your AI queries for today
+			</p>
+			<p className="mt-1 text-xs text-content-muted">
+				Upgrade for more daily queries and deeper analysis.
+			</p>
+			<div className="mt-4 flex w-full gap-2">
+				<button
+					onClick={onUpgrade}
+					className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-500"
+				>
+					Upgrade plan
+				</button>
+				<button
+					onClick={onDismiss}
+					className="flex-1 rounded-lg border border-edge px-3 py-2 text-xs font-medium text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
+				>
+					Maybe later
+				</button>
+			</div>
+		</div>
+	);
+}
+
 export default function CopilotPanel() {
 	const router = useRouter();
 	const {
@@ -219,14 +267,22 @@ export default function CopilotPanel() {
 			>
 				{hasMessages ? (
 					<div className="space-y-3 p-3">
-						{messages.map((msg) => (
-							<ChatMessageRenderer
-								key={msg.id}
-								message={msg}
-								onSuggestedPrompt={(prompt) => send(prompt)}
-								onNavigate={(href) => router.push(href)}
-							/>
-						))}
+						{messages.map((msg) =>
+							msg.id.startsWith("budget_exhausted_") ? (
+								<BudgetExhaustedCard
+									key={msg.id}
+									onUpgrade={() => router.push("/app/billing")}
+									onDismiss={close}
+								/>
+							) : (
+								<ChatMessageRenderer
+									key={msg.id}
+									message={msg}
+									onSuggestedPrompt={(prompt) => send(prompt)}
+									onNavigate={(href) => router.push(href)}
+								/>
+							),
+						)}
 						{streamingMessage && (
 							<ChatMessageRenderer
 								key="streaming"

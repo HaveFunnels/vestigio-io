@@ -225,14 +225,14 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 					createdAt: new Date(),
 				};
 				const upgradeMsg: ChatMessage = {
-					id: `system_${Date.now()}`,
+					id: `budget_exhausted_${Date.now()}`,
 					conversationId: conversationId || "copilot",
 					role: "assistant",
 					blocks: [
 						{
 							type: "markdown",
 							content:
-								"You've used all your AI queries for today. Upgrade your plan for more daily queries and deeper analysis.\n\n[View plans](/app/billing)",
+								"You've used all your AI queries for today. Upgrade your plan for more daily queries and deeper analysis.",
 						},
 					],
 					createdAt: new Date(),

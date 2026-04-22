@@ -6,14 +6,40 @@
 // Right-side panel, z-[45]. Full browser interior height minus paddings.
 // Reuses ChatMessageRenderer + ChatInputBar (compact/island mode).
 // Auto-minimizes when SideDrawer opens.
+// Header: playbooks grid menu, expand, minimize, close.
 // ──────────────────────────────────────────────
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCopilot } from "./CopilotProvider";
 import { ChatMessageRenderer } from "@/components/console/chat/ChatMessageRenderer";
 import { ChatInputBar } from "@/components/console/chat/ChatInputBar";
 import CopilotQuickActions from "./CopilotQuickActions";
+
+// ── Playbooks data (visual metadata — text from translations) ──
+
+interface FeaturedPlaybook {
+	id: string;
+	color: string;
+	queries: number;
+}
+
+const FEATURED_PLAYBOOKS: FeaturedPlaybook[] = [
+	{ id: "revenue_leak_full_audit", color: "red", queries: 2 },
+	{ id: "conversion_bottleneck", color: "emerald", queries: 3 },
+	{ id: "trust_signal_audit", color: "violet", queries: 2 },
+	{ id: "executive_summary", color: "amber", queries: 3 },
+	{ id: "cross_pack_correlation", color: "cyan", queries: 3 },
+];
+
+const PB_COLORS: Record<string, { border: string; bg: string; badge: string }> = {
+	red:     { border: "border-red-500/30 hover:border-red-500/50 hover:bg-red-500/5",         bg: "bg-red-500/10",     badge: "bg-red-500/10 text-red-400 border-red-500/30" },
+	emerald: { border: "border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/5", bg: "bg-emerald-500/10", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
+	violet:  { border: "border-violet-500/30 hover:border-violet-500/50 hover:bg-violet-500/5",   bg: "bg-violet-500/10",  badge: "bg-violet-500/10 text-violet-400 border-violet-500/30" },
+	amber:   { border: "border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/5",     bg: "bg-amber-500/10",   badge: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+	cyan:    { border: "border-cyan-500/30 hover:border-cyan-500/50 hover:bg-cyan-500/5",       bg: "bg-cyan-500/10",    badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30" },
+};
 
 // ── Budget exhausted card ──
 
@@ -106,6 +132,108 @@ function SparkleIcon({ className }: { className?: string }) {
 	);
 }
 
+// ── 3x3 dots grid icon (from template) ──
+
+function GridDotsIcon({ className }: { className?: string }) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1em"
+			height="1em"
+			viewBox="0 0 24 24"
+			className={className}
+		>
+			<path
+				fill="none"
+				stroke="currentColor"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				strokeWidth="2"
+				d="M4 5a1 1 0 1 0 2 0a1 1 0 1 0-2 0m7 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0m7 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0M4 12a1 1 0 1 0 2 0a1 1 0 1 0-2 0m7 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0m7 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0M4 19a1 1 0 1 0 2 0a1 1 0 1 0-2 0m7 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0m7 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0"
+			/>
+		</svg>
+	);
+}
+
+// ── Playbooks overlay (renders inside the panel) ──
+
+function PlaybooksOverlay({
+	onUsePrompt,
+	onClose,
+	mcpRemaining,
+}: {
+	onUsePrompt: (prompt: string) => void;
+	onClose: () => void;
+	mcpRemaining: number;
+}) {
+	const t = useTranslations("console.chat");
+
+	return (
+		<div className="absolute inset-0 z-10 flex flex-col bg-card">
+			{/* Header */}
+			<div className="flex items-center justify-between border-b border-edge px-4 py-2.5">
+				<span className="text-[11px] font-semibold uppercase tracking-wider text-content-muted">
+					Playbooks
+				</span>
+				<button
+					onClick={onClose}
+					className="flex h-7 w-7 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
+				>
+					<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+						<path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+					</svg>
+				</button>
+			</div>
+
+			{/* Divider label */}
+			<div className="px-4 pb-1.5 pt-3">
+				<span className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">
+					Expert Analysis
+				</span>
+			</div>
+
+			{/* Playbook list */}
+			<div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
+				{FEATURED_PLAYBOOKS.map((pb) => {
+					const colors = PB_COLORS[pb.color] || PB_COLORS.emerald;
+					const canAfford = mcpRemaining >= pb.queries;
+
+					return (
+						<button
+							key={pb.id}
+							onClick={() => {
+								if (canAfford) {
+									onUsePrompt(t(`playbook_prompts.${pb.id}`));
+									onClose();
+								}
+							}}
+							disabled={!canAfford}
+							className={`group flex w-full flex-col rounded-lg border bg-surface-card/30 p-3 text-left transition-all ${
+								canAfford ? colors.border : "cursor-not-allowed border-edge opacity-50"
+							}`}
+						>
+							<div className="flex items-center gap-2">
+								<span className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${colors.badge}`}>
+									{t(`featured_playbooks.${pb.id}.category`)}
+								</span>
+								<span className="text-[10px] text-content-faint">
+									{pb.queries} {pb.queries === 1 ? "query" : "queries"}
+								</span>
+							</div>
+							<h3 className="mt-1.5 text-sm font-medium text-content-secondary group-hover:text-content">
+								{t(`featured_playbooks.${pb.id}.title`)}
+							</h3>
+							<p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-content-muted">
+								{t(`featured_playbooks.${pb.id}.description`)}
+							</p>
+						</button>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
 // ── Main panel ──
 
 export default function CopilotPanel() {
@@ -130,6 +258,7 @@ export default function CopilotPanel() {
 	} = useCopilot();
 
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const [playbooksOpen, setPlaybooksOpen] = useState(false);
 
 	// Auto-scroll on new messages
 	useEffect(() => {
@@ -182,6 +311,18 @@ export default function CopilotPanel() {
 						<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 					</svg>
 				</button>
+				{/* Playbooks menu (3x3 dots grid) */}
+				<button
+					onClick={() => setPlaybooksOpen(!playbooksOpen)}
+					className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+						playbooksOpen
+							? "bg-surface-inset text-content-secondary"
+							: "text-content-faint hover:bg-surface-card-hover hover:text-content-secondary"
+					}`}
+					title="Playbooks"
+				>
+					<GridDotsIcon className="h-4 w-4" />
+				</button>
 				{/* Expand to full page */}
 				<button
 					onClick={() => {
@@ -219,6 +360,15 @@ export default function CopilotPanel() {
 					</svg>
 				</button>
 			</div>
+
+			{/* ── Playbooks overlay (inside the panel) ── */}
+			{playbooksOpen && (
+				<PlaybooksOverlay
+					onUsePrompt={(prompt) => send(prompt)}
+					onClose={() => setPlaybooksOpen(false)}
+					mcpRemaining={usage?.remaining ?? 0}
+				/>
+			)}
 
 			{/* ── Context chips ── */}
 			{contextItems.length > 0 && (

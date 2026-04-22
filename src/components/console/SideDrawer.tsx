@@ -25,6 +25,15 @@ export default function SideDrawer({
 		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [open, onClose]);
 
+	// 3.14: Notify copilot of drawer state changes (auto-minimize when drawer opens)
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("vestigio:sidedrawer", { detail: { open } }),
+			);
+		}
+	}, [open]);
+
 	if (!open) return null;
 
 	return (

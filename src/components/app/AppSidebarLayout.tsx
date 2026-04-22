@@ -10,6 +10,8 @@ import Link from "next/link";
 import AppSidebar from "./AppSidebar";
 import CommandPalette from "./CommandPalette";
 import CycleProgressBanner from "./CycleProgressBanner";
+import CopilotPanel from "./CopilotPanel";
+import CopilotFab from "./CopilotFab";
 import { orgDropdownNav } from "./sidebar-nav-data";
 
 // Routes where the in-flight audit banner should appear. Keep this list
@@ -421,6 +423,13 @@ export default function AppSidebarLayout({
 					</PageFade>
 				</div>
 			</div>
+			{/* 3.14: Vestigio AI Copilot — floating panel + FAB */}
+			{!isAdmin && (
+				<>
+					<CopilotPanel />
+					<CopilotFab />
+				</>
+			)}
 		</div>
 	);
 }

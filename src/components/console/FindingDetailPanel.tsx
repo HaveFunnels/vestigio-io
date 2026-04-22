@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import type { FindingProjection } from "@/../../packages/projections/types";
+import { useCopilot } from "@/components/app/CopilotProvider";
 import {
 	DrawerSection,
 	DrawerStatBox,
@@ -64,6 +65,7 @@ export default function FindingDetailPanel({
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
 	const router = useRouter();
+	const copilot = useCopilot();
 	const isFull = variant === "full";
 
 	// KB article lookup (full variant only)
@@ -494,9 +496,10 @@ export default function FindingDetailPanel({
 						) : (
 							<button
 								onClick={() =>
-									router.push(
-										`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
-									)
+									copilot.open({
+										finding,
+										prompt: `Discuss this finding: "${finding.title}". What's the impact and what should I do about it?`,
+									})
 								}
 								className="w-full rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-600 transition-colors hover:border-emerald-500 hover:bg-emerald-500/15 dark:text-emerald-400"
 							>

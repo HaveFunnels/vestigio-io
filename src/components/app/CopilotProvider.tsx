@@ -215,6 +215,32 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		async (text: string) => {
 			if (!text.trim() || isStreaming) return;
 
+			// Budget exhausted — inject canned upgrade message instead of calling API
+			if (usage && usage.remaining <= 0) {
+				const userMsg: ChatMessage = {
+					id: `user_${Date.now()}`,
+					conversationId: conversationId || "copilot",
+					role: "user",
+					blocks: [{ type: "markdown", content: text }],
+					createdAt: new Date(),
+				};
+				const upgradeMsg: ChatMessage = {
+					id: `system_${Date.now()}`,
+					conversationId: conversationId || "copilot",
+					role: "assistant",
+					blocks: [
+						{
+							type: "markdown",
+							content:
+								"You've used all your AI queries for today. Upgrade your plan for more daily queries and deeper analysis.\n\n[View plans](/app/billing)",
+						},
+					],
+					createdAt: new Date(),
+				};
+				setMessages((prev) => [...prev, userMsg, upgradeMsg]);
+				return;
+			}
+
 			// Ensure conversation exists
 			let convId = conversationId;
 			if (!convId) {
@@ -257,6 +283,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			isStreaming,
 			sendMessage,
 			createConversation,
+			usage,
 		],
 	);
 

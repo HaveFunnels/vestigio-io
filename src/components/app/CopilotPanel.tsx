@@ -284,7 +284,7 @@ export default function CopilotPanel() {
 			<div className="border-t border-edge">
 				<ChatInputBar
 					onSend={(text) => send(text)}
-					disabled={isStreaming || (usage?.remaining ?? 1) <= 0}
+					disabled={isStreaming}
 					plan={usage?.plan || "vestigio"}
 					selectedModel={selectedModel}
 					onModelChange={setModel}

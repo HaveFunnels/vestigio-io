@@ -1,9 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-17
+> Last updated: 2026-04-21 (full codebase audit of all P1 open items)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.3, 3.7B, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
+> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, L-R), 3.7B, 3.9 (A-B, F + 4 compound findings + 2 context signals), 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
 ---
 
@@ -51,12 +51,17 @@ These are env vars or external setups that the codebase can't ship for you. Each
 
 | Item | Status | Wave |
 |------|--------|------|
-| Workspace Redesign — browser verification + real data wiring | **Partial** — engine done, frontend needs verification | Wave 3.11 |
+| Workspace Redesign — browser verification only | **~85% done** — engine + frontend + API all working; lens components use client-side logic (equivalent output to engine functions); only browser verification remains | Wave 3.11 |
+| Shopify: promoted product cross-reference with crawled pages | **Bug** — `promotedProductIds` passes `[]` in poller.ts:185; `out_of_stock_promoted` always 0; finding M never fires | Wave 3.7 |
+| Ad Platforms: Creative→LP matcher + message-match + waste signal (C-E) | **Not started** — infrastructure 90% in place, ~12-17h | Wave 3.9 |
+| Meta Ads + Google Ads OAuth app approvals | External — 1-6 weeks | Wave 3.9 |
+| Prisma migration in prod for `syncMetadata` | Pending `npx prisma db push` | Wave 3.9 |
+| Stripe Integration — OAuth + poller (scaffolding ~40% done) | Types + reconciliation + Prisma + API CRUD done; missing OAuth flow + revenue poller + sync route | Wave 3.8 |
+| Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
+| Opportunity-First Actions — 7 fases | **~5%** — engine generates opportunities, tab exists; all UI/UX fases open | Wave 3.12 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
-| Meta Ads + Google Ads OAuth app approvals | External — 1-6 weeks | Wave 3.9 |
-| Prisma migration in prod for `syncMetadata` | Pending `npx prisma db push` | Wave 3.9 |
 
 ---
 
@@ -81,20 +86,21 @@ These are env vars or external setups that the codebase can't ship for you. Each
 
 ---
 
-### 3.4 Composite Findings — High Leverage
+### 3.4 Composite Findings — High Leverage ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` |
 | **Priority** | P1 |
+| **Status** | **Fully implemented and integrated — 2026-04-21 audit confirmed.** All 3 composites wired into `recomputeAll()` at `recompute.ts:871-879`, stored in `MultiPackResult.composites`. |
 
 Per [FINDINGS_OPPORTUNITIES.md § 7](FINDINGS_OPPORTUNITIES.md). These strengthen existing decisions, not create new findings.
 
-| # | Composite | What it does | Surface |
-|---|-----------|-------------|---------|
-| A | Trust Surface Strength Score (FO-17) | Aggregate positive indicators into composite 0/N score. Enriches preflight readiness. | Preflight, Scale workspace |
-| B | High-Blast-Radius Regression (CO-5) | Detect 3+ decisions regressing in same cycle with overlapping factors. Auto-creates incident. | Incident candidate, Preflight blocker |
-| C | Opportunity Compression (CO-6) | Group findings by root cause where 3+ findings share remediation. Boost action priority. | Action re-ranking, MCP artifact |
+| # | Composite | What it does | Surface | Status |
+|---|-----------|-------------|---------|--------|
+| A | Trust Surface Strength Score (FO-17) | Aggregate positive indicators into composite 0/10 score. 11 trust checks, graded A-F. | Preflight, Scale workspace | ✅ `packages/composites/trust-surface-score.ts` |
+| B | High-Blast-Radius Regression (CO-5) | Detect 3+ decisions regressing in same cycle with overlapping factors. Auto-creates incident. Severity: critical (shared root cause) / high (3+ concurrent). | Incident candidate, Preflight blocker | ✅ `packages/composites/blast-radius-regression.ts` |
+| C | Opportunity Compression (CO-6) | Group findings by root cause where 3+ findings share remediation. Priority boost 1.5×–2.0×. 18 root cause titles. | Action re-ranking, MCP artifact | ✅ `packages/composites/opportunity-compression.ts` |
 
 ---
 
@@ -189,22 +195,22 @@ interface RevenueRecoveryEstimate {
 
 | # | Part | Description | Status |
 |---|------|-------------|--------|
-| F | **Abandoned checkouts** | Fetch `/checkouts.json` (created_at filter, 90d window). Aggregate: abandonment_count, abandonment_rate, abandonment_value, avg_steps_before_abandon. Map to `CommerceContext.abandonment_rate` + `abandonment_value_monthly`. | Open |
-| G | **Customers** | Fetch `/customers.json` (orders_count, total_spent). Aggregate: repeat_purchase_rate, new_vs_returning_ratio, avg_customer_lifetime_value. Map to `CommerceContext`. | Open |
-| H | **Products** | Fetch `/products.json` (id, title, status, variants). Cross-reference with order line items. Identify: total_products, products_never_sold_30d (listed but 0 orders), top_products_by_revenue. Map to `CommerceContext`. | Partial — line_items wired (2026-04-17) |
-| I | **Inventory levels** | Fetch `/inventory_levels.json` for products found on crawled pages. Identify: out_of_stock_promoted_count (product page exists in crawl inventory but stock = 0). Map to `CommerceContext`. | Open |
+| F | **Abandoned checkouts** | Fetch `/checkouts.json` (created_at filter, 90d window). Aggregate: abandonment_count, abandonment_rate, abandonment_value, avg_steps_before_abandon. Map to `CommerceContext.abandonment_rate` + `abandonment_value_monthly`. | ✅ Done — fetch (`client.ts:194`), aggregation (`aggregator.ts:208`), mapping (`snapshot-mapper.ts:69`), CommerceContext (`reconcile.ts:218`) all wired |
+| G | **Customers** | Fetch `/customers.json` (orders_count, total_spent). Aggregate: repeat_purchase_rate, new_vs_returning_ratio, avg_customer_lifetime_value. Map to `CommerceContext`. | ✅ Done — fetch (`client.ts:245`), aggregation (`aggregator.ts:234`), mapping (`snapshot-mapper.ts:76`), CommerceContext (`reconcile.ts:226`) all wired |
+| H | **Products** | Fetch `/products.json` (id, title, status, variants). Cross-reference with order line items. Identify: total_products, products_never_sold_30d (listed but 0 orders), top_products_by_revenue. Map to `CommerceContext`. | ✅ Done — fetch (`client.ts:295`), line items cross-ref (`poller.ts:171`), aggregation (`aggregator.ts:267`), CommerceContext (`reconcile.ts:232`) all wired |
+| I | **Inventory levels** | Fetch `/inventory_levels.json` for products found on crawled pages. Identify: out_of_stock_promoted_count (product page exists in crawl inventory but stock = 0). Map to `CommerceContext`. | ⚠️ Partial — fetch + batching works (`client.ts:347`), `aggregateInventory()` exists (`aggregator.ts:305`), **but `promotedProductIds` hardcoded as `[]` in `poller.ts:185`** — needs cross-reference with crawled page graph to extract promoted product IDs. `out_of_stock_promoted` always = 0. |
 
 #### 3.7.4 New Findings & Signals
 
 | # | Finding | Data source | Pack | Status |
 |---|---------|-------------|------|--------|
-| L | `checkout_abandonment_revenue_leak` — "Your checkout loses $X/mo in abandoned carts" | abandoned_checkouts | revenue_integrity | Open |
-| M | `promoted_product_out_of_stock` — "Products on your site are out of stock, frustrating buyers" | inventory_levels + crawled pages | money_moment_exposure | Open |
-| N | `high_refund_rate_eroding_revenue` — "Refund rate is X%, eroding $Y/mo in revenue" | refund data (real, not proxy) | chargeback_resilience | Open |
-| O | `single_payment_gateway_risk` — "95%+ of payments go through one gateway — one outage stops all revenue" | payment_methods | money_moment_exposure | Open |
-| P | `discount_abuse_pattern` — "X% of orders use discounts, leaking $Y/mo in margin" | discount data | channel_integrity | Open |
-| Q | `low_repeat_purchase_rate` — "Only X% of buyers return — acquisition cost isn't being recovered" | customers | revenue_integrity | Open |
-| R | `dead_weight_products` — "X products are listed but haven't sold in 30 days" | products + orders | revenue_integrity (action_value_map behavioral) | Partial — line_items wired |
+| L | `checkout_abandonment_revenue_leak` — "Your checkout loses $X/mo in abandoned carts" | abandoned_checkouts | revenue_integrity | ✅ Firing — signal `checkout_abandonment_rate_high` (>60%) → inference wired (`inference/engine.ts:3264`) |
+| M | `promoted_product_out_of_stock` — "Products on your site are out of stock, frustrating buyers" | inventory_levels + crawled pages | money_moment_exposure | ⚠️ **Blocked** — signal + inference exist but never fire because `promotedProductIds = []` (see 3.7.2-I bug) |
+| N | `high_refund_rate_eroding_revenue` — "Refund rate is X%, eroding $Y/mo in revenue" | refund data (real, not proxy) | chargeback_resilience | ✅ Firing — signal `refund_rate_elevated` (>5%) → inference wired (`inference/engine.ts:3300`) |
+| O | `single_payment_gateway_risk` — "95%+ of payments go through one gateway — one outage stops all revenue" | payment_methods | money_moment_exposure | ✅ Firing — signal `payment_gateway_concentrated` (>90%) → inference wired (`inference/engine.ts:3318`) |
+| P | `discount_abuse_pattern` — "X% of orders use discounts, leaking $Y/mo in margin" | discount data | channel_integrity | ✅ Firing — signal `discount_usage_elevated` (>40%) → inference wired (`inference/engine.ts:3336`) |
+| Q | `low_repeat_purchase_rate` — "Only X% of buyers return — acquisition cost isn't being recovered" | customers | revenue_integrity | ✅ Firing — signal `repeat_purchase_rate_low` (<15%) → inference wired (`inference/engine.ts:3458`) |
+| R | `dead_weight_products` — "X products are listed but haven't sold in 30 days" | products + orders | revenue_integrity (action_value_map behavioral) | ✅ Firing — signal `dead_weight_products_detected` (>5 + >25% catalog) → inference wired (`inference/engine.ts:3476`) |
 
 #### 3.7.5 Transversal Impact (existing surfaces enriched by Shopify data)
 
@@ -226,18 +232,19 @@ interface RevenueRecoveryEstimate {
 |---|---|
 | **Tag** | `platform` `collection` |
 | **Priority** | P1 |
+| **Status** | **Scaffolding ~40% complete — 2026-04-21 audit confirmed.** Type-level foundation done: `StripeSnapshotData` interface, `IntegrationProvider` includes `'stripe'`, `reconcileIntegrations()` handles Stripe data (SaaS priority, dispute_rate wins over Shopify proxy, CommerceContext mrr/churn/failed_payment wired). Prisma model reuses `IntegrationConnection`. API CRUD routes accept `provider: "stripe"` (connect/disconnect/list). Settings UI card exists but `configurable: false`. **Missing:** OAuth Connect flow, Revenue poller, Sync route handler, Audit cycle wiring (~16-24h). |
 
 **Current state:** Stripe is the primary billing provider (checkout, webhooks, subscription lifecycle). **But** we only use Stripe for billing ourselves — we don't read the customer's Stripe data for revenue intelligence the way we do with Shopify.
 
 **Architecture:** Uses the same `IntegrationConnection` Prisma model and `IntegrationSnapshot<'stripe'>` pattern from 3.7.0. The `reconcileIntegrations()` function handles Shopify+Stripe overlap automatically.
 
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| A | **OAuth Connect flow** | Stripe Connect (Standard or Express) OAuth: let the customer connect their own Stripe account so we can read their revenue data. `/api/stripe/connect/auth` → `/api/stripe/connect/callback`. Scopes: `read_only` on charges, invoices, subscriptions. Uses the generic `IntegrationConnection` model from 3.7.1B. | Medium |
-| B | **Revenue poller** | Fetch last 90d of charges/invoices/subscriptions. Compute: MRR, churn rate, avg revenue per customer, refund rate, failed payment rate, real dispute rate. Produce `IntegrationSnapshot<'stripe'>`. | Medium |
-| C | **Settings UI** | "Connect Stripe" card alongside Shopify in Data Sources page. Same pattern as Shopify card. | Low |
-| D | **Chargeback pack enrichment** | With real Stripe dispute data, the chargeback pack gets real dispute rates instead of Shopify's refund-rate proxy. `reconcileIntegrations()` prefers Stripe's `chargeback_rate` over Shopify's proxy when both present. | Low |
-| E | **SaaS-specific fields** | Populate `CommerceContext.mrr`, `subscriber_churn_rate`, `failed_payment_rate` — Shopify can't provide these. | Low |
+| # | Part | Description | Effort | Status |
+|---|------|-------------|--------|--------|
+| A | **OAuth Connect flow** | Stripe Connect (Standard or Express) OAuth: let the customer connect their own Stripe account so we can read their revenue data. `/api/stripe/connect/auth` → `/api/stripe/connect/callback`. Scopes: `read_only` on charges, invoices, subscriptions. Uses the generic `IntegrationConnection` model from 3.7.1B. | Medium | ❌ Not started — use Meta/Google Ads OAuth as template |
+| B | **Revenue poller** | Fetch last 90d of charges/invoices/subscriptions. Compute: MRR, churn rate, avg revenue per customer, refund rate, failed payment rate, real dispute rate. Produce `IntegrationSnapshot<'stripe'>`. | Medium | ❌ Not started — use Shopify poller as template |
+| C | **Settings UI** | "Connect Stripe" card alongside Shopify in Data Sources page. Same pattern as Shopify card. | Low | ⚠️ Card exists (`data-sources/page.tsx:593`) but `configurable: false` — needs flip + connect form/button |
+| D | **Chargeback pack enrichment** | With real Stripe dispute data, the chargeback pack gets real dispute rates instead of Shopify's refund-rate proxy. `reconcileIntegrations()` prefers Stripe's `chargeback_rate` over Shopify's proxy when both present. | Low | ✅ Already wired in `reconcile.ts:154-162` — no new code needed, just needs data flowing |
+| E | **SaaS-specific fields** | Populate `CommerceContext.mrr`, `subscriber_churn_rate`, `failed_payment_rate` — Shopify can't provide these. | Low | ✅ Already wired in `reconcile.ts` — no new code needed, just needs poller returning data |
 
 **Note:** This is about reading the **customer's** Stripe account for revenue intelligence — completely separate from our own Stripe billing integration which is already working.
 
@@ -253,14 +260,16 @@ interface RevenueRecoveryEstimate {
 
 **Context:** Pulling actual ad creative text from ad platforms enables precise message-match analysis (does the landing page deliver what the ad promised?), ad spend waste quantification, and conversion attribution. This data also enriches the Copy Analysis Pack (3.10) with real ad creatives instead of UTM heuristics.
 
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| A | **Meta Ads API integration** | ✅ Done — OAuth flow, Graph API poller, LGPD webhooks, UI card, KB article. **Pending:** Meta app review approval. | — |
-| B | **Google Ads API integration** | ✅ Done — OAuth flow, GAQL poller, UI card, KB article. **Pending:** Google OAuth verification + developer token. | — |
-| C | **Creative → LP matcher** | Match ad creatives to landing pages via: (1) destination URL exact match, (2) UTM campaign/content → creative ID mapping, (3) final URL domain + path pattern. Each matched pair becomes a `AdLpPair { creative_text, creative_cta, lp_url, lp_copy_elements }` fed to the Haiku analysis. | Low |
-| D | **Precise message-match analysis** | Haiku call per `AdLpPair`: does the LP headline echo the ad promise? Does the LP CTA match the ad CTA type? Is the value prop consistent? Structured output with specific mismatch points and fix suggestions. New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. | Low |
-| E | **Ad spend waste signal** | Quantify message-mismatch findings in dollars: "This LP receives ~$X/day in ad spend but breaks the ad promise — estimated waste: $Y/mo." Uses `CommerceContext.ad_spend_by_platform` for real $ amounts. | Low |
-| F | **Settings UI** | ✅ Done — Meta Ads + Google Ads cards in Data Sources page. | — |
+| # | Part | Description | Effort | Status |
+|---|------|-------------|--------|--------|
+| A | **Meta Ads API integration** | OAuth flow, Graph API poller (30d insights + top 20 creatives with headline/body/cta/destination_url/spend), LGPD webhooks, UI card, KB article. **Pending:** Meta app review approval. | — | ✅ Done |
+| B | **Google Ads API integration** | OAuth flow, GAQL poller (campaign costs + responsive search ad headlines/descriptions + final URLs), UI card, KB article. **Pending:** Google OAuth verification + developer token. | — | ✅ Done |
+| C | **Creative → LP matcher** | Match ad creatives to landing pages via: (1) destination URL exact match, (2) UTM campaign/content → creative ID mapping, (3) final URL domain + path pattern. Each matched pair becomes a `AdLpPair { creative_text, creative_cta, lp_url, lp_copy_elements }` fed to the Haiku analysis. **Note:** Graph already has `ad_creative` nodes with headline/body/cta/destination_url in metadata + `ad_targets` edges — matcher needs to traverse these and pair with page copy. | Low | ❌ Not started — no `AdLpPair` type, no matcher logic |
+| D | **Precise message-match analysis** | Haiku call per `AdLpPair`: does the LP headline echo the ad promise? Does the LP CTA match the ad CTA type? Is the value prop consistent? Structured output with specific mismatch points and fix suggestions. New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. **Note:** Haiku enrichment infra exists (ContentEnrichment pattern) — just needs a new call type. | Low | ❌ Not started — no Haiku prompt, no signal/inference keys |
+| E | **Ad spend waste signal** | Quantify message-mismatch findings in dollars: "This LP receives ~$X/day in ad spend but breaks the ad promise — estimated waste: $Y/mo." Uses `CommerceContext.ad_spend_by_platform` for real $ amounts. **Note:** `ad_spend_by_platform` + `total_ad_spend_monthly` already populated by `reconcileCommerceContext()`. | Low | ❌ Not started — depends on D |
+| F | **Settings UI** | Meta Ads + Google Ads cards in Data Sources page. | — | ✅ Done |
+| — | **4 compound findings (heuristic, graph-based)** | `ad_creative_dead_destination`, `ad_creative_landing_trust_gap`, `ad_creative_form_friction_waste`, `ad_creative_mobile_checkout_degraded` — all with signals + inferences + remediation. These analyze page structure (forms, trust signals, mobile perf), NOT creative text content. | — | ✅ Done (`signals/engine.ts:5583-5645`) |
+| — | **2 context signals** | `ad_spend_platform_concentrated`, `ads_active_without_conversion_tracking`. | — | ✅ Done |
 
 ---
 
@@ -270,7 +279,7 @@ interface RevenueRecoveryEstimate {
 |---|---|
 | **Tag** | `engine` `collection` `docs` |
 | **Priority** | P1 |
-| **Status** | **Foundation shipped — 2026-04-11.** 4 enrichment types (`checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing`) produce `ContentEnrichmentPayload` evidence via Haiku. Signal extraction (`extractCopyEnrichmentSignals`) and inference functions wired. Tier 2 added 3 more signals at the engine level. Root cause `copy_strategy_gap` defined. Items E-F partially covered. A-D and G-P are the remaining work. |
+| **Status** | **Foundation shipped — 2026-04-11. Remaining items 0% implemented — 2026-04-21 audit confirmed.** 4 enrichment types (`checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing`) produce `ContentEnrichmentPayload` evidence via Haiku in `workers/ingestion/enrichment/semantic-enrichment.ts`. Signal extraction (`extractCopyEnrichmentSignals` at `signals/engine.ts:4662`) and 4 root cause mappings to `copy_strategy_gap` wired. Tier 2 signals (social_proof/form_error/onboarding) defined in extraction logic but semantic enrichment pass doesn't produce their evidence yet. **Items A-D, G-P: none implemented.** No `packages/copy-analysis/` directory, no `CopyElementsPayload` type, no ICP fields on Environment, no `CopyAnalysis` structured output, no `copy_alignment_pack`, no copy workspace, no MCP tool. |
 | **Why after integrations?** | With Shopify/Stripe connected (3.7/3.8), copy analysis can measure impact against **real revenue data** instead of heuristics. With ad platform data (3.9), message-match (item J) can compare **actual ad creative text** against landing page copy word-for-word, not just UTM keyword guesses. The pack is 10x more valuable with integration data feeding it. |
 
 **The thesis:** Most SaaS/ecommerce sites have copy that was written once and never audited against the actual ICP, funnel stage, or commercial intent of each page. The result is generic copy that doesn't convert — not because the product is bad, but because the words on the page don't match the buyer's mental state at that point in the journey. This pack turns Vestigio into a **copy strategist** that evaluates alignment between what the page says and what the page should say.
@@ -300,11 +309,11 @@ interface RevenueRecoveryEstimate {
 
 ---
 
-### 3.11 Workspace Redesign — Perspectives + Transversal Lenses (Partial)
+### 3.11 Workspace Redesign — Perspectives + Transversal Lenses (~85% Done)
 
 | | |
 |---|---|
-| **Status** | **Engine complete, frontend needs verification — 2026-04-12.** Backend: Pulse Summary API endpoint, `detectMaturityStage()` in `packages/classification/maturity.ts`, `groupByPerspective()` + `buildRevenueMap()` + `buildCycleDelta()` + `buildBraggingRights()` in `packages/projections/engine.ts`, `maturity_stage` field on `MultiPackResult`. Frontend: workspace page redesigned with 5 perspectives (Panorama, Receita, Confiança, Comportamento, Copy). 4 transversal lenses (PulseSummary, RevenueMap, CycleDelta, BraggingRights) as components. Perspective detail pages at `/workspaces/perspective/[slug]`. **Remaining:** wire new engine functions into frontend API routes so components get real data; browser verification. |
+| **Status** | **~85% complete — 2026-04-21 audit confirmed.** Backend: All 5 engine functions fully implemented (`detectMaturityStage`, `groupByPerspective`, `buildRevenueMap`, `buildCycleDelta`, `buildBraggingRights`). Pulse Summary API endpoint working with real Haiku LLM calls + 1h cache. Frontend: Panorama page + 4 perspective detail pages (`/workspaces/perspective/[slug]`) fully built and navigable. All 4 lens components (PulseSummary, RevenueMap, CycleDelta, BraggingRights) render correctly. **Nuance:** PulseSummary is wired to real API; the other 3 lens components use **client-side derived logic** from `WorkspaceProjection[]` props instead of calling the engine functions — output is functionally equivalent but the engine functions (`buildRevenueMap`, `buildCycleDelta`, `buildBraggingRights`) are technically dead code. **Remaining:** browser verification only. The "wire engine functions into API routes" gap is cosmetic, not functional — components already produce correct output. |
 
 **Goal:** Consolidate 12 flat workspaces into 5 smart perspectives with transversal lenses that cut across all packs. Each perspective adapts its content based on the detected maturity stage of the business.
 
@@ -339,11 +348,11 @@ interface RevenueRecoveryEstimate {
 
 | # | Part | Tag | Effort | Status |
 |---|---|---|---|---|
-| A-F | **Engine functions** (maturity, pulse, perspectives, revenue map, cycle delta, bragging rights) | `engine` | — | ✅ Done |
-| G | **Frontend: Workspace page redesign** | `frontend` | High | ✅ Built, needs browser verification |
-| H-K | **Frontend: Lens components** (PulseSummary, RevenueMap, CycleDelta, BraggingRights) | `frontend` | — | ✅ Built, need real data wiring |
-| — | **Wire engine functions into API routes** so lens components get real data | `frontend` | Medium | Open |
-| — | **Browser verification** of the full workspace experience | `frontend` | Low | Open |
+| A-F | **Engine functions** (maturity, pulse, perspectives, revenue map, cycle delta, bragging rights) | `engine` | — | ✅ Done — all integrated in `recompute.ts` |
+| G | **Frontend: Workspace page redesign** | `frontend` | High | ✅ Done — Panorama + 4 perspective pages |
+| H-K | **Frontend: Lens components** (PulseSummary, RevenueMap, CycleDelta, BraggingRights) | `frontend` | — | ✅ Done — PulseSummary wired to real API; other 3 use equivalent client-side logic |
+| — | ~~**Wire engine functions into API routes**~~ | `frontend` | ~~Medium~~ | **Deprioritized** — lens components already produce correct output via client-side derivation from `WorkspaceProjection[]`. Engine functions are dead code but not blocking. Optional cleanup. |
+| — | **Browser verification** of the full workspace experience | `frontend` | Low | Open — the only truly remaining item |
 
 ---
 
@@ -353,7 +362,7 @@ interface RevenueRecoveryEstimate {
 |---|---|
 | **Tag** | `frontend` `engine` `platform` |
 | **Priority** | P1 |
-| **Status** | Open |
+| **Status** | **~5% implemented — 2026-04-21 audit confirmed.** Engine side: `generateOpportunities()` in `opportunity-gate.ts` is complete (130+ inference templates, confidence scoring, clustering). `OpportunityCompressionResult` in composites is wired. Frontend side: Opportunities tab exists in Actions page with emerald badge, count card, category filtering, and opportunity lifecycle steps defined (`['identified', 'sized', 'accepted', 'implemented', 'verified', 'archived']`). **But:** `ActionProjection` has NO opportunity-specific fields (no uplift_hypothesis, no upside_score, no cluster_key); projection engine never calls `generateOpportunities()`; all 7 UI/UX fases (hero cards, cluster grouping, hypothesis display, status workflow, scatter plot, i18n) are unimplemented. No `OpportunityTracking` Prisma model. No status API endpoint. |
 
 **Context:** The engine already produces rich `Opportunity` objects via `generateOpportunities()` in [packages/decision/opportunity-gate.ts](../packages/decision/opportunity-gate.ts) — with `uplift_hypothesis`, `raw_upside_score`, `value_case`, `effort_hint`, full lifecycle (`identified → sized → accepted → implemented → verified → archived`), and `OpportunityCompressionResult` clusters grouped by root cause. The Actions page at [src/app/app/actions/page.tsx](../src/app/app/actions/page.tsx) already has a dedicated "Opportunities" tab with emerald badge, count card, category filtering, and operational timeline in the drawer. But the tab treats opportunities as slightly-green incidents instead of a **revenue pipeline**. The rich opportunity data from `MultiPackResult` doesn't reach `ActionProjection`.
 
@@ -502,7 +511,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | 2.1-2.4 ✅ — **2.5 (Prisma Migrate) open** |
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
-| **3** | Semantic Enrichment & New Lenses | LLM enrichment, cybersecurity, copy analysis pack, Shopify expanded, Stripe, **ads integrations (partial)**, workspace redesign, **opportunity-first actions** | 3.1-3.3 + 3.7B + 3.9 (partial) ✅ — **3.4-3.8, 3.10-3.12 open** |
+| **3** | Semantic Enrichment & New Lenses | LLM enrichment, cybersecurity, copy analysis pack, Shopify expanded, Stripe, **ads integrations (partial)**, workspace redesign, **opportunity-first actions** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.12 open** |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
 

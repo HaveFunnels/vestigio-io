@@ -55,6 +55,7 @@ export type PageContextType =
 interface CopilotState {
 	isOpen: boolean;
 	isMinimized: boolean;
+	isExpanded: boolean;
 	conversationId: string | null;
 	messages: ChatMessage[];
 	contextItems: CopilotContextItem[];
@@ -70,6 +71,8 @@ interface CopilotActions {
 	close: () => void;
 	minimize: () => void;
 	restore: () => void;
+	expand: () => void;
+	collapse: () => void;
 	send: (text: string) => void;
 	newConversation: () => void;
 	setModel: (model: ModelId) => void;
@@ -91,6 +94,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	// Visibility
 	const [isOpen, setIsOpen] = useState(false);
 	const [isMinimized, setIsMinimized] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(false);
 
 	// Conversation
 	const [conversationId, setConversationId] = useState<string | null>(() => {
@@ -327,6 +331,16 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		setIsOpen(true);
 	}, []);
 
+	const expand = useCallback(() => {
+		setIsExpanded(true);
+		setIsOpen(true);
+		setIsMinimized(false);
+	}, []);
+
+	const collapse = useCallback(() => {
+		setIsExpanded(false);
+	}, []);
+
 	const newConversation = useCallback(() => {
 		setConversationId(null);
 		setMessages([]);
@@ -361,6 +375,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		() => ({
 			isOpen,
 			isMinimized,
+			isExpanded,
 			conversationId,
 			messages,
 			contextItems,
@@ -373,6 +388,8 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			close,
 			minimize,
 			restore,
+			expand,
+			collapse,
 			send,
 			newConversation,
 			setModel: setSelectedModel,
@@ -382,6 +399,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		[
 			isOpen,
 			isMinimized,
+			isExpanded,
 			conversationId,
 			messages,
 			contextItems,
@@ -394,6 +412,8 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			close,
 			minimize,
 			restore,
+			expand,
+			collapse,
 			send,
 			newConversation,
 			abort,
@@ -415,6 +435,7 @@ export function useCopilot(): CopilotContextValue {
 		return {
 			isOpen: false,
 			isMinimized: false,
+			isExpanded: false,
 			conversationId: null,
 			messages: [],
 			contextItems: [],
@@ -427,6 +448,8 @@ export function useCopilot(): CopilotContextValue {
 			close: () => {},
 			minimize: () => {},
 			restore: () => {},
+			expand: () => {},
+			collapse: () => {},
 			send: () => {},
 			newConversation: () => {},
 			setModel: () => {},

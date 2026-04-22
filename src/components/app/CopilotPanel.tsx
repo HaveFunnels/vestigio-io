@@ -246,6 +246,7 @@ export default function CopilotPanel() {
 	const {
 		isOpen,
 		isMinimized,
+		isExpanded,
 		messages,
 		streamingMessage,
 		isStreaming,
@@ -257,6 +258,8 @@ export default function CopilotPanel() {
 		send,
 		close,
 		minimize,
+		expand,
+		collapse,
 		newConversation,
 		setModel,
 		abort,
@@ -295,7 +298,11 @@ export default function CopilotPanel() {
 
 	return (
 		<div
-			className="fixed top-14 right-3 bottom-3 z-[45] flex w-[420px] flex-col overflow-hidden rounded-2xl border border-edge bg-card shadow-2xl shadow-black/30 animate-panel-in"
+			className={`fixed z-[45] flex flex-col overflow-hidden rounded-2xl border border-edge bg-card shadow-2xl shadow-black/30 animate-panel-in ${
+			isExpanded
+				? "inset-3 top-14 w-auto"
+				: "top-14 right-3 bottom-3 w-[420px]"
+		}`}
 			role="dialog"
 			aria-label={t("fab_label")}
 		>
@@ -330,21 +337,23 @@ export default function CopilotPanel() {
 				>
 					<GridDotsIcon className="h-4 w-4" />
 				</button>
-				{/* Expand to full page */}
+				{/* Expand / Collapse toggle */}
 				<button
-					onClick={() => {
-						const url = conversationId
-							? `/app/chat?conversation=${conversationId}`
-							: "/app/chat";
-						router.push(url);
-						close();
-					}}
+					onClick={() => (isExpanded ? collapse() : expand())}
 					className="flex h-8 w-8 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
-					title={t("open_full_chat")}
+					title={isExpanded ? t("minimize") : t("open_full_chat")}
 				>
-					<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-						<path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-					</svg>
+					{isExpanded ? (
+						/* Collapse icon (arrows inward) */
+						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+						</svg>
+					) : (
+						/* Expand icon (arrows outward) */
+						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+						</svg>
+					)}
 				</button>
 				{/* Minimize */}
 				<button

@@ -16,8 +16,8 @@ export default function CopilotFab() {
 	// Hide FAB when panel is fully open
 	if (isOpen && !isMinimized) return null;
 
-	// Plan gate — show lock for starter plan
-	const isLocked = usage?.plan === "vestigio";
+	// Plan gate — lock when budget is exhausted (plan gating handled by input bar)
+	const isLocked = usage ? usage.remaining <= 0 : false;
 
 	return (
 		<button
@@ -60,8 +60,8 @@ export default function CopilotFab() {
 			</svg>
 			<span>Vestigio AI</span>
 			{isLocked && (
-				<span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">
-					PRO
+				<span className="rounded-full bg-red-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
+					0
 				</span>
 			)}
 			{/* Unread indicator when minimized */}

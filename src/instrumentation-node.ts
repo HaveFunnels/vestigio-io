@@ -406,4 +406,59 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	runDispatcher();
 	setInterval(runDispatcher, NOTIFICATION_DISPATCHER_INTERVAL_MS);
 	console.log("✓ Notification dispatcher cron registered (5m interval)");
+
+	// ── Product telemetry crons (3.16) ──────────────────────────
+
+	const ENGAGEMENT_SCORE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+	const PRODUCT_EVENT_PRUNE_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+	const { computeEngagementScores, pruneOldProductEvents } = await import(
+		"@/libs/product-telemetry"
+	);
+
+	// Engagement score computation — hourly, leader-elected
+	const runEngagementScore = async () => {
+		await withLeadership(
+			"engagement-score",
+			{ ttlSec: 120 },
+			async () => {
+				try {
+					const result = await computeEngagementScores();
+					if (result.envsScored > 0) {
+						console.log(
+							`[engagement-score] scored ${result.envsScored} envs, avg=${result.avgScore.toFixed(1)}`,
+						);
+					}
+				} catch (err) {
+					console.error("[engagement-score] pass failed:", err);
+				}
+			},
+		);
+	};
+	runEngagementScore(); // boot pass
+	setInterval(runEngagementScore, ENGAGEMENT_SCORE_INTERVAL_MS);
+	console.log("✓ Engagement score cron registered (1h interval)");
+
+	// Product event pruning — daily, 90-day retention, leader-elected
+	const runProductEventPrune = async () => {
+		await withLeadership(
+			"product-event-prune",
+			{ ttlSec: 120 },
+			async () => {
+				try {
+					const result = await pruneOldProductEvents(90);
+					if (result.count > 0) {
+						console.log(
+							`[product-event-prune] deleted ${result.count} events older than 90 days`,
+						);
+					}
+				} catch (err) {
+					console.error("[product-event-prune] pass failed:", err);
+				}
+			},
+		);
+	};
+	runProductEventPrune(); // boot pass
+	setInterval(runProductEventPrune, PRODUCT_EVENT_PRUNE_INTERVAL_MS);
+	console.log("✓ Product event prune cron registered (24h interval)");
 }

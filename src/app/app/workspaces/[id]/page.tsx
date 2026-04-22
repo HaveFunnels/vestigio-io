@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
+import { useTrack } from "@/hooks/useProductTrack";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
@@ -99,9 +100,16 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 	const mcpData = useMcpData();
 	const t = useTranslations("console.workspaces");
 	const tc = useTranslations("console.common");
+	const { track } = useTrack();
 	const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
 
 	const perspective = getPerspective(workspace.type, workspace.category);
+
+	// Track workspace drill (3.16)
+	useEffect(() => {
+		track("workspace_drill", { workspace_type: workspace.type, perspective: perspective.slug });
+		track("feature_first_use", { feature: "workspace_drill" });
+	}, [workspace.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const changeReportState =
 		mcpData.changeReport.status !== "not_ready"

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useTrack } from "@/hooks/useProductTrack";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
@@ -110,6 +111,7 @@ const polarityColors: Record<string, string> = {
 export default function AnalysisPage() {
 	const t = useTranslations("console.analysis");
 	const tTooltip = useTranslations("console.common");
+	const { track } = useTrack();
 	const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
 	const [currentStep, setCurrentStep] = useState<string | null>(null);
 	const [findings, setFindings] = useState<FindingProjection[]>([]);
@@ -877,7 +879,7 @@ function AnalysisContent({
 			<DataTable
 				columns={columns}
 				data={filtered}
-				onRowClick={(row) => setSelectedFinding(row)}
+				onRowClick={(row) => { setSelectedFinding(row); track("drawer_open", { entity_type: "finding", entity_id: row.id }); }}
 				getRowKey={(row) => row.id}
 				emptyMessage={t("no_match")}
 			/>

@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTrack } from "@/hooks/useProductTrack";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
@@ -79,6 +80,12 @@ export default function PerspectivePage({ params }: { params: Promise<{ slug: st
   const mcpData = useMcpData();
   const dataState = mcpData.workspaces.status !== "not_ready" ? mcpData.workspaces : loadWorkspaces();
   const t = useTranslations("console.workspaces");
+  const { track } = useTrack();
+
+  // Track perspective drill (3.16)
+  useEffect(() => {
+    track("workspace_drill", { perspective: slug });
+  }, [slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!["revenue", "trust", "behavior", "copy"].includes(slug)) {
     return (

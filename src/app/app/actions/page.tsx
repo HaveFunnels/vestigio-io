@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useTrack } from "@/hooks/useProductTrack";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
@@ -169,6 +170,7 @@ function formatCurrency(value: number): string {
 export default function ActionsPage() {
 	const t = useTranslations("console.actions");
 	const tc = useTranslations("console.common");
+	const { track } = useTrack();
 	const mcpData = useMcpData();
 	const dataState =
 		mcpData.actions.status !== "not_ready" ? mcpData.actions : loadActions();
@@ -712,7 +714,7 @@ function ActionsContent({
 				<DataTable
 					columns={columns}
 					data={filtered}
-					onRowClick={(row) => setSelected(row)}
+					onRowClick={(row) => { setSelected(row); track("drawer_open", { entity_type: "action", entity_id: row.id }); }}
 					getRowKey={(row) => row.id}
 				/>
 			)}

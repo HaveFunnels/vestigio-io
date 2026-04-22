@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useTrack } from "@/hooks/useProductTrack";
 import { ChatMessageRenderer } from "@/components/console/chat/ChatMessageRenderer";
 import { ConversationSidebar } from "@/components/console/chat/ConversationSidebar";
 import { ChatInputBar } from "@/components/console/chat/ChatInputBar";
@@ -94,6 +95,7 @@ export default function ChatPage() {
 	const router = useRouter();
 	const t = useTranslations("console.chat");
 	const tc = useTranslations("console.common");
+	const { track: trackProduct } = useTrack();
 
 	// ── State ──────────────────────────────────
 	const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -704,6 +706,11 @@ export default function ChatPage() {
 			let convId = activeConversationId;
 			if (!convId) {
 				convId = await createConversation();
+			}
+
+			// Track first chat use (feature adoption — 3.16)
+			if (messages.length === 0) {
+				trackProduct("feature_first_use", { feature: "chat" });
 			}
 
 			// Auto-title from first message

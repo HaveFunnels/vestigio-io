@@ -91,6 +91,11 @@ model User {
   activationToken       String?                 @unique
   activationTokenExpiresAt DateTime?
   activatedAt           DateTime?
+  // Product telemetry — feature adoption timestamps (3.16)
+  firstChatAt           DateTime?
+  firstActionAt         DateTime?
+  firstVerifyAt         DateTime?
+  firstWorkspaceDrillAt DateTime?
   createdAt             DateTime                @default(now())
   accounts              Account[]
   sessions              Session[]
@@ -262,6 +267,7 @@ model Environment {
   activated        Boolean   @default(false) // true once the first cold full cycle has been dispatched
   lastAccessedAt   DateTime? // updated (1h-debounced) when an owner/member loads /app/*; drives inactivity pause
   continuousPaused Boolean   @default(false) // true when >14d without access; cleared on next access, triggers catch-up cycle
+  engagementScore  Int       @default(0) // 0-100, computed hourly by product telemetry cron (3.16)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -1430,4 +1436,25 @@ model UserAction {
   @@index([environmentId, status, verifiedResolvedAt])
   @@index([findingId])
   @@index([createdByUserId])
+}
+
+// ──────────────────────────────────────────────
+// Product telemetry — in-app engagement tracking (3.16)
+// ──────────────────────────────────────────────
+
+model ProductEvent {
+  id            String   @id @default(cuid())
+  userId        String
+  orgId         String
+  environmentId String?
+  event         String   // page_view, feature_first_use, workspace_drill, finding_action, drawer_open, playbook_run
+  properties    Json?    // event-specific payload: { from, to, time_on_previous_ms, feature, finding_id, ... }
+  pathname      String
+  sessionId     String   // client-generated per-tab
+  createdAt     DateTime @default(now())
+
+  @@index([orgId, event, createdAt])
+  @@index([environmentId, createdAt])
+  @@index([userId, event])
+  @@index([createdAt]) // for 90-day retention pruning
 }

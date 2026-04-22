@@ -301,16 +301,18 @@ export default function CopilotPanel() {
 						{budgetText}
 					</span>
 				)}
-				{/* New conversation */}
-				<button
-					onClick={newConversation}
-					className="flex h-8 w-8 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
-					title="New conversation"
-				>
-					<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-						<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-					</svg>
-				</button>
+				{/* New conversation — hide when conversation is already empty */}
+				{hasMessages && (
+					<button
+						onClick={newConversation}
+						className="flex h-8 w-8 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
+						title="New conversation"
+					>
+						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+						</svg>
+					</button>
+				)}
 				{/* Playbooks menu (3x3 dots grid) */}
 				<button
 					onClick={() => setPlaybooksOpen(!playbooksOpen)}

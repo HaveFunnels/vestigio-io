@@ -67,6 +67,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Workspace Upgrade Moments — monetize value | **Not started** — blurred previews, copilot nudge, cadence nudge. ~3-5 days. | Wave 3.17 |
 | First-Audit Experience — value before data | **Not started** — rich progress feed, heuristic preview, first-findings celebration. ~1 week. | Wave 3.18 |
 | Cancel Flow & Save Offers — reduce voluntary churn | **Not started** — exit survey, dynamic offers, pause, win-back sequence. ~2 weeks. | Wave 3.19 |
+| Unified Entity Architecture — Findings as first-class citizens | **Not started** — Fase 1 (Linear-style: unified panel, cross-refs, canonical URL, filter persistence) ~1.5-2 weeks. Fase 2-3 (saved views, custom views) deferred. **Prerequisite for 3.14 Copilot + 3.15 Cross-Signal.** | Wave 3.20 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
@@ -871,6 +872,65 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 
 ---
 
+### 3.20 Unified Entity Architecture — Findings as First-Class Citizens
+
+| | |
+|---|---|
+| **Tag** | `frontend` `engine` |
+| **Priority** | P1 (Fase 1 is a **prerequisite for 3.14 Copilot** — the copilot needs a unified FindingDetailPanel to embed. Also prerequisite for 3.15 Cross-Signal — cross-references need to be on the entity. Ship Fase 1 before or alongside 3.14.) |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** The same finding appears in 5 pages (Dashboard, Analysis, Actions, Workspaces, Chat) with **different drawer implementations, different CTAs, and no cross-references**. `FindingDrawerContent` is copy-pasted between Analysis and Workspace Detail (~400 lines duplicated). Actions has a separate `ActionDrawerContent`. Filter state resets on navigation. No finding has a canonical URL. The user cannot tell "where else does this finding appear?" or "is there an action for this already?"
+
+**Root cause (codebase audit confirmed):** `WorkspaceProjection` **embeds copies** of `FindingProjection[]` instead of referencing by ID. This creates the illusion of separate data when the engine already produces a unified `MultiPackResult`. The separation is purely frontend.
+
+**Architecture principle:** Findings are the atomic unit of Vestigio's value. Every surface (workspaces, actions, analysis, dashboard, chat, maps) is a **view/lens** over the same findings database — not a container. This is how Linear, GitHub Projects, and Notion work.
+
+#### Fase 1 — Linear-style Foundation (~1.5-2 weeks)
+
+The user experience doesn't change. Pages keep their names and nav positions. What improves: consistent drawer everywhere, cross-references, filter persistence, canonical URLs.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **FindingDetailPanel** (shared component) | Extract duplicated `FindingDrawerContent` from Analysis + Workspace Detail into `src/components/console/FindingDetailPanel.tsx`. Used by all pages via `<SideDrawer><FindingDetailPanel finding={f} /></SideDrawer>`. Shows: header (title, severity, verification, change badges), cross-references section, impact breakdown, reasoning + cause + effect, remediation steps + effort, evidence quality, verification lifecycle, KB link. **CTAs are state-driven, not page-driven:** if finding has action → "See Action"; if no action → "Create Action"; always "Ask Vestigio" (opens copilot with context); if verification_strategy exists → "Verify". | Medium |
+| B | **Cross-references section** | In FindingDetailPanel, "Context" block showing: workspace(s) where this finding appears (clickable → `/app/workspaces/{id}`), action(s) linked (clickable → opens in Actions with `?selected={id}`), perspective label, cross-signal chain (if part of one, from 3.15), opportunity (if exists, with uplift hypothesis). Derived from new fields on FindingProjection. | Medium |
+| C | **Projection model enrichment** | Add to `FindingProjection`: `workspace_refs: { id, name, type }[]` (resolved from WorkspaceProjection pack_key matching), `action_refs: { id, title, status, category }[]` (resolved from ActionProjection inference_key matching), `opportunity_ref: { id, hypothesis, value_range } \| null` (from opportunities matching), `cross_signal_chain_id: string \| null` (from 3.15 when implemented). Populated during `projectFindings()` via lookups on `MultiPackResult`. | Medium |
+| D | **Canonical URL** | New route `/app/findings/[id]`. Full-page view: FindingDetailPanel rendered wide (no drawer constraint) with expanded reasoning, full evidence quality breakdown, full remediation with links. "Open full page" button (↗ icon) in FindingDetailPanel header navigates here. Shareable. Bookmark-friendly. | Low |
+| E | **URL-encoded filter state** | On Analysis page: all 7 filters encoded as URL params (`?severity=critical&pack=revenue_integrity&surface=/checkout&change=regression&search=trust`). On Actions page: tab + any future filters. On Workspaces perspective pages: perspective slug already in URL. Parse on mount, update on filter change. Back button preserves state. Sharing URL shares exact view. | Medium |
+| F | **Finding-in-URL on drawer open** | When SideDrawer opens with a finding, URL updates to include `?finding={id}` (without full navigation — `history.replaceState`). This means: (1) refreshing the page re-opens the drawer, (2) sharing the URL shows the same finding open, (3) back button closes the drawer. Same pattern as Linear (`/team/views/abc/TEAM-123`). | Low |
+
+**Fase 1 total:** ~1.5-2 weeks. Zero disruption for existing users — pages look the same, drawer is better.
+
+#### Fase 2 — Saved Views Foundation (~1 week, can be deferred)
+
+Adds a "Views" sidebar section with 5 pre-built defaults that map 1:1 to current pages. No behavior change for casual users. Foundation for custom views later.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| G | **SavedView model** | `Prisma: SavedView { id, userId, environmentId, name, icon, color, filters: Json, groupBy: String?, sortBy: String?, layout: 'table' \| 'checklist', isDefault: Boolean, isShared: Boolean, order: Int, createdAt }`. Defaults seeded on first access. | Low |
+| H | **5 default views** | Non-deletable: (1) "All Findings" = Analysis with no filters, (2) "Incidents" = findings filtered category=incident, (3) "Opportunities" = findings filtered category=opportunity, (4) "By Workspace" = findings grouped by workspace_ref, (5) "My Actions" = user-created actions. Each default is visually identical to the current page it replaces. **Zero behavior change.** | Medium |
+| I | **Views sidebar section** | Collapsible section in sidebar nav below existing items. Shows default + saved views with icon + color dot. Click → navigates to `/app/findings?view={id}` which loads the saved filter set. Existing pages (Analysis, Actions, etc.) still work independently — views are an alternative entry point, not a replacement. | Medium |
+| J | **"Save current view" CTA** | In the filter bar of Analysis page, button appears when filters ≠ default: "Save as view." Persists current filter state as a new SavedView. Appears in sidebar immediately. | Low |
+
+#### Fase 3 — Custom Views / Enterprise Foundation (~1 week, can be deferred further)
+
+Power-user features. Opt-in, never forced.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| K | **Custom grouping** | Views can group findings by: workspace, severity, root_cause, surface, pack, change_class. Renders as collapsible sections within DataTable. | Medium |
+| L | **Column selection** | Views can show/hide DataTable columns. Persisted in SavedView. | Low |
+| M | **Share view with team** | `isShared: true` → visible to all org members. "Team" badge in sidebar. | Low |
+| N | **Pin to sidebar** | Any SavedView can be pinned as a first-level sidebar item. Max 5 pins per user. | Low |
+
+**Dependency chain:** Fase 1 is self-contained. Fase 2 depends on Fase 1 (URL-encoded filters). Fase 3 depends on Fase 2 (SavedView model).
+
+**Migration path:** Ship Fase 1 immediately. It makes every existing feature better (copilot gets a panel to embed, cross-signal gets cross-references to show, workspace enrichment gets consistent drawers). Fase 2-3 ship when enterprise demand justifies — the SavedView model is trivial to add later because Fase 1's URL-encoded state is the exact data that SavedView.filters stores.
+
+**Files touched:** Fase 1: extract from `src/app/app/analysis/page.tsx` + `src/app/app/workspaces/[id]/page.tsx` → new `src/components/console/FindingDetailPanel.tsx`. Modify `packages/projections/engine.ts` (add refs to FindingProjection). New route `src/app/app/findings/[id]/page.tsx`. URL param handling in Analysis + Actions + Workspaces pages. Fase 2-3: new `prisma/schema.prisma` model, new `src/components/app/ViewsSidebar.tsx`, filter bar additions.
+
+---
+
 ### 3.18 First-Audit Experience — Value Before Data
 
 | | |
@@ -1013,7 +1073,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | 2.1-2.4 ✅ — **2.5 (Prisma Migrate) open** |
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
-| **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.19 open** |
+| **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.20 open** |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
 

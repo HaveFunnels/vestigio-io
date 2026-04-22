@@ -290,7 +290,7 @@ export default function CopilotPanel() {
 
 	return (
 		<div
-			className="fixed top-12 right-2 bottom-2 z-[45] flex w-[420px] flex-col overflow-hidden rounded-2xl border border-edge bg-card shadow-2xl shadow-black/30"
+			className="fixed top-14 right-3 bottom-3 z-[45] flex w-[420px] flex-col overflow-hidden rounded-2xl border border-edge bg-card shadow-2xl shadow-black/30"
 			role="dialog"
 			aria-label="Vestigio AI"
 		>

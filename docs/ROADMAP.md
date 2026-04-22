@@ -67,7 +67,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Workspace Upgrade Moments — monetize value | **Not started** — blurred previews, copilot nudge, cadence nudge. ~3-5 days. | Wave 3.17 |
 | First-Audit Experience — value before data | **Not started** — rich progress feed, heuristic preview, first-findings celebration. ~1 week. | Wave 3.18 |
 | Cancel Flow & Save Offers — reduce voluntary churn | **Not started** — exit survey, dynamic offers, pause, win-back sequence. ~2 weeks. | Wave 3.19 |
-| Unified Entity Architecture — Findings as first-class citizens | **Not started** — Fase 1 (Linear-style: unified panel, cross-refs, canonical URL, filter persistence) ~1.5-2 weeks. Fase 2-3 (saved views, custom views) deferred. **Prerequisite for 3.14 Copilot + 3.15 Cross-Signal.** | Wave 3.20 |
+| Unified Entity Architecture — Findings as first-class citizens | **Not started** — Fase 1 (unified panel, cross-refs, canonical URL, filter persistence, no sidebar change) ~1.5-2 weeks. Fase 2 (saved views inside Findings page + sidebar simplification: Analysis→Findings+Inventory top-level) ~1 week. Fase 3 (custom views, pin-to-sidebar) deferred. **Prerequisite for 3.14 Copilot + 3.15 Cross-Signal.** | Wave 3.20 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
@@ -775,7 +775,7 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 | G | **Conversation continuity** | Conversation persists across page navigation. User asks on workspaces, navigates to actions → copilot still shows the thread. `conversationId` in CopilotProvider. "New conversation" button in panel header. Conversation list accessible via dropdown (last 5) or "See all" → `/app/chat`. | Medium |
 | H | **Verification flow in copilot** | VerificationPlanIsland works inside the copilot panel with no changes (it's a self-contained component). "Create Action" CTA at terminal state works the same. The compact panel height means the plan island scrolls within the message area. | Low |
 | I | **Full-screen escape hatch** | "Expand" button in panel header → navigates to `/app/chat?conversation={id}` with full-screen layout. For long conversations, complex playbooks, or when user wants more space. The `/app/chat` route continues to exist but is demoted from sidebar primary nav to a secondary access point. | Low |
-| J | **Sidebar nav update** | Remove "Chat" from primary sidebar nav items. Add it to secondary/bottom nav or make it accessible only via copilot "Expand" button. The copilot FAB replaces the sidebar entry as the primary access point. | Low |
+| J | **Sidebar nav update** | Set `ai_chat_enabled = false` in platform config — the feature flag already conditionally hides Chat from sidebar. The copilot FAB replaces the sidebar entry as the primary AI access point. `/app/chat` stays as full-screen fallback accessible via copilot "See all conversations" dropdown. Sidebar goes from 7 to 6 items. See 3.20 sidebar evolution plan for the full navigation strategy. | Low |
 | K | **i18n** | ~20 new keys: welcome message, quick action labels per page, FAB tooltip, panel header labels, "Ask Vestigio" button label. | Low |
 
 **Total estimate:** ~3-4 weeks. Item B (panel component) is the bulk — extracting chat rendering into a constrained card layout. Items A, D, F are the differentiating logic. The rest is wiring.
@@ -886,6 +886,47 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 
 **Architecture principle:** Findings are the atomic unit of Vestigio's value. Every surface (workspaces, actions, analysis, dashboard, chat, maps) is a **view/lens** over the same findings database — not a container. This is how Linear, GitHub Projects, and Notion work.
 
+**Sidebar evolution principle (validated via competitive research — Linear, Datadog, FullStory, PostHog, Grafana, Notion):** Saved views are a **page-level concern, not a sidebar-level concern**. No major monitoring/intelligence tool puts saved views as default sidebar items. They live INSIDE the tool they relate to (Datadog pattern) or behind a favorites/pin system (Linear pattern). The sidebar stays stable and simple; the page grows with views.
+
+#### Sidebar Evolution (across 3.20 + 3.14)
+
+**Fase 1 + 3.14 Copilot (no structural sidebar change):**
+```
+Dashboard                    → /app/dashboard (dividerAfter)
+Actions                      → /app/actions (stays primary landing)
+Workspaces                   → /app/workspaces
+[Chat removed]               → copilot FAB replaces (ai_chat_enabled = false)
+Analysis                     → parent group
+  ├ Findings                 → /app/analysis
+  └ Inventory                → /app/inventory
+Maps                         → /app/maps
+────────────────────
+Customer Center              → bottom
+Data Sources                 → bottom
+```
+Chat disappears when copilot FAB ships (feature flag already exists). Sidebar goes from 7 to 6 items. Zero disruption.
+
+**Fase 2 (sidebar simplification when saved views ship):**
+```
+Dashboard                    → /app/dashboard (dividerAfter)
+Actions                      → /app/actions (stays primary landing)
+Findings                     → /app/findings (promoted, was "Analysis > Findings")
+Workspaces                   → /app/workspaces
+Maps                         → /app/maps
+Inventory                    → /app/inventory (promoted from child to top-level)
+────────────────────
+Customer Center              → bottom
+Data Sources                 → bottom
+```
+"Analysis" parent group disappears (was always an artificial umbrella). "Findings" and "Inventory" promoted to top-level. Redirect from `/app/analysis` → `/app/findings` preserves bookmarks. Still 6 items.
+
+**Key decisions:**
+- **"Incidents" and "Opportunities" stay as tabs in Actions** — not sidebar items, not saved views. Actions is defined by its operational nature ("what to DO"), splitting it fragments the operational focus.
+- **Saved views appear INSIDE `/app/findings` as a view selector** (horizontal tabs or dropdown in page header), NOT in the sidebar. Avoids "two paths to same data" problem entirely.
+- **"By Workspace" is a view inside Findings** — separate from Workspaces page (Panorama) which has distinct value (PulseSummary, RevenueMap, CycleDelta, BraggingRights, perspective cards, 3.11B enrichment).
+- **Custom views appear in the same in-page view selector** — sidebar never grows. Pin-to-sidebar (Fase 3) is opt-in, max 5 pins.
+- **Copilot FAB is NOT in the sidebar** — `fixed bottom-4 right-4`. Sidebar handles navigation, FAB handles AI. Independent concerns.
+
 #### Fase 1 — Linear-style Foundation (~1.5-2 weeks)
 
 The user experience doesn't change. Pages keep their names and nav positions. What improves: consistent drawer everywhere, cross-references, filter persistence, canonical URLs.
@@ -899,18 +940,19 @@ The user experience doesn't change. Pages keep their names and nav positions. Wh
 | E | **URL-encoded filter state** | On Analysis page: all 7 filters encoded as URL params (`?severity=critical&pack=revenue_integrity&surface=/checkout&change=regression&search=trust`). On Actions page: tab + any future filters. On Workspaces perspective pages: perspective slug already in URL. Parse on mount, update on filter change. Back button preserves state. Sharing URL shares exact view. | Medium |
 | F | **Finding-in-URL on drawer open** | When SideDrawer opens with a finding, URL updates to include `?finding={id}` (without full navigation — `history.replaceState`). This means: (1) refreshing the page re-opens the drawer, (2) sharing the URL shows the same finding open, (3) back button closes the drawer. Same pattern as Linear (`/team/views/abc/TEAM-123`). | Low |
 
-**Fase 1 total:** ~1.5-2 weeks. Zero disruption for existing users — pages look the same, drawer is better.
+**Fase 1 total:** ~1.5-2 weeks. Zero disruption for existing users — pages look the same, drawer is better. **No sidebar change in this fase.**
 
-#### Fase 2 — Saved Views Foundation (~1 week, can be deferred)
+#### Fase 2 — Saved Views + Sidebar Simplification (~1 week, can be deferred)
 
-Adds a "Views" sidebar section with 5 pre-built defaults that map 1:1 to current pages. No behavior change for casual users. Foundation for custom views later.
+Findings page gets an in-page view selector. Sidebar simplifies (Analysis group → Findings + Inventory top-level).
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
 | G | **SavedView model** | `Prisma: SavedView { id, userId, environmentId, name, icon, color, filters: Json, groupBy: String?, sortBy: String?, layout: 'table' \| 'checklist', isDefault: Boolean, isShared: Boolean, order: Int, createdAt }`. Defaults seeded on first access. | Low |
-| H | **5 default views** | Non-deletable: (1) "All Findings" = Analysis with no filters, (2) "Incidents" = findings filtered category=incident, (3) "Opportunities" = findings filtered category=opportunity, (4) "By Workspace" = findings grouped by workspace_ref, (5) "My Actions" = user-created actions. Each default is visually identical to the current page it replaces. **Zero behavior change.** | Medium |
-| I | **Views sidebar section** | Collapsible section in sidebar nav below existing items. Shows default + saved views with icon + color dot. Click → navigates to `/app/findings?view={id}` which loads the saved filter set. Existing pages (Analysis, Actions, etc.) still work independently — views are an alternative entry point, not a replacement. | Medium |
-| J | **"Save current view" CTA** | In the filter bar of Analysis page, button appears when filters ≠ default: "Save as view." Persists current filter state as a new SavedView. Appears in sidebar immediately. | Low |
+| H | **Default views (in-page)** | 2-3 non-deletable views rendered as tabs/dropdown in the Findings page header: (1) **"All"** = no filters (current Analysis behavior), (2) **"By Workspace"** = findings grouped by `workspace_ref` (collapsible sections in DataTable). More defaults can be added later without sidebar changes. | Medium |
+| I | **View selector component** | Horizontal tab bar or dropdown in `/app/findings` page header — same visual pattern as Actions page category tabs. Shows default views + user-created views. Active view sets URL: `/app/findings?view={id}`. "Save current view" button appears when filters ≠ default. New saved views appear in the selector immediately. | Medium |
+| J | **Sidebar simplification** | Remove "Analysis" parent group. Add "Findings" as top-level item (`/app/findings`). Add "Inventory" as top-level item (unchanged URL `/app/inventory`). Set up redirect `/app/analysis` → `/app/findings` to preserve bookmarks. 6 sidebar items total (same count as Fase 1). | Low |
+| K | **"Save current view" CTA** | In the filter bar of Findings page, button appears when filters ≠ any default view: "Save as view." Persists current filter state as a new `SavedView`. Appears in the view selector immediately. | Low |
 
 #### Fase 3 — Custom Views / Enterprise Foundation (~1 week, can be deferred further)
 
@@ -918,16 +960,16 @@ Power-user features. Opt-in, never forced.
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| K | **Custom grouping** | Views can group findings by: workspace, severity, root_cause, surface, pack, change_class. Renders as collapsible sections within DataTable. | Medium |
-| L | **Column selection** | Views can show/hide DataTable columns. Persisted in SavedView. | Low |
-| M | **Share view with team** | `isShared: true` → visible to all org members. "Team" badge in sidebar. | Low |
-| N | **Pin to sidebar** | Any SavedView can be pinned as a first-level sidebar item. Max 5 pins per user. | Low |
+| L | **Custom grouping** | Views can group findings by: workspace, severity, root_cause, surface, pack, change_class. Renders as collapsible sections within DataTable. | Medium |
+| M | **Column selection** | Views can show/hide DataTable columns. Persisted in SavedView. | Low |
+| N | **Share view with team** | `isShared: true` → visible to all org members. "Team" badge in view selector. | Low |
+| O | **Pin to sidebar** | Any SavedView can be pinned as a first-level sidebar item below "Findings". Max 5 pins per user. Pinned views have a small dot icon in sidebar. Only mechanism by which custom views enter the sidebar — always opt-in. | Low |
 
 **Dependency chain:** Fase 1 is self-contained. Fase 2 depends on Fase 1 (URL-encoded filters). Fase 3 depends on Fase 2 (SavedView model).
 
-**Migration path:** Ship Fase 1 immediately. It makes every existing feature better (copilot gets a panel to embed, cross-signal gets cross-references to show, workspace enrichment gets consistent drawers). Fase 2-3 ship when enterprise demand justifies — the SavedView model is trivial to add later because Fase 1's URL-encoded state is the exact data that SavedView.filters stores.
+**Migration path:** Ship Fase 1 immediately (no sidebar change). When copilot ships (3.14), Chat leaves sidebar via feature flag. When Fase 2 ships, sidebar simplifies (Analysis group → Findings + Inventory). Each step is independently shippable with zero user disorientation.
 
-**Files touched:** Fase 1: extract from `src/app/app/analysis/page.tsx` + `src/app/app/workspaces/[id]/page.tsx` → new `src/components/console/FindingDetailPanel.tsx`. Modify `packages/projections/engine.ts` (add refs to FindingProjection). New route `src/app/app/findings/[id]/page.tsx`. URL param handling in Analysis + Actions + Workspaces pages. Fase 2-3: new `prisma/schema.prisma` model, new `src/components/app/ViewsSidebar.tsx`, filter bar additions.
+**Files touched:** Fase 1: extract from `src/app/app/analysis/page.tsx` + `src/app/app/workspaces/[id]/page.tsx` → new `src/components/console/FindingDetailPanel.tsx`. Modify `packages/projections/engine.ts` (add refs to FindingProjection). New route `src/app/app/findings/[id]/page.tsx`. URL param handling in Analysis + Actions + Workspaces pages. Fase 2: new `prisma/schema.prisma` (SavedView), `src/components/app/sidebar-nav-data.ts` (restructure productNav), new `src/components/console/ViewSelector.tsx`, redirect middleware for `/app/analysis`. Fase 3: extend ViewSelector with grouping/columns, add pin logic to sidebar-nav-data.
 
 ---
 

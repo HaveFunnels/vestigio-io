@@ -60,6 +60,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Stripe Integration — OAuth + poller (scaffolding ~40% done) | Types + reconciliation + Prisma + API CRUD done; missing OAuth flow + revenue poller + sync route | Wave 3.8 |
 | Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
 | Opportunity-First Actions — 7 fases | **~5%** — engine generates opportunities, tab exists; all UI/UX fases open | Wave 3.12 |
+| Re-engagement Infrastructure — close retention loop | **Not started** — email digest, cycle summary, dashboard as landing, cross-signal narrative, alerts. Zero proactive mechanisms exist today. | Wave 3.13 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
@@ -354,6 +355,10 @@ interface RevenueRecoveryEstimate {
 | H-K | **Frontend: Lens components** (PulseSummary, RevenueMap, CycleDelta, BraggingRights) | `frontend` | — | ✅ Done — PulseSummary wired to real API; other 3 use equivalent client-side logic |
 | — | ~~**Wire engine functions into API routes**~~ | `frontend` | ~~Medium~~ | **Deprioritized** — lens components already produce correct output via client-side derivation from `WorkspaceProjection[]`. Engine functions are dead code but not blocking. Optional cleanup. |
 | — | **Browser verification** of the full workspace experience | `frontend` | Low | Open — the only truly remaining item |
+| — | **Workspace-level health scores** | Each workspace detail shows a 0-100 score with sparkline of last 5 cycles. Chargeback uses Trust Surface Score; Revenue derives from CommerceContext KPIs + finding severity. Score changes per cycle → reason to return. | `frontend` `engine` | Medium | Open — feeds into 3.13 digest |
+| — | **"What changed this cycle" hero banner** per workspace | Colored banner at top of each workspace detail: "3 items improved, 1 regressed, score went from B to A-." Data exists in `WorkspaceProjection.change_summary` but isn't prominent. | `frontend` | Low | Open |
+| — | **Trend sparklines** on KPI cards and checklist items | Mini sparkline showing last 5 cycle values next to each KPI and checklist item that has history. Creates temporal narrative. | `frontend` | Medium | Open |
+| — | **Workspace ↔ Actions bidirectional links** | (1) `workspace_ref` on ActionProjection + badge in Actions table, (2) "N actions in progress" badge on workspace header, (3) "Ask about this workspace" CTA on workspace detail (pre-populates chat context), (4) Opportunity Preview rows link to `/app/actions?tab=opportunity&id={x}` | `frontend` | Low | Open |
 
 ---
 
@@ -604,6 +609,78 @@ else                              → DataTable (behavioral + fallback)
 
 ---
 
+### 3.13 Re-engagement Infrastructure — Closing the Retention Loop
+
+| | |
+|---|---|
+| **Tag** | `platform` `frontend` `engine` |
+| **Priority** | P1 |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** Vestigio runs continuous audit cycles that produce rich data — but has **zero proactive mechanisms** to bring users back. No email digests, no Slack alerts, no "what changed" nudges. The default landing page (`/app/actions`) is task-focused, not discovery-focused. Dashboard widgets (streak, health score, money recovered, "What Changed") exist but are buried on a secondary page. Users visit when they have a specific task, not because the product pulled them back. Every monitoring/intelligence competitor (ContentKing, Semrush, Baremetrics, Contentsquare) ships email digests and configurable alerts as table stakes.
+
+**Retention loop gap analysis (competitive):**
+
+| Mechanic | ContentKing | Semrush | Baremetrics | Contentsquare | Vestigio |
+|---|---|---|---|---|---|
+| Score/health metric | ✅ | ✅ Health Score | ✅ MRR | ✅ | ⚠️ Exists on secondary dashboard |
+| Email/Slack digests | ✅ | ✅ | ✅ daily/weekly | ✅ scheduled AI analysis | ❌ Zero |
+| Configurable alerts | ✅ real-time | ✅ | ✅ threshold-based | ✅ | ❌ Zero |
+| Change feed / newsroom | ✅ change tracking | ✅ Compare Crawls | ✅ live activity feed | ✅ Newsroom | ⚠️ "What Changed" widget (buried) |
+| Forward-looking alerts | ✅ | — | ✅ renewal alerts | — | ❌ Zero |
+
+**Design rules:**
+- Same rules as 3.11B: hide when no data, technology-agnostic, no manual inputs.
+- Digests must tell a **narrative**, not dump metrics. "Your checkout trust improved and abandonment rate dropped 8%" not "12 findings, 3 resolved."
+- Alerts use smart defaults that work out-of-box; users can customize thresholds later.
+
+#### Fase 1 — Cycle Summary Page
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Cycle Summary page** | New route `/app/cycle/[id]/summary`. Content: overall health score delta, new findings, resolved findings, regressions, money recovered this cycle, top improvement, top regression, cross-signal correlations (if any). CycleProgressBanner redirect-on-complete points here instead of dismissing. Also accessible from Dashboard "What Changed" widget. | Medium |
+
+#### Fase 2 — Email Digest
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| B | **Digest email (daily/weekly configurable)** | After each cycle completion (or on daily/weekly schedule), send a narrative digest via Brevo (already configured). Content: health score + delta, top 3 changes (regressions first, then improvements), money recovered counter, streak status, deep-link to Cycle Summary page. Toggle in `/api/user/notification-prefs` (route already exists, `emailEnabled` toggle exists but sends nothing). Template: plain text with key metrics — Baremetrics/ChartMogul style. | Medium |
+| C | **Digest preferences UI** | Settings page section: frequency (per-cycle / daily / weekly), channels (email on/off), quiet hours. Stored on User model. | Low |
+
+#### Fase 3 — Dashboard as Daily Briefing
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| D | **Default landing = Dashboard** | Change redirect from `/app/actions` to `/app/dashboard`. Existing dashboard already has: Money Recovered ticker, Health Score trend, What Changed widget, Streak, Activity Heatmap, Verification Rate, Top Pack. Reorder: **What Changed** as hero (top, full width), Health Score + Money Recovered as secondary row, Streak + Activity as tertiary. Add "See all actions →" CTA for task-oriented users. | Medium |
+| E | **"Since you were last here" mode** | If user hasn't visited in >24h, Dashboard hero switches from "this cycle" to "since your last visit" — aggregates all cycle changes that happened while they were away. Uses `lastAccessedAt` (already tracked via `env-activity.ts`). | Medium |
+
+#### Fase 4 — Cross-Signal Narrative
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| F | **Cross-signal correlation in Pulse Summary** | Upgrade the Haiku prompt for Pulse Summary to include findings from ALL perspectives, not just the current one. When findings correlate across domains (e.g., security degradation + revenue drop + behavioral friction spike), the narrative should connect them: "Checkout page load time degraded (Security) which correlates with 12% abandonment increase (Revenue) and 3 rage-click sessions (Behavioral)." This is Vestigio's unique competitive advantage — no other tool can do this. Engine data already exists; it's a prompt engineering change. | Low |
+| G | **Cross-signal highlights in Cycle Summary** | Cycle Summary page (Fase 1) includes a "Cross-Signal Insights" section. For each finding that correlates across 2+ perspectives, show the causal chain as a horizontal flow: `[Security] Page speed ↓ → [Behavioral] Bounce rate ↑ → [Revenue] Conversions ↓`. Correlation detection: find findings from the same cycle that share the same `surface` URL and span different perspectives. | Medium |
+
+#### Fase 5 — Webhook/Slack Alerts
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| H | **Webhook destination model** | New Prisma model `AlertDestination { id, environmentId, type: 'webhook' \| 'slack' \| 'email', config: Json, enabled, createdAt }`. Settings UI in Data Sources page alongside integrations. | Low |
+| I | **Configurable alert triggers** | Alert triggers: critical regression detected, health score drops below threshold (default: 40), new high-severity finding on revenue-critical surface, finding resolved (celebration), integration data anomaly. Smart defaults ship enabled; user can customize thresholds. Fires POST to webhook URL or Slack incoming webhook. | Medium |
+| J | **Forward-looking alerts** | Detect and alert: SSL certificate expiring within 30 days (already crawled), domain with DNS anomaly, crawled page returning 5xx for 2+ consecutive cycles (degradation trend), payment page trust score below threshold. Creates prospective anxiety — the strongest pull-back mechanism. | Medium |
+
+#### Fase 6 — i18n
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| K | **Dictionary keys** | ~30 keys across en/pt-BR/es/de: cycle summary labels, digest email template strings, alert trigger names, dashboard hero labels, cross-signal narrative templates. | Low |
+
+**Total estimate:** ~40-50h (~5-6 days). Fase 1-3 are the critical path (cycle summary + digest + dashboard reorder). Fase 4 (cross-signal) is the competitive differentiator. Fase 5 (alerts) is table-stakes completion.
+
+**Infrastructure already in place:** Brevo API configured, `emailEnabled` toggle on User, `lastAccessedAt` tracking on Environment, CycleProgressBanner SSE stream, Dashboard page with all widgets, `change_summary` on every WorkspaceProjection, Pulse Summary API with Haiku.
+
+---
+
 ## Wave 4 — Expansion & Depth
 
 **Goal:** Extend the product into new strategic lenses, deeper verification, and platform maturity.
@@ -692,7 +769,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | 2.1-2.4 ✅ — **2.5 (Prisma Migrate) open** |
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
-| **3** | Semantic Enrichment & New Lenses | LLM enrichment, cybersecurity, copy analysis pack, Shopify expanded, Stripe, **ads integrations (partial)**, workspace redesign, **workspace lens enrichment**, **opportunity-first actions** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12 open** |
+| **3** | Semantic Enrichment & New Lenses | LLM enrichment, cybersecurity, copy analysis pack, Shopify expanded, Stripe, **ads integrations (partial)**, workspace redesign, **workspace lens enrichment**, **opportunity-first actions**, **re-engagement infrastructure** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12, 3.13 open** |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
 

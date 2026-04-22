@@ -63,11 +63,11 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Re-engagement Infrastructure — close retention loop | **Not started** — email digest, cycle summary, dashboard as landing, cross-signal narrative, alerts. Zero proactive mechanisms exist today. | Wave 3.13 |
 | Vestigio Pulse AI — Transversal Copilot | **Not started** — floating panel replacing chat-as-tab, page-context-aware, coexists with SideDrawer. ~3-4 weeks. | Wave 3.14 |
 | Cross-Signal Surface — making the moat visible | **Not started** — correlate findings across perspectives by shared URL/temporal pattern. ~1-2 weeks. | Wave 3.15 |
-| Product Telemetry — measure before you change | **Not started** — self-hosted product events, engagement score, feature adoption funnels. ~1 week. | Wave 3.16 |
+| Product Telemetry — measure before you change | **Shipped 2026-04-21** — ProductEvent model, useProductTrack hook, engagement score cron, admin product-analytics page. `prisma db push` applied to prod. | Wave 3.16 |
 | Workspace Upgrade Moments — monetize value | **Not started** — blurred previews, copilot nudge, cadence nudge. ~3-5 days. | Wave 3.17 |
 | First-Audit Experience — value before data | **Not started** — rich progress feed, heuristic preview, first-findings celebration. ~1 week. | Wave 3.18 |
 | Cancel Flow & Save Offers — reduce voluntary churn | **Not started** — exit survey, dynamic offers, pause, win-back sequence. ~2 weeks. | Wave 3.19 |
-| Unified Entity Architecture — Findings as first-class citizens | **Not started** — Fase 1 (unified panel, cross-refs, canonical URL, filter persistence, no sidebar change) ~1.5-2 weeks. Fase 2 (saved views inside Findings page + sidebar simplification: Analysis→Findings+Inventory top-level) ~1 week. Fase 3 (custom views, pin-to-sidebar) deferred. **Prerequisite for 3.14 Copilot + 3.15 Cross-Signal.** | Wave 3.20 |
+| Unified Entity Architecture — Findings as first-class citizens | **Fase 1 shipped 2026-04-21** — FindingDetailPanel unified, cross-refs wired (workspace_refs, action_refs, opportunity_ref), canonical /app/findings/[id], URL filter state on Analysis, finding-in-URL on drawer open/close. **Fase 2 (saved views + sidebar simplification) and Fase 3 (custom views) deferred.** | Wave 3.20 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |

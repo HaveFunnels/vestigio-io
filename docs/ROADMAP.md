@@ -51,7 +51,8 @@ These are env vars or external setups that the codebase can't ship for you. Each
 
 | Item | Status | Wave |
 |------|--------|------|
-| Workspace Redesign — browser verification only | **~85% done** — engine + frontend + API all working; lens components use client-side logic (equivalent output to engine functions); only browser verification remains | Wave 3.11 |
+| Workspace Redesign — browser verification only | **~85% done** — only browser verification remains | Wave 3.11 |
+| Workspace Lens Enrichment — checklist-first views | **Not started** — 5 fases, ~35-40h. Surfaces stored data (TrustSurfaceScore, CommerceContext KPIs, opportunities, product intelligence) that's currently never rendered | Wave 3.11B |
 | Shopify: promoted product cross-reference with crawled pages | **Bug** — `promotedProductIds` passes `[]` in poller.ts:185; `out_of_stock_promoted` always 0; finding M never fires | Wave 3.7 |
 | Ad Platforms: Creative→LP matcher + message-match + waste signal (C-E) | **Not started** — infrastructure 90% in place, ~12-17h | Wave 3.9 |
 | Meta Ads + Google Ads OAuth app approvals | External — 1-6 weeks | Wave 3.9 |
@@ -356,6 +357,186 @@ interface RevenueRecoveryEstimate {
 
 ---
 
+### 3.11B Workspace Lens Enrichment — Checklist-First, Not Findings-First
+
+| | |
+|---|---|
+| **Tag** | `frontend` `engine` |
+| **Priority** | P1 |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** Every workspace detail page (except Preflight) renders the same generic layout: change summary + findings table + coherence panel. This makes workspaces feel like filtered Analysis views — not enough value to justify dedicated surfaces. Meanwhile, the engine stores rich data (`CommerceContext`, `TrustSurfaceScore`, `opportunities`, `top_products_by_revenue`, inference reasoning, pilar-level aggregations) that never reaches the user.
+
+**Principle:** Preflight already solves this — it renders a `PreflightChecklist` instead of a generic DataTable. The pattern generalizes: each workspace type gets a **domain-specific primary view** above the findings table. The findings table stays as drill-down at the bottom, but stops being the only content.
+
+**Design rules:**
+- **If the user hasn't connected an integration, hide the block entirely** — no empty states, no "connect X to see data" CTAs. The workspace renders what it can from crawl data alone. Integration blocks appear silently when data starts flowing.
+- **Technology-agnostic** — never reference specific platforms. "Commerce data" not "Shopify data"; "payment provider" not "Stripe." The engine already abstracts this via `CommerceContext` and `IntegrationSnapshot`.
+- **No manual inputs** — if it can't be detected automatically (crawl, integration API, pixel), it doesn't appear. No toggles, no self-assessment checklists.
+- **Surface stored data** — every field the engine computes and stores must be exposed in the workspace where it's relevant. Dead data = wasted compute.
+
+**Navigation context:**
+```
+/app/workspaces (Panorama)
+  └── /perspective/[slug] (Perspective: Faturamento | Confiança | Comportamento | Copy)
+      └── /workspaces/[id] (Workspace Detail) ← enrichment goes here
+```
+
+The workspace detail page (`/workspaces/[id]`) already branches on `type === "preflight"`. This wave extends the branching:
+
+```
+if (type === "preflight")         → PreflightChecklist (existing)
+if (type === "chargeback")        → ChargebackResilience (new)
+if (type === "revenue")           → RevenueIntelligence (new)
+if (type === "security_posture")  → SecurityPosture (new)
+else                              → DataTable (behavioral + fallback)
+```
+
+---
+
+#### Fase 1 — Chargeback Resilience workspace
+
+**Where:** `/workspaces/[id]` when `type === "chargeback"` (inside Faturamento perspective)
+
+**Layout:**
+
+```
+┌─ HEADER (existing) ───────────────────────────────────┐
+│ Chargeback Resilience · [Severity] · [Trend]           │
+└─────────────��──────────────────────────────────────────┘
+┌─ 60% LEFT ─────────────────────┬─ 40% RIGHT ─────────┐
+│                                │                      │
+│ RESILIENCE CHECKLIST           │ TRUST SCORE CARD     │
+│ (collapsible pillar groups)    │ Grade: B (7/10)      │
+│                                │ ████████░░           │
+│ ▸ Pre-transaction prevention   │ passing_checks[]     │
+│   ✅ / ❌ / ⚠️ per item        │ failing_checks[]     │
+│                                │                      │
+│ ▸ Transaction security         │ PILAR BREAKDOWN      │
+│   ✅ / ❌ per item             │ (bar per pilar)      │
+│                                │                      │
+│ ▸ Post-transaction metrics     │ DISPUTE RATE GAUGE   │
+│   (only if integration data)   │ (only if integ data) │
+│                                │                      │
+│                                │ COHERENCE (existing) │
+│                                │                      │
+├────────────────────────────────┴───────────���──────────┤
+│ FINDINGS TABLE (existing, below as drill-down)         │
+└────────────���───────────────────────────────────────────┘
+```
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Resilience Checklist component** | Groups existing chargeback inferences (17 total) into 3 automatic pillars: **Pre-transaction prevention** (refund policy, terms, support contact, product descriptions, subscription disclosure, shipping/delivery policy, cancellation docs), **Transaction security** (3DS presence, fraud screening tool, trust signals on payment pages), **Post-transaction metrics** (dispute rate zone, refund rate health, refund turnaround). Each item derives pass/fail from the inference `conclusion_value` already in `WorkspaceProjection.findings[]`. Items in the post-transaction pillar **only render when `CommerceContext` has integration data** — the pillar itself is hidden otherwise. No manual toggles. | Medium |
+| B | **New crawl signals for transaction security** | Detect 3D Secure presence (Cardinal Commerce, Stripe.js 3DS elements, Adyen 3DS2 components, issuer auth redirects) and fraud screening tools (Signifyd, Riskified, ClearSale, Sift, Kount, NoFraud, Stripe Radar) via script/iframe analysis on payment pages. Two new signals: `three_d_secure_detected` and `fraud_screening_tool_detected`. Feed into the checklist's Transaction Security pillar. | Medium |
+| C | **Trust Score Card** | Surface the `TrustSurfaceScore` composite (already computed in `MultiPackResult.composites.trust_surface_score`, never rendered). Show grade (A-F), score (0-10), passing_checks[] and failing_checks[] as compact lists. | Low |
+| D | **Pilar Breakdown chart** | Small horizontal bar chart showing pass rate per pillar (e.g., Pre-tx: 8/10, Tx security: 1/3, Post-tx: 3/4). Derived from checklist items at render time, no new engine data. | Low |
+| E | **Dispute Rate Gauge** | Gauge visualization with zones: green (<0.5%), yellow (0.5–0.65%), orange (0.65–0.9%), red (>0.9% Visa VDMP / >1.0% Mastercard ECM). Shows current rate + "Revenue at risk" amount. **Only renders when `CommerceContext` contains real dispute/refund data from any connected integration.** Hidden entirely otherwise. | Low |
+
+---
+
+#### Fase 2 — Revenue Intelligence workspace
+
+**Where:** `/workspaces/[id]` when `type === "revenue"` (inside Faturamento perspective)
+
+**Layout:**
+
+```
+┌─ HEADER (existing) ─────────────���─────────────────────┐
+│ Revenue Integrity · [Severity] · [Trend]               │
+└───────────────────────────────────��─────────────────��──┘
+┌─ COMMERCE KPI STRIP (only if integration data) ───────┐
+│ ┌──────────┐ ┌────────��─┐ ┌────────���─┐ ┌──────────┐  │
+│ │Cart Aband│ │Repeat    │ │Avg CLV   │ │Refund    │  │
+│ │  32.1%   │ │ Rate     │ │  $340    │ │ Rate     │  │
+│ │ ↑ 2.3%   │ │  12.4%   │ │ ↑ $12    │ │  4.8%    ��  │
+│ └──────────┘ └──────────┘ └──────────┘ └───────��──┘  │
+│ (cards appear individually as each field has data)     │
+└────────────────────────────────────────────────────────┘
+┌─ 60% LEFT ────────────────��────┬─ 40% RIGHT ─────────┐
+│                                │                      │
+│ FUNNEL INTEGRITY MAP           │ PRODUCT INTELLIGENCE │
+│                                │ (only if integ data) │
+│ Discovery → Interest →         │                      │
+│   Decision → Purchase          │ Top 5 by revenue     │
+│ ✅  0    ⚠️ 2   ❌ 3   ⚠️ 1   │ Dead weight: N prods │
+│ $0     $1.2k  $4.8k   $800    │ OOS promoted: N      │
+│                                │                      │
+│                                │ COHERENCE (existing) │
+│                                │                      │
+├────────────────────────────────┴──────────────���───────┤
+│ OPPORTUNITY PREVIEW                                    │
+│ • "Reduce checkout friction" $2k-5k/mo · Quick win    │
+�� • "Fix abandoned cart flow" $1.5k-3k/mo · Medium      │
+│ Potencial combinado: $4k-10k/mo                       │
+├────────────────────────────────────���───────────────────┤
+│ FINDINGS TABLE (existing, below as drill-down)         │
+└──────��────────────────────────────────��────────────────┘
+```
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| F | **Commerce KPI Strip** | Horizontal row of metric cards sourced from `CommerceContext`. Each card renders **only if its field is non-null**: `abandonment_rate` + `abandonment_value_monthly`, `repeat_purchase_rate`, `avg_customer_lifetime_value`, `refund_rate`, `discount_usage_rate`, `payment_gateway_concentration`. For SaaS: `mrr`, `subscriber_churn_rate`, `failed_payment_rate`. Each card shows current value + delta vs previous cycle (from `CycleDelta` data). **The entire strip is hidden if no integration data exists** — no empty cards. | Medium |
+| G | **Funnel Integrity Map** | Horizontal flow visualization: Discovery → Interest → Decision → Purchase → Post-purchase. Each stage shows: finding count affecting that stage + aggregate impact $. Stage classification uses the existing page funnel classification from `FindingProjection.surface` URL patterns (commercial_entry, commercial_path, checkout, post_purchase). Always visible — works from crawl data alone. | Medium |
+| H | **Product Intelligence panel** | Three data sections, each hidden independently if data absent: (1) **Top products by revenue** — `CommerceContext.top_products_by_revenue` as ranked mini-table, (2) **Dead weight** — `products_never_sold_30d` count + % of `total_products`, (3) **Out of stock promoted** — `out_of_stock_promoted_count` (requires 3.7.2-I bug fix). Panel hidden entirely if all three sections lack data. | Low |
+| I | **Opportunity Preview** | Top 3-5 opportunities from `MultiPackResult.opportunities` filtered by revenue-related inference keys. Each shows `uplift_hypothesis` + `value_case.range` + `effort_hint`. Combined potential total at bottom. Links to Actions page Opportunities tab. **Hidden if no opportunities exist.** | Low |
+
+---
+
+#### Fase 3 — Security Posture workspace
+
+**Where:** `/workspaces/[id]` when `type === "security_posture"` (inside Confiança perspective)
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| J | **Security Checklist component** | Same pattern as Chargeback Resilience Checklist but for security domain. Groups the 12 cybersecurity pack findings into pillars: **Transport security** (HTTPS everywhere, HSTS, mixed content), **Response security** (security headers, clickjack protection, CORS), **Application security** (SRI on scripts, sensitive endpoints, cookie security, rate limiting, predictable URLs, error page information disclosure). Each item derives pass/fail from the existing cybersecurity inference in `WorkspaceProjection.findings[]`. | Medium |
+| K | **Trust Score integration** | Same `TrustSurfaceScore` card from Fase 1C, but here filtered to show only the security-relevant checks (not the policy/support checks that appear in the chargeback workspace). Avoids duplication — each workspace shows the subset of the trust score relevant to its domain. | Low |
+
+---
+
+#### Fase 4 — Perspective-level enrichment (light)
+
+**Where:** `/perspective/[slug]` pages — these aggregate all workspaces within a perspective. Light enrichment only — the heavy content lives at the workspace detail level.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| L | **Faturamento: KPI strip** | Same Commerce KPI Strip component from Fase 2F, rendered at the perspective level with data aggregated across all revenue workspaces. Appears between the Pulse Summary and the Findings Table. Hidden if no integration data. | Low (reuse) |
+| M | **Faturamento: Opportunity Preview** | Same component from Fase 2I but showing top 5 opportunities across all revenue + chargeback workspaces. | Low (reuse) |
+| N | **Confiança: Trust Score hero** | Large Trust Score card (grade A-F + score + top 3 failing checks) as a hero element between Pulse Summary and findings. Always visible since it's derived from crawl data. | Low (reuse) |
+
+---
+
+#### Fase 5 — i18n
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| O | **Dictionary keys (4 languages)** | ~40-50 new keys across en/pt-BR/es/de: checklist pillar names, checklist item labels, KPI card labels, funnel stage names, product intelligence labels, opportunity preview labels, gauge zone labels, trust score labels. `console.workspaces.chargeback.*`, `console.workspaces.revenue.*`, `console.workspaces.security.*`. pt-BR with real translation; es/de fallback to en. | Low |
+
+---
+
+#### Data flow: what's already stored vs what's new
+
+| Data | Source | Already computed? | Currently surfaced? | Surfaced in |
+|---|---|---|---|---|
+| Trust Surface Score (grade, passing/failing checks) | `MultiPackResult.composites.trust_surface_score` | ✅ Yes | ❌ Never rendered | Fase 1C, 3K, 4N |
+| 17 chargeback inferences with reasoning | `WorkspaceProjection.findings[]` | ✅ Yes | ⚠️ Only as flat finding rows | Fase 1A (regrouped as checklist) |
+| 12 cybersecurity findings | `WorkspaceProjection.findings[]` | ✅ Yes | ⚠�� Only as flat finding rows | Fase 3J (regrouped as checklist) |
+| CommerceContext KPIs (abandonment, CLV, repeat, refund, discount, gateway) | `CommerceContext` via `reconcileIntegrations()` | ✅ Yes | ❌ Never rendered in UI | Fase 2F, 4L |
+| Top products by revenue | `CommerceContext.top_products_by_revenue` | ✅ Yes | ❌ Never rendered | Fase 2H |
+| Dead weight products count | `CommerceContext.products_never_sold_30d` | ✅ Yes | ⚠️ Only as finding text | Fase 2H |
+| Opportunities with uplift hypothesis | `MultiPackResult.opportunities` | ✅ Yes | ❌ Never rendered | Fase 2I, 4M |
+| Dispute/refund rate from integrations | `CommerceContext` | ✅ Yes | ⚠️ Only as finding text | Fase 1E |
+| Page funnel classification | `FindingProjection.surface` + URL patterns | ✅ Yes | ❌ Not grouped by stage | Fase 2G |
+| 3DS / fraud tool presence | New signals | ❌ New | — | Fase 1B |
+
+**New engine work:** Only Fase 1B (2 new crawl signals). Everything else is frontend reorganization of existing data.
+
+**Total estimate:** ~35-40h (~4-5 days). Fase 1 (Chargeback) and Fase 2 (Revenue) are independent and can run in parallel. Fase 3 (Security) follows the same checklist pattern. Fase 4 (Perspective) reuses components. Fase 5 (i18n) is a sweep at the end.
+
+**Files touched:** [src/app/app/workspaces/[id]/page.tsx](../src/app/app/workspaces/[id]/page.tsx) (branching logic), new components in [src/components/console/](../src/components/console/) (`ChargebackResilience.tsx`, `RevenueIntelligence.tsx`, `SecurityPosture.tsx`, `ResilienceChecklist.tsx`, `CommerceKpiStrip.tsx`, `FunnelIntegrityMap.tsx`, `ProductIntelligence.tsx`, `OpportunityPreview.tsx`, `TrustScoreCard.tsx`, `DisputeRateGauge.tsx`), [src/app/app/workspaces/perspective/[slug]/page.tsx](../src/app/app/workspaces/perspective/[slug]/page.tsx) (perspective enrichment), [workers/ingestion/enrichment/](../workers/ingestion/enrichment/) (3DS + fraud tool detection), [packages/signals/engine.ts](../packages/signals/engine.ts) (2 new signals), dictionary files.
+
+---
+
 ### 3.12 Opportunity-First Actions — Revenue Pipeline Surface
 
 | | |
@@ -511,7 +692,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | 2.1-2.4 ✅ — **2.5 (Prisma Migrate) open** |
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
-| **3** | Semantic Enrichment & New Lenses | LLM enrichment, cybersecurity, copy analysis pack, Shopify expanded, Stripe, **ads integrations (partial)**, workspace redesign, **opportunity-first actions** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.12 open** |
+| **3** | Semantic Enrichment & New Lenses | LLM enrichment, cybersecurity, copy analysis pack, Shopify expanded, Stripe, **ads integrations (partial)**, workspace redesign, **workspace lens enrichment**, **opportunity-first actions** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12 open** |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
 

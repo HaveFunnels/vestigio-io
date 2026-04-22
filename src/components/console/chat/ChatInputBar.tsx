@@ -4,17 +4,95 @@
  * ChatInputBar — Input area with model selector, voice input, file chips,
  * send button, stop-generating button, and Shift+Enter support.
  *
- * Mobile: secondary controls (attach, voice, model) collapse into a "+"
- * popover so the textarea gets maximum width. Desktop: inline as before.
+ * Features:
+ * - Animated cycling placeholder with per-letter blur-in/out
+ * - Spring-animated container that expands on focus
+ * - Mobile: secondary controls collapse into a "+" popover
+ * - Desktop: inline controls
+ * - `compact` prop forces mobile island layout
  */
 
 import { useState, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { motion, AnimatePresence } from "framer-motion";
 import type { ModelId } from "@/lib/chat-types";
 import { MODELS } from "@/lib/chat-types";
 import { ModelSelector } from "./ModelSelector";
 import { VoiceInput } from "./VoiceInput";
 import { FileChip, processFileList, type UploadedFile } from "./FileUploadZone";
+
+// ── Animated per-letter cycling placeholder ──
+
+function CyclingPlaceholder({ texts }: { texts: string[] }) {
+  const [index, setIndex] = useState(0);
+  const [show, setShow] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShow(false);
+      setTimeout(() => {
+        setIndex((prev) => (prev + 1) % texts.length);
+        setShow(true);
+      }, 400);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [texts.length]);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden">
+      <AnimatePresence mode="wait">
+        {show && (
+          <motion.span
+            key={index}
+            className="whitespace-nowrap text-sm text-content-muted select-none"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={{
+              initial: {},
+              animate: { transition: { staggerChildren: 0.02 } },
+              exit: { transition: { staggerChildren: 0.012, staggerDirection: -1 } },
+            }}
+          >
+            {texts[index].split("").map((char, i) => (
+              <motion.span
+                key={i}
+                style={{ display: "inline-block" }}
+                variants={{
+                  initial: { opacity: 0, filter: "blur(8px)", y: 8 },
+                  animate: {
+                    opacity: 1,
+                    filter: "blur(0px)",
+                    y: 0,
+                    transition: {
+                      opacity: { duration: 0.2 },
+                      filter: { duration: 0.35 },
+                      y: { type: "spring", stiffness: 100, damping: 20 },
+                    },
+                  },
+                  exit: {
+                    opacity: 0,
+                    filter: "blur(8px)",
+                    y: -8,
+                    transition: {
+                      opacity: { duration: 0.15 },
+                      filter: { duration: 0.25 },
+                      y: { type: "spring", stiffness: 100, damping: 20 },
+                    },
+                  },
+                }}
+              >
+                {char === " " ? "\u00A0" : char}
+              </motion.span>
+            ))}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── ChatInputBar ──
 
 interface ChatInputBarProps {
   onSend: (message: string, attachedFiles?: UploadedFile[]) => void;
@@ -51,9 +129,19 @@ export function ChatInputBar({
   const t = useTranslations("console.chat_input");
   const [input, setInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Cycling placeholder texts from translations
+  const cyclingTexts = t.raw("cycling_placeholders") as string[];
+
+  // Show animated placeholder only when: no custom placeholder, empty input, not focused, not disabled
+  const showAnimatedPlaceholder = !placeholder && !input && !isFocused && !disabled && !isStreaming;
+
+  // Container expands on focus or when has content
+  const isExpanded = isFocused || input.length > 0 || attachedFiles.length > 0;
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -105,7 +193,23 @@ export function ChatInputBar({
 
   return (
     <div className={`shrink-0 px-4 pt-2 ${compact ? "" : "sm:px-8"}`} style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}>
-      <div className={`mx-auto max-w-3xl rounded-2xl border border-content-faint/25 bg-surface-card px-3 py-2.5 shadow-sm backdrop-blur-sm transition-shadow focus-within:border-content-faint/40 focus-within:shadow-[0_0_24px_-4px_rgba(255,255,255,0.12)] ${compact ? "" : "sm:px-4 sm:py-3"}`}>
+      <motion.div
+        className={`mx-auto max-w-3xl rounded-2xl border bg-surface-card px-3 py-2.5 backdrop-blur-sm transition-colors ${
+          isExpanded ? "border-content-faint/40" : "border-content-faint/25"
+        } ${compact ? "" : "sm:px-4 sm:py-3"}`}
+        animate={{
+          boxShadow: isExpanded
+            ? "0 0 24px -4px rgba(16,185,129,0.15)"
+            : "0 1px 3px 0 rgba(0,0,0,0.08)",
+          scale: isExpanded ? 1 : (compact ? 0.998 : 0.99),
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 400,
+          damping: 30,
+          mass: 0.8,
+        }}
+      >
         {/* Attached files */}
         {attachedFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
@@ -155,7 +259,6 @@ export function ChatInputBar({
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    // Trigger voice after menu closes
                     setTimeout(() => {
                       const voiceBtn = document.querySelector<HTMLButtonElement>("[data-voice-trigger]");
                       voiceBtn?.click();
@@ -235,17 +338,25 @@ export function ChatInputBar({
             onChange={handleFileInputChange}
           />
 
-          {/* Textarea */}
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={disabled}
-            placeholder={placeholder || t("placeholder")}
-            rows={1}
-            className="min-h-[40px] flex-1 resize-none bg-transparent py-2.5 text-sm text-white placeholder-content-muted outline-none disabled:opacity-50"
-          />
+          {/* Textarea with animated placeholder overlay */}
+          <div className="relative flex-1">
+            {showAnimatedPlaceholder && (
+              <CyclingPlaceholder texts={cyclingTexts} />
+            )}
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              disabled={disabled}
+              placeholder={showAnimatedPlaceholder ? "" : (placeholder || t("placeholder"))}
+              aria-label={placeholder || t("placeholder")}
+              rows={1}
+              className="min-h-[40px] w-full resize-none bg-transparent py-2.5 text-sm text-white placeholder-content-muted outline-none disabled:opacity-50"
+            />
+          </div>
 
           {/* ── Desktop: inline right-side controls ── */}
           <div className={`shrink-0 items-center gap-1.5 ${compact ? "hidden" : "hidden sm:flex"}`}>
@@ -277,7 +388,7 @@ export function ChatInputBar({
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Hints — outside the island */}
       <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between px-1">

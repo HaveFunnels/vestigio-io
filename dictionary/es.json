@@ -2343,7 +2343,15 @@
 			"stop": "Detener",
 			"used": "{used}/{limit} usados",
 			"hint_send": "Enter envía · Shift+Enter nueva línea",
-			"attach_file": "Adjuntar archivo"
+			"attach_file": "Adjuntar archivo",
+			"cycling_placeholders": [
+				"Pregunta cualquier cosa a Vestigio...",
+				"Que vulnerabilidades debo corregir primero?",
+				"Resume mis ultimos hallazgos",
+				"Donde estoy perdiendo ingresos?",
+				"Ayudame a escribir un plan de remediacion",
+				"Que tan confiable es mi pagina de checkout?"
+			]
 		},
 		"pulse_summary": {
 			"label": "Vestigio Pulse"

@@ -2495,7 +2495,15 @@
 			"stop": "Stopp",
 			"used": "{used}/{limit} verwendet",
 			"hint_send": "Enter senden · Shift+Enter neue Zeile",
-			"attach_file": "Datei anhängen"
+			"attach_file": "Datei anhängen",
+			"cycling_placeholders": [
+				"Fragen Sie Vestigio alles...",
+				"Welche Schwachstellen sollte ich zuerst beheben?",
+				"Fassen Sie meine neuesten Findings zusammen",
+				"Wo verliere ich Umsatz?",
+				"Helfen Sie mir einen Behebungsplan zu schreiben",
+				"Wie vertrauenswuerdig ist meine Checkout-Seite?"
+			]
 		},
 		"pulse_summary": {
 			"label": "Vestigio Pulse"

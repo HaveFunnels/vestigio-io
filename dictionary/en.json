@@ -2381,7 +2381,15 @@
 			"stop": "Stop",
 			"used": "{used}/{limit} used",
 			"hint_send": "Enter send · Shift+Enter new line",
-			"attach_file": "Attach file"
+			"attach_file": "Attach file",
+			"cycling_placeholders": [
+				"Ask Vestigio anything...",
+				"What vulnerabilities should I fix first?",
+				"Summarize my latest findings",
+				"Where am I losing revenue?",
+				"Help me write a remediation plan",
+				"How trustworthy is my checkout page?"
+			]
 		},
 		"pulse_summary": {
 			"label": "Vestigio Pulse"

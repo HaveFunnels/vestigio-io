@@ -2400,7 +2400,15 @@
 			"stop": "Parar",
 			"used": "{used}/{limit} usados",
 			"hint_send": "Enter envia · Shift+Enter nova linha",
-			"attach_file": "Anexar arquivo"
+			"attach_file": "Anexar arquivo",
+			"cycling_placeholders": [
+				"Pergunte qualquer coisa ao Vestigio...",
+				"Quais vulnerabilidades devo corrigir primeiro?",
+				"Resuma meus ultimos findings",
+				"Onde estou perdendo receita?",
+				"Me ajude a escrever um plano de remediacao",
+				"Quao confiavel esta minha pagina de checkout?"
+			]
 		},
 		"pulse_summary": {
 			"label": "Vestigio Pulse"

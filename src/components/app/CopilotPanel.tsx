@@ -6,7 +6,7 @@
 // Right-side panel, z-[45]. Full browser interior height minus paddings.
 // Reuses ChatMessageRenderer + ChatInputBar (compact/island mode).
 // Auto-minimizes when SideDrawer opens.
-// Header: playbooks grid menu, expand, minimize, close.
+// Header: playbooks grid menu, expand, minimize.
 // ──────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
@@ -46,9 +46,11 @@ const PB_COLORS: Record<string, { border: string; bg: string; badge: string }> =
 function BudgetExhaustedCard({
 	onUpgrade,
 	onDismiss,
+	t,
 }: {
 	onUpgrade: () => void;
 	onDismiss: () => void;
+	t: (key: string) => string;
 }) {
 	return (
 		<div className="flex flex-col items-center rounded-xl border border-amber-800/30 bg-amber-500/5 px-4 py-5 text-center">
@@ -68,23 +70,23 @@ function BudgetExhaustedCard({
 				</svg>
 			</div>
 			<p className="text-sm font-medium text-content-secondary">
-				You&apos;ve used all your AI queries for today
+				{t("budget_exhausted_title")}
 			</p>
 			<p className="mt-1 text-xs text-content-muted">
-				Upgrade for more daily queries and deeper analysis.
+				{t("budget_exhausted_description")}
 			</p>
 			<div className="mt-4 flex w-full gap-2">
 				<button
 					onClick={onUpgrade}
 					className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-500"
 				>
-					Upgrade plan
+					{t("budget_upgrade")}
 				</button>
 				<button
 					onClick={onDismiss}
 					className="flex-1 rounded-lg border border-edge px-3 py-2 text-xs font-medium text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
 				>
-					Maybe later
+					{t("budget_later")}
 				</button>
 			</div>
 		</div>
@@ -166,18 +168,20 @@ function PlaybooksOverlay({
 	onClose: () => void;
 	mcpRemaining: number;
 }) {
-	const t = useTranslations("console.chat");
+	const t = useTranslations("console.copilot");
+	const tChat = useTranslations("console.chat");
 
 	return (
 		<div className="absolute inset-0 z-10 flex flex-col bg-card">
 			{/* Header */}
 			<div className="flex items-center justify-between border-b border-edge px-4 py-2.5">
 				<span className="text-[11px] font-semibold uppercase tracking-wider text-content-muted">
-					Playbooks
+					{t("playbooks_header")}
 				</span>
 				<button
 					onClick={onClose}
 					className="flex h-7 w-7 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
+					title={t("close")}
 				>
 					<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
 						<path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -188,7 +192,7 @@ function PlaybooksOverlay({
 			{/* Divider label */}
 			<div className="px-4 pb-1.5 pt-3">
 				<span className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">
-					Expert Analysis
+					{t("playbooks_expert")}
 				</span>
 			</div>
 
@@ -203,7 +207,7 @@ function PlaybooksOverlay({
 							key={pb.id}
 							onClick={() => {
 								if (canAfford) {
-									onUsePrompt(t(`playbook_prompts.${pb.id}`));
+									onUsePrompt(tChat(`playbook_prompts.${pb.id}`));
 									onClose();
 								}
 							}}
@@ -214,17 +218,17 @@ function PlaybooksOverlay({
 						>
 							<div className="flex items-center gap-2">
 								<span className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${colors.badge}`}>
-									{t(`featured_playbooks.${pb.id}.category`)}
+									{tChat(`featured_playbooks.${pb.id}.category`)}
 								</span>
 								<span className="text-[10px] text-content-faint">
-									{pb.queries} {pb.queries === 1 ? "query" : "queries"}
+									{t("playbooks_queries", { count: pb.queries })}
 								</span>
 							</div>
 							<h3 className="mt-1.5 text-sm font-medium text-content-secondary group-hover:text-content">
-								{t(`featured_playbooks.${pb.id}.title`)}
+								{tChat(`featured_playbooks.${pb.id}.title`)}
 							</h3>
 							<p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-content-muted">
-								{t(`featured_playbooks.${pb.id}.description`)}
+								{tChat(`featured_playbooks.${pb.id}.description`)}
 							</p>
 						</button>
 					);
@@ -238,6 +242,7 @@ function PlaybooksOverlay({
 
 export default function CopilotPanel() {
 	const router = useRouter();
+	const t = useTranslations("console.copilot");
 	const {
 		isOpen,
 		isMinimized,
@@ -290,9 +295,9 @@ export default function CopilotPanel() {
 
 	return (
 		<div
-			className="fixed top-14 right-3 bottom-3 z-[45] flex w-[420px] flex-col overflow-hidden rounded-2xl border border-edge bg-card shadow-2xl shadow-black/30"
+			className="fixed top-14 right-3 bottom-3 z-[45] flex w-[420px] flex-col overflow-hidden rounded-2xl border border-edge bg-card shadow-2xl shadow-black/30 animate-panel-in"
 			role="dialog"
-			aria-label="Vestigio AI"
+			aria-label={t("fab_label")}
 		>
 			{/* ── Header ── */}
 			<div className="flex items-center justify-end gap-1 px-3 py-2">
@@ -306,7 +311,7 @@ export default function CopilotPanel() {
 					<button
 						onClick={newConversation}
 						className="flex h-8 w-8 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
-						title="New conversation"
+						title={t("new_conversation")}
 					>
 						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -321,7 +326,7 @@ export default function CopilotPanel() {
 							? "bg-surface-inset text-content-secondary"
 							: "text-content-faint hover:bg-surface-card-hover hover:text-content-secondary"
 					}`}
-					title="Playbooks"
+					title={t("playbooks")}
 				>
 					<GridDotsIcon className="h-4 w-4" />
 				</button>
@@ -335,7 +340,7 @@ export default function CopilotPanel() {
 						close();
 					}}
 					className="flex h-8 w-8 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
-					title="Open full chat"
+					title={t("open_full_chat")}
 				>
 					<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
 						<path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -345,20 +350,10 @@ export default function CopilotPanel() {
 				<button
 					onClick={minimize}
 					className="flex h-8 w-8 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
-					title="Minimize"
+					title={t("minimize")}
 				>
 					<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 						<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
-					</svg>
-				</button>
-				{/* Close */}
-				<button
-					onClick={close}
-					className="flex h-8 w-8 items-center justify-center rounded-md text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
-					title="Close"
-				>
-					<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-						<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
 					</svg>
 				</button>
 			</div>
@@ -410,6 +405,7 @@ export default function CopilotPanel() {
 									key={msg.id}
 									onUpgrade={() => router.push("/app/billing")}
 									onDismiss={close}
+									t={t}
 								/>
 							) : (
 								<ChatMessageRenderer
@@ -434,16 +430,15 @@ export default function CopilotPanel() {
 
 						<div className="space-y-1.5">
 							<h2 className="text-lg font-medium tracking-tight text-content-muted">
-								Vestigio AI
+								{t("greeting_title")}
 							</h2>
 							<h3 className="text-base font-medium tracking-tight text-content">
-								How can I help?
+								{t("greeting_subtitle")}
 							</h3>
 						</div>
 
 						<p className="mt-2.5 text-sm text-content-muted">
-							Ask about your findings, explore insights, or run an
-							audit.
+							{t("greeting_description")}
 						</p>
 
 						<div className="mt-6 w-full">
@@ -477,7 +472,7 @@ export default function CopilotPanel() {
 					onModelChange={setModel}
 					isStreaming={isStreaming}
 					onStop={abort}
-					placeholder="Ask Vestigio AI..."
+					placeholder={t("input_placeholder")}
 					compact
 				/>
 			</div>

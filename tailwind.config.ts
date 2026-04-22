@@ -296,6 +296,25 @@ const config: Config = {
 				99: "99",
 				1: "1",
 			},
+			keyframes: {
+				"fab-in": {
+					"0%": { opacity: "0", transform: "translateY(1rem) scale(0.9)" },
+					"100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+				},
+				"fab-out": {
+					"0%": { opacity: "1", transform: "translateY(0) scale(1)" },
+					"100%": { opacity: "0", transform: "translateY(1rem) scale(0.9)" },
+				},
+				"panel-in": {
+					"0%": { opacity: "0", transform: "translateX(1rem) scale(0.97)" },
+					"100%": { opacity: "1", transform: "translateX(0) scale(1)" },
+				},
+			},
+			animation: {
+				"fab-in": "fab-in 0.3s cubic-bezier(0.16,1,0.3,1) both",
+				"fab-out": "fab-out 0.2s cubic-bezier(0.16,1,0.3,1) both",
+				"panel-in": "panel-in 0.25s cubic-bezier(0.16,1,0.3,1) both",
+			},
 			boxShadow: {
 				1: "0px 1px 2px 0px rgba(84, 87, 118, 0.10)",
 				error: "0px 12px 34px 0px rgba(13, 10, 44, 0.05)",

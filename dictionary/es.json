@@ -28,27 +28,6 @@
 		"welcome": "Bienvenido"
 	},
 	"header": {
-		"features": "Características",
-		"pricing": "Precios",
-		"blog": "Blog",
-		"pages": "Páginas",
-		"blogDetails": "Detalles del Blog",
-		"signIn": "Iniciar Sesión",
-		"signUp": "Registrarse",
-		"errors": "Errores 404",
-		"support": "Soporte",
-		"buyNow": "Comprar Ahora ↗",
-		"account_menu": {
-			"account_settings": "Configuración de Cuenta",
-			"dashboard": "Dashboard",
-			"logOut": "Cerrar Sesión"
-		},
-		"notification_menu": {
-			"title": "Notificaciones",
-			"see_all": "Ver Todas las Notificaciones"
-		}
-	},
-	"header": {
 		"nav": {
 			"product": "Producto",
 			"solutions": "Soluciones",
@@ -3237,6 +3216,68 @@
 				"event_newsletter_desc": "Novedades mensuales del producto y roadmap.",
 				"event_product_updates": "Notas de versión",
 				"event_product_updates_desc": "Sé el primero en enterarte de las novedades."
+			}
+		},
+		"copilot": {
+			"fab_label": "Vestigio AI",
+			"fab_aria": "Abrir Vestigio AI",
+			"new_conversation": "Nueva conversacion",
+			"playbooks": "Playbooks",
+			"open_full_chat": "Abrir chat completo",
+			"minimize": "Minimizar",
+			"close": "Cerrar",
+			"greeting_title": "Vestigio AI",
+			"greeting_subtitle": "Como puedo ayudar?",
+			"greeting_description": "Pregunta sobre tus hallazgos, explora insights o ejecuta una auditoria.",
+			"input_placeholder": "Pregunta a Vestigio AI...",
+			"budget_exhausted_title": "Has usado todas tus consultas de AI de hoy",
+			"budget_exhausted_description": "Actualiza tu plan para mas consultas diarias y analisis mas profundos.",
+			"budget_upgrade": "Actualizar plan",
+			"budget_later": "Quiza despues",
+			"playbooks_header": "Playbooks",
+			"playbooks_expert": "Analisis Experto",
+			"playbooks_queries": "{count, plural, one {# consulta} other {# consultas}}",
+			"quick_actions": {
+				"what_changed": "Que cambio?",
+				"revenue_audit": "Auditoria de ingresos",
+				"explain_workspace": "Explicar esto",
+				"deep_dive": "Analisis profundo",
+				"fix_first": "Corregir primero",
+				"explain_action": "Explicar accion",
+				"verify": "Verificar correccion",
+				"summarize": "Resumir",
+				"cross_signal": "Verificacion cruzada",
+				"high_impact": "Solo alto impacto",
+				"audit_page": "Auditar pagina",
+				"down_pages": "Paginas con error",
+				"executive_summary": "Resumen ejecutivo",
+				"losing_money": "Donde pierdo dinero?",
+				"improvements": "Que mejoro?",
+				"whats_up": "Que debo saber?",
+				"trust_check": "Verificacion de confianza"
+			},
+			"quick_prompts": {
+				"what_changed_workspaces": "Que cambio en el ultimo ciclo de auditoria? Destaca regresiones y mejoras.",
+				"revenue_audit": "Realiza una auditoria rapida de fuga de ingresos. Donde estoy perdiendo dinero?",
+				"explain_workspace_workspaces": "Explica los hallazgos del workspace actual en lenguaje simple. Que es lo mas importante?",
+				"what_changed_perspective": "Que cambio en esta perspectiva desde el ultimo ciclo?",
+				"deep_dive": "Dame un analisis profundo de esta perspectiva. Cuales son los problemas mas criticos?",
+				"explain_workspace": "Explica los hallazgos de este workspace y su impacto en el negocio.",
+				"fix_first_workspace": "Que debo corregir primero en este workspace? Prioriza por impacto.",
+				"fix_first_actions": "Que debo corregir primero? Prioriza todas las acciones por impacto y esfuerzo.",
+				"explain_action": "Explica la accion de mayor prioridad en detalle. Que esta roto y como lo corrijo?",
+				"verify": "Hice una correccion. Ayudame a verificar que funciona correctamente.",
+				"summarize": "Resume todos los hallazgos actuales. Cual es la salud general de mi sitio?",
+				"cross_signal": "Hay hallazgos que se correlacionan entre diferentes perspectivas (seguridad + ingresos + comportamiento)?",
+				"high_impact": "Muestra solo los hallazgos de alto impacto por encima de $1,000/mes. Que debo priorizar?",
+				"audit_page": "Cuales paginas de mi sitio tienen mas problemas? Muestra las peores superficies.",
+				"down_pages": "Alguna de mis paginas esta devolviendo errores o caida? Cual es el impacto?",
+				"executive_summary": "Dame un resumen ejecutivo de la salud de mi sitio, riesgos de ingresos y que mejoro.",
+				"losing_money": "Donde estoy perdiendo dinero? Muestra las mayores fugas de ingresos con montos.",
+				"improvements": "Que mejoro desde el ultimo ciclo de auditoria? Alguna victoria para celebrar?",
+				"whats_up": "Cuales son las cosas mas importantes que debo saber sobre mi sitio ahora?",
+				"revenue_audit_other": "Realiza una auditoria rapida de fuga de ingresos. Donde estoy perdiendo dinero?",
+				"trust_check": "Que tan confiable se ve mi sitio para compradores? Verifica senales de confianza en todas las paginas."
 			}
 		}
 	},

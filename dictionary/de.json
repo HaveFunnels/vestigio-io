@@ -28,27 +28,6 @@
 		"welcome": "Willkommen"
 	},
 	"header": {
-		"features": "Funktionen",
-		"pricing": "Preise",
-		"blog": "Blog",
-		"pages": "Seiten",
-		"blogDetails": "Blog-Details",
-		"signIn": "Anmelden",
-		"signUp": "Registrieren",
-		"errors": "404 Fehler",
-		"support": "Support",
-		"buyNow": "Jetzt kaufen ↗",
-		"account_menu": {
-			"account_settings": "Kontoeinstellungen",
-			"dashboard": "Dashboard",
-			"logOut": "Abmelden"
-		},
-		"notification_menu": {
-			"title": "Benachrichtigungen",
-			"see_all": "Alle Benachrichtigungen anzeigen"
-		}
-	},
-	"header": {
 		"nav": {
 			"product": "Produkt",
 			"solutions": "Lösungen",
@@ -2828,6 +2807,68 @@
 				"refund_policy_reverted": "Ihre Erstattungsrichtlinie ist schon wieder aus dem Checkout verschwunden",
 				"og_image_stale": "Ihre Homepage hat ein veraltetes Vorschaubild geteilt",
 				"trust_seals_missing": "Die Vertrauenssiegel fehlten beim Bezahlschritt"
+			}
+		},
+		"copilot": {
+			"fab_label": "Vestigio AI",
+			"fab_aria": "Vestigio AI oeffnen",
+			"new_conversation": "Neues Gespraech",
+			"playbooks": "Playbooks",
+			"open_full_chat": "Vollstaendigen Chat oeffnen",
+			"minimize": "Minimieren",
+			"close": "Schliessen",
+			"greeting_title": "Vestigio AI",
+			"greeting_subtitle": "Wie kann ich helfen?",
+			"greeting_description": "Fragen Sie nach Ihren Findings, erkunden Sie Insights oder fuehren Sie ein Audit durch.",
+			"input_placeholder": "Fragen Sie Vestigio AI...",
+			"budget_exhausted_title": "Sie haben heute alle AI-Abfragen verbraucht",
+			"budget_exhausted_description": "Upgraden Sie fuer mehr taegliche Abfragen und tiefere Analysen.",
+			"budget_upgrade": "Plan upgraden",
+			"budget_later": "Vielleicht spaeter",
+			"playbooks_header": "Playbooks",
+			"playbooks_expert": "Expertenanalyse",
+			"playbooks_queries": "{count, plural, one {# Abfrage} other {# Abfragen}}",
+			"quick_actions": {
+				"what_changed": "Was hat sich geaendert?",
+				"revenue_audit": "Umsatz-Audit",
+				"explain_workspace": "Erklaere das",
+				"deep_dive": "Tiefenanalyse",
+				"fix_first": "Zuerst beheben",
+				"explain_action": "Aktion erklaeren",
+				"verify": "Fix verifizieren",
+				"summarize": "Zusammenfassen",
+				"cross_signal": "Kreuz-Signal-Pruefung",
+				"high_impact": "Nur hoher Impact",
+				"audit_page": "Seite auditieren",
+				"down_pages": "Fehlerseiten",
+				"executive_summary": "Executive Summary",
+				"losing_money": "Wo verliere ich Geld?",
+				"improvements": "Was hat sich verbessert?",
+				"whats_up": "Was sollte ich wissen?",
+				"trust_check": "Vertrauenspruefung"
+			},
+			"quick_prompts": {
+				"what_changed_workspaces": "Was hat sich im letzten Audit-Zyklus geaendert? Hebe Regressionen und Verbesserungen hervor.",
+				"revenue_audit": "Fuehre ein schnelles Umsatz-Leck-Audit durch. Wo verliere ich Geld?",
+				"explain_workspace_workspaces": "Erklaere die aktuellen Workspace-Findings in einfacher Sprache. Was ist am wichtigsten?",
+				"what_changed_perspective": "Was hat sich in dieser Perspektive seit dem letzten Zyklus geaendert?",
+				"deep_dive": "Gib mir eine Tiefenanalyse dieser Perspektive. Was sind die kritischsten Probleme?",
+				"explain_workspace": "Erklaere die Findings dieses Workspaces und deren geschaeftliche Auswirkung.",
+				"fix_first_workspace": "Was sollte ich in diesem Workspace zuerst beheben? Priorisiere nach Impact.",
+				"fix_first_actions": "Was sollte ich zuerst beheben? Priorisiere alle Aktionen nach Impact und Aufwand.",
+				"explain_action": "Erklaere die hoechstpriorisierte Aktion im Detail. Was ist kaputt und wie behebe ich es?",
+				"verify": "Ich habe einen Fix gemacht. Hilf mir zu verifizieren, dass er korrekt funktioniert.",
+				"summarize": "Fasse alle aktuellen Findings zusammen. Wie ist der Gesamtzustand meiner Seite?",
+				"cross_signal": "Gibt es Findings, die sich ueber verschiedene Perspektiven korrelieren (Sicherheit + Umsatz + Verhalten)?",
+				"high_impact": "Zeige mir nur die High-Impact-Findings ueber $1.000/Monat. Was sollte ich priorisieren?",
+				"audit_page": "Welche Seiten meiner Website haben die meisten Probleme? Zeige die schlimmsten Oberflaechen.",
+				"down_pages": "Geben einige meiner Seiten Fehler zurueck oder sind down? Was ist der Impact?",
+				"executive_summary": "Gib mir ein Executive Summary zum Gesundheitszustand meiner Seite, Umsatzrisiken und Verbesserungen.",
+				"losing_money": "Wo verliere ich Geld? Zeige die groessten Umsatz-Lecks mit Betraegen.",
+				"improvements": "Was hat sich seit dem letzten Audit-Zyklus verbessert? Gibt es Erfolge zu feiern?",
+				"whats_up": "Was sind die wichtigsten Dinge, die ich jetzt ueber meine Seite wissen sollte?",
+				"revenue_audit_other": "Fuehre ein schnelles Umsatz-Leck-Audit durch. Wo verliere ich Geld?",
+				"trust_check": "Wie vertrauenswuerdig sieht meine Seite fuer Kaeufer aus? Pruefe Vertrauenssignale auf allen Seiten."
 			}
 		}
 	},

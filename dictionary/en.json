@@ -28,27 +28,6 @@
 		"welcome": "Welcome"
 	},
 	"header": {
-		"features": "Features",
-		"pricing": "Pricing",
-		"blog": "Blog",
-		"pages": "Pages",
-		"blogDetails": "Blog Details",
-		"signIn": "Sign In",
-		"signUp": "Sign Up",
-		"errors": "404 Errors",
-		"support": "Support",
-		"buyNow": "Buy Now ↗",
-		"account_menu": {
-			"account_settings": "Account Settings",
-			"dashboard": "Dashboard",
-			"logOut": "Log Out"
-		},
-		"notification_menu": {
-			"title": "Notifications",
-			"see_all": "See All Notifications"
-		}
-	},
-	"header": {
 		"nav": {
 			"product": "Product",
 			"solutions": "Solutions",
@@ -3284,6 +3263,68 @@
 				"event_newsletter_desc": "Monthly product updates and roadmap highlights.",
 				"event_product_updates": "Release notes",
 				"event_product_updates_desc": "Be first to know about new features."
+			}
+		},
+		"copilot": {
+			"fab_label": "Vestigio AI",
+			"fab_aria": "Open Vestigio AI",
+			"new_conversation": "New conversation",
+			"playbooks": "Playbooks",
+			"open_full_chat": "Open full chat",
+			"minimize": "Minimize",
+			"close": "Close",
+			"greeting_title": "Vestigio AI",
+			"greeting_subtitle": "How can I help?",
+			"greeting_description": "Ask about your findings, explore insights, or run an audit.",
+			"input_placeholder": "Ask Vestigio AI...",
+			"budget_exhausted_title": "You've used all your AI queries for today",
+			"budget_exhausted_description": "Upgrade for more daily queries and deeper analysis.",
+			"budget_upgrade": "Upgrade plan",
+			"budget_later": "Maybe later",
+			"playbooks_header": "Playbooks",
+			"playbooks_expert": "Expert Analysis",
+			"playbooks_queries": "{count, plural, one {# query} other {# queries}}",
+			"quick_actions": {
+				"what_changed": "What changed?",
+				"revenue_audit": "Revenue audit",
+				"explain_workspace": "Explain this",
+				"deep_dive": "Deep dive",
+				"fix_first": "Fix first",
+				"explain_action": "Explain action",
+				"verify": "Verify a fix",
+				"summarize": "Summarize",
+				"cross_signal": "Cross-signal check",
+				"high_impact": "High impact only",
+				"audit_page": "Audit a page",
+				"down_pages": "Down pages",
+				"executive_summary": "Executive summary",
+				"losing_money": "Where am I losing money?",
+				"improvements": "What improved?",
+				"whats_up": "What should I know?",
+				"trust_check": "Trust check"
+			},
+			"quick_prompts": {
+				"what_changed_workspaces": "What changed in the latest audit cycle? Highlight regressions and improvements.",
+				"revenue_audit": "Perform a quick revenue leak audit. Where am I losing money?",
+				"explain_workspace_workspaces": "Explain the current workspace findings in plain language. What matters most?",
+				"what_changed_perspective": "What changed in this perspective since the last cycle?",
+				"deep_dive": "Give me a deep analysis of this perspective. What are the most critical issues?",
+				"explain_workspace": "Explain this workspace's findings and their business impact.",
+				"fix_first_workspace": "What should I fix first in this workspace? Prioritize by impact.",
+				"fix_first_actions": "What should I fix first? Prioritize all actions by impact and effort.",
+				"explain_action": "Explain the top priority action in detail. What's broken and how do I fix it?",
+				"verify": "I've made a fix. Help me verify it works correctly.",
+				"summarize": "Summarize all current findings. What's the overall health of my site?",
+				"cross_signal": "Are there any findings that correlate across different perspectives (security + revenue + behavior)?",
+				"high_impact": "Show me only the high-impact findings above $1,000/month. What should I prioritize?",
+				"audit_page": "Which pages on my site have the most issues? Show me the worst surfaces.",
+				"down_pages": "Are any of my pages returning errors or down? What's the impact?",
+				"executive_summary": "Give me an executive summary of my site's health, revenue risks, and what improved.",
+				"losing_money": "Where am I losing money? Show me the top revenue leaks with dollar amounts.",
+				"improvements": "What improved since the last audit cycle? Any wins to celebrate?",
+				"whats_up": "What are the most important things I should know about my site right now?",
+				"revenue_audit_other": "Perform a quick revenue leak audit. Where am I losing money?",
+				"trust_check": "How trustworthy does my site look to buyers? Check trust signals across all pages."
 			}
 		}
 	},

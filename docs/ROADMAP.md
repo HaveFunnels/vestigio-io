@@ -61,6 +61,10 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
 | Opportunity-First Actions — 7 fases | **~5%** — engine generates opportunities, tab exists; all UI/UX fases open | Wave 3.12 |
 | Re-engagement Infrastructure — close retention loop | **Not started** — email digest, cycle summary, dashboard as landing, cross-signal narrative, alerts. Zero proactive mechanisms exist today. | Wave 3.13 |
+| Vestigio Pulse AI — Transversal Copilot | **Not started** — floating panel replacing chat-as-tab, page-context-aware, coexists with SideDrawer. ~3-4 weeks. | Wave 3.14 |
+| Cross-Signal Surface — making the moat visible | **Not started** — correlate findings across perspectives by shared URL/temporal pattern. ~1-2 weeks. | Wave 3.15 |
+| Product Telemetry — measure before you change | **Not started** — self-hosted product events, engagement score, feature adoption funnels. ~1 week. | Wave 3.16 |
+| Workspace Upgrade Moments — monetize value | **Not started** — blurred previews, copilot nudge, cadence nudge. ~3-5 days. | Wave 3.17 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
@@ -681,6 +685,188 @@ else                              → DataTable (behavioral + fallback)
 
 ---
 
+### 3.14 Vestigio Pulse AI — Transversal Copilot
+
+| | |
+|---|---|
+| **Tag** | `frontend` `mcp` `platform` |
+| **Priority** | P0 |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** Chat is a full-page route (`/app/chat`) with zero page awareness. Every "Discuss Finding" CTA forces a page navigation, losing the user's visual context. Users must leave what they're looking at to ask a question about it. This is the single biggest friction point in the product — it breaks every task that requires insight + action in the same flow.
+
+**Solution:** Transform the chat from a dedicated page into a **floating copilot panel** available on every page, inspired by embedded AI assistant patterns (minimizable card, bottom-right, page-context-aware). The existing `/app/chat` route stays as a full-screen fallback for long conversations.
+
+**Technical feasibility (confirmed via codebase audit):** Chat code is modular — SSE streaming, context hydration, conversation persistence, verification flow, rich cards (FindingCard, ActionCard, KbArticleCard, CreateActionCard, ToolCallStep), playbooks all work independently of the full-page layout. `SideDrawer` component already proves the overlay pattern. Pulse Summary proves LLM works embedded in pages. Refactor is extraction, not rewrite.
+
+#### Copilot UX Design
+
+**Visual: floating card panel (bottom-right)**
+
+```
+┌─ APP PAGE (any) ──────────────────────────────────────┐
+│                                                        │
+│  [Page content: workspaces, actions, analysis, etc.]  │
+│                                                        │
+│                                                        │
+│  ┌─ SideDrawer (finding detail) ──────┐               │
+│  │ Opens from RIGHT edge, full height │               │
+│  │ z-index: 50                        │               │
+│  └────────────────────────────────────┘               │
+│                                                        │
+│                           ┌─ COPILOT PANEL ──────────┐│
+│                           │ z-index: 40              ││
+│                           │ 420px wide, ~600px tall   ││
+│                           │ bottom-right, floating    ││
+│                           │ rounded-xl, shadow-2xl    ││
+│                           │                          ││
+│                           │ [Messages scroll area]   ││
+│                           │                          ││
+│                           │ [Quick actions / badges] ││
+│                           │ [Input bar + controls]   ││
+│                           └──────────────────────────┘│
+│                                              [💬 FAB] │
+└────────────────────────────────────────────────────────┘
+```
+
+**Coexistence with SideDrawer:**
+- Copilot panel: `fixed bottom-4 right-4 z-40` — floating card, NOT full-height
+- SideDrawer: `fixed inset-y-0 right-0 z-50` — full-height overlay, higher z-index
+- When SideDrawer opens → copilot auto-minimizes to FAB (avoids visual collision)
+- When SideDrawer closes → copilot restores previous state (expanded/minimized)
+- FAB (floating action button) always visible at `bottom-4 right-4 z-30` when minimized
+- Finding drawer has "Ask Vestigio about this" button → opens copilot with finding context pre-loaded
+
+**Three states:**
+
+| State | Visual | Trigger |
+|---|---|---|
+| **Minimized** | FAB button only (emerald circle, sparkle icon, unread badge) | Click X on panel, SideDrawer opens, default on page load |
+| **Expanded (empty)** | Card with welcome message + quick action badges + input bar | Click FAB when no active conversation |
+| **Expanded (conversation)** | Card with message thread + context chips + input bar | Click FAB when conversation active, or trigger from page CTA |
+
+**Quick action badges (replace playbooks drawer):**
+
+Contextual per page — copilot knows which page the user is on via `usePathname()`:
+
+| Page | Quick Actions |
+|---|---|
+| Workspaces (any) | "What changed?", "Revenue audit", "Trust check", "Explain this workspace" |
+| Actions | "What should I fix first?", "Explain this action", "Verify finding" |
+| Analysis | "Analyze selected", "Cross-signal check", "Summarize findings" |
+| Inventory | "Audit this page", "Why is this page down?" |
+| Dashboard | "Executive summary", "What improved?", "Where am I losing money?" |
+
+Badges use the same pattern as the reference UI: `Badge variant="secondary"` with colored icons. Clicking a badge sends the prompt with current page context.
+
+#### Implementation
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **CopilotProvider (global context)** | React Context at app layout level. State: `isOpen`, `isMinimized`, `conversationId`, `messages[]`, `contextItems[]`, `pageContext { pathname, selectedFindings?, visibleWorkspace? }`. Persists `conversationId` in localStorage. Auto-injects `pageContext` via `usePathname()`. Exposes `useCopilot()` hook for any component to open/send/attach context. | Medium |
+| B | **CopilotPanel component** | Floating card component: `fixed bottom-4 right-4 w-[420px] max-h-[min(600px,80vh)]`. Three sections: header (minimize/close/conversation selector), messages scroll area (reuses existing `ChatMessageRenderer` + all rich cards), input bar (textarea + model selector + attach + shortcuts). CSS: `rounded-xl shadow-2xl border bg-card`. Animation: slide-up from bottom on expand, slide-down on minimize. | High |
+| C | **FAB (floating action button)** | `fixed bottom-4 right-4 z-30`. Emerald circle with sparkle icon. Unread count badge when copilot has unread responses. Pulse animation on new message. Click → toggles panel. Long-press or right-click → "Open full chat" (navigates to `/app/chat`). | Low |
+| D | **Page context injection** | `usePathname()` + `useMcpData()` to detect: current page, visible workspace (if on workspace detail), selected findings (if on analysis with selection), current action (if drawer open). Auto-attached to system prompt: "User is currently viewing [page] with [context]." Updates on navigation without interrupting conversation. | Medium |
+| E | **SideDrawer coexistence** | Listen for SideDrawer open/close state (new `useSideDrawer()` context or event). On SideDrawer open → auto-minimize copilot to FAB. On SideDrawer close → restore. SideDrawer finding detail gets new "Ask Vestigio" button → calls `copilot.open({ finding: currentFinding })`. | Low |
+| F | **Quick action badges** | Per-page badge configuration mapping `pathname` patterns to action arrays. Each action: `{ icon, label, prompt, color }`. Click → `copilot.send(prompt)` with current page context. Renders in the empty state (before first message) and as a collapsible strip above input bar (during conversation). Replaces the current PlaybooksDrawer in the full chat page too. | Medium |
+| G | **Conversation continuity** | Conversation persists across page navigation. User asks on workspaces, navigates to actions → copilot still shows the thread. `conversationId` in CopilotProvider. "New conversation" button in panel header. Conversation list accessible via dropdown (last 5) or "See all" → `/app/chat`. | Medium |
+| H | **Verification flow in copilot** | VerificationPlanIsland works inside the copilot panel with no changes (it's a self-contained component). "Create Action" CTA at terminal state works the same. The compact panel height means the plan island scrolls within the message area. | Low |
+| I | **Full-screen escape hatch** | "Expand" button in panel header → navigates to `/app/chat?conversation={id}` with full-screen layout. For long conversations, complex playbooks, or when user wants more space. The `/app/chat` route continues to exist but is demoted from sidebar primary nav to a secondary access point. | Low |
+| J | **Sidebar nav update** | Remove "Chat" from primary sidebar nav items. Add it to secondary/bottom nav or make it accessible only via copilot "Expand" button. The copilot FAB replaces the sidebar entry as the primary access point. | Low |
+| K | **i18n** | ~20 new keys: welcome message, quick action labels per page, FAB tooltip, panel header labels, "Ask Vestigio" button label. | Low |
+
+**Total estimate:** ~3-4 weeks. Item B (panel component) is the bulk — extracting chat rendering into a constrained card layout. Items A, D, F are the differentiating logic. The rest is wiring.
+
+**Migration path:** Ship copilot alongside existing `/app/chat`. Both work. Measure adoption via 3.16 telemetry. When copilot usage exceeds chat page usage, demote chat from sidebar.
+
+**Files touched:** New: `src/components/app/CopilotProvider.tsx`, `src/components/app/CopilotPanel.tsx`, `src/components/app/CopilotFab.tsx`, `src/components/app/CopilotQuickActions.tsx`. Modified: `src/app/app/layout.tsx` (mount CopilotProvider + Panel), `src/components/app/sidebar-nav-data.ts` (demote Chat), `src/components/console/SideDrawer.tsx` (emit open/close events), all page-level finding drawers (add "Ask Vestigio" CTA).
+
+---
+
+### 3.15 Cross-Signal Surface — Making the Moat Visible
+
+| | |
+|---|---|
+| **Tag** | `engine` `frontend` |
+| **Priority** | P1 |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** Vestigio's unique competitive advantage — correlating technical + behavioral + revenue + security signals into a single view — is invisible to users. Each perspective is a silo. The engine computes composites (blast radius, opportunity compression) that span perspectives, but the UI never shows the cross-domain story. No competitor (ContentKing, Hotjar, Semrush, Baremetrics, Contentsquare) correlates across these domains. This is the moat, and it's hidden.
+
+**Solution:** Create a first-class "Cross-Signal Insights" surface that appears wherever findings from different perspectives share the same affected URL or temporal correlation.
+
+#### Implementation
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Cross-signal detection engine** | New function `detectCrossSignalCorrelations(findings: FindingProjection[]): CrossSignalChain[]`. Groups findings by `surface` URL, then checks if findings span 2+ perspectives. For each group, builds a causal chain: `[Security finding] → [Behavioral finding] → [Revenue finding]`. Orders chain by causal priority (infrastructure → behavior → revenue). Also detects temporal correlations: findings that appeared in the same cycle with `change_class: 'new_issue'` or `'regression'` across perspectives. Returns structured chains with `{ trigger, consequences[], affected_surface, combined_impact, perspectives_involved[] }`. | Medium |
+| B | **Cross-Signal Insights block (Panorama)** | New component between Pulse Summary and Perspective Cards on `/app/workspaces`. Renders each `CrossSignalChain` as a horizontal flow: `[Icon+Badge] "Checkout trust degraded" → [Icon+Badge] "Bounce rate +12%" → [Icon+Badge] "3 abandoned carts"`. Each chain has: combined impact estimate, affected URL, "Ask Vestigio" CTA (opens copilot with full chain context), "See findings" CTA (navigates to Analysis pre-filtered). Hidden when no cross-signal correlations exist. | Medium |
+| C | **Cross-signal in Pulse Summary prompt** | Upgrade the Haiku system prompt to receive `CrossSignalChain[]` alongside findings. When chains exist, Pulse Summary explicitly narrates the correlation: "Your checkout page shows a connected pattern: [security issue] is likely causing [behavioral issue] which is costing [revenue amount]." This makes the AI briefing uniquely valuable vs competitors. | Low |
+| D | **Cross-signal in Cycle Summary** | In 3.13A Cycle Summary page, dedicated "Cross-Signal Insights" section showing chains that appeared or worsened this cycle. Timeline format: "This cycle, 2 cross-signal patterns detected." | Low |
+| E | **Cross-signal in Copilot** | When user asks about a finding that's part of a cross-signal chain, copilot auto-mentions: "This finding is connected to [N] other findings across [perspectives]. [Brief explanation]." Context injection in 3.14D includes chain data. | Low |
+
+**Total estimate:** ~1-2 weeks. Item A (detection engine) is the core logic. The UI components (B-E) are lightweight — they consume the chains and render them.
+
+---
+
+### 3.16 Product Telemetry — Measure Before You Change
+
+| | |
+|---|---|
+| **Tag** | `platform` |
+| **Priority** | P1 |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** Vestigio has solid marketing analytics (custom-built funnel, UTM, A/B testing) but **zero product-level engagement tracking**. Can't tell which console pages users visit, which features they adopt, when they're at risk of churning (only detects after 14 days of absence), or whether changes like workspace enrichment actually drive engagement. Flying blind on product decisions.
+
+**Existing infra:** `TrackingScript` + `PageView`/`MarketingEvent` models for marketing site. `McpSession`/`McpPromptEvent`/`PlaybookRun` for chat usage. `Usage` table for cycle/compute metering. `lastAccessedAt` on Environment. All self-hosted, no third-party analytics.
+
+**Solution:** Lightweight product event tracking using the same self-hosted philosophy. No third-party tools.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **ProductEvent Prisma model** | `{ id, userId, orgId, environmentId, event, properties: Json, pathname, sessionId, createdAt }`. Index on `(orgId, event, createdAt)` for efficient rollups. Retention: 90 days (auto-prune via cron). | Low |
+| B | **useProductTrack() hook** | Client-side hook: `useProductTrack()` returns `track(event, properties?)`. Auto-includes: userId, orgId, pathname, sessionId (generated once per tab). Debounced write to `POST /api/product-events` (fire-and-forget, never blocks UI). Events: `page_view`, `feature_first_use`, `copilot_open`, `copilot_send`, `workspace_drill`, `finding_action`, `drawer_open`, `upgrade_surface_view`, `playbook_run`. | Medium |
+| C | **Page view tracking** | `usePathname()` hook in app layout fires `page_view` on navigation. Properties: `{ from, to, time_on_previous_page }`. Enables: "which pages do users visit?", "what's the most common flow?", "where do they drop off?" | Low |
+| D | **Feature adoption flags** | On User model: `firstChatAt`, `firstActionAt`, `firstVerifyAt`, `firstWorkspaceDrillAt`. Set once on first use via `track('feature_first_use', { feature })`. Enables: "time from signup to first chat", "% of users who ever opened workspaces", activation funnel analysis. | Low |
+| E | **Engagement score** | Computed daily per environment: weighted sum of page_views (0.1), copilot_sends (0.3), actions_created (0.3), workspace_drills (0.15), verifications_run (0.15). Stored on Environment model as `engagementScore` (0-100). Enables: at-risk detection BEFORE 14-day pause, cohort analysis, impact measurement. | Medium |
+| F | **Admin product analytics dashboard** | New tab in admin: page view heatmap, feature adoption funnel (signup → first audit → first finding view → first chat → first action), engagement score distribution, at-risk users (score < 20 for 7+ days), top pages by time-spent. | Medium |
+
+**Total estimate:** ~1 week. A-D are the foundation (~3 days). E-F are the analysis layer (~2 days).
+
+**Privacy:** Same approach as marketing analytics — no PII in events, org-scoped, self-hosted, auto-pruned. Respects existing notification preferences.
+
+---
+
+### 3.17 Workspace Upgrade Moments — Monetize the Value Created
+
+| | |
+|---|---|
+| **Tag** | `frontend` `platform` |
+| **Priority** | P2 |
+| **Status** | Not started — 2026-04-21 |
+
+**Problem:** Workspace enrichment (3.11B) creates rich surfaces with KPIs, checklists, and funnels. Some data requires integrations (Pro+ feature). The copilot (3.14) creates AI interactions (Pro+ feature with MCP budget). But there are **zero upgrade prompts in workspaces** — upgrade pressure only exists in chat budget bar, seat limits, and billing page. The value the user sees in workspaces never converts to upgrade intent.
+
+**Solution:** Contextual, non-intrusive upgrade moments where enriched workspace data would appear but requires a higher tier.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Integration-gated workspace blocks** | When a workspace block (e.g., Commerce KPI Strip, Dispute Rate Gauge, Product Intelligence) would render but has no data because no integration is connected, show a subtle placeholder: blurred preview of what the block looks like with sample data + "Unlock with [plan feature]" CTA. Not a hard gate — the workspace still shows everything it can from crawl data. The blurred block is additive, not blocking. | Medium |
+| B | **Copilot upgrade nudge** | When Starter user clicks "Ask Vestigio" on a workspace (3.14E), show a gentle upgrade prompt: "AI insights are available on Pro. [See plans]." Same pattern as ChatBudgetBar's 0% state. Non-blocking — the button is disabled, not hidden. | Low |
+| C | **Continuous audit cadence nudge** | On workspace "What Changed" hero (3.11 addition), if user is on Starter (weekly cycles), show: "Updated weekly. [Upgrade to Pro for daily insights]." Subtle text below the change summary, not a modal. | Low |
+| D | **Cross-signal as Pro+ feature** | Cross-Signal Insights block (3.15B) visible to all plans but with a limit: Starter sees 1 chain max, Pro sees all, Max gets proactive alerts. When Starter user sees "2 more cross-signal patterns detected — [Upgrade to see all]", it demonstrates value without fully gating it. | Low |
+
+**Total estimate:** ~3-5 days. All items are lightweight UI additions on top of existing plan config (`src/libs/plan-config.ts`). No engine changes.
+
+**Design rules:**
+- Never hard-gate a workspace. Crawl-based data is always visible regardless of plan.
+- Blurred previews show WHAT the user would get, not empty states.
+- Upgrade CTAs are inline text or subtle badges, never modals or banners.
+- Copy is value-framing ("Unlock daily insights") not fear-framing ("You're missing out").
+
+---
+
 ## Wave 4 — Expansion & Depth
 
 **Goal:** Extend the product into new strategic lenses, deeper verification, and platform maturity.
@@ -769,7 +955,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | 2.1-2.4 ✅ — **2.5 (Prisma Migrate) open** |
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
-| **3** | Semantic Enrichment & New Lenses | LLM enrichment, cybersecurity, copy analysis pack, Shopify expanded, Stripe, **ads integrations (partial)**, workspace redesign, **workspace lens enrichment**, **opportunity-first actions**, **re-engagement infrastructure** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12, 3.13 open** |
+| **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.17 open** |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
 

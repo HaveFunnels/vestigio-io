@@ -298,22 +298,25 @@ const config: Config = {
 			},
 			keyframes: {
 				"fab-in": {
-					"0%": { opacity: "0", transform: "translateY(1rem) scale(0.9)" },
+					"0%":   { opacity: "0", transform: "translateY(2rem) scale(0.7)" },
+					"40%":  { opacity: "0.6", transform: "translateY(-0.25rem) scale(1.04)" },
+					"70%":  { opacity: "1", transform: "translateY(0.1rem) scale(0.98)" },
 					"100%": { opacity: "1", transform: "translateY(0) scale(1)" },
 				},
 				"fab-out": {
-					"0%": { opacity: "1", transform: "translateY(0) scale(1)" },
-					"100%": { opacity: "0", transform: "translateY(1rem) scale(0.9)" },
+					"0%":   { opacity: "1", transform: "translateY(0) scale(1)" },
+					"100%": { opacity: "0", transform: "translateY(2rem) scale(0.7)" },
 				},
 				"panel-in": {
-					"0%": { opacity: "0", transform: "translateX(1rem) scale(0.97)" },
+					"0%":   { opacity: "0", transform: "translateX(2rem) scale(0.95)" },
+					"50%":  { opacity: "0.8", transform: "translateX(-0.15rem) scale(1.005)" },
 					"100%": { opacity: "1", transform: "translateX(0) scale(1)" },
 				},
 			},
 			animation: {
-				"fab-in": "fab-in 0.3s cubic-bezier(0.16,1,0.3,1) both",
-				"fab-out": "fab-out 0.2s cubic-bezier(0.16,1,0.3,1) both",
-				"panel-in": "panel-in 0.25s cubic-bezier(0.16,1,0.3,1) both",
+				"fab-in": "fab-in 0.6s cubic-bezier(0.16,1,0.3,1) both",
+				"fab-out": "fab-out 0.35s cubic-bezier(0.4,0,1,1) both",
+				"panel-in": "panel-in 0.5s cubic-bezier(0.16,1,0.3,1) both",
 			},
 			boxShadow: {
 				1: "0px 1px 2px 0px rgba(84, 87, 118, 0.10)",

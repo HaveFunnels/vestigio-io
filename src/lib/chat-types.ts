@@ -51,7 +51,8 @@ export type ContentBlock =
   | QuoteBlock
   | CreateActionBlock
   | DataRowsBlock
-  | KbArticleCardBlock;
+  | KbArticleCardBlock
+  | VoiceMessageBlock;
 
 export interface MarkdownBlock {
   type: 'markdown';
@@ -161,6 +162,16 @@ export interface KbArticleCardBlock {
   slug: string | null;
   /** Optional excerpt for the card preview */
   excerpt: string | null;
+}
+
+export interface VoiceMessageBlock {
+  type: 'voice_message';
+  /** URL to the audio blob (object URL or uploaded URL) */
+  audioSrc: string;
+  /** Duration in seconds */
+  duration: number;
+  /** Optional transcript from speech-to-text */
+  transcript?: string;
 }
 
 // ── Messages ─────────────────────────────────

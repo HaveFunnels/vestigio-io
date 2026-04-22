@@ -17,6 +17,7 @@ import { StreamingCursor } from "./StreamingCursor";
 import { MessageActions } from "./MessageActions";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 import { CreateActionCard } from "./CreateActionCard";
+import VoiceMessageBubble from "./VoiceMessageBubble";
 import SeverityBadge from "../SeverityBadge";
 
 interface ChatMessageRendererProps {
@@ -83,6 +84,25 @@ export function ChatMessageRenderer({
   const timestamp = formatMessageTime(message.createdAt);
 
   if (message.role === "user") {
+    const voiceBlock = message.blocks.find((b) => b.type === "voice_message");
+    if (voiceBlock && voiceBlock.type === "voice_message") {
+      return (
+        <div className="group flex justify-end gap-2">
+          <div className="flex flex-col items-end">
+            <VoiceMessageBubble
+              audioSrc={voiceBlock.audioSrc}
+              duration={voiceBlock.duration}
+              transcript={voiceBlock.transcript}
+              variant="user"
+            />
+            <span className="mt-1 text-[10px] text-content-faint opacity-0 transition-opacity group-hover:opacity-100">
+              {timestamp}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
     const text = message.blocks[0]?.type === "markdown"
       ? (message.blocks[0] as { type: "markdown"; content: string }).content
       : "";
@@ -277,6 +297,16 @@ function BlockRenderer({
             ))}
           </div>
         </div>
+      );
+
+    case "voice_message":
+      return (
+        <VoiceMessageBubble
+          audioSrc={block.audioSrc}
+          duration={block.duration}
+          transcript={block.transcript}
+          variant="assistant"
+        />
       );
 
     default:

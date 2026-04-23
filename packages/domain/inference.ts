@@ -26,4 +26,12 @@ export interface Inference extends Timestamped {
   // Explanation
   reasoning: string;
   description: string | null;
+
+  /**
+   * Phase 3.2 i18n: Structured slot values for reasoning template
+   * interpolation. When present, the projection engine can look up a
+   * translated reasoning template and interpolate these values.
+   * The `reasoning` field remains as the English fallback.
+   */
+  reasoning_slots?: Record<string, string | number>;
 }

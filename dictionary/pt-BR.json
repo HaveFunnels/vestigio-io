@@ -4481,6 +4481,32 @@
 			"social_proof_generic": "Depoimentos genéricos não são convincentes — compradores desconfiam de provas sociais sem nome e contexto real",
 			"support_discovered_too_late_to_convert": "Canais de suporte encontrados só depois do checkout — quando comprador encontra ajuda, a hesitação já causou abandono",
 			"trust_deficit_conversion_drag": "Gap de receita entre sessões com e sem confiança representa receita recuperável se barreiras forem endereçadas"
+		},
+		"reasoning_templates": {
+			"security_header_weakness": "Sinais de confiança do navegador {severity}. {factors}. Navegadores mostram avisos de \"Não seguro\" e removem o cadeado quando esses headers estão ausentes — compradores veem esses sinais e abandonam.",
+			"mixed_content_exposure": "Risco de quebra do checkout {severity}. {factors}. Scripts de pagamento, formulários e selos de confiança carregados via HTTP são bloqueados silenciosamente em páginas HTTPS — o comprador clica Pagar e nada acontece.",
+			"open_redirect_indicator": "Risco de phishing via domínio {severity}. {factors}. Atacantes criam links legítimos no seu domínio que redirecionam compradores para checkouts falsos — clientes reais perdem dinheiro achando que estão no seu site.",
+			"sensitive_endpoint_exposed": "Exposição de infraestrutura {severity}. {factors}. Credenciais e painéis admin acessíveis publicamente significam que uma única invasão pode desligar todo o comércio — faturamento vai a zero.",
+			"checkout_script_hijack_risk": "Risco de sequestro do checkout {severity}. {count} script(s) externo(s) não verificado(s) carregam em páginas de pagamento sem proteção CSP. Um único script comprometido pode substituir silenciosamente o formulário de pagamento, redirecionar dados de cartão para um atacante, ou injetar fluxos falsos de checkout.",
+			"buyer_session_theft_risk": "Risco de roubo de sessão {severity}. {count} cookie(s) em páginas comerciais sem flags Secure, HttpOnly ou SameSite. Atacantes podem roubar sessões de compradores via XSS ou sniffing de rede, fazer compras com métodos de pagamento salvos, ou acessar dados da conta.",
+			"checkout_clickjack_risk": "Risco de clickjacking {severity}. Proteção contra clickjacking ausente em {count} página(s) com checkout comercial. Atacantes podem embutir seu checkout dentro de um site falso usando iframe invisível — compradores pensam que clicam no site do atacante mas estão autorizando pagamentos no seu.",
+			"payment_data_unencrypted": "Exposição de dados de pagamento {severity}. {count} formulário(s) de pagamento enviando para destinos inseguros ou não confiáveis. Números de cartão, CVVs e dados pessoais cruzam uma fronteira não criptografada onde qualquer observador de rede pode capturá-los em texto puro.",
+			"error_page_information_leak": "Vazamento de informação em páginas de erro {severity}. {count} página(s) de erro retornando respostas detalhadas (> 2 KB) em status 4xx/5xx. Provavelmente expõem stack traces, versões de framework, detalhes de banco de dados ou caminhos internos — dando aos atacantes um mapa detalhado da arquitetura.",
+			"cors_misconfiguration_risk": "Risco de CORS mal configurado {severity}. {count} página(s) comercial(is) retornando Access-Control-Allow-Origin: *. CORS wildcard em endpoints de pagamento permite que qualquer site faça requisições autenticadas — sites maliciosos podem ler dados de sessão, iniciar compras e extrair informações de clientes.",
+			"rate_limiting_absent_on_commerce": "Risco de rate limiting ausente {severity}. Nenhum header de rate-limit detectado em {count} endpoint(s) comercial(is). Sem rate limiting, bots de fraude podem testar milhares de cartões roubados por minuto, acumular estoque e extrair preços.",
+			"predictable_order_urls": "Exposição de URLs previsíveis {severity}. {count} URL(s) com padrões sequenciais (ex: /order/123) retornando HTTP 200. URLs sequenciais permitem que qualquer pessoa enumere pedidos, faturas e perfis de clientes — expondo dados pessoais e financeiros em escala.",
+			"revenue_path_fragile": "Fragilidade do caminho de faturamento: {severity}. Fatores contribuintes: {factors}.",
+			"conversion_flow_fragmented": "Fluxo de conversão {severity} fragmentado. {factors}. Cada fragmento é um ponto potencial de abandono que drena faturamento.",
+			"friction_on_critical_path": "Fricção no caminho crítico é {severity}. {factors}. Cada ponto de fricção no caminho de faturamento reduz a taxa de conversão.",
+			"revenue_leakage": "Severidade do vazamento de receita: {severity}. {factors}.",
+			"trust_break_in_checkout": "Quebra de confiança no checkout: {severity}. {factors}. Deficiências de confiança no ponto de conversão reduzem diretamente o faturamento.",
+			"measurement_blindspot": "Ponto cego de medição: {severity}. {factors}. Sem medição, o vazamento de receita é invisível e não quantificável.",
+			"unclear_conversion_intent": "Intenção de conversão {severity} obscura. {factors}. Quando visitantes não sabem o que fazer, eles saem.",
+			"refund_policy_gap": "Gap de política de reembolso: {severity}. {factors}. Compradores que não encontram termos claros disputam com o banco em vez de pedir reembolso.",
+			"support_unreachable": "Acessibilidade do suporte: {severity}. {factors}. Compradores que não encontram atendimento recorrem diretamente ao chargeback.",
+			"expectation_misalignment": "Desalinhamento de expectativa: {severity}. {factors}. Quando o checkout não bate com a expectativa, disputas aumentam.",
+			"dispute_risk_elevated": "Risco de disputa: {severity}. {factors}. Múltiplos fatores de risco combinados provocam chargebacks.",
+			"redirect_chain_erodes_checkout_trust": "Confiança do checkout corroída: {severity}. {factors}. Cada redirecionamento adiciona fricção e reduz confiança."
 		}
 	},
 	"privacy_policy": {

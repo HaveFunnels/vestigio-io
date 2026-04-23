@@ -286,6 +286,7 @@ function inferSecurityHeaderWeakness(
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
     reasoning: `Browser trust signals ${severity}. ${factors.join('; ')}. Browsers show "Not Secure" warnings and remove the padlock when these headers are missing — buyers see these signals and abandon.`,
+    reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
 
@@ -322,6 +323,7 @@ function inferMixedContentExposure(
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
     reasoning: `Checkout breakage risk ${severity}. ${factors.join('; ')}. Payment scripts, forms, and trust badges loaded over HTTP are silently blocked on HTTPS pages — the buyer clicks Pay and nothing happens.`,
+    reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
 
@@ -356,6 +358,7 @@ function inferOpenRedirectIndicator(
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
     reasoning: `Domain phishing risk ${severity}. ${factors.join('; ')}. Attackers create legitimate-looking links on your domain that redirect buyers to fake checkout pages — real customers lose money thinking they are on your site.`,
+    reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
 
@@ -392,6 +395,7 @@ function inferSensitiveEndpointExposed(
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
     reasoning: `Infrastructure exposure ${severity}. ${factors.join('; ')}. Publicly accessible credentials and admin panels mean one breach away from total commerce shutdown — revenue goes to zero.`,
+    reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
 
@@ -419,6 +423,7 @@ function inferCheckoutScriptHijackRisk(
     signal_refs: [makeRef('signal', hijackRisk.id)],
     evidence_refs: hijackRisk.evidence_refs,
     reasoning: `Checkout hijack risk ${severity}. ${count} unvetted external script(s) load on payment pages without CSP protection. A single compromised script can silently replace the payment form, redirect card data to an attacker, or inject fake checkout flows — buyers see your domain and trust it.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -446,6 +451,7 @@ function inferBuyerSessionTheftRisk(
     signal_refs: [makeRef('signal', cookieWeak.id)],
     evidence_refs: cookieWeak.evidence_refs,
     reasoning: `Session theft risk ${severity}. ${count} cookie(s) on commercial pages lack Secure, HttpOnly, or SameSite flags. Attackers can steal buyer sessions via XSS or network sniffing, make purchases with saved payment methods, or access account data — all without the buyer knowing.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -475,6 +481,7 @@ function inferCheckoutClickjackRisk(
     signal_refs: [makeRef('signal', clickjackMissing.id)],
     evidence_refs: clickjackMissing.evidence_refs,
     reasoning: `Clickjack risk ${severity}. Clickjacking protection missing on ${count} page(s) and commercial checkout exists. Attackers can embed your checkout page inside a fake site using an invisible iframe — buyers think they are clicking on the attacker's page but are actually authorizing payments on yours.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -502,6 +509,7 @@ function inferPaymentDataUnencrypted(
     signal_refs: [makeRef('signal', insecureTarget.id)],
     evidence_refs: insecureTarget.evidence_refs,
     reasoning: `Payment data exposure ${severity}. ${count} payment form(s) submit to insecure or untrusted destinations. Card numbers, CVVs, and personal data cross an unencrypted boundary where any network observer — coffee shop WiFi, ISP, compromised router — can capture them in plaintext.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -529,6 +537,7 @@ function inferErrorPageInformationLeak(
     signal_refs: [makeRef('signal', leaks.id)],
     evidence_refs: leaks.evidence_refs,
     reasoning: `Error page information leak ${severity}. ${count} error page(s) return verbose responses (> 2 KB) on 4xx/5xx status codes. These likely expose stack traces, framework versions, database connection details, or internal file paths — giving attackers a detailed map of the system architecture to craft targeted exploits.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -583,6 +592,7 @@ function inferCorsMisconfigurationRisk(
     signal_refs: [makeRef('signal', corsWildcard.id)],
     evidence_refs: corsWildcard.evidence_refs,
     reasoning: `CORS misconfiguration risk ${severity}. ${count} commercial page(s) return Access-Control-Allow-Origin: *. Wildcard CORS on payment endpoints lets any website make authenticated cross-origin requests — malicious sites can read session data, initiate purchases, and extract customer information using the buyer's authenticated session.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -610,6 +620,7 @@ function inferRateLimitingAbsent(
     signal_refs: [makeRef('signal', noRateLimit.id)],
     evidence_refs: noRateLimit.evidence_refs,
     reasoning: `Rate limiting risk ${severity}. No rate-limit headers detected on ${count} commercial endpoint(s). Without rate limiting, fraud bots can test thousands of stolen cards per minute, hoard inventory through automated cart requests, and scrape pricing — generating chargebacks, stock manipulation, and operational chaos.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -637,6 +648,7 @@ function inferPredictableOrderUrls(
     signal_refs: [makeRef('signal', predictable.id)],
     evidence_refs: predictable.evidence_refs,
     reasoning: `Predictable URL exposure ${severity}. ${count} URL(s) matching sequential patterns (e.g. /order/123, /invoice/456) return HTTP 200. Sequential URLs let anyone enumerate orders, invoices, and customer profiles — exposing personal and financial data at scale without authentication barriers.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -835,6 +847,7 @@ function inferRevenuePathFragility(
       evidence_refs: fragileSignals.flatMap((s) => s.evidence_refs),
       reasoning: `Revenue path fragility: ${fragility}. Contributing factors: ` +
         fragileSignals.map((s) => s.description).join('; '),
+      reasoning_slots: { severity: fragility, factors: fragileSignals.map((s) => s.description).join('; ') },
     }),
   ];
 }
@@ -973,6 +986,7 @@ function inferConversionFlowFragmentation(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Conversion flow is ${severity === 'high' ? 'severely' : 'moderately'} fragmented. ${factors.join('. ')}. Each fragment is a potential drop-off point that leaks revenue.`,
+    reasoning_slots: { severity, factors: factors.join('. ') },
   })];
 }
 
@@ -1028,6 +1042,7 @@ function inferFrictionOnCriticalPath(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Critical path friction is ${severity}. ${factors.join('. ')}. Every friction point on the revenue path reduces conversion rate.`,
+    reasoning_slots: { severity, factors: factors.join('. ') },
   })];
 }
 
@@ -1090,6 +1105,7 @@ function inferRevenueLeakage(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Revenue leakage severity: ${severity}. ${leakPoints.length} leak point(s): ${leakPoints.join('; ')}.`,
+    reasoning_slots: { severity, factors: leakPoints.join('; ') },
   })];
 }
 
@@ -1148,6 +1164,7 @@ function inferTrustRevenueImpact(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Trust break at checkout: ${severity}. ${factors.join('. ')}. Trust deficiencies at the conversion point directly reduce revenue.`,
+    reasoning_slots: { severity, factors: factors.join('. ') },
   })];
 }
 
@@ -1198,6 +1215,7 @@ function inferMeasurementBlindspot(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Measurement blindspot: ${severity}. ${factors.join('. ')}. Without measurement, revenue leakage is invisible and unquantifiable.`,
+    reasoning_slots: { severity, factors: factors.join('. ') },
   })];
 }
 
@@ -1241,6 +1259,7 @@ function inferConversionClarity(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Conversion clarity: ${severity}. ${factors.join('. ')}. Unclear conversion intent means users cannot find or trust the path to purchase.`,
+    reasoning_slots: { severity, factors: factors.join('. ') },
   })];
 }
 
@@ -1336,6 +1355,7 @@ function inferRefundPolicyRisk(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Refund policy risk: ${severity}. ${factors.join('. ')}. Without clear refund processes, customers resolve dissatisfaction through chargebacks.`,
+    reasoning_slots: { severity, factors: factors.join('. ') },
   })];
 }
 
@@ -1385,6 +1405,7 @@ function inferSupportAccessibility(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Support accessibility: ${severity}. ${factors.join('. ')}. When customers can't reach support, they file chargebacks instead.`,
+    reasoning_slots: { severity, factors: factors.join('. ') },
   })];
 }
 
@@ -1437,6 +1458,7 @@ function inferExpectationAlignment(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Expectation alignment: ${severity}. ${factors.join('. ')}. Misaligned expectations are the #1 driver of "unauthorized charge" disputes.`,
+    reasoning_slots: { severity, factors: factors.join('. ') },
   })];
 }
 
@@ -1483,6 +1505,7 @@ function inferDisputeRisk(
     signal_refs: relevantSignals.map(s => makeRef('signal', s.id)),
     evidence_refs: relevantSignals.flatMap(s => s.evidence_refs),
     reasoning: `Dispute risk: ${severity}. ${factors.length} risk factor(s): ${factors.join('; ')}. Each factor independently increases the probability of chargebacks.`,
+    reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
 
@@ -1622,6 +1645,7 @@ function inferRedirectTrustErosion(
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
     reasoning: `Redirect trust erosion ${severity}. ${factors.join('; ')}. Industry data shows each redirect loses 5-15% of users. On the path to payment, this compounds into direct revenue loss as buyers interpret domain changes as untrustworthy.`,
+    reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
 
@@ -3197,6 +3221,7 @@ function createInference(params: {
   signal_refs: string[];
   evidence_refs: string[];
   reasoning: string;
+  reasoning_slots?: Record<string, string | number>;
 }): Inference {
   const now = new Date();
   return {
@@ -3218,6 +3243,7 @@ function createInference(params: {
     signal_refs: params.signal_refs,
     evidence_refs: params.evidence_refs,
     reasoning: params.reasoning,
+    reasoning_slots: params.reasoning_slots,
     description: null,
     created_at: now,
     updated_at: now,

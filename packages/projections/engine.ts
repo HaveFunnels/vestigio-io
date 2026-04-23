@@ -614,6 +614,29 @@ function resolveParameterizedTitle(inferenceKey: string, conclusionValue: string
   return fallback;
 }
 
+/**
+ * Resolve translated reasoning using templates + slots.
+ * Template format: "Frame text {severity}. {factors}. Explanation."
+ * Slots come from Inference.reasoning_slots (set at inference time).
+ * Falls back to the English reasoning string when no template or slots.
+ */
+function resolveReasoning(
+  inferenceKey: string,
+  inf: Inference,
+  fallbackReasoning: string,
+  translations?: EngineTranslations,
+): string {
+  const template = translations?.reasoning_templates?.[inferenceKey];
+  if (!template || !inf.reasoning_slots) return fallbackReasoning;
+
+  // Simple {key} interpolation — no ICU complexity needed here
+  let result = template;
+  for (const [key, value] of Object.entries(inf.reasoning_slots)) {
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+  }
+  return result;
+}
+
 export function projectAll(result: MultiPackResult, translations?: EngineTranslations): ProjectionResult {
   const findings = projectFindings(result, translations);
   const actions = projectActions(result, translations);
@@ -873,7 +896,7 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       surface: INFERENCE_SURFACES[vc.inference_key] || '/',
       freshness: inf.freshness.freshness_state,
       inference_key: vc.inference_key,
-      reasoning: vc.reasoning,
+      reasoning: resolveReasoning(vc.inference_key, inf, vc.reasoning, translations),
       cause: translations?.inference_causes?.[vc.inference_key] ?? vc.cause,
       effect: translations?.inference_effects?.[vc.inference_key] ?? vc.effect,
       basis_type: vc.basis_type,

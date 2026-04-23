@@ -54,6 +54,9 @@ export async function ensureContext(orgCtx: {
     orgCtx.orgId === 'demo_org';
   if (isDemo) {
     _demoMode = true;
+    // Phase 3.2: inject locale translations so demo data renders in the user's language
+    const { setDemoTranslations } = require('./demo-data');
+    setDemoTranslations(orgCtx.engineTranslations);
     return;
   }
   _demoMode = false;

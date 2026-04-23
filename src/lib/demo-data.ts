@@ -16,11 +16,55 @@ import type { MultiPackResult } from "../../packages/workspace";
 // formatted as FindingProjection objects. The engine maps are derived
 // from them using buildCustomMap so they're structurally accurate.
 //
-// Why not run the real engine? The demo org has no Evidence in Prisma
-// (it's a fallback context, not a real organization). Creating
-// synthetic evidence → engine recompute would work but is fragile
-// and expensive. This module provides the same end result at zero cost.
+// Phase 3.2: Demo strings are translated to the user's locale using
+// the same engine translation dictionaries as the real projection
+// engine. English is the fallback when translations are missing.
 // ──────────────────────────────────────────────
+
+// ── Translation-aware string resolution ──
+// The demo data is built once at module load. To pick up the user's
+// locale we accept an optional translations dict from ensureContext.
+// When absent, English strings are used (same as pre-3.2).
+
+import type { EngineTranslations } from "../../packages/projections/types";
+import { lookupRemediation } from "../../packages/projections/remediation-catalog";
+
+let _translations: EngineTranslations | undefined;
+
+/** Call once from ensureContext (demo branch) to inject the locale. */
+export function setDemoTranslations(t: EngineTranslations | undefined): void {
+	_translations = t;
+	// Rebuild memoized exports so they pick up the new locale
+	_cachedFindings = null;
+	_cachedWorkspaces = null;
+	_cachedChangeReport = null;
+}
+
+function t_title(key: string, fallback: string): string {
+	return _translations?.inference_titles?.[key] ?? fallback;
+}
+function t_cause(key: string, fallback: string): string {
+	return _translations?.inference_causes?.[key] ?? fallback;
+}
+function t_effect(key: string, fallback: string): string {
+	return _translations?.inference_effects?.[key] ?? fallback;
+}
+function t_rootCause(key: string, fallback: string): string {
+	return _translations?.root_cause_titles?.[key] ?? fallback;
+}
+function t_reasoning(key: string, fallback: string): string {
+	return _translations?.reasoning_templates?.[key] ?? fallback;
+}
+function t_remed(key: string): { steps: string[] | null; notes: string | null } {
+	const tR = _translations?.remediation?.[key];
+	if (tR) return { steps: tR.remediation_steps, notes: tR.verification_notes };
+	const catalog = lookupRemediation(key);
+	if (catalog) return { steps: catalog.remediation_steps, notes: catalog.verification_notes };
+	return { steps: null, notes: null };
+}
+function t_workspace(key: string, fallback: string): string {
+	return _translations?.workspace_names?.[key] ?? fallback;
+}
 
 const BASE: Omit<
 	FindingProjection,
@@ -39,6 +83,8 @@ const BASE: Omit<
 	| "change_class"
 	| "verification_maturity"
 	| "verification_method"
+	| "remediation_steps"
+	| "verification_notes"
 > = {
 	confidence: 80,
 	confidence_tier: "high",
@@ -48,8 +94,6 @@ const BASE: Omit<
 	truth_context: null,
 	suppression_context: null,
 	verification_strategy: null,
-	verification_notes: null,
-	remediation_steps: null,
 	estimated_effort_hours: null,
 	evidence_quality: {
 		source_reliability: 85,
@@ -67,6 +111,7 @@ const BASE: Omit<
 function f(
 	key: string,
 	title: string,
+	rootCauseKey: string | null,
 	rootCause: string | null,
 	severity: "critical" | "high" | "medium" | "low",
 	pack: string,
@@ -81,12 +126,13 @@ function f(
 	changeClass: string | null = null,
 	verMaturity = "confirmed",
 ): FindingProjection {
+	const remed = t_remed(key);
 	return {
 		...BASE,
 		id: `demo_finding_${key}`,
 		inference_key: key,
-		title,
-		root_cause: rootCause || null,
+		title: t_title(key, title),
+		root_cause: rootCauseKey ? t_rootCause(rootCauseKey, rootCause || "") : rootCause,
 		severity,
 		pack,
 		surface,
@@ -99,30 +145,46 @@ function f(
 			currency: "USD",
 			role: polarity === "positive" ? "retention" : "loss",
 		},
-		cause,
-		effect,
-		reasoning,
+		cause: t_cause(key, cause),
+		effect: t_effect(key, effect),
+		reasoning: t_reasoning(key, reasoning),
 		change_class: changeClass,
 		verification_maturity: verMaturity,
 		verification_method: verMaturity === "confirmed" ? "browser_verified" : "static_only",
+		remediation_steps: remed.steps,
+		verification_notes: remed.notes,
 	} as FindingProjection;
 }
 
-export const DEMO_FINDINGS: FindingProjection[] = [
-	f("checkout_off_domain", "Checkout redirects buyers to a different domain", "Untracked purchase paths", "high", "revenue_integrity", "/checkout", "negative", 2400, 4800, 3200, "Checkout flow redirects through 3 hops to Stripe hosted checkout, crossing 2 domains.", "50% of buyers drop off during the redirect chain.", "At $85 AOV and 3,420 monthly checkout starts, conservative 20% recovery estimate yields ~$3,200/mo.", "stable_risk"),
-	f("conversion_tracking_absent", "No conversion tracking on checkout or thank-you page", "Commerce pages invisible to measurement", "high", "revenue_integrity", "/checkout", "negative", 800, 2400, 1600, "GA4, Facebook Pixel, and Segment are present on 6 pages but absent from checkout and thank-you.", "Ad platforms report $0 revenue, inflating CPA by 40-60%.", "Without purchase attribution, ad spend optimization is blind."),
-	f("product_page_high_abandonment", "Product page abandonment 15pp above benchmark", "Friction barrier on conversion path", "medium", "revenue_integrity", "/products", "negative", 900, 2700, 1800, "70% of product page visitors leave without adding to cart (benchmark: 55-60%). 3.4s LCP and missing social proof contribute.", "Each percentage point of cart-add rate recovered equals ~$120/mo.", "Slow load time and absence of reviews suppress impulse purchases."),
-	f("cart_intermittent_500", "Cart page fails with HTTP 500 during peak hours", "Runtime commerce fragility", "critical", "revenue_integrity", "/cart", "negative", 3000, 8000, 5000, "Cart page returns HTTP 500 during approximately 50% of peak traffic hours.", "Buyers see a blank error page with no recovery path.", "Error pattern correlates with traffic spikes — likely a backend capacity issue.", "regression"),
-	f("payment_api_timeout", "Payment API times out 50% of attempts", "Runtime commerce fragility", "critical", "revenue_integrity", "/checkout", "negative", 4000, 10000, 6500, "Payment intent creation fails with 502 Bad Gateway (30s Stripe timeout). No retry logic.", "Combined with cart 500s, the checkout funnel has ~75% technical failure rate during peak hours.", "Payment failures are the single highest-impact issue.", "new_issue"),
-	f("refund_policy_missing", "No refund or return policy found on site", "Dispute defenses absent", "high", "chargeback_resilience", "/", "negative", 400, 1200, 720, "Crawl of all pages found zero mention of refund, return, or exchange terms.", "Buyers who want a refund file chargebacks instead.", "Stores without visible refund policy have 2-3x higher chargeback rate."),
-	f("checkout_trust_signals_absent", "Checkout page missing trust badges and security indicators", "Trust deficit at decision point", "medium", "chargeback_resilience", "/checkout", "negative", 200, 600, 400, "Checkout page has no visible trust badges, payment logos, or security seals.", "Reduced buyer confidence at the most critical conversion moment.", "Trust signals reduce abandonment by 5-15%."),
-	f("admin_endpoint_unprotected", "Admin order export endpoint accessible without authentication", "Commerce operations exposed", "critical", "scale_readiness", "/admin/orders/export", "negative", 5000, 20000, 10000, "/admin/orders/export?format=csv returns full order data with no authentication.", "Complete customer data exfiltration risk. GDPR/LGPD violation.", "Unprotected admin endpoints are a critical security vulnerability."),
-	f("discount_code_guessable", "Discount codes discoverable through parameter guessing", "Commerce abuse exposure", "high", "scale_readiness", "/api/discount/apply", "negative", 1500, 6000, 3000, "Two discount codes (WELCOME50, STAFF100) discoverable via parameter fuzzing.", "STAFF100 eliminates all revenue from any order.", "Unprotected discount endpoints are actively exploited."),
-	f("mixed_content_checkout", "Checkout page loads non-secure content breaking padlock", "Trust deficit at decision point", "high", "scale_readiness", "/checkout", "negative", 300, 900, 500, "Address autocomplete widget loaded via HTTP iframe.", "Visible security warning during payment entry.", "Mixed content on payment pages contradicts PCI-DSS requirements."),
-	f("mobile_checkout_blocked", "Mobile checkout completely unreachable", "Friction barrier on conversion path", "critical", "scale_readiness", "/", "negative", 8000, 20000, 14000, "Add-to-cart button overlapped by Intercom chat widget on screens <430px.", "100% of mobile conversions blocked. Mobile represents ~55% of traffic.", "Total mobile conversion blockage implies $14k/mo in unreachable revenue.", "stable_risk"),
-	f("checkout_performance_critical", "Checkout page fails all Core Web Vitals", "Runtime commerce fragility", "high", "scale_readiness", "/checkout", "negative", 400, 1200, 700, "Checkout: 4.2s LCP, 120ms FID, 0.18 CLS. 6.8MB payload.", "Slow checkout increases abandonment.", "Every 100ms of checkout latency reduces conversion by ~0.7%.", "improvement"),
-	f("cookie_consent_missing", "No cookie consent banner despite 18 tracking cookies", "Commerce operations exposed", "medium", "scale_readiness", "/", "negative", 200, 1000, 500, "Site sets 18 cookies on first page load without consent.", "GDPR/ePrivacy violation for EU visitors.", "Cookie compliance is mandatory in EU, increasingly enforced in Brazil."),
-];
+function buildFindings(): FindingProjection[] {
+	return [
+		f("checkout_off_domain", "Checkout redirects buyers to a different domain", "trust_failure_at_checkout", "Untracked purchase paths", "high", "revenue_integrity", "/checkout", "negative", 2400, 4800, 3200, "Checkout flow redirects through 3 hops to Stripe hosted checkout, crossing 2 domains.", "50% of buyers drop off during the redirect chain.", "At $85 AOV and 3,420 monthly checkout starts, conservative 20% recovery estimate yields ~$3,200/mo.", "stable_risk"),
+		f("conversion_tracking_absent", "No conversion tracking on checkout or thank-you page", "measurement_gap_commercial", "Commerce pages invisible to measurement", "high", "revenue_integrity", "/checkout", "negative", 800, 2400, 1600, "GA4, Facebook Pixel, and Segment are present on 6 pages but absent from checkout and thank-you.", "Ad platforms report $0 revenue, inflating CPA by 40-60%.", "Without purchase attribution, ad spend optimization is blind."),
+		f("product_page_high_abandonment", "Product page abandonment 15pp above benchmark", "friction_blocking_purchase_path", "Friction barrier on conversion path", "medium", "revenue_integrity", "/products", "negative", 900, 2700, 1800, "70% of product page visitors leave without adding to cart (benchmark: 55-60%). 3.4s LCP and missing social proof contribute.", "Each percentage point of cart-add rate recovered equals ~$120/mo.", "Slow load time and absence of reviews suppress impulse purchases."),
+		f("cart_intermittent_500", "Cart page fails with HTTP 500 during peak hours", "runtime_commerce_fragility", "Runtime commerce fragility", "critical", "revenue_integrity", "/cart", "negative", 3000, 8000, 5000, "Cart page returns HTTP 500 during approximately 50% of peak traffic hours.", "Buyers see a blank error page with no recovery path.", "Error pattern correlates with traffic spikes — likely a backend capacity issue.", "regression"),
+		f("payment_api_timeout", "Payment API times out 50% of attempts", "runtime_commerce_fragility", "Runtime commerce fragility", "critical", "revenue_integrity", "/checkout", "negative", 4000, 10000, 6500, "Payment intent creation fails with 502 Bad Gateway (30s Stripe timeout). No retry logic.", "Combined with cart 500s, the checkout funnel has ~75% technical failure rate during peak hours.", "Payment failures are the single highest-impact issue.", "new_issue"),
+		f("refund_policy_missing", "No refund or return policy found on site", "dispute_defenses_absent", "Dispute defenses absent", "high", "chargeback_resilience", "/", "negative", 400, 1200, 720, "Crawl of all pages found zero mention of refund, return, or exchange terms.", "Buyers who want a refund file chargebacks instead.", "Stores without visible refund policy have 2-3x higher chargeback rate."),
+		f("checkout_trust_signals_absent", "Checkout page missing trust badges and security indicators", "trust_deficit_at_decision_point", "Trust deficit at decision point", "medium", "chargeback_resilience", "/checkout", "negative", 200, 600, 400, "Checkout page has no visible trust badges, payment logos, or security seals.", "Reduced buyer confidence at the most critical conversion moment.", "Trust signals reduce abandonment by 5-15%."),
+		f("admin_endpoint_unprotected", "Admin order export endpoint accessible without authentication", "commerce_operations_exposed", "Commerce operations exposed", "critical", "scale_readiness", "/admin/orders/export", "negative", 5000, 20000, 10000, "/admin/orders/export?format=csv returns full order data with no authentication.", "Complete customer data exfiltration risk. GDPR/LGPD violation.", "Unprotected admin endpoints are a critical security vulnerability."),
+		f("discount_code_guessable", "Discount codes discoverable through parameter guessing", "commerce_abuse_exposure", "Commerce abuse exposure", "high", "scale_readiness", "/api/discount/apply", "negative", 1500, 6000, 3000, "Two discount codes (WELCOME50, STAFF100) discoverable via parameter fuzzing.", "STAFF100 eliminates all revenue from any order.", "Unprotected discount endpoints are actively exploited."),
+		f("mixed_content_checkout", "Checkout page loads non-secure content breaking padlock", "trust_deficit_at_decision_point", "Trust deficit at decision point", "high", "scale_readiness", "/checkout", "negative", 300, 900, 500, "Address autocomplete widget loaded via HTTP iframe.", "Visible security warning during payment entry.", "Mixed content on payment pages contradicts PCI-DSS requirements."),
+		f("mobile_checkout_blocked", "Mobile checkout completely unreachable", "friction_barrier_on_conversion_path", "Friction barrier on conversion path", "critical", "scale_readiness", "/", "negative", 8000, 20000, 14000, "Add-to-cart button overlapped by Intercom chat widget on screens <430px.", "100% of mobile conversions blocked. Mobile represents ~55% of traffic.", "Total mobile conversion blockage implies $14k/mo in unreachable revenue.", "stable_risk"),
+		f("checkout_performance_critical", "Checkout page fails all Core Web Vitals", "runtime_commerce_fragility", "Runtime commerce fragility", "high", "scale_readiness", "/checkout", "negative", 400, 1200, 700, "Checkout: 4.2s LCP, 120ms FID, 0.18 CLS. 6.8MB payload.", "Slow checkout increases abandonment.", "Every 100ms of checkout latency reduces conversion by ~0.7%.", "improvement"),
+		f("cookie_consent_missing", "No cookie consent banner despite 18 tracking cookies", "commerce_operations_exposed", "Commerce operations exposed", "medium", "scale_readiness", "/", "negative", 200, 1000, 500, "Site sets 18 cookies on first page load without consent.", "GDPR/ePrivacy violation for EU visitors.", "Cookie compliance is mandatory in EU, increasingly enforced in Brazil."),
+	];
+}
+
+// ── Memoized exports (rebuild on locale change) ──
+let _cachedFindings: FindingProjection[] | null = null;
+let _cachedWorkspaces: WorkspaceProjection[] | null = null;
+let _cachedChangeReport: ChangeReportProjection | null = null;
+
+export const DEMO_FINDINGS: FindingProjection[] = new Proxy([] as FindingProjection[], {
+	get(target, prop) {
+		if (!_cachedFindings) _cachedFindings = buildFindings();
+		return Reflect.get(_cachedFindings, prop);
+	},
+});
 
 export const DEMO_ACTIONS: ActionProjection[] = [
 	{
@@ -246,19 +308,20 @@ function buildDemoProjectionResult(): {
 	result: MultiPackResult;
 } {
 	const rootCauses = [
-		{ root_cause_key: "untracked_purchase_paths", title: "Untracked purchase paths", category: "measurement_gap", severity: "high", confidence: 85, impact_types: ["revenue_loss"], affected_packs: ["revenue_integrity"], contributing_inferences: [], contributing_signals: [], description: "" },
-		{ root_cause_key: "runtime_commerce_fragility", title: "Runtime commerce fragility", category: "infrastructure_failure", severity: "critical", confidence: 90, impact_types: ["revenue_loss", "scale_risk"], affected_packs: ["revenue_integrity", "scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
-		{ root_cause_key: "friction_barrier_on_conversion_path", title: "Friction barrier on conversion path", category: "ux_friction", severity: "critical", confidence: 95, impact_types: ["revenue_loss"], affected_packs: ["revenue_integrity", "scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
-		{ root_cause_key: "trust_deficit_at_decision_point", title: "Trust deficit at decision point", category: "trust_failure", severity: "high", confidence: 78, impact_types: ["revenue_loss", "chargeback_risk"], affected_packs: ["chargeback_resilience", "scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
-		{ root_cause_key: "dispute_defenses_absent", title: "Dispute defenses absent", category: "policy_gap", severity: "high", confidence: 80, impact_types: ["chargeback_risk"], affected_packs: ["chargeback_resilience"], contributing_inferences: [], contributing_signals: [], description: "" },
-		{ root_cause_key: "commerce_operations_exposed", title: "Commerce operations exposed", category: "security_exposure", severity: "critical", confidence: 88, impact_types: ["revenue_loss", "trust_erosion"], affected_packs: ["scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
-		{ root_cause_key: "commerce_pages_invisible", title: "Commerce pages invisible to measurement", category: "measurement_gap", severity: "high", confidence: 82, impact_types: ["revenue_loss"], affected_packs: ["revenue_integrity"], contributing_inferences: [], contributing_signals: [], description: "" },
-		{ root_cause_key: "commerce_abuse_exposure", title: "Commerce abuse exposure", category: "security_exposure", severity: "high", confidence: 85, impact_types: ["revenue_loss"], affected_packs: ["scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
+		{ root_cause_key: "untracked_purchase_paths", title: t_rootCause("untracked_purchase_paths", "Untracked purchase paths"), category: "measurement_gap", severity: "high", confidence: 85, impact_types: ["revenue_loss"], affected_packs: ["revenue_integrity"], contributing_inferences: [], contributing_signals: [], description: "" },
+		{ root_cause_key: "runtime_commerce_fragility", title: t_rootCause("runtime_commerce_fragility", "Runtime commerce fragility"), category: "infrastructure_failure", severity: "critical", confidence: 90, impact_types: ["revenue_loss", "scale_risk"], affected_packs: ["revenue_integrity", "scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
+		{ root_cause_key: "friction_barrier_on_conversion_path", title: t_rootCause("friction_barrier_on_conversion_path", "Friction barrier on conversion path"), category: "ux_friction", severity: "critical", confidence: 95, impact_types: ["revenue_loss"], affected_packs: ["revenue_integrity", "scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
+		{ root_cause_key: "trust_deficit_at_decision_point", title: t_rootCause("trust_deficit_at_decision_point", "Trust deficit at decision point"), category: "trust_failure", severity: "high", confidence: 78, impact_types: ["revenue_loss", "chargeback_risk"], affected_packs: ["chargeback_resilience", "scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
+		{ root_cause_key: "dispute_defenses_absent", title: t_rootCause("dispute_defenses_absent", "Dispute defenses absent"), category: "policy_gap", severity: "high", confidence: 80, impact_types: ["chargeback_risk"], affected_packs: ["chargeback_resilience"], contributing_inferences: [], contributing_signals: [], description: "" },
+		{ root_cause_key: "commerce_operations_exposed", title: t_rootCause("commerce_operations_exposed", "Commerce operations exposed"), category: "security_exposure", severity: "critical", confidence: 88, impact_types: ["revenue_loss", "trust_erosion"], affected_packs: ["scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
+		{ root_cause_key: "commerce_pages_invisible", title: t_rootCause("commerce_pages_invisible", "Commerce pages invisible to measurement"), category: "measurement_gap", severity: "high", confidence: 82, impact_types: ["revenue_loss"], affected_packs: ["revenue_integrity"], contributing_inferences: [], contributing_signals: [], description: "" },
+		{ root_cause_key: "commerce_abuse_exposure", title: t_rootCause("commerce_abuse_exposure", "Commerce abuse exposure"), category: "security_exposure", severity: "high", confidence: 85, impact_types: ["revenue_loss"], affected_packs: ["scale_readiness"], contributing_inferences: [], contributing_signals: [], description: "" },
 	];
 
+	const findings = _cachedFindings || buildFindings();
 	return {
 		projections: {
-			findings: DEMO_FINDINGS,
+			findings,
 			actions: DEMO_ACTIONS,
 			workspaces: DEMO_WORKSPACES,
 			change_report: DEMO_CHANGE_REPORT,
@@ -304,31 +367,26 @@ function buildDemoWorkspace(
 	};
 }
 
-export function buildDemoWorkspaces(): WorkspaceProjection[] {
-	const revenue = DEMO_FINDINGS.filter((f) =>
-		f.pack === "revenue_integrity",
-	);
-	const chargeback = DEMO_FINDINGS.filter((f) =>
-		f.pack === "chargeback_resilience",
-	);
-	const scale = DEMO_FINDINGS.filter((f) =>
-		f.pack === "scale_readiness",
-	);
+function buildWorkspaces(): WorkspaceProjection[] {
+	const findings = _cachedFindings || buildFindings();
+	const revenue = findings.filter((f) => f.pack === "revenue_integrity");
+	const chargeback = findings.filter((f) => f.pack === "chargeback_resilience");
+	const scale = findings.filter((f) => f.pack === "scale_readiness");
 
 	return [
-		buildDemoWorkspace("preflight", "Scale Readiness", "preflight", "scale_readiness_pack", "high", scale, {
+		buildDemoWorkspace("preflight", t_workspace("scale_readiness", "Scale Readiness"), "preflight", "scale_readiness_pack", "high", scale, {
 			trend: "mixed",
 			regression_count: 1,
 			improvement_count: 1,
 			resolved_count: 0,
 		}),
-		buildDemoWorkspace("revenue", "Revenue Analysis", "revenue", "revenue_integrity_pack", "critical", revenue, {
+		buildDemoWorkspace("revenue", t_workspace("revenue_integrity", "Revenue Analysis"), "revenue", "revenue_integrity_pack", "critical", revenue, {
 			trend: "degrading",
 			regression_count: 2,
 			improvement_count: 0,
 			resolved_count: 0,
 		}),
-		buildDemoWorkspace("chargeback", "Chargeback Analysis", "chargeback", "chargeback_resilience_pack", "high", chargeback, {
+		buildDemoWorkspace("chargeback", t_workspace("chargeback_resilience", "Chargeback Analysis"), "chargeback", "chargeback_resilience_pack", "high", chargeback, {
 			trend: "stable",
 			regression_count: 0,
 			improvement_count: 0,
@@ -337,7 +395,16 @@ export function buildDemoWorkspaces(): WorkspaceProjection[] {
 	];
 }
 
-export const DEMO_WORKSPACES: WorkspaceProjection[] = buildDemoWorkspaces();
+export function buildDemoWorkspaces(): WorkspaceProjection[] {
+	return buildWorkspaces();
+}
+
+export const DEMO_WORKSPACES: WorkspaceProjection[] = new Proxy([] as WorkspaceProjection[], {
+	get(target, prop) {
+		if (!_cachedWorkspaces) _cachedWorkspaces = buildWorkspaces();
+		return Reflect.get(_cachedWorkspaces, prop);
+	},
+});
 
 function buildDemoChange(f: FindingProjection, changeClass: string): any {
 	return {
@@ -354,25 +421,35 @@ function buildDemoChange(f: FindingProjection, changeClass: string): any {
 	};
 }
 
-const demoRegressions = DEMO_FINDINGS.filter((f) => f.change_class === "regression").map((f) => buildDemoChange(f, "regression"));
-const demoImprovements = DEMO_FINDINGS.filter((f) => f.change_class === "improvement").map((f) => buildDemoChange(f, "improvement"));
-const demoNewIssues = DEMO_FINDINGS.filter((f) => f.change_class === "new_issue").map((f) => buildDemoChange(f, "new_issue"));
+function buildChangeReport(): ChangeReportProjection {
+	const findings = _cachedFindings || buildFindings();
+	const demoRegressions = findings.filter((f) => f.change_class === "regression").map((f) => buildDemoChange(f, "regression"));
+	const demoImprovements = findings.filter((f) => f.change_class === "improvement").map((f) => buildDemoChange(f, "improvement"));
+	const demoNewIssues = findings.filter((f) => f.change_class === "new_issue").map((f) => buildDemoChange(f, "new_issue"));
 
-export const DEMO_CHANGE_REPORT: ChangeReportProjection = {
-	headline: `${demoRegressions.length} regressions, ${demoImprovements.length} improvements, ${demoNewIssues.length} new issues`,
-	overall_trend: demoRegressions.length > demoImprovements.length ? "degrading" : "mixed",
-	regression_count: demoRegressions.length,
-	improvement_count: demoImprovements.length,
-	new_issue_count: demoNewIssues.length,
-	resolved_count: 0,
-	stable_risk_count: DEMO_FINDINGS.filter((f) => f.change_class === "stable_risk").length,
-	regressions: demoRegressions,
-	improvements: demoImprovements,
-	new_issues: demoNewIssues,
-	resolved: [],
-	previous_cycle_ref: "demo_cycle:previous",
-	current_cycle_ref: "demo_cycle:latest",
-};
+	return {
+		headline: `${demoRegressions.length} regressions, ${demoImprovements.length} improvements, ${demoNewIssues.length} new issues`,
+		overall_trend: demoRegressions.length > demoImprovements.length ? "degrading" : "mixed",
+		regression_count: demoRegressions.length,
+		improvement_count: demoImprovements.length,
+		new_issue_count: demoNewIssues.length,
+		resolved_count: 0,
+		stable_risk_count: findings.filter((f) => f.change_class === "stable_risk").length,
+		regressions: demoRegressions,
+		improvements: demoImprovements,
+		new_issues: demoNewIssues,
+		resolved: [],
+		previous_cycle_ref: "demo_cycle:previous",
+		current_cycle_ref: "demo_cycle:latest",
+	};
+}
+
+export const DEMO_CHANGE_REPORT: ChangeReportProjection = new Proxy({} as ChangeReportProjection, {
+	get(target, prop) {
+		if (!_cachedChangeReport) _cachedChangeReport = buildChangeReport();
+		return Reflect.get(_cachedChangeReport, prop);
+	},
+});
 
 export function buildDemoEngineMaps(): MapDefinition[] {
 	const { projections, result } = buildDemoProjectionResult();

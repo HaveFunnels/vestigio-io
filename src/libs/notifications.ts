@@ -40,7 +40,8 @@ export type NotificationEvent =
 	// operator marked as done is confirmed resolved by a subsequent
 	// cycle. Celebration moment — delivers the "since you fixed X,
 	// you recovered $Y/mo" payoff.
-	| "verified_resolved";
+	| "verified_resolved"
+	| "digest";
 
 interface BaseNotification {
 	event: NotificationEvent;
@@ -466,6 +467,10 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 			// recovered $X"), so this isn't a spam vector like regular
 			// alerts. A dedicated preference toggle can come later
 			// once we see real engagement.
+			return true;
+		case "digest":
+			// Daily digest respects emailEnabled (general toggle).
+			// Skipping if user has turned off email entirely.
 			return true;
 	}
 }

@@ -28,6 +28,9 @@ const RATE_PRUNE_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 // without access and should be paused. Hourly cadence is fine because
 // the threshold is measured in days; a pause that lands up to 60min
 // late is invisible to the user.
+// 3.13 — Daily digest email. Runs once per day. Sends narrative
+// briefing with cross-signal highlights, health score, top changes.
+const DIGEST_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const INACTIVITY_PAUSE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const INACTIVITY_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 // Dispatcher drains NotificationLog rows queued as status="skipped".
@@ -461,4 +464,24 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	runProductEventPrune(); // boot pass
 	setInterval(runProductEventPrune, PRODUCT_EVENT_PRUNE_INTERVAL_MS);
 	console.log("✓ Product event prune cron registered (24h interval)");
+
+	// ── 3.13: Daily digest email ──
+	const { sendDailyDigests } = await import("./libs/cycle-digest");
+	const runDigest = async () => {
+		await withLeadership(
+			"daily-digest",
+			{ ttlSec: 300 },
+			async () => {
+				try {
+					const { sent, skipped } = await sendDailyDigests();
+					console.log(`[daily-digest] sent=${sent} skipped=${skipped}`);
+				} catch (err) {
+					console.error("[daily-digest] pass failed:", err);
+				}
+			},
+		);
+	};
+	// Don't run on boot — first digest fires after 24h
+	setInterval(runDigest, DIGEST_INTERVAL_MS);
+	console.log("✓ Daily digest cron registered (24h interval)");
 }

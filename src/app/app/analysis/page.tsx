@@ -23,6 +23,7 @@ import {
 } from "@/components/console/DrawerSection";
 import { loadFindings } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import { useCopilot } from "@/components/app/CopilotProvider";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import FindingDetailPanel from "@/components/console/FindingDetailPanel";
 import type { FindingProjection } from "../../../../packages/projections";
@@ -354,6 +355,7 @@ function AnalysisContent({
 	const t = useTranslations("console.analysis");
 	const tc = useTranslations("console.common");
 	const { track } = useTrack();
+	const copilot = useCopilot();
 
 	// 3.20: Initialize filters from URL params (persist across navigation)
 	const [severityFilter, setSeverityFilter] = useState<SeverityFilter>(
@@ -752,7 +754,10 @@ function AnalysisContent({
 						variant='console'
 						onClick={(e) => {
 							e.stopPropagation();
-							router.push(`/chat?finding=${row.id}`);
+							copilot.open({
+								finding: row,
+								prompt: `Discuss this finding: "${row.title}". What's the impact and what should I do about it?`,
+							});
 						}}
 					>
 						{t("discuss")}
@@ -910,9 +915,19 @@ function AnalysisContent({
 					<div className='flex-1' />
 					<ShinyButton
 						variant="console"
-						onClick={() =>
-							router.push(`/app/chat?findings=${[...selectedIds].join(",")}`)
-						}
+						onClick={() => {
+							const selected = findings.filter((f) => selectedIds.has(f.id));
+							if (selected.length === 1) {
+								copilot.open({
+									finding: selected[0],
+									prompt: `Discuss this finding: "${selected[0].title}". What's the impact and what should I do about it?`,
+								});
+							} else {
+								copilot.open({
+									prompt: `Analyze these ${selected.length} findings together and identify cross-signal patterns:\n${selected.map((f) => `- ${f.title}`).join("\n")}`,
+								});
+							}
+						}}
 					>
 						{selectedIds.size === 1
 							? t("discuss")
@@ -955,7 +970,8 @@ function AnalysisContent({
 	);
 }
 
-function FindingDrawerContent({
+// FindingDrawerContent removed — superseded by FindingDetailPanel (3.20)
+function _FindingDrawerContent_REMOVED({
 	finding,
 	onDiscuss,
 }: {

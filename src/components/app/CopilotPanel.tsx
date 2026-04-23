@@ -172,7 +172,7 @@ function PlaybooksOverlay({
 	const tChat = useTranslations("console.chat");
 
 	return (
-		<div className="absolute inset-0 z-10 flex flex-col bg-card">
+		<div className="absolute inset-y-0 right-0 z-10 flex w-full max-w-md flex-col bg-card border-l border-edge">
 			{/* Header */}
 			<div className="flex items-center justify-between border-b border-edge px-4 py-2.5">
 				<span className="text-[11px] font-semibold uppercase tracking-wider text-content-muted">
@@ -298,7 +298,7 @@ export default function CopilotPanel() {
 
 	return (
 		<div
-			className={`fixed z-[45] flex flex-col overflow-hidden rounded-2xl border border-edge bg-card shadow-2xl shadow-black/30 animate-panel-in ${
+			className={`fixed z-[45] flex flex-col overflow-hidden rounded-2xl border border-edge bg-card shadow-2xl shadow-black/30 animate-panel-in transition-all duration-300 ease-out ${
 			isExpanded
 				? "inset-3 top-14 w-auto"
 				: "top-14 right-3 bottom-3 w-[420px]"
@@ -484,7 +484,6 @@ export default function CopilotPanel() {
 					onModelChange={setModel}
 					isStreaming={isStreaming}
 					onStop={abort}
-					placeholder={t("input_placeholder")}
 					compact
 				/>
 			</div>

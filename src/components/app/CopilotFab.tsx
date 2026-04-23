@@ -112,7 +112,7 @@ export default function CopilotFab() {
 						fixed bottom-4 right-4 z-[45]
 						flex items-center gap-2.5
 						rounded-full pl-3 pr-4 py-2.5
-						text-sm font-medium
+						text-sm font-medium cursor-pointer
 						bg-black/80 text-white backdrop-blur-sm
 						border border-white/10
 						shadow-[0_0_12px_-2px_rgba(255,255,255,0.2),0_0_4px_0px_rgba(255,255,255,0.08)]

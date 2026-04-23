@@ -115,8 +115,8 @@ export default function CopilotFab() {
 						text-sm font-medium
 						bg-black/80 text-white backdrop-blur-sm
 						border border-white/10
-						shadow-[0_0_16px_-2px_rgba(52,211,153,0.25),0_0_4px_0px_rgba(52,211,153,0.1)]
-						hover:border-white/20 hover:shadow-[0_0_24px_-2px_rgba(52,211,153,0.4),0_0_6px_0px_rgba(52,211,153,0.15)]
+						shadow-[0_0_12px_-2px_rgba(255,255,255,0.2),0_0_4px_0px_rgba(255,255,255,0.08)]
+						hover:border-white/20 hover:shadow-[0_0_18px_-2px_rgba(255,255,255,0.3),0_0_6px_0px_rgba(255,255,255,0.1)]
 					"
 					aria-label={t("fab_aria")}
 					initial={{ y: 80, scale: 0.8 }}

@@ -118,6 +118,7 @@ export default function CopilotFab() {
 						shadow-[0_0_12px_-2px_rgba(255,255,255,0.2),0_0_4px_0px_rgba(255,255,255,0.08)]
 						hover:border-white/20 hover:shadow-[0_0_18px_-2px_rgba(255,255,255,0.3),0_0_6px_0px_rgba(255,255,255,0.1)]
 					"
+					style={{ cursor: "pointer" }}
 					aria-label={t("fab_aria")}
 					initial={{ y: 80, scale: 0.8 }}
 					animate={{ y: 0, scale: 1 }}
@@ -128,6 +129,7 @@ export default function CopilotFab() {
 						damping: 30,
 						mass: 0.8,
 					}}
+					whileHover={{ scale: 1.06 }}
 					whileTap={{ scale: 0.93 }}
 				>
 					<ColorOrb size={24} />

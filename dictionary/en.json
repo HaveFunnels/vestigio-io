@@ -1913,7 +1913,9 @@
 						"decision": "Decision",
 						"purchase": "Purchase",
 						"post_purchase": "Post-purchase"
-					}
+					},
+					"findings_singular": "finding",
+					"findings_plural": "findings"
 				}
 			}
 		},

@@ -1761,7 +1761,9 @@
 						"decision": "Entscheidung",
 						"purchase": "Kauf",
 						"post_purchase": "Nach dem Kauf"
-					}
+					},
+					"findings_singular": "Befund",
+					"findings_plural": "Befunde"
 				}
 			}
 		},

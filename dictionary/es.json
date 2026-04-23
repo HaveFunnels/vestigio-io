@@ -1882,7 +1882,9 @@
 						"decision": "Decisión",
 						"purchase": "Compra",
 						"post_purchase": "Post-compra"
-					}
+					},
+					"findings_singular": "hallazgo",
+					"findings_plural": "hallazgos"
 				}
 			}
 		},

@@ -307,7 +307,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			)}
 			{isRevenue && (
 				<div className="mt-5">
-					<RevenueIntelligence findings={workspace.findings} />
+					<RevenueIntelligence findings={workspace.findings} onFindingClick={openFinding} />
 				</div>
 			)}
 			{isSecurityPosture && (

@@ -1897,7 +1897,9 @@
 						"decision": "Decisão",
 						"purchase": "Compra",
 						"post_purchase": "Pós-compra"
-					}
+					},
+					"findings_singular": "finding",
+					"findings_plural": "findings"
 				}
 			},
 			"panorama_title": "Panorama",

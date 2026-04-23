@@ -52,7 +52,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Item | Status | Wave |
 |------|--------|------|
 | Workspace Redesign — browser verification only | **~85% done** — only browser verification remains | Wave 3.11 |
-| Workspace Lens Enrichment — checklist-first views | **Not started** — 5 fases, ~35-40h. Surfaces stored data (TrustSurfaceScore, CommerceContext KPIs, opportunities, product intelligence) that's currently never rendered | Wave 3.11B |
+| Workspace Lens Enrichment — checklist-first views | **Fases 1-4 shipped 2026-04-23** — Chargeback Resilience (checklist + trust score), Revenue Intelligence (funnel map + opportunities), Security Posture (checklist), perspective-level enrichment. CommerceContext KPIs + Product Intelligence deferred until projection layer exposes integration data. **Fase 5 (i18n) pending.** | Wave 3.11B |
 | Shopify: promoted product cross-reference with crawled pages | **Bug** — `promotedProductIds` passes `[]` in poller.ts:185; `out_of_stock_promoted` always 0; finding M never fires | Wave 3.7 |
 | Ad Platforms: Creative→LP matcher + message-match + waste signal (C-E) | **Not started** — infrastructure 90% in place, ~12-17h | Wave 3.9 |
 | Meta Ads + Google Ads OAuth app approvals | External — 1-6 weeks | Wave 3.9 |

@@ -28,6 +28,7 @@ import type {
 	ActionProjection,
 	ChangeReportProjection,
 } from "../../../../packages/projections";
+import { generateRemediationPrompt } from "@/libs/remediation-prompt";
 
 // ──────────────────────────────────────────────
 // Actions Page — Phase 1B UX Overhaul
@@ -911,6 +912,78 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 // ──────────────────────────────────────────────
+// Fix with AI — Vibecoding Bridge
+// ──────────────────────────────────────────────
+
+function FixWithAiSection({ action }: { action: ActionProjection }) {
+	const [expanded, setExpanded] = useState(false);
+	const [copied, setCopied] = useState(false);
+	const { track } = useTrack();
+
+	const prompt = useMemo(
+		() => generateRemediationPrompt({ action }),
+		[action],
+	);
+
+	function handleCopy() {
+		navigator.clipboard.writeText(prompt);
+		setCopied(true);
+		track("copy_remediation_prompt", { actionId: action.id, severity: action.severity });
+		setTimeout(() => setCopied(false), 2000);
+	}
+
+	return (
+		<div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					<svg className="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+					</svg>
+					<span className="text-xs font-semibold text-emerald-400">Fix with AI</span>
+				</div>
+				<div className="flex items-center gap-1.5">
+					<button
+						onClick={() => setExpanded(!expanded)}
+						className="rounded px-2 py-0.5 text-[10px] text-content-faint hover:text-content-muted transition-colors"
+					>
+						{expanded ? "Hide" : "Preview"}
+					</button>
+					<button
+						onClick={handleCopy}
+						className="flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-emerald-500"
+					>
+						{copied ? (
+							<>
+								<svg className="h-3 w-3" viewBox="0 0 16 16" fill="none">
+									<path d="M13.25 4.75L6 12 2.75 8.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+								</svg>
+								Copied
+							</>
+						) : (
+							<>
+								<svg className="h-3 w-3" viewBox="0 0 16 16" fill="none">
+									<rect x="5" y="5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.25" />
+									<path d="M11 5V3a1 1 0 00-1-1H3a1 1 0 00-1 1v7a1 1 0 001 1h2" stroke="currentColor" strokeWidth="1.25" />
+								</svg>
+								Copy prompt
+							</>
+						)}
+					</button>
+				</div>
+			</div>
+			<p className="mt-1.5 text-[11px] text-content-muted">
+				Copy this prompt into Cursor, Claude Code, Replit, or any AI coding tool.
+			</p>
+			{expanded && (
+				<pre className="mt-2 max-h-48 overflow-y-auto rounded-md bg-surface-card p-3 text-[11px] leading-relaxed text-content-muted whitespace-pre-wrap">
+					{prompt}
+				</pre>
+			)}
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
 // Drawer Content
 // ──────────────────────────────────────────────
 
@@ -1090,6 +1163,11 @@ function ActionDrawerContent({
 						)}
 					</DrawerStatBox>
 				</DrawerSection>
+			)}
+
+			{/* Fix with AI — vibecoding bridge */}
+			{action.remediation_steps && action.remediation_steps.length > 0 && (
+				<FixWithAiSection action={action} />
 			)}
 
 			{/* Verification Lifecycle Panel */}

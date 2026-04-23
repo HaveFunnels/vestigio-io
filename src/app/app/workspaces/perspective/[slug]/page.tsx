@@ -15,6 +15,8 @@ import ChangeBadge from "@/components/console/ChangeBadge";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
 import PulseSummary from "@/components/console/PulseSummary";
+import OpportunityPreview from "@/components/console/workspace/OpportunityPreview";
+import TrustScoreCard from "@/components/console/workspace/TrustScoreCard";
 import RevenueMap from "@/components/console/RevenueMap";
 import CycleDelta from "@/components/console/CycleDelta";
 import BraggingRights from "@/components/console/BraggingRights";
@@ -266,6 +268,29 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       <div className="mt-5">
         <PulseSummary perspective={slug} />
       </div>
+
+      {/* Perspective-level enrichment (3.11B Fase 4) */}
+      {slug === "revenue" && allFindings.length > 0 && (
+        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+              <OpportunityPreview findings={allFindings} />
+            </section>
+          </div>
+          <div className="lg:col-span-2">
+            <section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+              <TrustScoreCard findings={allFindings} filterPacks={["revenue_integrity", "revenue", "chargeback_resilience", "chargeback"]} />
+            </section>
+          </div>
+        </div>
+      )}
+      {slug === "trust" && allFindings.length > 0 && (
+        <div className="mt-5">
+          <section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+            <TrustScoreCard findings={allFindings} filterPacks={["security_posture", "scale_readiness"]} />
+          </section>
+        </div>
+      )}
 
       {/* Lenses — same asymmetric layout */}
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">

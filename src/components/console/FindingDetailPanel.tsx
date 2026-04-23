@@ -16,7 +16,6 @@
 //   - "Create Action" → if finding.action_refs.length === 0
 //   - "See Action" → if finding.action_refs.length > 0
 //   - "Verify" → if verification_strategy exists
-//   - "Open full page" → navigates to /app/findings/{id}
 // ──────────────────────────────────────────────
 
 import { useState, useEffect } from "react";
@@ -25,6 +24,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import type { FindingProjection } from "@/../../packages/projections/types";
 import { useCopilot } from "@/components/app/CopilotProvider";
+import { ShinyButton } from "@/components/ui/shiny-button";
 import {
 	DrawerSection,
 	DrawerStatBox,
@@ -469,17 +469,18 @@ export default function FindingDetailPanel({
 								{td("see_action") || "See Action"} — {finding.action_refs[0].title}
 							</button>
 						) : (
-							<button
+							<ShinyButton
+								variant="console"
 								onClick={() =>
 									copilot.open({
 										finding,
 										prompt: `Discuss this finding: "${finding.title}". What's the impact and what should I do about it?`,
 									})
 								}
-								className="w-full rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-600 transition-colors hover:border-emerald-500 hover:bg-emerald-500/15 dark:text-emerald-400"
+								className="w-full"
 							>
 								{td("discuss_finding")}
-							</button>
+							</ShinyButton>
 						)}
 					</>
 				)}

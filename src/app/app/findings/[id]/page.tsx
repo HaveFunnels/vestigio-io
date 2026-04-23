@@ -89,7 +89,6 @@ export default function FindingPage({
 			<FindingDetailPanel
 				finding={finding}
 				variant="full"
-				hideFullPageLink
 			/>
 		</div>
 	);

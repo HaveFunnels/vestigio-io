@@ -42,7 +42,6 @@ export interface FindingDetailPanelProps {
 	/** 'full' = all sections (Analysis behavior). 'compact' = hides remediation, KB link (Workspace/Perspective). */
 	variant?: "full" | "compact";
 	/** Hide the "Open full page" button (e.g., when already on the canonical page). */
-	hideFullPageLink?: boolean;
 }
 
 // ── Pack badge styles ──
@@ -60,7 +59,6 @@ const packBadgeStyles: Record<string, string> = {
 export default function FindingDetailPanel({
 	finding,
 	variant = "full",
-	hideFullPageLink = false,
 }: FindingDetailPanelProps) {
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
@@ -456,29 +454,6 @@ export default function FindingDetailPanel({
 
 			{/* CTAs — state-driven */}
 			<section className="space-y-2 pt-2">
-				{/* Open full page (unless already on canonical page) */}
-				{!hideFullPageLink && (
-					<Link
-						href={`/app/findings/${encodeURIComponent(finding.id)}`}
-						className="flex w-full items-center justify-center gap-2 rounded-lg border border-edge px-4 py-2 text-sm text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover"
-					>
-						<svg
-							className="h-3.5 w-3.5"
-							fill="none"
-							viewBox="0 0 24 24"
-							strokeWidth={1.5}
-							stroke="currentColor"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-							/>
-						</svg>
-						{td("open_full_page") || "Open full page"}
-					</Link>
-				)}
-
 				{/* See Action / Create Action */}
 				{finding.polarity !== "positive" && (
 					<>

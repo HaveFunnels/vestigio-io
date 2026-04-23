@@ -37,7 +37,7 @@ const TEMPLATES: Record<string, NotificationTemplate> = {
 			subject: "[Vestigio] Incidente: {headline}",
 			headline: "Incidente detectado",
 			intro: "<strong>{headline}</strong>{rootCauseSuffix}.<br/><br/>A Vestigio acabou de analisar <strong>{domain}</strong> e identificou {count} problema(s) que precisam de atenção.",
-			ctaLabel: "Ver no Vestigio",
+			ctaLabel: "Ver na Vestigio",
 			ctaPath: "/app/analysis",
 			footerNote: "Disparado pela auditoria de {domain}.",
 		},
@@ -90,8 +90,8 @@ const TEMPLATES: Record<string, NotificationTemplate> = {
 			body: "[Vestigio] Seu link de acesso: {link} — expira em 10 minutos.",
 		},
 		email: {
-			subject: "Entrar no Vestigio",
-			headline: "Entrar no Vestigio",
+			subject: "Entrar na Vestigio",
+			headline: "Entrar na Vestigio",
 			intro: "Clique no botão abaixo para entrar. Este link expira em 10 minutos.",
 			ctaLabel: "Entrar",
 			ctaPath: "{link}",
@@ -106,7 +106,7 @@ const TEMPLATES: Record<string, NotificationTemplate> = {
 		email: {
 			subject: "Seu diagnóstico de {domain} está pronto — ative sua conta",
 			headline: "Seu diagnóstico completo está pronto",
-			intro: "Bem-vindo ao Vestigio. Ativamos sua conta para <strong>{domain}</strong> e o diagnóstico completo já está esperando no seu painel. Clique abaixo para escolher como quer fazer login.",
+			intro: "Bem-vindo à Vestigio. Ativamos sua conta para <strong>{domain}</strong> e o diagnóstico completo já está esperando no seu painel. Clique abaixo para escolher como quer fazer login.",
 			ctaLabel: "Ativar minha conta",
 			ctaPath: "{link}",
 			footerNote: "Este link expira em 24 horas e só pode ser usado uma vez. Se não foi você que comprou, responda este email para cancelarmos.",
@@ -118,7 +118,7 @@ const TEMPLATES: Record<string, NotificationTemplate> = {
 			body: "[Vestigio] Redefinição de senha: {link} — expira em 1 hora.",
 		},
 		email: {
-			subject: "Redefinir senha do Vestigio",
+			subject: "Redefinir senha da Vestigio",
 			headline: "Redefinir sua senha",
 			intro: "Clique no botão abaixo para escolher uma nova senha. Este link expira em 1 hora.",
 			ctaLabel: "Redefinir senha",

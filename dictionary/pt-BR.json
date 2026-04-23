@@ -789,7 +789,7 @@
 				},
 				{
 					"title": "Documentação Completa e Suporte por E-mail",
-					"description": "A documentação inclui guias detalhados e passo a passo para cada parte do Vestigio. Se precisar de mais ajuda, basta abrir um ticket de suporte e responderemos prontamente."
+					"description": "A documentação inclui guias detalhados e passo a passo para cada parte da Vestigio. Se precisar de mais ajuda, basta abrir um ticket de suporte e responderemos prontamente."
 				}
 			]
 		},
@@ -850,8 +850,8 @@
 				"title": "Estanque o vazamento antes que ele se acumule",
 				"description": "",
 				"axis_label": "Faturamento perdido / mês",
-				"before_label": "Antes do Vestigio",
-				"after_label": "Depois do Vestigio",
+				"before_label": "Antes da Vestigio",
+				"after_label": "Depois da Vestigio",
 				"annotation_label": "Faturamento recuperado",
 				"annotation_value": "+87,2%"
 			},
@@ -1515,10 +1515,10 @@
 				"workspaces": "Resumos de decisões agrupados por questão de negócio. Veja o panorama geral.",
 				"chat": "Faça perguntas sobre seu ambiente. Vestigio responde com evidências.",
 				"analysis": "Todas as descobertas com detalhe completo de evidências. Aprofunde-se.",
-				"inventory": "Todas as páginas e superfícies que o Vestigio descobriu no seu site.",
+				"inventory": "Todas as páginas e superfícies que a Vestigio descobriu no seu site.",
 				"maps": "Cadeias visuais de causa e efeito das descobertas às ações.",
 				"knowledge_base": "Documentação sobre descobertas, packs e conceitos da plataforma.",
-				"data_sources": "Configure integrações e fontes de acesso para análise do Vestigio."
+				"data_sources": "Configure integrações e fontes de acesso para análise da Vestigio."
 			}
 		},
 		"verification_badge": {
@@ -1572,7 +1572,7 @@
 			"empty": "Nenhuma descoberta detectada ainda.",
 			"coverage": "{score}% de cobertura",
 			"protection_detected": "Proteção detectada: {type}",
-			"protection_description": "O acesso a {url} está restrito. Adicione o IP do Vestigio à sua lista de permissões para melhores resultados.",
+			"protection_description": "O acesso a {url} está restrito. Adicione o IP da Vestigio à sua lista de permissões para melhores resultados.",
 			"connection_lost": "Conexão perdida",
 			"updating": "atualizando...",
 			"cards": {
@@ -2092,9 +2092,9 @@
 			"widget_unavailable": "Widget \"{id}\" não está mais disponível"
 		},
 		"chat": {
-			"title": "Pergunte ao Vestigio",
+			"title": "Pergunte à Vestigio",
 			"subtitle": "Escolha uma pergunta, execute um playbook ou digite a sua.",
-			"placeholder": "Pergunte ao Vestigio...",
+			"placeholder": "Pergunte à Vestigio...",
 			"send": "Enviar",
 			"open_playbooks": "Abrir Playbooks",
 			"clear_context": "Limpar contexto",
@@ -2120,7 +2120,7 @@
 				"title": "Vestigio Pulse",
 				"description": "Pergunte sobre faturamento, riscos, chargebacks ou o que corrigir primeiro. Cada resposta é baseada nos dados da sua auditoria.",
 				"playbooksHint": "Abra Playbooks para prompts de análise especializada",
-				"tips_toggle": "Como aproveitar melhor o chat do Vestigio",
+				"tips_toggle": "Como aproveitar melhor o chat da Vestigio",
 				"tips": {
 					"natural": "Pergunte em linguagem natural — sem formatação especial. Cite descobertas, ações, superfícies ou workspaces pelo nome.",
 					"context": "Clique em \"Discutir\" ou \"Usar como contexto\" em qualquer descoberta/ação para começar um chat com o item já anexado.",
@@ -2444,7 +2444,7 @@
 			"hint_send": "Enter envia · Shift+Enter nova linha",
 			"attach_file": "Anexar arquivo",
 			"cycling_placeholders": [
-				"Pergunte qualquer coisa ao Vestigio...",
+				"Pergunte qualquer coisa à Vestigio...",
 				"Quais vulnerabilidades devo corrigir primeiro?",
 				"Resuma meus últimos findings",
 				"Onde estou perdendo receita?",
@@ -3060,13 +3060,13 @@
 			},
 			"org_name": {
 				"title": "Vamos começar — nomeie sua organização",
-				"subtitle": "Este é o nome da sua equipe ou empresa no Vestigio.",
+				"subtitle": "Este é o nome da sua equipe ou empresa na Vestigio.",
 				"label": "Nome da organização",
 				"placeholder": "Acme Corp"
 			},
 			"domain": {
 				"title": "Nos aponte para o seu site",
-				"subtitle": "Insira a URL do seu site para que o Vestigio inicie a análise.",
+				"subtitle": "Insira a URL do seu site para que a Vestigio inicie a análise.",
 				"label": "Domínio",
 				"placeholder": "https://exemplo.com",
 				"validation_error": "Digite um domínio válido (ex.: exemplo.com ou https://exemplo.com)",
@@ -3077,7 +3077,7 @@
 			},
 			"business_context": {
 				"title": "Conte-nos sobre seu negócio",
-				"subtitle": "Ajude o Vestigio a adaptar a análise ao seu modelo de negócio.",
+				"subtitle": "Ajude a Vestigio a adaptar a análise ao seu modelo de negócio.",
 				"business_type": "Tipo de negócio",
 				"types": {
 					"ecommerce": "Ecommerce",
@@ -3172,7 +3172,7 @@
 			},
 			"plan": {
 				"title": "Escolha seu plano",
-				"subtitle": "Um plano é necessário para ativar o Vestigio. Você pode fazer upgrade a qualquer momento.",
+				"subtitle": "Um plano é necessário para ativar a Vestigio. Você pode fazer upgrade a qualquer momento.",
 				"recommended": "Recomendado",
 				"per_month": "/mês",
 				"opening_checkout": "Abrindo checkout...",
@@ -3301,7 +3301,7 @@
 			},
 			"notifications": {
 				"title": "Notificações",
-				"description": "Escolha como e quando o Vestigio deve te avisar. Enviamos só o que importa.",
+				"description": "Escolha como e quando a Vestigio deve te avisar. Enviamos só o que importa.",
 				"loading": "Carregando preferências...",
 				"saving": "Salvando...",
 				"save": "Salvar",
@@ -3316,7 +3316,7 @@
 				"channel_sms": "SMS",
 				"channel_sms_desc": "Alertas curtos apenas para casos críticos.",
 				"channel_whatsapp": "WhatsApp",
-				"channel_whatsapp_desc": "Alertas do Vestigio direto no WhatsApp.",
+				"channel_whatsapp_desc": "Alertas da Vestigio direto no WhatsApp.",
 				"channel_needs_phone": "Adicione um número de telefone acima para ativar esse canal.",
 				"events_title": "Sobre o que me avisar",
 				"events_help": "Ajuste quais eventos devem gerar uma notificação.",
@@ -3345,7 +3345,7 @@
 			"greeting_title": "Vestigio AI",
 			"greeting_subtitle": "Descubra o que esta custando dinheiro",
 			"greeting_description": "Vazamentos de receita, gaps de confiança, riscos de segurança — pergunte qualquer coisa.",
-			"input_placeholder": "Pergunte ao Vestigio AI...",
+			"input_placeholder": "Pergunte à Vestigio AI...",
 			"budget_exhausted_title": "Você usou todas as consultas de AI de hoje",
 			"budget_exhausted_description": "Faça upgrade para mais consultas diárias e análises mais profundas.",
 			"budget_upgrade": "Fazer upgrade",
@@ -3630,7 +3630,7 @@
 			"commerce_pages_invisible_to_search": "Google e assistentes de IA tipo o ChatGPT não conseguem ver direito suas páginas de produto e preço. Estão faltando os sinais que os buscadores procuram, então quando o comprador busca exatamente o que você vende, seus concorrentes aparecem e você não. Cada busca que você não aparece é um comprador que estava pronto pra pagar — e achou outra pessoa.",
 			"brand_impersonation_exposure": "Sua marca está sendo ativamente imitada. Domínios parecidos, typosquats, páginas de phishing ou variantes fragmentadas da marca interceptam tráfego, rodam transações fraudulentas ou capturam visitas com erro de digitação. Cada comprador interceptado é faturamento direto que você conquistou mas nunca viu — e cada transação fraudulenta destrói a confiança da marca que você levou anos pra construir.",
 			"behavioral_hesitation_at_commitment": "Seus compradores chegam no passo do pagamento e param. Ficam clicando em volta procurando algo que faça eles se sentirem bem em pagar — e aí vão embora. Eles vieram pra comprar. Alguma coisa fez eles duvidarem no último momento. Dá pra ver isso acontecer, e dá pra consertar.",
-			"behavioral_path_disconnection": "Seu checkout parece funcionar quando você mesmo passa por ele, mas comprador real trava. Eles chegam em passos e nunca avançam. Veem o botão \"Comprar\" mas nunca clicam. Comprador mobile bate em beco sem saída. Você só vê quando olha o que visitante real faz — que é exatamente o que o Vestigio está fazendo.",
+			"behavioral_path_disconnection": "Seu checkout parece funcionar quando você mesmo passa por ele, mas comprador real trava. Eles chegam em passos e nunca avançam. Veem o botão \"Comprar\" mas nunca clicam. Comprador mobile bate em beco sem saída. Você só vê quando olha o que visitante real faz — que é exatamente o que a Vestigio está fazendo.",
 			"behavioral_value_justification_gap": "O comprador olha seu preço, volta pra página de features, volta pro preço de novo, e vai embora. Ele está tentando decidir se vale a pena — e nada na página diz isso com clareza. Ele não foi embora porque está caro. Ele foi embora porque você nunca deixou claro que vale o que custa.",
 			"behavioral_trust_failure_at_input": "Seus formulários pedem número de cartão, dados pessoais e contato — mas nada na página passa segurança pro comprador. Ele chega no campo, hesita e vai embora em vez de digitar. No momento em que você pede algo sensível, o comprador precisa se sentir seguro. Agora ele não se sente.",
 			"security_posture_inadequate": "O comprador vê sinais de alerta no segundo que chega no seu site. O cadeado some, o navegador diz \"Não Seguro\", e formulários de pagamento param de funcionar silenciosamente. Comprador clica em \"Pagar\" e nada acontece. Ao mesmo tempo, páginas de admin internas estão abertas, a um passo de um vazamento completo. Isso está custando vendas todo santo dia — e te preparando pra um desastre muito maior.",

@@ -83,7 +83,7 @@ export default async function ActivatePage({ params }: PageProps) {
 						VESTIGIO
 					</div>
 					<h1 className="mt-6 text-2xl font-semibold text-zinc-100 sm:text-3xl">
-						Bem-vindo ao Vestigio
+						Bem-vindo à Vestigio
 					</h1>
 					<p className="mt-3 text-sm text-zinc-400">
 						Sua conta está pronta. Escolha como você prefere acessar:

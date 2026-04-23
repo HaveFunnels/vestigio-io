@@ -42,9 +42,9 @@ export const WHATSAPP_TEMPLATES: Record<WhatsAppLanguage, Record<string, WhatsAp
 		vestigio_incident: {
 			name: "vestigio_incident",
 			category: "UTILITY",
-			body: "🚨 Incidente detectado no seu site {{1}}.\n\n*{{2}}*\n\n{{3}}\n\nAbra o Vestigio para ver detalhes e a causa raiz.",
+			body: "🚨 Incidente detectado no seu site {{1}}.\n\n*{{2}}*\n\n{{3}}\n\nAbra a Vestigio para ver detalhes e a causa raiz.",
 			params: ["domain", "headline", "root_cause_summary"],
-			button: { type: "URL", text: "Abrir no Vestigio", url: "https://vestigio.io/app/analysis" },
+			button: { type: "URL", text: "Abrir na Vestigio", url: "https://vestigio.io/app/analysis" },
 		},
 		vestigio_regression: {
 			name: "vestigio_regression",

@@ -12,6 +12,7 @@ import CommandPalette from "./CommandPalette";
 import CycleProgressBanner from "./CycleProgressBanner";
 import CopilotPanel from "./CopilotPanel";
 import CopilotFab from "./CopilotFab";
+import NotificationBell from "./NotificationBell";
 import { orgDropdownNav } from "./sidebar-nav-data";
 
 // Routes where the in-flight audit banner should appear. Keep this list
@@ -381,6 +382,7 @@ export default function AppSidebarLayout({
 							</button>
 						)}
 						<ThemeToggle />
+						{!isAdmin && <NotificationBell />}
 						<Link
 							href="/app/billing"
 							className="rounded border border-edge px-2 py-0.5 text-[10px] font-medium uppercase text-content-faint transition-colors hover:border-emerald-600/50 hover:text-emerald-400"

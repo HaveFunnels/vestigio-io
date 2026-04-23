@@ -1,15 +1,14 @@
 "use client";
 
 /**
- * ChatInputBar — Input area with model selector, voice input, file chips,
- * send button, stop-generating button, and Shift+Enter support.
+ * ChatInputBar — Animated input island with expanding controls.
  *
- * Features:
- * - Animated cycling placeholder with per-letter blur-in/out
- * - Spring-animated container that expands on focus
- * - Mobile: secondary controls collapse into a "+" popover
- * - Desktop: inline controls
- * - `compact` prop forces mobile island layout
+ * Follows the ai-chat-input template pattern:
+ * - Collapsed: single-row input with placeholder cycling (blur per letter)
+ * - Expanded (on focus/click): taller container reveals secondary controls
+ *   (attach, voice, model selector) with spring animation
+ * - Glow shadow animates smoothly via framer-motion spring
+ * - `compact` prop forces mobile island layout (+ popover)
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -21,7 +20,37 @@ import { ModelSelector } from "./ModelSelector";
 import { VoiceInput } from "./VoiceInput";
 import { FileChip, processFileList, type UploadedFile } from "./FileUploadZone";
 
-// ── Animated per-letter cycling placeholder ──
+// ── Animated per-letter cycling placeholder (from template) ──
+
+const placeholderContainerVariants = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.025 } },
+  exit: { transition: { staggerChildren: 0.015, staggerDirection: -1 as const } },
+};
+
+const letterVariants = {
+  initial: { opacity: 0, filter: "blur(12px)", y: 10 },
+  animate: {
+    opacity: 1,
+    filter: "blur(0px)",
+    y: 0,
+    transition: {
+      opacity: { duration: 0.25 },
+      filter: { duration: 0.4 },
+      y: { type: "spring" as const, stiffness: 80, damping: 20 },
+    },
+  },
+  exit: {
+    opacity: 0,
+    filter: "blur(12px)",
+    y: -10,
+    transition: {
+      opacity: { duration: 0.2 },
+      filter: { duration: 0.3 },
+      y: { type: "spring" as const, stiffness: 80, damping: 20 },
+    },
+  },
+};
 
 function CyclingPlaceholder({ texts }: { texts: string[] }) {
   const [index, setIndex] = useState(0);
@@ -34,53 +63,27 @@ function CyclingPlaceholder({ texts }: { texts: string[] }) {
         setIndex((prev) => (prev + 1) % texts.length);
         setShow(true);
       }, 400);
-    }, 3500);
+    }, 3000);
     return () => clearInterval(interval);
   }, [texts.length]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden">
+    <div className="pointer-events-none absolute left-0 top-0 flex h-full w-full items-center overflow-hidden">
       <AnimatePresence mode="wait">
         {show && (
           <motion.span
             key={index}
-            className="whitespace-nowrap text-sm text-content-muted select-none"
+            className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-sm text-content-muted select-none pointer-events-none"
+            variants={placeholderContainerVariants}
             initial="initial"
             animate="animate"
             exit="exit"
-            variants={{
-              initial: {},
-              animate: { transition: { staggerChildren: 0.02 } },
-              exit: { transition: { staggerChildren: 0.012, staggerDirection: -1 } },
-            }}
           >
             {texts[index].split("").map((char, i) => (
               <motion.span
                 key={i}
+                variants={letterVariants}
                 style={{ display: "inline-block" }}
-                variants={{
-                  initial: { opacity: 0, filter: "blur(8px)", y: 8 },
-                  animate: {
-                    opacity: 1,
-                    filter: "blur(0px)",
-                    y: 0,
-                    transition: {
-                      opacity: { duration: 0.2 },
-                      filter: { duration: 0.35 },
-                      y: { type: "spring", stiffness: 100, damping: 20 },
-                    },
-                  },
-                  exit: {
-                    opacity: 0,
-                    filter: "blur(8px)",
-                    y: -8,
-                    transition: {
-                      opacity: { duration: 0.15 },
-                      filter: { duration: 0.25 },
-                      y: { type: "spring", stiffness: 100, damping: 20 },
-                    },
-                  },
-                }}
               >
                 {char === " " ? "\u00A0" : char}
               </motion.span>
@@ -91,6 +94,13 @@ function CyclingPlaceholder({ texts }: { texts: string[] }) {
     </div>
   );
 }
+
+// ── Container animation variants (from template) ──
+
+const COLLAPSED_HEIGHT = 64;
+const EXPANDED_HEIGHT = 120;
+const COMPACT_COLLAPSED_HEIGHT = 58;
+const COMPACT_EXPANDED_HEIGHT = 108;
 
 // ── ChatInputBar ──
 
@@ -128,21 +138,21 @@ export function ChatInputBar({
 }: ChatInputBarProps) {
   const t = useTranslations("console.chat_input");
   const [input, setInput] = useState("");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+  const [isActive, setIsActive] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Cycling placeholder texts from translations
   const cyclingTexts = t.raw("cycling_placeholders") as string[];
 
-  // Show animated placeholder only when: no custom placeholder, empty input, not focused, not disabled
-  const showAnimatedPlaceholder = !placeholder && !input && !isFocused && !disabled && !isStreaming;
+  // Show animated placeholder only when: no custom placeholder, empty input, not active, not disabled
+  const showAnimatedPlaceholder = !placeholder && !input && !isActive && !disabled && !isStreaming;
 
-  // Container expands on focus or when has content
-  const isExpanded = isFocused || input.length > 0 || attachedFiles.length > 0;
+  // Container is expanded when active or has content
+  const isExpanded = isActive || input.length > 0 || attachedFiles.length > 0;
 
+  // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -150,16 +160,21 @@ export function ChatInputBar({
     el.style.height = `${Math.min(el.scrollHeight, 150)}px`;
   }, [input]);
 
+  // Click outside to collapse (from template)
   useEffect(() => {
-    if (!mobileMenuOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as HTMLElement)) {
-        setMobileMenuOpen(false);
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        if (!input) setIsActive(false);
       }
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [mobileMenuOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [input]);
+
+  function handleActivate() {
+    setIsActive(true);
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  }
 
   function handleSubmit() {
     const trimmed = input.trim();
@@ -191,216 +206,143 @@ export function ChatInputBar({
     e.target.value = "";
   }
 
+  const collapsedH = compact ? COMPACT_COLLAPSED_HEIGHT : COLLAPSED_HEIGHT;
+  const expandedH = compact ? COMPACT_EXPANDED_HEIGHT : EXPANDED_HEIGHT;
+
   return (
-    <div className={`shrink-0 px-4 pt-2 ${compact ? "" : "sm:px-8"}`} style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}>
+    <div className={`shrink-0 px-4 pt-2 ${compact ? "" : "sm:px-8"}`} style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0.75rem))" }}>
       <motion.div
-        className={`mx-auto max-w-3xl rounded-2xl border bg-surface-card px-3 py-2.5 backdrop-blur-sm transition-colors ${
-          isExpanded ? "border-content-faint/40" : "border-content-faint/25"
-        } ${compact ? "" : "sm:px-4 sm:py-3"}`}
+        ref={wrapperRef}
+        className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-content-faint/25 bg-surface-card backdrop-blur-sm"
+        initial={false}
         animate={{
+          height: isExpanded ? expandedH : collapsedH,
           boxShadow: isExpanded
-            ? "0 0 24px -4px rgba(16,185,129,0.15)"
-            : "0 1px 3px 0 rgba(0,0,0,0.08)",
-          scale: isExpanded ? 1 : (compact ? 0.998 : 0.99),
+            ? "0 8px 32px 0 rgba(16,185,129,0.12)"
+            : "0 2px 8px 0 rgba(0,0,0,0.08)",
+          borderColor: isExpanded
+            ? "rgba(52,211,153,0.2)"
+            : "rgba(255,255,255,0.1)",
         }}
         transition={{
           type: "spring",
-          stiffness: 400,
-          damping: 30,
-          mass: 0.8,
+          stiffness: 120,
+          damping: 18,
         }}
+        onClick={handleActivate}
       >
-        {/* Attached files */}
-        {attachedFiles.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            {attachedFiles.map((f, idx) => (
-              <FileChip key={idx} file={f} onRemove={() => onRemoveFile?.(idx)} />
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-end gap-2">
-          {/* ── Mobile / compact: "+" menu button ── */}
-          <div className={`relative ${compact ? "" : "sm:hidden"}`} ref={menuRef}>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              disabled={disabled}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-30 ${
-                mobileMenuOpen
-                  ? "bg-surface-inset text-content-secondary"
-                  : "text-content-faint hover:text-content-muted"
-              }`}
-              aria-label="More options"
-            >
-              <svg className={`h-5 w-5 transition-transform duration-200 ${mobileMenuOpen ? "rotate-45" : ""}`} viewBox="0 0 20 20" fill="none">
-                <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-              </svg>
-            </button>
-
-            {/* Mobile popover menu */}
-            {mobileMenuOpen && (
-              <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl border border-edge bg-surface-card py-1.5 shadow-xl">
-                {/* Attach file */}
-                <button
-                  onClick={() => {
-                    fileInputRef.current?.click();
-                    setMobileMenuOpen(false);
-                  }}
-                  disabled={disabled}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-sm text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-30"
-                >
-                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none">
-                    <path d="M14 9.5V12a2 2 0 01-2 2H4a2 2 0 01-2-2V9.5M8 10V2m0 0L5 5m3-3l3 3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {t("attach_file")}
-                </button>
-
-                {/* Voice input */}
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setTimeout(() => {
-                      const voiceBtn = document.querySelector<HTMLButtonElement>("[data-voice-trigger]");
-                      voiceBtn?.click();
-                    }, 100);
-                  }}
-                  disabled={disabled}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-sm text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-30"
-                >
-                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="none">
-                    <rect x="5" y="2" width="6" height="8" rx="3" stroke="currentColor" strokeWidth="1.25" />
-                    <path d="M3 8a5 5 0 0010 0M8 13v2" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-                  </svg>
-                  Voice input
-                </button>
-
-                {/* Model selector */}
-                <div className="border-t border-edge/50 mt-1 pt-1">
-                  <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-content-faint">
-                    Model
-                  </div>
-                  {(Object.values(MODELS) as Array<(typeof MODELS)[ModelId]>).map((m) => {
-                    const isDisabled = m.id === "opus_4_6" && !(plan === "pro" || plan === "max");
-                    const isSelected = selectedModel === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        disabled={isDisabled}
-                        onClick={() => {
-                          if (!isDisabled) {
-                            onModelChange(m.id);
-                            setMobileMenuOpen(false);
-                          }
-                        }}
-                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                          isDisabled
-                            ? "cursor-not-allowed opacity-40"
-                            : "hover:bg-surface-card-hover"
-                        } ${isSelected ? "text-accent-text" : "text-content-muted"}`}
-                      >
-                        <span className="flex-1 text-left">{m.label}</span>
-                        {m.queryCost > 1 && (
-                          <span className="rounded border border-amber-700/30 bg-amber-500/10 px-1 py-0 text-[10px] font-medium text-amber-400">
-                            {m.queryCost}x
-                          </span>
-                        )}
-                        {isSelected && (
-                          <svg className="h-3.5 w-3.5 shrink-0 text-emerald-500" viewBox="0 0 16 16" fill="none">
-                            <path d="M13.25 4.75L6 12 2.75 8.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-              </div>
-            )}
-          </div>
-
-          {/* ── Desktop: inline file upload ── */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled}
-            className={`h-10 w-10 shrink-0 items-center justify-center rounded-lg text-content-faint transition-colors hover:text-content-muted disabled:opacity-30 ${compact ? "hidden" : "hidden sm:flex"}`}
-            title={t("attach_file")}
-          >
-            <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
-              <path d="M14 9.5V12a2 2 0 01-2 2H4a2 2 0 01-2-2V9.5M8 10V2m0 0L5 5m3-3l3 3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.json,.txt,.md,.pdf"
-            multiple
-            className="hidden"
-            onChange={handleFileInputChange}
-          />
-
-          {/* Textarea with animated placeholder overlay */}
-          <div className="relative flex-1">
-            {showAnimatedPlaceholder && (
-              <CyclingPlaceholder texts={cyclingTexts} />
-            )}
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              disabled={disabled}
-              placeholder={showAnimatedPlaceholder ? "" : (placeholder || t("placeholder"))}
-              aria-label={placeholder || t("placeholder")}
-              rows={1}
-              className="min-h-[40px] w-full resize-none bg-transparent py-2.5 text-sm text-white placeholder-content-muted outline-none disabled:opacity-50"
-            />
-          </div>
-
-          {/* ── Desktop: inline right-side controls ── */}
-          <div className={`shrink-0 items-center gap-1.5 ${compact ? "hidden" : "hidden sm:flex"}`}>
-            <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
-            <ModelSelector selected={selectedModel} onSelect={onModelChange} plan={plan} />
-          </div>
-
-          {/* Send / Stop — always visible */}
-          {isStreaming && onStop ? (
-            <button
-              onClick={onStop}
-              title={stopLabel || t("stop")}
-              aria-label={stopLabel || t("stop")}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white transition-colors hover:bg-red-500"
-            >
-              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
-                <rect x="3" y="3" width="10" height="10" rx="1" />
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={disabled || !input.trim()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
-                <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+        <div className="flex h-full flex-col">
+          {/* Attached files */}
+          {attachedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 px-3 pt-2">
+              {attachedFiles.map((f, idx) => (
+                <FileChip key={idx} file={f} onRemove={() => onRemoveFile?.(idx)} />
+              ))}
+            </div>
           )}
+
+          {/* Input row */}
+          <div className="flex items-center gap-2 px-3 py-2">
+            {/* Attach button (always visible, left side) */}
+            <button
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              disabled={disabled}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-content-faint transition-colors hover:bg-surface-inset hover:text-content-muted disabled:opacity-30"
+              title={t("attach_file")}
+            >
+              <svg className="h-4.5 w-4.5" viewBox="0 0 16 16" fill="none">
+                <path d="M14 9.5V12a2 2 0 01-2 2H4a2 2 0 01-2-2V9.5M8 10V2m0 0L5 5m3-3l3 3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.json,.txt,.md,.pdf"
+              multiple
+              className="hidden"
+              onChange={handleFileInputChange}
+            />
+
+            {/* Text input & placeholder */}
+            <div className="relative flex-1">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={handleActivate}
+                disabled={disabled}
+                placeholder={showAnimatedPlaceholder ? "" : (placeholder || t("placeholder"))}
+                aria-label={placeholder || t("placeholder")}
+                rows={1}
+                className="min-h-[40px] w-full resize-none bg-transparent py-2.5 text-sm text-white placeholder-content-muted outline-none disabled:opacity-50"
+                style={{ position: "relative", zIndex: 1 }}
+              />
+              {showAnimatedPlaceholder && (
+                <CyclingPlaceholder texts={cyclingTexts} />
+              )}
+            </div>
+
+            {/* Voice input (right side, always visible) */}
+            <VoiceInput onTranscript={handleVoiceTranscript} disabled={disabled} />
+
+            {/* Send / Stop */}
+            {isStreaming && onStop ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); onStop(); }}
+                title={stopLabel || t("stop")}
+                aria-label={stopLabel || t("stop")}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-600 text-white transition-colors hover:bg-red-500"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
+                  <rect x="3" y="3" width="10" height="10" rx="1" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleSubmit(); }}
+                disabled={disabled || !input.trim()}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white transition-colors hover:bg-emerald-500 disabled:opacity-30"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
+                  <path d="M14 2L7 9M14 2l-5 12-2-5-5-2 12-5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Expanded controls — only visible when active (from template pattern) */}
+          <motion.div
+            className="flex items-center gap-2 px-4"
+            variants={{
+              hidden: {
+                opacity: 0,
+                y: 16,
+                pointerEvents: "none" as const,
+                transition: { duration: 0.2 },
+              },
+              visible: {
+                opacity: 1,
+                y: 0,
+                pointerEvents: "auto" as const,
+                transition: { duration: 0.3, delay: 0.06 },
+              },
+            }}
+            initial="hidden"
+            animate={isExpanded ? "visible" : "hidden"}
+          >
+            {/* Model selector pill */}
+            <ModelSelector selected={selectedModel} onSelect={onModelChange} plan={plan} />
+
+            {/* Character counter */}
+            {input.length > 1500 && (
+              <span className={`ml-auto font-mono text-[10px] ${input.length > 1900 ? "text-red-400" : "text-content-faint"}`}>
+                {input.length}/2000
+              </span>
+            )}
+          </motion.div>
         </div>
       </motion.div>
-
-      {/* Hints — outside the island */}
-      <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between px-1">
-        <p className={`text-[9px] text-content-faint ${compact ? "hidden" : "hidden sm:block"}`}>
-          {t("hint_send")}
-        </p>
-        {input.length > 1500 && (
-          <span className={`font-mono text-[9px] ${input.length > 1900 ? "text-red-400" : "text-content-faint"}`}>
-            {input.length}/2000
-          </span>
-        )}
-      </div>
     </div>
   );
 }

@@ -17,6 +17,8 @@ import ConsoleState from "@/components/console/ConsoleState";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import ChangeTimeline from "@/components/console/ChangeTimeline";
+import ChargebackResilience from "@/components/console/workspace/ChargebackResilience";
+import SecurityPosture from "@/components/console/workspace/SecurityPosture";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type {
@@ -157,6 +159,8 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 	const topSeverity = getTopSeverity(workspace.findings);
 
 	const isPreflight = workspace.type === "preflight";
+	const isChargeback = workspace.type === "chargeback";
+	const isSecurityPosture = workspace.type === "security_posture";
 	const preflightReadiness = isPreflight ? computePreflightReadiness(workspace.findings) : null;
 
 	const findingColumns: Column<FindingProjection>[] = [
@@ -269,6 +273,18 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 							{!workspace.change_summary && workspaceChanges.length === 0 && (
 								<p className="text-[12px] text-zinc-400 dark:text-zinc-600">{t("detail.no_changes")}</p>
 							)}
+						</section>
+					)}
+
+					{/* Domain-specific enrichment (3.11B) — above findings table */}
+					{isChargeback && (
+						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+							<ChargebackResilience findings={workspace.findings} />
+						</section>
+					)}
+					{isSecurityPosture && (
+						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+							<SecurityPosture findings={workspace.findings} />
 						</section>
 					)}
 

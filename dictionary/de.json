@@ -2818,7 +2818,14 @@
 					"description": "Monatliche Werbeausgaben nach verbundener Plattform (Meta Ads, Google Ads)."
 				},
 				"cross_signal_hero": "Cross-Signal Insights",
-				"cross_signal_hero_desc": "Kausalketten ueber Domaenperspektiven"
+				"cross_signal_hero_desc": "Kausalketten ueber Domaenperspektiven",
+				"cross_signal_card": {
+					"eyebrow": "Cross-Signal Insights",
+					"pattern_singular": "Muster",
+					"pattern_plural": "Muster",
+					"empty_title": "Noch keine domänenübergreifenden Muster erkannt",
+					"empty_subtitle": "Muster erscheinen, wenn Befunde aus verschiedenen Packs dieselbe Seite betreffen"
+				}
 			},
 			"mock_data": {
 				"payment_intent_loss": "Käufer springen beim 3DS-Sicherheitsschritt ab",

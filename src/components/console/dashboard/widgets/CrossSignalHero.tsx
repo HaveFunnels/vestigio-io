@@ -93,6 +93,7 @@ function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boole
 }
 
 function CrossSignalHero({ data, editing }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.cross_signal_card");
 	const { crossSignal } = data;
 
 	if (!crossSignal || crossSignal.chains.length === 0) {
@@ -103,10 +104,10 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 					aria-hidden
 				/>
 				<p className="text-xs text-content-faint">
-					No cross-domain patterns detected yet
+					{t("empty_title")}
 				</p>
 				<p className="mt-1 text-[10px] text-content-faint">
-					Patterns appear when findings from different packs affect the same page
+					{t("empty_subtitle")}
 				</p>
 			</div>
 		);
@@ -129,7 +130,7 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 			{/* Eyebrow — Phosphor icon + label */}
 			<div className="relative flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
 				<GitFork size={11} weight="bold" className="text-indigo-400" />
-				<span>Cross-Signal Insights</span>
+				<span>{t("eyebrow")}</span>
 			</div>
 
 			{/* Hero number + caption */}
@@ -138,7 +139,7 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 					{chainCount}
 				</span>
 				<span className="text-[11px] text-content-secondary">
-					{chainCount === 1 ? "pattern" : "patterns"} · {formatCurrency(crossSignal.totalImpactCents)}/mo
+					{chainCount === 1 ? t("pattern_singular") : t("pattern_plural")} · {formatCurrency(crossSignal.totalImpactCents)}/mo
 				</span>
 			</div>
 

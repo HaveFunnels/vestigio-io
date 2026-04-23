@@ -2004,7 +2004,14 @@
 					"description": "Total monthly ad spend across connected platforms with per-platform breakdown."
 				},
 				"cross_signal_hero": "Cross-Signal Insights",
-				"cross_signal_hero_desc": "Causal chains across domain perspectives"
+				"cross_signal_hero_desc": "Causal chains across domain perspectives",
+				"cross_signal_card": {
+					"eyebrow": "Cross-Signal Insights",
+					"pattern_singular": "pattern",
+					"pattern_plural": "patterns",
+					"empty_title": "No cross-domain patterns detected yet",
+					"empty_subtitle": "Patterns appear when findings from different packs affect the same page"
+				}
 			},
 			"editing_subtitle": "Drag widgets to rearrange. Resize from the corner. Add or remove from the catalog.",
 			"add_widget": "Add widget",

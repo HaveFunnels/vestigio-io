@@ -1973,7 +1973,14 @@
 					"description": "Gasto mensual de ads total por plataforma conectada (Meta Ads, Google Ads)."
 				},
 				"cross_signal_hero": "Insights Cross-Signal",
-				"cross_signal_hero_desc": "Cadenas causales entre perspectivas de dominio"
+				"cross_signal_hero_desc": "Cadenas causales entre perspectivas de dominio",
+				"cross_signal_card": {
+					"eyebrow": "Insights Cross-Signal",
+					"pattern_singular": "patrón",
+					"pattern_plural": "patrones",
+					"empty_title": "Ningún patrón cross-domain detectado aún",
+					"empty_subtitle": "Los patrones aparecen cuando hallazgos de diferentes packs afectan la misma página"
+				}
 			},
 			"editing_subtitle": "Arrastra widgets para reorganizar. Redimensiona desde la esquina. Añade o elimina desde el catálogo.",
 			"add_widget": "Añadir widget",

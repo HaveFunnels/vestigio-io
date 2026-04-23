@@ -3,9 +3,11 @@
 /**
  * ModelSelector — Compact pill for choosing Default vs Ultra.
  * Ultra is gated by Pro+ plan. Shows cost indicator.
+ * Dropdown renders with fixed positioning + z-50 to escape overflow:hidden parents.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import type { ModelId } from "@/lib/chat-types";
 import { MODELS } from "@/lib/chat-types";
 
@@ -17,28 +19,42 @@ interface ModelSelectorProps {
 
 export function ModelSelector({ selected, onSelect, plan }: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const model = MODELS[selected];
   const canUseUltra = plan === "pro" || plan === "max";
 
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setPos({ top: rect.top - 4, left: rect.left });
+  }, []);
+
   useEffect(() => {
+    if (!open) return;
+    updatePosition();
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  }, [open, updatePosition]);
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={triggerRef}
         onClick={() => setOpen(!open)}
-        className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
+        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
           selected === "opus_4_6"
             ? "border-purple-700/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
-            : "border-edge/50 text-content-muted hover:border-edge hover:text-content-muted"
+            : "border-edge/50 bg-surface-inset text-content-muted hover:border-edge hover:text-content-secondary"
         }`}
       >
         {model.label}
@@ -51,8 +67,12 @@ export function ModelSelector({ selected, onSelect, plan }: ModelSelectorProps) 
         </svg>
       </button>
 
-      {open && (
-        <div className="absolute bottom-full left-0 mb-1.5 w-48 rounded-lg border border-edge bg-surface-card py-1 shadow-lg">
+      {open && pos && typeof document !== "undefined" && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed z-[60] w-48 rounded-lg border border-edge bg-surface-card py-1 shadow-xl"
+          style={{ top: pos.top, left: pos.left, transform: "translateY(-100%)" }}
+        >
           {(Object.values(MODELS) as Array<(typeof MODELS)[ModelId]>).map((m) => {
             const isDisabled = m.id === "opus_4_6" && !canUseUltra;
             const isSelected = selected === m.id;
@@ -104,8 +124,9 @@ export function ModelSelector({ selected, onSelect, plan }: ModelSelectorProps) 
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
 }

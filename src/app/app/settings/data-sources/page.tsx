@@ -97,11 +97,14 @@ const SOURCE_LOGOS: Record<string, React.ReactNode> = {
 	google_ads: <img src="/logos/google-ads.svg" alt="Google Ads" className="w-full h-full object-cover" />,
 };
 
-// TODO: Replace with real environment ID from context/session
 function getEnvironmentId(): string {
 	if (typeof window !== "undefined") {
+		// Priority: URL param > active_env cookie > fallback
 		const params = new URLSearchParams(window.location.search);
-		return params.get("env") || "default_env";
+		const fromUrl = params.get("env");
+		if (fromUrl) return fromUrl;
+		const match = document.cookie.match(/(?:^|;\s*)active_env=([^;]*)/);
+		if (match?.[1]) return match[1];
 	}
 	return "default_env";
 }
@@ -121,6 +124,7 @@ export default function DataSourcesPage() {
 	const [surfaces_audit_active] = useState(false); // Active once first audit completes
 
 	const environmentId = getEnvironmentId();
+	const isDemo = environmentId === "env_1" || environmentId === "default_env";
 
 	const fetchConfig = useCallback(async () => {
 		setLoading(true);
@@ -159,8 +163,19 @@ export default function DataSourcesPage() {
 	}, [environmentId]);
 
 	useEffect(() => {
+		if (isDemo) {
+			// Demo user: show mock connected integrations
+			setSaasStatus("verified");
+			setShopifyStatus("verified");
+			setMetaAdsStatus("verified");
+			setMetaAdsLastSync(new Date().toISOString());
+			setGoogleAdsStatus("verified");
+			setGoogleAdsLastSync(new Date().toISOString());
+			setLoading(false);
+			return;
+		}
 		fetchConfig();
-	}, [fetchConfig]);
+	}, [fetchConfig, isDemo]);
 
 	const updateSaas = (field: keyof SaasFormData, value: any) => {
 		setSaasForm((prev) => ({ ...prev, [field]: value }));

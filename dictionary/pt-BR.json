@@ -1663,11 +1663,11 @@
 		},
 		"customer_center": {
 			"title": "Central do Cliente",
-			"subtitle": "Documentacao, suporte e feedback em um so lugar.",
+			"subtitle": "Documentação, suporte e feedback em um so lugar.",
 			"cards": {
 				"knowledge_base": {
 					"title": "Base de Conhecimento",
-					"description": "Guias, conceitos, documentacao de descobertas e referencia de API.",
+					"description": "Guias, conceitos, documentação de descobertas e referencia de API.",
 					"cta": "Explorar docs"
 				},
 				"support": {
@@ -1677,7 +1677,7 @@
 				},
 				"feedback": {
 					"title": "Feedback",
-					"description": "Compartilhe ideias, reporte problemas ou nos diga o que voce ama.",
+					"description": "Compartilhe ideias, reporte problemas ou nos diga o que você ama.",
 					"cta": "Enviar feedback"
 				}
 			},
@@ -1690,7 +1690,7 @@
 				"error": "Algo deu errado. Tente novamente.",
 				"ticket_created": "Ticket criado! Retornaremos em breve.",
 				"reply_sent": "Resposta enviada.",
-				"not_found": "Ticket nao encontrado.",
+				"not_found": "Ticket não encontrado.",
 				"back": "Voltar ao Suporte",
 				"conversation": "Conversa",
 				"staff": "Equipe Vestigio",
@@ -1721,7 +1721,7 @@
 				"form": {
 					"title": "Criar Novo Ticket",
 					"subject": "Assunto",
-					"subject_placeholder": "Breve descricao do seu problema",
+					"subject_placeholder": "Breve descrição do seu problema",
 					"category": "Categoria",
 					"message": "Mensagem",
 					"message_placeholder": "Descreva seu problema em detalhes. Quanto mais contexto, mais rapido podemos ajudar.",
@@ -1736,7 +1736,7 @@
 				"error": "Algo deu errado. Tente novamente.",
 				"form": {
 					"type": "Que tipo de feedback?",
-					"rating": "Como voce avalia sua experiencia?",
+					"rating": "Como você avalia sua experiencia?",
 					"title": "Titulo",
 					"title_placeholder": "De um titulo curto ao seu feedback",
 					"optional": "opcional",
@@ -2010,7 +2010,7 @@
 					"description": "Gasto mensal de ads total por plataforma conectada (Meta Ads, Google Ads)."
 				},
 				"cross_signal_hero": "Insights Cross-Signal",
-				"cross_signal_hero_desc": "Cadeias causais entre perspectivas de dominio"
+				"cross_signal_hero_desc": "Cadeias causais entre perspectivas de domínio"
 			},
 			"editing_subtitle": "Arraste widgets para reorganizar. Redimensione pelo canto. Adicione ou remova pelo catálogo.",
 			"add_widget": "Adicionar widget",
@@ -2050,7 +2050,7 @@
 				"og_image_stale": "Sua homepage estava compartilhando uma imagem de preview desatualizada",
 				"trust_seals_missing": "Os selos de confiança sumiram na etapa de pagamento",
 				"cross_signal_security": "Headers CSP ausentes no checkout",
-				"cross_signal_revenue": "Indicadores de confianca ausentes no checkout"
+				"cross_signal_revenue": "Indicadores de confiança ausentes no checkout"
 			}
 		},
 		"chat": {
@@ -2408,10 +2408,10 @@
 			"cycling_placeholders": [
 				"Pergunte qualquer coisa ao Vestigio...",
 				"Quais vulnerabilidades devo corrigir primeiro?",
-				"Resuma meus ultimos findings",
+				"Resuma meus últimos findings",
 				"Onde estou perdendo receita?",
-				"Me ajude a escrever um plano de remediacao",
-				"Quao confiavel esta minha pagina de checkout?"
+				"Me ajude a escrever um plano de remediação",
+				"Quao confiável está minha página de checkout?"
 			]
 		},
 		"pulse_summary": {
@@ -3306,56 +3306,56 @@
 			"close": "Fechar",
 			"greeting_title": "Vestigio AI",
 			"greeting_subtitle": "Descubra o que esta custando dinheiro",
-			"greeting_description": "Vazamentos de receita, gaps de confianca, riscos de seguranca — pergunte qualquer coisa.",
+			"greeting_description": "Vazamentos de receita, gaps de confiança, riscos de segurança — pergunte qualquer coisa.",
 			"input_placeholder": "Pergunte ao Vestigio AI...",
-			"budget_exhausted_title": "Voce usou todas as consultas de AI de hoje",
-			"budget_exhausted_description": "Faca upgrade para mais consultas diarias e analises mais profundas.",
+			"budget_exhausted_title": "Você usou todas as consultas de AI de hoje",
+			"budget_exhausted_description": "Faça upgrade para mais consultas diárias e análises mais profundas.",
 			"budget_upgrade": "Fazer upgrade",
 			"budget_later": "Depois",
 			"playbooks_header": "Playbooks",
-			"playbooks_expert": "Analise Especializada",
+			"playbooks_expert": "Análise Especializada",
 			"playbooks_queries": "{count, plural, one {# consulta} other {# consultas}}",
 			"quick_actions": {
 				"what_changed": "O que mudou?",
 				"revenue_audit": "Auditoria de receita",
 				"explain_workspace": "Explique isso",
-				"deep_dive": "Analise profunda",
+				"deep_dive": "Análise profunda",
 				"fix_first": "Corrigir primeiro",
-				"explain_action": "Explicar acao",
-				"verify": "Verificar correcao",
+				"explain_action": "Explicar ação",
+				"verify": "Verificar correção",
 				"summarize": "Resumir",
-				"cross_signal": "Verificacao cruzada",
+				"cross_signal": "Verificação cruzada",
 				"high_impact": "Somente alto impacto",
-				"audit_page": "Auditar pagina",
+				"audit_page": "Auditar página",
 				"down_pages": "Paginas com erro",
 				"executive_summary": "Resumo executivo",
 				"losing_money": "Onde estou perdendo dinheiro?",
 				"improvements": "O que melhorou?",
 				"whats_up": "O que devo saber?",
-				"trust_check": "Verificacao de confianca"
+				"trust_check": "Verificação de confiança"
 			},
 			"quick_prompts": {
-				"what_changed_workspaces": "O que mudou no ultimo ciclo de auditoria? Destaque regressoes e melhorias.",
-				"revenue_audit": "Faca uma auditoria rapida de vazamento de receita. Onde estou perdendo dinheiro?",
+				"what_changed_workspaces": "O que mudou no último ciclo de auditoria? Destaque regressões e melhorias.",
+				"revenue_audit": "Faça uma auditoria rapida de vazamento de receita. Onde estou perdendo dinheiro?",
 				"explain_workspace_workspaces": "Explique os findings do workspace atual em linguagem simples. O que importa mais?",
-				"what_changed_perspective": "O que mudou nesta perspectiva desde o ultimo ciclo?",
-				"deep_dive": "Faca uma analise profunda desta perspectiva. Quais sao os problemas mais criticos?",
+				"what_changed_perspective": "O que mudou nesta perspectiva desde o último ciclo?",
+				"deep_dive": "Faça uma análise profunda desta perspectiva. Quais são os problemas mais críticos?",
 				"explain_workspace": "Explique os findings deste workspace e seu impacto no negocio.",
 				"fix_first_workspace": "O que devo corrigir primeiro neste workspace? Priorize por impacto.",
 				"fix_first_actions": "O que devo corrigir primeiro? Priorize todas as acoes por impacto e esforco.",
-				"explain_action": "Explique a acao de maior prioridade em detalhe. O que esta quebrado e como corrigir?",
-				"verify": "Fiz uma correcao. Me ajude a verificar se funciona corretamente.",
-				"summarize": "Resuma todos os findings atuais. Qual e a saude geral do meu site?",
-				"cross_signal": "Existem findings que se correlacionam entre diferentes perspectivas (seguranca + receita + comportamento)?",
+				"explain_action": "Explique a ação de maior prioridade em detalhe. O que esta quebrado e como corrigir?",
+				"verify": "Fiz uma correção. Me ajude a verificar se funciona corretamente.",
+				"summarize": "Resuma todos os findings atuais. Qual e a saúde geral do meu site?",
+				"cross_signal": "Existem findings que se correlacionam entre diferentes perspectivas (segurança + receita + comportamento)?",
 				"high_impact": "Mostre apenas os findings de alto impacto acima de $1.000/mes. O que devo priorizar?",
-				"audit_page": "Quais paginas do meu site tem mais problemas? Mostre as piores superficies.",
-				"down_pages": "Alguma das minhas paginas esta retornando erros ou fora do ar? Qual e o impacto?",
-				"executive_summary": "Me de um resumo executivo da saude do meu site, riscos de receita e o que melhorou.",
+				"audit_page": "Quais páginas do meu site têm mais problemas? Mostre as piores superfícies.",
+				"down_pages": "Alguma das minhas páginas está retornando erros ou fora do ar? Qual é o impacto?",
+				"executive_summary": "Me de um resumo executivo da saúde do meu site, riscos de receita e o que melhorou.",
 				"losing_money": "Onde estou perdendo dinheiro? Mostre os maiores vazamentos de receita com valores.",
-				"improvements": "O que melhorou desde o ultimo ciclo de auditoria? Alguma vitoria para celebrar?",
+				"improvements": "O que melhorou desde o último ciclo de auditoria? Alguma vitória para celebrar?",
 				"whats_up": "Quais sao as coisas mais importantes que devo saber sobre meu site agora?",
-				"revenue_audit_other": "Faca uma auditoria rapida de vazamento de receita. Onde estou perdendo dinheiro?",
-				"trust_check": "Quao confiavel meu site parece para compradores? Verifique sinais de confianca em todas as paginas."
+				"revenue_audit_other": "Faça uma auditoria rapida de vazamento de receita. Onde estou perdendo dinheiro?",
+				"trust_check": "Quao confiável meu site parece para compradores? Verifique sinais de confiança em todas as páginas."
 			}
 		}
 	},
@@ -3842,7 +3842,7 @@
 				"suspend": "Suspender",
 				"reactivate": "Reativar",
 				"impersonate": "Acessar como",
-				"org_detail": "Detalhes da Organizacao",
+				"org_detail": "Detalhes da Organização",
 				"business_profile": "Perfil do Negocio",
 				"all_orgs": "Todas",
 				"customers": "Clientes",
@@ -3895,8 +3895,8 @@
 				"last_90d": "Ultimos 90 dias"
 			},
 			"pricing": {
-				"title": "Configuracao de Precos",
-				"subtitle": "Configure limites dos planos, IDs de preco, cotas MCP e precificacao de creditos.",
+				"title": "Configuração de Precos",
+				"subtitle": "Configure limites dos planos, IDs de preco, cotas MCP e precificação de creditos.",
 				"plans": "Planos",
 				"price_per_month": "Preco ($/mes)",
 				"mcp_calls": "Chamadas MCP",
@@ -3905,20 +3905,20 @@
 				"continuous": "Continuo",
 				"credits": "Creditos",
 				"features_per_plan": "Funcionalidades por Plano",
-				"features_description": "Configure quais funcionalidades aparecem na tabela de comparacao de precos. Sao exibidas para os clientes.",
+				"features_description": "Configure quais funcionalidades aparecem na tabela de comparação de precos. Sao exibidas para os clientes.",
 				"add_feature": "Adicionar Funcionalidade",
 				"payment_provider_ids": "IDs de Provedores de Pagamento",
-				"paddle_sync": "Sincronizacao Paddle",
+				"paddle_sync": "Sincronização Paddle",
 				"sync_to_paddle": "Sincronizar com Paddle",
 				"syncing": "Sincronizando...",
 				"all_synced": "Todos os planos sincronizados",
-				"not_synced": "plano(s) nao sincronizado(s)",
-				"credit_pricing": "Precificacao de Creditos",
+				"not_synced": "plano(s) não sincronizado(s)",
+				"credit_pricing": "Precificação de Creditos",
 				"base_cost": "Custo base por chamada MCP ($)",
 				"markup": "Multiplicador de margem",
 				"effective": "Efetivo",
 				"per_call": "por chamada",
-				"save_config": "Salvar Configuracao"
+				"save_config": "Salvar Configuração"
 			},
 			"support_tickets": {
 				"title": "Tickets de Suporte",
@@ -3943,7 +3943,7 @@
 				"dismissed": "Descartados",
 				"grouped_view": "Visao Agrupada",
 				"list_view": "Visao em Lista",
-				"rating": "Avaliacao",
+				"rating": "Avaliação",
 				"type": "Tipo",
 				"content": "Conteudo",
 				"page": "Pagina",
@@ -4001,7 +4001,7 @@
 			"audit_log": {
 				"title": "Log de Auditoria",
 				"actor": "Autor",
-				"action": "Acao",
+				"action": "Ação",
 				"target": "Alvo",
 				"ip_address": "Endereco IP",
 				"timestamp": "Data/Hora",
@@ -4022,7 +4022,7 @@
 				"acknowledged": "Reconhecido",
 				"error_rate": "Taxa de Erros",
 				"mcp_usage": "Uso MCP",
-				"health_check": "Verificacao de Saude",
+				"health_check": "Verificação de Saude",
 				"new_signup": "Novo Cadastro"
 			},
 			"users": {
@@ -4038,7 +4038,7 @@
 				"remove_admin": "Remover Admin"
 			},
 			"platform_config": {
-				"title": "Configuracao da Plataforma",
+				"title": "Configuração da Plataforma",
 				"theme": "Tema",
 				"branding": "Marca",
 				"smtp": "SMTP",

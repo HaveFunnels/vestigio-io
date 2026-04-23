@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-21 (full codebase audit of all P1 open items)
+> Last updated: 2026-04-22 (3.14 shipped, open items refreshed)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, L-R), 3.7B, 3.9 (A-B, F + 4 compound findings + 2 context signals), 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -61,7 +61,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
 | Opportunity-First Actions — 7 fases | **~5%** — engine generates opportunities, tab exists; all UI/UX fases open | Wave 3.12 |
 | Re-engagement Infrastructure — close retention loop | **Not started** — email digest, cycle summary, dashboard as landing, cross-signal narrative, alerts. Zero proactive mechanisms exist today. | Wave 3.13 |
-| Vestigio Pulse AI — Transversal Copilot | **Not started** — floating panel replacing chat-as-tab, page-context-aware, coexists with SideDrawer. ~3-4 weeks. | Wave 3.14 |
+| Vestigio AI — Transversal Copilot | **Shipped 2026-04-22** — FAB with color orb + spring animation, full-height panel (side + full-screen expand), playbooks grid menu, CopilotProvider global state, SideDrawer coexistence, compact ChatInputBar with animated cycling placeholders, budget exhausted card, cross-domain pack insight bubbles during streaming, pack-aware ThinkingIndicator, voice message bubble, i18n (4 langs), chat removed from sidenav. | Wave 3.14 |
 | Cross-Signal Surface — making the moat visible | **Not started** — correlate findings across perspectives by shared URL/temporal pattern. ~1-2 weeks. | Wave 3.15 |
 | Product Telemetry — measure before you change | **Shipped 2026-04-21** — ProductEvent model, useProductTrack hook, engagement score cron, admin product-analytics page. `prisma db push` applied to prod. | Wave 3.16 |
 | Workspace Upgrade Moments — monetize value | **Not started** — blurred previews, copilot nudge, cadence nudge. ~3-5 days. | Wave 3.17 |

@@ -16,6 +16,7 @@
 // ──────────────────────────────────────────────
 
 import { PulseIcon as Pulse } from "@phosphor-icons/react/dist/ssr";
+import { useTranslations } from "next-intl";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -93,6 +94,7 @@ function Sparkline({
 }
 
 function HealthTrendCardComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.health_trend");
 	const { current, deltaVsLastCycle, trend30d, components, caption } =
 		data.healthScore;
 	const colorClass = scoreToColorClass(current);
@@ -106,7 +108,7 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 			{/* Eyebrow */}
 			<div className='flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<Pulse size={11} weight='bold' className='text-emerald-400' />
-				<span>Health score</span>
+				<span>{t("eyebrow")}</span>
 			</div>
 
 			{/* Hero row: big number + delta */}
@@ -117,7 +119,7 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 					>
 						{current}
 					</span>
-					<span className='font-mono text-xs text-content-faint'>/ 100</span>
+					<span className='font-mono text-xs text-content-faint'>{t("out_of")}</span>
 				</div>
 				<span
 					className={`font-mono text-xs tabular-nums ${
@@ -129,7 +131,7 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 					}`}
 				>
 					{deltaSign}
-					{deltaAbs} vs last cycle
+					{deltaAbs} {t("vs_last_cycle")}
 				</span>
 			</div>
 
@@ -142,7 +144,7 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 			<div className='mt-3 grid grid-cols-3 divide-x divide-edge/40 border-t border-edge/40 pt-2'>
 				<div className='flex flex-col gap-0.5 pr-3'>
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
-						Structural
+						{t("structural")}
 					</span>
 					<span className='font-mono text-xs tabular-nums text-content-secondary'>
 						{components.structural}
@@ -150,7 +152,7 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 				</div>
 				<div className='flex flex-col gap-0.5 px-3'>
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
-						Action quality
+						{t("action_quality")}
 					</span>
 					<span className='font-mono text-xs tabular-nums text-content-secondary'>
 						{components.actionQuality}
@@ -158,7 +160,7 @@ function HealthTrendCardComponent({ data }: WidgetProps) {
 				</div>
 				<div className='flex flex-col gap-0.5 pl-3'>
 					<span className='text-[10px] uppercase tracking-wider text-content-faint'>
-						Verification
+						{t("verification")}
 					</span>
 					<span className='font-mono text-xs tabular-nums text-content-secondary'>
 						{components.verification}

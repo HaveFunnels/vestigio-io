@@ -1900,11 +1900,21 @@
 				},
 				"health_trend": {
 					"name": "Tendencia de Salud",
-					"description": "Puntuación compuesta de salud con curva de tendencia de 30 días."
+					"description": "Puntuación compuesta de salud con curva de tendencia de 30 días.",
+					"eyebrow": "Score de salud",
+					"out_of": "/ 100",
+					"vs_last_cycle": "vs último ciclo",
+					"structural": "Estructural",
+					"action_quality": "Calidad de acciones",
+					"verification": "Verificación"
 				},
 				"exposure": {
 					"name": "Exposición Mensual",
-					"description": "Total $/mes en riesgo entre hallazgos abiertos, dividido por pack."
+					"description": "Total $/mes en riesgo entre hallazgos abiertos, dividido por pack.",
+					"eyebrow": "Exposición mensual",
+					"per_month": "/ mes",
+					"vs_last_cycle": "vs último ciclo",
+					"no_open_packs": "Sin packs abiertos"
 				},
 				"what_changed": {
 					"name": "Qué Cambió",
@@ -1970,7 +1980,13 @@
 				},
 				"ad_spend": {
 					"name": "Ad Spend",
-					"description": "Gasto mensual de ads total por plataforma conectada (Meta Ads, Google Ads)."
+					"description": "Gasto mensual de ads total por plataforma conectada (Meta Ads, Google Ads).",
+					"eyebrow": "Gasto en Ads",
+					"per_month": "/ mes",
+					"awaiting_sync": "esperando sync",
+					"view_revenue": "Ver hallazgos de ads en Ingresos →",
+					"connect_cta": "Conecta Meta Ads o Google Ads en {link} para ver gasto en ads aquí.",
+					"data_sources": "Fuentes de Datos"
 				},
 				"cross_signal_hero": "Insights Cross-Signal",
 				"cross_signal_hero_desc": "Cadenas causales entre perspectivas de dominio",
@@ -2021,7 +2037,8 @@
 				"trust_seals_missing": "Los sellos de confianza desaparecieron en el paso de pago",
 				"cross_signal_security": "Headers CSP faltantes en checkout",
 				"cross_signal_revenue": "Indicadores de confianza ausentes en checkout"
-			}
+			},
+			"widget_unavailable": "Widget \"{id}\" ya no está disponible"
 		},
 		"chat": {
 			"title": "Pregunta a Vestigio",

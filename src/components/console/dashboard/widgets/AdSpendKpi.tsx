@@ -13,6 +13,7 @@
 // DashboardData.adSpend.
 // ──────────────────────────────────────────────
 
+import { useTranslations } from "next-intl";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -30,6 +31,7 @@ function fmt(value: number, currency: string): string {
 }
 
 function AdSpendKpiComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.ad_spend");
 	const { totalMonthly, currency, byPlatform, hasData, caption } = data.adSpend;
 
 	if (!hasData) {
@@ -39,11 +41,13 @@ function AdSpendKpiComponent({ data }: WidgetProps) {
 					<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 				</svg>
 				<p className="text-[11px] text-content-faint">
-					Connect Meta Ads or Google Ads in{" "}
-					<a href="/app/settings/data-sources" className="text-indigo-400 hover:underline">
-						Data Sources
-					</a>{" "}
-					to see ad spend here.
+					{t.rich("connect_cta", {
+						link: (chunks) => (
+							<a href="/app/settings/data-sources" className="text-indigo-400 hover:underline">
+								{t("data_sources")}
+							</a>
+						),
+					})}
 				</p>
 			</div>
 		);
@@ -54,9 +58,9 @@ function AdSpendKpiComponent({ data }: WidgetProps) {
 			{/* Header */}
 			<div className="mb-1 flex items-baseline justify-between">
 				<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
-					Ad Spend
+					{t("eyebrow")}
 				</span>
-				<span className="font-mono text-[10px] tabular-nums text-content-faint">/ mo</span>
+				<span className="font-mono text-[10px] tabular-nums text-content-faint">{t("per_month")}</span>
 			</div>
 
 			{/* Hero number */}
@@ -86,7 +90,7 @@ function AdSpendKpiComponent({ data }: WidgetProps) {
 										</span>
 									</div>
 								) : (
-									<span className="text-[10px] text-content-faint">awaiting sync</span>
+									<span className="text-[10px] text-content-faint">{t("awaiting_sync")}</span>
 								)}
 							</div>
 						);
@@ -102,7 +106,7 @@ function AdSpendKpiComponent({ data }: WidgetProps) {
 						href="/app/workspaces/perspective/revenue"
 						className="mt-1 inline-block text-[10px] text-indigo-400 hover:underline"
 					>
-						View spend findings in Revenue →
+						{t("view_revenue")}
 					</a>
 				</div>
 			)}

@@ -27,6 +27,7 @@
 // ──────────────────────────────────────────────
 
 import { WarningIcon as Warning } from "@phosphor-icons/react/dist/ssr";
+import { useTranslations } from "next-intl";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -65,6 +66,7 @@ function packLabel(pack: string): string {
 }
 
 function ExposureKpiCardComponent({ data }: WidgetProps) {
+	const t = useTranslations("console.dashboard.widgets.exposure");
 	const { monthlyCents, deltaVsLastCycleCents, currency, byPack } =
 		data.exposure;
 	// Negative-number rule: exposure is a loss → display with leading
@@ -96,7 +98,7 @@ function ExposureKpiCardComponent({ data }: WidgetProps) {
 			{/* Eyebrow */}
 			<div className='relative flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<Warning size={11} weight='bold' className='text-red-400' />
-				<span>Monthly exposure</span>
+				<span>{t("eyebrow")}</span>
 			</div>
 
 			{/* Hero number — always negative, always red */}
@@ -104,7 +106,7 @@ function ExposureKpiCardComponent({ data }: WidgetProps) {
 				<span className='font-mono text-4xl font-medium tabular-nums leading-none tracking-tight text-red-400'>
 					{heroNumber}
 				</span>
-				<span className='font-mono text-[11px] text-content-faint'>/ mo</span>
+				<span className='font-mono text-[11px] text-content-faint'>{t("per_month")}</span>
 			</div>
 
 			{/* Delta — color follows whether exposure improved or worsened */}
@@ -119,7 +121,7 @@ function ExposureKpiCardComponent({ data }: WidgetProps) {
 					}`}
 				>
 					{sign}
-					{deltaFormatted} vs last cycle
+					{deltaFormatted} {t("vs_last_cycle")}
 				</span>
 			</div>
 
@@ -142,7 +144,7 @@ function ExposureKpiCardComponent({ data }: WidgetProps) {
 					</div>
 				))}
 				{topPacks.length === 0 && (
-					<div className='text-[11px] text-content-faint'>No open packs</div>
+					<div className='text-[11px] text-content-faint'>{t("no_open_packs")}</div>
 				)}
 			</div>
 		</div>

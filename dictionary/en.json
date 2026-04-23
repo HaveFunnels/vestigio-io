@@ -1931,11 +1931,21 @@
 				},
 				"health_trend": {
 					"name": "Health Trend",
-					"description": "Composite health score with the 30-day trend curve."
+					"description": "Composite health score with the 30-day trend curve.",
+					"eyebrow": "Health score",
+					"out_of": "/ 100",
+					"vs_last_cycle": "vs last cycle",
+					"structural": "Structural",
+					"action_quality": "Action quality",
+					"verification": "Verification"
 				},
 				"exposure": {
 					"name": "Monthly Exposure",
-					"description": "Total $/mo at risk across open findings, split by pack."
+					"description": "Total $/mo at risk across open findings, split by pack.",
+					"eyebrow": "Monthly exposure",
+					"per_month": "/ mo",
+					"vs_last_cycle": "vs last cycle",
+					"no_open_packs": "No open packs"
 				},
 				"what_changed": {
 					"name": "What Changed",
@@ -2001,7 +2011,13 @@
 				},
 				"ad_spend": {
 					"name": "Ad Spend",
-					"description": "Total monthly ad spend across connected platforms with per-platform breakdown."
+					"description": "Total monthly ad spend across connected platforms with per-platform breakdown.",
+					"eyebrow": "Ad Spend",
+					"per_month": "/ mo",
+					"awaiting_sync": "awaiting sync",
+					"view_revenue": "View spend findings in Revenue →",
+					"connect_cta": "Connect Meta Ads or Google Ads in {link} to see ad spend here.",
+					"data_sources": "Data Sources"
 				},
 				"cross_signal_hero": "Cross-Signal Insights",
 				"cross_signal_hero_desc": "Causal chains across domain perspectives",
@@ -2017,6 +2033,7 @@
 			"add_widget": "Add widget",
 			"remove_widget": "Remove widget",
 			"drag_to_rearrange": "Drag to rearrange",
+			"widget_unavailable": "Widget \"{id}\" no longer available",
 			"save_status": {
 				"saving": "Saving…",
 				"saved": "Saved",

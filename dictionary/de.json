@@ -2783,11 +2783,21 @@
 				},
 				"health_trend": {
 					"name": "Gesundheitstrend",
-					"description": "Zusammengesetzter Gesundheitswert mit 30-Tage-Trendkurve."
+					"description": "Zusammengesetzter Gesundheitswert mit 30-Tage-Trendkurve.",
+					"eyebrow": "Gesundheitswert",
+					"out_of": "/ 100",
+					"vs_last_cycle": "vs letzter Zyklus",
+					"structural": "Struktur",
+					"action_quality": "Aktionsqualität",
+					"verification": "Verifizierung"
 				},
 				"exposure": {
 					"name": "Monatliches Risiko",
-					"description": "Gesamt-$/Monat im Risiko über offene Findings, nach Pack aufgeteilt."
+					"description": "Gesamt-$/Monat im Risiko über offene Findings, nach Pack aufgeteilt.",
+					"eyebrow": "Monatliche Exposition",
+					"per_month": "/ Monat",
+					"vs_last_cycle": "vs letzter Zyklus",
+					"no_open_packs": "Keine offenen Packs"
 				},
 				"what_changed": {
 					"name": "Was sich geändert hat",
@@ -2815,7 +2825,13 @@
 				},
 				"ad_spend": {
 					"name": "Werbeausgaben",
-					"description": "Monatliche Werbeausgaben nach verbundener Plattform (Meta Ads, Google Ads)."
+					"description": "Monatliche Werbeausgaben nach verbundener Plattform (Meta Ads, Google Ads).",
+					"eyebrow": "Werbeausgaben",
+					"per_month": "/ Monat",
+					"awaiting_sync": "Sync ausstehend",
+					"view_revenue": "Werbe-Befunde in Umsatz ansehen →",
+					"connect_cta": "Verbinde Meta Ads oder Google Ads in {link} um Werbeausgaben hier zu sehen.",
+					"data_sources": "Datenquellen"
 				},
 				"cross_signal_hero": "Cross-Signal Insights",
 				"cross_signal_hero_desc": "Kausalketten ueber Domaenperspektiven",
@@ -2839,7 +2855,8 @@
 				"trust_seals_missing": "Die Vertrauenssiegel fehlten beim Bezahlschritt",
 				"cross_signal_security": "CSP-Header fehlen auf der Checkout-Seite",
 				"cross_signal_revenue": "Vertrauensindikatoren auf Checkout-Seite fehlen"
-			}
+			},
+			"widget_unavailable": "Widget \"{id}\" nicht mehr verfügbar"
 		},
 		"copilot": {
 			"fab_label": "Vestigio AI",

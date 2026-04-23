@@ -39,6 +39,7 @@ import {
 	DotsSixVerticalIcon as DotsSixVertical,
 	XIcon as X,
 } from "@phosphor-icons/react/dist/ssr";
+import { useTranslations } from "next-intl";
 import { getWidgetDef } from "@/lib/dashboard/init";
 import type { DashboardData } from "@/lib/dashboard/types";
 import type { WidgetInstance } from "@/lib/dashboard/default-layout";
@@ -58,6 +59,7 @@ export function DashboardGrid({
 	onLayoutChange,
 	onRemove,
 }: DashboardGridProps) {
+	const t = useTranslations("console.dashboard");
 	// `useContainerWidth` measures the wrapper div via ResizeObserver
 	// and re-renders the grid whenever the width changes. The
 	// `mounted` flag suppresses the initial render until the real
@@ -222,7 +224,7 @@ export function DashboardGrid({
 							return (
 								<div key={inst.instanceId}>
 									<div className='flex h-full items-center justify-center rounded-2xl border border-dashed border-edge bg-surface-card/30 p-4 text-xs text-content-faint'>
-										Widget &quot;{inst.defId}&quot; no longer available
+										{t("widget_unavailable", { id: inst.defId })}
 									</div>
 								</div>
 							);
@@ -252,7 +254,7 @@ export function DashboardGrid({
 									<>
 										<div
 											className='widget-drag-handle absolute inset-x-0 top-0 z-10 flex cursor-grab items-center justify-center gap-1 border-b border-emerald-500/20 bg-emerald-500/[0.08] py-1 text-[10px] text-emerald-600 backdrop-blur-sm active:cursor-grabbing dark:text-emerald-300'
-											title='Drag to rearrange'
+											title={t("drag_to_rearrange")}
 										>
 											<DotsSixVertical size={12} weight='bold' />
 											<span className='font-medium uppercase tracking-wider'>
@@ -264,8 +266,8 @@ export function DashboardGrid({
 												type='button'
 												onClick={() => onRemove(inst.instanceId)}
 												className='absolute right-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-red-500/40 bg-red-500/15 text-red-500 opacity-0 backdrop-blur-sm transition-opacity hover:bg-red-500/25 hover:text-red-600 group-hover:opacity-100 dark:text-red-300 dark:hover:text-red-100'
-												title='Remove widget'
-												aria-label='Remove widget'
+												title={t("remove_widget")}
+												aria-label={t("remove_widget")}
 											>
 												<X size={12} weight='bold' />
 											</button>

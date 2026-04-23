@@ -18,6 +18,7 @@ import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import ChangeTimeline from "@/components/console/ChangeTimeline";
 import ChargebackResilience from "@/components/console/workspace/ChargebackResilience";
+import RevenueIntelligence from "@/components/console/workspace/RevenueIntelligence";
 import SecurityPosture from "@/components/console/workspace/SecurityPosture";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -160,6 +161,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 
 	const isPreflight = workspace.type === "preflight";
 	const isChargeback = workspace.type === "chargeback";
+	const isRevenue = workspace.type === "revenue";
 	const isSecurityPosture = workspace.type === "security_posture";
 	const preflightReadiness = isPreflight ? computePreflightReadiness(workspace.findings) : null;
 
@@ -280,6 +282,11 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					{isChargeback && (
 						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
 							<ChargebackResilience findings={workspace.findings} />
+						</section>
+					)}
+					{isRevenue && (
+						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+							<RevenueIntelligence findings={workspace.findings} />
 						</section>
 					)}
 					{isSecurityPosture && (

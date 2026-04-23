@@ -18,6 +18,7 @@ import { MessageActions } from "./MessageActions";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 import { CreateActionCard } from "./CreateActionCard";
 import VoiceMessageBubble from "./VoiceMessageBubble";
+import PackInsightBubble from "./PackInsightBubble";
 import SeverityBadge from "../SeverityBadge";
 
 interface ChatMessageRendererProps {
@@ -306,6 +307,14 @@ function BlockRenderer({
           duration={block.duration}
           transcript={block.transcript}
           variant="assistant"
+        />
+      );
+
+    case "pack_insight":
+      return (
+        <PackInsightBubble
+          pack={block.pack}
+          message={block.message}
         />
       );
 

@@ -34,6 +34,7 @@ import type { ContentBlock } from "./chat-types";
 //   $$CREATEACTION{"title":"...","description":"...","severity":"...","estimatedImpact":N}$$
 //   $$NAVIGATE{"label":"...","href":"...","variant":"..."}$$
 //   $$KB{finding:<inference_key>}$$  or  $$KB{root_cause:<root_cause_key>}$$
+//   $$PACKINSIGHT{"pack":"revenue","message":"..."}$$
 //
 // IMPORTANT: the regex below uses `[^}]+` for the body of the marker,
 // which means a marker payload that itself contains a `}` character
@@ -41,7 +42,7 @@ import type { ContentBlock } from "./chat-types";
 // avoids `}` inside marker payloads (we use only flat key:value JSON).
 // If we ever want nested objects, this regex needs a depth-aware
 // matcher.
-const BLOCK_MARKER_REGEX = /\$\$(FINDING|ACTION|IMPACT|CREATEACTION|NAVIGATE|KB)\{([^}]+)\}\$\$/g;
+const BLOCK_MARKER_REGEX = /\$\$(FINDING|ACTION|IMPACT|CREATEACTION|NAVIGATE|KB|PACKINSIGHT)\{([^}]+)\}\$\$/g;
 
 /**
  * Convert raw LLM text containing $$MARKER{...}$$ tokens into a
@@ -147,6 +148,16 @@ export function parseBlockMarkers(text: string): ContentBlock[] {
               excerpt: null,
             });
           }
+        }
+      } else if (markerType === "PACKINSIGHT") {
+        // $$PACKINSIGHT{"pack":"revenue","message":"Found 3 checkout friction points..."}$$
+        const data = JSON.parse(markerContent);
+        if (data.pack && data.message) {
+          blocks.push({
+            type: "pack_insight",
+            pack: data.pack,
+            message: data.message,
+          });
         }
       }
     } catch {
@@ -262,7 +273,15 @@ export function serializeBlocksToText(blocks: ContentBlock[]): string {
         parts.push(`**${block.label}**\n${rows}`);
         break;
       }
-      // tool_call + suggested_prompts intentionally skipped (see jsdoc)
+      case "pack_insight":
+        parts.push(
+          `$$PACKINSIGHT{${JSON.stringify({
+            pack: block.pack,
+            message: block.message,
+          })}}$$`,
+        );
+        break;
+      // tool_call + suggested_prompts + voice_message intentionally skipped (see jsdoc)
     }
   }
   return parts.join("\n").trim();

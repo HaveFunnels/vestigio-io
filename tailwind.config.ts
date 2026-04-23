@@ -306,10 +306,15 @@ const config: Config = {
 					"0%":   { transform: "translateX(0) scale(1)" },
 					"100%": { transform: "translateX(2rem) scale(0.97)" },
 				},
+				"message-appear": {
+					"0%":   { opacity: "0", transform: "translateY(8px)" },
+					"100%": { opacity: "1", transform: "translateY(0)" },
+				},
 			},
 			animation: {
 				"panel-in": "panel-in 0.45s cubic-bezier(0.16,1,0.3,1) both",
 				"panel-out": "panel-out 0.3s cubic-bezier(0.4,0,1,1) both",
+				"message-appear": "message-appear 0.3s ease-out forwards",
 			},
 			boxShadow: {
 				1: "0px 1px 2px 0px rgba(84, 87, 118, 0.10)",

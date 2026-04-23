@@ -52,6 +52,7 @@ export type ContentBlock =
   | CreateActionBlock
   | DataRowsBlock
   | KbArticleCardBlock
+  | PackInsightBlock
   | VoiceMessageBlock;
 
 export interface MarkdownBlock {
@@ -162,6 +163,14 @@ export interface KbArticleCardBlock {
   slug: string | null;
   /** Optional excerpt for the card preview */
   excerpt: string | null;
+}
+
+export interface PackInsightBlock {
+  type: 'pack_insight';
+  /** Pack identifier (e.g., "revenue", "chargeback", "security_posture") */
+  pack: string;
+  /** The insight message from this pack's perspective */
+  message: string;
 }
 
 export interface VoiceMessageBlock {

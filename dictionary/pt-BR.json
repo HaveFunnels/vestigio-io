@@ -2035,7 +2035,8 @@
 					"per_month": "/ mês",
 					"awaiting_sync": "aguardando sync",
 					"view_revenue": "Ver findings de ads em Faturamento →",
-					"connect_cta": "Conecte Meta Ads ou Google Ads em {link} para ver gasto com ads aqui.",
+					"connect_cta_before": "Conecte Meta Ads ou Google Ads em",
+					"connect_cta_after": "para ver gasto com ads aqui.",
 					"data_sources": "Fontes de Dados"
 				},
 				"cross_signal_hero": "Insights Cross-Signal",

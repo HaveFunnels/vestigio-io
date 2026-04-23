@@ -34,7 +34,7 @@ let _translations: EngineTranslations | undefined;
 /** Call once from ensureContext (demo branch) to inject the locale. */
 export function setDemoTranslations(t: EngineTranslations | undefined): void {
 	_translations = t;
-	// Rebuild memoized exports so they pick up the new locale
+	// Force rebuild on next access
 	_cachedFindings = null;
 	_cachedWorkspaces = null;
 	_cachedChangeReport = null;
@@ -179,12 +179,15 @@ let _cachedFindings: FindingProjection[] | null = null;
 let _cachedWorkspaces: WorkspaceProjection[] | null = null;
 let _cachedChangeReport: ChangeReportProjection | null = null;
 
-export const DEMO_FINDINGS: FindingProjection[] = new Proxy([] as FindingProjection[], {
-	get(target, prop) {
-		if (!_cachedFindings) _cachedFindings = buildFindings();
-		return Reflect.get(_cachedFindings, prop);
-	},
-});
+/** Returns translated demo findings, rebuilding if locale changed. */
+export function getDemoFindings(): FindingProjection[] {
+	if (!_cachedFindings) _cachedFindings = buildFindings();
+	return _cachedFindings;
+}
+
+// Legacy named export — kept for backward compat but callers should
+// prefer getDemoFindings() for locale-aware data.
+export const DEMO_FINDINGS: FindingProjection[] = buildFindings();
 
 export const DEMO_ACTIONS: ActionProjection[] = [
 	{
@@ -323,8 +326,8 @@ function buildDemoProjectionResult(): {
 		projections: {
 			findings,
 			actions: DEMO_ACTIONS,
-			workspaces: DEMO_WORKSPACES,
-			change_report: DEMO_CHANGE_REPORT,
+			workspaces: getDemoWorkspaces(),
+			change_report: getDemoChangeReport(),
 		} as unknown as ProjectionResult,
 		result: {
 			intelligence: { root_causes: rootCauses, global_actions: [] },
@@ -399,12 +402,12 @@ export function buildDemoWorkspaces(): WorkspaceProjection[] {
 	return buildWorkspaces();
 }
 
-export const DEMO_WORKSPACES: WorkspaceProjection[] = new Proxy([] as WorkspaceProjection[], {
-	get(target, prop) {
-		if (!_cachedWorkspaces) _cachedWorkspaces = buildWorkspaces();
-		return Reflect.get(_cachedWorkspaces, prop);
-	},
-});
+export function getDemoWorkspaces(): WorkspaceProjection[] {
+	if (!_cachedWorkspaces) _cachedWorkspaces = buildWorkspaces();
+	return _cachedWorkspaces;
+}
+
+export const DEMO_WORKSPACES: WorkspaceProjection[] = buildWorkspaces();
 
 function buildDemoChange(f: FindingProjection, changeClass: string): any {
 	return {
@@ -444,12 +447,12 @@ function buildChangeReport(): ChangeReportProjection {
 	};
 }
 
-export const DEMO_CHANGE_REPORT: ChangeReportProjection = new Proxy({} as ChangeReportProjection, {
-	get(target, prop) {
-		if (!_cachedChangeReport) _cachedChangeReport = buildChangeReport();
-		return Reflect.get(_cachedChangeReport, prop);
-	},
-});
+export function getDemoChangeReport(): ChangeReportProjection {
+	if (!_cachedChangeReport) _cachedChangeReport = buildChangeReport();
+	return _cachedChangeReport;
+}
+
+export const DEMO_CHANGE_REPORT: ChangeReportProjection = buildChangeReport();
 
 export function buildDemoEngineMaps(): MapDefinition[] {
 	const { projections, result } = buildDemoProjectionResult();

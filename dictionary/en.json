@@ -2016,7 +2016,8 @@
 					"per_month": "/ mo",
 					"awaiting_sync": "awaiting sync",
 					"view_revenue": "View spend findings in Revenue →",
-					"connect_cta": "Connect Meta Ads or Google Ads in {link} to see ad spend here.",
+					"connect_cta_before": "Connect Meta Ads or Google Ads in",
+					"connect_cta_after": "to see ad spend here.",
 					"data_sources": "Data Sources"
 				},
 				"cross_signal_hero": "Cross-Signal Insights",

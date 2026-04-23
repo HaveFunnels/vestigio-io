@@ -114,8 +114,8 @@ export async function ensureContext(orgCtx: {
 
 export function loadFindings(): DataState<FindingProjection[]> {
   if (_demoMode) {
-    const { DEMO_FINDINGS } = require('./demo-data');
-    return { status: 'ready', data: DEMO_FINDINGS };
+    const { getDemoFindings } = require('./demo-data');
+    return { status: 'ready', data: getDemoFindings() };
   }
   try {
     const server = getMcpServer();
@@ -162,8 +162,9 @@ export function loadActions(): DataState<ActionProjection[]> {
 
 export function loadWorkspaces(): DataState<WorkspaceProjection[]> {
   if (_demoMode) {
-    const { DEMO_WORKSPACES } = require('./demo-data');
-    return DEMO_WORKSPACES.length > 0 ? { status: 'ready', data: DEMO_WORKSPACES } : { status: 'empty' };
+    const { getDemoWorkspaces } = require('./demo-data');
+    const ws = getDemoWorkspaces();
+    return ws.length > 0 ? { status: 'ready', data: ws } : { status: 'empty' };
   }
   try {
     const server = getMcpServer();
@@ -186,8 +187,9 @@ export function loadWorkspaces(): DataState<WorkspaceProjection[]> {
 
 export function loadChangeReport(): DataState<ChangeReportProjection> {
   if (_demoMode) {
-    const { DEMO_CHANGE_REPORT } = require('./demo-data');
-    return DEMO_CHANGE_REPORT ? { status: 'ready', data: DEMO_CHANGE_REPORT } : { status: 'empty' };
+    const { getDemoChangeReport } = require('./demo-data');
+    const cr = getDemoChangeReport();
+    return cr ? { status: 'ready', data: cr } : { status: 'empty' };
   }
   try {
     const server = getMcpServer();

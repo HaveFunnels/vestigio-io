@@ -2830,7 +2830,8 @@
 					"per_month": "/ Monat",
 					"awaiting_sync": "Sync ausstehend",
 					"view_revenue": "Werbe-Befunde in Umsatz ansehen →",
-					"connect_cta": "Verbinde Meta Ads oder Google Ads in {link} um Werbeausgaben hier zu sehen.",
+					"connect_cta_before": "Verbinde Meta Ads oder Google Ads in",
+					"connect_cta_after": "um Werbeausgaben hier zu sehen.",
 					"data_sources": "Datenquellen"
 				},
 				"cross_signal_hero": "Cross-Signal Insights",

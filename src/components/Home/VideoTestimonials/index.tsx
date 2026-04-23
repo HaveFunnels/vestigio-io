@@ -25,11 +25,12 @@ interface VideoTestimonialItem {
   quote: string;
 }
 
-// Video/poster paths are not translated — they're assets
+// Video assets served from CDN (Cloudflare R2)
+const CDN = process.env.NEXT_PUBLIC_CDN_URL || "";
 const VIDEO_ASSETS = [
-  { videoSrc: "/videos/testimonials/daniel.mp4", posterSrc: "/videos/testimonials/daniel-poster.webp" },
-  { videoSrc: "/videos/testimonials/john.mp4", posterSrc: "/videos/testimonials/john-poster.webp" },
-  { videoSrc: "/videos/testimonials/jarell.mp4", posterSrc: "/videos/testimonials/jarell-poster.webp" },
+  { videoSrc: `${CDN}/Testimonial%20Advogada.mp4`, posterSrc: "" },
+  { videoSrc: `${CDN}/Testimonial%20info.mp4`, posterSrc: "" },
+  { videoSrc: `${CDN}/Testimonial%20Dropshipper.mp4`, posterSrc: "" },
 ];
 
 // ── Individual video card ──────────────────────

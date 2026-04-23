@@ -1084,6 +1084,66 @@ Power-user features. Opt-in, never forced.
 
 ---
 
+## Wave 6 — Future Cross-Domain Findings
+
+**Goal:** Expand the decision engine beyond commercial path analysis into adjacent financial surfaces — same buyer, same loss-frame, same defensible R$. Each category requires the finding to pass: *"Is this real money, already happening, verifiable with data we have?"*
+
+> These are **future explorations**, not committed work. Each requires validation that the R$ is defensible before building.
+
+---
+
+### 6.1 Revenue Attribution Integrity
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` |
+| **Priority** | P2 |
+| **What** | Cross-reference ad platform reported revenue (Meta, Google) with actual transaction data (Stripe, Shopify) to detect overattribution. |
+| **Key finding** | "You think Meta brought R$120k/month. Crossing with Stripe, it's R$74k. You're overinvesting R$X in CPC based on inflated attribution." |
+| **Requires** | Meta Ads + Google Ads OAuth (Wave 3.9) + Stripe integration (Wave 3.8) + Shopify integration (existing) |
+| **R$ credibility** | High — compares two real data sources, delta is verifiable |
+
+---
+
+### 6.2 Pricing Exposure
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` |
+| **Priority** | P2 |
+| **What** | Detect pricing errors: expired coupons still active, channel inconsistencies, underpricing vs market, unintentional discounts. |
+| **Key findings** | "Coupon BLACKFRIDAY still active since November — R$4k/month in unintentional discount." · "Product X sells 300 units/month at R$89 but competitor charges R$129 — margin R$12k/month below market." |
+| **Requires** | Shopify integration (existing) — discount/coupon data, catalog pricing |
+| **R$ credibility** | High — transaction data proves the loss directly |
+
+---
+
+### 6.3 Vendor Cost Leakage
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` |
+| **Priority** | P3 |
+| **What** | Analyze SaaS/infra spend to find waste — duplicate tools, oversized plans, unused subscriptions. |
+| **Key finding** | "Your Shopify Plus plan costs R$2k/month but your sales volume fits Basic at R$130/month." |
+| **Requires** | Billing API integrations (Stripe for SaaS subscriptions, potentially AWS billing) |
+| **R$ credibility** | High for plan downgrades (billing data is factual), medium for tool consolidation recommendations |
+
+---
+
+### 6.4 Contract & Subscription Revenue Decay (SaaS)
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` |
+| **Priority** | P3 |
+| **What** | Predict churn from usage patterns, quantify MRR at risk before cancellation happens. |
+| **Key finding** | "47 accounts with total MRR of R$38k haven't logged in for 30 days. Based on historical pattern, 60% cancel next cycle. Revenue at risk: R$23k." |
+| **Requires** | Stripe Billing (MRR data) + behavioral pixel (login/usage tracking) or authenticated session data |
+| **R$ credibility** | Medium-high — probabilistic but based on the client's own historical churn data, not market averages |
+
+---
+
 ## Wave 5 — Continuous Incremental Engine (Remaining)
 
 > Fases 1-3 shipped (2026-04-14). See [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md) for details.
@@ -1112,6 +1172,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.20 open** |
 | **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
+| **6** | Future Cross-Domain Findings | Revenue attribution integrity, pricing exposure, vendor cost leakage, subscription revenue decay | All exploratory — not committed |
 
 ---
 

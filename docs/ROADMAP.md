@@ -71,6 +71,8 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
+| Neglected Findings — data collected, findings missing | **Not started** — payment handoff (pixel), SaaS activation (auth sessions), oscillation clustering (pixel), network error weighting (Playwright), mobile trust gap (Playwright), behavioral micro-patterns (pixel) | Wave 4.6 |
+| Cross-Domain Compound Findings — multi-source moat | **Not started** — security×revenue, ad promise×reality×behavior, trust×hesitation×revenue, post-purchase chain, brand impersonation×revenue | Wave 4.7 |
 
 ---
 
@@ -1084,6 +1086,216 @@ Power-user features. Opt-in, never forced.
 
 ---
 
+### 4.6 Neglected Findings — Data Collected, Findings Missing
+
+**Goal:** Extract high-impact findings from evidence the system already collects but doesn't use. Zero new collection infrastructure needed — only signal extraction + inference functions.
+
+---
+
+#### 4.6A Payment Handoff Leakage (Pixel)
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P1 |
+| **Effort** | Low (~1 day) |
+| **Data source** | `BehavioralSessionPayload.handoff_without_return_count`, `handoff_without_confirmation_count` |
+| **Status** | Fields collected, no signal extraction, no inference |
+
+| # | Finding | Signal | Impact |
+|---|---------|--------|--------|
+| A | Payment handoff abandonment | `handoff_without_return_count / session_count > threshold` | "34% of buyers who go to payment gateway never return. Revenue lost in handoff: R$X/month." |
+| B | Post-purchase confirmation absent | `handoff_without_confirmation_count > 0` | "Buyers complete payment but never see a confirmation page. Drives 'did my order go through?' support contacts and disputes." |
+
+---
+
+#### 4.6B SaaS Activation Findings (Authenticated Sessions)
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P1 |
+| **Effort** | Medium (~3-5 days) |
+| **Data source** | `AuthenticatedPageView`, `ActivationStepObserved`, `UpgradeSurfaceObserved`, `EmptyStateObserved`, `NavigationStructureObserved` |
+| **Status** | All evidence types collected, all InferenceCategory values exist in enum, 0% signal/inference implemented |
+
+| # | Finding | Signal | Impact |
+|---|---------|--------|--------|
+| A | Activation blocked | `ActivationStepObserved.has_clear_cta === false` + high complexity | "Trial users can't find how to start — activation rate at risk" |
+| B | Activation friction high | `ActivationStepObserved.estimated_complexity === 'high'` across multiple steps | "Onboarding requires 5+ high-complexity steps — predicts trial-to-paid drop" |
+| C | Empty state without guidance | `EmptyStateObserved.has_guidance === false && has_cta === false` | "New users land on empty screens with no direction — churn trigger" |
+| D | Navigation overcomplex | `NavigationStructureObserved.total_nav_items > threshold` + `depth_levels > 3` | "Navigation has 40+ items across 4 levels — feature discovery suffers" |
+| E | Upgrade invisible | `UpgradeSurfaceObserved.visibility === 'hidden'` | "Upgrade path exists but is hidden — expansion revenue blocked" |
+| F | Upgrade timing wrong | Upgrade CTA on onboarding pages (too early) or absent on usage-limit pages | "Upgrade shown before value, absent when user hits limits" |
+| G | Landing ≠ app mismatch | Crawled homepage promise vs `AuthenticatedPageView` first-screen reality | "Marketing promises X, product shows empty dashboard — trust break at first login" |
+
+---
+
+#### 4.6C Surface Oscillation Clustering (Pixel)
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P2 |
+| **Effort** | Low-Medium (~2 days) |
+| **Data source** | `BehavioralSessionPayload.surface_oscillation_top_pairs` |
+| **Status** | Detailed pair data collected, only basic oscillation rate used |
+
+| # | Finding | Signal | Impact |
+|---|---------|--------|--------|
+| A | Indecision map by page pair | Top oscillation pairs × conversion rate delta | "Visitors oscillating between /pricing and /features convert 70% less. Indecision cost: R$X/month." |
+| B | Friction cluster detection | 3+ pages forming oscillation loop | "Circular navigation pattern detected: /cart → /shipping → /cart → /shipping. Checkout friction loop costs R$X/month." |
+
+---
+
+#### 4.6D Network Error Commercial Weighting (Playwright)
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P2 |
+| **Effort** | Low (~1 day) |
+| **Data source** | `BrowserFailureEvent.network_errors[]`, `NetworkAnalysis` payment/trust/measurement breakdown |
+| **Status** | Errors captured without commercial impact classification |
+
+| # | Finding | Signal | Impact |
+|---|---------|--------|--------|
+| A | Payment provider request failing | `network_errors` on checkout page matching payment provider domains | "3 failed requests to Stripe on checkout — these block purchases, not just tracking" |
+| B | Trust asset load failure | Trust-related requests (seal, badge, SSL indicator) failing | "Trust badges fail to load on 12% of sessions — trust erosion on high-intent pages" |
+
+---
+
+#### 4.6E Mobile Trust Gap Quantification (Playwright)
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P2 |
+| **Effort** | Low (~1 day) |
+| **Data source** | `MobileVerificationResult.trust_degraded_vs_desktop` + desktop trust signal count |
+| **Status** | Boolean flag exists, no quantification |
+
+| # | Finding | Signal | Impact |
+|---|---------|--------|--------|
+| A | Mobile trust signal gap | Desktop shows 5 trust signals, mobile shows 2 | "Mobile hides 3 of 5 trust signals visible on desktop. Mobile converts X% worse — trust gap is a measurable driver." |
+| B | Mobile checkout path slower | `MobileVerificationResult.duration_ms` vs desktop `BrowserNavigationTrace.duration_ms` | "Mobile path to checkout: 8.2s vs desktop 2.1s. Each extra second reduces conversion ~7%." |
+
+---
+
+#### 4.6F Behavioral Micro-Pattern Gaps (Pixel)
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P2 |
+| **Effort** | Low (~1-2 days) |
+| **Data source** | `BehavioralSessionPayload` fields with partial or no usage |
+
+| # | Finding | Signal | Impact |
+|---|---------|--------|--------|
+| A | Sensitive field type abandonment breakdown | `sensitive_input_abandon_kinds[]` per field type (CPF, card, address, phone) | "68% of form abandonments happen at CPF field specifically — not generic 'form friction'" |
+| B | Time-to-first-action benchmark | `time_to_first_commercial_action_ms` vs industry/traffic cohort | "Visitors take 47s to first commercial action. Benchmark for e-commerce: 12s. Landing page isn't connecting." |
+| C | CTA render timing impact | `cta_rendered_late` events correlated with engagement rate | "CTA appears after user has already scrolled past — 40% of visitors never see primary CTA" |
+
+---
+
+### 4.7 Cross-Domain Compound Findings
+
+**Goal:** Produce findings that are **only possible** because Vestigio sees data from 3+ sources simultaneously. These are the moat — no single-domain tool can replicate them.
+
+> Existing compounds (3.4) combine 2 signals within the same domain. These combine evidence from fundamentally different collection methods (crawl × pixel × integration × browser verification).
+
+---
+
+#### 4.7A Security Exposure × Revenue Surface Quantification
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P1 |
+| **Sources** | Nuclei (security) × Shopify (revenue) × Pixel (traffic) |
+| **Effort** | Medium |
+
+| # | Finding | Cross-Domain Logic | Impact |
+|---|---------|-------------------|--------|
+| A | Vulnerability on revenue-critical page | Nuclei finds vulnerability on URL → Pixel shows that URL receives X sessions/month → Shopify shows that URL processes R$Y/month | "XSS vulnerability on your checkout page. This page processes R$400k/month across 2,300 sessions. Exposure: 100% of checkout traffic." |
+| B | Exposed endpoint with transaction volume | Katana finds guessable endpoint → Shopify confirms transactions flow through that path | "Guessable order endpoint /api/orders/{id} handles R$X/month in transactions. Enumeration risk is financial, not theoretical." |
+
+**Why unique:** Snyk finds the vulnerability. Shopify knows the revenue. Only Vestigio connects "this vulnerability is on your R$400k/month page."
+
+---
+
+#### 4.7B Ad Promise × Landing Reality × Behavioral Proof
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P1 |
+| **Sources** | Meta/Google Ads (creative copy) × Crawl (landing page content) × Pixel (behavioral drop-off) × Shopify (actual values) |
+| **Effort** | Medium — requires Wave 3.9 (C-E) ad creative matcher |
+
+| # | Finding | Cross-Domain Logic | Impact |
+|---|---------|-------------------|--------|
+| A | Ad promise ≠ landing page reality | Ad copy promises "free shipping" → Landing page shows R$15 shipping → Pixel shows 60% bounce at shipping info → Shopify confirms avg shipping R$18 | "Your Meta ad promises free shipping. Your landing page charges R$15-18. 60% of paid visitors bounce at shipping info. CPC waste: R$X/month." |
+| B | Ad audience × mobile experience mismatch | Ads target mobile-heavy demographic → Playwright shows mobile checkout broken → Pixel confirms mobile paid traffic converts 5× worse | "72% of your ad spend reaches mobile users. Mobile checkout has 3 critical errors. You're paying to send traffic into a broken funnel." |
+
+**Why unique:** Meta knows the ad. The crawl sees the page. The pixel sees the behavior. Shopify knows the real price. No single tool has all four.
+
+---
+
+#### 4.7C Trust Architecture × Behavioral Hesitation × Revenue Impact
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P1 |
+| **Sources** | Crawl (trust signal inventory) × Pixel (hesitation patterns) × Shopify (conversion by page) |
+| **Effort** | Medium |
+
+| # | Finding | Cross-Domain Logic | Impact |
+|---|---------|-------------------|--------|
+| A | Trust density ↔ drop-off correlation | Crawl counts trust signals per page → Pixel measures drop-off rate per page → Correlation: pages with <3 trust signals have 5× drop-off | "Pages with fewer than 3 trust signals have 5× the drop-off rate. Adding trust signals to your top 3 leaking pages: estimated R$X/month recovery." |
+| B | Chargeback driver chain | Shopify shows high chargeback on category X → Pixel shows those buyers visited policy page 3× more → Crawl shows policy is thin (200 words, no clear return process) | "Buyers of [category] visit your return policy 3× before purchasing, but your policy is thin and unclear. This drives your 4.2% chargeback rate. Cost: R$X/month." |
+
+**Why unique:** Hotjar sees behavior but doesn't correlate with trust signal density or chargeback data. Shopify sees chargebacks but not the behavioral pattern that caused them.
+
+---
+
+#### 4.7D Post-Purchase Experience × Chargeback × Support Correlation
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P2 |
+| **Sources** | Pixel (post-purchase behavior) × Playwright (confirmation flow) × Shopify (support tickets, chargebacks) × Crawl (tracking page existence) |
+| **Effort** | Medium |
+
+| # | Finding | Cross-Domain Logic | Impact |
+|---|---------|-------------------|--------|
+| A | Missing post-purchase → support flood → chargebacks | Pixel shows 40% of buyers seek support within 24h → Crawl finds no order tracking page → Playwright confirms confirmation email links broken → Shopify shows 8% of these become chargebacks | "40% of buyers seek support within 24h of purchase. No order tracking page exists. Confirmation email links are broken. This chain drives 8% chargeback rate: R$X/month." |
+| B | Shipping expectation gap | Crawl shows shipping page says "3-5 days" → Shopify shows avg fulfillment is 9 days → Pixel shows support spikes 5 days post-purchase | "You promise 3-5 day shipping. Average fulfillment: 9 days. Support contacts spike on day 5. Expectation gap drives disputes: R$X/month." |
+
+**Why unique:** Each piece of evidence is in a different system. The causal chain (missing tracking → support → chargeback) is only visible when you see all three together.
+
+---
+
+#### 4.7E Brand Impersonation × Revenue Correlation
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P2 |
+| **Sources** | Brand intel scan (lookalike domains) × Shopify (organic traffic trend) × Crawl (lookalike site has checkout) |
+| **Effort** | Low-Medium |
+
+| # | Finding | Cross-Domain Logic | Impact |
+|---|---------|-------------------|--------|
+| A | Active impersonation with revenue diversion | Brand scan finds lookalike domain → Crawl of lookalike shows active checkout → Shopify organic traffic declined 15% since lookalike registration | "vestigio-shop.com registered 3 weeks ago, actively selling your products. Your organic traffic dropped 15% in the same period. Estimated revenue diversion: R$X/month." |
+
+**Why unique:** Brand monitoring tools find the domain. Analytics shows the traffic drop. Only together do you see the causal link and financial impact.
+
+---
+
 ## Wave 6 — Future Cross-Domain Findings
 
 **Goal:** Expand the decision engine beyond commercial path analysis into adjacent financial surfaces — same buyer, same loss-frame, same defensible R$. Each category requires the finding to pass: *"Is this real money, already happening, verifiable with data we have?"*
@@ -1170,7 +1382,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
 | **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.20 open** |
-| **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity | All open |
+| **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity, **neglected findings (4.6)**, **cross-domain compounds (4.7)** | All open |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
 | **6** | Future Cross-Domain Findings | Revenue attribution integrity, pricing exposure, vendor cost leakage, subscription revenue decay | All exploratory — not committed |
 

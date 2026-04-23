@@ -874,8 +874,8 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       freshness: inf.freshness.freshness_state,
       inference_key: vc.inference_key,
       reasoning: vc.reasoning,
-      cause: vc.cause,
-      effect: vc.effect,
+      cause: translations?.inference_causes?.[vc.inference_key] ?? vc.cause,
+      effect: translations?.inference_effects?.[vc.inference_key] ?? vc.effect,
       basis_type: vc.basis_type,
       eligibility: {
         eligible: findingEligible,
@@ -892,13 +892,16 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       // catalog keyed by inference_key. Null when the entry hasn't
       // been authored yet — UI / MCP fall back to the legacy generic
       // response gracefully.
+      // Phase 3.2: translations override remediation_steps and
+      // verification_notes when present for the user's locale.
       ...(() => {
         const entry = lookupRemediation(vc.inference_key);
+        const tRemed = translations?.remediation?.[vc.inference_key];
         return {
-          remediation_steps: entry?.remediation_steps ?? null,
+          remediation_steps: tRemed?.remediation_steps ?? entry?.remediation_steps ?? null,
           estimated_effort_hours: entry?.estimated_effort_hours ?? null,
           verification_strategy: entry?.verification_strategy ?? null,
-          verification_notes: entry?.verification_notes ?? null,
+          verification_notes: tRemed?.verification_notes ?? entry?.verification_notes ?? null,
           verification_eta_seconds: entry?.verification_eta_seconds ?? null,
         };
       })(),

@@ -545,4 +545,24 @@ export interface EngineTranslations {
     names?: Record<string, string>;
     categories?: Record<string, string>;
   };
+  /**
+   * Phase 3.2: Finding body text translations. Keyed by inference_key.
+   * Falls back to English hardcoded baselines when missing.
+   */
+  inference_causes?: Record<string, string>;
+  inference_effects?: Record<string, string>;
+  /**
+   * Remediation steps keyed by inference_key. Falls back to the
+   * REMEDIATION_CATALOG (pt-BR) when missing.
+   */
+  remediation?: Record<string, {
+    remediation_steps: string[];
+    verification_notes: string;
+  }>;
+  /**
+   * Reasoning templates keyed by inference_key. Uses ICU MessageFormat
+   * placeholders ({severity}, {count}, {factors}) for site-specific data.
+   * Falls back to the English reasoning built inline in the inference engine.
+   */
+  reasoning_templates?: Record<string, string>;
 }

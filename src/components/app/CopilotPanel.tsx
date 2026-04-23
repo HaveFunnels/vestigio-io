@@ -433,28 +433,31 @@ export default function CopilotPanel() {
 						)}
 					</div>
 				) : (
-					/* ── Empty state — template-inspired centered layout ── */
-					<div className="flex h-full flex-col items-center justify-center px-6 text-center">
-						<SparkleIcon className="mb-6 h-12 w-12" />
-
-						<div className="space-y-1.5">
-							<h2 className="text-lg font-medium tracking-tight text-content-muted">
+					/* ── Empty state ── */
+					<div className="flex h-full flex-col items-center px-6 text-center">
+						{/* Icon + brand — pushed toward the top */}
+						<div className="mt-12 mb-8">
+							<SparkleIcon className="mx-auto mb-3 h-10 w-10" />
+							<h2 className="text-sm font-medium tracking-tight text-content-faint">
 								{t("greeting_title")}
 							</h2>
-							<h3 className="text-base font-medium tracking-tight text-content">
-								{t("greeting_subtitle")}
-							</h3>
 						</div>
 
-						<p className="mt-2.5 text-sm text-content-muted">
-							{t("greeting_description")}
-						</p>
+						{/* CTA + description — centered in remaining space */}
+						<div className="flex flex-1 flex-col items-center justify-center">
+							<h3 className="text-base font-semibold tracking-tight text-content">
+								{t("greeting_subtitle")}
+							</h3>
+							<p className="mt-1.5 text-sm text-content-muted">
+								{t("greeting_description")}
+							</p>
 
-						<div className="mt-6 w-full">
-							<CopilotQuickActions
-								pageContext={pageContext}
-								onAction={(prompt) => send(prompt)}
-							/>
+							<div className="mt-6 w-full">
+								<CopilotQuickActions
+									pageContext={pageContext}
+									onAction={(prompt) => send(prompt)}
+								/>
+							</div>
 						</div>
 					</div>
 				)}

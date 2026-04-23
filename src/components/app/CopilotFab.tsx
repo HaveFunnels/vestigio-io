@@ -113,8 +113,10 @@ export default function CopilotFab() {
 						flex items-center gap-2.5
 						rounded-full pl-3 pr-4 py-2.5
 						text-sm font-medium
-						shadow-lg shadow-emerald-500/20
-						bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-500/30
+						bg-black/80 text-white backdrop-blur-sm
+						border border-white/10
+						shadow-[0_0_16px_-2px_rgba(52,211,153,0.25),0_0_4px_0px_rgba(52,211,153,0.1)]
+						hover:border-white/20 hover:shadow-[0_0_24px_-2px_rgba(52,211,153,0.4),0_0_6px_0px_rgba(52,211,153,0.15)]
 					"
 					aria-label={t("fab_aria")}
 					initial={{ y: 80, scale: 0.8 }}
@@ -133,8 +135,8 @@ export default function CopilotFab() {
 					{/* Unread indicator when minimized */}
 					{isMinimized && (
 						<span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
-							<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-							<span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+							<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60 opacity-75" />
+							<span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
 						</span>
 					)}
 				</motion.button>

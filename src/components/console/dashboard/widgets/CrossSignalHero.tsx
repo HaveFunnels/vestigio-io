@@ -79,7 +79,7 @@ function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boole
 								>
 									<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
 									<span className={`font-semibold ${style.text}`}>{style.label}</span>
-									<span className="max-w-[110px] truncate text-content-secondary">
+									<span className="max-w-[140px] truncate text-content-secondary lg:max-w-[240px] xl:max-w-[320px]">
 										{link.title}
 									</span>
 								</button>

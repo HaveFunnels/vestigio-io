@@ -269,26 +269,16 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
         <PulseSummary perspective={slug} />
       </div>
 
-      {/* Perspective-level enrichment (3.11B Fase 4) */}
+      {/* Perspective-level enrichment (3.11B Fase 4) — no card wrappers, components self-style */}
       {slug === "revenue" && allFindings.length > 0 && (
-        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-5">
-          <div className="lg:col-span-3">
-            <section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-              <OpportunityPreview findings={allFindings} />
-            </section>
-          </div>
-          <div className="lg:col-span-2">
-            <section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-              <TrustScoreCard findings={allFindings} filterPacks={["revenue_integrity", "revenue", "chargeback_resilience", "chargeback"]} />
-            </section>
-          </div>
+        <div className="mt-5 space-y-4">
+          <OpportunityPreview findings={allFindings} />
+          <TrustScoreCard findings={allFindings} filterPacks={["revenue_integrity", "revenue", "chargeback_resilience", "chargeback"]} />
         </div>
       )}
       {slug === "trust" && allFindings.length > 0 && (
         <div className="mt-5">
-          <section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-            <TrustScoreCard findings={allFindings} filterPacks={["security_posture", "scale_readiness"]} />
-          </section>
+          <TrustScoreCard findings={allFindings} filterPacks={["security_posture", "scale_readiness"]} />
         </div>
       )}
 

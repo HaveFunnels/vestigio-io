@@ -104,6 +104,12 @@ export default function ResilienceChecklist({ findings, pillars }: Props) {
 		return p.inferenceKeys.some((k) => byKey.has(k));
 	});
 
+	// Hide entirely when no pillar has any matching data
+	const hasAnyData = visiblePillars.some((p) =>
+		p.inferenceKeys.some((k) => byKey.has(k)),
+	);
+	if (!hasAnyData) return null;
+
 	return (
 		<div className="space-y-3">
 			{visiblePillars.map((pillar) => {

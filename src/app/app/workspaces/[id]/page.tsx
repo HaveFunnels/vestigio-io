@@ -32,16 +32,23 @@ import type {
 // Workspace Detail — aligned with industrial-editorial design
 // ──────────────────────────────────────────────
 
-const PERSPECTIVE_META: Record<string, { label: string; color: string; border: string; slug: string }> = {
-	revenue: { label: "Receita", color: "text-red-400", border: "border-l-red-500/60", slug: "revenue" },
-	chargeback: { label: "Receita", color: "text-red-400", border: "border-l-red-500/60", slug: "revenue" },
-	preflight: { label: "Confiança", color: "text-amber-400", border: "border-l-amber-500/60", slug: "trust" },
-	security_posture: { label: "Confiança", color: "text-amber-400", border: "border-l-amber-500/60", slug: "trust" },
+const PERSPECTIVE_SLUG_MAP: Record<string, string> = {
+	revenue: "revenue",
+	chargeback: "revenue",
+	preflight: "trust",
+	security_posture: "trust",
 };
 
-function getPerspective(type: string, category: string) {
-	if (category === "behavioral") return { label: "Comportamento", color: "text-violet-400", border: "border-l-violet-500/60", slug: "behavior" };
-	return PERSPECTIVE_META[type] || { label: "Confiança", color: "text-amber-400", border: "border-l-amber-500/60", slug: "trust" };
+const PERSPECTIVE_COLORS: Record<string, { color: string; border: string }> = {
+	revenue: { color: "text-red-400", border: "border-l-red-500/60" },
+	trust: { color: "text-amber-400", border: "border-l-amber-500/60" },
+	behavior: { color: "text-violet-400", border: "border-l-violet-500/60" },
+};
+
+function getPerspective(type: string, category: string, t: (key: string) => string) {
+	const slug = category === "behavioral" ? "behavior" : (PERSPECTIVE_SLUG_MAP[type] || "trust");
+	const colors = PERSPECTIVE_COLORS[slug] || PERSPECTIVE_COLORS.trust;
+	return { label: t(`perspectives.${slug}`), slug, ...colors };
 }
 
 function fmtCurrency(value: number): string {
@@ -108,7 +115,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 	const { track } = useTrack();
 	const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
 
-	const perspective = getPerspective(workspace.type, workspace.category);
+	const perspective = getPerspective(workspace.type, workspace.category, t);
 
 	// Track workspace drill (3.16)
 	useEffect(() => {
@@ -256,139 +263,129 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 				</div>
 			</div>
 
-			{/* ── Two-column layout ── */}
+			{/* ── Summary strip: Change Summary + Quick Stats (full width) ── */}
 			<div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
-				{/* Left: Changes + Findings */}
-				<div className="space-y-5">
-					{/* Change Summary */}
-					{(workspace.change_summary || workspaceChanges.length > 0) && (
-						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-							<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-								{t("detail.change_summary")}
-							</h2>
-							{workspace.change_summary && <TrendHeadline summary={workspace.change_summary} />}
-							{workspaceChanges.length > 0 && (
-								<div className="mt-3">
-									<ChangeTimeline changes={workspaceChanges} maxItems={8} />
-								</div>
-							)}
-							{!workspace.change_summary && workspaceChanges.length === 0 && (
-								<p className="text-[12px] text-zinc-400 dark:text-zinc-600">{t("detail.no_changes")}</p>
-							)}
-						</section>
-					)}
-
-					{/* Domain-specific enrichment (3.11B) — above findings table */}
-					{isChargeback && (
-						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-							<ChargebackResilience findings={workspace.findings} />
-						</section>
-					)}
-					{isRevenue && (
-						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-							<RevenueIntelligence findings={workspace.findings} />
-						</section>
-					)}
-					{isSecurityPosture && (
-						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-							<SecurityPosture findings={workspace.findings} />
-						</section>
-					)}
-
-					{/* Findings */}
-					<section className="rounded-2xl border border-edge bg-surface-card shadow-lg">
-						<div className="px-5 pt-5 pb-2">
-							<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-								{isPreflight ? t("detail.preflight_checklist") : t("detail.findings")}
-							</h2>
-						</div>
-
-						{isPreflight && preflightReadiness ? (
-							<div className="px-5 pb-5">
-								<PreflightChecklist
-									findings={workspace.findings}
-									readiness={preflightReadiness}
-									onFindingClick={(f) => openFinding(f)}
-								/>
-							</div>
-						) : (
-							<DataTable
-								columns={findingColumns}
-								data={workspace.findings}
-								onRowClick={(row) => openFinding(row)}
-								getRowKey={(row) => row.id}
-								emptyMessage={t("detail.no_findings")}
-							/>
-						)}
-					</section>
-				</div>
-
-				{/* Right: Coherence + Stats */}
-				<div className="space-y-5">
-					{/* Coherence */}
-					{workspace.coherence && (
-						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-							<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-								{t("detail.coherence")}
-							</h2>
-							<div className="space-y-3">
-								<div>
-									<div className="mb-1 flex items-center justify-between">
-										<span className="text-[11px] text-zinc-500">{t("detail.coherence_score")}</span>
-										<span className={`font-[family-name:var(--font-jetbrains-mono)] text-[13px] font-semibold tabular-nums ${
-											workspace.coherence.coherence_score >= 70 ? "text-emerald-500" :
-											workspace.coherence.coherence_score >= 40 ? "text-amber-500" : "text-red-500"
-										}`}>
-											{workspace.coherence.coherence_score}
-										</span>
-									</div>
-									<div className="h-[4px] w-full rounded-sm bg-zinc-100 dark:bg-white/[0.04]">
-										<div
-											className={`h-full rounded-sm transition-all ${
-												workspace.coherence.coherence_score >= 70 ? "bg-emerald-500" :
-												workspace.coherence.coherence_score >= 40 ? "bg-amber-500" : "bg-red-500"
-											}`}
-											style={{ width: `${Math.min(100, workspace.coherence.coherence_score)}%` }}
-										/>
-									</div>
-								</div>
-								{workspace.coherence.conflict_annotations.length > 0 && (
-									<div className="space-y-1.5">
-										{workspace.coherence.conflict_annotations.map((note, i) => (
-											<div key={i} className="rounded border-l-2 border-l-amber-500/60 bg-amber-50 px-3 py-2 dark:bg-amber-500/[0.04]">
-												<p className="text-[11px] text-amber-700 dark:text-amber-300/90">{note}</p>
-											</div>
-										))}
-									</div>
-								)}
-								{workspace.coherence.suppressed && (
-									<div className="rounded border-l-2 border-l-red-500/60 bg-red-50 px-3 py-2 dark:bg-red-500/[0.04]">
-										<p className="text-[11px] text-red-700 dark:text-red-300/90">{t("detail.suppressed_by_pack")}</p>
-									</div>
-								)}
-							</div>
-						</section>
-					)}
-
-					{/* Quick Stats */}
+				{/* Change Summary */}
+				{(workspace.change_summary || workspaceChanges.length > 0) ? (
 					<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
 						<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-							{t("detail.quick_stats")}
+							{t("detail.change_summary")}
 						</h2>
-						<div className="grid grid-cols-2 gap-3">
-							<StatCard label={t("detail.negative_findings")} value={negativeFindings.length} color="text-red-500 dark:text-red-400" />
-							<StatCard label={t("detail.positive_findings")} value={positiveFindings.length} color="text-emerald-600 dark:text-emerald-400" />
-							<StatCard
-								label={t("detail.top_severity")}
-								value={topSeverity}
-								color={topSeverity === "critical" ? "text-red-500 dark:text-red-400" :
-									topSeverity === "high" ? "text-orange-500 dark:text-orange-400" :
-									topSeverity === "medium" ? "text-amber-500 dark:text-amber-400" : "text-zinc-400 dark:text-zinc-500"}
-							/>
-						</div>
+						{workspace.change_summary && <TrendHeadline summary={workspace.change_summary} />}
+						{workspaceChanges.length > 0 && (
+							<div className="mt-3">
+								<ChangeTimeline changes={workspaceChanges} maxItems={8} />
+							</div>
+						)}
 					</section>
-				</div>
+				) : <div />}
+
+				{/* Quick Stats */}
+				<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+					<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+						{t("detail.quick_stats")}
+					</h2>
+					<div className="grid grid-cols-3 gap-3">
+						<StatCard label={t("detail.negative_findings")} value={negativeFindings.length} color="text-red-500 dark:text-red-400" />
+						<StatCard label={t("detail.positive_findings")} value={positiveFindings.length} color="text-emerald-600 dark:text-emerald-400" />
+						<StatCard
+							label={t("detail.top_severity")}
+							value={topSeverity.charAt(0).toUpperCase() + topSeverity.slice(1)}
+							color={topSeverity === "critical" ? "text-red-500 dark:text-red-400" :
+								topSeverity === "high" ? "text-orange-500 dark:text-orange-400" :
+								topSeverity === "medium" ? "text-amber-500 dark:text-amber-400" : "text-zinc-400 dark:text-zinc-500"}
+						/>
+					</div>
+				</section>
 			</div>
+
+			{/* ── Domain-specific enrichment (3.11B) — full width, no card wrapper ── */}
+			{isChargeback && (
+				<div className="mt-5">
+					<ChargebackResilience findings={workspace.findings} />
+				</div>
+			)}
+			{isRevenue && (
+				<div className="mt-5">
+					<RevenueIntelligence findings={workspace.findings} />
+				</div>
+			)}
+			{isSecurityPosture && (
+				<div className="mt-5">
+					<SecurityPosture findings={workspace.findings} />
+				</div>
+			)}
+
+			{/* ── Coherence (only if conflicts exist) ── */}
+			{workspace.coherence && workspace.coherence.has_conflicts && (
+				<section className="mt-5 rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+					<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+						{t("detail.coherence")}
+					</h2>
+					<div className="space-y-3">
+						<div>
+							<div className="mb-1 flex items-center justify-between">
+								<span className="text-[11px] text-zinc-500">{t("detail.coherence_score")}</span>
+								<span className={`font-[family-name:var(--font-jetbrains-mono)] text-[13px] font-semibold tabular-nums ${
+									workspace.coherence.coherence_score >= 70 ? "text-emerald-500" :
+									workspace.coherence.coherence_score >= 40 ? "text-amber-500" : "text-red-500"
+								}`}>
+									{workspace.coherence.coherence_score}
+								</span>
+							</div>
+							<div className="h-[4px] w-full rounded-sm bg-zinc-100 dark:bg-white/[0.04]">
+								<div
+									className={`h-full rounded-sm transition-all ${
+										workspace.coherence.coherence_score >= 70 ? "bg-emerald-500" :
+										workspace.coherence.coherence_score >= 40 ? "bg-amber-500" : "bg-red-500"
+									}`}
+									style={{ width: `${Math.min(100, workspace.coherence.coherence_score)}%` }}
+								/>
+							</div>
+						</div>
+						{workspace.coherence.conflict_annotations.length > 0 && (
+							<div className="space-y-1.5">
+								{workspace.coherence.conflict_annotations.map((note, i) => (
+									<div key={i} className="rounded border-l-2 border-l-amber-500/60 bg-amber-50 px-3 py-2 dark:bg-amber-500/[0.04]">
+										<p className="text-[11px] text-amber-700 dark:text-amber-300/90">{note}</p>
+									</div>
+								))}
+							</div>
+						)}
+						{workspace.coherence.suppressed && (
+							<div className="rounded border-l-2 border-l-red-500/60 bg-red-50 px-3 py-2 dark:bg-red-500/[0.04]">
+								<p className="text-[11px] text-red-700 dark:text-red-300/90">{t("detail.suppressed_by_pack")}</p>
+							</div>
+						)}
+					</div>
+				</section>
+			)}
+
+			{/* ── Findings table (full width) ── */}
+			<section className="mt-5 w-full rounded-2xl border border-edge bg-surface-card shadow-lg">
+				<div className="px-5 pt-5 pb-2">
+					<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+						{isPreflight ? t("detail.preflight_checklist") : t("detail.findings")}
+					</h2>
+				</div>
+				{isPreflight && preflightReadiness ? (
+					<div className="px-5 pb-5">
+						<PreflightChecklist
+							findings={workspace.findings}
+							readiness={preflightReadiness}
+							onFindingClick={(f) => openFinding(f)}
+						/>
+					</div>
+				) : (
+					<DataTable
+						columns={findingColumns}
+						data={workspace.findings}
+						onRowClick={(row) => openFinding(row)}
+						getRowKey={(row) => row.id}
+						emptyMessage={t("detail.no_findings")}
+					/>
+				)}
+			</section>
 
 			{/* ── Finding Drawer ── */}
 			<SideDrawer open={selectedFinding !== null} onClose={closeFinding} title={selectedFinding?.title || ""}>

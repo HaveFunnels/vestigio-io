@@ -54,6 +54,10 @@ interface Props {
 }
 
 export default function ChargebackResilience({ findings }: Props) {
+	// Hide when no chargeback findings exist
+	const hasChargebackData = findings.some((f) => f.pack === "chargeback_resilience" || f.pack === "chargeback");
+	if (!hasChargebackData) return null;
+
 	return (
 		<div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
 			{/* Left: Checklist (60%) */}

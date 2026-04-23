@@ -50,6 +50,9 @@ interface Props {
 }
 
 export default function SecurityPosture({ findings }: Props) {
+	const hasSecurityData = findings.some((f) => f.pack === "security_posture" || f.pack === "scale_readiness");
+	if (!hasSecurityData) return null;
+
 	return (
 		<div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
 			{/* Left: Security Checklist (60%) */}

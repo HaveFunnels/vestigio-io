@@ -1748,9 +1748,20 @@
 					"no_significant_changes": "No significant changes"
 				},
 				"readiness": {
-					"ready": "Ready to scale",
-					"ready_with_risks": "Ready with risks",
-					"blocker": "Blockers found"
+					"ready": "Skalierungsbereit",
+					"ready_with_risks": "Bereit mit Risiken",
+					"blocker": "Blocker gefunden"
+				},
+				"enrichment": {
+					"funnel_integrity": "Funnel-Integrität",
+					"funnel_ok": "OK",
+					"funnel_stages": {
+						"discovery": "Entdeckung",
+						"interest": "Interesse",
+						"decision": "Entscheidung",
+						"purchase": "Kauf",
+						"post_purchase": "Nach dem Kauf"
+					}
 				}
 			}
 		},

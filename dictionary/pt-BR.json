@@ -1887,6 +1887,17 @@
 					"ready": "Pronto para escalar",
 					"ready_with_risks": "Pronto com riscos",
 					"blocker": "Blockers encontrados"
+				},
+				"enrichment": {
+					"funnel_integrity": "Integridade do Funil",
+					"funnel_ok": "OK",
+					"funnel_stages": {
+						"discovery": "Descoberta",
+						"interest": "Interesse",
+						"decision": "Decisão",
+						"purchase": "Compra",
+						"post_purchase": "Pós-compra"
+					}
 				}
 			},
 			"panorama_title": "Panorama",

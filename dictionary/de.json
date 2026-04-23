@@ -2803,7 +2803,9 @@
 				"ad_spend": {
 					"name": "Werbeausgaben",
 					"description": "Monatliche Werbeausgaben nach verbundener Plattform (Meta Ads, Google Ads)."
-				}
+				},
+				"cross_signal_hero": "Cross-Signal Insights",
+				"cross_signal_hero_desc": "Kausalketten ueber Domaenperspektiven"
 			},
 			"mock_data": {
 				"payment_intent_loss": "Käufer springen beim 3DS-Sicherheitsschritt ab",
@@ -2814,7 +2816,9 @@
 				"pricing_page_outdated": "Ihre Preisseite zeigt einen Plan, den es gar nicht mehr gibt",
 				"refund_policy_reverted": "Ihre Erstattungsrichtlinie ist schon wieder aus dem Checkout verschwunden",
 				"og_image_stale": "Ihre Homepage hat ein veraltetes Vorschaubild geteilt",
-				"trust_seals_missing": "Die Vertrauenssiegel fehlten beim Bezahlschritt"
+				"trust_seals_missing": "Die Vertrauenssiegel fehlten beim Bezahlschritt",
+				"cross_signal_security": "CSP-Header fehlen auf der Checkout-Seite",
+				"cross_signal_revenue": "Vertrauensindikatoren auf Checkout-Seite fehlen"
 			}
 		},
 		"copilot": {

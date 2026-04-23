@@ -29,6 +29,8 @@ import type {
 	AdSpendData,
 	ChangeReportData,
 	ChangeReportEntry,
+	CrossSignalChain,
+	CrossSignalData,
 	DashboardData,
 	ExposureData,
 	HealthScoreData,
@@ -845,6 +847,7 @@ export function emptyDashboardData(): DashboardData {
 		changeReport,
 		activityHeatmap,
 		adSpend: { totalMonthly: 0, currency: "USD", byPlatform: [], hasData: false, caption: "" },
+		crossSignal: { chains: [], totalChains: 0, totalImpactCents: 0, caption: "" },
 	};
 }
 
@@ -946,12 +949,97 @@ async function computeAdSpend(
 	}
 }
 
+// ──────────────────────────────────────────────
+// Slice 7 — Cross-Signal Chains
+//
+// Finds findings that share the same surface URL but come from
+// different packs. This reveals causal chains like:
+//   [Security] CSP missing → [Trust] Buyer hesitation → [Revenue] Conversion drop
+// The detection is pure SQL grouping — no LLM cost.
+// ──────────────────────────────────────────────
+async function computeCrossSignal(
+	prisma: PrismaClient,
+	envId: string
+): Promise<CrossSignalData> {
+	try {
+		// Get open negative findings with a surface URL
+		const findings = await prisma.finding.findMany({
+			where: {
+				environmentId: envId,
+				polarity: { not: "positive" },
+				changeClass: { not: "resolved" },
+				NOT: { surface: "" },
+			},
+			select: {
+				id: true,
+				severity: true,
+				pack: true,
+				surface: true,
+				impactMidpoint: true,
+				projection: true,
+			},
+		});
+
+		// Group by surface, keep only groups with 2+ distinct packs
+		type FindingRow = (typeof findings)[number];
+		const bySurface = new Map<string, FindingRow[]>();
+		for (const f of findings) {
+			if (!f.surface) continue;
+			const group = bySurface.get(f.surface) || [];
+			group.push(f);
+			bySurface.set(f.surface, group);
+		}
+
+		const chains: CrossSignalChain[] = [];
+		for (const [surface, group] of bySurface) {
+			const packs = new Set(group.map((f) => f.pack).filter(Boolean));
+			if (packs.size < 2) continue;
+
+			const links = group.map((f) => {
+				let title = "Untitled";
+				try {
+					const proj = JSON.parse(f.projection || "{}");
+					title = proj.title || title;
+				} catch { /* ignore */ }
+				return {
+					pack: f.pack || "unknown",
+					title,
+					severity: f.severity || "medium",
+					impactCents: dollarsToCents(f.impactMidpoint || 0),
+					findingId: f.id,
+				};
+			});
+
+			const totalImpactCents = links.reduce((sum, l) => sum + l.impactCents, 0);
+			chains.push({ surface, links, totalImpactCents });
+		}
+
+		// Sort by impact descending
+		chains.sort((a, b) => b.totalImpactCents - a.totalImpactCents);
+
+		// Keep top 5
+		const topChains = chains.slice(0, 5);
+		const totalImpactCents = topChains.reduce((sum, c) => sum + c.totalImpactCents, 0);
+
+		return {
+			chains: topChains,
+			totalChains: chains.length,
+			totalImpactCents,
+			caption: chains.length > 0
+				? `${chains.length} cross-domain pattern${chains.length > 1 ? "s" : ""} detected across your site`
+				: "No cross-domain patterns detected yet",
+		};
+	} catch {
+		return { chains: [], totalChains: 0, totalImpactCents: 0, caption: "" };
+	}
+}
+
 export async function computeDashboardData(
 	prisma: PrismaClient,
 	orgId: string,
 	envId: string
 ): Promise<DashboardData> {
-	const [moneyRecovered, healthScore, exposure, changeReport, activityHeatmap, adSpend] =
+	const [moneyRecovered, healthScore, exposure, changeReport, activityHeatmap, adSpend, crossSignal] =
 		await Promise.all([
 			computeMoneyRecovered(prisma, envId),
 			computeHealthScore(prisma, orgId, envId),
@@ -959,6 +1047,7 @@ export async function computeDashboardData(
 			computeChangeReport(prisma, envId),
 			computeActivityHeatmap(prisma, orgId, envId),
 			computeAdSpend(prisma, envId),
+			computeCrossSignal(prisma, envId),
 		]);
 
 	return {
@@ -968,5 +1057,6 @@ export async function computeDashboardData(
 		changeReport,
 		activityHeatmap,
 		adSpend,
+		crossSignal,
 	};
 }

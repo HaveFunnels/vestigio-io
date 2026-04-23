@@ -207,6 +207,21 @@ export function buildMockDashboardData(t: MockTranslator): DashboardData {
 			hasData: true,
 			caption: "Meta Ads leads with $8,500/mo (68% of total).",
 		},
+		crossSignal: {
+			chains: [
+				{
+					surface: "/checkout",
+					links: [
+						{ pack: "security_posture", title: t("cross_signal_security"), severity: "high", impactCents: 124000, findingId: "mock-cs-1" },
+						{ pack: "revenue", title: t("cross_signal_revenue"), severity: "critical", impactCents: 241000, findingId: "mock-cs-2" },
+					],
+					totalImpactCents: 365000,
+				},
+			],
+			totalChains: 1,
+			totalImpactCents: 365000,
+			caption: "1 cross-domain pattern detected on checkout.",
+		},
 	};
 }
 
@@ -344,5 +359,29 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
 		],
 		hasData: true,
 		caption: "Meta Ads leads with $8,500/mo (68% of total).",
+	},
+	crossSignal: {
+		chains: [
+			{
+				surface: "/checkout",
+				links: [
+					{ pack: "security_posture", title: "Missing CSP headers on checkout", severity: "high", impactCents: 124000, findingId: "demo-cs-1" },
+					{ pack: "revenue", title: "Checkout trust indicators absent", severity: "critical", impactCents: 241000, findingId: "demo-cs-2" },
+					{ pack: "behavioral", title: "3 rage-click sessions on payment form", severity: "medium", impactCents: 89000, findingId: "demo-cs-3" },
+				],
+				totalImpactCents: 454000,
+			},
+			{
+				surface: "/product/premium-plan",
+				links: [
+					{ pack: "revenue", title: "Pricing page missing social proof", severity: "high", impactCents: 178000, findingId: "demo-cs-4" },
+					{ pack: "chargeback", title: "No refund policy visible before purchase", severity: "medium", impactCents: 67000, findingId: "demo-cs-5" },
+				],
+				totalImpactCents: 245000,
+			},
+		],
+		totalChains: 2,
+		totalImpactCents: 699000,
+		caption: "2 cross-domain patterns detected — checkout is the highest-impact surface.",
 	},
 };

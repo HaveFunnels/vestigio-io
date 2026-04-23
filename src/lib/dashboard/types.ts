@@ -144,6 +144,30 @@ export interface AdSpendData {
 	caption: string;
 }
 
+export interface CrossSignalChain {
+	/** Shared surface URL that links these findings */
+	surface: string;
+	/** Findings from different packs that share this surface */
+	links: Array<{
+		pack: string;
+		title: string;
+		severity: string;
+		impactCents: number;
+		findingId: string;
+	}>;
+	/** Combined monthly impact across all linked findings */
+	totalImpactCents: number;
+}
+
+export interface CrossSignalData {
+	/** Detected causal chains (findings on same surface across 2+ packs) */
+	chains: CrossSignalChain[];
+	/** Summary for headline */
+	totalChains: number;
+	totalImpactCents: number;
+	caption: string;
+}
+
 export interface DashboardData {
 	moneyRecovered: MoneyRecoveredData;
 	healthScore: HealthScoreData;
@@ -151,6 +175,7 @@ export interface DashboardData {
 	changeReport: ChangeReportData;
 	activityHeatmap: ActivityHeatmapData;
 	adSpend: AdSpendData;
+	crossSignal: CrossSignalData;
 }
 
 /** Type-safe key list — used by the registry to declare data dependencies */

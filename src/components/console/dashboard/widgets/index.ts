@@ -16,6 +16,8 @@
 // widget. The registry-driven architecture handles the rest.
 // ──────────────────────────────────────────────
 
+// Cross-signal hero — Vestigio's differentiator (3.13)
+import "./CrossSignalHero";
 import "./MoneyRecoveredTicker";
 import "./ExposureKpiCard";
 import "./HealthTrendCard";

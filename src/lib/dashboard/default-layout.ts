@@ -31,20 +31,22 @@
 //      color → pack mapping is finally explicit. TopPack stays as
 //      a small w=2 tile in the bottom KPI row.
 //
-//   ┌────────┬──────────────┬────────┐
-//   │ Money  │  Exposure    │Critical│   row 0-2 (h=3)
+//   ┌─────────────────────────────────┐
+//   │ CrossSignal Hero               │   row 0-3 (h=4) ← NEW: Vestigio's moat
+//   │ w=12                           │
+//   ├────────┬──────────────┬────────┤
+//   │ Money  │  Exposure    │Critical│   row 4-6 (h=3)
 //   │ w=4    │  w=5         │ w=3    │
 //   ├────────┴──────┬───────┴────────┤
-//   │ Health        │ WhatChanged    │   row 3-6 (h=4)
+//   │ Health        │ WhatChanged    │   row 7-10 (h=4)
 //   │ w=6           │ w=6            │
 //   ├───────────────┼─────┬────┬────┤
-//   │ Heatmap       │Strk │Verf│Top │   row 7-9 (h=3)
+//   │ Heatmap       │Strk │Verf│Top │   row 11-13 (h=3)
 //   │ w=6           │w=2  │w=2 │w=2 │
-//   └───────────────┴─────┴────┴────┘
+//   └───────────────┴─────┴────┘────┘
 //
-// Total: 10 row units. With rowHeight=80 and margin=14, the dashboard
-// renders in ~944px — close to a single screen on a standard 1080p
-// laptop without scrolling.
+// Total: 14 row units. With rowHeight=80 and margin=14, the dashboard
+// renders in ~1264px — scrollable on 1080p, fits on 1440p.
 // ──────────────────────────────────────────────
 
 export interface WidgetInstance {
@@ -61,12 +63,22 @@ export interface WidgetInstance {
 }
 
 export const DEFAULT_LAYOUT: WidgetInstance[] = [
-	// ── Row 0-2 (h=3): hero strip — mandatory order ──
+	// ── Row 0-3 (h=4): Cross-Signal Hero — Vestigio's moat ──
+	{
+		instanceId: "default-crosssignal",
+		defId: "cross_signal_hero",
+		x: 0,
+		y: 0,
+		w: 12,
+		h: 4,
+	},
+
+	// ── Row 4-6 (h=3): KPI strip ──
 	{
 		instanceId: "default-money",
 		defId: "money_recovered_ticker",
 		x: 0,
-		y: 0,
+		y: 4,
 		w: 4,
 		h: 3,
 	},
@@ -74,7 +86,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-exposure",
 		defId: "exposure_kpi",
 		x: 4,
-		y: 0,
+		y: 4,
 		w: 5,
 		h: 3,
 	},
@@ -82,17 +94,17 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-critical",
 		defId: "open_critical_kpi",
 		x: 9,
-		y: 0,
+		y: 4,
 		w: 3,
 		h: 3,
 	},
 
-	// ── Row 3-6 (h=4): trends + change report ──
+	// ── Row 7-10 (h=4): trends + change report ──
 	{
 		instanceId: "default-health",
 		defId: "health_trend",
 		x: 0,
-		y: 3,
+		y: 7,
 		w: 6,
 		h: 4,
 	},
@@ -100,17 +112,17 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-changed",
 		defId: "what_changed",
 		x: 6,
-		y: 3,
+		y: 7,
 		w: 6,
 		h: 4,
 	},
 
-	// ── Row 7-9 (h=3): heatmap + compact KPI tiles ──
+	// ── Row 11-13 (h=3): heatmap + compact KPI tiles ──
 	{
 		instanceId: "default-heatmap",
 		defId: "activity_heatmap",
 		x: 0,
-		y: 7,
+		y: 11,
 		w: 6,
 		h: 3,
 	},
@@ -118,7 +130,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-streak",
 		defId: "streak_kpi",
 		x: 6,
-		y: 7,
+		y: 11,
 		w: 2,
 		h: 3,
 	},
@@ -126,7 +138,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-verification",
 		defId: "verification_rate_kpi",
 		x: 8,
-		y: 7,
+		y: 11,
 		w: 2,
 		h: 3,
 	},
@@ -134,7 +146,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-toppack",
 		defId: "top_pack_kpi",
 		x: 10,
-		y: 7,
+		y: 11,
 		w: 2,
 		h: 3,
 	},

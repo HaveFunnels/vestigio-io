@@ -1989,7 +1989,9 @@
 				"ad_spend": {
 					"name": "Ad Spend",
 					"description": "Total monthly ad spend across connected platforms with per-platform breakdown."
-				}
+				},
+				"cross_signal_hero": "Cross-Signal Insights",
+				"cross_signal_hero_desc": "Causal chains across domain perspectives"
 			},
 			"editing_subtitle": "Drag widgets to rearrange. Resize from the corner. Add or remove from the catalog.",
 			"add_widget": "Add widget",
@@ -2027,7 +2029,9 @@
 				"pricing_page_outdated": "Your pricing page is showing a plan that no longer exists",
 				"refund_policy_reverted": "Your refund policy disappeared from checkout again",
 				"og_image_stale": "Your homepage was sharing an outdated preview image",
-				"trust_seals_missing": "The trust seals were missing at the payment step"
+				"trust_seals_missing": "The trust seals were missing at the payment step",
+				"cross_signal_security": "Missing CSP headers on checkout",
+				"cross_signal_revenue": "Checkout trust indicators absent"
 			}
 		},
 		"chat": {

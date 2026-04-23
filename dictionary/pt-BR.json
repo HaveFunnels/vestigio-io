@@ -2008,7 +2008,9 @@
 				"ad_spend": {
 					"name": "Ad Spend",
 					"description": "Gasto mensal de ads total por plataforma conectada (Meta Ads, Google Ads)."
-				}
+				},
+				"cross_signal_hero": "Insights Cross-Signal",
+				"cross_signal_hero_desc": "Cadeias causais entre perspectivas de dominio"
 			},
 			"editing_subtitle": "Arraste widgets para reorganizar. Redimensione pelo canto. Adicione ou remova pelo catálogo.",
 			"add_widget": "Adicionar widget",
@@ -2046,7 +2048,9 @@
 				"pricing_page_outdated": "Sua página de preços está mostrando um plano que não existe mais",
 				"refund_policy_reverted": "Sua política de reembolso sumiu do checkout de novo",
 				"og_image_stale": "Sua homepage estava compartilhando uma imagem de preview desatualizada",
-				"trust_seals_missing": "Os selos de confiança sumiram na etapa de pagamento"
+				"trust_seals_missing": "Os selos de confiança sumiram na etapa de pagamento",
+				"cross_signal_security": "Headers CSP ausentes no checkout",
+				"cross_signal_revenue": "Indicadores de confianca ausentes no checkout"
 			}
 		},
 		"chat": {

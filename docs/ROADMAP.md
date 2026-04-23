@@ -60,7 +60,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Stripe Integration — OAuth + poller (scaffolding ~40% done) | Types + reconciliation + Prisma + API CRUD done; missing OAuth flow + revenue poller + sync route | Wave 3.8 |
 | Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
 | Opportunity-First Actions — 7 fases | **~5%** — engine generates opportunities, tab exists; all UI/UX fases open | Wave 3.12 |
-| Re-engagement Infrastructure — close retention loop | **Not started** — email digest, cycle summary, dashboard as landing, cross-signal narrative, alerts. Zero proactive mechanisms exist today. | Wave 3.13 |
+| Re-engagement & Remediation — close the loop | **Not started** — 4 fases: dashboard as daily briefing + cross-signal hero, email digest, remediation execution playbooks (vibecoding bridge), i18n. ~35-40h. | Wave 3.13 |
 | Vestigio AI — Transversal Copilot | **Shipped 2026-04-22** — FAB with color orb + spring animation, full-height panel (side + full-screen expand), playbooks grid menu, CopilotProvider global state, SideDrawer coexistence, compact ChatInputBar with animated cycling placeholders, budget exhausted card, cross-domain pack insight bubbles during streaming, pack-aware ThinkingIndicator, voice message bubble, i18n (4 langs), chat removed from sidenav. | Wave 3.14 |
 | Cross-Signal Surface — making the moat visible | **Not started** — correlate findings across perspectives by shared URL/temporal pattern. ~1-2 weeks. | Wave 3.15 |
 | Product Telemetry — measure before you change | **Shipped 2026-04-21** — ProductEvent model, useProductTrack hook, engagement score cron, admin product-analytics page. `prisma db push` applied to prod. | Wave 3.16 |
@@ -616,75 +616,69 @@ else                              → DataTable (behavioral + fallback)
 
 ---
 
-### 3.13 Re-engagement Infrastructure — Closing the Retention Loop
+### 3.13 Re-engagement & Remediation — Closing the Loop
 
 | | |
 |---|---|
-| **Tag** | `platform` `frontend` `engine` |
+| **Tag** | `platform` `frontend` `engine` `mcp` |
 | **Priority** | P1 |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | Not started — 2026-04-22 |
 
-**Problem:** Vestigio runs continuous audit cycles that produce rich data — but has **zero proactive mechanisms** to bring users back. No email digests, no Slack alerts, no "what changed" nudges. The default landing page (`/app/actions`) is task-focused, not discovery-focused. Dashboard widgets (streak, health score, money recovered, "What Changed") exist but are buried on a secondary page. Users visit when they have a specific task, not because the product pulled them back. Every monitoring/intelligence competitor (ContentKing, Semrush, Baremetrics, Contentsquare) ships email digests and configurable alerts as table stakes.
+**Problem:** Vestigio finds problems but has (1) **zero proactive mechanisms** to bring users back and (2) **no bridge from finding to fix**. Users must manually translate Vestigio's findings into code changes. In the vibecoding era, every user has access to AI coding tools (Cursor, Claude Code, Replit, Lovable, Codex) — Vestigio should generate the prompt that those tools need to implement the fix. The finding→fix loop is: Vestigio detects → user reviews → copies prompt → AI codes the fix → Vestigio verifies.
 
-**Retention loop gap analysis (competitive):**
+**Competitive gap:**
 
-| Mechanic | ContentKing | Semrush | Baremetrics | Contentsquare | Vestigio |
-|---|---|---|---|---|---|
-| Score/health metric | ✅ | ✅ Health Score | ✅ MRR | ✅ | ⚠️ Exists on secondary dashboard |
-| Email/Slack digests | ✅ | ✅ | ✅ daily/weekly | ✅ scheduled AI analysis | ❌ Zero |
-| Configurable alerts | ✅ real-time | ✅ | ✅ threshold-based | ✅ | ❌ Zero |
-| Change feed / newsroom | ✅ change tracking | ✅ Compare Crawls | ✅ live activity feed | ✅ Newsroom | ⚠️ "What Changed" widget (buried) |
-| Forward-looking alerts | ✅ | — | ✅ renewal alerts | — | ❌ Zero |
+| Mechanic | Competitors | Vestigio |
+|---|---|---|
+| Score/health metric | All have it | ⚠️ Exists on secondary dashboard |
+| Email digests | ContentKing, Semrush, Baremetrics, Contentsquare | ❌ Zero |
+| Cross-domain narrative | ❌ Nobody does this | ⚠️ Pack insights in copilot (3.14), not yet in dashboard/digest |
+| AI-generated fix prompts | ❌ Nobody does this | ❌ Not yet — massive differentiator |
 
 **Design rules:**
 - Same rules as 3.11B: hide when no data, technology-agnostic, no manual inputs.
-- Digests must tell a **narrative**, not dump metrics. "Your checkout trust improved and abandonment rate dropped 8%" not "12 findings, 3 resolved."
-- Alerts use smart defaults that work out-of-box; users can customize thresholds later.
+- Digests tell a **narrative**, not dump metrics. "Your checkout trust improved and abandonment dropped 8%" not "12 findings, 3 resolved."
+- Cross-signal is the hero — it's the unique differentiator, not a hidden section.
+- Remediation playbooks are technology-aware but tool-agnostic (work in any AI coding tool).
 
-#### Fase 1 — Cycle Summary Page
+#### Fase 1 — Dashboard as Daily Briefing + Cross-Signal Hero
+
+No new pages. The dashboard becomes the landing and the cycle summary lives here.
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| A | **Cycle Summary page** | New route `/app/cycle/[id]/summary`. Content: overall health score delta, new findings, resolved findings, regressions, money recovered this cycle, top improvement, top regression, cross-signal correlations (if any). CycleProgressBanner redirect-on-complete points here instead of dismissing. Also accessible from Dashboard "What Changed" widget. | Medium |
+| A | **Default landing = Dashboard** | Change redirect from `/app/actions` to `/app/dashboard`. Reorder widgets: **Cross-Signal Insights** as hero (top, full width) when cross-domain correlations exist, **What Changed** as secondary hero, Health Score + Money Recovered row, Streak + Activity row. "See all actions →" CTA for task-oriented users. | Medium |
+| B | **"Since you were last here" mode** | If user hasn't visited in >24h, dashboard hero switches to "since your last visit" — aggregates all cycle changes while away. Uses `lastAccessedAt` (already tracked via `env-activity.ts`). | Medium |
+| C | **Cross-Signal Insights hero widget** | Dedicated widget showing causal chains across perspectives. For each finding that correlates across 2+ packs (same surface URL, same cycle), render horizontal flow: `[Security] CSP missing → [Trust] Buyer hesitation ↑ → [Revenue] Conversion ↓ $2.1k/mo`. Correlation: group findings by `surface` across different `pack` values. This is the visual anchor for Vestigio's moat. | Medium |
+| D | **Cross-signal in Pulse Summary prompt** | Upgrade Haiku prompt for Pulse Summary to include findings from ALL perspectives. When findings correlate across domains, the narrative connects them: "Checkout page load time degraded (Security) which correlates with 12% abandonment increase (Revenue) and 3 rage-click sessions (Behavioral)." Engine data already exists; prompt engineering change only. | Low |
 
 #### Fase 2 — Email Digest
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| B | **Digest email (daily/weekly configurable)** | After each cycle completion (or on daily/weekly schedule), send a narrative digest via Brevo (already configured). Content: health score + delta, top 3 changes (regressions first, then improvements), money recovered counter, streak status, deep-link to Cycle Summary page. Toggle in `/api/user/notification-prefs` (route already exists, `emailEnabled` toggle exists but sends nothing). Template: plain text with key metrics — Baremetrics/ChartMogul style. | Medium |
-| C | **Digest preferences UI** | Settings page section: frequency (per-cycle / daily / weekly), channels (email on/off), quiet hours. Stored on User model. | Low |
+| E | **Digest email (daily/weekly configurable)** | After each cycle (or daily/weekly), send narrative digest via Brevo (already configured). Content: cross-signal highlights (if any) as the hero, health score + delta, top 3 changes, money recovered, streak, deep-link to dashboard. Toggle in `/api/user/notification-prefs` (route exists, `emailEnabled` toggle exists but sends nothing). Template: plain text with key metrics. | Medium |
+| F | **Digest preferences UI** | Settings page section: frequency (per-cycle / daily / weekly), channels (email on/off). Stored on User model. | Low |
 
-#### Fase 3 — Dashboard as Daily Briefing
+#### Fase 3 — Remediation Execution Playbooks (Vibecoding Bridge)
 
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| D | **Default landing = Dashboard** | Change redirect from `/app/actions` to `/app/dashboard`. Existing dashboard already has: Money Recovered ticker, Health Score trend, What Changed widget, Streak, Activity Heatmap, Verification Rate, Top Pack. Reorder: **What Changed** as hero (top, full width), Health Score + Money Recovered as secondary row, Streak + Activity as tertiary. Add "See all actions →" CTA for task-oriented users. | Medium |
-| E | **"Since you were last here" mode** | If user hasn't visited in >24h, Dashboard hero switches from "this cycle" to "since your last visit" — aggregates all cycle changes that happened while they were away. Uses `lastAccessedAt` (already tracked via `env-activity.ts`). | Medium |
-
-#### Fase 4 — Cross-Signal Narrative
+The bridge from "finding" to "fix". Each action's SideDrawer gets a "Fix with AI" section that generates a context-rich prompt the user can copy into any AI coding tool.
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| F | **Cross-signal correlation in Pulse Summary** | Upgrade the Haiku prompt for Pulse Summary to include findings from ALL perspectives, not just the current one. When findings correlate across domains (e.g., security degradation + revenue drop + behavioral friction spike), the narrative should connect them: "Checkout page load time degraded (Security) which correlates with 12% abandonment increase (Revenue) and 3 rage-click sessions (Behavioral)." This is Vestigio's unique competitive advantage — no other tool can do this. Engine data already exists; it's a prompt engineering change. | Low |
-| G | **Cross-signal highlights in Cycle Summary** | Cycle Summary page (Fase 1) includes a "Cross-Signal Insights" section. For each finding that correlates across 2+ perspectives, show the causal chain as a horizontal flow: `[Security] Page speed ↓ → [Behavioral] Bounce rate ↑ → [Revenue] Conversions ↓`. Correlation detection: find findings from the same cycle that share the same `surface` URL and span different perspectives. | Medium |
+| G | **Playbook prompt generator** | Server function that takes an ActionProjection + its linked findings + detected tech stack (from TechnologyDetection) and generates a structured remediation prompt. Includes: problem context (finding title, severity, impact, evidence), detected framework/platform, step-by-step remediation from the finding's `remediation` field, success criteria, verification instructions. Output is a copy-ready string. ~200 lines. | Medium |
+| H | **"Fix with AI" panel in Action SideDrawer** | New section in the Action detail SideDrawer (below remediation steps). Shows: generated prompt preview (collapsible), "Copy prompt" button, tool suggestions (Cursor, Claude Code, Replit, Lovable — icons only, no hard dependency). Tracks `copy_remediation_prompt` in product telemetry (3.16). | Medium |
+| I | **"Fix with AI" in FindingDetailPanel** | Same CTA in FindingDetailPanel for findings that have linked actions. Button: "Generate fix prompt" → expands inline with the prompt + copy button. If no linked action, shows "Create action first" nudge. | Low |
+| J | **Technology-aware prompt templates** | Prompt templates adapt based on detected tech: Next.js/React (component-level fix), Shopify/Liquid (theme edit), WordPress/PHP (plugin/theme), static HTML, generic. Detection data already exists in `TechnologyDetection` model. Templates are stored as string templates with `{{placeholders}}`, not LLM-generated (zero token cost). | Medium |
 
-#### Fase 5 — Webhook/Slack Alerts
-
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| H | **Webhook destination model** | New Prisma model `AlertDestination { id, environmentId, type: 'webhook' \| 'slack' \| 'email', config: Json, enabled, createdAt }`. Settings UI in Data Sources page alongside integrations. | Low |
-| I | **Configurable alert triggers** | Alert triggers: critical regression detected, health score drops below threshold (default: 40), new high-severity finding on revenue-critical surface, finding resolved (celebration), integration data anomaly. Smart defaults ship enabled; user can customize thresholds. Fires POST to webhook URL or Slack incoming webhook. | Medium |
-| J | **Forward-looking alerts** | Detect and alert: SSL certificate expiring within 30 days (already crawled), domain with DNS anomaly, crawled page returning 5xx for 2+ consecutive cycles (degradation trend), payment page trust score below threshold. Creates prospective anxiety — the strongest pull-back mechanism. | Medium |
-
-#### Fase 6 — i18n
+#### Fase 4 — i18n
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| K | **Dictionary keys** | ~30 keys across en/pt-BR/es/de: cycle summary labels, digest email template strings, alert trigger names, dashboard hero labels, cross-signal narrative templates. | Low |
+| K | **Dictionary keys** | ~40 keys across en/pt-BR/es/de: dashboard hero labels, cross-signal templates, digest email strings, remediation playbook labels, "Fix with AI" UI strings. | Low |
 
-**Total estimate:** ~40-50h (~5-6 days). Fase 1-3 are the critical path (cycle summary + digest + dashboard reorder). Fase 4 (cross-signal) is the competitive differentiator. Fase 5 (alerts) is table-stakes completion.
+**Total estimate:** ~35-40h (~4-5 days). Fase 1 (dashboard + cross-signal hero) is the highest-impact change. Fase 3 (remediation playbooks) is the most differentiated feature.
 
-**Infrastructure already in place:** Brevo API configured, `emailEnabled` toggle on User, `lastAccessedAt` tracking on Environment, CycleProgressBanner SSE stream, Dashboard page with all widgets, `change_summary` on every WorkspaceProjection, Pulse Summary API with Haiku.
+**Infrastructure already in place:** Brevo API configured, `emailEnabled` toggle on User, `lastAccessedAt` tracking on Environment, CycleProgressBanner SSE stream, Dashboard page with all widgets, `change_summary` on every WorkspaceProjection, Pulse Summary API with Haiku, TechnologyDetection model, ActionProjection with linked findings, FindingDetailPanel with CTA slots, product telemetry (3.16).
 
 ---
 

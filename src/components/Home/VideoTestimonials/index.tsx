@@ -28,9 +28,9 @@ interface VideoTestimonialItem {
 // Video assets served from CDN (Cloudflare R2)
 const CDN = process.env.NEXT_PUBLIC_CDN_URL || "";
 const VIDEO_ASSETS = [
-  { videoSrc: `${CDN}/Testimonial%20Advogada.mp4`, posterSrc: "" },
-  { videoSrc: `${CDN}/Testimonial%20info.mp4`, posterSrc: "" },
-  { videoSrc: `${CDN}/Testimonial%20Dropshipper.mp4`, posterSrc: "" },
+  { videoSrc: `${CDN}/Testimonial%20Advogada.MP4`, posterSrc: "" },
+  { videoSrc: `${CDN}/Testimonials%20info.MP4`, posterSrc: "" },
+  { videoSrc: `${CDN}/Testimonial%20Dropshipper.MP4`, posterSrc: "" },
 ];
 
 // ── Individual video card ──────────────────────

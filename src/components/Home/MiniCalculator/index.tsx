@@ -194,8 +194,8 @@ const MiniCalculator = ({
 	useEffect(() => {
 		if (state !== "loading") return;
 
-		const CHUNKS = [15, 30, 45, 60, 75, 90, 100];
-		const CHUNK_DURATION = 1300;
+		const CHUNKS = [15, 28, 42, 56, 70, 85, 100];
+		const CHUNK_DURATION = 1714; // ~12s total (7 × 1714ms)
 		let chunkIndex = 0;
 		let animFrame: number;
 		let startTime = performance.now();
@@ -430,40 +430,69 @@ const MiniCalculator = ({
 									{t("analyzing_sub")}
 								</p>
 
-								{/* Progress bar */}
-								<div className='mx-auto mb-6 w-full max-w-[480px]'>
-									<div className='relative h-2.5 w-full overflow-hidden rounded-full bg-zinc-100'>
-										<div
-											className='h-full rounded-full bg-emerald-500'
-											style={{
-												width: `${progress}%`,
-												boxShadow: "0 0 12px rgba(16,185,129,0.45)",
-												transition: "width 80ms linear",
-											}}
-										/>
-									</div>
-									<div className='mt-3 flex items-center justify-between font-mono text-[11px] tabular-nums text-zinc-500'>
-										<span>
-											{findingCounter} {t("findings_found")}
-										</span>
-										<span>{Math.round(progress)}%</span>
-									</div>
+								{/* Stacked step cards */}
+								<div className='relative mx-auto flex w-full max-w-[380px] flex-col items-center gap-1.5'>
+									{STATUS_KEYS.map((key, i) => {
+										const isDone = i < statusIdx;
+										const isActive = i === statusIdx;
+										const isPending = i > statusIdx;
+										const chunkFrom = i === 0 ? 0 : [15, 28, 42, 56, 70, 85, 100][i - 1];
+										const chunkTo = [15, 28, 42, 56, 70, 85, 100][i];
+										const chunkFrac = isActive
+											? Math.min(Math.max((progress - chunkFrom) / (chunkTo - chunkFrom), 0), 1)
+											: isDone ? 1 : 0;
+
+										return (
+											<div
+												key={key}
+												className={`flex w-full flex-col gap-1.5 rounded-lg border px-3 py-2 transition-all duration-300 ${
+													isActive
+														? "scale-100 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/50 opacity-100 shadow-sm"
+														: isDone
+															? "scale-[0.97] border-emerald-200/60 bg-emerald-50/30 opacity-70"
+															: "scale-[0.97] border-zinc-200 bg-zinc-50/50 opacity-50"
+												}`}
+											>
+												<div className='flex items-center gap-2 text-xs'>
+													{isDone ? (
+														<span className='flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500'>
+															<svg viewBox='0 0 12 12' fill='none' stroke='white' strokeWidth='2' className='h-2.5 w-2.5'>
+																<path d='M2.5 6.5l2.5 2.5L9.5 3.5' strokeLinecap='round' strokeLinejoin='round' />
+															</svg>
+														</span>
+													) : isActive ? (
+														<svg className='h-4 w-4 animate-spin text-emerald-500' viewBox='0 0 24 24' fill='none'>
+															<circle cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='3' opacity='0.25' />
+															<path d='M12 2a10 10 0 019.17 6' stroke='currentColor' strokeWidth='3' strokeLinecap='round' />
+														</svg>
+													) : (
+														<span className='flex h-4 w-4 items-center justify-center rounded-full border border-zinc-300'>
+															<span className='h-1.5 w-1.5 rounded-full bg-zinc-300' />
+														</span>
+													)}
+													<span className={`font-medium ${isDone ? "text-emerald-700" : isActive ? "text-zinc-900" : "text-zinc-400"}`}>
+														{t(key)}
+													</span>
+												</div>
+												<div className='ml-6 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200/80'>
+													<div
+														className='h-full rounded-full bg-emerald-500 transition-[width] duration-100 ease-linear'
+														style={{ width: `${chunkFrac * 100}%` }}
+													/>
+												</div>
+											</div>
+										);
+									})}
+									{/* Top and bottom fade masks */}
+									<div className='pointer-events-none absolute top-0 h-[30%] w-full [background-image:linear-gradient(to_bottom,white_10%,transparent_100%)]' />
+									<div className='pointer-events-none absolute bottom-0 h-[30%] w-full [background-image:linear-gradient(to_top,white_10%,transparent_100%)]' />
 								</div>
 
-								{/* Status message — fade down transition */}
-								<div className='relative h-6 overflow-hidden'>
-									<p
-										className='text-sm text-zinc-500'
-										style={{
-											transition: "opacity 0.25s ease, transform 0.25s ease",
-											opacity: statusFading ? 0 : 1,
-											transform: statusFading
-												? "translateY(8px)"
-												: "translateY(0)",
-										}}
-									>
-										{t(STATUS_KEYS[statusIdx])}
-									</p>
+								{/* Counter below cards */}
+								<div className='mt-4 flex items-center justify-center gap-3 font-mono text-[11px] tabular-nums text-zinc-500'>
+									<span>{findingCounter} {t("findings_found")}</span>
+									<span>·</span>
+									<span>{Math.round(progress)}%</span>
 								</div>
 							</div>
 						)}

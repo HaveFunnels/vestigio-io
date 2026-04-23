@@ -3,32 +3,48 @@
 /**
  * FunnelIntegrityMap — Horizontal flow visualization for the revenue workspace.
  *
- * Shows: Discovery → Interest → Decision → Purchase → Post-purchase
+ * Shows: Awareness → Consideration → Decision → Conversion → Post-conversion
  * Each stage shows finding count + aggregate impact.
- * Stage classification derived from FindingProjection.surface URL patterns.
- * Stages are clickable — expand to show their findings inline.
+ *
+ * Classification uses the SAME engine logic as the user-journey map:
+ *   - classifyPageType() from packages/behavioral/surface-normalizer.ts
+ *   - stageOrder from src/app/api/maps/user-journey/route.ts
+ *
+ * This ensures consistent page classification across all views.
  */
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
+import { classifyPageType } from "../../../../packages/behavioral/surface-normalizer";
 import type { FindingProjection } from "../../../../packages/projections/types";
 
-const STAGE_IDS = ["discovery", "interest", "decision", "purchase", "post_purchase"] as const;
-
-const STAGE_PATTERNS: Record<string, RegExp[]> = {
-	discovery: [/^\/$/, /\/home/i, /\/landing/i, /\/lp\//i],
-	interest: [/\/product/i, /\/collection/i, /\/category/i, /\/catalog/i, /\/pricing/i, /\/plan/i],
-	decision: [/\/cart/i, /\/bag/i, /\/review/i, /\/compare/i],
-	purchase: [/\/checkout/i, /\/payment/i, /\/order/i, /\/subscribe/i, /\/signup/i],
-	post_purchase: [/\/account/i, /\/thank/i, /\/confirm/i, /\/success/i, /\/dashboard/i, /\/support/i],
+/**
+ * Funnel stage groupings — maps engine SurfacePageType → funnel stage.
+ * Aligned with stageOrder in user-journey route.
+ */
+const PAGE_TYPE_TO_STAGE: Record<string, string> = {
+	homepage: "awareness",
+	landing: "awareness",
+	blog: "awareness",
+	category: "consideration",
+	product: "consideration",
+	pricing: "consideration",
+	cart: "decision",
+	checkout: "conversion",
+	thank_you: "post_conversion",
+	account: "post_conversion",
+	support: "post_conversion",
+	policy: "post_conversion",
+	onboarding: "post_conversion",
+	unknown: "awareness", // fallback
 };
 
+const STAGE_IDS = ["awareness", "consideration", "decision", "conversion", "post_conversion"] as const;
+
 function classifyStage(surface: string): string {
-	for (const id of STAGE_IDS) {
-		if (STAGE_PATTERNS[id].some((p) => p.test(surface))) return id;
-	}
-	return "discovery";
+	const pageType = classifyPageType(surface);
+	return PAGE_TYPE_TO_STAGE[pageType] || "awareness";
 }
 
 function formatDollars(amount: number): string {
@@ -38,11 +54,11 @@ function formatDollars(amount: number): string {
 }
 
 const STAGE_COLORS: Record<string, { bg: string; text: string; border: string; activeBg: string }> = {
-	discovery: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/30", activeBg: "bg-blue-500/15" },
-	interest: { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/30", activeBg: "bg-violet-500/15" },
+	awareness: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/30", activeBg: "bg-blue-500/15" },
+	consideration: { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/30", activeBg: "bg-violet-500/15" },
 	decision: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/30", activeBg: "bg-amber-500/15" },
-	purchase: { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/30", activeBg: "bg-red-500/15" },
-	post_purchase: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30", activeBg: "bg-emerald-500/15" },
+	conversion: { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/30", activeBg: "bg-red-500/15" },
+	post_conversion: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30", activeBg: "bg-emerald-500/15" },
 };
 
 interface Props {
@@ -54,7 +70,7 @@ export default function FunnelIntegrityMap({ findings, onFindingClick }: Props) 
 	const t = useTranslations("console.workspaces");
 	const [expandedStage, setExpandedStage] = useState<string | null>(null);
 
-	// Classify findings into stages
+	// Classify findings into stages using the engine's classifyPageType
 	const stageFindings = new Map<string, FindingProjection[]>();
 	const stageData = new Map<string, { count: number; impact: number }>();
 	for (const id of STAGE_IDS) {
@@ -71,7 +87,7 @@ export default function FunnelIntegrityMap({ findings, onFindingClick }: Props) 
 		data.impact += f.impact?.midpoint || 0;
 	}
 
-	const expandedFindings = expandedStage ? stageFindings.get(expandedStage) || [] : [];
+	const expandedItems = expandedStage ? stageFindings.get(expandedStage) || [] : [];
 	const expandedColors = expandedStage ? STAGE_COLORS[expandedStage] : null;
 
 	return (
@@ -130,13 +146,13 @@ export default function FunnelIntegrityMap({ findings, onFindingClick }: Props) 
 			</div>
 
 			{/* Expanded findings list */}
-			{expandedStage && expandedFindings.length > 0 && expandedColors && (
+			{expandedStage && expandedItems.length > 0 && expandedColors && (
 				<div className={`mt-3 rounded-lg border ${expandedColors.border} ${expandedColors.bg} p-3`}>
 					<div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-content-faint">
-						{t(`detail.enrichment.funnel_stages.${expandedStage}`)} — {expandedFindings.length} {expandedFindings.length === 1 ? t("detail.enrichment.findings_singular") : t("detail.enrichment.findings_plural")}
+						{t(`detail.enrichment.funnel_stages.${expandedStage}`)} — {expandedItems.length} {expandedItems.length === 1 ? t("detail.enrichment.findings_singular") : t("detail.enrichment.findings_plural")}
 					</div>
 					<div className="space-y-1.5">
-						{expandedFindings.map((f) => (
+						{expandedItems.map((f) => (
 							<button
 								key={f.id}
 								type="button"

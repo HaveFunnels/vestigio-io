@@ -1756,11 +1756,11 @@
 					"funnel_integrity": "Funnel-Integrität",
 					"funnel_ok": "OK",
 					"funnel_stages": {
-						"discovery": "Entdeckung",
-						"interest": "Interesse",
+						"awareness": "Aufmerksamkeit",
+						"consideration": "Überlegung",
 						"decision": "Entscheidung",
-						"purchase": "Kauf",
-						"post_purchase": "Nach dem Kauf"
+						"conversion": "Konversion",
+						"post_conversion": "Nach der Konversion"
 					},
 					"findings_singular": "Befund",
 					"findings_plural": "Befunde"

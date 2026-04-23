@@ -1908,11 +1908,11 @@
 					"funnel_integrity": "Funnel Integrity",
 					"funnel_ok": "OK",
 					"funnel_stages": {
-						"discovery": "Discovery",
-						"interest": "Interest",
+						"awareness": "Awareness",
+						"consideration": "Consideration",
 						"decision": "Decision",
-						"purchase": "Purchase",
-						"post_purchase": "Post-purchase"
+						"conversion": "Conversion",
+						"post_conversion": "Post-conversion"
 					},
 					"findings_singular": "finding",
 					"findings_plural": "findings"

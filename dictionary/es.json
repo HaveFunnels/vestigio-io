@@ -1877,11 +1877,11 @@
 					"funnel_integrity": "Integridad del Embudo",
 					"funnel_ok": "OK",
 					"funnel_stages": {
-						"discovery": "Descubrimiento",
-						"interest": "Interés",
+						"awareness": "Conciencia",
+						"consideration": "Consideración",
 						"decision": "Decisión",
-						"purchase": "Compra",
-						"post_purchase": "Post-compra"
+						"conversion": "Conversión",
+						"post_conversion": "Post-conversión"
 					},
 					"findings_singular": "hallazgo",
 					"findings_plural": "hallazgos"

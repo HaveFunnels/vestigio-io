@@ -1892,11 +1892,11 @@
 					"funnel_integrity": "Integridade do Funil",
 					"funnel_ok": "OK",
 					"funnel_stages": {
-						"discovery": "Descoberta",
-						"interest": "Interesse",
+						"awareness": "Consciência",
+						"consideration": "Consideração",
 						"decision": "Decisão",
-						"purchase": "Compra",
-						"post_purchase": "Pós-compra"
+						"conversion": "Conversão",
+						"post_conversion": "Pós-conversão"
 					},
 					"findings_singular": "finding",
 					"findings_plural": "findings"

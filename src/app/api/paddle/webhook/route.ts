@@ -20,7 +20,7 @@ const verifyPaddleSignature = (
 	rawBody: string
 ): boolean => {
 	const key = process.env.PADDLE_WEBHOOK_SECRET;
-	if (!key) return true; // Skip verification if no secret configured
+	if (!key) return false; // Reject if no secret — never skip verification
 
 	try {
 		const [tsPart, h1Part] = paddleSignature.split(";");
@@ -105,13 +105,20 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 			return NextResponse.json({ error: "Request body is empty" }, { status: 400 });
 		}
 
-		// Verify signature if secret is configured
-		if (paddleSignature) {
-			const isValid = verifyPaddleSignature(paddleSignature, rawBody);
-			if (!isValid) {
-				console.error("[Paddle Webhook] Invalid signature");
-				return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-			}
+		// Verify webhook signature — REQUIRED in production.
+		// Reject unsigned webhooks to prevent forgery attacks.
+		if (!process.env.PADDLE_WEBHOOK_SECRET) {
+			console.error("[Paddle Webhook] PADDLE_WEBHOOK_SECRET not configured — rejecting webhook");
+			return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+		}
+		if (!paddleSignature) {
+			console.error("[Paddle Webhook] Missing paddle-signature header");
+			return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+		}
+		const isValid = verifyPaddleSignature(paddleSignature, rawBody);
+		if (!isValid) {
+			console.error("[Paddle Webhook] Invalid signature");
+			return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
 		}
 
 		const body = JSON.parse(rawBody);

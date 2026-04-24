@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { checkRateLimit } from "@/libs/limiter";
 
 // ──────────────────────────────────────────────
 // POST /api/activate/password
@@ -26,6 +27,10 @@ const MAX_PASSWORD_LEN = 72; // bcrypt hard limit
 
 export const POST = withErrorTracking(
 	async function POST(req: NextRequest) {
+		// Rate limit: 5 attempts per IP per minute
+		const limited = await checkRateLimit(5, 60000);
+		if (limited) return limited;
+
 		let body: { token?: unknown; password?: unknown };
 		try {
 			body = await req.json();
@@ -55,26 +60,16 @@ export const POST = withErrorTracking(
 			);
 		}
 
-		const pending = await prisma.user.findFirst({
+		const hashed = await bcrypt.hash(password, 10);
+
+		// Atomic find-and-update: prevents race condition where two
+		// concurrent requests both consume the same token.
+		const pending = await prisma.user.updateMany({
 			where: {
 				activationToken: token,
 				activationTokenExpiresAt: { gt: new Date() },
 				activatedAt: null,
 			},
-		});
-
-		if (!pending) {
-			// Token missing / expired / already consumed. Generic response.
-			return NextResponse.json(
-				{ message: "This activation link is no longer valid." },
-				{ status: 410 },
-			);
-		}
-
-		const hashed = await bcrypt.hash(password, 10);
-
-		await prisma.user.update({
-			where: { id: pending.id },
 			data: {
 				password: hashed,
 				emailVerified: new Date(),
@@ -84,8 +79,23 @@ export const POST = withErrorTracking(
 			},
 		});
 
+		if (pending.count === 0) {
+			// Token missing / expired / already consumed. Generic response.
+			return NextResponse.json(
+				{ message: "This activation link is no longer valid." },
+				{ status: 410 },
+			);
+		}
+
+		// Fetch email for response (token is already cleared)
+		const activated = await prisma.user.findFirst({
+			where: { activatedAt: { not: null }, password: hashed },
+			select: { email: true },
+			orderBy: { activatedAt: "desc" },
+		});
+
 		return NextResponse.json({
-			email: pending.email,
+			email: activated?.email ?? "",
 		});
 	},
 	{ endpoint: "/api/activate/password", method: "POST" },

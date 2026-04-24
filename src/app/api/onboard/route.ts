@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { z } from "zod";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { checkRateLimit } from "@/libs/limiter";
 
 // ──────────────────────────────────────────────
 // Onboarding API — creates org + starts checkout
@@ -42,6 +43,10 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   const stripe = new Stripe(requireEnv("STRIPE_SECRET_KEY"), {
     apiVersion: "2023-10-16",
   });
+
+  // Rate limit: 3 org creations per hour per IP
+  const limited = await checkRateLimit(3, 3600000);
+  if (limited) return limited;
 
   const user = await isAuthorized();
   if (!user) {

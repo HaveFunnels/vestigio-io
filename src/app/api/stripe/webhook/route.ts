@@ -12,11 +12,16 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 
 	let event: Stripe.Event;
 
+	if (!process.env.STRIPE_WEBHOOK_SECRET) {
+		console.error("[Stripe Webhook] STRIPE_WEBHOOK_SECRET not configured — rejecting webhook");
+		return new Response("Webhook secret not configured", { status: 500 });
+	}
+
 	try {
 		event = stripe.webhooks.constructEvent(
 			body,
 			signature,
-			process.env.STRIPE_WEBHOOK_SECRET!
+			process.env.STRIPE_WEBHOOK_SECRET
 		);
 	} catch (err) {
 		return new Response(

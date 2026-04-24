@@ -63,5 +63,8 @@ export async function POST(request: Request) {
 		);
 	}
 
+	// Audit log
+	console.log(`[admin.resend-activation] Admin ${(session.user as any).email} resent activation for user ${user.email} (${userId})`);
+
 	return NextResponse.json({ message: "Activation email sent", email: user.email });
 }

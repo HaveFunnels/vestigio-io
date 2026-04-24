@@ -529,7 +529,7 @@ Never: "Get Started", "Learn More", "Sign Up", "Try Free", "Run Free Audit"
 | **5** | Rewrite final CTA section | `/`, `/lp` | ✅ |
 | **6** | Reframe feature bento cards (copy only) | `/` | ✅ |
 | **7** | Replace Solution Layers content | `/` | ✅ |
-| **8** | Replace persona cards (FeaturesWithImage) | `/` | 🔲 |
+| **8** | Replace persona cards (FeaturesWithImage) | `/` | ✅ |
 | **9** | Reduce Counter to 3 items | `/` | 🔲 |
 | **10** | Reduce FAQ to 3 questions | `/` | 🔲 |
 | **11** | Replace Success Stories (real data or counter) | `/` | 🔲 |

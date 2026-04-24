@@ -426,7 +426,7 @@ Nunca: "Comece Grátis", "Saiba Mais", "Cadastre-se", "Teste Grátis", "Rodar Au
 | **5** | Reescrever CTA final | `/`, `/lp` | ✅ |
 | **6** | Reformular cards do features bento | `/` | ✅ |
 | **7** | Substituir conteúdo Solution Layers | `/` | ✅ |
-| **8** | Substituir cards de persona (FeaturesWithImage) | `/` | 🔲 |
+| **8** | Substituir cards de persona (FeaturesWithImage) | `/` | ✅ |
 | **9** | Reduzir Counter para 3 itens | `/` | 🔲 |
 | **10** | Reduzir FAQ para 3 perguntas | `/` | 🔲 |
 | **11** | Substituir Success Stories (dados reais ou contador) | `/` | 🔲 |

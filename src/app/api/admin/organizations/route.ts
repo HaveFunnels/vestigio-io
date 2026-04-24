@@ -1,6 +1,7 @@
 import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { randomBytes } from "node:crypto";
 import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
@@ -224,12 +225,19 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
       //    later via password-reset.
       let owner = await tx.user.findUnique({ where: { email: ownerEmail } });
       let ownerCreated = false;
+      let activationToken: string | null = null;
       if (!owner) {
+        // Generate activation token so the owner can set a password
+        // or link OAuth when they receive the activation email.
+        activationToken = randomBytes(32).toString("hex");
+        const tokenTTL = 7 * 24 * 60 * 60 * 1000; // 7 days for admin-provisioned
         owner = await tx.user.create({
           data: {
             email: ownerEmail,
             name: body.ownerName?.trim() || null,
             role: "USER",
+            activationToken,
+            activationTokenExpiresAt: new Date(Date.now() + tokenTTL),
           },
         });
         ownerCreated = true;
@@ -284,8 +292,22 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
         });
       }
 
-      return { org, owner, environment, ownerCreated };
+      return { org, owner, environment, ownerCreated, activationToken };
     });
+
+    // ── Send activation email (fire-and-forget) ──
+    // Only for newly created users — existing users already have auth.
+    if (result.ownerCreated && result.activationToken) {
+      import("@/libs/notification-triggers")
+        .then(({ sendActivationEmail }) =>
+          sendActivationEmail(
+            ownerEmail,
+            result.activationToken!,
+            normalizedDomain || result.org.name,
+          ),
+        )
+        .catch((err) => console.error("[admin.org.create] activation email failed:", err));
+    }
 
     // ── Audit log ──
     const ip = await getIp();

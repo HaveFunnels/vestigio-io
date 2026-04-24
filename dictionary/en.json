@@ -706,62 +706,47 @@
 			]
 		},
 		"solution_layers": {
-			"section_label": "What Vestigio does",
-			"title": "Refuse to scale your business in the dark.",
-			"subtitle": "See early, prioritize with clarity, and validate your digital business continuously.",
+			"section_label": "The problem",
+			"title": "Traffic is not the problem. Scaling a broken system is.",
+			"subtitle": "",
 			"layers": [
 				{
-					"eyebrow": "Layer 1",
-					"title": "Discover before others",
-					"body": "See where the risks, leaks, and opportunities are before they become costs.",
+					"eyebrow": "The gap",
+					"title": "Clicks cost money. Drop-offs cost more.",
+					"body": "You see the ad spend. You see the revenue. The gap between them? That's the part nobody's measuring.",
 					"support": ""
 				},
 				{
-					"eyebrow": "Layer 2",
-					"title": "Prioritize and act with precision",
-					"body": "Turn signals into a continuous queue of action, with context and priority.",
+					"eyebrow": "The cycle",
+					"title": "You scale the problem with the traffic.",
+					"body": "You change the ads hoping it fixes the numbers. But the landing page now contradicts the creative. The drop-off moved — it didn't disappear. And you won't know until the numbers come in next month.",
 					"support": ""
 				},
 				{
-					"eyebrow": "Layer 3",
-					"title": "Validate with confidence",
-					"body": "Confirm if it's ready, if it got worse, or if the fix actually closed.",
+					"eyebrow": "The silence",
+					"title": "You can't fix what you can't see.",
+					"body": "No error log. No support ticket. No angry email. Somewhere between the landing page and the payment, the buyer gives up. Your analytics says \"session ended.\" That's not an insight. That's a shrug.",
 					"support": ""
 				}
 			],
 			"tools": [
 				[
-					"Findings",
-					"Analysis",
+					"Ad spend",
+					"Revenue",
+					"The gap"
+				],
+				[
+					"Creatives",
+					"Landing pages",
+					"Drop-off"
+				],
+				[
+					"Sessions",
+					"Behavior",
 					"Evidence"
-				],
-				[
-					"Actions",
-					"Workspaces",
-					"Priorities"
-				],
-				[
-					"Preflight",
-					"Regressions",
-					"Verification"
 				]
 			],
-			"chat": {
-				"label": "Vestigio Pulse",
-				"heading": "Explain, investigate, and validate with Vestigio Pulse",
-				"user_query_label": "You ask:",
-				"user_query": "What risks are getting worse since the last analysis?",
-				"response_label": "Structured Response",
-				"response_body": "3 regressions found: checkout abandonment +12%, payment validation failed on 2 routes, SSL expires in 5 days.",
-				"chip_findings": "Used 3 findings",
-				"chip_actions": "Created a new action",
-				"chip_verification": "Ran verification as a user",
-				"satellites": [
-					"Findings",
-					"Actions",
-					"Verification"
-				]
-			}
+			"closing": "You can keep scaling without seeing this. Or you can look."
 		},
 		"features_section": {
 			"title": "Launch SaaS Startup in Days",

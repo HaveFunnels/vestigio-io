@@ -707,62 +707,47 @@
 			]
 		},
 		"solution_layers": {
-			"section_label": "Was Vestigio macht",
-			"title": "Weigere dich, dein Geschäft im Dunkeln zu skalieren.",
-			"subtitle": "Erkenne früh, priorisiere klar und validiere dein digitales Geschäft kontinuierlich.",
+			"section_label": "Das Problem",
+			"title": "Traffic ist nicht das Problem. Ein kaputtes System zu skalieren schon.",
+			"subtitle": "",
 			"layers": [
 				{
-					"eyebrow": "Schicht 1",
-					"title": "Entdecke vor anderen",
-					"body": "Erkenne Risiken, Lecks und Chancen, bevor sie zu Kosten werden.",
+					"eyebrow": "Die Lücke",
+					"title": "Klicks kosten Geld. Drop-offs kosten mehr.",
+					"body": "Sie sehen die Werbeausgaben. Sie sehen den Umsatz. Die Lücke dazwischen? Das ist der Teil, den niemand misst.",
 					"support": ""
 				},
 				{
-					"eyebrow": "Schicht 2",
-					"title": "Priorisiere und handle präzise",
-					"body": "Verwandle Signale in eine kontinuierliche Aktionswarteschlange mit Kontext und Priorität.",
+					"eyebrow": "Der Kreislauf",
+					"title": "Sie skalieren das Problem mit dem Traffic.",
+					"body": "Sie ändern die Anzeigen in der Hoffnung, dass sich die Zahlen verbessern. Aber die Landing Page widerspricht jetzt dem Creative. Der Drop-off hat sich verschoben — er ist nicht verschwunden. Und Sie erfahren es erst, wenn die Zahlen nächsten Monat kommen.",
 					"support": ""
 				},
 				{
-					"eyebrow": "Schicht 3",
-					"title": "Validiere mit Vertrauen",
-					"body": "Bestätige, ob es bereit ist, ob es schlimmer wurde oder ob die Korrektur abgeschlossen wurde.",
+					"eyebrow": "Die Stille",
+					"title": "Was Sie nicht sehen, können Sie nicht beheben.",
+					"body": "Kein Fehlerprotokoll. Kein Support-Ticket. Keine wütende E-Mail. Irgendwo zwischen der Landing Page und der Zahlung gibt der Käufer auf. Ihre Analyse sagt \"Sitzung beendet.\" Das ist kein Insight. Das ist ein Achselzucken.",
 					"support": ""
 				}
 			],
 			"tools": [
 				[
-					"Befunde",
-					"Analyse",
-					"Beweise"
+					"Werbeausgaben",
+					"Umsatz",
+					"Die Lücke"
 				],
 				[
-					"Aktionen",
-					"Workspaces",
-					"Prioritäten"
+					"Creatives",
+					"Landing Pages",
+					"Drop-off"
 				],
 				[
-					"Preflight",
-					"Regressionen",
-					"Verifizierung"
+					"Sitzungen",
+					"Verhalten",
+					"Evidenz"
 				]
 			],
-			"chat": {
-				"label": "Vestigio Pulse",
-				"heading": "Erkläre, untersuche und validiere mit Vestigio Pulse",
-				"user_query_label": "Du fragst:",
-				"user_query": "Welche Risiken verschlechtern sich seit der letzten Analyse?",
-				"response_label": "Strukturierte Antwort",
-				"response_body": "3 Regressionen gefunden: Checkout-Abbruch +12%, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL läuft in 5 Tagen ab.",
-				"chip_findings": "Nutzte 3 Befunde",
-				"chip_actions": "Erstellte eine neue Aktion",
-				"chip_verification": "Führte Verifizierung als Benutzer aus",
-				"satellites": [
-					"Befunde",
-					"Aktionen",
-					"Verifizierung"
-				]
-			}
+			"closing": "Sie können weiter skalieren, ohne das zu sehen. Oder Sie können hinschauen."
 		},
 		"features_section": {
 			"title": "SaaS-Startup in Tagen starten",

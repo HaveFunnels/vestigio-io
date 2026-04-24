@@ -707,62 +707,47 @@
 			]
 		},
 		"solution_layers": {
-			"section_label": "Qué hace Vestigio",
-			"title": "Niégate a escalar tu negocio a ciegas.",
-			"subtitle": "Detecta temprano, prioriza con claridad y valida tu negocio digital de forma continua.",
+			"section_label": "El problema",
+			"title": "El tráfico no es el problema. Escalar un sistema roto sí.",
+			"subtitle": "",
 			"layers": [
 				{
-					"eyebrow": "Capa 1",
-					"title": "Descubre antes que otros",
-					"body": "Detecta riesgos, fugas y oportunidades antes de que se conviertan en costos.",
+					"eyebrow": "La brecha",
+					"title": "Los clics cuestan dinero. Los drop-offs cuestan más.",
+					"body": "Ves el gasto en ads. Ves los ingresos. La brecha entre ellos? Es la parte que nadie está midiendo.",
 					"support": ""
 				},
 				{
-					"eyebrow": "Capa 2",
-					"title": "Prioriza y actúa con precisión",
-					"body": "Convierte señales en una cola continua de acción, con contexto y prioridad.",
+					"eyebrow": "El ciclo",
+					"title": "Escalas el problema junto con el tráfico.",
+					"body": "Cambias los anuncios esperando que los números mejoren. Pero la landing page ahora contradice el creativo. El drop-off se movió — no desapareció. Y no lo sabrás hasta que lleguen los números el próximo mes.",
 					"support": ""
 				},
 				{
-					"eyebrow": "Capa 3",
-					"title": "Valida con confianza",
-					"body": "Confirma si está listo, si empeoró o si la corrección realmente cerró.",
+					"eyebrow": "El silencio",
+					"title": "No puedes arreglar lo que no puedes ver.",
+					"body": "Sin log de error. Sin ticket de soporte. Sin email enojado. En algún punto entre la landing page y el pago, el comprador se rinde. Tu analytics dice \"sesión terminada.\" Eso no es un insight. Es un encogimiento de hombros.",
 					"support": ""
 				}
 			],
 			"tools": [
 				[
-					"Hallazgos",
-					"Análisis",
+					"Ad spend",
+					"Ingresos",
+					"La brecha"
+				],
+				[
+					"Creativos",
+					"Landing pages",
+					"Drop-off"
+				],
+				[
+					"Sesiones",
+					"Comportamiento",
 					"Evidencia"
-				],
-				[
-					"Acciones",
-					"Workspaces",
-					"Prioridades"
-				],
-				[
-					"Preflight",
-					"Regresiones",
-					"Verificación"
 				]
 			],
-			"chat": {
-				"label": "Vestigio Pulse",
-				"heading": "Explica, investiga y valida con Vestigio Pulse",
-				"user_query_label": "Tú preguntas:",
-				"user_query": "¿Qué riesgos están empeorando desde el último análisis?",
-				"response_label": "Respuesta Estructurada",
-				"response_body": "3 regresiones encontradas: abandono de checkout +12%, validación de pago falló en 2 rutas, SSL expira en 5 días.",
-				"chip_findings": "Usó 3 hallazgos",
-				"chip_actions": "Creó una nueva acción",
-				"chip_verification": "Ejecutó verificación como usuario",
-				"satellites": [
-					"Hallazgos",
-					"Acciones",
-					"Verificación"
-				]
-			}
+			"closing": "Puedes seguir escalando sin ver esto. O puedes mirar."
 		},
 		"features_section": {
 			"title": "Lanza tu Startup SaaS en Días",

@@ -325,6 +325,16 @@ export default function AppSidebarLayout({
 	const pathnameForBanner = usePathname();
 	const showCycleBanner =
 		!isAdmin && shouldShowCycleBanner(pathnameForBanner);
+
+	// Ensure active_env cookie is always set so client components
+	// (Data Sources, etc.) can resolve the real environment ID.
+	useEffect(() => {
+		if (!orgCtx.envId || orgCtx.envId === "default") return;
+		const hasEnvCookie = document.cookie.includes("active_env=");
+		if (!hasEnvCookie) {
+			document.cookie = `active_env=${orgCtx.envId};path=/;max-age=${60 * 60 * 24 * 365}`;
+		}
+	}, [orgCtx.envId]);
 	const pausedBannerT = useTranslations("console.paused_banner");
 
 	return (

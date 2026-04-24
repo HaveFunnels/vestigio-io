@@ -124,7 +124,9 @@ export default function DataSourcesPage() {
 	const [surfaces_audit_active] = useState(false); // Active once first audit completes
 
 	const environmentId = getEnvironmentId();
-	const isDemo = environmentId === "env_1" || environmentId === "default_env";
+	// Demo detection: only match the exact demo envId from DEMO_CONTEXT.
+	// "default_env" means cookie not set yet — NOT demo mode.
+	const isDemo = environmentId === "env_1";
 
 	const fetchConfig = useCallback(async () => {
 		setLoading(true);
@@ -161,6 +163,34 @@ export default function DataSourcesPage() {
 			setLoading(false);
 		}
 	}, [environmentId]);
+
+	// Handle OAuth callback URL params (Meta Ads / Google Ads)
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const params = new URLSearchParams(window.location.search);
+		// Meta Ads
+		if (params.get("meta_ads_connected")) {
+			setMetaAdsStatus("verified");
+			setMetaAdsLastSync(new Date().toISOString());
+			setMetaAdsError(null);
+		}
+		if (params.get("meta_ads_error")) {
+			setMetaAdsError(decodeURIComponent(params.get("meta_ads_error") || ""));
+		}
+		// Google Ads
+		if (params.get("google_ads_connected")) {
+			setGoogleAdsStatus("verified");
+			setGoogleAdsLastSync(new Date().toISOString());
+			setGoogleAdsError(null);
+		}
+		if (params.get("google_ads_error")) {
+			setGoogleAdsError(decodeURIComponent(params.get("google_ads_error") || ""));
+		}
+		// Clean URL params without navigation
+		if (params.toString()) {
+			window.history.replaceState({}, "", window.location.pathname);
+		}
+	}, []);
 
 	useEffect(() => {
 		if (isDemo) {

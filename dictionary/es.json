@@ -801,8 +801,8 @@
 			"subtitle": "",
 			"action_queue": {
 				"eyebrow": "Vestigio prioriza",
-				"title": "Una cola clara de qué arreglar primero",
-				"description": "",
+				"title": "Sepa qué corregir el lunes por la mañana",
+				"description": "Una cola priorizada. Impacto en dólares, no en colores. El primer ítem vale $42k/mes. El noveno vale $1.5k. Sabes por dónde empezar.",
 				"rows": [
 					{
 						"title": "Pico de abandono en checkout",
@@ -824,8 +824,8 @@
 			},
 			"revenue_leaks": {
 				"eyebrow": "Vestigio diagnostica",
-				"title": "Encuentra dónde sangra el dinero",
-				"description": "",
+				"title": "Vea exactamente cuánto cuesta cada problema",
+				"description": "No es 'severidad alta'. No es un punto rojo. Un monto: −$18.420/mes, 94% de confianza. Sabes qué decirle a tu equipo.",
 				"confidence_label": "confianza",
 				"leaking_label": "Fuga",
 				"rows": [
@@ -847,9 +847,9 @@
 				]
 			},
 			"continuous_watch": {
-				"eyebrow": "Tú recuperas",
-				"title": "Detén la fuga antes de que se acumule",
-				"description": "",
+				"eyebrow": "Usted recupera",
+				"title": "El deploy de la semana pasada rompió el checkout. Lo sabrías en horas, no en días.",
+				"description": "Ciclos continuos comparan cada superficie con la anterior. Cuando algo se degrada, aparece en tu cola antes de que un cliente se queje.",
 				"axis_label": "Ingresos perdidos / mes",
 				"before_label": "Antes de Vestigio",
 				"after_label": "Después de Vestigio",
@@ -857,9 +857,9 @@
 				"annotation_value": "+87,2%"
 			},
 			"evidence_orbit": {
-				"eyebrow": "Vestigio audita",
-				"title": "Cada hallazgo se rastrea hasta la evidencia",
-				"description": "",
+				"eyebrow": "Vestigio verifica",
+				"title": "Escala con pruebas, no con opiniones",
+				"description": "Cada hallazgo: captura del navegador, snapshot del DOM, trace de rendimiento, timestamp. Tu CTO ve evidencia, no un dashboard.",
 				"center_label": "Hallazgo",
 				"evidence_types": {
 					"browser": "Navegador",

@@ -800,8 +800,8 @@
 			"subtitle": "",
 			"action_queue": {
 				"eyebrow": "Vestigio prioritizes",
-				"title": "A clear queue of what to fix first",
-				"description": "",
+				"title": "Know what to fix Monday morning",
+				"description": "A ranked queue. Impact in dollars, not color codes. The first item is worth $42k/month. The ninth is worth $1.5k. You know where to start.",
 				"rows": [
 					{
 						"title": "Checkout abandons spike",
@@ -823,8 +823,8 @@
 			},
 			"revenue_leaks": {
 				"eyebrow": "Vestigio diagnoses",
-				"title": "Find where money is bleeding",
-				"description": "",
+				"title": "See exactly what each problem costs",
+				"description": "Not 'high severity'. Not a red dot. A dollar amount: −$18,420/month, 94% confidence. You know what to tell your team.",
 				"confidence_label": "confidence",
 				"leaking_label": "Leaking",
 				"rows": [
@@ -847,8 +847,8 @@
 			},
 			"continuous_watch": {
 				"eyebrow": "You recover",
-				"title": "Stop the bleed before it compounds",
-				"description": "",
+				"title": "Last week's deploy broke checkout. You'd know in hours, not days.",
+				"description": "Continuous cycles compare every surface against the last. When something degrades, it shows up in your queue before a customer complains.",
 				"axis_label": "Revenue lost / mo",
 				"before_label": "Before Vestigio",
 				"after_label": "After Vestigio",
@@ -856,9 +856,9 @@
 				"annotation_value": "+87.2%"
 			},
 			"evidence_orbit": {
-				"eyebrow": "Vestigio audits",
-				"title": "Every finding traces back to evidence",
-				"description": "",
+				"eyebrow": "Vestigio verifies",
+				"title": "Scale with proof, not your opinion",
+				"description": "Every finding: browser screenshot, DOM snapshot, performance trace, timestamp. Your CTO sees evidence, not a dashboard.",
 				"center_label": "Finding",
 				"evidence_types": {
 					"browser": "Browser",

@@ -801,8 +801,8 @@
 			"subtitle": "",
 			"action_queue": {
 				"eyebrow": "Vestigio priorisiert",
-				"title": "Eine klare Liste — was zuerst behoben gehört",
-				"description": "",
+				"title": "Wissen, was am Montagmorgen zu beheben ist",
+				"description": "Eine priorisierte Warteschlange. Auswirkung in Dollar, nicht in Farbcodes. Das erste Element ist $42k/Monat wert. Das neunte $1.5k. Sie wissen, wo Sie anfangen.",
 				"rows": [
 					{
 						"title": "Checkout-Abbrüche steigen",
@@ -824,8 +824,8 @@
 			},
 			"revenue_leaks": {
 				"eyebrow": "Vestigio diagnostiziert",
-				"title": "Finden Sie, wo das Geld blutet",
-				"description": "",
+				"title": "Sehen Sie genau, was jedes Problem kostet",
+				"description": "Nicht 'hohe Schwere'. Kein roter Punkt. Ein Betrag: −$18.420/Monat, 94% Konfidenz. Sie wissen, was Sie Ihrem Team sagen.",
 				"confidence_label": "Konfidenz",
 				"leaking_label": "Leck",
 				"rows": [
@@ -847,9 +847,9 @@
 				]
 			},
 			"continuous_watch": {
-				"eyebrow": "Sie gewinnen zurück",
-				"title": "Stoppen Sie das Leck, bevor es sich aufstaut",
-				"description": "",
+				"eyebrow": "Sie erholen sich",
+				"title": "Das Deploy letzte Woche hat den Checkout beschädigt. Sie wüssten es in Stunden, nicht Tagen.",
+				"description": "Kontinuierliche Zyklen vergleichen jede Oberfläche mit der vorherigen. Wenn sich etwas verschlechtert, erscheint es in Ihrer Warteschlange, bevor ein Kunde sich beschwert.",
 				"axis_label": "Verlorene Einnahmen / Monat",
 				"before_label": "Vor Vestigio",
 				"after_label": "Nach Vestigio",
@@ -857,9 +857,9 @@
 				"annotation_value": "+87,2%"
 			},
 			"evidence_orbit": {
-				"eyebrow": "Vestigio prüft",
-				"title": "Jeder Befund führt zurück zum Beweis",
-				"description": "",
+				"eyebrow": "Vestigio verifiziert",
+				"title": "Skalieren Sie mit Beweisen, nicht mit Meinungen",
+				"description": "Jeder Fund: Browser-Screenshot, DOM-Snapshot, Performance-Trace, Zeitstempel. Ihr CTO sieht Beweise, kein Dashboard.",
 				"center_label": "Befund",
 				"evidence_types": {
 					"browser": "Browser",

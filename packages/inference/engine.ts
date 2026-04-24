@@ -565,6 +565,7 @@ function inferEmailDeliverabilityRisk(
     signal_refs: [makeRef('signal', emailAbsent.id)],
     evidence_refs: emailAbsent.evidence_refs,
     reasoning: `Email deliverability risk ${severity}. Commerce site with checkout but no detectable email infrastructure (ESP, transactional email provider). Without SPF/DKIM/DMARC configured through a reputable email provider, order confirmation emails land in spam — buyers assume the purchase failed or was fraudulent and file chargebacks.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -690,6 +691,7 @@ function inferCommerceContext(
       reasoning: hasCommerce
         ? 'Commerce indicators found: checkout flow, payment forms, or known payment providers detected.'
         : 'No commerce indicators detected. Site may be informational or use non-standard checkout.',
+      reasoning_slots: { commerce_detected: hasCommerce ? 'true' : 'false' },
     }),
   ];
 }
@@ -741,6 +743,7 @@ function inferTrustBoundary(
       signal_refs: relevantSignals.map((s) => makeRef('signal', s.id)),
       evidence_refs: relevantSignals.flatMap((s) => s.evidence_refs),
       reasoning: buildTrustBoundaryReasoning(isCrossed, hasWeakSurface, hasLongRedirect),
+      reasoning_slots: { severity },
     }),
   ];
 }
@@ -805,6 +808,7 @@ function inferPolicyGap(
         (gap === 'high'
           ? 'Critical: commercial site missing essential consumer protection policies.'
           : 'Some required policies are missing or not detected.'),
+      reasoning_slots: { severity: gap, coverage: coverageLevel },
     }),
   ];
 }
@@ -878,6 +882,7 @@ function inferMeasurementCoverage(
         : level === 'shallow'
           ? 'Only basic analytics detected. Attribution and optimization capabilities are limited.'
           : 'No analytics tools detected. Measurement is insufficient for any optimization.',
+      reasoning_slots: { severity: level },
     }),
   ];
 }
@@ -932,6 +937,7 @@ function inferCheckoutIntegrity(
       reasoning: issues.length > 0
         ? `Checkout integrity is ${integrity} (score: ${integrityScore}/100). Issues: ${issues.join(', ')}.`
         : `Checkout integrity is ${integrity} (score: ${integrityScore}/100). No significant issues detected.`,
+      reasoning_slots: { severity: integrity, score: integrityScore },
     }),
   ];
 }
@@ -1537,6 +1543,7 @@ function inferCriticalPathBroken(
     signal_refs: [makeRef('signal', criticalError.id)],
     evidence_refs: criticalError.evidence_refs,
     reasoning: `${count} revenue-critical page(s) (checkout, cart, pricing, login) are returning HTTP errors. These pages are directly on the conversion path — every visitor hitting an error page is a lost transaction. This is not a generic SEO concern; it is an active break in the revenue path.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -1564,6 +1571,7 @@ function inferFormDataLeavesDomain(
     signal_refs: [makeRef('signal', exposure.id)],
     evidence_refs: exposure.evidence_refs,
     reasoning: `${exposure.numeric_value} form(s) submit user data to unrecognized external domains. ${isPayment ? 'Payment fields are included — this is a direct trust and compliance risk at the conversion point.' : 'User data leaves the domain boundary without a recognized payment provider, creating trust and privacy concerns.'} This is distinct from a known provider redirect (Stripe, PayPal) — these are unrecognized external endpoints.`,
+    reasoning_slots: { severity, count: exposure.numeric_value || 0 },
   })];
 }
 
@@ -1592,6 +1600,7 @@ function inferProviderFragmentation(
     signal_refs: [makeRef('signal', fragmentation.id)],
     evidence_refs: fragmentation.evidence_refs,
     reasoning: `${count} distinct payment providers detected on the site. While offering payment choice can be positive, ${count}+ competing provider scripts create inconsistent checkout experiences, increase page weight, and fragment the user's path to purchase. Different providers may show conflicting UI patterns, currencies, or trust signals.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -1672,6 +1681,7 @@ function inferLanguageDiscontinuity(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${count} commercial page(s) switch language compared to the homepage. When a buyer moves from browsing in one language to a checkout or pricing page in another, it creates confusion, reduces trust, and increases abandonment — especially in markets where the primary audience does not speak the checkout language.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -1698,6 +1708,7 @@ function inferOrphanCommercialPage(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${count} commercial page(s) (checkout, pricing, login, billing) have no inbound navigation links from the main site. These pages exist but visitors cannot reach them through normal browsing. Revenue-critical surfaces that are unreachable from the main journey represent direct conversion leakage.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -1724,6 +1735,7 @@ function inferUntrustedEmbed(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${count} unrecognized external iframe(s) embedded on commercial pages. Unlike known payment providers (Stripe, PayPal), these embeds are not recognized trust signals. External content from unknown sources near the purchase moment undermines buyer confidence and may introduce security perception risk.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -1749,6 +1761,7 @@ function inferPlatformCheckoutRisk(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: sig.description || 'Platform-specific checkout patterns creating unresolved risk.',
+    reasoning_slots: { severity },
   })];
 }
 
@@ -1773,6 +1786,7 @@ function inferPostPurchaseGap(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `No order confirmation page and no refund policy detected. This compound gap means customers who just paid have no immediate proof their order was received and no way to understand return terms. The result is "did my order go through?" support contacts and "I don't recognize this charge" disputes — the two highest-volume chargeback drivers.`,
+    reasoning_slots: { severity: 'high' },
   })];
 }
 
@@ -1807,6 +1821,7 @@ function inferCommercialMeasurementBlind(
     signal_refs: [makeRef('signal', missingCommercial.id), ...(measurement ? [makeRef('signal', measurement.id)] : [])],
     evidence_refs: missingCommercial.evidence_refs,
     reasoning: `Analytics tools are present on the site but absent from checkout and payment pages. The highest-intent surfaces — where conversion actually happens — are operating without measurement. Ad spend optimization, attribution, and conversion rate improvement are impossible on the pages that generate revenue.`,
+    reasoning_slots: { severity: 'high' },
   })];
 }
 
@@ -1837,6 +1852,7 @@ function inferThinPolicyContent(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `The refund/return policy is ${wordCount} words — too thin to defuse buyer disputes. A policy this brief cannot meaningfully explain return windows, refund processes, or exception handling. When dissatisfied customers cannot find clear terms, they bypass the merchant and file chargebacks.`,
+    reasoning_slots: { severity, count: wordCount },
   })];
 }
 
@@ -1860,6 +1876,7 @@ function inferHiddenSupportWidget(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `A live support widget exists on the site but is absent from checkout and payment pages. Buyers who hesitate at the purchase moment — with questions about shipping, returns, or product fit — have no way to get immediate answers. This pushes uncertain buyers toward abandonment instead of resolution.`,
+    reasoning_slots: { severity: 'medium' },
   })];
 }
 
@@ -1886,6 +1903,7 @@ function inferTrustSignalsThin(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Only ${count} trust-building signal(s) found across the commercial surface (business schema, policy pages, recognized providers). Buyers evaluate trust through visible signals — business identity, review presence, policy accessibility, recognized checkout partners. A thin trust surface directly reduces checkout confidence and increases abandonment.`,
+    reasoning_slots: { severity, count },
   })];
 }
 
@@ -1911,6 +1929,7 @@ function inferTrackingStackIncomplete(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: sig.description || 'Commerce tracking infrastructure has gaps preventing full conversion visibility and optimization.',
+    reasoning_slots: { severity },
   })];
 }
 
@@ -1934,6 +1953,7 @@ function inferConsentMeasurementConflict(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `A consent management platform is present but no tag manager was detected. Without a consent-aware tag firing mechanism, analytics scripts may be blocked entirely for users who consent — creating a silent gap in conversion data. The site appears to have measurement, but the consent layer may be preventing it from actually working for a portion of visitors.`,
+    reasoning_slots: { severity: 'medium' },
   })];
 }
 
@@ -1963,6 +1983,7 @@ function inferMobilePathBlocked(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `The commercial path is blocked or degraded on mobile. Mobile visitors — who represent the majority of traffic for most sites — cannot reach checkout, pricing, or key conversion pages. This is not a layout issue; it is a revenue path that does not exist for mobile buyers.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -1986,6 +2007,7 @@ function inferMobileTrustDegraded(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Mobile buyers experience a weaker trust surface than desktop visitors. Trust indicators, policy visibility, or provider signals present on desktop are absent or degraded on mobile. When mobile users see fewer reasons to trust, they abandon at higher rates.`,
+    reasoning_slots: { severity: 'medium' },
   })];
 }
 
@@ -2009,6 +2031,7 @@ function inferRuntimePurchaseInterruption(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `JavaScript runtime errors are directly interrupting the purchase journey. Payment provider scripts, checkout flow logic, or transaction-critical code is failing at execution time. Every instance is a buyer who wanted to pay but could not complete the transaction.`,
+    reasoning_slots: { severity: 'high' },
   })];
 }
 
@@ -2034,6 +2057,7 @@ function inferRuntimeMeasurementBreak(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Analytics, pixel, or tag manager scripts are failing at runtime on commercial pages. The tracking infrastructure appears to be present in the source code, but JavaScript errors prevent it from actually executing. Conversion data is silently dropping — the site thinks it has measurement, but the runtime tells a different story.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2059,6 +2083,7 @@ function inferSecondaryFlowBypassing(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Multiple distinct entry points lead to commercial conversion pages, suggesting secondary or alternate checkout flows that bypass the main trust, support, and measurement path. Revenue flowing through these secondary paths may escape policy coverage, support visibility, and analytics tracking.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2088,6 +2113,7 @@ function inferRefundProcessUnclear(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `A refund/return policy page exists but is missing ${sig.numeric_value} critical detail(s) that buyers need when something goes wrong. Without a clear return window, a described refund process, and contact information for returns, the policy exists in name only — it cannot actually guide a dissatisfied customer through resolution. The gap between "policy present" and "policy useful" is where chargebacks happen.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2113,6 +2139,7 @@ function inferPostPurchaseProofWeak(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `An order confirmation page exists but contains only ${sig.numeric_value} words — too little to serve as meaningful purchase proof. A confirmation page that does not clearly show order details, expected delivery timeline, and next steps leaves the buyer uncertain whether the purchase was actually processed. This uncertainty drives "I didn't order this" and "I never received it" disputes. The page exists, but it does not reassure.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2136,6 +2163,7 @@ function inferSupportLateInJourney(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Support and help pages exist on the site but are not accessible from the commercial journey (checkout, pricing, cart). Buyers who hesitate — with questions about sizing, shipping, returns, or product fit — have no reassurance pathway available at the moment of decision. They must leave the purchase flow to find help, and most will not return.`,
+    reasoning_slots: { severity: 'medium' },
   })];
 }
 
@@ -2161,6 +2189,7 @@ function inferHiddenReassuranceRoutes(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Help, FAQ, confirmation, or warranty pages were discovered but have no navigation links from the main commercial journey. These pages were built to reduce buyer anxiety — but buyers cannot find them. The investment in reassurance content is wasted because the content is disconnected from the path where anxiety occurs.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2186,6 +2215,7 @@ function inferAlternateFlowMeasurementGap(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Some commercial pages lack analytics coverage while others have it. Revenue flowing through the untracked paths cannot be attributed, measured, or optimized. The ad spend driving traffic to these paths is unaccountable — the business cannot tell whether these routes convert, leak, or waste budget.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2211,6 +2241,7 @@ function inferRuntimeReassuranceBreak(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Support widgets, chat tools, or consent managers are failing at runtime on commercial pages. These are the reassurance mechanisms that convert hesitant buyers — live chat answers last-minute questions, consent tools enable tracking. When they fail, buyers lose their reassurance channel at the exact moment they need it most.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2236,6 +2267,7 @@ function inferProviderPathWeak(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `The checkout redirects buyers to an external domain, but no recognized payment provider (Stripe, PayPal, etc.) was detected on the destination. Combined with thin policy coverage, this creates a payment handoff that looks weaker than what buyers expect. Legitimate payment flows typically display recognized provider branding — this one does not.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2259,6 +2291,7 @@ function inferTrustMeasurementCompoundBreak(
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Multiple commercial paths operate without both trust infrastructure (policies, business identity) and measurement coverage (analytics, tracking). This is the worst compound scenario: revenue cannot convert well because trust is thin, and the business cannot see the problem because measurement is absent. Optimization is impossible on paths where both the experience and the visibility are broken.`,
+    reasoning_slots: { severity: 'high' },
   })];
 }
 
@@ -2277,6 +2310,7 @@ function inferPaymentSurfaceExposure(byKey: Map<string, Signal>, scoping: Scopin
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Purchase surfaces are exposed to unauthorized script execution. Injection patterns or missing script controls on checkout and payment pages enable formjacking, session hijack, and payment data interception. This is not a theoretical vulnerability — it is the exact pattern used in real-world payment compromises (Magecart, web skimming). Every transaction through these surfaces carries active fraud exposure.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2291,6 +2325,7 @@ function inferChannelHijackExposure(byKey: Map<string, Signal>, scoping: Scoping
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Customer traffic can be diverted through weakly governed channel surfaces. Open redirects, permissive cross-origin policies, or exposed infrastructure enable attackers to create legitimate-looking links that route buyers to phishing destinations, fake checkout pages, or competitor sites — using the brand's own domain as the trust anchor.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2305,6 +2340,7 @@ function inferCommerceContinuityThreat(byKey: Map<string, Signal>, scoping: Scop
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Public-facing operational surfaces — admin panels, debug endpoints, or configuration files — are accessible near the commercial footprint. An attacker who reaches these surfaces can modify pricing, disable checkout, extract customer data, or trigger downtime. The business impact is not "a security bug" — it is emergency refunds, commerce interruption, and forced incident response.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2319,6 +2355,7 @@ function inferLowTrustPosture(byKey: Map<string, Signal>, scoping: Scoping, cycl
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Paid and organic traffic is landing on a domain whose technical posture signals weakness to browsers and cautious buyers. Missing security headers, mixed content, or certificate issues create visible trust friction — browser warnings, missing padlock icons, or "not secure" indicators that suppress conversion before the buyer even reads the offer.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2333,6 +2370,7 @@ function inferChannelCompromisePattern(byKey: Map<string, Signal>, scoping: Scop
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Multiple exposure types detected across the commercial channel — the pattern of simultaneous weaknesses (payment surfaces, channel governance, operational posture) signals a domain that has not been hardened for commercial operation. Even before a confirmed exploit, this exposure pattern is enough to trigger distrust from cautious buyers, security-conscious partners, and compliance reviewers.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2347,6 +2385,7 @@ function inferAbuseExposure(byKey: Map<string, Signal>, scoping: Scoping, cycle_
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `The commercial path includes conditions that enable automated abuse — unauthenticated API endpoints, exposed schema introspection, or unprotected business-logic surfaces. Attackers can automate pricing manipulation, coupon abuse, inventory depletion, or account enumeration without needing to breach authentication. The result is margin leakage, operational noise, and increased support/fraud burden.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2360,6 +2399,7 @@ function inferCheckoutInfraBrittle(byKey: Map<string, Signal>, scoping: Scoping,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Checkout and payment trust is anchored to infrastructure that is both technically weak and actively exploitable. Payment integrity exposures exist alongside trust posture weaknesses on the same commercial domain — the combination means that not only is the checkout surface vulnerable to compromise, but the surrounding infrastructure provides no defense-in-depth. This is a launch/scale blocker: scaling traffic into this environment amplifies both fraud exposure and trust failure.`,
+    reasoning_slots: { severity: 'high' },
   })];
 }
 
@@ -2374,6 +2414,7 @@ function inferEconomicExploitation(byKey: Map<string, Signal>, scoping: Scoping,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Business-logic exploitation conditions are present on the commercial path. Cart or pricing endpoints respond to unauthorized manipulation, coupon endpoints are enumerable, or refund processes are accessible without authentication. This is not theoretical — these are the exact patterns used in automated margin theft: bots that modify prices before checkout, scripts that brute-force coupon codes, and tools that initiate fraudulent refunds at scale. The financial impact is direct: every exploited transaction reduces margin, every abused coupon erodes promotion ROI, every fraudulent refund becomes a net loss.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2392,6 +2433,7 @@ function inferPromotionLogicExposed(byKey: Map<string, Signal>, scoping: Scoping
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Deep discovery found promotion, discount, or coupon routes that are structurally exposed to abuse. These endpoints follow predictable patterns or lack rate limiting and authentication gates — the exact conditions that enable automated coupon enumeration, discount stacking, and promotional code brute-forcing. Each exploited promotion directly reduces margin and erodes the ROI of marketing campaigns.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2406,6 +2448,7 @@ function inferCartVariantWeakControl(byKey: Map<string, Signal>, scoping: Scopin
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Multiple cart or checkout route variants were discovered through deep crawling. Alternate cart paths often carry weaker price validation, missing inventory checks, or inconsistent tax calculations compared to the primary flow. When pricing controls are not uniform across all cart variants, the weakest path becomes the attack surface — bots route through whichever variant applies the fewest safeguards.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2420,6 +2463,7 @@ function inferHiddenDiscountRefundRoute(byKey: Map<string, Signal>, scoping: Sco
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Discount and refund routes discovered outside the expected safeguard envelope. These paths exist in the application but are not governed by the same controls that protect the primary commercial flow. Discoverable refund endpoints without authentication enable fraudulent refund initiation, while exposed discount routes enable code enumeration and stacking. The business impact is margin erosion from the discount side and net financial loss from the refund side.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2434,6 +2478,7 @@ function inferGuessableBusinessEndpoint(byKey: Map<string, Signal>, scoping: Sco
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Business-critical commerce endpoints follow predictable URL patterns and lack visible safeguards proportional to their business importance. Order management, billing, account, and refund actions are reachable through guessable paths — enabling automated probing, IDOR-style access, and business-logic manipulation. The risk is not theoretical: these patterns are the first targets in automated commerce fraud because they are trivially discoverable.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2448,6 +2493,7 @@ function inferAlternatePricingSafeguardBypass(byKey: Map<string, Signal>, scopin
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Deep discovery found alternate commercial actions (legacy endpoints, beta paths, test routes, or parameter-based variants) that may bypass intended pricing safeguards. These are not generic alternate pages — they are structurally different commercial actions that process transactions or pricing through weaker validation than the primary checkout flow. The margin and offer integrity risk is that the weakest pricing path determines the actual price floor.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2462,6 +2508,7 @@ function inferJsDiscoveredPurchaseVariant(byKey: Map<string, Signal>, scoping: S
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Client-side JavaScript reveals commerce routes not visible through static navigation — alternate checkout paths, dynamic cart endpoints, or SPA-rendered purchase flows. These variants typically escape the main safeguard model: they may lack analytics instrumentation (invisible to optimization), skip trust-building elements (policies, provider badges), or bypass server-side validation that the primary flow enforces. Revenue flowing through these paths is both unprotected and unmeasured.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2476,6 +2523,7 @@ function inferDynamicRouteWeakControl(byKey: Map<string, Signal>, scoping: Scopi
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Dynamically discovered commerce routes show weaker governance than the visible purchase flow. Routes found through JavaScript rendering lack the safeguards (authentication gates, rate limiting, CSRF protection) that protect the primary path. The structural gap means that the deeper you crawl, the weaker the controls become — creating a gradient of decreasing protection that automated tools exploit preferentially.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2490,6 +2538,7 @@ function inferHiddenSupportBurden(byKey: Map<string, Signal>, scoping: Scoping, 
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Support, help, and FAQ routes exist but are structurally disconnected from the commercial journey — they were found through deep crawling, not through the normal buying path. This means buyers who need reassurance during purchase cannot find it, while the same support infrastructure generates downstream ticket volume from post-purchase confusion. The result is the worst of both worlds: support cost without conversion benefit.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2503,6 +2552,7 @@ function inferAlternateVariantControlBreakdown(byKey: Map<string, Signal>, scopi
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Both pricing control exposure and commerce variant proliferation are present. Alternate commerce variants lack the trust signals, measurement infrastructure, and pricing safeguards that protect the primary flow. This compound failure means: pricing can be manipulated on the weaker variant, the manipulation is invisible to analytics, and the buyer experience offers fewer trust signals to offset the weaker controls. Revenue integrity, measurement, and trust all degrade simultaneously on the alternate paths.`,
+    reasoning_slots: { severity: 'high' },
   })];
 }
 

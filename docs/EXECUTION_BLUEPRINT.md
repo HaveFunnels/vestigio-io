@@ -526,7 +526,7 @@ Never: "Get Started", "Learn More", "Sign Up", "Try Free", "Run Free Audit"
 | Phase | What | Pages | Status |
 |-------|------|-------|--------|
 | **4** | ~~Move MiniCalc to position 5~~ → Added copy after HomeBigCard | `/`, `/lp` | ✅ |
-| **5** | Rewrite final CTA section | `/` | 🔲 |
+| **5** | Rewrite final CTA section | `/`, `/lp` | ✅ |
 | **6** | Reframe feature bento cards (copy only) | `/` | 🔲 |
 | **7** | Replace Solution Layers content | `/` | 🔲 |
 | **8** | Replace persona cards (FeaturesWithImage) | `/` | 🔲 |

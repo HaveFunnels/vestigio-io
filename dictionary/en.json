@@ -1101,52 +1101,70 @@
 		"copyright": "© {year} Vestigio. All rights reserved."
 	},
 	"signInPage": {
+		"title": "Welcome back.",
+		"subtitle": "Sign in to your decision engine.",
 		"socialSignIn": "Sign in with",
-		"or": "OR",
-		"form": {
-			"email": {
-				"label": "Email",
-				"placeholder": "Enter your email"
-			},
-			"password": {
-				"label": "Password",
-				"placeholder": "Enter your password"
-			},
-			"rememberMe": "Remember me",
-			"forgotPassword": "Forgot password?",
-			"magicLinkSubmit": "Send magic link",
-			"passwordSubmit": "Sign In"
-		},
+		"or": "or",
 		"magicLink": "Magic Link",
 		"password": "Password",
-		"noAccount": "Don't have an account yet? <link>Create account</link>",
-		"demo": {
-			"description": "Or Continue as Demo User, Admin",
-			"user": "User",
-			"admin": "Admin"
+		"noAccount": "Don't have an account? <link>Create one</link>",
+		"form": {
+			"email": "Email",
+			"emailPlaceholder": "you@yourcompany.com",
+			"password": "Password",
+			"passwordPlaceholder": "Enter your password",
+			"rememberMe": "Keep me signed in",
+			"forgotPassword": "Reset password",
+			"passwordSubmit": "Sign In",
+			"magicLinkSubmit": "Send magic link",
+			"magicLinkSent": "Magic link sent!",
+			"checkInbox": "Check your email inbox for the sign-in link.",
+			"sending": "Sending...",
+			"loading": "Signing in...",
+			"invalidCredentials": "Invalid email or password."
+		},
+		"hero": {
+			"eyebrow": "Average first diagnostic",
+			"stat_description": "Average revenue leakage found in the first Vestigio diagnostic."
 		}
 	},
 	"signUpPage": {
+		"title": "See what's costing you money.",
+		"subtitle": "Create your account. First diagnostic in 60 seconds.",
+		"socialSignUp": "Sign up with",
+		"or": "or continue with email",
 		"magicLink": "Magic Link",
 		"email": "Email",
-		"socialSignUp": "Sign up with",
-		"or": "OR",
+		"alreadyHaveAccount": "Already have an account? <link>Sign in</link>",
 		"form": {
 			"name": {
-				"label": "Name",
-				"placeholder": "Enter your username"
+				"label": "Full name",
+				"placeholder": "Your name"
 			},
 			"email": {
 				"label": "Email",
-				"placeholder": "Enter your email"
+				"placeholder": "you@yourcompany.com"
 			},
 			"password": {
 				"label": "Password",
-				"placeholder": "Enter your password"
+				"placeholder": "8+ characters"
 			},
-			"submit": "Sign Up"
+			"submit": "Create Account",
+			"loading": "Creating...",
+			"success": "Account created successfully."
 		},
-		"alreadyHaveAccount": "Already have an account? <link>Sign In</link>"
+		"trust": {
+			"noCard": "No credit card required",
+			"firstDiagnostic": "First diagnostic in 60s",
+			"privacy": "We only crawl public pages"
+		},
+		"hero": {
+			"eyebrow": "Average first diagnostic",
+			"stat_description": "Average revenue leakage found in the first Vestigio diagnostic.",
+			"testimonial_1": "Vestigio found R$23k/month in leaks we didn't know existed.",
+			"testimonial_2": "I had no idea my checkout was losing that much money.",
+			"testimonial_3": "I tested on an e-commerce and found 12 critical leaks in 60 seconds."
+		}
 	},
 	"support_page": {
 		"heading": "Support",

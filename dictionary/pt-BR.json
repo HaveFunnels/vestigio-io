@@ -1101,52 +1101,70 @@
 		"copyright": "© {year} Vestigio. Todos os direitos reservados."
 	},
 	"signInPage": {
+		"title": "Bem-vindo de volta.",
+		"subtitle": "Entre no seu motor de decisão.",
 		"socialSignIn": "Entrar com",
-		"or": "OU",
-		"form": {
-			"email": {
-				"label": "E-mail",
-				"placeholder": "Digite seu e-mail"
-			},
-			"password": {
-				"label": "Senha",
-				"placeholder": "Digite sua senha"
-			},
-			"rememberMe": "Lembrar de mim",
-			"forgotPassword": "Esqueceu a senha?",
-			"magicLinkSubmit": "Enviar link mágico",
-			"passwordSubmit": "Entrar"
-		},
+		"or": "ou",
 		"magicLink": "Link Mágico",
 		"password": "Senha",
-		"noAccount": "Ainda não tem uma conta? <link>Criar conta</link>",
-		"demo": {
-			"description": "Ou Continue como Usuário Demo, Admin",
-			"user": "Usuário",
-			"admin": "Admin"
+		"noAccount": "Não tem conta? <link>Criar uma</link>",
+		"form": {
+			"email": "Email",
+			"emailPlaceholder": "voce@suaempresa.com",
+			"password": "Senha",
+			"passwordPlaceholder": "Digite sua senha",
+			"rememberMe": "Manter conectado",
+			"forgotPassword": "Esqueci a senha",
+			"passwordSubmit": "Entrar",
+			"magicLinkSubmit": "Enviar link mágico",
+			"magicLinkSent": "Link mágico enviado!",
+			"checkInbox": "Verifique sua caixa de entrada para o link de acesso.",
+			"sending": "Enviando...",
+			"loading": "Entrando...",
+			"invalidCredentials": "Email ou senha inválidos."
+		},
+		"hero": {
+			"eyebrow": "Primeiro diagnóstico médio",
+			"stat_description": "Vazamento médio de receita encontrado no primeiro diagnóstico Vestigio."
 		}
 	},
 	"signUpPage": {
-		"magicLink": "Link Mágico",
-		"email": "E-mail",
+		"title": "Veja o que está custando dinheiro.",
+		"subtitle": "Crie sua conta. Primeiro diagnóstico em 60 segundos.",
 		"socialSignUp": "Cadastrar com",
-		"or": "OU",
+		"or": "ou continue com email",
+		"magicLink": "Link Mágico",
+		"email": "Email",
+		"alreadyHaveAccount": "Já tem uma conta? <link>Entrar</link>",
 		"form": {
 			"name": {
-				"label": "Nome",
-				"placeholder": "Digite seu nome de usuário"
+				"label": "Nome completo",
+				"placeholder": "Seu nome"
 			},
 			"email": {
-				"label": "E-mail",
-				"placeholder": "Digite seu e-mail"
+				"label": "Email",
+				"placeholder": "voce@suaempresa.com"
 			},
 			"password": {
 				"label": "Senha",
-				"placeholder": "Digite sua senha"
+				"placeholder": "8+ caracteres"
 			},
-			"submit": "Cadastrar"
+			"submit": "Criar Conta",
+			"loading": "Criando...",
+			"success": "Conta criada com sucesso."
 		},
-		"alreadyHaveAccount": "Já tem uma conta? <link>Entrar</link>"
+		"trust": {
+			"noCard": "Sem cartão de crédito",
+			"firstDiagnostic": "Primeiro diagnóstico em 60s",
+			"privacy": "Só analisamos páginas públicas"
+		},
+		"hero": {
+			"eyebrow": "Primeiro diagnóstico médio",
+			"stat_description": "Vazamento médio de receita encontrado no primeiro diagnóstico Vestigio.",
+			"testimonial_1": "A Vestigio encontrou R$23k/mês em vazamentos que não sabíamos que existiam.",
+			"testimonial_2": "Eu não fazia ideia de quanto dinheiro meu checkout estava perdendo.",
+			"testimonial_3": "Testei num e-commerce e encontrei 12 vazamentos críticos em 60 segundos."
+		}
 	},
 	"support_page": {
 		"heading": "Suporte",

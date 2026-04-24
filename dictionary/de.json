@@ -1101,52 +1101,70 @@
 		"copyright": "© {year} Vestigio. Alle Rechte vorbehalten."
 	},
 	"signInPage": {
+		"title": "Willkommen zurück.",
+		"subtitle": "Melden Sie sich bei Ihrer Entscheidungsmaschine an.",
 		"socialSignIn": "Anmelden mit",
-		"or": "ODER",
-		"form": {
-			"email": {
-				"label": "E-Mail",
-				"placeholder": "Geben Sie Ihre E-Mail-Adresse ein"
-			},
-			"password": {
-				"label": "Passwort",
-				"placeholder": "Geben Sie Ihr Passwort ein"
-			},
-			"rememberMe": "Angemeldet bleiben",
-			"forgotPassword": "Passwort vergessen?",
-			"magicLinkSubmit": "Magic Link senden",
-			"passwordSubmit": "Anmelden"
-		},
-		"magicLink": "Magischer Link",
+		"or": "oder",
+		"magicLink": "Magic Link",
 		"password": "Passwort",
-		"noAccount": "Noch kein Konto? <link>Konto erstellen</link>",
-		"demo": {
-			"description": "Oder fortfahren als Demo-Benutzer, Admin",
-			"user": "Benutzer",
-			"admin": "Admin"
+		"noAccount": "Kein Konto? <link>Eines erstellen</link>",
+		"form": {
+			"email": "E-Mail",
+			"emailPlaceholder": "sie@ihreFirma.com",
+			"password": "Passwort",
+			"passwordPlaceholder": "Passwort eingeben",
+			"rememberMe": "Angemeldet bleiben",
+			"forgotPassword": "Passwort zurücksetzen",
+			"passwordSubmit": "Anmelden",
+			"magicLinkSubmit": "Magic Link senden",
+			"magicLinkSent": "Magic Link gesendet!",
+			"checkInbox": "Überprüfen Sie Ihren Posteingang für den Anmeldelink.",
+			"sending": "Sende...",
+			"loading": "Melde an...",
+			"invalidCredentials": "Ungültige E-Mail oder Passwort."
+		},
+		"hero": {
+			"eyebrow": "Durchschnittliche erste Diagnose",
+			"stat_description": "Durchschnittlicher Umsatzverlust bei der ersten Vestigio-Diagnose."
 		}
 	},
 	"signUpPage": {
-		"magicLink": "Magischer Link",
-		"email": "E-Mail",
+		"title": "Sehen Sie, was Sie Geld kostet.",
+		"subtitle": "Erstellen Sie Ihr Konto. Erste Diagnose in 60 Sekunden.",
 		"socialSignUp": "Registrieren mit",
-		"or": "ODER",
+		"or": "oder mit E-Mail fortfahren",
+		"magicLink": "Magic Link",
+		"email": "E-Mail",
+		"alreadyHaveAccount": "Bereits ein Konto? <link>Anmelden</link>",
 		"form": {
 			"name": {
-				"label": "Name",
-				"placeholder": "Gib deinen Benutzernamen ein"
+				"label": "Vollständiger Name",
+				"placeholder": "Ihr Name"
 			},
 			"email": {
 				"label": "E-Mail",
-				"placeholder": "Gib deine E-Mail-Adresse ein"
+				"placeholder": "sie@ihreFirma.com"
 			},
 			"password": {
 				"label": "Passwort",
-				"placeholder": "Gib dein Passwort ein"
+				"placeholder": "8+ Zeichen"
 			},
-			"submit": "Registrieren"
+			"submit": "Konto erstellen",
+			"loading": "Erstelle...",
+			"success": "Konto erfolgreich erstellt."
 		},
-		"alreadyHaveAccount": "Hast du schon ein Konto? <link>Anmelden</link>"
+		"trust": {
+			"noCard": "Keine Kreditkarte erforderlich",
+			"firstDiagnostic": "Erste Diagnose in 60s",
+			"privacy": "Wir crawlen nur öffentliche Seiten"
+		},
+		"hero": {
+			"eyebrow": "Durchschnittliche erste Diagnose",
+			"stat_description": "Durchschnittlicher Umsatzverlust bei der ersten Vestigio-Diagnose.",
+			"testimonial_1": "Vestigio fand R$23k/Monat an Lecks, von denen wir nichts wussten.",
+			"testimonial_2": "Ich hatte keine Ahnung, wie viel Geld mein Checkout verlor.",
+			"testimonial_3": "Ich testete einen E-Commerce und fand 12 kritische Lecks in 60 Sekunden."
+		}
 	},
 	"support_page": {
 		"heading": "Support",

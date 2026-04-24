@@ -1101,52 +1101,70 @@
 		"copyright": "© {year} Vestigio. Todos los derechos reservados."
 	},
 	"signInPage": {
+		"title": "Bienvenido de vuelta.",
+		"subtitle": "Inicia sesión en tu motor de decisiones.",
 		"socialSignIn": "Iniciar sesión con",
-		"or": "O",
-		"form": {
-			"email": {
-				"label": "Email",
-				"placeholder": "Ingresa tu email"
-			},
-			"password": {
-				"label": "Contraseña",
-				"placeholder": "Ingresa tu contraseña"
-			},
-			"rememberMe": "Recordarme",
-			"forgotPassword": "¿Olvidaste tu contraseña?",
-			"magicLinkSubmit": "Enviar enlace mágico",
-			"passwordSubmit": "Iniciar Sesión"
-		},
+		"or": "o",
 		"magicLink": "Enlace Mágico",
 		"password": "Contraseña",
-		"noAccount": "¿Aún no tienes una cuenta? <link>Crear cuenta</link>",
-		"demo": {
-			"description": "O continúa como Usuario Demo, Administrador",
-			"user": "Usuario",
-			"admin": "Administrador"
+		"noAccount": "¿No tienes cuenta? <link>Crear una</link>",
+		"form": {
+			"email": "Email",
+			"emailPlaceholder": "tu@tuempresa.com",
+			"password": "Contraseña",
+			"passwordPlaceholder": "Ingresa tu contraseña",
+			"rememberMe": "Mantener sesión iniciada",
+			"forgotPassword": "Olvidé mi contraseña",
+			"passwordSubmit": "Iniciar Sesión",
+			"magicLinkSubmit": "Enviar enlace mágico",
+			"magicLinkSent": "¡Enlace mágico enviado!",
+			"checkInbox": "Revisa tu bandeja de entrada para el enlace de acceso.",
+			"sending": "Enviando...",
+			"loading": "Iniciando sesión...",
+			"invalidCredentials": "Email o contraseña inválidos."
+		},
+		"hero": {
+			"eyebrow": "Primer diagnóstico promedio",
+			"stat_description": "Fuga promedio de ingresos encontrada en el primer diagnóstico Vestigio."
 		}
 	},
 	"signUpPage": {
+		"title": "Vea qué le está costando dinero.",
+		"subtitle": "Cree su cuenta. Primer diagnóstico en 60 segundos.",
+		"socialSignUp": "Registrarse con",
+		"or": "o continuar con email",
 		"magicLink": "Enlace Mágico",
 		"email": "Email",
-		"socialSignUp": "Registrarse con",
-		"or": "O",
+		"alreadyHaveAccount": "¿Ya tienes cuenta? <link>Iniciar sesión</link>",
 		"form": {
 			"name": {
-				"label": "Nombre",
-				"placeholder": "Ingresa tu nombre de usuario"
+				"label": "Nombre completo",
+				"placeholder": "Tu nombre"
 			},
 			"email": {
 				"label": "Email",
-				"placeholder": "Ingresa tu email"
+				"placeholder": "tu@tuempresa.com"
 			},
 			"password": {
 				"label": "Contraseña",
-				"placeholder": "Ingresa tu contraseña"
+				"placeholder": "8+ caracteres"
 			},
-			"submit": "Registrarse"
+			"submit": "Crear Cuenta",
+			"loading": "Creando...",
+			"success": "Cuenta creada exitosamente."
 		},
-		"alreadyHaveAccount": "¿Ya tienes una cuenta? <link>Iniciar Sesión</link>"
+		"trust": {
+			"noCard": "Sin tarjeta de crédito",
+			"firstDiagnostic": "Primer diagnóstico en 60s",
+			"privacy": "Solo analizamos páginas públicas"
+		},
+		"hero": {
+			"eyebrow": "Primer diagnóstico promedio",
+			"stat_description": "Fuga promedio de ingresos encontrada en el primer diagnóstico Vestigio.",
+			"testimonial_1": "Vestigio encontró R$23k/mes en fugas que no sabíamos que existían.",
+			"testimonial_2": "No tenía idea de cuánto dinero estaba perdiendo mi checkout.",
+			"testimonial_3": "Probé en un e-commerce y encontré 12 fugas críticas en 60 segundos."
+		}
 	},
 	"support_page": {
 		"heading": "Soporte",

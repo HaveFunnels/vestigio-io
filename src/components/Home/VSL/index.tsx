@@ -12,9 +12,16 @@ import { useRef, useState, useCallback } from "react";
 //
 // Performance: preload="none", poster loads
 // immediately, video fetches only on play.
+//
+// Set NEXT_PUBLIC_VSL_VIDEO_URL to enable.
+// When unset, the component renders nothing.
 // ──────────────────────────────────────────────
 
+const VSL_VIDEO = process.env.NEXT_PUBLIC_VSL_VIDEO_URL || "";
+const VSL_POSTER = process.env.NEXT_PUBLIC_VSL_POSTER_URL || "";
+
 export default function VSL() {
+	if (!VSL_VIDEO) return null;
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const [playing, setPlaying] = useState(false);
 
@@ -41,8 +48,8 @@ export default function VSL() {
 					<video
 						ref={videoRef}
 						className="absolute inset-0 h-full w-full object-cover"
-						src="/videos/vsl.mp4"
-						poster="/videos/vsl-poster.webp"
+						src={VSL_VIDEO}
+						poster={VSL_POSTER || undefined}
 						preload="none"
 						playsInline
 						onEnded={() => setPlaying(false)}

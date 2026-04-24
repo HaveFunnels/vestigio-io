@@ -297,24 +297,6 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
         </div>
       </div>
 
-      {/* Findings table */}
-      {allFindings.length > 0 && (
-        <section className="mt-6">
-          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-            {t("perspective_findings")}
-          </h2>
-          <div className="overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
-            <DataTable
-              columns={findingColumns}
-              data={allFindings}
-              onRowClick={(row) => openFinding(row)}
-              getRowKey={(row) => row.id}
-              emptyMessage={t("empty")}
-            />
-          </div>
-        </section>
-      )}
-
       {/* Workspace breakdown */}
       {perspectiveWorkspaces.length > 1 && (
         <section className="mt-6">
@@ -340,6 +322,24 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
                 </div>
               </button>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Findings table — last section */}
+      {allFindings.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+            {t("perspective_findings")}
+          </h2>
+          <div className="overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
+            <DataTable
+              columns={findingColumns}
+              data={allFindings}
+              onRowClick={(row) => openFinding(row)}
+              getRowKey={(row) => row.id}
+              emptyMessage={t("empty")}
+            />
           </div>
         </section>
       )}

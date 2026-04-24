@@ -1,6 +1,6 @@
 # Execution Blueprint — Homepage, Landing Page & Funnel
 
-*Last updated: 2026-04-21 (rev 5 — AIDA reorder + product tour audit + LP headline)*
+*Last updated: 2026-04-23 (rev 6 — completed items removed, statuses refreshed)*
 *Reference: MARKETING_DIRECTION.md*
 
 ---
@@ -13,8 +13,10 @@ Each section follows this format:
 CURRENT: What exists today (component, position, content)
 VERDICT: Keep / Change / Remove / Move / New
 DIRECTIVE: Exact change with before→after copy
-STATUS: ✅ Done / 🔲 Not started / 🟡 Partial
+STATUS: 🔲 Not started / 🟡 Partial
 ```
+
+Completed items have been removed. For historical record, see git history.
 
 ### Terminology rules (binding across all copy)
 
@@ -37,20 +39,7 @@ STATUS: ✅ Done / 🔲 Not started / 🟡 Partial
 
 ---
 
-## Section 1: Hero
-
-**CURRENT:** Position 1. Component: `Hero/index.tsx`
-- Headline L1: "There's money leaking" (en) / "Tem dinheiro vazando" (pt-BR)
-- Headline L2: "from your operation." (en) / "na sua operação." (pt-BR)
-- Headline L3: "You just don't know how much." (en) / "Você só não sabe quanto." (pt-BR)
-- Subtitle: "Problems identified and ranked. Decisions ready to execute. Real evidence." (en) / "Problemas identificados e ranqueados. Decisões prontas pra executar. Evidência real." (pt-BR)
-- Pills: 4 problem→solution pairs
-- CTA: "Run free diagnostic"
-- Microcopy: Removed
-
-**STATUS:** ✅ Done (headline, subtitle, pills, CTA, microcopy removed)
-
-**REMAINING:**
+## Section 1: Hero — REMAINING
 
 Pills should sharpen toward financial specificity:
 
@@ -61,73 +50,15 @@ Pills should sharpen toward financial specificity:
 | "Nice site, no sales?" | "We find the bottleneck" | "Site looks fine, sales don't?" | "We find what's broken" |
 | "Deciding in the dark?" | "Impact in dollars" | "20 problems, no priority?" | "A ranked queue. Fix #1 first." |
 
-**Visual:** Keep the animated trails and halos. They work — atmospheric, not distracting.
-
----
-
-## Section 2: Social Proof Strip (NEW)
-
-**CURRENT:** Does not exist. Client gallery is at position 3, inside HomeBigCard.
-
-**VERDICT:** New. Insert between Hero and Product Tour (inside HomeBigCard).
-
-**DIRECTIVE:** Single line, centered, subtle. No logos. Just a number.
-
-```
-Empresas como a sua encontram em média 9 vazamentos críticos e −R$81k/mês no primeiro diagnóstico Vestigio.
-```
-
-The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` — the financial impact pops without breaking the understated tone.
-
-**Visual:** `text-[13px] text-zinc-500`, centered, no border, no card. The `−R$81k/mês` highlight is the only color accent. Loss-frame maintained from hero.
-
-**STATUS:** ✅ Done
+**STATUS:** 🔲 Not started (pill copy sharpening only — everything else done)
 
 ---
 
 ## Section 3: VSL (Video Sales Letter)
 
-**CURRENT:** Does not exist.
+**CURRENT:** Component exists (`VSL/index.tsx`). Placeholder video paths (`/videos/vsl.mp4`, `/videos/vsl-poster.webp`). No real video asset.
 
-**VERDICT:** New. Insert between Social Proof Strip and Product Tour. AIDA role: **Attention → Interest** bridge — the video explains the value proposition in a format that doesn't require scrolling.
-
-**DIRECTIVE:** Single video player, centered, full-width within the HomeBigCard container. No title, no description — just the video. The social proof strip above provides context; the video provides depth.
-
-**Visual:**
-- Rounded container (`rounded-2xl`) with subtle border
-- Poster/thumbnail loads immediately; video fetches on play (`preload="none"`)
-- Play button overlay (same pattern as VideoTestimonials)
-- Aspect ratio 16:9
-- No autoplay — user initiates
-
-**Asset:** Video file at `/videos/vsl.mp4`, poster at `/videos/vsl-poster.webp`. Placeholder until real video is ready.
-
-**STATUS:** 🔲 Not started (awaiting video asset)
-
----
-
-## Section 4: Product Tour
-
-**CURRENT:** Position 2. Component: `ProductTour/index.tsx`
-- Title: "Not a dashboard. A queue of decisions."
-- Subtitle: "Every tab is a different lens on the same revenue picture — ranked, evidenced, and ready to act on."
-- Eyebrow: "Product Tour"
-
-**VERDICT:** Keep position (stays at 3, after social proof strip). Change header copy. AIDA role: **Interest** — show how it works.
-
-**DIRECTIVE:**
-
-| Element | Current | Write |
-|---------|---------|-------|
-| Eyebrow pill | "Product Tour" | "Inside your decision engine" |
-| Title | Keep — "Not a dashboard. A queue of decisions." is excellent | Keep |
-| Subtitle | "Every tab is a different lens on the same revenue picture..." | "Your action queue, your evidence trail, your financial clarity — from day one." |
-| CTA | "Run free diagnostic" | Keep |
-
-**Tab content:** Keep all 6 tabs. The interactive browser mockup is strong.
-**Recovery callout** ("Recoverable +$67k/mo"): Keep — this is the emotional payoff of the tour.
-
-**STATUS:** 🔲 Not started (copy changes only)
+**STATUS:** 🟡 Partial (component done, awaiting real video asset)
 
 ---
 
@@ -135,7 +66,7 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 **CURRENT:** Position 6. Component: `Features/index.tsx`. Four bento cards: Action Queue, Revenue Leaks, Continuous Watch, Evidence Orbit.
 
-**VERDICT:** Move to position 4 (after Product Tour). Keep the bento visual layout (visually stunning). Reframe each card from "what the product does" to "what happens to your business." AIDA role: **Desire** — concrete dollar amounts make the visitor want this for themselves.
+**VERDICT:** Move to position 4 (after Product Tour). Keep the bento visual layout. Reframe each card from "what the product does" to "what happens to your business." AIDA role: **Desire** — concrete dollar amounts make the visitor want this for themselves.
 
 **DIRECTIVE:**
 
@@ -177,21 +108,19 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 **CURRENT:** Position 11 (second to last, before CallToAction). Component: `MiniCalculator/index.tsx`
 
-**VERDICT:** Move to position 5 — after Outcomes, before safety net sections. AIDA role: **Action** — the visitor has seen the problem (hero), the proof (product tour), and the desire (outcomes with dollar amounts). Now they're Solution-Aware and ready to act.
+**VERDICT:** Move to position 5 — after Outcomes, before safety net sections. AIDA role: **Action**.
 
-**Why position 5, not position 3:** Moving MiniCalc before Product Tour (as originally proposed) optimizes for MiniCalc entries but hurts signup conversion. At position 3, the visitor enters the MiniCalc with only hero + social proof — no understanding of what Vestigio does, no trust built, no objections addressed. BJ Fogg model: Ability is high (free, 60s) but Motivation is low (haven't seen value). At position 5, the visitor has seen Interest (product tour) and Desire (outcomes with $42k/month examples) — Motivation is high. Second-order effect: fewer total MiniCalc entries, but higher conversion downstream.
+**Why position 5, not position 3:** At position 5, the visitor has seen Interest (product tour) and Desire (outcomes with $42k/month examples) — Motivation is high. Fewer total MiniCalc entries, but higher conversion downstream.
 
 **DIRECTIVE:**
 
 | Element | Current | Write |
 |---------|---------|-------|
 | Eyebrow | "Free instant diagnostic" | "FREE DIAGNOSTIC" |
-| Tagline | "Try Vestigio on your own domain — no signup, no card." | Remove — the title does this job. |
+| Tagline | "Try Vestigio on your own domain — no signup, no card." | Remove |
 | Title | "See what you're leaving on the table" | "How much are you losing right now?" |
 | Subtitle | "Enter your website URL to get a free snapshot of potential revenue leaks." | "Enter your domain. No signup. No card. 60 seconds." |
 | CTA | "Run Free Diagnostic" | Keep |
-
-**Results state — keep as-is.** The findings table with dollar amounts is the strongest element on the site.
 
 **STATUS:** 🔲 Not started (position change + copy rewrite)
 
@@ -199,9 +128,9 @@ The `−R$81k/mês` is highlighted in `font-mono font-semibold text-red-400` —
 
 ## Section 7: Problem Statement (REPLACES Solution Layers)
 
-**CURRENT:** Position 4. Component: `SolutionLayers/index.tsx`. Three sticky-stack cards explaining Discover → Prioritize → Validate. Uses `homepage.solution_layers` i18n.
+**CURRENT:** Position 4. Component: `SolutionLayers/index.tsx`. Three sticky-stack cards explaining Discover → Prioritize → Validate.
 
-**VERDICT:** Replace content. Keep the sticky-stack visual treatment (great pattern) but change from product process to user consequence. Moves to position 6 — safety net for visitors who scrolled past MiniCalc without converting.
+**VERDICT:** Replace content. Keep the sticky-stack visual treatment. Change from product process to user consequence. Moves to position 6.
 
 **DIRECTIVE:**
 
@@ -237,7 +166,7 @@ Write:   "Fixes you can't verify. You ship a fix, but did it actually work?
 This is what "scaling in the dark" looks like. And it costs money every day.
 ```
 
-**Visual:** Keep the sticky-stack animation. Remove the agentic chat flow diagram — it's too product-oriented for this section.
+**Visual:** Keep the sticky-stack animation. Remove the agentic chat flow diagram.
 
 **STATUS:** 🔲 Not started
 
@@ -253,10 +182,10 @@ This is what "scaling in the dark" looks like. And it costs money every day.
 
 | Element | Current | Write |
 |---------|---------|-------|
-| Eyebrow | "Use Cases" (i18n) | "BUILT FOR" |
+| Eyebrow | "Use Cases" | "BUILT FOR" |
 | Title | "Audit, prioritize, recover — every layer of your funnel" | "Operators who won't scale blind" |
 
-**Replace 5 product-surface cards with 3 persona scenarios:**
+**3 persona scenarios:**
 
 **Card 1: The Founder**
 ```
@@ -276,7 +205,7 @@ Vestigio compares every surface against the last cycle. Regressions show up rank
 Vestigio traces chargeback risk to specific surfaces, policies, and trust gaps. Evidence attached.
 ```
 
-**Visual:** Clean cards, no icons. Just the quote + answer. The simplicity is the design.
+**Visual:** Clean cards, no icons. Just the quote + answer.
 
 **STATUS:** 🔲 Not started
 
@@ -284,11 +213,11 @@ Vestigio traces chargeback risk to specific surfaces, policies, and trust gaps. 
 
 ## Section 9: Counter / Value Props
 
-**CURRENT:** Position 7. Component: `Counter/index.tsx`. Bento grid with 6 items: Quick Start, Full Visibility, 4X ROI, Vestigio Pulse, Continuous Monitoring, Integrations.
+**CURRENT:** Position 7. Component: `Counter/index.tsx`. Bento grid with 6 items.
 
-**VERDICT:** Simplify to 3 items. Remove fluff.
+**VERDICT:** Simplify to 3 items.
 
-**DIRECTIVE:** Keep only the most compelling:
+**DIRECTIVE:**
 
 ```
 [4X ROI Guarantee]     [First diagnostic in 60s]     [15,000+ signals per cycle]
@@ -296,19 +225,7 @@ You literally can't     Enter your domain,            Automated. Continuous.
 lose.                   see results immediately.      No manual review needed.
 ```
 
-Remove: Quick Start (redundant with "60s"), Vestigio Pulse (save for later), Integrations (too early to mention).
-
-**STATUS:** 🔲 Not started
-
----
-
-## Section 10: Video Testimonials
-
-**CURRENT:** Position 8. Component: `VideoTestimonials/index.tsx`. Portrait videos with placeholder content from another product.
-
-**VERDICT:** Remove until real customer videos exist. Placeholder content ("Review Harvest", "Pooper Scoopers") is worse than no social proof.
-
-**DIRECTIVE:** Hide the component from the homepage composition. Re-add when real Vestigio customer testimonial videos are available. When re-adding, position ABOVE the counter section (social proof should precede claims).
+Remove: Quick Start (redundant), Vestigio Pulse (save for later), Integrations (too early).
 
 **STATUS:** 🔲 Not started
 
@@ -318,7 +235,7 @@ Remove: Quick Start (redundant with "60s"), Vestigio Pulse (save for later), Int
 
 **CURRENT:** Position 9. Component: `Testimonials/index.tsx`. Carousel with 5 generic industry cards (placeholder stats unrelated to Vestigio).
 
-**VERDICT:** Replace with real customer outcomes or replace with honest counter.
+**VERDICT:** Replace with real customer outcomes or honest counter.
 
 **DIRECTIVE:**
 
@@ -328,12 +245,10 @@ If real customers exist:
 — [Name], [Role]
 ```
 
-If no real customers yet, replace entire carousel with a single counter line:
+If no real customers yet:
 ```
 127 companies have run their first diagnostic.
 ```
-
-A real counter is more honest and more compelling than fake success stories. Generic industry stats ("51.42% Engagement Rate", "2.8x Revenue Growth") have no connection to Vestigio's value prop and damage credibility.
 
 **STATUS:** 🔲 Not started
 
@@ -341,7 +256,7 @@ A real counter is more honest and more compelling than fake success stories. Gen
 
 ## Section 12: FAQ
 
-**CURRENT:** Position 10. Component: `FAQ/index.tsx`. 4 questions (generic "what does Vestigio do", technical verification, try before buying, pricing plans).
+**CURRENT:** Position 10. Component: `FAQ/index.tsx`. 4 questions.
 
 **VERDICT:** Reduce to 3 questions. Replace with strategic conversion questions.
 
@@ -360,11 +275,10 @@ A real counter is more honest and more compelling than fake success stories. Gen
 
 ## Section 13: Final CTA
 
-**CURRENT:** Rendered on homepage. Component: `CallToAction/index.tsx`.
-- Title: "Ready to put your platform on autopilot?" ← uses AVOID word "autopilot" and "platform"
-- Subtitle: "Join SaaS teams using Vestigio to automate auditing..." ← uses AVOID words "automate", "auditing"
+**CURRENT:** Component: `CallToAction/index.tsx`.
+- Title: "Ready to put your platform on autopilot?" ← AVOID words
 - Primary CTA: "Get started free" ← should be "Run Free Diagnostic"
-- Secondary CTA: "Try live demo" ← blueprint says one action only
+- Secondary CTA: "Try live demo" ← one action only
 
 **VERDICT:** Rewrite. One CTA only.
 
@@ -377,9 +291,7 @@ CTA:      [Run Free Diagnostic]
 Micro:    "You can be looking at your first diagnostic in 60 seconds."
 ```
 
-Remove secondary CTA ("Try live demo"). One action only.
-
-**Visual:** Full-width, dark bg, centered. Emerald CTA button.
+Remove secondary CTA. One action only.
 
 **STATUS:** 🔲 Not started
 
@@ -389,34 +301,36 @@ Remove secondary CTA ("Try live demo"). One action only.
 
 **CURRENT ORDER (Home/index.tsx):**
 1. Hero ✅
-2. ProductTour
-3. ClientGallery
-4. SolutionLayers
-5. FeaturesWithImage
-6. Features
-7. Counter
-8. VideoTestimonials ← placeholder, should hide
-9. Testimonials ← placeholder, should hide or replace
-10. FAQ
-11. MiniCalculator ← wrong position
-12. CallToAction
+2. Social Proof Strip ✅
+3. VSL 🟡
+4. Product Tour ✅
+5. ClientGallery ✅
+6. SolutionLayers
+7. FeaturesWithImage
+8. Features
+9. Counter
+10. VideoTestimonials ✅ (real client videos from R2 CDN)
+11. Testimonials ← placeholder, should replace
+12. FAQ
+13. MiniCalculator ← wrong position
+14. (CallToAction missing from composition)
 
 **TARGET ORDER (AIDA-aligned):**
 1. Hero ✅ — **Attention**: loss-frame, curiosity gap
-2. Social Proof Strip ✅ — **Attention** reinforcement: −R$81k/mês
-3. VSL (NEW) — **Attention → Interest** bridge: video explanation
-4. Product Tour — **Interest**: "this is how it works"
-5. Outcomes (Features bento) — **Desire**: dollar amounts, concrete impact
-6. MiniCalculator (MOVED from 11) — **Action**: "now test on your domain"
+2. Social Proof Strip ✅ — **Attention** reinforcement
+3. VSL 🟡 — **Attention → Interest** bridge
+4. Product Tour ✅ — **Interest**: "this is how it works"
+5. Outcomes (Features bento) — **Desire**: dollar amounts
+6. MiniCalculator (MOVED from 13) — **Action**: "now test on your domain"
 7. ClientGallery — social proof strip (quiet)
-8. Problem Statement (rewritten SolutionLayers) — safety net: consequence of inaction
-9. Use Cases (rewritten FeaturesWithImage) — safety net: persona scenarios
-10. Counter (reduced to 3 items) — safety net: value props
-11. FAQ (reduced to 3 questions) — safety net: objection handling
-12. CallToAction (rewritten) — final action
+8. Problem Statement (rewritten SolutionLayers) — safety net
+9. Use Cases (rewritten FeaturesWithImage) — safety net
+10. Counter (reduced to 3 items) — safety net
+11. Video Testimonials ✅ — real client social proof
+12. FAQ (reduced to 3 questions) — objection handling
+13. CallToAction (rewritten) — final action
 
 **Removed until real content available:**
-- VideoTestimonials (placeholder from another product)
 - Success Stories (generic placeholder stats)
 
 ---
@@ -431,23 +345,9 @@ Remove secondary CTA ("Try live demo"). One action only.
 
 ---
 
-## Section 1: Hero + CTA
+## Section 1: Hero + CTA — REMAINING
 
-**CURRENT (implemented):**
-```
-Headline L1: "How much money is" (en) / "Quanto dinheiro está" (pt-BR)
-Headline L2: "leaking from your operation" (en) / "vazando da sua operação" (pt-BR)  ← emerald gradient
-Headline L3: "without you knowing?" (en) / "sem você perceber?" (pt-BR)  ← emerald gradient
-Subtitle L1: "Enter your domain." (en) / "Digite seu domínio." (pt-BR)
-Subtitle L2: "Find out in 60 seconds how much YOU lose." (en) / "Descubra em 60 segundos quanto VOCÊ perde." (pt-BR)
-```
-
-Gradient on L2+L3 controlled by `headline_gradient_parts: "2,3"`. "YOU"/"VOCÊ" rendered in bold.
-Desktop: subtitle on single line. Mobile: two lines (break after "Digite seu domínio.").
-
-**STATUS:** ✅ Done (separate `hero_lp` i18n namespace, all 4 locales, emerald gradient)
-
-**REMAINING:** The /lp currently renders the full homepage (all sections). It should be stripped to 5 sections only:
+The /lp currently renders the full homepage (all sections). It should be stripped to 5 sections only:
 
 1. Hero (with LP-specific copy) ✅
 2. MiniCalculator (immediate interaction)
@@ -455,15 +355,9 @@ Desktop: subtitle on single line. Mobile: two lines (break after "Digite seu dom
 4. One proof point (stat or real customer quote)
 5. Final CTA (repeat)
 
-**Visual:** Minimal. Dark bg, white text, emerald CTA. No pills, no animation on LP hero. The number does the work.
+**Visual:** Minimal. Dark bg, white text, emerald CTA. No pills, no animation on LP hero.
 
 **STATUS:** 🟡 Partial (hero done, page structure not stripped yet)
-
----
-
-## Section 2: MiniCalculator (immediate)
-
-Same component as homepage. No changes needed — the calculator IS the landing page.
 
 ---
 
@@ -524,56 +418,43 @@ You're either finding the leaks or funding them.
 
 **CURRENT:**
 1. Click "Run free diagnostic" on homepage
-2. → `/auth/signup` (standard auth page with Google/GitHub/Magic Link/Password)
+2. → `/auth/signup`
 3. After auth → `/app/onboarding` (7-step form)
 4. Step 7: Plan selection → Paddle checkout
-5. After payment → `/app/onboarding/thank-you` → redirect to `/app/inventory`
+5. After payment → redirect to `/app/inventory`
 
-**PROBLEMS:**
-- 7-step onboarding is too many steps
-- Multiple fields per step creates cognitive load
-- Plan selection happens AFTER 6 steps of data entry (user already invested, but also tired)
-- No progressive disclosure — user sees all fields at once per step
+**DIRECTIVE:** Simplify to 4 steps (1 question per screen):
 
-**PROPOSED:**
-
-### New Onboarding: 1 question per screen
-
-**DIRECTIVE:** Each step is a full-screen card with ONE field and a prominent "Continue" button. No scrolling. The progress indicator shows how many steps remain.
-
-**Step 1: Domain** (most important — gets them invested)
+**Step 1: Domain**
 ```
 What domain should we diagnose?
-[________________________] ← full-width input
-☐ I own or manage this domain  ← inline legal checkbox
+[________________________]
+☐ I own or manage this domain
 [Continue]
 "We only crawl public pages. No access to your code or data."
 ```
 
-**Step 2: Business type + Conversion model** (4 large cards, tap to select → sub-question appears)
+**Step 2: Business type + Conversion model** (4 large cards, tap to select)
 ```
 What kind of business?
-[Ecommerce]  [SaaS]
-[Lead Gen]   [Hybrid]
+[Ecommerce]  [SaaS]  [Lead Gen]  [Hybrid]
 ← tapping reveals: "How do customers complete a purchase?"
 [Online checkout]  [WhatsApp/Chat]  [Form/Contact]
-← tapping auto-advances
 ```
 
-**Step 3: Monthly revenue** (one field)
+**Step 3: Monthly revenue**
 ```
 What's your approximate monthly revenue?
-[________________________] ← accepts "$50k", "1.5m", etc.
+[________________________]
 [Continue]
 "This helps us calibrate impact estimates."
 ```
 
-**Step 4: Plan selection** (3 cards, one recommended, with annual toggle)
+**Step 4: Plan selection** (3 cards, one recommended)
 ```
 Pick the plan that matches your revenue at risk.
 [Monthly / Annual ← 20% off]
 [Starter $99]  [Pro $199 ★]  [Max $399]
-"Every plan pays for itself in the first cycle."
 ```
 
 **Result: 7 steps → 4 steps. Zero scrolling per step.**
@@ -584,32 +465,19 @@ Pick the plan that matches your revenue at risk.
 
 ## LP CTA → Lead Funnel
 
-**CURRENT:**
-1. Click "Run free diagnostic" on /lp
-2. → `/lp/audit` (4-step form: org, domain, metrics, email)
-3. → `/lp/audit/result/[id]` (polling, 5 findings, blurred 10)
-4. → Paddle checkout (unlock full diagnostic)
-5. → `/lp/audit/thank-you/[id]`
+**CURRENT:** 4-step form (org, domain, metrics, email)
 
 **DIRECTIVE:** Simplify to 3 steps:
 
 **Step 1:** Domain + ownership checkbox
 **Step 2:** Revenue (conversion model inferred from crawl signals)
-**Step 3:** Email only (no phone — phone is scary for cold leads)
+**Step 3:** Email only (no phone)
 
-**Result: 4 steps → 3 steps (domain, revenue, email). Faster to value.**
+**Result: 4 steps → 3 steps. Faster to value.**
 
-**Result page:** Keep the 5-visible + 10-blurred pattern. It's a strong conversion mechanic.
+Result page: Keep the 5-visible + 10-blurred pattern.
 
 **STATUS:** 🔲 Not started
-
----
-
-## MiniCalculator → Signup Bridge
-
-**CURRENT (implemented):** MiniCalc passes `?domain=` to `/auth/signup`. Signup page persists domain to `localStorage` (survives OAuth redirect). Onboarding reads and pre-fills the domain field.
-
-**STATUS:** ✅ Done
 
 ---
 
@@ -618,8 +486,6 @@ Pick the plan that matches your revenue at risk.
 ---
 
 ## CTA Consistency
-
-Every CTA across both pages should use the same language:
 
 | Context | CTA Text |
 |---------|----------|
@@ -636,26 +502,11 @@ Never: "Get Started", "Learn More", "Sign Up", "Try Free", "Run Free Audit"
 
 ## Number Formatting
 
-All financial numbers should follow these rules:
-- Always use the minus sign character `−` (U+2212), not hyphen `-`
+- Always use minus sign `−` (U+2212), not hyphen `-`
 - Always show ranges: `−$18k–$42k/mo`
 - Always include time unit: `/month` or `/mo`
-- Use `k` for thousands, `m` for millions — never spell out
+- Use `k` for thousands, `m` for millions
 - Confidence ranges when shown: `94% confidence`
-
----
-
-## i18n
-
-All homepage and LP components now use `next-intl` with translations in all 4 locales (en, pt-BR, es, de). English is the canonical language; others are translations.
-
-All copy changes must be made in this order:
-1. `en.json` (canonical)
-2. `pt-BR.json` (primary market)
-3. `es.json`
-4. `de.json`
-
-**STATUS:** ✅ Done (full i18n migration completed for all homepage sections)
 
 ---
 
@@ -663,79 +514,30 @@ All copy changes must be made in this order:
 
 - Hero: headline should be max 2 lines on 375px width
 - MiniCalc: full-width inputs, stacked vertically
-- Product Tour: tab icons only (no labels) on mobile — already implemented
+- Product Tour: tab icons only (no labels) on mobile — done
 - Problem cards: stack vertically, no sticky-stack on mobile
-- Outcome bento: single column on mobile — already implemented
+- Outcome bento: single column on mobile — done
 - Final CTA: full-width button, centered
 
 ---
 
-## Implementation Order (updated)
+## Implementation Order
 
 | Phase | What | Pages | Status |
 |-------|------|-------|--------|
-| **1** | Rewrite hero copy (both pages) | `/`, `/lp` | ✅ Done |
-| **2** | Full i18n migration (all homepage sections) | `/` | ✅ Done |
-| **3** | MiniCalc → Signup domain persistence | `/auth/signup`, onboarding | ✅ Done |
 | **4** | Move MiniCalc to position 5 (after Outcomes) | `/` | 🔲 |
-| **5** | Add social proof strip | `/` | 🔲 |
-| **6** | Rewrite final CTA section | `/` | 🔲 |
-| **7** | Reframe feature bento cards (copy only) | `/` | 🔲 |
-| **8** | Replace Solution Layers content | `/` | 🔲 |
-| **9** | Replace persona cards (FeaturesWithImage) | `/` | 🔲 |
-| **10** | Reduce Counter to 3 items | `/` | 🔲 |
-| **11** | Reduce FAQ to 3 questions | `/` | 🔲 |
-| **12** | Hide VideoTestimonials + Success Stories | `/` | 🔲 |
-| **13** | Strip /lp to 5 sections only | `/lp` | 🔲 |
-| **14** | Simplify onboarding (7→4 steps) | `/app/onboarding` | 🔲 |
-| **15** | Simplify LP lead form (4→3 steps) | `/lp/audit` | 🔲 |
+| **5** | Rewrite final CTA section | `/` | 🔲 |
+| **6** | Reframe feature bento cards (copy only) | `/` | 🔲 |
+| **7** | Replace Solution Layers content | `/` | 🔲 |
+| **8** | Replace persona cards (FeaturesWithImage) | `/` | 🔲 |
+| **9** | Reduce Counter to 3 items | `/` | 🔲 |
+| **10** | Reduce FAQ to 3 questions | `/` | 🔲 |
+| **11** | Replace Success Stories (real data or counter) | `/` | 🔲 |
+| **12** | Strip /lp to 5 sections only | `/lp` | 🔲 |
+| **13** | Simplify onboarding (7→4 steps) | `/app/onboarding` | 🔲 |
+| **14** | Simplify LP lead form (4→3 steps) | `/lp/audit` | 🔲 |
 
 ---
-
-## Success Metrics
-
-| Metric | Current (baseline) | Target |
-|--------|-------------------|--------|
-| Hero → MiniCalc scroll % | Measure | +30% |
-| MiniCalc completion rate | Measure | +20% |
-| MiniCalc → Signup conversion | Measure | +40% |
-| /lp bounce rate | Measure | −25% |
-| Onboarding completion rate | Measure | +50% (fewer steps) |
-| Time from CTA click to first diagnostic | Measure | <2 minutes |
-
----
-
-# PART 5 — CRO CORRECTIONS (applied)
-
-*Applied 2026-04-19 after running CRO skill audits against actual codebase.*
-
----
-
-## Pricing Copy (applied in code)
-
-| Current (fixed) | New |
-|-----------------|-----|
-| "Agentic insights" / "5x more agentic insights" | "Vestigio Pulse AI" / "5x Vestigio Pulse AI" |
-| "50 MCP calls/mo" / "250 MCP calls/mo" | "Vestigio Pulse AI interactions/mo" |
-| Plan: "Essential intelligence for small teams getting started" | "See what's costing you money. Fix the top 3." |
-| Plan: "Full analysis suite for growing businesses that need an edge" | "Full financial clarity across 3 environments. Daily." |
-| Plan: "Unlimited scale with dedicated support for large organizations" | "Enterprise-grade. 10 environments. Dedicated support. SLA." |
-
-## Auth Flow (applied in code)
-
-- Trust signals added to `/auth/signup`: "No credit card required" + "First diagnostic in 60s"
-- Domain persistence: MiniCalc → signup → onboarding via `localStorage`
-- OAuth callbacks redirect to `/app` (was `/admin`)
-- Onboarding pre-selects recommended plan (Pro)
-
-## Known Bugs (fixed in code)
-
-| Bug | Fix |
-|-----|-----|
-| Name field `maxlength="10"` | Changed to `maxlength="100"` |
-| OAuth callbacks to `/admin` | Changed to `/app` |
-| Lorem Ipsum in i18n sections | Replaced with proper copy |
-| "MCP calls" jargon in pricing | Replaced with "Vestigio Pulse AI" |
 
 ## Known Issues (not yet fixed)
 
@@ -746,5 +548,4 @@ All copy changes must be made in this order:
 | LP result page mixes English and Portuguese | Confusing for non-PT visitors | Medium |
 | Blurred findings don't show financial impact | Missed FOMO opportunity | Low |
 | No upgrade triggers for Maps/AI Chat/Integrations | Starter users miss Pro features | Medium |
-| Thank-you page uses hardcoded zinc colors | Broken in light mode | Low |
 | Paddle checkout double-open race condition | `setTimeout(1500ms)` is fragile | Low |

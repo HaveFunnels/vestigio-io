@@ -2211,8 +2211,8 @@
 				"placeholder": "__TODO__"
 			},
 			"business_context": {
-				"title": "__TODO__",
-				"subtitle": "__TODO__",
+				"title": "Welche Art von Geschäft?",
+				"subtitle": "Um die Diagnose an Ihr Modell anzupassen.",
 				"business_type": "__TODO__",
 				"types": {
 					"ecommerce": "__TODO__",
@@ -2234,8 +2234,14 @@
 					"checkout": "__TODO__",
 					"whatsapp": "__TODO__",
 					"form": "__TODO__",
-					"external": "__TODO__"
-				}
+					"external": "__TODO__",
+					"checkout_desc": "Online-Kauf auf der Website",
+					"whatsapp_desc": "Verkauf per Messaging",
+					"form_desc": "Lead-Erfassungsformulare",
+					"external_desc": "Weiterleitung zu externer Zahlung"
+				},
+				"conversion_title": "Wie konvertieren Ihre Kunden?",
+				"conversion_subtitle": "Das bestimmt, welche Pfade wir analysieren."
 			},
 			"saas_access": {
 				"title": "__TODO__",
@@ -2346,6 +2352,13 @@
 			"errors": {
 				"something_wrong": "__TODO__",
 				"network_error": "__TODO__"
+			},
+			"continue": "Weiter",
+			"revenue": {
+				"title": "Wie hoch ist Ihr ungefährer monatlicher Umsatz?",
+				"subtitle": "Das hilft uns, die Auswirkungsschätzungen zu kalibrieren.",
+				"placeholder": "z.B. $50k",
+				"hint": "Sie können $50k, 1.5m oder einfach eine Zahl eingeben."
 			}
 		},
 		"navigation": {

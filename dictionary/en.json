@@ -3026,8 +3026,8 @@
 				"ownership_description": "Vestigio will only crawl public pages. By checking this you confirm you have the right to analyze this site."
 			},
 			"business_context": {
-				"title": "Tell us about your business",
-				"subtitle": "Help Vestigio tailor its analysis to your business model.",
+				"title": "What kind of business?",
+				"subtitle": "So we can tailor the diagnostic to your model.",
 				"business_type": "Business type",
 				"types": {
 					"ecommerce": "Ecommerce",
@@ -3049,8 +3049,14 @@
 					"checkout": "Checkout (on-site purchase)",
 					"whatsapp": "WhatsApp / Messaging",
 					"form": "Form Submission",
-					"external": "External Redirect"
-				}
+					"external": "External Redirect",
+					"checkout_desc": "On-site purchase flow",
+					"whatsapp_desc": "Messaging-based sales",
+					"form_desc": "Lead capture forms",
+					"external_desc": "Redirect to external payment"
+				},
+				"conversion_title": "How do customers convert?",
+				"conversion_subtitle": "This determines which paths we analyze."
 			},
 			"saas_access": {
 				"title": "Authenticated app access",
@@ -3181,6 +3187,13 @@
 				"network_error": "Network error. Please try again.",
 				"activation_delayed": "Activation is taking longer than expected. Please refresh the page.",
 				"payment_loading": "Payment system is loading. Please try again in a moment."
+			},
+			"continue": "Continue",
+			"revenue": {
+				"title": "What's your approximate monthly revenue?",
+				"subtitle": "This helps us calibrate impact estimates.",
+				"placeholder": "e.g. $50k",
+				"hint": "You can type $50k, 1.5m, or just a number."
 			}
 		},
 		"navigation": {

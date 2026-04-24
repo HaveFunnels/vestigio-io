@@ -3045,8 +3045,8 @@
 				"ownership_description": "O Vestigio irá rastrear apenas páginas públicas. Ao marcar isso, você confirma que tem o direito de analisar este site."
 			},
 			"business_context": {
-				"title": "Conte-nos sobre seu negócio",
-				"subtitle": "Ajude a Vestigio a adaptar a análise ao seu modelo de negócio.",
+				"title": "Que tipo de negócio?",
+				"subtitle": "Para adaptarmos o diagnóstico ao seu modelo.",
 				"business_type": "Tipo de negócio",
 				"types": {
 					"ecommerce": "Ecommerce",
@@ -3068,8 +3068,14 @@
 					"checkout": "Checkout (compra no site)",
 					"whatsapp": "WhatsApp / Mensagens",
 					"form": "Envio de Formulário",
-					"external": "Redirecionamento Externo"
-				}
+					"external": "Redirecionamento Externo",
+					"checkout_desc": "Compra online no site",
+					"whatsapp_desc": "Vendas via mensagem",
+					"form_desc": "Formulários de captura",
+					"external_desc": "Redirecionamento para pagamento externo"
+				},
+				"conversion_title": "Como seus clientes convertem?",
+				"conversion_subtitle": "Isso determina quais caminhos analisamos."
 			},
 			"saas_access": {
 				"title": "Acesso autenticado ao app",
@@ -3200,6 +3206,13 @@
 				"network_error": "Erro de rede. Por favor, tente novamente.",
 				"activation_delayed": "A ativação está demorando mais do que o esperado. Atualize a página.",
 				"payment_loading": "O sistema de pagamento ainda está carregando. Tente novamente em instantes."
+			},
+			"continue": "Continuar",
+			"revenue": {
+				"title": "Qual é sua receita mensal aproximada?",
+				"subtitle": "Isso nos ajuda a calibrar as estimativas de impacto.",
+				"placeholder": "ex: R$50k",
+				"hint": "Você pode digitar R$50k, 1.5m, ou só um número."
 			}
 		},
 		"navigation": {

@@ -2985,8 +2985,8 @@
 				"ownership_description": "Vestigio solo rastreará páginas públicas. Al marcar esto confirmas que tienes derecho a analizar este sitio."
 			},
 			"business_context": {
-				"title": "Cuéntanos sobre tu negocio",
-				"subtitle": "Ayuda a Vestigio a adaptar su análisis a tu modelo de negocio.",
+				"title": "¿Qué tipo de negocio?",
+				"subtitle": "Para adaptar el diagnóstico a tu modelo.",
 				"business_type": "Tipo de negocio",
 				"types": {
 					"ecommerce": "Ecommerce",
@@ -3008,8 +3008,14 @@
 					"checkout": "Checkout (compra en el sitio)",
 					"whatsapp": "WhatsApp / Mensajería",
 					"form": "Envío de Formulario",
-					"external": "Redirección Externa"
-				}
+					"external": "Redirección Externa",
+					"checkout_desc": "Compra en línea en el sitio",
+					"whatsapp_desc": "Ventas por mensajería",
+					"form_desc": "Formularios de captura",
+					"external_desc": "Redirección a pago externo"
+				},
+				"conversion_title": "¿Cómo convierten tus clientes?",
+				"conversion_subtitle": "Esto determina qué rutas analizamos."
 			},
 			"saas_access": {
 				"title": "Acceso autenticado a la app",
@@ -3140,6 +3146,13 @@
 				"network_error": "Error de red. Por favor intenta de nuevo.",
 				"activation_delayed": "La activación está tardando más de lo esperado. Recarga la página.",
 				"payment_loading": "El sistema de pago todavía se está cargando. Inténtalo de nuevo en un momento."
+			},
+			"continue": "Continuar",
+			"revenue": {
+				"title": "¿Cuál es tu ingreso mensual aproximado?",
+				"subtitle": "Esto nos ayuda a calibrar las estimaciones de impacto.",
+				"placeholder": "ej: $50k",
+				"hint": "Puedes escribir $50k, 1.5m, o solo un número."
 			}
 		},
 		"navigation": {

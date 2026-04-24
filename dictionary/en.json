@@ -628,10 +628,10 @@
 			]
 		},
 		"cta": {
-			"title": "Ready to put your platform on autopilot?",
-			"subtitle": "Join SaaS teams using Vestigio to automate auditing, detect regressions, and make evidence-based decisions.",
-			"primary": "Get started free",
-			"secondary": "Try live demo"
+			"title": "The money is leaving now.",
+			"subtitle": "Every day without visibility is revenue you don't recover.",
+			"primary": "Run Free Diagnostic",
+			"micro": "You can be looking at your first diagnostic in 60 seconds."
 		},
 		"video_testimonials": {
 			"title": "Hear from Our Clients",

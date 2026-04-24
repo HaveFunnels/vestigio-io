@@ -11,6 +11,7 @@ import Counter from "@/components/Home/Counter";
 import Testimonials from "@/components/Home/Testimonials";
 import FAQ from "@/components/Home/FAQ";
 import MiniCalculator from "@/components/Home/MiniCalculator";
+import CallToAction from "@/components/Home/CallToAction";
 
 // ──────────────────────────────────────────────
 // HomeLp — landing page variant for /lp commercial funnel.
@@ -49,6 +50,7 @@ const HomeLp = () => {
 			<Testimonials />
 			<FAQ />
 			<MiniCalculator primaryCtaHref={LP_CTA_HREF} />
+			<CallToAction primaryCtaHref={LP_CTA_HREF} />
 		</>
 	);
 };

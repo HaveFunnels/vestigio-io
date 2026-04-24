@@ -12,6 +12,7 @@ import VideoTestimonials from "./VideoTestimonials";
 import Testimonials from "./Testimonials";
 import FAQ from "./FAQ";
 import MiniCalculator from "./MiniCalculator";
+import CallToAction from "./CallToAction";
 
 // ──────────────────────────────────────────────
 // Home — public marketing root.
@@ -52,6 +53,7 @@ const Home = () => {
 			<Testimonials />
 			<FAQ />
 			<MiniCalculator />
+			<CallToAction />
 		</>
 	);
 };

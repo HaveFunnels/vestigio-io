@@ -628,10 +628,10 @@
 			]
 		},
 		"cta": {
-			"title": "Pronto para colocar sua plataforma no piloto automático?",
-			"subtitle": "Junte-se a equipes SaaS que usam a Vestigio para automatizar auditorias, detectar regressões e tomar decisões baseadas em evidências.",
-			"primary": "Comece grátis",
-			"secondary": "Teste a demo"
+			"title": "O dinheiro está saindo agora.",
+			"subtitle": "Cada dia sem visibilidade é receita que você não recupera.",
+			"primary": "Rodar Diagnóstico Gratuito",
+			"micro": "Você pode estar olhando seu primeiro diagnóstico em 60 segundos."
 		},
 		"video_testimonials": {
 			"title": "Ouça nossos clientes",

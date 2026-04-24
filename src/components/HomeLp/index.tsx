@@ -41,6 +41,7 @@ const HomeLp = () => {
 				<ProductTour primaryCtaHref={LP_CTA_HREF} />
 				<ClientGallery />
 			</HomeBigCard>
+			<MiniCalculator primaryCtaHref={LP_CTA_HREF} />
 			<SolutionLayers />
 			<FeaturesWithImage />
 			<Features />

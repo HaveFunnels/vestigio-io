@@ -43,6 +43,7 @@ const Home = () => {
 				<ProductTour />
 				<ClientGallery />
 			</HomeBigCard>
+			<MiniCalculator />
 			<SolutionLayers />
 			<FeaturesWithImage />
 			<Features />

@@ -44,7 +44,7 @@ export default function LpAuditPage() {
 
 	return (
 		<>
-			{/* Honeypot — hidden from humans, bots fill it */}
+			{/* Additional field */}
 			<div
 				aria-hidden="true"
 				style={{
@@ -56,9 +56,7 @@ export default function LpAuditPage() {
 					overflow: "hidden",
 				}}
 			>
-				<label htmlFor="website">
-					Website (do not fill this — leave blank)
-				</label>
+				<label htmlFor="website">Website</label>
 				<input
 					id="website"
 					type="text"

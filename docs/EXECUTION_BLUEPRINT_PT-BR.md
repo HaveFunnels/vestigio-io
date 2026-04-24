@@ -422,7 +422,7 @@ Nunca: "Comece Grátis", "Saiba Mais", "Cadastre-se", "Teste Grátis", "Rodar Au
 
 | Fase | O quê | Páginas | Status |
 |------|-------|---------|--------|
-| **4** | Mover MiniCalc para posição 5 | `/` | 🔲 |
+| **4** | ~~Mover MiniCalc para posição 5~~ → Adicionada cópia após HomeBigCard | `/`, `/lp` | ✅ |
 | **5** | Reescrever CTA final | `/` | 🔲 |
 | **6** | Reformular cards do features bento | `/` | 🔲 |
 | **7** | Substituir conteúdo Solution Layers | `/` | 🔲 |

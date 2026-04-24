@@ -1,12 +1,8 @@
-// Barrel exports for the shared form fields used by /onboard and /lp/audit.
+// Shared form field types and utilities.
 //
-// Importing pattern:
-//   import { DomainField, BusinessTypeField, RevenueField, parseRevenue }
-//     from "@/components/form-fields";
-//
-// Anything new that needs to be shared between the two funnels should
-// land in this folder and be re-exported here.
+// The UI components (SharedFields, StyledDropdown) were removed in the
+// premium form redesign — both funnels now use src/components/form-steps/.
+// This barrel re-exports only the types and helpers still used by
+// backend routes (parseRevenue, isValidPhone, isValidDomainFormat).
 
 export * from "./types";
-export * from "./StyledDropdown";
-export * from "./SharedFields";

@@ -66,7 +66,11 @@ export default function AdminCreateOrganizationPage() {
     id: string;
     name: string;
     ownerEmail: string;
+    ownerId: string;
+    ownerCreated: boolean;
   } | null>(null);
+  const [resendingActivation, setResendingActivation] = useState(false);
+  const [activationResent, setActivationResent] = useState(false);
 
   // ── Load plan options on mount ──
   useEffect(() => {
@@ -157,7 +161,10 @@ export default function AdminCreateOrganizationPage() {
         id: data.organization.id,
         name: data.organization.name,
         ownerEmail: data.owner.email,
+        ownerId: data.owner.id,
+        ownerCreated: data.owner.created,
       });
+      setActivationResent(false);
     } catch {
       setError("Failed to create organization");
     } finally {
@@ -210,9 +217,11 @@ export default function AdminCreateOrganizationPage() {
           </h1>
           <p className="mt-2 text-sm text-content-muted">
             <span className="font-medium text-content">{createdOrg.name}</span> is
-            ready. Owner <span className="font-mono text-content-secondary">{createdOrg.ownerEmail}</span>{" "}
-            was created without a password — sign in as them via impersonation,
-            or let the customer set one via password reset.
+            ready. {createdOrg.ownerCreated ? (
+              <>An activation email was sent to <span className="font-mono text-content-secondary">{createdOrg.ownerEmail}</span> — they have 7 days to activate. You can also sign in as them via impersonation.</>
+            ) : (
+              <>Owner <span className="font-mono text-content-secondary">{createdOrg.ownerEmail}</span> already had an account — they can log in normally.</>
+            )}
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
@@ -222,6 +231,34 @@ export default function AdminCreateOrganizationPage() {
             >
               Sign in as owner
             </button>
+            {createdOrg.ownerCreated && (
+              <button
+                onClick={async () => {
+                  setResendingActivation(true);
+                  try {
+                    const res = await fetch("/api/admin/organizations/resend-activation", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ userId: createdOrg.ownerId, domain: domain || createdOrg.name }),
+                    });
+                    if (res.ok) {
+                      setActivationResent(true);
+                    } else {
+                      const data = await res.json().catch(() => ({}));
+                      alert(data.message || "Failed to resend");
+                    }
+                  } catch {
+                    alert("Network error");
+                  } finally {
+                    setResendingActivation(false);
+                  }
+                }}
+                disabled={resendingActivation || activationResent}
+                className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
+              >
+                {activationResent ? "Activation email resent ✓" : resendingActivation ? "Sending..." : "Resend activation email"}
+              </button>
+            )}
             <Link
               href={`/app/admin/organizations/${createdOrg.id}`}
               className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"

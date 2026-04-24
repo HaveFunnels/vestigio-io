@@ -564,42 +564,26 @@
 			"subtitle": "De ecommerce a SaaS a captação de leads, a Vestigio é o motor de decisão que operadores buscam quando algo está custando dinheiro — e querem saber exatamente o quê."
 		},
 		"use_cases": {
-			"eyebrow": "O que a Vestigio faz",
-			"title": "Audite, priorize, recupere — em cada camada do seu funil",
+			"eyebrow": "Feito para",
+			"title": "Operadores que não escalam no escuro",
 			"subtitle": "",
-			"items": [
+			"personas": [
 				{
-					"tag": "Fila de Ações",
-					"title": "Priorize as correções que realmente movem faturamento",
-					"description": "",
-					"cta": "Explorar Ações"
+					"persona": "O Fundador",
+					"question": "Gasto R$200k/mês em ads. Estou mandando tráfego pra um funil quebrado?",
+					"answer": "A Vestigio responde em 60 segundos. Com valores em reais em cada finding."
 				},
 				{
-					"tag": "Auditoria de Faturamento",
-					"title": "Encontre cada vazamento no seu funil",
-					"description": "A Vestigio quantifica perdas superfície por superfície — checkout, preços, onboarding — com faixas de confiança, não achismos.",
-					"cta": "Explorar Auditoria"
+					"persona": "O Head de Growth",
+					"question": "Fizemos deploy semana passada. Quebrou alguma coisa?",
+					"answer": "A Vestigio compara cada superfície com o ciclo anterior. Regressões aparecem ranqueadas por impacto."
 				},
 				{
-					"tag": "Trilha de Evidência",
-					"title": "Cada descoberta rastreia até prova multi-fonte",
-					"description": "",
-					"cta": "Explorar Evidência"
-				},
-				{
-					"tag": "Vigilância Contínua",
-					"title": "Detecte regressões antes dos seus clientes",
-					"description": "Cada deploy e campanha cria novos vetores. A Vestigio re-audita continuamente para que nada degrade em silêncio.",
-					"cta": "Explorar Monitoramento"
-				},
-				{
-					"tag": "Motor de Decisão IA",
-					"title": "Pergunte em linguagem natural, decida com contexto completo",
-					"description": "Um workspace para cada pergunta de negócio — faturamento, churn, chargeback. A Vestigio Pulse conecta respostas à evidência.",
-					"cta": "Explorar Workspaces"
+					"persona": "O CTO",
+					"question": "Chargebacks estão subindo. Qual é a causa raiz?",
+					"answer": "A Vestigio rastreia risco de chargeback até superfícies, políticas e gaps de confiança específicos. Evidência anexada."
 				}
-			],
-			"cta_primary": "Comece sua primeira auditoria"
+			]
 		},
 		"mini_calc_card": {
 			"eyebrow": "Diagnóstico gratuito instantâneo",

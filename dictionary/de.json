@@ -565,42 +565,26 @@
 			"subtitle": "Von Ecommerce über SaaS bis Lead-Gen — Vestigio ist die Entscheidungs-Engine, zu der Operatoren greifen, wenn etwas Geld kostet — und sie genau wissen wollen, was."
 		},
 		"use_cases": {
-			"eyebrow": "Was Vestigio macht",
-			"title": "Auditieren, priorisieren, zurückgewinnen — auf jeder Funnel-Ebene",
+			"eyebrow": "Gebaut für",
+			"title": "Operatoren, die nicht blind skalieren",
 			"subtitle": "",
-			"items": [
+			"personas": [
 				{
-					"tag": "Aktionswarteschlange",
-					"title": "Priorisieren Sie Fixes, die Umsatz wirklich bewegen",
-					"description": "",
-					"cta": "Aktionen erkunden"
+					"persona": "Der Gründer",
+					"question": "Ich gebe $40k/Monat für Ads aus. Schicke ich Traffic in einen kaputten Funnel?",
+					"answer": "Vestigio antwortet in 60 Sekunden. Mit Dollarwerten bei jedem Fund."
 				},
 				{
-					"tag": "Umsatz-Audit",
-					"title": "Finden Sie jedes Leck in Ihrem Funnel",
-					"description": "Vestigio quantifiziert Verluste Fläche für Fläche — Checkout, Preise, Onboarding — mit Konfidenzbereichen, nicht Vermutungen.",
-					"cta": "Audit erkunden"
+					"persona": "Der Head of Growth",
+					"question": "Wir haben letzte Woche deployed. Ist etwas kaputt gegangen?",
+					"answer": "Vestigio vergleicht jede Oberfläche mit dem letzten Zyklus. Regressionen erscheinen nach Auswirkung sortiert."
 				},
 				{
-					"tag": "Beweis-Spur",
-					"title": "Jeder Fund führt zurück zu Multi-Source-Beweis",
-					"description": "",
-					"cta": "Beweise erkunden"
-				},
-				{
-					"tag": "Kontinuierliche Wache",
-					"title": "Erkennen Sie Regressionen, bevor Ihre Kunden es tun",
-					"description": "Jeder Deploy und jede Kampagne erzeugt neue Vektoren. Vestigio auditiert kontinuierlich, damit nichts im Stillen degradiert.",
-					"cta": "Monitoring erkunden"
-				},
-				{
-					"tag": "KI-Entscheidungs-Engine",
-					"title": "Fragen Sie in natürlicher Sprache, entscheiden Sie mit vollem Kontext",
-					"description": "Ein Workspace pro Geschäftsfrage — Umsatz, Churn, Chargeback. Vestigio Pulse verbindet Antworten mit dem Beweis.",
-					"cta": "Workspaces erkunden"
+					"persona": "Der CTO",
+					"question": "Chargebacks steigen. Was ist die Ursache?",
+					"answer": "Vestigio verfolgt Chargeback-Risiken zu spezifischen Oberflächen, Richtlinien und Vertrauenslücken. Beweise angehängt."
 				}
-			],
-			"cta_primary": "Erstes Audit starten"
+			]
 		},
 		"mini_calc_card": {
 			"eyebrow": "Sofortige kostenlose Diagnose",

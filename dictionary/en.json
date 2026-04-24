@@ -564,42 +564,26 @@
 			"subtitle": "From ecommerce to SaaS to lead-gen, Vestigio is the decision engine operators reach for when something is costing them money — and they want to know exactly what."
 		},
 		"use_cases": {
-			"eyebrow": "What Vestigio does",
-			"title": "Audit, prioritize, recover — every layer of your funnel",
+			"eyebrow": "Built for",
+			"title": "Operators who won't scale blind",
 			"subtitle": "",
-			"items": [
+			"personas": [
 				{
-					"tag": "Action Queue",
-					"title": "Prioritize the fixes that actually move revenue",
-					"description": "",
-					"cta": "Explore Actions"
+					"persona": "The Founder",
+					"question": "I spend $40k/month on ads. Am I sending traffic into a broken funnel?",
+					"answer": "Vestigio answers in 60 seconds. With dollar amounts on every finding."
 				},
 				{
-					"tag": "Revenue Audit",
-					"title": "Find every leak across your funnel",
-					"description": "Vestigio quantifies losses surface-by-surface — checkout, pricing, onboarding — with confidence ranges, not vibes.",
-					"cta": "Explore Audit"
+					"persona": "The Head of Growth",
+					"question": "We shipped last week. Did anything break?",
+					"answer": "Vestigio compares every surface against the last cycle. Regressions show up ranked by impact."
 				},
 				{
-					"tag": "Evidence Trail",
-					"title": "Every finding traces back to multi-source proof",
-					"description": "",
-					"cta": "Explore Evidence"
-				},
-				{
-					"tag": "Continuous Watch",
-					"title": "Catch regressions before your customers do",
-					"description": "Each deploy and campaign creates new vectors. Vestigio re-audits continuously so nothing degrades in silence.",
-					"cta": "Explore Monitoring"
-				},
-				{
-					"tag": "AI Decision Engine",
-					"title": "Ask in plain language, decide with full context",
-					"description": "A workspace for every business question — receita, churn, chargeback. Vestigio Pulse ties answers back to the evidence.",
-					"cta": "Explore Workspaces"
+					"persona": "The CTO",
+					"question": "Chargebacks are climbing. Where's the root cause?",
+					"answer": "Vestigio traces chargeback risk to specific surfaces, policies, and trust gaps. Evidence attached."
 				}
-			],
-			"cta_primary": "Start your first audit"
+			]
 		},
 		"mini_calc_card": {
 			"eyebrow": "Free instant diagnostic",

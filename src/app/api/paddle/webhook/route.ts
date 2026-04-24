@@ -91,6 +91,11 @@ async function findUserOrg(userId: string) {
 	return membership?.organization || null;
 }
 
+// Idempotency tracker — in-memory dedup for webhook event IDs.
+// Prevents replay attacks and double-processing from Paddle retries.
+// Entries auto-pruned after 1h. For multi-instance deploys, move to Redis.
+const processedWebhookIds = new Map<string, number>();
+
 // Helper: log webhook event for debugging
 function logEvent(eventType: string, detail: string) {
 	console.log(`[Paddle Webhook] ${eventType}: ${detail}`);
@@ -123,7 +128,23 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 
 		const body = JSON.parse(rawBody);
 		const eventType = body.event_type as string;
+		const eventId = body.event_id || body.notification_id || "";
 		const data = body.data;
+
+		// Idempotency: reject replayed webhooks
+		if (eventId && processedWebhookIds.has(eventId)) {
+			return NextResponse.json({ message: "Already processed" }, { status: 200 });
+		}
+		if (eventId) {
+			processedWebhookIds.set(eventId, Date.now());
+			// Prune old entries (keep last 1h)
+			if (processedWebhookIds.size > 1000) {
+				const cutoff = Date.now() - 3600_000;
+				for (const [k, v] of processedWebhookIds) {
+					if (v < cutoff) processedWebhookIds.delete(k);
+				}
+			}
+		}
 
 		logEvent(eventType, JSON.stringify(data).slice(0, 200));
 

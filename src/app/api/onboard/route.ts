@@ -24,7 +24,17 @@ import { checkRateLimit } from "@/libs/limiter";
 
 const onboardSchema = z.object({
   organizationName: z.string().min(1).max(100),
-  domain: z.string().min(3),
+  domain: z.string().min(3).max(253).refine(
+    (d) => {
+      const cleaned = d.replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase();
+      // Block path traversal, localhost, IPs, and special chars
+      if (/^[./]|\.\.|\s|[<>"'`]/.test(cleaned)) return false;
+      if (/^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01]))/.test(cleaned)) return false;
+      // Must look like a domain (at least one dot, valid chars)
+      return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(cleaned);
+    },
+    { message: "Invalid domain format" },
+  ),
   businessModel: z.enum(["ecommerce", "lead_gen", "saas", "hybrid"]),
   monthlyRevenue: z.number().nullable().optional(),
   averageOrderValue: z.number().nullable().optional(),

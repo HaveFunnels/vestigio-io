@@ -122,7 +122,10 @@ interface CreateOrgBody {
 function normalizeDomain(input: string): string {
   let d = input.trim().toLowerCase();
   d = d.replace(/^https?:\/\//, "");
-  d = d.replace(/\/$/, "");
+  d = d.replace(/\/.*$/, ""); // strip path
+  // Block path traversal, localhost, private IPs, special chars
+  if (/^[./]|\.\.|\s|[<>"'`]/.test(d)) throw new Error("Invalid domain format");
+  if (/^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01]))/.test(d)) throw new Error("Cannot use reserved/private domain");
   return d;
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { checkRateLimit } from "@/libs/limiter";
 
 // ──────────────────────────────────────────────
 // POST /api/activate/oauth-prepare
@@ -34,6 +35,9 @@ const ALLOWED_PROVIDERS = new Set(["google", "github"]);
 
 export const POST = withErrorTracking(
 	async function POST(req: NextRequest) {
+		const limited = await checkRateLimit(5, 60000);
+		if (limited) return limited;
+
 		let body: { token?: unknown; provider?: unknown };
 		try {
 			body = await req.json();
@@ -79,7 +83,7 @@ export const POST = withErrorTracking(
 		res.cookies.set("vestigio_activation_token", token, {
 			httpOnly: true,
 			sameSite: "lax", // must survive OAuth provider redirects
-			secure: process.env.NODE_ENV === "production",
+			secure: !base.startsWith("http://localhost"),
 			maxAge: ACTIVATION_COOKIE_TTL_SECONDS,
 			path: "/",
 		});

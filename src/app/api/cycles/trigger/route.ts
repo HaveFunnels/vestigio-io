@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
+import { checkRateLimit } from "@/libs/limiter";
 
 // ──────────────────────────────────────────────
 // POST /api/cycles/trigger
@@ -54,6 +55,10 @@ function errorResponse(
 }
 
 export async function POST(request: Request) {
+	// Rate limit: 10 triggers per hour per IP
+	const limited = await checkRateLimit(10, 3600000);
+	if (limited) return limited;
+
 	const session = await getServerSession(authOptions);
 	const userId = (session?.user as any)?.id;
 	if (!session?.user || !userId) {

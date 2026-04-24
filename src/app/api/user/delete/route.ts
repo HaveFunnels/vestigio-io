@@ -5,8 +5,13 @@ import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { userDeleteSchema } from "./schema";
+import { blockIfImpersonating } from "@/libs/impersonation-guard";
 
 export const DELETE = withErrorTracking(async function DELETE(request: Request) {
+	// Block destructive actions when admin is impersonating
+	const impersonationBlock = await blockIfImpersonating();
+	if (impersonationBlock) return impersonationBlock;
+
 	const session = await getServerSession(authOptions);
 
 	if (!session?.user?.email) {

@@ -6,6 +6,9 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import type Stripe from "stripe";
 
+// Idempotency tracker — prevents webhook replay attacks.
+const processedStripeEvents = new Map<string, number>();
+
 export const POST = withErrorTracking(async function POST(request: Request) {
 	const body = await request.text();
 	const signature = (await headers()).get("Stripe-Signature") ?? "";
@@ -28,6 +31,18 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 			`Webhook Error: ${err instanceof Error ? err.message : "Unknown Error"}`,
 			{ status: 400 }
 		);
+	}
+
+	// Idempotency: reject replayed events
+	if (processedStripeEvents.has(event.id)) {
+		return new Response(null, { status: 200 });
+	}
+	processedStripeEvents.set(event.id, Date.now());
+	if (processedStripeEvents.size > 1000) {
+		const cutoff = Date.now() - 3600_000;
+		for (const [k, v] of processedStripeEvents) {
+			if (v < cutoff) processedStripeEvents.delete(k);
+		}
 	}
 
 	const session = event.data.object as Stripe.Checkout.Session;

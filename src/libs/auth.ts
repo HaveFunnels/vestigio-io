@@ -373,6 +373,7 @@ export const authOptions: NextAuthOptions = {
 					hasOrganization: signals.hasOrganization,
 					hasActivatedEnv: signals.hasActivatedEnv,
 					isImpersonating,
+					impersonationStartedAt: isImpersonating ? Date.now() : undefined,
 					role: user.role,
 					picture: user.image,
 					image: user.image,

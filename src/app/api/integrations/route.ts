@@ -7,6 +7,7 @@ import { encryptConfig, decryptConfig } from "@/libs/integration-crypto";
 import { verifyMetaAdsConnection } from "../../../../workers/meta-ads/poller";
 import { verifyGoogleAdsConnection } from "../../../../workers/google-ads/poller";
 import { z } from "zod";
+import { blockIfImpersonating } from "@/libs/impersonation-guard";
 
 // ──────────────────────────────────────────────
 // Integrations — POST (connect) + GET (list) + DELETE (disconnect)
@@ -316,6 +317,9 @@ export const GET = withErrorTracking(async function GET(request: Request) {
 // ── DELETE — Disconnect an integration ───────
 
 export const DELETE = withErrorTracking(async function DELETE(request: Request) {
+  const impersonationBlock = await blockIfImpersonating();
+  if (impersonationBlock) return impersonationBlock;
+
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });

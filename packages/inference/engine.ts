@@ -2567,6 +2567,7 @@ function inferDeepCommerceExploitationRisk(byKey: Map<string, Signal>, scoping: 
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Deeply reachable commerce surfaces combine business-logic abuse exposure with safeguard bypass conditions. Guessable endpoints without authentication, exposed refund/billing actions, and alternate pricing paths compound to make deep commerce surfaces materially easier to exploit than the primary purchase flow. This is the exploitation gradient: the primary checkout has security, the deeper endpoints have business logic but not the matching protection. Automated fraud tools target exactly this gap.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2585,6 +2586,7 @@ function inferCheckoutApiLatency(byKey: Map<string, Signal>, scoping: Scoping, c
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Payment-critical API responses on checkout surfaces exceed acceptable latency thresholds. Every second of checkout latency costs conversion: buyers who wait for payment processing to respond are progressively more likely to abandon. This is not generic page slowness — it is latency at the exact moment of purchase commitment.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2599,6 +2601,7 @@ function inferCommercialPagesSlow(byKey: Map<string, Signal>, scoping: Scoping, 
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `The pages that generate revenue are disproportionately slower than the rest of the site. Visitors browse at normal speed but hit friction when they reach the commercial path. This asymmetry means the site performs well enough to attract buyers but degrades at the moment they try to convert.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2613,6 +2616,7 @@ function inferPaidLandingOverloaded(byKey: Map<string, Signal>, scoping: Scoping
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `The landing page is overloaded with third-party requests before buyers reach any meaningful action. Paid traffic — which has a real per-click cost — is hitting a heavy runtime wall. CAC increases because media spend arrives into a page that cannot present the offer quickly enough to capture intent.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2627,6 +2631,7 @@ function inferThirdPartyWeightDelaysTrust(byKey: Map<string, Signal>, scoping: S
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Heavy third-party dependency chains on commercial surfaces delay the moment when buyers feel trust and form intent. Non-essential external scripts, widgets, and trackers are consuming bandwidth and execution time before the buyer reaches the point of confidence. Each delayed second widens the gap between intent arrival and trust formation.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2641,6 +2646,7 @@ function inferCheckoutBrittleThirdParty(byKey: Map<string, Signal>, scoping: Sco
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Checkout completion depends on third-party services that are failing or unstable during browser verification. When payment providers, cart APIs, or checkout widgets fail to respond reliably, every affected session is a potential lost transaction. This is operational fragility at the revenue-critical surface.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2654,6 +2660,7 @@ function inferPurchaseBlockedFailingRequests(byKey: Map<string, Signal>, scoping
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Payment or commerce API requests are failing on purchase surfaces. This is not slow loading — it is active failure. Buyers who reach checkout and attempt to purchase are being blocked by requests that return errors or never complete. Every instance is a buyer who wanted to pay but could not.`,
+    reasoning_slots: { severity: sig.value || 'high' },
   })];
 }
 
@@ -2668,6 +2675,7 @@ function inferMeasurementBreaksRevenuePath(byKey: Map<string, Signal>, scoping: 
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Analytics and measurement requests are failing at runtime on the pages that generate revenue. The instrumentation appears to be present but is not actually executing — conversion data, attribution, and funnel metrics are silently dropping on the surfaces that matter most for optimization and ROI measurement.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2682,6 +2690,7 @@ function inferPurchaseBeforeDepsReady(byKey: Map<string, Signal>, scoping: Scopi
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Critical payment and trust dependencies take too long to become available on checkout surfaces. Buyers can see and interact with the purchase UI before payment processing, trust badges, or support widgets are ready. This sequencing gap means the purchase moment arrives before the infrastructure that supports it — leading to failed transactions, missing trust signals, and incomplete checkout experiences.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2696,6 +2705,7 @@ function inferTrustAssetsLateLoad(byKey: Map<string, Signal>, scoping: Scoping, 
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Trust and reassurance assets — support chat, review widgets, trust badges — start loading well after the page is interactive. Buyers form their trust impression in the first few seconds. When reassurance layers arrive late, the hesitation window is already open and abandonment decisions have already been made. The reassurance investment is wasted because it arrives after the moment it was needed.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2710,6 +2720,7 @@ function inferMobileHeavyRuntimeChain(byKey: Map<string, Signal>, scoping: Scopi
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `The mobile commerce path carries a heavy third-party runtime dependency chain. Mobile connections are slower and more constrained than desktop — the same dependency weight that is tolerable on desktop becomes conversion-killing on mobile. Media spend directed at mobile audiences is landing into an experience that physically cannot convert as efficiently as desktop due to runtime overload.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2724,6 +2735,7 @@ function inferMobileTrustPaymentDepsFailing(byKey: Map<string, Signal>, scoping:
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `Payment, trust, and measurement dependencies are failing on mobile commercial surfaces. Mobile buyers — who typically represent the majority of traffic — are entering a weaker operational environment than desktop. Payment SDKs fail to load, support widgets do not appear, and measurement breaks on the very surfaces where mobile conversion needs the most support.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -2738,6 +2750,7 @@ function inferTrustSurfacesUnstableDeps(byKey: Map<string, Signal>, scoping: Sco
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
     reasoning: `The layers that make buyers feel safe — support widgets, review badges, trust signals, chat tools — depend on external services that are failing or unreliable. Trust-critical surfaces are supposed to reduce hesitation and prevent abandonment, but when these dependencies fail, the trust infrastructure becomes invisible exactly when it matters most. The result is a checkout that looks bare and untrustworthy during outage or degradation of external providers.`,
+    reasoning_slots: { severity },
   })];
 }
 

@@ -91,10 +91,10 @@ export default function TextInputStep({
 					onKeyDown={handleKeyDown}
 					placeholder={placeholder}
 					autoComplete={inputType === "email" ? "email" : inputType === "url" ? "url" : "off"}
-					className={`w-full rounded-xl border bg-zinc-100 px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition-colors focus:border-zinc-400 focus:bg-white ${
+					className={`shiny-input w-full rounded-xl px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none ${
 						error
-							? "border-red-400 bg-red-50 focus:border-red-500"
-							: "border-zinc-200"
+							? "!border-red-400 !bg-red-50"
+							: ""
 					}`}
 				/>
 			</div>

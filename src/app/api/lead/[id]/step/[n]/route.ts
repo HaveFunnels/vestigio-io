@@ -43,6 +43,14 @@ function getClientIp(request: Request): string {
 interface StepBody {
 	formToken: string;
 	behavioral: BehavioralSignals;
+	// v2 step mapping — sent by the redesigned premium form.
+	// When version=2, the step numbers map differently:
+	//   Step 1: domain + ownershipConfirmed
+	//   Step 2: businessModel + conversionModel
+	//   Step 3: monthlyRevenue
+	//   Step 4: email
+	// Default (v1) preserves the original mapping for in-progress leads.
+	version?: number;
 	// Step-specific fields (all optional — server picks the right ones
 	// per step number)
 	organizationName?: string;
@@ -138,85 +146,158 @@ export async function PATCH(
 		currentStep: Math.max(lead.currentStep, stepNum),
 	};
 
-	if (stepNum === 1) {
-		const orgCheck = validateLeadOrgName(body.organizationName || "");
-		if (!orgCheck.ok) {
-			return NextResponse.json(
-				{ message: orgCheck.reason, field: "organizationName" },
-				{ status: 422 },
-			);
-		}
-		if (!body.businessModel) {
-			return NextResponse.json(
-				{ message: "Please pick a business type.", field: "businessModel" },
-				{ status: 422 },
-			);
-		}
-		updates.organizationName = body.organizationName!.trim();
-		updates.businessModel = body.businessModel;
-	}
+	const isV2 = body.version === 2;
 
-	if (stepNum === 2) {
-		const domainCheck = validateLeadDomain(body.domain || "");
-		if (!domainCheck.ok) {
-			return NextResponse.json(
-				{ message: domainCheck.reason, field: "domain" },
-				{ status: 422 },
-			);
-		}
-		if (!body.ownershipConfirmed) {
-			return NextResponse.json(
-				{
-					message:
-						"Please confirm ownership before we audit your domain.",
-					field: "ownershipConfirmed",
-				},
-				{ status: 422 },
-			);
-		}
-		updates.domain = body.domain!.trim();
-	}
+	if (isV2) {
+		// ── V2 step mapping (premium one-question-per-screen form) ──
+		// Step 1: domain + ownership
+		// Step 2: businessModel + conversionModel
+		// Step 3: monthlyRevenue
+		// Step 4: email
 
-	if (stepNum === 3) {
-		const revenueParsed = parseRevenue(body.monthlyRevenue || "");
-		const revenueCheck = validateLeadRevenue(revenueParsed);
-		if (!revenueCheck.ok) {
-			return NextResponse.json(
-				{ message: revenueCheck.reason, field: "monthlyRevenue" },
-				{ status: 422 },
-			);
-		}
-		updates.monthlyRevenue = revenueParsed;
-		const ticketParsed = parseRevenue(body.averageTicket || "");
-		updates.averageTicket = ticketParsed; // optional, no validation
-		if (!body.conversionModel) {
-			return NextResponse.json(
-				{ message: "Please pick a conversion model.", field: "conversionModel" },
-				{ status: 422 },
-			);
-		}
-		updates.conversionModel = body.conversionModel;
-	}
-
-	if (stepNum === 4) {
-		const emailCheck = validateLeadEmail(body.email || "");
-		if (!emailCheck.ok) {
-			return NextResponse.json(
-				{ message: emailCheck.reason, field: "email" },
-				{ status: 422 },
-			);
-		}
-		if (body.phone) {
-			const phoneCheck = validateLeadPhone(body.phone, true);
-			if (!phoneCheck.ok) {
+		if (stepNum === 1) {
+			const domainCheck = validateLeadDomain(body.domain || "");
+			if (!domainCheck.ok) {
 				return NextResponse.json(
-					{ message: phoneCheck.reason, field: "phone" },
+					{ message: domainCheck.reason, field: "domain" },
 					{ status: 422 },
 				);
 			}
+			if (!body.ownershipConfirmed) {
+				return NextResponse.json(
+					{ message: "Please confirm ownership before we audit your domain.", field: "ownershipConfirmed" },
+					{ status: 422 },
+				);
+			}
+			updates.domain = body.domain!.trim();
+			// Derive org name from domain (e.g. "example.com" → "Example")
+			const domainClean = body.domain!.trim().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+			const orgFromDomain = domainClean.split(".")[0];
+			updates.organizationName = orgFromDomain.charAt(0).toUpperCase() + orgFromDomain.slice(1);
 		}
-		updates.email = body.email!.trim().toLowerCase();
-		updates.phone = body.phone?.trim() || null;
+
+		if (stepNum === 2) {
+			if (!body.businessModel) {
+				return NextResponse.json(
+					{ message: "Please pick a business type.", field: "businessModel" },
+					{ status: 422 },
+				);
+			}
+			if (!body.conversionModel) {
+				return NextResponse.json(
+					{ message: "Please pick a conversion model.", field: "conversionModel" },
+					{ status: 422 },
+				);
+			}
+			updates.businessModel = body.businessModel;
+			updates.conversionModel = body.conversionModel;
+		}
+
+		if (stepNum === 3) {
+			const revenueParsed = parseRevenue(body.monthlyRevenue || "");
+			const revenueCheck = validateLeadRevenue(revenueParsed);
+			if (!revenueCheck.ok) {
+				return NextResponse.json(
+					{ message: revenueCheck.reason, field: "monthlyRevenue" },
+					{ status: 422 },
+				);
+			}
+			updates.monthlyRevenue = revenueParsed;
+		}
+
+		if (stepNum === 4) {
+			const emailCheck = validateLeadEmail(body.email || "");
+			if (!emailCheck.ok) {
+				return NextResponse.json(
+					{ message: emailCheck.reason, field: "email" },
+					{ status: 422 },
+				);
+			}
+			updates.email = body.email!.trim().toLowerCase();
+		}
+	} else {
+		// ── V1 step mapping (original 4-step form) ──
+
+		if (stepNum === 1) {
+			const orgCheck = validateLeadOrgName(body.organizationName || "");
+			if (!orgCheck.ok) {
+				return NextResponse.json(
+					{ message: orgCheck.reason, field: "organizationName" },
+					{ status: 422 },
+				);
+			}
+			if (!body.businessModel) {
+				return NextResponse.json(
+					{ message: "Please pick a business type.", field: "businessModel" },
+					{ status: 422 },
+				);
+			}
+			updates.organizationName = body.organizationName!.trim();
+			updates.businessModel = body.businessModel;
+		}
+
+		if (stepNum === 2) {
+			const domainCheck = validateLeadDomain(body.domain || "");
+			if (!domainCheck.ok) {
+				return NextResponse.json(
+					{ message: domainCheck.reason, field: "domain" },
+					{ status: 422 },
+				);
+			}
+			if (!body.ownershipConfirmed) {
+				return NextResponse.json(
+					{
+						message:
+							"Please confirm ownership before we audit your domain.",
+						field: "ownershipConfirmed",
+					},
+					{ status: 422 },
+				);
+			}
+			updates.domain = body.domain!.trim();
+		}
+
+		if (stepNum === 3) {
+			const revenueParsed = parseRevenue(body.monthlyRevenue || "");
+			const revenueCheck = validateLeadRevenue(revenueParsed);
+			if (!revenueCheck.ok) {
+				return NextResponse.json(
+					{ message: revenueCheck.reason, field: "monthlyRevenue" },
+					{ status: 422 },
+				);
+			}
+			updates.monthlyRevenue = revenueParsed;
+			const ticketParsed = parseRevenue(body.averageTicket || "");
+			updates.averageTicket = ticketParsed;
+			if (!body.conversionModel) {
+				return NextResponse.json(
+					{ message: "Please pick a conversion model.", field: "conversionModel" },
+					{ status: 422 },
+				);
+			}
+			updates.conversionModel = body.conversionModel;
+		}
+
+		if (stepNum === 4) {
+			const emailCheck = validateLeadEmail(body.email || "");
+			if (!emailCheck.ok) {
+				return NextResponse.json(
+					{ message: emailCheck.reason, field: "email" },
+					{ status: 422 },
+				);
+			}
+			if (body.phone) {
+				const phoneCheck = validateLeadPhone(body.phone, true);
+				if (!phoneCheck.ok) {
+					return NextResponse.json(
+						{ message: phoneCheck.reason, field: "phone" },
+						{ status: 422 },
+					);
+				}
+			}
+			updates.email = body.email!.trim().toLowerCase();
+			updates.phone = body.phone?.trim() || null;
+		}
 	}
 
 	await prisma.anonymousLead.update({

@@ -770,10 +770,10 @@ function SidebarDataSourcesCard() {
 			<div className="mb-2.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
 				{t("data_sources_label")}
 			</div>
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-1.5">
 				{DATA_SOURCES.map((ds) => (
 					<div key={ds.alt} className="relative">
-						<div className="h-7 w-7 overflow-hidden rounded-full border border-white/[0.08]">
+						<div className="h-5 w-5 overflow-hidden rounded-full border border-white/[0.08]">
 							<img
 								src={ds.src}
 								alt={ds.alt}
@@ -782,8 +782,8 @@ function SidebarDataSourcesCard() {
 							/>
 						</div>
 						{/* Active indicator */}
-						<div className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center rounded-full border-2 border-[#0a0a12] bg-emerald-400">
-							<svg viewBox="0 0 8 8" fill="none" className="h-1.5 w-1.5 text-[#0a0a12]">
+						<div className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full border-[1.5px] border-[#0a0a12] bg-emerald-400">
+							<svg viewBox="0 0 8 8" fill="none" className="h-1 w-1 text-[#0a0a12]">
 								<path d="M1.5 4L3.5 6L6.5 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
 							</svg>
 						</div>
@@ -878,7 +878,11 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 						</span>
 					</div>
 				</div>
-				<div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a14] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)] sm:rounded-2xl">
+				<div className={`overflow-hidden rounded-xl border bg-[#0a0a14] transition-shadow duration-300 sm:rounded-2xl ${
+						focused
+							? "border-violet-500/25 shadow-[0_30px_80px_-30px_rgba(139,92,246,0.35),0_0_40px_-10px_rgba(139,92,246,0.15),0_0_0_1px_rgba(139,92,246,0.12)]"
+							: "border-white/[0.08] shadow-[0_30px_80px_-30px_rgba(139,92,246,0.22),0_0_0_1px_rgba(255,255,255,0.04)]"
+					}`}>
 					{/* Browser title bar */}
 					<div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#08080f] px-3 py-2.5 sm:px-4 sm:py-3">
 						<div className="flex w-[52px] shrink-0 gap-1.5">

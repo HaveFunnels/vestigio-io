@@ -556,7 +556,8 @@
 				"unit": "/Monat",
 				"sub": "über 9 priorisierte Aktionen"
 			},
-			"data_sources_label": "Datenquellen"
+			"data_sources_label": "Datenquellen",
+			"section_headline": "In Ihrer Entscheidungsmaschine"
 		},
 		"client_gallery": {
 			"eyebrow": "Vertrauen digitaler Operatoren",

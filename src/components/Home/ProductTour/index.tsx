@@ -44,7 +44,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useState, useRef, useCallback, useEffect, type ReactNode } from "react";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
 // ─────────────────────────────────────────────────────────────────────
@@ -814,7 +814,38 @@ interface ProductTourProps {
 export default function ProductTour({ primaryCtaHref = "/auth/signup" }: ProductTourProps) {
 	const t = useTranslations("homepage.product_tour");
 	const [activeTab, setActiveTab] = useState<TabId>("actions");
+	const [focused, setFocused] = useState(false);
+	const panelRef = useRef<HTMLDivElement>(null);
 	const ActivePanel = PANELS[activeTab];
+
+	// Focus mode: panel only scrolls internally after a click inside.
+	// Clicking outside or pressing Escape deactivates focus mode so
+	// the user can continue scrolling the page.
+	const handlePanelClick = useCallback(() => {
+		setFocused(true);
+	}, []);
+
+	const handleBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+		if (panelRef.current && !panelRef.current.contains(e.relatedTarget as Node)) {
+			setFocused(false);
+		}
+	}, []);
+
+	const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+		if (e.key === "Escape") setFocused(false);
+	}, []);
+
+	// Deactivate focus when clicking outside the panel
+	useEffect(() => {
+		if (!focused) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+				setFocused(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [focused]);
 
 	return (
 		<section
@@ -946,8 +977,16 @@ export default function ProductTour({ primaryCtaHref = "/auth/signup" }: Product
 							</div>
 						</div>
 
-						{/* Active panel — fixed height, scrollable content */}
-						<div className="thin-scrollbar h-[420px] shrink-0 overflow-y-auto p-4 sm:p-6 md:h-[640px] md:flex-1 md:shrink md:p-7 lg:h-[680px] lg:p-8">
+						{/* Active panel — fixed height, scrollable only when focused */}
+						<div
+							ref={panelRef}
+							tabIndex={-1}
+							onClick={handlePanelClick}
+							onBlur={handleBlur}
+							onKeyDown={handleKeyDown}
+							className={`thin-scrollbar h-[420px] shrink-0 p-4 transition-shadow duration-200 sm:p-6 md:h-[640px] md:flex-1 md:shrink md:p-7 lg:h-[680px] lg:p-8 ${
+								focused ? "overflow-y-auto shadow-[inset_0_0_0_1px_rgba(139,92,246,0.15)]" : "overflow-y-hidden"
+							}`}>
 							<div
 								key={activeTab}
 								className="animate-[vptour-fade-in_0.25s_ease-out]"

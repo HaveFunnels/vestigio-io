@@ -34,7 +34,9 @@
  */
 
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 import HeroPills, { type Pill } from "./HeroPills";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 // Pill icons and the pill interaction state live in HeroPills.tsx —
 // this file only orchestrates the hero layout. CTAs moved to
@@ -98,7 +100,7 @@ const TrailLayer = () => (
  * Section
  * ──────────────────────────────────────────────────────────────── */
 
-const Hero = async ({ i18nNamespace = "homepage.hero_v2" }: { i18nNamespace?: string } = {}) => {
+const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/auth/signup" }: { i18nNamespace?: string; primaryCtaHref?: string } = {}) => {
 	const t = await getTranslations(i18nNamespace);
 	const pills = t.raw("pills") as Pill[];
 
@@ -216,6 +218,14 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2" }: { i18nNamespace?: st
 				    dark + pain → emerald + solution when clicked. See
 				    HeroPills.tsx. */}
 				<HeroPills pills={pills} />
+
+				{/* Primary CTA — visible above the fold, before the
+				    visitor scrolls into the Product Tour. */}
+				<div className="mt-8 sm:mt-10">
+					<Link href={primaryCtaHref} className="inline-block">
+						<ShinyButton>{t("cta_primary")}</ShinyButton>
+					</Link>
+				</div>
 
 			</div>
 

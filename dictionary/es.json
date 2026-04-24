@@ -556,7 +556,8 @@
 				"unit": "/mes",
 				"sub": "en 9 acciones priorizadas"
 			},
-			"data_sources_label": "Fuentes de Datos"
+			"data_sources_label": "Fuentes de Datos",
+			"section_headline": "Dentro de tu motor de decisiones"
 		},
 		"client_gallery": {
 			"eyebrow": "Confianza de operadores digitales",

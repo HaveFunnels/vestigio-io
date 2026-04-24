@@ -35,7 +35,7 @@ const HomeLp = () => {
 	return (
 		<>
 			<HomeBigCard>
-				<Hero i18nNamespace="homepage.hero_lp" />
+				<Hero i18nNamespace="homepage.hero_lp" primaryCtaHref={LP_CTA_HREF} />
 				<SocialProofStrip />
 				<VSL />
 				<ProductTour primaryCtaHref={LP_CTA_HREF} />

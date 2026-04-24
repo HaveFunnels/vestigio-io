@@ -424,7 +424,7 @@ Nunca: "Comece Grátis", "Saiba Mais", "Cadastre-se", "Teste Grátis", "Rodar Au
 |------|-------|---------|--------|
 | **4** | ~~Mover MiniCalc para posição 5~~ → Adicionada cópia após HomeBigCard | `/`, `/lp` | ✅ |
 | **5** | Reescrever CTA final | `/`, `/lp` | ✅ |
-| **6** | Reformular cards do features bento | `/` | 🔲 |
+| **6** | Reformular cards do features bento | `/` | ✅ |
 | **7** | Substituir conteúdo Solution Layers | `/` | 🔲 |
 | **8** | Substituir cards de persona (FeaturesWithImage) | `/` | 🔲 |
 | **9** | Reduzir Counter para 3 itens | `/` | 🔲 |

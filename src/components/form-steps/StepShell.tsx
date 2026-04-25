@@ -55,6 +55,14 @@ export default function StepShell({
 			/>
 
 			<div className="relative w-full max-w-[480px]">
+				{/* Progress bar — above the card, always centered */}
+				<div className="mb-4 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+					<div
+						className="h-full rounded-full bg-white transition-all duration-300 ease-out"
+						style={{ width: `${Math.max(progress, 4)}%` }}
+					/>
+				</div>
+
 				<div className="shiny-card group relative flex min-h-[520px] flex-col overflow-hidden rounded-3xl shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] sm:min-h-[560px]">
 					{/* Emerald glow halos */}
 					<div className="pointer-events-none absolute inset-0 -z-1 opacity-50" aria-hidden>
@@ -63,42 +71,34 @@ export default function StepShell({
 					</div>
 					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 
-					{/* Top bar: back arrow + progress bar (compact, same row) */}
-					<div className="flex items-center gap-3 px-6 pt-5 sm:px-8 sm:pt-6">
-						<button
-							type="button"
-							onClick={onBack}
-							disabled={!showBackArrow}
-							className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all ${
-								showBackArrow
-									? "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
-									: "pointer-events-none border-transparent opacity-0"
-							}`}
-							aria-label="Voltar"
-						>
-							<svg
-								viewBox="0 0 16 16"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1.6"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								className="h-4 w-4"
+					{/* Step content */}
+					<div className="flex flex-1 flex-col px-6 pb-8 pt-5 sm:px-8 sm:pb-10 sm:pt-6">
+						{/* Back arrow */}
+						<div className="mb-6">
+							<button
+								type="button"
+								onClick={onBack}
+								disabled={!showBackArrow}
+								className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all ${
+									showBackArrow
+										? "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
+										: "pointer-events-none border-transparent opacity-0"
+								}`}
+								aria-label="Voltar"
 							>
-								<path d="M10 3L5 8l5 5" />
-							</svg>
-						</button>
-
-						<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-200">
-							<div
-								className="h-full rounded-full bg-zinc-900 transition-all duration-300 ease-out"
-								style={{ width: `${Math.max(progress, 4)}%` }}
-							/>
+								<svg
+									viewBox="0 0 16 16"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="1.6"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									className="h-4 w-4"
+								>
+									<path d="M10 3L5 8l5 5" />
+								</svg>
+							</button>
 						</div>
-					</div>
-
-					{/* Step content — flex-1 so it stretches to fill the card */}
-					<div className="flex flex-1 flex-col px-6 pb-8 pt-6 sm:px-8 sm:pb-10 sm:pt-8">
 						<AnimatePresence mode="wait">
 							<motion.div
 								key={stepIndex}

@@ -57,6 +57,16 @@ export default function MiniAuditResultPage() {
 	const [timedOut, setTimedOut] = useState(false);
 	const pollAttemptsRef = useRef(0);
 
+	// ── Canonical link ──
+	useEffect(() => {
+		if (!leadId) return;
+		const link = document.createElement("link");
+		link.rel = "canonical";
+		link.href = `${window.location.origin}/lp/audit/result/${leadId}`;
+		document.head.appendChild(link);
+		return () => { document.head.removeChild(link); };
+	}, [leadId]);
+
 	// ── Polling loop ──
 	const fetchLead = useCallback(async () => {
 		if (!leadId) return;
@@ -121,13 +131,7 @@ export default function MiniAuditResultPage() {
 	}
 
 	if (lead.status === "expired") {
-		return (
-			<ErrorState
-				message="Este link expirou. Faça um novo diagnóstico — é gratuito."
-				onRetry={() => router.push("/lp/audit")}
-				retryLabel="Fazer novo diagnóstico"
-			/>
-		);
+		return <ExpiredState lead={lead} />;
 	}
 
 	const isAuditComplete = lead.status === "audit_complete" && lead.result;
@@ -745,6 +749,93 @@ function AuditingState({
 						Ver meu diagnóstico
 					</button>
 				)}
+			</div>
+		</div>
+	);
+}
+
+function ExpiredState({ lead }: { lead: LeadResponse }) {
+	const domain = lead.domain || "seu site";
+	const faviconUrl = lead.domain
+		? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(lead.domain)}&sz=64`
+		: null;
+
+	// Try to extract stats from expired lead result (may or may not be available)
+	const result = lead.result;
+	const totalFindings = result
+		? result.visibleFindings.filter((f) => f.severity !== "positive").length + result.blurredFindings.length
+		: null;
+	const hiddenCount = result ? result.blurredFindings.length : null;
+	const summary = result
+		? summarizeMiniImpact(
+				result.visibleFindings
+					.filter((f) => f.severity !== "positive")
+					.map((f) => f.impact),
+			)
+		: null;
+
+	return (
+		<div className="relative flex min-h-screen items-center justify-center bg-[#070710] px-4">
+			<DotGrid />
+			<div className="relative w-full max-w-md text-center">
+				{/* Favicon */}
+				{faviconUrl && (
+					<div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900">
+						<img src={faviconUrl} alt="" className="h-8 w-8 rounded object-contain" />
+					</div>
+				)}
+
+				{/* Headline */}
+				<h1 className="text-2xl font-semibold text-zinc-100 sm:text-3xl">
+					Que pena, seu diagnóstico expirou
+				</h1>
+
+				{/* Impact reminder — re-triggers loss aversion */}
+				{totalFindings && summary && summary.count > 0 ? (
+					<div className="mt-5 rounded-xl border border-red-500/20 bg-red-950/20 px-5 py-4">
+						<p className="text-sm leading-relaxed text-zinc-300">
+							Encontramos{" "}
+							<span className="font-semibold text-red-300">{totalFindings} problemas</span>{" "}
+							no <span className="font-mono text-zinc-200">{domain}</span> custando entre{" "}
+							<span className="font-semibold text-red-300">{formatBRL(summary.min_brl_cents)}</span>{" "}
+							e{" "}
+							<span className="font-semibold text-red-300">{formatBRL(summary.max_brl_cents)}</span>{" "}
+							por mês
+						</p>
+						{hiddenCount && hiddenCount > 0 && (
+							<p className="mt-2 text-xs text-zinc-500">
+								Incluindo {hiddenCount} findings que você ainda não viu.
+							</p>
+						)}
+					</div>
+				) : (
+					<p className="mt-4 text-sm text-zinc-500">
+						Encontramos problemas no <span className="font-mono text-zinc-300">{domain}</span> que estavam custando dinheiro.
+						O link expirou, mas você pode recuperar o diagnóstico.
+					</p>
+				)}
+
+				{/* Primary CTA — recovery */}
+				<Link
+					href="/auth/signup"
+					className="mt-7 block w-full rounded-xl bg-emerald-500 px-7 py-3.5 text-center text-sm font-semibold text-emerald-950 shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)]"
+				>
+					Recuperar meu diagnóstico de {domain}
+				</Link>
+
+				<p className="mt-3 text-xs text-zinc-600">
+					Sem cartão de crédito. O diagnóstico completo analisa 15.000+ sinais.
+				</p>
+
+				{/* Secondary CTA — fresh start */}
+				<div className="mt-8 border-t border-zinc-900 pt-5">
+					<Link
+						href="/lp/audit"
+						className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+					>
+						Ou rodar um novo diagnóstico gratuito →
+					</Link>
+				</div>
 			</div>
 		</div>
 	);

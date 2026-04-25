@@ -2762,49 +2762,49 @@ function inferWeakSearchRepresentation(byKey: Map<string, Signal>, scoping: Scop
   const sig = byKey.get('commercial_pages_weak_search_representation');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'commercial_pages_weak_search_representation', category: InferenceCategory.CommercialPagesWeakSearchRepresentation, conclusion: 'commercial_pages_weak_search_representation', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `High-intent commercial pages have missing or thin titles and descriptions. When search engines display these pages in results, the snippets are generic or auto-generated — reducing click-through rate. Every missed click on a high-intent query is discoverable demand that never reaches the site.` })];
+  return [createInference({ inference_key: 'commercial_pages_weak_search_representation', category: InferenceCategory.CommercialPagesWeakSearchRepresentation, conclusion: 'commercial_pages_weak_search_representation', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `High-intent commercial pages have missing or thin titles and descriptions. When search engines display these pages in results, the snippets are generic or auto-generated — reducing click-through rate. Every missed click on a high-intent query is discoverable demand that never reaches the site.`, reasoning_slots: { severity } })];
 }
 
 function inferSocialPreviewsFailValue(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('social_previews_fail_commercial_value');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'social_previews_fail_commercial_value', category: InferenceCategory.SocialPreviewsFailCommercialValue, conclusion: 'social_previews_fail_commercial_value', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `When commercial pages are shared via messaging, social media, or email, they appear as raw URLs without product images, compelling titles, or value propositions. In a world where link previews drive click-through, a bare URL is a wasted distribution opportunity. Every share that fails to communicate value is a conversion the brand already earned but cannot capture.` })];
+  return [createInference({ inference_key: 'social_previews_fail_commercial_value', category: InferenceCategory.SocialPreviewsFailCommercialValue, conclusion: 'social_previews_fail_commercial_value', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `When commercial pages are shared via messaging, social media, or email, they appear as raw URLs without product images, compelling titles, or value propositions. In a world where link previews drive click-through, a bare URL is a wasted distribution opportunity. Every share that fails to communicate value is a conversion the brand already earned but cannot capture.`, reasoning_slots: { severity } })];
 }
 
 function inferBrandInconsistentSurfaces(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('brand_inconsistent_across_surfaces');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'brand_inconsistent_across_surfaces', category: InferenceCategory.BrandInconsistentAcrossSurfaces, conclusion: 'brand_inconsistent_across_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The brand appears inconsistently across search results, social previews, and sharing surfaces. When titles and descriptions vary widely between commercial pages, search engines cannot build a coherent brand signal. Buyers see an unreliable brand presence — some pages look professional while others look unfinished — reducing both click-through and trust.` })];
+  return [createInference({ inference_key: 'brand_inconsistent_across_surfaces', category: InferenceCategory.BrandInconsistentAcrossSurfaces, conclusion: 'brand_inconsistent_across_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The brand appears inconsistently across search results, social previews, and sharing surfaces. When titles and descriptions vary widely between commercial pages, search engines cannot build a coherent brand signal. Buyers see an unreliable brand presence — some pages look professional while others look unfinished — reducing both click-through and trust.`, reasoning_slots: { severity } })];
 }
 
 function inferCommercialPagesUnlikelyIndexed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('commercial_pages_unlikely_indexed');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'commercial_pages_unlikely_indexed', category: InferenceCategory.CommercialPagesUnlikelyIndexed, conclusion: 'commercial_pages_unlikely_indexed', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Revenue-generating pages have indexing problems — missing canonical URLs or explicit noindex directives. Search engines may not reliably include these pages in results. Demand that exists for these products or services cannot find the site through search, even when the content is commercially relevant.` })];
+  return [createInference({ inference_key: 'commercial_pages_unlikely_indexed', category: InferenceCategory.CommercialPagesUnlikelyIndexed, conclusion: 'commercial_pages_unlikely_indexed', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Revenue-generating pages have indexing problems — missing canonical URLs or explicit noindex directives. Search engines may not reliably include these pages in results. Demand that exists for these products or services cannot find the site through search, even when the content is commercially relevant.`, reasoning_slots: { severity } })];
 }
 
 function inferWeakSemanticIntentSignals(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('weak_semantic_intent_signals');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'weak_semantic_intent_signals', category: InferenceCategory.WeakSemanticIntentSignals, conclusion: 'weak_semantic_intent_signals', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Search engines and AI systems receive weak signals about what these commercial pages offer. Without structured data (Product, Organization, Offer schemas), ranking algorithms and AI assistants must guess page purpose from raw HTML. The result is lower ranking for commercial queries and inaccurate AI-generated summaries that fail to capture the business offering.` })];
+  return [createInference({ inference_key: 'weak_semantic_intent_signals', category: InferenceCategory.WeakSemanticIntentSignals, conclusion: 'weak_semantic_intent_signals', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Search engines and AI systems receive weak signals about what these commercial pages offer. Without structured data (Product, Organization, Offer schemas), ranking algorithms and AI assistants must guess page purpose from raw HTML. The result is lower ranking for commercial queries and inaccurate AI-generated summaries that fail to capture the business offering.`, reasoning_slots: { severity } })];
 }
 
 function inferPreviewsDisconnectedConversion(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('previews_disconnected_from_conversion');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'previews_disconnected_from_conversion', category: InferenceCategory.PreviewsDisconnectedFromConversion, conclusion: 'previews_disconnected_from_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Social and search previews show content that doesn't match the actual page. Visitors clicking through arrive with expectations set by the preview but encounter different content — creating a mismatch that drives immediate drop-off. The gap between what was promised and what was delivered converts the traffic acquisition cost into waste.` })];
+  return [createInference({ inference_key: 'previews_disconnected_from_conversion', category: InferenceCategory.PreviewsDisconnectedFromConversion, conclusion: 'previews_disconnected_from_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Social and search previews show content that doesn't match the actual page. Visitors clicking through arrive with expectations set by the preview but encounter different content — creating a mismatch that drives immediate drop-off. The gap between what was promised and what was delivered converts the traffic acquisition cost into waste.`, reasoning_slots: { severity } })];
 }
 
 function inferCommercialPagesNotExposed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('commercial_pages_not_exposed_for_discovery');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'commercial_pages_not_exposed_for_discovery', category: InferenceCategory.CommercialPagesNotExposedForDiscovery, conclusion: 'commercial_pages_not_exposed_for_discovery', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Key commercial pages have no internal links pointing to them — they exist in the site structure but are invisible to crawlers and users navigating the site. Without structural exposure, search engines cannot discover these pages reliably, and organic demand for the products or services offered on them cannot reach the site.` })];
+  return [createInference({ inference_key: 'commercial_pages_not_exposed_for_discovery', category: InferenceCategory.CommercialPagesNotExposedForDiscovery, conclusion: 'commercial_pages_not_exposed_for_discovery', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Key commercial pages have no internal links pointing to them — they exist in the site structure but are invisible to crawlers and users navigating the site. Without structural exposure, search engines cannot discover these pages reliably, and organic demand for the products or services offered on them cannot reach the site.`, reasoning_slots: { severity } })];
 }
 
 // ──────────────────────────────────────────────
@@ -2815,42 +2815,42 @@ function inferLookalikeDomains(byKey: Map<string, Signal>, scoping: Scoping, cyc
   const sig = byKey.get('lookalike_domains_competing');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'lookalike_domain_competing_for_traffic', category: InferenceCategory.LookalikeDomainCompetingForTraffic, conclusion: 'lookalike_domain_competing_for_traffic', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Active lookalike domains are competing for brand traffic. When customers search for the brand or type the domain from memory, some portion of traffic lands on impostor domains instead. This inflates effective customer acquisition cost — the brand pays for awareness that is captured by competitors or fraudsters through domain similarity.` })];
+  return [createInference({ inference_key: 'lookalike_domain_competing_for_traffic', category: InferenceCategory.LookalikeDomainCompetingForTraffic, conclusion: 'lookalike_domain_competing_for_traffic', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Active lookalike domains are competing for brand traffic. When customers search for the brand or type the domain from memory, some portion of traffic lands on impostor domains instead. This inflates effective customer acquisition cost — the brand pays for awareness that is captured by competitors or fraudsters through domain similarity.`, reasoning_slots: { severity } })];
 }
 
 function inferExternalMimicry(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('external_sites_mimicking_brand');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'external_sites_mimicking_brand', category: InferenceCategory.ExternalSitesMimickingBrand, conclusion: 'external_sites_mimicking_brand', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `External domains are actively mimicking the brand's identity — matching titles, descriptions, and content patterns. This is not passive domain squatting; these sites are designed to look like the real brand. Customers who land on these surfaces may share payment information with fraudsters, damaging both the customer and the brand's reputation.` })];
+  return [createInference({ inference_key: 'external_sites_mimicking_brand', category: InferenceCategory.ExternalSitesMimickingBrand, conclusion: 'external_sites_mimicking_brand', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `External domains are actively mimicking the brand's identity — matching titles, descriptions, and content patterns. This is not passive domain squatting; these sites are designed to look like the real brand. Customers who land on these surfaces may share payment information with fraudsters, damaging both the customer and the brand's reputation.`, reasoning_slots: { severity } })];
 }
 
 function inferBrandTrafficDeceptive(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('brand_traffic_deceptive_surfaces');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'brand_traffic_exposed_to_deceptive_surfaces', category: InferenceCategory.BrandTrafficExposedToDeceptiveSurfaces, conclusion: 'brand_traffic_exposed_to_deceptive_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Typosquat domains — near-identical misspellings of the brand — are active and reachable. Users who make common typing errors land on these surfaces instead of the real site. This diverts direct-type traffic, damages trust when users realize the mistake, and creates chargeback and fraud exposure when the impostor site processes transactions.` })];
+  return [createInference({ inference_key: 'brand_traffic_exposed_to_deceptive_surfaces', category: InferenceCategory.BrandTrafficExposedToDeceptiveSurfaces, conclusion: 'brand_traffic_exposed_to_deceptive_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Typosquat domains — near-identical misspellings of the brand — are active and reachable. Users who make common typing errors land on these surfaces instead of the real site. This diverts direct-type traffic, damages trust when users realize the mistake, and creates chargeback and fraud exposure when the impostor site processes transactions.`, reasoning_slots: { severity } })];
 }
 
 function inferSuspiciousDomainsPurchaseIntent(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('suspicious_domains_purchase_intent');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'suspicious_domains_capturing_purchase_intent', category: InferenceCategory.SuspiciousDomainsCapturingPurchaseIntent, conclusion: 'suspicious_domains_capturing_purchase_intent', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Lookalike domains show active commerce intent — checkout pages, cart functionality, or pricing structures. These are not passive parked domains; they are positioned to capture purchase-intent traffic and process transactions under a brand-similar identity. Revenue leakage is direct: customers who intended to buy from the brand are buying from impostors.` })];
+  return [createInference({ inference_key: 'suspicious_domains_capturing_purchase_intent', category: InferenceCategory.SuspiciousDomainsCapturingPurchaseIntent, conclusion: 'suspicious_domains_capturing_purchase_intent', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Lookalike domains show active commerce intent — checkout pages, cart functionality, or pricing structures. These are not passive parked domains; they are positioned to capture purchase-intent traffic and process transactions under a brand-similar identity. Revenue leakage is direct: customers who intended to buy from the brand are buying from impostors.`, reasoning_slots: { severity } })];
 }
 
 function inferPhishingExposure(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('customers_exposed_to_phishing');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'customers_exposed_to_phishing_surfaces', category: InferenceCategory.CustomersExposedToPhishingSurfaces, conclusion: 'customers_exposed_to_phishing_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `High-confidence phishing surfaces combine brand domain similarity with active commerce patterns and content mimicry. Customers cannot distinguish these from the real site and may submit payment credentials to fraudsters. The downstream impact includes chargebacks on the brand's payment processor, legal liability from data breach exposure, and lasting trust damage when customers learn they were deceived through a brand-similar surface.` })];
+  return [createInference({ inference_key: 'customers_exposed_to_phishing_surfaces', category: InferenceCategory.CustomersExposedToPhishingSurfaces, conclusion: 'customers_exposed_to_phishing_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `High-confidence phishing surfaces combine brand domain similarity with active commerce patterns and content mimicry. Customers cannot distinguish these from the real site and may submit payment credentials to fraudsters. The downstream impact includes chargebacks on the brand's payment processor, legal liability from data breach exposure, and lasting trust damage when customers learn they were deceived through a brand-similar surface.`, reasoning_slots: { severity } })];
 }
 
 function inferBrandDilution(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('brand_diluted_across_variants');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'brand_presence_diluted_across_variants', category: InferenceCategory.BrandPresenceDilutedAcrossVariants, conclusion: 'brand_presence_diluted_across_variants', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The brand's online presence is fragmented across many domain variants — each one diluting the authority of the legitimate site. Search engines may split ranking signals across multiple similar domains, reducing organic visibility. Buyers encountering multiple brand-similar sites lose confidence in which one is real, suppressing click-through and trust across all surfaces.` })];
+  return [createInference({ inference_key: 'brand_presence_diluted_across_variants', category: InferenceCategory.BrandPresenceDilutedAcrossVariants, conclusion: 'brand_presence_diluted_across_variants', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The brand's online presence is fragmented across many domain variants — each one diluting the authority of the legitimate site. Search engines may split ranking signals across multiple similar domains, reducing organic visibility. Buyers encountering multiple brand-similar sites lose confidence in which one is real, suppressing click-through and trust across all surfaces.`, reasoning_slots: { severity } })];
 }
 
 // ──────────────────────────────────────────────
@@ -2861,56 +2861,56 @@ function inferPolicyViewAbandonment(byKey: Map<string, Signal>, scoping: Scoping
   const sig = byKey.get('policy_view_then_abandonment');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'policy_view_then_abandonment', category: InferenceCategory.PolicyViewThenAbandonment, conclusion: 'policy_view_then_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Sessions that open refund or return policy pages are abandoning without returning to the commercial flow. The policy content is triggering doubt rather than building confidence — buyers read the return terms and decide not to buy. This is behavioral evidence that the policy presentation is creating hesitation rather than resolving it.` })];
+  return [createInference({ inference_key: 'policy_view_then_abandonment', category: InferenceCategory.PolicyViewThenAbandonment, conclusion: 'policy_view_then_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Sessions that open refund or return policy pages are abandoning without returning to the commercial flow. The policy content is triggering doubt rather than building confidence — buyers read the return terms and decide not to buy. This is behavioral evidence that the policy presentation is creating hesitation rather than resolving it.`, reasoning_slots: { severity } })];
 }
 
 function inferHighIntentDetour(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('high_intent_detour_before_abandonment');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'high_intent_detour_before_abandonment', category: InferenceCategory.HighIntentDetourBeforeAbandonment, conclusion: 'high_intent_detour_before_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Buyers who reached the checkout step are detouring into reassurance content (FAQ, support, policy) before abandoning. These are high-intent sessions that failed to convert despite reaching the purchase moment — they needed reassurance that was not already embedded in the checkout experience and went looking for it elsewhere.` })];
+  return [createInference({ inference_key: 'high_intent_detour_before_abandonment', category: InferenceCategory.HighIntentDetourBeforeAbandonment, conclusion: 'high_intent_detour_before_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Buyers who reached the checkout step are detouring into reassurance content (FAQ, support, policy) before abandoning. These are high-intent sessions that failed to convert despite reaching the purchase moment — they needed reassurance that was not already embedded in the checkout experience and went looking for it elsewhere.`, reasoning_slots: { severity } })];
 }
 
 function inferSupportTooLateToConvert(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('support_discovered_too_late');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'support_discovered_too_late_to_convert', category: InferenceCategory.SupportDiscoveredTooLateToConvert, conclusion: 'support_discovered_too_late_to_convert', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Support channels are being discovered only after users have already reached the purchase step. By the time buyers find help, their pre-purchase questions have already driven abandonment decisions. If support were accessible earlier in the journey — on product, pricing, or cart pages — it could resolve hesitation before it becomes abandonment.` })];
+  return [createInference({ inference_key: 'support_discovered_too_late_to_convert', category: InferenceCategory.SupportDiscoveredTooLateToConvert, conclusion: 'support_discovered_too_late_to_convert', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Support channels are being discovered only after users have already reached the purchase step. By the time buyers find help, their pre-purchase questions have already driven abandonment decisions. If support were accessible earlier in the journey — on product, pricing, or cart pages — it could resolve hesitation before it becomes abandonment.`, reasoning_slots: { severity } })];
 }
 
 function inferCtaBehaviorallyDead(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('cta_visible_but_dead');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'cta_visible_but_behaviorally_dead', category: InferenceCategory.CtaVisibleButBehaviorallyDead, conclusion: 'cta_visible_but_behaviorally_dead', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Commercial CTAs on key surfaces are visible to users but generate near-zero behavioral engagement. Users see the call-to-action but do not click — indicating either the CTA copy fails to motivate action, the placement is wrong, or the surrounding context (pricing, trust, value proposition) is insufficient to drive progression.` })];
+  return [createInference({ inference_key: 'cta_visible_but_behaviorally_dead', category: InferenceCategory.CtaVisibleButBehaviorallyDead, conclusion: 'cta_visible_but_behaviorally_dead', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Commercial CTAs on key surfaces are visible to users but generate near-zero behavioral engagement. Users see the call-to-action but do not click — indicating either the CTA copy fails to motivate action, the placement is wrong, or the surrounding context (pricing, trust, value proposition) is insufficient to drive progression.`, reasoning_slots: { severity } })];
 }
 
 function inferPurchaseHesitationBacktrack(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('purchase_hesitation_backtrack');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'purchase_hesitation_with_backtrack', category: InferenceCategory.PurchaseHesitationWithBacktrack, conclusion: 'purchase_hesitation_with_backtrack', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `A significant portion of sessions are backtracking during the purchase journey — reaching a commercial step and then retreating to previous pages. This behavioral pattern indicates hesitation at the moment of commitment: buyers want to proceed but lack the confidence to do so. The missing element is typically trust reinforcement, price justification, or reassurance content at the decision point.` })];
+  return [createInference({ inference_key: 'purchase_hesitation_with_backtrack', category: InferenceCategory.PurchaseHesitationWithBacktrack, conclusion: 'purchase_hesitation_with_backtrack', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `A significant portion of sessions are backtracking during the purchase journey — reaching a commercial step and then retreating to previous pages. This behavioral pattern indicates hesitation at the moment of commitment: buyers want to proceed but lack the confidence to do so. The missing element is typically trust reinforcement, price justification, or reassurance content at the decision point.`, reasoning_slots: { severity } })];
 }
 
 function inferCriticalStepRetries(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('critical_step_retries_before_abandonment');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'critical_step_retries_before_abandonment', category: InferenceCategory.CriticalStepRetriesBeforeAbandonment, conclusion: 'critical_step_retries_before_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users are repeatedly attempting the same critical step before giving up. This is not casual browsing — these are users who want to complete the action but encounter errors, confusion, or friction that blocks them. Each retry represents a user fighting the interface before ultimately losing patience and abandoning.` })];
+  return [createInference({ inference_key: 'critical_step_retries_before_abandonment', category: InferenceCategory.CriticalStepRetriesBeforeAbandonment, conclusion: 'critical_step_retries_before_abandonment', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users are repeatedly attempting the same critical step before giving up. This is not casual browsing — these are users who want to complete the action but encounter errors, confusion, or friction that blocks them. Each retry represents a user fighting the interface before ultimately losing patience and abandoning.`, reasoning_slots: { severity } })];
 }
 
 function inferMobileFirstActionFails(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('mobile_fails_first_commercial_action');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'mobile_fails_first_commercial_action', category: InferenceCategory.MobileFailsFirstCommercialAction, conclusion: 'mobile_fails_first_commercial_action', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Mobile users are failing to progress past the first commercial action at a rate that significantly exceeds acceptable thresholds. The mobile entry point to the commercial flow is broken or unusable — meaning the majority of traffic (mobile users) hits a dead end before the commercial journey even begins.` })];
+  return [createInference({ inference_key: 'mobile_fails_first_commercial_action', category: InferenceCategory.MobileFailsFirstCommercialAction, conclusion: 'mobile_fails_first_commercial_action', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Mobile users are failing to progress past the first commercial action at a rate that significantly exceeds acceptable thresholds. The mobile entry point to the commercial flow is broken or unusable — meaning the majority of traffic (mobile users) hits a dead end before the commercial journey even begins.`, reasoning_slots: { severity } })];
 }
 
 function inferFunnelStepStalled(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('funnel_step_alive_not_advancing');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'funnel_step_alive_but_not_advancing', category: InferenceCategory.FunnelStepAliveButNotAdvancing, conclusion: 'funnel_step_alive_but_not_advancing', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Funnel steps that are actively receiving sessions are failing to advance users to the next step. These surfaces are alive from a vitality perspective but are behavioral dead ends — users arrive but do not progress. The step exists in the flow but does not function as a transition point, creating a bottleneck that blocks the entire downstream funnel.` })];
+  return [createInference({ inference_key: 'funnel_step_alive_but_not_advancing', category: InferenceCategory.FunnelStepAliveButNotAdvancing, conclusion: 'funnel_step_alive_but_not_advancing', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Funnel steps that are actively receiving sessions are failing to advance users to the next step. These surfaces are alive from a vitality perspective but are behavioral dead ends — users arrive but do not progress. The step exists in the flow but does not function as a transition point, creating a bottleneck that blocks the entire downstream funnel.`, reasoning_slots: { severity } })];
 }
 
 // ──────────────────────────────────────────────
@@ -2921,28 +2921,28 @@ function inferHesitationBeforeConversionMissingTrust(byKey: Map<string, Signal>,
   const sig = byKey.get('hesitation_before_conversion_missing_trust');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'hesitation_before_conversion_missing_trust', category: InferenceCategory.HesitationBeforeConversionMissingTrust, conclusion: 'hesitation_before_conversion_missing_trust', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users hesitate before the primary conversion action on commercial surfaces. The pause pattern before CTA engagement indicates insufficient trust or reassurance at the decision point — buyers see the action, want to proceed, but lack the confidence signals they need to commit. The root cause is missing trust reinforcement (guarantees, social proof, policy visibility, support access) near the CTA zone.` })];
+  return [createInference({ inference_key: 'hesitation_before_conversion_missing_trust', category: InferenceCategory.HesitationBeforeConversionMissingTrust, conclusion: 'hesitation_before_conversion_missing_trust', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users hesitate before the primary conversion action on commercial surfaces. The pause pattern before CTA engagement indicates insufficient trust or reassurance at the decision point — buyers see the action, want to proceed, but lack the confidence signals they need to commit. The root cause is missing trust reinforcement (guarantees, social proof, policy visibility, support access) near the CTA zone.`, reasoning_slots: { severity } })];
 }
 
 function inferPricingHesitationUnclearValue(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('pricing_hesitation_unclear_value');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'pricing_hesitation_unclear_value', category: InferenceCategory.PricingHesitationUnclearValue, conclusion: 'pricing_hesitation_unclear_value', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users view pricing then backtrack to product or explanation pages without advancing to conversion. The pricing surface creates a decision moment that the value proposition fails to carry — buyers see the price, cannot justify it from the surrounding context, and retreat to seek additional justification rather than proceeding.` })];
+  return [createInference({ inference_key: 'pricing_hesitation_unclear_value', category: InferenceCategory.PricingHesitationUnclearValue, conclusion: 'pricing_hesitation_unclear_value', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users view pricing then backtrack to product or explanation pages without advancing to conversion. The pricing surface creates a decision moment that the value proposition fails to carry — buyers see the price, cannot justify it from the surrounding context, and retreat to seek additional justification rather than proceeding.`, reasoning_slots: { severity } })];
 }
 
 function inferPolicyDetourBeforeConversion(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('policy_detour_before_conversion');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'policy_detour_before_conversion', category: InferenceCategory.PolicyDetourBeforeConversion, conclusion: 'policy_detour_before_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users open policy pages after expressing purchase intent but before completing conversion. This pre-conversion policy detour indicates trust uncertainty at the commitment moment — buyers need to verify refund terms, privacy conditions, or terms of service before they feel safe proceeding. The root cause is insufficient confidence at the point of commitment, not general information seeking.` })];
+  return [createInference({ inference_key: 'policy_detour_before_conversion', category: InferenceCategory.PolicyDetourBeforeConversion, conclusion: 'policy_detour_before_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users open policy pages after expressing purchase intent but before completing conversion. This pre-conversion policy detour indicates trust uncertainty at the commitment moment — buyers need to verify refund terms, privacy conditions, or terms of service before they feel safe proceeding. The root cause is insufficient confidence at the point of commitment, not general information seeking.`, reasoning_slots: { severity } })];
 }
 
 function inferCtaViewedNotEngaged(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('cta_viewed_not_engaged');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'cta_viewed_not_engaged', category: InferenceCategory.CtaViewedNotEngaged, conclusion: 'cta_viewed_not_engaged', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The primary CTA is behaviorally visible to users — scrolled into view on pages with meaningful traffic — but generates disproportionately low engagement. Users see the call-to-action but do not interact with it. The CTA is present but not compelling: weak positioning, unclear copy, or insufficient surrounding context (value proposition, trust signals, urgency) fails to motivate action.` })];
+  return [createInference({ inference_key: 'cta_viewed_not_engaged', category: InferenceCategory.CtaViewedNotEngaged, conclusion: 'cta_viewed_not_engaged', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The primary CTA is behaviorally visible to users — scrolled into view on pages with meaningful traffic — but generates disproportionately low engagement. Users see the call-to-action but do not interact with it. The CTA is present but not compelling: weak positioning, unclear copy, or insufficient surrounding context (value proposition, trust signals, urgency) fails to motivate action.`, reasoning_slots: { severity } })];
 }
 
 function inferSensitiveInputAbandonment(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
@@ -2978,7 +2978,7 @@ function inferSensitiveInputAbandonment(byKey: Map<string, Signal>, scoping: Sco
     rootCauseContext = 'The root cause is a trust deficit at the data capture point — the form asks for information without adequate context about why it is needed or what the user gets in return.';
   }
 
-  return [createInference({ inference_key: 'sensitive_input_abandonment', category: InferenceCategory.SensitiveInputAbandonment, conclusion: 'sensitive_input_abandonment', conclusion_value: `${severity}:${fieldKind}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users abandon the form after interacting with ${fieldLabel} input fields. ${rootCauseContext}` })];
+  return [createInference({ inference_key: 'sensitive_input_abandonment', category: InferenceCategory.SensitiveInputAbandonment, conclusion: 'sensitive_input_abandonment', conclusion_value: `${severity}:${fieldKind}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users abandon the form after interacting with ${fieldLabel} input fields. ${rootCauseContext}`, reasoning_slots: { severity } })];
 }
 
 function inferFormExcessiveFieldsBeforeConversion(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
@@ -2994,14 +2994,14 @@ function inferFormExcessiveFieldsBeforeConversion(byKey: Map<string, Signal>, sc
   } else {
     subCauseReasoning = `Conversion-proximate forms demand disproportionate data collection through excessive field counts or sensitive field combinations. The root cause is a form that asks for more than the conversion step justifies — unnecessary fields reduce completion rate, and sensitive fields (payment, identity, contact) without trust context accelerate abandonment. The friction is not about form length alone but about the mismatch between what is asked and what the user perceives as necessary at this stage.`;
   }
-  return [createInference({ inference_key: 'form_excessive_fields_before_conversion', category: InferenceCategory.FormExcessiveFieldsBeforeConversion, conclusion: 'form_excessive_fields_before_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: subCauseReasoning })];
+  return [createInference({ inference_key: 'form_excessive_fields_before_conversion', category: InferenceCategory.FormExcessiveFieldsBeforeConversion, conclusion: 'form_excessive_fields_before_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: subCauseReasoning, reasoning_slots: { severity, count: formCount } })];
 }
 
 function inferFormSubmissionRetryFriction(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('form_submission_retry_friction');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'form_submission_retry_friction', category: InferenceCategory.FormSubmissionRetryFriction, conclusion: 'form_submission_retry_friction', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users retry form submission multiple times without achieving progression. Repeated submissions indicate the form provides poor validation feedback, fails silently, or presents unclear error states — users believe the action should succeed but receive no confirmation of progress or clear explanation of failure. The root cause is inadequate submission feedback or broken validation.` })];
+  return [createInference({ inference_key: 'form_submission_retry_friction', category: InferenceCategory.FormSubmissionRetryFriction, conclusion: 'form_submission_retry_friction', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users retry form submission multiple times without achieving progression. Repeated submissions indicate the form provides poor validation feedback, fails silently, or presents unclear error states — users believe the action should succeed but receive no confirmation of progress or clear explanation of failure. The root cause is inadequate submission feedback or broken validation.`, reasoning_slots: { severity } })];
 }
 
 function inferSurfaceOscillationBeforeDropoff(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
@@ -3019,28 +3019,28 @@ function inferSurfaceOscillationBeforeDropoff(byKey: Map<string, Signal>, scopin
   const labelA = surfaceA.replace(/^surface:[^:]+:/, '') || surfaceA;
   const labelB = surfaceB.replace(/^surface:[^:]+:/, '') || surfaceB;
 
-  return [createInference({ inference_key: 'surface_oscillation_before_dropoff', category: InferenceCategory.SurfaceOscillationBeforeDropoff, conclusion: 'surface_oscillation_before_dropoff', conclusion_value: `${severity}:${labelA}:${labelB}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users oscillate back and forth between ${labelA} and ${labelB} before dropping off — neither surface resolves the user's decisive question. This pattern indicates unresolved decision friction: the user has a question that one surface raises but the other fails to answer, creating a navigational loop that ends in abandonment.` })];
+  return [createInference({ inference_key: 'surface_oscillation_before_dropoff', category: InferenceCategory.SurfaceOscillationBeforeDropoff, conclusion: 'surface_oscillation_before_dropoff', conclusion_value: `${severity}:${labelA}:${labelB}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users oscillate back and forth between ${labelA} and ${labelB} before dropping off — neither surface resolves the user's decisive question. This pattern indicates unresolved decision friction: the user has a question that one surface raises but the other fails to answer, creating a navigational loop that ends in abandonment.`, reasoning_slots: { severity } })];
 }
 
 function inferConversionFinalStepRetry(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('conversion_final_step_retry');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'conversion_final_step_retry', category: InferenceCategory.ConversionFinalStepRetry, conclusion: 'conversion_final_step_retry', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Conversion attempts in the final steps require multiple retries before completion or abandonment. Users who reach the final commitment moment are blocked by friction — failed submissions, unclear error states, or unresponsive interfaces at the purchase moment. Each retry erodes buyer confidence, and the accumulation of failed attempts directly causes abandonment at the highest-value step in the funnel.` })];
+  return [createInference({ inference_key: 'conversion_final_step_retry', category: InferenceCategory.ConversionFinalStepRetry, conclusion: 'conversion_final_step_retry', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Conversion attempts in the final steps require multiple retries before completion or abandonment. Users who reach the final commitment moment are blocked by friction — failed submissions, unclear error states, or unresponsive interfaces at the purchase moment. Each retry erodes buyer confidence, and the accumulation of failed attempts directly causes abandonment at the highest-value step in the funnel.`, reasoning_slots: { severity } })];
 }
 
 function inferCtaLateAvailabilityDelaysAction(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('cta_late_availability_delays_action');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'cta_late_availability_delays_action', category: InferenceCategory.CtaLateAvailabilityDelaysAction, conclusion: 'cta_late_availability_delays_action', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Primary CTAs render late on high-intent surfaces — users arrive with purchase intent but the action is not yet available. Late CTA availability creates a gap between user readiness and UI readiness. Users must wait for the page to fully render before they can act, widening the window for distraction, hesitation, or abandonment. The root cause is render-order or dependency-loading that deprioritizes the primary commercial action.` })];
+  return [createInference({ inference_key: 'cta_late_availability_delays_action', category: InferenceCategory.CtaLateAvailabilityDelaysAction, conclusion: 'cta_late_availability_delays_action', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Primary CTAs render late on high-intent surfaces — users arrive with purchase intent but the action is not yet available. Late CTA availability creates a gap between user readiness and UI readiness. Users must wait for the page to fully render before they can act, widening the window for distraction, hesitation, or abandonment. The root cause is render-order or dependency-loading that deprioritizes the primary commercial action.`, reasoning_slots: { severity } })];
 }
 
 function inferCheckoutAbandonNoFeedback(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   const sig = byKey.get('checkout_abandon_no_feedback');
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'checkout_abandon_no_feedback', category: InferenceCategory.CheckoutAbandonNoFeedback, conclusion: 'checkout_abandon_no_feedback', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users initiate checkout then abandon without any visible progress or confirmation. The checkout UI provides no immediate feedback — no loading state, no progress indicator, no next-step preview — after the commitment action. This feedback vacuum creates uncertainty: users do not know if their action was received, if the system is working, or what comes next. The root cause is absent immediate feedback and progress indication at the checkout entry point.` })];
+  return [createInference({ inference_key: 'checkout_abandon_no_feedback', category: InferenceCategory.CheckoutAbandonNoFeedback, conclusion: 'checkout_abandon_no_feedback', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users initiate checkout then abandon without any visible progress or confirmation. The checkout UI provides no immediate feedback — no loading state, no progress indicator, no next-step preview — after the commitment action. This feedback vacuum creates uncertainty: users do not know if their action was received, if the system is working, or what comes next. The root cause is absent immediate feedback and progress indication at the checkout entry point.`, reasoning_slots: { severity } })];
 }
 
 function inferSensitiveInputPerceivedRiskDropoff(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
@@ -3070,7 +3070,7 @@ function inferSensitiveInputPerceivedRiskDropoff(byKey: Map<string, Signal>, sco
     riskContext = 'The root cause is a trust-to-sensitivity mismatch — the form asks for data on a surface that provides inadequate security reassurance, privacy context, or provider trust signals for the sensitivity level required.';
   }
 
-  return [createInference({ inference_key: 'sensitive_input_perceived_risk_dropoff', category: InferenceCategory.SensitiveInputPerceivedRiskDropoff, conclusion: 'sensitive_input_perceived_risk_dropoff', conclusion_value: `${severity}:${fieldKind}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users drop off immediately after interacting with ${fieldLabel} fields. ${riskContext}` })];
+  return [createInference({ inference_key: 'sensitive_input_perceived_risk_dropoff', category: InferenceCategory.SensitiveInputPerceivedRiskDropoff, conclusion: 'sensitive_input_perceived_risk_dropoff', conclusion_value: `${severity}:${fieldKind}`, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users drop off immediately after interacting with ${fieldLabel} fields. ${riskContext}`, reasoning_slots: { severity } })];
 }
 
 // ──────────────────────────────────────────────
@@ -3080,7 +3080,7 @@ function inferSensitiveInputPerceivedRiskDropoff(byKey: Map<string, Signal>, sco
 function inferCohort(sig: Signal | undefined, key: string, cat: InferenceCategory, reasoning: string, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: key, category: cat, conclusion: key, conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning })];
+  return [createInference({ inference_key: key, category: cat, conclusion: key, conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning, reasoning_slots: { severity } })];
 }
 
 // First Impression Revenue
@@ -3199,6 +3199,7 @@ function inferCheckoutTrustLanguageAbsent(byKey: Map<string, Signal>, scoping: S
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
     reasoning: `Checkout pages lack trust language (trust score ${score}/100). Buyers at the payment moment see no security language, guarantees, or social proof — the absence of reassurance at the most anxious point in the journey directly suppresses conversion.`,
+    reasoning_slots: { severity, score },
   })];
 }
 
@@ -3222,6 +3223,7 @@ function inferCtaClarityWeak(byKey: Map<string, Signal>, scoping: Scoping, cycle
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
     reasoning: `Commercial pages have weak CTA clarity (score ${score}/100). Competing, generic, or unclear calls-to-action leave visitors unsure what to do next — when every button competes equally, none wins the click.`,
+    reasoning_slots: { severity, score },
   })];
 }
 
@@ -3245,6 +3247,7 @@ function inferProductPageCopyGeneric(byKey: Map<string, Signal>, scoping: Scopin
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
     reasoning: `Product pages use generic supplier text (quality score ${score}/100). Manufacturer-standard descriptions fail to differentiate, address objections, or communicate benefits — buyers comparison-shop and leave because every store says the same thing.`,
+    reasoning_slots: { severity, score },
   })];
 }
 
@@ -3268,6 +3271,7 @@ function inferPricingPageFramingUnclear(byKey: Map<string, Signal>, scoping: Sco
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
     reasoning: `Pricing page framing is weak (framing score ${score}/100). When the recommended plan isn't obvious, features aren't framed as benefits, and objections aren't handled — visitors stall at the plan selection step because they can't decide.`,
+    reasoning_slots: { severity, score },
   })];
 }
 
@@ -3323,7 +3327,7 @@ function inferSocialProofGeneric(byKey: Map<string, Signal>, scoping: Scoping, c
   if (matches.length === 0) return [];
   const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'social_proof_generic', category: InferenceCategory.SocialProofGeneric, conclusion: 'social_proof_generic', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `Testimonials are generic and unattributed. Reviews like "Great product!" without a name, company, or measurable outcome reduce trust instead of building it — buyers question if the reviews are real. ${matches.length} page(s) show social proof that lacks specificity.` })];
+  return [createInference({ inference_key: 'social_proof_generic', category: InferenceCategory.SocialProofGeneric, conclusion: 'social_proof_generic', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `Testimonials are generic and unattributed. Reviews like "Great product!" without a name, company, or measurable outcome reduce trust instead of building it — buyers question if the reviews are real. ${matches.length} page(s) show social proof that lacks specificity.`, reasoning_slots: { severity } })];
 }
 
 function inferFormErrorMessagesUnhelpful(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
@@ -3331,7 +3335,7 @@ function inferFormErrorMessagesUnhelpful(byKey: Map<string, Signal>, scoping: Sc
   if (matches.length === 0) return [];
   const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'form_error_messages_unhelpful', category: InferenceCategory.FormErrorMessagesUnhelpful, conclusion: 'form_error_messages_unhelpful', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `Form error messages are technical instead of helpful. When a buyer enters an invalid email and sees "Invalid input" instead of "Please enter a valid email (e.g. name@example.com)", they don't know what to fix and abandon the form. ${matches.length} form(s) use generic or technical error messages.` })];
+  return [createInference({ inference_key: 'form_error_messages_unhelpful', category: InferenceCategory.FormErrorMessagesUnhelpful, conclusion: 'form_error_messages_unhelpful', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `Form error messages are technical instead of helpful. When a buyer enters an invalid email and sees "Invalid input" instead of "Please enter a valid email (e.g. name@example.com)", they don't know what to fix and abandon the form. ${matches.length} form(s) use generic or technical error messages.`, reasoning_slots: { severity } })];
 }
 
 function inferOnboardingNoQuickWin(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
@@ -3339,7 +3343,7 @@ function inferOnboardingNoQuickWin(byKey: Map<string, Signal>, scoping: Scoping,
   if (matches.length === 0) return [];
   const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'onboarding_no_quick_win', category: InferenceCategory.OnboardingNoQuickWin, conclusion: 'onboarding_no_quick_win', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `New users don't experience product value in the first session. Without a quick win in the first minutes — a visible result, a completed setup, a personalized recommendation — trial users conclude the product isn't for them and never return. ${matches.length} onboarding surface(s) lack immediate value delivery.` })];
+  return [createInference({ inference_key: 'onboarding_no_quick_win', category: InferenceCategory.OnboardingNoQuickWin, conclusion: 'onboarding_no_quick_win', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `New users don't experience product value in the first session. Without a quick win in the first minutes — a visible result, a completed setup, a personalized recommendation — trial users conclude the product isn't for them and never return. ${matches.length} onboarding surface(s) lack immediate value delivery.`, reasoning_slots: { severity } })];
 }
 
 // ──────────────────────────────────────────────
@@ -3365,6 +3369,7 @@ function inferCheckoutAbandonmentRevenueLeak(byKey: Map<string, Signal>, scoping
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Checkout abandonment rate is ${sig.numeric_value}%. Every abandoned cart is revenue that reached the final step and walked away. At this rate, your checkout is the single largest revenue leak in the business — more than any marketing problem or product issue.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -3383,6 +3388,7 @@ function inferPromotedProductOutOfStock(byKey: Map<string, Signal>, scoping: Sco
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value} promoted product(s) are out of stock. Buyers arrive ready to purchase and find they cannot — ad spend drives traffic to dead ends, organic rankings reward pages that frustrate instead of convert.`,
+    reasoning_slots: { severity, count: sig.numeric_value ?? 0 },
   })];
 }
 
@@ -3401,6 +3407,7 @@ function inferHighRefundRateErodingRevenue(byKey: Map<string, Signal>, scoping: 
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Refund rate of ${sig.numeric_value}% is eating into revenue. Each refund costs the sale plus processing fees, shipping, and operational time. A refund rate this high signals a systemic gap between what the buyer expected and what they received.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -3419,6 +3426,7 @@ function inferSinglePaymentGatewayRisk(byKey: Map<string, Signal>, scoping: Scop
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value}% of transactions flow through a single payment gateway. A single point of failure for all revenue — one gateway outage, rate limit, or policy change stops every transaction until resolved. No fallback means zero revenue during downtime.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -3437,6 +3445,7 @@ function inferDiscountAbusePattern(byKey: Map<string, Signal>, scoping: Scoping,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value}% of orders use discount codes. When most orders are discounted, full-price purchases become the exception — buyers learn to wait for codes, share them freely, and never pay the listed price. Margin erosion compounds every month.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -3455,6 +3464,7 @@ function inferAdSpendPlatformConcentrationRisk(byKey: Map<string, Signal>, scopi
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value}% of monthly ad spend is concentrated on a single platform. An account disable, policy change, or platform outage would halt acquisition — standing up an alternative channel typically takes weeks, and revenue drops during the gap. Single-platform dependency is the acquisition-side analogue of single-payment-gateway risk.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -3473,6 +3483,7 @@ function inferAdsWithoutConversionVisibility(byKey: Map<string, Signal>, scoping
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Ad spend of $${sig.numeric_value}/month is running without a commerce platform connected to measure its return. Every dollar of ad spend without conversion tracking is a dollar that cannot be attributed, compared against the next dollar, or defended as worth the spend. ROAS is not low — it's literally unknown.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -3490,6 +3501,7 @@ function inferAdCreativeDeadDestination(byKey: Map<string, Signal>, scoping: Sco
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `$${sig.numeric_value}/month of ad spend is directed at a URL that returns an error or redirects through too many hops. Every dollar of this spend reaches a dead end — buyers who click the ad cannot complete the intended action. This is 100% waste, recoverable immediately by updating the creative's destination URL.`,
+    reasoning_slots: { severity: sig.value || 'medium' },
   })];
 }
 
@@ -3507,6 +3519,7 @@ function inferAdCreativeLandingTrustGap(byKey: Map<string, Signal>, scoping: Sco
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `$${sig.numeric_value}/month of ad spend sends buyers to a page that collects sensitive data (payment, password, identity) but shows fewer than 2 trust signals (badges, reviews, certificates). The gap between what the ad promises and what the landing page reassures drives abandonment — buyers who were ready to convert decide the risk is not worth it at the moment they are asked for sensitive information.`,
+    reasoning_slots: { severity: sig.value || 'medium' },
   })];
 }
 
@@ -3524,6 +3537,7 @@ function inferAdCreativeFormFrictionWaste(byKey: Map<string, Signal>, scoping: S
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `$${sig.numeric_value}/month of ad spend sends buyers to a page with a form that demands excessive input. Every field past six measurably increases abandonment — the ad brought a buyer to the conversion step, and the form pushed them away. A portion of this spend converts to friction instead of revenue.`,
+    reasoning_slots: { severity: sig.value || 'medium' },
   })];
 }
 
@@ -3541,6 +3555,7 @@ function inferAdCreativeMobileCheckoutDegraded(byKey: Map<string, Signal>, scopi
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `$${sig.numeric_value}/month of ad spend sends mobile buyers to a page where the commercial path shows step failures or extended load times. Mobile users who arrive from the ad encounter a degraded experience — CTAs load late, forms fail, or the checkout path stalls. The ad did its job getting the click; the landing page fails to convert it.`,
+    reasoning_slots: { severity: sig.value || 'medium' },
   })];
 }
 
@@ -3559,6 +3574,7 @@ function inferLowRepeatPurchaseRate(byKey: Map<string, Signal>, scoping: Scoping
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `Only ${sig.numeric_value}% of customers return to buy again. Customer acquisition cost is not being amortized across multiple purchases — each customer is effectively a one-time transaction, making every new sale as expensive as the first.`,
+    reasoning_slots: { severity },
   })];
 }
 
@@ -3577,5 +3593,6 @@ function inferDeadWeightProducts(byKey: Map<string, Signal>, scoping: Scoping, c
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value} product(s) haven't generated a single sale in 30 days. Dead inventory dilutes site search results, clutters category pages, and wastes operational bandwidth on listings that contribute nothing to revenue.`,
+    reasoning_slots: { severity, count: sig.numeric_value ?? 0 },
   })];
 }

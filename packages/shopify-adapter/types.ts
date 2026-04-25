@@ -228,6 +228,7 @@ export interface ShopifyCustomer {
 export interface ShopifyProduct {
   id: number;
   title: string;
+  handle: string;
   status: string;
   variants: { id: number; inventory_quantity: number; price: string }[];
 }

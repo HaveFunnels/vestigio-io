@@ -299,7 +299,7 @@ export async function fetchProducts(
   const allProducts: ShopifyProduct[] = [];
 
   let pageUrl: string | null =
-    `/products.json?status=active&limit=250&fields=id,title,status,variants`;
+    `/products.json?status=active&limit=250&fields=id,title,handle,status,variants`;
 
   let pageCount = 0;
   const MAX_PAGES = 10;
@@ -316,6 +316,7 @@ export async function fetchProducts(
       const products: ShopifyProduct[] = (data.products || []).map((p: any) => ({
         id: p.id,
         title: p.title,
+        handle: p.handle || '',
         status: p.status,
         variants: (p.variants || []).map((v: any) => ({
           id: v.id,

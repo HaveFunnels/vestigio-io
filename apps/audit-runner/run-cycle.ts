@@ -495,12 +495,16 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						const shopDomain = (config.store_url || '')
 							.replace(/^https?:\/\//, '')
 							.replace(/\/+$/, '');
+						// Extract crawled page paths for promoted product cross-reference
+						const crawledPaths = (result.coverage_entries || []).map((e: any) => {
+							try { return new URL(e.url).pathname; } catch { return e.url; }
+						});
 						const pollResult = await pollShopifyData({
 							shop_domain: shopDomain,
 							access_token: config.access_token,
 							api_key: config.api_key || '',
 							api_secret: config.api_secret || '',
-						});
+						}, {}, crawledPaths);
 
 						if (pollResult.metrics.length > 0) {
 							const snapshot: IntegrationSnapshot<'shopify'> = {

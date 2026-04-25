@@ -81,6 +81,8 @@ export interface ShopifyPollResult {
 export async function pollShopifyData(
   credentials: ShopifyCredentials,
   config: Partial<ShopifyPollingConfig> = {},
+  /** Crawled page paths (e.g. ['/products/blue-hoodie', '/collections/all']) for promoted product cross-reference */
+  crawledPaths: string[] = [],
 ): Promise<ShopifyPollResult> {
   const startTime = Date.now();
   const errors: string[] = [];
@@ -181,8 +183,23 @@ export async function pollShopifyData(
     ? aggregateProducts(productResult.products, orderLineItems)
     : null;
 
+  // Cross-reference crawled product pages with Shopify product handles
+  // to identify "promoted" products (products visible on the site).
+  // Shopify product pages follow /products/{handle} pattern.
+  const crawledHandles = new Set(
+    crawledPaths
+      .map(p => {
+        const m = p.match(/\/products\/([^/?#]+)/);
+        return m ? m[1].toLowerCase() : null;
+      })
+      .filter(Boolean) as string[],
+  );
+  const promotedProductIds = productResult.products
+    .filter(p => p.handle && crawledHandles.has(p.handle.toLowerCase()))
+    .map(p => p.id);
+
   const inventoryMetrics = (productResult.products.length > 0 && inventoryResult.levels.length > 0)
-    ? aggregateInventory(productResult.products, inventoryResult.levels, [])
+    ? aggregateInventory(productResult.products, inventoryResult.levels, promotedProductIds)
     : null;
 
   // Step 7: Map to BusinessInputs

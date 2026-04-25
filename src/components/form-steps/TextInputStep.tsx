@@ -67,11 +67,11 @@ export default function TextInputStep({
 		<div className="flex flex-1 flex-col">
 			{/* Top: title + subtitle */}
 			<div>
-				<h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl">
 					{title}
 				</h2>
 				{subtitle && (
-					<p className="mt-2 text-sm leading-relaxed text-zinc-500">
+					<p className="mt-2 text-[15px] leading-relaxed text-zinc-500 sm:text-base">
 						{subtitle}
 					</p>
 				)}

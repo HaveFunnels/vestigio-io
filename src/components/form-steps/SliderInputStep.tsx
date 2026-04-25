@@ -119,43 +119,46 @@ export default function SliderInputStep({
 				.step-slider {
 					-webkit-appearance: none;
 					appearance: none;
-					height: 6px;
-					border-radius: 3px;
+					height: 10px;
+					border-radius: 5px;
 					outline: none;
 					cursor: pointer;
+					padding: 8px 0;
+					box-sizing: content-box;
+					background-clip: content-box;
 				}
 				.step-slider::-webkit-slider-thumb {
 					-webkit-appearance: none;
 					appearance: none;
-					width: 24px;
-					height: 24px;
+					width: 32px;
+					height: 32px;
 					border-radius: 50%;
 					background: #18181b;
 					border: 3px solid #ffffff;
-					box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+					box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 					cursor: pointer;
 					transition: box-shadow 0.15s;
-					margin-top: -9px;
+					margin-top: -11px;
 				}
 				.step-slider::-webkit-slider-thumb:hover {
-					box-shadow: 0 1px 8px rgba(0,0,0,0.3);
+					box-shadow: 0 2px 10px rgba(0,0,0,0.35);
 				}
 				.step-slider::-moz-range-thumb {
-					width: 24px;
-					height: 24px;
+					width: 32px;
+					height: 32px;
 					border-radius: 50%;
 					background: #18181b;
 					border: 3px solid #ffffff;
-					box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+					box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 					cursor: pointer;
 				}
 				.step-slider::-webkit-slider-runnable-track {
-					height: 6px;
-					border-radius: 3px;
+					height: 10px;
+					border-radius: 5px;
 				}
 				.step-slider::-moz-range-track {
-					height: 6px;
-					border-radius: 3px;
+					height: 10px;
+					border-radius: 5px;
 					background: #e4e4e7;
 				}
 			`}</style>

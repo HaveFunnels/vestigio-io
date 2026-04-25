@@ -111,22 +111,25 @@ const PERSONA_ICONS = [
 
 const ACCENTS = [
 	{
-		border: "border-amber-500/40",
+		border: "border-amber-500/50",
 		label: "text-amber-300/90",
 		icon: "text-amber-400",
-		glow: "hover:shadow-[0_18px_50px_-18px_rgba(245,158,11,0.25)]",
+		shadow: "shadow-[0_4px_30px_-8px_rgba(245,158,11,0.15)]",
+		glow: "hover:shadow-[0_18px_50px_-18px_rgba(245,158,11,0.3)]",
 	},
 	{
-		border: "border-emerald-500/40",
+		border: "border-emerald-500/50",
 		label: "text-emerald-300/90",
 		icon: "text-emerald-400",
-		glow: "hover:shadow-[0_18px_50px_-18px_rgba(16,185,129,0.25)]",
+		shadow: "shadow-[0_4px_30px_-8px_rgba(16,185,129,0.15)]",
+		glow: "hover:shadow-[0_18px_50px_-18px_rgba(16,185,129,0.3)]",
 	},
 	{
-		border: "border-sky-500/40",
+		border: "border-sky-500/50",
 		label: "text-sky-300/90",
 		icon: "text-sky-400",
-		glow: "hover:shadow-[0_18px_50px_-18px_rgba(56,189,248,0.25)]",
+		shadow: "shadow-[0_4px_30px_-8px_rgba(56,189,248,0.15)]",
+		glow: "hover:shadow-[0_18px_50px_-18px_rgba(56,189,248,0.3)]",
 	},
 ];
 
@@ -169,7 +172,7 @@ const FeaturesWithImage = async () => {
 						return (
 							<div
 								key={i}
-								className={`group relative flex flex-col rounded-2xl border ${accent.border} bg-white/[0.02] p-6 transition-all duration-500 ease-out hover:-translate-y-1 sm:p-7 ${accent.glow}`}
+								className={`group relative flex flex-col rounded-2xl border ${accent.border} ${accent.shadow} bg-white/[0.02] p-6 transition-all duration-500 ease-out hover:-translate-y-1 sm:p-7 ${accent.glow}`}
 							>
 								<div className="relative flex h-full flex-col">
 									{/* Persona label + icon */}

@@ -121,14 +121,9 @@ export default function LpAuditPage() {
 									<path d="M2.5 6L5 8.5L9.5 3.5" />
 								</svg>
 							</div>
-							<div>
-								<span className="text-sm font-medium text-zinc-700">
-									Eu sou dono ou tenho autorização para analisar este domínio
-								</span>
-								<p className="mt-0.5 text-xs text-zinc-400">
-									A Vestigio só analisa páginas públicas.
-								</p>
-							</div>
+							<span className="text-xs text-zinc-500">
+								Eu sou dono ou tenho autorização para analisar este domínio
+							</span>
 						</label>
 					</TextInputStep>
 				)}
@@ -193,7 +188,7 @@ export default function LpAuditPage() {
 
 				{/* Global error */}
 				{f.globalError && (
-					<div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+					<div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-700">
 						{f.globalError}
 					</div>
 				)}

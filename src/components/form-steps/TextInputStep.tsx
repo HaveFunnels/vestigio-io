@@ -70,16 +70,17 @@ export default function TextInputStep({
 	return (
 		<div className="flex flex-col">
 			{/* Title */}
-			<h2 className="mb-1.5 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
+			<h2 className="mb-2 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
 				{title}
 			</h2>
 
 			{/* Subtitle */}
 			{subtitle && (
-				<p className="mb-6 text-sm leading-relaxed text-zinc-500">
+				<p className="mb-8 text-sm leading-relaxed text-zinc-500">
 					{subtitle}
 				</p>
 			)}
+			{!subtitle && <div className="mb-6" />}
 
 			{/* Input */}
 			<div className="mb-2">
@@ -124,7 +125,7 @@ export default function TextInputStep({
 				type="button"
 				onClick={onSubmit}
 				disabled={!canSubmit}
-				className={`mt-6 w-full rounded-xl px-6 py-3.5 text-sm font-semibold transition-all ${
+				className={`mt-8 w-full rounded-xl px-6 py-3.5 text-sm font-semibold transition-all ${
 					canSubmit
 						? "bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.98]"
 						: "cursor-not-allowed bg-zinc-200 text-zinc-400"

@@ -61,19 +61,19 @@ export default function CardSelectionStep<T extends string = string>({
 	return (
 		<div className="flex flex-col">
 			{/* Title */}
-			<h2 className="mb-1.5 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
+			<h2 className="mb-2 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
 				{title}
 			</h2>
 
 			{/* Subtitle */}
 			{subtitle && (
-				<p className="mb-6 text-sm leading-relaxed text-zinc-500">
+				<p className="mb-8 text-sm leading-relaxed text-zinc-500">
 					{subtitle}
 				</p>
 			)}
 
 			{/* Card grid — 1 col mobile, 2 col desktop */}
-			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+			<div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
 				{options.map((option) => {
 					const isSelected = pending === option.value;
 
@@ -83,7 +83,7 @@ export default function CardSelectionStep<T extends string = string>({
 							type="button"
 							onClick={() => handleTap(option.value)}
 							disabled={!!pending}
-							className={`relative flex flex-col items-start rounded-xl border px-5 py-4 text-left transition-all duration-200 ${
+							className={`relative flex flex-col items-start rounded-xl border px-5 py-5 text-left transition-all duration-200 ${
 								isSelected
 									? "border-zinc-900 bg-zinc-900 scale-[1.02] shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
 									: "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100"

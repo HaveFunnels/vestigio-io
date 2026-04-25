@@ -28,21 +28,16 @@ function parseTitleHighlight(text: string): React.ReactNode {
 		i % 2 === 1 ? (
 			<span key={i} className="relative inline-block text-emerald-400">
 				{part}
-				<svg
-					className="absolute -bottom-1 left-0 h-[6px] w-full"
-					viewBox="0 0 200 8"
-					preserveAspectRatio="none"
+				<span
+					className="absolute -bottom-0.5 left-0 h-[3px] w-full rounded-full"
+					style={{
+						background:
+							"linear-gradient(90deg, rgba(52,211,153,0.15), rgba(110,231,183,0.7), rgba(52,211,153,0.15))",
+						backgroundSize: "200% 100%",
+						animation: "title-underline-shimmer 3s ease-in-out infinite",
+					}}
 					aria-hidden
-				>
-					<path
-						d="M2 6 Q40 1, 80 5 T160 4 T198 5"
-						stroke="currentColor"
-						strokeWidth="2.5"
-						fill="none"
-						strokeLinecap="round"
-						opacity="0.55"
-					/>
-				</svg>
+				/>
 			</span>
 		) : (
 			<span key={i}>{part}</span>
@@ -116,19 +111,19 @@ const PERSONA_ICONS = [
 
 const ACCENTS = [
 	{
-		border: "border-zinc-700/70",
+		border: "border-zinc-600/60",
 		label: "text-amber-300/90",
 		icon: "text-amber-400",
 		glow: "hover:shadow-[0_18px_50px_-18px_rgba(245,158,11,0.25)]",
 	},
 	{
-		border: "border-zinc-700/70",
+		border: "border-zinc-600/60",
 		label: "text-emerald-300/90",
 		icon: "text-emerald-400",
 		glow: "hover:shadow-[0_18px_50px_-18px_rgba(16,185,129,0.25)]",
 	},
 	{
-		border: "border-zinc-700/70",
+		border: "border-zinc-600/60",
 		label: "text-sky-300/90",
 		icon: "text-sky-400",
 		glow: "hover:shadow-[0_18px_50px_-18px_rgba(56,189,248,0.25)]",

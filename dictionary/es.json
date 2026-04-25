@@ -566,23 +566,23 @@
 		},
 		"use_cases": {
 			"eyebrow": "Hecho para",
-			"title": "Operadores que no escalan a ciegas",
+			"title": "Operadores que no escalan **a ciegas**",
 			"subtitle": "",
 			"personas": [
 				{
 					"persona": "El Fundador",
 					"question": "Gasto $40k/mes en ads. ¿Estoy enviando tráfico a un embudo roto?",
-					"answer": "Vestigio responde en 60 segundos. Con montos en dólares en cada hallazgo."
+					"answer": "Vestigio responde en **60 segundos**. Con montos en dólares en cada hallazgo."
 				},
 				{
 					"persona": "El Head de Growth",
 					"question": "Hicimos deploy la semana pasada. ¿Se rompió algo?",
-					"answer": "Vestigio compara cada superficie con el ciclo anterior. Las regresiones aparecen ordenadas por impacto."
+					"answer": "Vestigio compara cada superficie con el ciclo anterior. Las regresiones aparecen ordenadas por **impacto**."
 				},
 				{
 					"persona": "El CTO",
 					"question": "Los chargebacks están subiendo. ¿Cuál es la causa raíz?",
-					"answer": "Vestigio rastrea el riesgo de chargeback hasta superficies, políticas y brechas de confianza específicas. Evidencia adjunta."
+					"answer": "Vestigio rastrea el riesgo de chargeback hasta superficies, políticas y brechas de confianza específicas. **Evidencia adjunta.**"
 				}
 			]
 		},

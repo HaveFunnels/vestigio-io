@@ -566,23 +566,23 @@
 		},
 		"use_cases": {
 			"eyebrow": "Gebaut für",
-			"title": "Operatoren, die nicht blind skalieren",
+			"title": "Operatoren, die nicht **blind** skalieren",
 			"subtitle": "",
 			"personas": [
 				{
 					"persona": "Der Gründer",
 					"question": "Ich gebe $40k/Monat für Ads aus. Schicke ich Traffic in einen kaputten Funnel?",
-					"answer": "Vestigio antwortet in 60 Sekunden. Mit Dollarwerten bei jedem Fund."
+					"answer": "Vestigio antwortet in **60 Sekunden**. Mit Dollarwerten bei jedem Fund."
 				},
 				{
 					"persona": "Der Head of Growth",
 					"question": "Wir haben letzte Woche deployed. Ist etwas kaputt gegangen?",
-					"answer": "Vestigio vergleicht jede Oberfläche mit dem letzten Zyklus. Regressionen erscheinen nach Auswirkung sortiert."
+					"answer": "Vestigio vergleicht jede Oberfläche mit dem letzten Zyklus. Regressionen erscheinen nach **Auswirkung** sortiert."
 				},
 				{
 					"persona": "Der CTO",
 					"question": "Chargebacks steigen. Was ist die Ursache?",
-					"answer": "Vestigio verfolgt Chargeback-Risiken zu spezifischen Oberflächen, Richtlinien und Vertrauenslücken. Beweise angehängt."
+					"answer": "Vestigio verfolgt Chargeback-Risiken zu spezifischen Oberflächen, Richtlinien und Vertrauenslücken. **Beweise angehängt.**"
 				}
 			]
 		},

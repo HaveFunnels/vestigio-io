@@ -141,6 +141,20 @@ const TEMPLATES: Record<string, NotificationTemplate> = {
 		},
 	},
 
+	mini_audit_complete: {
+		sms: {
+			body: "[Vestigio] Diagnóstico de {domain}: {count} vazamentos, {impact}/mês em risco. Veja: {resultUrl}",
+		},
+		email: {
+			subject: "Diagnóstico de {domain}: {count} vazamentos — {impact}/mês em risco",
+			headline: "Seu diagnóstico está pronto",
+			intro: "{findingsHtml}<p style=\"margin:16px 0 0 0;font-size:13px;color:#a1a1aa;\">⏱ Este link expira em 30 minutos.</p>",
+			ctaLabel: "Ver meu diagnóstico completo",
+			ctaPath: "{resultUrl}",
+			footerNote: "Você recebeu este email porque solicitou um diagnóstico gratuito na Vestigio.",
+		},
+	},
+
 	inactivity_pause: {
 		sms: {
 			body: "[Vestigio] Suas auditorias de {domain} foram pausadas por inatividade. Acesse app.vestigio.io para retomar.",

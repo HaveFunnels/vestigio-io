@@ -229,6 +229,117 @@ export async function sendActivationEmail(
 	});
 }
 
+// ──────────────────────────────────────────────
+// Mini-audit completion email — sent to the lead's email
+// when audit_complete fires. Includes findings summary
+// with severity + impact, and a CTA to the result page.
+// ──────────────────────────────────────────────
+
+interface MiniAuditFinding {
+	title: string;
+	severity: string;
+	impact?: { min_brl_cents: number; max_brl_cents: number } | null;
+}
+
+const SEVERITY_LABELS: Record<string, string> = {
+	critical: "Crítico",
+	high: "Alto",
+	medium: "Médio",
+	low: "Baixo",
+};
+
+const SEVERITY_COLORS: Record<string, string> = {
+	critical: "#f87171",
+	high: "#fbbf24",
+	medium: "#facc15",
+	low: "#a1a1aa",
+};
+
+function formatBRLCents(cents: number): string {
+	return `R$ ${Math.round(cents / 100).toLocaleString("pt-BR")}`;
+}
+
+function buildFindingsHtml(
+	domain: string,
+	findings: MiniAuditFinding[],
+	totalImpactMin: number,
+	totalImpactMax: number,
+	hiddenCount: number,
+): string {
+	const rows = findings
+		.filter((f) => f.severity !== "positive")
+		.map((f) => {
+			const color = SEVERITY_COLORS[f.severity] || "#a1a1aa";
+			const label = SEVERITY_LABELS[f.severity] || f.severity;
+			const impact = f.impact
+				? `<span style="color:#f87171;font-family:monospace;font-size:12px;">↓ ${formatBRLCents(f.impact.min_brl_cents)}–${formatBRLCents(f.impact.max_brl_cents)}/mês</span>`
+				: "";
+			return `<tr>
+				<td style="padding:8px 12px;border-bottom:1px solid #27272a;">
+					<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:8px;vertical-align:middle;"></span>
+					<span style="font-size:11px;font-weight:600;text-transform:uppercase;color:${color};letter-spacing:0.5px;">${escapeHtml(label)}</span>
+				</td>
+				<td style="padding:8px 12px;border-bottom:1px solid #27272a;font-size:14px;color:#e4e4e7;">${escapeHtml(f.title)}</td>
+				<td style="padding:8px 12px;border-bottom:1px solid #27272a;text-align:right;">${impact}</td>
+			</tr>`;
+		})
+		.join("");
+
+	return `<p style="margin:0 0 8px 0;font-size:15px;color:#d4d4d8;">
+		Encontramos <strong style="color:#f87171;">${findings.filter((f) => f.severity !== "positive").length} vazamentos</strong> em
+		<strong>${escapeHtml(domain)}</strong> custando entre
+		<strong style="color:#f87171;">${formatBRLCents(totalImpactMin)}</strong> e
+		<strong style="color:#f87171;">${formatBRLCents(totalImpactMax)}</strong> por mês.
+	</p>
+	<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:16px 0;background:#0f0f17;border:1px solid #27272a;border-radius:8px;overflow:hidden;">
+		${rows}
+	</table>
+	${hiddenCount > 0 ? `<p style="margin:0 0 8px 0;font-size:13px;color:#71717a;">+ ${hiddenCount} findings adicionais bloqueados no diagnóstico gratuito.</p>` : ""}`;
+}
+
+export async function sendMiniAuditEmail(args: {
+	email: string;
+	domain: string;
+	leadId: string;
+	findings: MiniAuditFinding[];
+	hiddenCount: number;
+	totalImpactMin: number;
+	totalImpactMax: number;
+}): Promise<void> {
+	const baseUrl = getBaseUrl();
+	const resultUrl = `${baseUrl}/lp/audit/result/${args.leadId}`;
+	const negativeCount = args.findings.filter((f) => f.severity !== "positive").length;
+
+	const findingsHtml = buildFindingsHtml(
+		args.domain,
+		args.findings,
+		args.totalImpactMin,
+		args.totalImpactMax,
+		args.hiddenCount,
+	);
+
+	const vars = {
+		domain: args.domain.replace(/[<>&"']/g, ""),
+		count: String(negativeCount),
+		impact: `${formatBRLCents(args.totalImpactMin)}–${formatBRLCents(args.totalImpactMax)}`,
+		resultUrl,
+		findingsHtml,
+	};
+
+	const rendered = renderEmailFromTemplate("mini_audit_complete", vars, baseUrl)!;
+	const smsText = renderSmsFromTemplate("mini_audit_complete", vars)!;
+
+	const { notifyDirect } = await import("@/libs/notifications");
+	await notifyDirect({
+		event: "mini_audit_complete",
+		to: { email: args.email },
+		subject: rendered.subject,
+		bodyHtml: rendered.html,
+		bodyText: smsText,
+		tag: `mini_audit:${args.leadId}`,
+	});
+}
+
 export async function sendPasswordResetEmail(userId: string, email: string, link: string): Promise<void> {
 	const vars = { link };
 	const rendered = renderEmailFromTemplate("password_reset", vars, getBaseUrl())!;

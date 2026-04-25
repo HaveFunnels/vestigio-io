@@ -41,7 +41,8 @@ export type NotificationEvent =
 	// cycle. Celebration moment — delivers the "since you fixed X,
 	// you recovered $Y/mo" payoff.
 	| "verified_resolved"
-	| "digest";
+	| "digest"
+	| "mini_audit_complete";
 
 interface BaseNotification {
 	event: NotificationEvent;
@@ -471,6 +472,9 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 		case "digest":
 			// Daily digest respects emailEnabled (general toggle).
 			// Skipping if user has turned off email entirely.
+			return true;
+		case "mini_audit_complete":
+			// Anonymous lead email — always sent (they just requested it)
 			return true;
 	}
 }

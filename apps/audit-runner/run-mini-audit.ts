@@ -5,6 +5,7 @@ import { httpFetch } from "../../workers/ingestion/http-client";
 import { extractLandingPreview } from "../../workers/ingestion/landing-preview";
 import { deriveMiniAuditFindings } from "../../workers/ingestion/mini-audit-findings";
 import { hashDomain, normalizeDomain } from "@/libs/lead-validation";
+import { summarizeMiniImpact, formatBRL } from "../../packages/impact/mini-impact";
 
 // ──────────────────────────────────────────────
 // Mini-Audit Worker (anonymous /lp/audit funnel)
@@ -25,6 +26,42 @@ import { hashDomain, normalizeDomain } from "@/libs/lead-validation";
 // ──────────────────────────────────────────────
 
 const CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+
+/** Fire-and-forget email to the lead's email with findings summary. */
+async function sendCompletionEmail(
+	leadId: string,
+	email: string | null,
+	domain: string,
+	miniAuditResult: { visibleFindings: string; blurredFindings: string },
+): Promise<void> {
+	if (!email) return;
+	try {
+		const { sendMiniAuditEmail } = await import("@/libs/notification-triggers");
+		const visible = JSON.parse(miniAuditResult.visibleFindings) as Array<{
+			title: string;
+			severity: string;
+			impact?: { min_brl_cents: number; max_brl_cents: number } | null;
+		}>;
+		const blurred = JSON.parse(miniAuditResult.blurredFindings) as unknown[];
+		const negative = visible.filter((f) => f.severity !== "positive");
+		const impacts = negative.map((f) => f.impact).filter(Boolean);
+		const totalMin = impacts.reduce((sum, i) => sum + (i?.min_brl_cents || 0), 0);
+		const totalMax = impacts.reduce((sum, i) => sum + (i?.max_brl_cents || 0), 0);
+
+		await sendMiniAuditEmail({
+			email,
+			domain,
+			leadId,
+			findings: negative,
+			hiddenCount: blurred.length,
+			totalImpactMin: totalMin,
+			totalImpactMax: totalMax,
+		});
+		console.log(`[mini-audit ${leadId}] completion email sent to ${email.slice(0, 3)}***`);
+	} catch (err) {
+		console.error(`[mini-audit ${leadId}] email send failed:`, err);
+	}
+}
 
 export interface RunMiniAuditResult {
 	leadId: string;
@@ -77,6 +114,10 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 			},
 		});
 		console.log(`[mini-audit ${leadId}] cache hit for ${normalized} → ${cached.id}`);
+
+		// Fire-and-forget email
+		sendCompletionEmail(leadId, lead.email, lead.domain!, cached);
+
 		return {
 			leadId,
 			miniAuditId: cached.id,
@@ -216,6 +257,12 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 		console.log(
 			`[mini-audit ${leadId}] complete — ${normalized}, ${findings.visible.length}+${findings.blurred.length} findings, ${Date.now() - startedAt}ms`,
 		);
+
+		// Fire-and-forget email
+		sendCompletionEmail(leadId, lead.email, lead.domain!, {
+			visibleFindings: JSON.stringify(findings.visible),
+			blurredFindings: JSON.stringify(findings.blurred),
+		});
 
 		return {
 			leadId,

@@ -3,11 +3,13 @@
 /**
  * CardSelectionStep — tappable card grid with auto-advance.
  *
- * On tap: selected card gets black border + subtle scale + checkmark.
- * After a short delay (400ms default) the parent's onSelect fires,
- * which should advance to the next step. No "Next" button.
+ * Layout:
+ *   Title + subtitle pinned to top
+ *   (stretch space)
+ *   Card grid pinned to bottom
  *
- * Cards start with no pre-selection — all look identical until tapped.
+ * On tap: selected card gets black bg + white text + checkmark.
+ * After 400ms the parent's onSelect fires to advance.
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -23,9 +25,7 @@ interface CardSelectionStepProps<T extends string = string> {
 	title: string;
 	subtitle?: string;
 	options: CardOption<T>[];
-	/** Called after the auto-advance delay with the selected value */
 	onSelect: (value: T) => void;
-	/** Delay in ms before auto-advancing (default 400) */
 	autoAdvanceDelay?: number;
 }
 
@@ -39,7 +39,6 @@ export default function CardSelectionStep<T extends string = string>({
 	const [pending, setPending] = useState<T | null>(null);
 	const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-	// Cleanup timer on unmount
 	useEffect(() => {
 		return () => {
 			if (timerRef.current) clearTimeout(timerRef.current);
@@ -59,21 +58,24 @@ export default function CardSelectionStep<T extends string = string>({
 	);
 
 	return (
-		<div className="flex flex-col">
-			{/* Title */}
-			<h2 className="mb-2 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
-				{title}
-			</h2>
+		<div className="flex flex-1 flex-col">
+			{/* Top: title + subtitle */}
+			<div>
+				<h2 className="text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
+					{title}
+				</h2>
+				{subtitle && (
+					<p className="mt-2 text-sm leading-relaxed text-zinc-500">
+						{subtitle}
+					</p>
+				)}
+			</div>
 
-			{/* Subtitle */}
-			{subtitle && (
-				<p className="mb-8 text-sm leading-relaxed text-zinc-500">
-					{subtitle}
-				</p>
-			)}
+			{/* Stretch space */}
+			<div className="flex-1 min-h-[40px]" />
 
-			{/* Card grid — 1 col mobile, 2 col desktop */}
-			<div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+			{/* Bottom: card grid */}
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				{options.map((option) => {
 					const isSelected = pending === option.value;
 
@@ -83,13 +85,12 @@ export default function CardSelectionStep<T extends string = string>({
 							type="button"
 							onClick={() => handleTap(option.value)}
 							disabled={!!pending}
-							className={`relative flex flex-col items-start rounded-xl border px-5 py-5 text-left transition-all duration-200 ${
+							className={`relative flex flex-col items-start rounded-xl border px-5 py-4 text-left transition-all duration-200 ${
 								isSelected
 									? "border-zinc-900 bg-zinc-900 scale-[1.02] shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
 									: "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100"
 							} ${pending && !isSelected ? "opacity-40" : ""}`}
 						>
-							{/* Label */}
 							<span
 								className={`text-sm font-semibold ${
 									isSelected ? "text-white" : "text-zinc-900"
@@ -98,7 +99,6 @@ export default function CardSelectionStep<T extends string = string>({
 								{option.label}
 							</span>
 
-							{/* Description */}
 							{option.description && (
 								<span
 									className={`mt-0.5 text-xs ${
@@ -109,16 +109,11 @@ export default function CardSelectionStep<T extends string = string>({
 								</span>
 							)}
 
-							{/* Checkmark */}
 							{isSelected && (
 								<motion.div
 									initial={{ scale: 0 }}
 									animate={{ scale: 1 }}
-									transition={{
-										type: "spring",
-										stiffness: 300,
-										damping: 20,
-									}}
+									transition={{ type: "spring", stiffness: 300, damping: 20 }}
 									className="absolute right-3 top-3"
 								>
 									<div className="flex h-5 w-5 items-center justify-center rounded-full bg-white">

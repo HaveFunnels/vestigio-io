@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * TextInputStep — a single text input question on a light card.
+ * TextInputStep — single text input on a full-height card.
  *
- * Shows: bold title, optional subtitle, one input, optional extra
- * content (e.g. ownership checkbox), and a "Continue" button.
- * Enter key submits when the input is valid.
+ * Layout:
+ *   Title + subtitle pinned to top
+ *   (stretch space)
+ *   Input + optional children (checkbox) + button pinned to bottom
  */
 
 import { useRef, useEffect } from "react";
@@ -13,7 +14,6 @@ import { useRef, useEffect } from "react";
 interface TextInputStepProps {
 	title: string;
 	subtitle?: string;
-	/** Input props */
 	inputType?: "text" | "url" | "email" | "tel";
 	value: string;
 	onChange: (value: string) => void;
@@ -21,14 +21,11 @@ interface TextInputStepProps {
 	error?: string | null;
 	warning?: React.ReactNode;
 	hint?: string;
-	/** Extra content rendered below the input (e.g. ownership checkbox) */
 	children?: React.ReactNode;
-	/** Submit button */
 	buttonLabel: string;
 	onSubmit: () => void;
 	disabled?: boolean;
 	loading?: boolean;
-	/** Auto-focus the input on mount */
 	autoFocus?: boolean;
 }
 
@@ -54,7 +51,6 @@ export default function TextInputStep({
 
 	useEffect(() => {
 		if (autoFocus) {
-			// Small delay so AnimatePresence finishes the enter animation
 			const t = setTimeout(() => inputRef.current?.focus(), 320);
 			return () => clearTimeout(t);
 		}
@@ -68,22 +64,24 @@ export default function TextInputStep({
 	};
 
 	return (
-		<div className="flex flex-col">
-			{/* Title */}
-			<h2 className="mb-2 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
-				{title}
-			</h2>
+		<div className="flex flex-1 flex-col">
+			{/* Top: title + subtitle */}
+			<div>
+				<h2 className="text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
+					{title}
+				</h2>
+				{subtitle && (
+					<p className="mt-2 text-sm leading-relaxed text-zinc-500">
+						{subtitle}
+					</p>
+				)}
+			</div>
 
-			{/* Subtitle */}
-			{subtitle && (
-				<p className="mb-8 text-sm leading-relaxed text-zinc-500">
-					{subtitle}
-				</p>
-			)}
-			{!subtitle && <div className="mb-6" />}
+			{/* Stretch space */}
+			<div className="flex-1 min-h-[40px]" />
 
-			{/* Input */}
-			<div className="mb-2">
+			{/* Bottom: input + extras + button */}
+			<div>
 				<input
 					ref={inputRef}
 					type={inputType}
@@ -93,55 +91,48 @@ export default function TextInputStep({
 					placeholder={placeholder}
 					autoComplete={inputType === "email" ? "email" : inputType === "url" ? "url" : "off"}
 					className={`shiny-input w-full rounded-xl px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none ${
-						error
-							? "!border-red-400 !bg-red-50"
-							: ""
+						error ? "!border-red-400 !bg-red-50" : ""
 					}`}
 				/>
-			</div>
 
-			{/* Error */}
-			{error && (
-				<p className="mb-2 text-xs text-red-600">{error}</p>
-			)}
-
-			{/* Warning */}
-			{warning && !error && (
-				<div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-					{warning}
-				</div>
-			)}
-
-			{/* Hint */}
-			{hint && !error && !warning && (
-				<p className="mb-2 text-xs text-zinc-400">{hint}</p>
-			)}
-
-			{/* Extra content (e.g. ownership checkbox) */}
-			{children && <div className="mt-3">{children}</div>}
-
-			{/* Submit button */}
-			<button
-				type="button"
-				onClick={onSubmit}
-				disabled={!canSubmit}
-				className={`mt-8 w-full rounded-xl px-6 py-3.5 text-sm font-semibold transition-all ${
-					canSubmit
-						? "bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.98]"
-						: "cursor-not-allowed bg-zinc-200 text-zinc-400"
-				}`}
-			>
-				{loading ? (
-					<span className="flex items-center justify-center gap-2">
-						<svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-							<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
-						</svg>
-						{buttonLabel}
-					</span>
-				) : (
-					buttonLabel
+				{error && (
+					<p className="mt-2 text-xs text-red-600">{error}</p>
 				)}
-			</button>
+
+				{warning && !error && (
+					<div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+						{warning}
+					</div>
+				)}
+
+				{hint && !error && !warning && (
+					<p className="mt-2 text-xs text-zinc-400">{hint}</p>
+				)}
+
+				{children && <div className="mt-4">{children}</div>}
+
+				<button
+					type="button"
+					onClick={onSubmit}
+					disabled={!canSubmit}
+					className={`mt-6 w-full rounded-xl px-6 py-3.5 text-sm font-semibold transition-all ${
+						canSubmit
+							? "bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.98]"
+							: "cursor-not-allowed bg-zinc-200 text-zinc-400"
+					}`}
+				>
+					{loading ? (
+						<span className="flex items-center justify-center gap-2">
+							<svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+								<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
+							</svg>
+							{buttonLabel}
+						</span>
+					) : (
+						buttonLabel
+					)}
+				</button>
+			</div>
 		</div>
 	);
 }

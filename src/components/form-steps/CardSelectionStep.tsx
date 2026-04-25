@@ -3,13 +3,8 @@
 /**
  * CardSelectionStep — tappable card grid with auto-advance.
  *
- * Layout:
- *   Title + subtitle pinned to top
- *   (stretch space)
- *   Card grid pinned to bottom
- *
- * On tap: selected card gets black bg + white text + checkmark.
- * After 400ms the parent's onSelect fires to advance.
+ * Title + subtitle + cards are vertically centered as a group
+ * within the card. Cards are tall with large text.
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -58,9 +53,9 @@ export default function CardSelectionStep<T extends string = string>({
 	);
 
 	return (
-		<div className="flex flex-1 flex-col">
-			{/* Title + subtitle */}
-			<div>
+		<div className="flex flex-1 flex-col items-center justify-center">
+			{/* Title + subtitle + cards centered as a group */}
+			<div className="w-full">
 				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl">
 					{title}
 				</h2>
@@ -69,68 +64,67 @@ export default function CardSelectionStep<T extends string = string>({
 						{subtitle}
 					</p>
 				)}
-			</div>
 
-			{/* Card grid — flows naturally below the title, not pinned to bottom */}
-			<div className="mt-8 grid grid-cols-1 gap-3 sm:mt-10 sm:grid-cols-2">
-				{options.map((option) => {
-					const isSelected = pending === option.value;
+				<div className="mt-8 grid grid-cols-1 gap-3.5 sm:mt-10 sm:grid-cols-2">
+					{options.map((option) => {
+						const isSelected = pending === option.value;
 
-					return (
-						<button
-							key={option.value}
-							type="button"
-							onClick={() => handleTap(option.value)}
-							disabled={!!pending}
-							className={`relative flex flex-col items-start rounded-xl border px-5 py-4 text-left transition-all duration-200 ${
-								isSelected
-									? "border-zinc-900 bg-zinc-900 scale-[1.02] shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
-									: "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100"
-							} ${pending && !isSelected ? "opacity-40" : ""}`}
-						>
-							<span
-								className={`text-sm font-semibold ${
-									isSelected ? "text-white" : "text-zinc-900"
-								}`}
+						return (
+							<button
+								key={option.value}
+								type="button"
+								onClick={() => handleTap(option.value)}
+								disabled={!!pending}
+								className={`relative flex flex-col justify-center rounded-xl border px-6 py-6 text-left transition-all duration-200 sm:py-7 ${
+									isSelected
+										? "border-zinc-900 bg-zinc-900 scale-[1.02] shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
+										: "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100"
+								} ${pending && !isSelected ? "opacity-40" : ""}`}
 							>
-								{option.label}
-							</span>
-
-							{option.description && (
 								<span
-									className={`mt-0.5 text-xs ${
-										isSelected ? "text-zinc-400" : "text-zinc-500"
+									className={`text-base font-semibold sm:text-lg ${
+										isSelected ? "text-white" : "text-zinc-900"
 									}`}
 								>
-									{option.description}
+									{option.label}
 								</span>
-							)}
 
-							{isSelected && (
-								<motion.div
-									initial={{ scale: 0 }}
-									animate={{ scale: 1 }}
-									transition={{ type: "spring", stiffness: 300, damping: 20 }}
-									className="absolute right-3 top-3"
-								>
-									<div className="flex h-5 w-5 items-center justify-center rounded-full bg-white">
-										<svg
-											viewBox="0 0 12 12"
-											fill="none"
-											stroke="#18181b"
-											strokeWidth="2"
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											className="h-3 w-3"
-										>
-											<path d="M2.5 6L5 8.5L9.5 3.5" />
-										</svg>
-									</div>
-								</motion.div>
-							)}
-						</button>
-					);
-				})}
+								{option.description && (
+									<span
+										className={`mt-1 text-sm ${
+											isSelected ? "text-zinc-400" : "text-zinc-500"
+										}`}
+									>
+										{option.description}
+									</span>
+								)}
+
+								{isSelected && (
+									<motion.div
+										initial={{ scale: 0 }}
+										animate={{ scale: 1 }}
+										transition={{ type: "spring", stiffness: 300, damping: 20 }}
+										className="absolute right-4 top-4"
+									>
+										<div className="flex h-5 w-5 items-center justify-center rounded-full bg-white">
+											<svg
+												viewBox="0 0 12 12"
+												fill="none"
+												stroke="#18181b"
+												strokeWidth="2"
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												className="h-3 w-3"
+											>
+												<path d="M2.5 6L5 8.5L9.5 3.5" />
+											</svg>
+										</div>
+									</motion.div>
+								)}
+							</button>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);

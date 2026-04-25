@@ -54,7 +54,7 @@ export default function StepShell({
 					/>
 				</div>
 
-				<div className="shiny-card group relative flex min-h-[580px] flex-col overflow-hidden rounded-3xl shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] sm:min-h-[620px]">
+				<div className="shiny-card group relative flex min-h-[calc(100dvh-100px)] flex-col overflow-hidden rounded-3xl shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] max-h-[720px] sm:min-h-[640px] sm:max-h-[760px]">
 					{/* Emerald glow halos */}
 					<div className="pointer-events-none absolute inset-0 -z-1 opacity-50" aria-hidden>
 						<div className="absolute -left-20 -top-20 h-[250px] w-[250px] rounded-full bg-emerald-400/[0.12] blur-3xl" />

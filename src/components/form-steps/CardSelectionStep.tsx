@@ -59,7 +59,7 @@ export default function CardSelectionStep<T extends string = string>({
 
 	return (
 		<div className="flex flex-1 flex-col">
-			{/* Top: title + subtitle */}
+			{/* Title + subtitle */}
 			<div>
 				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl">
 					{title}
@@ -71,11 +71,8 @@ export default function CardSelectionStep<T extends string = string>({
 				)}
 			</div>
 
-			{/* Stretch space */}
-			<div className="flex-1 min-h-[40px]" />
-
-			{/* Bottom: card grid */}
-			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+			{/* Card grid — flows naturally below the title, not pinned to bottom */}
+			<div className="mt-8 grid grid-cols-1 gap-3 sm:mt-10 sm:grid-cols-2">
 				{options.map((option) => {
 					const isSelected = pending === option.value;
 

@@ -198,8 +198,8 @@ export default function LpAuditPage() {
 				{/* ── Email ── */}
 				{f.currentScreen === "email" && (
 					<TextInputStep
-						title="Onde devemos enviar seus resultados?"
-						subtitle="Digite seu email para ver o diagnóstico."
+						title="Para onde devemos enviar seu diagnóstico inicial?"
+						subtitle="Digite seu melhor e-mail."
 						inputType="email"
 						value={f.form.email}
 						onChange={(v) => f.update("email", v)}

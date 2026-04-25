@@ -128,7 +128,6 @@ export default function LpAuditPage() {
 						title="What kind of business?"
 						subtitle="So we can tailor the audit to your model."
 						options={BUSINESS_TYPE_OPTIONS}
-						value={f.form.businessModel}
 						onSelect={(v) => {
 							f.update("businessModel", v);
 							f.next();
@@ -142,7 +141,6 @@ export default function LpAuditPage() {
 						title="How do customers convert?"
 						subtitle="This determines which paths we analyze."
 						options={CONVERSION_OPTIONS}
-						value={f.form.conversionModel}
 						onSelect={(v) => {
 							f.update("conversionModel", v);
 							f.next();

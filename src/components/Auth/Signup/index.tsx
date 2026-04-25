@@ -97,9 +97,18 @@ export default function Signup() {
 	};
 
 	return (
-		<div className="flex h-[100dvh] w-full bg-[#090911]">
+		<div className="relative flex h-[100dvh] w-full bg-[#090911]">
+			{/* Canvas dot-grid background */}
+			<div
+				className="pointer-events-none absolute inset-0 -z-1"
+				aria-hidden
+				style={{
+					backgroundImage: "radial-gradient(circle, rgba(39,39,42,0.5) 1px, transparent 1px)",
+					backgroundSize: "20px 20px",
+				}}
+			/>
 			{/* Left column: form */}
-			<section className="flex flex-1 items-center justify-center p-6 sm:p-8">
+			<section className="flex flex-1 items-center justify-center px-6 py-8 sm:p-8">
 				<div className="w-full max-w-[420px]">
 					{/* Logo */}
 					<div className="auth-fade-in auth-delay-100 mb-8">

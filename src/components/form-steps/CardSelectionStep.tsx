@@ -3,12 +3,14 @@
 /**
  * CardSelectionStep — tappable card grid with auto-advance.
  *
- * On tap: selected card gets emerald border + subtle scale + checkmark.
+ * On tap: selected card gets black border + subtle scale + checkmark.
  * After a short delay (400ms default) the parent's onSelect fires,
  * which should advance to the next step. No "Next" button.
+ *
+ * Cards start with no pre-selection — all look identical until tapped.
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 
 export interface CardOption<T extends string = string> {
@@ -21,8 +23,6 @@ interface CardSelectionStepProps<T extends string = string> {
 	title: string;
 	subtitle?: string;
 	options: CardOption<T>[];
-	/** Currently persisted value (for back navigation) */
-	value?: T | null;
 	/** Called after the auto-advance delay with the selected value */
 	onSelect: (value: T) => void;
 	/** Delay in ms before auto-advancing (default 400) */
@@ -33,37 +33,30 @@ export default function CardSelectionStep<T extends string = string>({
 	title,
 	subtitle,
 	options,
-	value,
 	onSelect,
 	autoAdvanceDelay = 400,
 }: CardSelectionStepProps<T>) {
 	const [pending, setPending] = useState<T | null>(null);
 	const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
+	// Cleanup timer on unmount
+	useEffect(() => {
+		return () => {
+			if (timerRef.current) clearTimeout(timerRef.current);
+		};
+	}, []);
+
 	const handleTap = useCallback(
 		(optionValue: T) => {
-			// Prevent double-tap
 			if (pending) return;
-
 			setPending(optionValue);
-
-			// Clear any existing timer
 			if (timerRef.current) clearTimeout(timerRef.current);
-
 			timerRef.current = setTimeout(() => {
 				onSelect(optionValue);
 			}, autoAdvanceDelay);
 		},
 		[pending, onSelect, autoAdvanceDelay],
 	);
-
-	// Cleanup on unmount
-	const cleanupRef = useRef(timerRef);
-	cleanupRef.current = timerRef;
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	// Cleanup handled via ref
-
-	const selected = pending ?? value ?? null;
 
 	return (
 		<div className="flex flex-col">
@@ -79,11 +72,10 @@ export default function CardSelectionStep<T extends string = string>({
 				</p>
 			)}
 
-			{/* Card grid */}
+			{/* Card grid — 1 col mobile, 2 col desktop */}
 			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				{options.map((option) => {
-					const isSelected = selected === option.value;
-					const isPending = pending === option.value;
+					const isSelected = pending === option.value;
 
 					return (
 						<button
@@ -93,14 +85,14 @@ export default function CardSelectionStep<T extends string = string>({
 							disabled={!!pending}
 							className={`relative flex flex-col items-start rounded-xl border px-5 py-4 text-left transition-all duration-200 ${
 								isSelected
-									? "border-emerald-500 bg-emerald-50 scale-[1.02] shadow-[0_0_16px_rgba(16,185,129,0.15)]"
-									: "border-zinc-200 bg-zinc-100 hover:border-zinc-300 hover:bg-zinc-50"
-							} ${pending && !isPending ? "opacity-50" : ""}`}
+									? "border-zinc-900 bg-zinc-900 scale-[1.02] shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
+									: "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100"
+							} ${pending && !isSelected ? "opacity-40" : ""}`}
 						>
 							{/* Label */}
 							<span
 								className={`text-sm font-semibold ${
-									isSelected ? "text-emerald-900" : "text-zinc-900"
+									isSelected ? "text-white" : "text-zinc-900"
 								}`}
 							>
 								{option.label}
@@ -110,7 +102,7 @@ export default function CardSelectionStep<T extends string = string>({
 							{option.description && (
 								<span
 									className={`mt-0.5 text-xs ${
-										isSelected ? "text-emerald-700" : "text-zinc-500"
+										isSelected ? "text-zinc-400" : "text-zinc-500"
 									}`}
 								>
 									{option.description}
@@ -129,11 +121,11 @@ export default function CardSelectionStep<T extends string = string>({
 									}}
 									className="absolute right-3 top-3"
 								>
-									<div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+									<div className="flex h-5 w-5 items-center justify-center rounded-full bg-white">
 										<svg
 											viewBox="0 0 12 12"
 											fill="none"
-											stroke="white"
+											stroke="#18181b"
 											strokeWidth="2"
 											strokeLinecap="round"
 											strokeLinejoin="round"

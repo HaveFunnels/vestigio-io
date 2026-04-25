@@ -178,7 +178,6 @@ export default function OnboardPage() {
 					title={f.t("business_context.title")}
 					subtitle={f.t("business_context.subtitle")}
 					options={businessTypeOptions}
-					value={f.form.businessType}
 					onSelect={(v) => {
 						f.update("businessType", v);
 						f.next();
@@ -192,7 +191,6 @@ export default function OnboardPage() {
 					title={f.t("business_context.conversion_title")}
 					subtitle={f.t("business_context.conversion_subtitle")}
 					options={conversionOptions}
-					value={f.form.conversionModel}
 					onSelect={(v) => {
 						f.update("conversionModel", v);
 						f.next();

@@ -32,8 +32,17 @@ export default function StepShell({
 
 	return (
 		<div
-			className={`flex min-h-[100dvh] items-center justify-center bg-[#090911] px-4 py-8 sm:py-12 ${className}`}
+			className={`relative flex min-h-[100dvh] items-center justify-center bg-[#090911] px-4 py-8 sm:py-12 ${className}`}
 		>
+			{/* Canvas dot-grid background (same as maps) */}
+			<div
+				className="pointer-events-none absolute inset-0 -z-1"
+				aria-hidden
+				style={{
+					backgroundImage: "radial-gradient(circle, rgba(39,39,42,0.5) 1px, transparent 1px)",
+					backgroundSize: "20px 20px",
+				}}
+			/>
 			<div className="w-full max-w-[480px]">
 				{/* Shiny card — same treatment as MiniCalc */}
 				<div className="shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] sm:p-8">

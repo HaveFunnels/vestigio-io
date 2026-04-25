@@ -111,19 +111,19 @@ const PERSONA_ICONS = [
 
 const ACCENTS = [
 	{
-		border: "border-amber-500/30",
+		border: "border-amber-500/40",
 		label: "text-amber-300/90",
 		icon: "text-amber-400",
 		glow: "hover:shadow-[0_18px_50px_-18px_rgba(245,158,11,0.25)]",
 	},
 	{
-		border: "border-emerald-500/30",
+		border: "border-emerald-500/40",
 		label: "text-emerald-300/90",
 		icon: "text-emerald-400",
 		glow: "hover:shadow-[0_18px_50px_-18px_rgba(16,185,129,0.25)]",
 	},
 	{
-		border: "border-sky-500/30",
+		border: "border-sky-500/40",
 		label: "text-sky-300/90",
 		icon: "text-sky-400",
 		glow: "hover:shadow-[0_18px_50px_-18px_rgba(56,189,248,0.25)]",

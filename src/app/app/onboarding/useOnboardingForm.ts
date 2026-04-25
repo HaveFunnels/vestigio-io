@@ -23,14 +23,15 @@ declare global {
 // ---------------------------------------------------------------------------
 export type BusinessType = "ecommerce" | "lead_gen" | "saas" | "hybrid";
 export type ConversionModel = "checkout" | "whatsapp" | "form" | "external";
-export type StepId = "org" | "domain" | "business_type" | "conversion_model" | "revenue" | "plan";
+export type StepId = "org" | "domain" | "business_type" | "conversion_model" | "revenue" | "ticket" | "plan";
 
 export interface OnboardState {
 	organizationName: string;
 	domain: string;
 	ownershipConfirmed: boolean;
 	businessType: BusinessType;
-	monthlyRevenue: string;
+	monthlyRevenue: number;
+	averageTicket: number;
 	conversionModel: ConversionModel;
 }
 
@@ -81,10 +82,9 @@ export function parseRevenue(value: string): number | null {
 // ---------------------------------------------------------------------------
 function getSteps(hasActiveOrg: boolean): StepId[] {
 	if (hasActiveOrg) {
-		// Admin-provisioned: skip org name + plan
-		return ["domain", "business_type", "conversion_model", "revenue"];
+		return ["domain", "business_type", "conversion_model", "revenue", "ticket"];
 	}
-	return ["org", "domain", "business_type", "conversion_model", "revenue", "plan"];
+	return ["org", "domain", "business_type", "conversion_model", "revenue", "ticket", "plan"];
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +137,8 @@ export default function useOnboardingForm() {
 		domain: prefillDomain,
 		ownershipConfirmed: false,
 		businessType: "ecommerce",
-		monthlyRevenue: "",
+		monthlyRevenue: 100000,
+		averageTicket: 300,
 		conversionModel: "checkout",
 	};
 
@@ -371,8 +372,8 @@ export default function useOnboardingForm() {
 					organizationName: form.organizationName,
 					domain: form.domain,
 					businessModel: form.businessType,
-					monthlyRevenue: parseRevenue(form.monthlyRevenue),
-					averageOrderValue: null,
+					monthlyRevenue: form.monthlyRevenue,
+					averageOrderValue: form.averageTicket,
 					conversionModel: form.conversionModel,
 					priceId: selectedPlan.paddlePriceId,
 					paymentProvider: "paddle",
@@ -422,7 +423,8 @@ export default function useOnboardingForm() {
 			!domainChecking) ||
 		currentStep === "business_type" ||
 		currentStep === "conversion_model" ||
-		currentStep === "revenue";
+		currentStep === "revenue" ||
+		currentStep === "ticket";
 
 	return {
 		// State

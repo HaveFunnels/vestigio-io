@@ -17,6 +17,7 @@ import {
 	StepShell,
 	TextInputStep,
 	CardSelectionStep,
+	SliderInputStep,
 } from "@/components/form-steps";
 import type { CardOption } from "@/components/form-steps";
 import useLpAuditForm from "./useLpAuditForm";
@@ -154,19 +155,43 @@ export default function LpAuditPage() {
 					/>
 				)}
 
-				{/* ── Revenue ── */}
+				{/* ── Revenue (slider) ── */}
 				{f.currentScreen === "revenue" && (
-					<TextInputStep
+					<SliderInputStep
 						title="Qual sua receita mensal aproximada?"
-						subtitle="Usamos isso para dimensionar o impacto financeiro no diagnóstico."
-						value={f.form.monthlyRevenue}
-						onChange={(v) => f.update("monthlyRevenue", v)}
-						placeholder="ex: R$50k"
-						hint="Você pode digitar R$50k, 1.5m, ou só um número."
-						error={f.fieldError?.field === "monthlyRevenue" ? f.fieldError.message : null}
+						subtitle="Usamos isso para dimensionar o impacto financeiro."
+						min={5000}
+						max={10000000}
+						step={5000}
+						defaultValue={f.form.monthlyRevenue}
+						formatValue={(v) => `R$${v >= 1000000 ? `${(v / 1000000).toFixed(1)}M` : `${Math.round(v / 1000)}k`}`}
+						minLabel="R$5k"
+						maxLabel="R$10M"
 						buttonLabel="Continuar"
-						onSubmit={f.next}
-						loading={f.submitting}
+						onSubmit={(v) => {
+							f.update("monthlyRevenue", v);
+							f.next();
+						}}
+					/>
+				)}
+
+				{/* ── Average Ticket (slider) ── */}
+				{f.currentScreen === "ticket" && (
+					<SliderInputStep
+						title="Qual o ticket médio?"
+						subtitle="O valor médio de cada venda ou transação."
+						min={20}
+						max={40000}
+						step={10}
+						defaultValue={f.form.averageTicket}
+						formatValue={(v) => `R$${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
+						minLabel="R$20"
+						maxLabel="R$40k"
+						buttonLabel="Continuar"
+						onSubmit={(v) => {
+							f.update("averageTicket", v);
+							f.next();
+						}}
 					/>
 				)}
 

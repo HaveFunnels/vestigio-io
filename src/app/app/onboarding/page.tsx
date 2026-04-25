@@ -14,6 +14,7 @@ import {
 	StepShell,
 	TextInputStep,
 	CardSelectionStep,
+	SliderInputStep,
 	PlanSelectionStep,
 } from "@/components/form-steps";
 import type { CardOption } from "@/components/form-steps";
@@ -212,23 +213,47 @@ export default function OnboardPage() {
 				/>
 			)}
 
-			{/* ── Revenue ── */}
+			{/* ── Revenue (slider) ── */}
 			{f.currentStep === "revenue" && (
-				<TextInputStep
+				<SliderInputStep
 					title={f.t("revenue.title")}
 					subtitle={f.t("revenue.subtitle")}
-					value={f.form.monthlyRevenue}
-					onChange={(v) => f.update("monthlyRevenue", v)}
-					placeholder={f.t("revenue.placeholder")}
-					hint={f.t("revenue.hint")}
+					min={5000}
+					max={10000000}
+					step={5000}
+					defaultValue={f.form.monthlyRevenue}
+					formatValue={(v) => `R$${v >= 1000000 ? `${(v / 1000000).toFixed(1)}M` : `${Math.round(v / 1000)}k`}`}
+					minLabel="R$5k"
+					maxLabel="R$10M"
+					buttonLabel={f.t("continue")}
+					onSubmit={(v) => {
+						f.update("monthlyRevenue", v);
+						f.next();
+					}}
+				/>
+			)}
+
+			{/* ── Average Ticket (slider) ── */}
+			{f.currentStep === "ticket" && (
+				<SliderInputStep
+					title={f.t("ticket.title")}
+					subtitle={f.t("ticket.subtitle")}
+					min={20}
+					max={40000}
+					step={10}
+					defaultValue={f.form.averageTicket}
+					formatValue={(v) => `R$${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
+					minLabel="R$20"
+					maxLabel="R$40k"
 					buttonLabel={
 						f.hasActiveOrg
 							? f.t("review.activate_environment")
 							: f.t("continue")
 					}
-					onSubmit={
-						f.hasActiveOrg ? f.handleActivate : f.next
-					}
+					onSubmit={(v) => {
+						f.update("averageTicket", v);
+						f.hasActiveOrg ? f.handleActivate() : f.next();
+					}}
 					loading={f.loading}
 				/>
 			)}

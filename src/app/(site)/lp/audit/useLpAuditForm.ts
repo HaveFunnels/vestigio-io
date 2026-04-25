@@ -29,15 +29,14 @@ export interface LeadState {
 	ownershipConfirmed: boolean;
 	businessModel: BusinessType;
 	conversionModel: ConversionModel;
-	monthlyRevenue: string;
+	monthlyRevenue: number;
+	averageTicket: number;
 	email: string;
 }
 
 // Frontend screens → backend step mapping (v2)
-// Screens 2+3 (business type + conversion model) are batched into one
-// backend step, submitted when the user completes screen 3.
-type ScreenId = "domain" | "business_type" | "conversion_model" | "revenue" | "email";
-const SCREENS: ScreenId[] = ["domain", "business_type", "conversion_model", "revenue", "email"];
+type ScreenId = "domain" | "business_type" | "conversion_model" | "revenue" | "ticket" | "email";
+const SCREENS: ScreenId[] = ["domain", "business_type", "conversion_model", "revenue", "ticket", "email"];
 const TOTAL_SCREENS = SCREENS.length;
 
 // Which backend step to submit after each screen
@@ -45,8 +44,9 @@ function backendStepForScreen(screen: ScreenId): number | null {
 	switch (screen) {
 		case "domain": return 1;
 		case "business_type": return null; // batched — submitted with conversion_model
-		case "conversion_model": return 2; // submits both businessModel + conversionModel
-		case "revenue": return 3;
+		case "conversion_model": return 2;
+		case "revenue": return null; // batched — submitted with ticket
+		case "ticket": return 3; // submits both revenue + ticket
 		case "email": return 4;
 	}
 }
@@ -83,7 +83,8 @@ export default function useLpAuditForm() {
 		ownershipConfirmed: false,
 		businessModel: "ecommerce",
 		conversionModel: "checkout",
-		monthlyRevenue: "",
+		monthlyRevenue: 100000,
+		averageTicket: 300,
 		email: "",
 	});
 
@@ -183,7 +184,8 @@ export default function useLpAuditForm() {
 			ownershipConfirmed: form.ownershipConfirmed,
 			businessModel: form.businessModel,
 			conversionModel: form.conversionModel,
-			monthlyRevenue: form.monthlyRevenue,
+			monthlyRevenue: String(form.monthlyRevenue),
+			averageTicket: String(form.averageTicket),
 			email: form.email,
 		};
 

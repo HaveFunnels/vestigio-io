@@ -2405,6 +2405,10 @@
 				"subtitle": "Das hilft uns, die Auswirkungsschätzungen zu kalibrieren.",
 				"placeholder": "z.B. $50k",
 				"hint": "Sie können $50k, 1.5m oder einfach eine Zahl eingeben."
+			},
+			"ticket": {
+				"title": "Wie hoch ist Ihr durchschnittlicher Bestellwert?",
+				"subtitle": "Der durchschnittliche Wert jeder Transaktion."
 			}
 		},
 		"navigation": {
@@ -3096,7 +3100,8 @@
 			"single_payment_gateway_risk": "Ein Ausfall deines Zahlungsanbieters stoppt deinen gesamten Umsatz",
 			"discount_abuse_pattern": "Zu viele Rabatte fressen bei fast jeder Bestellung deine Marge",
 			"low_repeat_purchase_rate": "Käufer kommen nicht wieder — deine Werbekosten holst du nicht rein",
-			"dead_weight_products": "Gelistete Produkte haben seit 30 Tagen nichts verkauft — totes Gewicht"
+			"dead_weight_products": "Gelistete Produkte haben seit 30 Tagen nichts verkauft — totes Gewicht",
+			"ad_creative_message_mismatch": "Eine Anzeige verspricht eines, aber die Landing Page liefert etwas anderes — die Diskrepanz verschwendet Werbebudget"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Käufer verlieren im Moment der Bezahlung das Vertrauen",
@@ -3523,6 +3528,7 @@
 			"ad_creative_form_friction_waste": "Anzeige leitet auf ein Formular mit übermäßiger Reibung",
 			"ad_creative_landing_trust_gap": "Anzeige leitet auf eine Seite ohne Vertrauenssignale",
 			"ad_creative_mobile_checkout_degraded": "Mobile Anzeige leitet auf einen beeinträchtigten Checkout",
+			"ad_creative_message_mismatch": "Anzeige leitet Traffic auf Seite mit anderer Botschaft",
 			"ad_spend_platform_concentration_risk": "Werbebudget-Konzentration auf einer einzigen Plattform",
 			"ads_without_conversion_visibility": "Werbeausgaben ohne Konversionssichtbarkeit",
 			"buyer_session_theft_risk": "Käufersitzungen können auf kommerziellen Seiten gestohlen werden",
@@ -3743,6 +3749,7 @@
 			"ad_creative_form_friction_waste": "Anzeige leitet bezahlten Traffic auf ein Formular mit übermäßiger Reibung — verschwendete Konversion",
 			"ad_creative_landing_trust_gap": "Bezahlter Traffic landet auf einer Seite ohne Vertrauen — verschwendete Akquisitionsinvestition",
 			"ad_creative_mobile_checkout_degraded": "Mobile Anzeige leitet auf beeinträchtigten Checkout — mobile Käufer brechen ab",
+			"ad_creative_message_mismatch": "Diskrepanz zwischen Anzeigenversprechen und LP-Inhalt verschwendet Werbebudget — der Käufer erwartet eines und findet etwas anderes",
 			"ad_spend_platform_concentration_risk": "Budgetkonzentration auf einer Plattform schafft existenzielles Akquisitionsrisiko",
 			"ads_without_conversion_visibility": "Werbeausgaben ohne Konversions-Tracking verhindern Optimierung und verschwenden Budget",
 			"buyer_session_theft_risk": "Cookies auf kommerziellen Seiten ohne Secure-, HttpOnly- oder SameSite-Flags ermöglichen Sitzungsdiebstahl durch XSS oder Netzwerkabfang",
@@ -3859,7 +3866,8 @@
 			"mixed_content_checkout": "Gemischter Inhalt auf Zahlungsseiten widerspricht PCI-DSS-Anforderungen.",
 			"mobile_checkout_blocked": "Vollständige Blockade der mobilen Konversion bedeutet ca. 14.000 $/Monat an unerreichbarem Umsatz.",
 			"checkout_performance_critical": "Jede 100 ms Checkout-Latenz senkt die Konversion um ca. 0,7 %.",
-			"cookie_consent_missing": "Cookie-Compliance ist in der EU verpflichtend und wird zunehmend durchgesetzt."
+			"cookie_consent_missing": "Cookie-Compliance ist in der EU verpflichtend und wird zunehmend durchgesetzt.",
+			"ad_creative_message_mismatch": "Versprechen-Inhalt-Diskrepanz: {severity}. ${totalSpend}/Monat Werbeausgaben leiten Traffic auf Seiten, wo das Anzeigenversprechen nicht mit dem LP-Inhalt übereinstimmt. Die Diskrepanz zwischen dem, was die Anzeige verspricht, und dem, was die Seite liefert, senkt die Konversionsrate."
 		}
 	},
 	"privacy_policy": {

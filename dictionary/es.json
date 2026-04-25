@@ -3200,6 +3200,10 @@
 				"subtitle": "Esto nos ayuda a calibrar las estimaciones de impacto.",
 				"placeholder": "ej: $50k",
 				"hint": "Puedes escribir $50k, 1.5m, o solo un número."
+			},
+			"ticket": {
+				"title": "¿Cuál es tu ticket promedio?",
+				"subtitle": "El valor promedio de cada venta o transacción."
 			}
 		},
 		"navigation": {
@@ -3505,7 +3509,8 @@
 			"single_payment_gateway_risk": "Una sola caída de pasarela de pago detiene todos tus ingresos",
 			"discount_abuse_pattern": "El uso excesivo de descuentos te está comiendo el margen en casi todos los pedidos",
 			"low_repeat_purchase_rate": "Los compradores no vuelven: no estás recuperando el coste de adquisición",
-			"dead_weight_products": "Hay productos listados que no se han vendido en 30 días: peso muerto"
+			"dead_weight_products": "Hay productos listados que no se han vendido en 30 días: peso muerto",
+			"ad_creative_message_mismatch": "Un anuncio promete una cosa pero la landing page entrega otra — la desconexión desperdicia inversión en ads"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Los compradores pierden la confianza en el momento del pago",
@@ -3932,6 +3937,7 @@
 			"ad_creative_form_friction_waste": "Anuncio dirigiendo a formulario con fricción excesiva",
 			"ad_creative_landing_trust_gap": "Anuncio dirigiendo a página sin señales de confianza",
 			"ad_creative_mobile_checkout_degraded": "Anuncio móvil dirigiendo a checkout degradado",
+			"ad_creative_message_mismatch": "Anuncio dirigiendo tráfico a página con promesa diferente",
 			"ad_spend_platform_concentration_risk": "Concentración de inversión en ads en una sola plataforma",
 			"ads_without_conversion_visibility": "Gasto en ads sin visibilidad de conversión",
 			"buyer_session_theft_risk": "Sesiones de compradores pueden ser robadas en páginas comerciales",
@@ -4152,6 +4158,7 @@
 			"ad_creative_form_friction_waste": "Anuncio enviando tráfico de pago a formulario con fricción excesiva — conversión desperdiciada",
 			"ad_creative_landing_trust_gap": "Tráfico de pago cayendo en página sin confianza — inversión desperdiciada en adquisición",
 			"ad_creative_mobile_checkout_degraded": "Anuncio móvil enviando a checkout degradado — compradores en móvil abandonan",
+			"ad_creative_message_mismatch": "Desconexión entre la promesa del anuncio y el contenido de la LP desperdicia inversión — el comprador llega esperando una cosa y encuentra otra",
 			"ad_spend_platform_concentration_risk": "Concentración de presupuesto en una plataforma crea riesgo existencial de adquisición",
 			"ads_without_conversion_visibility": "Gasto en ads sin tracking de conversión impide la optimización y desperdicia presupuesto",
 			"buyer_session_theft_risk": "Cookies en páginas comerciales sin flags Secure, HttpOnly o SameSite permiten robo de sesión por XSS o interceptación de red",
@@ -4268,7 +4275,8 @@
 			"mixed_content_checkout": "Contenido mixto en páginas de pago contradice los requisitos PCI-DSS.",
 			"mobile_checkout_blocked": "Bloqueo total de conversión móvil implica $14k/mes en ingresos inaccesibles.",
 			"checkout_performance_critical": "Cada 100ms de latencia en el checkout reduce la conversión en ~0.7%.",
-			"cookie_consent_missing": "El cumplimiento de cookies es obligatorio en la UE, cada vez más fiscalizado en Latinoamérica."
+			"cookie_consent_missing": "El cumplimiento de cookies es obligatorio en la UE, cada vez más fiscalizado en Latinoamérica.",
+			"ad_creative_message_mismatch": "Desconexión promesa-contenido: {severity}. ${totalSpend}/mes de inversión en ads dirigiendo tráfico a páginas donde la promesa del anuncio no coincide con el contenido de la LP. La desconexión entre lo que el anuncio promete y lo que la página entrega suprime la conversión."
 		}
 	},
 	"privacy_policy": {

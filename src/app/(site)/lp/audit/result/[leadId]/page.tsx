@@ -2,8 +2,15 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Script from "next/script";
 import Link from "next/link";
 import Image from "next/image";
+
+declare global {
+	interface Window {
+		Paddle: any;
+	}
+}
 import type { LandingPreview } from "../../../../../../../workers/ingestion/landing-preview";
 import type {
 	MiniFinding,
@@ -22,6 +29,10 @@ import logoDark from "@/../public/images/logo/logo.png";
 
 const POLL_INTERVAL_MS = 3000;
 const POLL_MAX_ATTEMPTS = 40; // 2 min cap
+const LP_PRICE_ID =
+	process.env.NEXT_PUBLIC_PADDLE_LP_PRICE_ID ||
+	process.env.NEXT_PUBLIC_PADDLE_VESTIGIO_PRICE_ID ||
+	"";
 
 interface MiniAuditApiResult {
 	id: string;
@@ -55,7 +66,76 @@ export default function MiniAuditResultPage() {
 	const [shareCopied, setShareCopied] = useState(false);
 	const [showResults, setShowResults] = useState(false);
 	const [timedOut, setTimedOut] = useState(false);
+	const [paddleReady, setPaddleReady] = useState(false);
+	const [checkoutEmail, setCheckoutEmail] = useState<string | null>(null);
+	const [launching, setLaunching] = useState(false);
 	const pollAttemptsRef = useRef(0);
+
+	// ── Paddle initialization ──
+	const initPaddle = useCallback(() => {
+		if (typeof window === "undefined" || !window.Paddle) return;
+		try {
+			window.Paddle.Environment.set(
+				process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox",
+			);
+			window.Paddle.Initialize({
+				token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
+				eventCallback: (event: any) => {
+					if (event.name === "checkout.completed" && event.data?.status === "completed") {
+						router.push(`/lp/audit/thank-you/${leadId}`);
+					}
+				},
+			});
+			setPaddleReady(true);
+		} catch (err) {
+			console.error("[lp-result] Paddle init failed:", err);
+		}
+	}, [leadId, router]);
+
+	// ── Fetch unmasked email for Paddle pre-fill ──
+	useEffect(() => {
+		if (!leadId || !lead) return;
+		if (!["audit_complete", "expired"].includes(lead.status)) return;
+		if (checkoutEmail) return;
+		let cancelled = false;
+		(async () => {
+			try {
+				const res = await fetch(`/api/lead/${leadId}/checkout-context`);
+				if (!res.ok) return;
+				const data = await res.json();
+				if (!cancelled && typeof data.email === "string") {
+					setCheckoutEmail(data.email);
+				}
+			} catch { /* Paddle will prompt for email if we can't prefill */ }
+		})();
+		return () => { cancelled = true; };
+	}, [leadId, lead, checkoutEmail]);
+
+	// ── Open Paddle checkout ──
+	function openCheckout() {
+		if (!leadId || !window.Paddle || !paddleReady) {
+			setError("Sistema de pagamento carregando. Aguarde um momento.");
+			return;
+		}
+		if (!LP_PRICE_ID) {
+			setError("Preços ainda não configurados. Entre em contato com o suporte.");
+			return;
+		}
+		setLaunching(true);
+		try {
+			window.Paddle.Checkout.open({
+				items: [{ priceId: LP_PRICE_ID, quantity: 1 }],
+				...(checkoutEmail ? { customer: { email: checkoutEmail } } : {}),
+				customData: { leadId, lpFunnel: "true" },
+				successUrl: `${window.location.origin}/lp/audit/thank-you/${leadId}`,
+				settings: { displayMode: "overlay" },
+			});
+		} catch (err) {
+			console.error("[lp-result] checkout open failed:", err);
+			setError("Não foi possível abrir o checkout. Tente novamente.");
+		}
+		setTimeout(() => setLaunching(false), 1500);
+	}
 
 	// ── Canonical link ──
 	useEffect(() => {
@@ -131,7 +211,12 @@ export default function MiniAuditResultPage() {
 	}
 
 	if (lead.status === "expired") {
-		return <ExpiredState lead={lead} />;
+		return (
+			<>
+				<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
+				<ExpiredState lead={lead} onCheckout={openCheckout} launching={launching} />
+			</>
+		);
 	}
 
 	const isAuditComplete = lead.status === "audit_complete" && lead.result;
@@ -165,6 +250,9 @@ export default function MiniAuditResultPage() {
 
 	return (
 		<>
+			{/* Paddle script */}
+			<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
+
 			<div className="relative min-h-screen overflow-hidden bg-[#070710]">
 				{/* Canvas dot-grid background */}
 				<DotGrid />
@@ -257,8 +345,8 @@ export default function MiniAuditResultPage() {
 							))}
 						</ul>
 
-						{/* Unlock section — horizontal CTA card */}
-						<UnlockSection negativeFindings={negativeFindings} blurredCount={blurredFindings.length} />
+						{/* Unlock section — horizontal CTA card → Paddle checkout */}
+						<UnlockSection negativeFindings={negativeFindings} blurredCount={blurredFindings.length} onCheckout={openCheckout} launching={launching} />
 					</section>
 
 					{/* Footer */}
@@ -590,16 +678,28 @@ function CostSummaryBanner({
 	);
 }
 
-function UnlockSection({ negativeFindings, blurredCount }: { negativeFindings: MiniFinding[]; blurredCount: number }) {
+function UnlockSection({
+	negativeFindings,
+	blurredCount,
+	onCheckout,
+	launching,
+}: {
+	negativeFindings: MiniFinding[];
+	blurredCount: number;
+	onCheckout: () => void;
+	launching: boolean;
+}) {
 	const summary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
 	const totalImpact = summary && summary.count > 0
 		? formatBRL(summary.max_brl_cents)
 		: "R$ 22.000";
 
 	return (
-		<Link
-			href="/auth/signup"
-			className="group relative mt-8 flex items-center gap-5 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-zinc-950 to-zinc-950 p-5 transition-all hover:border-emerald-500/50 hover:shadow-[0_0_40px_rgba(16,185,129,0.15)] sm:p-6"
+		<button
+			type="button"
+			onClick={onCheckout}
+			disabled={launching}
+			className="group relative mt-8 flex w-full items-center gap-5 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-zinc-950 to-zinc-950 p-5 text-left transition-all hover:border-emerald-500/50 hover:shadow-[0_0_40px_rgba(16,185,129,0.15)] disabled:opacity-60 sm:p-6"
 		>
 			{/* Trophy icon */}
 			<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
@@ -611,23 +711,20 @@ function UnlockSection({ negativeFindings, blurredCount }: { negativeFindings: M
 			{/* Content */}
 			<div className="min-w-0 flex-1">
 				<h3 className="text-sm font-bold text-zinc-100 sm:text-base">
-					Desbloquear diagnóstico completo
+					{launching ? "Abrindo checkout…" : "Desbloquear diagnóstico completo"}
 				</h3>
 				<p className="mt-1 text-xs leading-relaxed text-zinc-400 sm:text-sm">
 					O diagnóstico completo analisa 15.000+ sinais incluindo navegação automatizada, análise de copy e monitoramento contínuo. Recupere até <span className="font-semibold text-emerald-400">{totalImpact}/mês</span>.
-				</p>
-				<p className="mt-1.5 text-[11px] text-zinc-600">
-					Sem cartão de crédito · Primeiro diagnóstico em 60s
 				</p>
 			</div>
 
 			{/* Arrow */}
 			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 transition-transform group-hover:scale-110">
-				<svg className="h-5 w-5 text-emerald-950" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+				<svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
 					<path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 				</svg>
 			</div>
-		</Link>
+		</button>
 	);
 }
 
@@ -826,7 +923,7 @@ function AuditingState({
 	);
 }
 
-function ExpiredState({ lead }: { lead: LeadResponse }) {
+function ExpiredState({ lead, onCheckout, launching }: { lead: LeadResponse; onCheckout: () => void; launching: boolean }) {
 	const domain = lead.domain || "seu site";
 	const faviconUrl = lead.domain
 		? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(lead.domain)}&sz=64`
@@ -905,13 +1002,15 @@ function ExpiredState({ lead }: { lead: LeadResponse }) {
 					))}
 				</ul>
 
-				{/* Primary CTA — recovery */}
-				<Link
-					href="/auth/signup"
-					className="mt-7 block w-full rounded-xl bg-emerald-500 px-7 py-3.5 text-center text-sm font-semibold text-white shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)]"
+				{/* Primary CTA — Paddle checkout */}
+				<button
+					type="button"
+					onClick={onCheckout}
+					disabled={launching}
+					className="mt-7 block w-full rounded-xl bg-emerald-500 px-7 py-3.5 text-center text-sm font-semibold text-white shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] disabled:opacity-60"
 				>
-					Recuperar meu diagnóstico em {domain}
-				</Link>
+					{launching ? "Abrindo checkout…" : `Recuperar meu diagnóstico em ${domain}`}
+				</button>
 
 				<p className="mt-3 text-xs text-zinc-600">
 					O diagnóstico completo analisa 15.000+ sinais.

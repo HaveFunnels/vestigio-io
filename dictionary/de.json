@@ -572,17 +572,17 @@
 				{
 					"persona": "Der Gründer",
 					"question": "Ich gebe $40k/Monat für Ads aus. Schicke ich Traffic in einen kaputten Funnel?",
-					"answer": "Vestigio antwortet in **60 Sekunden**. Mit Dollarwerten bei jedem Fund."
+					"answer": "Vestigio antwortet in **60 Sekunden**. Jeder Fund zeigt genau, was er Sie kostet."
 				},
 				{
 					"persona": "Der Head of Growth",
-					"question": "Wir haben letzte Woche deployed. Ist etwas kaputt gegangen?",
-					"answer": "Vestigio vergleicht jede Oberfläche mit dem letzten Zyklus. Regressionen erscheinen nach **Auswirkung** sortiert."
+					"question": "Wir haben letzte Woche Änderungen umgesetzt. Ist etwas kaputt gegangen?",
+					"answer": "Vestigio vergleicht vorher und nachher, automatisch. Regressionen erscheinen nach **Umsatzauswirkung** sortiert."
 				},
 				{
 					"persona": "Der CTO",
-					"question": "Chargebacks steigen. Was ist die Ursache?",
-					"answer": "Vestigio verfolgt Chargeback-Risiken zu spezifischen Oberflächen, Richtlinien und Vertrauenslücken. **Beweise angehängt.**"
+					"question": "Erstattungen steigen. Was ist die Ursache?",
+					"answer": "Vestigio verfolgt das Risiko bis zur genauen Seite, Richtlinie oder Vertrauenslücke. **Beweise angehängt.**"
 				}
 			]
 		},

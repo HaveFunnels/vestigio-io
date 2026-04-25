@@ -571,17 +571,17 @@
 				{
 					"persona": "The Founder",
 					"question": "I spend $40k/month on ads. Am I sending traffic into a broken funnel?",
-					"answer": "Vestigio answers in **60 seconds**. With dollar amounts on every finding."
+					"answer": "Vestigio answers in **60 seconds**. Every finding shows exactly what it costs you."
 				},
 				{
 					"persona": "The Head of Growth",
-					"question": "We shipped last week. Did anything break?",
-					"answer": "Vestigio compares every surface against the last cycle. Regressions show up ranked by **impact**."
+					"question": "We pushed changes last week. Did anything break?",
+					"answer": "Vestigio compares before and after, automatically. Regressions show up ranked by **revenue impact**."
 				},
 				{
 					"persona": "The CTO",
-					"question": "Chargebacks are climbing. Where's the root cause?",
-					"answer": "Vestigio traces chargeback risk to specific surfaces, policies, and trust gaps. **Evidence attached.**"
+					"question": "Refunds are climbing. Where's the root cause?",
+					"answer": "Vestigio traces risk to the exact page, policy, or trust gap. **Evidence attached.**"
 				}
 			]
 		},

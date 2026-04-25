@@ -571,17 +571,17 @@
 				{
 					"persona": "O Fundador",
 					"question": "Gasto R$200k/mês em ads. Estou mandando tráfego pra um funil quebrado?",
-					"answer": "A Vestigio responde em **60 segundos**. Com valores em reais em cada finding."
+					"answer": "A Vestigio responde em **60 segundos**. Cada finding mostra exatamente quanto está custando."
 				},
 				{
 					"persona": "O Head de Growth",
-					"question": "Fizemos deploy semana passada. Quebrou alguma coisa?",
-					"answer": "A Vestigio compara cada superfície com o ciclo anterior. Regressões aparecem ranqueadas por **impacto**."
+					"question": "Implementamos mudanças semana passada. Quebrou alguma coisa?",
+					"answer": "A Vestigio compara antes e depois, automaticamente. Regressões aparecem ranqueadas por **impacto em receita**."
 				},
 				{
 					"persona": "O CTO",
-					"question": "Chargebacks estão subindo. Qual é a causa raiz?",
-					"answer": "A Vestigio rastreia risco de chargeback até superfícies, políticas e gaps de confiança específicos. **Evidência anexada.**"
+					"question": "Reembolsos estão subindo. Qual é a causa raiz?",
+					"answer": "A Vestigio rastreia o risco até a página, política ou gap de confiança exato. **Evidência anexada.**"
 				}
 			]
 		},

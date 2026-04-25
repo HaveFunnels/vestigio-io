@@ -74,8 +74,8 @@ export default function LpAuditPage() {
 				{/* ── Domain ── */}
 				{f.currentScreen === "domain" && (
 					<TextInputStep
-						title="Qual domínio devemos diagnosticar?"
-						subtitle="Só analisamos a landing page pública."
+						title="Qual site devemos analisar?"
+						subtitle="Só analisamos páginas públicas. Nenhum acesso ao seu código ou dados."
 						inputType="url"
 						value={f.form.domain}
 						onChange={(v) => {
@@ -123,7 +123,7 @@ export default function LpAuditPage() {
 								</svg>
 							</div>
 							<span className="text-xs text-zinc-500">
-								Eu sou dono ou tenho autorização para analisar este domínio
+								Tenho autorização para analisar este site
 							</span>
 						</label>
 					</TextInputStep>
@@ -132,8 +132,8 @@ export default function LpAuditPage() {
 				{/* ── Business Type (cards) ── */}
 				{f.currentScreen === "business_type" && (
 					<CardSelectionStep
-						title="Que tipo de negócio?"
-						subtitle="Para adaptarmos o diagnóstico ao seu modelo."
+						title="Que tipo de negócio é o seu?"
+						subtitle="Isso muda como calculamos o impacto financeiro."
 						options={BUSINESS_TYPE_OPTIONS}
 						onSelect={(v) => {
 							f.update("businessModel", v);
@@ -145,8 +145,8 @@ export default function LpAuditPage() {
 				{/* ── Conversion Model (cards) ── */}
 				{f.currentScreen === "conversion_model" && (
 					<CardSelectionStep
-						title="Como seus clientes convertem?"
-						subtitle="Isso determina quais caminhos analisamos."
+						title="Como seus clientes compram?"
+						subtitle="Analisamos os caminhos que levam à conversão."
 						options={CONVERSION_OPTIONS}
 						onSelect={(v) => {
 							f.update("conversionModel", v);
@@ -158,8 +158,8 @@ export default function LpAuditPage() {
 				{/* ── Revenue (slider) ── */}
 				{f.currentScreen === "revenue" && (
 					<SliderInputStep
-						title="Qual sua receita mensal aproximada?"
-						subtitle="Usamos isso para dimensionar o impacto financeiro."
+						title="Qual sua receita mensal?"
+						subtitle="Para calcular quanto você pode estar perdendo."
 						min={5000}
 						max={10000000}
 						step={5000}
@@ -178,8 +178,8 @@ export default function LpAuditPage() {
 				{/* ── Average Ticket (slider) ── */}
 				{f.currentScreen === "ticket" && (
 					<SliderInputStep
-						title="Qual o ticket médio?"
-						subtitle="O valor médio de cada venda ou transação."
+						title="Qual o valor médio de cada venda?"
+						subtitle="Quanto maior o ticket, maior o impacto de cada vazamento."
 						min={20}
 						max={40000}
 						step={10}
@@ -205,7 +205,7 @@ export default function LpAuditPage() {
 						onChange={(v) => f.update("email", v)}
 						placeholder="voce@suaempresa.com"
 						error={f.fieldError?.field === "email" ? f.fieldError.message : null}
-						buttonLabel="Rodar diagnóstico"
+						buttonLabel="Ver quanto estou perdendo"
 						onSubmit={f.next}
 						loading={f.submitting}
 					/>

@@ -78,7 +78,7 @@ export default function CardSelectionStep<T extends string = string>({
 								type="button"
 								onClick={() => handleTap(option.value)}
 								disabled={!!pending}
-								className={`relative flex flex-col justify-center rounded-xl border px-6 py-6 text-left transition-all duration-200 sm:py-7 ${
+								className={`relative flex min-h-[88px] flex-col justify-center rounded-xl border px-6 py-6 text-left transition-all duration-200 sm:py-7 ${
 									isSelected
 										? "border-zinc-900 bg-zinc-900 scale-[1.02] shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
 										: "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100"

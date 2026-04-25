@@ -36,6 +36,7 @@ export type RootCauseCategory =
   | 'policy_deficiency'
   | 'support_gap'
   | 'expectation_failure'
+  | 'expectation_alignment'
   | 'dispute_exposure'
   // Phase 3A: Channel integrity
   | 'channel_integrity'

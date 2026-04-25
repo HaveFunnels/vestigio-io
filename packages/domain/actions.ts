@@ -125,6 +125,7 @@ export type VerificationStrategy =
    * string as the user-facing explanation so nobody clicks Verify
    * and gets a silent no-op.
    */
+  | 'reuse_only'
   | 'not_verifiable_explain';
 
 export type ActionType = 'risk_mitigation' | 'opportunity_capture' | 'verification' | 'observation';

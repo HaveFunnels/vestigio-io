@@ -20,6 +20,7 @@ export type VerificationStrategyKey =
 	| 'external_scan'
 	| 'pixel_accumulation'
 	| 'heuristic_recompute'
+	| 'reuse_only'
 	| 'not_verifiable_explain'
 	| null;
 
@@ -96,6 +97,13 @@ const TEMPLATES: Record<Exclude<VerificationStrategyKey, null>, VerificationPlan
 			{ id: 'compare_baseline', label_key: 'console.chat.verify.plan.steps.compare_baseline' },
 			{ id: 'diagnose_drift', label_key: 'console.chat.verify.plan.steps.diagnose_drift' },
 			{ id: 'draft_remediation', label_key: 'console.chat.verify.plan.steps.draft_remediation' },
+			TERMINAL_STEP,
+		],
+	},
+	reuse_only: {
+		goal_key: 'console.chat.verify.plan.goals.reuse_only',
+		steps: [
+			{ id: 'reuse_existing', label_key: 'console.chat.verify.plan.steps.reuse_existing' },
 			TERMINAL_STEP,
 		],
 	},

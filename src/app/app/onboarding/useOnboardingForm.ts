@@ -312,11 +312,11 @@ export default function useOnboardingForm() {
 			}
 		}
 
-		setStepIndex((s) => Math.min(s + 1, totalSteps - 1));
+		setStepIndex((s: number) => Math.min(s + 1, totalSteps - 1));
 	}, [currentStep, form.domain, t, totalSteps]);
 
 	const prev = useCallback(() => {
-		setStepIndex((s) => Math.max(s - 1, 0));
+		setStepIndex((s: number) => Math.max(s - 1, 0));
 	}, []);
 
 	// ── Activation ──
@@ -334,7 +334,7 @@ export default function useOnboardingForm() {
 						domain: form.domain,
 						businessModel: form.businessType,
 						conversionModel: form.conversionModel,
-						monthlyRevenue: parseRevenue(form.monthlyRevenue),
+						monthlyRevenue: form.monthlyRevenue,
 						averageOrderValue: null,
 					}),
 				});

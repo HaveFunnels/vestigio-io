@@ -191,6 +191,7 @@ export interface FindingProjection {
     | 'external_scan'
     | 'pixel_accumulation'
     | 'heuristic_recompute'
+    | 'reuse_only'
     | 'not_verifiable_explain'
     | null;
   /** User-facing copy describing the verification action. */
@@ -275,6 +276,7 @@ export interface ActionProjection {
     | 'external_scan'
     | 'pixel_accumulation'
     | 'heuristic_recompute'
+    | 'reuse_only'
     | 'not_verifiable_explain'
     | null;
   /** User-facing copy describing the verification action. */

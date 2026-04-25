@@ -84,6 +84,7 @@ export type VerificationStrategyKey =
 	| 'external_scan'
 	| 'pixel_accumulation'
 	| 'heuristic_recompute'
+	| 'reuse_only'
 	| 'not_verifiable_explain'
 	| null;
 
@@ -153,6 +154,13 @@ export function planVerification(
 				message:
 					notes ||
 					'Re-running the projection over current evidence — no new data fetch needed.',
+			};
+		case 'reuse_only':
+			return {
+				kind: 'recompute',
+				message:
+					notes ||
+					'Re-using existing evidence — no new data fetch needed.',
 			};
 		case null:
 		default:

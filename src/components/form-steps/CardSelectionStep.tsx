@@ -32,7 +32,7 @@ export default function CardSelectionStep<T extends string = string>({
 	autoAdvanceDelay = 400,
 }: CardSelectionStepProps<T>) {
 	const [pending, setPending] = useState<T | null>(null);
-	const timerRef = useRef<ReturnType<typeof setTimeout>>();
+	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	useEffect(() => {
 		return () => {

@@ -14,7 +14,7 @@ export interface Plan {
 	price: string;
 	paddlePriceId: string;
 	features: string[];
-	recommended?: boolean;
+	recommended: boolean;
 }
 
 interface PlanSelectionStepProps {

@@ -38,7 +38,7 @@ const VIDEO_ASSETS = [
 function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; videoSrc: string; posterSrc: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [playing, setPlaying] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [showControls, setShowControls] = useState(false);

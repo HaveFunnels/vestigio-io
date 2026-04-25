@@ -205,7 +205,7 @@ export default function LpAuditPage() {
 						onChange={(v) => f.update("email", v)}
 						placeholder="voce@suaempresa.com"
 						error={f.fieldError?.field === "email" ? f.fieldError.message : null}
-						buttonLabel="Ver meus resultados"
+						buttonLabel="Rodar diagnóstico"
 						onSubmit={f.next}
 						loading={f.submitting}
 					/>

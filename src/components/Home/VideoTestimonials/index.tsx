@@ -38,20 +38,45 @@ const VIDEO_ASSETS = [
 function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; videoSrc: string; posterSrc: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const [playing, setPlaying] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [showControls, setShowControls] = useState(false);
 
-  const toggle = useCallback(() => {
+  const play = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) {
-      v.play();
-      setPlaying(true);
-    } else {
-      v.pause();
-      setPlaying(false);
-    }
+    v.play();
+    setPlaying(true);
+    setShowControls(false);
   }, []);
+
+  const pause = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.pause();
+    setPlaying(false);
+    setShowControls(false);
+  }, []);
+
+  // Tap on video while playing → show pause button briefly
+  const handleVideoTap = useCallback(() => {
+    if (!playing) {
+      play();
+      return;
+    }
+    // Show pause button, auto-hide after 1s
+    setShowControls(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setShowControls(false), 1000);
+  }, [playing, play]);
+
+  // Tap specifically on the pause button → pause
+  const handlePauseClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    pause();
+  }, [pause]);
 
   // Pause when card scrolls out of view
   useEffect(() => {
@@ -64,12 +89,16 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
         if (!entry.isIntersecting && !video.paused) {
           video.pause();
           setPlaying(false);
+          setShowControls(false);
         }
       },
       { threshold: 0.25 },
     );
     observer.observe(card);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
   }, []);
 
   return (
@@ -78,7 +107,7 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
       <div
         className="relative cursor-pointer overflow-hidden rounded-2xl bg-zinc-900"
         style={{ aspectRatio: "9 / 16" }}
-        onClick={toggle}
+        onClick={handleVideoTap}
       >
         <video
           ref={videoRef}
@@ -90,7 +119,7 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
           loop
           muted={false}
           onCanPlay={() => setLoaded(true)}
-          onEnded={() => setPlaying(false)}
+          onEnded={() => { setPlaying(false); setShowControls(false); }}
         />
 
         {/* Gradient overlay at bottom for name legibility */}
@@ -102,25 +131,31 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
           <p className="text-xs text-white/60">{item.role}</p>
         </div>
 
-        {/* Play / Pause indicator */}
-        <div
-          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
-            playing ? "opacity-0 hover:opacity-100" : "opacity-100"
-          }`}
-        >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
-            {playing ? (
+        {/* Play button — visible only when paused */}
+        {!playing && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+              <svg className="ml-1 h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5.14v14l11-7-11-7z" />
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* Pause button — appears briefly on tap while playing */}
+        {playing && showControls && (
+          <div
+            className="absolute inset-0 flex items-center justify-center animate-[fadeIn_150ms_ease-out]"
+            onClick={handlePauseClick}
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
               <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="4" width="4" height="16" rx="1" />
                 <rect x="14" y="4" width="4" height="16" rx="1" />
               </svg>
-            ) : (
-              <svg className="ml-1 h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5.14v14l11-7-11-7z" />
-              </svg>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Loading shimmer — visible only before poster loads */}
         {!loaded && !posterSrc && (

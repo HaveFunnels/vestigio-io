@@ -220,15 +220,19 @@ export default function MiniAuditResultPage() {
 					</div>
 
 					{/* Findings */}
-					<section className={`mt-6 space-y-2 transition-opacity duration-700 sm:mt-8 sm:space-y-3 ${revealed ? "opacity-100" : "opacity-0"}`}>
-						<header className="flex items-end justify-between border-b border-zinc-900 pb-3">
-							<h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
-								{negativeFindings.length} findings na sua landing
-							</h2>
-							<span className="text-xs text-zinc-600">Visíveis · Grátis</span>
+					<section className={`mt-6 transition-opacity duration-700 sm:mt-8 ${revealed ? "opacity-100" : "opacity-0"}`}>
+						<header className="mb-3 flex items-end justify-between">
+							<div>
+								<span className="mb-2 inline-block rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+									Gratuito
+								</span>
+								<h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
+									{negativeFindings.length} vazamentos encontrados
+								</h2>
+							</div>
 						</header>
 
-						<ul className="space-y-2">
+						<ul className="space-y-1.5">
 							{negativeFindings.map((f, i) => (
 								<FindingCard key={f.id} finding={f} index={i} revealed={revealed} />
 							))}
@@ -253,8 +257,8 @@ export default function MiniAuditResultPage() {
 							))}
 						</ul>
 
-						{/* Unlock section — value bullets + single CTA */}
-						<UnlockSection />
+						{/* Unlock section — horizontal CTA card */}
+						<UnlockSection negativeFindings={negativeFindings} blurredCount={blurredFindings.length} />
 					</section>
 
 					{/* Footer */}
@@ -318,15 +322,36 @@ function PreviewCard({
 	negativeFindings: MiniFinding[];
 	revealed: boolean;
 }) {
-	// Google favicon as fallback when preview.favicon_url is missing/broken
 	const googleFavicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(preview.host)}&sz=64`;
 	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
 
-	// Compute visible impact range
 	const summary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
 	const impactLabel = summary && summary.count > 0
 		? `${formatBRL(summary.min_brl_cents)}–${formatBRL(summary.max_brl_cents)}/mês`
 		: null;
+
+	// Response time quality badge
+	const rtMs = preview.response_time_ms;
+	const rtBadge = rtMs < 300 ? { text: "Ótimo", color: "text-emerald-400 bg-emerald-500/10" }
+		: rtMs < 800 ? { text: "Bom", color: "text-emerald-400 bg-emerald-500/10" }
+		: rtMs < 2000 ? { text: "Lento", color: "text-amber-400 bg-amber-500/10" }
+		: { text: "Crítico", color: "text-red-400 bg-red-500/10" };
+
+	const httpBadge = preview.http_status === 200
+		? { text: "Sucesso", color: "text-emerald-400 bg-emerald-500/10" }
+		: { text: "Erro", color: "text-red-400 bg-red-500/10" };
+
+	// Score: capped at 70, computed from findings severity
+	const baseScore = 70;
+	const penalty = negativeFindings.reduce((acc, f) => {
+		if (f.severity === "critical") return acc + 15;
+		if (f.severity === "high") return acc + 10;
+		if (f.severity === "medium") return acc + 5;
+		return acc + 2;
+	}, 0);
+	const score = Math.max(10, Math.min(70, baseScore - penalty));
+	const scoreColor = score >= 50 ? "text-emerald-400" : score >= 30 ? "text-amber-400" : "text-red-400";
+	const scoreStroke = score >= 50 ? "#34d399" : score >= 30 ? "#fbbf24" : "#f87171";
 
 	return (
 		<div
@@ -363,24 +388,85 @@ function PreviewCard({
 				</div>
 			</div>
 
-			{/* Stats strip */}
-			<div className={`mt-5 grid gap-4 border-t border-zinc-800 pt-4 ${impactLabel ? "grid-cols-3" : "grid-cols-2"}`}>
-				<Stat label="Tempo de resposta" value={`${preview.response_time_ms}ms`} />
-				<Stat label="Findings encontrados" value={String(totalFindings)} />
-				{impactLabel && <Stat label="Impacto estimado" value={impactLabel} highlight />}
+			{/* Stats strip with icons + badges */}
+			<div className="mt-5 grid grid-cols-3 gap-4 border-t border-zinc-800 pt-4">
+				<div>
+					<div className="flex items-center gap-1.5">
+						<svg className="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+						</svg>
+						<span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">Resposta</span>
+					</div>
+					<div className="mt-0.5 font-mono text-sm text-zinc-300">{preview.response_time_ms}ms</div>
+					<span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${rtBadge.color}`}>{rtBadge.text}</span>
+				</div>
+				<div>
+					<div className="flex items-center gap-1.5">
+						<svg className="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+						</svg>
+						<span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">HTTP</span>
+					</div>
+					<div className="mt-0.5 font-mono text-sm text-zinc-300">{preview.http_status}</div>
+					<span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${httpBadge.color}`}>{httpBadge.text}</span>
+				</div>
+				<div>
+					<div className="flex items-center gap-1.5">
+						<svg className="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						<span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">Vazamentos</span>
+					</div>
+					<div className="mt-0.5 font-mono text-sm text-red-300">{totalFindings}</div>
+					{impactLabel && (
+						<span className="mt-1 inline-block rounded-full bg-red-500/10 px-2 py-0.5 text-[9px] font-semibold text-red-400">
+							↓ {impactLabel}
+						</span>
+					)}
+				</div>
+			</div>
+
+			{/* Score strip */}
+			<div className="mt-5 flex items-center gap-5 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+				{/* Circular score */}
+				<div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
+					<svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
+						<circle cx="32" cy="32" r="28" fill="none" stroke="rgba(39,39,42,0.5)" strokeWidth="5" />
+						<circle
+							cx="32" cy="32" r="28" fill="none"
+							stroke={scoreStroke} strokeWidth="5"
+							strokeLinecap="round"
+							strokeDasharray={`${(score / 100) * 175.9} 175.9`}
+						/>
+					</svg>
+					<div className="absolute inset-0 flex flex-col items-center justify-center">
+						<span className={`text-lg font-bold leading-none ${scoreColor}`}>{score}</span>
+						<span className="text-[9px] text-zinc-600">/100</span>
+					</div>
+				</div>
+				<div className="min-w-0 flex-1">
+					<h3 className="text-sm font-semibold text-zinc-100">
+						{score >= 50 ? "Oportunidades de conversão detectadas" : score >= 30 ? "Problemas significativos encontrados" : "Vazamentos críticos detectados"}
+					</h3>
+					<p className="mt-1 text-xs leading-relaxed text-zinc-400">
+						{score >= 50
+							? "Sua landing funciona, mas está vazando receita em pontos específicos."
+							: "Sua landing tem problemas que estão custando dinheiro todos os dias."
+						}
+					</p>
+				</div>
 			</div>
 		</div>
 	);
 }
 
-function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-	return (
-		<div>
-			<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">{label}</div>
-			<div className={`mt-0.5 font-mono text-sm ${highlight ? "text-red-300" : "text-zinc-300"}`}>{value}</div>
-		</div>
-	);
-}
+const SEVERITY_PT: Record<string, string> = {
+	critical: "Crítico",
+	high: "Alto",
+	medium: "Médio",
+	low: "Baixo",
+	positive: "Positivo",
+};
 
 function FindingCard({
 	finding,
@@ -397,7 +483,7 @@ function FindingCard({
 
 	return (
 		<li
-			className={`overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/60 transition-colors hover:border-zinc-700 ${
+			className={`overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/60 transition-colors hover:border-zinc-700 ${
 				revealed ? "lp-card-anim" : "opacity-0"
 			}`}
 			style={{ animationDelay: revealed ? `${index * 200}ms` : undefined }}
@@ -405,37 +491,37 @@ function FindingCard({
 			<button
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
-				className="flex w-full items-start gap-3 px-3.5 py-3 text-left sm:gap-4 sm:px-5 sm:py-4"
+				className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3"
 			>
 				<span className={`mt-1 inline-flex h-2 w-2 shrink-0 rounded-full ${severityClass.dot}`} />
 				<div className="min-w-0 flex-1">
-					<div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+					<div className="flex flex-wrap items-center gap-1.5">
 						<span className={`text-[10px] font-semibold uppercase tracking-wider ${severityClass.label}`}>
-							{finding.severity}
+							{SEVERITY_PT[finding.severity] || finding.severity}
 						</span>
 						<span className="text-[10px] uppercase tracking-wider text-zinc-600">
 							· {finding.category}
 						</span>
-						{impact && (
-							<span className="ml-auto font-mono text-[11px] text-emerald-400/90 sm:text-xs">
-								↓ {formatBRL(impact.min_brl_cents)}–{formatBRL(impact.max_brl_cents)}/mês
-							</span>
-						)}
 					</div>
-					<h3 className="mt-1 text-[13px] font-semibold leading-snug text-zinc-100 sm:text-sm">
+					<h3 className="mt-0.5 text-[13px] font-semibold leading-snug text-zinc-100 sm:text-sm">
 						{finding.title}
 					</h3>
+					{impact && (
+						<p className="mt-1 font-mono text-[11px] text-red-400/90">
+							Impacto estimado: ↓ {formatBRL(impact.min_brl_cents)}–{formatBRL(impact.max_brl_cents)}/mês
+						</p>
+					)}
 					{expanded && (
 						<>
 							<p className="mt-2 text-[13px] leading-relaxed text-zinc-400 sm:text-sm">
 								{finding.body}
 							</p>
 							{finding.evidence_refs && finding.evidence_refs.length > 0 && (
-								<ul className="mt-3 flex flex-wrap gap-2">
+								<ul className="mt-2 flex flex-wrap gap-1.5">
 									{finding.evidence_refs.map((ref, i) => (
 										<li
 											key={i}
-											className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900/60 px-2 py-1 text-[11px] text-zinc-400"
+											className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900/60 px-2 py-0.5 text-[11px] text-zinc-400"
 										>
 											<span className="text-zinc-600">›</span>
 											<span>{ref}</span>
@@ -443,7 +529,7 @@ function FindingCard({
 									))}
 								</ul>
 							)}
-							<p className="mt-3 inline-flex items-center gap-1.5 text-xs text-emerald-400">
+							<p className="mt-2 inline-flex items-center gap-1.5 text-xs text-emerald-400">
 								<span>↳</span>
 								<span>{finding.impact_hint}</span>
 							</p>
@@ -504,58 +590,44 @@ function CostSummaryBanner({
 	);
 }
 
-function UnlockSection() {
-	const bullets = [
-		{ icon: "search", text: "15.000+ sinais analisados por auditoria estática" },
-		{ icon: "browser", text: "Navegação automatizada completa via browser real" },
-		{ icon: "copy", text: "Análise de copy, CTAs e fricção de formulários" },
-		{ icon: "delta", text: "Detecção de regressão ciclo a ciclo" },
-		{ icon: "dollar", text: "Impacto financeiro quantificado em cada finding" },
-	];
+function UnlockSection({ negativeFindings, blurredCount }: { negativeFindings: MiniFinding[]; blurredCount: number }) {
+	const summary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
+	const totalImpact = summary && summary.count > 0
+		? formatBRL(summary.max_brl_cents)
+		: "R$ 22.000";
 
 	return (
-		<div className="relative mt-10 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-zinc-950 to-zinc-950 px-5 py-7 sm:px-8 sm:py-9">
-			<div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-500/10 blur-[80px]" />
-			<div className="relative">
-				<p className="text-[10px] uppercase tracking-[0.2em] text-emerald-400/80 sm:text-xs">
-					Diagnóstico completo
-				</p>
-				<h3 className="mt-2 text-xl font-semibold leading-tight text-zinc-100 sm:text-2xl">
+		<Link
+			href="/auth/signup"
+			className="group relative mt-8 flex items-center gap-5 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-zinc-950 to-zinc-950 p-5 transition-all hover:border-emerald-500/50 hover:shadow-[0_0_40px_rgba(16,185,129,0.15)] sm:p-6"
+		>
+			{/* Trophy icon */}
+			<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
+				<svg className="h-7 w-7 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+					<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0016.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.782m0 0a6.004 6.004 0 01-2.27-.782" />
+				</svg>
+			</div>
+
+			{/* Content */}
+			<div className="min-w-0 flex-1">
+				<h3 className="text-sm font-bold text-zinc-100 sm:text-base">
 					Desbloquear diagnóstico completo
 				</h3>
-				<p className="mt-2 text-sm text-zinc-400">
-					O que você viu é uma amostra. O diagnóstico completo inclui:
+				<p className="mt-1 text-xs leading-relaxed text-zinc-400 sm:text-sm">
+					O diagnóstico completo analisa 15.000+ sinais incluindo navegação automatizada, análise de copy e monitoramento contínuo. Recupere até <span className="font-semibold text-emerald-400">{totalImpact}/mês</span>.
 				</p>
-
-				<ul className="mt-5 space-y-3">
-					{bullets.map((b) => (
-						<li key={b.icon} className="flex items-start gap-3">
-							<svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-							</svg>
-							<span className="text-sm text-zinc-300">{b.text}</span>
-						</li>
-					))}
-				</ul>
-
-				{/* Social proof */}
-				<p className="mt-6 text-xs text-zinc-500">
-					Empresas como a sua encontram em média <span className="text-zinc-300">9 vazamentos</span> e <span className="text-red-300">−R$81k/mês</span> no primeiro diagnóstico completo.
+				<p className="mt-1.5 text-[11px] text-zinc-600">
+					Sem cartão de crédito · Primeiro diagnóstico em 60s
 				</p>
-
-				<div className="mt-5 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-					<Link
-						href="/auth/signup"
-						className="rounded-xl bg-emerald-500 px-7 py-3.5 text-center text-sm font-semibold text-emerald-950 shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)]"
-					>
-						Ver o que mais estou perdendo
-					</Link>
-					<span className="text-center text-xs text-zinc-600 sm:ml-2 sm:text-left">
-						Sem cartão de crédito. Primeiro diagnóstico em 60 segundos.
-					</span>
-				</div>
 			</div>
-		</div>
+
+			{/* Arrow */}
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 transition-transform group-hover:scale-110">
+				<svg className="h-5 w-5 text-emerald-950" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+					<path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+				</svg>
+			</div>
+		</Link>
 	);
 }
 

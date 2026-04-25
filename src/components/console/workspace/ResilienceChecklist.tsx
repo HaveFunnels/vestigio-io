@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { FindingProjection } from "../../../../packages/projections/types";
 
 export interface ChecklistPillar {
@@ -63,7 +64,7 @@ const STATUS_STYLES: Record<ItemStatus, { icon: string; bg: string; text: string
 	},
 };
 
-function ChecklistItem({ finding, status }: { finding?: FindingProjection; status: ItemStatus }) {
+function ChecklistItem({ finding, status, notDetectedLabel }: { finding?: FindingProjection; status: ItemStatus; notDetectedLabel: string }) {
 	const s = STATUS_STYLES[status];
 	return (
 		<div className={`flex items-start gap-2.5 rounded-lg border px-3 py-2 ${s.border} ${s.bg}`}>
@@ -72,7 +73,7 @@ function ChecklistItem({ finding, status }: { finding?: FindingProjection; statu
 			</svg>
 			<div className="min-w-0 flex-1">
 				<p className="text-xs font-medium text-content-secondary">
-					{finding?.title || "Not detected"}
+					{finding?.title || notDetectedLabel}
 				</p>
 				{finding && status !== "pass" && finding.root_cause && (
 					<p className="mt-0.5 text-[11px] text-content-muted line-clamp-2">
@@ -90,6 +91,7 @@ function ChecklistItem({ finding, status }: { finding?: FindingProjection; statu
 }
 
 export default function ResilienceChecklist({ findings, pillars }: Props) {
+	const t = useTranslations("console.workspaces.detail.enrichment");
 	const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
 	// Build a map of inference_key → finding for fast lookup
@@ -150,6 +152,7 @@ export default function ResilienceChecklist({ findings, pillars }: Props) {
 										key={key}
 										finding={finding}
 										status={statusFromFinding(finding)}
+										notDetectedLabel={t("not_detected")}
 									/>
 								))}
 							</div>

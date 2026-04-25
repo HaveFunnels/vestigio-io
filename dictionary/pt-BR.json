@@ -1886,7 +1886,35 @@
 						"post_conversion": "Pós-conversão"
 					},
 					"findings_singular": "finding",
-					"findings_plural": "findings"
+					"findings_plural": "findings",
+					"resilience_checklist": "Checklist de Resiliência",
+					"trust_score": "Score de Confiança",
+					"security_checklist": "Checklist de Segurança",
+					"security_score": "Score de Segurança",
+					"opportunities": "Oportunidades",
+					"combined_potential": "Potencial combinado",
+					"not_detected": "Não detectado",
+					"passing": "Aprovado ({count})",
+					"failing": "Reprovado ({count})",
+					"pillars": {
+						"pre_transaction": "Prevenção Pré-transação",
+						"transaction_security": "Segurança da Transação",
+						"post_transaction": "Métricas Pós-transação",
+						"transport": "Segurança de Transporte",
+						"response": "Segurança de Resposta",
+						"application": "Segurança de Aplicação"
+					},
+					"packs": {
+						"revenue": "Receita",
+						"chargeback": "Chargeback",
+						"security": "Segurança",
+						"scale": "Escala",
+						"behavioral": "Comportamental",
+						"first_impression": "Primeira Impressão",
+						"friction": "Fricção",
+						"trust": "Confiança",
+						"analysis": "Análise"
+					}
 				}
 			},
 			"panorama_title": "Panorama",
@@ -2449,7 +2477,8 @@
 			"eyebrow": "Atividade · 90 dias",
 			"day_streak": "dias seguidos",
 			"less": "menos",
-			"more": "mais"
+			"more": "mais",
+			"day_tooltip": "{date} · {cycles} {cycles, plural, one {ciclo} other {ciclos}} · {actions} {actions, plural, one {ação} other {ações}} resolvidas"
 		},
 		"money_recovered": {
 			"eyebrow": "Total recuperado com a Vestigio",

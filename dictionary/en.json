@@ -1902,7 +1902,35 @@
 						"post_conversion": "Post-conversion"
 					},
 					"findings_singular": "finding",
-					"findings_plural": "findings"
+					"findings_plural": "findings",
+					"resilience_checklist": "Resilience Checklist",
+					"trust_score": "Trust Score",
+					"security_checklist": "Security Checklist",
+					"security_score": "Security Score",
+					"opportunities": "Opportunities",
+					"combined_potential": "Combined potential",
+					"not_detected": "Not detected",
+					"passing": "Passing ({count})",
+					"failing": "Failing ({count})",
+					"pillars": {
+						"pre_transaction": "Pre-transaction Prevention",
+						"transaction_security": "Transaction Security",
+						"post_transaction": "Post-transaction Metrics",
+						"transport": "Transport Security",
+						"response": "Response Security",
+						"application": "Application Security"
+					},
+					"packs": {
+						"revenue": "Revenue",
+						"chargeback": "Chargeback",
+						"security": "Security",
+						"scale": "Scale",
+						"behavioral": "Behavioral",
+						"first_impression": "First Impression",
+						"friction": "Friction",
+						"trust": "Trust",
+						"analysis": "Analysis"
+					}
 				}
 			}
 		},
@@ -2430,7 +2458,8 @@
 			"eyebrow": "Activity · 90 days",
 			"day_streak": "day streak",
 			"less": "less",
-			"more": "more"
+			"more": "more",
+			"day_tooltip": "{date} · {cycles} {cycles, plural, one {cycle} other {cycles}} · {actions} {actions, plural, one {action} other {actions}} resolved"
 		},
 		"money_recovered": {
 			"eyebrow": "Total recovered with Vestigio",

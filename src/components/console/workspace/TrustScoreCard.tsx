@@ -8,6 +8,7 @@
  * Pure frontend derivation — no new engine data needed.
  */
 
+import { useTranslations } from "next-intl";
 import type { FindingProjection } from "../../../../packages/projections/types";
 
 interface Props {
@@ -25,6 +26,7 @@ function scoreToGrade(score: number): { letter: string; color: string } {
 }
 
 export default function TrustScoreCard({ findings, filterPacks }: Props) {
+	const t = useTranslations("console.workspaces.detail.enrichment");
 	const relevant = filterPacks
 		? findings.filter((f) => filterPacks.includes(f.pack))
 		: findings;
@@ -61,7 +63,7 @@ export default function TrustScoreCard({ findings, filterPacks }: Props) {
 			{passing.length > 0 && (
 				<div className="mb-2">
 					<span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
-						Passing ({passing.length})
+						{t("passing", { count: passing.length })}
 					</span>
 					<ul className="mt-1 space-y-0.5">
 						{passing.slice(0, 5).map((f) => (
@@ -80,7 +82,7 @@ export default function TrustScoreCard({ findings, filterPacks }: Props) {
 			{failing.length > 0 && (
 				<div>
 					<span className="text-[10px] font-semibold uppercase tracking-wider text-red-400">
-						Failing ({failing.length})
+						{t("failing", { count: failing.length })}
 					</span>
 					<ul className="mt-1 space-y-0.5">
 						{failing.slice(0, 5).map((f) => (

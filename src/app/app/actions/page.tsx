@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTrack } from "@/hooks/useProductTrack";
+import { useCopilot } from "@/components/app/CopilotProvider";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
@@ -213,6 +214,7 @@ function ActionsContent({
 	const t = useTranslations("console.actions");
 	const { track } = useTrack();
 	const router = useRouter();
+	const copilot = useCopilot();
 	const searchParams = useSearchParams();
 	const [selected, setSelected] = useState<ActionProjection | null>(null);
 	const [selectedUserAction, setSelectedUserAction] = useState<UserActionRow | null>(null);
@@ -728,7 +730,7 @@ function ActionsContent({
 				{selected && (
 					<ActionDrawerContent
 						action={selected}
-						onNavigateChat={(id) => router.push(`/chat?action=${id}`)}
+						onNavigateChat={(id) => copilot.open({ prompt: `Discuss action ${id}. What should I prioritize and how do I fix it?` })}
 						onRunVerification={(intent) => runVerification(selected, intent)}
 						isVerifying={verifyingId === selected.id}
 					/>
@@ -751,8 +753,8 @@ function ActionsContent({
 						onRunVerification={() =>
 							runVerificationForUserAction(selectedUserAction)
 						}
-						onReopenConversation={(convId) =>
-							router.push(`/app/chat?conversation=${convId}`)
+						onReopenConversation={() =>
+							copilot.open({ prompt: "Continue our previous conversation about this action." })
 						}
 					/>
 				)}

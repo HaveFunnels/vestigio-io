@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTrack } from "@/hooks/useProductTrack";
+import { useCopilot } from "@/components/app/CopilotProvider";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
@@ -477,6 +478,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
 	const router = useRouter();
+	const copilot = useCopilot();
 
 	return (
 		<div className="space-y-6">
@@ -571,7 +573,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 					reTriggerReason={null}
 					decisionStatus={null}
 					onRequestVerification={() =>
-						router.push(`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`)
+						copilot.open({ finding, prompt: `Verify this finding: "${finding.title}". Run a verification check and tell me if it's still valid.` })
 					}
 				/>
 			</section>

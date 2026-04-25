@@ -8,6 +8,7 @@
  * Hidden if no opportunities exist.
  */
 
+import { useTranslations } from "next-intl";
 import type { FindingProjection } from "../../../../packages/projections/types";
 
 function formatDollars(amount: number): string {
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export default function OpportunityPreview({ findings }: Props) {
+	const t = useTranslations("console.workspaces.detail.enrichment");
 	// Deduplicate opportunities from findings
 	const seen = new Set<string>();
 	const opportunities: Opportunity[] = [];
@@ -51,7 +53,7 @@ export default function OpportunityPreview({ findings }: Props) {
 	return (
 		<div>
 			<h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-content-faint">
-				Opportunities
+				{t("opportunities")}
 			</h3>
 			<div className="space-y-2">
 				{opportunities.slice(0, 5).map((opp) => (
@@ -69,7 +71,7 @@ export default function OpportunityPreview({ findings }: Props) {
 			{opportunities.length > 0 && (
 				<div className="mt-3 flex items-center justify-between rounded-lg bg-surface-inset px-3 py-2">
 					<span className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">
-						Combined potential
+						{t("combined_potential")}
 					</span>
 					<span className="text-xs font-bold text-emerald-400">
 						{formatDollars(totalMin)}–{formatDollars(totalMax)}/mo

@@ -3616,7 +3616,7 @@
 			"unclear_conversion_intent": "Wenn Besucher nicht wissen, was sie tun sollen, gehen sie — vage CTAs, mehrdeutige Pfade und verwirrende Abläufe senken direkt die Konversion",
 			"refund_policy_gap": "Käufer, die keine klaren Erstattungsregeln finden, wenden sich an den Kartenaussteller statt um Erstattung zu bitten — das erzeugt Chargebacks",
 			"support_unreachable": "Wenn Käufer den Support nicht finden, gehen sie direkt zur Bank — unzufriedene Kunden ohne Kontaktweg greifen zum Chargeback",
-			"expectation_misalignment": "Wenn der Checkout nicht den Erwartungen des Käufers entspricht, nehmen Streitigkeiten wegen „Artikel nicht wie beschrieben" und Chargebacks zu",
+			"expectation_misalignment": "Wenn der Checkout nicht den Erwartungen des Käufers entspricht, nehmen Streitigkeiten wegen ‚Artikel nicht wie beschrieben' und Chargebacks zu",
 			"dispute_risk_elevated": "Mehrere kombinierte Risikofaktoren schaffen ein Umfeld, das Streitigkeiten und Chargebacks seitens der Käufer provoziert",
 			"activation_blocked": "Nutzer, die den ersten Wertmoment nicht erreichen, konvertieren nie von Trial zu Bezahlung",
 			"activation_friction_high": "Jeder Reibungsschritt im Onboarding senkt die Konversionsrate von Trial zu zahlendem Kunden",
@@ -3723,7 +3723,7 @@
 			"refund_turnaround": "Erhöhte Erstattungsbearbeitungszeit steigert die Wahrscheinlichkeit einer Bankstreitigkeit",
 			"terms_conditions_missing": "Ohne sichtbare AGB fehlt dem Käufer die rechtliche Grundlage für die Transaktion",
 			"product_description_misleading": "Beschreibungen, die nicht der Realität entsprechen, erzeugen falsche Erwartungen und Chargebacks",
-			"subscription_disclosure_missing": "Nicht offengelegte wiederkehrende Abonnements erzeugen Streitigkeiten wegen „nicht autorisiert"",
+			"subscription_disclosure_missing": "Nicht offengelegte wiederkehrende Abonnements erzeugen Streitigkeiten wegen ‚nicht autorisiert'",
 			"shipping_policy_gap": "Ohne klare Versandrichtlinie sind Käufer unsicher bezüglich Lieferung und Zusatzkosten",
 			"cancellation_docs_missing": "Ohne Kündigungsdokumentation finden Nutzer keinen Weg zur Kündigung und wenden sich an die Bank",
 			"commerce_context": "Kommerzieller Kontext der Website ermittelt, um Wirkungsbewertungen zu kalibrieren",
@@ -3823,7 +3823,7 @@
 			"cookie_consent_missing": "DSGVO-/ePrivacy-Verstoß für Besucher aus der EU."
 		},
 		"reasoning_templates": {
-			"security_header_weakness": "Browser-Vertrauenssignale {severity}. {factors}. Browser zeigen Warnungen wie „Nicht sicher" und entfernen das Schlosssymbol, wenn diese Header fehlen — Käufer sehen diese Signale und brechen ab.",
+			"security_header_weakness": "Browser-Vertrauenssignale {severity}. {factors}. Browser zeigen Warnungen wie ‚Nicht sicher' und entfernen das Schlosssymbol, wenn diese Header fehlen — Käufer sehen diese Signale und brechen ab.",
 			"mixed_content_exposure": "Risiko eines Checkout-Ausfalls {severity}. {factors}. Zahlungsskripte, Formulare und Vertrauenssiegel, die über HTTP geladen werden, werden auf HTTPS-Seiten stillschweigend blockiert — der Käufer klickt auf Bezahlen und nichts passiert.",
 			"open_redirect_indicator": "Phishing-Risiko über Domain {severity}. {factors}. Angreifer erstellen legitime Links auf Ihrer Domain, die Käufer auf gefälschte Checkouts weiterleiten — echte Kunden verlieren Geld in dem Glauben, auf Ihrer Website zu sein.",
 			"sensitive_endpoint_exposed": "Infrastruktur-Exposition {severity}. {factors}. Öffentlich zugängliche Zugangsdaten und Admin-Panels bedeuten, dass ein einziger Einbruch den gesamten Handel lahmlegen kann — der Umsatz geht auf null.",

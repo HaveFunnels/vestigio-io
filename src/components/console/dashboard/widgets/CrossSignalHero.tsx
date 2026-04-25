@@ -21,20 +21,20 @@ import {
 } from "@/lib/dashboard/widget-registry";
 import type { CrossSignalChain } from "@/lib/dashboard/types";
 
-const PACK_STYLES: Record<string, { text: string; dot: string; label: string }> = {
-	revenue: { text: "text-red-400", dot: "bg-red-500", label: "Revenue" },
-	revenue_integrity: { text: "text-red-400", dot: "bg-red-500", label: "Revenue" },
-	chargeback: { text: "text-amber-400", dot: "bg-amber-500", label: "Chargeback" },
-	chargeback_resilience: { text: "text-amber-400", dot: "bg-amber-500", label: "Chargeback" },
-	security_posture: { text: "text-blue-400", dot: "bg-blue-500", label: "Security" },
-	scale_readiness: { text: "text-emerald-400", dot: "bg-emerald-500", label: "Scale" },
-	behavioral: { text: "text-violet-400", dot: "bg-violet-500", label: "Behavioral" },
-	first_impression: { text: "text-violet-400", dot: "bg-violet-500", label: "First Impression" },
-	friction_tax: { text: "text-rose-400", dot: "bg-rose-500", label: "Friction" },
-	trust_gap: { text: "text-indigo-400", dot: "bg-indigo-500", label: "Trust" },
+const PACK_STYLES: Record<string, { text: string; dot: string; labelKey: string }> = {
+	revenue: { text: "text-red-400", dot: "bg-red-500", labelKey: "revenue" },
+	revenue_integrity: { text: "text-red-400", dot: "bg-red-500", labelKey: "revenue" },
+	chargeback: { text: "text-amber-400", dot: "bg-amber-500", labelKey: "chargeback" },
+	chargeback_resilience: { text: "text-amber-400", dot: "bg-amber-500", labelKey: "chargeback" },
+	security_posture: { text: "text-blue-400", dot: "bg-blue-500", labelKey: "security" },
+	scale_readiness: { text: "text-emerald-400", dot: "bg-emerald-500", labelKey: "scale" },
+	behavioral: { text: "text-violet-400", dot: "bg-violet-500", labelKey: "behavioral" },
+	first_impression: { text: "text-violet-400", dot: "bg-violet-500", labelKey: "first_impression" },
+	friction_tax: { text: "text-rose-400", dot: "bg-rose-500", labelKey: "friction" },
+	trust_gap: { text: "text-indigo-400", dot: "bg-indigo-500", labelKey: "trust" },
 };
 
-const FALLBACK_STYLE = { text: "text-content-muted", dot: "bg-content-faint", label: "Analysis" };
+const FALLBACK_STYLE = { text: "text-content-muted", dot: "bg-content-faint", labelKey: "analysis" };
 
 function formatCurrency(cents: number): string {
 	const d = Math.abs(cents) / 100;
@@ -45,6 +45,7 @@ function formatCurrency(cents: number): string {
 
 function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boolean }) {
 	const router = useRouter();
+	const tp = useTranslations("console.workspaces.detail.enrichment.packs");
 	const surface = chain.surface.length > 35
 		? "..." + chain.surface.slice(-32)
 		: chain.surface;
@@ -78,7 +79,7 @@ function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boole
 									className="inline-flex items-center gap-1 text-[11px] transition-colors hover:opacity-80 disabled:cursor-default"
 								>
 									<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
-									<span className={`font-semibold ${style.text}`}>{style.label}</span>
+									<span className={`font-semibold ${style.text}`}>{tp(style.labelKey)}</span>
 									<span className="max-w-[140px] truncate text-content-secondary lg:max-w-[240px] xl:max-w-[320px]">
 										{link.title}
 									</span>

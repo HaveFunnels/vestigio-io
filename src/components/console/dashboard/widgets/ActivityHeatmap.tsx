@@ -35,8 +35,7 @@ function intensityClass(count: number): string {
 	return "bg-emerald-500";
 }
 
-function DayCell({ day }: { day: ActivityHeatmapDay }) {
-	const tooltip = `${day.date} · ${day.cycles} cycle${day.cycles === 1 ? "" : "s"} · ${day.actionsResolved} action${day.actionsResolved === 1 ? "" : "s"} resolved`;
+function DayCell({ day, tooltip }: { day: ActivityHeatmapDay; tooltip: string }) {
 	return (
 		<div
 			className={`h-2.5 w-2.5 rounded-[2px] ${intensityClass(day.count)} transition-colors hover:ring-1 hover:ring-emerald-400/50`}
@@ -85,7 +84,11 @@ function ActivityHeatmapComponent({ data }: WidgetProps) {
 				{weeks.map((week, wi) => (
 					<div key={wi} className='flex flex-col gap-1'>
 						{week.map((day) => (
-							<DayCell key={day.date} day={day} />
+							<DayCell
+								key={day.date}
+								day={day}
+								tooltip={t("day_tooltip", { date: day.date, cycles: day.cycles, actions: day.actionsResolved })}
+							/>
 						))}
 					</div>
 				))}

@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useCopilot } from "@/components/app/CopilotProvider";
 import Link from "next/link";
 import {
 	ReactFlow,
@@ -1648,6 +1649,7 @@ function InsightsDrawerContent({
 }) {
 	const t = useTranslations("console.maps.insights");
 	const router = useRouter();
+	const copilot = useCopilot();
 
 	// Group findings by root cause
 	const byRootCause = useMemo(() => {
@@ -1792,8 +1794,17 @@ function InsightsDrawerContent({
 			<button
 				type='button'
 				onClick={() => {
-					const ids = insights.items.map((it) => it.finding.id).join(",");
-					router.push(`/app/chat?findings=${encodeURIComponent(ids)}`);
+					const selected = insights.items.map((it) => it.finding);
+					if (selected.length === 1) {
+						copilot.open({
+							finding: selected[0],
+							prompt: `Discuss this finding: "${selected[0].title}". What's the impact and what should I do about it?`,
+						});
+					} else {
+						copilot.open({
+							prompt: `Analyze these ${selected.length} findings together and identify cross-signal patterns:\n${selected.map((f) => `- ${f.title}`).join("\n")}`,
+						});
+					}
 				}}
 				className='flex w-full items-center justify-center gap-2 rounded-lg border border-edge bg-surface-card px-4 py-2.5 text-xs font-medium text-content-secondary transition-colors hover:border-edge-strong hover:bg-surface-card-hover'
 			>

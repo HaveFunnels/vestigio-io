@@ -8,14 +8,15 @@
  * Layout: 60/40 split — checklist (left) + trust score card (right).
  */
 
+import { useTranslations } from "next-intl";
 import type { FindingProjection } from "../../../../packages/projections/types";
 import ResilienceChecklist, { type ChecklistPillar } from "./ResilienceChecklist";
 import TrustScoreCard from "./TrustScoreCard";
 
-const CHARGEBACK_PILLARS: ChecklistPillar[] = [
+const CHARGEBACK_PILLAR_DEFS = [
 	{
 		id: "pre_transaction",
-		label: "Pre-transaction Prevention",
+		labelKey: "pillars.pre_transaction" as const,
 		inferenceKeys: [
 			"refund_policy_gap",
 			"terms_conditions_missing",
@@ -29,7 +30,7 @@ const CHARGEBACK_PILLARS: ChecklistPillar[] = [
 	},
 	{
 		id: "transaction_security",
-		label: "Transaction Security",
+		labelKey: "pillars.transaction_security" as const,
 		inferenceKeys: [
 			"three_d_secure_detected",
 			"fraud_screening_tool_detected",
@@ -39,13 +40,13 @@ const CHARGEBACK_PILLARS: ChecklistPillar[] = [
 	},
 	{
 		id: "post_transaction",
-		label: "Post-transaction Metrics",
+		labelKey: "pillars.post_transaction" as const,
 		inferenceKeys: [
 			"dispute_rate_zone",
 			"refund_rate_health",
 			"refund_turnaround",
 		],
-		requiresData: true, // Only show when integration data exists
+		requiresData: true,
 	},
 ];
 
@@ -54,27 +55,36 @@ interface Props {
 }
 
 export default function ChargebackResilience({ findings }: Props) {
+	const t = useTranslations("console.workspaces.detail.enrichment");
+
 	// Hide when no chargeback findings exist
 	const hasChargebackData = findings.some((f) => f.pack === "chargeback_resilience" || f.pack === "chargeback");
 	if (!hasChargebackData) return null;
+
+	const pillars: ChecklistPillar[] = CHARGEBACK_PILLAR_DEFS.map((d) => ({
+		id: d.id,
+		label: t(d.labelKey),
+		inferenceKeys: d.inferenceKeys,
+		requiresData: d.requiresData,
+	}));
 
 	return (
 		<div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
 			{/* Left: Checklist (60%) */}
 			<div className="lg:col-span-3">
 				<h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-content-faint">
-					Resilience Checklist
+					{t("resilience_checklist")}
 				</h3>
 				<ResilienceChecklist
 					findings={findings}
-					pillars={CHARGEBACK_PILLARS}
+					pillars={pillars}
 				/>
 			</div>
 
 			{/* Right: Trust Score (40%) */}
 			<div className="lg:col-span-2">
 				<h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-content-faint">
-					Trust Score
+					{t("trust_score")}
 				</h3>
 				<TrustScoreCard
 					findings={findings}

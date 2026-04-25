@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useCopilot } from "@/components/app/CopilotProvider";
 import { Column } from "@/components/console/DataTable";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ConsoleState from "@/components/console/ConsoleState";
@@ -409,6 +410,7 @@ function SelectionBar({
 
 export default function InventoryPage() {
 	const router = useRouter();
+	const copilot = useCopilot();
 	const t = useTranslations("console.inventory");
 	const tc = useTranslations("console.common.columns");
 	const tTooltip = useTranslations("console.common");
@@ -580,9 +582,8 @@ export default function InventoryPage() {
 	const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
 	const handleUseAsContext = useCallback(() => {
-		const ids = Array.from(selectedIds);
-		router.push(`/chat?context=${encodeURIComponent(ids.join(","))}`);
-	}, [selectedIds, router]);
+		copilot.open({ prompt: `Analyze these ${selectedIds.size} pages from my inventory. What issues should I look at first?` });
+	}, [selectedIds, copilot]);
 
 	// ── Down pages count ──
 
@@ -855,7 +856,7 @@ export default function InventoryPage() {
 							count={selectedIds.size}
 							onUseAsContext={handleUseAsContext}
 							onAnalyzeTogether={() =>
-								router.push(`/chat?surfaces=${[...selectedIds].join(",")}`)
+								copilot.open({ prompt: `Analyze these ${selectedIds.size} surfaces together. Are there cross-signal patterns or shared issues?` })
 							}
 							onClear={clearSelection}
 						/>

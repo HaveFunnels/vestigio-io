@@ -53,9 +53,9 @@ export default function CardSelectionStep<T extends string = string>({
 	);
 
 	return (
-		<div className="flex flex-1 flex-col items-center justify-center">
-			{/* Title + subtitle + cards centered as a group */}
-			<div className="w-full">
+		<div className="flex flex-1 flex-col">
+			{/* Title + subtitle pinned to top */}
+			<div>
 				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl">
 					{title}
 				</h2>
@@ -64,8 +64,11 @@ export default function CardSelectionStep<T extends string = string>({
 						{subtitle}
 					</p>
 				)}
+			</div>
 
-				<div className="mt-8 grid grid-cols-1 gap-3.5 sm:mt-10 sm:grid-cols-2">
+			{/* Cards centered vertically in remaining space */}
+			<div className="flex flex-1 items-center">
+				<div className="w-full grid grid-cols-1 gap-3.5 sm:grid-cols-2">
 					{options.map((option) => {
 						const isSelected = pending === option.value;
 

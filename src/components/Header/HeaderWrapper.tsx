@@ -11,7 +11,8 @@ export const HeaderWrapper = () => {
 	if (
 		pathname.startsWith("/admin") ||
 		pathname.startsWith("/user") ||
-		pathname.startsWith("/auth")
+		pathname.startsWith("/auth") ||
+		pathname.startsWith("/lp/audit")
 	) {
 		return null;
 	}

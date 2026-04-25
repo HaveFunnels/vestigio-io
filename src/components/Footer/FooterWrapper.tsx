@@ -9,7 +9,8 @@ const FooterWrapper = () => {
 		<>
 			{!pathname.startsWith("/admin") &&
 				!pathname.startsWith("/user") &&
-				!pathname.startsWith("/auth") && <Footer />}
+				!pathname.startsWith("/auth") &&
+				!pathname.startsWith("/lp/audit") && <Footer />}
 		</>
 	);
 };

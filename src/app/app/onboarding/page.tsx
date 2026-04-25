@@ -152,14 +152,28 @@ export default function OnboardPage() {
 				>
 					{/* Ownership checkbox */}
 					<label className="flex cursor-pointer items-start gap-3">
-						<input
-							type="checkbox"
-							checked={f.form.ownershipConfirmed}
-							onChange={(e) =>
-								f.update("ownershipConfirmed", e.target.checked)
-							}
-							className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
-						/>
+						<div className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+							<input
+								type="checkbox"
+								checked={f.form.ownershipConfirmed}
+								onChange={(e) =>
+									f.update("ownershipConfirmed", e.target.checked)
+								}
+								className="peer sr-only"
+							/>
+							<div className="h-5 w-5 rounded-md border-2 border-zinc-300 bg-white transition-colors peer-checked:border-zinc-900 peer-checked:bg-zinc-900 peer-focus-visible:ring-2 peer-focus-visible:ring-zinc-400 peer-focus-visible:ring-offset-2" />
+							<svg
+								viewBox="0 0 12 12"
+								fill="none"
+								stroke="white"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								className="pointer-events-none absolute h-3 w-3 opacity-0 transition-opacity peer-checked:opacity-100"
+							>
+								<path d="M2.5 6L5 8.5L9.5 3.5" />
+							</svg>
+						</div>
 						<div>
 							<span className="text-sm font-medium text-zinc-700">
 								{f.t("domain.ownership_title")}

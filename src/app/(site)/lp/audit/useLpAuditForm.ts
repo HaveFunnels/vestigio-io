@@ -103,11 +103,11 @@ export default function useLpAuditForm() {
 					setLeadId(data.leadId);
 					setFormToken(data.formToken);
 				} else {
-					setGlobalError(data.message || "Couldn't start the audit. Please refresh.");
+					setGlobalError(data.message || "Não foi possível iniciar o diagnóstico. Atualize a página.");
 				}
 			})
 			.catch(() => {
-				if (!cancelled) setGlobalError("Network error. Please refresh.");
+				if (!cancelled) setGlobalError("Erro de conexão. Verifique sua internet e atualize a página.");
 			});
 
 		const inc = (key: keyof typeof eventCountRef.current) => () => {
@@ -168,7 +168,7 @@ export default function useLpAuditForm() {
 	// ── Submit step to backend ──
 	const submitToBackend = useCallback(async (backendStep: number): Promise<boolean> => {
 		if (!leadId || !formToken) {
-			setGlobalError("Form not ready yet. Please wait a moment.");
+			setGlobalError("Formulário ainda carregando. Aguarde um momento.");
 			return false;
 		}
 
@@ -200,13 +200,13 @@ export default function useLpAuditForm() {
 				if (data.field) {
 					setFieldError({ field: data.field, message: data.message || "Invalid input" });
 				} else {
-					setGlobalError(data.message || "Submission failed.");
+					setGlobalError(data.message || "Envio falhou. Tente novamente.");
 				}
 				return false;
 			}
 			return true;
 		} catch {
-			setGlobalError("Network error. Please try again.");
+			setGlobalError("Erro de conexão. Tente novamente.");
 			return false;
 		}
 	}, [leadId, formToken, honeypot, form]);
@@ -229,7 +229,7 @@ export default function useLpAuditForm() {
 			}
 			return true;
 		} catch {
-			setGlobalError("Network error. Please try again.");
+			setGlobalError("Erro de conexão. Tente novamente.");
 			return false;
 		}
 	}, [leadId, formToken]);

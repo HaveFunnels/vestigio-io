@@ -22,21 +22,18 @@ import type { CardOption } from "@/components/form-steps";
 import useLpAuditForm from "./useLpAuditForm";
 import type { BusinessType, ConversionModel } from "./useLpAuditForm";
 
-// ---------------------------------------------------------------------------
-// Card options (hardcoded EN — LP is not i18n-ized)
-// ---------------------------------------------------------------------------
 const BUSINESS_TYPE_OPTIONS: CardOption<BusinessType>[] = [
-	{ value: "ecommerce", label: "Ecommerce", description: "Direct online sales" },
-	{ value: "lead_gen", label: "Lead Gen", description: "Lead capture and nurture" },
-	{ value: "saas", label: "SaaS", description: "Subscription software" },
-	{ value: "hybrid", label: "Hybrid", description: "Mixed business model" },
+	{ value: "ecommerce", label: "Ecommerce", description: "Vendas online diretas" },
+	{ value: "lead_gen", label: "Lead Gen", description: "Captura e nutrição de leads" },
+	{ value: "saas", label: "SaaS", description: "Software por assinatura" },
+	{ value: "hybrid", label: "Híbrido", description: "Modelo misto de negócio" },
 ];
 
 const CONVERSION_OPTIONS: CardOption<ConversionModel>[] = [
-	{ value: "checkout", label: "Checkout", description: "On-site purchase flow" },
-	{ value: "whatsapp", label: "WhatsApp / Chat", description: "Messaging-based sales" },
-	{ value: "form", label: "Form", description: "Lead capture forms" },
-	{ value: "external", label: "External", description: "Redirect to external payment" },
+	{ value: "checkout", label: "Checkout", description: "Compra online no site" },
+	{ value: "whatsapp", label: "WhatsApp / Chat", description: "Vendas via mensagem" },
+	{ value: "form", label: "Formulário", description: "Formulários de captura" },
+	{ value: "external", label: "Externo", description: "Redirecionamento para pagamento externo" },
 ];
 
 export default function LpAuditPage() {
@@ -76,25 +73,25 @@ export default function LpAuditPage() {
 				{/* ── Domain ── */}
 				{f.currentScreen === "domain" && (
 					<TextInputStep
-						title="What domain should we diagnose?"
-						subtitle="We'll only crawl the public landing page."
+						title="Qual domínio devemos diagnosticar?"
+						subtitle="Só analisamos a landing page pública."
 						inputType="url"
 						value={f.form.domain}
 						onChange={(v) => {
 							f.update("domain", v);
 							f.setDomainWarning(null);
 						}}
-						placeholder="https://example.com"
+						placeholder="https://seusite.com.br"
 						error={f.fieldError?.field === "domain" ? f.fieldError.message : null}
 						warning={
 							f.domainWarning ? (
 								<>
 									{f.domainWarning}{" "}
-									<span className="font-medium">You can still proceed.</span>
+									<span className="font-medium">Você ainda pode prosseguir.</span>
 								</>
 							) : undefined
 						}
-						buttonLabel="Continue"
+						buttonLabel="Continuar"
 						onSubmit={f.next}
 						disabled={
 							f.form.domain.length === 0 ||
@@ -104,18 +101,32 @@ export default function LpAuditPage() {
 						loading={f.domainChecking || f.submitting}
 					>
 						<label className="flex cursor-pointer items-start gap-3">
-							<input
-								type="checkbox"
-								checked={f.form.ownershipConfirmed}
-								onChange={(e) => f.update("ownershipConfirmed", e.target.checked)}
-								className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
-							/>
+							<div className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+								<input
+									type="checkbox"
+									checked={f.form.ownershipConfirmed}
+									onChange={(e) => f.update("ownershipConfirmed", e.target.checked)}
+									className="peer sr-only"
+								/>
+								<div className="h-5 w-5 rounded-md border-2 border-zinc-300 bg-white transition-colors peer-checked:border-zinc-900 peer-checked:bg-zinc-900 peer-focus-visible:ring-2 peer-focus-visible:ring-zinc-400 peer-focus-visible:ring-offset-2" />
+								<svg
+									viewBox="0 0 12 12"
+									fill="none"
+									stroke="white"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									className="pointer-events-none absolute h-3 w-3 opacity-0 transition-opacity peer-checked:opacity-100"
+								>
+									<path d="M2.5 6L5 8.5L9.5 3.5" />
+								</svg>
+							</div>
 							<div>
 								<span className="text-sm font-medium text-zinc-700">
-									I own this domain or have authorization
+									Eu sou dono ou tenho autorização para analisar este domínio
 								</span>
 								<p className="mt-0.5 text-xs text-zinc-400">
-									Vestigio will only crawl public pages.
+									A Vestigio só analisa páginas públicas.
 								</p>
 							</div>
 						</label>
@@ -125,8 +136,8 @@ export default function LpAuditPage() {
 				{/* ── Business Type (cards) ── */}
 				{f.currentScreen === "business_type" && (
 					<CardSelectionStep
-						title="What kind of business?"
-						subtitle="So we can tailor the audit to your model."
+						title="Que tipo de negócio?"
+						subtitle="Para adaptarmos o diagnóstico ao seu modelo."
 						options={BUSINESS_TYPE_OPTIONS}
 						onSelect={(v) => {
 							f.update("businessModel", v);
@@ -138,8 +149,8 @@ export default function LpAuditPage() {
 				{/* ── Conversion Model (cards) ── */}
 				{f.currentScreen === "conversion_model" && (
 					<CardSelectionStep
-						title="How do customers convert?"
-						subtitle="This determines which paths we analyze."
+						title="Como seus clientes convertem?"
+						subtitle="Isso determina quais caminhos analisamos."
 						options={CONVERSION_OPTIONS}
 						onSelect={(v) => {
 							f.update("conversionModel", v);
@@ -151,14 +162,14 @@ export default function LpAuditPage() {
 				{/* ── Revenue ── */}
 				{f.currentScreen === "revenue" && (
 					<TextInputStep
-						title="What's your approximate monthly revenue?"
-						subtitle="We use this to size the financial impact in your audit."
+						title="Qual sua receita mensal aproximada?"
+						subtitle="Usamos isso para dimensionar o impacto financeiro no diagnóstico."
 						value={f.form.monthlyRevenue}
 						onChange={(v) => f.update("monthlyRevenue", v)}
-						placeholder="e.g. $50k"
-						hint="You can type $50k, 1.5m, or just a number."
+						placeholder="ex: R$50k"
+						hint="Você pode digitar R$50k, 1.5m, ou só um número."
 						error={f.fieldError?.field === "monthlyRevenue" ? f.fieldError.message : null}
-						buttonLabel="Continue"
+						buttonLabel="Continuar"
 						onSubmit={f.next}
 						loading={f.submitting}
 					/>
@@ -167,14 +178,14 @@ export default function LpAuditPage() {
 				{/* ── Email ── */}
 				{f.currentScreen === "email" && (
 					<TextInputStep
-						title="Where should we send your results?"
-						subtitle="Drop your email so we can show your audit."
+						title="Onde devemos enviar seus resultados?"
+						subtitle="Digite seu email para ver o diagnóstico."
 						inputType="email"
 						value={f.form.email}
 						onChange={(v) => f.update("email", v)}
-						placeholder="you@yourcompany.com"
+						placeholder="voce@suaempresa.com"
 						error={f.fieldError?.field === "email" ? f.fieldError.message : null}
-						buttonLabel="See my results"
+						buttonLabel="Ver meus resultados"
 						onSubmit={f.next}
 						loading={f.submitting}
 					/>

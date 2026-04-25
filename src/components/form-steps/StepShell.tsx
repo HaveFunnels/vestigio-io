@@ -34,18 +34,18 @@ export default function StepShell({
 		<div
 			className={`relative flex min-h-[100dvh] items-center justify-center bg-[#090911] px-4 py-8 sm:py-12 ${className}`}
 		>
-			{/* Canvas dot-grid background (same as maps) */}
+			{/* Canvas dot-grid background */}
 			<div
-				className="pointer-events-none absolute inset-0 -z-1"
+				className="pointer-events-none absolute inset-0"
 				aria-hidden
 				style={{
-					backgroundImage: "radial-gradient(circle, rgba(39,39,42,0.5) 1px, transparent 1px)",
-					backgroundSize: "20px 20px",
+					backgroundImage: "radial-gradient(circle, rgba(63,63,70,0.6) 1px, transparent 1px)",
+					backgroundSize: "24px 24px",
 				}}
 			/>
-			<div className="w-full max-w-[480px]">
+			<div className="relative w-full max-w-[480px]">
 				{/* Shiny card — same treatment as MiniCalc */}
-				<div className="shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] sm:p-8">
+				<div className="shiny-card group relative overflow-hidden rounded-3xl p-8 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] sm:p-10 lg:p-12">
 					{/* Emerald glow halos */}
 					<div className="pointer-events-none absolute inset-0 -z-1 opacity-50" aria-hidden>
 						<div className="absolute -left-20 -top-20 h-[250px] w-[250px] rounded-full bg-emerald-400/[0.12] blur-3xl" />
@@ -57,7 +57,7 @@ export default function StepShell({
 					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 
 					{/* Top bar: back arrow + progress */}
-					<div className="relative mb-6 flex items-center gap-3">
+					<div className="relative mb-8 flex items-center gap-3">
 						<button
 							type="button"
 							onClick={onBack}
@@ -67,7 +67,7 @@ export default function StepShell({
 									? "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
 									: "pointer-events-none border-transparent opacity-0"
 							}`}
-							aria-label="Go back"
+							aria-label="Voltar"
 						>
 							<svg
 								viewBox="0 0 16 16"
@@ -92,7 +92,7 @@ export default function StepShell({
 					</div>
 
 					{/* Step content with transition */}
-					<div className="relative">
+					<div className="relative min-h-[280px]">
 						<AnimatePresence mode="wait">
 							<motion.div
 								key={stepIndex}

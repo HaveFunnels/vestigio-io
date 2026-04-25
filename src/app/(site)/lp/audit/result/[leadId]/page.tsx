@@ -98,6 +98,7 @@ export default function MiniAuditResultPage() {
 	const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 	const [checkoutEmail, setCheckoutEmail] = useState<string | null>(null);
 	const [launchingPlan, setLaunchingPlan] = useState<string | null>(null);
+	const [timedOut, setTimedOut] = useState(false);
 	const pollAttemptsRef = useRef(0);
 
 	// ── Polling loop ──
@@ -117,7 +118,7 @@ export default function MiniAuditResultPage() {
 				setTimeout(() => setRevealed(true), 80);
 			}
 		} catch {
-			setError("Network error. Please refresh.");
+			setError("Erro de conexão. Atualize a página.");
 		}
 	}, [leadId]);
 
@@ -181,7 +182,10 @@ export default function MiniAuditResultPage() {
 	useEffect(() => {
 		if (!lead) return;
 		if (lead.status === "audit_complete" || lead.status === "expired") return;
-		if (pollAttemptsRef.current >= POLL_MAX_ATTEMPTS) return;
+		if (pollAttemptsRef.current >= POLL_MAX_ATTEMPTS) {
+			setTimedOut(true);
+			return;
+		}
 
 		const timer = setTimeout(() => {
 			pollAttemptsRef.current++;
@@ -225,7 +229,7 @@ export default function MiniAuditResultPage() {
 	function openCheckout(planKey: string | null) {
 		if (!leadId || !lead?.result) return;
 		if (!window.Paddle || !paddleReady) {
-			setError("Payment system still loading. Please wait a moment.");
+			setError("Sistema de pagamento carregando. Aguarde um momento.");
 			return;
 		}
 
@@ -239,7 +243,7 @@ export default function MiniAuditResultPage() {
 			priceId = plan.paddlePriceId;
 		}
 		if (!priceId) {
-			setError("Pricing isn't configured yet. Please contact support.");
+			setError("Preços ainda não configurados. Entre em contato com o suporte.");
 			return;
 		}
 
@@ -260,7 +264,7 @@ export default function MiniAuditResultPage() {
 			});
 		} catch (err) {
 			console.error("[lp-result] checkout open failed:", err);
-			setError("Couldn't open checkout. Please try again.");
+			setError("Não foi possível abrir o checkout. Tente novamente.");
 			setLaunchingPlan(null);
 			return;
 		}
@@ -280,7 +284,7 @@ export default function MiniAuditResultPage() {
 				setTimeout(() => setShareCopied(false), 2000);
 			})
 			.catch(() => {
-				setError("Couldn't copy link. Try selecting the URL bar manually.");
+				setError("Não foi possível copiar o link. Tente selecionar a barra de URL manualmente.");
 			});
 	}
 
@@ -293,21 +297,21 @@ export default function MiniAuditResultPage() {
 	}
 
 	if (!lead) {
-		return <LoadingState message="Loading your audit…" />;
+		return <LoadingState message="Carregando seu diagnóstico…" />;
 	}
 
 	if (lead.status === "expired") {
 		return (
 			<ErrorState
-				message="This audit link has expired. Run a fresh one — it's free."
+				message="Este link expirou. Faça um novo diagnóstico — é gratuito."
 				onRetry={() => router.push("/lp/audit")}
-				retryLabel="Start a new audit"
+				retryLabel="Fazer novo diagnóstico"
 			/>
 		);
 	}
 
 	if (lead.status === "draft" || lead.status === "auditing" || !lead.result) {
-		return <AuditingState lead={lead} />;
+		return <AuditingState lead={lead} timedOut={timedOut} />;
 	}
 
 	const { preview, visibleFindings, blurredFindings, durationMs } = lead.result;
@@ -322,6 +326,8 @@ export default function MiniAuditResultPage() {
 			/>
 
 			<div className="relative min-h-screen overflow-hidden bg-[#070710]">
+				{/* Canvas dot-grid background */}
+				<DotGrid />
 				{/* Ambient gradient background */}
 				<div className="pointer-events-none absolute inset-x-0 top-0 -z-1 h-[600px] bg-gradient-to-b from-emerald-900/15 via-emerald-900/5 to-transparent" />
 				<div className="pointer-events-none absolute left-1/2 top-0 -z-1 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-emerald-700/10 blur-[120px]" />
@@ -342,14 +348,14 @@ export default function MiniAuditResultPage() {
 									<svg className="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
 									</svg>
-									<span>Link copied</span>
+									<span>Link copiado</span>
 								</>
 							) : (
 								<>
 									<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
 									</svg>
-									<span>Share</span>
+									<span>Compartilhar</span>
 								</>
 							)}
 						</button>
@@ -408,7 +414,7 @@ export default function MiniAuditResultPage() {
 
 					{/* Footer */}
 					<footer className="mt-12 border-t border-zinc-900 pt-6 text-center text-xs text-zinc-700">
-						Audit performed by Vestigio · Sample of 5 of 15+ findings · Cached for 14 days
+						Diagnóstico realizado pela Vestigio · Amostra de 5 de 15+ findings · Válido por 14 dias
 					</footer>
 				</main>
 			</div>
@@ -805,15 +811,15 @@ function BlurredCard({ blurred }: { blurred: BlurredFinding }) {
 // State branches
 // ──────────────────────────────────────────────
 
-function AuditingState({ lead }: { lead: LeadResponse }) {
+function AuditingState({ lead, timedOut }: { lead: LeadResponse; timedOut?: boolean }) {
 	const [stageIdx, setStageIdx] = useState(0);
 	const stages = [
-		"Fetching your landing page",
-		"Parsing the HTML",
-		"Checking trust signals",
-		"Analyzing CTAs",
-		"Evaluating form friction",
-		"Compiling your audit",
+		"Buscando sua landing page",
+		"Analisando o HTML",
+		"Verificando sinais de confiança",
+		"Analisando CTAs",
+		"Avaliando fricção de formulários",
+		"Compilando seu diagnóstico",
 	];
 
 	useEffect(() => {
@@ -823,25 +829,80 @@ function AuditingState({ lead }: { lead: LeadResponse }) {
 		return () => clearInterval(interval);
 	}, [stages.length]);
 
+	// Build favicon URL from domain
+	const faviconUrl = lead.domain
+		? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(lead.domain)}&sz=64`
+		: null;
+
+	if (timedOut) {
+		return (
+			<div className="relative flex min-h-screen items-center justify-center bg-[#070710] px-4">
+				<DotGrid />
+				<div className="relative w-full max-w-md text-center">
+					{faviconUrl && (
+						<img src={faviconUrl} alt="" className="mx-auto mb-4 h-10 w-10 rounded-lg" />
+					)}
+					<h1 className="text-2xl font-semibold text-zinc-100">
+						O diagnóstico está demorando mais que o esperado
+					</h1>
+					<p className="mt-3 text-sm text-zinc-500">
+						Isso pode acontecer se o site estiver lento ou temporariamente indisponível. Verifique se o domínio está correto e tente novamente.
+					</p>
+					<div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-mono text-sm text-zinc-300">
+						{lead.domain}
+					</div>
+					<div className="mt-6 flex flex-col items-center gap-3">
+						<a
+							href="/lp/audit"
+							className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-12px_rgba(16,185,129,0.5)] transition-colors hover:bg-emerald-500"
+						>
+							Tentar novamente
+						</a>
+						<a href="mailto:support@vestigio.io" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
+							Precisa de ajuda? Fale com o suporte
+						</a>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-[#070710] px-4">
-			<div className="w-full max-w-md text-center">
+		<div className="relative flex min-h-screen items-center justify-center bg-[#070710] px-4">
+			<DotGrid />
+			<div className="relative w-full max-w-md text-center">
+				{/* Favicon + animated ping */}
 				<div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center">
 					<span className="relative flex h-12 w-12">
 						<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30" />
-						<span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-400 bg-emerald-500/10 text-emerald-300">
-							<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-							</svg>
-						</span>
+						{faviconUrl ? (
+							<img
+								src={faviconUrl}
+								alt=""
+								className="relative inline-flex h-12 w-12 rounded-full border-2 border-emerald-400 bg-zinc-900 object-cover p-1.5"
+							/>
+						) : (
+							<span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-400 bg-emerald-500/10 text-emerald-300">
+								<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+								</svg>
+							</span>
+						)}
 					</span>
 				</div>
+
 				<h1 className="text-2xl font-semibold text-zinc-100">
-					Auditing {lead.domain || "your site"}…
+					Diagnosticando {lead.domain || "seu site"}…
 				</h1>
 				<p className="mt-2 text-sm text-zinc-500">
-					This usually takes 5–10 seconds. Don&rsquo;t close this tab.
+					Isso geralmente leva 5–10 segundos. Não feche esta aba.
 				</p>
+
+				{/* Domain confirmation */}
+				<div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-1.5">
+					{faviconUrl && <img src={faviconUrl} alt="" className="h-4 w-4 rounded" />}
+					<span className="font-mono text-xs text-zinc-400">{lead.domain}</span>
+				</div>
 
 				<ul className="mt-8 space-y-2 text-left">
 					{stages.map((label, idx) => {
@@ -880,10 +941,25 @@ function AuditingState({ lead }: { lead: LeadResponse }) {
 	);
 }
 
+/** Dot-grid background — same canvas pattern as maps */
+function DotGrid() {
+	return (
+		<div
+			className="pointer-events-none absolute inset-0 -z-1"
+			aria-hidden
+			style={{
+				backgroundImage: "radial-gradient(circle, rgba(39,39,42,0.5) 1px, transparent 1px)",
+				backgroundSize: "20px 20px",
+			}}
+		/>
+	);
+}
+
 function LoadingState({ message }: { message: string }) {
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-[#070710] px-4">
-			<div className="text-center">
+		<div className="relative flex min-h-screen items-center justify-center bg-[#070710] px-4">
+			<DotGrid />
+			<div className="relative text-center">
 				<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-emerald-400" />
 				<p className="mt-4 text-sm text-zinc-500">{message}</p>
 			</div>
@@ -894,21 +970,22 @@ function LoadingState({ message }: { message: string }) {
 function ErrorState({
 	message,
 	onRetry,
-	retryLabel = "Try again",
+	retryLabel = "Tentar novamente",
 }: {
 	message: string;
 	onRetry: () => void;
 	retryLabel?: string;
 }) {
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-[#070710] px-4">
-			<div className="max-w-md text-center">
+		<div className="relative flex min-h-screen items-center justify-center bg-[#070710] px-4">
+			<DotGrid />
+			<div className="relative max-w-md text-center">
 				<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10">
 					<svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 						<path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
 					</svg>
 				</div>
-				<h1 className="text-xl font-semibold text-zinc-100">Something went wrong</h1>
+				<h1 className="text-xl font-semibold text-zinc-100">Algo deu errado</h1>
 				<p className="mt-2 text-sm text-zinc-500">{message}</p>
 				<button
 					type="button"

@@ -43,6 +43,42 @@ export async function GET(
 		);
 	}
 
+	// ── 30-minute result expiration ──
+	// After audit_complete, results are visible for 30 minutes.
+	// After that, return the lead with status "expired" but include
+	// the result data so the frontend can show the impact reminder
+	// on the expired page (loss aversion + endowment effect).
+	// The actual DB row persists for 14 days (normal cleanup TTL).
+	const RESULT_TTL_MS = 30 * 60 * 1000; // 30 minutes
+	if (
+		lead.status === "audit_complete" &&
+		lead.miniAudit?.computedAt &&
+		Date.now() - new Date(lead.miniAudit.computedAt).getTime() > RESULT_TTL_MS
+	) {
+		const expiredResult = lead.miniAudit
+			? {
+					id: lead.miniAudit.id,
+					preview: JSON.parse(lead.miniAudit.preview),
+					visibleFindings: JSON.parse(lead.miniAudit.visibleFindings),
+					blurredFindings: JSON.parse(lead.miniAudit.blurredFindings),
+					durationMs: lead.miniAudit.durationMs,
+					computedAt: lead.miniAudit.computedAt.toISOString(),
+				}
+			: null;
+
+		return NextResponse.json({
+			id: lead.id,
+			status: "expired",
+			currentStep: lead.currentStep,
+			domain: lead.domain,
+			organizationName: lead.organizationName,
+			businessModel: lead.businessModel,
+			emailMasked: lead.email ? maskEmail(lead.email) : null,
+			createdAt: lead.createdAt.toISOString(),
+			result: expiredResult,
+		});
+	}
+
 	// Spam leads pretend to still be auditing forever
 	if (lead.status === "spam") {
 		return NextResponse.json({

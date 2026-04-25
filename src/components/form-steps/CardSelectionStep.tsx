@@ -68,7 +68,7 @@ export default function CardSelectionStep<T extends string = string>({
 
 			{/* Cards centered vertically in remaining space */}
 			<div className="flex flex-1 items-center">
-				<div className="w-full grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+				<div className="w-full grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:auto-rows-fr">
 					{options.map((option) => {
 						const isSelected = pending === option.value;
 

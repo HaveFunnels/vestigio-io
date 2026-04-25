@@ -168,6 +168,8 @@ export default function useLpAuditForm() {
 	// ── Submit step to backend ──
 	const submitToBackend = useCallback(async (backendStep: number): Promise<boolean> => {
 		if (!leadId || !formToken) {
+			// Dev mode without DB: skip backend validation, allow UI navigation
+			if (process.env.NODE_ENV === "development") return true;
 			setGlobalError("Formulário ainda carregando. Aguarde um momento.");
 			return false;
 		}
@@ -213,7 +215,14 @@ export default function useLpAuditForm() {
 
 	// ── Fire audit + redirect ──
 	const fireAudit = useCallback(async (): Promise<boolean> => {
-		if (!leadId || !formToken) return false;
+		if (!leadId || !formToken) {
+			// Dev mode without DB: can't fire audit, just log
+			if (process.env.NODE_ENV === "development") {
+				console.log("[dev] Would fire audit here. Form data:", form);
+				return false;
+			}
+			return false;
+		}
 		try {
 			const res = await fetch(`/api/lead/${leadId}/run-audit`, {
 				method: "POST",

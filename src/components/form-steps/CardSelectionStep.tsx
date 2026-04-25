@@ -61,7 +61,7 @@ export default function CardSelectionStep<T extends string = string>({
 		<div className="flex flex-1 flex-col">
 			{/* Top: title + subtitle */}
 			<div>
-				<h2 className="text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
+				<h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
 					{title}
 				</h2>
 				{subtitle && (

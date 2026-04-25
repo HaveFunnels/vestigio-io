@@ -151,8 +151,8 @@ export default function OnboardPage() {
 					loading={f.domainChecking}
 				>
 					{/* Ownership checkbox */}
-					<label className="flex cursor-pointer items-start gap-3">
-						<div className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+					<label className="flex cursor-pointer items-center gap-3">
+						<div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
 							<input
 								type="checkbox"
 								checked={f.form.ownershipConfirmed}

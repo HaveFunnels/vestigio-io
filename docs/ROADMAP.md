@@ -59,7 +59,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Prisma migration in prod for `syncMetadata` | Pending `npx prisma db push` | Wave 3.9 |
 | Stripe Integration — OAuth + poller (scaffolding ~40% done) | Types + reconciliation + Prisma + API CRUD done; missing OAuth flow + revenue poller + sync route | Wave 3.8 |
 | Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
-| Opportunity-First Actions — 7 fases | **~5%** — engine generates opportunities, tab exists; all UI/UX fases open | Wave 3.12 |
+| Opportunity-First Actions — unified impact-ranked pipeline, 6 fases | **~5%** — engine generates opportunities; tab removed in favor of single unified list ranked by $ impact. All UI/UX fases open | Wave 3.12 |
 | Re-engagement & Remediation — close the loop | **Fases 1-3 shipped 2026-04-22** — dashboard as landing + CrossSignalHero widget, daily email digest via Brevo (cross-signal hero, health score, top changes), Fix with AI remediation playbooks in action SideDrawer. **Fase 4 (i18n) pending.** | Wave 3.13 |
 | Vestigio AI — Transversal Copilot | **Shipped 2026-04-22** — FAB with color orb + spring animation, full-height panel (side + full-screen expand), playbooks grid menu, CopilotProvider global state, SideDrawer coexistence, compact ChatInputBar with animated cycling placeholders, budget exhausted card, cross-domain pack insight bubbles during streaming, pack-aware ThinkingIndicator, voice message bubble, i18n (4 langs), chat removed from sidenav. | Wave 3.14 |
 | Cross-Signal Surface — making the moat visible | **Not started** — correlate findings across perspectives by shared URL/temporal pattern. ~1-2 weeks. | Wave 3.15 |
@@ -551,70 +551,70 @@ else                              → DataTable (behavioral + fallback)
 
 ---
 
-### 3.12 Opportunity-First Actions — Revenue Pipeline Surface
+### 3.12 Opportunity-First Actions — Unified Impact-Ranked Pipeline
 
 | | |
 |---|---|
 | **Tag** | `frontend` `engine` `platform` |
 | **Priority** | P1 |
-| **Status** | **~5% implemented — 2026-04-21 audit confirmed.** Engine side: `generateOpportunities()` in `opportunity-gate.ts` is complete (130+ inference templates, confidence scoring, clustering). `OpportunityCompressionResult` in composites is wired. Frontend side: Opportunities tab exists in Actions page with emerald badge, count card, category filtering, and opportunity lifecycle steps defined (`['identified', 'sized', 'accepted', 'implemented', 'verified', 'archived']`). **But:** `ActionProjection` has NO opportunity-specific fields (no uplift_hypothesis, no upside_score, no cluster_key); projection engine never calls `generateOpportunities()`; all 7 UI/UX fases (hero cards, cluster grouping, hypothesis display, status workflow, scatter plot, i18n) are unimplemented. No `OpportunityTracking` Prisma model. No status API endpoint. |
+| **Status** | **~5% implemented — 2026-04-21 audit confirmed.** Engine side: `generateOpportunities()` in `opportunity-gate.ts` is complete (130+ inference templates, confidence scoring, clustering). `OpportunityCompressionResult` in composites is wired. Frontend side: Opportunities tab exists in Actions page with emerald badge, count card, category filtering, and opportunity lifecycle steps defined. **But:** `ActionProjection` has NO opportunity-specific fields; projection engine never calls `generateOpportunities()`; all UI/UX fases unimplemented. No `OpportunityTracking` Prisma model. No status API endpoint. |
 
-**Context:** The engine already produces rich `Opportunity` objects via `generateOpportunities()` in [packages/decision/opportunity-gate.ts](../packages/decision/opportunity-gate.ts) — with `uplift_hypothesis`, `raw_upside_score`, `value_case`, `effort_hint`, full lifecycle (`identified → sized → accepted → implemented → verified → archived`), and `OpportunityCompressionResult` clusters grouped by root cause. The Actions page at [src/app/app/actions/page.tsx](../src/app/app/actions/page.tsx) already has a dedicated "Opportunities" tab with emerald badge, count card, category filtering, and operational timeline in the drawer. But the tab treats opportunities as slightly-green incidents instead of a **revenue pipeline**. The rich opportunity data from `MultiPackResult` doesn't reach `ActionProjection`.
+**Design revision (2026-04-24):** Tabs split "what to fix" from "what to gain" as if they're different decisions. They're not — the user always asks "where do I invest time for max return?" A **single unified list ranked by $ impact** answers this directly. Incidents (loss) and opportunities (gain) are both actions with a dollar value; the type becomes a visual badge (red vs emerald) on the same row, not a tab switch. This eliminates the tab overhead, prevents the user from missing high-value opportunities buried in a secondary tab, and lets the scatter plot work across both types.
 
-**Goal:** Reformulate the existing Actions page so the Opportunities tab feels like "where to gain money" instead of "what else to fix." No new page, no new sidenav entry — same Actions page, same visual language (card styles, font sizes, badge shapes, drawer structure, table layout), enriched conditionally when the user is on the Opportunities tab.
+**Goal:** Remove the Opportunities tab. Enrich the single Actions list with opportunity data so incidents and opportunities live side by side, **ranked by impact**. The user sees "Fix checkout CSP ($2.4k/mo)" next to "Add social proof to pricing page (+$1.8k/mo)" in one prioritized view. No new page, no new sidenav entry — same Actions surface, enriched.
 
-**Design decision:** No kanban board. The operational timeline already in the drawer handles status visualization. Status progression is handled by action buttons (Aceitar / Iniciar / Verificar) instead of drag-and-drop — the expected opportunity count per cycle (5-15) doesn't justify kanban overhead. An effort × impact scatter plot is included as an alternative view toggle (like Analysis page's grid/list toggle).
+**Context:** The engine already produces rich `Opportunity` objects via `generateOpportunities()` in [packages/decision/opportunity-gate.ts](../packages/decision/opportunity-gate.ts) — with `uplift_hypothesis`, `raw_upside_score`, `value_case`, `effort_hint`, full lifecycle, and `OpportunityCompressionResult` clusters grouped by root cause. This data doesn't reach `ActionProjection` yet.
+
+**Design decisions:**
+- **No tabs.** Single list, sorted by `impact.midpoint` descending. Type badge differentiates.
+- **No kanban.** Status progression via action buttons (Aceitar / Iniciar / Verificar) in the drawer.
+- **Scatter plot works for both types.** Incidents plot as "cost of inaction", opportunities as "gain from action". Same axes (effort × $), different colors.
 
 #### Fase 1 — Enrich ActionProjection with opportunity data
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| A | **New fields on ActionProjection** | Add to [packages/projections/types.ts](../packages/projections/types.ts): `uplift_hypothesis: string \| null` (from `Opportunity.uplift_hypothesis`), `upside_score: number \| null` (from `Opportunity.raw_upside_score`), `value_case_basis: 'data_driven' \| 'heuristic' \| 'mixed' \| null` (from `Opportunity.value_case.basis_type`), `cluster_key: string \| null` (root_cause_key from matching `OpportunityCluster`), `cluster_count: number \| null` (finding count in the cluster). | Low |
-| B | **Wire in projection engine** | In [packages/projections/engine.ts](../packages/projections/engine.ts), resolve new fields from `MultiPackResult.opportunities` and `composites.opportunity_compression` during `projectActions()`. Match via `decision_refs` overlap between ActionProjection source and Opportunity objects. Build cluster lookup from `OpportunityCompressionResult.clusters[]` keyed by finding_key. | Medium |
+| A | **New fields on ActionProjection** | Add to [packages/projections/types.ts](../packages/projections/types.ts): `uplift_hypothesis: string \| null`, `upside_score: number \| null`, `value_case_basis: 'data_driven' \| 'heuristic' \| 'mixed' \| null`, `cluster_key: string \| null`, `cluster_count: number \| null`. | Low |
+| B | **Wire in projection engine** | In [packages/projections/engine.ts](../packages/projections/engine.ts), resolve new fields from `MultiPackResult.opportunities` and `composites.opportunity_compression` during `projectActions()`. | Medium |
 
-#### Fase 2 — Contextual summary cards
-
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| C | **Opportunity-specific hero cards** | When `activeTab === 'opportunity'`, replace the 4 summary cards with: (1) **Potencial Total** — sum of `value_case.range` (min–max) across non-archived opportunities, (2) **Capturado** — sum for `operational_status === 'verified'`, (3) **Em Execução** — sum for `accepted` + `implemented`, (4) **Esforço Médio** — distribution histogram of `effort_hint` values. Same card component, same dimensions, same font — only content and accent color (emerald) change. Incident tab keeps current red-framed loss cards. "All" tab shows a combined 2-row summary or the current generic cards. | Medium |
-
-#### Fase 3 — Cluster grouping
+#### Fase 2 — Unified summary cards
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| D | **Collapsible root-cause clusters** | When `activeTab === 'opportunity'` and clusters exist (`cluster_key !== null` on any action): group actions by `cluster_key`, render each group as a collapsible section with header showing root cause title + finding count + combined impact range + "Aceitar cluster" button (advances all to `accepted`). Actions with `cluster_key === null` render below clusters as individual rows. Same table columns inside each cluster — no layout change, just grouping with a subtle border/indent. Collapse state per cluster in local component state. | Medium |
+| C | **Impact-aware hero cards** | Replace tab-specific cards with unified cards that combine both types: (1) **Total Exposure** — sum of incident losses + opportunity potential, (2) **Captured** — verified opportunities + resolved incidents, (3) **In Progress** — accepted + implemented, (4) **Quick Wins** — count of low-effort, high-impact items (both types). Dual-tone: red portion for losses, emerald for opportunities. | Medium |
 
-#### Fase 4 — Hypothesis inline
-
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| E | **Uplift hypothesis in table row** | For `category === 'opportunity'` rows, render `uplift_hypothesis` as a second line below `title` in zinc-500 text-sm. Same font family, same cell — just an extra line. In the drawer, render hypothesis in a dedicated card with emerald-500/10 background + emerald border, positioned before the Impact Breakdown section. Both conditional on `uplift_hypothesis !== null`. | Low |
-
-#### Fase 5 — Status workflow
+#### Fase 3 — Visual differentiation in unified list
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| F | **Opportunity status transitions** | Replace the generic `resolve_path` button for opportunity actions with status-aware buttons: `identified/sized` → "Aceitar" (→ accepted) + "Descartar" (→ archived); `accepted` → "Iniciar" (→ implemented) + "Voltar" (→ sized); `implemented` → "Verificar" (triggers re-verify); `verified` → "Reabrir" (→ accepted). Button styling follows existing resolve button patterns (emerald for primary, zinc for secondary). | Medium |
-| G | **Status persistence** | New `PATCH /api/actions/[id]/status` endpoint. Persists `operational_status` transitions. Storage: new `OpportunityTracking` Prisma model (`{ id, findingKey, environmentId, status, updatedAt, updatedBy }`) — lightweight, avoids polluting Finding model with workflow state. On next audit cycle, projection engine reads persisted status and carries it forward instead of resetting to `identified`. | Medium |
-| H | **Auto-verify on improvement** | In projection engine: when a finding linked to an opportunity with `operational_status === 'implemented'` receives `change_class: 'improvement'` from the change report, auto-advance to `verified`. Feeds into Bragging Rights (3.11F) as captured value. | Low |
+| D | **Type badge + hypothesis inline** | Each row gets a small badge: `incident` (red) or `opportunity` (emerald). For opportunity rows, `uplift_hypothesis` renders as a second line in zinc-500. In the drawer, hypothesis gets a dedicated emerald card before Impact Breakdown. Remove the Opportunities tab — the filter bar gets a type filter dropdown instead (All / Incidents / Opportunities). | Medium |
+| E | **Cluster grouping (optional view)** | Collapsible root-cause clusters in a toggle view. Groups actions by `cluster_key`, header shows root cause + combined impact + "Accept cluster" button. Flat list is default; cluster view is a toggle. | Medium |
 
-#### Fase 6 — Effort × Impact scatter
-
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| I | **Scatter plot view toggle** | Add a list/scatter toggle (same pattern as Analysis page view toggles) visible only on the Opportunities tab. Scatter renders a 2D plot: x-axis = `effort_hint` (5 discrete positions: trivial → very_high), y-axis = `value_case.range.max` (continuous, $ scale). Each dot = one opportunity, colored by `operational_status` (emerald=identified, blue=accepted, amber=implemented, green=verified). Dot click opens the drawer. Quadrant labels: "Quick wins" (low effort, high $), "Big bets" (high effort, high $), "Fill-ins" (low effort, low $), "Strategic" (high effort, low $). Lightweight — no charting library, SVG with positioned circles. | Medium |
-
-#### Fase 7 — i18n
+#### Fase 4 — Status workflow
 
 | # | Part | Description | Effort |
 |---|------|-------------|--------|
-| J | **Dictionary keys (4 languages)** | ~30 new keys across en/pt-BR/es/de in `console.actions.opportunities` namespace: summary card labels, cluster header template, hypothesis section label, status button labels, scatter quadrant labels, empty states per status group. pt-BR with real translation; es/de fallback to en. | Low |
+| F | **Opportunity status transitions** | Status-aware buttons for opportunity actions: identified → "Accept" + "Discard"; accepted → "Start" + "Back"; implemented → "Verify"; verified → "Reopen". | Medium |
+| G | **Status persistence** | New `PATCH /api/actions/[id]/status` endpoint. New `OpportunityTracking` Prisma model. Projection engine reads persisted status on next cycle. | Medium |
+| H | **Auto-verify on improvement** | When a finding linked to an `implemented` opportunity improves, auto-advance to `verified`. Feeds into Money Recovered widget. | Low |
 
-**Total estimate:** ~22h (~3 days). Zero engine refactor — projection enrichment + conditional UI rendering within the existing Actions page structure.
+#### Fase 5 — Effort × Impact scatter
 
-**Visual language constraint:** All new elements (cards, badges, buttons, table rows, drawer sections, scatter dots) must use the same component library, color tokens, font sizes, spacing, and border radiuses already established in the Actions page. No new design primitives. The Opportunities tab should feel like a natural mode of the same surface, not a grafted-on feature.
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| I | **Scatter plot view toggle** | List/scatter toggle. Both incidents and opportunities plotted: x = effort, y = $ impact. Incidents in red, opportunities in emerald, colored by status. Quadrants: "Quick wins", "Big bets", "Fill-ins", "Strategic". SVG, no charting library. | Medium |
 
-**Files touched:** [packages/projections/types.ts](../packages/projections/types.ts), [packages/projections/engine.ts](../packages/projections/engine.ts), [src/app/app/actions/page.tsx](../src/app/app/actions/page.tsx), [src/app/api/actions/[id]/status/route.ts](../src/app/api/actions/) (new), [prisma/schema.prisma](../prisma/schema.prisma) (`OpportunityTracking`), [dictionary/en.json](../dictionary/en.json), [dictionary/pt-BR.json](../dictionary/pt-BR.json), [dictionary/es.json](../dictionary/es.json), [dictionary/de.json](../dictionary/de.json).
+#### Fase 6 — i18n
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| J | **Dictionary keys (4 languages)** | ~25 new keys in `console.actions` namespace: type badges, hypothesis label, scatter quadrants, status buttons, cluster headers. | Low |
+
+**Total estimate:** ~18h (~2.5 days). Simplified from 22h by removing tab-switching logic and tab-specific card branches.
+
+**Visual language constraint:** Same component library, color tokens, font sizes, spacing. Opportunities are a **mode** of the same list, not a separate surface.
+
+**Files touched:** [packages/projections/types.ts](../packages/projections/types.ts), [packages/projections/engine.ts](../packages/projections/engine.ts), [src/app/app/actions/page.tsx](../src/app/app/actions/page.tsx), [src/app/api/actions/[id]/status/route.ts](../src/app/api/actions/) (new), [prisma/schema.prisma](../prisma/schema.prisma) (`OpportunityTracking`), [dictionary/*.json](../dictionary/).
 
 ---
 

@@ -2557,6 +2557,26 @@
 		"data_table": {
 			"no_data": "Keine Daten verfügbar"
 		},
+		"upgrade_moments": {
+			"unlock_integration": "Verbinden Sie eine Integration, um diese Daten freizuschalten",
+			"ai_pro": "KI-Insights verfügbar im Pro-Plan — tiefere Analyse, Playbooks und mehr Abfragen",
+			"cadence_weekly": "Wöchentlich aktualisiert.",
+			"cadence_daily_upgrade": "Upgrade auf Pro für tägliche Insights",
+			"more_patterns": "{count} weitere Muster erkannt",
+			"see_all_upgrade": "Upgrade um alle zu sehen",
+			"upgrade_cta": "Upgraden →"
+		},
+		"feedback_moments": {
+			"finding_question": "War dieser Befund hilfreich?",
+			"copilot_question": "Gibt Ihnen die KI nützliche Antworten?",
+			"action_question": "Wie hilfreich war diese Handlungsempfehlung?",
+			"verification_question": "Wie war die Verifizierungserfahrung?",
+			"nps_question": "Wie wahrscheinlich ist es, dass Sie Vestigio einem Kollegen empfehlen?",
+			"optional_note": "Schnelles Feedback? (optional)",
+			"submit": "Absenden",
+			"not_now": "Nicht jetzt",
+			"thanks": "Danke für das Feedback!"
+		},
 		"activity_heatmap": {
 			"eyebrow": "Aktivität · 90 Tage",
 			"day_streak": "Tage in Folge",

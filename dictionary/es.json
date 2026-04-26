@@ -2417,6 +2417,26 @@
 		"data_table": {
 			"no_data": "No hay datos disponibles"
 		},
+		"upgrade_moments": {
+			"unlock_integration": "Conecta una integración para desbloquear estos datos",
+			"ai_pro": "Insights de IA disponibles en Pro — análisis más profundo, playbooks y más consultas",
+			"cadence_weekly": "Actualizado semanalmente.",
+			"cadence_daily_upgrade": "Actualiza a Pro para insights diarios",
+			"more_patterns": "{count} patrones adicionales detectados",
+			"see_all_upgrade": "Actualiza para ver todos",
+			"upgrade_cta": "Actualizar →"
+		},
+		"feedback_moments": {
+			"finding_question": "¿Fue útil este hallazgo?",
+			"copilot_question": "¿La IA te está dando respuestas útiles?",
+			"action_question": "¿Qué tan útil fue esta recomendación de acción?",
+			"verification_question": "¿Cómo fue la experiencia de verificación?",
+			"nps_question": "¿Qué tan probable es que recomiendes Vestigio a un colega?",
+			"optional_note": "¿Algún comentario rápido? (opcional)",
+			"submit": "Enviar",
+			"not_now": "Ahora no",
+			"thanks": "¡Gracias por el feedback!"
+		},
 		"activity_heatmap": {
 			"eyebrow": "Actividad · 90 días",
 			"day_streak": "días seguidos",

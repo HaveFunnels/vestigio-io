@@ -2454,6 +2454,26 @@
 		"data_table": {
 			"no_data": "No data available"
 		},
+		"upgrade_moments": {
+			"unlock_integration": "Connect an integration to unlock this data",
+			"ai_pro": "AI insights available on Pro \u2014 deeper analysis, playbooks, and more queries",
+			"cadence_weekly": "Updated weekly.",
+			"cadence_daily_upgrade": "Upgrade to Pro for daily insights",
+			"more_patterns": "{count} more patterns detected",
+			"see_all_upgrade": "Upgrade to see all",
+			"upgrade_cta": "Upgrade \u2192"
+		},
+		"feedback_moments": {
+			"finding_question": "Was this finding useful?",
+			"copilot_question": "Is the AI giving you useful answers?",
+			"action_question": "How useful was this action recommendation?",
+			"verification_question": "How was the verification experience?",
+			"nps_question": "How likely are you to recommend Vestigio to a colleague?",
+			"optional_note": "Any quick feedback? (optional)",
+			"submit": "Submit",
+			"not_now": "Not now",
+			"thanks": "Thanks for the feedback!"
+		},
 		"activity_heatmap": {
 			"eyebrow": "Activity · 90 days",
 			"day_streak": "day streak",

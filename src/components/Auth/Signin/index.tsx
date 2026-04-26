@@ -20,7 +20,7 @@ import { signIn } from "next-auth/react";
 import toast from "react-hot-toast";
 import { rateLimitByIp } from "@/libs/limiter";
 import { integrations, messages } from "../../../../integrations.config";
-import logoDark from "@/../public/images/logo/logo.png";
+import logoLight from "@/../public/images/logo/logo-light.png";
 import DemoSignin from "./DemoSignin";
 
 export default function Signin() {
@@ -116,7 +116,7 @@ export default function Signin() {
 					{/* Logo */}
 					<div className="auth-fade-in auth-delay-100 mb-8">
 						<Link href="/">
-							<Image src={logoDark} alt="Vestigio" className="h-7 w-auto" />
+							<Image src={logoLight} alt="Vestigio" className="h-7 w-auto" />
 						</Link>
 					</div>
 

@@ -22,7 +22,7 @@ import toast from "react-hot-toast";
 import z from "zod";
 import { rateLimitByIp } from "@/libs/limiter";
 import { integrations, messages } from "../../../../integrations.config";
-import logoDark from "@/../public/images/logo/logo.png";
+import logoLight from "@/../public/images/logo/logo-light.png";
 
 const schema = z.object({
 	name: z.string().min(3, { message: "Name must be at least 3 characters long" }),
@@ -113,7 +113,7 @@ export default function Signup() {
 					{/* Logo */}
 					<div className="auth-fade-in auth-delay-100 mb-8">
 						<Link href="/">
-							<Image src={logoDark} alt="Vestigio" className="h-7 w-auto" />
+							<Image src={logoLight} alt="Vestigio" className="h-7 w-auto" />
 						</Link>
 					</div>
 

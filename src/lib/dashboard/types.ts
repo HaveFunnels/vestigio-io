@@ -154,17 +154,28 @@ export interface CrossSignalChain {
 		severity: string;
 		impactCents: number;
 		findingId: string;
+		/** When this link's finding was first seen */
+		firstSeenAt: string | null;
 	}>;
 	/** Combined monthly impact across all linked findings */
 	totalImpactCents: number;
+	/** Temporal relationship between packs on this surface */
+	temporalPattern: 'sequential' | 'simultaneous' | null;
+	/** Auto-generated narrative explaining the chain */
+	narrative: string;
+	/** Earliest finding in this chain */
+	firstDetectedAt: string | null;
 }
 
 export interface CrossSignalData {
-	/** Detected causal chains (findings on same surface across 2+ packs) */
+	/** Top chains for dashboard widget (max 5) */
 	chains: CrossSignalChain[];
+	/** ALL chains for the dedicated page (empty on dashboard endpoint) */
+	allChains: CrossSignalChain[];
 	/** Summary for headline */
 	totalChains: number;
 	totalImpactCents: number;
+	allChainsImpactCents: number;
 	caption: string;
 }
 

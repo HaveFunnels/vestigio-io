@@ -957,81 +957,165 @@ async function computeAdSpend(
 //   [Security] CSP missing → [Trust] Buyer hesitation → [Revenue] Conversion drop
 // The detection is pure SQL grouping — no LLM cost.
 // ──────────────────────────────────────────────
+// ── Cross-signal chain builder (shared core) ──
+
+interface CrossSignalFindingRow {
+	id: string;
+	severity: string | null;
+	pack: string | null;
+	surface: string | null;
+	impactMidpoint: number | null;
+	projection: string | null;
+	createdAt: Date;
+	cycleId: string | null;
+}
+
+function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalChain[] {
+	const bySurface = new Map<string, CrossSignalFindingRow[]>();
+	for (const f of findings) {
+		if (!f.surface) continue;
+		const group = bySurface.get(f.surface) || [];
+		group.push(f);
+		bySurface.set(f.surface, group);
+	}
+
+	const chains: CrossSignalChain[] = [];
+	for (const [surface, group] of bySurface) {
+		const packs = new Set(group.map((f) => f.pack).filter(Boolean));
+		if (packs.size < 2) continue;
+
+		const links = group.map((f) => {
+			let title = "Untitled";
+			try {
+				const proj = JSON.parse(f.projection || "{}");
+				title = proj.title || title;
+			} catch { /* ignore */ }
+			return {
+				pack: f.pack || "unknown",
+				title,
+				severity: f.severity || "medium",
+				impactCents: dollarsToCents(f.impactMidpoint || 0),
+				findingId: f.id,
+				firstSeenAt: f.createdAt ? f.createdAt.toISOString() : null,
+			};
+		});
+
+		// Temporal pattern detection: compare cycleIds across packs
+		const cyclesByPack = new Map<string, Set<string>>();
+		for (const f of group) {
+			if (!f.pack || !f.cycleId) continue;
+			const cycles = cyclesByPack.get(f.pack) || new Set();
+			cycles.add(f.cycleId);
+			cyclesByPack.set(f.pack, cycles);
+		}
+		let temporalPattern: 'sequential' | 'simultaneous' | null = null;
+		if (cyclesByPack.size >= 2) {
+			// Get the earliest cycleId per pack (lexicographic — UUIDs are time-sortable with CUID)
+			const earliestCyclePerPack = [...cyclesByPack.entries()].map(
+				([, cycles]) => [...cycles].sort()[0],
+			);
+			const allSameCycle = earliestCyclePerPack.every((c) => c === earliestCyclePerPack[0]);
+			temporalPattern = allSameCycle ? 'simultaneous' : 'sequential';
+		}
+
+		const totalImpactCents = links.reduce((sum, l) => sum + l.impactCents, 0);
+		const dates = group.map((f) => f.createdAt).filter(Boolean).sort((a, b) => a.getTime() - b.getTime());
+		const firstDetectedAt = dates.length > 0 ? dates[0].toISOString() : null;
+
+		const chain: CrossSignalChain = {
+			surface,
+			links,
+			totalImpactCents,
+			temporalPattern,
+			narrative: "", // filled by narrative generator
+			firstDetectedAt,
+		};
+
+		// Generate narrative inline (avoid circular import)
+		const sorted = [...links].sort((a, b) => {
+			const PRIORITY: Record<string, number> = { security_posture: 0, scale_readiness: 1, trust_gap: 2, chargeback: 3, chargeback_resilience: 3, behavioral: 4, friction_tax: 5, first_impression: 6, revenue_integrity: 7, revenue: 7 };
+			return (PRIORITY[a.pack] ?? 50) - (PRIORITY[b.pack] ?? 50);
+		});
+		const impact = totalImpactCents >= 100_000 ? `$${(totalImpactCents / 100_00).toFixed(1)}k` : `$${Math.round(totalImpactCents / 100)}`;
+		const LABELS: Record<string, string> = { security_posture: "Security", scale_readiness: "Scale", trust_gap: "Trust", chargeback_resilience: "Chargeback", chargeback: "Chargeback", behavioral: "Behavioral", friction_tax: "Friction", first_impression: "First Impression", revenue_integrity: "Revenue", revenue: "Revenue" };
+		const label = (p: string) => LABELS[p] ?? p.replace(/_/g, " ");
+		if (sorted.length === 2) {
+			chain.narrative = `Your ${surface} has a cross-domain issue: ${sorted[0].title} (${label(sorted[0].pack)}) contributes to ${sorted[1].title} (${label(sorted[1].pack)}), with ~${impact}/mo at risk.`;
+		} else {
+			chain.narrative = `Your ${surface} has ${sorted.length} cross-domain issues: ${sorted.map((l) => `${l.title} (${label(l.pack)})`).join(", ")}, leading to ~${impact}/mo in combined exposure.`;
+		}
+		if (temporalPattern === 'sequential' && sorted.length >= 2) {
+			chain.narrative += ` Cause-effect chain — ${label(sorted[0].pack)} findings preceded ${label(sorted[sorted.length - 1].pack)}.`;
+		}
+
+		chains.push(chain);
+	}
+
+	chains.sort((a, b) => b.totalImpactCents - a.totalImpactCents);
+	return chains;
+}
+
+const CROSS_SIGNAL_SELECT = {
+	id: true,
+	severity: true,
+	pack: true,
+	surface: true,
+	impactMidpoint: true,
+	projection: true,
+	createdAt: true,
+	cycleId: true,
+} as const;
+
+const CROSS_SIGNAL_WHERE = (envId: string) => ({
+	environmentId: envId,
+	polarity: { not: "positive" as const },
+	changeClass: { not: "resolved" as const },
+	NOT: { surface: "" },
+});
+
 async function computeCrossSignal(
 	prisma: PrismaClient,
 	envId: string
 ): Promise<CrossSignalData> {
 	try {
-		// Get open negative findings with a surface URL
 		const findings = await prisma.finding.findMany({
-			where: {
-				environmentId: envId,
-				polarity: { not: "positive" },
-				changeClass: { not: "resolved" },
-				NOT: { surface: "" },
-			},
-			select: {
-				id: true,
-				severity: true,
-				pack: true,
-				surface: true,
-				impactMidpoint: true,
-				projection: true,
-			},
+			where: CROSS_SIGNAL_WHERE(envId),
+			select: CROSS_SIGNAL_SELECT,
 		});
 
-		// Group by surface, keep only groups with 2+ distinct packs
-		type FindingRow = (typeof findings)[number];
-		const bySurface = new Map<string, FindingRow[]>();
-		for (const f of findings) {
-			if (!f.surface) continue;
-			const group = bySurface.get(f.surface) || [];
-			group.push(f);
-			bySurface.set(f.surface, group);
-		}
-
-		const chains: CrossSignalChain[] = [];
-		for (const [surface, group] of bySurface) {
-			const packs = new Set(group.map((f) => f.pack).filter(Boolean));
-			if (packs.size < 2) continue;
-
-			const links = group.map((f) => {
-				let title = "Untitled";
-				try {
-					const proj = JSON.parse(f.projection || "{}");
-					title = proj.title || title;
-				} catch { /* ignore */ }
-				return {
-					pack: f.pack || "unknown",
-					title,
-					severity: f.severity || "medium",
-					impactCents: dollarsToCents(f.impactMidpoint || 0),
-					findingId: f.id,
-				};
-			});
-
-			const totalImpactCents = links.reduce((sum, l) => sum + l.impactCents, 0);
-			chains.push({ surface, links, totalImpactCents });
-		}
-
-		// Sort by impact descending
-		chains.sort((a, b) => b.totalImpactCents - a.totalImpactCents);
-
-		// Keep top 5
-		const topChains = chains.slice(0, 5);
+		const allChains = buildCrossSignalChains(findings);
+		const topChains = allChains.slice(0, 5);
 		const totalImpactCents = topChains.reduce((sum, c) => sum + c.totalImpactCents, 0);
+		const allChainsImpactCents = allChains.reduce((sum, c) => sum + c.totalImpactCents, 0);
 
 		return {
 			chains: topChains,
-			totalChains: chains.length,
+			allChains: [],  // empty on dashboard (populated by dedicated endpoint)
+			totalChains: allChains.length,
 			totalImpactCents,
-			caption: chains.length > 0
-				? `${chains.length} cross-domain pattern${chains.length > 1 ? "s" : ""} detected across your site`
+			allChainsImpactCents,
+			caption: allChains.length > 0
+				? `${allChains.length} cross-domain pattern${allChains.length > 1 ? "s" : ""} detected across your site`
 				: "No cross-domain patterns detected yet",
 		};
 	} catch {
-		return { chains: [], totalChains: 0, totalImpactCents: 0, caption: "" };
+		return { chains: [], allChains: [], totalChains: 0, totalImpactCents: 0, allChainsImpactCents: 0, caption: "" };
 	}
+}
+
+/**
+ * Compute ALL cross-signal chains (not capped at 5).
+ * Used by the dedicated /api/cross-signals endpoint.
+ */
+export async function computeAllCrossSignals(
+	prisma: PrismaClient,
+	envId: string,
+): Promise<CrossSignalChain[]> {
+	const findings = await prisma.finding.findMany({
+		where: CROSS_SIGNAL_WHERE(envId),
+		select: CROSS_SIGNAL_SELECT,
+	});
+	return buildCrossSignalChains(findings).slice(0, 50);
 }
 
 export async function computeDashboardData(

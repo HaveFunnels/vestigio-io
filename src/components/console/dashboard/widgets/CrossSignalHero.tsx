@@ -56,7 +56,14 @@ function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boole
 			{/* Surface + impact */}
 			<div className="min-w-0 flex-1">
 				<div className="flex items-center gap-2">
-					<span className="truncate font-mono text-[10px] text-content-faint">{surface}</span>
+					<button
+						type="button"
+						disabled={editing}
+						onClick={() => !editing && router.push(`/app/analysis?chain=${encodeURIComponent(chain.surface)}`)}
+						className="truncate font-mono text-[10px] text-content-faint transition-colors hover:text-content-secondary disabled:cursor-default"
+					>
+						{surface}
+					</button>
 					<span className="shrink-0 font-mono text-[10px] tabular-nums text-red-400">
 						−{formatCurrency(chain.totalImpactCents)}/mo
 					</span>
@@ -165,13 +172,21 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 								<ChainRow key={i} chain={chain} editing={editing} />
 							))}
 						</ul>
-						{hiddenCount > 0 && (
+						{hiddenCount > 0 && isStarter && (
 							<p className="relative mt-2 border-t border-edge/40 pt-2 text-[10px] text-content-faint">
 								{tu("more_patterns", { count: hiddenCount })}{" "}
 								<a href="/app/billing" className="text-emerald-400 transition-colors hover:text-emerald-300 hover:underline">
 									{tu("see_all_upgrade")} {tu("upgrade_cta")}
 								</a>
 							</p>
+						)}
+						{crossSignal.totalChains > visibleChains.length && !isStarter && (
+							<a
+								href="/app/cross-signals"
+								className="relative mt-2 flex items-center justify-center gap-1 border-t border-edge/40 pt-2 text-[10px] font-medium text-indigo-400 transition-colors hover:text-indigo-300"
+							>
+								{t("view_all")} {crossSignal.totalChains} {t("pattern_plural")} →
+							</a>
 						)}
 					</>
 				);

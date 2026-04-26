@@ -18,6 +18,7 @@
 import type {
 	ActivityHeatmapData,
 	ChangeReportData,
+	CrossSignalChain,
 	DashboardData,
 	ExposureData,
 	HealthScoreData,
@@ -212,15 +213,20 @@ export function buildMockDashboardData(t: MockTranslator): DashboardData {
 				{
 					surface: "/checkout",
 					links: [
-						{ pack: "security_posture", title: t("cross_signal_security"), severity: "high", impactCents: 124000, findingId: "mock-cs-1" },
-						{ pack: "revenue", title: t("cross_signal_revenue"), severity: "critical", impactCents: 241000, findingId: "mock-cs-2" },
+						{ pack: "security_posture", title: t("cross_signal_security"), severity: "high", impactCents: 124000, findingId: "mock-cs-1", firstSeenAt: "2026-04-18T10:00:00Z" },
+						{ pack: "revenue", title: t("cross_signal_revenue"), severity: "critical", impactCents: 241000, findingId: "mock-cs-2", firstSeenAt: "2026-04-19T14:00:00Z" },
 					],
 					totalImpactCents: 365000,
+					temporalPattern: "sequential",
+					narrative: "Your /checkout has a cross-domain issue: CSP headers missing (Security) contributes to conversion drop (Revenue), with ~$3.7k/mo at risk. Cause-effect chain — Security findings preceded Revenue.",
+					firstDetectedAt: "2026-04-18T10:00:00Z",
 				},
 			],
-			totalChains: 1,
+			allChains: [],
+			totalChains: 3,
 			totalImpactCents: 365000,
-			caption: "1 cross-domain pattern detected on checkout.",
+			allChainsImpactCents: 512000,
+			caption: "3 cross-domain patterns detected across your site.",
 		},
 	};
 }
@@ -365,19 +371,25 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
 			{
 				surface: "/checkout",
 				links: [
-					{ pack: "security_posture", title: "Missing CSP headers on checkout", severity: "high", impactCents: 124000, findingId: "demo-cs-1" },
-					{ pack: "revenue", title: "Checkout trust indicators absent", severity: "critical", impactCents: 241000, findingId: "demo-cs-2" },
-					{ pack: "behavioral", title: "3 rage-click sessions on payment form", severity: "medium", impactCents: 89000, findingId: "demo-cs-3" },
+					{ pack: "security_posture", title: "Missing CSP headers on checkout", severity: "high", impactCents: 124000, findingId: "demo-cs-1", firstSeenAt: "2026-04-15T08:00:00Z" },
+					{ pack: "revenue", title: "Checkout trust indicators absent", severity: "critical", impactCents: 241000, findingId: "demo-cs-2", firstSeenAt: "2026-04-16T12:00:00Z" },
+					{ pack: "behavioral", title: "3 rage-click sessions on payment form", severity: "medium", impactCents: 89000, findingId: "demo-cs-3", firstSeenAt: "2026-04-17T09:00:00Z" },
 				],
 				totalImpactCents: 454000,
+				temporalPattern: "sequential" as const,
+				narrative: "Your /checkout has 3 cross-domain issues: Missing CSP headers (Security), Checkout trust indicators absent (Revenue), and 3 rage-click sessions (Behavioral), leading to ~$4.5k/mo in combined exposure. Cause-effect chain — Security findings preceded Behavioral.",
+				firstDetectedAt: "2026-04-15T08:00:00Z",
 			},
 			{
 				surface: "/product/premium-plan",
 				links: [
-					{ pack: "revenue", title: "Pricing page missing social proof", severity: "high", impactCents: 178000, findingId: "demo-cs-4" },
-					{ pack: "chargeback", title: "No refund policy visible before purchase", severity: "medium", impactCents: 67000, findingId: "demo-cs-5" },
+					{ pack: "revenue", title: "Pricing page missing social proof", severity: "high", impactCents: 178000, findingId: "demo-cs-4", firstSeenAt: "2026-04-18T10:00:00Z" },
+					{ pack: "chargeback", title: "No refund policy visible before purchase", severity: "medium", impactCents: 67000, findingId: "demo-cs-5", firstSeenAt: "2026-04-18T10:00:00Z" },
 				],
 				totalImpactCents: 245000,
+				temporalPattern: "simultaneous" as const,
+				narrative: "Your /product/premium-plan has a cross-domain issue: Pricing page missing social proof (Revenue) contributes to No refund policy visible before purchase (Chargeback), with ~$2.5k/mo at risk.",
+				firstDetectedAt: "2026-04-18T10:00:00Z",
 			},
 		],
 		totalChains: 2,
@@ -385,3 +397,11 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
 		caption: "2 cross-domain patterns detected — checkout is the highest-impact surface.",
 	},
 };
+
+/**
+ * Build mock cross-signal chains for the dedicated page (all chains).
+ * Used by the /api/cross-signals endpoint for demo orgs.
+ */
+export function buildMockCrossSignals(): CrossSignalChain[] {
+	return DEMO_DASHBOARD.crossSignal.chains;
+}

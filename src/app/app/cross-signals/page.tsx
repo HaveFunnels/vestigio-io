@@ -36,13 +36,13 @@ export default function CrossSignalsPage() {
 			});
 	}, []);
 
-	if (state.status === "loading") {
-		return <ConsoleState variant="loading" />;
-	}
-
-	if (state.status === "error") {
-		return <ConsoleState variant="error" message={state.message} />;
-	}
-
-	return <CrossSignalsShell chains={state.chains} />;
+	return (
+		<ConsoleState state={
+			state.status === "loading" ? { status: "loading" }
+			: state.status === "error" ? { status: "error", message: state.message }
+			: { status: "ready", data: state.chains }
+		}>
+			{(chains) => <CrossSignalsShell chains={chains} />}
+		</ConsoleState>
+	);
 }

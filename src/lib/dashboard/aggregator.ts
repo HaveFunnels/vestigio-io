@@ -847,7 +847,7 @@ export function emptyDashboardData(): DashboardData {
 		changeReport,
 		activityHeatmap,
 		adSpend: { totalMonthly: 0, currency: "USD", byPlatform: [], hasData: false, caption: "" },
-		crossSignal: { chains: [], totalChains: 0, totalImpactCents: 0, caption: "" },
+		crossSignal: { chains: [], allChains: [], totalChains: 0, totalImpactCents: 0, allChainsImpactCents: 0, caption: "" },
 	};
 }
 

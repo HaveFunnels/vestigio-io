@@ -20,7 +20,7 @@ const prisma = new PrismaClient();
 // ──────────────────────────────────────────────
 
 const DEMO_EMAIL = 'demo@vestigio.io';
-const DEMO_PASSWORD = 'demo1234';
+const DEMO_PASSWORD = 'Vestigio_Demo@2026';
 const DEMO_DOMAIN = 'acme-store.com';
 
 const now = new Date();

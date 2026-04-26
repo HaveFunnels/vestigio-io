@@ -90,12 +90,23 @@ async function redisRateLimit(identifier: string, limit: number, windowMs: numbe
 // Public API
 // ──────────────────────────────────────────────
 
+// IPs that bypass rate limiting (comma-separated env var)
+const WHITELIST_IPS = new Set(
+  (process.env.RATE_LIMIT_WHITELIST_IPS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
+
 export async function rateLimitByIp(limit = 5, windowMs = 60000) {
   const ip = await getIp();
 
   if (!ip) {
     throw new Error("IP address not found");
   }
+
+  // Skip rate limiting for whitelisted IPs
+  if (WHITELIST_IPS.has(ip)) return;
 
   // Try Redis first, fall back to in-memory
   const redisResult = await redisRateLimit(ip, limit, windowMs);

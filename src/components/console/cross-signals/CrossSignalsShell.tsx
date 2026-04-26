@@ -71,17 +71,17 @@ export default function CrossSignalsShell({ chains }: Props) {
 		{
 			label: t("hero_chains"),
 			value: String(chains.length),
-			color: "indigo",
+			variant: "info",
 		},
 		{
 			label: t("hero_at_risk"),
 			value: formatCurrency(totalImpact) + "/mo",
-			color: "red",
+			variant: "danger",
 		},
 		{
 			label: t("hero_sequential"),
 			value: String(sequentialCount),
-			color: "amber",
+			variant: "warning",
 		},
 	];
 

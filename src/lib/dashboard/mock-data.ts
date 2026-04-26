@@ -394,14 +394,18 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
 		],
 		totalChains: 2,
 		totalImpactCents: 699000,
+		allChains: [],
+		allChainsImpactCents: 699000,
 		caption: "2 cross-domain patterns detected — checkout is the highest-impact surface.",
 	},
 };
+
+const DEMO_DASHBOARD_REF = MOCK_DASHBOARD_DATA;
 
 /**
  * Build mock cross-signal chains for the dedicated page (all chains).
  * Used by the /api/cross-signals endpoint for demo orgs.
  */
 export function buildMockCrossSignals(): CrossSignalChain[] {
-	return DEMO_DASHBOARD.crossSignal.chains;
+	return DEMO_DASHBOARD_REF.crossSignal.chains;
 }

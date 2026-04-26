@@ -144,6 +144,7 @@
 				"actions": "Aktionen",
 				"analysis": "Analyse",
 				"inventory": "Inventar",
+				"cross_signals": "Cross-Signals",
 				"workspaces": "Workspaces",
 				"chat": "Vestigio AI",
 				"maps": "Karten"
@@ -2577,6 +2578,22 @@
 			"not_now": "Nicht jetzt",
 			"thanks": "Danke für das Feedback!"
 		},
+		"cross_signals": {
+			"title": "Cross-Signal-Insights",
+			"subtitle": "Seiten, auf denen Befunde aus verschiedenen Perspektiven konvergieren — Vestigios einzigartige Multi-Domain-Korrelation.",
+			"hero_chains": "Cross-Signal-Ketten",
+			"hero_at_risk": "Monatliche Exposition",
+			"hero_sequential": "Kausale Muster",
+			"filter_severity": "Schweregrad",
+			"filter_temporal_all": "Alle Muster",
+			"filter_temporal_sequential": "Sequenziell (kausal)",
+			"filter_temporal_simultaneous": "Gleichzeitig",
+			"chain_card_view_analysis": "In der Analyse anzeigen",
+			"temporal_sequential": "Sequenziell",
+			"temporal_simultaneous": "Gleichzeitig",
+			"empty_title": "Noch keine Cross-Signal-Muster erkannt",
+			"empty_subtitle": "Cross-Signal-Muster erscheinen, wenn Befunde aus verschiedenen Analyse-Packs dieselbe Seite Ihrer Website betreffen."
+		},
 		"activity_heatmap": {
 			"eyebrow": "Aktivität · 90 Tage",
 			"day_streak": "Tage in Folge",
@@ -2895,7 +2912,8 @@
 					"pattern_singular": "Muster",
 					"pattern_plural": "Muster",
 					"empty_title": "Noch keine domänenübergreifenden Muster erkannt",
-					"empty_subtitle": "Muster erscheinen, wenn Befunde aus verschiedenen Packs dieselbe Seite betreffen"
+					"empty_subtitle": "Muster erscheinen, wenn Befunde aus verschiedenen Packs dieselbe Seite betreffen",
+					"view_all": "Alle anzeigen"
 				}
 			},
 			"mock_data": {

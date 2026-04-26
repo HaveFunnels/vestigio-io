@@ -144,6 +144,7 @@
 				"actions": "Ações",
 				"analysis": "Análise",
 				"inventory": "Inventário",
+				"cross_signals": "Cross-Signals",
 				"workspaces": "Workspaces",
 				"chat": "Vestigio AI",
 				"maps": "Mapas"
@@ -2061,7 +2062,8 @@
 					"pattern_singular": "padrão",
 					"pattern_plural": "padrões",
 					"empty_title": "Nenhum padrão cross-domain detectado ainda",
-					"empty_subtitle": "Padrões aparecem quando findings de diferentes packs afetam a mesma página"
+					"empty_subtitle": "Padrões aparecem quando findings de diferentes packs afetam a mesma página",
+					"view_all": "Ver todos"
 				}
 			},
 			"editing_subtitle": "Arraste widgets para reorganizar. Redimensione pelo canto. Adicione ou remova pelo catálogo.",
@@ -2492,6 +2494,22 @@
 			"submit": "Enviar",
 			"not_now": "Agora não",
 			"thanks": "Obrigado pelo feedback!"
+		},
+		"cross_signals": {
+			"title": "Insights Cross-Signal",
+			"subtitle": "Superficies onde findings de multiplas perspectivas convergem — a correlacao multi-dominio exclusiva da Vestigio.",
+			"hero_chains": "Cadeias Cross-Signal",
+			"hero_at_risk": "Exposicao Mensal",
+			"hero_sequential": "Padroes Causais",
+			"filter_severity": "Severidade",
+			"filter_temporal_all": "Todos os padroes",
+			"filter_temporal_sequential": "Sequencial (causal)",
+			"filter_temporal_simultaneous": "Simultaneo",
+			"chain_card_view_analysis": "Ver na Analise",
+			"temporal_sequential": "Sequencial",
+			"temporal_simultaneous": "Simultaneo",
+			"empty_title": "Nenhum padrao cross-signal detectado ainda",
+			"empty_subtitle": "Padroes cross-signal aparecem quando findings de diferentes packs de analise afetam a mesma pagina do seu site."
 		},
 		"activity_heatmap": {
 			"eyebrow": "Atividade · 90 dias",

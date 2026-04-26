@@ -18,12 +18,13 @@
 //   - "Verify" → if verification_strategy exists
 // ──────────────────────────────────────────────
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import type { FindingProjection } from "@/../../packages/projections/types";
 import { useCopilot } from "@/components/app/CopilotProvider";
+import FeedbackMoment from "./FeedbackMoment";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import {
 	DrawerSection,
@@ -84,6 +85,14 @@ export default function FindingDetailPanel({
 			})
 			.catch(() => {});
 	}, [finding.inference_key, isFull]);
+
+	// Feedback moment: show after 10s dwell time
+	const [showFeedback, setShowFeedback] = useState(false);
+	const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(() => {
+		dwellTimer.current = setTimeout(() => setShowFeedback(true), 10_000);
+		return () => { if (dwellTimer.current) clearTimeout(dwellTimer.current); };
+	}, [finding.id]);
 
 	const packLabels: Record<string, string> = {
 		scale_readiness: tc("pack_labels.scale_readiness"),
@@ -485,6 +494,13 @@ export default function FindingDetailPanel({
 					</>
 				)}
 			</section>
+
+			{/* Feedback moment — appears after 10s of viewing */}
+			{showFeedback && (
+				<section className="mt-2">
+					<FeedbackMoment trigger="finding_dwell" questionKey="finding_question" />
+				</section>
+			)}
 		</div>
 	);
 }

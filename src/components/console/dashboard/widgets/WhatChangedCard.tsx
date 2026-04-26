@@ -27,6 +27,7 @@ import {
 	registerWidget,
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
+import { usePlan } from "@/hooks/usePlan";
 import type { ChangeReportEntry } from "@/lib/dashboard/types";
 
 function formatCurrency(cents?: number): string {
@@ -111,6 +112,8 @@ function Section({ icon, label, count, tone, entries }: SectionProps) {
 
 function WhatChangedCardComponent({ data }: WidgetProps) {
 	const t = useTranslations("console.dashboard.widgets.what_changed_card");
+	const tu = useTranslations("console.upgrade_moments");
+	const { isStarter } = usePlan();
 	const {
 		newFindings,
 		regressions,
@@ -162,6 +165,16 @@ function WhatChangedCardComponent({ data }: WidgetProps) {
 			<p className='mt-2 line-clamp-1 border-t border-edge/40 pt-2 text-[11px] leading-snug text-content-secondary'>
 				{caption}
 			</p>
+
+			{/* Cadence nudge for Starter users */}
+			{isStarter && (
+				<p className='mt-1 text-[10px] text-content-faint'>
+					{tu("cadence_weekly")}{" "}
+					<a href="/app/billing" className='text-emerald-400 transition-colors hover:text-emerald-300 hover:underline'>
+						{tu("cadence_daily_upgrade")} {tu("upgrade_cta")}
+					</a>
+				</p>
+			)}
 		</div>
 	);
 }

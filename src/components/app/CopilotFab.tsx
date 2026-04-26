@@ -12,6 +12,7 @@
 import { useTranslations } from "next-intl";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCopilot } from "./CopilotProvider";
+import { usePlan } from "@/hooks/usePlan";
 
 // ── Color Orb (adapted from template, emerald tones) ──
 
@@ -93,6 +94,7 @@ function ColorOrb({ size = 24 }: { size?: number }) {
 export default function CopilotFab() {
 	const t = useTranslations("console.copilot");
 	const { isOpen, isMinimized, open, restore } = useCopilot();
+	const { isStarter } = usePlan();
 
 	const visible = !(isOpen && !isMinimized);
 
@@ -134,6 +136,11 @@ export default function CopilotFab() {
 				>
 					<ColorOrb size={24} />
 					<span>{t("fab_label")}</span>
+					{isStarter && (
+						<span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-emerald-400">
+							Pro
+						</span>
+					)}
 					{/* Unread indicator when minimized */}
 					{isMinimized && (
 						<span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">

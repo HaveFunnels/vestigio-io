@@ -13,6 +13,8 @@ import CycleProgressBanner from "./CycleProgressBanner";
 import CopilotPanel from "./CopilotPanel";
 import CopilotFab from "./CopilotFab";
 import NotificationBell from "./NotificationBell";
+import { PlanProvider } from "@/hooks/usePlan";
+import NpsPulse from "./NpsPulse";
 import { orgDropdownNav } from "./sidebar-nav-data";
 
 // Routes where the in-flight audit banner should appear. Keep this list
@@ -338,6 +340,7 @@ export default function AppSidebarLayout({
 	const pausedBannerT = useTranslations("console.paused_banner");
 
 	return (
+		<PlanProvider plan={plan}>
 		<div className="flex h-screen bg-surface-shell text-content">
 			<TopProgressBar />
 			<CommandPalette enabled={isAdmin} />
@@ -440,8 +443,10 @@ export default function AppSidebarLayout({
 				<>
 					<CopilotPanel />
 					<CopilotFab />
+					<NpsPulse />
 				</>
 			)}
 		</div>
+		</PlanProvider>
 	);
 }

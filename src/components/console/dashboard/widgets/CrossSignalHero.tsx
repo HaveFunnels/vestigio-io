@@ -15,6 +15,7 @@
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GitForkIcon as GitFork } from "@phosphor-icons/react/dist/ssr";
+import { usePlan } from "@/hooks/usePlan";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -95,6 +96,8 @@ function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boole
 
 function CrossSignalHero({ data, editing }: WidgetProps) {
 	const t = useTranslations("console.dashboard.widgets.cross_signal_card");
+	const tu = useTranslations("console.upgrade_moments");
+	const { isStarter } = usePlan();
 	const { crossSignal } = data;
 
 	if (!crossSignal || crossSignal.chains.length === 0) {
@@ -152,11 +155,27 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 			)}
 
 			{/* Chain list — flat rows, no nested cards */}
-			<ul className="relative mt-3 flex-1 space-y-0 overflow-y-auto">
-				{crossSignal.chains.map((chain, i) => (
-					<ChainRow key={i} chain={chain} editing={editing} />
-				))}
-			</ul>
+			{(() => {
+				const visibleChains = isStarter ? crossSignal.chains.slice(0, 1) : crossSignal.chains;
+				const hiddenCount = crossSignal.chains.length - visibleChains.length;
+				return (
+					<>
+						<ul className="relative mt-3 flex-1 space-y-0 overflow-y-auto">
+							{visibleChains.map((chain, i) => (
+								<ChainRow key={i} chain={chain} editing={editing} />
+							))}
+						</ul>
+						{hiddenCount > 0 && (
+							<p className="relative mt-2 border-t border-edge/40 pt-2 text-[10px] text-content-faint">
+								{tu("more_patterns", { count: hiddenCount })}{" "}
+								<a href="/app/billing" className="text-emerald-400 transition-colors hover:text-emerald-300 hover:underline">
+									{tu("see_all_upgrade")} {tu("upgrade_cta")}
+								</a>
+							</p>
+						)}
+					</>
+				);
+			})()}
 		</div>
 	);
 }

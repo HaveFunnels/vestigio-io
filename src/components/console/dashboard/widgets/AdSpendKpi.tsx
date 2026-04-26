@@ -14,6 +14,7 @@
 // ──────────────────────────────────────────────
 
 import { useTranslations } from "next-intl";
+import { usePlan } from "@/hooks/usePlan";
 import {
 	registerWidget,
 	type WidgetProps,
@@ -32,9 +33,38 @@ function fmt(value: number, currency: string): string {
 
 function AdSpendKpiComponent({ data }: WidgetProps) {
 	const t = useTranslations("console.dashboard.widgets.ad_spend");
+	const tu = useTranslations("console.upgrade_moments");
+	const { isStarter } = usePlan();
 	const { totalMonthly, currency, byPlatform, hasData, caption } = data.adSpend;
 
 	if (!hasData) {
+		// Starter users see a blurred preview with upgrade CTA
+		if (isStarter) {
+			return (
+				<div className="relative flex h-full flex-col p-5">
+					{/* Mock data behind blur */}
+					<div className="pointer-events-none select-none" style={{ filter: "blur(8px)" }}>
+						<div className="mb-1 flex items-baseline justify-between">
+							<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">{t("eyebrow")}</span>
+							<span className="font-mono text-[10px] text-content-faint">{t("per_month")}</span>
+						</div>
+						<div className="mb-3 font-mono text-2xl font-medium tabular-nums leading-none text-content">$2,840</div>
+						<div className="space-y-2">
+							<div className="flex items-center justify-between"><span className="text-[11px] text-content-secondary">Meta Ads</span><span className="font-mono text-[11px] text-content">$1,920</span></div>
+							<div className="flex items-center justify-between"><span className="text-[11px] text-content-secondary">Google Ads</span><span className="font-mono text-[11px] text-content">$920</span></div>
+						</div>
+					</div>
+					{/* Overlay CTA */}
+					<div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-surface/60 backdrop-blur-sm">
+						<div className="text-center">
+							<p className="text-xs font-medium text-content-secondary">{tu("unlock_integration")}</p>
+							<a href="/app/billing" className="mt-2 inline-block rounded-md bg-emerald-500/10 px-3 py-1.5 text-[11px] font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/20">{tu("upgrade_cta")}</a>
+						</div>
+					</div>
+				</div>
+			);
+		}
+
 		return (
 			<div className="flex h-full flex-col items-center justify-center px-4 text-center">
 				<svg className="mb-2 h-5 w-5 text-content-faint opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

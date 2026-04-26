@@ -13,6 +13,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCopilot } from "./CopilotProvider";
+import { usePlan } from "@/hooks/usePlan";
+import FeedbackMoment from "@/components/console/FeedbackMoment";
 import { ChatMessageRenderer } from "@/components/console/chat/ChatMessageRenderer";
 import { ChatInputBar } from "@/components/console/chat/ChatInputBar";
 import CopilotQuickActions from "./CopilotQuickActions";
@@ -243,6 +245,8 @@ function PlaybooksOverlay({
 export default function CopilotPanel() {
 	const router = useRouter();
 	const t = useTranslations("console.copilot");
+	const tu = useTranslations("console.upgrade_moments");
+	const { isStarter } = usePlan();
 	const {
 		isOpen,
 		isMinimized,
@@ -274,6 +278,17 @@ export default function CopilotPanel() {
 			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
 		}
 	}, [messages.length, streamingMessage]);
+
+	// Feedback moment: show after 3+ user messages in session
+	const userMsgCountRef = useRef(0);
+	const [showCopilotFeedback, setShowCopilotFeedback] = useState(false);
+	useEffect(() => {
+		const userMsgs = messages.filter((m) => m.role === "user").length;
+		if (userMsgs > userMsgCountRef.current) {
+			userMsgCountRef.current = userMsgs;
+			if (userMsgs >= 3 && !showCopilotFeedback) setShowCopilotFeedback(true);
+		}
+	}, [messages, showCopilotFeedback]);
 
 	// Listen for SideDrawer open → auto-minimize
 	useEffect(() => {
@@ -452,6 +467,13 @@ export default function CopilotPanel() {
 								{t("greeting_description")}
 							</p>
 
+							{isStarter && (
+								<p className="mt-3 rounded-md bg-emerald-500/5 border border-emerald-500/10 px-3 py-2 text-[11px] text-emerald-400/80">
+									{tu("ai_pro")}{" "}
+									<a href="/app/billing" className="font-medium text-emerald-400 hover:underline">{tu("upgrade_cta")}</a>
+								</p>
+							)}
+
 							<div className="mt-6 w-full">
 								<CopilotQuickActions
 									pageContext={pageContext}
@@ -475,6 +497,13 @@ export default function CopilotPanel() {
 			)}
 
 			{/* ── Input island (compact/mobile mode) ── */}
+			{/* Feedback moment after 3+ messages */}
+			{showCopilotFeedback && (
+				<div className="px-3 pb-1">
+					<FeedbackMoment trigger="copilot_3msg" questionKey="copilot_question" />
+				</div>
+			)}
+
 			<div className="border-t border-edge">
 				<ChatInputBar
 					onSend={(text) => send(text)}

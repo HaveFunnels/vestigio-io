@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 
-const VALID_TYPES = ["general", "bug", "feature", "ux", "performance"];
+const VALID_TYPES = ["general", "bug", "feature", "ux", "performance", "contextual", "nps"];
 
 /** POST /api/feedback — authenticated feedback submission */
 export async function POST(request: Request) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const type = VALID_TYPES.includes(body.type) ? body.type : "general";
   const content = (body.content || "").trim().slice(0, 5000);
   const title = body.title ? String(body.title).trim().slice(0, 200) : null;
-  const rating = typeof body.rating === "number" && body.rating >= 1 && body.rating <= 5
+  const rating = typeof body.rating === "number" && body.rating >= 0 && body.rating <= 10
     ? body.rating
     : null;
   const page = body.page ? String(body.page).slice(0, 500) : null;

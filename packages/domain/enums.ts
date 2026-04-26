@@ -468,6 +468,7 @@ export enum InferenceCategory {
   AdCreativeLandingTrustGap = 'ad_creative_landing_trust_gap',
   AdCreativeFormFrictionWaste = 'ad_creative_form_friction_waste',
   AdCreativeMobileCheckoutDegraded = 'ad_creative_mobile_checkout_degraded',
+  AdCreativeMessageMismatch = 'ad_creative_message_mismatch',
   LowRepeatPurchaseRate = 'low_repeat_purchase_rate',
   DeadWeightProducts = 'dead_weight_products',
 }

@@ -39,6 +39,7 @@ import { decryptConfig } from "@/libs/integration-crypto";
 import type { IntegrationSnapshot } from "../../packages/integrations/types";
 import type { Evidence } from "../../packages/domain";
 import { triggerIncidentNotifications } from "@/libs/notification-triggers";
+import { analyzeAdMessageMatch } from "../../workers/ingestion/enrichment/ad-message-match";
 
 export interface RunAuditCycleResult {
 	cycleId: string;
@@ -672,6 +673,33 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					console.warn(`[audit-runner ${cycleId}] integration connections lookup failed:`, err);
 					// Non-fatal — the cycle still works without integration data.
 				}
+
+			// (b-pre) Wave 3.9 C-E: Ad-LP message-match analysis (LLM enrichment)
+			// Only on cold (full) cycles — hot/warm skip the LLM cost.
+			if (cycleMode === 'cold' && integrationSnapshots.length > 0) {
+				try {
+					const adMatchEvidence = await analyzeAdMessageMatch(
+						integrationSnapshots,
+						result.evidence,
+						{
+							workspace_ref: workspaceRef,
+							environment_ref: environmentRef,
+							subject_ref: `website:${website.id}`,
+							path_scope: null,
+						},
+						cycleRefStr,
+					);
+					if (adMatchEvidence.length > 0) {
+						result.evidence.push(...adMatchEvidence);
+						console.log(
+							`[audit-runner ${cycleId}] ad-LP message match: ${adMatchEvidence.length} pairs analyzed`,
+						);
+					}
+				} catch (err) {
+					console.warn(`[audit-runner ${cycleId}] ad-LP message match failed:`, err);
+					// Non-fatal — the cycle still produces all other findings.
+				}
+			}
 
 			// (b) Engine
 			const recomputeStartMs = Date.now();

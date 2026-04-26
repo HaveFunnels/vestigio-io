@@ -266,6 +266,7 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   ad_creative_landing_trust_gap:      { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
   ad_creative_form_friction_waste:    { root_cause_key: 'behavioral_trust_failure_at_input', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss'] },
   ad_creative_mobile_checkout_degraded: { root_cause_key: 'mobile_conversion_failure', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+  ad_creative_message_mismatch:         { root_cause_key: 'ad_landing_promise_gap', category: 'expectation_alignment', impact_types: ['revenue_loss'] },
   low_repeat_purchase_rate:           { root_cause_key: 'weak_conversion_signal', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
   dead_weight_products:               { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
 };

@@ -224,6 +224,7 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   ad_creative_landing_trust_gap: 'revenue_integrity',
   ad_creative_form_friction_waste: 'revenue_integrity',
   ad_creative_mobile_checkout_degraded: 'revenue_integrity',
+  ad_creative_message_mismatch: 'revenue_integrity',
   low_repeat_purchase_rate: 'revenue_integrity',
   dead_weight_products: 'revenue_integrity',
 };
@@ -395,6 +396,7 @@ const INFERENCE_SURFACES: Record<string, string> = {
   ad_creative_landing_trust_gap: 'Meta Ads / Google Ads → checkout/landing',
   ad_creative_form_friction_waste: 'Meta Ads / Google Ads → checkout/forms',
   ad_creative_mobile_checkout_degraded: 'Meta Ads / Google Ads → mobile path',
+  ad_creative_message_mismatch: 'Meta Ads / Google Ads → landing page copy',
   low_repeat_purchase_rate: '/store (retention)',
   dead_weight_products: '/products (catalog)',
 };
@@ -570,6 +572,7 @@ export const INFERENCE_TITLES: Record<string, string> = {
   ad_creative_landing_trust_gap: 'An ad sends buyers to a page that asks for card data but shows no trust signals',
   ad_creative_form_friction_waste: 'An ad sends buyers to a form so long they abandon before converting',
   ad_creative_mobile_checkout_degraded: 'An ad sends mobile buyers to a page where checkout is broken or too slow',
+  ad_creative_message_mismatch: 'An ad promises one thing but the landing page delivers another — the message disconnect wastes ad spend',
   low_repeat_purchase_rate: "Buyers aren't coming back — acquisition cost isn't being recovered",
   dead_weight_products: "Listed products haven't sold in 30 days — dead weight",
 };

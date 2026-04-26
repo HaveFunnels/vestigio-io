@@ -1882,6 +1882,21 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 30,
 	},
 
+	ad_creative_message_mismatch: {
+		remediation_steps: [
+			'Open the ad creative in your Ads Manager and read the headline + body copy side by side with the landing page.',
+			'Update the landing page H1 to echo the ad\'s primary promise — exact word match increases perceived relevance.',
+			'Ensure the CTA on the landing page matches the action the ad promised (e.g., ad says "Try Free" but LP says "Contact Sales" is a mismatch).',
+			'If the ad mentions a specific offer (discount, free trial, feature), make sure it\'s visible above the fold on the LP.',
+			'Alternatively, update the ad copy to match what the LP actually delivers, rather than what you wish it delivered.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'reuse_only' as const,
+		verification_notes:
+			'Re-fetch the landing page and re-run message-match analysis to confirm alignment score improved above 60.',
+		verification_eta_seconds: 15,
+	},
+
 	low_repeat_purchase_rate: {
 		remediation_steps: [
 			'Configure email de re-engagement 30/60/90 dias pós-compra com recomendações personalizadas.',

@@ -749,7 +749,7 @@ export interface SurfaceVitalityPayload {
 
 export interface ContentEnrichmentPayload {
   type: 'content_enrichment';
-  enrichment_type: 'policy_quality' | 'checkout_trust' | 'cta_clarity' | 'product_page_quality' | 'pricing_page_framing';
+  enrichment_type: 'policy_quality' | 'checkout_trust' | 'cta_clarity' | 'product_page_quality' | 'pricing_page_framing' | 'ad_message_match';
   source_evidence_key: string;
   source_url: string;
   scores: { clarity_score: number; readability_grade: string };

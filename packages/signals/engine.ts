@@ -4852,6 +4852,42 @@ function extractCopyEnrichmentSignals(
         }));
       }
     }
+
+    // Wave 3.9 C-E: Ad-LP message mismatch
+    if (p.enrichment_type === 'ad_message_match') {
+      const results = (p.results || {}) as {
+        alignment_score?: number;
+        headline_echoes_ad?: boolean;
+        cta_type_matches?: boolean;
+        value_proposition_consistent?: boolean;
+        misleading_claims?: boolean;
+        mismatch_points?: string[];
+        spend_30d?: number;
+        platform?: string;
+        ad_headline?: string;
+      };
+      const alignmentScore = results.alignment_score ?? 100;
+      const spend = results.spend_30d ?? 0;
+
+      if (alignmentScore < 60) {
+        const severity = (alignmentScore < 30 || results.misleading_claims)
+          ? 'high'
+          : alignmentScore < 50
+            ? 'medium'
+            : 'low';
+        signals.push(createSignal({ ids,
+          signal_key: `ad_message_mismatch_detected_${p.source_url}`,
+          category: SignalCategory.Commerce,
+          attribute: 'commerce.ad_message_mismatch',
+          value: severity,
+          numeric_value: Math.round(spend),
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Ad "${(results.ad_headline || '').slice(0, 60)}" (${results.platform || 'unknown'}, $${spend.toFixed(0)}/mo) promises one thing but the landing page at ${p.source_url} delivers another (alignment ${alignmentScore}/100). Mismatches: ${(results.mismatch_points || []).join('; ')}`,
+        }));
+      }
+    }
   }
 }
 

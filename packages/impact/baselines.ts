@@ -1574,6 +1574,14 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.03, max: 0.05 }, medium: { min: 0.02, max: 0.03 }, low: { min: 0.01, max: 0.02 },
     base_metric: 'revenue',
   },
+  ad_creative_message_mismatch: {
+    inference_key: 'ad_creative_message_mismatch',
+    impact_category: 'revenue_loss',
+    cause: 'An ad promises one thing but the landing page delivers another',
+    effect: 'The ad attracted the click with a specific promise but the landing page either does not mention it, contradicts it, or buries it. The disconnect means buyer intent set by the ad is not met by the page content — conversion rate degrades proportionally to the gap and some of the ad spend converts to bounces instead of revenue',
+    high: { min: 0.04, max: 0.07 }, medium: { min: 0.02, max: 0.04 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
   low_repeat_purchase_rate: {
     inference_key: 'low_repeat_purchase_rate',
     impact_category: 'revenue_loss',

@@ -238,6 +238,7 @@ export function computeInferences(
   inferences.push(...inferAdCreativeLandingTrustGap(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferAdCreativeFormFrictionWaste(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferAdCreativeMobileCheckoutDegraded(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAdCreativeMessageMismatch(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferLowRepeatPurchaseRate(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferDeadWeightProducts(byKey, scoping, cycle_ref, ids));
 
@@ -3556,6 +3557,35 @@ function inferAdCreativeMobileCheckoutDegraded(byKey: Map<string, Signal>, scopi
     evidence_refs: sig.evidence_refs,
     reasoning: `$${sig.numeric_value}/month of ad spend sends mobile buyers to a page where the commercial path shows step failures or extended load times. Mobile users who arrive from the ad encounter a degraded experience — CTAs load late, forms fail, or the checkout path stalls. The ad did its job getting the click; the landing page fails to convert it.`,
     reasoning_slots: { severity: sig.value || 'medium' },
+  })];
+}
+
+function inferAdCreativeMessageMismatch(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  // Collect all per-URL mismatch signals
+  const matches: Signal[] = [];
+  for (const [key, sig] of byKey.entries()) {
+    if (key.startsWith('ad_message_mismatch_detected_')) matches.push(sig);
+  }
+  if (matches.length === 0) return [];
+
+  const worst = matches.reduce((a, b) =>
+    (a.numeric_value ?? 0) > (b.numeric_value ?? 0) ? a : b,
+  );
+  const totalSpend = matches.reduce((sum, s) => sum + (s.numeric_value ?? 0), 0);
+  const severity = worst.value || 'medium';
+
+  return [createInference({
+    inference_key: 'ad_creative_message_mismatch',
+    category: InferenceCategory.AdCreativeMessageMismatch,
+    conclusion: 'ad_creative_message_mismatch',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: worst.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: matches.map(s => makeRef('signal', s.id)),
+    evidence_refs: matches.flatMap(s => s.evidence_refs),
+    reasoning: `$${totalSpend}/month of ad spend sends traffic to ${matches.length} page(s) where the ad's promise doesn't match the landing page's content. The ad headline, value proposition, or CTA sets an expectation that the landing page fails to deliver — buyers arrive expecting one thing and find another, driving bounce rates up and conversion rates down.`,
+    reasoning_slots: { severity, totalSpend },
   })];
 }
 

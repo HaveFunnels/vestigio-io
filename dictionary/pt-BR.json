@@ -2760,6 +2760,53 @@
 				"high": "Alto",
 				"very_high": "Muito Alto"
 			},
+			"filters": {
+				"type_all": "Todos os Tipos",
+				"incidents": "Incidentes",
+				"opportunities": "Oportunidades",
+				"verifications": "Verificações",
+				"observations": "Observações",
+				"severity_all": "Severidade",
+				"effort_all": "Esforço",
+				"effort_low": "Rápido (trivial/baixo)",
+				"effort_medium": "Moderado",
+				"effort_high": "Significativo (alto+)"
+			},
+			"pipeline": {
+				"totalExposure": "Exposição Total",
+				"quickWins": "Quick Wins",
+				"inProgress": "Em Andamento",
+				"captured": "Capturado",
+				"combinedExposure": "incidentes + oportunidades",
+				"lowEffortHighImpact": "baixo esforço, alto impacto",
+				"activelyWorking": "em execução",
+				"resolvedOrVerified": "resolvido ou verificado"
+			},
+			"scatter": {
+				"quick_wins": "Quick Wins",
+				"big_bets": "Apostas Altas",
+				"fill_ins": "Complementos",
+				"strategic": "Estratégico",
+				"effort_axis": "Esforço →",
+				"impact_axis": "Impacto Mensal ($)",
+				"toggle_list": "Lista",
+				"toggle_scatter": "Scatter"
+			},
+			"status_buttons": {
+				"accept": "Aceitar",
+				"dismiss_opportunity": "Descartar",
+				"start": "Iniciar Implementação",
+				"back": "Voltar",
+				"verify": "Rodar Verificação",
+				"reopen": "Reabrir"
+			},
+			"hypothesis": {
+				"title": "Hipótese",
+				"upside": "Potencial",
+				"effort": "Esforço",
+				"basis": "Base",
+				"cluster": "Parte do cluster {key} ({count} findings relacionados)"
+			},
 			"resolve": {
 				"fix": "Marcar Resolvido",
 				"verify": "Executar Verificação",

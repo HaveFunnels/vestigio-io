@@ -38,13 +38,7 @@ import type {
 // resolve-path action buttons, and category badges.
 // ──────────────────────────────────────────────
 
-type CategoryTab =
-	| "all"
-	| "incident"
-	| "opportunity"
-	| "verification"
-	| "observation"
-	| "mine";
+type PipelineTab = "pipeline" | "mine";
 
 // Persisted UserAction (chat-Verify flow terminal). Shape mirrors
 // the JSON returned by /api/actions/user — mapped to camelCase
@@ -218,9 +212,12 @@ function ActionsContent({
 	const searchParams = useSearchParams();
 	const [selected, setSelected] = useState<ActionProjection | null>(null);
 	const [selectedUserAction, setSelectedUserAction] = useState<UserActionRow | null>(null);
-	const [activeTab, setActiveTab] = useState<CategoryTab>("all");
+	const [activeTab, setActiveTab] = useState<PipelineTab>("pipeline");
 	const [userActions, setUserActions] = useState<UserActionRow[]>([]);
 	const [mutatingUserActionId, setMutatingUserActionId] = useState<string | null>(null);
+	const [typeFilter, setTypeFilter] = useState<string>("all");
+	const [severityFilter, setSeverityFilter] = useState<string>("all");
+	const [effortFilter, setEffortFilter] = useState<string>("all");
 
 	// Fetch persisted UserActions once on mount. These come from the
 	// chat Verify flow (POST /api/actions/from-finding) and aren't
@@ -407,20 +404,18 @@ function ActionsContent({
 	// drawer button shows a spinner instead of relying on a global state.
 	const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
-	// Category counts
-	const counts = useMemo(() => {
-		const c = { incident: 0, opportunity: 0, verification: 0, observation: 0 };
-		for (const a of actions) {
-			if (a.category in c) c[a.category as keyof typeof c]++;
-		}
-		return c;
-	}, [actions]);
-
-	// Filtered actions based on active tab
+	// Filtered actions based on filter bar (pipeline tab)
 	const filtered = useMemo(() => {
-		if (activeTab === "all") return actions;
-		return actions.filter((a) => a.category === activeTab);
-	}, [actions, activeTab]);
+		let result = actions;
+		if (typeFilter !== "all") result = result.filter(a => a.category === typeFilter);
+		if (severityFilter !== "all") result = result.filter(a => a.severity === severityFilter);
+		if (effortFilter !== "all") {
+			if (effortFilter === "low") result = result.filter(a => a.effort_hint === "trivial" || a.effort_hint === "low");
+			else if (effortFilter === "medium") result = result.filter(a => a.effort_hint === "medium");
+			else if (effortFilter === "high") result = result.filter(a => a.effort_hint === "high" || a.effort_hint === "very_high");
+		}
+		return result;
+	}, [actions, typeFilter, severityFilter, effortFilter]);
 
 	// Total addressable impact
 	const totalImpact = useMemo(() => {
@@ -481,81 +476,74 @@ function ActionsContent({
 		}
 	}
 
-	// Summary cards
+	// Fase 2: Impact-focused summary cards
+	const quickWinsCount = useMemo(() => {
+		return actions.filter(a => (a.effort_hint === "trivial" || a.effort_hint === "low") && (a.impact?.midpoint ?? 0) > 500).length;
+	}, [actions]);
+
+	const inProgressCount = useMemo(() => {
+		return actions.filter(a =>
+			a.operational_status === "accepted" ||
+			a.operational_status === "implemented" ||
+			a.decision_status === "confirmed"
+		).length;
+	}, [actions]);
+
+	const capturedValue = useMemo(() => {
+		const resolved = actions.filter(a =>
+			a.operational_status === "closed" ||
+			a.operational_status === "verified" ||
+			a.operational_status === "archived" ||
+			a.decision_status === "resolved"
+		);
+		return resolved.reduce((sum, a) => sum + (a.impact?.midpoint || 0), 0);
+	}, [actions]);
+
 	const cards: SummaryCard[] = [
 		{
-			label: t("cards.activeIncidents"),
-			value: counts.incident,
-			variant: "warning",
-			subtext:
-				counts.incident > 0
-					? t("cards.requireRemediation")
-					: t("cards.noneDetected"),
-		},
-		{
-			label: t("cards.openOpportunities"),
-			value: counts.opportunity,
-			variant: "success",
-			subtext:
-				counts.opportunity > 0
-					? t("cards.actionableImprovements")
-					: t("cards.noneIdentified"),
-		},
-		{
-			label: t("cards.pendingVerifications"),
-			value: counts.verification,
-			variant: "info",
-			subtext:
-				counts.verification > 0
-					? t("cards.awaitingConfirmation")
-					: t("cards.allVerified"),
-		},
-		{
-			label: t("cards.totalAddressableImpact"),
+			label: t("cards.totalExposure"),
 			value:
 				totalImpact >= 1000
 					? `${formatCurrency(totalImpact)}`
 					: `$${totalImpact}`,
 			variant: "danger",
-			// Negative-number rule: addressable impact = money still on
-			// the table = a loss until the actions ship. SummaryCards
-			// renders this with a leading minus sign and forced red.
 			negative: true,
-			subtext: t("cards.perMonthMidpoint"),
+			subtext: t("cards.combinedExposure"),
+		},
+		{
+			label: t("cards.quickWins"),
+			value: quickWinsCount,
+			variant: "success",
+			subtext: t("cards.lowEffortHighImpact"),
+		},
+		{
+			label: t("cards.inProgress"),
+			value: inProgressCount,
+			variant: "info",
+			subtext: t("cards.activelyWorking"),
+		},
+		{
+			label: t("cards.captured"),
+			value:
+				capturedValue >= 1000
+					? `${formatCurrency(capturedValue)}`
+					: `$${capturedValue}`,
+			variant: "success",
+			subtext: t("cards.resolvedOrVerified"),
 		},
 	];
 
-	// Tab definitions
+	// Tab definitions — Fase 3: 2 tabs + filter bar
 	const tabs: {
-		key: CategoryTab;
+		key: PipelineTab;
 		label: string;
 		count?: number;
 		dotColor?: string;
 	}[] = [
-		{ key: "all", label: t("tabs.all") },
 		{
-			key: "incident",
-			label: t("tabs.incidents"),
-			count: counts.incident,
-			dotColor: "bg-red-500",
-		},
-		{
-			key: "opportunity",
-			label: t("tabs.opportunities"),
-			count: counts.opportunity,
-			dotColor: "bg-emerald-500",
-		},
-		{
-			key: "verification",
-			label: t("tabs.verifications"),
-			count: counts.verification,
-			dotColor: "bg-blue-500",
-		},
-		{
-			key: "observation",
-			label: t("tabs.observations"),
-			count: counts.observation,
-			dotColor: "bg-zinc-500",
+			key: "pipeline",
+			label: t("tabs.pipeline"),
+			count: actions.length,
 		},
 		{
 			key: "mine",
@@ -587,7 +575,12 @@ function ActionsContent({
 			render: (row) => (
 				<div>
 					<div className='text-sm text-content-secondary'>{row.title}</div>
-					{row.root_cause && (
+					{row.uplift_hypothesis && (
+						<div className='mt-0.5 text-xs text-emerald-500/80 line-clamp-1'>
+							{row.uplift_hypothesis}
+						</div>
+					)}
+					{!row.uplift_hypothesis && row.root_cause && (
 						<div className='mt-0.5 text-xs text-content-muted'>
 							{row.root_cause}
 						</div>
@@ -599,7 +592,16 @@ function ActionsContent({
 			key: "category",
 			label: t("columns.category"),
 			className: "w-28",
-			render: (row) => <CategoryBadge category={row.category} />,
+			render: (row) => (
+				<div className="flex items-center gap-1.5">
+					<CategoryBadge category={row.category} />
+					{row.category === 'opportunity' && row.impact?.midpoint && (
+						<span className="text-[10px] font-mono text-emerald-400">
+							+{formatCurrency(row.impact.midpoint)}
+						</span>
+					)}
+				</div>
+			),
 		},
 		{
 			key: "status",
@@ -701,6 +703,32 @@ function ActionsContent({
 					</button>
 				))}
 			</div>
+
+			{/* Fase 3: Filter bar — only visible on pipeline tab */}
+			{activeTab === "pipeline" && (
+				<div className="flex flex-wrap items-center gap-2 mt-3 mb-4">
+					<select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary">
+						<option value="all">{t("filters.type_all")}</option>
+						<option value="incident">{t("filters.incidents")}</option>
+						<option value="opportunity">{t("filters.opportunities")}</option>
+						<option value="verification">{t("filters.verifications")}</option>
+						<option value="observation">{t("filters.observations")}</option>
+					</select>
+					<select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)} className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary">
+						<option value="all">{t("filters.severity_all")}</option>
+						<option value="critical">Critical</option>
+						<option value="high">High</option>
+						<option value="medium">Medium</option>
+						<option value="low">Low</option>
+					</select>
+					<select value={effortFilter} onChange={e => setEffortFilter(e.target.value)} className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary">
+						<option value="all">{t("filters.effort_all")}</option>
+						<option value="low">{t("filters.effort_low")}</option>
+						<option value="medium">{t("filters.effort_medium")}</option>
+						<option value="high">{t("filters.effort_high")}</option>
+					</select>
+				</div>
+			)}
 
 			{/* Data Table — dispatches on active tab. The "mine" tab
 			    renders a distinct table shape for UserActions (chat

@@ -2680,15 +2680,36 @@
 				"total_actions": "Total Actions",
 				"total_impact": "Total Impact Addressable",
 				"cross_pack": "Cross-Pack",
-				"high_severity": "High Severity"
+				"high_severity": "High Severity",
+				"totalExposure": "Total Exposure",
+				"quickWins": "Quick Wins",
+				"inProgress": "In Progress",
+				"captured": "Captured",
+				"combinedExposure": "incidents + opportunities",
+				"lowEffortHighImpact": "low effort, high impact",
+				"activelyWorking": "actively being worked on",
+				"resolvedOrVerified": "resolved or verified"
 			},
 			"tabs": {
 				"all": "All",
+				"pipeline": "Pipeline",
 				"incidents": "Incidents",
 				"opportunities": "Opportunities",
 				"verifications": "Verifications",
 				"observations": "Observations",
-				"mine": "Verified by you"
+				"mine": "My Actions"
+			},
+			"filters": {
+				"type_all": "All Types",
+				"incidents": "Incidents",
+				"opportunities": "Opportunities",
+				"verifications": "Verifications",
+				"observations": "Observations",
+				"severity_all": "Severity",
+				"effort_all": "Effort",
+				"effort_low": "Quick (trivial/low)",
+				"effort_medium": "Moderate",
+				"effort_high": "Significant (high+)"
 			},
 			"columns": {
 				"priority": "#",
@@ -2719,6 +2740,53 @@
 				"medium": "Medium",
 				"high": "High",
 				"very_high": "Very High"
+			},
+			"filters": {
+				"type_all": "All Types",
+				"incidents": "Incidents",
+				"opportunities": "Opportunities",
+				"verifications": "Verifications",
+				"observations": "Observations",
+				"severity_all": "Severity",
+				"effort_all": "Effort",
+				"effort_low": "Quick (trivial/low)",
+				"effort_medium": "Moderate",
+				"effort_high": "Significant (high+)"
+			},
+			"pipeline": {
+				"totalExposure": "Total Exposure",
+				"quickWins": "Quick Wins",
+				"inProgress": "In Progress",
+				"captured": "Captured",
+				"combinedExposure": "incidents + opportunities combined",
+				"lowEffortHighImpact": "low effort, high impact",
+				"activelyWorking": "actively being worked on",
+				"resolvedOrVerified": "resolved or verified"
+			},
+			"scatter": {
+				"quick_wins": "Quick Wins",
+				"big_bets": "Big Bets",
+				"fill_ins": "Fill-ins",
+				"strategic": "Strategic",
+				"effort_axis": "Effort \u2192",
+				"impact_axis": "Monthly Impact ($)",
+				"toggle_list": "List",
+				"toggle_scatter": "Scatter"
+			},
+			"status_buttons": {
+				"accept": "Accept",
+				"dismiss_opportunity": "Dismiss",
+				"start": "Start Implementation",
+				"back": "Back",
+				"verify": "Run Verification",
+				"reopen": "Reopen"
+			},
+			"hypothesis": {
+				"title": "Hypothesis",
+				"upside": "Upside",
+				"effort": "Effort",
+				"basis": "Basis",
+				"cluster": "Part of {key} cluster ({count} related findings)"
 			},
 			"resolve": {
 				"fix": "Mark Resolved",

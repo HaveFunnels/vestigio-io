@@ -2699,15 +2699,36 @@
 				"total_actions": "Total de Ações",
 				"total_impact": "Impacto Mensal Recuperável",
 				"cross_pack": "Entre packs",
-				"high_severity": "Alta Severidade"
+				"high_severity": "Alta Severidade",
+				"totalExposure": "Exposição Total",
+				"quickWins": "Vitórias Rápidas",
+				"inProgress": "Em Progresso",
+				"captured": "Capturado",
+				"combinedExposure": "incidentes + oportunidades",
+				"lowEffortHighImpact": "baixo esforço, alto impacto",
+				"activelyWorking": "em trabalho ativo",
+				"resolvedOrVerified": "resolvido ou verificado"
 			},
 			"tabs": {
 				"all": "Todos",
+				"pipeline": "Pipeline",
 				"incidents": "Incidentes",
 				"opportunities": "Oportunidades",
 				"verifications": "Verificações",
 				"observations": "Observações",
-				"mine": "Verificadas por você"
+				"mine": "Minhas Ações"
+			},
+			"filters": {
+				"type_all": "Todos os Tipos",
+				"incidents": "Incidentes",
+				"opportunities": "Oportunidades",
+				"verifications": "Verificações",
+				"observations": "Observações",
+				"severity_all": "Severidade",
+				"effort_all": "Esforço",
+				"effort_low": "Rápido (trivial/baixo)",
+				"effort_medium": "Moderado",
+				"effort_high": "Significativo (alto+)"
 			},
 			"columns": {
 				"priority": "#",

@@ -279,6 +279,7 @@ model Environment {
   // Wave 0.2: Raw behavioral events from the snippet for this env
   behavioralEvents RawBehavioralEvent[]
   userActions      UserAction[]
+  opportunityTrackings OpportunityTracking[]
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
@@ -1457,4 +1458,25 @@ model ProductEvent {
   @@index([environmentId, createdAt])
   @@index([userId, event])
   @@index([createdAt]) // for 90-day retention pruning
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.12: Opportunity Tracking
+//
+// Persists opportunity status transitions across audit cycles.
+// Without this, projectActions() would reset every opportunity
+// back to 'identified' on each cycle run.
+// ──────────────────────────────────────────────
+model OpportunityTracking {
+  id            String   @id @default(cuid())
+  actionKey     String   // matches ActionProjection.id (opportunity_key)
+  environmentId String
+  status        String   // identified | sized | accepted | implemented | verified | archived
+  updatedAt     DateTime @updatedAt
+  updatedBy     String?  // userId who last changed status
+
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([actionKey, environmentId])
+  @@index([environmentId])
 }

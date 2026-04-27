@@ -289,6 +289,18 @@ export interface ActionProjection {
   verification_maturity: VerificationStage | null;
   /** Phase 1B UX: Suggested resolution path */
   resolve_path: 'fix' | 'verify' | 'track' | 'dismiss' | null;
+
+  // Wave 3.12: Opportunity enrichment
+  /** Hypothesis of what uplift is expected (template-generated) */
+  uplift_hypothesis: string | null;
+  /** 0-100 raw upside score from opportunity engine */
+  upside_score: number | null;
+  /** Data basis for the value case */
+  value_case_basis: 'data_driven' | 'heuristic' | 'mixed' | null;
+  /** Root cause cluster this action belongs to (from OpportunityCompression) */
+  cluster_key: string | null;
+  /** Number of findings sharing the same cluster */
+  cluster_count: number | null;
 }
 
 export type WorkspaceProjectionType =

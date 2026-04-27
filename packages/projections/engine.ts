@@ -991,13 +991,34 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
     domainActionByRef.set(makeRef('action', da.id), da);
   }
 
-  // Phase 1B: Build opportunity lookup by decision_ref for operational_status
-  const opportunityByDecisionRef = new Map<string, string>();
+  // Phase 1B + Wave 3.12: Build opportunity lookup by decision_ref
+  const opportunityByDecisionRef = new Map<string, {
+    status: string;
+    uplift_hypothesis: string;
+    upside_score: number;
+    value_case_basis: string | null;
+  }>();
   if (result.opportunities?.opportunities) {
     for (const opp of result.opportunities.opportunities) {
       for (const dref of opp.decision_refs) {
-        opportunityByDecisionRef.set(dref, opp.status);
+        opportunityByDecisionRef.set(dref, {
+          status: opp.status,
+          uplift_hypothesis: opp.uplift_hypothesis,
+          upside_score: opp.raw_upside_score,
+          value_case_basis: opp.value_case?.basis_type ?? null,
+        });
       }
+    }
+  }
+
+  // Wave 3.12: Build cluster lookup from OpportunityCompression
+  const clusterByRootCauseKey = new Map<string, { key: string; count: number }>();
+  if (result.composites?.opportunity_compression?.clusters) {
+    for (const cluster of result.composites.opportunity_compression.clusters) {
+      clusterByRootCauseKey.set(cluster.root_cause_key, {
+        key: cluster.root_cause_key,
+        count: cluster.finding_count,
+      });
     }
   }
 
@@ -1090,6 +1111,10 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       change_class: changeClass,
       verification_maturity: verificationMaturity,
       resolve_path: resolvePath,
+      // Wave 3.12: Opportunity enrichment
+      ...resolveOpportunityData(action.source_decisions, category, opportunityByDecisionRef),
+      cluster_key: rc ? (clusterByRootCauseKey.has(rc.root_cause_key) ? rc.root_cause_key : null) : null,
+      cluster_count: rc ? (clusterByRootCauseKey.get(rc.root_cause_key)?.count ?? null) : null,
     };
   });
 
@@ -1136,18 +1161,33 @@ function resolveDecisionStatus(
 function resolveOperationalStatus(
   sourceDecisions: string[],
   category: ActionProjection['category'],
-  opportunityByDecisionRef: Map<string, string>,
+  opportunityByDecisionRef: Map<string, { status: string; uplift_hypothesis: string; upside_score: number; value_case_basis: string | null }>,
 ): string | null {
   // For opportunity actions, look up matching opportunity status
   if (category === 'opportunity') {
     for (const ref of sourceDecisions) {
-      const status = opportunityByDecisionRef.get(ref);
-      if (status) return status;
+      const opp = opportunityByDecisionRef.get(ref);
+      if (opp) return opp.status;
     }
   }
-  // For incidents, we would look up matching incident status, but incidents
-  // are not yet part of MultiPackResult. Return null safely.
   return null;
+}
+
+function resolveOpportunityData(
+  sourceDecisions: string[],
+  category: ActionProjection['category'],
+  opportunityByDecisionRef: Map<string, { status: string; uplift_hypothesis: string; upside_score: number; value_case_basis: string | null }>,
+): { uplift_hypothesis: string | null; upside_score: number | null; value_case_basis: 'data_driven' | 'heuristic' | 'mixed' | null } {
+  if (category !== 'opportunity') return { uplift_hypothesis: null, upside_score: null, value_case_basis: null };
+  for (const ref of sourceDecisions) {
+    const opp = opportunityByDecisionRef.get(ref);
+    if (opp) return {
+      uplift_hypothesis: opp.uplift_hypothesis,
+      upside_score: opp.upside_score,
+      value_case_basis: (opp.value_case_basis as any) || null,
+    };
+  }
+  return { uplift_hypothesis: null, upside_score: null, value_case_basis: null };
 }
 
 function resolveEffortHint(

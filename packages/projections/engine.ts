@@ -1064,6 +1064,16 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
     // Phase 1B: Derive resolve_path
     const resolvePath = deriveResolvePath(category, verificationMaturity, decisionStatus);
 
+    // Wave 3.12: Auto-verify opportunities on improvement. When the engine
+    // detects an improvement on a finding linked to an opportunity that's
+    // been marked as 'implemented', auto-advance to 'verified'.
+    const finalOperationalStatus =
+      category === 'opportunity' &&
+      changeClass === 'improvement' &&
+      operationalStatus === 'implemented'
+        ? 'verified'
+        : operationalStatus;
+
     return {
       id: action.action_key,
       title: action.title,
@@ -1078,7 +1088,7 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       severity: action.severity,
       action_type: action.action_type,
       category,
-      operational_status: operationalStatus,
+      operational_status: finalOperationalStatus,
       decision_status: decisionStatus,
       effort_hint: effortHint,
       // Phase 2.5: prefer the GlobalAction's carried-through fields

@@ -7,6 +7,7 @@ import { useTrack } from "@/hooks/useProductTrack";
 import { useCopilot } from "@/components/app/CopilotProvider";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
+import ScatterPlot from "@/components/console/actions/ScatterPlot";
 import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import VerificationBadge from "@/components/console/VerificationBadge";
@@ -215,6 +216,7 @@ function ActionsContent({
 	const [activeTab, setActiveTab] = useState<PipelineTab>("pipeline");
 	const [userActions, setUserActions] = useState<UserActionRow[]>([]);
 	const [mutatingUserActionId, setMutatingUserActionId] = useState<string | null>(null);
+	const [viewMode, setViewMode] = useState<"list" | "scatter">("list");
 	const [typeFilter, setTypeFilter] = useState<string>("all");
 	const [severityFilter, setSeverityFilter] = useState<string>("all");
 	const [effortFilter, setEffortFilter] = useState<string>("all");
@@ -727,6 +729,24 @@ function ActionsContent({
 						<option value="medium">{t("filters.effort_medium")}</option>
 						<option value="high">{t("filters.effort_high")}</option>
 					</select>
+
+					{/* View toggle: list / scatter */}
+					<div className="ml-auto flex rounded-lg border border-edge overflow-hidden">
+						<button
+							type="button"
+							onClick={() => setViewMode("list")}
+							className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-surface-card-hover text-content" : "text-content-faint hover:text-content-secondary"}`}
+						>
+							{t("scatter.toggle_list")}
+						</button>
+						<button
+							type="button"
+							onClick={() => setViewMode("scatter")}
+							className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "scatter" ? "bg-surface-card-hover text-content" : "text-content-faint hover:text-content-secondary"}`}
+						>
+							{t("scatter.toggle_scatter")}
+						</button>
+					</div>
 				</div>
 			)}
 
@@ -739,6 +759,11 @@ function ActionsContent({
 				<UserActionsTable
 					actions={userActions}
 					onRowClick={(row) => setSelectedUserAction(row)}
+				/>
+			) : viewMode === "scatter" ? (
+				<ScatterPlot
+					actions={filtered}
+					onSelect={(row) => { setSelected(row); track("drawer_open", { entity_type: "action", entity_id: row.id }); }}
 				/>
 			) : (
 				<DataTable
@@ -1193,6 +1218,34 @@ function ActionDrawerContent({
 					)}
 				</div>
 			</section>
+
+			{/* Wave 3.12: Hypothesis card for opportunities */}
+			{action.category === "opportunity" && action.uplift_hypothesis && (
+				<section className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+					<h4 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+						{t("hypothesis.title")}
+					</h4>
+					<p className="text-xs leading-relaxed text-content-secondary">
+						{action.uplift_hypothesis}
+					</p>
+					<div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-content-faint">
+						{action.upside_score != null && (
+							<span>{t("hypothesis.upside")}: <strong className="text-emerald-400">{action.upside_score}/100</strong></span>
+						)}
+						{action.effort_hint && (
+							<span>{t("hypothesis.effort")}: <strong>{action.effort_hint}</strong></span>
+						)}
+						{action.value_case_basis && (
+							<span>{t("hypothesis.basis")}: <strong>{action.value_case_basis.replace(/_/g, " ")}</strong></span>
+						)}
+					</div>
+					{action.cluster_key && action.cluster_count && (
+						<p className="mt-2 text-[10px] text-content-faint">
+							{t("hypothesis.cluster", { key: action.cluster_key.replace(/_/g, " "), count: action.cluster_count })}
+						</p>
+					)}
+				</section>
+			)}
 
 			{/* Impact Breakdown — accent + colored shadow scaled to severity */}
 			{action.impact && (

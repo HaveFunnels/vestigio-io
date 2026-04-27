@@ -1960,65 +1960,65 @@
 				"baselineImpact": "Baseline",
 				"created": "Erstellt"
 			},
-			“mineEmpty”: {
-				“title”: “Du hast noch keine Befunde verifiziert.”,
-				“description”: “Klicke bei einem Befund auf „Verify”, um einen geführten Plan durchzugehen und die Remediation hier zu verfolgen.”
+			"mineEmpty": {
+				"title": "Du hast noch keine Befunde verifiziert.",
+				"description": "Klicke bei einem Befund auf „Verify“, um einen geführten Plan durchzugehen und die Remediation hier zu verfolgen."
 			},
-			“effort”: {
-				“trivial”: “Trivial”,
-				“low”: “Gering”,
-				“medium”: “Mittel”,
-				“high”: “Hoch”,
-				“very_high”: “Sehr Hoch”
+			"effort": {
+				"trivial": "Trivial",
+				"low": "Gering",
+				"medium": "Mittel",
+				"high": "Hoch",
+				"very_high": "Sehr Hoch"
 			},
-			“filters”: {
-				“type_all”: “Alle Typen”,
-				“incidents”: “Vorfälle”,
-				“opportunities”: “Chancen”,
-				“verifications”: “Verifizierungen”,
-				“observations”: “Beobachtungen”,
-				“severity_all”: “Schweregrad”,
-				“effort_all”: “Aufwand”,
-				“effort_low”: “Schnell (trivial/gering)”,
-				“effort_medium”: “Moderat”,
-				“effort_high”: “Erheblich (hoch+)”
+			"filters": {
+				"type_all": "Alle Typen",
+				"incidents": "Vorfälle",
+				"opportunities": "Chancen",
+				"verifications": "Verifizierungen",
+				"observations": "Beobachtungen",
+				"severity_all": "Schweregrad",
+				"effort_all": "Aufwand",
+				"effort_low": "Schnell (trivial/gering)",
+				"effort_medium": "Moderat",
+				"effort_high": "Erheblich (hoch+)"
 			},
-			“pipeline”: {
-				“totalExposure”: “Gesamtexposition”,
-				“quickWins”: “Quick Wins”,
-				“inProgress”: “In Bearbeitung”,
-				“captured”: “Erfasst”,
-				“combinedExposure”: “Vorfälle + Chancen”,
-				“lowEffortHighImpact”: “geringer Aufwand, hoher Impact”,
-				“activelyWorking”: “wird aktiv bearbeitet”,
-				“resolvedOrVerified”: “gelöst oder verifiziert”
+			"pipeline": {
+				"totalExposure": "Gesamtexposition",
+				"quickWins": "Quick Wins",
+				"inProgress": "In Bearbeitung",
+				"captured": "Erfasst",
+				"combinedExposure": "Vorfälle + Chancen",
+				"lowEffortHighImpact": "geringer Aufwand, hoher Impact",
+				"activelyWorking": "wird aktiv bearbeitet",
+				"resolvedOrVerified": "gelöst oder verifiziert"
 			},
-			“scatter”: {
-				“quick_wins”: “Quick Wins”,
-				“big_bets”: “Große Wetten”,
-				“fill_ins”: “Ergänzungen”,
-				“strategic”: “Strategisch”,
-				“effort_axis”: “Aufwand →”,
-				“impact_axis”: “Monatlicher Impact ($)”,
-				“toggle_list”: “Liste”,
-				“toggle_scatter”: “Scatter”
+			"scatter": {
+				"quick_wins": "Quick Wins",
+				"big_bets": "Große Wetten",
+				"fill_ins": "Ergänzungen",
+				"strategic": "Strategisch",
+				"effort_axis": "Aufwand →",
+				"impact_axis": "Monatlicher Impact ($)",
+				"toggle_list": "Liste",
+				"toggle_scatter": "Scatter"
 			},
-			“status_buttons”: {
-				“accept”: “Akzeptieren”,
-				“dismiss_opportunity”: “Verwerfen”,
-				“start”: “Implementierung starten”,
-				“back”: “Zurück”,
-				“verify”: “Verifizierung starten”,
-				“reopen”: “Wieder öffnen”
+			"status_buttons": {
+				"accept": "Akzeptieren",
+				"dismiss_opportunity": "Verwerfen",
+				"start": "Implementierung starten",
+				"back": "Zurück",
+				"verify": "Verifizierung starten",
+				"reopen": "Wieder öffnen"
 			},
-			“hypothesis”: {
-				“title”: “Hypothese”,
-				“upside”: “Potenzial”,
-				“effort”: “Aufwand”,
-				“basis”: “Grundlage”,
-				“cluster”: “Teil des {key}-Clusters ({count} verwandte Befunde)”
+			"hypothesis": {
+				"title": "Hypothese",
+				"upside": "Potenzial",
+				"effort": "Aufwand",
+				"basis": "Grundlage",
+				"cluster": "Teil des {key}-Clusters ({count} verwandte Befunde)"
 			},
-			“resolve”: {
+			"resolve": {
 				"fix": "Als Gelöst markieren",
 				"verify": "Verifizierung Starten",
 				"track": "Fortschritt verfolgen"

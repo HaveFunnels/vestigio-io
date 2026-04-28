@@ -68,18 +68,23 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 
 	return (
 		<div className='mx-auto mb-8 w-full max-w-[900px] text-left sm:mb-10'>
-			{/* Hint — click instruction */}
-			<div className='mb-2.5 flex items-center justify-center gap-1.5'>
+			{/* Hint — click instruction + curved arrow */}
+			<div className='relative mb-2.5 flex items-center justify-center'>
 				<span className='inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1 text-[11px] text-emerald-300/80'>
 					<svg className='h-3.5 w-3.5' viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.4' strokeLinecap='round' strokeLinejoin='round'>
-						<path d='M10 2v3M10 15v3M5 10H2M18 10h-3' />
-						<circle cx='10' cy='10' r='3' />
-						<path d='M14 14l1.5 1.5' />
+						<path d='M7.5 2.5L10 7l2-1.5L10 1 7.5 2.5z' fill='currentColor' stroke='none' />
+						<path d='M10 7v2a3 3 0 003 3h2' />
+						<path d='M6 11a5 5 0 005 5' />
 					</svg>
 					Clique nas opções que fazem sentido para você
 				</span>
+				{/* Curved arrow pointing down-left */}
+				<svg className='absolute -bottom-4 left-[calc(50%-80px)] h-5 w-8 text-emerald-400/50' viewBox='0 0 32 20' fill='none'>
+					<path d='M28 2 C24 2, 8 2, 6 12 C5 16, 4 18, 4 18' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' fill='none' />
+					<path d='M2 15 L4 19 L7 16' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' fill='none' />
+				</svg>
 			</div>
-			<div className='grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-4'>
+			<div className='mt-2 grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-4'>
 			{pills.map((pill, i) => {
 				const isOn = selected.has(i);
 

@@ -56,7 +56,7 @@ type StageId = "discover" | "classify" | "analyze" | "enrich" | "compute";
 
 interface Stage {
 	id: StageId;
-	icon: React.ComponentType<{ size?: number; weight?: string; className?: string }>;
+	icon: React.ComponentType<{ size?: number; weight?: "thin" | "light" | "regular" | "bold" | "fill" | "duotone"; className?: string }>;
 }
 
 const STAGES: Stage[] = [

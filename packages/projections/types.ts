@@ -540,6 +540,7 @@ export interface EngineTranslations {
      * to the hardcoded English text when missing.
      */
     security_posture?: Record<string, string>;
+    copy_alignment?: Record<string, string>;
   };
   summaries: Record<string, string>;
   confidence_narrative: Record<string, string>;

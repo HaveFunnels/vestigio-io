@@ -67,7 +67,19 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 	};
 
 	return (
-		<div className='mx-auto mb-8 grid w-full max-w-[900px] grid-cols-2 gap-2 text-left sm:mb-10 sm:gap-2.5 lg:grid-cols-4'>
+		<div className='mx-auto mb-8 w-full max-w-[900px] text-left sm:mb-10'>
+			{/* Hint — click instruction */}
+			<div className='mb-2.5 flex items-center justify-center gap-1.5'>
+				<span className='inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1 text-[11px] text-emerald-300/80'>
+					<svg className='h-3.5 w-3.5' viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.4' strokeLinecap='round' strokeLinejoin='round'>
+						<path d='M10 2v3M10 15v3M5 10H2M18 10h-3' />
+						<circle cx='10' cy='10' r='3' />
+						<path d='M14 14l1.5 1.5' />
+					</svg>
+					Clique nas opções que fazem sentido para você
+				</span>
+			</div>
+			<div className='grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-4'>
 			{pills.map((pill, i) => {
 				const isOn = selected.has(i);
 
@@ -151,6 +163,7 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 					</button>
 				);
 			})}
+			</div>
 		</div>
 	);
 }

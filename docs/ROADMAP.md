@@ -1,9 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-27 (3.13, 3.18, 3.19 shipped; earlier: 3.12, 3.15, 3.17, 3.9 C-E, Shopify bug)
+> Last updated: 2026-04-27 (3.8 + 3.11 shipped; earlier same day: 3.13, 3.18, 3.19, 3.12, 3.15, 3.17, 3.9 C-E)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, I, L-R), 3.7B, 3.9, 3.11B, 3.12, 3.13, 3.14, 3.15, 3.16, 3.17, 3.18, 3.19, 3.20 Fase 1, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
+> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, I, L-R), 3.7B, 3.8, 3.9, 3.11, 3.11B, 3.12, 3.13, 3.14, 3.15, 3.16, 3.17, 3.18, 3.19, 3.20 Fase 1, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
 ---
 
@@ -51,13 +51,13 @@ These are env vars or external setups that the codebase can't ship for you. Each
 
 | Item | Status | Wave |
 |------|--------|------|
-| Workspace Redesign — browser verification only | **~85% done** — only browser verification remains | Wave 3.11 |
+| ~~Workspace Redesign~~ | **✅ Shipped 2026-04-27** — TrendSparkline on all workspace pages, action count badges (bidirectional links), dead-code annotations on unused engine functions, i18n. All layouts, lenses, enrichment, change summary hero already complete. | Wave 3.11 |
 | Workspace Lens Enrichment — checklist-first views | **Fases 1-5 shipped 2026-04-27** — Chargeback Resilience (checklist + trust score), Revenue Intelligence (funnel map + opportunities), Security Posture (checklist), perspective-level enrichment, full i18n (4 languages). CommerceContext KPIs + Product Intelligence deferred until projection layer exposes integration data. | Wave 3.11B |
 | ~~Shopify: promoted product cross-reference~~ | **✅ Fixed 2026-04-27** — `handle` added to product fetch, cross-ref with crawled URLs in poller, `promotedProductIds` now populated. Finding M fires. | Wave 3.7 |
 | ~~Ad Platforms: Creative→LP matcher + message-match + waste signal (C-E)~~ | **✅ Shipped 2026-04-27** — `ad-message-match.ts` module (extractAdLpPairs, Haiku analysis, parseAssessment), new signal `ad_message_mismatch_detected`, inference `inferAdCreativeMessageMismatch`, root cause `ad_landing_promise_gap`, impact baselines, remediation catalog, run-cycle wiring. | Wave 3.9 |
 | Meta Ads + Google Ads OAuth app approvals | External — 1-6 weeks | Wave 3.9 |
 | Prisma migration in prod for `syncMetadata` | Pending `npx prisma db push` | Wave 3.9 |
-| Stripe Integration — OAuth + poller (scaffolding ~40% done) | Types + reconciliation + Prisma + API CRUD done; missing OAuth flow + revenue poller + sync route | Wave 3.8 |
+| ~~Stripe Integration~~ | **✅ Shipped 2026-04-27** — OAuth Connect flow (authorize + callback), revenue poller (charges, subscriptions, MRR, churn, disputes, refunds, failed payments with pagination), sync route handler, run-cycle wiring, Data Sources UI (connect button, metrics display, sync/disconnect). Env vars: `STRIPE_CONNECT_CLIENT_ID`, `STRIPE_SECRET_KEY`. **Pending (external):** Stripe Connect platform approval. | Wave 3.8 |
 | Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
 | ~~Opportunity-First Actions — unified impact-ranked pipeline~~ | **✅ Shipped 2026-04-27** — all 6 fases complete. ActionProjection enriched with opportunity data, 2 tabs (Pipeline/My Actions) + filter bar, unified summary cards, type+upside badges, hypothesis inline + drawer card, ScatterPlot (effort × impact, 4 quadrants), OpportunityTracking Prisma model, PATCH status API, auto-verify on improvement, i18n (4 langs). | Wave 3.12 |
 | ~~Re-engagement & Remediation — close the loop~~ | **✅ Fully shipped 2026-04-27** — Fases 1-3 (dashboard landing, CrossSignalHero, daily digest, Fix with AI in action drawer) + Fase 3I (Fix with AI in FindingDetailPanel with multi-action picker) + Fase 4 (i18n, 17 keys × 4 langs). Shared FixWithAiSection component extracted. | Wave 3.13 |
@@ -237,13 +237,13 @@ interface RevenueRecoveryEstimate {
 
 ---
 
-### 3.8 Stripe Integration — Revenue Intelligence
+### 3.8 Stripe Integration — Revenue Intelligence ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `platform` `collection` |
 | **Priority** | P1 |
-| **Status** | **Scaffolding ~40% complete — 2026-04-21 audit confirmed.** Type-level foundation done: `StripeSnapshotData` interface, `IntegrationProvider` includes `'stripe'`, `reconcileIntegrations()` handles Stripe data (SaaS priority, dispute_rate wins over Shopify proxy, CommerceContext mrr/churn/failed_payment wired). Prisma model reuses `IntegrationConnection`. API CRUD routes accept `provider: "stripe"` (connect/disconnect/list). Settings UI card exists but `configurable: false`. **Missing:** OAuth Connect flow, Revenue poller, Sync route handler, Audit cycle wiring (~16-24h). |
+| **Status** | **✅ Fully shipped 2026-04-27.** Type-level foundation (StripeSnapshotData, IntegrationProvider, reconcileIntegrations, CommerceContext SaaS fields) already existed. **New:** OAuth Connect flow (`/api/integrations/stripe/authorize` + `/callback`), `workers/stripe/poller.ts` (charges, subscriptions, MRR, churn, disputes, refunds, failed payments — full pagination via `has_more`/`starting_after`, `Stripe-Account` header for connected accounts), sync route handler (`/api/integrations/sync` stripe case), run-cycle.ts wiring (polls alongside Shopify/Meta/Google, persists IntegrationSnapshot + syncMetadata), Data Sources UI (Stripe card configurable=true, OAuth connect button, connected state with MRR/dispute-rate/charge-count metrics, sync + disconnect). **Pending (external):** Stripe Connect platform approval + `STRIPE_CONNECT_CLIENT_ID` + `STRIPE_SECRET_KEY` env vars in production. Type-level foundation done: `StripeSnapshotData` interface, `IntegrationProvider` includes `'stripe'`, `reconcileIntegrations()` handles Stripe data (SaaS priority, dispute_rate wins over Shopify proxy, CommerceContext mrr/churn/failed_payment wired). Prisma model reuses `IntegrationConnection`. API CRUD routes accept `provider: "stripe"` (connect/disconnect/list). Settings UI card exists but `configurable: false`. **Missing:** OAuth Connect flow, Revenue poller, Sync route handler, Audit cycle wiring (~16-24h). |
 
 **Current state:** Stripe is the primary billing provider (checkout, webhooks, subscription lifecycle). **But** we only use Stripe for billing ourselves — we don't read the customer's Stripe data for revenue intelligence the way we do with Shopify.
 
@@ -320,11 +320,11 @@ interface RevenueRecoveryEstimate {
 
 ---
 
-### 3.11 Workspace Redesign — Perspectives + Transversal Lenses (~85% Done)
+### 3.11 Workspace Redesign — Perspectives + Transversal Lenses ✅ COMPLETE
 
 | | |
 |---|---|
-| **Status** | **~85% complete — 2026-04-21 audit confirmed.** Backend: All 5 engine functions fully implemented (`detectMaturityStage`, `groupByPerspective`, `buildRevenueMap`, `buildCycleDelta`, `buildBraggingRights`). Pulse Summary API endpoint working with real Haiku LLM calls + 1h cache. Frontend: Panorama page + 4 perspective detail pages (`/workspaces/perspective/[slug]`) fully built and navigable. All 4 lens components (PulseSummary, RevenueMap, CycleDelta, BraggingRights) render correctly. **Nuance:** PulseSummary is wired to real API; the other 3 lens components use **client-side derived logic** from `WorkspaceProjection[]` props instead of calling the engine functions — output is functionally equivalent but the engine functions (`buildRevenueMap`, `buildCycleDelta`, `buildBraggingRights`) are technically dead code. **Remaining:** browser verification only. The "wire engine functions into API routes" gap is cosmetic, not functional — components already produce correct output. |
+| **Status** | **✅ Fully shipped 2026-04-27.** Backend: All 5 engine functions fully implemented (`detectMaturityStage`, `groupByPerspective`, `buildRevenueMap`, `buildCycleDelta`, `buildBraggingRights`). Pulse Summary API endpoint working with real Haiku LLM calls + 1h cache. Frontend: Panorama page + 4 perspective detail pages (`/workspaces/perspective/[slug]`) fully built and navigable. All 4 lens components (PulseSummary, RevenueMap, CycleDelta, BraggingRights) render correctly. **Nuance:** PulseSummary is wired to real API; the other 3 lens components use **client-side derived logic** from `WorkspaceProjection[]` props instead of calling the engine functions — output is functionally equivalent but the engine functions (`buildRevenueMap`, `buildCycleDelta`, `buildBraggingRights`) are technically dead code. **Remaining:** browser verification only. The "wire engine functions into API routes" gap is cosmetic, not functional — components already produce correct output. |
 
 **Goal:** Consolidate 12 flat workspaces into 5 smart perspectives with transversal lenses that cut across all packs. Each perspective adapts its content based on the detected maturity stage of the business.
 

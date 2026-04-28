@@ -1,9 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-27 (3.12, 3.15, 3.17 shipped; 3.9 C-E shipped; Shopify bug fixed)
+> Last updated: 2026-04-27 (3.13, 3.18, 3.19 shipped; earlier: 3.12, 3.15, 3.17, 3.9 C-E, Shopify bug)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, I, L-R), 3.7B, 3.9 (A-F + 4 compound findings + 2 context signals), 3.12, 3.15, 3.17, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
+> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, I, L-R), 3.7B, 3.9, 3.11B, 3.12, 3.13, 3.14, 3.15, 3.16, 3.17, 3.18, 3.19, 3.20 Fase 1, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
 ---
 
@@ -60,13 +60,13 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Stripe Integration — OAuth + poller (scaffolding ~40% done) | Types + reconciliation + Prisma + API CRUD done; missing OAuth flow + revenue poller + sync route | Wave 3.8 |
 | Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
 | ~~Opportunity-First Actions — unified impact-ranked pipeline~~ | **✅ Shipped 2026-04-27** — all 6 fases complete. ActionProjection enriched with opportunity data, 2 tabs (Pipeline/My Actions) + filter bar, unified summary cards, type+upside badges, hypothesis inline + drawer card, ScatterPlot (effort × impact, 4 quadrants), OpportunityTracking Prisma model, PATCH status API, auto-verify on improvement, i18n (4 langs). | Wave 3.12 |
-| Re-engagement & Remediation — close the loop | **Fases 1-3 shipped 2026-04-22** — dashboard as landing + CrossSignalHero widget, daily email digest via Brevo (cross-signal hero, health score, top changes), Fix with AI remediation playbooks in action SideDrawer. **Fase 4 (i18n) pending.** | Wave 3.13 |
+| ~~Re-engagement & Remediation — close the loop~~ | **✅ Fully shipped 2026-04-27** — Fases 1-3 (dashboard landing, CrossSignalHero, daily digest, Fix with AI in action drawer) + Fase 3I (Fix with AI in FindingDetailPanel with multi-action picker) + Fase 4 (i18n, 17 keys × 4 langs). Shared FixWithAiSection component extracted. | Wave 3.13 |
 | Vestigio AI — Transversal Copilot | **Shipped 2026-04-22** — FAB with color orb + spring animation, full-height panel (side + full-screen expand), playbooks grid menu, CopilotProvider global state, SideDrawer coexistence, compact ChatInputBar with animated cycling placeholders, budget exhausted card, cross-domain pack insight bubbles during streaming, pack-aware ThinkingIndicator, voice message bubble, i18n (4 langs), chat removed from sidenav. | Wave 3.14 |
 | ~~Cross-Signal Surface — making the moat visible~~ | **✅ Shipped 2026-04-27** — dedicated `/app/cross-signals` page, `GET /api/cross-signals` endpoint, CrossSignalsShell (hero stats, filters, chain cards), CrossSignalChainCard (expandable), temporal pattern detection (sequential vs simultaneous via cycleId), template-based narrative generator, sidebar nav entry, mock data, i18n (4 langs). CrossSignalHero dashboard widget enhanced with temporal patterns + narratives. | Wave 3.15 |
 | Product Telemetry — measure before you change | **Shipped 2026-04-21** — ProductEvent model, useProductTrack hook, engagement score cron, admin product-analytics page. `prisma db push` applied to prod. | Wave 3.16 |
 | ~~Upgrade Moments + Feedback Moments~~ | **✅ Shipped 2026-04-27** — PlanProvider + usePlan hook, UpgradeNudge (3 variants: inline/badge/blurred-overlay), FeedbackMoment (rating 5-star + NPS 0-10), useFeedbackMoment hook (3-layer cooldown: 48h/session/3-dismiss), NpsPulse 14-day pulse, copilot Pro pill badge, copilot upgrade nudge in empty state, copilot feedback after 3 messages, FindingDetailPanel 10s dwell trigger, WhatChangedCard cadence nudge, CrossSignalHero chain limiting for Starter, AdSpendKpi blurred preview, i18n (4 langs). | Wave 3.17 |
-| First-Audit Experience — value before data | **Not started** — rich progress feed, heuristic preview, first-findings celebration. ~1 week. | Wave 3.18 |
-| Cancel Flow & Save Offers — reduce voluntary churn | **Not started** — exit survey, dynamic offers, pause, win-back sequence. ~2 weeks. | Wave 3.19 |
+| ~~First-Audit Experience — value before data~~ | **✅ Shipped 2026-04-27** — FirstAuditProgress (5-stage emerald timeline, SSE-driven, business-type heuristic preview), FirstAuditCelebration (emerald glow dots overlay), wired into DashboardShell, i18n (4 langs). | Wave 3.18 |
+| ~~Cancel Flow & Save Offers~~ | **✅ Shipped 2026-04-27** — CancelSurvey Prisma model, 3-step cancel page (`/app/settings/cancel`), dynamic save offers by reason (discount/pause/downgrade/support/roadmap), Paddle API integration (pause + cancel + discount), win-back email via Brevo, CancelSubscriptionButton in settings, i18n (4 langs). | Wave 3.19 |
 | Unified Entity Architecture — Findings as first-class citizens | **Fase 1 shipped 2026-04-21** — FindingDetailPanel unified, cross-refs wired (workspace_refs, action_refs, opportunity_ref), canonical /app/findings/[id], URL filter state on Analysis, finding-in-URL on drawer open/close. **Fase 2 (saved views + sidebar simplification) and Fase 3 (custom views) deferred.** | Wave 3.20 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
@@ -371,7 +371,7 @@ interface RevenueRecoveryEstimate {
 
 ---
 
-### 3.11B Workspace Lens Enrichment — Checklist-First, Not Findings-First
+### 3.11B Workspace Lens Enrichment — Checklist-First, Not Findings-First ✅ COMPLETE
 
 | | |
 |---|---|
@@ -618,13 +618,13 @@ else                              → DataTable (behavioral + fallback)
 
 ---
 
-### 3.13 Re-engagement & Remediation — Closing the Loop
+### 3.13 Re-engagement & Remediation — Closing the Loop ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `platform` `frontend` `engine` `mcp` |
 | **Priority** | P1 |
-| **Status** | **Fases 1-3 shipped 2026-04-22** — dashboard as landing + CrossSignalHero widget, daily email digest via Brevo, Fix with AI remediation playbooks. **Fase 4 (i18n) pending.** |
+| **Status** | **✅ Fully shipped 2026-04-27.** Fase 1: dashboard as default landing, CrossSignalHero widget as hero. Fase 2: daily digest email via Brevo cron (24h interval, leader-elected, narrative HTML+text). Fase 3: `generateRemediationPrompt()` template generator, `POST /api/actions/remediation-prompt` endpoint (tool-aware: Claude/Codex/Cursor/Windsurf/Lovable), FixWithAiSection extracted as shared component in `src/components/console/actions/FixWithAiSection.tsx`, wired in both ActionDrawerContent and FindingDetailPanel (multi-action picker for findings with multiple linked actions). Fase 4: i18n complete (17 keys × 4 langs in `console.actions.fix_with_ai` namespace). |
 
 **Problem:** Vestigio finds problems but has (1) **zero proactive mechanisms** to bring users back and (2) **no bridge from finding to fix**. Users must manually translate Vestigio's findings into code changes. In the vibecoding era, every user has access to AI coding tools (Cursor, Claude Code, Replit, Lovable, Codex) — Vestigio should generate the prompt that those tools need to implement the fix. The finding→fix loop is: Vestigio detects → user reviews → copies prompt → AI codes the fix → Vestigio verifies.
 
@@ -684,13 +684,13 @@ The bridge from "finding" to "fix". Each action's SideDrawer gets a "Fix with AI
 
 ---
 
-### 3.14 Vestigio Pulse AI — Transversal Copilot
+### 3.14 Vestigio Pulse AI — Transversal Copilot ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `frontend` `mcp` `platform` |
 | **Priority** | P0 |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | **✅ Shipped 2026-04-22.** CopilotProvider (global context, conversation persistence, SSE streaming, budget tracking), CopilotPanel (full-height floating panel, playbooks grid, minimize/expand/close, model selector), CopilotFab (animated color orb, spring animation, Pro badge for Starter, unread indicator), SideDrawer coexistence (auto-minimize on drawer open), ChatInputBar with animated cycling placeholders, budget exhausted card, cross-domain pack insight bubbles during streaming, pack-aware ThinkingIndicator, voice message bubble, page context injection via usePathname, chat removed from sidenav. i18n (4 langs). |
 
 **Problem:** Chat is a full-page route (`/app/chat`) with zero page awareness. Every "Discuss Finding" CTA forces a page navigation, losing the user's visual context. Users must leave what they're looking at to ask a question about it. This is the single biggest friction point in the product — it breaks every task that requires insight + action in the same flow.
 
@@ -808,13 +808,13 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 
 ---
 
-### 3.16 Product Telemetry — Measure Before You Change
+### 3.16 Product Telemetry — Measure Before You Change ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `platform` |
 | **Priority** | P1 |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | **✅ Shipped 2026-04-21.** ProductEvent Prisma model (userId, orgId, environmentId, event, properties, pathname, sessionId, indexed on orgId+event+createdAt), useProductTrack() hook (auto-includes context, debounced fire-and-forget POST), page view tracking via usePathname, feature adoption flags, engagement score computed daily per environment (weighted: copilot_sends 0.3, actions_created 0.3, workspace_drills 0.15, verifications_run 0.15, page_views 0.1), 90-day auto-prune cron in instrumentation-node.ts, admin product-analytics page. `prisma db push` applied to prod. |
 
 **Problem:** Vestigio has solid marketing analytics (custom-built funnel, UTM, A/B testing) but **zero product-level engagement tracking**. Can't tell which console pages users visit, which features they adopt, when they're at risk of churning (only detects after 14 days of absence), or whether changes like workspace enrichment actually drive engagement. Flying blind on product decisions.
 
@@ -868,13 +868,13 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 
 ---
 
-### 3.20 Unified Entity Architecture — Findings as First-Class Citizens
+### 3.20 Unified Entity Architecture — Findings as First-Class Citizens (Fase 1 ✅)
 
 | | |
 |---|---|
 | **Tag** | `frontend` `engine` |
 | **Priority** | P1 (Fase 1 is a **prerequisite for 3.14 Copilot** — the copilot needs a unified FindingDetailPanel to embed. Also prerequisite for 3.15 Cross-Signal — cross-references need to be on the entity. Ship Fase 1 before or alongside 3.14.) |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | **Fase 1 shipped 2026-04-21.** FindingDetailPanel unified (extracted from Analysis + Workspace Detail), cross-refs wired (workspace_refs, action_refs, opportunity_ref), canonical `/app/findings/[id]` route (supports ID + inference_key lookup), URL-encoded filter state on Analysis page, finding-in-URL on drawer open/close (history.replaceState). **Fase 2 (saved views + sidebar simplification) and Fase 3 (custom views) deferred.** |
 
 **Problem:** The same finding appears in 5 pages (Dashboard, Analysis, Actions, Workspaces, Chat) with **different drawer implementations, different CTAs, and no cross-references**. `FindingDrawerContent` is copy-pasted between Analysis and Workspace Detail (~400 lines duplicated). Actions has a separate `ActionDrawerContent`. Filter state resets on navigation. No finding has a canonical URL. The user cannot tell "where else does this finding appear?" or "is there an action for this already?"
 
@@ -969,13 +969,13 @@ Power-user features. Opt-in, never forced.
 
 ---
 
-### 3.18 First-Audit Experience — Value Before Data
+### 3.18 First-Audit Experience — Value Before Data ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `frontend` |
 | **Priority** | P2 |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | **✅ Shipped 2026-04-27.** `FirstAuditProgress.tsx` — 5-stage emerald-accented timeline (Discover, Classify, Analyze, Enrich, Compute) driven by SSE stream from `/api/cycles/[id]/stream`, advances heuristically based on page count + finding count. Business-type heuristic preview below timeline with 5 bullet points per business type (ecommerce/SaaS/lead gen/hybrid), sourced from `BusinessProfile.businessType`. `FirstAuditCelebration.tsx` — 1.5s overlay with 24 emerald glow dots (custom `celebration-dot` keyframe), finding/page counts, fades into real dashboard. Wired into `DashboardShell.tsx`. i18n (4 langs). |
 
 **Problem:** After onboarding, the first audit cycle takes 5-10 minutes. During this time, users see empty pages with a "Audit in progress" banner and page count ticking up. First contact with value only happens when findings appear. This is the highest-churn window — users who don't see value in their first session rarely return.
 
@@ -991,13 +991,13 @@ Power-user features. Opt-in, never forced.
 
 ---
 
-### 3.19 Cancel Flow & Save Offers — Reduce Voluntary Churn
+### 3.19 Cancel Flow & Save Offers — Reduce Voluntary Churn ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `platform` `frontend` |
 | **Priority** | P2 |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | **✅ Shipped 2026-04-27.** `CancelSurvey` Prisma model (reason, freeText, offeredSave, acceptedSave, cancelledAt). `POST /api/billing/cancel` endpoint with 3 actions (survey → dynamic offer, accept-offer → Paddle API, confirm → cancel + win-back email). Cancel page at `/app/settings/cancel` — 3-step flow: exit survey (7 reasons + free text), dynamic save offer (discount/pause/downgrade/support/roadmap mapped by reason, emerald card with primary + fallback), confirmation (feature loss list, destructive red button). Paddle integration via fetch (pause, cancel effective_from next_billing_period, discount). Post-cancel win-back via `notifyOrganization()`. `CancelSubscriptionButton` in settings page. i18n (4 langs, `cancel_flow` + `subscription` namespaces). |
 
 **Problem:** No cancel flow exists. Cancellation via Paddle is instant — no exit survey, no save offer, no pause option, no win-back sequence. Industry benchmarks show that even a minimal cancel flow (survey + one save offer) recovers 10-15% of cancellations. A well-designed flow with dynamic offers recovers 25-35%.
 

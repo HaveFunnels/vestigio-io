@@ -1782,7 +1782,13 @@
 						"analysis": "Analyse"
 					}
 				}
-			}
+			},
+			"trend_improving": "Verbessernd",
+			"trend_declining": "Verschlechternd",
+			"trend_stable": "Stabil",
+			"actions_in_progress": "{count} Aktionen in Bearbeitung",
+			"actions_in_progress_one": "1 Aktion in Bearbeitung",
+			"no_actions": "Noch keine Aktionen"
 		},
 		"chat": {
 			"title": "Vestigio Pulse",

@@ -1940,6 +1940,12 @@
 			"pixel_required": "Pixel necessário",
 			"coming_soon": "Em breve",
 			"no_data_yet": "Sem dados ainda",
+			"trend_improving": "Melhorando",
+			"trend_declining": "Piorando",
+			"trend_stable": "Estável",
+			"actions_in_progress": "{count} ações em andamento",
+			"actions_in_progress_one": "1 ação em andamento",
+			"no_actions": "Nenhuma ação ainda",
 			"workspaces_in_perspective": "Workspaces",
 			"lenses": {
 				"revenue_map": "Mapa de Faturamento",

@@ -21,6 +21,7 @@ import ChangeTimeline from "@/components/console/ChangeTimeline";
 import ChargebackResilience from "@/components/console/workspace/ChargebackResilience";
 import RevenueIntelligence from "@/components/console/workspace/RevenueIntelligence";
 import SecurityPosture from "@/components/console/workspace/SecurityPosture";
+import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type {
@@ -167,6 +168,23 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 	const positiveFindings = workspace.findings.filter((f) => f.polarity === "positive");
 	const topSeverity = getTopSeverity(workspace.findings);
 
+	// Sparkline data
+	const sparklineData = useMemo(
+		() => synthesizeSparklineData(workspace.change_summary, workspace.summary.issue_count),
+		[workspace.change_summary, workspace.summary.issue_count],
+	);
+
+	// Count linked actions
+	const linkedActionCount = useMemo(() => {
+		const actionIds = new Set<string>();
+		for (const f of workspace.findings) {
+			for (const ref of f.action_refs ?? []) {
+				actionIds.add(ref.id);
+			}
+		}
+		return actionIds.size;
+	}, [workspace.findings]);
+
 	const isPreflight = workspace.type === "preflight";
 	const isChargeback = workspace.type === "chargeback";
 	const isRevenue = workspace.type === "revenue";
@@ -237,12 +255,27 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			<div className={`mt-4 rounded border-l-2 ${perspective.border} px-5 py-4`}>
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<div>
-						<h1 className="text-[16px] font-semibold text-zinc-800 dark:text-zinc-200">
-							{workspace.name}
-						</h1>
+						<div className="flex items-center gap-3">
+							<h1 className="text-[16px] font-semibold text-zinc-800 dark:text-zinc-200">
+								{workspace.name}
+							</h1>
+							{linkedActionCount > 0 && (
+								<Link
+									href="/app/actions?type=all"
+									className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+								>
+									{linkedActionCount === 1
+										? t("actions_in_progress_one")
+										: t("actions_in_progress", { count: linkedActionCount })}
+								</Link>
+							)}
+						</div>
 						<div className="mt-1.5 flex flex-wrap items-center gap-2">
 							<SeverityBadge value={workspace.decision_impact} />
 							<WorkspaceChangeTrend summary={workspace.change_summary} />
+							{sparklineData.length >= 2 && (
+								<TrendSparkline data={sparklineData} width={64} height={20} />
+							)}
 						</div>
 					</div>
 					<div className="flex items-center gap-6">

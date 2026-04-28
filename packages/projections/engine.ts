@@ -2363,6 +2363,7 @@ function packToPerspective(pack: string): string {
   return 'panorama';
 }
 
+// NOTE: Currently unused — frontend derives equivalent data client-side from WorkspaceProjection[]
 /**
  * Aggregate quantified value cases by perspective, producing a revenue
  * map suitable for the workspace redesign's Revenue Map lens.
@@ -2418,6 +2419,7 @@ function decisionKeyToPerspective(decisionKey: string): string {
   return packToPerspective(pack);
 }
 
+// NOTE: Currently unused — frontend derives equivalent data client-side from WorkspaceProjection[]
 /**
  * Group cycle-to-cycle changes by perspective, enabling the Cycle Delta
  * lens in the redesigned workspace UI.
@@ -2479,6 +2481,7 @@ export function buildCycleDelta(
 // Wave 3.11: Bragging Rights Lens
 // ──────────────────────────────────────────────
 
+// NOTE: Currently unused — frontend derives equivalent data client-side from WorkspaceProjection[]
 /**
  * Build the "bragging rights" view — positive achievements, resolved
  * issues, and improvements that users can celebrate.

@@ -27,6 +27,7 @@ export interface MaturityDetectionInput {
   has_integrations?: boolean;
 }
 
+// NOTE: Currently unused — frontend derives equivalent data client-side from WorkspaceProjection[]
 /**
  * Detect the maturity stage of a workspace based on evidence depth,
  * behavioral data, and historical activity signals.

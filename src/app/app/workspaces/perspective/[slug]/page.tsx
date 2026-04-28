@@ -23,6 +23,7 @@ import CycleDelta from "@/components/console/CycleDelta";
 import BraggingRights from "@/components/console/BraggingRights";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
+import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type {
@@ -164,6 +165,37 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
     perspectiveWorkspaces.length > 0 &&
     perspectiveWorkspaces.every((ws) => ws.pixel_status !== "active");
 
+  // Sparkline data for perspective header
+  const perspectiveSparkline = useMemo(() => {
+    let totalReg = 0, totalImp = 0, totalRes = 0;
+    let dominantTrend = "stable";
+    for (const ws of perspectiveWorkspaces) {
+      if (ws.change_summary) {
+        totalReg += ws.change_summary.regression_count;
+        totalImp += ws.change_summary.improvement_count;
+        totalRes += ws.change_summary.resolved_count;
+        if (ws.change_summary.trend !== "stable") dominantTrend = ws.change_summary.trend;
+      }
+    }
+    return synthesizeSparklineData(
+      perspectiveWorkspaces.length > 0
+        ? { trend: dominantTrend, regression_count: totalReg, improvement_count: totalImp, resolved_count: totalRes }
+        : null,
+      negativeFindings.length,
+    );
+  }, [perspectiveWorkspaces, negativeFindings.length]);
+
+  // Count linked actions across all findings in this perspective
+  const perspectiveActionCount = useMemo(() => {
+    const actionIds = new Set<string>();
+    for (const f of allFindings) {
+      for (const ref of f.action_refs ?? []) {
+        actionIds.add(ref.id);
+      }
+    }
+    return actionIds.size;
+  }, [allFindings]);
+
   const perspectiveLabel = t(`perspectives.${slug}`);
 
   const findingColumns: Column<FindingProjection>[] = [
@@ -229,7 +261,22 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
               <path strokeLinecap="round" strokeLinejoin="round" d={meta.icon} />
             </svg>
             <div>
-              <h1 className="text-[16px] font-semibold text-zinc-200">{perspectiveLabel}</h1>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-[16px] font-semibold text-zinc-200">{perspectiveLabel}</h1>
+                {perspectiveActionCount > 0 && (
+                  <Link
+                    href="/app/actions?type=all"
+                    className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                  >
+                    {perspectiveActionCount === 1
+                      ? t("actions_in_progress_one")
+                      : t("actions_in_progress", { count: perspectiveActionCount })}
+                  </Link>
+                )}
+                {perspectiveSparkline.length >= 2 && (
+                  <TrendSparkline data={perspectiveSparkline} width={64} height={20} />
+                )}
+              </div>
               <p className="mt-0.5 text-[12px] text-zinc-500">{t(`perspective_descriptions.${slug}`)}</p>
             </div>
           </div>

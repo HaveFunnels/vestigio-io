@@ -1903,7 +1903,13 @@
 						"analysis": "Análisis"
 					}
 				}
-			}
+			},
+			"trend_improving": "Mejorando",
+			"trend_declining": "Empeorando",
+			"trend_stable": "Estable",
+			"actions_in_progress": "{count} acciones en progreso",
+			"actions_in_progress_one": "1 acción en progreso",
+			"no_actions": "Sin acciones aún"
 		},
 		"dashboard": {
 			"title": "Dashboard",

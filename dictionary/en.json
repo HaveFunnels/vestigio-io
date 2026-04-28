@@ -1850,6 +1850,12 @@
 			"pixel_required": "Pixel required",
 			"coming_soon": "Coming soon",
 			"no_data_yet": "No data yet",
+			"trend_improving": "Improving",
+			"trend_declining": "Declining",
+			"trend_stable": "Stable",
+			"actions_in_progress": "{count} actions in progress",
+			"actions_in_progress_one": "1 action in progress",
+			"no_actions": "No actions yet",
 			"workspaces_in_perspective": "Workspaces",
 			"lenses": {
 				"revenue_map": "Revenue Map",

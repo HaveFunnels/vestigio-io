@@ -10,6 +10,7 @@ import PulseSummary from "@/components/console/PulseSummary";
 import RevenueMap from "@/components/console/RevenueMap";
 import CycleDelta from "@/components/console/CycleDelta";
 import BraggingRights from "@/components/console/BraggingRights";
+import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type { WorkspaceProjection } from "../../../../packages/projections";
@@ -112,10 +113,29 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
     [workspaces],
   );
   // Aggregate per perspective
+  // Count actions in progress per perspective
+  const perspectiveActionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of PERSPECTIVES) counts[p.key] = 0;
+
+    for (const ws of workspaces) {
+      const p = classifyPerspective(ws);
+      if (!counts.hasOwnProperty(p)) continue;
+      const actionIds = new Set<string>();
+      for (const f of ws.findings) {
+        for (const ref of f.action_refs ?? []) {
+          actionIds.add(ref.id);
+        }
+      }
+      counts[p] += actionIds.size;
+    }
+    return counts;
+  }, [workspaces]);
+
   const perspectiveData = useMemo(() => {
-    const map: Record<string, { issues: number; loss: number; topSeverity: string; hasData: boolean; isLocked: boolean }> = {};
+    const map: Record<string, { issues: number; loss: number; topSeverity: string; hasData: boolean; isLocked: boolean; sparkline: number[]; trend: string }> = {};
     for (const p of PERSPECTIVES) {
-      map[p.key] = { issues: 0, loss: 0, topSeverity: "none", hasData: false, isLocked: false };
+      map[p.key] = { issues: 0, loss: 0, topSeverity: "none", hasData: false, isLocked: false, sparkline: [], trend: "stable" };
     }
 
     let hasBehavioral = false;
@@ -141,6 +161,32 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
     }
 
     if (hasBehavioral && allBehavioralLocked) map.behavior.isLocked = true;
+
+    // Synthesize sparkline data per perspective
+    for (const p of PERSPECTIVES) {
+      const d = map[p.key];
+      // Aggregate change summaries across workspaces in this perspective
+      let totalReg = 0, totalImp = 0, totalRes = 0;
+      let dominantTrend = "stable";
+      for (const ws of workspaces) {
+        if (classifyPerspective(ws) !== p.key) continue;
+        if (ws.change_summary) {
+          totalReg += ws.change_summary.regression_count;
+          totalImp += ws.change_summary.improvement_count;
+          totalRes += ws.change_summary.resolved_count;
+          if (ws.change_summary.trend !== "stable") dominantTrend = ws.change_summary.trend;
+        }
+      }
+      const synthSummary = d.hasData ? {
+        trend: dominantTrend,
+        regression_count: totalReg,
+        improvement_count: totalImp,
+        resolved_count: totalRes,
+      } : null;
+      d.sparkline = synthesizeSparklineData(synthSummary, d.issues);
+      d.trend = synthSummary?.trend ?? "stable";
+    }
+
     return map;
   }, [workspaces]);
 
@@ -227,13 +273,18 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                           {t("issues")}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {data.loss > 0 && (
-                          <span className={`font-mono text-sm font-medium tabular-nums ${pDef.accentText}`}>
-                            {fmtCurrency(data.loss)}
-                          </span>
+                      <div className="flex flex-col items-end gap-1.5">
+                        <div className="flex items-center gap-2">
+                          {data.loss > 0 && (
+                            <span className={`font-mono text-sm font-medium tabular-nums ${pDef.accentText}`}>
+                              {fmtCurrency(data.loss)}
+                            </span>
+                          )}
+                          <SeverityBadge value={data.topSeverity} />
+                        </div>
+                        {data.sparkline.length >= 2 && (
+                          <TrendSparkline data={data.sparkline} width={64} height={20} />
                         )}
-                        <SeverityBadge value={data.topSeverity} />
                       </div>
                     </>
                   ) : (
@@ -242,6 +293,17 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                     </span>
                   )}
                 </div>
+
+                {/* Action count badge */}
+                {hasData && !isLocked && !isCopyEmpty && (perspectiveActionCounts[pDef.key] ?? 0) > 0 && (
+                  <div className="relative mt-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                      {perspectiveActionCounts[pDef.key] === 1
+                        ? t("actions_in_progress_one")
+                        : t("actions_in_progress", { count: perspectiveActionCounts[pDef.key] })}
+                    </span>
+                  </div>
+                )}
 
                 {/* Hover arrow */}
                 {!isLocked && !isCopyEmpty && (

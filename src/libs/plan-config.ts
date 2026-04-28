@@ -127,7 +127,7 @@ const DEFAULT_PLANS: PlanConfig[] = [
 
 let cached: PlanConfig[] | null = null;
 let cacheTime = 0;
-const CACHE_TTL = 60_000; // 1 minute
+const CACHE_TTL = 3_600_000; // 1 hour
 
 export async function getPlanConfigs(): Promise<PlanConfig[]> {
   if (cached && Date.now() - cacheTime < CACHE_TTL) return cached;

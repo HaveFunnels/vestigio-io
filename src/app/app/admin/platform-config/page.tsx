@@ -1003,6 +1003,8 @@ export default function PlatformConfigPage() {
   const [config, setConfig] = useState<AllConfig>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [cacheResetting, setCacheResetting] = useState(false);
+  const [cacheFeedback, setCacheFeedback] = useState<"ok" | "error" | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -1027,14 +1029,70 @@ export default function PlatformConfigPage() {
     [],
   );
 
+  const handleResetCache = async () => {
+    setCacheResetting(true);
+    setCacheFeedback(null);
+    try {
+      const res = await fetch("/api/admin/platform-config/reset-cache", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to reset cache");
+      setCacheFeedback("ok");
+      setTimeout(() => setCacheFeedback(null), 3000);
+    } catch {
+      setCacheFeedback("error");
+      setTimeout(() => setCacheFeedback(null), 4000);
+    } finally {
+      setCacheResetting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-content">Platform Config</h1>
-        <p className="mt-1 text-sm text-content-muted">
-          Manage theme, branding, integrations, credentials, and feature flags. Changes take effect immediately.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-content">Platform Config</h1>
+          <p className="mt-1 text-sm text-content-muted">
+            Manage theme, branding, integrations, credentials, and feature flags. Changes take effect immediately.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleResetCache}
+            disabled={cacheResetting}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-sm font-medium text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
+          >
+            <svg
+              className={`h-4 w-4 ${cacheResetting ? "animate-spin" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182"
+              />
+            </svg>
+            {cacheResetting ? "Resetando..." : "Resetar cache de configura\u00e7\u00e3o"}
+          </button>
+          {cacheFeedback === "ok" && (
+            <span className="flex items-center gap-1 text-xs text-emerald-400 whitespace-nowrap">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              Cache invalidado
+            </span>
+          )}
+          {cacheFeedback === "error" && (
+            <span className="text-xs text-red-400 whitespace-nowrap">
+              Falha ao resetar cache
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Load Error */}

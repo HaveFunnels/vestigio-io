@@ -1,9 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-27 (3.8 + 3.11 shipped; earlier same day: 3.13, 3.18, 3.19, 3.12, 3.15, 3.17, 3.9 C-E)
+> Last updated: 2026-04-28 (3.10 Copy Analysis Pack shipped — Wave 3 fully complete)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, I, L-R), 3.7B, 3.8, 3.9, 3.11, 3.11B, 3.12, 3.13, 3.14, 3.15, 3.16, 3.17, 3.18, 3.19, 3.20 Fase 1, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
+> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, I, L-R), 3.7B, 3.8, 3.9, 3.10, 3.11, 3.11B, 3.12, 3.13, 3.14, 3.15, 3.16, 3.17, 3.18, 3.19, 3.20 Fase 1, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
 ---
 
@@ -58,7 +58,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Meta Ads + Google Ads OAuth app approvals | External — 1-6 weeks | Wave 3.9 |
 | Prisma migration in prod for `syncMetadata` | Pending `npx prisma db push` | Wave 3.9 |
 | ~~Stripe Integration~~ | **✅ Shipped 2026-04-27** — OAuth Connect flow (authorize + callback), revenue poller (charges, subscriptions, MRR, churn, disputes, refunds, failed payments with pagination), sync route handler, run-cycle wiring, Data Sources UI (connect button, metrics display, sync/disconnect). Env vars: `STRIPE_CONNECT_CLIENT_ID`, `STRIPE_SECRET_KEY`. **Pending (external):** Stripe Connect platform approval. | Wave 3.8 |
-| Copy Analysis Pack — expanded scope (4 fases) | **Spec expanded 2026-04-28** — foundation: 5 enrichment types + 7 signals + 4 inferences + 1 root cause. Expansion: 8 new enrichment types (→13 total), 7 root causes replacing `copy_strategy_gap`, guidelines KB from copywriting/CRO/marketing-psychology (80+ models), ICP-aware analysis, copy workspace, MCP tool. 4 fases: core engine → discovery → high-value → polish. | Wave 3.10 |
+| ~~Copy Analysis Pack~~ | **✅ Shipped 2026-04-28** — all 4 fases. Guidelines KB (80 guidelines from copywriting/CRO/marketing-psychology), 17 enrichment types total (5 existing + 8 new page-type + cross-page + pricing psychology + localization + micro-copy + SEO tension + staleness), 20+ signals, 12+ inferences, 7 root causes replacing `copy_strategy_gap`, copy_alignment_pack decision, CopyAlignment workspace, analyze_copy MCP tool + copy_audit playbook, ICP fields on BusinessProfile, i18n (4 langs). | Wave 3.10 |
 | ~~Opportunity-First Actions — unified impact-ranked pipeline~~ | **✅ Shipped 2026-04-27** — all 6 fases complete. ActionProjection enriched with opportunity data, 2 tabs (Pipeline/My Actions) + filter bar, unified summary cards, type+upside badges, hypothesis inline + drawer card, ScatterPlot (effort × impact, 4 quadrants), OpportunityTracking Prisma model, PATCH status API, auto-verify on improvement, i18n (4 langs). | Wave 3.12 |
 | ~~Re-engagement & Remediation — close the loop~~ | **✅ Fully shipped 2026-04-27** — Fases 1-3 (dashboard landing, CrossSignalHero, daily digest, Fix with AI in action drawer) + Fase 3I (Fix with AI in FindingDetailPanel with multi-action picker) + Fase 4 (i18n, 17 keys × 4 langs). Shared FixWithAiSection component extracted. | Wave 3.13 |
 | Vestigio AI — Transversal Copilot | **Shipped 2026-04-22** — FAB with color orb + spring animation, full-height panel (side + full-screen expand), playbooks grid menu, CopilotProvider global state, SideDrawer coexistence, compact ChatInputBar with animated cycling placeholders, budget exhausted card, cross-domain pack insight bubbles during streaming, pack-aware ThinkingIndicator, voice message bubble, i18n (4 langs), chat removed from sidenav. | Wave 3.14 |
@@ -284,13 +284,13 @@ interface RevenueRecoveryEstimate {
 
 ---
 
-### 3.10 Copy Analysis Pack — AI-Powered Copy & Funnel Alignment (Foundation Shipped)
+### 3.10 Copy Analysis Pack — AI-Powered Copy & Funnel Alignment ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` `collection` `docs` `frontend` |
 | **Priority** | P1 |
-| **Status** | **Foundation shipped — 2026-04-11. Expanded spec 2026-04-28.** 5 enrichment types (`policy_quality`, `checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing`) produce `ContentEnrichmentPayload` evidence via Haiku in `workers/ingestion/enrichment/semantic-enrichment.ts`. Signal extraction (`extractCopyEnrichmentSignals` at `signals/engine.ts:4662`) → 7 signals → 4 inferences → 1 root cause (`copy_strategy_gap`). **Expansion:** 8 new enrichment types (total 13), 7 root causes replacing the single `copy_strategy_gap`, guidelines KB distilled from professional copywriting/CRO/marketing-psychology frameworks, ICP-aware analysis, copy workspace, MCP tooling. |
+| **Status** | **✅ Fully shipped 2026-04-28.** All 4 fases complete. 5 enrichment types (`policy_quality`, `checkout_trust`, `cta_clarity`, `product_page_quality`, `pricing_page_framing`) produce `ContentEnrichmentPayload` evidence via Haiku in `workers/ingestion/enrichment/semantic-enrichment.ts`. Signal extraction (`extractCopyEnrichmentSignals` at `signals/engine.ts:4662`) → 7 signals → 4 inferences → 1 root cause (`copy_strategy_gap`). **Expansion:** 8 new enrichment types (total 13), 7 root causes replacing the single `copy_strategy_gap`, guidelines KB distilled from professional copywriting/CRO/marketing-psychology frameworks, ICP-aware analysis, copy workspace, MCP tooling. |
 | **Why after integrations?** | With Shopify/Stripe connected (3.7/3.8), copy analysis measures impact against **real revenue data**. With ad platform data (3.9), message-match compares **actual ad creative text** against landing page copy. The pack is 10x more valuable with integration data feeding it. |
 
 **The thesis:** Most SaaS/ecommerce sites have copy that was written once and never audited against the actual ICP, funnel stage, or commercial intent of each page. The result is generic copy that doesn't convert — not because the product is bad, but because the words on the page don't match the buyer's mental state at that point in the journey. This pack turns Vestigio into a **copy strategist** that evaluates alignment between what the page says and what the page should say.

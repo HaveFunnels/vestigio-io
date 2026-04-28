@@ -310,11 +310,17 @@ const config: Config = {
 					"0%":   { opacity: "0", transform: "translateY(8px)" },
 					"100%": { opacity: "1", transform: "translateY(0)" },
 				},
+				"celebration-dot": {
+					"0%":   { opacity: "0", transform: "translateY(0) scale(0.5)" },
+					"30%":  { opacity: "1", transform: "translateY(-10px) scale(1)" },
+					"100%": { opacity: "0", transform: "translateY(-40px) scale(0.3)" },
+				},
 			},
 			animation: {
 				"panel-in": "panel-in 0.45s cubic-bezier(0.16,1,0.3,1) both",
 				"panel-out": "panel-out 0.3s cubic-bezier(0.4,0,1,1) both",
 				"message-appear": "message-appear 0.3s ease-out forwards",
+				"celebration-dot": "celebration-dot 1.8s ease-out both",
 			},
 			boxShadow: {
 				1: "0px 1px 2px 0px rgba(84, 87, 118, 0.10)",

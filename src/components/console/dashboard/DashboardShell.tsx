@@ -31,10 +31,14 @@
 // ──────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DashboardGrid } from "./DashboardGrid";
 import { DashboardHeader, type SaveStatus } from "./DashboardHeader";
 import { CatalogDrawer } from "./CatalogDrawer";
+import FirstAuditProgress from "@/components/console/FirstAuditProgress";
+import FirstAuditCelebration from "@/components/console/FirstAuditCelebration";
+import type { FirstAuditCompletePayload } from "@/components/console/FirstAuditProgress";
 import {
 	DEFAULT_LAYOUT,
 	type WidgetInstance,
@@ -57,11 +61,33 @@ export function DashboardShell({
 	persistEnabled = true,
 }: DashboardShellProps) {
 	const t = useTranslations("console.dashboard");
+	const router = useRouter();
 	const [instances, setInstances] =
 		useState<WidgetInstance[]>(initialInstances);
 	const [editing, setEditing] = useState(false);
 	const [catalogOpen, setCatalogOpen] = useState(false);
 	const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+
+	// ── Wave 3.18: First-Audit Experience ──
+	const [firstAuditComplete, setFirstAuditComplete] =
+		useState<FirstAuditCompletePayload | null>(null);
+	const [showCelebration, setShowCelebration] = useState(false);
+	const [firstAuditDismissed, setFirstAuditDismissed] = useState(false);
+
+	const handleFirstAuditComplete = useCallback(
+		(payload: FirstAuditCompletePayload) => {
+			setFirstAuditComplete(payload);
+			setShowCelebration(true);
+		},
+		[]
+	);
+
+	const handleCelebrationDone = useCallback(() => {
+		setShowCelebration(false);
+		setFirstAuditDismissed(true);
+		// Refresh the page data so the dashboard shows real findings
+		router.refresh();
+	}, [router]);
 
 	// Debounce timer + abort controller so rapid drags don't create
 	// a queue of in-flight requests.
@@ -181,14 +207,34 @@ export function DashboardShell({
 		setCatalogOpen(false);
 	}, [persistLayout]);
 
+	// Show the first-audit progress feed when the audit hasn't completed
+	// yet (or hasn't been dismissed after the celebration).
+	const showFirstAudit = !firstAuditDismissed && !firstAuditComplete;
+
 	return (
 		<>
+			{/* Wave 3.18C: Celebration overlay */}
+			{showCelebration && firstAuditComplete && (
+				<FirstAuditCelebration
+					findingsCount={firstAuditComplete.findingsCount}
+					pagesDiscovered={firstAuditComplete.pagesDiscovered}
+					onDone={handleCelebrationDone}
+				/>
+			)}
+
 			<DashboardHeader
 				editing={editing}
 				onToggleEdit={handleToggleEdit}
 				onOpenCatalog={editing ? () => setCatalogOpen(true) : undefined}
 				saveStatus={saveStatus}
 			/>
+
+			{/* Wave 3.18A+B: First-audit progress + preview (renders only
+			    when it detects a first audit is running; null otherwise) */}
+			{showFirstAudit && (
+				<FirstAuditProgress onComplete={handleFirstAuditComplete} />
+			)}
+
 			<DashboardGrid
 				instances={instances}
 				data={data}

@@ -21,12 +21,22 @@ export interface MetaAdsCredentials {
 	access_token: string;
 	/** Ad account id with leading "act_" prefix. We normalize if absent. */
 	ad_account_id: string;
+	/** Timestamp (epoch ms) when the token was issued — used for refresh logic. */
+	token_issued_at?: number;
+	/** Seconds until expiry from issue time — used for refresh logic. */
+	token_expires_in_sec?: number;
 }
 
 export interface MetaAdsPollResult {
 	data: MetaAdsSnapshotData;
 	errors: string[];
 	duration_ms: number;
+	/** Set when the token was proactively refreshed (< 5 days remaining). */
+	refreshed_token?: {
+		access_token: string;
+		token_issued_at: number;
+		token_expires_in_sec: number;
+	};
 }
 
 interface InsightsResponse {
@@ -106,12 +116,49 @@ export async function pollMetaAdsData(
 ): Promise<MetaAdsPollResult> {
 	const started = Date.now();
 	const errors: string[] = [];
+	let refreshedToken: MetaAdsPollResult["refreshed_token"] = undefined;
+	let activeToken = credentials.access_token;
+
+	// ── Proactive token refresh ────────────────────────────
+	// If the token is within 5 days of expiry, attempt to exchange it for
+	// a new long-lived token. This prevents silent failures when the 60-day
+	// window closes between audit cycles.
+	if (credentials.token_issued_at && credentials.token_expires_in_sec) {
+		const expiresAtMs = credentials.token_issued_at + credentials.token_expires_in_sec * 1000;
+		const daysRemaining = (expiresAtMs - Date.now()) / (1000 * 60 * 60 * 24);
+		if (daysRemaining < 5) {
+			const appId = process.env.META_ADS_APP_ID || process.env.META_APP_ID || "";
+			const appSecret = process.env.META_ADS_APP_SECRET || process.env.META_APP_SECRET || "";
+			if (appId && appSecret) {
+				try {
+					const refreshUrl = `${GRAPH_BASE}/oauth/access_token?grant_type=fb_exchange_token&client_id=${encodeURIComponent(appId)}&client_secret=${encodeURIComponent(appSecret)}&fb_exchange_token=${encodeURIComponent(credentials.access_token)}`;
+					const refreshRes = await fetch(refreshUrl, { signal: AbortSignal.timeout(10_000) });
+					const refreshBody = await refreshRes.json().catch(() => ({})) as any;
+					if (refreshRes.ok && refreshBody.access_token) {
+						activeToken = refreshBody.access_token;
+						refreshedToken = {
+							access_token: refreshBody.access_token,
+							token_issued_at: Date.now(),
+							token_expires_in_sec: refreshBody.expires_in ?? 5184000, // default 60d
+						};
+					} else {
+						errors.push(`token_refresh_warning: ${refreshBody?.error?.message || "refresh failed, continuing with current token"}`);
+					}
+				} catch (err) {
+					errors.push(`token_refresh_warning: ${err instanceof Error ? err.message : "refresh request failed"}`);
+				}
+			} else {
+				errors.push("token_refresh_warning: META_ADS_APP_ID/SECRET not configured, cannot refresh expiring token");
+			}
+		}
+	}
+
 	const accountId = normaliseAccountId(credentials.ad_account_id);
 
 	// 1. Account insights — total spend 30d + currency
 	const insightsRes = await graphGet<InsightsResponse>(
 		`/${accountId}/insights?fields=spend,impressions,clicks,account_currency&date_preset=last_30d&level=account`,
-		credentials.access_token,
+		activeToken,
 	);
 
 	let adSpend30d = 0;
@@ -135,7 +182,7 @@ export async function pollMetaAdsData(
 	].join(",");
 	const adsRes = await graphGet<AdsListResponse>(
 		`/${accountId}/ads?fields=${encodeURIComponent(adsFields)}&limit=20`,
-		credentials.access_token,
+		activeToken,
 	);
 
 	const creatives: MetaAdsSnapshotData["creatives"] = [];
@@ -178,6 +225,7 @@ export async function pollMetaAdsData(
 		},
 		errors,
 		duration_ms: durationMs,
+		refreshed_token: refreshedToken,
 	};
 }
 

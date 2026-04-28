@@ -33,6 +33,8 @@ export interface GoogleAdsPollResult {
 	data: GoogleAdsSnapshotData;
 	errors: string[];
 	duration_ms: number;
+	/** True if the refresh_token was rejected with 401/invalid_grant — connection should be marked disconnected. */
+	token_revoked?: boolean;
 }
 
 interface OAuthTokenResponse {
@@ -63,7 +65,7 @@ interface GaqlRow {
 
 async function exchangeRefreshToken(
 	credentials: GoogleAdsCredentials,
-): Promise<{ ok: boolean; access_token?: string; error?: string }> {
+): Promise<{ ok: boolean; access_token?: string; error?: string; status?: number }> {
 	try {
 		const body = new URLSearchParams({
 			client_id: credentials.client_id,
@@ -82,9 +84,10 @@ async function exchangeRefreshToken(
 			return {
 				ok: false,
 				error: data.error_description || data.error || `HTTP ${res.status}`,
+				status: res.status,
 			};
 		}
-		return { ok: true, access_token: data.access_token };
+		return { ok: true, access_token: data.access_token, status: res.status };
 	} catch (err) {
 		return {
 			ok: false,
@@ -151,11 +154,18 @@ export async function pollGoogleAdsData(
 	// Step 1: exchange refresh token for a short-lived access token.
 	const tokenRes = await exchangeRefreshToken(credentials);
 	if (!tokenRes.ok || !tokenRes.access_token) {
-		errors.push(`oauth: ${tokenRes.error ?? "unknown"}`);
+		const errorMsg = tokenRes.error ?? "unknown";
+		errors.push(`oauth: ${errorMsg}`);
+		// Detect revoked/invalid refresh token — caller should mark disconnected.
+		const isRevoked =
+			tokenRes.status === 401 ||
+			errorMsg.includes("invalid_grant") ||
+			errorMsg.includes("Token has been expired or revoked");
 		return {
 			data: { ad_spend_30d: 0, currency: "USD", campaigns: [] },
 			errors,
 			duration_ms: Date.now() - started,
+			token_revoked: isRevoked || undefined,
 		};
 	}
 

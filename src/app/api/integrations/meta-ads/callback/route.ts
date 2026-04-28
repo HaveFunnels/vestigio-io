@@ -113,8 +113,10 @@ export async function GET(request: Request) {
 		`/oauth/access_token?grant_type=fb_exchange_token&client_id=${encodeURIComponent(META_APP_ID)}&client_secret=${encodeURIComponent(META_APP_SECRET)}&fb_exchange_token=${encodeURIComponent(shortToken)}`,
 	);
 	const accessToken = longLived.data?.access_token || shortToken;
-	const expiresInSec = longLived.data?.expires_in ?? 0;
 	const isShortLived = !longLived.data?.access_token;
+	// If long-lived upgrade worked, use its reported expiry; otherwise mark as short-lived (1h).
+	const expiresInSec = isShortLived ? 3600 : (longLived.data?.expires_in ?? 5184000);
+	const tokenType = isShortLived ? "short_lived" : "long_lived";
 	if (isShortLived) {
 		console.warn("[Meta Ads Callback] Long-lived token upgrade failed — using short-lived token (expires in ~1h). Error:", longLived.error);
 	}
@@ -145,13 +147,15 @@ export async function GET(request: Request) {
 
 	// Persist. Ad account id stored with act_ prefix for poller convenience.
 	const adAccountId = active.id.startsWith("act_") ? active.id : `act_${active.id}`;
+	const tokenIssuedAt = Date.now();
 	const encryptedConfig = encryptConfig({
 		access_token: accessToken,
 		ad_account_id: adAccountId,
 		meta_user_id: metaUserId,
 		account_name: active.name,
-		token_issued_at: String(Date.now()),
+		token_issued_at: String(tokenIssuedAt),
 		token_expires_in_sec: String(expiresInSec),
+		token_type: tokenType,
 	});
 
 	await prisma.integrationConnection.upsert({
@@ -162,12 +166,24 @@ export async function GET(request: Request) {
 			config: encryptedConfig,
 			status: "connected",
 			syncError: null,
+			syncMetadata: JSON.stringify({
+				token_type: tokenType,
+				token_expires_at: tokenIssuedAt + expiresInSec * 1000,
+				account_name: active.name,
+				connected_at: new Date().toISOString(),
+			}),
 		},
 		create: {
 			environmentId,
 			provider: "meta_ads",
 			config: encryptedConfig,
 			status: "connected",
+			syncMetadata: JSON.stringify({
+				token_type: tokenType,
+				token_expires_at: tokenIssuedAt + expiresInSec * 1000,
+				account_name: active.name,
+				connected_at: new Date().toISOString(),
+			}),
 		},
 	});
 

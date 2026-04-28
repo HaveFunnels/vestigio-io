@@ -583,6 +583,8 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 							const metaPollResult = await pollMetaAdsData({
 								access_token: config.access_token,
 								ad_account_id: config.ad_account_id,
+								token_issued_at: config.token_issued_at ? Number(config.token_issued_at) : undefined,
+								token_expires_in_sec: config.token_expires_in_sec ? Number(config.token_expires_in_sec) : undefined,
 							});
 
 							if (metaPollResult.errors.length === 0 || metaPollResult.data.ad_spend_30d > 0) {
@@ -594,17 +596,47 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 								});
 							}
 
+							// If token was refreshed, update stored credentials with new token.
+							if (metaPollResult.refreshed_token) {
+								try {
+									const updatedConfig = {
+										...config,
+										access_token: metaPollResult.refreshed_token.access_token,
+										token_issued_at: String(metaPollResult.refreshed_token.token_issued_at),
+										token_expires_in_sec: String(metaPollResult.refreshed_token.token_expires_in_sec),
+									};
+									const { encryptConfig } = await import("@/libs/integration-crypto");
+									const reEncrypted = encryptConfig(updatedConfig);
+									await prisma.integrationConnection.update({
+										where: { id: metaAdsConn.id },
+										data: { config: reEncrypted },
+									});
+									console.log(`[audit-runner ${cycleId}] Meta Ads token refreshed successfully`);
+								} catch (refreshErr) {
+									console.warn(`[audit-runner ${cycleId}] Meta Ads token refresh persist failed:`, refreshErr);
+								}
+							}
+
+							// Filter out token_refresh_warning from error count for status determination
+							const realErrors = metaPollResult.errors.filter(e => !e.startsWith("token_refresh_warning:"));
+							const tokenExpiresAt = metaPollResult.refreshed_token
+								? metaPollResult.refreshed_token.token_issued_at + metaPollResult.refreshed_token.token_expires_in_sec * 1000
+								: (config.token_issued_at && config.token_expires_in_sec
+									? Number(config.token_issued_at) + Number(config.token_expires_in_sec) * 1000
+									: null);
+
 							await prisma.integrationConnection.update({
 								where: { id: metaAdsConn.id },
 								data: {
 									lastSyncedAt: new Date(),
-									status: metaPollResult.errors.length > 0 ? 'error' : 'connected',
-									syncError: metaPollResult.errors[0] ?? null,
+									status: realErrors.length > 0 ? 'error' : 'connected',
+									syncError: realErrors[0] ?? null,
 									syncMetadata: JSON.stringify({
 										ad_spend_30d: metaPollResult.data.ad_spend_30d,
 										currency: metaPollResult.data.currency,
 										creative_count: metaPollResult.data.creatives.length,
 										synced_at: new Date().toISOString(),
+										...(tokenExpiresAt ? { token_expires_at: tokenExpiresAt } : {}),
 									}),
 								},
 							});
@@ -644,24 +676,38 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 								});
 							}
 
+							// If refresh token was revoked, mark disconnected instead of error
+							const connectionStatus = googlePollResult.token_revoked
+								? 'disconnected'
+								: googlePollResult.errors.length > 0
+									? 'error'
+									: 'connected';
+
 							await prisma.integrationConnection.update({
 								where: { id: googleAdsConn.id },
 								data: {
 									lastSyncedAt: new Date(),
-									status: googlePollResult.errors.length > 0 ? 'error' : 'connected',
+									status: connectionStatus,
 									syncError: googlePollResult.errors[0] ?? null,
 									syncMetadata: JSON.stringify({
 										ad_spend_30d: googlePollResult.data.ad_spend_30d,
 										currency: googlePollResult.data.currency,
 										campaign_count: googlePollResult.data.campaigns.length,
 										synced_at: new Date().toISOString(),
+										...(googlePollResult.token_revoked ? { token_revoked: true } : {}),
 									}),
 								},
 							});
 
-							console.log(
-								`[audit-runner ${cycleId}] Google Ads integration synced (spend_30d=${googlePollResult.data.ad_spend_30d} ${googlePollResult.data.currency}, campaigns=${googlePollResult.data.campaigns.length}, errors=${googlePollResult.errors.length})`,
-							);
+							if (googlePollResult.token_revoked) {
+								console.warn(
+									`[audit-runner ${cycleId}] Google Ads refresh token revoked — connection marked disconnected`,
+								);
+							} else {
+								console.log(
+									`[audit-runner ${cycleId}] Google Ads integration synced (spend_30d=${googlePollResult.data.ad_spend_30d} ${googlePollResult.data.currency}, campaigns=${googlePollResult.data.campaigns.length}, errors=${googlePollResult.errors.length})`,
+								);
+							}
 						} catch (err) {
 							console.warn(`[audit-runner ${cycleId}] Google Ads integration sync failed:`, err);
 							await prisma.integrationConnection.update({

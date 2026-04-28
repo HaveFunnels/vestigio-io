@@ -42,7 +42,7 @@ const defaultSaasForm: SaasFormData = {
 	primaryUpgradePath: "",
 };
 
-type SourceStatus = "not_configured" | "configured" | "verified" | "failed" | "awaiting_manual_mfa" | "coming_soon";
+type SourceStatus = "not_configured" | "configured" | "verified" | "failed" | "disconnected" | "awaiting_manual_mfa" | "coming_soon";
 
 interface SaasPublicView {
 	id: string;
@@ -68,6 +68,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 	configured: { label: "Configured", color: "#f59e0b" },
 	verified: { label: "Verified", color: "#22c55e" },
 	failed: { label: "Failed", color: "#ef4444" },
+	disconnected: { label: "Disconnected", color: "#ef4444" },
 	awaiting_manual_mfa: { label: "Awaiting MFA", color: "#f59e0b" },
 	expired: { label: "Expired", color: "#f59e0b" },
 	coming_soon: { label: "Coming soon", color: "#6366f1" },
@@ -443,6 +444,9 @@ export default function DataSourcesPage() {
 	const [metaAdsLastSync, setMetaAdsLastSync] = useState<string | null>(null);
 	const [metaAdsError, setMetaAdsError] = useState<string | null>(null);
 	const [metaAdsAdvanced, setMetaAdsAdvanced] = useState(false);
+	const [metaAdsSyncMeta, setMetaAdsSyncMeta] = useState<Record<string, any> | null>(null);
+	const [metaAdsTokenDaysLeft, setMetaAdsTokenDaysLeft] = useState<number | null>(null);
+	const [metaAdsTokenType, setMetaAdsTokenType] = useState<string | null>(null);
 
 	const fetchMetaAdsStatus = useCallback(async () => {
 		try {
@@ -454,6 +458,19 @@ export default function DataSourcesPage() {
 				setMetaAdsStatus(mapStatus(metaAds.status));
 				setMetaAdsLastSync(metaAds.lastSyncedAt);
 				setMetaAdsError(metaAds.syncError);
+				if (metaAds.syncMetadata) {
+					try {
+						const meta = typeof metaAds.syncMetadata === 'string' ? JSON.parse(metaAds.syncMetadata) : metaAds.syncMetadata;
+						setMetaAdsSyncMeta(meta);
+						if (meta.token_expires_at) {
+							const daysLeft = (meta.token_expires_at - Date.now()) / (1000 * 60 * 60 * 24);
+							setMetaAdsTokenDaysLeft(Math.round(daysLeft));
+						}
+						if (meta.token_type) {
+							setMetaAdsTokenType(meta.token_type);
+						}
+					} catch { /* silent */ }
+				}
 			}
 		} catch { /* silent */ }
 	}, [environmentId]);
@@ -865,7 +882,7 @@ export default function DataSourcesPage() {
 											<div>
 												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Connected</p>
 												{shopifyLastSync && (
-													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last sync: {new Date(shopifyLastSync).toLocaleString()}</p>
+													<SyncTimestamp lastSyncedAt={shopifyLastSync} />
 												)}
 												{shopifyValueFeedback && (
 													<p style={{ color: "#10b981", fontSize: 12, marginTop: 4 }}>{shopifyValueFeedback}</p>
@@ -939,7 +956,7 @@ export default function DataSourcesPage() {
 											<div>
 												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Conectado</p>
 												{nuvemshopLastSync && (
-													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Último sync: {new Date(nuvemshopLastSync).toLocaleString()}</p>
+													<SyncTimestamp lastSyncedAt={nuvemshopLastSync} />
 												)}
 												{nuvemshopValueFeedback && (
 													<p style={{ color: "#10b981", fontSize: 12, marginTop: 4 }}>{nuvemshopValueFeedback}</p>
@@ -1012,7 +1029,7 @@ export default function DataSourcesPage() {
 											<div>
 												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Connected</p>
 												{stripeLastSync && (
-													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last sync: {new Date(stripeLastSync).toLocaleString()}</p>
+													<SyncTimestamp lastSyncedAt={stripeLastSync} />
 												)}
 											</div>
 											<div style={{ display: "flex", gap: 8 }}>
@@ -1090,13 +1107,30 @@ export default function DataSourcesPage() {
 											<div>
 												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Connected</p>
 												{metaAdsLastSync && (
-													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last sync: {new Date(metaAdsLastSync).toLocaleString()}</p>
+													<SyncTimestamp lastSyncedAt={metaAdsLastSync} />
 												)}
 											</div>
-											<button onClick={handleDisconnectMetaAds} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
-												Disconnect
-											</button>
+											<div style={{ display: "flex", gap: 8 }}>
+												<a href={`/api/integrations/meta-ads/authorize?environment_id=${encodeURIComponent(environmentId)}`} style={{ ...buttonStyle, backgroundColor: "#27272a", color: "#e4e4e7", textDecoration: "none", textAlign: "center" as const }}>
+													Reconnect
+												</a>
+												<button onClick={handleDisconnectMetaAds} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
+													Disconnect
+												</button>
+											</div>
 										</div>
+										{metaAdsTokenType === "short_lived" && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+												<svg style={{ width: 14, height: 14, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+												<span>Limited access — token expires in 1 hour. Please try reconnecting.</span>
+											</div>
+										)}
+										{metaAdsTokenDaysLeft !== null && metaAdsTokenDaysLeft < 7 && metaAdsTokenType !== "short_lived" && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #92400e", backgroundColor: "#78350f30", color: "#fbbf24", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+												<svg style={{ width: 14, height: 14, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+												<span>Token expires in {metaAdsTokenDaysLeft} day{metaAdsTokenDaysLeft !== 1 ? "s" : ""} — reconnect to refresh</span>
+											</div>
+										)}
 										{metaAdsError && (
 											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
 												{metaAdsError}
@@ -1182,12 +1216,17 @@ export default function DataSourcesPage() {
 											<div>
 												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Connected</p>
 												{googleAdsLastSync && (
-													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last sync: {new Date(googleAdsLastSync).toLocaleString()}</p>
+													<SyncTimestamp lastSyncedAt={googleAdsLastSync} />
 												)}
 											</div>
-											<button onClick={handleDisconnectGoogleAds} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
-												Disconnect
-											</button>
+											<div style={{ display: "flex", gap: 8 }}>
+												<a href={`/api/integrations/google-ads/authorize?environment_id=${encodeURIComponent(environmentId)}`} style={{ ...buttonStyle, backgroundColor: "#27272a", color: "#e4e4e7", textDecoration: "none", textAlign: "center" as const }}>
+													Reconnect
+												</a>
+												<button onClick={handleDisconnectGoogleAds} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
+													Disconnect
+												</button>
+											</div>
 										</div>
 										{googleAdsError && (
 											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
@@ -1359,6 +1398,22 @@ export default function DataSourcesPage() {
 
 // ── Sub-components ───────────────────────────
 
+/**
+ * Shows "Last synced: X hours ago" with amber "Sync stale" if > 48h.
+ */
+function SyncTimestamp({ lastSyncedAt }: { lastSyncedAt: string }) {
+	const syncDate = new Date(lastSyncedAt);
+	const hoursAgo = Math.round((Date.now() - syncDate.getTime()) / (1000 * 60 * 60));
+	const isStale = hoursAgo > 48;
+	const label = hoursAgo < 1 ? "just now" : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.round(hoursAgo / 24)}d ago`;
+	return (
+		<p style={{ color: isStale ? "#f59e0b" : "#52525b", fontSize: 11, marginTop: 2 }}>
+			Last synced: {label}
+			{isStale && <span style={{ marginLeft: 6, padding: "1px 5px", borderRadius: 4, backgroundColor: "#78350f30", border: "1px solid #92400e", fontSize: 10, fontWeight: 500, color: "#fbbf24" }}>Sync stale</span>}
+		</p>
+	);
+}
+
 function StatusBadge({ status }: { status: string }) {
 	const info = STATUS_LABELS[status] || STATUS_LABELS.not_configured;
 	return (
@@ -1428,6 +1483,12 @@ function mapStatus(status: string): SourceStatus {
 	if (status === "error") return "failed";
 	if (status === "disconnected") return "not_configured";
 	return status as SourceStatus;
+}
+
+/** Compute hours since last sync — used for stale detection. */
+function hoursSinceSync(lastSyncedAt: string | null): number | null {
+	if (!lastSyncedAt) return null;
+	return Math.round((Date.now() - new Date(lastSyncedAt).getTime()) / (1000 * 60 * 60));
 }
 
 const inputStyle: React.CSSProperties = {

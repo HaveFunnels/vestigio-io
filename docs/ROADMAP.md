@@ -1,9 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-22 (3.14 shipped, open items refreshed)
+> Last updated: 2026-04-27 (3.12, 3.15, 3.17 shipped; 3.9 C-E shipped; Shopify bug fixed)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, L-R), 3.7B, 3.9 (A-B, F + 4 compound findings + 2 context signals), 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
+> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, I, L-R), 3.7B, 3.9 (A-F + 4 compound findings + 2 context signals), 3.12, 3.15, 3.17, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
 ---
 
@@ -52,19 +52,19 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | Item | Status | Wave |
 |------|--------|------|
 | Workspace Redesign — browser verification only | **~85% done** — only browser verification remains | Wave 3.11 |
-| Workspace Lens Enrichment — checklist-first views | **Fases 1-4 shipped 2026-04-23** — Chargeback Resilience (checklist + trust score), Revenue Intelligence (funnel map + opportunities), Security Posture (checklist), perspective-level enrichment. CommerceContext KPIs + Product Intelligence deferred until projection layer exposes integration data. **Fase 5 (i18n) pending.** | Wave 3.11B |
-| Shopify: promoted product cross-reference with crawled pages | **Bug** — `promotedProductIds` passes `[]` in poller.ts:185; `out_of_stock_promoted` always 0; finding M never fires | Wave 3.7 |
-| Ad Platforms: Creative→LP matcher + message-match + waste signal (C-E) | **Not started** — infrastructure 90% in place, ~12-17h | Wave 3.9 |
+| Workspace Lens Enrichment — checklist-first views | **Fases 1-5 shipped 2026-04-27** — Chargeback Resilience (checklist + trust score), Revenue Intelligence (funnel map + opportunities), Security Posture (checklist), perspective-level enrichment, full i18n (4 languages). CommerceContext KPIs + Product Intelligence deferred until projection layer exposes integration data. | Wave 3.11B |
+| ~~Shopify: promoted product cross-reference~~ | **✅ Fixed 2026-04-27** — `handle` added to product fetch, cross-ref with crawled URLs in poller, `promotedProductIds` now populated. Finding M fires. | Wave 3.7 |
+| ~~Ad Platforms: Creative→LP matcher + message-match + waste signal (C-E)~~ | **✅ Shipped 2026-04-27** — `ad-message-match.ts` module (extractAdLpPairs, Haiku analysis, parseAssessment), new signal `ad_message_mismatch_detected`, inference `inferAdCreativeMessageMismatch`, root cause `ad_landing_promise_gap`, impact baselines, remediation catalog, run-cycle wiring. | Wave 3.9 |
 | Meta Ads + Google Ads OAuth app approvals | External — 1-6 weeks | Wave 3.9 |
 | Prisma migration in prod for `syncMetadata` | Pending `npx prisma db push` | Wave 3.9 |
 | Stripe Integration — OAuth + poller (scaffolding ~40% done) | Types + reconciliation + Prisma + API CRUD done; missing OAuth flow + revenue poller + sync route | Wave 3.8 |
 | Copy Analysis Pack — remaining 16 items (A-D, G-P) | **0% of remaining items** — foundation only (4 enrichment types + signals + root cause) | Wave 3.10 |
-| Opportunity-First Actions — unified impact-ranked pipeline, 6 fases | **~5%** — engine generates opportunities; tab removed in favor of single unified list ranked by $ impact. All UI/UX fases open | Wave 3.12 |
+| ~~Opportunity-First Actions — unified impact-ranked pipeline~~ | **✅ Shipped 2026-04-27** — all 6 fases complete. ActionProjection enriched with opportunity data, 2 tabs (Pipeline/My Actions) + filter bar, unified summary cards, type+upside badges, hypothesis inline + drawer card, ScatterPlot (effort × impact, 4 quadrants), OpportunityTracking Prisma model, PATCH status API, auto-verify on improvement, i18n (4 langs). | Wave 3.12 |
 | Re-engagement & Remediation — close the loop | **Fases 1-3 shipped 2026-04-22** — dashboard as landing + CrossSignalHero widget, daily email digest via Brevo (cross-signal hero, health score, top changes), Fix with AI remediation playbooks in action SideDrawer. **Fase 4 (i18n) pending.** | Wave 3.13 |
 | Vestigio AI — Transversal Copilot | **Shipped 2026-04-22** — FAB with color orb + spring animation, full-height panel (side + full-screen expand), playbooks grid menu, CopilotProvider global state, SideDrawer coexistence, compact ChatInputBar with animated cycling placeholders, budget exhausted card, cross-domain pack insight bubbles during streaming, pack-aware ThinkingIndicator, voice message bubble, i18n (4 langs), chat removed from sidenav. | Wave 3.14 |
-| Cross-Signal Surface — making the moat visible | **Not started** — correlate findings across perspectives by shared URL/temporal pattern. ~1-2 weeks. | Wave 3.15 |
+| ~~Cross-Signal Surface — making the moat visible~~ | **✅ Shipped 2026-04-27** — dedicated `/app/cross-signals` page, `GET /api/cross-signals` endpoint, CrossSignalsShell (hero stats, filters, chain cards), CrossSignalChainCard (expandable), temporal pattern detection (sequential vs simultaneous via cycleId), template-based narrative generator, sidebar nav entry, mock data, i18n (4 langs). CrossSignalHero dashboard widget enhanced with temporal patterns + narratives. | Wave 3.15 |
 | Product Telemetry — measure before you change | **Shipped 2026-04-21** — ProductEvent model, useProductTrack hook, engagement score cron, admin product-analytics page. `prisma db push` applied to prod. | Wave 3.16 |
-| Workspace Upgrade Moments — monetize value | **Not started** — blurred previews, copilot nudge, cadence nudge. ~3-5 days. | Wave 3.17 |
+| ~~Upgrade Moments + Feedback Moments~~ | **✅ Shipped 2026-04-27** — PlanProvider + usePlan hook, UpgradeNudge (3 variants: inline/badge/blurred-overlay), FeedbackMoment (rating 5-star + NPS 0-10), useFeedbackMoment hook (3-layer cooldown: 48h/session/3-dismiss), NpsPulse 14-day pulse, copilot Pro pill badge, copilot upgrade nudge in empty state, copilot feedback after 3 messages, FindingDetailPanel 10s dwell trigger, WhatChangedCard cadence nudge, CrossSignalHero chain limiting for Starter, AdSpendKpi blurred preview, i18n (4 langs). | Wave 3.17 |
 | First-Audit Experience — value before data | **Not started** — rich progress feed, heuristic preview, first-findings celebration. ~1 week. | Wave 3.18 |
 | Cancel Flow & Save Offers — reduce voluntary churn | **Not started** — exit survey, dynamic offers, pause, win-back sequence. ~2 weeks. | Wave 3.19 |
 | Unified Entity Architecture — Findings as first-class citizens | **Fase 1 shipped 2026-04-21** — FindingDetailPanel unified, cross-refs wired (workspace_refs, action_refs, opportunity_ref), canonical /app/findings/[id], URL filter state on Analysis, finding-in-URL on drawer open/close. **Fase 2 (saved views + sidebar simplification) and Fase 3 (custom views) deferred.** | Wave 3.20 |
@@ -209,14 +209,14 @@ interface RevenueRecoveryEstimate {
 | F | **Abandoned checkouts** | Fetch `/checkouts.json` (created_at filter, 90d window). Aggregate: abandonment_count, abandonment_rate, abandonment_value, avg_steps_before_abandon. Map to `CommerceContext.abandonment_rate` + `abandonment_value_monthly`. | ✅ Done — fetch (`client.ts:194`), aggregation (`aggregator.ts:208`), mapping (`snapshot-mapper.ts:69`), CommerceContext (`reconcile.ts:218`) all wired |
 | G | **Customers** | Fetch `/customers.json` (orders_count, total_spent). Aggregate: repeat_purchase_rate, new_vs_returning_ratio, avg_customer_lifetime_value. Map to `CommerceContext`. | ✅ Done — fetch (`client.ts:245`), aggregation (`aggregator.ts:234`), mapping (`snapshot-mapper.ts:76`), CommerceContext (`reconcile.ts:226`) all wired |
 | H | **Products** | Fetch `/products.json` (id, title, status, variants). Cross-reference with order line items. Identify: total_products, products_never_sold_30d (listed but 0 orders), top_products_by_revenue. Map to `CommerceContext`. | ✅ Done — fetch (`client.ts:295`), line items cross-ref (`poller.ts:171`), aggregation (`aggregator.ts:267`), CommerceContext (`reconcile.ts:232`) all wired |
-| I | **Inventory levels** | Fetch `/inventory_levels.json` for products found on crawled pages. Identify: out_of_stock_promoted_count (product page exists in crawl inventory but stock = 0). Map to `CommerceContext`. | ⚠️ Partial — fetch + batching works (`client.ts:347`), `aggregateInventory()` exists (`aggregator.ts:305`), **but `promotedProductIds` hardcoded as `[]` in `poller.ts:185`** — needs cross-reference with crawled page graph to extract promoted product IDs. `out_of_stock_promoted` always = 0. |
+| I | **Inventory levels** | Fetch `/inventory_levels.json` for products found on crawled pages. Identify: out_of_stock_promoted_count (product page exists in crawl inventory but stock = 0). Map to `CommerceContext`. | ✅ Done — fetch + batching (`client.ts:347`), `aggregateInventory()` (`aggregator.ts:305`), `handle` field added to product fetch (`client.ts`), poller cross-references product handles with crawled `/products/{handle}` URLs to populate `promotedProductIds`. Fixed 2026-04-27. |
 
 #### 3.7.4 New Findings & Signals
 
 | # | Finding | Data source | Pack | Status |
 |---|---------|-------------|------|--------|
 | L | `checkout_abandonment_revenue_leak` — "Your checkout loses $X/mo in abandoned carts" | abandoned_checkouts | revenue_integrity | ✅ Firing — signal `checkout_abandonment_rate_high` (>60%) → inference wired (`inference/engine.ts:3264`) |
-| M | `promoted_product_out_of_stock` — "Products on your site are out of stock, frustrating buyers" | inventory_levels + crawled pages | money_moment_exposure | ⚠️ **Blocked** — signal + inference exist but never fire because `promotedProductIds = []` (see 3.7.2-I bug) |
+| M | `promoted_product_out_of_stock` — "Products on your site are out of stock, frustrating buyers" | inventory_levels + crawled pages | money_moment_exposure | ✅ Firing — `promotedProductIds` now populated via handle cross-reference (3.7.2-I fix, 2026-04-27) |
 | N | `high_refund_rate_eroding_revenue` — "Refund rate is X%, eroding $Y/mo in revenue" | refund data (real, not proxy) | chargeback_resilience | ✅ Firing — signal `refund_rate_elevated` (>5%) → inference wired (`inference/engine.ts:3300`) |
 | O | `single_payment_gateway_risk` — "95%+ of payments go through one gateway — one outage stops all revenue" | payment_methods | money_moment_exposure | ✅ Firing — signal `payment_gateway_concentrated` (>90%) → inference wired (`inference/engine.ts:3318`) |
 | P | `discount_abuse_pattern` — "X% of orders use discounts, leaking $Y/mo in margin" | discount data | channel_integrity | ✅ Firing — signal `discount_usage_elevated` (>40%) → inference wired (`inference/engine.ts:3336`) |
@@ -261,13 +261,13 @@ interface RevenueRecoveryEstimate {
 
 ---
 
-### 3.9 Ad Platform Integrations — Meta & Google Ads
+### 3.9 Ad Platform Integrations — Meta & Google Ads ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `platform` `collection` `engine` |
 | **Priority** | P1 |
-| **Status** | **Partially shipped — 2026-04-17.** Full pipeline built: pollers (Graph API + GAQL), OAuth full-flow with CSRF protection, LGPD webhooks (data deletion + deauthorize for Meta), UI cards with Connect buttons in Data Sources, run-cycle wiring, KB articles, deployment docs. Graph foundation (Layer 1): ad_creative/ad_campaign node types, ad_targets/ad_funds edge types, 4 compound findings (dead destination, landing trust gap, form friction waste, mobile checkout degraded), 2 context signals (ad spend concentrated, ads without conversion tracking). 6 new inferences + impact baselines + root causes + remediation catalog. Dashboard AdSpendKpi widget reading syncMetadata. **Pending:** Meta Developer App Review approval (ads_read + business_management) + Google Cloud OAuth verification + Google Ads Developer Token. `npx prisma db push` for syncMetadata field. |
+| **Status** | **✅ Fully shipped — 2026-04-27.** Full pipeline built: pollers (Graph API + GAQL), OAuth full-flow with CSRF protection, LGPD webhooks (data deletion + deauthorize for Meta), UI cards with Connect buttons in Data Sources, run-cycle wiring, KB articles, deployment docs. Graph foundation (Layer 1): ad_creative/ad_campaign node types, ad_targets/ad_funds edge types, 4 compound findings (dead destination, landing trust gap, form friction waste, mobile checkout degraded), 2 context signals (ad spend concentrated, ads without conversion tracking). 6 new inferences + impact baselines + root causes + remediation catalog. Dashboard AdSpendKpi widget reading syncMetadata. **Layer 2 (C-E shipped 2026-04-27):** Creative→LP matcher (`extractAdLpPairs`), Haiku message-match analysis (`analyzeAdMessageMatch`), ad spend waste quantification — full signal→inference→impact→remediation pipeline wired in run-cycle. **Pending (external):** Meta Developer App Review approval (ads_read + business_management) + Google Cloud OAuth verification + Google Ads Developer Token. `npx prisma db push` for syncMetadata field. |
 
 **Context:** Pulling actual ad creative text from ad platforms enables precise message-match analysis (does the landing page deliver what the ad promised?), ad spend waste quantification, and conversion attribution. This data also enriches the Copy Analysis Pack (3.10) with real ad creatives instead of UTM heuristics.
 
@@ -275,9 +275,9 @@ interface RevenueRecoveryEstimate {
 |---|------|-------------|--------|--------|
 | A | **Meta Ads API integration** | OAuth flow, Graph API poller (30d insights + top 20 creatives with headline/body/cta/destination_url/spend), LGPD webhooks, UI card, KB article. **Pending:** Meta app review approval. | — | ✅ Done |
 | B | **Google Ads API integration** | OAuth flow, GAQL poller (campaign costs + responsive search ad headlines/descriptions + final URLs), UI card, KB article. **Pending:** Google OAuth verification + developer token. | — | ✅ Done |
-| C | **Creative → LP matcher** | Match ad creatives to landing pages via: (1) destination URL exact match, (2) UTM campaign/content → creative ID mapping, (3) final URL domain + path pattern. Each matched pair becomes a `AdLpPair { creative_text, creative_cta, lp_url, lp_copy_elements }` fed to the Haiku analysis. **Note:** Graph already has `ad_creative` nodes with headline/body/cta/destination_url in metadata + `ad_targets` edges — matcher needs to traverse these and pair with page copy. | Low | ❌ Not started — no `AdLpPair` type, no matcher logic |
-| D | **Precise message-match analysis** | Haiku call per `AdLpPair`: does the LP headline echo the ad promise? Does the LP CTA match the ad CTA type? Is the value prop consistent? Structured output with specific mismatch points and fix suggestions. New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. **Note:** Haiku enrichment infra exists (ContentEnrichment pattern) — just needs a new call type. | Low | ❌ Not started — no Haiku prompt, no signal/inference keys |
-| E | **Ad spend waste signal** | Quantify message-mismatch findings in dollars: "This LP receives ~$X/day in ad spend but breaks the ad promise — estimated waste: $Y/mo." Uses `CommerceContext.ad_spend_by_platform` for real $ amounts. **Note:** `ad_spend_by_platform` + `total_ad_spend_monthly` already populated by `reconcileCommerceContext()`. | Low | ❌ Not started — depends on D |
+| C | **Creative → LP matcher** | Match ad creatives to landing pages via: (1) destination URL exact match, (2) UTM campaign/content → creative ID mapping, (3) final URL domain + path pattern. Each matched pair becomes a `AdLpPair { creative_text, creative_cta, lp_url, lp_copy_elements }` fed to the Haiku analysis. | Low | ✅ Done — `extractAdLpPairs()` in `workers/ingestion/enrichment/ad-message-match.ts`, traverses graph `ad_creative` nodes + `ad_targets` edges, pairs with page copy from enrichment evidence |
+| D | **Precise message-match analysis** | Haiku call per `AdLpPair`: does the LP headline echo the ad promise? Does the LP CTA match the ad CTA type? Is the value prop consistent? Structured output with specific mismatch points and fix suggestions. New signal `ad_message_mismatch_detected`, new inference `landing_page_breaks_ad_promise`. | Low | ✅ Done — `analyzeAdMessageMatch()` Haiku prompt + `parseAssessment()` in `ad-message-match.ts`, signal `ad_message_mismatch_detected` in `signals/engine.ts`, inference `inferAdCreativeMessageMismatch` in `inference/engine.ts`, root cause `ad_landing_promise_gap`, evidence type `ad_message_match` |
+| E | **Ad spend waste signal** | Quantify message-mismatch findings in dollars: "This LP receives ~$X/day in ad spend but breaks the ad promise — estimated waste: $Y/mo." Uses `CommerceContext.ad_spend_by_platform` for real $ amounts. | Low | ✅ Done — inference aggregates total spend across mismatched pairs, impact baselines in `baselines.ts` (high: 4-7%, medium: 2-4%, low: 1-2%), remediation catalog with 5 steps, pack `revenue_integrity`, surface `Meta Ads / Google Ads → landing page copy` |
 | F | **Settings UI** | Meta Ads + Google Ads cards in Data Sources page. | — | ✅ Done |
 | — | **4 compound findings (heuristic, graph-based)** | `ad_creative_dead_destination`, `ad_creative_landing_trust_gap`, `ad_creative_form_friction_waste`, `ad_creative_mobile_checkout_degraded` — all with signals + inferences + remediation. These analyze page structure (forms, trust signals, mobile perf), NOT creative text content. | — | ✅ Done (`signals/engine.ts:5583-5645`) |
 | — | **2 context signals** | `ad_spend_platform_concentrated`, `ads_active_without_conversion_tracking`. | — | ✅ Done |
@@ -377,7 +377,7 @@ interface RevenueRecoveryEstimate {
 |---|---|
 | **Tag** | `frontend` `engine` |
 | **Priority** | P1 |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | **Fases 1-5 shipped 2026-04-27** — Chargeback Resilience (checklist + trust score), Revenue Intelligence (funnel map + opportunities), Security Posture (checklist), perspective-level enrichment, full i18n (4 languages). CommerceContext KPIs + Product Intelligence deferred until projection layer exposes integration data. |
 
 **Problem:** Every workspace detail page (except Preflight) renders the same generic layout: change summary + findings table + coherence panel. This makes workspaces feel like filtered Analysis views — not enough value to justify dedicated surfaces. Meanwhile, the engine stores rich data (`CommerceContext`, `TrustSurfaceScore`, `opportunities`, `top_products_by_revenue`, inference reasoning, pilar-level aggregations) that never reaches the user.
 
@@ -551,13 +551,13 @@ else                              → DataTable (behavioral + fallback)
 
 ---
 
-### 3.12 Opportunity-First Actions — Unified Impact-Ranked Pipeline
+### 3.12 Opportunity-First Actions — Unified Impact-Ranked Pipeline ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `frontend` `engine` `platform` |
 | **Priority** | P1 |
-| **Status** | **~5% implemented — 2026-04-21 audit confirmed.** Engine side: `generateOpportunities()` in `opportunity-gate.ts` is complete (130+ inference templates, confidence scoring, clustering). `OpportunityCompressionResult` in composites is wired. Frontend side: Opportunities tab exists in Actions page with emerald badge, count card, category filtering, and opportunity lifecycle steps defined. **But:** `ActionProjection` has NO opportunity-specific fields; projection engine never calls `generateOpportunities()`; all UI/UX fases unimplemented. No `OpportunityTracking` Prisma model. No status API endpoint. |
+| **Status** | **✅ Fully shipped 2026-04-27 — all 6 fases complete.** Engine: `ActionProjection` enriched with 5 new fields (uplift_hypothesis, upside_score, value_case_basis, cluster_key, cluster_count), opportunity data resolved from `MultiPackResult.opportunities` + cluster data from `opportunity_compression`, auto-verify on improvement (change_class === 'improvement' + status === 'implemented' → 'verified'). Frontend: 6 tabs → 2 tabs (Pipeline/My Actions) + filter bar (type/severity/effort/status), unified summary cards (Total Exposure, Quick Wins, In Progress, Captured), type+upside badges, hypothesis inline + emerald drawer card, ScatterPlot SVG (effort × impact, 4 quadrants, red/emerald dots). Platform: `OpportunityTracking` Prisma model, `PATCH /api/actions/[id]/status` endpoint with transition validation. i18n: 4 languages. |
 
 **Design revision (2026-04-24):** Tabs split "what to fix" from "what to gain" as if they're different decisions. They're not — the user always asks "where do I invest time for max return?" A **single unified list ranked by $ impact** answers this directly. Incidents (loss) and opportunities (gain) are both actions with a dollar value; the type becomes a visual badge (red vs emerald) on the same row, not a tab switch. This eliminates the tab overhead, prevents the user from missing high-value opportunities buried in a secondary tab, and lets the scatter plot work across both types.
 
@@ -624,7 +624,7 @@ else                              → DataTable (behavioral + fallback)
 |---|---|
 | **Tag** | `platform` `frontend` `engine` `mcp` |
 | **Priority** | P1 |
-| **Status** | Not started — 2026-04-22 |
+| **Status** | **Fases 1-3 shipped 2026-04-22** — dashboard as landing + CrossSignalHero widget, daily email digest via Brevo, Fix with AI remediation playbooks. **Fase 4 (i18n) pending.** |
 
 **Problem:** Vestigio finds problems but has (1) **zero proactive mechanisms** to bring users back and (2) **no bridge from finding to fix**. Users must manually translate Vestigio's findings into code changes. In the vibecoding era, every user has access to AI coding tools (Cursor, Claude Code, Replit, Lovable, Codex) — Vestigio should generate the prompt that those tools need to implement the fix. The finding→fix loop is: Vestigio detects → user reviews → copies prompt → AI codes the fix → Vestigio verifies.
 
@@ -782,13 +782,13 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 
 ---
 
-### 3.15 Cross-Signal Surface — Making the Moat Visible
+### 3.15 Cross-Signal Surface — Making the Moat Visible ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` `frontend` |
 | **Priority** | P1 |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | **✅ Shipped 2026-04-27.** Dedicated `/app/cross-signals` page with CrossSignalsShell (hero stats: total chains, combined impact, perspectives involved; filters by perspective/temporal pattern; expandable chain cards). `GET /api/cross-signals` endpoint. CrossSignalChainCard component with link flow visualization, narrative text, temporal badge (sequential/simultaneous), expandable detail. Aggregator refactored with shared `buildCrossSignalChains()` helper, temporal pattern detection via cycleId comparison, `computeAllCrossSignals()` export. Template-based narrative generator (`cross-signal-narrative.ts`). CrossSignalHero dashboard widget enhanced with temporal patterns + narratives. Sidebar nav entry under Analysis group. Mock data for demo. i18n (4 languages). **Deferred:** Analysis page `?chain=` pre-filter (when clicking from Cross-Signals page). |
 
 **Problem:** Vestigio's unique competitive advantage — correlating technical + behavioral + revenue + security signals into a single view — is invisible to users. Each perspective is a silo. The engine computes composites (blast radius, opportunity compression) that span perspectives, but the UI never shows the cross-domain story. No competitor (ContentKing, Hotjar, Semrush, Baremetrics, Contentsquare) correlates across these domains. This is the moat, and it's hidden.
 
@@ -837,7 +837,7 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 
 ---
 
-### 3.17 Workspace Upgrade Moments — Monetize the Value Created
+### 3.17 Upgrade & Feedback Moments — Monetize & Measure ✅ COMPLETE
 
 > **See also:** 3.18 (First-Audit Experience) and 3.19 (Cancel Flow & Save Offers) below.
 
@@ -845,7 +845,7 @@ Badges use the same pattern as the reference UI: `Badge variant="secondary"` wit
 |---|---|
 | **Tag** | `frontend` `platform` |
 | **Priority** | P2 |
-| **Status** | Not started — 2026-04-21 |
+| **Status** | **✅ Shipped 2026-04-27.** Scope expanded beyond original spec to include feedback moments alongside upgrade moments. **Upgrade moments:** PlanProvider + usePlan() hook (Starter/Pro/Max), UpgradeNudge component (3 variants: inline, badge, blurred-overlay), copilot Pro pill badge for Starter, copilot upgrade nudge in empty state, WhatChangedCard cadence nudge ("Upgrade to Pro for daily insights"), CrossSignalHero chain limiting (Starter: 1 chain + "N more"), AdSpendKpi blurred preview overlay. **Feedback moments:** FeedbackMoment component (2 variants: rating 5-star, NPS 0-10), useFeedbackMoment hook with 3-layer cooldown (48h per-trigger, session global, 3-dismiss suppression), NpsPulse 14-day pulse at bottom-left, copilot feedback after 3 messages, FindingDetailPanel 10s dwell timer, `/api/feedback` extended with "contextual" + "nps" types + 0-10 rating range. i18n (4 languages). |
 
 **Problem:** Workspace enrichment (3.11B) creates rich surfaces with KPIs, checklists, and funnels. Some data requires integrations (Pro+ feature). The copilot (3.14) creates AI interactions (Pro+ feature with MCP budget). But there are **zero upgrade prompts in workspaces** — upgrade pressure only exists in chat budget bar, seat limits, and billing page. The value the user sees in workspaces never converts to upgrade intent.
 

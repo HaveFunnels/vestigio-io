@@ -2523,6 +2523,55 @@
 			"title": "Audits were paused after 14 days without access.",
 			"body": "Resuming now — a catch-up audit is running against your site. You'll see updated findings shortly."
 		},
+		"first_audit": {
+			"title": "Running your first audit",
+			"title_complete": "Audit complete",
+			"pages_one": "1 page discovered",
+			"pages_other": "{count} pages discovered",
+			"findings_one": "1 finding",
+			"findings_other": "{count} findings",
+			"elapsed": "{seconds}s elapsed",
+			"in_progress": "In progress...",
+			"done": "Complete",
+			"stages": {
+				"discover": "Discovering your site structure...",
+				"classify": "Classifying pages by commercial intent...",
+				"analyze": "Analyzing security, trust, and revenue signals...",
+				"enrich": "Enriching with AI insights...",
+				"compute": "Computing impact estimates..."
+			},
+			"preview": {
+				"heading": "Based on your {businessType} site, here's what we typically find:",
+				"disclaimer": "Preview — full results in a few minutes",
+				"business_types": {
+					"ecommerce": "ecommerce",
+					"saas": "SaaS",
+					"lead_gen": "lead gen",
+					"hybrid": "hybrid"
+				},
+				"bullets": {
+					"checkout_trust": "Checkout trust signals that affect purchase confidence",
+					"payment_security": "Payment security indicators visible to buyers",
+					"product_page_quality": "Product page quality and conversion readiness",
+					"cart_abandonment": "Cart abandonment patterns and friction points",
+					"mobile_checkout": "Mobile checkout experience and speed issues",
+					"pricing_framing": "Pricing page framing and anchoring effectiveness",
+					"trial_barriers": "Trial conversion barriers and signup friction",
+					"trust_signals": "Trust signals and social proof placement",
+					"onboarding_friction": "Onboarding flow friction and drop-off points",
+					"security_posture": "Security posture visible to prospects",
+					"form_friction": "Form friction and field optimization opportunities",
+					"cta_clarity": "CTA clarity and prominence across key pages",
+					"social_proof": "Social proof placement and credibility signals",
+					"mobile_responsiveness": "Mobile responsiveness and touch-target issues",
+					"trust_indicators": "Trust indicators that influence lead quality"
+				}
+			},
+			"celebration": {
+				"title": "Audit complete!",
+				"body": "{findings} findings discovered across {pages} pages. Your dashboard is ready."
+			}
+		},
 		"organization": {
 			"title": "Organization",
 			"subtitle": "Manage your organization, plan, and environments.",
@@ -2867,6 +2916,23 @@
 					"confirmedTitle": "Recovery confirmed",
 					"confirmedBody": "A later cycle confirmed this fix stuck — attribution landed on {when}."
 				}
+			},
+			"fix_with_ai": {
+				"title": "Fix with AI",
+				"description": "Generate a remediation prompt tailored for your AI coding tool.",
+				"select_tool": "Select your AI tool",
+				"generate": "Generate prompt",
+				"generating": "Generating",
+				"copy": "Copy prompt",
+				"copied": "Copied!",
+				"cost": "1 query",
+				"prompt_for": "Prompt for {tool}",
+				"change_tool": "Change tool",
+				"no_action": "Create an action first to generate a fix prompt.",
+				"select_action": "This finding has multiple linked actions. Pick one to generate a fix prompt.",
+				"pick_different": "Pick a different action",
+				"error_generate": "Failed to generate prompt",
+				"error_network": "Network error"
 			}
 		},
 		"data_sources": {
@@ -3452,7 +3518,78 @@
 				"event_newsletter_desc": "Monthly product updates and roadmap highlights.",
 				"event_product_updates": "Release notes",
 				"event_product_updates_desc": "Be first to know about new features."
+			},
+			"subscription": {
+				"title": "Subscription",
+				"description": "Manage your subscription plan. Changes take effect at the end of your current billing period.",
+				"cancel_button": "Cancel Subscription"
 			}
+		},
+		"cancel_flow": {
+			"survey_title": "We're sorry to see you go",
+			"survey_subtitle": "What's the main reason you're cancelling? Your feedback helps us improve.",
+			"reasons": {
+				"too_expensive": "It's too expensive for what I get",
+				"not_using": "I'm not using it enough",
+				"missing_feature": "It's missing a feature I need",
+				"switching": "I'm switching to another tool",
+				"technical": "I'm having technical issues",
+				"temporary": "I just need a break",
+				"other": "Other"
+			},
+			"free_text_placeholder": "Tell us more (optional)...",
+			"keep_subscription": "Never mind, keep my subscription",
+			"continue": "Continue",
+			"loading": "Please wait...",
+			"offer_title": "Before you go...",
+			"offer_subtitle": "We'd love to find a way to make this work. How about this?",
+			"offers": {
+				"discount": {
+					"title": "25% off for 3 months",
+					"description": "We'll apply a 25% discount to your next 3 billing cycles so you can keep getting value at a lower cost.",
+					"cta": "Apply discount"
+				},
+				"pause": {
+					"title": "Pause your subscription",
+					"description": "Take a break without losing your data. We'll keep everything safe and resume when you're ready.",
+					"cta": "Pause my subscription"
+				},
+				"downgrade": {
+					"title": "Switch to Starter plan",
+					"description": "Keep the essentials at a lower price. You can always upgrade again later.",
+					"cta": "Downgrade to Starter"
+				},
+				"support": {
+					"title": "Talk to our team",
+					"description": "Let us help resolve your issue. Our support team can schedule a call within 24 hours.",
+					"cta": "Schedule a call"
+				},
+				"roadmap": {
+					"title": "It's on our roadmap",
+					"description": "The feature you need is being built. We'll notify you as soon as it ships. Stay and be the first to try it.",
+					"cta": "Notify me when it ships"
+				}
+			},
+			"month": "month",
+			"months": "months",
+			"no_thanks": "No thanks, continue cancelling",
+			"confirm_title": "Confirm cancellation",
+			"confirm_subtitle": "Your subscription will end at the close of your current billing period. You won't be charged again.",
+			"lose_title": "What you'll lose access to",
+			"lose_features": {
+				"continuous_audits": "Continuous audit cycles and monitoring",
+				"ai_chat": "AI Chat assistant and agentic insights",
+				"revenue_maps": "Revenue integrity maps and visualizations",
+				"priority_support": "Priority support and account management",
+				"integrations": "Custom integrations (Shopify, Stripe, Meta, Google)",
+				"team_access": "Team member access and collaboration"
+			},
+			"data_retention": "Your data will be preserved for 30 days after cancellation. You can reactivate your subscription anytime from Settings.",
+			"confirm_cancel": "Cancel my subscription",
+			"changed_mind": "I changed my mind, keep my subscription",
+			"cancelled_title": "Your subscription has been cancelled",
+			"cancelled_description": "Your access continues until the end of your current billing period. We'll keep your data safe for 30 days.",
+			"back_to_settings": "Back to Settings"
 		},
 		"copilot": {
 			"fab_label": "Vestigio AI",

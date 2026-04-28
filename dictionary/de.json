@@ -2071,6 +2071,23 @@
 					"confirmedTitle": "Wiederherstellung bestätigt",
 					"confirmedBody": "Ein späterer Zyklus hat bestätigt, dass dieser Fix gegriffen hat — Attribution erfolgte am {when}."
 				}
+			},
+			"fix_with_ai": {
+				"title": "Mit KI beheben",
+				"description": "Erstelle einen Korrektur-Prompt fuer dein KI-Coding-Tool.",
+				"select_tool": "Waehle dein KI-Tool",
+				"generate": "Prompt generieren",
+				"generating": "Generiere",
+				"copy": "Prompt kopieren",
+				"copied": "Kopiert!",
+				"cost": "1 Abfrage",
+				"prompt_for": "Prompt fuer {tool}",
+				"change_tool": "Tool wechseln",
+				"no_action": "Erstelle zuerst eine Aktion, um einen Korrektur-Prompt zu generieren.",
+				"select_action": "Dieser Befund hat mehrere verknuepfte Aktionen. Waehle eine aus, um den Korrektur-Prompt zu generieren.",
+				"pick_different": "Andere Aktion waehlen",
+				"error_generate": "Prompt konnte nicht generiert werden",
+				"error_network": "Netzwerkfehler"
 			}
 		},
 		"data_sources": {

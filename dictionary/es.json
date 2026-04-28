@@ -2486,6 +2486,55 @@
 			"title": "Las auditorías se pausaron tras 14 días sin acceso.",
 			"body": "Reanudando ahora — una auditoría de recuperación se está ejecutando sobre tu sitio. Verás los hallazgos actualizados en breve."
 		},
+		"first_audit": {
+			"title": "Ejecutando tu primera auditoría",
+			"title_complete": "Auditoría completada",
+			"pages_one": "1 página descubierta",
+			"pages_other": "{count} páginas descubiertas",
+			"findings_one": "1 hallazgo",
+			"findings_other": "{count} hallazgos",
+			"elapsed": "{seconds}s transcurridos",
+			"in_progress": "En progreso...",
+			"done": "Completado",
+			"stages": {
+				"discover": "Descubriendo la estructura de tu sitio...",
+				"classify": "Clasificando páginas por intención comercial...",
+				"analyze": "Analizando señales de seguridad, confianza e ingresos...",
+				"enrich": "Enriqueciendo con insights de IA...",
+				"compute": "Calculando estimaciones de impacto..."
+			},
+			"preview": {
+				"heading": "Basándonos en tu sitio de {businessType}, esto es lo que normalmente encontramos:",
+				"disclaimer": "Vista previa — resultados completos en unos minutos",
+				"business_types": {
+					"ecommerce": "e-commerce",
+					"saas": "SaaS",
+					"lead_gen": "generación de leads",
+					"hybrid": "modelo híbrido"
+				},
+				"bullets": {
+					"checkout_trust": "Señales de confianza en el checkout que afectan la decisión de compra",
+					"payment_security": "Indicadores de seguridad de pago visibles para compradores",
+					"product_page_quality": "Calidad de la página de producto y preparación para conversión",
+					"cart_abandonment": "Patrones de abandono de carrito y puntos de fricción",
+					"mobile_checkout": "Experiencia de checkout móvil y problemas de velocidad",
+					"pricing_framing": "Enmarcado de la página de precios y efectividad del anclaje",
+					"trial_barriers": "Barreras de conversión de prueba y fricción en el registro",
+					"trust_signals": "Señales de confianza y ubicación de prueba social",
+					"onboarding_friction": "Fricción en el flujo de onboarding y puntos de abandono",
+					"security_posture": "Postura de seguridad visible para prospectos",
+					"form_friction": "Fricción en formularios y oportunidades de optimización de campos",
+					"cta_clarity": "Claridad y prominencia de CTAs en páginas clave",
+					"social_proof": "Ubicación de prueba social y señales de credibilidad",
+					"mobile_responsiveness": "Responsividad móvil y problemas de áreas táctiles",
+					"trust_indicators": "Indicadores de confianza que influyen en la calidad de leads"
+				}
+			},
+			"celebration": {
+				"title": "¡Auditoría completada!",
+				"body": "{findings} hallazgos descubiertos en {pages} páginas. Tu dashboard está listo."
+			}
+		},
 		"organization": {
 			"title": "Organización",
 			"subtitle": "Administra tu organización, plan y entornos.",
@@ -2826,6 +2875,23 @@
 					"confirmedTitle": "Recuperación confirmada",
 					"confirmedBody": "Un ciclo posterior confirmó que la corrección funcionó — la atribución cayó el {when}."
 				}
+			},
+			"fix_with_ai": {
+				"title": "Corregir con IA",
+				"description": "Genera un prompt de corrección adaptado a tu herramienta de IA.",
+				"select_tool": "Selecciona tu herramienta de IA",
+				"generate": "Generar prompt",
+				"generating": "Generando",
+				"copy": "Copiar prompt",
+				"copied": "Copiado!",
+				"cost": "1 consulta",
+				"prompt_for": "Prompt para {tool}",
+				"change_tool": "Cambiar herramienta",
+				"no_action": "Crea una acción primero para generar un prompt de corrección.",
+				"select_action": "Este hallazgo tiene múltiples acciones vinculadas. Elige una para generar el prompt de corrección.",
+				"pick_different": "Elegir otra acción",
+				"error_generate": "Error al generar el prompt",
+				"error_network": "Error de red"
 			}
 		},
 		"data_sources": {

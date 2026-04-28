@@ -2542,6 +2542,55 @@
 			"title": "Auditorias pausadas após 14 dias sem acesso.",
 			"body": "Retomando agora — uma auditoria de recuperação está rodando no seu site. Os findings atualizados aparecem em instantes."
 		},
+		"first_audit": {
+			"title": "Executando sua primeira auditoria",
+			"title_complete": "Auditoria concluída",
+			"pages_one": "1 página descoberta",
+			"pages_other": "{count} páginas descobertas",
+			"findings_one": "1 finding",
+			"findings_other": "{count} findings",
+			"elapsed": "{seconds}s decorridos",
+			"in_progress": "Em andamento...",
+			"done": "Concluído",
+			"stages": {
+				"discover": "Descobrindo a estrutura do seu site...",
+				"classify": "Classificando páginas por intenção comercial...",
+				"analyze": "Analisando sinais de segurança, confiança e receita...",
+				"enrich": "Enriquecendo com insights de IA...",
+				"compute": "Calculando estimativas de impacto..."
+			},
+			"preview": {
+				"heading": "Com base no seu site de {businessType}, aqui está o que normalmente encontramos:",
+				"disclaimer": "Prévia — resultados completos em poucos minutos",
+				"business_types": {
+					"ecommerce": "e-commerce",
+					"saas": "SaaS",
+					"lead_gen": "geração de leads",
+					"hybrid": "modelo híbrido"
+				},
+				"bullets": {
+					"checkout_trust": "Sinais de confiança no checkout que afetam a decisão de compra",
+					"payment_security": "Indicadores de segurança de pagamento visíveis para compradores",
+					"product_page_quality": "Qualidade da página de produto e prontidão para conversão",
+					"cart_abandonment": "Padr��es de abandono de carrinho e pontos de fricção",
+					"mobile_checkout": "Experiência de checkout mobile e problemas de velocidade",
+					"pricing_framing": "Enquadramento da página de preços e eficácia de ancoragem",
+					"trial_barriers": "Barreiras de conversão de trial e fricção no cadastro",
+					"trust_signals": "Sinais de confiança e posicionamento de prova social",
+					"onboarding_friction": "Fricção no fluxo de onboarding e pontos de desistência",
+					"security_posture": "Postura de segurança visível para prospects",
+					"form_friction": "Fricção em formulários e oportunidades de otimização de campos",
+					"cta_clarity": "Clareza e destaque dos CTAs nas páginas principais",
+					"social_proof": "Posicionamento de prova social e sinais de credibilidade",
+					"mobile_responsiveness": "Responsividade mobile e problemas de área de toque",
+					"trust_indicators": "Indicadores de confiança que influenciam a qualidade dos leads"
+				}
+			},
+			"celebration": {
+				"title": "Auditoria concluída!",
+				"body": "{findings} findings descobertos em {pages} páginas. Seu dashboard está pronto."
+			}
+		},
 		"organization": {
 			"title": "Organização",
 			"subtitle": "Gerencie sua organização, plano e ambientes.",
@@ -2886,6 +2935,23 @@
 					"confirmedTitle": "Recuperação confirmada",
 					"confirmedBody": "Um cycle posterior confirmou que a correção funcionou — attribution caiu em {when}."
 				}
+			},
+			"fix_with_ai": {
+				"title": "Corrigir com IA",
+				"description": "Gere um prompt de correção personalizado para sua ferramenta de IA.",
+				"select_tool": "Selecione sua ferramenta de IA",
+				"generate": "Gerar prompt",
+				"generating": "Gerando",
+				"copy": "Copiar prompt",
+				"copied": "Copiado!",
+				"cost": "1 consulta",
+				"prompt_for": "Prompt para {tool}",
+				"change_tool": "Trocar ferramenta",
+				"no_action": "Crie uma ação primeiro para gerar um prompt de correção.",
+				"select_action": "Este achado tem múltiplas ações vinculadas. Escolha uma para gerar o prompt de correção.",
+				"pick_different": "Escolher outra ação",
+				"error_generate": "Falha ao gerar o prompt",
+				"error_network": "Erro de rede"
 			}
 		},
 		"data_sources": {
@@ -3471,7 +3537,78 @@
 				"event_newsletter_desc": "Atualizações mensais do produto e destaques do roadmap.",
 				"event_product_updates": "Notas de lançamento",
 				"event_product_updates_desc": "Seja o primeiro a saber das novas funcionalidades."
+			},
+			"subscription": {
+				"title": "Assinatura",
+				"description": "Gerencie seu plano de assinatura. Alterações entram em vigor no final do período de cobrança atual.",
+				"cancel_button": "Cancelar Assinatura"
 			}
+		},
+		"cancel_flow": {
+			"survey_title": "Sentimos muito em ver você partir",
+			"survey_subtitle": "Qual o principal motivo do cancelamento? Seu feedback nos ajuda a melhorar.",
+			"reasons": {
+				"too_expensive": "Está muito caro para o que eu recebo",
+				"not_using": "Não estou usando o suficiente",
+				"missing_feature": "Falta uma funcionalidade que preciso",
+				"switching": "Estou mudando para outra ferramenta",
+				"technical": "Estou tendo problemas técnicos",
+				"temporary": "Só preciso de uma pausa",
+				"other": "Outro"
+			},
+			"free_text_placeholder": "Conte mais (opcional)...",
+			"keep_subscription": "Deixa pra lá, quero manter minha assinatura",
+			"continue": "Continuar",
+			"loading": "Aguarde...",
+			"offer_title": "Antes de ir...",
+			"offer_subtitle": "Adoraríamos encontrar uma forma de fazer isso funcionar. Que tal isso?",
+			"offers": {
+				"discount": {
+					"title": "25% de desconto por 3 meses",
+					"description": "Aplicaremos um desconto de 25% nos próximos 3 ciclos de cobrança para que você continue aproveitando com um custo menor.",
+					"cta": "Aplicar desconto"
+				},
+				"pause": {
+					"title": "Pausar sua assinatura",
+					"description": "Faça uma pausa sem perder seus dados. Mantemos tudo seguro e retomamos quando estiver pronto.",
+					"cta": "Pausar minha assinatura"
+				},
+				"downgrade": {
+					"title": "Mudar para o plano Starter",
+					"description": "Mantenha o essencial por um preço menor. Você pode fazer upgrade novamente quando quiser.",
+					"cta": "Mudar para Starter"
+				},
+				"support": {
+					"title": "Fale com nosso time",
+					"description": "Deixe-nos ajudar a resolver seu problema. Nossa equipe de suporte pode agendar uma chamada em até 24 horas.",
+					"cta": "Agendar uma chamada"
+				},
+				"roadmap": {
+					"title": "Está no nosso roadmap",
+					"description": "A funcionalidade que você precisa está sendo desenvolvida. Avisaremos assim que lançarmos. Fique e seja o primeiro a experimentar.",
+					"cta": "Me avise quando lançar"
+				}
+			},
+			"month": "mês",
+			"months": "meses",
+			"no_thanks": "Não, obrigado. Continuar cancelando",
+			"confirm_title": "Confirmar cancelamento",
+			"confirm_subtitle": "Sua assinatura terminará no final do período de cobrança atual. Você não será cobrado novamente.",
+			"lose_title": "O que você perderá acesso",
+			"lose_features": {
+				"continuous_audits": "Ciclos de auditoria contínuos e monitoramento",
+				"ai_chat": "Assistente de IA e insights agênticos",
+				"revenue_maps": "Mapas de integridade de receita e visualizações",
+				"priority_support": "Suporte prioritário e gestão de conta",
+				"integrations": "Integrações personalizadas (Shopify, Stripe, Meta, Google)",
+				"team_access": "Acesso de membros da equipe e colaboração"
+			},
+			"data_retention": "Seus dados serão preservados por 30 dias após o cancelamento. Você pode reativar sua assinatura a qualquer momento nas Configurações.",
+			"confirm_cancel": "Cancelar minha assinatura",
+			"changed_mind": "Mudei de ideia, quero manter minha assinatura",
+			"cancelled_title": "Sua assinatura foi cancelada",
+			"cancelled_description": "Seu acesso continua até o final do período de cobrança atual. Manteremos seus dados seguros por 30 dias.",
+			"back_to_settings": "Voltar para Configurações"
 		},
 		"copilot": {
 			"fab_label": "Vestigio AI",

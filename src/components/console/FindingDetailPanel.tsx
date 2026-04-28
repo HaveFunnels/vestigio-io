@@ -18,12 +18,13 @@
 //   - "Verify" → if verification_strategy exists
 // ──────────────────────────────────────────────
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import type { FindingProjection } from "@/../../packages/projections/types";
+import type { FindingProjection, ActionProjection } from "@/../../packages/projections/types";
 import { useCopilot } from "@/components/app/CopilotProvider";
+import { useMcpData } from "@/components/app/McpDataProvider";
 import FeedbackMoment from "./FeedbackMoment";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import {
@@ -37,6 +38,7 @@ import ChangeBadge from "@/components/console/ChangeBadge";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
+import FixWithAiSection from "@/components/console/actions/FixWithAiSection";
 
 export interface FindingDetailPanelProps {
 	finding: FindingProjection;
@@ -63,9 +65,19 @@ export default function FindingDetailPanel({
 }: FindingDetailPanelProps) {
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
+	const tFix = useTranslations("console.actions.fix_with_ai");
 	const router = useRouter();
 	const copilot = useCopilot();
+	const mcpData = useMcpData();
 	const isFull = variant === "full";
+
+	// Resolve full ActionProjection(s) from lightweight action_refs
+	const linkedActions = useMemo<ActionProjection[]>(() => {
+		if (finding.action_refs.length === 0) return [];
+		if (mcpData.actions.status !== "ready") return [];
+		const refIds = new Set(finding.action_refs.map((r) => r.id));
+		return mcpData.actions.data.filter((a) => refIds.has(a.id));
+	}, [finding.action_refs, mcpData.actions]);
 
 	// KB article lookup (full variant only)
 	const [kbLink, setKbLink] = useState<{
@@ -276,6 +288,25 @@ export default function FindingDetailPanel({
 						)}
 					</DrawerStatBox>
 				</DrawerSection>
+			)}
+
+			{/* Fix with AI — vibecoding bridge */}
+			{isFull && finding.polarity !== "positive" && (
+				<>
+					{linkedActions.length === 1 &&
+						linkedActions[0].remediation_steps &&
+						linkedActions[0].remediation_steps.length > 0 && (
+							<FixWithAiSection action={linkedActions[0]} />
+						)}
+					{linkedActions.length > 1 && (
+						<FixWithAiPicker actions={linkedActions} />
+					)}
+					{finding.action_refs.length === 0 && (
+						<p className="text-[11px] text-content-faint italic">
+							{tFix("no_action")}
+						</p>
+					)}
+				</>
 			)}
 
 			{/* Impact Breakdown */}
@@ -501,6 +532,87 @@ export default function FindingDetailPanel({
 					<FeedbackMoment trigger="finding_dwell" questionKey="finding_question" />
 				</section>
 			)}
+		</div>
+	);
+}
+
+// ── Fix with AI Picker (multi-action) ──
+
+function FixWithAiPicker({ actions }: { actions: ActionProjection[] }) {
+	const tFix = useTranslations("console.actions.fix_with_ai");
+	const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+
+	// Filter to only actions that have remediation steps
+	const eligible = actions.filter(
+		(a) => a.remediation_steps && a.remediation_steps.length > 0,
+	);
+
+	if (eligible.length === 0) return null;
+
+	if (selectedIdx !== null && eligible[selectedIdx]) {
+		return (
+			<div className="space-y-2">
+				<button
+					onClick={() => setSelectedIdx(null)}
+					className="text-[10px] text-content-faint hover:text-content-muted transition-colors"
+				>
+					&larr; {tFix("pick_different")}
+				</button>
+				<FixWithAiSection action={eligible[selectedIdx]} />
+			</div>
+		);
+	}
+
+	return (
+		<div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+			<div className="flex items-center gap-2 mb-2">
+				<svg
+					className="h-4 w-4 text-emerald-400"
+					fill="none"
+					viewBox="0 0 24 24"
+					strokeWidth={1.5}
+					stroke="currentColor"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"
+					/>
+				</svg>
+				<span className="text-xs font-semibold text-emerald-400">
+					{tFix("title")}
+				</span>
+			</div>
+			<p className="text-[11px] text-content-muted mb-2">
+				{tFix("select_action")}
+			</p>
+			<div className="space-y-1.5">
+				{eligible.map((action, idx) => (
+					<button
+						key={action.id}
+						onClick={() => setSelectedIdx(idx)}
+						className="w-full flex items-center gap-2 rounded-md border border-edge px-3 py-1.5 text-xs text-content-secondary transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/5 text-left"
+					>
+						<span
+							className={`h-1.5 w-1.5 shrink-0 rounded-full ${action.category === "incident" ? "bg-red-500" : "bg-emerald-500"}`}
+						/>
+						<span className="flex-1 truncate">{action.title}</span>
+						<svg
+							className="h-3 w-3 shrink-0 text-content-faint"
+							fill="none"
+							viewBox="0 0 24 24"
+							strokeWidth={2}
+							stroke="currentColor"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M8.25 4.5l7.5 7.5-7.5 7.5"
+							/>
+						</svg>
+					</button>
+				))}
+			</div>
 		</div>
 	);
 }

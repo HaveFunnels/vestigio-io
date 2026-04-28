@@ -2572,7 +2572,7 @@
 					"checkout_trust": "Sinais de confiança no checkout que afetam a decisão de compra",
 					"payment_security": "Indicadores de segurança de pagamento visíveis para compradores",
 					"product_page_quality": "Qualidade da página de produto e prontidão para conversão",
-					"cart_abandonment": "Padr��es de abandono de carrinho e pontos de fricção",
+					"cart_abandonment": "Padroes de abandono de carrinho e pontos de atrito",
 					"mobile_checkout": "Experiência de checkout mobile e problemas de velocidade",
 					"pricing_framing": "Enquadramento da página de preços e eficácia de ancoragem",
 					"trial_barriers": "Barreiras de conversão de trial e fricção no cadastro",

@@ -3472,7 +3472,78 @@
 				"event_newsletter_desc": "Novedades mensuales del producto y roadmap.",
 				"event_product_updates": "Notas de versión",
 				"event_product_updates_desc": "Sé el primero en enterarte de las novedades."
+			},
+			"subscription": {
+				"title": "Suscripcion",
+				"description": "Administra tu plan de suscripcion. Los cambios se aplican al final del periodo de facturacion actual.",
+				"cancel_button": "Cancelar Suscripcion"
 			}
+		},
+		"cancel_flow": {
+			"survey_title": "Lamentamos verte partir",
+			"survey_subtitle": "Cual es la razon principal por la que cancelas? Tus comentarios nos ayudan a mejorar.",
+			"reasons": {
+				"too_expensive": "Es demasiado caro para lo que obtengo",
+				"not_using": "No lo estoy usando lo suficiente",
+				"missing_feature": "Le falta una funcion que necesito",
+				"switching": "Me cambio a otra herramienta",
+				"technical": "Tengo problemas tecnicos",
+				"temporary": "Solo necesito un descanso",
+				"other": "Otro"
+			},
+			"free_text_placeholder": "Cuentanos mas (opcional)...",
+			"keep_subscription": "Mejor no, quiero mantener mi suscripcion",
+			"continue": "Continuar",
+			"loading": "Espera...",
+			"offer_title": "Antes de irte...",
+			"offer_subtitle": "Nos encantaria encontrar una forma de que esto funcione. Que te parece esto?",
+			"offers": {
+				"discount": {
+					"title": "25% de descuento por 3 meses",
+					"description": "Aplicaremos un descuento del 25% en tus proximos 3 ciclos de facturacion para que sigas aprovechando a menor costo.",
+					"cta": "Aplicar descuento"
+				},
+				"pause": {
+					"title": "Pausar tu suscripcion",
+					"description": "Tomate un descanso sin perder tus datos. Guardamos todo de forma segura y retomamos cuando estes listo.",
+					"cta": "Pausar mi suscripcion"
+				},
+				"downgrade": {
+					"title": "Cambiar al plan Starter",
+					"description": "Manten lo esencial a un precio menor. Puedes hacer upgrade de nuevo cuando quieras.",
+					"cta": "Cambiar a Starter"
+				},
+				"support": {
+					"title": "Habla con nuestro equipo",
+					"description": "Permitenos ayudarte a resolver tu problema. Nuestro equipo de soporte puede agendar una llamada en 24 horas.",
+					"cta": "Agendar una llamada"
+				},
+				"roadmap": {
+					"title": "Esta en nuestro roadmap",
+					"description": "La funcion que necesitas se esta construyendo. Te avisaremos apenas este lista. Quedate y se el primero en probarla.",
+					"cta": "Avisame cuando este lista"
+				}
+			},
+			"month": "mes",
+			"months": "meses",
+			"no_thanks": "No gracias, continuar cancelando",
+			"confirm_title": "Confirmar cancelacion",
+			"confirm_subtitle": "Tu suscripcion terminara al final del periodo de facturacion actual. No se te cobrara de nuevo.",
+			"lose_title": "Lo que perderas acceso a",
+			"lose_features": {
+				"continuous_audits": "Ciclos de auditoria continuos y monitoreo",
+				"ai_chat": "Asistente de IA e insights agenticos",
+				"revenue_maps": "Mapas de integridad de ingresos y visualizaciones",
+				"priority_support": "Soporte prioritario y gestion de cuenta",
+				"integrations": "Integraciones personalizadas (Shopify, Stripe, Meta, Google)",
+				"team_access": "Acceso de miembros del equipo y colaboracion"
+			},
+			"data_retention": "Tus datos se conservaran durante 30 dias despues de la cancelacion. Puedes reactivar tu suscripcion en cualquier momento desde Configuracion.",
+			"confirm_cancel": "Cancelar mi suscripcion",
+			"changed_mind": "Cambie de opinion, quiero mantener mi suscripcion",
+			"cancelled_title": "Tu suscripcion ha sido cancelada",
+			"cancelled_description": "Tu acceso continua hasta el final del periodo de facturacion actual. Guardaremos tus datos de forma segura por 30 dias.",
+			"back_to_settings": "Volver a Configuracion"
 		},
 		"copilot": {
 			"fab_label": "Vestigio AI",

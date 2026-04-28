@@ -222,6 +222,7 @@ model Organization {
   credits                 OrgCredits?
   userActions             UserAction[]
   customMaps              CustomMap[]
+  cancelSurveys           CancelSurvey[]
 
   @@index([orgType, status])
 }
@@ -1479,4 +1480,29 @@ model OpportunityTracking {
 
   @@unique([actionKey, environmentId])
   @@index([environmentId])
+}
+
+// ──────────────────────────────────────────────
+// Cancel Survey — exit survey + save offer tracking
+//
+// One row per cancel attempt. Captures the exit reason,
+// what save offer was shown, whether it was accepted, and
+// when (if) the subscription was actually cancelled.
+// Used for churn analytics and save-offer optimization.
+// ──────────────────────────────────────────────
+
+model CancelSurvey {
+  id              String    @id @default(cuid())
+  organizationId  String
+  reason          String    // too_expensive | not_using | missing_feature | switching | technical | temporary | other
+  freeText        String?
+  offeredSave     String?   // discount | pause | downgrade | support | roadmap | none
+  acceptedSave    Boolean   @default(false)
+  cancelledAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([createdAt])
 }

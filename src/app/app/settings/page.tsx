@@ -72,6 +72,19 @@ export default function SettingsPage() {
 				</div>
 			</section>
 
+			{/* Subscription */}
+			<section className='mb-10'>
+				<h2 className='mb-4 text-lg font-semibold text-content'>
+					{t("subscription.title")}
+				</h2>
+				<div className='rounded-md border border-edge bg-surface-card px-6 py-5'>
+					<p className='mb-4 text-sm text-content-muted'>
+						{t("subscription.description")}
+					</p>
+					<CancelSubscriptionButton />
+				</div>
+			</section>
+
 			{/* Account */}
 			<section>
 				<h2 className='mb-4 text-lg font-semibold text-content'>
@@ -339,6 +352,24 @@ function ToggleRow(props: {
 					className={`h-4 w-4 rounded-full bg-white transition-transform ${props.enabled ? "translate-x-4" : ""}`}
 				/>
 			</div>
+		</button>
+	);
+}
+
+// ──────────────────────────────────────────────
+// Cancel Subscription Button — routes to /app/settings/cancel
+// ──────────────────────────────────────────────
+
+function CancelSubscriptionButton() {
+	const t = useTranslations("console.settings.subscription");
+	const router = useRouter();
+
+	return (
+		<button
+			onClick={() => router.push("/app/settings/cancel")}
+			className='rounded-md border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20'
+		>
+			{t("cancel_button")}
 		</button>
 	);
 }

@@ -2696,6 +2696,55 @@
 			"title": "Audits wurden nach 14 Tagen ohne Zugriff pausiert.",
 			"body": "Wird jetzt fortgesetzt — ein Nachhol-Audit läuft gegen deinen Shop. Aktualisierte Befunde erscheinen in Kürze."
 		},
+		"first_audit": {
+			"title": "Dein erstes Audit wird durchgefuehrt",
+			"title_complete": "Audit abgeschlossen",
+			"pages_one": "1 Seite entdeckt",
+			"pages_other": "{count} Seiten entdeckt",
+			"findings_one": "1 Befund",
+			"findings_other": "{count} Befunde",
+			"elapsed": "{seconds}s vergangen",
+			"in_progress": "In Bearbeitung...",
+			"done": "Abgeschlossen",
+			"stages": {
+				"discover": "Deine Seitenstruktur wird erkundet...",
+				"classify": "Seiten werden nach kommerzieller Absicht klassifiziert...",
+				"analyze": "Sicherheits-, Vertrauens- und Umsatzsignale werden analysiert...",
+				"enrich": "KI-Insights werden angereichert...",
+				"compute": "Auswirkungsschaetzungen werden berechnet..."
+			},
+			"preview": {
+				"heading": "Basierend auf deiner {businessType}-Seite, hier ist, was wir typischerweise finden:",
+				"disclaimer": "Vorschau — vollstaendige Ergebnisse in wenigen Minuten",
+				"business_types": {
+					"ecommerce": "E-Commerce",
+					"saas": "SaaS",
+					"lead_gen": "Leadgenerierung",
+					"hybrid": "Hybrid"
+				},
+				"bullets": {
+					"checkout_trust": "Vertrauenssignale im Checkout, die die Kaufentscheidung beeinflussen",
+					"payment_security": "Zahlungssicherheitsindikatoren, die fuer Kaeufer sichtbar sind",
+					"product_page_quality": "Produktseitenqualitaet und Konversionsbereitschaft",
+					"cart_abandonment": "Warenkorbabbruchmuster und Reibungspunkte",
+					"mobile_checkout": "Mobile Checkout-Erfahrung und Geschwindigkeitsprobleme",
+					"pricing_framing": "Preisseitengestaltung und Ankerungseffektivitaet",
+					"trial_barriers": "Testkonversionsbarrieren und Registrierungsreibung",
+					"trust_signals": "Vertrauenssignale und Platzierung sozialer Nachweise",
+					"onboarding_friction": "Onboarding-Reibung und Abbruchpunkte",
+					"security_posture": "Sicherheitsstatus, der fuer Interessenten sichtbar ist",
+					"form_friction": "Formularreibung und Feldoptimierungsmoeglichkeiten",
+					"cta_clarity": "CTA-Klarheit und Praesenz auf wichtigen Seiten",
+					"social_proof": "Platzierung sozialer Nachweise und Glaubwuerdigkeitssignale",
+					"mobile_responsiveness": "Mobile Reaktionsfaehigkeit und Touch-Zielprobleme",
+					"trust_indicators": "Vertrauensindikatoren, die die Leadqualitaet beeinflussen"
+				}
+			},
+			"celebration": {
+				"title": "Audit abgeschlossen!",
+				"body": "{findings} Befunde in {pages} Seiten entdeckt. Dein Dashboard ist bereit."
+			}
+		},
 		"organization": {
 			"title": "Organisation",
 			"subtitle": "Verwalte deine Organisation, Plan und Umgebungen.",
@@ -2887,7 +2936,78 @@
 				"event_newsletter_desc": "Monatliche Produkt-Updates und Roadmap-Highlights.",
 				"event_product_updates": "Release Notes",
 				"event_product_updates_desc": "Erfahre als Erstes von neuen Funktionen."
+			},
+			"subscription": {
+				"title": "Abonnement",
+				"description": "Verwalte deinen Abo-Plan. Aenderungen werden am Ende des aktuellen Abrechnungszeitraums wirksam.",
+				"cancel_button": "Abonnement kuendigen"
 			}
+		},
+		"cancel_flow": {
+			"survey_title": "Es tut uns leid, dass du gehst",
+			"survey_subtitle": "Was ist der Hauptgrund fuer deine Kuendigung? Dein Feedback hilft uns, besser zu werden.",
+			"reasons": {
+				"too_expensive": "Es ist zu teuer fuer das, was ich bekomme",
+				"not_using": "Ich nutze es nicht genug",
+				"missing_feature": "Es fehlt eine Funktion, die ich brauche",
+				"switching": "Ich wechsle zu einem anderen Tool",
+				"technical": "Ich habe technische Probleme",
+				"temporary": "Ich brauche nur eine Pause",
+				"other": "Sonstiges"
+			},
+			"free_text_placeholder": "Erzaehl uns mehr (optional)...",
+			"keep_subscription": "Doch nicht, ich moechte mein Abo behalten",
+			"continue": "Weiter",
+			"loading": "Bitte warten...",
+			"offer_title": "Bevor du gehst...",
+			"offer_subtitle": "Wir wuerden gerne eine Loesung finden. Wie waere es damit?",
+			"offers": {
+				"discount": {
+					"title": "25% Rabatt fuer 3 Monate",
+					"description": "Wir gewaehren dir 25% Rabatt auf die naechsten 3 Abrechnungszyklen, damit du weiterhin zum guenstigeren Preis profitierst.",
+					"cta": "Rabatt anwenden"
+				},
+				"pause": {
+					"title": "Abonnement pausieren",
+					"description": "Mach eine Pause, ohne deine Daten zu verlieren. Wir bewahren alles sicher auf und setzen fort, wenn du bereit bist.",
+					"cta": "Mein Abo pausieren"
+				},
+				"downgrade": {
+					"title": "Zum Starter-Plan wechseln",
+					"description": "Behalte das Wesentliche zu einem guenstigeren Preis. Du kannst jederzeit wieder upgraden.",
+					"cta": "Zu Starter wechseln"
+				},
+				"support": {
+					"title": "Sprich mit unserem Team",
+					"description": "Lass uns dir helfen, dein Problem zu loesen. Unser Support-Team kann innerhalb von 24 Stunden einen Termin vereinbaren.",
+					"cta": "Termin vereinbaren"
+				},
+				"roadmap": {
+					"title": "Es steht auf unserer Roadmap",
+					"description": "Die Funktion, die du brauchst, wird gerade entwickelt. Wir benachrichtigen dich, sobald sie verfuegbar ist. Bleib und sei der Erste, der sie testet.",
+					"cta": "Benachrichtige mich bei Verfuegbarkeit"
+				}
+			},
+			"month": "Monat",
+			"months": "Monate",
+			"no_thanks": "Nein danke, Kuendigung fortsetzen",
+			"confirm_title": "Kuendigung bestaetigen",
+			"confirm_subtitle": "Dein Abonnement endet am Ende des aktuellen Abrechnungszeitraums. Dir wird nichts mehr berechnet.",
+			"lose_title": "Worauf du den Zugang verlierst",
+			"lose_features": {
+				"continuous_audits": "Kontinuierliche Audit-Zyklen und Monitoring",
+				"ai_chat": "KI-Chat-Assistent und agentische Einblicke",
+				"revenue_maps": "Umsatz-Integritaetskarten und Visualisierungen",
+				"priority_support": "Prioritaets-Support und Account-Management",
+				"integrations": "Benutzerdefinierte Integrationen (Shopify, Stripe, Meta, Google)",
+				"team_access": "Team-Mitglieder-Zugang und Zusammenarbeit"
+			},
+			"data_retention": "Deine Daten werden 30 Tage nach der Kuendigung aufbewahrt. Du kannst dein Abonnement jederzeit in den Einstellungen reaktivieren.",
+			"confirm_cancel": "Mein Abonnement kuendigen",
+			"changed_mind": "Ich habe mich umentschieden, Abo behalten",
+			"cancelled_title": "Dein Abonnement wurde gekuendigt",
+			"cancelled_description": "Dein Zugang besteht bis zum Ende des aktuellen Abrechnungszeitraums. Wir bewahren deine Daten 30 Tage sicher auf.",
+			"back_to_settings": "Zurueck zu Einstellungen"
 		},
 		"dashboard": {
 			"title": "Dashboard",

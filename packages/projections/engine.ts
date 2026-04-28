@@ -153,6 +153,11 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   trust_copy_absent_at_decision: 'copy_alignment',
   copy_funnel_misalignment: 'copy_alignment',
   copy_cross_page_inconsistent: 'copy_alignment',
+  // Wave 3.10 Fase 4: Polish enrichments
+  localization_persuasion_lost: 'copy_alignment',
+  micro_copy_friction_high: 'copy_alignment',
+  seo_conversion_conflict: 'copy_alignment',
+  copy_stale_references: 'copy_alignment',
   // Behavioral workspace findings (pixel-dependent)
   first_session_milestone_stall: 'first_impression_revenue',
   first_session_trust_barrier: 'first_impression_revenue',
@@ -431,6 +436,11 @@ const INFERENCE_SURFACES: Record<string, string> = {
   trust_copy_absent_at_decision: '/checkout, /pricing (trust language)',
   copy_funnel_misalignment: '/ → /pricing → /checkout (funnel copy)',
   copy_cross_page_inconsistent: '/ (cross-page messaging)',
+  // Wave 3.10 Fase 4: Polish enrichments
+  localization_persuasion_lost: '/en, /es, /fr (translated pages)',
+  micro_copy_friction_high: '/contact, /signup, /app (forms & micro-copy)',
+  seo_conversion_conflict: '/, /product, /pricing (SEO vs conversion)',
+  copy_stale_references: '/ (sitewide content freshness)',
 };
 
 // Human-readable titles for inference findings
@@ -462,6 +472,11 @@ export const INFERENCE_TITLES: Record<string, string> = {
   trust_copy_absent_at_decision: 'No trust language where buyers make their purchase decision',
   copy_funnel_misalignment: 'Copy tone and message do not match the funnel stage',
   copy_cross_page_inconsistent: 'Messaging contradicts itself across pages',
+  // Wave 3.10 Fase 4: Polish enrichments
+  localization_persuasion_lost: 'Translated pages lost their persuasive power',
+  micro_copy_friction_high: 'Form labels, buttons, and error messages create friction',
+  seo_conversion_conflict: 'Pages optimized for Google, not for buyers',
+  copy_stale_references: 'Outdated content signals neglect to buyers',
   // ── SaaS Growth Readiness ───────────────────────
   activation_blocked: 'New users get stuck before they ever see your product work',
   activation_friction_high: 'Your onboarding is losing trials before they become customers',

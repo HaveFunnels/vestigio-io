@@ -236,6 +236,12 @@ export function computeInferences(
   inferences.push(...inferAboveFoldCluttered(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferCopyCrossPageInconsistent(byKey, scoping, cycle_ref, ids));
 
+  // Wave 3.10 Fase 4 — Polish enrichment inferences
+  inferences.push(...inferLocalizationPersuasionLost(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMicroCopyFrictionHigh(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSeoConversionConflict(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCopyStaleReferences(byKey, scoping, cycle_ref, ids));
+
   // Phase 4A: Commerce context inferences (Shopify-powered)
   inferences.push(...inferCheckoutAbandonmentRevenueLeak(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPromotedProductOutOfStock(byKey, scoping, cycle_ref, ids));
@@ -3547,6 +3553,106 @@ function inferCopyCrossPageInconsistent(byKey: Map<string, Signal>, scoping: Sco
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
     reasoning: `Pages contradict each other or shift tone (consistency score ${score}/100). Homepage promises "simple" but pricing page is complex. Landing page is casual but checkout is formal. These contradictions erode buyer confidence because the brand feels like it's run by different people. ${matches.length} page(s) flagged.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.10 Fase 4: Polish Enrichment Inferences
+// ──────────────────────────────────────────────
+
+function inferLocalizationPersuasionLost(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('localization_persuasion_lost_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 30 ? 'high' : score < 45 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'localization_persuasion_lost',
+    category: InferenceCategory.LocalizationPersuasionLost,
+    conclusion: 'localization_persuasion_lost',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(75, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Translated page(s) lost persuasive power during localization (quality score ${score}/100). Urgency language, social proof specificity, CTA power, or value proposition framing was flattened into generic literal translation. ${matches.length} locale comparison(s) flagged. Buyers in non-primary locales see a weaker sales message.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+function inferMicroCopyFrictionHigh(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('micro_copy_friction_high_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 20 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'micro_copy_friction_high',
+    category: InferenceCategory.MicroCopyFrictionHigh,
+    conclusion: 'micro_copy_friction_high',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(75, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Micro-copy creates unnecessary friction on form/app pages (score ${score}/100). Generic button labels like "Submit", unclear form labels, missing helper text, or technical error messages make users work harder than they should. ${matches.length} page(s) flagged. Every confusing label is a moment where the user stops and considers leaving.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+function inferSeoConversionConflict(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('seo_conversion_conflict_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 0) > (b.numeric_value ?? 0) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score > 80 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'seo_conversion_conflict',
+    category: InferenceCategory.SeoConversionConflict,
+    conclusion: 'seo_conversion_conflict',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(75, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `SEO optimization conflicts with conversion persuasion (tension score ${score}/100). Headlines read like search queries instead of compelling statements, keyword stuffing dilutes the sales message, or the H1 targets a keyword but fails to communicate value. ${matches.length} page(s) flagged. Search traffic arrives but the page reads like it was written for Google, not for buyers.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+function inferCopyStaleReferences(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('copy_stale_references_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 0) > (b.numeric_value ?? 0) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score > 60 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'copy_stale_references',
+    category: InferenceCategory.CopyStaleReferences,
+    conclusion: 'copy_stale_references',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: 85, // Parser-based, fixed confidence
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Stale content detected across ${matches.length} page(s) (worst staleness score ${score}/100). Outdated copyright years, past dates, expired promotion references, or old social proof numbers signal neglect. Buyers notice when a site looks abandoned — an old copyright year or a "Black Friday sale" in March tells them nobody is maintaining this store.`,
     reasoning_slots: { severity, score },
   })];
 }

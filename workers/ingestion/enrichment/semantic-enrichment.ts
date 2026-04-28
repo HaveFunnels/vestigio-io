@@ -23,6 +23,10 @@ import {
 } from "../../../packages/copy-analysis/guidelines";
 import { analyzeCrossPageConsistency } from "./cross-page-copy";
 import { runPricingPsychologyEnrichment } from "./pricing-psychology";
+import { runLocalizationQualityEnrichment } from "./copy-localization";
+import { runMicroCopyEnrichment } from "./copy-micro-copy";
+import { runSeoConversionTensionEnrichment } from "./copy-seo-tension";
+import { runCopyStalenessEnrichment } from "./copy-staleness";
 import type { CopyElementsPayload } from "../../../packages/domain";
 
 // ──────────────────────────────────────────────
@@ -1114,6 +1118,22 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
     // Runs on pricing pages AFTER the standard pricing_page_framing enrichment.
     // Deeper psychology-specific analysis: charm pricing, anchoring, Good-Better-Best, etc.
     await runPricingPsychologyEnrichment(ctx, pricingPages, evidenceAdded, w310Budget);
+
+    // ── Wave 3.10 Fase 4: Micro-Copy Audit (Item N) ──
+    // Runs on form pages and app/dashboard pages.
+    await runMicroCopyEnrichment(ctx, pageContentEvidence, evidenceAdded, w310Budget);
+
+    // ── Wave 3.10 Fase 4: SEO vs Conversion Tension (Item O) ──
+    // Runs on all commercial pages.
+    await runSeoConversionTensionEnrichment(ctx, pageContentEvidence, evidenceAdded, w310Budget);
+
+    // ── Wave 3.10 Fase 4: Localization Quality (Item M) ──
+    // Runs AFTER per-page analysis when multi-locale detected.
+    await runLocalizationQualityEnrichment(ctx, pageContentEvidence, evidenceAdded, w310Budget);
+
+    // ── Wave 3.10 Fase 4: Copy Staleness (Item P) ──
+    // Zero LLM cost — pure regex/pattern matching, runs on every page.
+    await runCopyStalenessEnrichment(ctx, pageContentEvidence, evidenceAdded);
 
     // ── Wave 3.10 Fase 3: Cross-Page Narrative Consistency (Item K) ──
     // Runs AFTER all per-page enrichments complete. Collects CopyElementsPayload

@@ -1035,6 +1035,69 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 
 	// ─────────────────────────────────────────────
+	// Wave 3.10 Fase 4 — Polish Enrichments
+	// ─────────────────────────────────────────────
+
+	localization_persuasion_lost: {
+		remediation_steps: [
+			'Compare versões primária e traduzida lado a lado — identifique onde urgência, prova social e CTA foram "achatados" para texto genérico.',
+			'Use transcriação (não tradução literal) para CTAs, headlines e social proof — contrate copywriters nativos que entendam persuasão.',
+			'Mantenha elementos de urgência e escassez nas versões traduzidas — adapte culturalmente em vez de remover.',
+			'Implemente review process para copy localizado: tradutor + revisor nativo + aprovação de marketing antes de publicar.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar ambas versões (primária e traduzida) e comparar estrutura persuasiva: presença de urgência, especificidade de prova social, poder do CTA.',
+		verification_eta_seconds: 15,
+	},
+
+	micro_copy_friction_high: {
+		remediation_steps: [
+			'Substitua botões genéricos ("Submit", "Send", "OK") por texto específico orientado a ação ("Começar trial grátis", "Enviar minha proposta").',
+			'Revise labels de formulário: cada label deve explicar O QUE preencher e POR QUE — ex: "Email corporativo (para receber seu acesso)" em vez de apenas "Email".',
+			'Adicione texto helper inline nos campos que mais causam abandono — placeholder com exemplo real, não repetição do label.',
+			'Reescreva mensagens de erro em linguagem humana: "O email precisa ter @ — verifique e tente de novo" em vez de "Invalid input".',
+			'Teste micro-copy com 3 usuários: peça para preencherem o formulário em voz alta — onde pausam ou perguntam é onde o copy falha.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas com formulários e avaliar qualidade de labels, botões, placeholders e mensagens de erro.',
+		verification_eta_seconds: 10,
+	},
+
+	seo_conversion_conflict: {
+		remediation_steps: [
+			'Reescreva H1s keyword-stuffed para comunicar valor ao comprador — use a keyword no title tag e meta, mas o H1 deve vender.',
+			'Separe SEO content blocks do conversion path: mova parágrafos keyword-rich para abaixo do fold ou para subpáginas dedicadas.',
+			'Unifique title tag e H1: se o title diz "Best CRM Software 2026", o H1 deve dizer algo como "O CRM que [resultado específico]".',
+			'Revise alt text de imagens: deve descrever a imagem para acessibilidade E incluir keyword naturalmente — não keyword-spam.',
+			'Avalie se large SEO content blocks abaixo do fold estão diluindo a mensagem de conversão — considere mover para /blog ou /resources.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-analisar H1, title tags e copy das páginas comerciais para detectar se tensão SEO-conversão foi resolvida.',
+		verification_eta_seconds: 10,
+	},
+
+	copy_stale_references: {
+		remediation_steps: [
+			'Atualize o ano de copyright no footer para o ano vigente — configure auto-update se possível.',
+			'Busque e remova referências a datas passadas, promoções expiradas e métricas desatualizadas em todas as páginas comerciais.',
+			'Implemente review trimestral de copy: agende audit de conteúdo a cada 3 meses para detectar referências que envelheceram.',
+			'Substitua métricas de prova social por números atualizados — se o homepage dizia "1000+ clientes" em 2024, atualize para o número real.',
+			'Configure alertas automáticos para detectar copy com datas hard-coded que ficarão obsoletas.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas e verificar: copyright atualizado, ausência de datas passadas, promoções expiradas e métricas de prova social atualizadas.',
+		verification_eta_seconds: 8,
+	},
+
+	// ─────────────────────────────────────────────
 	// Security Posture (Wave 3.3)
 	// ─────────────────────────────────────────────
 

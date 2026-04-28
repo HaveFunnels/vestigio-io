@@ -768,7 +768,12 @@ export interface ContentEnrichmentPayload {
     | 'above_fold_density'
     // Wave 3.10 Fase 3 — High-value enrichments
     | 'cross_page_consistency'
-    | 'pricing_psychology';
+    | 'pricing_psychology'
+    // Wave 3.10 Fase 4 — Polish enrichments
+    | 'localization_quality'
+    | 'micro_copy'
+    | 'seo_conversion_tension'
+    | 'copy_staleness';
   source_evidence_key: string;
   source_url: string;
   scores: { clarity_score: number; readability_grade: string };

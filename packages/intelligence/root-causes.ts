@@ -264,6 +264,12 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   above_fold_cluttered:              { root_cause_key: 'value_proposition_buried', category: 'copy_strategy', impact_types: ['revenue_loss'] },
   copy_cross_page_inconsistent:      { root_cause_key: 'copy_cross_page_inconsistent', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
 
+  // Wave 3.10 Fase 4 — Polish enrichment inference-to-root-cause mappings
+  localization_persuasion_lost:       { root_cause_key: 'copy_funnel_misalignment', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  micro_copy_friction_high:           { root_cause_key: 'cta_competing_or_unclear', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  seo_conversion_conflict:            { root_cause_key: 'value_proposition_buried', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  copy_stale_references:              { root_cause_key: 'copy_cross_page_inconsistent', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
+
   // Phase 4A: Commerce context findings (Shopify-powered)
   checkout_abandonment_revenue_leak:  { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss'] },
   promoted_product_out_of_stock:      { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },

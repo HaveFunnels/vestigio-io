@@ -465,6 +465,11 @@ export enum InferenceCategory {
   NavigationConfusing = 'navigation_confusing',
   AboveFoldCluttered = 'above_fold_cluttered',
   CopyCrossPageInconsistent = 'copy_cross_page_inconsistent',
+  // Wave 3.10 Fase 4 — Polish enrichments
+  LocalizationPersuasionLost = 'localization_persuasion_lost',
+  MicroCopyFrictionHigh = 'micro_copy_friction_high',
+  SeoConversionConflict = 'seo_conversion_conflict',
+  CopyStaleReferences = 'copy_stale_references',
   // Phase 4A: Commerce context findings (Shopify-powered)
   CheckoutAbandonmentRevenueLeak = 'checkout_abandonment_revenue_leak',
   PromotedProductOutOfStock = 'promoted_product_out_of_stock',

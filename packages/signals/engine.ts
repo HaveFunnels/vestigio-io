@@ -5156,6 +5156,111 @@ function extractCopyEnrichmentSignals(
       }
     }
 
+    // ── Wave 3.10 Fase 4: Localization Quality (Item M) ──
+    if (p.enrichment_type === 'localization_quality') {
+      const results = (p.results || {}) as {
+        quality_score?: number;
+        primary_locale?: string;
+        compared_locale?: string;
+        lost_in_translation?: string[];
+      };
+      const qualityScore = results.quality_score ?? 100;
+
+      if (qualityScore < 60) {
+        const severity = qualityScore < 30 ? 'high' : qualityScore < 45 ? 'medium' : 'low';
+        const lostItems = (results.lost_in_translation || []).slice(0, 5).join(', ');
+        signals.push(createSignal({ ids,
+          signal_key: `localization_persuasion_lost_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.localization_quality.score',
+          value: severity,
+          numeric_value: qualityScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Localization quality weak at ${p.source_url}: ${results.primary_locale || '?'} vs ${results.compared_locale || '?'} (score ${qualityScore}/100). Translation weakened: ${lostItems || 'none detected'}. Persuasive structure was flattened into generic literal translation.`,
+        }));
+      }
+    }
+
+    // ── Wave 3.10 Fase 4: Micro-Copy Audit (Item N) ──
+    if (p.enrichment_type === 'micro_copy') {
+      const results = (p.results || {}) as {
+        microcopy_score?: number;
+        form_labels_quality?: string;
+        button_text_quality?: string;
+        field_count?: number;
+      };
+      const microcopyScore = results.microcopy_score ?? 100;
+
+      if (microcopyScore < 40) {
+        const severity = microcopyScore < 20 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `micro_copy_friction_high_${p.source_url}`,
+          category: SignalCategory.Friction,
+          attribute: 'enrichment.micro_copy.score',
+          value: severity,
+          numeric_value: microcopyScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Micro-copy friction high at ${p.source_url}: score ${microcopyScore}/100, form labels ${results.form_labels_quality || '?'}, buttons ${results.button_text_quality || '?'}, ${results.field_count || 0} field(s). Generic labels, unhelpful placeholders, or technical button text create unnecessary friction.`,
+        }));
+      }
+    }
+
+    // ── Wave 3.10 Fase 4: SEO vs Conversion Tension (Item O) ──
+    if (p.enrichment_type === 'seo_conversion_tension') {
+      const results = (p.results || {}) as {
+        tension_score?: number;
+        keyword_stuffing_detected?: boolean;
+        h1_optimized_for?: string;
+        issues?: Array<{ element: string; recommendation: string }>;
+      };
+      const tensionScore = results.tension_score ?? 0;
+
+      if (tensionScore > 60) {
+        const severity = tensionScore > 80 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `seo_conversion_conflict_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.seo_conversion_tension.score',
+          value: severity,
+          numeric_value: tensionScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `SEO-conversion conflict at ${p.source_url}: tension score ${tensionScore}/100, H1 optimized for ${results.h1_optimized_for || '?'}, keyword stuffing ${results.keyword_stuffing_detected ? 'detected' : 'not detected'}. The page sacrifices persuasion for search engine optimization.`,
+        }));
+      }
+    }
+
+    // ── Wave 3.10 Fase 4: Copy Staleness (Item P) ──
+    if (p.enrichment_type === 'copy_staleness') {
+      const results = (p.results || {}) as {
+        staleness_score?: number;
+        stale_element_count?: number;
+        stale_elements?: Array<{ type: string; text: string }>;
+      };
+      const stalenessScore = results.staleness_score ?? 0;
+
+      if (stalenessScore > 30) {
+        const severity = stalenessScore > 60 ? 'high' : 'medium';
+        const topIssues = (results.stale_elements || []).slice(0, 3).map(e => `${e.type}: ${e.text}`).join('; ');
+        signals.push(createSignal({ ids,
+          signal_key: `copy_stale_references_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.copy_staleness.score',
+          value: severity,
+          numeric_value: stalenessScore,
+          confidence: 85, // Parser-based, fixed confidence
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Stale content at ${p.source_url}: staleness score ${stalenessScore}/100, ${results.stale_element_count || 0} outdated element(s). ${topIssues || 'Past dates, old copyright, or expired promotions detected.'}`,
+        }));
+      }
+    }
+
     // Wave 3.9 C-E: Ad-LP message mismatch
     if (p.enrichment_type === 'ad_message_match') {
       const results = (p.results || {}) as {

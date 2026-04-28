@@ -1536,6 +1536,36 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     base_metric: 'revenue',
   },
 
+  // ── Wave 3.10 Fase 4: Polish enrichments ──
+  localization_persuasion_lost: {
+    inference_key: 'localization_persuasion_lost', impact_category: 'conversion_loss',
+    cause: 'Your translated pages lost their persuasive power',
+    effect: 'Translation flattened urgency language, social proof specificity, CTA power, and value prop framing into generic literal text — buyers in non-primary locales see a weaker sales message and convert at lower rates',
+    high: { min: 0.02, max: 0.05 }, medium: { min: 0.01, max: 0.025 }, low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
+  micro_copy_friction_high: {
+    inference_key: 'micro_copy_friction_high', impact_category: 'conversion_loss',
+    cause: 'Your form and button copy creates unnecessary friction',
+    effect: 'Generic button labels, unclear form labels, missing helper text, and technical error messages make users work harder — every confusing micro-copy moment is where users stop, reconsider, and potentially leave',
+    high: { min: 0.02, max: 0.04 }, medium: { min: 0.01, max: 0.02 }, low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
+  seo_conversion_conflict: {
+    inference_key: 'seo_conversion_conflict', impact_category: 'conversion_loss',
+    cause: 'Your pages are optimized for Google, not for buyers',
+    effect: 'Headlines read like search queries, keyword stuffing dilutes the sales message, and the H1 targets keywords instead of communicating value — search traffic arrives but the page was written for an algorithm, not a buyer',
+    high: { min: 0.015, max: 0.035 }, medium: { min: 0.008, max: 0.015 }, low: { min: 0.003, max: 0.008 },
+    base_metric: 'revenue',
+  },
+  copy_stale_references: {
+    inference_key: 'copy_stale_references', impact_category: 'conversion_loss',
+    cause: 'Your pages have outdated content that signals neglect',
+    effect: 'Old copyright years, past dates, expired promotions, and stale social proof numbers tell buyers nobody is maintaining this site — an old copyright in the footer or a "Black Friday sale" in March erodes trust',
+    high: { min: 0.01, max: 0.025 }, medium: { min: 0.005, max: 0.01 }, low: { min: 0.002, max: 0.005 },
+    base_metric: 'revenue',
+  },
+
   // ── Phase 4A: Commerce context (Shopify-powered) ──
   checkout_abandonment_revenue_leak: {
     inference_key: 'checkout_abandonment_revenue_leak',

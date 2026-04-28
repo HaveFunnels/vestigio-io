@@ -35,6 +35,7 @@ import { pollNuvemshopData } from "../../workers/nuvemshop/poller";
 import { mapPollResultToSnapshotData as mapNuvemshopPollResult } from "../../packages/nuvemshop-adapter/snapshot-mapper";
 import { pollMetaAdsData } from "../../workers/meta-ads/poller";
 import { pollGoogleAdsData } from "../../workers/google-ads/poller";
+import { pollStripeData } from "../../workers/stripe/poller";
 import { decryptConfig } from "@/libs/integration-crypto";
 import type { IntegrationSnapshot } from "../../packages/integrations/types";
 import type { Evidence } from "../../packages/domain";
@@ -665,6 +666,52 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 							console.warn(`[audit-runner ${cycleId}] Google Ads integration sync failed:`, err);
 							await prisma.integrationConnection.update({
 								where: { id: googleAdsConn.id },
+								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
+							}).catch(() => { /* swallow secondary error */ });
+						}
+					}
+
+					// Stripe integration — revenue, MRR, churn, disputes, refunds.
+					const stripeConn = integrationConnections.find(c => c.provider === 'stripe' && c.status === 'connected');
+					if (stripeConn) {
+						try {
+							const config = decryptConfig(stripeConn.config);
+							const stripePollResult = await pollStripeData({
+								access_token: config.access_token,
+								stripe_user_id: config.stripe_user_id,
+							});
+
+							if (stripePollResult.errors.length === 0) {
+								integrationSnapshots.push({
+									provider: 'stripe',
+									fetched_at: new Date().toISOString(),
+									window: '30d',
+									data: stripePollResult.data,
+								});
+							}
+
+							await prisma.integrationConnection.update({
+								where: { id: stripeConn.id },
+								data: {
+									lastSyncedAt: new Date(),
+									status: stripePollResult.errors.length > 0 ? 'error' : 'connected',
+									syncError: stripePollResult.errors[0] ?? null,
+									syncMetadata: JSON.stringify({
+										mrr: stripePollResult.data.mrr,
+										dispute_rate: stripePollResult.data.dispute_rate,
+										charge_count: stripePollResult.data.revenue.charge_count,
+										synced_at: new Date().toISOString(),
+									}),
+								},
+							});
+
+							console.log(
+								`[audit-runner ${cycleId}] Stripe integration synced (revenue=${stripePollResult.data.revenue.total} ${stripePollResult.data.revenue.currency}, mrr=${stripePollResult.data.mrr}, disputes=${stripePollResult.data.dispute_rate}, errors=${stripePollResult.errors.length})`,
+							);
+						} catch (err) {
+							console.warn(`[audit-runner ${cycleId}] Stripe integration sync failed:`, err);
+							await prisma.integrationConnection.update({
+								where: { id: stripeConn.id },
 								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
 							}).catch(() => { /* swallow secondary error */ });
 						}

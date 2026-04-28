@@ -278,6 +278,66 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     case "nuvemshop":
       syncResult = await syncNuvemshop(config);
       break;
+    case "stripe": {
+      const { pollStripeData } = await import("../../../../../workers/stripe/poller");
+      const stripePollResult = await pollStripeData({
+        access_token: config.access_token,
+        stripe_user_id: config.stripe_user_id,
+      });
+      syncResult = {
+        ok: stripePollResult.errors.length === 0,
+        summary: {
+          mrr: stripePollResult.data.mrr,
+          revenue: stripePollResult.data.revenue.total,
+          currency: stripePollResult.data.revenue.currency,
+          charge_count: stripePollResult.data.revenue.charge_count,
+          dispute_rate: stripePollResult.data.dispute_rate,
+          synced_at: new Date().toISOString(),
+        },
+        error: stripePollResult.errors[0] || undefined,
+      };
+      break;
+    }
+    case "meta_ads": {
+      const { pollMetaAdsData: pollMeta } = await import("../../../../../workers/meta-ads/poller");
+      const metaPollResult = await pollMeta({
+        access_token: config.access_token,
+        ad_account_id: config.ad_account_id,
+      });
+      syncResult = {
+        ok: metaPollResult.errors.length === 0,
+        summary: {
+          ad_spend_30d: metaPollResult.data.ad_spend_30d,
+          currency: metaPollResult.data.currency,
+          creative_count: metaPollResult.data.creatives.length,
+          synced_at: new Date().toISOString(),
+        },
+        error: metaPollResult.errors[0] || undefined,
+      };
+      break;
+    }
+    case "google_ads": {
+      const { pollGoogleAdsData: pollGoogle } = await import("../../../../../workers/google-ads/poller");
+      const googlePollResult = await pollGoogle({
+        developer_token: config.developer_token,
+        client_id: config.client_id,
+        client_secret: config.client_secret,
+        refresh_token: config.refresh_token,
+        customer_id: config.customer_id,
+        login_customer_id: config.login_customer_id || undefined,
+      });
+      syncResult = {
+        ok: googlePollResult.errors.length === 0,
+        summary: {
+          ad_spend_30d: googlePollResult.data.ad_spend_30d,
+          currency: googlePollResult.data.currency,
+          campaign_count: googlePollResult.data.campaigns.length,
+          synced_at: new Date().toISOString(),
+        },
+        error: googlePollResult.errors[0] || undefined,
+      };
+      break;
+    }
     default:
       return NextResponse.json(
         { message: `Sync not yet implemented for provider: ${provider}` },

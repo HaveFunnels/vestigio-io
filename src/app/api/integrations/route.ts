@@ -6,6 +6,7 @@ import { withErrorTracking } from "@/libs/error-tracker";
 import { encryptConfig, decryptConfig } from "@/libs/integration-crypto";
 import { verifyMetaAdsConnection } from "../../../../workers/meta-ads/poller";
 import { verifyGoogleAdsConnection } from "../../../../workers/google-ads/poller";
+import { verifyStripeConnection } from "../../../../workers/stripe/poller";
 import { z } from "zod";
 import { blockIfImpersonating } from "@/libs/impersonation-guard";
 
@@ -169,6 +170,23 @@ async function verifyGoogleAdsConnectionWrapper(
   });
 }
 
+// ── Stripe connection verification ──────────
+
+async function verifyStripeConnectionWrapper(
+  config: Record<string, string>,
+): Promise<{ ok: boolean; error?: string }> {
+  const { access_token, stripe_user_id } = config;
+
+  if (!access_token || !stripe_user_id) {
+    return {
+      ok: false,
+      error: "access_token and stripe_user_id are required for Stripe",
+    };
+  }
+
+  return verifyStripeConnection({ access_token, stripe_user_id });
+}
+
 // ── Schemas ──────────────────────────────────
 
 const connectSchema = z.object({
@@ -247,8 +265,9 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     verificationResult = await verifyMetaAdsConnectionWrapper(config);
   } else if (provider === "google_ads") {
     verificationResult = await verifyGoogleAdsConnectionWrapper(config);
+  } else if (provider === "stripe") {
+    verificationResult = await verifyStripeConnectionWrapper(config);
   }
-  // Future: add verification for stripe
 
   // Update status based on verification
   const updatedConnection = await prisma.integrationConnection.update({

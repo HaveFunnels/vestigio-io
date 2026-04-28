@@ -186,6 +186,15 @@ export default function DataSourcesPage() {
 		if (params.get("google_ads_error")) {
 			setGoogleAdsError(decodeURIComponent(params.get("google_ads_error") || ""));
 		}
+		// Stripe
+		if (params.get("connected") === "stripe") {
+			setStripeStatus("verified");
+			setStripeLastSync(new Date().toISOString());
+			setStripeError(null);
+		}
+		if (params.get("stripe_error")) {
+			setStripeError(decodeURIComponent(params.get("stripe_error") || ""));
+		}
 		// Clean URL params without navigation
 		if (params.toString()) {
 			window.history.replaceState({}, "", window.location.pathname);
@@ -606,6 +615,61 @@ export default function DataSourcesPage() {
 		} catch { /* silent */ }
 	};
 
+	// ── Stripe state ──
+	const [stripeStatus, setStripeStatus] = useState<SourceStatus>("not_configured");
+	const [stripeSyncing, setStripeSyncing] = useState(false);
+	const [stripeLastSync, setStripeLastSync] = useState<string | null>(null);
+	const [stripeError, setStripeError] = useState<string | null>(null);
+	const [stripeSyncMeta, setStripeSyncMeta] = useState<Record<string, any> | null>(null);
+
+	const fetchStripeStatus = useCallback(async () => {
+		try {
+			const res = await fetch(`/api/integrations?environment_id=${environmentId}`);
+			if (!res.ok) return;
+			const { integrations } = await res.json();
+			const stripe = integrations?.find((i: any) => i.provider === "stripe");
+			if (stripe) {
+				setStripeStatus(mapStatus(stripe.status));
+				setStripeLastSync(stripe.lastSyncedAt);
+				setStripeError(stripe.syncError);
+			}
+		} catch { /* silent */ }
+	}, [environmentId]);
+
+	useEffect(() => { fetchStripeStatus(); }, [fetchStripeStatus]);
+
+	const handleDisconnectStripe = async () => {
+		if (!confirm("Disconnect Stripe? Revenue intelligence data will no longer be available.")) return;
+		try {
+			await fetch("/api/integrations", {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ environmentId, provider: "stripe" }),
+			});
+			setStripeStatus("not_configured");
+			setStripeLastSync(null);
+			setStripeError(null);
+			setStripeSyncMeta(null);
+		} catch { /* silent */ }
+	};
+
+	const handleSyncStripe = async () => {
+		setStripeSyncing(true);
+		try {
+			const res = await fetch("/api/integrations/sync", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ environmentId, provider: "stripe" }),
+			});
+			if (res.ok) {
+				const data = await res.json();
+				if (data.summary) setStripeSyncMeta(data.summary);
+				await fetchStripeStatus();
+			}
+		} catch { /* silent */ }
+		finally { setStripeSyncing(false); }
+	};
+
 	const [pixelCopied, setPixelCopied] = useState(false);
 	const pixelSnippet = `<script async src="https://app.vestigio.io/snippet/vestigio.js" data-env="${environmentId}"></script>`;
 
@@ -637,10 +701,10 @@ export default function DataSourcesPage() {
 		{
 			id: "stripe",
 			title: "Stripe",
-			description: "Transaction data, chargeback metrics, and revenue tracking via webhooks.",
-			status: "not_configured" as SourceStatus,
-			configurable: false,
-			unlocks: "Revenue data, chargeback rates, transaction metrics",
+			description: "Revenue intelligence via Stripe Connect — MRR, churn, disputes, refunds, and failed payments.",
+			status: stripeStatus,
+			configurable: true,
+			unlocks: "Revenue data, MRR, churn rate, dispute rate, refund tracking",
 		},
 		{
 			id: "shopify",
@@ -934,6 +998,84 @@ export default function DataSourcesPage() {
 										<button onClick={handleConnectNuvemshop} disabled={nuvemshopSaving} style={buttonStyle}>
 											{nuvemshopSaving ? "Conectando..." : "Conectar Nuvemshop"}
 										</button>
+									</div>
+								)}
+							</div>
+						)}
+
+						{/* Expanded Stripe card */}
+						{source.id === "stripe" && expandedCard === "stripe" && (
+							<div style={{ padding: "0 20px 20px", borderTop: "1px solid #27272a" }}>
+								{stripeStatus === "configured" || stripeStatus === "verified" ? (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+										<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+											<div>
+												<p style={{ color: "#22c55e", fontWeight: 500, fontSize: 13 }}>Connected</p>
+												{stripeLastSync && (
+													<p style={{ color: "#52525b", fontSize: 11, marginTop: 2 }}>Last sync: {new Date(stripeLastSync).toLocaleString()}</p>
+												)}
+											</div>
+											<div style={{ display: "flex", gap: 8 }}>
+												<button onClick={handleSyncStripe} disabled={stripeSyncing} style={{ ...buttonStyle, backgroundColor: "#27272a", color: "#e4e4e7" }}>
+													{stripeSyncing ? "Syncing..." : "Sync Now"}
+												</button>
+												<button onClick={handleDisconnectStripe} style={{ ...buttonStyle, backgroundColor: "transparent", border: "1px solid #7f1d1d", color: "#f87171" }}>
+													Disconnect
+												</button>
+											</div>
+										</div>
+										{stripeSyncMeta && (
+											<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+												{stripeSyncMeta.mrr != null && (
+													<div style={{ padding: "10px 12px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+														<p style={{ color: "#71717a", fontSize: 11, marginBottom: 2 }}>MRR</p>
+														<p style={{ color: "#e4e4e7", fontSize: 15, fontWeight: 600 }}>${Number(stripeSyncMeta.mrr).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+													</div>
+												)}
+												{stripeSyncMeta.dispute_rate != null && (
+													<div style={{ padding: "10px 12px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+														<p style={{ color: "#71717a", fontSize: 11, marginBottom: 2 }}>Dispute Rate</p>
+														<p style={{ color: stripeSyncMeta.dispute_rate > 0.01 ? "#f87171" : "#e4e4e7", fontSize: 15, fontWeight: 600 }}>{(Number(stripeSyncMeta.dispute_rate) * 100).toFixed(2)}%</p>
+													</div>
+												)}
+												{stripeSyncMeta.charge_count != null && (
+													<div style={{ padding: "10px 12px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+														<p style={{ color: "#71717a", fontSize: 11, marginBottom: 2 }}>Charges (30d)</p>
+														<p style={{ color: "#e4e4e7", fontSize: 15, fontWeight: 600 }}>{Number(stripeSyncMeta.charge_count).toLocaleString()}</p>
+													</div>
+												)}
+											</div>
+										)}
+										{stripeError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{stripeError}
+											</div>
+										)}
+									</div>
+								) : (
+									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+										<div style={{ padding: "14px 16px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#e4e4e7", fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Connect via Stripe OAuth</p>
+											<p style={{ color: "#71717a", fontSize: 12, lineHeight: 1.6 }}>
+												You will be redirected to Stripe to authorize Vestigio with <strong style={{ color: "#a1a1aa" }}>read_only</strong> access. We never modify your Stripe data. Revenue, MRR, churn, and dispute metrics will be imported automatically.
+											</p>
+										</div>
+
+										{stripeError && (
+											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12 }}>
+												{stripeError}
+											</div>
+										)}
+
+										<a href={`/api/integrations/stripe/authorize?environment_id=${encodeURIComponent(environmentId)}`} style={{ ...buttonStyle, textAlign: "center" as const, textDecoration: "none", backgroundColor: "#635bff", color: "#fff" }}>
+											Connect with Stripe
+										</a>
+
+										<div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
+											<p style={{ color: "#71717a", fontSize: 11, lineHeight: 1.5 }}>
+												Read-only scope via Stripe Connect. Vestigio never modifies charges, subscriptions, or any other data. Credentials encrypted with AES-256-GCM.
+											</p>
+										</div>
 									</div>
 								)}
 							</div>

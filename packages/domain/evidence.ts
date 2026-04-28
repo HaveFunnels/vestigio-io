@@ -750,7 +750,22 @@ export interface SurfaceVitalityPayload {
 
 export interface ContentEnrichmentPayload {
   type: 'content_enrichment';
-  enrichment_type: 'policy_quality' | 'checkout_trust' | 'cta_clarity' | 'product_page_quality' | 'pricing_page_framing' | 'ad_message_match';
+  enrichment_type:
+    | 'policy_quality'
+    | 'checkout_trust'
+    | 'cta_clarity'
+    | 'product_page_quality'
+    | 'pricing_page_framing'
+    | 'ad_message_match'
+    // Wave 3.10 Copy Analysis Pack
+    | 'homepage_hero'
+    | 'social_proof_placement'
+    | 'objection_handling'
+    | 'urgency_scarcity'
+    | 'onboarding_copy'
+    | 'error_page_recovery'
+    | 'navigation_clarity'
+    | 'above_fold_density';
   source_evidence_key: string;
   source_url: string;
   scores: { clarity_score: number; readability_grade: string };

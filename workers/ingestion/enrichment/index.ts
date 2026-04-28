@@ -18,3 +18,4 @@ export {
   pickCommercialPathScenario,
   buildSupportReachScenario,
 } from "./scenarios";
+export { extractCopyElements } from "./copy-elements-extractor";

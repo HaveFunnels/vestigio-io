@@ -298,6 +298,12 @@ model BusinessProfile {
   churnRate           Float?
   conversionModel     String @default("checkout") // checkout | whatsapp | form | external
 
+  // Wave 3.10: ICP (Ideal Customer Profile) fields — optional, system
+  // falls back to heuristic detection from site content when absent.
+  icpDescription       String?   // Free text: "CTOs at mid-market SaaS companies"
+  targetIndustry       String?   // "saas", "ecommerce", "fintech", "healthcare", etc.
+  buyerSophistication  String?   // "technical" | "non_technical" | "mixed"
+
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 

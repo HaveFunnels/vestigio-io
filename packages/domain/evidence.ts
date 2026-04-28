@@ -69,7 +69,8 @@ export type EvidencePayload =
   | ShopifyStoreMetricsPayload
   | BehavioralSessionPayload
   | SurfaceVitalityPayload
-  | ContentEnrichmentPayload;
+  | ContentEnrichmentPayload
+  | CopyElementsPayload;
 
 export interface HttpResponsePayload {
   type: 'http_response';
@@ -760,4 +761,39 @@ export interface ContentEnrichmentPayload {
   confidence: number;
   model_used: string;
   cached: boolean;
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.10: Copy Elements Evidence Payload
+//
+// Extracted copy/content elements from a page, used by the
+// copy-analysis Haiku to evaluate messaging quality, CTA
+// clarity, trust-signal density, and funnel-stage alignment.
+// Produced by the regex-based copy-elements-extractor (no LLM).
+// ──────────────────────────────────────────────
+
+export interface CopyElementsPayload {
+  type: 'copy_elements';
+  url: string;
+  page_type: string;   // homepage, landing_page, pricing, product, checkout, etc.
+  funnel_stage: string; // awareness, consideration, decision, retention
+
+  // Extracted elements
+  h1: string | null;
+  subheadline: string | null;
+  cta_texts: string[];            // All button/link CTAs found
+  primary_cta: string | null;     // Best guess at primary CTA
+  social_proof_elements: string[]; // Testimonials, logos, metrics found
+  trust_signals: string[];         // Security badges, guarantees, certifications
+  urgency_indicators: string[];    // Timers, stock counts, "limited" language
+  above_fold_text: string;         // First ~500 chars of visible content
+  navigation_labels: string[];     // Top-level menu items
+  body_text: string;               // Full body text (up to 2000 chars)
+
+  // Metadata
+  word_count: number;
+  cta_count: number;
+  has_form: boolean;
+  has_pricing_table: boolean;
+  has_faq: boolean;
 }

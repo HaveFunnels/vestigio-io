@@ -2,7 +2,7 @@ import FooterWrapper from "@/components/Footer/FooterWrapper";
 import { HeaderWrapper } from "@/components/Header/HeaderWrapper";
 import TrackingScript from "@/components/analytics/TrackingScript";
 import NextTopLoader from "nextjs-toploader";
-import "react-quill-new/dist/quill.snow.css";
+// react-quill CSS moved to admin layout — not needed on public pages
 import ToastContext from "../context/ToastContext";
 import { Providers } from "./providers";
 

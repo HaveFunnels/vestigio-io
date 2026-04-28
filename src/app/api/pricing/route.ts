@@ -23,5 +23,9 @@ export const GET = withErrorTracking(async function GET() {
     maxMembers: p.maxMembers,
   }));
 
-  return NextResponse.json({ plans: publicPlans });
+  return NextResponse.json({ plans: publicPlans }, {
+    headers: {
+      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+    },
+  });
 }, { endpoint: "/api/pricing", method: "GET" });

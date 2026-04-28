@@ -2,6 +2,7 @@
 import dynamic from "next/dynamic";
 import { LegacyRef, useRef } from "react";
 import type ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 
 interface IWrappedComponent extends React.ComponentProps<typeof ReactQuill> {
 	forwardedRef: LegacyRef<ReactQuill>;

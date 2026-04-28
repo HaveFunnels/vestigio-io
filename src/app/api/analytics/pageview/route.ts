@@ -45,25 +45,10 @@ export async function POST(req: NextRequest) {
 
     // Extract visitor IP for geographic data
     const ip = extractIp(req);
-    let country = body.country ? String(body.country).slice(0, 100) : null;
-    let city = body.city ? String(body.city).slice(0, 100) : null;
-    let region: string | null = null;
-    let lat: number | null = null;
-    let lng: number | null = null;
+    const country = body.country ? String(body.country).slice(0, 100) : null;
+    const city = body.city ? String(body.city).slice(0, 100) : null;
 
-    // Server-side geo resolution from IP
-    if (ip) {
-      const geo = await resolveGeo(ip);
-      if (geo) {
-        if (!country) country = geo.country;
-        if (!city) city = geo.city;
-        region = geo.region;
-        lat = geo.lat;
-        lng = geo.lng;
-      }
-    }
-
-    // Fire and forget — don't block the response
+    // Fire and forget — create pageview immediately, resolve geo in background
     prisma.pageView
       .create({
         data: {
@@ -75,16 +60,30 @@ export async function POST(req: NextRequest) {
           utmCampaign: utmCampaign ? String(utmCampaign).slice(0, 200) : null,
           utmContent: utmContent ? String(utmContent).slice(0, 200) : null,
           country,
-          region,
           city,
-          lat,
-          lng,
           ip: hashClientIp(ip),
           device: device ? String(device).slice(0, 20) : null,
           browser: browser ? String(browser).slice(0, 50) : null,
           os: os ? String(os).slice(0, 50) : null,
           abVariant: abVariant ? String(abVariant).slice(0, 100) : null,
         },
+      })
+      .then((pv) => {
+        // Background: resolve geo from IP and patch the row
+        if (!ip) return;
+        resolveGeo(ip).then((geo) => {
+          if (!geo) return;
+          prisma.pageView.update({
+            where: { id: pv.id },
+            data: {
+              country: pv.country || geo.country,
+              city: pv.city || geo.city,
+              region: geo.region,
+              lat: geo.lat,
+              lng: geo.lng,
+            },
+          }).catch(() => {});
+        }).catch(() => {});
       })
       .catch(() => {});
 

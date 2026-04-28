@@ -456,6 +456,15 @@ export enum InferenceCategory {
   SocialProofGeneric = 'social_proof_generic',
   FormErrorMessagesUnhelpful = 'form_error_messages_unhelpful',
   OnboardingNoQuickWin = 'onboarding_no_quick_win',
+  // Wave 3.10 Copy Analysis Pack
+  ValuePropositionBuried = 'value_proposition_buried',
+  SocialProofIneffective = 'social_proof_ineffective',
+  ObjectionUnaddressed = 'objection_unaddressed',
+  UrgencyDarkPattern = 'urgency_dark_pattern',
+  OnboardingCopyWeak = 'onboarding_copy_weak',
+  NavigationConfusing = 'navigation_confusing',
+  AboveFoldCluttered = 'above_fold_cluttered',
+  CopyCrossPageInconsistent = 'copy_cross_page_inconsistent',
   // Phase 4A: Commerce context findings (Shopify-powered)
   CheckoutAbandonmentRevenueLeak = 'checkout_abandonment_revenue_leak',
   PromotedProductOutOfStock = 'promoted_product_out_of_stock',

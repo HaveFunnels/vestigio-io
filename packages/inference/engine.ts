@@ -226,6 +226,16 @@ export function computeInferences(
   inferences.push(...inferProductPageCopyGeneric(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPricingPageFramingUnclear(byKey, scoping, cycle_ref, ids));
 
+  // Wave 3.10 Copy Analysis Pack inferences
+  inferences.push(...inferValuePropositionBuried(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSocialProofIneffective(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferObjectionUnaddressed(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferUrgencyDarkPattern(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferOnboardingCopyWeak(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferNavigationConfusing(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAboveFoldCluttered(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferCopyCrossPageInconsistent(byKey, scoping, cycle_ref, ids));
+
   // Phase 4A: Commerce context inferences (Shopify-powered)
   inferences.push(...inferCheckoutAbandonmentRevenueLeak(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPromotedProductOutOfStock(byKey, scoping, cycle_ref, ids));
@@ -3345,6 +3355,200 @@ function inferOnboardingNoQuickWin(byKey: Map<string, Signal>, scoping: Scoping,
   const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
   return [createInference({ inference_key: 'onboarding_no_quick_win', category: InferenceCategory.OnboardingNoQuickWin, conclusion: 'onboarding_no_quick_win', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `New users don't experience product value in the first session. Without a quick win in the first minutes — a visible result, a completed setup, a personalized recommendation — trial users conclude the product isn't for them and never return. ${matches.length} onboarding surface(s) lack immediate value delivery.`, reasoning_slots: { severity } })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.10 Copy Analysis Pack Inferences
+// ──────────────────────────────────────────────
+
+function inferValuePropositionBuried(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const absentMatches = [...byKey.entries()].filter(([k]) => k.startsWith('value_proposition_absent_'));
+  const belowFoldMatches = [...byKey.entries()].filter(([k]) => k.startsWith('value_proposition_below_fold_'));
+  const allMatches = [...absentMatches, ...belowFoldMatches];
+  if (allMatches.length === 0) return [];
+
+  const signals = allMatches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 30 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'value_proposition_buried',
+    category: InferenceCategory.ValuePropositionBuried,
+    conclusion: 'value_proposition_buried',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(85, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `The value proposition is ${score < 30 ? 'absent' : 'buried below the fold'} (score ${score}/100). Visitors cannot tell what you do or why it matters within 5 seconds of landing. The hero section — the single highest-leverage piece of copy on the site — fails to communicate the core promise. ${allMatches.length} page(s) affected.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+function inferSocialProofIneffective(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const genericMatches = [...byKey.entries()].filter(([k]) => k.startsWith('social_proof_generic_'));
+  const misplacedMatches = [...byKey.entries()].filter(([k]) => k.startsWith('social_proof_misplaced_'));
+  const allMatches = [...genericMatches, ...misplacedMatches];
+  if (allMatches.length === 0) return [];
+
+  const signals = allMatches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 30 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'social_proof_ineffective',
+    category: InferenceCategory.SocialProofIneffective,
+    conclusion: 'social_proof_ineffective',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(80, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Social proof is present but ineffective — ${genericMatches.length > 0 ? 'testimonials lack names, companies, or measurable outcomes' : ''}${genericMatches.length > 0 && misplacedMatches.length > 0 ? ' and ' : ''}${misplacedMatches.length > 0 ? 'proof is placed away from decision points' : ''}. Generic or misplaced social proof doesn't just fail to convince — it signals inauthenticity. ${allMatches.length} page(s) affected.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+function inferObjectionUnaddressed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('objection_unaddressed_at_decision_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 20 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'objection_unaddressed',
+    category: InferenceCategory.ObjectionUnaddressed,
+    conclusion: 'objection_unaddressed',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(80, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Key buyer objections go unanswered on decision pages (objection coverage score ${score}/100). Pricing pages without FAQ or guarantee, product pages without comparison or risk reversal — buyers who can't find answers to their concerns leave and buy from someone who addresses them. ${matches.length} decision page(s) affected.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+function inferUrgencyDarkPattern(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('urgency_dark_pattern_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+
+  return [createInference({
+    inference_key: 'urgency_dark_pattern',
+    category: InferenceCategory.UrgencyDarkPattern,
+    conclusion: 'urgency_dark_pattern',
+    conclusion_value: 'high',
+    severity_hint: 'high',
+    confidence: Math.min(85, signals[0].confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Manipulative urgency/scarcity tactics detected on ${matches.length} page(s). Fake countdown timers, fabricated stock levels, and manufactured urgency erode trust and may violate consumer protection regulations. Short-term conversion gains from dark patterns are offset by increased returns, chargebacks, and brand damage.`,
+    reasoning_slots: { severity: 'high' },
+  })];
+}
+
+function inferOnboardingCopyWeak(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('onboarding_no_quick_win_copy_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+
+  return [createInference({
+    inference_key: 'onboarding_copy_weak',
+    category: InferenceCategory.OnboardingCopyWeak,
+    conclusion: 'onboarding_copy_weak',
+    conclusion_value: 'medium',
+    severity_hint: 'medium',
+    confidence: Math.min(75, signals[0].confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Onboarding copy does not promise or deliver a quick win on ${matches.length} surface(s). The copy fails to guide new users to an immediate value moment — without a clear "here's what you'll get in 2 minutes" promise, users disengage before experiencing the product's core benefit.`,
+    reasoning_slots: { severity: 'medium' },
+  })];
+}
+
+function inferNavigationConfusing(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('navigation_jargon_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 30 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'navigation_confusing',
+    category: InferenceCategory.NavigationConfusing,
+    conclusion: 'navigation_confusing',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(80, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Navigation uses internal jargon instead of buyer language (clarity score ${score}/100). When navigation labels don't match the words buyers think in, they can't find what they need and leave — navigation is the silent CTA hierarchy that either guides or loses visitors. ${matches.length} surface(s) affected.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+function inferAboveFoldCluttered(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('above_fold_cluttered_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 25 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'above_fold_cluttered',
+    category: InferenceCategory.AboveFoldCluttered,
+    conclusion: 'above_fold_cluttered',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(80, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Above-the-fold area is cluttered (density score ${score}/100). Too many elements, competing CTAs, and visual noise above the fold bury the value proposition and overwhelm visitors — when everything screams for attention, nothing gets it. ${matches.length} page(s) affected.`,
+    reasoning_slots: { severity, score },
+  })];
+}
+
+function inferCopyCrossPageInconsistent(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const matches = [...byKey.entries()].filter(([k]) => k.startsWith('copy_tone_inconsistent_'));
+  if (matches.length === 0) return [];
+
+  const signals = matches.map(([, s]) => s);
+  const worst = signals.reduce((a, b) => (a.numeric_value ?? 100) < (b.numeric_value ?? 100) ? a : b);
+  const score = worst.numeric_value ?? 0;
+  const severity = score < 30 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'copy_cross_page_inconsistent',
+    category: InferenceCategory.CopyCrossPageInconsistent,
+    conclusion: 'copy_cross_page_inconsistent',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: Math.min(75, worst.confidence + 5),
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Pages contradict each other or shift tone (consistency score ${score}/100). Homepage promises "simple" but pricing page is complex. Landing page is casual but checkout is formal. These contradictions erode buyer confidence because the brand feels like it's run by different people. ${matches.length} page(s) flagged.`,
+    reasoning_slots: { severity, score },
+  })];
 }
 
 // ──────────────────────────────────────────────

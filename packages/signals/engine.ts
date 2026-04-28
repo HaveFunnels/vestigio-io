@@ -4853,6 +4853,271 @@ function extractCopyEnrichmentSignals(
       }
     }
 
+    // ── Wave 3.10 Copy Analysis Pack — new enrichment types ──
+
+    // From homepage_hero: value proposition absent / below fold / headline formula weak
+    if (p.enrichment_type === 'homepage_hero') {
+      const results = (p.results || {}) as {
+        value_prop_score?: number; headline_formula_match?: boolean;
+        cta_specificity_score?: number;
+      };
+      const vpScore = results.value_prop_score ?? 0;
+
+      if (vpScore < 30) {
+        signals.push(createSignal({ ids,
+          signal_key: `value_proposition_absent_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.homepage_hero.value_prop',
+          value: 'absent',
+          numeric_value: vpScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Value proposition absent at ${p.source_url}: value_prop_score ${vpScore}/100 — visitors cannot tell what the product does or why it matters within 5 seconds`,
+        }));
+      } else if (vpScore >= 30 && vpScore < 50) {
+        signals.push(createSignal({ ids,
+          signal_key: `value_proposition_below_fold_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.homepage_hero.value_prop',
+          value: 'below_fold',
+          numeric_value: vpScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Value proposition present but weak above the fold at ${p.source_url}: value_prop_score ${vpScore}/100 — the message exists but doesn't land in the first viewport`,
+        }));
+      }
+
+      if (!results.headline_formula_match && (results.cta_specificity_score ?? 100) < 40) {
+        const ctaScore = results.cta_specificity_score ?? 0;
+        signals.push(createSignal({ ids,
+          signal_key: `headline_formula_weak_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.homepage_hero.headline_formula',
+          value: 'weak',
+          numeric_value: ctaScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Headline formula weak at ${p.source_url}: no recognized headline pattern and CTA specificity score ${ctaScore}/100 — the hero section doesn't follow proven persuasion structures`,
+        }));
+      }
+    }
+
+    // From social_proof_placement: social proof generic or misplaced
+    if (p.enrichment_type === 'social_proof_placement') {
+      const results = (p.results || {}) as {
+        specificity?: string; placement_near_cta?: boolean;
+        proof_quality_score?: number;
+      };
+      const specificity = results.specificity ?? 'none';
+      const qualityScore = results.proof_quality_score ?? 0;
+
+      if (specificity === 'low' || specificity === 'none') {
+        signals.push(createSignal({ ids,
+          signal_key: `social_proof_generic_${p.source_url}`,
+          category: SignalCategory.Trust,
+          attribute: 'enrichment.social_proof_placement.specificity',
+          value: specificity,
+          numeric_value: qualityScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Social proof is generic (specificity: ${specificity}) at ${p.source_url}: testimonials lack names, companies, or measurable outcomes`,
+        }));
+      }
+
+      if (results.placement_near_cta === false && qualityScore < 50) {
+        signals.push(createSignal({ ids,
+          signal_key: `social_proof_misplaced_${p.source_url}`,
+          category: SignalCategory.Trust,
+          attribute: 'enrichment.social_proof_placement.placement',
+          value: 'misplaced',
+          numeric_value: qualityScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Social proof misplaced at ${p.source_url}: not near CTA and quality score ${qualityScore}/100 — trust signals are disconnected from the decision moment`,
+        }));
+      }
+    }
+
+    // From objection_handling: objection unaddressed at decision point
+    if (p.enrichment_type === 'objection_handling') {
+      const results = (p.results || {}) as {
+        objection_coverage_score?: number; page_type?: string;
+      };
+      const coverageScore = results.objection_coverage_score ?? 0;
+      const pageType = results.page_type ?? '';
+      const isDecisionPage = /pricing|checkout|cart|product/i.test(pageType);
+
+      if (coverageScore < 40 && isDecisionPage) {
+        const severity = coverageScore < 20 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `objection_unaddressed_at_decision_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.objection_handling.coverage',
+          value: severity,
+          numeric_value: coverageScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Key buyer objections unaddressed on ${pageType} page at ${p.source_url}: objection coverage score ${coverageScore}/100 — buyers' real concerns go unanswered at the decision point`,
+        }));
+      }
+    }
+
+    // From urgency_scarcity: dark pattern or authentic urgency absent
+    if (p.enrichment_type === 'urgency_scarcity') {
+      const results = (p.results || {}) as {
+        urgency_type?: string; page_type?: string;
+      };
+      const urgencyType = results.urgency_type ?? 'none';
+      const pageType = results.page_type ?? '';
+
+      if (urgencyType === 'manipulative') {
+        signals.push(createSignal({ ids,
+          signal_key: `urgency_dark_pattern_${p.source_url}`,
+          category: SignalCategory.Trust,
+          attribute: 'enrichment.urgency_scarcity.type',
+          value: 'manipulative',
+          numeric_value: 0,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Urgency dark pattern detected at ${p.source_url}: manipulative urgency/scarcity tactics erode trust and may violate consumer protection regulations`,
+        }));
+      }
+
+      if (urgencyType === 'none' && /product|pricing/i.test(pageType)) {
+        signals.push(createSignal({ ids,
+          signal_key: `urgency_authentic_absent_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.urgency_scarcity.type',
+          value: 'absent',
+          numeric_value: 0,
+          confidence: Math.min(60, p.confidence),
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Authentic urgency absent on ${pageType} page at ${p.source_url}: no legitimate scarcity or time-sensitivity cues — opportunity to add truthful urgency drivers`,
+        }));
+      }
+    }
+
+    // From onboarding_copy: no quick win
+    if (p.enrichment_type === 'onboarding_copy') {
+      const results = (p.results || {}) as {
+        has_quick_win?: boolean;
+      };
+
+      if (results.has_quick_win === false) {
+        signals.push(createSignal({ ids,
+          signal_key: `onboarding_no_quick_win_copy_${p.source_url}`,
+          category: SignalCategory.Onboarding,
+          attribute: 'enrichment.onboarding_copy.quick_win',
+          value: 'absent',
+          numeric_value: 0,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Onboarding copy at ${p.source_url} does not promise or deliver a quick win — new users have no clear path to immediate value`,
+        }));
+      }
+    }
+
+    // From error_page_recovery: no recovery path
+    if (p.enrichment_type === 'error_page_recovery') {
+      const results = (p.results || {}) as {
+        has_recovery_path?: boolean;
+      };
+
+      if (results.has_recovery_path === false) {
+        signals.push(createSignal({ ids,
+          signal_key: `error_recovery_absent_${p.source_url}`,
+          category: SignalCategory.Friction,
+          attribute: 'enrichment.error_page_recovery.has_path',
+          value: 'absent',
+          numeric_value: 0,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Error page at ${p.source_url} has no recovery path — visitors who hit errors see a dead end instead of a way back to the conversion flow`,
+        }));
+      }
+    }
+
+    // From navigation_clarity: jargon in navigation labels
+    if (p.enrichment_type === 'navigation_clarity') {
+      const results = (p.results || {}) as {
+        jargon_labels?: string[]; clarity_score?: number;
+      };
+      const jargonLabels = results.jargon_labels ?? [];
+      const clarityScore = results.clarity_score ?? 100;
+
+      if (jargonLabels.length > 0 && clarityScore < 50) {
+        const severity = clarityScore < 30 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `navigation_jargon_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.navigation_clarity.jargon',
+          value: severity,
+          numeric_value: clarityScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Navigation uses jargon at ${p.source_url}: clarity score ${clarityScore}/100, jargon labels: ${jargonLabels.slice(0, 5).join(', ')} — visitors cannot find what they need`,
+        }));
+      }
+    }
+
+    // From above_fold_density: cluttered above fold
+    if (p.enrichment_type === 'above_fold_density') {
+      const results = (p.results || {}) as {
+        density_score?: number; competing_ctas?: number;
+      };
+      const densityScore = results.density_score ?? 100;
+      const competingCtas = results.competing_ctas ?? 0;
+
+      if (densityScore < 40 || competingCtas > 2) {
+        const severity = (densityScore < 25 || competingCtas > 3) ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `above_fold_cluttered_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.above_fold_density.score',
+          value: severity,
+          numeric_value: densityScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Above-the-fold area is cluttered at ${p.source_url}: density score ${densityScore}/100, ${competingCtas} competing CTAs — too many elements compete for attention and the value proposition gets buried`,
+        }));
+      }
+    }
+
+    // Placeholder: cross-page tone inconsistency (Fase 3 — fired by cross-page analysis)
+    if (p.enrichment_type === 'cross_page_tone') {
+      const results = (p.results || {}) as {
+        tone_consistency_score?: number; contradictions?: string[];
+      };
+      const consistencyScore = results.tone_consistency_score ?? 100;
+
+      if (consistencyScore < 50) {
+        const severity = consistencyScore < 30 ? 'high' : 'medium';
+        signals.push(createSignal({ ids,
+          signal_key: `copy_tone_inconsistent_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.cross_page_tone.consistency',
+          value: severity,
+          numeric_value: consistencyScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Cross-page tone inconsistency detected at ${p.source_url}: consistency score ${consistencyScore}/100 — pages contradict each other or shift tone, confusing buyers about what the brand stands for`,
+        }));
+      }
+    }
+
     // Wave 3.9 C-E: Ad-LP message mismatch
     if (p.enrichment_type === 'ad_message_match') {
       const results = (p.results || {}) as {

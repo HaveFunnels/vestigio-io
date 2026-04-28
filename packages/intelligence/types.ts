@@ -54,7 +54,9 @@ export type RootCauseCategory =
   // Wave 2.3: Runtime fragility (separated from friction_barrier so maps treat them distinctly)
   | 'runtime_fragility'
   // Tier 1 Copy Analysis
-  | 'copy_clarity';
+  | 'copy_clarity'
+  // Wave 3.10 Copy Analysis Pack
+  | 'copy_strategy';
 
 export type RootCauseSeverity = 'critical' | 'high' | 'medium' | 'low';
 

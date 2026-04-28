@@ -243,16 +243,26 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   intent_decay_time_excessive:     { root_cause_key: 'behavioral_path_inefficiency', category: 'behavioral_path_integrity', impact_types: ['revenue_loss'] },
   intent_absorber_detected:        { root_cause_key: 'behavioral_path_inefficiency', category: 'behavioral_path_integrity', impact_types: ['revenue_loss', 'scale_risk'] },
 
-  // Wave 3.1 Tier 2: LLM enrichment findings
-  social_proof_generic:              { root_cause_key: 'copy_strategy_gap', category: 'conversion_clarity', impact_types: ['revenue_loss', 'trust_erosion'] },
-  form_error_messages_unhelpful:     { root_cause_key: 'copy_strategy_gap', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
+  // Wave 3.1 Tier 2: LLM enrichment findings (remapped in Wave 3.10)
+  social_proof_generic:              { root_cause_key: 'social_proof_ineffective', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
+  form_error_messages_unhelpful:     { root_cause_key: 'copy_funnel_misalignment', category: 'copy_strategy', impact_types: ['revenue_loss'] },
   onboarding_no_quick_win:           { root_cause_key: 'saas_activation_barrier', category: 'saas_activation_failure', impact_types: ['revenue_loss'] },
 
-  // Tier 1 Copy Analysis findings
-  checkout_trust_language_absent:    { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss', 'trust_erosion'] },
-  cta_clarity_weak_on_commercial:    { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
-  product_page_copy_generic:         { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
-  pricing_page_framing_unclear:      { root_cause_key: 'copy_strategy_gap', category: 'copy_clarity', impact_types: ['revenue_loss'] },
+  // Tier 1 Copy Analysis findings (remapped in Wave 3.10)
+  checkout_trust_language_absent:    { root_cause_key: 'trust_copy_absent_at_decision', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
+  cta_clarity_weak_on_commercial:    { root_cause_key: 'cta_competing_or_unclear', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  product_page_copy_generic:         { root_cause_key: 'copy_funnel_misalignment', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  pricing_page_framing_unclear:      { root_cause_key: 'objection_unaddressed', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+
+  // Wave 3.10 Copy Analysis Pack — new inference-to-root-cause mappings
+  value_proposition_buried:          { root_cause_key: 'value_proposition_buried', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  social_proof_ineffective:          { root_cause_key: 'social_proof_ineffective', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
+  objection_unaddressed:             { root_cause_key: 'objection_unaddressed', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  urgency_dark_pattern:              { root_cause_key: 'trust_copy_absent_at_decision', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
+  onboarding_copy_weak:              { root_cause_key: 'copy_funnel_misalignment', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  navigation_confusing:              { root_cause_key: 'cta_competing_or_unclear', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  above_fold_cluttered:              { root_cause_key: 'value_proposition_buried', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  copy_cross_page_inconsistent:      { root_cause_key: 'copy_cross_page_inconsistent', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
 
   // Phase 4A: Commerce context findings (Shopify-powered)
   checkout_abandonment_revenue_leak:  { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss'] },
@@ -323,8 +333,14 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   behavioral_friction_tax: 'Every step of your checkout asks too much of buyers',
   behavioral_trust_revenue_gap: "Buyers want to buy but don't trust you enough to finish",
   behavioral_path_inefficiency: 'Your path to purchase is too long for buyers to stay engaged',
-  // Wave 3.1 Tier 2: LLM enrichment root causes
-  copy_strategy_gap: "Your copy doesn't match what buyers need to hear",
+  // Wave 3.10 Copy Analysis Pack — 7 granular root causes (replaces copy_strategy_gap)
+  copy_funnel_misalignment: "Your copy doesn't match where the buyer is in their journey",
+  value_proposition_buried: 'Your value proposition is hidden or missing above the fold',
+  trust_copy_absent_at_decision: "Buyers don't see trust signals when they're about to pay",
+  social_proof_ineffective: "Your social proof doesn't convince — it's generic or misplaced",
+  cta_competing_or_unclear: 'Your call-to-action competes with itself or says nothing',
+  objection_unaddressed: 'Key buyer objections go unanswered on the page',
+  copy_cross_page_inconsistent: 'Your pages contradict each other or shift tone',
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -416,8 +432,20 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
 
   behavioral_path_inefficiency: "Buyers arrive ready to buy, but your site makes them walk through too many pages before they can. By the time they reach \"Pay,\" the interest that brought them has faded. Shorter paths turn intent into sales. Longer paths let it slip away.",
 
-  // Wave 3.1 Tier 2: LLM enrichment root causes
-  copy_strategy_gap: "The words on your site — testimonials, error messages, onboarding steps, buttons — aren't saying what buyers actually need to hear. Your testimonials are generic. Your form errors read like computer code. Your onboarding never gives the new user a quick win. At every moment, buyers have a real question in their head, and your copy answers the wrong one.",
+  // Wave 3.10 Copy Analysis Pack — 7 granular root cause descriptions (replaces copy_strategy_gap)
+  copy_funnel_misalignment: "Pages speak to the wrong stage of the buying process. Your product pages use generic supplier text instead of benefit-driven copy. Your onboarding doesn't deliver a quick win. Your error messages read like computer code. At every stage, the copy answers the wrong question for where the buyer actually is in their journey — and they leave to find a site that speaks their language.",
+
+  value_proposition_buried: "Visitors can't tell what you do or why it matters within 5 seconds of landing. The hero section — the single highest-leverage piece of copy on the entire site — either says nothing specific or buries the real value below the fold under visual clutter. Above-the-fold density, competing CTAs, and vague headlines all contribute to a buried value proposition. First impressions happen once; yours isn't landing.",
+
+  trust_copy_absent_at_decision: "Checkout, pricing, and product pages lack guarantees, security badges, or trust language at the moment buyers are most anxious about paying. Dark patterns like fake urgency timers make it worse — they erode the trust you should be building. Buyers who reach the payment step and see no reassurance back out. The absence of trust copy at the decision moment directly suppresses conversion.",
+
+  social_proof_ineffective: "Testimonials without names or companies, logos without context, reviews without measurable outcomes — your social proof doesn't convince because it lacks specificity. Worse, it's placed away from the decision points where buyers need reassurance most. Generic social proof doesn't just fail to help — it actively signals inauthenticity and makes buyers question if the reviews are real.",
+
+  cta_competing_or_unclear: "Multiple competing CTAs on the same screen, generic button labels like 'Learn More' or 'Click Here', and navigation that uses internal jargon instead of buyer language. When every element competes equally for attention, none wins the click. Your call-to-action hierarchy — from navigation labels to primary buttons — should guide visitors toward one clear next step. Right now it scatters them.",
+
+  objection_unaddressed: "Pricing pages without FAQ or guarantee, product pages without comparison or risk reversal, checkout without security reassurance — the real questions buyers have go unanswered. Every unanswered objection is a reason to leave. Buyers who can't find answers to 'What if it doesn't work?', 'Can I get a refund?', or 'Why is this worth the price?' leave and buy from someone who addresses those concerns head-on.",
+
+  copy_cross_page_inconsistent: "Homepage promises 'simple' but pricing page is complex. Landing page is casual but checkout is formal. Feature page says 'enterprise-grade' but the support page says 'community support only'. These contradictions erode buyer confidence because the brand feels like it's run by different people who never talked to each other. Consistency builds trust; inconsistency destroys it.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

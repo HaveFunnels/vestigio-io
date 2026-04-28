@@ -1485,6 +1485,57 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     base_metric: 'revenue',
   },
 
+  // ── Wave 3.10 Copy Analysis Pack — root cause baselines ──
+  value_proposition_buried: {
+    inference_key: 'value_proposition_buried', impact_category: 'conversion_loss',
+    cause: 'Your value proposition is hidden or missing above the fold',
+    effect: 'Visitors cannot tell what you do or why it matters within 5 seconds — the hero section fails to communicate the core promise, and above-fold clutter buries whatever value exists',
+    high: { min: 0.03, max: 0.06 }, medium: { min: 0.015, max: 0.03 }, low: { min: 0.005, max: 0.015 },
+    base_metric: 'revenue',
+  },
+  trust_copy_absent_at_decision: {
+    inference_key: 'trust_copy_absent_at_decision', impact_category: 'conversion_loss',
+    cause: "Buyers don't see trust signals when they're about to pay",
+    effect: 'Checkout, pricing, and product pages lack guarantees, security language, or trust badges — the absence of reassurance at the most anxious point in the journey directly suppresses conversion',
+    high: { min: 0.04, max: 0.07 }, medium: { min: 0.02, max: 0.04 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  social_proof_ineffective: {
+    inference_key: 'social_proof_ineffective', impact_category: 'conversion_loss',
+    cause: "Your social proof doesn't convince — it's generic or misplaced",
+    effect: 'Testimonials without names or companies, reviews without measurable outcomes, and proof placed away from decision points — generic social proof signals inauthenticity instead of trust',
+    high: { min: 0.02, max: 0.04 }, medium: { min: 0.01, max: 0.02 }, low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
+  cta_competing_or_unclear: {
+    inference_key: 'cta_competing_or_unclear', impact_category: 'conversion_loss',
+    cause: 'Your call-to-action competes with itself or says nothing',
+    effect: 'Multiple competing CTAs on the same screen, generic labels, and jargon navigation scatter attention — when everything competes equally for clicks, none wins',
+    high: { min: 0.03, max: 0.05 }, medium: { min: 0.015, max: 0.03 }, low: { min: 0.005, max: 0.015 },
+    base_metric: 'revenue',
+  },
+  objection_unaddressed: {
+    inference_key: 'objection_unaddressed', impact_category: 'conversion_loss',
+    cause: 'Key buyer objections go unanswered on the page',
+    effect: 'Pricing pages without FAQ, product pages without comparison or guarantee — every unanswered objection is a reason to leave and buy from someone who addresses concerns head-on',
+    high: { min: 0.02, max: 0.05 }, medium: { min: 0.01, max: 0.025 }, low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
+  copy_cross_page_inconsistent: {
+    inference_key: 'copy_cross_page_inconsistent', impact_category: 'conversion_loss',
+    cause: 'Your pages contradict each other or shift tone',
+    effect: 'Homepage promises "simple" but pricing page is complex — contradictions erode buyer confidence because the brand feels like it is run by different people who never talked',
+    high: { min: 0.01, max: 0.03 }, medium: { min: 0.005, max: 0.015 }, low: { min: 0.002, max: 0.007 },
+    base_metric: 'revenue',
+  },
+  copy_funnel_misalignment: {
+    inference_key: 'copy_funnel_misalignment', impact_category: 'conversion_loss',
+    cause: "Your copy doesn't match where the buyer is in their journey",
+    effect: 'Pages speak to the wrong stage of the buying process — product pages use generic text, onboarding lacks quick wins, error messages confuse instead of help — the copy answers the wrong question for the buyer stage',
+    high: { min: 0.03, max: 0.06 }, medium: { min: 0.015, max: 0.03 }, low: { min: 0.005, max: 0.015 },
+    base_metric: 'revenue',
+  },
+
   // ── Phase 4A: Commerce context (Shopify-powered) ──
   checkout_abandonment_revenue_leak: {
     inference_key: 'checkout_abandonment_revenue_leak',

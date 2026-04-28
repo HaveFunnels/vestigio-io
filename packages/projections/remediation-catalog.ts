@@ -931,6 +931,110 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 
 	// ─────────────────────────────────────────────
+	// Wave 3.10 Copy Analysis Pack
+	// ─────────────────────────────────────────────
+
+	value_proposition_buried: {
+		remediation_steps: [
+			'Reescreva o headline do hero para comunicar O QUE o produto faz, PARA QUEM, e POR QUE importa — tudo em uma frase.',
+			'Mova a proposta de valor para acima da dobra: o visitante precisa entender em 5 segundos sem rolar.',
+			'Reduza elementos competindo no hero — 1 headline, 1 sub-headline, 1 CTA. Remova banners, sliders e widgets secundários.',
+			'Teste A/B headlines usando fórmulas comprovadas: "Resultado [desejado] sem [objeção principal]" ou "[Número] [tipo de cliente] já [resultado]".',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a homepage e analisar o conteúdo above-the-fold: presença de proposta de valor, densidade de elementos, e especificidade do headline.',
+		verification_eta_seconds: 8,
+	},
+
+	trust_copy_absent_at_decision: {
+		remediation_steps: [
+			'Adicione copy de segurança próximo ao botão de pagamento: "Pagamento criptografado SSL", "Garantia de 30 dias", "Seus dados protegidos".',
+			'Inclua microcopy explicando o que acontece após a compra: "Você receberá confirmação por email em até 2 minutos".',
+			'Posicione selos de trust (SSL, Reclame Aqui, Google Reviews) visíveis sem scroll na página de checkout.',
+			'Remova qualquer urgência artificial (timers falsos, estoque fabricado) — substitua por urgência autêntica baseada em dados reais.',
+			'Adicione garantia de satisfação ou política de devolução resumida diretamente na página de preços.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar checkout, pricing e product pages, procurando keywords de trust language, selos de segurança e ausência de dark patterns.',
+		verification_eta_seconds: 8,
+	},
+
+	social_proof_ineffective: {
+		remediation_steps: [
+			'Substitua depoimentos genéricos por depoimentos com nome completo, cargo, empresa e resultado mensurável.',
+			'Posicione social proof próximo aos CTAs de decisão (botão de compra, formulário de trial, página de pricing).',
+			'Adicione números concretos: "12.000 clientes", "4.8 estrelas em 3.200 avaliações", "reduziu X em Y%".',
+			'Inclua logos de clientes reais com permissão — social proof visual impacta mais que texto genérico.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas comerciais e avaliar qualidade de social proof: especificidade de depoimentos, proximidade de CTAs, e presença de dados concretos.',
+		verification_eta_seconds: 10,
+	},
+
+	cta_competing_or_unclear: {
+		remediation_steps: [
+			'Defina hierarquia de CTAs: 1 primário (cor forte), 1 secundário (outline), links terciários — nunca 2+ botões dominantes competindo.',
+			'Substitua labels vagos ("Saiba mais", "Clique aqui") por verbos de ação específicos com resultado: "Começar teste grátis", "Ver preços", "Agendar demo".',
+			'Revise labels de navegação: substitua jargão interno por linguagem que o comprador usa ("Dashboard" → "Painel de resultados").',
+			'Teste heat maps para confirmar que o CTA primário recebe a maioria dos cliques — se não, ajuste posição e contraste.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-parsear HTML de páginas comerciais e auditar hierarquia de CTAs, labels de botões e navegação contra padrões de clareza.',
+		verification_eta_seconds: 8,
+	},
+
+	objection_unaddressed: {
+		remediation_steps: [
+			'Liste as 5 objeções mais comuns do comprador (pesquisa, suporte, reviews negativos) e responda cada uma na página de decisão.',
+			'Adicione FAQ na página de pricing respondendo: "Posso cancelar?", "Tem garantia?", "O que acontece se não gostar?".',
+			'Inclua comparação com alternativas na página de produto — o comprador vai comparar de qualquer forma, melhor que faça no seu site.',
+			'Adicione risk reversal explícito próximo ao CTA: "Garantia de 30 dias — se não servir, devolvemos 100%".',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar pricing e product pages, verificando presença de FAQ, garantias, comparações e risk reversal elements.',
+		verification_eta_seconds: 8,
+	},
+
+	copy_cross_page_inconsistent: {
+		remediation_steps: [
+			'Crie um brand voice guide definindo tom, vocabulário e promessas — distribua para todos que escrevem copy.',
+			'Audite homepage, pricing, produto e checkout lado a lado — identifique contradições de tom e promessa.',
+			'Unifique terminologia: se homepage diz "simples", pricing não pode listar 47 features em tabela complexa.',
+			'Implemente revisão cross-page antes de publicar — cada página deve reforçar, não contradizer, as outras.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar múltiplas páginas e comparar tom, terminologia e promessas cross-page para detectar contradições.',
+		verification_eta_seconds: 15,
+	},
+
+	copy_funnel_misalignment: {
+		remediation_steps: [
+			'Mapeie cada página ao estágio do funil (awareness, consideração, decisão) e ajuste copy para responder a pergunta daquele estágio.',
+			'Reescreva descrições de produto focando em benefícios e resultado — não features genéricas do fornecedor.',
+			'Redesign onboarding copy para prometer e entregar um quick win em <5 minutos — "Em 2 minutos você vai ver X".',
+			'Substitua mensagens de erro técnicas por linguagem humana que explica o problema E como resolver.',
+			'Teste copy com 5 usuários reais: pergunte "O que essa página quer que você faça?" — se não souberem, reescreva.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar product pages, onboarding e forms, avaliando especificidade de copy, presença de quick wins e qualidade de mensagens de erro.',
+		verification_eta_seconds: 12,
+	},
+
+	// ─────────────────────────────────────────────
 	// Security Posture (Wave 3.3)
 	// ─────────────────────────────────────────────
 

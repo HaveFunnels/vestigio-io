@@ -1447,12 +1447,14 @@
 				"scale_readiness": "Preparación para Escalar",
 				"revenue_integrity": "Integridad de Ingresos",
 				"chargeback_resilience": "Resiliencia ante Chargebacks",
+				"copy_alignment": "Alineamiento de Copy",
 				"saas_growth_readiness": "Crecimiento SaaS"
 			},
 			"pack_labels": {
 				"scale_readiness": "Escala",
 				"revenue_integrity": "Ingresos",
 				"chargeback_resilience": "Chargeback",
+				"copy_alignment": "Copy",
 				"saas_growth_readiness": "SaaS"
 			},
 			"polarity": {

@@ -423,6 +423,14 @@ const INFERENCE_SURFACES: Record<string, string> = {
   ad_creative_message_mismatch: 'Meta Ads / Google Ads → landing page copy',
   low_repeat_purchase_rate: '/store (retention)',
   dead_weight_products: '/products (catalog)',
+  // Wave 3.10: Copy alignment
+  value_proposition_buried: '/, /product, /pricing (hero section)',
+  social_proof_ineffective: '/, /product (testimonials & social proof)',
+  objection_unaddressed: '/pricing, /checkout (objection handling)',
+  cta_competing_or_unclear: '/, /product, /pricing (CTAs)',
+  trust_copy_absent_at_decision: '/checkout, /pricing (trust language)',
+  copy_funnel_misalignment: '/ → /pricing → /checkout (funnel copy)',
+  copy_cross_page_inconsistent: '/ (cross-page messaging)',
 };
 
 // Human-readable titles for inference findings
@@ -446,6 +454,14 @@ export const INFERENCE_TITLES: Record<string, string> = {
   support_unreachable: "Buyers can't find a way to contact you",
   expectation_misalignment: 'Buyers reach checkout expecting something different than what they get',
   dispute_risk_elevated: 'Your store has multiple red flags that trigger chargebacks',
+  // ── Copy Alignment (Wave 3.10) ─────────────────
+  value_proposition_buried: 'Your value proposition is buried or invisible to visitors',
+  social_proof_ineffective: 'Social proof is generic or missing where it matters',
+  objection_unaddressed: 'Buyer objections go unanswered on commercial pages',
+  cta_competing_or_unclear: 'Too many CTAs compete for attention — visitors choose none',
+  trust_copy_absent_at_decision: 'No trust language where buyers make their purchase decision',
+  copy_funnel_misalignment: 'Copy tone and message do not match the funnel stage',
+  copy_cross_page_inconsistent: 'Messaging contradicts itself across pages',
   // ── SaaS Growth Readiness ───────────────────────
   activation_blocked: 'New users get stuck before they ever see your product work',
   activation_friction_high: 'Your onboarding is losing trials before they become customers',

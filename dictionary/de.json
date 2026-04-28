@@ -1427,12 +1427,14 @@
 				"scale_readiness": "__TODO__",
 				"revenue_integrity": "__TODO__",
 				"chargeback_resilience": "__TODO__",
+				"copy_alignment": "Copy-Ausrichtung",
 				"saas_growth_readiness": "__TODO__"
 			},
 			"pack_labels": {
 				"scale_readiness": "__TODO__",
 				"revenue_integrity": "__TODO__",
 				"chargeback_resilience": "__TODO__",
+				"copy_alignment": "Copy",
 				"saas_growth_readiness": "__TODO__"
 			},
 			"polarity": {

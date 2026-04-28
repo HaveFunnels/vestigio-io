@@ -21,6 +21,9 @@ import {
   serializeGuidelinesForPrompt,
   type PageType,
 } from "../../../packages/copy-analysis/guidelines";
+import { analyzeCrossPageConsistency } from "./cross-page-copy";
+import { runPricingPsychologyEnrichment } from "./pricing-psychology";
+import type { CopyElementsPayload } from "../../../packages/domain";
 
 // ──────────────────────────────────────────────
 // Wave 3.1 — Semantic Enrichment (Policy Pages)
@@ -1106,6 +1109,79 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
       buildAboveFoldDensityPrompt, 'above-fold density analysis',
       evidenceAdded, w310Budget,
     );
+
+    // ── Wave 3.10 Fase 3: Pricing Psychology (Item L) ──
+    // Runs on pricing pages AFTER the standard pricing_page_framing enrichment.
+    // Deeper psychology-specific analysis: charm pricing, anchoring, Good-Better-Best, etc.
+    await runPricingPsychologyEnrichment(ctx, pricingPages, evidenceAdded, w310Budget);
+
+    // ── Wave 3.10 Fase 3: Cross-Page Narrative Consistency (Item K) ──
+    // Runs AFTER all per-page enrichments complete. Collects CopyElementsPayload
+    // evidence from the cycle and (if 3+ commercial pages) runs a single Haiku
+    // call comparing copy across all pages.
+    try {
+      const copyElementsByPage = new Map<string, CopyElementsPayload>();
+      for (const e of ctx.evidence) {
+        if (
+          e.evidence_type === EvidenceType.ContentEnrichment &&
+          (e.payload as ContentEnrichmentPayload).type === 'content_enrichment'
+        ) {
+          // Skip — these are enrichments, not copy elements
+          continue;
+        }
+        if (
+          'type' in e.payload &&
+          (e.payload as CopyElementsPayload).type === 'copy_elements'
+        ) {
+          const ce = e.payload as CopyElementsPayload;
+          copyElementsByPage.set(ce.url, ce);
+        }
+      }
+
+      // Also extract from pages we just analyzed (in case copy_elements evidence
+      // was not produced by a separate pass). Build from allPages when the map
+      // is still below threshold.
+      if (copyElementsByPage.size < 3 && allPages.length >= 3) {
+        for (const pe of allPages.slice(0, 15)) {
+          const p = pe.payload as PageContentPayload;
+          if (copyElementsByPage.has(p.url)) continue;
+          try {
+            const resp = await httpFetch(p.url);
+            if (resp.status_code < 400 && resp.body) {
+              const pageType = classifyPageType(p.url);
+              const funnelStage = inferFunnelStage(pageType);
+              const ce = extractCopyElements(resp.body, p.url, pageType, funnelStage);
+              copyElementsByPage.set(p.url, ce);
+            }
+          } catch {
+            // Non-fatal — skip this page
+          }
+        }
+      }
+
+      if (copyElementsByPage.size >= 3) {
+        ctx.emit({
+          type: "step",
+          stage: "enrichment",
+          data: {
+            message: `Wave 3.10: cross-page consistency analysis (${copyElementsByPage.size} pages)`,
+            index: w310Budget.processed + 1,
+          },
+          timestamp: new Date(),
+        });
+
+        const crossPageEvidence = await analyzeCrossPageConsistency(
+          copyElementsByPage,
+          ctx.scoping,
+          ctx.cycle_ref,
+        );
+        evidenceAdded.push(...crossPageEvidence);
+        w310Budget.processed += crossPageEvidence.length;
+      }
+    } catch (crossPageErr) {
+      const msg = crossPageErr instanceof Error ? crossPageErr.message : String(crossPageErr);
+      console.warn(`[semantic-enrichment ${ctx.cycle_ref}] cross-page analysis error: ${msg}`);
+    }
 
     // Sync budget back
     totalBudget = w310Budget.remaining;

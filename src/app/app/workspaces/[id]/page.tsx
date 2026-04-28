@@ -21,6 +21,7 @@ import ChangeTimeline from "@/components/console/ChangeTimeline";
 import ChargebackResilience from "@/components/console/workspace/ChargebackResilience";
 import RevenueIntelligence from "@/components/console/workspace/RevenueIntelligence";
 import SecurityPosture from "@/components/console/workspace/SecurityPosture";
+import CopyAlignment from "@/components/console/workspace/CopyAlignment";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -39,12 +40,14 @@ const PERSPECTIVE_SLUG_MAP: Record<string, string> = {
 	chargeback: "revenue",
 	preflight: "trust",
 	security_posture: "trust",
+	copy_alignment: "copy",
 };
 
 const PERSPECTIVE_COLORS: Record<string, { color: string; border: string }> = {
 	revenue: { color: "text-red-400", border: "border-l-red-500/60" },
 	trust: { color: "text-amber-400", border: "border-l-amber-500/60" },
 	behavior: { color: "text-violet-400", border: "border-l-violet-500/60" },
+	copy: { color: "text-emerald-400", border: "border-l-emerald-500/60" },
 };
 
 function getPerspective(type: string, category: string, t: (key: string) => string) {
@@ -189,6 +192,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 	const isChargeback = workspace.type === "chargeback";
 	const isRevenue = workspace.type === "revenue";
 	const isSecurityPosture = workspace.type === "security_posture";
+	const isCopyAlignment = workspace.type === "copy_alignment";
 	const preflightReadiness = isPreflight ? computePreflightReadiness(workspace.findings) : null;
 
 	const findingColumns: Column<FindingProjection>[] = [
@@ -347,6 +351,11 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			{isSecurityPosture && (
 				<div className="mt-5">
 					<SecurityPosture findings={workspace.findings} />
+				</div>
+			)}
+			{isCopyAlignment && (
+				<div className="mt-5">
+					<CopyAlignment findings={workspace.findings} />
 				</div>
 			)}
 

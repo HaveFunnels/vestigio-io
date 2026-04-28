@@ -1447,12 +1447,14 @@
 				"scale_readiness": "Prontidão para Escala",
 				"revenue_integrity": "Integridade de Faturamento",
 				"chargeback_resilience": "Resiliência a Chargeback",
+				"copy_alignment": "Alinhamento de Copy",
 				"saas_growth_readiness": "Crescimento SaaS"
 			},
 			"pack_labels": {
 				"scale_readiness": "Escala",
 				"revenue_integrity": "Faturamento",
 				"chargeback_resilience": "Chargeback",
+				"copy_alignment": "Copy",
 				"saas_growth_readiness": "SaaS"
 			},
 			"polarity": {
@@ -1819,6 +1821,7 @@
 				"preflight": "Prontidão para Escalar",
 				"revenue": "Integridade de Faturamento",
 				"chargeback": "Resiliência de Chargeback",
+				"copy_alignment": "Alinhamento de Copy",
 				"first_impression": "Faturamento de Primeira Impressão",
 				"action_value": "Mapa de Valor de Ações",
 				"acquisition_integrity": "Integridade de Aquisição",
@@ -1914,8 +1917,32 @@
 						"first_impression": "Primeira Impressão",
 						"friction": "Fricção",
 						"trust": "Confiança",
-						"analysis": "Análise"
+						"analysis": "Análise",
+						"copy_alignment": "Copy"
 					}
+				}
+			},
+			"copy": {
+				"copy_health": "Saúde do Copy",
+				"dimensions_heading": "Dimensões CRO",
+				"top_issues": "Principais Problemas",
+				"strengths": "Pontos Fortes",
+				"pages_analyzed": "Páginas Analisadas",
+				"dimensions": {
+					"value_prop": "Proposta de Valor",
+					"headlines": "Prova Social",
+					"ctas": "CTAs",
+					"visual_hierarchy": "Alinhamento do Funil",
+					"trust": "Copy de Confiança",
+					"objections": "Objeções",
+					"friction": "Consistência"
+				},
+				"grade_labels": {
+					"overall": "Nota Geral",
+					"aligned": "Alinhado",
+					"minor_gaps": "Lacunas Menores",
+					"significant_gaps": "Lacunas Significativas",
+					"misaligned": "Desalinhado"
 				}
 			},
 			"panorama_title": "Panorama",

@@ -197,6 +197,12 @@ export interface MultiPackResult {
     actions: Action[];
     workspace: SecurityWorkspaceResult;
   };
+  copy_alignment: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: WorkspaceResult;
+  };
   intelligence: DecisionIntelligenceResult;
   impact: {
     value_cases: QuantifiedValueCase[];
@@ -349,6 +355,18 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     securityResult.decision, securityActions, inferences,
   );
 
+  // Wave 3.10: Copy alignment decision
+  const copyAlignmentResult: DecisionResult = produceDecision({
+    question_key: 'is_copy_aligned_with_commercial_intent',
+    scoping, cycle_ref, signals, inferences,
+    conversion_proximity, is_production, translations,
+  });
+  const copyAlignmentActions = deriveActions(copyAlignmentResult.decision);
+  const copyAlignmentWorkspace = createPreflightWorkspace(
+    { name: 'Copy Alignment', type: 'analysis', scoping, landing_url, cycle_ref },
+    copyAlignmentResult.decision, copyAlignmentActions, inferences,
+  );
+
   // Classification — probabilistic business model + surface hypotheses
   const classInput = extractClassificationInput(
     evidence,
@@ -467,8 +485,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   const allInferences = [...inferences, ...saasInferences];
 
   // Collect all decisions and risk evaluations
-  let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision];
-  let allRiskEvals = [scaleResult.risk_evaluation, revenueResult.risk_evaluation, chargebackResult.risk_evaluation, securityResult.risk_evaluation];
+  let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision, copyAlignmentResult.decision];
+  let allRiskEvals = [scaleResult.risk_evaluation, revenueResult.risk_evaluation, chargebackResult.risk_evaluation, securityResult.risk_evaluation, copyAlignmentResult.risk_evaluation];
   if (saasGrowthReadiness) {
     allDecisions.push(saasGrowthReadiness.decision);
     allRiskEvals.push(saasGrowthReadiness.risk_evaluation);
@@ -592,8 +610,9 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   actionsByDecision.set(makeRef('decision', allDecisions[1].id), revenueActions);
   actionsByDecision.set(makeRef('decision', allDecisions[2].id), chargebackActions);
   actionsByDecision.set(makeRef('decision', allDecisions[3].id), securityActions);
-  if (saasGrowthReadiness && allDecisions.length > 4) {
-    actionsByDecision.set(makeRef('decision', allDecisions[4].id), saasGrowthReadiness.actions);
+  actionsByDecision.set(makeRef('decision', allDecisions[4].id), copyAlignmentActions);
+  if (saasGrowthReadiness && allDecisions.length > 5) {
+    actionsByDecision.set(makeRef('decision', allDecisions[5].id), saasGrowthReadiness.actions);
   }
 
   const intelligence = produceIntelligence({
@@ -818,9 +837,15 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
       actions: securityActions,
       workspace: securityWorkspace,
     },
+    copy_alignment: {
+      decision: allDecisions[4],
+      risk_evaluation: allRiskEvals[4],
+      actions: copyAlignmentActions,
+      workspace: copyAlignmentWorkspace,
+    },
     saas_growth_readiness: saasGrowthReadiness ? {
-      decision: allDecisions[4] || saasGrowthReadiness.decision,
-      risk_evaluation: allRiskEvals[4] || saasGrowthReadiness.risk_evaluation,
+      decision: allDecisions[5] || saasGrowthReadiness.decision,
+      risk_evaluation: allRiskEvals[5] || saasGrowthReadiness.risk_evaluation,
       actions: saasGrowthReadiness.actions,
       workspace: saasGrowthReadiness.workspace,
     } : null,

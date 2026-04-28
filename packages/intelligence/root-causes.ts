@@ -276,7 +276,7 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   ad_creative_landing_trust_gap:      { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
   ad_creative_form_friction_waste:    { root_cause_key: 'behavioral_trust_failure_at_input', category: 'behavioral_conversion_failure', impact_types: ['revenue_loss'] },
   ad_creative_mobile_checkout_degraded: { root_cause_key: 'mobile_conversion_failure', category: 'friction_barrier', impact_types: ['revenue_loss'] },
-  ad_creative_message_mismatch:         { root_cause_key: 'ad_landing_promise_gap', category: 'expectation_alignment', impact_types: ['revenue_loss'] },
+  ad_creative_message_mismatch:         { root_cause_key: 'ad_landing_promise_gap', category: 'copy_strategy', impact_types: ['revenue_loss'] },
   low_repeat_purchase_rate:           { root_cause_key: 'weak_conversion_signal', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
   dead_weight_products:               { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
 };
@@ -341,6 +341,8 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   cta_competing_or_unclear: 'Your call-to-action competes with itself or says nothing',
   objection_unaddressed: 'Key buyer objections go unanswered on the page',
   copy_cross_page_inconsistent: 'Your pages contradict each other or shift tone',
+  // Wave 3.10 Fase 3 — ad-message-match integration into copy pack
+  ad_landing_promise_gap: 'Your ads promise one thing but your landing page delivers another',
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -446,6 +448,9 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   objection_unaddressed: "Pricing pages without FAQ or guarantee, product pages without comparison or risk reversal, checkout without security reassurance — the real questions buyers have go unanswered. Every unanswered objection is a reason to leave. Buyers who can't find answers to 'What if it doesn't work?', 'Can I get a refund?', or 'Why is this worth the price?' leave and buy from someone who addresses those concerns head-on.",
 
   copy_cross_page_inconsistent: "Homepage promises 'simple' but pricing page is complex. Landing page is casual but checkout is formal. Feature page says 'enterprise-grade' but the support page says 'community support only'. These contradictions erode buyer confidence because the brand feels like it's run by different people who never talked to each other. Consistency builds trust; inconsistency destroys it.",
+
+  // Wave 3.10 Fase 3 — ad-message-match integration into copy pack
+  ad_landing_promise_gap: "Your paid ads make promises your landing pages don't keep. The ad headline says one thing, but when the buyer clicks through, the landing page delivers a different message, different value proposition, or different offer entirely. Every mismatched click costs you money twice — once for the ad spend, and again for the lost conversion. The buyer arrived expecting exactly what the ad said; instead they got a bait-and-switch experience that drives bounce rates up and ROAS down.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

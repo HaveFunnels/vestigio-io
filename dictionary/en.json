@@ -1447,12 +1447,14 @@
 				"scale_readiness": "Scale Readiness",
 				"revenue_integrity": "Revenue Integrity",
 				"chargeback_resilience": "Chargeback Resilience",
+				"copy_alignment": "Copy Alignment",
 				"saas_growth_readiness": "SaaS Growth"
 			},
 			"pack_labels": {
 				"scale_readiness": "Scale",
 				"revenue_integrity": "Revenue",
 				"chargeback_resilience": "Chargeback",
+				"copy_alignment": "Copy",
 				"saas_growth_readiness": "SaaS"
 			},
 			"polarity": {
@@ -1800,6 +1802,7 @@
 				"preflight": "Scale Readiness",
 				"revenue": "Revenue Integrity",
 				"chargeback": "Chargeback Resilience",
+				"copy_alignment": "Copy Alignment",
 				"first_impression": "First Impression Revenue",
 				"action_value": "Action Value Map",
 				"acquisition_integrity": "Acquisition Integrity",
@@ -1936,8 +1939,32 @@
 						"first_impression": "First Impression",
 						"friction": "Friction",
 						"trust": "Trust",
-						"analysis": "Analysis"
+						"analysis": "Analysis",
+						"copy_alignment": "Copy"
 					}
+				}
+			},
+			"copy": {
+				"copy_health": "Copy Health",
+				"dimensions_heading": "CRO Dimensions",
+				"top_issues": "Top Issues",
+				"strengths": "Strengths",
+				"pages_analyzed": "Pages Analyzed",
+				"dimensions": {
+					"value_prop": "Value Prop",
+					"headlines": "Social Proof",
+					"ctas": "CTAs",
+					"visual_hierarchy": "Funnel Alignment",
+					"trust": "Trust Copy",
+					"objections": "Objections",
+					"friction": "Consistency"
+				},
+				"grade_labels": {
+					"overall": "Overall Grade",
+					"aligned": "Aligned",
+					"minor_gaps": "Minor Gaps",
+					"significant_gaps": "Significant Gaps",
+					"misaligned": "Misaligned"
 				}
 			}
 		},

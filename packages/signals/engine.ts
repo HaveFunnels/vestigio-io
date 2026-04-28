@@ -5095,25 +5095,63 @@ function extractCopyEnrichmentSignals(
       }
     }
 
-    // Placeholder: cross-page tone inconsistency (Fase 3 — fired by cross-page analysis)
-    if (p.enrichment_type === 'cross_page_tone') {
+    // Wave 3.10 Fase 3: cross-page narrative consistency (replaces placeholder)
+    if (p.enrichment_type === 'cross_page_consistency') {
       const results = (p.results || {}) as {
-        tone_consistency_score?: number; contradictions?: string[];
+        consistency_score?: number;
+        contradictions?: Array<{ type: string; claim_a: string; claim_b: string }>;
+        overall_tone?: string;
       };
-      const consistencyScore = results.tone_consistency_score ?? 100;
+      const consistencyScore = results.consistency_score ?? 100;
+      const contradictionCount = Array.isArray(results.contradictions) ? results.contradictions.length : 0;
 
-      if (consistencyScore < 50) {
-        const severity = consistencyScore < 30 ? 'high' : 'medium';
+      // Fire when consistency_score < 50 OR contradictions detected
+      if (consistencyScore < 50 || contradictionCount > 0) {
+        const severity = consistencyScore < 30 ? 'high' : consistencyScore < 50 ? 'medium' : 'low';
+        const contradictionSummary = contradictionCount > 0
+          ? ` Found ${contradictionCount} contradiction(s): ${(results.contradictions || []).slice(0, 3).map(c => `${c.type} — "${c.claim_a}" vs "${c.claim_b}"`).join('; ')}`
+          : '';
         signals.push(createSignal({ ids,
           signal_key: `copy_tone_inconsistent_${p.source_url}`,
           category: SignalCategory.Clarity,
-          attribute: 'enrichment.cross_page_tone.consistency',
+          attribute: 'enrichment.cross_page_consistency.score',
           value: severity,
           numeric_value: consistencyScore,
           confidence: p.confidence,
           scoping, cycle_ref,
           evidence_refs: refs,
-          description: `Cross-page tone inconsistency detected at ${p.source_url}: consistency score ${consistencyScore}/100 — pages contradict each other or shift tone, confusing buyers about what the brand stands for`,
+          description: `Cross-page narrative inconsistency detected: consistency score ${consistencyScore}/100, overall tone "${results.overall_tone || 'mixed'}".${contradictionSummary} Pages contradict each other or shift tone, confusing buyers about what the brand stands for`,
+        }));
+      }
+    }
+
+    // Wave 3.10 Fase 3: Pricing psychology analysis
+    if (p.enrichment_type === 'pricing_psychology') {
+      const results = (p.results || {}) as {
+        psychology_score?: number;
+        pricing_model?: string;
+        tier_count?: number;
+        has_recommended_plan?: boolean;
+        techniques_detected?: string[];
+        techniques_missing?: string[];
+        issues?: Array<{ finding: string; suggestion: string; psychology_model: string }>;
+      };
+      const psychScore = results.psychology_score ?? 100;
+      const missingCount = (results.techniques_missing || []).length;
+
+      if (psychScore < 50 || missingCount >= 3) {
+        const severity = psychScore < 30 ? 'high' : psychScore < 50 ? 'medium' : 'low';
+        const missingTechniques = (results.techniques_missing || []).slice(0, 5).join(', ');
+        signals.push(createSignal({ ids,
+          signal_key: `pricing_page_framing_weak_psych_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.pricing_psychology.score',
+          value: severity,
+          numeric_value: psychScore,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Pricing page at ${p.source_url} scores ${psychScore}/100 on pricing psychology: ${results.pricing_model || 'unknown'} model with ${results.tier_count ?? 0} tier(s), ${(results.techniques_detected || []).length} technique(s) used. Missing high-impact techniques: ${missingTechniques || 'none'}. ${!results.has_recommended_plan ? 'No recommended plan highlighted. ' : ''}Issues found: ${(results.issues || []).length}`,
         }));
       }
     }

@@ -1805,6 +1805,7 @@
 				"preflight": "Preparación para Escalar",
 				"revenue": "Integridad de Ingresos",
 				"chargeback": "Resiliencia de Chargeback",
+				"copy_alignment": "Alineamiento de Copy",
 				"first_impression": "Ingresos de Primera Impresión",
 				"action_value": "Mapa de Valor de Acciones",
 				"acquisition_integrity": "Integridad de Adquisición",
@@ -1900,8 +1901,32 @@
 						"first_impression": "Primera Impresión",
 						"friction": "Fricción",
 						"trust": "Confianza",
-						"analysis": "Análisis"
+						"analysis": "Análisis",
+						"copy_alignment": "Copy"
 					}
+				}
+			},
+			"copy": {
+				"copy_health": "Salud del Copy",
+				"dimensions_heading": "Dimensiones CRO",
+				"top_issues": "Problemas Principales",
+				"strengths": "Fortalezas",
+				"pages_analyzed": "Páginas Analizadas",
+				"dimensions": {
+					"value_prop": "Propuesta de Valor",
+					"headlines": "Prueba Social",
+					"ctas": "CTAs",
+					"visual_hierarchy": "Alineamiento del Embudo",
+					"trust": "Copy de Confianza",
+					"objections": "Objeciones",
+					"friction": "Consistencia"
+				},
+				"grade_labels": {
+					"overall": "Nota General",
+					"aligned": "Alineado",
+					"minor_gaps": "Brechas Menores",
+					"significant_gaps": "Brechas Significativas",
+					"misaligned": "Desalineado"
 				}
 			},
 			"trend_improving": "Mejorando",

@@ -153,6 +153,13 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
     input_schema: { finding_ids: { type: 'array', items: { type: 'string' } } },
   },
   {
+    name: 'analyze_copy',
+    description: 'Get copy analysis summary. If a URL is provided, returns findings for that specific page. If no URL, returns overall copy health (dimension scores, top issues, grade).',
+    input_schema: {
+      url: { type: 'string', nullable: true, description: 'Optional URL to get page-specific copy analysis. Omit for overall copy health.' },
+    },
+  },
+  {
     name: 'create_custom_map',
     description: 'Create a custom causal map from a subset of findings. The map shows the selected findings, their root causes, and recommended actions. Appears in the Maps gallery under "Created by you". Use when the user asks to focus on specific findings, create a visualization, or isolate a problem area.',
     input_schema: {
@@ -196,8 +203,19 @@ export type ToolResult =
   | { type: 'change_report'; data: ChangeReportProjection | null }
   | { type: 'map'; data: MapDefinition | null }
   | { type: 'custom_map_created'; data: { mapId: string; name: string; nodeCount: number; edgeCount: number; url: string; mapDefinition: MapDefinition } }
+  | { type: 'copy_analysis'; data: CopyAnalysisView }
   | { type: 'verification_skipped'; data: VerificationSkippedView }
   | { type: 'error'; data: { message: string } };
+
+export interface CopyAnalysisView {
+  overall_grade: string;
+  overall_score: number;
+  pages_analyzed: number;
+  dimensions: { id: string; score: number; issue_count: number }[];
+  top_issues: { root_cause: string; count: number; worst_severity: string }[];
+  strengths: string[];
+  page_findings?: { url: string; title: string; severity: string; root_cause: string | null }[];
+}
 
 export interface VerificationSkippedView {
   requested_type: string;
@@ -295,6 +313,105 @@ export function executeTool(
       const findingIds = params.finding_ids as string[];
       if (!findingIds || findingIds.length === 0) return { type: 'error', data: { message: 'finding_ids is required' } };
       return { type: 'answer', data: composeMultiFindingChatAnswer(ctx, findingIds) };
+    }
+
+    case 'analyze_copy': {
+      const url = (params.url as string) || null;
+      const allFindings = getFindingProjections(ctx);
+      const copyInferenceKeys = new Set([
+        'value_proposition_buried',
+        'social_proof_ineffective',
+        'objection_unaddressed',
+        'cta_competing_or_unclear',
+        'trust_copy_absent_at_decision',
+        'copy_funnel_misalignment',
+        'copy_cross_page_inconsistent',
+      ]);
+      const copyFindings = allFindings.filter(
+        f => f.pack === 'copy_alignment' || copyInferenceKeys.has(f.inference_key ?? ''),
+      );
+
+      if (url) {
+        const pageFindings = copyFindings.filter(f => f.surface === url || f.surface?.includes(url));
+        return {
+          type: 'copy_analysis',
+          data: {
+            overall_grade: '--',
+            overall_score: 0,
+            pages_analyzed: 1,
+            dimensions: [],
+            top_issues: [],
+            strengths: [],
+            page_findings: pageFindings.map(f => ({
+              url: f.surface || url,
+              title: f.title,
+              severity: f.severity,
+              root_cause: f.root_cause,
+            })),
+          },
+        };
+      }
+
+      // Overall copy health
+      const DIMS = [
+        { id: 'value_prop', key: 'value_proposition_buried' },
+        { id: 'headlines', key: 'social_proof_ineffective' },
+        { id: 'ctas', key: 'cta_competing_or_unclear' },
+        { id: 'visual_hierarchy', key: 'copy_funnel_misalignment' },
+        { id: 'trust', key: 'trust_copy_absent_at_decision' },
+        { id: 'objections', key: 'objection_unaddressed' },
+        { id: 'friction', key: 'copy_cross_page_inconsistent' },
+      ];
+
+      const severityScore = (s: string) =>
+        s === 'critical' ? 15 : s === 'high' ? 35 : s === 'medium' ? 60 : s === 'low' ? 80 : 100;
+
+      const dimensions = DIMS.map(dim => {
+        const neg = copyFindings.filter(f => f.inference_key === dim.key && f.polarity === 'negative');
+        const pos = copyFindings.filter(f => f.inference_key === dim.key && f.polarity === 'positive');
+        let score = 75;
+        if (neg.length > 0) {
+          const worst = Math.min(...neg.map(f => severityScore(f.severity)));
+          const avg = neg.reduce((s, f) => s + severityScore(f.severity), 0) / neg.length;
+          score = Math.round((worst + avg) / 2);
+        } else if (pos.length > 0) {
+          score = 95;
+        }
+        return { id: dim.id, score, issue_count: neg.length };
+      });
+
+      const overall = Math.round(dimensions.reduce((s, d) => s + d.score, 0) / dimensions.length);
+      const grade = overall >= 90 ? 'A' : overall >= 80 ? 'A-' : overall >= 70 ? 'B' : overall >= 60 ? 'C' : overall >= 45 ? 'D' : 'F';
+      const surfaces = new Set(copyFindings.map(f => f.surface).filter(Boolean));
+
+      // Group issues
+      const negFindings = copyFindings.filter(f => f.polarity === 'negative');
+      const issueMap = new Map<string, { count: number; worst: string }>();
+      for (const f of negFindings) {
+        const rc = f.root_cause || f.inference_key || 'unknown';
+        const existing = issueMap.get(rc);
+        if (!existing) {
+          issueMap.set(rc, { count: 1, worst: f.severity });
+        } else {
+          existing.count++;
+          if (severityScore(f.severity) < severityScore(existing.worst)) existing.worst = f.severity;
+        }
+      }
+
+      return {
+        type: 'copy_analysis',
+        data: {
+          overall_grade: grade,
+          overall_score: overall,
+          pages_analyzed: surfaces.size || 1,
+          dimensions,
+          top_issues: [...issueMap.entries()]
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 7)
+            .map(([rc, v]) => ({ root_cause: rc, count: v.count, worst_severity: v.worst })),
+          strengths: copyFindings.filter(f => f.polarity === 'positive').map(f => f.title),
+        },
+      };
     }
 
     case 'create_custom_map': {

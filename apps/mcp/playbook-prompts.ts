@@ -44,7 +44,8 @@ export type PlaybookCategory =
   | 'trust'
   | 'landing_vs_app'
   | 'measurement'
-  | 'competitive';
+  | 'competitive'
+  | 'copy_audit';
 
 export const PLAYBOOK_CATEGORY_META: Record<PlaybookCategory, { label: string; icon: string; color: string }> = {
   revenue_leaks:  { label: 'Revenue Leaks',     icon: 'dollar',     color: 'red' },
@@ -55,6 +56,7 @@ export const PLAYBOOK_CATEGORY_META: Record<PlaybookCategory, { label: string; i
   landing_vs_app: { label: 'Landing vs App',     icon: 'compare',    color: 'orange' },
   measurement:    { label: 'Measurement',        icon: 'chart',      color: 'cyan' },
   competitive:    { label: 'Competitive Edge',   icon: 'trophy',     color: 'rose' },
+  copy_audit:     { label: 'Copy Audit',         icon: 'pencil',     color: 'emerald' },
 };
 
 // ──────────────────────────────────────────────
@@ -406,6 +408,61 @@ export const PLAYBOOK_PROMPTS: PlaybookPrompt[] = [
     min_plan: 'vestigio',
     tags: ['seasonal', 'peak', 'campaign', 'black-friday', 'traffic'],
     estimated_queries: 2,
+  },
+
+  // ═══════════════════════════════════════════
+  // COPY AUDIT (Wave 3.10)
+  // ═══════════════════════════════════════════
+
+  {
+    id: 'copy_audit_full',
+    title: 'Full Copy Audit',
+    description: 'Comprehensive review of all 7 CRO copy dimensions with scores, issues, and fix priorities.',
+    prompt: 'Run a comprehensive copy audit using the analyze_copy tool. Walk me through each of the 7 CRO dimensions (value proposition, social proof / headlines, CTAs, visual hierarchy / funnel alignment, trust copy, objection handling, cross-page consistency). For each dimension: show the score, list the specific issues found, cite the relevant copy guideline being violated, and suggest a concrete rewrite or improvement. Rank dimensions by revenue impact and tell me which 3 changes would lift conversion the most.',
+    category: 'copy_audit',
+    min_plan: 'vestigio',
+    tags: ['copy', 'audit', 'cro', 'dimensions', 'comprehensive'],
+    estimated_queries: 3,
+  },
+  {
+    id: 'copy_audit_vp_deep_dive',
+    title: 'Value Proposition Deep Dive',
+    description: 'Is your value prop clear, specific, and above the fold? Analysis with rewrite suggestions.',
+    prompt: 'Focus on the value proposition dimension of my copy. Using analyze_copy, show me every finding related to value_proposition_buried. For each page where the VP is weak: what does the current copy say, why is it failing (buried, generic, jargon-heavy?), and write me a stronger alternative headline + subheadline that follows CRO best practices. Include the estimated revenue impact of fixing each one.',
+    category: 'copy_audit',
+    min_plan: 'vestigio',
+    tags: ['copy', 'value-prop', 'headline', 'rewrite'],
+    estimated_queries: 2,
+  },
+  {
+    id: 'copy_audit_cta_clarity',
+    title: 'CTA Clarity & Alignment',
+    description: 'Are your CTAs competing, unclear, or misaligned with user intent?',
+    prompt: 'Analyze my CTA copy across all pages. Using analyze_copy, find every instance of cta_competing_or_unclear. For each page: how many CTAs are competing for attention, which one should be primary, and what should the CTA text say? Follow the principle: one primary CTA per page, action-oriented language, clear benefit statement. Generate "Fix with AI" style rewrites for the worst offenders.',
+    category: 'copy_audit',
+    min_plan: 'vestigio',
+    tags: ['copy', 'cta', 'clarity', 'competing', 'rewrite'],
+    estimated_queries: 2,
+  },
+  {
+    id: 'copy_audit_objection_gaps',
+    title: 'Objection Handling Gaps',
+    description: 'Which buyer objections go unaddressed on your commercial pages?',
+    prompt: 'Identify every page where buyer objections go unaddressed (objection_unaddressed findings). For each: what is the likely objection a buyer has at that stage (price, trust, complexity, commitment)? What copy should be there to address it? Show me specific FAQ entries, risk-reversal copy, guarantee language, or comparison tables that would neutralize each objection. Prioritize by proximity to purchase decision.',
+    category: 'copy_audit',
+    min_plan: 'vestigio',
+    tags: ['copy', 'objections', 'faq', 'guarantees', 'risk-reversal'],
+    estimated_queries: 2,
+  },
+  {
+    id: 'copy_audit_funnel_consistency',
+    title: 'Funnel Copy Consistency',
+    description: 'Does your messaging stay consistent and escalate properly from awareness to purchase?',
+    prompt: 'Analyze copy consistency across my funnel using analyze_copy. Check for copy_funnel_misalignment and copy_cross_page_inconsistent findings. Map the messaging journey: what does the landing page promise? Does the pricing page reinforce it? Does checkout copy maintain confidence? Find every instance where the message breaks, contradicts, or fails to escalate urgency appropriately. Suggest a unified messaging framework for the full funnel.',
+    category: 'copy_audit',
+    min_plan: 'pro',
+    tags: ['copy', 'funnel', 'consistency', 'messaging', 'alignment'],
+    estimated_queries: 3,
   },
 ];
 

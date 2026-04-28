@@ -145,6 +145,14 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   suspicious_domains_capturing_purchase_intent: 'brand_integrity',
   customers_exposed_to_phishing_surfaces: 'brand_integrity',
   brand_presence_diluted_across_variants: 'brand_integrity',
+  // Wave 3.10: Copy alignment pack
+  value_proposition_buried: 'copy_alignment',
+  social_proof_ineffective: 'copy_alignment',
+  objection_unaddressed: 'copy_alignment',
+  cta_competing_or_unclear: 'copy_alignment',
+  trust_copy_absent_at_decision: 'copy_alignment',
+  copy_funnel_misalignment: 'copy_alignment',
+  copy_cross_page_inconsistent: 'copy_alignment',
   // Behavioral workspace findings (pixel-dependent)
   first_session_milestone_stall: 'first_impression_revenue',
   first_session_trust_barrier: 'first_impression_revenue',
@@ -228,6 +236,22 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   low_repeat_purchase_rate: 'revenue_integrity',
   dead_weight_products: 'revenue_integrity',
 };
+
+// Wave 3.10 Fase 3 — Root causes that belong to the copy alignment context.
+// Used by the (future) copy_alignment workspace to pull findings from
+// BOTH the copy-strategy root causes AND the ad-message-match root cause.
+// This set is also consumed by CopyAlignment.tsx (when it exists) to render
+// ad-mismatch findings in the "Top Issues" section with an "Ad mismatch" badge.
+export const COPY_STRATEGY_ROOT_CAUSES = new Set([
+  'copy_funnel_misalignment',
+  'value_proposition_buried',
+  'trust_copy_absent_at_decision',
+  'social_proof_ineffective',
+  'cta_competing_or_unclear',
+  'objection_unaddressed',
+  'copy_cross_page_inconsistent',
+  'ad_landing_promise_gap',  // Wave 3.10 Fase 3: ad-message-match integration
+]);
 
 // Inference → typical page surface
 const INFERENCE_SURFACES: Record<string, string> = {
@@ -735,6 +759,7 @@ function enrichFindingsWithCrossRefs(
       result.scale_readiness?.decision,
       result.revenue_integrity?.decision,
       result.chargeback_resilience?.decision,
+      result.copy_alignment?.decision,
       result.saas_growth_readiness?.decision,
     ].filter(Boolean);
     for (const d of allDecisions) {
@@ -973,6 +998,7 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
     result.scale_readiness.decision,
     result.revenue_integrity.decision,
     result.chargeback_resilience.decision,
+    result.copy_alignment.decision,
     ...(result.saas_growth_readiness ? [result.saas_growth_readiness.decision] : []),
   ];
   for (const d of allDecisions) {
@@ -984,6 +1010,7 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
     ...result.scale_readiness.actions,
     ...result.revenue_integrity.actions,
     ...result.chargeback_resilience.actions,
+    ...result.copy_alignment.actions,
     ...(result.saas_growth_readiness?.actions || []),
   ];
   const domainActionByRef = new Map<string, { effort_hint: string | null }>();
@@ -1312,6 +1339,7 @@ export function projectWorkspaces(
   const revenueFindings = findings.filter(f => f.pack === 'revenue_integrity');
   const chargebackFindings = findings.filter(f => f.pack === 'chargeback_resilience');
   const securityFindings = findings.filter(f => f.pack === 'money_moment_exposure');
+  const copyAlignmentFindings = findings.filter(f => f.pack === 'copy_alignment');
   const saasFindings = findings.filter(f => f.pack === 'saas_growth_readiness');
 
   const wn = translations?.workspace_names;
@@ -1358,6 +1386,22 @@ export function projectWorkspaces(
       changeSummaryMap.get('money_moment_exposure_pack') ?? null,
     ),
   ];
+
+  // Add Copy Alignment workspace when copy findings exist
+  if (copyAlignmentFindings.length > 0) {
+    workspaces.push(
+      buildWorkspaceProjection(
+        'copy_alignment', wn?.copy_alignment ?? 'Copy Alignment', 'copy_alignment',
+        'copy_alignment_pack',
+        result.copy_alignment.decision.decision_key,
+        result.copy_alignment.decision.decision_impact,
+        copyAlignmentFindings,
+        coherenceByDecisionRef.get(makeRef('decision', result.copy_alignment.decision.id)) || null,
+        narrative,
+        changeSummaryMap.get('copy_alignment_pack') ?? null,
+      ),
+    );
+  }
 
   // Add SaaS workspace only if pack is eligible and has findings
   if (result.saas_growth_readiness && saasFindings.length > 0) {
@@ -1487,6 +1531,11 @@ const DECISION_KEY_TO_PACK: Record<string, string> = {
   moderate_chargeback_risk: 'chargeback_resilience_pack',
   low_chargeback_risk: 'chargeback_resilience_pack',
   chargeback_resilience_strong: 'chargeback_resilience_pack',
+  // Copy Alignment (Wave 3.10)
+  copy_misaligned: 'copy_alignment_pack',
+  copy_significant_gaps: 'copy_alignment_pack',
+  copy_minor_gaps: 'copy_alignment_pack',
+  copy_aligned: 'copy_alignment_pack',
   // SaaS Growth Readiness
   is_saas_growth_ready_result: 'saas_growth_readiness_pack',
   // Channel Integrity
@@ -2240,7 +2289,7 @@ const PERSPECTIVE_PACK_MAP: Record<string, Set<string>> = {
     'trust_revenue_gap_pack',
     'path_efficiency_pack',
   ]),
-  copy: new Set<string>(), // dynamic — see isCopyWorkspace below
+  copy: new Set<string>(['copy_alignment_pack']), // also uses dynamic isCopyWorkspace check below
 };
 
 const PERSPECTIVE_NAMES: Record<string, string> = {

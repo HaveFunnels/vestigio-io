@@ -308,6 +308,7 @@ export type WorkspaceProjectionType =
   | 'revenue'
   | 'chargeback'
   | 'security_posture'
+  | 'copy_alignment'
   // Behavioral workspaces (pixel-dependent)
   | 'first_impression'
   | 'action_value'

@@ -1696,6 +1696,7 @@
 				"preflight": "Skalierungsbereitschaft",
 				"revenue": "Umsatzintegrität",
 				"chargeback": "Chargeback-Resilienz",
+				"copy_alignment": "Copy-Ausrichtung",
 				"first_impression": "Erster-Eindruck-Umsatz",
 				"action_value": "Aktionswert-Karte",
 				"acquisition_integrity": "Akquisitionsintegrität",
@@ -1779,8 +1780,32 @@
 						"first_impression": "Erster Eindruck",
 						"friction": "Reibung",
 						"trust": "Vertrauen",
-						"analysis": "Analyse"
+						"analysis": "Analyse",
+						"copy_alignment": "Copy"
 					}
+				}
+			},
+			"copy": {
+				"copy_health": "Copy-Zustand",
+				"dimensions_heading": "CRO-Dimensionen",
+				"top_issues": "Wichtigste Probleme",
+				"strengths": "Staerken",
+				"pages_analyzed": "Analysierte Seiten",
+				"dimensions": {
+					"value_prop": "Wertversprechen",
+					"headlines": "Social Proof",
+					"ctas": "CTAs",
+					"visual_hierarchy": "Funnel-Ausrichtung",
+					"trust": "Vertrauens-Copy",
+					"objections": "Einwaende",
+					"friction": "Konsistenz"
+				},
+				"grade_labels": {
+					"overall": "Gesamtnote",
+					"aligned": "Ausgerichtet",
+					"minor_gaps": "Kleine Luecken",
+					"significant_gaps": "Erhebliche Luecken",
+					"misaligned": "Nicht ausgerichtet"
 				}
 			},
 			"trend_improving": "Verbessernd",

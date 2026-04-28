@@ -765,7 +765,10 @@ export interface ContentEnrichmentPayload {
     | 'onboarding_copy'
     | 'error_page_recovery'
     | 'navigation_clarity'
-    | 'above_fold_density';
+    | 'above_fold_density'
+    // Wave 3.10 Fase 3 — High-value enrichments
+    | 'cross_page_consistency'
+    | 'pricing_psychology';
   source_evidence_key: string;
   source_url: string;
   scores: { clarity_score: number; readability_grade: string };

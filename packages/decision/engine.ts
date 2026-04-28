@@ -291,6 +291,21 @@ function resolveDecisionOutcome(
     return { decision_key: 'path_efficiency_good', category: DecisionClass.State, primary_outcome: 'observation' };
   }
 
+  // ── Copy alignment (Wave 3.10) ──
+
+  if (questionKey === 'is_copy_aligned_with_commercial_intent') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'copy_misaligned', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'copy_significant_gaps', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'copy_minor_gaps', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'copy_aligned', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
   // ── Security posture (Wave 3.3) ──
 
   if (questionKey === 'is_visible_security_posture_creating_financial_risk') {
@@ -344,6 +359,9 @@ function buildActions(
   }
   if (questionKey === 'is_visible_security_posture_creating_financial_risk') {
     return buildSecurityPostureActions(risk, inferences, translations);
+  }
+  if (questionKey === 'is_copy_aligned_with_commercial_intent') {
+    return buildCopyAlignmentActions(risk, inferences, translations);
   }
 
   const ta = translations?.actions;
@@ -629,6 +647,81 @@ function buildSecurityPostureActions(
   };
 }
 
+function buildCopyAlignmentActions(
+  risk: RiskEvaluation,
+  inferences: Inference[],
+  translations?: EngineTranslations,
+): { primary: string; secondary: string[]; verification: string[] } {
+  const ts = translations?.actions?.copy_alignment;
+  const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
+
+  const secondary: string[] = [];
+  const verification: string[] = [];
+
+  const vpBuried = inferences.find(i => i.inference_key === 'value_proposition_buried');
+  const socialProof = inferences.find(i => i.inference_key === 'social_proof_ineffective');
+  const objection = inferences.find(i => i.inference_key === 'objection_unaddressed');
+  const ctaUnclear = inferences.find(i => i.inference_key === 'cta_competing_or_unclear');
+  const trustCopy = inferences.find(i => i.inference_key === 'trust_copy_absent_at_decision');
+  const funnelMismatch = inferences.find(i => i.inference_key === 'copy_funnel_misalignment');
+  const crossPage = inferences.find(i => i.inference_key === 'copy_cross_page_inconsistent');
+
+  if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+    const primary = tr('incident_primary', 'Your copy is actively losing revenue. The messaging fails to convert high-intent visitors.');
+
+    if (vpBuried && vpBuried.conclusion_value !== 'low') {
+      secondary.push(tr('incident_vp_buried', 'Rewrite your hero section: the value proposition is buried below the fold or hidden behind generic language.'));
+    }
+    if (ctaUnclear && ctaUnclear.conclusion_value !== 'low') {
+      secondary.push(tr('incident_cta_unclear', 'Consolidate competing CTAs: visitors see too many actions and choose none. Pick one primary CTA per page.'));
+    }
+    if (trustCopy && trustCopy.conclusion_value !== 'low') {
+      secondary.push(tr('incident_trust_copy', 'Add trust copy at the decision point: testimonials, guarantees, and security language near your checkout or signup.'));
+    }
+    if (objection && objection.conclusion_value !== 'low') {
+      secondary.push(tr('incident_objection', 'Address buyer objections on the page: missing FAQ, no risk-reversal language, unaddressed pricing concerns.'));
+    }
+
+    verification.push(tr('incident_verify_rerun', 'Re-run copy analysis after rewriting to confirm alignment improves.'));
+    verification.push(tr('incident_verify_conversion', 'Monitor conversion rate lift after copy changes to measure revenue impact.'));
+    return { primary, secondary, verification };
+  }
+
+  if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+    const primary = tr('fix_primary', 'Your copy has structural gaps that will bleed revenue at scale. Fix before increasing ad spend.');
+
+    if (funnelMismatch && funnelMismatch.conclusion_value !== 'low') {
+      secondary.push(tr('fix_funnel_mismatch', 'Align copy to funnel stage: awareness pages should educate, decision pages should reassure and convert.'));
+    }
+    if (socialProof && socialProof.conclusion_value !== 'low') {
+      secondary.push(tr('fix_social_proof', 'Strengthen social proof: add specific numbers, named testimonials, and logos instead of generic claims.'));
+    }
+    if (crossPage && crossPage.conclusion_value !== 'low') {
+      secondary.push(tr('fix_cross_page', 'Harmonize messaging across pages: your landing page promises one thing, but pricing and checkout say another.'));
+    }
+
+    verification.push(tr('fix_verify', 'Re-run copy analysis after changes to confirm gaps are closed.'));
+    return { primary, secondary, verification };
+  }
+
+  if (risk.decision_impact === DecisionImpact.Optimize) {
+    return {
+      primary: tr('optimize_primary', 'Copy is functional but has optimization opportunities. Refining messaging could lift conversion.'),
+      secondary: [
+        ...(socialProof ? [tr('optimize_social_proof', 'Consider upgrading social proof from generic to specific and quantified.')] : []),
+        ...(vpBuried ? [tr('optimize_vp', 'Test alternative headline framings to make the value proposition more immediate.')] : []),
+      ],
+      verification: [tr('optimize_verify', 'Re-check copy alignment periodically as you update pages.')],
+    };
+  }
+
+  return {
+    primary: tr('aligned_primary', 'Copy is well-aligned with commercial intent. No significant gaps detected.'),
+    secondary: [],
+    verification: [tr('aligned_verify', 'Schedule periodic copy reviews to catch drift as products evolve.')],
+  };
+}
+
 function buildSummary(decisionKey: string, risk: RiskEvaluation, translations?: EngineTranslations): string {
   const ts = translations?.summaries;
 
@@ -679,6 +772,14 @@ function buildSummary(decisionKey: string, risk: RiskEvaluation, translations?: 
       return `Security posture has minor gaps. Risk score: ${risk.raw_risk_score}/100. Hardening opportunities exist but are not blocking.`;
     case 'security_posture_adequate':
       return `Security posture is adequate. No significant exposures detected (score: ${risk.raw_risk_score}/100).`;
+    case 'copy_misaligned':
+      return `Copy is misaligned with commercial intent. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Messaging is failing to convert high-intent visitors across multiple dimensions.`;
+    case 'copy_significant_gaps':
+      return `Copy has significant alignment gaps. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Multiple CRO dimensions need attention before scaling.`;
+    case 'copy_minor_gaps':
+      return `Copy has minor alignment gaps. Risk score: ${risk.raw_risk_score}/100. Messaging is mostly effective but refinements could lift conversion.`;
+    case 'copy_aligned':
+      return `Copy is aligned with commercial intent. No significant gaps detected (score: ${risk.raw_risk_score}/100).`;
     default:
       return `Decision: ${decisionKey}. Risk: ${risk.raw_risk_score}/100, Confidence: ${risk.confidence_score}/100.`;
   }

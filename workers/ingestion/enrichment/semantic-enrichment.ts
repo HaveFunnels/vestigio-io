@@ -47,8 +47,14 @@ import type { CopyElementsPayload } from "../../../packages/domain";
 const PASS_NAME = "semantic_enrichment";
 const PASS_LABEL = "Wave 3.1 — Semantic Enrichment";
 
-/** Max total pages to analyze per cycle across all enrichment types (cost control) */
-const MAX_PAGES = 10;
+/**
+ * Max total LLM-analyzed pages per cycle across all enrichment types (cost control).
+ * With 17 enrichment types, each page may trigger multiple analyses.
+ * Budget is per-page-analysis (1 Haiku call = 1 budget unit).
+ * At ~$0.003/call, 25 units = ~$0.075/cycle — well within acceptable range.
+ * The copy staleness enrichment (item P) is regex-only and doesn't consume budget.
+ */
+const MAX_PAGES = 25;
 
 /** Max body text chars sent to the LLM (cost + context window control) */
 const MAX_TEXT_CHARS = 8_000;

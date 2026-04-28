@@ -1808,6 +1808,15 @@
 					"minor_gaps": "Kleine Luecken",
 					"significant_gaps": "Erhebliche Luecken",
 					"misaligned": "Nicht ausgerichtet"
+				},
+				"root_causes": {
+					"value_proposition_buried": "Wertversprechen verborgen",
+					"trust_copy_absent_at_decision": "Vertrauenssignale fehlen",
+					"social_proof_ineffective": "Social Proof unwirksam",
+					"cta_competing_or_unclear": "CTA unklar oder konkurrierend",
+					"objection_unaddressed": "Einwaende unbeantwortet",
+					"copy_cross_page_inconsistent": "Seitenuebergreifende Inkonsistenz",
+					"copy_funnel_misalignment": "Funnel-Fehlausrichtung"
 				}
 			},
 			"trend_improving": "Verbessernd",

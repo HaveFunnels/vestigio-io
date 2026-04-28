@@ -1965,6 +1965,15 @@
 					"minor_gaps": "Minor Gaps",
 					"significant_gaps": "Significant Gaps",
 					"misaligned": "Misaligned"
+				},
+				"root_causes": {
+					"value_proposition_buried": "Value proposition buried",
+					"trust_copy_absent_at_decision": "Trust copy absent at decision",
+					"social_proof_ineffective": "Social proof ineffective",
+					"cta_competing_or_unclear": "CTA competing or unclear",
+					"objection_unaddressed": "Objections unaddressed",
+					"copy_cross_page_inconsistent": "Cross-page inconsistency",
+					"copy_funnel_misalignment": "Funnel misalignment"
 				}
 			}
 		},

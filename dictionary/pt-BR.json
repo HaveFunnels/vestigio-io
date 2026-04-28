@@ -1943,6 +1943,15 @@
 					"minor_gaps": "Lacunas Menores",
 					"significant_gaps": "Lacunas Significativas",
 					"misaligned": "Desalinhado"
+				},
+				"root_causes": {
+					"value_proposition_buried": "Proposta de valor escondida",
+					"trust_copy_absent_at_decision": "Sinais de confianca ausentes na decisao",
+					"social_proof_ineffective": "Prova social ineficaz",
+					"cta_competing_or_unclear": "CTA confuso ou competindo",
+					"objection_unaddressed": "Objecoes nao respondidas",
+					"copy_cross_page_inconsistent": "Inconsistencia entre paginas",
+					"copy_funnel_misalignment": "Desalinhamento no funil"
 				}
 			},
 			"panorama_title": "Panorama",

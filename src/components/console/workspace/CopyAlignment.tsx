@@ -262,7 +262,7 @@ export default function CopyAlignment({ findings }: Props) {
 											&#8226;
 										</span>
 										<span className="text-zinc-600 dark:text-zinc-400">
-											{rc.replace(/_/g, " ")}
+											{(() => { try { return t(`root_causes.${rc}`); } catch { return rc.replace(/_/g, " "); } })()}
 											<span className="ml-1 text-zinc-400 dark:text-zinc-600">
 												({items.length})
 											</span>

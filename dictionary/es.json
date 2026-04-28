@@ -1929,6 +1929,15 @@
 					"minor_gaps": "Brechas Menores",
 					"significant_gaps": "Brechas Significativas",
 					"misaligned": "Desalineado"
+				},
+				"root_causes": {
+					"value_proposition_buried": "Propuesta de valor oculta",
+					"trust_copy_absent_at_decision": "Senales de confianza ausentes",
+					"social_proof_ineffective": "Prueba social ineficaz",
+					"cta_competing_or_unclear": "CTA confuso o compitiendo",
+					"objection_unaddressed": "Objeciones sin responder",
+					"copy_cross_page_inconsistent": "Inconsistencia entre paginas",
+					"copy_funnel_misalignment": "Desalineacion del embudo"
 				}
 			},
 			"trend_improving": "Mejorando",

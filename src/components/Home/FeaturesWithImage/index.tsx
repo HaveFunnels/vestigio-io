@@ -27,9 +27,11 @@ function parseTitleHighlight(text: string): React.ReactNode {
 	return parts.map((part, i) =>
 		i % 2 === 1 ? (
 			<span key={i} className="relative inline-block text-emerald-400">
-				{part}
+				<span className="relative z-[1]" style={{ textShadow: "2px 0 #080812, -2px 0 #080812, 0 2px #080812, 0 -2px #080812, 1px 1px #080812, -1px -1px #080812, 1px -1px #080812, -1px 1px #080812" }}>
+					{part}
+				</span>
 				<span
-					className="absolute -bottom-0.5 left-0 h-[3px] w-full rounded-full"
+					className="absolute -bottom-0.5 left-0 z-0 h-[3px] w-full rounded-full"
 					style={{
 						background:
 							"linear-gradient(90deg, rgba(52,211,153,0.15), rgba(110,231,183,0.7), rgba(52,211,153,0.15))",

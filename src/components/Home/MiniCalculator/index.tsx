@@ -338,9 +338,11 @@ const MiniCalculator = ({
 									<span className='text-red-500'>{t("title_highlight")}</span>
 									{t("title_after")}
 									<span className='relative inline-block'>
-										{t("title_underline")}
+										<span className='relative z-[1]' style={{ textShadow: "2px 0 white, -2px 0 white, 0 2px white, 0 -2px white, 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white" }}>
+											{t("title_underline")}
+										</span>
 										<span
-											className='absolute -bottom-0.5 left-0 h-[3px] w-full rounded-full'
+											className='absolute -bottom-0.5 left-0 z-0 h-[3px] w-full rounded-full'
 											style={{
 												background: "linear-gradient(90deg, rgba(239,68,68,0.15), rgba(248,113,113,0.7), rgba(239,68,68,0.15))",
 												backgroundSize: "200% 100%",

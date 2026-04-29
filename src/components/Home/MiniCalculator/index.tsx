@@ -334,10 +334,26 @@ const MiniCalculator = ({
 						{state === "input" && (
 							<div className='text-center'>
 								<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl xl:text-5xl'>
-									{t("title")}
+									{t("title_before")}
+									<span className='text-red-500'>{t("title_highlight")}</span>
+									{t("title_after")}
+									<span className='relative inline-block'>
+										{t("title_underline")}
+										<span
+											className='absolute -bottom-0.5 left-0 h-[3px] w-full rounded-full'
+											style={{
+												background: "linear-gradient(90deg, rgba(239,68,68,0.15), rgba(248,113,113,0.7), rgba(239,68,68,0.15))",
+												backgroundSize: "200% 100%",
+												animation: "title-underline-shimmer 3s ease-in-out infinite",
+											}}
+											aria-hidden
+										/>
+									</span>
 								</h2>
 								<p className='mx-auto mb-8 max-w-[540px] text-sm text-zinc-500 sm:mb-10 sm:text-base'>
 									{t("subtitle")}
+									<span className='font-semibold text-emerald-600'>{t("subtitle_accent")}</span>
+									{" "}⚡
 								</p>
 
 								<div className='mx-auto flex max-w-[540px] flex-col items-center gap-4'>
@@ -415,6 +431,30 @@ const MiniCalculator = ({
 											</ShinyButton>
 										</div>
 									)}
+								</div>
+
+								{/* Trust badges */}
+								<div className='mx-auto mt-6 flex max-w-[540px] items-center justify-center gap-3 text-[11px] text-zinc-500 sm:gap-5 sm:text-xs'>
+									<span className='flex items-center gap-1.5'>
+										<svg className='h-3.5 w-3.5 text-red-400' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor'>
+											<path strokeLinecap='round' strokeLinejoin='round' d='M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z' />
+										</svg>
+										{t("trust_speed")}
+									</span>
+									<span className='h-3 w-px bg-zinc-700' />
+									<span className='flex items-center gap-1.5'>
+										<svg className='h-3.5 w-3.5 text-emerald-400' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor'>
+											<path strokeLinecap='round' strokeLinejoin='round' d='M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z' />
+										</svg>
+										{t("trust_secure")}
+									</span>
+									<span className='h-3 w-px bg-zinc-700' />
+									<span className='flex items-center gap-1.5'>
+										<svg className='h-3.5 w-3.5 text-emerald-400' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor'>
+											<path strokeLinecap='round' strokeLinejoin='round' d='M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
+										</svg>
+										{t("trust_free")}
+									</span>
 								</div>
 							</div>
 						)}

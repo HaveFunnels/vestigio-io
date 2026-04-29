@@ -190,7 +190,7 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
             </svg>
           ))}
         </div>
-        <p className="text-[13px] leading-relaxed text-zinc-400">
+        <p className="text-[13px] leading-relaxed text-zinc-600">
           {item.quote}
         </p>
       </div>
@@ -227,9 +227,15 @@ const VideoTestimonials = () => {
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 
-          {/* Header */}
-          <div className="mb-8 text-center sm:mb-10">
-            <h2 className="text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
+          {/* Header — decorative quote mark anchors the title */}
+          <div className="relative mb-8 text-center sm:mb-10">
+            {/* Large decorative open-quote */}
+            <span className="pointer-events-none absolute -top-4 left-1/2 -translate-x-1/2 select-none font-serif text-[120px] leading-none text-emerald-500/[0.07] sm:text-[160px]" aria-hidden>
+              &ldquo;
+            </span>
+            {/* Thin separator line */}
+            <div className="mx-auto mb-5 h-px w-16 bg-emerald-500/30" />
+            <h2 className="relative text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
               {t("title_before")}
               <span className="relative inline-block">
                 <span

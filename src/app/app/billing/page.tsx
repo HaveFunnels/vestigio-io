@@ -73,7 +73,7 @@ export default function BillingPage() {
   const t = useTranslations("console.billing");
   const { data: session, update: updateSession } = useSession();
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
-  const { plans: fetchedPlans, loading } = usePricingPlans();
+  const { plans: fetchedPlans, loading, currencySymbol } = usePricingPlans();
 
   const [billing, setBilling] = useState<BillingData | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
@@ -566,6 +566,7 @@ export default function BillingPage() {
             billingCycle={cycle}
             onCycleChange={setCycle}
             onPlanSelect={handlePlanSelect}
+            currencySymbol={currencySymbol}
             heading={t("compare_plans")}
             subheading={t("compare_plans_subtitle")}
           />

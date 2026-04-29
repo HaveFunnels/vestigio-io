@@ -15,7 +15,7 @@ import FinalCTA from "@/components/shared/FinalCTA";
 const HomePricing = () => {
   const [cycle, setCycle] = useState<BillingCycle>("annually");
   const router = useRouter();
-  const { plans, loading } = usePricingPlans();
+  const { plans, loading, currencySymbol } = usePricingPlans();
 
   const handlePlanSelect = () => {
     router.push("/auth/signup");
@@ -30,6 +30,7 @@ const HomePricing = () => {
         billingCycle={cycle}
         onCycleChange={setCycle}
         onPlanSelect={handlePlanSelect}
+        currencySymbol={currencySymbol}
         heading="Veja exatamente o que est&aacute; perdendo. Corrija. Escale."
         subheading="Intelig&ecirc;ncia que se paga sozinha. Comece gr&aacute;tis, evolua quando quiser."
       />

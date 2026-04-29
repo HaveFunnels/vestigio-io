@@ -35,6 +35,7 @@ interface PricingComponentProps {
 	heading?: string;
 	subheading?: string;
 	className?: string;
+	currencySymbol?: string;
 }
 
 // --- Feature Row ---
@@ -130,6 +131,7 @@ export default function PricingComponent({
 	heading = "Veja exatamente o que est\u00e1 perdendo. Corrija. Escale.",
 	subheading = "Intelig\u00eancia que se paga sozinha. Comece gr\u00e1tis, evolua quando quiser.",
 	className,
+	currencySymbol = "$",
 }: PricingComponentProps) {
 	const annualDiscountPercent = 20;
 	const allFeatures = Array.from(
@@ -246,7 +248,7 @@ export default function PricingComponent({
                   and annual values */}
 							<div className='relative mt-5'>
 								<span className='font-mono text-4xl font-medium tabular-nums tracking-tight text-white'>
-									$<AnimatedPrice value={price} />
+									{currencySymbol}<AnimatedPrice value={price} />
 								</span>
 								<span className='ml-1 font-mono text-xs text-zinc-400'>
 									{suffix}
@@ -259,7 +261,7 @@ export default function PricingComponent({
 											: "h-0 opacity-0"
 									)}
 								>
-									${plan.priceMonthly}/mo
+									{currencySymbol}{plan.priceMonthly}/mo
 								</p>
 							</div>
 
@@ -491,19 +493,31 @@ export function usePricingPlans() {
 		null
 	);
 	const [loading, setLoading] = useState(true);
+	const [currencySymbol, setCurrencySymbol] = useState("$");
 
 	React.useEffect(() => {
-		fetch("/api/pricing")
+		// Try localized prices first, fall back to standard pricing
+		fetch("/api/pricing-preview")
 			.then((r) => r.json())
 			.then((data) => {
 				const tiers = planConfigsToPriceTiers(data.plans);
 				if (tiers) setPlans(tiers);
+				if (data.currencySymbol) setCurrencySymbol(data.currencySymbol);
 			})
-			.catch(() => {})
+			.catch(() => {
+				// Fallback to non-localized pricing
+				fetch("/api/pricing")
+					.then((r) => r.json())
+					.then((data) => {
+						const tiers = planConfigsToPriceTiers(data.plans);
+						if (tiers) setPlans(tiers);
+					})
+					.catch(() => {});
+			})
 			.finally(() => setLoading(false));
 	}, []);
 
-	return { plans, loading };
+	return { plans, loading, currencySymbol };
 }
 
 // --- Static fallback (used only if API is unavailable) ---

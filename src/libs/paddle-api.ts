@@ -129,6 +129,73 @@ export async function createPrice(
   return json.data;
 }
 
+// ── Pricing Preview (localized prices) ──────────
+
+export interface PricePreviewItem {
+	priceId: string;
+	quantity: number;
+}
+
+export interface PricePreviewResult {
+	currencyCode: string;
+	items: Array<{
+		priceId: string;
+		formattedTotal: string;
+		unitAmountCents: number;
+	}>;
+}
+
+/**
+ * Paddle v2 Pricing Preview — returns localized prices based on
+ * the customer's IP address. Paddle resolves the IP to a country,
+ * applies currency overrides and tax rules, and returns the price
+ * the customer would actually see at checkout.
+ *
+ * Docs: https://developer.paddle.com/api-reference/pricing-preview/preview-prices
+ */
+export async function previewPrices(
+	items: PricePreviewItem[],
+	customerIpAddress?: string,
+): Promise<PricePreviewResult | null> {
+	if (!isPaddleConfigured()) return null;
+
+	const body: Record<string, unknown> = {
+		items: items.map((i) => ({
+			price_id: i.priceId,
+			quantity: i.quantity,
+		})),
+	};
+	if (customerIpAddress) {
+		body.customer_ip_address = customerIpAddress;
+	}
+
+	try {
+		const res = await fetch(`${getBaseUrl()}/pricing-preview`, {
+			method: "POST",
+			headers: headers(),
+			body: JSON.stringify(body),
+		});
+		if (!res.ok) {
+			console.error(`[paddle] previewPrices failed: ${res.status}`);
+			return null;
+		}
+		const json = await res.json();
+		const data = json.data;
+
+		return {
+			currencyCode: data.currency_code,
+			items: data.details.line_items.map((li: any) => ({
+				priceId: li.price.id,
+				formattedTotal: li.formatted_totals.subtotal,
+				unitAmountCents: parseInt(li.price.unit_price.amount, 10),
+			})),
+		};
+	} catch (err) {
+		console.error("[paddle] previewPrices error:", err);
+		return null;
+	}
+}
+
 export async function updatePrice(
   priceId: string,
   description?: string,

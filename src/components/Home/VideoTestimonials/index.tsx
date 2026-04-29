@@ -229,12 +229,12 @@ const VideoTestimonials = () => {
 
           {/* Header */}
           <div className="mb-8 text-center sm:mb-10">
-            <h2 className="text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl">
+            <h2 className="text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
               {t("title_before")}
               <span className="relative inline-block">
                 <span
                   className="relative z-[1]"
-                  style={{ textShadow: "2px 0 #080812, -2px 0 #080812, 0 2px #080812, 0 -2px #080812, 1px 1px #080812, -1px -1px #080812, 1px -1px #080812, -1px 1px #080812" }}
+                  style={{ textShadow: "2px 0 white, -2px 0 white, 0 2px white, 0 -2px white, 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white" }}
                 >
                   {t("title_highlight")}
                 </span>

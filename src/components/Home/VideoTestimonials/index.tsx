@@ -227,35 +227,41 @@ const VideoTestimonials = () => {
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 
-          {/* Header — decorative quote mark anchors the title */}
+          {/* Header — arrows flanking the title pointing down to videos */}
           <div className="relative mb-8 text-center sm:mb-10">
-            {/* Large decorative open-quote — sits behind the title text */}
-            <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] select-none font-serif text-[140px] leading-none text-emerald-500/[0.12] sm:text-[180px]" aria-hidden>
-              &ldquo;
-            </span>
-            {/* Separator line */}
-            <div className="mx-auto mb-5 h-[2px] w-12 rounded-full bg-emerald-500/50" />
-            <h2 className="relative text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
-              {t("title_before")}
-              <span className="relative inline-block">
-                <span
-                  className="relative z-[1]"
-                  style={{ textShadow: "2px 0 white, -2px 0 white, 0 2px white, 0 -2px white, 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white" }}
-                >
-                  {t("title_highlight")}
+            <div className="flex items-center justify-center gap-3 sm:gap-5">
+              {/* Left arrow */}
+              <svg className="h-5 w-5 flex-shrink-0 text-emerald-500/60 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7" />
+              </svg>
+
+              <h2 className="relative text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
+                {t("title_before")}
+                <span className="relative inline-block">
+                  <span
+                    className="relative z-[1]"
+                    style={{ textShadow: "2px 0 white, -2px 0 white, 0 2px white, 0 -2px white, 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white" }}
+                  >
+                    {t("title_highlight")}
+                  </span>
+                  <span
+                    className="absolute -bottom-0.5 left-0 z-0 h-[3px] w-full rounded-full"
+                    style={{
+                      background: "linear-gradient(90deg, rgba(16,185,129,0.25), rgba(52,211,153,0.9), rgba(16,185,129,0.25))",
+                      backgroundSize: "200% 100%",
+                      animation: "title-underline-shimmer 3s ease-in-out infinite",
+                    }}
+                    aria-hidden
+                  />
                 </span>
-                <span
-                  className="absolute -bottom-0.5 left-0 z-0 h-[3px] w-full rounded-full"
-                  style={{
-                    background: "linear-gradient(90deg, rgba(52,211,153,0.15), rgba(110,231,183,0.7), rgba(52,211,153,0.15))",
-                    backgroundSize: "200% 100%",
-                    animation: "title-underline-shimmer 3s ease-in-out infinite",
-                  }}
-                  aria-hidden
-                />
-              </span>
-              {t("title_after")}
-            </h2>
+                {t("title_after")}
+              </h2>
+
+              {/* Right arrow */}
+              <svg className="h-5 w-5 flex-shrink-0 text-emerald-500/60 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7" />
+              </svg>
+            </div>
           </div>
 
           {/* 3-column video grid */}

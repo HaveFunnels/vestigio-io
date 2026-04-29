@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 
 export interface Testimonial {
@@ -268,24 +266,6 @@ export function SocialProof({
 
   return (
     <section className="relative z-1 overflow-hidden bg-[#090911] py-16 lg:py-24">
-      <style>{`
-        @keyframes vsp-scroll-left {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
-        @keyframes vsp-scroll-right {
-          from { transform: translateX(-50%); }
-          to   { transform: translateX(0); }
-        }
-        .vsp-track-left  { animation: vsp-scroll-left  90s linear infinite; }
-        .vsp-track-right { animation: vsp-scroll-right  90s linear infinite; }
-        .vsp-track-left:hover,
-        .vsp-track-right:hover { animation-play-state: paused; }
-        @media (prefers-reduced-motion: reduce) {
-          .vsp-track-left,
-          .vsp-track-right { animation: none !important; }
-        }
-      `}</style>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-8">
         <h2 className="mb-10 text-center text-lg font-medium text-zinc-400 sm:text-xl">

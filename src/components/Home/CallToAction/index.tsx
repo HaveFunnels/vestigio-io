@@ -1,17 +1,15 @@
-"use client";
-
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
 interface CallToActionProps {
 	primaryCtaHref?: string;
 }
 
-const CallToAction = ({
+const CallToAction = async ({
 	primaryCtaHref = "/auth/signup",
 }: CallToActionProps = {}) => {
-	const t = useTranslations("homepage.cta");
+	const t = await getTranslations("homepage.cta");
 
 	return (
 		<section className='relative z-1 overflow-hidden bg-[#090911] py-12 sm:py-16 lg:py-20'>

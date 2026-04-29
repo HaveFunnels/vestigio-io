@@ -1,6 +1,4 @@
-"use client";
-
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 const accents = ["emerald", "violet", "amber"] as const;
 const colors = {
@@ -98,26 +96,13 @@ function LayerCard({ layer, index, tools, accent }: {
 }
 
 // ── Main ──
-export default function SolutionLayers() {
-	const t = useTranslations("homepage.solution_layers");
+export default async function SolutionLayers() {
+	const t = await getTranslations("homepage.solution_layers");
 	const layers = t.raw("layers") as { eyebrow: string; title: string; body: string; support: string }[];
 	const tools = t.raw("tools") as string[][];
 
 	return (
 		<section className="relative bg-[#090911] py-12 sm:py-16 lg:py-20">
-			{/* One-shot entrance animation */}
-			<style>{`
-				@keyframes layerFadeIn {
-					from { opacity: 0; transform: translateY(12px) scale(0.98); }
-					to   { opacity: 1; transform: translateY(0)    scale(1); }
-				}
-				.layer-fade-in {
-					animation: layerFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
-				}
-				@media (prefers-reduced-motion: reduce) {
-					.layer-fade-in { animation: none; }
-				}
-			`}</style>
 			<div className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute left-1/2 top-[30%] h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-violet-900/8 blur-[80px] sm:h-[500px] sm:w-[600px] sm:blur-[100px]" />
 			</div>

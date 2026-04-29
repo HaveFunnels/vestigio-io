@@ -89,6 +89,15 @@ export default async function RootLayout({
 
 	return (
 		<html lang={locale} className={`dark ${jetbrainsMono.variable} ${geist.variable}`} suppressHydrationWarning={true}>
+			<head>
+				{/* Preconnect to CDN — eliminates DNS+TLS on first video/image load */}
+				{process.env.NEXT_PUBLIC_CDN_URL && (
+					<>
+						<link rel="preconnect" href={process.env.NEXT_PUBLIC_CDN_URL} />
+						<link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_CDN_URL} />
+					</>
+				)}
+			</head>
 			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
 				<JsonLd />
 				<NextIntlClientProvider messages={messages}>

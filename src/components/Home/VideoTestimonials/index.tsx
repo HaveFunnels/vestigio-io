@@ -42,6 +42,17 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
   const [playing, setPlaying] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [warmedUp, setWarmedUp] = useState(false);
+
+  // Hover/touch warm-up: start buffering before click
+  const warmUp = useCallback(() => {
+    if (warmedUp) return;
+    const v = videoRef.current;
+    if (!v) return;
+    v.preload = "auto";
+    v.load();
+    setWarmedUp(true);
+  }, [warmedUp]);
 
   const play = useCallback(() => {
     const v = videoRef.current;
@@ -108,13 +119,15 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
         className="relative cursor-pointer overflow-hidden rounded-2xl bg-zinc-900"
         style={{ aspectRatio: "9 / 16" }}
         onClick={handleVideoTap}
+        onMouseEnter={warmUp}
+        onTouchStart={warmUp}
       >
         <video
           ref={videoRef}
           className="absolute inset-0 h-full w-full object-cover"
           src={videoSrc}
           poster={posterSrc}
-          preload="none"
+          preload="metadata"
           playsInline
           loop
           muted={false}

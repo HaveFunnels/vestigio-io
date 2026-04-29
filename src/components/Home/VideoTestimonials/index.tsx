@@ -229,12 +229,12 @@ const VideoTestimonials = () => {
 
           {/* Header — decorative quote mark anchors the title */}
           <div className="relative mb-8 text-center sm:mb-10">
-            {/* Large decorative open-quote */}
-            <span className="pointer-events-none absolute -top-4 left-1/2 -translate-x-1/2 select-none font-serif text-[120px] leading-none text-emerald-500/[0.07] sm:text-[160px]" aria-hidden>
+            {/* Large decorative open-quote — sits behind the title text */}
+            <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] select-none font-serif text-[140px] leading-none text-emerald-500/[0.12] sm:text-[180px]" aria-hidden>
               &ldquo;
             </span>
-            {/* Thin separator line */}
-            <div className="mx-auto mb-5 h-px w-16 bg-emerald-500/30" />
+            {/* Separator line */}
+            <div className="mx-auto mb-5 h-[2px] w-12 rounded-full bg-emerald-500/50" />
             <h2 className="relative text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
               {t("title_before")}
               <span className="relative inline-block">

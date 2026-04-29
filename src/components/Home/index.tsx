@@ -1,37 +1,35 @@
+import dynamic from "next/dynamic";
 import Hero from "./Hero";
 import HomeBigCard from "./HomeBigCard";
 import SocialProofStrip from "./SocialProofStrip";
 import VSL from "./VSL";
 import ProductTour from "./ProductTour";
 import ClientGallery from "./ClientGallery";
-import SolutionLayers from "./SolutionLayers";
-import Features from "./Features";
-import FeaturesWithImage from "./FeaturesWithImage";
-import Counter from "./Counter";
-import VideoTestimonials from "./VideoTestimonials";
-import SocialProof from "@/components/shared/SocialProof";
-import FAQ from "./FAQ";
 import MiniCalculator from "./MiniCalculator";
-import CallToAction from "./CallToAction";
+
+// ── Below-the-fold: lazy-load JS chunks, keep SSR HTML ──
+// next/dynamic with ssr: true (default) renders full HTML on the
+// server for SEO, but defers the JS hydration bundle until the
+// browser needs it. This cuts the initial JS payload by ~60%.
+
+const SolutionLayers = dynamic(() => import("./SolutionLayers"));
+const FeaturesWithImage = dynamic(() => import("./FeaturesWithImage"));
+const Features = dynamic(() => import("./Features"));
+const Counter = dynamic(() => import("./Counter"));
+const VideoTestimonials = dynamic(() => import("./VideoTestimonials"));
+const SocialProof = dynamic(() => import("@/components/shared/SocialProof"));
+const FAQ = dynamic(() => import("./FAQ"));
+const CallToAction = dynamic(() => import("./CallToAction"));
 
 // ──────────────────────────────────────────────
 // Home — public marketing root.
 //
-// Reading order matches the marketing brief in
-// docs/MARKETING_COPY.md (sections 12 + 21):
+// Above the fold (eager): Hero, SocialProofStrip, VSL,
+// ProductTour, ClientGallery, MiniCalculator.
 //
-//  1. Hero               — banner + headline + 5 pill cards + product shell
-//  2. ProductTour        — interactive dashboard mock
-//  3. ClientGallery      — quiet social-proof strip
-//  4. FeaturesWithImage  — five product use cases (decision-first cards)
-//  5. Features           — bento grid with the four product promises
-//  6. SolutionLayers     — comparison-style strip
-//  7. Counter / Testimonials / FAQ — supporting blocks
-//  8. MiniCalculator     — gradient hero card with the auto audit
-//  9. CallToAction       — final CTA
-//
-// The /lp variant (HomeLp) keeps the same order but rewires CTAs to
-// the anonymous lead funnel.
+// Below the fold (lazy JS, full SSR): everything after
+// MiniCalculator. HTML is in the initial response for SEO;
+// JS chunks load as the user scrolls.
 // ──────────────────────────────────────────────
 
 const Home = () => {

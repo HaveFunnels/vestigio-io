@@ -52,7 +52,6 @@ const Home = () => {
 			<VideoTestimonials />
 			<SocialProof />
 			<FAQ />
-			<MiniCalculator />
 			<CallToAction />
 		</>
 	);

@@ -6,17 +6,14 @@ import { useTranslations } from "next-intl";
 // ──────────────────────────────────────────────
 // VideoTestimonials — portrait video social proof
 //
-// Performance strategy:
-//   • Videos served from CDN via <video> with preload="none"
-//   • Poster images (first frame / thumbnail) load immediately
-//   • Video only fetches on play — zero bytes until interaction
-//   • IntersectionObserver pauses off-screen videos
-//   • Portrait aspect-ratio (9:16) preserved via CSS
-//
-// To add real videos:
-//   1. Upload .mp4 (H.264, ~720p portrait) to your CDN
-//   2. Generate a poster .webp thumbnail for each
-//   3. Replace the src + poster URLs below
+// UX pattern (vTurb-style):
+//   • Videos autoplay muted+looping — visitor sees person talking
+//   • Glassmorphism pill with unmute icon invites "Ouvir"
+//   • Click → restart from 0:00, unmute, play with audio
+//   • Click while unmuted → blur overlay + mute icon (paused)
+//   • Click blur overlay → remove blur, resume unmuted
+//   • IntersectionObserver mutes+resets when off-screen
+//   • On video end → return to muted loop state
 // ──────────────────────────────────────────────
 
 interface VideoTestimonialItem {
@@ -33,63 +30,86 @@ const VIDEO_ASSETS = [
   { videoSrc: `${CDN}/Testimonial%20Dropshipper.MP4`, posterSrc: `${CDN}/dropshipper-poster.jpg` },
 ];
 
+// ── Unmute icon (speaker with X) ──────────────
+function UnmuteIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+    </svg>
+  );
+}
+
+// ── Volume icon (speaker with waves) ──────────
+function VolumeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728" />
+    </svg>
+  );
+}
+
 // ── Individual video card ──────────────────────
 
 function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; videoSrc: string; posterSrc: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const [playing, setPlaying] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [showControls, setShowControls] = useState(false);
-  const [warmedUp, setWarmedUp] = useState(false);
+  // "muted" = autoplay muted loop (default)
+  // "playing" = unmuted, playing with audio
+  // "paused" = unmuted but paused, blur overlay visible
+  const [state, setState] = useState<"muted" | "playing" | "paused">("muted");
 
-  // Hover/touch warm-up: start buffering before click
-  const warmUp = useCallback(() => {
-    if (warmedUp) return;
+  // Unmute: restart from beginning with audio
+  const unmute = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
-    v.preload = "auto";
-    v.load();
-    setWarmedUp(true);
-  }, [warmedUp]);
-
-  const play = useCallback(() => {
-    const v = videoRef.current;
-    if (!v) return;
+    v.currentTime = 0;
+    v.muted = false;
+    v.loop = false;
     v.play();
-    setPlaying(true);
-    setShowControls(false);
+    setState("playing");
   }, []);
 
+  // Pause: show blur overlay
   const pause = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
     v.pause();
-    setPlaying(false);
-    setShowControls(false);
+    setState("paused");
   }, []);
 
-  // Tap on video while playing → show pause button briefly
-  const handleVideoTap = useCallback(() => {
-    if (!playing) {
-      play();
-      return;
-    }
-    // Show pause button, auto-hide after 1s
-    setShowControls(true);
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = setTimeout(() => setShowControls(false), 1000);
-  }, [playing, play]);
+  // Resume: remove blur, continue playing
+  const resume = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.play();
+    setState("playing");
+  }, []);
 
-  // Tap specifically on the pause button → pause
-  const handlePauseClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    pause();
-  }, [pause]);
+  // Return to muted autoplay loop
+  const returnToMuted = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.loop = true;
+    v.currentTime = 0;
+    v.play();
+    setState("muted");
+  }, []);
 
-  // Pause when card scrolls out of view
+  const handleClick = useCallback(() => {
+    if (state === "muted") unmute();
+    else if (state === "playing") pause();
+    else if (state === "paused") resume();
+  }, [state, unmute, pause, resume]);
+
+  // When video ends (unmuted playback) → return to muted loop
+  const handleEnded = useCallback(() => {
+    returnToMuted();
+  }, [returnToMuted]);
+
+  // Mute + reset when card scrolls out of view
   useEffect(() => {
     const card = cardRef.current;
     const video = videoRef.current;
@@ -97,19 +117,18 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry.isIntersecting && !video.paused) {
-          video.pause();
-          setPlaying(false);
-          setShowControls(false);
+        if (!entry.isIntersecting && !video.muted) {
+          video.muted = true;
+          video.loop = true;
+          video.currentTime = 0;
+          video.play();
+          setState("muted");
         }
       },
       { threshold: 0.25 },
     );
     observer.observe(card);
-    return () => {
-      observer.disconnect();
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    };
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -118,21 +137,19 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
       <div
         className="relative cursor-pointer overflow-hidden rounded-2xl bg-zinc-900"
         style={{ aspectRatio: "9 / 16" }}
-        onClick={handleVideoTap}
-        onMouseEnter={warmUp}
-        onTouchStart={warmUp}
+        onClick={handleClick}
       >
         <video
           ref={videoRef}
           className="absolute inset-0 h-full w-full object-cover"
           src={videoSrc}
           poster={posterSrc}
-          preload="metadata"
+          preload="auto"
           playsInline
+          autoPlay
+          muted
           loop
-          muted={false}
-          onCanPlay={() => setLoaded(true)}
-          onEnded={() => { setPlaying(false); setShowControls(false); }}
+          onEnded={handleEnded}
         />
 
         {/* Gradient overlay at bottom for name legibility */}
@@ -144,35 +161,24 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
           <p className="text-xs text-white/60">{item.role}</p>
         </div>
 
-        {/* Play button — visible only when paused */}
-        {!playing && (
+        {/* Unmute pill — visible in muted autoplay state */}
+        {state === "muted" && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
-              <svg className="ml-1 h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5.14v14l11-7-11-7z" />
-              </svg>
+            <div className="flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-5 py-2.5 backdrop-blur-md transition-transform duration-200 hover:scale-105">
+              <UnmuteIcon className="h-5 w-5 text-white" />
+              <span className="text-sm font-medium text-white">Ouvir</span>
             </div>
           </div>
         )}
 
-        {/* Pause button — appears briefly on tap while playing */}
-        {playing && showControls && (
-          <div
-            className="absolute inset-0 flex items-center justify-center animate-[fadeIn_150ms_ease-out]"
-            onClick={handlePauseClick}
-          >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
-              <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <rect x="6" y="4" width="4" height="16" rx="1" />
-                <rect x="14" y="4" width="4" height="16" rx="1" />
-              </svg>
+        {/* Blur overlay + volume icon — visible when paused */}
+        {state === "paused" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-[fadeIn_200ms_ease-out]">
+            <div className="flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-5 py-2.5 backdrop-blur-md">
+              <VolumeIcon className="h-5 w-5 text-white" />
+              <span className="text-sm font-medium text-white">Ouvir</span>
             </div>
           </div>
-        )}
-
-        {/* Loading shimmer — visible only before poster loads */}
-        {!loaded && !posterSrc && (
-          <div className="absolute inset-0 animate-pulse bg-zinc-800" />
         )}
       </div>
 

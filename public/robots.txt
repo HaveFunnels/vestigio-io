@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /activate/
+Disallow: /lp/audit/result/
+
+Sitemap: https://vestigio.io/sitemap.xml

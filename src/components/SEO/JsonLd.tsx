@@ -28,21 +28,27 @@ export default function JsonLd() {
 		offers: [
 			{
 				"@type": "Offer",
-				name: "Vestigio",
-				price: "0",
+				name: "Starter",
+				price: "99",
 				priceCurrency: "USD",
+				priceValidUntil: "2027-12-31",
+				availability: "https://schema.org/InStock",
 			},
 			{
 				"@type": "Offer",
 				name: "Pro",
-				price: "49",
+				price: "199",
 				priceCurrency: "USD",
+				priceValidUntil: "2027-12-31",
+				availability: "https://schema.org/InStock",
 			},
 			{
 				"@type": "Offer",
 				name: "Max",
-				price: "99",
+				price: "399",
 				priceCurrency: "USD",
+				priceValidUntil: "2027-12-31",
+				availability: "https://schema.org/InStock",
 			},
 		],
 	};

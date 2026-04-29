@@ -293,7 +293,7 @@ const MiniCalculator = ({
 				<div className='absolute left-1/2 top-1/2 h-[250px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.05] blur-[80px]' />
 			</div>
 
-			<div className='mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0'>
+			<div className='px-2 sm:px-4 lg:px-8 xl:px-12'>
 				{/* Gradient hero card — the calculator's container.
 				    Hover-lift, animated conic border on hover, soft inner
 				    glow. The whole section is "one big card" so the

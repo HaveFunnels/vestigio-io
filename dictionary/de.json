@@ -620,7 +620,9 @@
 			"micro": "In 60 Sekunden sehen Sie Ihre erste Diagnose."
 		},
 		"video_testimonials": {
-			"title": "Das sagen unsere Kunden",
+			"title_before": "Sie entdeckten, ",
+			"title_highlight": "wie viel",
+			"title_after": " sie verloren",
 			"items": [
 				{
 					"name": "Dra. Renata Albuquerque",

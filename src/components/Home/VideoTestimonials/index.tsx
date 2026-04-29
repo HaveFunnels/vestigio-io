@@ -230,7 +230,25 @@ const VideoTestimonials = () => {
           {/* Header */}
           <div className="mb-8 text-center sm:mb-10">
             <h2 className="text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-3xl lg:text-4xl">
-              {t("title")}
+              {t("title_before")}
+              <span className="relative inline-block">
+                <span
+                  className="relative z-[1]"
+                  style={{ textShadow: "2px 0 #080812, -2px 0 #080812, 0 2px #080812, 0 -2px #080812, 1px 1px #080812, -1px -1px #080812, 1px -1px #080812, -1px 1px #080812" }}
+                >
+                  {t("title_highlight")}
+                </span>
+                <span
+                  className="absolute -bottom-0.5 left-0 z-0 h-[3px] w-full rounded-full"
+                  style={{
+                    background: "linear-gradient(90deg, rgba(52,211,153,0.15), rgba(110,231,183,0.7), rgba(52,211,153,0.15))",
+                    backgroundSize: "200% 100%",
+                    animation: "title-underline-shimmer 3s ease-in-out infinite",
+                  }}
+                  aria-hidden
+                />
+              </span>
+              {t("title_after")}
             </h2>
           </div>
 

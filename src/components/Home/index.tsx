@@ -9,7 +9,7 @@ import Features from "./Features";
 import FeaturesWithImage from "./FeaturesWithImage";
 import Counter from "./Counter";
 import VideoTestimonials from "./VideoTestimonials";
-import Testimonials from "./Testimonials";
+import SocialProof from "@/components/shared/SocialProof";
 import FAQ from "./FAQ";
 import MiniCalculator from "./MiniCalculator";
 import CallToAction from "./CallToAction";
@@ -50,7 +50,7 @@ const Home = () => {
 			<Features />
 			<Counter />
 			<VideoTestimonials />
-			<Testimonials />
+			<SocialProof />
 			<FAQ />
 			<MiniCalculator />
 			<CallToAction />

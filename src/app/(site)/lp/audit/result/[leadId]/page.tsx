@@ -787,10 +787,11 @@ function AuditingState({
 		return () => clearInterval(interval);
 	}, [stages.length, completed]);
 
-	// Build favicon URL from domain
-	const faviconUrl = lead.domain
+	// Prefer real favicon from audit result; fall back to Google's API
+	const googleFavicon = lead.domain
 		? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(lead.domain)}&sz=64`
 		: null;
+	const faviconUrl = lead.result?.preview?.favicon_url || googleFavicon;
 
 	if (timedOut) {
 		return (
@@ -798,7 +799,13 @@ function AuditingState({
 				<DotGrid />
 				<div className="relative w-full max-w-md text-center">
 					{faviconUrl && (
-						<img src={faviconUrl} alt="" className="mx-auto mb-4 h-10 w-10 rounded-lg" />
+						/* eslint-disable-next-line @next/next/no-img-element */
+						<img
+							src={faviconUrl}
+							alt=""
+							className="mx-auto mb-4 h-10 w-10 rounded-lg"
+							onError={(e) => { if (googleFavicon && e.currentTarget.src !== googleFavicon) e.currentTarget.src = googleFavicon; }}
+						/>
 					)}
 					<h1 className="text-2xl font-semibold text-zinc-100">
 						O diagnóstico está demorando mais que o esperado
@@ -839,10 +846,12 @@ function AuditingState({
 							<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30" />
 						)}
 						{faviconUrl ? (
+							/* eslint-disable-next-line @next/next/no-img-element */
 							<img
 								src={faviconUrl}
 								alt=""
 								className={`relative inline-flex h-12 w-12 rounded-full border-2 bg-zinc-900 object-cover p-1.5 ${showButton ? "border-emerald-400" : "border-emerald-400"}`}
+								onError={(e) => { if (googleFavicon && e.currentTarget.src !== googleFavicon) e.currentTarget.src = googleFavicon; }}
 							/>
 						) : (
 							<span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-400 bg-emerald-500/10 text-emerald-300">
@@ -870,7 +879,8 @@ function AuditingState({
 				{/* Domain confirmation */}
 				{!showButton && (
 					<div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-1.5">
-						{faviconUrl && <img src={faviconUrl} alt="" className="h-4 w-4 rounded" />}
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						{faviconUrl && <img src={faviconUrl} alt="" className="h-4 w-4 rounded" onError={(e) => { if (googleFavicon && e.currentTarget.src !== googleFavicon) e.currentTarget.src = googleFavicon; }} />}
 						<span className="font-mono text-xs text-zinc-400">{lead.domain}</span>
 					</div>
 				)}
@@ -925,9 +935,10 @@ function AuditingState({
 
 function ExpiredState({ lead, onCheckout, launching }: { lead: LeadResponse; onCheckout: () => void; launching: boolean }) {
 	const domain = lead.domain || "seu site";
-	const faviconUrl = lead.domain
+	const googleFavicon = lead.domain
 		? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(lead.domain)}&sz=64`
 		: null;
+	const faviconUrl = lead.result?.preview?.favicon_url || googleFavicon;
 
 	// Try to extract stats from expired lead result (may or may not be available)
 	const result = lead.result;
@@ -950,7 +961,8 @@ function ExpiredState({ lead, onCheckout, launching }: { lead: LeadResponse; onC
 				{/* Favicon */}
 				{faviconUrl && (
 					<div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900">
-						<img src={faviconUrl} alt="" className="h-8 w-8 rounded object-contain" />
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img src={faviconUrl} alt="" className="h-8 w-8 rounded object-contain" onError={(e) => { if (googleFavicon && e.currentTarget.src !== googleFavicon) e.currentTarget.src = googleFavicon; }} />
 					</div>
 				)}
 

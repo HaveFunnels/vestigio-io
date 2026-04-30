@@ -43,11 +43,11 @@ const Home = () => {
 				<ClientGallery />
 			</HomeBigCard>
 			<MiniCalculator />
-			<SolutionLayers />
+			<VideoTestimonials />
 			<FeaturesWithImage />
 			<Features />
 			<Counter />
-			<VideoTestimonials />
+			<SolutionLayers />
 			<SocialProof />
 			<FAQ />
 			<CallToAction />

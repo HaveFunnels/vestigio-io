@@ -10,8 +10,8 @@ import {
 // Mini-Audit Findings Deriver
 //
 // Converts a single-page Stage A crawl + optional checkout HEAD probe
-// into 5 visible findings + 10 blurred placeholders for the /lp/audit
-// result page.
+// into up to 5 negative findings + positive findings + 10 blurred
+// placeholders for the /lp/audit result page.
 //
 // Vestigio-flavor rules (different from generic site-scan tools):
 //   - Every negative finding CORRELATES ≥ 2 pieces of evidence. A
@@ -428,6 +428,413 @@ const detectFormFriction: Detector = ({ parsed, business }) => {
 	);
 };
 
+// ── 7. Missing analytics/tracking ─────────────
+const detectMissingAnalytics: Detector = ({ rawHtml, parsed, business }) => {
+	const lower = rawHtml.toLowerCase();
+	const hasGA = /gtag|google-analytics|googletagmanager|ga\.js|analytics\.js/i.test(lower);
+	const hasGTM = /gtm\.js|gtm\.start/i.test(lower);
+	const hasPixel = /fbq\(|facebook\.net\/|connect\.facebook/i.test(lower);
+	const hasAnalyticsScript = parsed.scripts.some(
+		(s) => /google-analytics|googletagmanager|facebook\.net|hotjar|clarity\.ms|segment\.com|mixpanel|amplitude/i.test(s.src),
+	);
+
+	if (hasGA || hasGTM || hasPixel || hasAnalyticsScript) return null;
+
+	return withImpact(
+		{
+			id: "mini_missing_analytics",
+			severity: "high",
+			category: "structure",
+			title: "Nenhum analytics ou pixel de conversão detectado",
+			body: `Não encontramos Google Analytics, GTM, Meta Pixel, nem qualquer plataforma de analytics no HTML da página. Sem medição, você não sabe quais canais trazem receita, quais páginas vazam visitantes, ou se mudanças melhoram ou pioram conversão. Todo investimento em tráfego está voando cego.`,
+			impact_hint: "Atribuição impossível — ROI invisível",
+			evidence_refs: ["Sem GA/GTM no HTML", "Sem Meta Pixel", "Sem scripts de analytics"],
+		},
+		"measurement_coverage",
+		business,
+	);
+};
+
+// ── 8. Images without lazy loading ────────────
+const detectNoLazyImages: Detector = ({ rawHtml, business }) => {
+	const imgTags = rawHtml.match(/<img\b[^>]*>/gi) || [];
+	if (imgTags.length < 5) return null;
+
+	const lazyCount = imgTags.filter((tag) => /loading\s*=\s*["']lazy["']/i.test(tag)).length;
+	const nonLazyCount = imgTags.length - lazyCount;
+
+	if (nonLazyCount < 4) return null;
+
+	return withImpact(
+		{
+			id: "mini_no_lazy_images",
+			severity: "medium",
+			category: "performance",
+			title: `${nonLazyCount} de ${imgTags.length} imagens carregam de uma vez`,
+			body: `Sua página tem ${imgTags.length} imagens e apenas ${lazyCount} usam lazy loading. Todas as imagens são baixadas imediatamente, mesmo as que estão fora da tela, travando o carregamento e aumentando o tempo de interação. Cada segundo adicional de load time reduz conversão em ~7%.`,
+			impact_hint: "Lentidão percebida ↑ abandono mobile",
+			evidence_refs: [`${imgTags.length} <img> tags`, `${lazyCount} com lazy loading`],
+		},
+		"friction_on_critical_path",
+		business,
+	);
+};
+
+// ── 9. Weak meta description ──────────────────
+const detectWeakMetaDescription: Detector = ({ parsed, business }) => {
+	const desc = parsed.meta_description;
+	if (desc && desc.length >= 50) return null;
+
+	return withImpact(
+		{
+			id: "mini_weak_meta_desc",
+			severity: "medium",
+			category: "structure",
+			title: desc ? "Meta description curta demais para gerar cliques" : "Meta description ausente",
+			body: desc
+				? `Sua meta description tem apenas ${desc.length} caracteres ("${desc.slice(0, 60)}…"). O ideal é 120–160 caracteres. Descrições curtas perdem espaço no snippet do Google e reduzem CTR orgânico — menos cliques = menos tráfego gratuito.`
+				: `Sua página não declara meta description. O Google vai gerar uma automaticamente, mas ela raramente comunica seu valor. Páginas sem description perdem até 5.8% de CTR orgânico comparado com descriptions otimizadas.`,
+			impact_hint: desc ? "CTR orgânico subotimizado" : "Google decide sua mensagem",
+			evidence_refs: desc ? [`${desc.length} chars (mínimo: 50)`] : ["Tag <meta description> ausente"],
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── 10. Missing structured data ───────────────
+const detectMissingStructuredData: Detector = ({ parsed, business }) => {
+	if (parsed.structured_data.length > 0) return null;
+
+	return withImpact(
+		{
+			id: "mini_no_structured_data",
+			severity: "medium",
+			category: "structure",
+			title: "Sem structured data (JSON-LD) na página",
+			body: `Nenhum bloco Schema.org/JSON-LD foi detectado. Structured data habilita rich snippets no Google (estrelas, preço, FAQ) e alimenta AI agents e assistentes de voz. Páginas com rich snippets têm CTR 58% maior que resultados simples. Sem isso, seu resultado é texto puro competindo contra concorrentes com cards visuais.`,
+			impact_hint: "Sem rich snippets — CTR -58% vs concorrentes",
+			evidence_refs: ["Zero blocos JSON-LD"],
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── 11. No social proof ───────────────────────
+const detectNoSocialProof: Detector = ({ rawHtml, business }) => {
+	const lower = rawHtml.toLowerCase();
+	const proofPatterns = [
+		/depoimento|testemunho|testimonial/,
+		/avalia[çc][ãa]o|review|rating/,
+		/cliente[s]?\s+(diz|fala|conta|recomend)/,
+		/estrela[s]?\b/,
+		/\b(4|5)\s*\/\s*5\b/,
+		/trustpilot|reclame\s*aqui|google\s*reviews?/,
+	];
+
+	const hasProof = proofPatterns.some((p) => p.test(lower));
+	if (hasProof) return null;
+
+	return withImpact(
+		{
+			id: "mini_no_social_proof",
+			severity: "high",
+			category: "trust",
+			title: "Nenhum sinal de prova social detectado",
+			body: `Não encontramos depoimentos, avaliações, estrelas, ou menções a Trustpilot/Reclame Aqui na página. 92% dos consumidores leem avaliações antes de comprar. Sem prova social visível, cada visitante precisa confiar apenas na sua promessa — e a maioria não vai.`,
+			impact_hint: "92% decidem baseado em reviews",
+			evidence_refs: ["Sem depoimentos", "Sem estrelas/ratings", "Sem plataformas de review"],
+		},
+		"trust_boundary_crossed",
+		business,
+	);
+};
+
+// ── 12. Redirect chain ────────────────────────
+const detectRedirectChain: Detector = ({ response, business }) => {
+	if (response.redirect_chain.length < 2) return null;
+
+	return withImpact(
+		{
+			id: "mini_redirect_chain",
+			severity: "medium",
+			category: "performance",
+			title: `${response.redirect_chain.length} redirecionamentos antes de carregar`,
+			body: `Sua página passa por ${response.redirect_chain.length} redirects antes de renderizar (${response.redirect_chain.map((r) => r.status_code).join(" → ")}). Cada redirecionamento adiciona 100-500ms e perde ~5% dos visitantes mobile. Além da lentidão, crawlers de busca podem indexar a URL errada.`,
+			impact_hint: "~5% perda por hop em mobile",
+			evidence_refs: response.redirect_chain.slice(0, 3).map((r) => `${r.status_code} → ${new URL(r.url).hostname}`),
+		},
+		"friction_on_critical_path",
+		business,
+	);
+};
+
+// ── 13. Missing canonical ─────────────────────
+const detectMissingCanonical: Detector = ({ parsed, business }) => {
+	if (parsed.canonical_url) return null;
+
+	return withImpact(
+		{
+			id: "mini_missing_canonical",
+			severity: "medium",
+			category: "structure",
+			title: "Sem URL canônica declarada",
+			body: `Sua página não define <link rel="canonical">. Sem canonical, buscadores podem indexar versões duplicadas (www vs non-www, http vs https, com/sem trailing slash) e diluir a autoridade da página entre múltiplas URLs. Isso reduz ranking orgânico e tráfego gratuito.`,
+			impact_hint: "Risco de conteúdo duplicado no Google",
+			evidence_refs: ["Tag <link rel=canonical> ausente"],
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── 14. Thin content ──────────────────────────
+const detectThinContent: Detector = ({ parsed, business }) => {
+	if (parsed.body_word_count >= 300) return null;
+
+	return withImpact(
+		{
+			id: "mini_thin_content",
+			severity: "medium",
+			category: "cta",
+			title: `Apenas ${parsed.body_word_count} palavras — conteúdo insuficiente para converter`,
+			body: `Sua landing page tem apenas ${parsed.body_word_count} palavras de corpo. Páginas de alta conversão tipicamente têm 500-1500 palavras porque precisam: endereçar objeções, demonstrar valor, mostrar prova social e guiar até o CTA. Com conteúdo raso, o visitante não tem argumento suficiente para agir.`,
+			impact_hint: "Conteúdo raso = argumento fraco",
+			evidence_refs: [`${parsed.body_word_count} palavras no body`],
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── 15. Excessive external scripts ────────────
+const detectExcessiveExternalScripts: Detector = ({ parsed, business }) => {
+	const externalScripts = parsed.scripts.filter((s) => s.is_external);
+	if (externalScripts.length < 8) return null;
+
+	const uniqueHosts = [...new Set(externalScripts.map((s) => s.host))];
+
+	return withImpact(
+		{
+			id: "mini_excessive_scripts",
+			severity: "medium",
+			category: "performance",
+			title: `${externalScripts.length} scripts externos de ${uniqueHosts.length} domínios diferentes`,
+			body: `Sua página carrega ${externalScripts.length} scripts de ${uniqueHosts.length} domínios (${uniqueHosts.slice(0, 4).join(", ")}${uniqueHosts.length > 4 ? "…" : ""}). Cada script externo adiciona latência de DNS, TLS e download. Além do peso, cada domínio é uma dependência — se um CDN travar, sua página pode quebrar. O custo composto em performance mobile é significativo.`,
+			impact_hint: `${uniqueHosts.length} dependências externas`,
+			evidence_refs: uniqueHosts.slice(0, 3).map((h) => `Scripts de ${h}`),
+		},
+		"friction_on_critical_path",
+		business,
+	);
+};
+
+// ── 16. No H1 ─────────────────────────────────
+const detectNoH1: Detector = ({ parsed, business }) => {
+	if (parsed.h1) return null;
+
+	return withImpact(
+		{
+			id: "mini_no_h1",
+			severity: "medium",
+			category: "structure",
+			title: "Sem headline principal (H1) na página",
+			body: `Nenhum H1 foi detectado. A tag H1 é a hierarquia mais alta de conteúdo — comunica ao visitante e ao Google o assunto principal da página em milissegundos. Sem H1, a escaneabilidade cai, o ranking orgânico sofre e a proposta de valor fica diluída em texto genérico.`,
+			impact_hint: "Escaneabilidade comprometida",
+			evidence_refs: ["Tag <h1> ausente"],
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── 17. External forms ────────────────────────
+const detectExternalForms: Detector = ({ parsed, business }) => {
+	const externalForms = parsed.forms.filter((f) => f.is_external);
+	if (externalForms.length === 0) return null;
+
+	return withImpact(
+		{
+			id: "mini_external_forms",
+			severity: "high",
+			category: "trust",
+			title: `${externalForms.length} ${externalForms.length === 1 ? "formulário envia" : "formulários enviam"} dados para domínio externo`,
+			body: `${externalForms.length} ${externalForms.length === 1 ? "formulário" : "formulários"} na página ${externalForms.length === 1 ? "submete" : "submetem"} dados para ${externalForms.map((f) => f.target_host).filter(Boolean).join(", ") || "domínio externo"}. Quando um visitante preenche um formulário e é redirecionado para outro site, a quebra de contexto reduz drasticamente a taxa de conclusão — especialmente em mobile.`,
+			impact_hint: "Quebra de contexto na submissão",
+			evidence_refs: externalForms.slice(0, 2).map((f) => `Form → ${f.target_host || "externo"}`),
+		},
+		"trust_boundary_crossed",
+		business,
+	);
+};
+
+// ── 18. Missing lang attribute ────────────────
+const detectMissingLang: Detector = ({ parsed, business }) => {
+	if (parsed.lang) return null;
+
+	return withImpact(
+		{
+			id: "mini_missing_lang",
+			severity: "medium",
+			category: "structure",
+			title: "Idioma da página não declarado",
+			body: `O atributo <html lang="..."> não está definido. Sem essa declaração, leitores de tela leem o texto com pronúncia errada, ferramentas de tradução automática podem ignorar a página, e buscadores podem apresentar seu resultado na SERP errada. É uma correção de 1 linha com impacto desproporcional.`,
+			impact_hint: "Acessibilidade + SEO internacional",
+			evidence_refs: ["Atributo lang ausente no <html>"],
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── 19. Iframe overuse ────────────────────────
+const detectIframeOveruse: Detector = ({ parsed, business }) => {
+	if (parsed.iframes.length < 3) return null;
+
+	return withImpact(
+		{
+			id: "mini_iframe_overuse",
+			severity: "medium",
+			category: "performance",
+			title: `${parsed.iframes.length} iframes carregando simultaneamente`,
+			body: `Sua página embarca ${parsed.iframes.length} iframes (${parsed.iframes.slice(0, 3).map((i) => new URL(i.src).hostname).join(", ")}${parsed.iframes.length > 3 ? "…" : ""}). Cada iframe abre uma nova "mini-página" dentro da sua, com seu próprio DOM, CSS, JS e requests de rede. O custo de memória e CPU em mobile é multiplicativo, não aditivo.`,
+			impact_hint: "Performance mobile degradada",
+			evidence_refs: parsed.iframes.slice(0, 3).map((i) => `iframe: ${new URL(i.src).hostname}`),
+		},
+		"friction_on_critical_path",
+		business,
+	);
+};
+
+// ──────────────────────────────────────────────
+// Cross-signal detectors — Vestigio's moat
+// These correlate 2+ signals that compound each other's impact
+// ──────────────────────────────────────────────
+
+// ── 20. Speed × Trust compound ────────────────
+const detectSpeedTrustCompound: Detector = ({ response, rawHtml, business }) => {
+	if (response.response_time_ms < 1500) return null;
+
+	const lower = rawHtml.toLowerCase();
+	const hasTrust = /(política\s+de\s+privacidade|privacy\s+policy|lgpd|gdpr|pagamento\s+seguro|compra\s+segura)/i.test(lower);
+	const hasRefund = /(política\s+de\s+(trocas?|reembolso|devolu)|refund|return\s+policy|garantia)/i.test(lower);
+
+	// Need both: slow AND trust-weak
+	if (hasTrust && hasRefund) return null;
+
+	const missingSignals = [];
+	if (!hasTrust) missingSignals.push("sem política de privacidade");
+	if (!hasRefund) missingSignals.push("sem política de reembolso");
+
+	return withImpact(
+		{
+			id: "mini_speed_trust_compound",
+			severity: "high",
+			category: "trust",
+			title: "Página lenta + sinais de confiança fracos — efeito composto",
+			body: `Sua página levou ${(response.response_time_ms / 1000).toFixed(1)}s para responder E não apresenta sinais claros de confiança (${missingSignals.join(", ")}). Isolados, cada problema reduz conversão em ~10%. Juntos, o efeito é multiplicativo: o visitante espera, chega numa página sem reforço de segurança, e o cérebro interpreta como risco. A taxa de abandono combinada pode atingir 30-40%.`,
+			impact_hint: "Efeito multiplicativo: lentidão × desconfiança",
+			evidence_refs: [`${(response.response_time_ms / 1000).toFixed(1)}s de resposta`, ...missingSignals],
+		},
+		"trust_break_in_checkout",
+		business,
+	);
+};
+
+// ── 21. Weak conversion path ──────────────────
+const detectWeakConversionPath: Detector = ({ parsed, rawHtml, business }) => {
+	const lower = rawHtml.toLowerCase();
+
+	// Signal 1: Vague or absent CTAs
+	const commercialVerbs = /\b(compra|compre|buy|add.to.cart|adicionar|carrinho|assine|sign.?up|cadastr|comece|start|agendar|schedule)\b/i;
+	const hasStrongCta = parsed.links.some((l) => l.text && commercialVerbs.test(l.text));
+
+	// Signal 2: No social proof
+	const hasSocialProof = /(depoimento|testemunho|testimonial|avalia[çc][ãa]o|review|rating|estrela)/i.test(lower);
+
+	// Signal 3: No urgency
+	const hasUrgency = /(últ[iu]m|últim|limited|ofertal|promo[çc]|desconto|grátis|free|hoje|today|agora|now|expir|acabando|vagas? limit)/i.test(lower);
+
+	// Need at least 2 of 3 weak signals
+	const weakCount = [!hasStrongCta, !hasSocialProof, !hasUrgency].filter(Boolean).length;
+	if (weakCount < 2) return null;
+
+	const missing = [];
+	if (!hasStrongCta) missing.push("sem CTA comercial claro");
+	if (!hasSocialProof) missing.push("sem prova social");
+	if (!hasUrgency) missing.push("sem urgência/escassez");
+
+	return withImpact(
+		{
+			id: "mini_weak_conversion_path",
+			severity: "high",
+			category: "cta",
+			title: "Caminho de conversão sem incentivo — 3 sinais ausentes",
+			body: `Detectamos ${weakCount} lacunas simultâneas no caminho de conversão: ${missing.join(", ")}. Cada ausência isolada reduz conversão em 5-15%. Mas quando o visitante encontra uma página sem CTA claro, sem prova de que outros compraram, e sem razão para agir agora — a conversão cai para perto de zero. O caminho de compra não existe funcionalmente.`,
+			impact_hint: `${weakCount}/3 pilares de conversão ausentes`,
+			evidence_refs: missing,
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── 22. Slow + heavy + thin page ──────────────
+const detectSlowHeavyPage: Detector = ({ response, parsed, business }) => {
+	if (response.response_time_ms < 1000) return null;
+	if (parsed.scripts.length < 6) return null;
+	if (parsed.body_word_count >= 500) return null;
+
+	return withImpact(
+		{
+			id: "mini_slow_heavy_thin",
+			severity: "high",
+			category: "performance",
+			title: "Página lenta e pesada, mas com pouco conteúdo útil",
+			body: `Sua página leva ${(response.response_time_ms / 1000).toFixed(1)}s para carregar, usa ${parsed.scripts.length} scripts, mas tem apenas ${parsed.body_word_count} palavras de conteúdo. Todo o peso é overhead técnico, não valor para o visitante. O mobile sofre mais: baixa memória + scripts pesados = página travando em dispositivos populares no Brasil.`,
+			impact_hint: "Overhead técnico > conteúdo útil",
+			evidence_refs: [
+				`${(response.response_time_ms / 1000).toFixed(1)}s de resposta`,
+				`${parsed.scripts.length} scripts`,
+				`${parsed.body_word_count} palavras`,
+			],
+		},
+		"friction_on_critical_path",
+		business,
+	);
+};
+
+// ── 23. Trustless payment collection ──────────
+const detectTrustlessCheckout: Detector = ({ parsed, rawHtml, business }) => {
+	const hasPaymentForms = parsed.forms.some((f) => f.has_payment_fields);
+	if (!hasPaymentForms) return null;
+
+	const lower = rawHtml.toLowerCase();
+	const hasPrivacy = /(política\s+de\s+privacidade|privacy\s+policy|lgpd|gdpr)/i.test(lower);
+	const hasSslBadge = /(ssl|pagamento\s+seguro|compra\s+segura|site\s+seguro|cadeado|secure\s+checkout)/i.test(lower);
+
+	if (hasPrivacy && hasSslBadge) return null;
+
+	const missing = [];
+	if (!hasPrivacy) missing.push("sem política de privacidade");
+	if (!hasSslBadge) missing.push("sem selo de segurança");
+
+	return withImpact(
+		{
+			id: "mini_trustless_checkout",
+			severity: "critical",
+			category: "checkout",
+			title: "Formulário coleta pagamento sem sinais de segurança",
+			body: `Detectamos campos de pagamento (cartão, CPF, dados financeiros) sem sinais visíveis de segurança na página (${missing.join(", ")}). Quando um visitante está prestes a inserir dados do cartão e não vê nenhuma menção a SSL, privacidade ou segurança, a taxa de abandono no campo de pagamento ultrapassa 67%.`,
+			impact_hint: "67%+ abandonam sem sinal de segurança",
+			evidence_refs: ["Campos de pagamento detectados", ...missing],
+		},
+		"trust_break_in_checkout",
+		business,
+	);
+};
+
 // ──────────────────────────────────────────────
 // Positive fallbacks — only kick in when fewer than 5 negatives hit.
 // ──────────────────────────────────────────────
@@ -499,12 +906,32 @@ const SEVERITY_ORDER: Record<MiniFindingSeverity, number> = {
 
 export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 	const detectors: Detector[] = [
-		detectRevenuePathFragility, // can produce critical
-		detectCtaBelowFold, // can produce critical
+		// Original 6
+		detectRevenuePathFragility,
+		detectCtaBelowFold,
 		detectTrustComposite,
 		detectCompetingCtas,
 		detectVagueCta,
 		detectFormFriction,
+		// New pure-parser detectors
+		detectMissingAnalytics,
+		detectNoLazyImages,
+		detectWeakMetaDescription,
+		detectMissingStructuredData,
+		detectNoSocialProof,
+		detectRedirectChain,
+		detectMissingCanonical,
+		detectThinContent,
+		detectExcessiveExternalScripts,
+		detectNoH1,
+		detectExternalForms,
+		detectMissingLang,
+		detectIframeOveruse,
+		// Cross-signal detectors (Vestigio moat)
+		detectSpeedTrustCompound,
+		detectWeakConversionPath,
+		detectSlowHeavyPage,
+		detectTrustlessCheckout,
 	];
 
 	const detected: MiniFinding[] = [];
@@ -517,32 +944,26 @@ export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 		}
 	}
 
-	if (detected.length < 5) {
-		for (const fn of fallbackPositives) {
-			if (detected.length >= 5) break;
-			try {
-				const result = fn(input);
-				if (result) detected.push(result);
-			} catch {
-				// ignore
-			}
+	// Separate negatives from positives
+	const negatives = detected.filter((f) => f.severity !== "positive");
+	const positives: MiniFinding[] = [];
+
+	// Always collect positive fallbacks
+	for (const fn of fallbackPositives) {
+		try {
+			const result = fn(input);
+			if (result) positives.push(result);
+		} catch {
+			// ignore
 		}
 	}
 
-	while (detected.length < 5) {
-		detected.push({
-			id: `mini_pad_${detected.length}`,
-			severity: "positive",
-			category: "structure",
-			title: "Checagens de fundação passaram",
-			body: `Checamos sua página contra padrões conhecidos de conversão (CTAs vagos, falta de sinais de confiança, fricção de formulário, carregamento lento, botões ocultos) e a fundação está sólida. A próxima camada de oportunidades vive mais fundo no funil — fluxo de checkout, jornada mobile, experiência pós-clique.`,
-			impact_hint: "Fundação sólida",
-			impact: null,
-		});
-	}
+	// Sort negatives by severity (critical first)
+	negatives.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
 
-	detected.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
-	const visible = detected.slice(0, 5);
+	// Cap at 5 negative findings + all positives
+	const cappedNegatives = negatives.slice(0, 5);
+	const visible = [...cappedNegatives, ...positives];
 
 	// Blurred placeholders — never computed, purely teaser for paid tier.
 	const blurred: BlurredFinding[] = [

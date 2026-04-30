@@ -44,10 +44,10 @@ const Home = () => {
 			</HomeBigCard>
 			<MiniCalculator />
 			<FeaturesWithImage />
-			<Features />
+			<SolutionLayers />
 			<VideoTestimonials />
 			<Counter />
-			<SolutionLayers />
+			<Features />
 			<SocialProof />
 			<FAQ />
 			<CallToAction />

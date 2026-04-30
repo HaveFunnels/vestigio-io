@@ -219,7 +219,7 @@ const VideoTestimonials = () => {
 
       <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
         {/* Shiny outline card — transparent bg, emerald border glow */}
-        <div className="shiny-card relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.12),0_0_50px_-10px_rgba(16,185,129,0.10)] sm:p-10 lg:p-14">
+        <div className="shiny-card relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.12),0_0_50px_-10px_rgba(16,185,129,0.10)] sm:p-10 lg:p-14" style={{ "--shiny-card-bg": "#080812" } as React.CSSProperties}>
           {/* Emerald accent lines */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent" />

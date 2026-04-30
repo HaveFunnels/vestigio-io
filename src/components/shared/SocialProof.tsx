@@ -248,6 +248,8 @@ interface SocialProofProps {
   row2?: Testimonial[];
   heading?: string;
   locale?: "en" | "pt-BR";
+  /** Which rows to render. Defaults to "both". */
+  rows?: "row1" | "row2" | "both";
 }
 
 export function SocialProof({
@@ -255,10 +257,14 @@ export function SocialProof({
   row2,
   heading,
   locale = "pt-BR",
+  rows = "both",
 }: SocialProofProps) {
   const resolvedRow1 = row1 ?? (locale === "pt-BR" ? ROW1_PT : ROW1_EN);
   const resolvedRow2 = row2 ?? (locale === "pt-BR" ? ROW2_PT : ROW2_EN);
   const resolvedHeading = heading ?? HEADINGS[locale] ?? HEADINGS["pt-BR"];
+
+  const showRow1 = rows === "both" || rows === "row1";
+  const showRow2 = rows === "both" || rows === "row2";
 
   // Duplicate each row for seamless loop
   const track1 = [...resolvedRow1, ...resolvedRow1];
@@ -267,29 +273,35 @@ export function SocialProof({
   return (
     <section className="relative z-1 overflow-hidden bg-[#090911] py-16 lg:py-24">
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-8">
-        <h2 className="mb-10 text-center text-lg font-medium text-zinc-400 sm:text-xl">
-          {resolvedHeading}
-        </h2>
-      </div>
+      {showRow1 && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-8">
+          <h2 className="mb-10 text-center text-lg font-medium text-zinc-400 sm:text-xl">
+            {resolvedHeading}
+          </h2>
+        </div>
+      )}
 
       {/* Row 1 — scrolls left */}
-      <div className="relative mb-5 w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
-        <div className="vsp-track-left flex w-max gap-5">
-          {track1.map((t, i) => (
-            <TestimonialCard key={`r1-${t.name}-${i}`} t={t} />
-          ))}
+      {showRow1 && (
+        <div className={`relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)] ${showRow2 ? "mb-5" : ""}`}>
+          <div className="vsp-track-left flex w-max gap-5">
+            {track1.map((t, i) => (
+              <TestimonialCard key={`r1-${t.name}-${i}`} t={t} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Row 2 — scrolls right */}
-      <div className="relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
-        <div className="vsp-track-right flex w-max gap-5">
-          {track2.map((t, i) => (
-            <TestimonialCard key={`r2-${t.name}-${i}`} t={t} />
-          ))}
+      {showRow2 && (
+        <div className="relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
+          <div className="vsp-track-right flex w-max gap-5">
+            {track2.map((t, i) => (
+              <TestimonialCard key={`r2-${t.name}-${i}`} t={t} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

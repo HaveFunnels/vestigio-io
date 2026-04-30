@@ -43,12 +43,13 @@ const Home = () => {
 				<ClientGallery />
 			</HomeBigCard>
 			<MiniCalculator />
+			<SocialProof rows="row1" />
 			<FeaturesWithImage />
 			<SolutionLayers />
 			<VideoTestimonials />
 			<Counter />
 			<Features />
-			<SocialProof />
+			<SocialProof rows="row2" />
 			<FAQ />
 			<CallToAction />
 		</>

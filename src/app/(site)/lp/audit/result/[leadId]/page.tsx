@@ -6,6 +6,7 @@ import Script from "next/script";
 import Link from "next/link";
 import Image from "next/image";
 import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, CheckCircle2, ChevronDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 declare global {
 	interface Window {
@@ -57,6 +58,7 @@ interface LeadResponse {
 }
 
 export default function MiniAuditResultPage() {
+	const t = useTranslations("lp.audit_result");
 	const params = useParams<{ leadId: string }>();
 	const router = useRouter();
 	const leadId = params?.leadId;
@@ -115,11 +117,11 @@ export default function MiniAuditResultPage() {
 	// ── Open Paddle checkout ──
 	function openCheckout() {
 		if (!leadId || !window.Paddle || !paddleReady) {
-			setError("Sistema de pagamento carregando. Aguarde um momento.");
+			setError(t("error_payment_loading"));
 			return;
 		}
 		if (!LP_PRICE_ID) {
-			setError("Preços ainda não configurados. Entre em contato com o suporte.");
+			setError(t("error_prices_missing"));
 			return;
 		}
 		setLaunching(true);
@@ -133,7 +135,7 @@ export default function MiniAuditResultPage() {
 			});
 		} catch (err) {
 			console.error("[lp-result] checkout open failed:", err);
-			setError("Não foi possível abrir o checkout. Tente novamente.");
+			setError(t("error_checkout_failed"));
 		}
 		setTimeout(() => setLaunching(false), 1500);
 	}
@@ -161,7 +163,7 @@ export default function MiniAuditResultPage() {
 			const data: LeadResponse = await res.json();
 			setLead(data);
 		} catch {
-			setError("Erro de conexão. Atualize a página.");
+			setError(t("error_connection"));
 		}
 	}, [leadId]);
 
@@ -195,7 +197,7 @@ export default function MiniAuditResultPage() {
 				setTimeout(() => setShareCopied(false), 2000);
 			})
 			.catch(() => {
-				setError("Não foi possível copiar o link. Tente selecionar a barra de URL manualmente.");
+				setError(t("error_copy_failed"));
 			});
 	}
 
@@ -208,7 +210,7 @@ export default function MiniAuditResultPage() {
 	}
 
 	if (!lead) {
-		return <LoadingState message="Carregando seu diagnóstico…" />;
+		return <LoadingState message={t("loading")} />;
 	}
 
 	if (lead.status === "expired") {
@@ -276,14 +278,14 @@ export default function MiniAuditResultPage() {
 							{shareCopied ? (
 								<>
 									<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-									<span>Link copiado</span>
+									<span>{t("share_copied")}</span>
 								</>
 							) : (
 								<>
 									<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
 									</svg>
-									<span>Compartilhar</span>
+									<span>{t("share")}</span>
 								</>
 							)}
 						</button>
@@ -295,7 +297,7 @@ export default function MiniAuditResultPage() {
 					<div className={`mb-6 flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] px-5 py-4 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
 						<p className="text-sm text-zinc-300">
-							Seu diagnóstico foi realizado com sucesso. Confira os resultados abaixo.
+							{t("success_banner")}
 						</p>
 					</div>
 
@@ -313,7 +315,7 @@ export default function MiniAuditResultPage() {
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
 						</svg>
 						<span className="text-xs text-zinc-500">
-							Seus resultados ficam disponíveis por apenas{" "}
+							{t("timer_prefix")}{" "}
 							<CountdownTimer computedAt={computedAt} />
 						</span>
 					</div>
@@ -328,10 +330,10 @@ export default function MiniAuditResultPage() {
 						<header className="mb-3 flex items-end justify-between">
 							<div>
 								<span className="mb-2 inline-block rounded-full border border-zinc-700 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-									Gratuito
+									{t("badge_free")}
 								</span>
 								<h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
-									{negativeFindings.length} {negativeFindings.length === 1 ? "vazamento desbloqueado" : "vazamentos desbloqueados"} gratuitamente
+									{negativeFindings.length === 1 ? t("findings_unlocked_one", { count: negativeFindings.length }) : t("findings_unlocked_other", { count: negativeFindings.length })}
 								</h2>
 							</div>
 						</header>
@@ -369,10 +371,10 @@ export default function MiniAuditResultPage() {
 								}}
 							>
 								<Sparkles className="mr-1 inline h-3 w-3" />
-								Premium
+								{t("badge_premium")}
 							</span>
 							<h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
-								{blurredFindings.length} vazamentos para você desbloquear
+								{t("findings_to_unlock", { count: blurredFindings.length })}
 							</h2>
 						</header>
 
@@ -388,7 +390,7 @@ export default function MiniAuditResultPage() {
 
 					{/* Footer */}
 					<footer className="mt-12 border-t border-zinc-900 pt-6 text-center text-xs text-zinc-700">
-						Diagnóstico realizado pela Vestigio · Amostra de {negativeFindings.length} de {totalFindings}+ findings
+						{t("footer", { visible: negativeFindings.length, total: totalFindings })}
 					</footer>
 				</main>
 			</div>
@@ -447,6 +449,7 @@ function PreviewCard({
 	negativeFindings: MiniFinding[];
 	revealed: boolean;
 }) {
+	const t = useTranslations("lp.audit_result");
 	const googleFavicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(preview.host)}&sz=64`;
 	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
 
@@ -457,10 +460,10 @@ function PreviewCard({
 
 	// Response time quality badge
 	const rtMs = preview.response_time_ms;
-	const rtBadge = rtMs < 300 ? { text: "Ótimo", color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" }
-		: rtMs < 800 ? { text: "Bom", color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" }
-		: rtMs < 2000 ? { text: "Lento", color: "border-amber-500/20 bg-amber-500/10 text-amber-400" }
-		: { text: "Crítico", color: "border-red-500/20 bg-red-500/10 text-red-400" };
+	const rtBadge = rtMs < 300 ? { text: t("response_excellent"), color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" }
+		: rtMs < 800 ? { text: t("response_good"), color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" }
+		: rtMs < 2000 ? { text: t("response_slow"), color: "border-amber-500/20 bg-amber-500/10 text-amber-400" }
+		: { text: t("response_critical"), color: "border-red-500/20 bg-red-500/10 text-red-400" };
 
 	const sslActive = (preview.final_url || preview.url || "").startsWith("https");
 
@@ -498,7 +501,7 @@ function PreviewCard({
 
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
-						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">Diagnosticado</span>
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">{t("diagnosed")}</span>
 						<span className="h-1 w-1 rounded-full bg-zinc-700" />
 						<span className="font-mono text-[10px] text-zinc-500">{preview.host}</span>
 					</div>
@@ -515,7 +518,7 @@ function PreviewCard({
 						<svg className="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
 						</svg>
-						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Resposta</span>
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">{t("response")}</span>
 					</div>
 					<div className="mt-0.5 font-mono text-sm tabular-nums text-zinc-300">{preview.response_time_ms}ms</div>
 					<span className={`mt-1 inline-block rounded border px-2 py-0.5 text-[9px] font-medium ${rtBadge.color}`}>{rtBadge.text}</span>
@@ -526,11 +529,11 @@ function PreviewCard({
 							? <ShieldCheck className="h-3 w-3 text-zinc-600" />
 							: <ShieldX className="h-3 w-3 text-zinc-600" />
 						}
-						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">SSL</span>
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">{t("ssl")}</span>
 					</div>
-					<div className="mt-0.5 font-mono text-sm text-zinc-300">{sslActive ? "HTTPS" : "HTTP"}</div>
+					<div className="mt-0.5 font-mono text-sm text-zinc-300">{sslActive ? t("ssl_https") : t("ssl_http")}</div>
 					<span className={`mt-1 inline-block rounded border px-2 py-0.5 text-[9px] font-medium ${sslActive ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}>
-						{sslActive ? "Ativo" : "Inativo"}
+						{sslActive ? t("ssl_active") : t("ssl_inactive")}
 					</span>
 				</div>
 				<div>
@@ -538,7 +541,7 @@ function PreviewCard({
 						<svg className="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
 						</svg>
-						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Vazamentos</span>
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">{t("leaks")}</span>
 					</div>
 					<div className="mt-0.5 font-mono text-sm tabular-nums text-red-300">{totalFindings}</div>
 					{impactLabel && (
@@ -569,13 +572,10 @@ function PreviewCard({
 				</div>
 				<div className="min-w-0 flex-1">
 					<h3 className="text-sm font-semibold text-zinc-100">
-						{score >= 50 ? "Oportunidades de conversão detectadas" : score >= 30 ? "Problemas significativos encontrados" : "Vazamentos críticos detectados"}
+						{score >= 50 ? t("score_opportunities") : score >= 30 ? t("score_problems") : t("score_critical")}
 					</h3>
 					<p className="mt-1 text-xs leading-relaxed text-zinc-400">
-						{score >= 50
-							? "Sua landing funciona, mas está vazando receita em pontos específicos."
-							: "Sua landing tem problemas que estão custando dinheiro todos os dias."
-						}
+						{score >= 50 ? t("score_desc_ok") : t("score_desc_bad")}
 					</p>
 				</div>
 			</div>
@@ -583,13 +583,17 @@ function PreviewCard({
 	);
 }
 
-const SEVERITY_PT: Record<string, string> = {
-	critical: "Crítico",
-	high: "Alto",
-	medium: "Médio",
-	low: "Baixo",
-	positive: "Positivo",
-};
+function useSeverityLabel(severity: string): string {
+	const t = useTranslations("lp.audit_result");
+	const map: Record<string, string> = {
+		critical: t("severity_critical"),
+		high: t("severity_high"),
+		medium: t("severity_medium"),
+		low: t("severity_low"),
+		positive: t("severity_positive"),
+	};
+	return map[severity] || severity;
+}
 
 function FindingCard({
 	finding,
@@ -600,8 +604,10 @@ function FindingCard({
 	index: number;
 	revealed: boolean;
 }) {
+	const t = useTranslations("lp.audit_result");
 	const [expanded, setExpanded] = useState(false);
 	const severityClass = severityClasses(finding.severity);
+	const severityLabel = useSeverityLabel(finding.severity);
 	const impact = finding.impact;
 	const isPositive = finding.severity === "positive";
 
@@ -624,7 +630,7 @@ function FindingCard({
 				<div className="min-w-0 flex-1">
 					<div className="flex flex-wrap items-center gap-1.5">
 						<span className={`rounded border px-2 py-0.5 text-[10px] font-medium ${severityClass.label}`}>
-							{SEVERITY_PT[finding.severity] || finding.severity}
+							{severityLabel}
 						</span>
 						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
 							{finding.category}
@@ -635,7 +641,7 @@ function FindingCard({
 					</h3>
 					{impact && !isPositive && (
 						<p className="mt-1 font-mono text-[11px] tabular-nums text-red-400/90">
-							Impacto estimado: ↓ {formatBRL(impact.min_brl_cents)}–{formatBRL(impact.max_brl_cents)}/mês
+							{t("impact_estimated")}: ↓ {formatBRL(impact.min_brl_cents)}–{formatBRL(impact.max_brl_cents)}/mês
 						</p>
 					)}
 					{expanded && (
@@ -659,7 +665,7 @@ function FindingCard({
 							{/* Como corrigir */}
 							{!isPositive && finding.impact_hint && (
 								<div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3">
-									<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">Como corrigir</p>
+									<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">{t("how_to_fix")}</p>
 									<p className="mt-1 text-[13px] leading-relaxed text-zinc-300">{finding.impact_hint}</p>
 								</div>
 							)}
@@ -683,6 +689,7 @@ function CostSummaryBanner({
 	hiddenCount: number;
 	revealed: boolean;
 }) {
+	const t = useTranslations("lp.audit_result");
 	const summary = summarizeMiniImpact(findings.map((f) => f.impact));
 	if (!summary || summary.count === 0) return null;
 
@@ -695,14 +702,10 @@ function CostSummaryBanner({
 			<div className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-red-500/10 blur-[80px]" />
 			<div className="relative">
 				<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-red-400/80">
-					Exposição mensal estimada
+					{t("exposure_label")}
 				</p>
 				<h3 className="mt-2 font-mono text-lg font-semibold leading-tight tabular-nums text-zinc-100 sm:text-2xl">
-					{findings.length + hiddenCount} problemas custando entre{" "}
-					<span className="text-red-300">{formatBRL(summary.min_brl_cents)}</span>{" "}
-					e{" "}
-					<span className="text-red-300">{formatBRL(summary.max_brl_cents)}</span>{" "}
-					por mês
+					{t("exposure_text", { count: findings.length + hiddenCount, min: formatBRL(summary.min_brl_cents), max: formatBRL(summary.max_brl_cents) })}
 				</h3>
 			</div>
 		</div>
@@ -720,6 +723,7 @@ function UnlockSection({
 	onCheckout: () => void;
 	launching: boolean;
 }) {
+	const t = useTranslations("lp.audit_result");
 	const summary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
 	const totalImpact = summary && summary.count > 0
 		? formatBRL(summary.max_brl_cents)
@@ -740,10 +744,10 @@ function UnlockSection({
 			{/* Content */}
 			<div className="min-w-0 flex-1">
 				<h3 className="text-sm font-bold text-zinc-100 sm:text-base">
-					{launching ? "Abrindo checkout…" : "Desbloquear diagnóstico completo"}
+					{launching ? t("unlock_launching") : t("unlock_title")}
 				</h3>
 				<p className="mt-1 text-xs leading-relaxed text-zinc-400 sm:text-sm">
-					O diagnóstico completo analisa 15.000+ sinais incluindo navegação automatizada, análise de copy e monitoramento contínuo. Recupere até <span className="font-semibold text-emerald-400">{totalImpact}/mês</span>.
+					{t("unlock_desc", { amount: totalImpact })}
 				</p>
 			</div>
 
@@ -794,15 +798,10 @@ function AuditingState({
 	completed?: boolean;
 	onViewResults?: () => void;
 }) {
+	const t = useTranslations("lp.audit_result");
 	const [stageIdx, setStageIdx] = useState(0);
-	const stages = [
-		"Buscando sua landing page",
-		"Analisando o HTML",
-		"Verificando sinais de confiança",
-		"Analisando CTAs",
-		"Avaliando fricção de formulários",
-		"Compilando seu diagnóstico",
-	];
+	const stagesRaw = t.raw("stages") as string[];
+	const stages = stagesRaw;
 
 	const allStagesDone = completed || stageIdx >= stages.length - 1;
 
@@ -839,10 +838,10 @@ function AuditingState({
 						/>
 					)}
 					<h1 className="text-2xl font-semibold text-zinc-100">
-						O diagnóstico está demorando mais que o esperado
+						{t("timeout_title")}
 					</h1>
 					<p className="mt-3 text-sm text-zinc-500">
-						Isso pode acontecer se o site estiver lento ou temporariamente indisponível. Verifique se o domínio está correto e tente novamente.
+						{t("timeout_desc")}
 					</p>
 					<div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 font-mono text-sm text-zinc-300">
 						{lead.domain}
@@ -852,10 +851,10 @@ function AuditingState({
 							href="/lp/audit"
 							className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-12px_rgba(16,185,129,0.5)] transition-colors hover:bg-emerald-500"
 						>
-							Tentar novamente
+							{t("timeout_retry")}
 						</a>
 						<a href="mailto:support@vestigio.io" className="text-xs text-zinc-600 transition-colors hover:text-zinc-400">
-							Precisa de ajuda? Fale com o suporte
+							{t("timeout_support")}
 						</a>
 					</div>
 				</div>
@@ -896,15 +895,12 @@ function AuditingState({
 
 				<h1 className="text-2xl font-semibold text-zinc-100">
 					{showButton
-						? `Diagnóstico de ${lead.domain || "seu site"} concluído`
-						: `Diagnosticando ${lead.domain || "seu site"}…`
+						? t("auditing_complete_title", { domain: lead.domain || t("your_site") })
+						: t("auditing_title", { domain: lead.domain || t("your_site") })
 					}
 				</h1>
 				<p className="mt-2 text-sm text-zinc-500">
-					{showButton
-						? "Encontramos findings no seu site. Clique abaixo para ver o resultado."
-						: "Isso geralmente leva 5–10 segundos. Não feche esta aba."
-					}
+					{showButton ? t("auditing_complete_desc") : t("auditing_desc")}
 				</p>
 
 				{/* Domain confirmation */}
@@ -956,7 +952,7 @@ function AuditingState({
 						onClick={onViewResults}
 						className="mt-8 w-full rounded-xl bg-emerald-500 px-7 py-3.5 text-sm font-semibold text-emerald-950 shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)]"
 					>
-						Ver meu diagnóstico
+						{t("auditing_view")}
 					</button>
 				)}
 			</div>
@@ -965,7 +961,8 @@ function AuditingState({
 }
 
 function ExpiredState({ lead, onCheckout, launching }: { lead: LeadResponse; onCheckout: () => void; launching: boolean }) {
-	const domain = lead.domain || "seu site";
+	const t = useTranslations("lp.audit_result");
+	const domain = lead.domain || t("your_site");
 	const googleFavicon = lead.domain
 		? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(lead.domain)}&sz=64`
 		: null;
@@ -999,43 +996,30 @@ function ExpiredState({ lead, onCheckout, launching }: { lead: LeadResponse; onC
 
 				{/* Headline */}
 				<h1 className="text-2xl font-semibold text-zinc-100 sm:text-3xl">
-					Que pena, seu diagnóstico expirou
+					{t("expired_title")}
 				</h1>
 
 				{/* Impact reminder — re-triggers loss aversion */}
 				{totalFindings && summary && summary.count > 0 ? (
 					<div className="mt-5 rounded-xl border border-red-500/20 bg-red-950/20 px-5 py-4">
 						<p className="text-sm leading-relaxed text-zinc-300">
-							Encontramos{" "}
-							<span className="font-semibold text-red-300">{totalFindings} problemas</span>{" "}
-							em <span className="font-mono text-zinc-200">{domain}</span> custando entre{" "}
-							<span className="font-semibold text-red-300">{formatBRL(summary.min_brl_cents)}</span>{" "}
-							e{" "}
-							<span className="font-semibold text-red-300">{formatBRL(summary.max_brl_cents)}</span>{" "}
-							por mês
+							{t("expired_impact", { count: totalFindings, domain, min: formatBRL(summary.min_brl_cents), max: formatBRL(summary.max_brl_cents) })}
 						</p>
 						{hiddenCount && hiddenCount > 0 && (
 							<p className="mt-2 text-xs text-zinc-500">
-								Incluindo {hiddenCount} findings que você ainda não viu.
+								{t("expired_hidden", { count: hiddenCount })}
 							</p>
 						)}
 					</div>
 				) : (
 					<p className="mt-4 text-sm text-zinc-500">
-						Encontramos problemas em <span className="font-mono text-zinc-300">{domain}</span> que estavam custando dinheiro.
-						O link expirou, mas você pode recuperar o diagnóstico.
+						{t("expired_fallback", { domain })}
 					</p>
 				)}
 
 				{/* What you get — bullet points */}
 				<ul className="mt-6 space-y-2.5 text-left">
-					{[
-						"15.000+ sinais analisados por auditoria estática",
-						"Navegação automatizada completa via browser real",
-						"Análise de copy, CTAs e fricção de formulários",
-						"Detecção de regressão ciclo a ciclo",
-						"Impacto financeiro quantificado em cada finding",
-					].map((text) => (
+					{(t.raw("expired_features") as string[]).map((text) => (
 						<li key={text} className="flex items-start gap-2.5">
 							<svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -1052,11 +1036,11 @@ function ExpiredState({ lead, onCheckout, launching }: { lead: LeadResponse; onC
 					disabled={launching}
 					className="mt-7 block w-full rounded-xl bg-emerald-500 px-7 py-3.5 text-center text-sm font-semibold text-white shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] disabled:opacity-60"
 				>
-					{launching ? "Abrindo checkout…" : `Recuperar meu diagnóstico em ${domain}`}
+					{launching ? t("unlock_launching") : t("expired_cta", { domain })}
 				</button>
 
 				<p className="mt-3 text-xs text-zinc-600">
-					O diagnóstico completo analisa 15.000+ sinais.
+					{t("expired_footer")}
 				</p>
 			</div>
 		</div>
@@ -1092,12 +1076,13 @@ function LoadingState({ message }: { message: string }) {
 function ErrorState({
 	message,
 	onRetry,
-	retryLabel = "Tentar novamente",
+	retryLabel,
 }: {
 	message: string;
 	onRetry: () => void;
 	retryLabel?: string;
 }) {
+	const t = useTranslations("lp.audit_result");
 	return (
 		<div className="relative flex min-h-screen items-center justify-center bg-[#070710] px-4">
 			<DotGrid />
@@ -1107,14 +1092,14 @@ function ErrorState({
 						<path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
 					</svg>
 				</div>
-				<h1 className="text-xl font-semibold text-zinc-100">Algo deu errado</h1>
+				<h1 className="text-xl font-semibold text-zinc-100">{t("error_title")}</h1>
 				<p className="mt-2 text-sm text-zinc-500">{message}</p>
 				<button
 					type="button"
 					onClick={onRetry}
 					className="mt-6 rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
 				>
-					{retryLabel}
+					{retryLabel || t("error_retry")}
 				</button>
 			</div>
 		</div>

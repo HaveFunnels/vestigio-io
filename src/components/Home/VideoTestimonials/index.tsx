@@ -218,6 +218,12 @@ const VideoTestimonials = () => {
       </div>
 
       <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
+        {/* Shiny outline card — transparent bg, emerald border glow */}
+        <div className="shiny-card relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.12),0_0_50px_-10px_rgba(16,185,129,0.10)] sm:p-10 lg:p-14">
+          {/* Emerald accent lines */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/15 to-transparent" />
+
           {/* Header — arrows flanking the title pointing down to videos */}
           <div className="relative mb-8 text-center sm:mb-10">
             <div className="flex items-center justify-center gap-3 sm:gap-5">
@@ -263,6 +269,7 @@ const VideoTestimonials = () => {
               />
             ))}
           </div>
+        </div>
       </div>
     </section>
   );

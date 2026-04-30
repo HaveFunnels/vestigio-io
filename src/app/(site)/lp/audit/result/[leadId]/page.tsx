@@ -662,11 +662,18 @@ function FindingCard({
 									))}
 								</ul>
 							)}
-							{/* Como corrigir */}
+							{/* Impact hint */}
 							{!isPositive && finding.impact_hint && (
+								<p className="inline-flex items-center gap-1.5 text-xs text-red-400/80">
+									<span>↳</span>
+									<span>{finding.impact_hint}</span>
+								</p>
+							)}
+							{/* Como corrigir */}
+							{!isPositive && finding.suggestion && (
 								<div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3">
 									<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">{t("how_to_fix")}</p>
-									<p className="mt-1 text-[13px] leading-relaxed text-zinc-300">{finding.impact_hint}</p>
+									<p className="mt-1 text-[13px] leading-relaxed text-zinc-300">{finding.suggestion}</p>
 								</div>
 							)}
 						</div>

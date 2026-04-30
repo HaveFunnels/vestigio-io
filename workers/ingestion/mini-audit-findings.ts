@@ -53,6 +53,11 @@ export interface MiniFinding {
 	body: string; // shown when expanded
 	impact_hint: string; // short phrase like "~25% drop"
 	/**
+	 * Actionable remediation suggestion shown in the "Como corrigir"
+	 * section of the result page. Null for positive findings.
+	 */
+	suggestion?: string | null;
+	/**
 	 * BRL impact range derived from the lead's declared revenue+AOV.
 	 * Null for positive findings (nothing lost), and for rare legacy
 	 * detectors without a mapped inference_key.
@@ -224,6 +229,9 @@ const detectRevenuePathFragility: Detector = ({
 			impact_hint: checkoutBroken
 				? "Checkout inacessível — perda direta"
 				: "10-25% de queda no momento de pagamento",
+			suggestion: checkoutBroken
+				? "Verifique se a rota /checkout ou /cart do seu site está acessível. Teste em modo anônimo. Se usa plataforma terceira, confirme que a integração está ativa e as credenciais válidas."
+				: "Adicione selos de segurança ('Pagamento Seguro', 'SSL Ativo') visíveis acima do fold na sua landing. Se o checkout é externo, mantenha consistência visual (logo, cores) na página de destino.",
 			evidence_refs,
 		},
 		checkoutBroken ? "critical_path_broken" : "trust_boundary_crossed",
@@ -291,6 +299,7 @@ const detectTrustComposite: Detector = ({ parsed, rawHtml, business }) => {
 			title: `Confiança composta fraca: ${missing.length} sinais ausentes`,
 			body: `Seu site não expõe ${missing.join(", ")}. Isoladamente, cada um desses é ignorável — a combinação é o sinal. ${BASELINE_CORPUS_PT}: lojas com 2+ desses marcadores ausentes têm taxa de abandono consistentemente maior no momento da decisão de compra.${aovLine}`,
 			impact_hint: "Combinação sinaliza abandono em fase de decisão",
+			suggestion: "Crie páginas dedicadas de Política de Privacidade, Política de Trocas/Devolução e uma página de Contato com email, telefone ou WhatsApp. Linke no footer de todas as páginas. O rodapé é onde o visitante busca essas informações antes de comprar.",
 			evidence_refs: missing.slice(0, 3),
 		},
 		"policy_gap",
@@ -324,6 +333,7 @@ const detectCtaBelowFold: Detector = ({ rawHtml, parsed, business }) => {
 			title: "CTA principal abaixo da dobra no mobile",
 			body: `Nos primeiros 8KB do HTML da sua página (aproximadamente o que cabe na dobra mobile de 375px) não encontramos nenhum verbo comercial forte. A página tem ${linkCount} links, então não é uma "em construção" — é que o CTA de compra está posicionado mais abaixo. ${BASELINE_CORPUS_PT}: ~60% dos visitantes mobile nunca rolam. Se o CTA não está visível no primeiro render, essa fração simplesmente não sabe o que você vende.`,
 			impact_hint: "~60% do tráfego mobile nunca vê abaixo da dobra",
+			suggestion: "Mova seu CTA principal (botão de compra, WhatsApp ou formulário) para acima da dobra — visível sem scroll. Use um verbo de ação direto no botão. Teste em celular: o botão precisa aparecer na primeira tela.",
 			evidence_refs: [
 				"Sem verbo comercial nos primeiros 8KB",
 				`${linkCount} links na página (não é stub)`,
@@ -364,6 +374,7 @@ const detectCompetingCtas: Detector = ({ parsed, business }) => {
 			title: `${ctaLinkCount} CTAs primários competindo na mesma página`,
 			body: `Detectamos ${ctaLinkCount} CTAs com verbos de ação comercial forte ("comprar", "cadastrar", "começar") no mesmo layout${formCount >= 2 ? `, com ${formCount} formulários ativos` : ""}. ${BASELINE_CORPUS_PT}: páginas com mais de 1 CTA primário reduzem conversão em cerca de 25% — o visitante pausa para escolher e muitos saem sem clicar em nenhum.`,
 			impact_hint: "~25% de queda na conversão por competição de CTAs",
+			suggestion: "Defina UM CTA primário por seção da página. Reduza os CTAs secundários em tamanho e destaque visual. O visitante deve saber exatamente qual botão clicar sem pensar.",
 			evidence_refs: [
 				`${ctaLinkCount} CTAs comerciais detectados`,
 				formCount >= 2 ? `${formCount} formulários ativos` : "1 formulário primário",
@@ -398,6 +409,7 @@ const detectVagueCta: Detector = ({ parsed, business }) => {
 			title: `Seu CTA diz "${example}" — verbo que não vende`,
 			body: `Verbos como "saiba mais" e "clique aqui" estão entre os CTAs de pior performance já medidos. Verbos específicos ("Ver meu plano", "Começar teste de 14 dias") convertem cerca de 90% mais porque dizem ao visitante exatamente o que ele vai receber e o que acontece depois. ${BASELINE_CORPUS_PT}: trocar 1 CTA vago por 1 específico é uma das mudanças de maior retorno-sobre-esforço que a gente vê.`,
 			impact_hint: "~90% de lift ao trocar por verbo específico",
+			suggestion: "Substitua textos genéricos como 'Saiba mais' e 'Clique aqui' por verbos de ação específicos: 'Comprar agora', 'Agendar demonstração', 'Começar teste grátis'. O botão deve dizer exatamente o que acontece ao clicar.",
 			evidence_refs: [
 				`CTA detectado: "${example}"`,
 				`${vagueLinks.length} CTA(s) vago(s) total`,
@@ -421,6 +433,7 @@ const detectFormFriction: Detector = ({ parsed, business }) => {
 			title: `${formCount} formulários competindo numa única página`,
 			body: `Sua landing tem ${formCount} formulários ativos (newsletter, contato, busca, login, etc.). Múltiplos formulários na mesma página geram fadiga de decisão — o visitante não sabe qual importa e a maioria sai sem preencher nenhum. ${BASELINE_CORPUS_PT}: landings de alta conversão têm um único formulário primário por scroll view.`,
 			impact_hint: "Fricção composta reduz conversão em ~40%",
+			suggestion: "Reduza para 1 formulário principal por página. Mova formulários secundários (newsletter, busca) para o footer ou páginas dedicadas. O formulário que resta deve ter o menor número de campos possível.",
 			evidence_refs: [`${formCount} formulários detectados`],
 		},
 		"friction_on_critical_path",
@@ -448,6 +461,7 @@ const detectMissingAnalytics: Detector = ({ rawHtml, parsed, business }) => {
 			title: "Nenhum analytics ou pixel de conversão detectado",
 			body: `Não encontramos Google Analytics, GTM, Meta Pixel, nem qualquer plataforma de analytics no HTML da página. Sem medição, você não sabe quais canais trazem receita, quais páginas vazam visitantes, ou se mudanças melhoram ou pioram conversão. Todo investimento em tráfego está voando cego.`,
 			impact_hint: "Atribuição impossível — ROI invisível",
+			suggestion: "Instale o Google Tag Manager e configure GA4 com eventos de conversão (compra, lead, clique no WhatsApp). Se investe em ads, adicione o Meta Pixel. Setup básico leva 30 minutos e permite saber exatamente de onde vem cada real.",
 			evidence_refs: ["Sem GA/GTM no HTML", "Sem Meta Pixel", "Sem scripts de analytics"],
 		},
 		"measurement_coverage",
@@ -473,6 +487,7 @@ const detectNoLazyImages: Detector = ({ rawHtml, business }) => {
 			title: `${nonLazyCount} de ${imgTags.length} imagens carregam de uma vez`,
 			body: `Sua página tem ${imgTags.length} imagens e apenas ${lazyCount} usam lazy loading. Todas as imagens são baixadas imediatamente, mesmo as que estão fora da tela, travando o carregamento e aumentando o tempo de interação. Cada segundo adicional de load time reduz conversão em ~7%.`,
 			impact_hint: "Lentidão percebida ↑ abandono mobile",
+			suggestion: "Adicione loading='lazy' em todas as <img> abaixo da dobra. Mantenha apenas as imagens visíveis no primeiro viewport com carregamento imediato. Em WordPress, ative lazy loading nativo. Em Shopify, o tema já suporta — verifique se está habilitado.",
 			evidence_refs: [`${imgTags.length} <img> tags`, `${lazyCount} com lazy loading`],
 		},
 		"friction_on_critical_path",
@@ -495,6 +510,9 @@ const detectWeakMetaDescription: Detector = ({ parsed, business }) => {
 				? `Sua meta description tem apenas ${desc.length} caracteres ("${desc.slice(0, 60)}…"). Esse é o texto que aparece no Google quando alguém busca seu produto. Com uma descrição rasa, o clique vai pro concorrente que comunica valor em 160 caracteres. Cada clique perdido no orgânico é tráfego gratuito desperdiçado — receita que você não paga pra adquirir mas também não captura.`
 				: `Sua página não declara meta description. O Google gera uma automaticamente cortando trechos aleatórios do HTML — raramente comunica seu diferencial. O resultado: seu concorrente com description otimizada captura o clique. Você perde tráfego gratuito que não custa nada adquirir.`,
 			impact_hint: desc ? "Tráfego gratuito perdido pro concorrente" : "Você não controla sua vitrine no Google",
+			suggestion: desc
+				? "Reescreva a meta description com 120-160 caracteres. Inclua seu diferencial principal, uma prova (número de clientes, anos de mercado) e um CTA implícito. Pense nela como o anúncio gratuito da sua página no Google."
+				: "Adicione uma tag <meta name='description'> com 120-160 caracteres no <head>. Descreva o que o visitante ganha ao clicar — não o que você faz, mas o que ele resolve. É seu anúncio gratuito no Google.",
 			evidence_refs: desc ? [`${desc.length} chars — concorrentes usam 120-160`] : ["Google está escolhendo seu pitch de vendas"],
 		},
 		"unclear_conversion_intent",
@@ -514,6 +532,7 @@ const detectMissingStructuredData: Detector = ({ parsed, business }) => {
 			title: "Invisível para rich snippets e AI agents",
 			body: `Sua página não declara dados estruturados (JSON-LD). Enquanto concorrentes aparecem no Google com estrelas, preço e imagem no resultado de busca, o seu é texto puro. Rich snippets capturam 58% mais cliques — cada busca onde seu concorrente tem card visual e você não é receita perdida. Além disso, AI agents (ChatGPT, Gemini, Perplexity) priorizam páginas com Schema.org na hora de recomendar produtos.`,
 			impact_hint: "Concorrentes com cards visuais roubam seus cliques",
+			suggestion: "Adicione JSON-LD no <head> da página. Para e-commerce: use Schema Product (com preço e avaliação). Para serviços: use Schema LocalBusiness ou Organization. Para conteúdo: use FAQPage. Ferramentas como schema.org ou o Schema Markup Generator do Merkle geram o código automaticamente.",
 			evidence_refs: ["Sem Schema.org", "Sem estrelas/preço no Google", "Invisível pra AI agents"],
 		},
 		"unclear_conversion_intent",
@@ -544,6 +563,7 @@ const detectNoSocialProof: Detector = ({ rawHtml, business }) => {
 			title: "Nenhum sinal de prova social detectado",
 			body: `Não encontramos depoimentos, avaliações, estrelas, ou menções a Trustpilot/Reclame Aqui na página. 92% dos consumidores leem avaliações antes de comprar. Sem prova social visível, cada visitante precisa confiar apenas na sua promessa — e a maioria não vai.`,
 			impact_hint: "92% decidem baseado em reviews",
+			suggestion: "Adicione pelo menos 3 depoimentos reais na landing page — com nome, foto e resultado concreto ('Aumentei 40% em 2 meses'). Se tiver avaliações em Google ou Reclame Aqui, mostre a nota com link. Depoimentos em vídeo convertem 2x mais que texto.",
 			evidence_refs: ["Sem depoimentos", "Sem estrelas/ratings", "Sem plataformas de review"],
 		},
 		"trust_boundary_crossed",
@@ -563,6 +583,7 @@ const detectRedirectChain: Detector = ({ response, business }) => {
 			title: `${response.redirect_chain.length} redirecionamentos antes de carregar`,
 			body: `Sua página passa por ${response.redirect_chain.length} redirects antes de renderizar (${response.redirect_chain.map((r) => r.status_code).join(" → ")}). Cada redirecionamento adiciona 100-500ms e perde ~5% dos visitantes mobile. Além da lentidão, crawlers de busca podem indexar a URL errada.`,
 			impact_hint: "~5% perda por hop em mobile",
+			suggestion: "Configure redirecionamentos para resolver em no máximo 1 hop. Se usa www → non-www (ou vice-versa), faça direto no servidor/CDN sem intermediários. Verifique se HTTP → HTTPS também não passa por múltiplos saltos.",
 			evidence_refs: response.redirect_chain.slice(0, 3).map((r) => `${r.status_code} → ${new URL(r.url).hostname}`),
 		},
 		"friction_on_critical_path",
@@ -582,6 +603,7 @@ const detectMissingCanonical: Detector = ({ parsed, business }) => {
 			title: "Autoridade da página diluída entre URLs duplicadas",
 			body: `Sem <link rel="canonical">, o Google pode estar indexando 2, 3 ou mais versões da mesma página (www vs sem www, http vs https, com/sem barra final). Cada versão compete consigo mesma no ranking — em vez de uma página forte, você tem várias fracas. O tráfego orgânico que deveria chegar concentrado se dispersa, e cada variante duplicada é receita orgânica que você está dividindo com... você mesmo.`,
 			impact_hint: "Suas páginas competem entre si no Google",
+			suggestion: "Adicione <link rel='canonical' href='URL_PRINCIPAL'> no <head> de cada página. Use a versão HTTPS, sem www (ou com www — escolha uma e mantenha). A maioria dos CMSs (WordPress, Shopify) tem configuração nativa para isso.",
 			evidence_refs: ["Canonical ausente — URLs podem estar duplicadas"],
 		},
 		"unclear_conversion_intent",
@@ -601,6 +623,7 @@ const detectThinContent: Detector = ({ parsed, business }) => {
 			title: `Página não tem argumento suficiente para fechar a venda`,
 			body: `Sua landing tem apenas ${parsed.body_word_count} palavras. Para converter, uma página precisa endereçar objeções ("será que funciona?"), demonstrar valor ("o que ganho?"), provar com evidência ("quem mais usa?") e criar urgência ("por que agora?"). Com ${parsed.body_word_count} palavras, não há espaço para esse argumento. O visitante chega, não encontra razão pra agir, e sai — levando a receita potencial.`,
 			impact_hint: "Sem argumento = sem conversão",
+			suggestion: "Expanda o conteúdo para pelo menos 500 palavras cobrindo: (1) qual problema você resolve, (2) como funciona, (3) prova social/depoimentos, (4) objeções comuns respondidas, (5) CTA claro. Não encha com texto — cada parágrafo deve avançar o argumento de venda.",
 			evidence_refs: [`${parsed.body_word_count} palavras — insuficiente para persuadir`],
 		},
 		"unclear_conversion_intent",
@@ -623,6 +646,7 @@ const detectExcessiveExternalScripts: Detector = ({ parsed, business }) => {
 			title: `${externalScripts.length} scripts externos de ${uniqueHosts.length} domínios diferentes`,
 			body: `Sua página carrega ${externalScripts.length} scripts de ${uniqueHosts.length} domínios (${uniqueHosts.slice(0, 4).join(", ")}${uniqueHosts.length > 4 ? "…" : ""}). Cada script externo adiciona latência de DNS, TLS e download. Além do peso, cada domínio é uma dependência — se um CDN travar, sua página pode quebrar. O custo composto em performance mobile é significativo.`,
 			impact_hint: `${uniqueHosts.length} dependências externas`,
+			suggestion: "Audite cada script externo: remova os que não usa mais (chat widgets antigos, pixels inativos). Adie scripts não-críticos com async ou defer. Considere self-hosting de fontes ao invés de carregar do Google Fonts. Cada script removido melhora o tempo de carregamento.",
 			evidence_refs: uniqueHosts.slice(0, 3).map((h) => `Scripts de ${h}`),
 		},
 		"friction_on_critical_path",
@@ -642,6 +666,7 @@ const detectNoH1: Detector = ({ parsed, business }) => {
 			title: "Proposta de valor invisível nos primeiros 3 segundos",
 			body: `Sua página não tem headline principal (H1). O visitante decide em 3 segundos se fica ou sai — e escaneia a página de cima pra baixo buscando a resposta para "o que isso faz por mim?". Sem H1, essa resposta não existe na hierarquia visual. O olho não encontra âncora, o cérebro interpreta como "nada relevante aqui", e o bounce acontece antes de qualquer scroll.`,
 			impact_hint: "Visitante não encontra sua proposta de valor",
+			suggestion: "Adicione um H1 claro no topo da página que responda 'o que isso faz por mim?' em uma frase. Evite H1 genéricos como 'Bem-vindo'. Use o formato: '[Resultado desejado] para [público-alvo]'. Exemplo: 'Recupere receita que está vazando da sua loja'.",
 			evidence_refs: ["Sem headline (H1) — proposta de valor sem âncora visual"],
 		},
 		"unclear_conversion_intent",
@@ -662,6 +687,7 @@ const detectExternalForms: Detector = ({ parsed, business }) => {
 			title: `${externalForms.length} ${externalForms.length === 1 ? "formulário envia" : "formulários enviam"} dados para domínio externo`,
 			body: `${externalForms.length} ${externalForms.length === 1 ? "formulário" : "formulários"} na página ${externalForms.length === 1 ? "submete" : "submetem"} dados para ${externalForms.map((f) => f.target_host).filter(Boolean).join(", ") || "domínio externo"}. Quando um visitante preenche um formulário e é redirecionado para outro site, a quebra de contexto reduz drasticamente a taxa de conclusão — especialmente em mobile.`,
 			impact_hint: "Quebra de contexto na submissão",
+			suggestion: "Configure o form action para seu próprio domínio. Se usa ferramenta terceira (Mailchimp, HubSpot), integre via API no backend ao invés de submeter direto para o domínio deles. O visitante não deve sair da sua página ao preencher um formulário.",
 			evidence_refs: externalForms.slice(0, 2).map((f) => `Form → ${f.target_host || "externo"}`),
 		},
 		"trust_boundary_crossed",
@@ -681,6 +707,7 @@ const detectMissingLang: Detector = ({ parsed, business }) => {
 			title: "Público errado pode estar vendo sua página",
 			body: `Sem o atributo lang no HTML, o Google pode servir sua página para audiências no idioma errado. Ferramentas de tradução automática (que ~40% dos visitantes internacionais usam) podem ignorar o conteúdo. E quando um visitante que não lê português chega na sua página via busca — é tráfego desperdiçado: custo de servidor sem chance de conversão.`,
 			impact_hint: "Tráfego irrelevante desperdiçando recursos",
+			suggestion: "Adicione lang='pt-BR' (ou o idioma correto) na tag <html>. É uma mudança de 1 linha no template principal. Se atende múltiplos idiomas, use hreflang para indicar versões alternativas ao Google.",
 			evidence_refs: ["Sem lang — Google pode servir pra audiência errada"],
 		},
 		"unclear_conversion_intent",
@@ -700,6 +727,7 @@ const detectIframeOveruse: Detector = ({ parsed, business }) => {
 			title: `${parsed.iframes.length} iframes carregando simultaneamente`,
 			body: `Sua página embarca ${parsed.iframes.length} iframes (${parsed.iframes.slice(0, 3).map((i) => new URL(i.src).hostname).join(", ")}${parsed.iframes.length > 3 ? "…" : ""}). Cada iframe abre uma nova "mini-página" dentro da sua, com seu próprio DOM, CSS, JS e requests de rede. O custo de memória e CPU em mobile é multiplicativo, não aditivo.`,
 			impact_hint: "Performance mobile degradada",
+			suggestion: "Carregue iframes com lazy loading (loading='lazy') e considere substituir embeds pesados por imagens placeholder que só carregam o iframe ao clicar. Mapas do Google e vídeos do YouTube são os maiores vilões — use thumbnail + play button.",
 			evidence_refs: parsed.iframes.slice(0, 3).map((i) => `iframe: ${new URL(i.src).hostname}`),
 		},
 		"friction_on_critical_path",
@@ -735,6 +763,7 @@ const detectSpeedTrustCompound: Detector = ({ response, rawHtml, business }) => 
 			title: "Página lenta + sinais de confiança fracos — efeito composto",
 			body: `Sua página levou ${(response.response_time_ms / 1000).toFixed(1)}s para responder E não apresenta sinais claros de confiança (${missingSignals.join(", ")}). Isolados, cada problema reduz conversão em ~10%. Juntos, o efeito é multiplicativo: o visitante espera, chega numa página sem reforço de segurança, e o cérebro interpreta como risco. A taxa de abandono combinada pode atingir 30-40%.`,
 			impact_hint: "Efeito multiplicativo: lentidão × desconfiança",
+			suggestion: "Ataque os dois lados: (1) Otimize velocidade — comprima imagens, ative cache, reduza scripts. (2) Adicione sinais de confiança visíveis acima da dobra — selo de segurança, política de privacidade, depoimento. Corrigir só um não resolve — o efeito composto exige atacar ambos.",
 			evidence_refs: [`${(response.response_time_ms / 1000).toFixed(1)}s de resposta`, ...missingSignals],
 		},
 		"trust_break_in_checkout",
@@ -773,6 +802,7 @@ const detectWeakConversionPath: Detector = ({ parsed, rawHtml, business }) => {
 			title: "Caminho de conversão sem incentivo — 3 sinais ausentes",
 			body: `Detectamos ${weakCount} lacunas simultâneas no caminho de conversão: ${missing.join(", ")}. Cada ausência isolada reduz conversão em 5-15%. Mas quando o visitante encontra uma página sem CTA claro, sem prova de que outros compraram, e sem razão para agir agora — a conversão cai para perto de zero. O caminho de compra não existe funcionalmente.`,
 			impact_hint: `${weakCount}/3 pilares de conversão ausentes`,
+			suggestion: "Implemente os 3 pilares: (1) CTA direto com verbo de ação ('Comprar agora', 'Agendar'). (2) Prova social (depoimentos, número de clientes, avaliações). (3) Urgência real (estoque limitado, oferta com prazo, vagas restantes). A combinação dos 3 é o que converte — isolados, nenhum funciona tão bem.",
 			evidence_refs: missing,
 		},
 		"unclear_conversion_intent",
@@ -794,6 +824,7 @@ const detectSlowHeavyPage: Detector = ({ response, parsed, business }) => {
 			title: "Página lenta e pesada, mas com pouco conteúdo útil",
 			body: `Sua página leva ${(response.response_time_ms / 1000).toFixed(1)}s para carregar, usa ${parsed.scripts.length} scripts, mas tem apenas ${parsed.body_word_count} palavras de conteúdo. Todo o peso é overhead técnico, não valor para o visitante. O mobile sofre mais: baixa memória + scripts pesados = página travando em dispositivos populares no Brasil.`,
 			impact_hint: "Overhead técnico > conteúdo útil",
+			suggestion: "Audite os scripts: remova tracking inativo, widgets não usados, e bibliotecas carregadas mas não chamadas. Depois, expanda o conteúdo — adicione seções de benefícios, prova social e FAQ. O peso da página deve vir de argumento de venda, não de código morto.",
 			evidence_refs: [
 				`${(response.response_time_ms / 1000).toFixed(1)}s de resposta`,
 				`${parsed.scripts.length} scripts`,
@@ -828,6 +859,7 @@ const detectTrustlessCheckout: Detector = ({ parsed, rawHtml, business }) => {
 			title: "Formulário coleta pagamento sem sinais de segurança",
 			body: `Detectamos campos de pagamento (cartão, CPF, dados financeiros) sem sinais visíveis de segurança na página (${missing.join(", ")}). Quando um visitante está prestes a inserir dados do cartão e não vê nenhuma menção a SSL, privacidade ou segurança, a taxa de abandono no campo de pagamento ultrapassa 67%.`,
 			impact_hint: "67%+ abandonam sem sinal de segurança",
+			suggestion: "Antes de qualquer campo de pagamento, exiba: (1) selo de SSL/Pagamento Seguro, (2) link para Política de Privacidade, (3) ícones de bandeiras aceitas (Visa, Mastercard, Pix). Use texto como 'Seus dados estão protegidos por criptografia SSL de 256 bits'. Coloque esses sinais imediatamente acima do formulário de pagamento.",
 			evidence_refs: ["Campos de pagamento detectados", ...missing],
 		},
 		"trust_break_in_checkout",

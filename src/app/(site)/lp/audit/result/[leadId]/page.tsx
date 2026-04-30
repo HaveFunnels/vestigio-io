@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import Link from "next/link";
 import Image from "next/image";
+import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, CheckCircle2, ChevronDown } from "lucide-react";
 
 declare global {
 	interface Window {
@@ -242,10 +243,11 @@ export default function MiniAuditResultPage() {
 	}
 
 	// ── Results view ──
-	const { preview, visibleFindings, blurredFindings } = lead.result!;
+	const { preview, visibleFindings, blurredFindings, computedAt } = lead.result!;
 
-	// Only show negative findings — positives dilute urgency
+	// Separate negative vs positive — both shown, but only negatives count toward limit
 	const negativeFindings = visibleFindings.filter((f) => f.severity !== "positive");
+	const positiveFindings = visibleFindings.filter((f) => f.severity === "positive");
 	const totalFindings = negativeFindings.length + blurredFindings.length;
 
 	return (
@@ -273,9 +275,7 @@ export default function MiniAuditResultPage() {
 						>
 							{shareCopied ? (
 								<>
-									<svg className="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-										<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-									</svg>
+									<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
 									<span>Link copiado</span>
 								</>
 							) : (
@@ -291,6 +291,14 @@ export default function MiniAuditResultPage() {
 				</header>
 
 				<main className="mx-auto max-w-3xl px-4 py-10 sm:py-16">
+					{/* Success banner */}
+					<div className={`mb-6 flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] px-5 py-4 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
+						<CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
+						<p className="text-sm text-zinc-300">
+							Seu diagnóstico foi realizado com sucesso. Confira os resultados abaixo.
+						</p>
+					</div>
+
 					{/* Preview card — the proof */}
 					<PreviewCard
 						preview={preview}
@@ -299,23 +307,31 @@ export default function MiniAuditResultPage() {
 						revealed={revealed}
 					/>
 
-					{/* Urgency note */}
+					{/* Urgency timer */}
 					<div className={`mt-4 flex items-center justify-center gap-2 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<svg className="h-3.5 w-3.5 text-amber-400/70" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
 						</svg>
-						<span className="text-xs text-zinc-500">Seus resultados ficam disponíveis por 30 minutos</span>
+						<span className="text-xs text-zinc-500">
+							Seus resultados ficam disponíveis por apenas{" "}
+							<CountdownTimer computedAt={computedAt} />
+						</span>
 					</div>
 
-					{/* Findings */}
-					<section className={`mt-6 transition-opacity duration-700 sm:mt-8 ${revealed ? "opacity-100" : "opacity-0"}`}>
+					{/* First CTA — right after urgency timer */}
+					<div className={`mt-4 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
+						<UnlockSection negativeFindings={negativeFindings} blurredCount={blurredFindings.length} onCheckout={openCheckout} launching={launching} />
+					</div>
+
+					{/* Negative findings */}
+					<section className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<header className="mb-3 flex items-end justify-between">
 							<div>
-								<span className="mb-2 inline-block rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+								<span className="mb-2 inline-block rounded-full border border-zinc-700 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
 									Gratuito
 								</span>
 								<h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
-									{negativeFindings.length} vazamentos encontrados
+									{negativeFindings.length} {negativeFindings.length === 1 ? "vazamento desbloqueado" : "vazamentos desbloqueados"} gratuitamente
 								</h2>
 							</div>
 						</header>
@@ -327,21 +343,42 @@ export default function MiniAuditResultPage() {
 						</ul>
 					</section>
 
+					{/* Positive findings */}
+					{positiveFindings.length > 0 && (
+						<section className={`mt-6 transition-opacity duration-700 sm:mt-8 ${revealed ? "opacity-100" : "opacity-0"}`}>
+							<ul className="space-y-1.5">
+								{positiveFindings.map((f, i) => (
+									<FindingCard key={f.id} finding={f} index={i} revealed={revealed} />
+								))}
+							</ul>
+						</section>
+					)}
+
 					{/* Cost summary banner */}
 					<CostSummaryBanner findings={negativeFindings} hiddenCount={blurredFindings.length} revealed={revealed} />
 
-					{/* Blurred grid */}
+					{/* Locked findings grid */}
 					<section className={`mt-10 transition-opacity duration-1000 delay-1000 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
-						<header className="flex items-end justify-between border-b border-zinc-900 pb-3">
+						<header className="mb-4">
+							<span
+								className="mb-2 inline-block rounded-full border border-amber-400/30 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-400"
+								style={{
+									background: "linear-gradient(90deg, rgba(251,191,36,0.06), rgba(251,191,36,0.12), rgba(251,191,36,0.06))",
+									backgroundSize: "200% 100%",
+									animation: "title-underline-shimmer 3s ease-in-out infinite",
+								}}
+							>
+								<Sparkles className="mr-1 inline h-3 w-3" />
+								Premium
+							</span>
 							<h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
-								{blurredFindings.length} findings bloqueados
+								{blurredFindings.length} vazamentos para você desbloquear
 							</h2>
-							<span className="text-xs text-emerald-400/80">Premium</span>
 						</header>
 
 						<ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-2">
 							{blurredFindings.map((b) => (
-								<BlurredCard key={b.id} blurred={b} />
+								<LockedFindingCard key={b.id} blurred={b} onCheckout={openCheckout} />
 							))}
 						</ul>
 
@@ -351,7 +388,7 @@ export default function MiniAuditResultPage() {
 
 					{/* Footer */}
 					<footer className="mt-12 border-t border-zinc-900 pt-6 text-center text-xs text-zinc-700">
-						Diagnóstico realizado pela Vestigio · Amostra de {negativeFindings.length} de {totalFindings}+ findings · Válido por 30 minutos
+						Diagnóstico realizado pela Vestigio · Amostra de {negativeFindings.length} de {totalFindings}+ findings
 					</footer>
 				</main>
 			</div>
@@ -420,14 +457,12 @@ function PreviewCard({
 
 	// Response time quality badge
 	const rtMs = preview.response_time_ms;
-	const rtBadge = rtMs < 300 ? { text: "Ótimo", color: "text-emerald-400 bg-emerald-500/10" }
-		: rtMs < 800 ? { text: "Bom", color: "text-emerald-400 bg-emerald-500/10" }
-		: rtMs < 2000 ? { text: "Lento", color: "text-amber-400 bg-amber-500/10" }
-		: { text: "Crítico", color: "text-red-400 bg-red-500/10" };
+	const rtBadge = rtMs < 300 ? { text: "Ótimo", color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" }
+		: rtMs < 800 ? { text: "Bom", color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" }
+		: rtMs < 2000 ? { text: "Lento", color: "border-amber-500/20 bg-amber-500/10 text-amber-400" }
+		: { text: "Crítico", color: "border-red-500/20 bg-red-500/10 text-red-400" };
 
-	const httpBadge = preview.http_status === 200
-		? { text: "Sucesso", color: "text-emerald-400 bg-emerald-500/10" }
-		: { text: "Erro", color: "text-red-400 bg-red-500/10" };
+	const sslActive = (preview.final_url || preview.url || "").startsWith("https");
 
 	// Score: capped at 70, computed from findings severity
 	const baseScore = 70;
@@ -463,51 +498,51 @@ function PreviewCard({
 
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
-						<span className="text-xs font-medium uppercase tracking-wider text-emerald-400">Diagnosticado</span>
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">Diagnosticado</span>
 						<span className="h-1 w-1 rounded-full bg-zinc-700" />
-						<span className="font-mono text-xs text-zinc-500">{preview.host}</span>
+						<span className="font-mono text-[10px] text-zinc-500">{preview.host}</span>
 					</div>
 					<h1 className="mt-1 truncate text-xl font-semibold text-zinc-100" title={preview.title || preview.host}>
 						{preview.title || preview.host}
 					</h1>
-					{preview.description && (
-						<p className="mt-1 line-clamp-2 text-sm text-zinc-400">{preview.description}</p>
-					)}
 				</div>
 			</div>
 
-			{/* Stats strip with icons + badges */}
+			{/* Stats strip — Panorama-style */}
 			<div className="mt-5 grid grid-cols-3 gap-4 border-t border-zinc-800 pt-4">
 				<div>
 					<div className="flex items-center gap-1.5">
 						<svg className="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
 						</svg>
-						<span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">Resposta</span>
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Resposta</span>
 					</div>
-					<div className="mt-0.5 font-mono text-sm text-zinc-300">{preview.response_time_ms}ms</div>
-					<span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${rtBadge.color}`}>{rtBadge.text}</span>
+					<div className="mt-0.5 font-mono text-sm tabular-nums text-zinc-300">{preview.response_time_ms}ms</div>
+					<span className={`mt-1 inline-block rounded border px-2 py-0.5 text-[9px] font-medium ${rtBadge.color}`}>{rtBadge.text}</span>
 				</div>
 				<div>
 					<div className="flex items-center gap-1.5">
-						<svg className="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-							<path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
-						</svg>
-						<span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">HTTP</span>
+						{sslActive
+							? <ShieldCheck className="h-3 w-3 text-zinc-600" />
+							: <ShieldX className="h-3 w-3 text-zinc-600" />
+						}
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">SSL</span>
 					</div>
-					<div className="mt-0.5 font-mono text-sm text-zinc-300">{preview.http_status}</div>
-					<span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${httpBadge.color}`}>{httpBadge.text}</span>
+					<div className="mt-0.5 font-mono text-sm text-zinc-300">{sslActive ? "HTTPS" : "HTTP"}</div>
+					<span className={`mt-1 inline-block rounded border px-2 py-0.5 text-[9px] font-medium ${sslActive ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}>
+						{sslActive ? "Ativo" : "Inativo"}
+					</span>
 				</div>
 				<div>
 					<div className="flex items-center gap-1.5">
 						<svg className="h-3 w-3 text-zinc-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
 						</svg>
-						<span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">Vazamentos</span>
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">Vazamentos</span>
 					</div>
-					<div className="mt-0.5 font-mono text-sm text-red-300">{totalFindings}</div>
+					<div className="mt-0.5 font-mono text-sm tabular-nums text-red-300">{totalFindings}</div>
 					{impactLabel && (
-						<span className="mt-1 inline-block rounded-full bg-red-500/10 px-2 py-0.5 text-[9px] font-semibold text-red-400">
+						<span className="mt-1 inline-block rounded border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[9px] font-medium text-red-400">
 							↓ {impactLabel}
 						</span>
 					)}
@@ -515,21 +550,21 @@ function PreviewCard({
 			</div>
 
 			{/* Score strip */}
-			<div className="mt-5 flex items-center gap-5 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+			<div className="mt-5 flex items-center gap-5 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-5">
 				{/* Circular score */}
-				<div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
-					<svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
-						<circle cx="32" cy="32" r="28" fill="none" stroke="rgba(39,39,42,0.5)" strokeWidth="5" />
+				<div className="relative flex h-20 w-20 shrink-0 items-center justify-center sm:h-[88px] sm:w-[88px]">
+					<svg className="h-full w-full -rotate-90" viewBox="0 0 80 80">
+						<circle cx="40" cy="40" r="34" fill="none" stroke="rgba(39,39,42,0.5)" strokeWidth="5" />
 						<circle
-							cx="32" cy="32" r="28" fill="none"
+							cx="40" cy="40" r="34" fill="none"
 							stroke={scoreStroke} strokeWidth="5"
 							strokeLinecap="round"
-							strokeDasharray={`${(score / 100) * 175.9} 175.9`}
+							strokeDasharray={`${(score / 100) * 213.6} 213.6`}
 						/>
 					</svg>
-					<div className="absolute inset-0 flex flex-col items-center justify-center">
-						<span className={`text-lg font-bold leading-none ${scoreColor}`}>{score}</span>
-						<span className="text-[9px] text-zinc-600">/100</span>
+					<div className="absolute inset-0 flex items-center justify-center">
+						<span className={`font-mono text-xl font-bold leading-none tabular-nums ${scoreColor}`}>{score}</span>
+						<span className="font-mono text-[10px] tabular-nums text-zinc-600">/100</span>
 					</div>
 				</div>
 				<div className="min-w-0 flex-1">
@@ -568,48 +603,52 @@ function FindingCard({
 	const [expanded, setExpanded] = useState(false);
 	const severityClass = severityClasses(finding.severity);
 	const impact = finding.impact;
+	const isPositive = finding.severity === "positive";
+
+	// Strip baseline corpus text from body
+	const cleanBody = finding.body.replace(/\s*Baseline:.*$/s, "").trim();
 
 	return (
 		<li
-			className={`overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/60 transition-colors hover:border-zinc-700 ${
-				revealed ? "lp-card-anim" : "opacity-0"
-			}`}
+			className={`overflow-hidden rounded-2xl border transition-colors ${
+				isPositive ? "border-emerald-500/15 bg-emerald-500/[0.03]" : "border-zinc-800 bg-zinc-950/60 hover:border-zinc-700"
+			} ${revealed ? "lp-card-anim" : "opacity-0"}`}
 			style={{ animationDelay: revealed ? `${index * 200}ms` : undefined }}
 		>
 			<button
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
-				className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3"
+				className="flex w-full items-start gap-2.5 px-3 py-3 text-left sm:gap-3 sm:px-5 sm:py-4"
 			>
 				<span className={`mt-1 inline-flex h-2 w-2 shrink-0 rounded-full ${severityClass.dot}`} />
 				<div className="min-w-0 flex-1">
 					<div className="flex flex-wrap items-center gap-1.5">
-						<span className={`text-[10px] font-semibold uppercase tracking-wider ${severityClass.label}`}>
+						<span className={`rounded border px-2 py-0.5 text-[10px] font-medium ${severityClass.label}`}>
 							{SEVERITY_PT[finding.severity] || finding.severity}
 						</span>
-						<span className="text-[10px] uppercase tracking-wider text-zinc-600">
-							· {finding.category}
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+							{finding.category}
 						</span>
 					</div>
-					<h3 className="mt-0.5 text-[13px] font-semibold leading-snug text-zinc-100 sm:text-sm">
+					<h3 className="mt-1 text-[13px] font-semibold leading-snug text-zinc-100 sm:text-sm">
 						{finding.title}
 					</h3>
-					{impact && (
-						<p className="mt-1 font-mono text-[11px] text-red-400/90">
+					{impact && !isPositive && (
+						<p className="mt-1 font-mono text-[11px] tabular-nums text-red-400/90">
 							Impacto estimado: ↓ {formatBRL(impact.min_brl_cents)}–{formatBRL(impact.max_brl_cents)}/mês
 						</p>
 					)}
 					{expanded && (
-						<>
-							<p className="mt-2 text-[13px] leading-relaxed text-zinc-400 sm:text-sm">
-								{finding.body}
+						<div className="mt-3 space-y-3 border-t border-zinc-800/50 pt-3">
+							<p className="text-[13px] leading-relaxed text-zinc-400 sm:text-sm">
+								{cleanBody}
 							</p>
 							{finding.evidence_refs && finding.evidence_refs.length > 0 && (
-								<ul className="mt-2 flex flex-wrap gap-1.5">
+								<ul className="flex flex-wrap gap-1.5">
 									{finding.evidence_refs.map((ref, i) => (
 										<li
 											key={i}
-											className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900/60 px-2 py-0.5 text-[11px] text-zinc-400"
+											className="inline-flex items-center gap-1 rounded border border-zinc-800 bg-zinc-900/60 px-2 py-0.5 text-[11px] text-zinc-400"
 										>
 											<span className="text-zinc-600">›</span>
 											<span>{ref}</span>
@@ -617,22 +656,19 @@ function FindingCard({
 									))}
 								</ul>
 							)}
-							<p className="mt-2 inline-flex items-center gap-1.5 text-xs text-emerald-400">
-								<span>↳</span>
-								<span>{finding.impact_hint}</span>
-							</p>
-						</>
+							{/* Como corrigir */}
+							{!isPositive && finding.impact_hint && (
+								<div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3">
+									<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">Como corrigir</p>
+									<p className="mt-1 text-[13px] leading-relaxed text-zinc-300">{finding.impact_hint}</p>
+								</div>
+							)}
+						</div>
 					)}
 				</div>
-				<svg
+				<ChevronDown
 					className={`mt-1 h-4 w-4 shrink-0 text-zinc-600 transition-transform ${expanded ? "rotate-180" : ""}`}
-					fill="none"
-					viewBox="0 0 24 24"
-					strokeWidth={2}
-					stroke="currentColor"
-				>
-					<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-				</svg>
+				/>
 			</button>
 		</li>
 	);
@@ -658,21 +694,16 @@ function CostSummaryBanner({
 		>
 			<div className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-red-500/10 blur-[80px]" />
 			<div className="relative">
-				<p className="text-[10px] uppercase tracking-[0.2em] text-red-400/80 sm:text-xs">
+				<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-red-400/80">
 					Exposição mensal estimada
 				</p>
-				<h3 className="mt-2 text-lg font-semibold leading-tight text-zinc-100 sm:text-2xl">
+				<h3 className="mt-2 font-mono text-lg font-semibold leading-tight tabular-nums text-zinc-100 sm:text-2xl">
 					{findings.length + hiddenCount} problemas custando entre{" "}
 					<span className="text-red-300">{formatBRL(summary.min_brl_cents)}</span>{" "}
 					e{" "}
 					<span className="text-red-300">{formatBRL(summary.max_brl_cents)}</span>{" "}
 					por mês
 				</h3>
-				<p className="mt-2 text-xs leading-relaxed text-zinc-400 sm:text-sm">
-					Baseline: 21.000+ lojas auditadas pela Vestigio e quanto cada uma
-					fatura. Consultores cobram R$ 6.500+ por mês pelo mesmo diagnóstico —
-					sem continuidade, sem monitoramento, sem impacto quantificado.
-				</p>
 			</div>
 		</div>
 	);
@@ -699,13 +730,11 @@ function UnlockSection({
 			type="button"
 			onClick={onCheckout}
 			disabled={launching}
-			className="group relative mt-8 flex w-full items-center gap-5 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-zinc-950 to-zinc-950 p-5 text-left transition-all hover:border-emerald-500/50 hover:shadow-[0_0_40px_rgba(16,185,129,0.15)] disabled:opacity-60 sm:p-6"
+			className="group relative mt-8 flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-zinc-950 to-zinc-950 p-4 text-left transition-all hover:border-emerald-500/50 hover:shadow-[0_0_40px_rgba(16,185,129,0.15)] disabled:opacity-60 sm:gap-5 sm:p-6"
 		>
 			{/* Trophy icon */}
-			<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
-				<svg className="h-7 w-7 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-					<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0016.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.782m0 0a6.004 6.004 0 01-2.27-.782" />
-				</svg>
+			<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 sm:h-14 sm:w-14">
+				<Trophy className="h-6 w-6 text-emerald-400 sm:h-7 sm:w-7" />
 			</div>
 
 			{/* Content */}
@@ -719,8 +748,8 @@ function UnlockSection({
 			</div>
 
 			{/* Arrow */}
-			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 transition-transform group-hover:scale-110">
-				<svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+			<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 transition-transform group-hover:scale-110 sm:h-10 sm:w-10">
+				<svg className="h-4 w-4 text-white sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
 					<path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 				</svg>
 			</div>
@@ -728,22 +757,24 @@ function UnlockSection({
 	);
 }
 
-function BlurredCard({ blurred }: { blurred: BlurredFinding }) {
+function LockedFindingCard({ blurred, onCheckout }: { blurred: BlurredFinding; onCheckout: () => void }) {
 	return (
-		<li className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/60 px-3 py-3 transition-colors hover:border-zinc-700 sm:px-4 sm:py-4">
-			<div className="flex items-start gap-2.5 sm:gap-3">
-				<svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-600 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-					<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-				</svg>
+		<li>
+			<button
+				type="button"
+				onClick={onCheckout}
+				className="group flex w-full items-start gap-2.5 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/60 px-3 py-3 text-left transition-all hover:border-amber-400/30 hover:bg-amber-500/[0.03] sm:gap-3 sm:px-4 sm:py-4"
+			>
+				<Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-amber-400 sm:h-4 sm:w-4" />
 				<div className="min-w-0 flex-1">
-					<div className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 sm:text-[10px]">
+					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
 						{blurred.category}
 					</div>
-					<div className="mt-0.5 truncate text-xs font-medium text-zinc-300 blur-[3px] transition-all group-hover:blur-[2px] sm:text-sm">
+					<div className="mt-0.5 truncate text-xs font-medium text-zinc-300 sm:text-sm">
 						{blurred.teaser_title}
 					</div>
 				</div>
-			</div>
+			</button>
 		</li>
 	);
 }
@@ -1097,12 +1128,40 @@ function ErrorState({
 function severityClasses(severity: MiniFindingSeverity): { dot: string; label: string } {
 	switch (severity) {
 		case "critical":
-			return { dot: "bg-red-400", label: "text-red-400" };
+			return { dot: "bg-red-400", label: "border-red-500/20 bg-red-500/10 text-red-400" };
 		case "high":
-			return { dot: "bg-amber-400", label: "text-amber-400" };
+			return { dot: "bg-orange-400", label: "border-orange-500/20 bg-orange-500/10 text-orange-400" };
 		case "medium":
-			return { dot: "bg-yellow-400", label: "text-yellow-400" };
+			return { dot: "bg-amber-400", label: "border-amber-500/20 bg-amber-500/10 text-amber-400" };
 		case "positive":
-			return { dot: "bg-emerald-400", label: "text-emerald-400" };
+			return { dot: "bg-emerald-400", label: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" };
 	}
+}
+
+// ── Countdown timer ──────────────────────────
+
+const RESULT_TTL_MS = 30 * 60 * 1000;
+
+function CountdownTimer({ computedAt }: { computedAt: string }) {
+	const expiresAt = useMemo(() => new Date(computedAt).getTime() + RESULT_TTL_MS, [computedAt]);
+	const [remaining, setRemaining] = useState(() => Math.max(0, expiresAt - Date.now()));
+
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setRemaining(Math.max(0, expiresAt - Date.now()));
+		}, 1000);
+		return () => clearInterval(interval);
+	}, [expiresAt]);
+
+	const totalSecs = Math.ceil(remaining / 1000);
+	const mins = Math.floor(totalSecs / 60);
+	const secs = totalSecs % 60;
+	const label = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+	const isLow = totalSecs < 300; // less than 5 min
+
+	return (
+		<span className={`font-mono tabular-nums ${isLow ? "font-semibold text-red-400" : "text-red-400/80"}`}>
+			{label}
+		</span>
+	);
 }

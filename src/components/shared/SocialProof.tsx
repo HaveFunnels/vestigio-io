@@ -273,14 +273,6 @@ export function SocialProof({
   return (
     <section className="relative z-1 overflow-hidden bg-[#090911] py-16 lg:py-24">
 
-      {showRow1 && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-8">
-          <h2 className="mb-10 text-center text-lg font-medium text-zinc-400 sm:text-xl">
-            {resolvedHeading}
-          </h2>
-        </div>
-      )}
-
       {/* Row 1 — scrolls left */}
       {showRow1 && (
         <div className={`relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)] ${showRow2 ? "mb-5" : ""}`}>

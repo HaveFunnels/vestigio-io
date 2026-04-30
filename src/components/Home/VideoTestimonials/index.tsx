@@ -196,8 +196,8 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
             </svg>
           ))}
         </div>
-        <p className="text-[13px] leading-relaxed text-zinc-600">
-          {item.quote}
+        <p className="text-[13px] italic leading-relaxed text-zinc-400">
+          &ldquo;{item.quote}&rdquo;
         </p>
       </div>
     </div>
@@ -218,21 +218,6 @@ const VideoTestimonials = () => {
       </div>
 
       <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-8 xl:px-0">
-        {/* Big card — same shiny-card pattern as MiniCalc */}
-        <div className="shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] transition-[transform] duration-500 hover:-translate-y-1 sm:p-10 lg:p-14">
-          {/* Soft conic gradient halos */}
-          <div
-            className="pointer-events-none absolute inset-0 -z-1 opacity-50 transition-opacity duration-500 group-hover:opacity-80"
-            aria-hidden
-          >
-            <div className="absolute -left-20 -top-20 h-[300px] w-[300px] rounded-full bg-emerald-400/[0.15] blur-3xl" />
-            <div className="absolute -bottom-20 -right-20 h-[300px] w-[300px] rounded-full bg-emerald-400/[0.10] blur-3xl" />
-          </div>
-
-          {/* Emerald accent lines */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-
           {/* Header — arrows flanking the title pointing down to videos */}
           <div className="relative mb-8 text-center sm:mb-10">
             <div className="flex items-center justify-center gap-3 sm:gap-5">
@@ -241,13 +226,10 @@ const VideoTestimonials = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7" />
               </svg>
 
-              <h2 className="relative text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
+              <h2 className="relative text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-100 sm:text-3xl lg:text-4xl">
                 {t("title_before")}
                 <span className="relative inline-block">
-                  <span
-                    className="relative z-[1]"
-                    style={{ textShadow: "2px 0 white, -2px 0 white, 0 2px white, 0 -2px white, 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white" }}
-                  >
+                  <span className="relative z-[1]">
                     {t("title_highlight")}
                   </span>
                   <span
@@ -281,7 +263,6 @@ const VideoTestimonials = () => {
               />
             ))}
           </div>
-        </div>
       </div>
     </section>
   );

@@ -43,9 +43,9 @@ const Home = () => {
 				<ClientGallery />
 			</HomeBigCard>
 			<MiniCalculator />
-			<VideoTestimonials />
 			<FeaturesWithImage />
 			<Features />
+			<VideoTestimonials />
 			<Counter />
 			<SolutionLayers />
 			<SocialProof />

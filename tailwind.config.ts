@@ -298,22 +298,34 @@ const config: Config = {
 			},
 			keyframes: {
 				"panel-in": {
-					"0%":   { transform: "translateX(2rem) scale(0.97)" },
-					"60%":  { transform: "translateX(-0.15rem) scale(1.005)" },
+					"0%": { transform: "translateX(2rem) scale(0.97)" },
+					"60%": { transform: "translateX(-0.15rem) scale(1.005)" },
 					"100%": { transform: "translateX(0) scale(1)" },
 				},
 				"panel-out": {
-					"0%":   { transform: "translateX(0) scale(1)" },
+					"0%": { transform: "translateX(0) scale(1)" },
 					"100%": { transform: "translateX(2rem) scale(0.97)" },
 				},
 				"message-appear": {
-					"0%":   { opacity: "0", transform: "translateY(8px)" },
+					"0%": { opacity: "0", transform: "translateY(8px)" },
 					"100%": { opacity: "1", transform: "translateY(0)" },
 				},
 				"celebration-dot": {
-					"0%":   { opacity: "0", transform: "translateY(0) scale(0.5)" },
-					"30%":  { opacity: "1", transform: "translateY(-10px) scale(1)" },
+					"0%": { opacity: "0", transform: "translateY(0) scale(0.5)" },
+					"30%": { opacity: "1", transform: "translateY(-10px) scale(1)" },
 					"100%": { opacity: "0", transform: "translateY(-40px) scale(0.3)" },
+				},
+				"critical-pulse": {
+					"0%, 100%": { boxShadow: "0 0 20px rgba(239, 68, 68, 0.2)" },
+					"50%": { boxShadow: "0 0 30px rgba(239, 68, 68, 0.5)" },
+				},
+				"causal-flow": {
+					"0%": { strokeDashoffset: "20" },
+					"100%": { strokeDashoffset: "0" },
+				},
+				"causal-flow-fast": {
+					"0%": { strokeDashoffset: "20" },
+					"100%": { strokeDashoffset: "0" },
 				},
 			},
 			animation: {
@@ -321,6 +333,9 @@ const config: Config = {
 				"panel-out": "panel-out 0.3s cubic-bezier(0.4,0,1,1) both",
 				"message-appear": "message-appear 0.3s ease-out forwards",
 				"celebration-dot": "celebration-dot 1.8s ease-out both",
+				"critical-pulse": "critical-pulse 2s ease-in-out infinite",
+				"causal-flow": "causal-flow 1.5s linear infinite",
+				"causal-flow-fast": "causal-flow-fast 0.8s linear infinite",
 			},
 			boxShadow: {
 				1: "0px 1px 2px 0px rgba(84, 87, 118, 0.10)",

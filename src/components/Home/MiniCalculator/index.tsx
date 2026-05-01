@@ -352,7 +352,7 @@ const MiniCalculator = ({
 				<div className='absolute left-1/2 top-1/2 h-[250px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.05] blur-[80px]' />
 			</div>
 
-			<div className='px-2 sm:px-4 lg:px-8 xl:px-12'>
+			<div className='px-4 sm:px-8 lg:px-8 xl:px-12'>
 				{/* Gradient hero card — the calculator's container.
 				    Hover-lift, animated conic border on hover, soft inner
 				    glow. The whole section is "one big card" so the
@@ -509,16 +509,16 @@ const MiniCalculator = ({
 						{/* ===================== LOADING ===================== */}
 						{state === "loading" && (
 							<div className='text-center'>
-								<h2 className='mb-2 text-xl font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl'>
+								<h2 className='mb-2 text-lg font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl'>
 									{t("analyzing")}{" "}
-									<span className='block break-all sm:inline'>{domain}</span>
+									<span className='block truncate sm:inline sm:overflow-visible sm:text-clip'>{domain}</span>
 								</h2>
 								<p className='mb-8 text-sm text-zinc-400 sm:mb-10'>
 									{t("analyzing_sub")}
 								</p>
 
 								{/* Stacked step cards */}
-								<div className='relative mx-auto flex w-full max-w-[380px] flex-col items-center gap-1.5'>
+								<div className='relative mx-auto flex w-full max-w-[340px] flex-col items-center gap-1.5 sm:max-w-[380px]'>
 									{STATUS_KEYS.map((key, i) => {
 										const isDone = i < statusIdx;
 										const isActive = i === statusIdx;
@@ -561,7 +561,7 @@ const MiniCalculator = ({
 														{t(key)}
 													</span>
 												</div>
-												<div className='ml-6 h-1.5 w-full overflow-hidden rounded-full bg-zinc-800'>
+												<div className='ml-6 mr-1 h-1.5 overflow-hidden rounded-full bg-zinc-800'>
 													<div
 														className='h-full rounded-full bg-emerald-500 transition-[width] duration-100 ease-linear'
 														style={{ width: `${chunkFrac * 100}%` }}
@@ -591,9 +591,9 @@ const MiniCalculator = ({
 									<p className='mb-2 font-mono text-xs uppercase tracking-widest text-zinc-500'>
 										{t("scan_complete")}
 									</p>
-									<h2 className='text-xl font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl'>
+									<h2 className='text-lg font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl'>
 										{t("results_for")}{" "}
-										<span className='break-all text-emerald-600'>{domain}</span>
+										<span className='break-all text-emerald-400'>{domain}</span>
 									</h2>
 								</div>
 
@@ -621,24 +621,23 @@ const MiniCalculator = ({
 											return (
 												<div
 													key={finding.key}
-													className={`px-4 py-4 sm:grid sm:grid-cols-[100px_1fr_200px] sm:items-center sm:gap-4 sm:px-5 ${
+													className={`px-3 py-3 sm:grid sm:grid-cols-[100px_1fr_200px] sm:items-center sm:gap-4 sm:px-5 sm:py-4 ${
 														i < selectedFindings.length - 1
 															? "border-b border-red-500/10"
 															: ""
 													}`}
 												>
 													{/* Mobile: severity badge + impact on same row */}
-													<div className='mb-2 flex items-center justify-between sm:mb-0 sm:block'>
-														<span className='inline-flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-400'>
+													<div className='mb-2 flex items-center justify-between gap-2 sm:mb-0 sm:block'>
+														<span className='inline-flex shrink-0 items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-red-400 sm:px-2.5 sm:py-1 sm:text-[10px]'>
 															<span
 																className='h-1.5 w-1.5 rounded-full bg-red-500'
 																aria-hidden
 															/>
 															CRITICAL
 														</span>
-														<span className='font-mono text-sm tabular-nums text-red-400 sm:hidden'>
-															−{formatCurrency(impMin, sym)}–{formatCurrency(impMax, sym)}
-															/mo
+														<span className='font-mono text-xs tabular-nums text-red-400 sm:hidden'>
+															−{formatCurrency(impMin, sym)}–{formatCurrency(impMax, sym)}/mo
 														</span>
 													</div>
 													<p className='text-sm leading-snug text-zinc-300 sm:mb-0'>
@@ -672,7 +671,7 @@ const MiniCalculator = ({
 									<p className='mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500'>
 										{t("total_impact")}
 									</p>
-									<p className='font-mono text-4xl font-medium tabular-nums leading-none tracking-tight text-red-400 sm:text-5xl lg:text-6xl'>
+									<p className='font-mono text-3xl font-medium tabular-nums leading-none tracking-tight text-red-400 sm:text-5xl lg:text-6xl'>
 										<span
 											style={{
 												textShadow:

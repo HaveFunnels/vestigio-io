@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ShinyButton } from "@/components/ui/shiny-button";
+import { ChevronDown } from "lucide-react";
 
 // ── MiniCalculator section
 //
@@ -138,6 +139,64 @@ function randomFindingCount(): number {
 
 function easeOut(t: number): number {
 	return 1 - Math.pow(1 - t, 3);
+}
+
+// ── Custom dropdown (replaces native <select>) ──
+
+function BusinessTypeSelect({
+	value,
+	onChange,
+	t,
+}: {
+	value: BusinessType;
+	onChange: (v: BusinessType) => void;
+	t: ReturnType<typeof useTranslations>;
+}) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!open) return;
+		const handler = (e: MouseEvent) => {
+			if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, [open]);
+
+	const options = Object.keys(IMPACT_PROFILES) as BusinessType[];
+
+	return (
+		<div ref={ref} className="relative w-full">
+			<button
+				type="button"
+				onClick={() => setOpen((o) => !o)}
+				className="flex w-full items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3.5 text-left text-sm text-zinc-100 outline-none transition-all hover:border-zinc-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
+			>
+				<span>{t(IMPACT_PROFILES[value].label)}</span>
+				<ChevronDown className={`h-4 w-4 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
+			</button>
+			{open && (
+				<ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-xl shadow-black/40">
+					{options.map((key) => (
+						<li key={key}>
+							<button
+								type="button"
+								onClick={() => { onChange(key); setOpen(false); }}
+								className={`flex w-full px-5 py-3 text-left text-sm transition-colors ${
+									key === value
+										? "bg-emerald-500/10 text-emerald-400"
+										: "text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+								}`}
+							>
+								{t(IMPACT_PROFILES[key].label)}
+							</button>
+						</li>
+					))}
+				</ul>
+			)}
+		</div>
+	);
 }
 
 // ── Component ──
@@ -275,12 +334,12 @@ const MiniCalculator = ({
 	const totalMax = findingImpacts.reduce((s, [, max]) => s + max, 0);
 
 	const inputClass =
-		"w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition-all hover:border-zinc-300 focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500/40";
+		"w-full rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none transition-all hover:border-zinc-600 focus:border-emerald-500 focus:bg-zinc-900 focus:ring-1 focus:ring-emerald-500/40";
 
 	const domainInputClass =
-		`shiny-input w-full rounded-xl px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none ${
+		`shiny-input w-full rounded-xl px-5 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none ${
 			domainReady
-				? "!border-emerald-500 ring-1 ring-emerald-500/40 !bg-white"
+				? "!border-emerald-500 ring-1 ring-emerald-500/40 !bg-zinc-900"
 				: ""
 		}`;
 
@@ -298,7 +357,7 @@ const MiniCalculator = ({
 				    Hover-lift, animated conic border on hover, soft inner
 				    glow. The whole section is "one big card" so the
 				    calculator stops looking like just-another-section. */}
-				<div className='vcalc-card shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] transition-[transform] duration-500 hover:-translate-y-1 sm:p-10 lg:p-14'>
+				<div className='vcalc-card shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] transition-[transform] duration-500 hover:-translate-y-1 sm:p-10 lg:p-14' style={{ "--shiny-card-bg": "#080812" } as React.CSSProperties}>
 					{/* Soft conic gradient halo behind the card edges */}
 					<div
 						className='pointer-events-none absolute inset-0 -z-1 opacity-50 transition-opacity duration-500 group-hover:opacity-80'
@@ -317,13 +376,13 @@ const MiniCalculator = ({
 					    over) */}
 					{state === "input" && (
 						<div className='relative mb-6 flex flex-col items-center gap-3 text-center sm:mb-8'>
-							<span className='inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-50 px-3 py-1'>
+							<span className='inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1'>
 								<span className='h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500' />
-								<span className='text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-600'>
+								<span className='text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400'>
 									{tCard("eyebrow")}
 								</span>
 							</span>
-							<p className='max-w-[420px] text-xs text-zinc-500 sm:text-[13px]'>
+							<p className='max-w-[420px] text-xs text-zinc-400 sm:text-[13px]'>
 								{tCard("tagline")}
 							</p>
 						</div>
@@ -333,12 +392,12 @@ const MiniCalculator = ({
 						{/* ===================== INPUT ===================== */}
 						{state === "input" && (
 							<div className='text-center'>
-								<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl xl:text-5xl'>
+								<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-100 sm:text-3xl lg:text-4xl xl:text-5xl'>
 									{t("title_before")}
-									<span className='text-red-500'>{t("title_highlight")}</span>
+									<span className='text-red-400'>{t("title_highlight")}</span>
 									{t("title_after")}
 									<span className='relative inline-block'>
-										<span className='relative z-[1]' style={{ textShadow: "2px 0 white, -2px 0 white, 0 2px white, 0 -2px white, 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white" }}>
+										<span className='relative z-[1]'>
 											{t("title_underline")}
 										</span>
 										<span
@@ -352,9 +411,9 @@ const MiniCalculator = ({
 										/>
 									</span>
 								</h2>
-								<p className='mx-auto mb-8 max-w-[540px] text-sm text-zinc-500 sm:mb-10 sm:text-base'>
+								<p className='mx-auto mb-8 max-w-[540px] text-sm text-zinc-400 sm:mb-10 sm:text-base'>
 									{t("subtitle")}
-									<span className='font-semibold text-emerald-600'>{t("subtitle_accent")}</span>
+									<span className='font-semibold text-emerald-400'>{t("subtitle_accent")}</span>
 									{" "}⚡
 								</p>
 
@@ -392,7 +451,7 @@ const MiniCalculator = ({
 										>
 											<div className='flex w-full flex-col items-center gap-3 sm:flex-row'>
 												<div className='relative w-full'>
-													<span className='absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-400'>
+													<span className='absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500'>
 														{sym}
 													</span>
 													<input
@@ -405,25 +464,11 @@ const MiniCalculator = ({
 														className={`${inputClass} pl-8`}
 													/>
 												</div>
-												<select
+												<BusinessTypeSelect
 													value={businessType}
-													onChange={(e) =>
-														setBusinessType(e.target.value as BusinessType)
-													}
-													className={`${inputClass} cursor-pointer appearance-none`}
-												>
-													{(Object.keys(IMPACT_PROFILES) as BusinessType[]).map(
-														(key) => (
-															<option
-																key={key}
-																value={key}
-																className='bg-white text-zinc-900'
-															>
-																{t(IMPACT_PROFILES[key].label)}
-															</option>
-														)
-													)}
-												</select>
+													onChange={setBusinessType}
+													t={t}
+												/>
 											</div>
 											<ShinyButton
 												onClick={handleSubmit}
@@ -464,11 +509,11 @@ const MiniCalculator = ({
 						{/* ===================== LOADING ===================== */}
 						{state === "loading" && (
 							<div className='text-center'>
-								<h2 className='mb-2 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl'>
+								<h2 className='mb-2 text-xl font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl'>
 									{t("analyzing")}{" "}
 									<span className='block break-all sm:inline'>{domain}</span>
 								</h2>
-								<p className='mb-8 text-sm text-zinc-500 sm:mb-10'>
+								<p className='mb-8 text-sm text-zinc-400 sm:mb-10'>
 									{t("analyzing_sub")}
 								</p>
 
@@ -489,10 +534,10 @@ const MiniCalculator = ({
 												key={key}
 												className={`flex w-full flex-col gap-1.5 rounded-lg border px-3 py-2 transition-all duration-300 ${
 													isActive
-														? "scale-100 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/50 opacity-100 shadow-sm"
+														? "scale-100 border-emerald-500/30 bg-emerald-500/[0.06] opacity-100"
 														: isDone
-															? "scale-[0.97] border-emerald-200/60 bg-emerald-50/30 opacity-70"
-															: "scale-[0.97] border-zinc-200 bg-zinc-50/50 opacity-50"
+															? "scale-[0.97] border-emerald-500/20 bg-emerald-500/[0.03] opacity-70"
+															: "scale-[0.97] border-zinc-800 bg-zinc-900/50 opacity-50"
 												}`}
 											>
 												<div className='flex items-center gap-2 text-xs'>
@@ -508,15 +553,15 @@ const MiniCalculator = ({
 															<path d='M12 2a10 10 0 019.17 6' stroke='currentColor' strokeWidth='3' strokeLinecap='round' />
 														</svg>
 													) : (
-														<span className='flex h-4 w-4 items-center justify-center rounded-full border border-zinc-300'>
-															<span className='h-1.5 w-1.5 rounded-full bg-zinc-300' />
+														<span className='flex h-4 w-4 items-center justify-center rounded-full border border-zinc-700'>
+															<span className='h-1.5 w-1.5 rounded-full bg-zinc-700' />
 														</span>
 													)}
-													<span className={`font-medium ${isDone ? "text-emerald-700" : isActive ? "text-zinc-900" : "text-zinc-400"}`}>
+													<span className={`font-medium ${isDone ? "text-emerald-400" : isActive ? "text-zinc-100" : "text-zinc-600"}`}>
 														{t(key)}
 													</span>
 												</div>
-												<div className='ml-6 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200/80'>
+												<div className='ml-6 h-1.5 w-full overflow-hidden rounded-full bg-zinc-800'>
 													<div
 														className='h-full rounded-full bg-emerald-500 transition-[width] duration-100 ease-linear'
 														style={{ width: `${chunkFrac * 100}%` }}
@@ -526,8 +571,8 @@ const MiniCalculator = ({
 										);
 									})}
 									{/* Top and bottom fade masks */}
-									<div className='pointer-events-none absolute top-0 h-[30%] w-full [background-image:linear-gradient(to_bottom,white_10%,transparent_100%)]' />
-									<div className='pointer-events-none absolute bottom-0 h-[30%] w-full [background-image:linear-gradient(to_top,white_10%,transparent_100%)]' />
+									<div className='pointer-events-none absolute top-0 h-[30%] w-full [background-image:linear-gradient(to_bottom,#080812_10%,transparent_100%)]' />
+									<div className='pointer-events-none absolute bottom-0 h-[30%] w-full [background-image:linear-gradient(to_top,#080812_10%,transparent_100%)]' />
 								</div>
 
 								{/* Counter below cards */}
@@ -546,7 +591,7 @@ const MiniCalculator = ({
 									<p className='mb-2 font-mono text-xs uppercase tracking-widest text-zinc-500'>
 										{t("scan_complete")}
 									</p>
-									<h2 className='text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl lg:text-3xl'>
+									<h2 className='text-xl font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl'>
 										{t("results_for")}{" "}
 										<span className='break-all text-emerald-600'>{domain}</span>
 									</h2>
@@ -556,7 +601,7 @@ const MiniCalculator = ({
                 accent gradient overlay + colored shadow scaled to severity
                 so the eye reads "this is a list of losses" before parsing
                 any individual row. */}
-								<div className='relative mb-4 overflow-hidden rounded-2xl border border-red-200 bg-red-50/50 shadow-[0_8px_24px_-14px_rgba(239,68,68,0.15)]'>
+								<div className='relative mb-4 overflow-hidden rounded-2xl border border-red-500/20 bg-red-950/30 shadow-[0_8px_24px_-14px_rgba(239,68,68,0.15)]'>
 									{/* Subtle red gradient highlight in the corner */}
 									<div
 										className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-red-500/[0.05] via-transparent to-transparent'
@@ -564,7 +609,7 @@ const MiniCalculator = ({
 									/>
 
 									{/* Desktop column headers */}
-									<div className='relative hidden grid-cols-[100px_1fr_200px] gap-4 border-b border-red-100 px-5 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500 sm:grid'>
+									<div className='relative hidden grid-cols-[100px_1fr_200px] gap-4 border-b border-red-500/10 px-5 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500 sm:grid'>
 										<span>{t("col_severity")}</span>
 										<span>{t("col_finding")}</span>
 										<span className='text-right'>{t("col_impact")}</span>
@@ -578,7 +623,7 @@ const MiniCalculator = ({
 													key={finding.key}
 													className={`px-4 py-4 sm:grid sm:grid-cols-[100px_1fr_200px] sm:items-center sm:gap-4 sm:px-5 ${
 														i < selectedFindings.length - 1
-															? "border-b border-red-100"
+															? "border-b border-red-500/10"
 															: ""
 													}`}
 												>
@@ -596,7 +641,7 @@ const MiniCalculator = ({
 															/mo
 														</span>
 													</div>
-													<p className='text-sm leading-snug text-zinc-700 sm:mb-0'>
+													<p className='text-sm leading-snug text-zinc-300 sm:mb-0'>
 														{t(finding.key)}
 													</p>
 													<p className='hidden font-mono text-sm tabular-nums text-red-400 sm:block sm:text-right'>
@@ -644,7 +689,7 @@ const MiniCalculator = ({
 
 								{/* CTA */}
 								<div className='text-center'>
-									<p className='mb-6 text-sm text-zinc-600 sm:text-base'>
+									<p className='mb-6 text-sm text-zinc-400 sm:text-base'>
 										{t("cta_question")}
 									</p>
 									<div className='mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
@@ -655,7 +700,7 @@ const MiniCalculator = ({
 										</Link>
 										<Link
 											href='/pricing'
-											className='rounded-[1rem] border border-zinc-200 px-7 py-3 text-center text-sm font-semibold text-zinc-900 transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-zinc-300'
+											className='rounded-[1rem] border border-zinc-700 px-7 py-3 text-center text-sm font-semibold text-zinc-100 transition-colors hover:border-zinc-600 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-600'
 										>
 											{t("cta_pricing")}
 										</Link>

@@ -1,9 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-04-28 (3.10 Copy Analysis Pack shipped — Wave 3 fully complete)
+> Last updated: 2026-05-01 (4.7 Compound Findings shipped; 2.5 Prisma Migrate done)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **For completed work** (Waves 0, 1, 2.1–2.4, 3.1–3.4, 3.7 (F-H, I, L-R), 3.7B, 3.8, 3.9, 3.10, 3.11, 3.11B, 3.12, 3.13, 3.14, 3.15, 3.16, 3.17, 3.18, 3.19, 3.20 Fase 1, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
+> **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.4, 3.7–3.19, 3.20 Fase 1, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
 ---
 
@@ -72,7 +72,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~`prisma db push` → `prisma migrate`~~ | **✅ Shipped 2026-04-27** — Baseline migration `0_init` generated from current schema, `migration_lock.toml` added, package.json scripts updated (`db:migrate:deploy`, `db:migrate:dev`, `db:push:dev`), deployment guide at `docs/PRISMA_MIGRATE.md`. One-time `prisma migrate resolve --applied 0_init` required on prod before next deploy. | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
 | Neglected Findings — data collected, findings missing | **Not started** — payment handoff (pixel), SaaS activation (auth sessions), oscillation clustering (pixel), network error weighting (Playwright), mobile trust gap (Playwright), behavioral micro-patterns (pixel) | Wave 4.6 |
-| Cross-Domain Compound Findings — multi-source moat | **Not started** — security×revenue, ad promise×reality×behavior, trust×hesitation×revenue, post-purchase chain, brand impersonation×revenue | Wave 4.7 |
+| ~~Cross-Domain Compound Findings~~ | **✅ Shipped 2026-05-01** — 5 compound types (security_revenue_chain, ad_promise_reality_behavior, trust_hesitation_revenue, post_purchase_chain, brand_impersonation_revenue). Detection engine in `packages/composites/compound-findings.ts`, wired into recompute + projections (1.5x priority boost) + cross-signal narratives. CompoundInput lightweight type, confidence tiers (confirmed/likely/heuristic), multiplicative impact. i18n (4 langs). | Wave 4.7 |
 
 ---
 

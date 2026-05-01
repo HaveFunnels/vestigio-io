@@ -1865,6 +1865,21 @@ function extractMobileVerificationSignals(
         description: 'Mobile trust experience is weaker than desktop. Trust indicators, policies, or provider signals differ between viewports.',
       }));
     }
+
+    // Wave 4.6: Mobile trust gap (compound: degraded trust + commercial errors)
+    if (p.trust_degraded_vs_desktop && p.commercial_errors_count > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: 'mobile_trust_gap_from_verification',
+        category: SignalCategory.Trust,
+        attribute: 'mobile.trust_gap_verified',
+        value: p.commercial_errors_count >= 3 ? 'high' : 'medium',
+        numeric_value: p.commercial_errors_count,
+        confidence: 70,
+        scoping, cycle_ref,
+        evidence_refs: [makeRef('evidence', ev.id)],
+        description: `Mobile trust is degraded vs desktop AND ${p.commercial_errors_count} commercial errors detected. Mobile visitors see fewer trust signals than desktop visitors while also experiencing functional failures.`,
+      }));
+    }
   }
 }
 
@@ -3088,6 +3103,68 @@ function extractNetworkAnalysisSignals(
       description: `${totalTrustFails} trust-layer and ${totalThirdPartyFails} third-party failures on surfaces that need to make buyers feel safe. Support widgets, review badges, and trust signals depend on unstable external services.`,
     }));
   }
+
+  // ── Wave 4.6: Critical network errors on commerce (weighted severity) ──
+  {
+    let weightedScore = 0;
+    let totalPaymentFails = 0;
+    let totalMeasurementFails = 0;
+    let totalTrustLateLoads = 0;
+    let totalThirdPartyFails = 0;
+    const relevantEvidence: Evidence[] = [];
+
+    for (const ev of commercialEvidence) {
+      const p = ev.payload as NetworkAnalysisPayload;
+      const pageScore = (p.payment_failures * 3) + (p.measurement_failures * 2) + (p.trust_late_loads * 1) + (p.third_party_failures * 1);
+      if (pageScore > 0) {
+        weightedScore += pageScore;
+        totalPaymentFails += p.payment_failures;
+        totalMeasurementFails += p.measurement_failures;
+        totalTrustLateLoads += p.trust_late_loads;
+        totalThirdPartyFails += p.third_party_failures;
+        relevantEvidence.push(ev);
+      }
+    }
+
+    if (weightedScore > 5) {
+      const severity = weightedScore > 15 ? 'high' : weightedScore > 9 ? 'medium' : 'low';
+      signals.push(createSignal({
+        signal_key: 'critical_network_errors_on_commerce',
+        category: SignalCategory.Operational,
+        attribute: 'network.critical_commerce_errors_weighted',
+        value: severity,
+        numeric_value: weightedScore,
+        confidence: 75,
+        scoping, cycle_ref, ids,
+        evidence_refs: relevantEvidence.slice(0, 5).map(e => makeRef('evidence', e.id)),
+        description: `Weighted network error score of ${weightedScore} on commercial surfaces (${totalPaymentFails} payment failures x3, ${totalMeasurementFails} measurement failures x2, ${totalTrustLateLoads} trust late loads, ${totalThirdPartyFails} third-party failures). Critical infrastructure is failing on revenue-generating pages.`,
+      }));
+    }
+  }
+
+  // ── Wave 4.6: Mobile trust gap — trust signals failing/late on mobile ──
+  {
+    const mobileTrustIssues = mobileEvidence.filter(e => {
+      const p = e.payload as NetworkAnalysisPayload;
+      return p.trust_requests_failed > 0 || p.trust_latest_start_ms > 3000;
+    });
+    if (mobileTrustIssues.length >= 1) {
+      const totalMobileTrustFails = mobileTrustIssues.reduce((s, e) => s + (e.payload as NetworkAnalysisPayload).trust_requests_failed, 0);
+      const worstLatency = mobileTrustIssues.reduce((max, e) => Math.max(max, (e.payload as NetworkAnalysisPayload).trust_latest_start_ms), 0);
+      const severity = totalMobileTrustFails >= 2 || worstLatency > 5000 ? 'high' : 'medium';
+      signals.push(createSignal({
+        signal_key: 'mobile_trust_gap_detected',
+        category: SignalCategory.Trust,
+        attribute: 'network.mobile_trust_gap',
+        value: severity,
+        numeric_value: totalMobileTrustFails + (worstLatency > 3000 ? 1 : 0),
+        confidence: 65,
+        scoping, cycle_ref, ids,
+        evidence_refs: mobileTrustIssues.map(e => makeRef('evidence', e.id)),
+        description: `Mobile visitors experience degraded trust signals: ${totalMobileTrustFails} trust request failures and trust assets loading ${worstLatency}ms after page load. Security badges, testimonials, and guarantees are hidden or broken on mobile.`,
+      }));
+    }
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -3892,6 +3969,79 @@ function extractBehavioralSignals(
           numeric_value: p.sensitive_field_dropoff_count,
           confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
           description: `${p.sensitive_field_dropoff_count} sessions drop off immediately after interacting with ${topKind} fields. Users perceive risk at the sensitive data entry moment — the trust model is insufficient for the data being requested.`,
+        }));
+      }
+    }
+
+    // ── Wave 4.6: Neglected Findings — 3 behavioral signals ──
+
+    // 21. Payment handoff dropoff — users enter payment but don't return
+    if (p.handoff_without_return_count > 0 && p.checkout_reached_count > 0) {
+      const handoffRate = p.handoff_without_return_count / p.checkout_reached_count;
+      if (handoffRate > 0.30) {
+        const pctRate = Math.round(handoffRate * 100);
+        signals.push(createSignal({
+          signal_key: 'payment_handoff_incomplete',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.payment_handoff_dropoff',
+          value: handoffRate > 0.60 ? 'high' : handoffRate > 0.40 ? 'medium' : 'low',
+          numeric_value: pctRate,
+          confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${pctRate}% of checkout sessions are not returning from the payment handoff. ${p.handoff_without_return_count} sessions entered payment but never completed — the payment provider transition is losing customers.`,
+        }));
+      }
+    }
+
+    // 22. SaaS activation gap heuristic — proxy for broken first-action activation
+    if (p.mobile_first_action_failure_rate > 0.25 || p.form_retry_rate > 0.20) {
+      const failRate = Math.max(p.mobile_first_action_failure_rate, p.form_retry_rate);
+      signals.push(createSignal({
+        signal_key: 'saas_activation_gap_heuristic',
+        category: SignalCategory.Behavioral,
+        attribute: 'behavioral.saas_activation_gap',
+        value: failRate > 0.40 ? 'high' : failRate > 0.30 ? 'medium' : 'low',
+        numeric_value: Math.round(failRate * 100),
+        confidence: 55, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Heuristic proxy for activation failure: ${Math.round(p.mobile_first_action_failure_rate * 100)}% first-action failure rate and ${Math.round(p.form_retry_rate * 100)}% form retry rate suggest users signing up are struggling to complete their first meaningful action.`,
+      }));
+    }
+
+    // 23. Navigation oscillation cluster — same page pair oscillated 3+ times
+    if (p.surface_oscillation_count >= 5 && p.surface_oscillation_top_pairs.length > 0) {
+      const topPair = p.surface_oscillation_top_pairs[0];
+      if (topPair && topPair.count >= 3 && topPair.surface_a && topPair.surface_b) {
+        const pairLabel = `${topPair.surface_a} ↔ ${topPair.surface_b}`;
+        signals.push(createSignal({
+          signal_key: 'navigation_oscillation_cluster',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.oscillation_cluster',
+          value: `${topPair.count >= 8 ? 'high' : topPair.count >= 5 ? 'medium' : 'low'}:${topPair.surface_a}:${topPair.surface_b}`,
+          numeric_value: topPair.count,
+          confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `Users are caught in repetitive navigation loops between ${pairLabel} (${topPair.count} oscillations in the top pair, ${p.surface_oscillation_count} total). This cluster indicates systematic confusion about what action to take next.`,
+        }));
+      }
+    }
+
+    // 23. Behavioral micro-pattern cascade — 2+ compound conditions firing
+    {
+      let cascadeCount = 0;
+      const cascadeFactors: string[] = [];
+      if (p.hesitation_before_cta_count > 3) { cascadeCount++; cascadeFactors.push('hesitation_near_cta'); }
+      if (p.dead_click_rate > 0.05) { cascadeCount++; cascadeFactors.push('dead_clicks'); }
+      if (p.pricing_then_hesitation_count > 2) { cascadeCount++; cascadeFactors.push('pricing_doubt'); }
+      if (p.form_retry_rate > 0.15) { cascadeCount++; cascadeFactors.push('form_retries'); }
+      if (p.backtrack_rate > 0.12) { cascadeCount++; cascadeFactors.push('backtrack_navigation'); }
+
+      if (cascadeCount >= 2) {
+        signals.push(createSignal({
+          signal_key: 'behavioral_micro_pattern_cascade',
+          category: SignalCategory.Behavioral,
+          attribute: 'behavioral.micro_pattern_cascade',
+          value: cascadeCount >= 4 ? 'high' : cascadeCount >= 3 ? 'medium' : 'low',
+          numeric_value: cascadeCount,
+          confidence: 75, scoping, cycle_ref, ids, evidence_refs: refs,
+          description: `${cascadeCount} behavioral friction indicators are firing simultaneously (${cascadeFactors.join(', ')}). Individual metrics may appear borderline but together they indicate systematic UX confusion — hesitating, clicking dead elements, and navigating back repeatedly.`,
         }));
       }
     }

@@ -493,4 +493,11 @@ export enum InferenceCategory {
   PricingOfferUnclear = 'pricing_offer_unclear',
   PagePurposeMismatch = 'page_purpose_mismatch',
   StructuredDataMismatch = 'structured_data_mismatch',
+  // Wave 4.6: Neglected Findings
+  PaymentHandoffDropoff = 'payment_handoff_dropoff',
+  SaasActivationGapHeuristic = 'saas_activation_gap_heuristic',
+  OscillationClustering = 'oscillation_clustering',
+  NetworkErrorWeighted = 'network_error_weighted',
+  MobileTrustGap = 'mobile_trust_gap',
+  BehavioralMicroPatternCascade = 'behavioral_micro_pattern_cascade',
 }

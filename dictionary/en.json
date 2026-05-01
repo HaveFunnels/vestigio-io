@@ -3922,7 +3922,13 @@
 			"single_payment_gateway_risk": "One payment gateway outage stops all your revenue",
 			"discount_abuse_pattern": "Discount overuse is leaking margin on most orders",
 			"low_repeat_purchase_rate": "Buyers aren't coming back — acquisition cost isn't being recovered",
-			"dead_weight_products": "Listed products haven't sold in 30 days — dead weight"
+			"dead_weight_products": "Listed products haven't sold in 30 days — dead weight",
+			"payment_handoff_dropoff": "Buyers enter payment but never come back to complete the purchase",
+			"saas_activation_gap_heuristic": "Users sign up but can't complete their first meaningful action",
+			"oscillation_clustering": "Buyers are stuck in repetitive loops between the same pages",
+			"network_error_weighted": "Critical scripts are failing on pages that generate your revenue",
+			"mobile_trust_gap": "Mobile buyers see less reassurance than desktop buyers do",
+			"behavioral_micro_pattern_cascade": "Multiple friction signals are firing at once — your UX is systematically confusing"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Buyers lose trust at the checkout moment",

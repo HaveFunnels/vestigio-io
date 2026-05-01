@@ -295,6 +295,14 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   pricing_offer_unclear:              { root_cause_key: 'objection_unaddressed', category: 'copy_strategy', impact_types: ['revenue_loss'] },
   page_purpose_mismatch:              { root_cause_key: 'copy_funnel_misalignment', category: 'copy_strategy', impact_types: ['revenue_loss'] },
   structured_data_mismatch:           { root_cause_key: 'brand_inconsistent_in_previews', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
+
+  // Wave 4.6: Neglected Findings
+  payment_handoff_dropoff:            { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
+  saas_activation_gap_heuristic:      { root_cause_key: 'copy_funnel_misalignment', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  oscillation_clustering:             { root_cause_key: 'friction_barrier_on_path', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+  network_error_weighted:             { root_cause_key: 'runtime_commerce_fragility', category: 'runtime_fragility', impact_types: ['revenue_loss', 'scale_risk'] },
+  mobile_trust_gap:                   { root_cause_key: 'trust_copy_absent_at_decision', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
+  behavioral_micro_pattern_cascade:   { root_cause_key: 'friction_barrier_on_path', category: 'friction_barrier', impact_types: ['revenue_loss'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a

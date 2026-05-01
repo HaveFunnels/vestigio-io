@@ -3961,7 +3961,13 @@
 			"mixed_content_checkout": "Página de checkout carregando conteúdo inseguro quebrando o cadeado",
 			"mobile_checkout_blocked": "Checkout mobile completamente inacessível",
 			"checkout_performance_critical": "Página de checkout reprova em todos os Core Web Vitals",
-			"cookie_consent_missing": "Sem banner de consentimento de cookies apesar de 18 cookies de tracking"
+			"cookie_consent_missing": "Sem banner de consentimento de cookies apesar de 18 cookies de tracking",
+			"payment_handoff_dropoff": "Compradores entram no pagamento mas nunca voltam pra completar a compra",
+			"saas_activation_gap_heuristic": "Usuários se cadastram mas não conseguem completar a primeira ação de valor",
+			"oscillation_clustering": "Compradores ficam presos em loops repetitivos entre as mesmas páginas",
+			"network_error_weighted": "Scripts críticos estão falhando nas páginas que geram seu faturamento",
+			"mobile_trust_gap": "Compradores mobile veem menos sinais de confiança que compradores desktop",
+			"behavioral_micro_pattern_cascade": "Múltiplos sinais de fricção disparando ao mesmo tempo — sua UX está sistematicamente confusa"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Falha de confiança no checkout",

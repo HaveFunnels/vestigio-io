@@ -3454,7 +3454,13 @@
 			"discount_abuse_pattern": "Zu viele Rabatte fressen bei fast jeder Bestellung deine Marge",
 			"low_repeat_purchase_rate": "Käufer kommen nicht wieder — deine Werbekosten holst du nicht rein",
 			"dead_weight_products": "Gelistete Produkte haben seit 30 Tagen nichts verkauft — totes Gewicht",
-			"ad_creative_message_mismatch": "Eine Anzeige verspricht eines, aber die Landing Page liefert etwas anderes — die Diskrepanz verschwendet Werbebudget"
+			"ad_creative_message_mismatch": "Eine Anzeige verspricht eines, aber die Landing Page liefert etwas anderes -- die Diskrepanz verschwendet Werbebudget",
+			"payment_handoff_dropoff": "Kaeufer starten die Zahlung, kommen aber nie zurueck um den Kauf abzuschliessen",
+			"saas_activation_gap_heuristic": "Nutzer registrieren sich, schaffen aber ihre erste sinnvolle Aktion nicht",
+			"oscillation_clustering": "Kaeufer stecken in wiederholten Schleifen zwischen denselben Seiten fest",
+			"network_error_weighted": "Kritische Skripte versagen auf den Seiten, die deinen Umsatz generieren",
+			"mobile_trust_gap": "Mobile Kaeufer sehen weniger Vertrauenssignale als Desktop-Kaeufer",
+			"behavioral_micro_pattern_cascade": "Mehrere Reibungssignale feuern gleichzeitig -- deine UX ist systematisch verwirrend"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Käufer verlieren im Moment der Bezahlung das Vertrauen",

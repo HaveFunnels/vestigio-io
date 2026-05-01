@@ -268,6 +268,14 @@ export function computeInferences(
   inferences.push(...inferPagePurposeMismatch(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferStructuredDataMismatch(byKey, scoping, cycle_ref, ids));
 
+  // Wave 4.6: Neglected Findings
+  inferences.push(...inferPaymentHandoffDropoff(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSaasActivationGap(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferOscillationClustering(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferNetworkErrorWeighted(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMobileTrustGap(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferBehavioralMicroPatternCascade(byKey, scoping, cycle_ref, ids));
+
   return inferences;
 }
 
@@ -4138,4 +4146,64 @@ function inferStructuredDataMismatch(
     reasoning: `Structured data (JSON-LD) contradicts visible page content on ${matches.length} page(s) with ${totalMismatches} total mismatch(es). When Google finds that your schema claims don't match what users see (different prices, names, or ratings), rich results get stripped and trust scores drop — costing organic traffic and click-through rate.`,
     reasoning_slots: { severity, count: totalMismatches },
   })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 4.6: Neglected Findings — 6 New Inferences
+// ──────────────────────────────────────────────
+
+function inferPaymentHandoffDropoff(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('payment_handoff_incomplete');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'payment_handoff_dropoff', category: InferenceCategory.PaymentHandoffDropoff, conclusion: 'payment_handoff_dropoff', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users are entering payment but not completing — the handoff to the payment provider is losing customers. ${sig.numeric_value}% of checkout sessions don't return from the payment step. The transition between your site and the payment provider creates a trust break or technical failure that prevents completion.`, reasoning_slots: { severity, rate: sig.numeric_value ?? 0 } })];
+}
+
+function inferSaasActivationGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('saas_activation_gap_heuristic');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'saas_activation_gap_heuristic', category: InferenceCategory.SaasActivationGapHeuristic, conclusion: 'saas_activation_gap_heuristic', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users are signing up but struggling to complete their first meaningful action — your activation flow has friction. High first-action failure rate (${sig.numeric_value}%) indicates the onboarding or initial product experience is blocking users before they reach value. This is a heuristic proxy based on behavioral indicators until direct auth-based tracking is available.`, reasoning_slots: { severity, rate: sig.numeric_value ?? 0 } })];
+}
+
+function inferOscillationClustering(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('navigation_oscillation_cluster');
+  if (!sig) return [];
+  const parts = sig.value.split(':');
+  const severity = parts[0] === 'high' ? 'high' : parts[0] === 'medium' ? 'medium' : 'low';
+  const surfaceA = parts[1] || 'unknown';
+  const surfaceB = parts[2] || 'unknown';
+  const pairLabel = `${surfaceA} \u2194 ${surfaceB}`;
+  return [createInference({ inference_key: 'oscillation_clustering', category: InferenceCategory.OscillationClustering, conclusion: 'oscillation_clustering', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Users are caught in repetitive navigation loops between specific pages — they're confused about what to do next. The dominant oscillation pair (${pairLabel}) fired ${sig.numeric_value} times, indicating neither page resolves the user's decision. This is not random browsing — it's systematic indecision between two surfaces that should guide the user forward.`, reasoning_slots: { severity, pair: pairLabel, count: sig.numeric_value ?? 0 } })];
+}
+
+function inferNetworkErrorWeighted(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('critical_network_errors_on_commerce');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'network_error_weighted', category: InferenceCategory.NetworkErrorWeighted, conclusion: 'network_error_weighted', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Critical network failures are blocking revenue-generating page functionality — payment scripts and measurement tools are failing. Weighted severity score of ${sig.numeric_value} indicates that the most commercially damaging error types (payment x3, measurement x2) are accumulating on commerce surfaces. Each failure type directly suppresses conversion or blinds your ability to measure it.`, reasoning_slots: { severity, score: sig.numeric_value ?? 0 } })];
+}
+
+function inferMobileTrustGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  // Fire from either source: mobile verification result OR network analysis mobile trust issues
+  const sigVerified = byKey.get('mobile_trust_gap_from_verification');
+  const sigNetwork = byKey.get('mobile_trust_gap_detected');
+  const sig = sigVerified || sigNetwork;
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : 'medium';
+  const allRefs = [makeRef('signal', sig.id)];
+  const allEvidence = [...sig.evidence_refs];
+  // Include both signals if available
+  if (sigVerified && sigNetwork) {
+    allRefs.push(makeRef('signal', sigNetwork.id));
+    allEvidence.push(...sigNetwork.evidence_refs);
+  }
+  return [createInference({ inference_key: 'mobile_trust_gap', category: InferenceCategory.MobileTrustGap, conclusion: 'mobile_trust_gap', conclusion_value: severity, severity_hint: severity, confidence: Math.max(sig.confidence, sigNetwork?.confidence ?? 0, sigVerified?.confidence ?? 0), scoping, cycle_ref, ids, signal_refs: allRefs, evidence_refs: allEvidence, reasoning: `Mobile visitors see fewer trust signals than desktop visitors — security badges, testimonials, and guarantees are hidden or broken on mobile. Trust degradation on mobile is confirmed by ${sigVerified ? 'browser verification' : 'network analysis'} showing ${sig.numeric_value} trust-related failures. Since mobile represents the majority of traffic for most sites, this trust gap directly suppresses mobile conversion.`, reasoning_slots: { severity } })];
+}
+
+function inferBehavioralMicroPatternCascade(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('behavioral_micro_pattern_cascade');
+  if (!sig) return [];
+  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
+  return [createInference({ inference_key: 'behavioral_micro_pattern_cascade', category: InferenceCategory.BehavioralMicroPatternCascade, conclusion: 'behavioral_micro_pattern_cascade', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Multiple behavioral friction signals are firing simultaneously — users are hesitating, clicking dead elements, and navigating back repeatedly. ${sig.numeric_value} compound indicators triggered at once. This pattern indicates systematic UX confusion, not isolated issues. When hesitation, dead clicks, pricing doubt, form retries, and backtrack navigation combine, the root cause is architectural rather than cosmetic — the entire decision flow needs restructuring.`, reasoning_slots: { severity, factors: sig.numeric_value ?? 0 } })];
 }

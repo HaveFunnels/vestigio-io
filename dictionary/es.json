@@ -3877,7 +3877,13 @@
 			"discount_abuse_pattern": "El uso excesivo de descuentos te está comiendo el margen en casi todos los pedidos",
 			"low_repeat_purchase_rate": "Los compradores no vuelven: no estás recuperando el coste de adquisición",
 			"dead_weight_products": "Hay productos listados que no se han vendido en 30 días: peso muerto",
-			"ad_creative_message_mismatch": "Un anuncio promete una cosa pero la landing page entrega otra — la desconexión desperdicia inversión en ads"
+			"ad_creative_message_mismatch": "Un anuncio promete una cosa pero la landing page entrega otra — la desconexión desperdicia inversión en ads",
+			"payment_handoff_dropoff": "Los compradores entran al pago pero nunca vuelven para completar la compra",
+			"saas_activation_gap_heuristic": "Los usuarios se registran pero no logran completar su primera acción de valor",
+			"oscillation_clustering": "Los compradores quedan atrapados en bucles repetitivos entre las mismas páginas",
+			"network_error_weighted": "Scripts críticos están fallando en las páginas que generan tus ingresos",
+			"mobile_trust_gap": "Los compradores móviles ven menos señales de confianza que los de escritorio",
+			"behavioral_micro_pattern_cascade": "Múltiples señales de fricción disparándose a la vez — tu UX es sistemáticamente confusa"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Los compradores pierden la confianza en el momento del pago",

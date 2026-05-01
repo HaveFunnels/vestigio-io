@@ -2724,6 +2724,99 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos extrair JSON-LD e comparar claims (preço, nome, rating) contra conteúdo visível da página.',
 		verification_eta_seconds: 12,
 	},
+
+	// ─────────────────────────────────────────────
+	// Wave 4.6: Neglected Findings
+	// ─────────────────────────────────────────────
+
+	payment_handoff_dropoff: {
+		remediation_steps: [
+			'Monitore a taxa de retorno pós-handoff de pagamento — identifique em qual gateway a queda é maior.',
+			'Substitua redirect externo por checkout embedded (Stripe Elements, PayPal Smart Buttons) quando possível.',
+			'Se o redirect for inevitável, adicione logotipo da loja + selo de segurança na página do gateway.',
+			'Implemente callback/webhook para detectar sessões que nunca retornam e acione recuperação por email.',
+			'Teste o fluxo em mobile e desktop — gateways com pop-up podem bloquear no Safari/iOS.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos executar o checkout completo em headless browser, seguir o handoff até o gateway, e validar se a sessão retorna ao domínio da loja com confirmação.',
+		verification_eta_seconds: 60,
+	},
+
+	saas_activation_gap_heuristic: {
+		remediation_steps: [
+			'Mapeie a primeira ação de valor (first meaningful action) e meça quantos trial users a completam.',
+			'Reduza o onboarding pra no máximo 3 steps antes da primeira vitória.',
+			'Elimine campos opcionais no signup — peça apenas email e senha, complete perfil depois.',
+			'Adicione empty states com CTAs claros que guiem pra primeira ação de valor.',
+			'Implemente progress indicator mostrando quanto falta pra ativar o produto.',
+		],
+		estimated_effort_hours: 24,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos simular signup + primeira ação no headless browser e medir se o fluxo completa sem erro ou abandono.',
+		verification_eta_seconds: 45,
+	},
+
+	oscillation_clustering: {
+		remediation_steps: [
+			'Identifique o par de páginas com maior oscilação e analise o que falta em cada uma pra resolver a dúvida.',
+			'Adicione comparativo ou resumo inline na página de origem (ex: tabela de preços na página de features).',
+			'Implemente breadcrumb ou progress indicator que mostre onde o usuário está no fluxo de decisão.',
+			'Teste sticky CTA ou sidebar com resumo das opções pra reduzir necessidade de navegar de volta.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Vamos monitorar o par de páginas após a mudança e verificar se a taxa de oscilação caiu abaixo do threshold.',
+		verification_eta_seconds: null,
+	},
+
+	network_error_weighted: {
+		remediation_steps: [
+			'Priorize correção por peso: payment failures (x3) > measurement failures (x2) > trust/third-party (x1).',
+			'Configure retry automático com backoff exponencial pra scripts de pagamento e analytics.',
+			'Implemente fallback visual quando trust badges falham (ex: texto estático ao invés de widget dinâmico).',
+			'Monitore uptime dos provedores críticos com alerta sub-5-min e failover automático.',
+			'Reduza dependências third-party no checkout — inline o que puder.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos re-executar a captura de rede nas páginas comerciais e validar se o score ponderado caiu abaixo de 5.',
+		verification_eta_seconds: 30,
+	},
+
+	mobile_trust_gap: {
+		remediation_steps: [
+			'Audite mobile vs desktop lado a lado — liste todos os trust signals visíveis apenas no desktop.',
+			'Garanta que selos de segurança, avaliações, e garantias estejam visíveis above-the-fold no mobile.',
+			'Evite trust badges em carousels ou abas — no mobile eles precisam estar inline e visíveis sem scroll.',
+			'Teste carregamento de widgets de review no 3G throttled — substitua por estático se falharem.',
+			'Adicione microdata de segurança visível no header mobile (SSL lock icon + texto "Compra Segura").',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos verificar mobile vs desktop em headless e confirmar que trust signals estão presentes e carregando dentro de 3s no mobile.',
+		verification_eta_seconds: 45,
+	},
+
+	behavioral_micro_pattern_cascade: {
+		remediation_steps: [
+			'Não trate cada sintoma isolado — o padrão composto indica que o fluxo de decisão inteiro precisa reestruturação.',
+			'Simplifique a página de decisão: reduza opções, elimine dead clicks, e centralize informação de preço + valor.',
+			'Adicione reassurance progressiva ao longo do funil ao invés de concentrar no checkout.',
+			'Implemente form validation inline com mensagens claras — elimine retries por erro de UX.',
+			'Monitore o cascade score após cada mudança pra validar que o padrão está se dissolvendo.',
+		],
+		estimated_effort_hours: 20,
+		verification_strategy: 'pixel_accumulation',
+		verification_notes:
+			'Vamos monitorar os 5 indicadores comportamentais em conjunto e verificar se menos de 2 estão acima do threshold.',
+		verification_eta_seconds: null,
+	},
 };
 
 /**

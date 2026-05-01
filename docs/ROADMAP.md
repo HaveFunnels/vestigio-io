@@ -1,9 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-01 (Roadmap complete — 4.1, 4.2, 4.4, 4.7, 3.20 all shipped)
+> Last updated: 2026-05-01 (Full roadmap complete — all waves shipped)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
+> **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
 ---
 
@@ -71,7 +71,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | ~~`prisma db push` → `prisma migrate`~~ | **✅ Shipped 2026-04-27** — Baseline migration `0_init` generated from current schema, `migration_lock.toml` added, package.json scripts updated (`db:migrate:deploy`, `db:migrate:dev`, `db:push:dev`), deployment guide at `docs/PRISMA_MIGRATE.md`. One-time `prisma migrate resolve --applied 0_init` required on prod before next deploy. | Wave 2.5 |
 | ~~Conversation export/branching~~ | **✅ Shipped 2026-05-01** — Branching (fork) already existed. Export: JSON/Markdown/CSV formats, `/api/conversations/[id]/export` endpoint, ExportDropdown in CopilotPanel header, i18n. | Wave 4.4 |
-| Neglected Findings — data collected, findings missing | **Not started** — payment handoff (pixel), SaaS activation (auth sessions), oscillation clustering (pixel), network error weighting (Playwright), mobile trust gap (Playwright), behavioral micro-patterns (pixel) | Wave 4.6 |
+| ~~Neglected Findings~~ | **✅ Shipped 2026-05-01** — 6 findings: payment handoff dropoff (30%+ don't return), SaaS activation gap (heuristic proxy via first-action failure), oscillation clustering (same pair 3+ times), network error weighting (payment×3/measurement×2), mobile trust gap (trust degraded on mobile), behavioral micro-pattern cascade (2+ friction signals simultaneous). All with signals, inferences, root cause mappings, baselines, remediation, i18n. | Wave 4.6 |
 | ~~Cross-Domain Compound Findings~~ | **✅ Shipped 2026-05-01** — 5 compound types (security_revenue_chain, ad_promise_reality_behavior, trust_hesitation_revenue, post_purchase_chain, brand_impersonation_revenue). Detection engine in `packages/composites/compound-findings.ts`, wired into recompute + projections (1.5x priority boost) + cross-signal narratives. CompoundInput lightweight type, confidence tiers (confirmed/likely/heuristic), multiplicative impact. i18n (4 langs). | Wave 4.7 |
 
 ---

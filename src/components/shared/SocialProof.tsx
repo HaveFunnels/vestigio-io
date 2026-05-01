@@ -271,7 +271,7 @@ export function SocialProof({
   const track2 = [...resolvedRow2, ...resolvedRow2];
 
   return (
-    <section className="relative z-1 overflow-hidden bg-[#090911] py-16 lg:py-24">
+    <section className="relative z-1 overflow-hidden bg-[#090911] py-6 sm:py-8 lg:py-10">
 
       {/* Row 1 — scrolls left */}
       {showRow1 && (

@@ -14,7 +14,7 @@ const FAQ = async () => {
 	return (
 		<section
 			id="faq"
-			className="overflow-hidden border-t border-white/5 bg-[#090911] py-10 sm:py-14 lg:py-16"
+			className="overflow-hidden border-t border-white/5 bg-[#090911] py-8 sm:py-10 lg:py-14"
 		>
 			<FaqJsonLd faqs={items} />
 

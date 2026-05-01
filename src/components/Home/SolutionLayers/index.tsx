@@ -102,7 +102,7 @@ export default async function SolutionLayers() {
 	const tools = t.raw("tools") as string[][];
 
 	return (
-		<section className="relative bg-[#090911] py-12 sm:py-16 lg:py-20">
+		<section className="relative bg-[#090911] py-8 sm:py-10 lg:py-14">
 			<div className="pointer-events-none absolute inset-0 -z-10">
 				<div className="absolute left-1/2 top-[30%] h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-violet-900/8 blur-[80px] sm:h-[500px] sm:w-[600px] sm:blur-[100px]" />
 			</div>

@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-01 (Full roadmap complete — all waves shipped)
+> Last updated: 2026-05-01 (Deep Analysis: 7.11 Critical Fixes + 7.12 Activate Packs + Wave 8 New Analysis Packs)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -73,6 +73,11 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~Conversation export/branching~~ | **✅ Shipped 2026-05-01** — Branching (fork) already existed. Export: JSON/Markdown/CSV formats, `/api/conversations/[id]/export` endpoint, ExportDropdown in CopilotPanel header, i18n. | Wave 4.4 |
 | ~~Neglected Findings~~ | **✅ Shipped 2026-05-01** — 6 findings: payment handoff dropoff (30%+ don't return), SaaS activation gap (heuristic proxy via first-action failure), oscillation clustering (same pair 3+ times), network error weighting (payment×3/measurement×2), mobile trust gap (trust degraded on mobile), behavioral micro-pattern cascade (2+ friction signals simultaneous). All with signals, inferences, root cause mappings, baselines, remediation, i18n. | Wave 4.6 |
 | ~~Cross-Domain Compound Findings~~ | **✅ Shipped 2026-05-01** — 5 compound types (security_revenue_chain, ad_promise_reality_behavior, trust_hesitation_revenue, post_purchase_chain, brand_impersonation_revenue). Detection engine in `packages/composites/compound-findings.ts`, wired into recompute + projections (1.5x priority boost) + cross-signal narratives. CompoundInput lightweight type, confidence tiers (confirmed/likely/heuristic), multiplicative impact. i18n (4 langs). | Wave 4.7 |
+| Critical Fixes — Deep Analysis Issues | **Not started** — 12 issues: mobile behavioral broken, behavioralContext null, embeddings unwired, MCP schema gaps, SSE bug, Stripe/Ads data unused, Nuvemshop data unmapped, state machine drift, legacy scheduler, CycleType enum | Wave 7.11 |
+| Activate Declared-but-Unimplemented Packs | **Not started** — Channel Integrity, Discoverability, Brand Integrity: gate logic + inference categories + projection mappings exist, `produceDecision()` never called | Wave 7.12 |
+| Payment Health & Involuntary Churn Pack | **Not started** — Stripe data (`failed_payment_rate`, `subscriber_churn_rate`, `mrr`) already in CommerceContext but feeds zero signals. 20-40% of all SaaS churn is involuntary. | Wave 8.1 |
+| Dark Pattern & Compliance Risk Pack | **Not started** — `urgency_dark_pattern` signal exists as foundation. DSA Art. 25 enforcement ramping 2026. Fines up to 4% global revenue. | Wave 8.2 |
+| Content Freshness & Decay Pack | **Not started** — `copy_staleness` enrichment exists (Wave 3.10), `asyncGetNthRecent()` built but never called. Content half-life collapsed to 6 months in AI era. | Wave 8.3 |
 
 ---
 
@@ -1446,7 +1451,8 @@ Feature-flag gated rollout with a kill switch. Order:
 | **4** | Expansion & Depth | Cybersecurity Phase 2, LLM enrichment, conversation export, neglected findings, cross-domain compounds | ✅ All shipped |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | ✅ Fases 1-3 shipped |
 | **—** | Marketing/SEO | Homepage, /lp funnel, structured data, OG images, hreflang | ✅ All shipped |
-| **7** | Scaling & Moat Deepening | Batch writes, CWV, multi-cycle trends, revenue recovery, deploy webhooks, ELK maps, map export | **Open — new wave** |
+| **7** | Scaling & Moat Deepening | Batch writes, CWV, multi-cycle trends, revenue recovery, deploy webhooks, maps modernization, critical fixes, activate declared packs | **Open — active** |
+| **8** | New Analysis Packs | Payment Health (Stripe data activation), Dark Pattern & Compliance (DSA enforcement), Content Freshness (AI-era decay) | **Open — new wave** |
 
 ---
 
@@ -1672,6 +1678,53 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 
 ---
 
+### 7.11 Critical Fixes — Issues from Deep Analysis ⭐
+
+| | |
+|---|---|
+| **Tag** | `engine` `mcp` `collection` `infra` |
+| **Priority** | P0 |
+| **Status** | Not started — all issues identified in Deep Analysis Report (2026-05-01) |
+| **Effort** | ~3-5 days total |
+
+**Source:** [DEEP_ANALYSIS_REPORT.md](DEEP_ANALYSIS_REPORT.md) — comprehensive investigation of 5 core modules.
+
+| # | Fix | Module | What's Wrong | Effort |
+|---|-----|--------|-------------|--------|
+| A | **Fix `mobile_session_count`** | Findings/Behavioral | `isMobileSession()` in `session-aggregator.ts` returns `false` as placeholder. 50%+ of traffic invisible to behavioral analysis. `mobile_session_count` in `BehavioralSessionPayload` is always 0. | 2h |
+| B | **Wire `behavioralContext` into compound findings** | Engine | `recompute.ts:913` passes `null` as third arg to `detectCompoundFindings()`. All `ad_creative_message_mismatch` compounds permanently `'heuristic'` confidence. With behavioral data: upgrades to `'confirmed'`. | 2h |
+| C | **Wire embeddings to `search_findings` MCP tool** | MCP | `llm/embeddings.ts` has `searchFindings()` built but no MCP tool calls it. Add `search_findings` tool definition + executor. | 3h |
+| D | **Fix `get_decision_explainability` schema** | MCP | Tool enum only has 2 pack keys (`scale_readiness_pack`, `revenue_integrity_pack`). Missing `saas_growth_readiness`. Claude can't request SaaS finding explainability. | 30min |
+| E | **Hide `integration_pull` from MCP tool schema** | MCP | `IntegrationPullExecutor` is a permanent stub returning failure. Exposed in schema → user sees failure. Hide until implemented. | 30min |
+| F | **Fix SSE progress counter** | Audit Lifecycle | `/api/cycles/[id]/stream` counts ALL `PageInventoryItem` rows for environment, not current cycle. Progress indicator meaningless for non-first cycles. | 1h |
+| G | **Consume Stripe data in signal engine** | Engine | `CommerceContext.mrr`, `subscriber_churn_rate`, `failed_payment_rate` are populated from Stripe but **feed zero signals and zero inferences**. Data arrives and sits unused. | 1d |
+| H | **Consume Meta/Google Ads in signal engine** | Engine | `IntegrationSnapshot<'meta_ads'>` and `<'google_ads'>` flow into `recomputeAll()` but signal engine doesn't consume them. Types exist, consumption doesn't. | 1d |
+| I | **Map Nuvemshop-exclusive data into CommerceContext** | Engine | `NuvemshopSnapshotData.coupons` (stacking, unlimited, expired-but-active), `.shipping` (avg_days, pickup_rate, cost_ratio), `.channels` (fraud_cancelled, inventory_cancelled) are computed by adapter but `reconcileCommerceContext()` never reads them. | 4h |
+| J | **Clean up state machine inconsistency** | Audit Lifecycle | `CycleStatus` in `packages/domain/audit-cycle.ts` defines 6 states but DB and runtime use 4. Domain types are dead code creating confusion. Align or remove. | 2h |
+| K | **Remove legacy scheduler artifact** | Audit Lifecycle | `apps/platform/audit-scheduler.ts` is a functional but unused in-memory scheduler. Active scheduler is `apps/audit-runner/scheduler.ts`. Remove or mark deprecated. | 1h |
+| L | **Fix CycleType enum drift** | Audit Lifecycle | 6 distinct cycle type strings across codebase with partial overlap (`full`, `hot`, `warm`, `cold`, `incremental`, `verification`). Consolidate to canonical enum. | 2h |
+
+---
+
+### 7.12 Activate Declared-but-Unimplemented Packs
+
+| | |
+|---|---|
+| **Tag** | `engine` `frontend` |
+| **Priority** | P1 |
+| **Status** | Not started — pack slots declared in `eligibility.ts`, inference categories exist, `INFERENCE_TO_PACK` mappings exist, but `recomputeAll()` never calls `produceDecision()` for them |
+| **Effort** | ~3-5 days total |
+
+**Source:** Deep Analysis codebase exploration — 4 pack slots have gate logic, inference categories, root-cause entries, and projection mappings but NO decision pack wired in `recomputeAll()`. Findings surface via intelligence layer but have no workspace, no scoring, no copilot answer.
+
+| # | Pack | Question Key | Existing Infrastructure | What's Missing | Effort |
+|---|------|-------------|------------------------|----------------|--------|
+| A | **Channel Integrity** | `is_channel_integrity_compromised` | Gate in `eligibility.ts`, 8+ inference categories (`PaymentSurfaceScriptExposure`, `ChannelHijackExposure`, `CommerceContinuityThreat`, `AbuseExposureConditions`, etc.), `INFERENCE_TO_PACK` mappings, root causes | `produceDecision()` call in `recomputeAll()`, workspace creator, i18n | 1-2d |
+| B | **Discoverability** | `is_discoverability_limiting_growth` | Gate in `eligibility.ts`, 7 inference categories, projection mappings | Same as above | 1d |
+| C | **Brand Integrity** | `is_brand_integrity_at_risk` | Gate in `eligibility.ts`, 6 inference categories (brand impersonation via `brandIntelScanPass`), projection mappings | Same as above | 1d |
+
+---
+
 ### Open items (Wave 7)
 
 | Item | Priority | Effort | Status |
@@ -1686,12 +1739,167 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 | **7.8** Custom Map Persistence | P3 | 1 day | Model exists |
 | **7.9** Behavioral Delta Processing | P2 | 2-3 days | Not started |
 | **7.10** Maps Modernization | P1 | 2-3 weeks | **Phase 1 starting** |
+| **7.11** Critical Fixes (Deep Analysis) | P0 | 3-5 days | Not started |
+| **7.12** Activate Declared Packs (3) | P1 | 3-5 days | Not started |
 
 **Implementation order:**
-1. **7.3** Batch writes (unblocks scaling) + **7.5** Webhooks (deploy integration)
-2. **7.1** Multi-cycle trends + **7.2** Revenue recovery (moat features)
-3. **7.9** Behavioral delta (scaling) + **7.4** CWV (new findings)
-4. **7.6** + **7.7** + **7.8** (maps polish)
+1. **7.11** Critical fixes (P0 — unblocks data consumption + fixes broken behavioral)
+2. **7.12** Activate declared packs (low-hanging fruit — infrastructure already exists)
+3. **7.3** Batch writes (unblocks scaling) + **7.5** Webhooks (deploy integration)
+4. **7.1** Multi-cycle trends + **7.2** Revenue recovery (moat features)
+5. **7.9** Behavioral delta (scaling) + **7.4** CWV (new findings)
+6. **7.10** Maps Modernization (demo-winning)
+
+---
+
+## Wave 8 — New Analysis Packs
+
+**Goal:** Add high-value decision packs that leverage Vestigio's unique multi-source data architecture. These packs produce compound findings that no single-source competitor can replicate.
+
+> **Source:** Deep Analysis Report (2026-05-01) — market research, competitive landscape, codebase exploration. Packs ranked by compound value × feasibility.
+
+---
+
+### 8.1 Payment Health & Involuntary Churn Pack ⭐
+
+| | |
+|---|---|
+| **Tag** | `engine` `frontend` `mcp` |
+| **Priority** | P0 |
+| **Status** | Not started — **90% of data already flows into CommerceContext but feeds zero signals** |
+| **Effort** | ~3-5 days |
+
+**Problem:** Involuntary churn accounts for 20-40% of all SaaS churn. $440B/year globally in failed payments. Stripe already returns `failed_payment_rate`, `subscriber_churn_rate`, and `mrr` into `CommerceContext` — but no signal extraction function reads them. Chargeflow/Redux focus on *recovery*; no one does *diagnosis* of why payment friction exists.
+
+**Question key:** `is_payment_health_creating_revenue_risk`
+
+**Gate:** Stripe integration connected (`IntegrationConnection.provider === 'stripe'`)
+
+**Data sources (all already available):**
+
+| Data | Source | Status in CommerceContext |
+|------|--------|--------------------------|
+| `failed_payment_rate` | Stripe poller | ✅ Populated, **never read by signal engine** |
+| `subscriber_churn_rate` | Stripe poller | ✅ Populated, **never read by signal engine** |
+| `mrr` | Stripe poller | ✅ Populated, **never read by signal engine** |
+| `dispute_rate` | Stripe poller | ✅ Already consumed by chargeback pack |
+| `single_payment_gateway_risk` | Inference | ✅ Already exists |
+| Billing/account page UX | Crawl | ⚠️ Not classified as critical surface |
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Signal extraction** | New `extractPaymentHealthSignals()` in `packages/signals/engine.ts`: `failed_payment_rate_elevated` (>5%), `subscriber_churn_accelerating` (>7%), `mrr_contraction_detected` (negative delta cycle-over-cycle), `payment_diversity_insufficient` (reuse existing `single_payment_gateway_risk`) | Low |
+| B | **Inference rules** | 4 new inferences: `inferFailedPaymentRevenueDrain`, `inferChurnRateUnsustainable`, `inferMrrContraction`, `inferBillingPageFriction` (compound: billing page quality × failed payment rate) | Medium |
+| C | **Impact baselines** | `failed_payment_rate × mrr × 12 = annual involuntary churn cost`. Real data from Stripe. | Low |
+| D | **Pack decision** | Add `produceDecision({ question_key: 'is_payment_health_creating_revenue_risk', ... })` in `recomputeAll()`. Workspace creator. | Low |
+| E | **MCP integration** | `answer_payment_health` business answer. `payment_health` playbook in copilot. | Low |
+| F | **i18n** | 4 languages (en, pt-BR, es, de) | Low |
+
+**Files touched:** `packages/signals/engine.ts`, `packages/inference/engine.ts`, `packages/impact/baselines.ts`, `packages/projections/remediation-catalog.ts`, `packages/projections/engine.ts` (INFERENCE_TO_PACK), `packages/workspace/recompute.ts`, `packages/classification/eligibility.ts`, `apps/mcp/answers.ts`, `apps/mcp/playbook-prompts.ts`, `dictionary/{en,pt-BR,es,de}.json`
+
+**Why this pack first:** The data is already there. `failed_payment_rate` sits in CommerceContext unused. This is the highest ROI-per-effort pack possible.
+
+---
+
+### 8.2 Dark Pattern & Compliance Risk Pack ⭐
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` `frontend` `mcp` |
+| **Priority** | P1 |
+| **Status** | Not started — `urgency_scarcity` enrichment + `urgency_dark_pattern` signal already exist as foundation |
+| **Effort** | ~1-2 weeks |
+
+**Problem:** EU Digital Services Act Article 25 bans dark patterns explicitly. CPPA (California) uses automated detection tools since Feb 2026. Fines up to 4% of global revenue. E-commerce is the #1 target (70% of ADA lawsuits). No audit tool quantifies dark pattern risk in dollars.
+
+**Question key:** `are_dark_patterns_creating_legal_and_trust_risk`
+
+**Gate:** Always eligible (dark patterns are universally detectable from crawl evidence)
+
+**Existing foundation:**
+
+| Signal/Enrichment | Status |
+|-------------------|--------|
+| `urgency_scarcity` enrichment type (authentic vs manipulative) | ✅ Exists |
+| `urgency_dark_pattern` signal | ✅ Exists |
+| `urgency_authentic_absent` signal | ✅ Exists |
+| Form field analysis (pre-checked, hidden fields) | ✅ Parser extracts |
+| Copy analysis with 80+ psychology models | ✅ Guidelines KB |
+| Cancel flow analysis (Wave 3.19 cancel flow) | ✅ Flow exists |
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Dark pattern detector** | New enrichment pass or extension of `semanticEnrichmentPass`. Detect: pre-checked checkboxes, confirmshaming language ("No thanks, I don't want to save money"), forced account creation before checkout, hidden cost reveals, subscription traps (>3 steps to cancel), misleading countdown timers. Haiku-based classification: `manipulative / borderline / authentic`. | High |
+| B | **Compliance risk scoring** | Map detected patterns to regulatory frameworks (DSA Art. 25, FTC Act §5, CPPA). Risk tiers: `critical` (explicit ban violation), `elevated` (borderline), `advisory`. Financial risk = revenue × fine % × likelihood. | Medium |
+| C | **Behavioral confirmation** | Cross-reference dark patterns with behavioral data: users who abandon after hidden cost reveal, sessions that backtrack after pre-checked upsell, abandon rate at forced signup wall. Upgrades confidence from `structural` to `confirmed`. | Medium |
+| D | **Commerce quantification** | Hidden cost reveals: compare cart value at product page vs checkout (Shopify data). Forced signup: behavioral abandon rate × traffic × AOV. Timer urgency: compare conversion with/without timer (behavioral A/B proxy). | Medium |
+| E | **Inference rules** | `inferHiddenCostManipulation`, `inferForcedAccountCreation`, `inferConfirmshamingLanguage`, `inferSubscriptionTrapDetected`, `inferUrgencyManipulative` (extends existing), `inferPreCheckedUpsell` | Medium |
+| F | **Pack decision + workspace** | `produceDecision()`, workspace creator, compliance risk dashboard with regulatory mapping | Medium |
+| G | **MCP integration** | `analyze_compliance_risk` tool, `compliance_audit` playbook | Low |
+| H | **i18n** | 4 languages. Compliance terminology per jurisdiction. | Low |
+
+**Compound value:** Crawl detects patterns + LLM classifies intent + Behavioral confirms impact + Commerce quantifies cost + Regulatory framework quantifies legal risk. 5-source compound finding.
+
+**Market validation:** DSA enforcement ramping in 2026, CPPA Audits Division operational since Feb 2026, 4% global revenue penalties. No competitor frames dark patterns as financial risk.
+
+---
+
+### 8.3 Content Freshness & Decay Pack
+
+| | |
+|---|---|
+| **Tag** | `engine` `frontend` `mcp` |
+| **Priority** | P1 |
+| **Status** | Not started — `copy_staleness` enrichment already exists (Wave 3.10 Fase 4), `asyncGetNthRecent()` snapshot store ready but never called |
+| **Effort** | ~1 week |
+
+**Problem:** Content half-life collapsed from 18 to 6 months in 2026. AI-cited content is 25.7% fresher than Google organic. CTR drops 61% when AI Overviews appear. No audit tool detects content decay as a revenue problem — they show "content is old" but not "this old content is costing you $X/month."
+
+**Question key:** `is_stale_content_eroding_trust_and_visibility`
+
+**Gate:** Always eligible (content freshness detectable from any crawl)
+
+**Existing foundation:**
+
+| Component | Status |
+|-----------|--------|
+| `copy_staleness` enrichment type (Fase 4) | ✅ Exists — detects old dates, expired promotions, outdated screenshots, discontinued features |
+| `PrismaSnapshotStore.asyncGetNthRecent()` | ✅ Built but **never called** — only `asyncGetLatest()` used |
+| `PrismaSnapshotStore.asyncList()` | ✅ Built, returns up to 50 snapshots — **never called** |
+| Change detection engine | ✅ Compares cycle-to-cycle — but only pairwise, not N-cycle trends |
+| `PageInventoryItem` with freshness tracking | ✅ Exists |
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Temporal staleness scoring** | Use `asyncGetNthRecent(10)` to compare evidence across cycles. Pages unchanged for N cycles get `staleness_score = 1 - (1 / cycles_since_change)`. Pages with commercial intent + high staleness = priority finding. | Medium |
+| B | **Content age extraction** | Extend `copy_staleness` enrichment to extract explicit dates from page content (copyright years, "last updated", blog dates). Compare against current date. Pages with dates >6 months old on competitive topics = decaying. | Low |
+| C | **Revenue correlation** | Cross-reference stale pages with traffic data (if analytics integration exists) or behavioral session data. Stale page + high traffic + declining engagement = quantifiable revenue loss. Stale page + low traffic = already decayed. | Medium |
+| D | **AI visibility scoring** | Heuristic: pages last updated >30 days ago on topics where AI Overviews appear are 25.7% less likely to be cited. Flag as "AI visibility risk." | Low |
+| E | **Inference rules** | `inferCommercialPageStale` (commercial page unchanged >3 cycles), `inferContentDecayProgression` (N-cycle declining engagement), `inferPricingPageOutdated` (pricing page with old dates/stale competitive claims), `inferSocialProofExpired` (testimonials with old dates/names) | Medium |
+| F | **Pack decision + workspace** | `produceDecision()`, content freshness workspace showing page-by-page staleness heatmap, N-cycle timeline of content changes | Medium |
+| G | **MCP integration** | `get_content_freshness` tool, `content_refresh_audit` playbook | Low |
+| H | **i18n** | 4 languages | Low |
+
+**Files touched:** `packages/projections/trend-engine.ts` (if 7.1 ships first, reuse), `packages/change-detection/engine.ts` (N-cycle behavioral trend), `workers/ingestion/enrichment/semantic-enrichment.ts`, `packages/signals/engine.ts`, `packages/inference/engine.ts`, `packages/workspace/recompute.ts`
+
+**Why this pack third:** The infrastructure exists (`copy_staleness` + snapshot store). The market changed (AI search compressed content half-life). The pack reuses multi-cycle trend analysis from 7.1 if shipped first.
+
+---
+
+### Open items (Wave 8)
+
+| Item | Priority | Effort | Status |
+|------|----------|--------|--------|
+| **8.1** Payment Health Pack | P0 | 3-5 days | Not started — data flows but unused |
+| **8.2** Dark Pattern & Compliance Pack | P1 | 1-2 weeks | Not started — foundation exists |
+| **8.3** Content Freshness Pack | P1 | 1 week | Not started — enrichment + store exist |
+
+**Implementation order:**
+1. **8.1** Payment Health (highest ROI — Stripe data already in CommerceContext)
+2. **8.3** Content Freshness (reuses 7.1 trend engine + existing enrichment)
+3. **8.2** Dark Pattern & Compliance (most complex but highest market urgency)
+
+**Dependency:** 7.11G (Consume Stripe data in signal engine) should ship before 8.1, or be merged into 8.1A.
 
 ---
 

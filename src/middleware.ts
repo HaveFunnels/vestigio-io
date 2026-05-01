@@ -99,6 +99,13 @@ export default withAuth(
 
 		// ── Legacy redirects (app domain) ───────────
 
+		// Wave 3.20: /app/analysis → /app/findings (301, preserves query params)
+		if (pathname === "/app/analysis" || pathname === "/app/analysis/") {
+			const url = new URL("/app/findings", req.url);
+			url.search = req.nextUrl.search; // preserve ?severity=, etc.
+			return NextResponse.redirect(url, 301);
+		}
+
 		// /user root → /app
 		if (pathname === "/user" || pathname === "/user/") {
 			return NextResponse.redirect(new URL("/app", req.url));

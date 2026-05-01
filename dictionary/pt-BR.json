@@ -1626,6 +1626,31 @@
 				}
 			}
 		},
+		"findings": {
+			"views": {
+				"page_title": "Descobertas",
+				"on_fire": "Pegando Fogo",
+				"awaiting_verification": "Aguardando Verificacao",
+				"by_domain": "Por Dominio",
+				"winning": "Funcionando Bem",
+				"on_fire_desc": "Problemas criticos que precisam de atencao",
+				"awaiting_verification_desc": "Descobertas de alto impacto para confirmar",
+				"by_domain_desc": "Saude por perspectiva",
+				"winning_desc": "Controles funcionando bem",
+				"save_view": "Salvar visualizacao atual",
+				"view_name": "Nome da visualizacao",
+				"select_icon": "Selecionar icone",
+				"select_color": "Selecionar cor",
+				"save": "Salvar",
+				"cancel": "Cancelar",
+				"delete_view": "Excluir visualizacao",
+				"shared_badge": "Compartilhado",
+				"by_pack": "Por Pack",
+				"by_severity": "Por Severidade",
+				"by_root_cause": "Por Causa Raiz",
+				"by_surface": "Por Superficie"
+			}
+		},
 		"finding_drawer": {
 			"summary": "Resumo",
 			"effect": "Efeito",
@@ -3548,6 +3573,8 @@
 			"growth": "Crescimento",
 			"support": "Suporte",
 			"observability": "Observabilidade",
+			"cross_signals": "Cross-Signals",
+			"product_analytics": "Product Analytics",
 			"add_new_domain": "Adicionar novo domínio",
 			"upgrade_to_add_domains": "Faça upgrade do plano para adicionar mais domínios"
 		},

@@ -1526,6 +1526,31 @@
 			"analyze_together": "__TODO__",
 			"no_match": "__TODO__"
 		},
+		"findings": {
+			"views": {
+				"page_title": "Erkenntnisse",
+				"on_fire": "Dringend",
+				"awaiting_verification": "Warten auf Verifizierung",
+				"by_domain": "Nach Bereich",
+				"winning": "Funktioniert gut",
+				"on_fire_desc": "Kritische Probleme, die Aufmerksamkeit erfordern",
+				"awaiting_verification_desc": "Erkenntnisse mit hohem Einfluss zur Bestaetigung",
+				"by_domain_desc": "Zustand nach Perspektive",
+				"winning_desc": "Kontrollen funktionieren gut",
+				"save_view": "Aktuelle Ansicht speichern",
+				"view_name": "Ansichtsname",
+				"select_icon": "Symbol auswaehlen",
+				"select_color": "Farbe auswaehlen",
+				"save": "Speichern",
+				"cancel": "Abbrechen",
+				"delete_view": "Ansicht loeschen",
+				"shared_badge": "Geteilt",
+				"by_pack": "Nach Pack",
+				"by_severity": "Nach Schweregrad",
+				"by_root_cause": "Nach Ursache",
+				"by_surface": "Nach Oberflaeche"
+			}
+		},
 		"finding_drawer": {
 			"summary": "__TODO__",
 			"effect": "__TODO__",
@@ -2570,7 +2595,9 @@
 			"business": "Geschäft",
 			"growth": "Wachstum",
 			"support": "Support",
-			"observability": "Überwachung"
+			"observability": "\u00dcberwachung",
+			"cross_signals": "Cross-Signals",
+			"product_analytics": "Product Analytics"
 		},
 		"organization_selector": {
 			"no_organization": "Keine Organisation"

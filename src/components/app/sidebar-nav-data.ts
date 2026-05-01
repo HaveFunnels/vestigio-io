@@ -4,10 +4,11 @@
 // Labels use i18n keys from console.navigation.
 // The Sidebar component resolves them via useTranslations.
 //
-// Actions is the primary operating surface.
-// Analysis is an expandable parent with children:
-//   - Findings (/app/analysis)
-//   - Inventory (/app/inventory)
+// Wave 3.20 Fase 2: Sidebar simplification
+//   - "Analysis" parent group removed
+//   - "Findings" promoted to top-level (/app/findings)
+//   - "Inventory" promoted to top-level
+//   - "Cross-Signals" promoted to top-level
 // ──────────────────────────────────────────────
 
 export interface NavItem {
@@ -43,6 +44,13 @@ export const productNav: NavItem[] = [
 		icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
 	},
 	{
+		id: "findings",
+		href: "/app/findings",
+		labelKey: "findings",
+		// Heroicons "document-magnifying-glass"
+		icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z",
+	},
+	{
 		id: "workspaces",
 		href: "/app/workspaces",
 		labelKey: "workspaces",
@@ -52,35 +60,22 @@ export const productNav: NavItem[] = [
 	// Chat removed from sidenav — copilot panel is the primary AI access point (3.14)
 	// /app/chat route still works as a direct-URL fallback.
 	{
-		id: "analysis",
-		labelKey: "analysis",
-		icon: "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z",
-		children: [
-			{
-				id: "findings",
-				href: "/app/analysis",
-				labelKey: "findings",
-				icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z",
-			},
-			{
-				id: "inventory",
-				href: "/app/inventory",
-				labelKey: "inventory",
-				icon: "M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L12 12.75l-5.571-3m11.142 0l4.179 2.25L12 17.25 2.25 12l4.179-2.25m11.142 0l4.179 2.25-4.179 2.25M6.429 14.25L2.25 16.5 12 21.75l9.75-5.25-4.179-2.25",
-			},
-			{
-				id: "cross-signals",
-				href: "/app/cross-signals",
-				labelKey: "cross_signals",
-				icon: "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",
-			},
-		],
+		id: "cross-signals",
+		href: "/app/cross-signals",
+		labelKey: "cross_signals",
+		icon: "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",
 	},
 	{
 		id: "maps",
 		href: "/app/maps",
 		labelKey: "maps",
 		icon: "M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z",
+	},
+	{
+		id: "inventory",
+		href: "/app/inventory",
+		labelKey: "inventory",
+		icon: "M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L12 12.75l-5.571-3m11.142 0l4.179 2.25L12 17.25 2.25 12l4.179-2.25m11.142 0l4.179 2.25-4.179 2.25M6.429 14.25L2.25 16.5 12 21.75l9.75-5.25-4.179-2.25",
 	},
 ];
 

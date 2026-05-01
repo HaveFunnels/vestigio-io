@@ -1618,6 +1618,31 @@
 				}
 			}
 		},
+		"findings": {
+			"views": {
+				"page_title": "Findings",
+				"on_fire": "On Fire",
+				"awaiting_verification": "Awaiting Verification",
+				"by_domain": "By Domain",
+				"winning": "Winning",
+				"on_fire_desc": "Critical issues needing attention",
+				"awaiting_verification_desc": "High-impact findings to confirm",
+				"by_domain_desc": "Health by perspective",
+				"winning_desc": "Controls working well",
+				"save_view": "Save current view",
+				"view_name": "View name",
+				"select_icon": "Select icon",
+				"select_color": "Select color",
+				"save": "Save",
+				"cancel": "Cancel",
+				"delete_view": "Delete view",
+				"shared_badge": "Shared",
+				"by_pack": "By Pack",
+				"by_severity": "By Severity",
+				"by_root_cause": "By Root Cause",
+				"by_surface": "By Surface"
+			}
+		},
 		"finding_drawer": {
 			"summary": "Summary",
 			"effect": "Effect",
@@ -3529,6 +3554,8 @@
 			"growth": "Growth",
 			"support": "Support",
 			"observability": "Observability",
+			"cross_signals": "Cross-Signals",
+			"product_analytics": "Product Analytics",
 			"add_new_domain": "Add new domain",
 			"upgrade_to_add_domains": "Upgrade your plan to add more domains"
 		},

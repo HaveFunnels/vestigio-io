@@ -110,6 +110,7 @@ model User {
   dashboardLayouts      DashboardLayout[]
   userActions           UserAction[]
   customMaps            CustomMap[]
+  savedViews            SavedView[]
 }
 
 // ──────────────────────────────────────────────
@@ -281,6 +282,7 @@ model Environment {
   behavioralEvents RawBehavioralEvent[]
   userActions      UserAction[]
   opportunityTrackings OpportunityTracking[]
+  savedViews       SavedView[]
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
@@ -1511,4 +1513,37 @@ model CancelSurvey {
 
   @@index([organizationId])
   @@index([createdAt])
+}
+
+// ──────────────────────────────────────────────
+// Wave 3.20 — Saved Views (Findings page)
+//
+// Persists user-customized filter presets for the Findings page.
+// Each view stores its filter JSON, groupBy/sortBy preferences,
+// and visual metadata (Phosphor icon name + hex accent color).
+// Default views are seeded on first access (4 preset views).
+// ──────────────────────────────────────────────
+
+model SavedView {
+  id            String   @id @default(cuid())
+  userId        String
+  environmentId String
+  name          String
+  icon          String?         // Phosphor icon name: "Flame", "SealCheck", "SquaresFour", "ShieldCheck"
+  color         String?         // hex for tab accent
+  filters       Json            // { severity?, pack?, polarity?, verification?, change?, impact?, surface?, rootCause? }
+  groupBy       String?         // "workspace" | "severity" | "root_cause" | "surface" | "pack"
+  sortBy        String  @default("impact_desc")
+  layout        String  @default("table")
+  isDefault     Boolean @default(false)
+  isShared      Boolean @default(false)
+  order         Int     @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, environmentId])
+  @@index([environmentId, isShared])
 }

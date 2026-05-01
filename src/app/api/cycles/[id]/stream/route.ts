@@ -104,23 +104,23 @@ export async function GET(
 		});
 
 		// Pages discovered: counted from PageInventoryItem rows created
-		// during this cycle via the worker. Graceful fallback to 0 if the
-		// item table doesn't yet have a cycleId linkage for this row (the
-		// worker currently links by environmentId, so we approximate via
-		// the environment's latest count — good enough for a progress UI).
+		// during this cycle. We filter by createdAt >= cycle start time to
+		// only count pages discovered in THIS cycle, not historical ones.
 		let pagesDiscovered = 0;
 		try {
-			const envId = (
-				await prisma.auditCycle.findUnique({
-					where: { id: cycleId },
-					select: { environmentId: true },
-				})
-			)?.environmentId;
-			if (envId) {
+			const cycleRow = await prisma.auditCycle.findUnique({
+				where: { id: cycleId },
+				select: { environmentId: true, createdAt: true },
+			});
+			if (cycleRow?.environmentId) {
 				// PageInventoryItem carries `environmentRef` (plain string column
 				// set to the env's id) — not a Prisma relation via environmentId.
+				// Filter by createdAt >= cycle start to scope to current cycle only.
 				pagesDiscovered = await prisma.pageInventoryItem.count({
-					where: { environmentRef: envId },
+					where: {
+						environmentRef: cycleRow.environmentId,
+						createdAt: { gte: cycleRow.createdAt },
+					},
 				});
 			}
 		} catch {

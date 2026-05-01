@@ -36,6 +36,7 @@ import { VerificationRequest, VerificationType } from '../../packages/domain';
 import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection } from '../../packages/projections';
 import type { MapDefinition } from '../../packages/maps';
 import { buildCustomMap } from '../../packages/maps';
+import { searchFindingsSync } from './llm';
 
 // ──────────────────────────────────────────────
 // MCP Tool Registry
@@ -50,7 +51,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   {
     name: 'get_decision_explainability',
     description: 'Get detailed explainability for a specific decision pack — why the decision was made, contributing factors, and linked root causes.',
-    input_schema: { pack_key: { type: 'string', enum: ['scale_readiness_pack', 'revenue_integrity_pack'] } },
+    input_schema: { pack_key: { type: 'string', enum: ['scale_readiness_pack', 'revenue_integrity_pack', 'saas_growth_readiness'] } },
   },
   {
     name: 'get_root_causes',
@@ -81,7 +82,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
     name: 'request_verification',
     description: 'Request additional verification to strengthen confidence in a decision. Creates a verification request — does NOT execute collection directly.',
     input_schema: {
-      verification_type: { type: 'string', enum: ['reuse_only', 'light_probe', 'browser_verification', 'integration_pull'] },
+      verification_type: { type: 'string', enum: ['reuse_only', 'light_probe', 'browser_verification'] },
       subject_ref: { type: 'string' },
       reason: { type: 'string' },
       decision_ref: { type: 'string', nullable: true },
@@ -140,7 +141,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   {
     name: 'get_map',
     description: 'Get a causal visualization map (revenue_leakage, chargeback_risk, or root_cause).',
-    input_schema: { map_type: { type: 'string', enum: ['revenue_leakage', 'chargeback_risk', 'root_cause'] } },
+    input_schema: { map_type: { type: 'string', enum: ['revenue_leakage', 'chargeback_risk', 'root_cause', 'user_journey'] } },
   },
   {
     name: 'discuss_finding',
@@ -166,6 +167,13 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
       name: { type: 'string', description: 'Short name for the map (e.g., "Checkout Trust Issues")' },
       description: { type: 'string', description: 'One-sentence description of what the map shows' },
       finding_ids: { type: 'array', items: { type: 'string' }, description: 'IDs of findings to include. Use get_finding_projections first to get IDs.' },
+    },
+  },
+  {
+    name: 'search_findings',
+    description: 'Search findings by natural language query. Returns semantically similar findings ranked by relevance.',
+    input_schema: {
+      query: { type: 'string', description: 'Natural language search query' },
     },
   },
 ];
@@ -205,6 +213,7 @@ export type ToolResult =
   | { type: 'custom_map_created'; data: { mapId: string; name: string; nodeCount: number; edgeCount: number; url: string; mapDefinition: MapDefinition } }
   | { type: 'copy_analysis'; data: CopyAnalysisView }
   | { type: 'verification_skipped'; data: VerificationSkippedView }
+  | { type: 'search_findings'; data: SearchFindingsView }
   | { type: 'error'; data: { message: string } };
 
 export interface CopyAnalysisView {
@@ -223,6 +232,11 @@ export interface VerificationSkippedView {
   reasoning: string;
   value_to_cost_ratio: number;
   alternatives: { type: string; cost: number; value: number; trade_off: string }[];
+}
+
+export interface SearchFindingsView {
+  query: string;
+  results: { id: string; type: 'finding' | 'action'; title: string; severity: string; impact_mid: number; pack: string }[];
 }
 
 // ──────────────────────────────────────────────
@@ -431,6 +445,28 @@ export function executeTool(
           edgeCount: mapDef.edges.length,
           url: '/app/maps',
           mapDefinition: mapDef,
+        },
+      };
+    }
+
+    case 'search_findings': {
+      const query = params.query as string;
+      if (!query) return { type: 'error', data: { message: 'query is required' } };
+      // Derive orgId from workspace_ref (format: "workspace:<org_id>")
+      const orgId = ctx.scope.workspace_ref.replace('workspace:', '');
+      const results = searchFindingsSync(orgId, query, 10);
+      return {
+        type: 'search_findings',
+        data: {
+          query,
+          results: results.map((r: { id: string; type: 'finding' | 'action'; metadata: { title: string; severity: string; impact_mid: number; pack: string } }) => ({
+            id: r.id,
+            type: r.type,
+            title: r.metadata.title,
+            severity: r.metadata.severity,
+            impact_mid: r.metadata.impact_mid,
+            pack: r.metadata.pack,
+          })),
         },
       };
     }

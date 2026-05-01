@@ -488,12 +488,24 @@ function isPaidSession(s: SessionAggregate): boolean {
 }
 
 function isMobileSession(s: SessionAggregate): boolean {
-  // Mobile detection: check for viewport/device hints in data
-  // For now, we rely on the session having mobile indicators from the pixel
-  // The pixel sends device_type in the heartbeat data; if not available,
-  // we use a heuristic: sessions with very short progression + high dead clicks
-  // This is a simplification — in production, the pixel should send device_type
-  return false; // placeholder — overridden in aggregateCohorts via deviceClassifier
+  // Mobile detection heuristic for when no external deviceClassifier is provided.
+  // The pixel stores viewport_width in heartbeat data and device_type if available.
+  // Since SessionAggregate doesn't carry raw event data, this function uses
+  // behavioral heuristics as a fallback. The primary mobile detection path is
+  // the deviceClassifier passed to aggregateCohorts() (uses user-agent regex).
+  //
+  // Heuristic indicators of mobile sessions:
+  // - Short surface progressions (mobile users navigate less)
+  // - Higher dead click counts (fat-finger taps on mobile)
+  // - Very short session durations with form abandonment
+  //
+  // This is intentionally conservative: false negatives are acceptable;
+  // false positives would contaminate the desktop cohort.
+  const shortProgression = s.surface_progression.length <= 2;
+  const highDeadClicks = s.dead_click_count >= 3;
+  const shortWithAbandon = s.session_duration_ms < 60_000 && s.form_started && !s.form_completed;
+
+  return shortProgression && highDeadClicks && shortWithAbandon;
 }
 
 function computeCohortSlice(sessions: SessionAggregate[]): BehavioralCohortSlice {

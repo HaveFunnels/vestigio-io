@@ -184,7 +184,13 @@ export async function processBehavioralEventsForEnv(
   }
 
   // ── Reduce to BehavioralSessionPayload (env-level metrics) ──
-  const sessionPayload = sessionsToBehavioralPayload(aggregates);
+  // Pass the device classifier so mobile_session_count is populated.
+  const deviceClassifier = (s: SessionAggregate): "mobile" | "desktop" | null => {
+    const ua = sessionUserAgent.get(s.session_id);
+    if (!ua) return "desktop"; // unknown UA → conservative default
+    return MOBILE_UA_REGEX.test(ua) ? "mobile" : "desktop";
+  };
+  const sessionPayload = sessionsToBehavioralPayload(aggregates, deviceClassifier);
 
   // ── Reduce to BehavioralCohortPayload (cohort-level metrics) ──
   // Powers the 7 pixel-dependent workspaces (first_impression, action_value,
@@ -193,11 +199,6 @@ export async function processBehavioralEventsForEnv(
   // looks for `payload.type === 'behavioral_cohort'` and bails out if it
   // doesn't find one — without this second evidence entry the cohort
   // signals never fire and the 7 workspaces stay empty.
-  const deviceClassifier = (s: SessionAggregate): "mobile" | "desktop" | null => {
-    const ua = sessionUserAgent.get(s.session_id);
-    if (!ua) return "desktop"; // unknown UA → conservative default
-    return MOBILE_UA_REGEX.test(ua) ? "mobile" : "desktop";
-  };
   const cohortPayload = aggregateCohorts(aggregates, deviceClassifier);
 
   // ── Mark rows as processed (informational; retention uses receivedAt) ──
@@ -259,6 +260,7 @@ const EMPTY_ATTRIBUTION: AttributionContext = {
  */
 export function sessionsToBehavioralPayload(
   sessions: SessionAggregate[],
+  deviceClassifier?: (s: SessionAggregate) => "mobile" | "desktop" | null,
 ): BehavioralSessionPayload {
   const n = sessions.length;
   if (n === 0) return EMPTY_PAYLOAD;
@@ -344,6 +346,24 @@ export function sessionsToBehavioralPayload(
     if (s.form_retry_count > 0 && !s.reached_thank_you) retryThenAbandon++;
 
     sessionDurationTotal += s.session_duration_ms;
+
+    // Mobile classification — uses the passed-in device classifier
+    // (resolves Bug: mobile_session_count always 0)
+    if (deviceClassifier) {
+      const device = deviceClassifier(s);
+      if (device === "mobile") {
+        mobile++;
+        // Mobile first-action failure: mobile session that started a form
+        // or clicked a CTA but did not reach checkout/thank-you
+        if (
+          (s.form_started || s.cta_clicked_count > 0) &&
+          !s.checkout_reached &&
+          !s.reached_thank_you
+        ) {
+          mobileFirstActionFail++;
+        }
+      }
+    }
 
     // Milestones
     switch (s.highest_milestone) {

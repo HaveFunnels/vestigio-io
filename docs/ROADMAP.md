@@ -1703,9 +1703,151 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 | J | **Clean up state machine inconsistency** | Audit Lifecycle | `CycleStatus` in `packages/domain/audit-cycle.ts` defines 6 states but DB and runtime use 4. Domain types are dead code creating confusion. Align or remove. | 2h |
 | K | **Remove legacy scheduler artifact** | Audit Lifecycle | `apps/platform/audit-scheduler.ts` is a functional but unused in-memory scheduler. Active scheduler is `apps/audit-runner/scheduler.ts`. Remove or mark deprecated. | 1h |
 | L | **Fix CycleType enum drift** | Audit Lifecycle | 6 distinct cycle type strings across codebase with partial overlap (`full`, `hot`, `warm`, `cold`, `incremental`, `verification`). Consolidate to canonical enum. | 2h |
-| M | **Add `pixel_coverage_page_types` to BehavioralSessionPayload** | Behavioral (🔴 **CRITICAL**) | Partial pixel coverage (e.g., pixel on homepage+pricing but NOT checkout) produces **silently incorrect findings**: `checkout_reached_rate = 0%` when pixel just isn't on checkout page. Engine cannot distinguish "zero conversions" from "no visibility." Fix: compute `covered_page_types` in `processBehavioralEventsForEnv()`, add to payload, gate checkout-dependent signals on coverage. | 4h |
-| N | **Tag change detection `new_issue` reason** | Engine | When pixel is installed or integration connected mid-lifecycle, all new findings enter as `new_issue` in change report. Generates "7 new issues" surge + false `revenue_path_regressed` inference injection. System can't distinguish "new because new data source" from "new because site degraded." Fix: track active `source_kind` types per snapshot, tag `new_issue` with `reason: 'new_data_source' \| 'site_degradation'`, suppress regression inference for data-source-expansion findings. | 4h |
-| O | **Fix `monthly_revenue = 0` fallback in impact engine** | Impact | `business.monthly_revenue \|\| FALLBACK_INPUTS.monthly_revenue` uses $50k fallback when revenue is explicitly 0 (pre-revenue startup). Produces false $X/mo impact estimates. Fix: `!= null` check instead of `\|\|`. | 30min |
+---
+
+#### 7.11B — Wire `behavioralContext` into Compound Findings (Fix B) ⚠️
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P0 |
+| **Status** | Not started |
+| **Effort** | ~2h |
+
+**Problem:** `recompute.ts:913` passes `null` as the third argument to `detectCompoundFindings()`. The `detectAdPromiseRealityBehavior` detector in `compound-findings.ts:381-382` reads `behavioralContext?.bounce_rate` and `behavioralContext?.avg_session_duration` to upgrade compound confidence from `'heuristic'` to `'confirmed'` and compute precise excess-bounce impact. With `null` passed, **every** `ad_creative_message_mismatch` compound finding is permanently `'heuristic'` confidence and uses only a flat 25% ad spend waste estimate — even when the pipeline already computed rich behavioral cohort data earlier in the same cycle.
+
+**What the data looks like:**
+- `BehavioralCohortPayload.cohorts.paid_traffic` has `conversion_rate`, `backtrack_rate`, `hesitation_pause_rate`
+- These are already computed in `processBehavioralEventsForEnv()` and present as `Evidence<BehavioralSession>` by the time `detectCompoundFindings()` runs
+- The compound detector only needs `bounce_rate` (proxy: `1 - paid_traffic.conversion_rate`) and `avg_session_duration`
+
+**Fix:**
+
+| # | Step | File | Change |
+|---|------|------|--------|
+| 1 | Build `BehavioralContextForCompound` | `packages/workspace/recompute.ts` | Before line 913, extract `BehavioralSessionPayload` from evidence array (same loop at lines 388-401). Compute `{ bounce_rate: 1 - (payload.checkout_reached_rate \|\| 0), avg_session_duration: payload.avg_session_duration_ms / 1000 }` |
+| 2 | Pass instead of `null` | `packages/workspace/recompute.ts:913` | `detectCompoundFindings(compoundInputs, commerceContext, behavioralCtx)` |
+| 3 | Verify detector reads it | `packages/composites/compound-findings.ts:381-382` | Already reads `behavioralContext?.bounce_rate` — no change needed here |
+
+**Result:** When behavioral data is available, ad-promise compound findings jump from `heuristic` → `confirmed` confidence. When absent, behavior unchanged (`null` → heuristic fallback preserved). **Zero regression risk.**
+
+---
+
+#### 7.11M — Pixel Coverage Metadata (Fix M) 🔴 CRITICAL
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` |
+| **Priority** | P0 |
+| **Status** | Not started |
+| **Effort** | ~4-6h |
+
+**Problem:** When the behavioral pixel is installed on some pages but not others (e.g., homepage + pricing but NOT checkout), the engine produces **silently incorrect findings**:
+
+- `checkout_reached_rate = 0%` → engine concludes nobody reaches checkout
+- `conversion_rate = 0%` → engine concludes zero conversions
+- `inferCheckoutAbandonmentRevenueLeak` may fire with "$X/mo lost" based on false data
+- `inferHighIntentDetour` fires for all sessions (nobody "reached" checkout)
+- All behavioral findings about checkout are factually wrong — it's not "zero conversions," it's "pixel isn't on conversion pages"
+
+**Why it's silent:** There is no `pixel_coverage_page_types` field in `BehavioralSessionPayload` or `BehavioralCohortPayload`. The engine cannot distinguish "zero conversions" from "no visibility into conversions." No caveat is shown to the user.
+
+**The session aggregator already has the data needed:** Every `RawBehavioralEvent` has a URL. The `Surface.page_type: SurfacePageType` classifies each URL as `homepage | checkout | pricing | product | cart | thank_you | ...`. The aggregator just never collects which page types it observed across all sessions.
+
+**Fix:**
+
+| # | Step | File | Change |
+|---|------|------|--------|
+| 1 | Add `pixel_coverage_page_types` field | `packages/behavioral/types.ts` | Add to `BehavioralSessionPayload`: `pixel_coverage_page_types: SurfacePageType[]` — the set of all `page_type` values observed across any session |
+| 2 | Compute coverage in aggregation | `apps/audit-runner/process-behavioral.ts` | In `sessionsToBehavioralPayload()`, collect `Set<SurfacePageType>` from all session events' URLs. Map URLs → page types using the same `inferPageType()` from `run-cycle.ts:56`. Attach to payload. |
+| 3 | Gate checkout-dependent signals | `packages/signals/engine.ts` | In behavioral signal extractors (lines ~3809, 3858, 3979, 5957), check `payload.pixel_coverage_page_types.includes('checkout')` before emitting checkout-rate signals. If checkout not covered: skip signal OR emit a `checkout_coverage_absent` signal instead |
+| 4 | Gate checkout-dependent inferences | `packages/inference/engine.ts` | Inferences that read checkout behavioral signals (`inferHighIntentDetour`, `inferCheckoutAbandonNoFeedback`, `inferSensitiveInputAbandonment`) should check for the `checkout_coverage_absent` signal. If present: don't fire, or emit with `confidence: 15` + reasoning "checkout page not covered by pixel" |
+| 5 | Surface coverage gap in UI | `frontend` (optional) | Show "Pixel not detected on: checkout, cart" warning in behavioral workspace header. Low effort, high trust. |
+
+**Affected `SurfacePageType` values for gating:**
+
+| Page Type | If NOT in coverage → suppress signals about... |
+|-----------|------------------------------------------------|
+| `checkout` | `checkout_reached_rate`, `conversion_rate`, `sensitive_input_abandon`, `checkout_abandon`, `handoff_without_return` |
+| `cart` | `cart_to_checkout_rate` |
+| `thank_you` | `confirmation_seen_rate`, `reached_thank_you` |
+| `pricing` | `pricing_then_backtrack` (already correct — if pixel not on pricing, the event won't fire) |
+
+**Result:** Findings that depend on page types NOT covered by the pixel are either suppressed or clearly caveated. Zero false positives from partial pixel coverage. Full backward compatibility when pixel covers all pages.
+
+---
+
+#### 7.11N — Change Detection Source Expansion Tagging (Fix N) ⚠️
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P0 |
+| **Status** | Not started |
+| **Effort** | ~4-6h |
+
+**Problem:** When a user installs the pixel or connects an integration mid-lifecycle, the next audit cycle produces many new findings that are genuinely new *visibility* — not new *problems*. But the change detection system treats them identically to real site degradation:
+
+1. `detectChanges()` in `change-detection/engine.ts:51-53` classifies any decision present in current but absent in previous as `new_issue` with `contributing_factors: ['First observation of this decision']`
+2. All 7 behavioral workspace decisions enter as `new_issue` → dashboard shows "7 new issues"
+3. Integration-powered findings (checkout abandonment, refund rate, etc.) enter as `new_issue` → "5 new issues"
+4. **Worse:** The `revenue_path_regressed` synthetic inference at `recompute.ts:763-791` fires when `changeReport.regressions` has `severity >= notable`. These "new issues" can meet that threshold → a false regression inference is injected → the user sees "revenue path degraded" when nothing degraded
+
+**The user experience:** "I installed the pixel to get more insights. Now my dashboard says everything is getting worse. This tool is broken."
+
+**Fix:**
+
+| # | Step | File | Change |
+|---|------|------|--------|
+| 1 | Track active source kinds per snapshot | `packages/change-detection/types.ts` | Add `active_source_kinds: SourceKind[]` to `CycleSnapshot` metadata. Populated from evidence at snapshot creation time in `recompute.ts`. |
+| 2 | Detect source expansion | `packages/change-detection/engine.ts` | At the top of `detectChanges()`, compare `previous.active_source_kinds` vs `current.active_source_kinds`. Compute `newSources = current - previous`. |
+| 3 | Tag new-issue reason | `packages/change-detection/engine.ts` | In `createNewIssueChange()` (line 231-250): accept optional `reason` param. When `newSources` is non-empty AND the decision's `question_key` relates to a new source (e.g., behavioral workspace question keys when `BehavioralSnippet` is a new source), set `reason: 'data_source_expanded'` instead of default. Add to `contributing_factors: ['First observation — new data source (behavioral pixel) connected this cycle']`. |
+| 4 | Add `reason` field to `DecisionChange` | `packages/change-detection/types.ts` | `reason?: 'site_degradation' \| 'data_source_expanded' \| 'first_observation'` |
+| 5 | Suppress false regression injection | `packages/workspace/recompute.ts:763-791` | In the regression injection block, filter `materialRegressions` to exclude changes where `reason === 'data_source_expanded'`. Only inject `revenue_path_regressed` for genuine site degradations. |
+| 6 | UI distinction (optional) | `frontend` | In change summary hero (WhatChangedCard), show data-source-expansion findings with a distinct badge: "📊 New visibility" instead of "⚠️ New issue". Different color (blue info vs amber warning). |
+
+**Mapping question_keys to source kinds for tagging:**
+
+| New Source Kind | Question Keys to Tag as `data_source_expanded` |
+|----------------|------------------------------------------------|
+| `BehavioralSnippet` | All 7 behavioral workspace questions (`is_first_session_conversion_leaking`, `are_user_actions_driving_revenue`, etc.) |
+| `Integration` (Shopify) | Commerce-dependent findings (`checkout_abandonment_revenue_leak`, `promoted_product_out_of_stock`, etc.) |
+| `Integration` (Stripe) | Payment findings (future 8.1 pack: `is_payment_health_creating_revenue_risk`) |
+| `Integration` (Meta/Google) | Ad findings (`ad_creative_message_mismatch`, etc.) |
+
+**Result:** "7 new issues" becomes "7 new insights from behavioral pixel installation." No false `revenue_path_regressed` inference. Real site degradation still triggers true regression alerts. Full backward compatibility.
+
+---
+
+#### 7.11O — Fix `monthly_revenue = 0` Fallback in Impact Engine (Fix O) ⚠️
+
+| | |
+|---|---|
+| **Tag** | `engine` |
+| **Priority** | P1 |
+| **Status** | Not started |
+| **Effort** | ~30min |
+
+**Problem:** In `packages/impact/engine.ts:233-235`, three lines use `||` (logical OR) instead of `!= null` for fallback:
+
+```ts
+const revenue = business.monthly_revenue || FALLBACK_INPUTS.monthly_revenue!;      // line 233
+const transactions = business.monthly_transactions || FALLBACK_INPUTS.monthly_transactions!;  // line 234
+const chargebackRate = business.chargeback_rate || FALLBACK_INPUTS.chargeback_rate!;   // line 235
+```
+
+When `monthly_revenue` is explicitly `0` (pre-revenue startup that entered $0 in business profile), JavaScript `0 || 50000` evaluates to `50000`. The engine silently uses the $50k SMB default. All impact estimates are inflated: a finding that should show "$0/mo impact" shows "$X,XXX/mo impact" based on phantom revenue.
+
+Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargeback_rate = 0` (→ falls back to 0.01).
+
+**Fix:**
+
+| # | Step | File | Change |
+|---|------|------|--------|
+| 1 | Replace `\|\|` with `!= null` ternary | `packages/impact/engine.ts:233-235` | `const revenue = business.monthly_revenue != null ? business.monthly_revenue : FALLBACK_INPUTS.monthly_revenue!;` — same pattern for all three lines |
+| 2 | Same fix in `mini-impact.ts` if present | `packages/impact/mini-impact.ts` | Check for same pattern with `FALLBACK_MONTHLY_REVENUE_BRL` (line 51) |
+
+**Result:** Pre-revenue startups with $0 declared revenue get $0/mo impact estimates (correct). Startups that never entered revenue data (fields are `null`) still get the $50k fallback (preserved). **Zero regression risk** — only `0` changes behavior, `null` and positive numbers are unchanged.
 
 ---
 

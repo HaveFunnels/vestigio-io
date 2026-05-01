@@ -73,7 +73,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~Conversation export/branching~~ | **✅ Shipped 2026-05-01** — Branching (fork) already existed. Export: JSON/Markdown/CSV formats, `/api/conversations/[id]/export` endpoint, ExportDropdown in CopilotPanel header, i18n. | Wave 4.4 |
 | ~~Neglected Findings~~ | **✅ Shipped 2026-05-01** — 6 findings: payment handoff dropoff (30%+ don't return), SaaS activation gap (heuristic proxy via first-action failure), oscillation clustering (same pair 3+ times), network error weighting (payment×3/measurement×2), mobile trust gap (trust degraded on mobile), behavioral micro-pattern cascade (2+ friction signals simultaneous). All with signals, inferences, root cause mappings, baselines, remediation, i18n. | Wave 4.6 |
 | ~~Cross-Domain Compound Findings~~ | **✅ Shipped 2026-05-01** — 5 compound types (security_revenue_chain, ad_promise_reality_behavior, trust_hesitation_revenue, post_purchase_chain, brand_impersonation_revenue). Detection engine in `packages/composites/compound-findings.ts`, wired into recompute + projections (1.5x priority boost) + cross-signal narratives. CompoundInput lightweight type, confidence tiers (confirmed/likely/heuristic), multiplicative impact. i18n (4 langs). | Wave 4.7 |
-| Critical Fixes — Deep Analysis Issues | **Not started** — 12 issues: mobile behavioral broken, behavioralContext null, embeddings unwired, MCP schema gaps, SSE bug, Stripe/Ads data unused, Nuvemshop data unmapped, state machine drift, legacy scheduler, CycleType enum | Wave 7.11 |
+| Critical Fixes — Deep Analysis Issues | **Not started** — 15 issues (3 critical): mobile behavioral broken, behavioralContext null, embeddings unwired, MCP schema gaps, SSE bug, Stripe/Ads data unused, Nuvemshop data unmapped, state machine drift, legacy scheduler, CycleType enum, **🔴 partial pixel coverage produces silently incorrect findings**, **🔴 new data source triggers false regression alerts**, monthly_revenue=0 fallback bug | Wave 7.11 |
 | Activate Declared-but-Unimplemented Packs | **Not started** — Channel Integrity, Discoverability, Brand Integrity: gate logic + inference categories + projection mappings exist, `produceDecision()` never called | Wave 7.12 |
 | Payment Health & Involuntary Churn Pack | **Not started** — Stripe data (`failed_payment_rate`, `subscriber_churn_rate`, `mrr`) already in CommerceContext but feeds zero signals. 20-40% of all SaaS churn is involuntary. | Wave 8.1 |
 | Dark Pattern & Compliance Risk Pack | **Not started** — `urgency_dark_pattern` signal exists as foundation. DSA Art. 25 enforcement ramping 2026. Fines up to 4% global revenue. | Wave 8.2 |
@@ -1685,7 +1685,7 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 | **Tag** | `engine` `mcp` `collection` `infra` |
 | **Priority** | P0 |
 | **Status** | Not started — all issues identified in Deep Analysis Report (2026-05-01) |
-| **Effort** | ~3-5 days total |
+| **Effort** | ~5-7 days total (15 fixes, 3 critical) |
 
 **Source:** [DEEP_ANALYSIS_REPORT.md](DEEP_ANALYSIS_REPORT.md) — comprehensive investigation of 5 core modules.
 
@@ -1703,6 +1703,9 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 | J | **Clean up state machine inconsistency** | Audit Lifecycle | `CycleStatus` in `packages/domain/audit-cycle.ts` defines 6 states but DB and runtime use 4. Domain types are dead code creating confusion. Align or remove. | 2h |
 | K | **Remove legacy scheduler artifact** | Audit Lifecycle | `apps/platform/audit-scheduler.ts` is a functional but unused in-memory scheduler. Active scheduler is `apps/audit-runner/scheduler.ts`. Remove or mark deprecated. | 1h |
 | L | **Fix CycleType enum drift** | Audit Lifecycle | 6 distinct cycle type strings across codebase with partial overlap (`full`, `hot`, `warm`, `cold`, `incremental`, `verification`). Consolidate to canonical enum. | 2h |
+| M | **Add `pixel_coverage_page_types` to BehavioralSessionPayload** | Behavioral (🔴 **CRITICAL**) | Partial pixel coverage (e.g., pixel on homepage+pricing but NOT checkout) produces **silently incorrect findings**: `checkout_reached_rate = 0%` when pixel just isn't on checkout page. Engine cannot distinguish "zero conversions" from "no visibility." Fix: compute `covered_page_types` in `processBehavioralEventsForEnv()`, add to payload, gate checkout-dependent signals on coverage. | 4h |
+| N | **Tag change detection `new_issue` reason** | Engine | When pixel is installed or integration connected mid-lifecycle, all new findings enter as `new_issue` in change report. Generates "7 new issues" surge + false `revenue_path_regressed` inference injection. System can't distinguish "new because new data source" from "new because site degraded." Fix: track active `source_kind` types per snapshot, tag `new_issue` with `reason: 'new_data_source' \| 'site_degradation'`, suppress regression inference for data-source-expansion findings. | 4h |
+| O | **Fix `monthly_revenue = 0` fallback in impact engine** | Impact | `business.monthly_revenue \|\| FALLBACK_INPUTS.monthly_revenue` uses $50k fallback when revenue is explicitly 0 (pre-revenue startup). Produces false $X/mo impact estimates. Fix: `!= null` check instead of `\|\|`. | 30min |
 
 ---
 

@@ -112,7 +112,7 @@ export default async function SolutionLayers() {
 						<span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
 						<span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">{t("section_label")}</span>
 					</div>
-				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-4xl lg:text-5xl">{t("title")}</h2>
+				<h2 className="mb-4 text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:mb-5 sm:text-3xl lg:text-[2.25rem]">{t("title")}</h2>
 			</div>
 
 			<div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">

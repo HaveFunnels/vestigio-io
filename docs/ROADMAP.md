@@ -1601,6 +1601,77 @@ Feature-flag gated rollout with a kill switch. Order:
 
 ---
 
+### 7.10 Maps Modernization — State of the Art ⭐
+
+| | |
+|---|---|
+| **Tag** | `frontend` `engine` |
+| **Priority** | P1 |
+| **Status** | Not started — spec ready |
+| **Effort** | ~2-3 weeks |
+
+**Problem:** Maps scored 7.0/10 in Deep Analysis. Layout quality 5/10 (fixed columns, edge crossings), mobile 4/10 (broken), interactivity 7/10 (no export/search/filter/multi-select). 2111-line monolith file. Edges are straight lines with no routing. Deprecated React Flow prop. Competitors (Sitebulb) have superior graph visualization.
+
+**Target:** Production-grade, demo-winning graph visualization. Dagre layout with crossing minimization, bezier edges with animated strokes, modular component architecture, mobile-responsive canvas, revenue heat overlay (node size by $), interactive legend, export (PNG/SVG), severity filter, canvas search.
+
+**Architecture target:**
+```
+packages/maps/
+  ├── engine.ts (builders — keep)
+  ├── layout/
+  │   ├── dagre-layout.ts (LR + TB + custom ranks)
+  │   └── layout-config.ts (spacing, padding, rank separation)
+  └── types.ts (add edge routing types)
+
+src/components/maps/
+  ├── nodes/ (12 modular components)
+  ├── edges/ (custom bezier edge components)
+  ├── controls/ (toolbar, severity filter, search)
+  ├── overlays/ (insight badges, revenue heat)
+  └── MapCanvas.tsx (core wrapper, <500 lines)
+
+src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
+```
+
+#### Phase 1 — Layout + Edge Routing + Modularization (~1 week)
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Dagre layout engine** | Replace `applyHierarchicalLayout()` with dagre. LR direction (left-to-right), rank separation 250px, node separation 80px. Crossing minimization automatic. Fallback to current layout if dagre fails. | Medium |
+| B | **Custom edge components** | Replace React Flow default straight-line edges with custom bezier components: `CausalEdge` (animated red bezier), `TransitionEdge` (blue smoothstep), `ContributesToEdge` (dashed gray bezier), `AddressesEdge` (green solid bezier), `RedirectEdge` (violet dotted). Use `getBezierPath()` from @xyflow/react. | Medium |
+| C | **Modularize nodes** | Extract 9 inline node components from 2111-line page.tsx into `src/components/maps/nodes/`. Each node: self-contained, <80 lines, typed props. | Medium |
+| D | **Modularize page** | Reduce `[mapId]/page.tsx` from 2111 → ~400 lines. Extract: node types registry, edge styles, drawer content, filter bar, legend into separate files. | Medium |
+| E | **Fix deprecated prop** | Remove `edgesReconnectable={false}`, fix any console warnings. | Low |
+
+#### Phase 2 — Visual Polish + Heat Overlay (~1 week)
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| F | **Revenue heat overlay** | Node SIZE varies by `impact.midpoint`. Critical findings: 1.3x scale + red glow pulse (`box-shadow: 0 0 20px rgba(239,68,68,0.3)`). Creates instant visual hierarchy without reading. | Medium |
+| G | **Edge labels with glass morphism** | `backdrop-filter: blur(8px)` on edge labels. Severity-colored edge animation speed (critical = fast, low = slow). | Low |
+| H | **Interactive legend** | Click legend item → highlight/dim nodes of that type. Hover → outline matching nodes. Connected to severity filter state. | Medium |
+| I | **Framer Motion transitions** | Replace CSS keyframes with Framer Motion `layoutId` for smooth node transitions between map types. Staggered entrance via `variants` + `delayChildren`. | Medium |
+| J | **Mobile responsive canvas** | Remove `min-h-[500px]`. Touch gestures (pinch zoom, pan). Collapsible controls panel. MiniMap hidden on mobile. Full-height canvas. | Medium |
+
+#### Phase 3 — Features + Export (~3-4 days)
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| K | **Map export (PNG/SVG)** | Export button in toolbar. PNG via `html2canvas`. SVG via React Flow's `toObject()` + SVG serializer. Filename: `{map_title}_{date}.{ext}`. | Low |
+| L | **Canvas search (Cmd+K)** | Overlay with fuzzy search across node labels. Highlights matching node + zooms to it. ESC to dismiss. | Medium |
+| M | **Severity filter** | Toggle buttons in toolbar (Critical/High/Medium/Low). Toggling off fades nodes (opacity 0.15) instead of removing — preserves layout. | Low |
+| N | **Multi-select + batch discuss** | Shift+click to select multiple nodes. Selected nodes get emerald ring. "Discuss selected" button → opens copilot with multi-node context. | Medium |
+
+#### Phase 4 — Demo-winning features (optional, ~1 week)
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| O | **Funnel timeline animation** | Week-over-week journey evolution. Slider control shows funnel changes across cycles. Nodes grow/shrink based on conversion rate delta. **No competitor has this.** | High |
+| P | **Revenue flow visualization** | Edge thickness proportional to $ flowing through that path. Animated particles (like Stripe's payment flow) showing money movement. | High |
+| Q | **Comparison mode** | Side-by-side map comparison: "this cycle vs 3 cycles ago". Diff overlay shows new/removed nodes+edges. | Medium |
+
+---
+
 ### Open items (Wave 7)
 
 | Item | Priority | Effort | Status |
@@ -1610,10 +1681,11 @@ Feature-flag gated rollout with a kill switch. Order:
 | **7.3** Batch Evidence Persistence | P1 | 2-3 days | Not started |
 | **7.4** Core Web Vitals | P2 | 3-4 days | Not started |
 | **7.5** Webhook-Triggered Audits | P1 | 2-3 days | Not started |
-| **7.6** ELK/Dagre Layout | P2 | 2 days | Not started |
-| **7.7** Map Export (PNG/SVG) | P2 | 1 day | Not started |
+| **7.6** ~~ELK/Dagre Layout~~ | — | — | Subsumed by 7.10 Phase 1A |
+| **7.7** ~~Map Export~~ | — | — | Subsumed by 7.10 Phase 3K |
 | **7.8** Custom Map Persistence | P3 | 1 day | Model exists |
 | **7.9** Behavioral Delta Processing | P2 | 2-3 days | Not started |
+| **7.10** Maps Modernization | P1 | 2-3 weeks | **Phase 1 starting** |
 
 **Implementation order:**
 1. **7.3** Batch writes (unblocks scaling) + **7.5** Webhooks (deploy integration)

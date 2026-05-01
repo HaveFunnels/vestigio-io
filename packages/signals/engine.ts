@@ -3625,6 +3625,30 @@ function extractBehavioralSignals(
 
     const refs = [makeRef('evidence', ev.id)];
 
+    // ── Wave 7.11: Pixel coverage gating ──
+    // Determine which page types the pixel actually observes. If a page type
+    // is NOT covered, signals that depend on that page type are unreliable
+    // (e.g., checkout_reached_rate=0 because the pixel never sees checkout).
+    const coverage = new Set<string>(p.pixel_coverage_page_types || []);
+    const hasCheckoutCoverage = coverage.has('checkout');
+    const hasThankYouCoverage = coverage.has('thank_you');
+
+    // Emit pixel_coverage_gap signal when important page types are missing
+    if (!hasCheckoutCoverage || !hasThankYouCoverage) {
+      const missingTypes: string[] = [];
+      if (!hasCheckoutCoverage) missingTypes.push('checkout');
+      if (!hasThankYouCoverage) missingTypes.push('thank_you');
+      signals.push(createSignal({
+        signal_key: 'pixel_coverage_gap',
+        category: SignalCategory.Behavioral,
+        attribute: 'behavioral.pixel_coverage_gap',
+        value: missingTypes.join(','),
+        numeric_value: missingTypes.length,
+        confidence: 90, scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `Pixel is not installed on ${missingTypes.join(' or ')} pages. Behavioral signals depending on those page types are suppressed to avoid false findings.`,
+      }));
+    }
+
     // 1. Policy view then abandonment
     if (p.policy_then_abandon_count > 0 && p.policy_opened_rate > 0.05) {
       const rate = p.policy_then_abandon_count / p.session_count;
@@ -3641,8 +3665,8 @@ function extractBehavioralSignals(
       }
     }
 
-    // 2. High-intent detour before abandonment
-    if (p.high_intent_detour_count > 0) {
+    // 2. High-intent detour before abandonment (requires checkout coverage)
+    if (hasCheckoutCoverage && p.high_intent_detour_count > 0) {
       const rate = p.high_intent_detour_count / p.session_count;
       if (rate > 0.02) {
         signals.push(createSignal({
@@ -3806,7 +3830,7 @@ function extractBehavioralSignals(
       // General surfaces (homepage, landing, product) tolerate lower engagement → looser threshold
       // This prevents false positives on informational pages while catching real CTA failures
       // on pages where users arrive with purchase intent.
-      const hasHighIntentSurfaces = p.checkout_reached_rate > 0.10 || p.milestone_intent_count > (p.session_count * 0.15);
+      const hasHighIntentSurfaces = (hasCheckoutCoverage && p.checkout_reached_rate > 0.10) || p.milestone_intent_count > (p.session_count * 0.15);
       const minViews = hasHighIntentSurfaces ? 30 : 80;
       const engagementCeiling = hasHighIntentSurfaces ? 0.08 : 0.04;
 
@@ -3908,8 +3932,8 @@ function extractBehavioralSignals(
       }
     }
 
-    // 17. Conversion final-step retry
-    if (p.conversion_retry_count > 0) {
+    // 17. Conversion final-step retry (requires checkout coverage)
+    if (hasCheckoutCoverage && p.conversion_retry_count > 0) {
       const rate = p.conversion_retry_count / p.session_count;
       if (rate > 0.02) {
         signals.push(createSignal({
@@ -3939,8 +3963,8 @@ function extractBehavioralSignals(
       }
     }
 
-    // 19. Checkout abandon without feedback
-    if (p.checkout_immediate_abandon_count > 0) {
+    // 19. Checkout abandon without feedback (requires checkout coverage)
+    if (hasCheckoutCoverage && p.checkout_immediate_abandon_count > 0) {
       const rate = p.checkout_immediate_abandon_count / p.session_count;
       if (rate > 0.03) {
         signals.push(createSignal({
@@ -3975,8 +3999,8 @@ function extractBehavioralSignals(
 
     // ── Wave 4.6: Neglected Findings — 3 behavioral signals ──
 
-    // 21. Payment handoff dropoff — users enter payment but don't return
-    if (p.handoff_without_return_count > 0 && p.checkout_reached_count > 0) {
+    // 21. Payment handoff dropoff — users enter payment but don't return (requires checkout coverage)
+    if (hasCheckoutCoverage && p.handoff_without_return_count > 0 && p.checkout_reached_count > 0) {
       const handoffRate = p.handoff_without_return_count / p.checkout_reached_count;
       if (handoffRate > 0.30) {
         const pctRate = Math.round(handoffRate * 100);
@@ -3987,7 +4011,7 @@ function extractBehavioralSignals(
           value: handoffRate > 0.60 ? 'high' : handoffRate > 0.40 ? 'medium' : 'low',
           numeric_value: pctRate,
           confidence: 70, scoping, cycle_ref, ids, evidence_refs: refs,
-          description: `${pctRate}% of checkout sessions are not returning from the payment handoff. ${p.handoff_without_return_count} sessions entered payment but never completed — the payment provider transition is losing customers.`,
+          description: `${pctRate}% of checkout sessions are not returning from the payment handoff. ${p.handoff_without_return_count} sessions entered payment but never completed ��� the payment provider transition is losing customers.`,
         }));
       }
     }
@@ -5712,6 +5736,19 @@ function extractBehavioralCohortSignals(
   const refs = [evidenceRef];
   const c = cohort.cohorts;
 
+  // ── Wave 7.11: Pixel coverage gating for cohort signals ──
+  // Find coverage from the env-level behavioral session payload
+  let cohortCoverage = new Set<string>();
+  for (const ev of behavioralEvidence) {
+    const sp = ev.payload as any;
+    if (sp.type === 'behavioral_session' && Array.isArray(sp.pixel_coverage_page_types)) {
+      cohortCoverage = new Set<string>(sp.pixel_coverage_page_types);
+      break;
+    }
+  }
+  const cohortHasCheckoutCoverage = cohortCoverage.has('checkout');
+  const cohortHasThankYouCoverage = cohortCoverage.has('thank_you');
+
   // ── First Impression Revenue signals ──
 
   // First-session milestone stall: first-timers stall before intent at a much higher rate
@@ -5857,8 +5894,8 @@ function extractBehavioralCohortSignals(
       }));
     }
 
-    // Paid + mobile compounding waste
-    if (c.mobile.session_count >= 10) {
+    // Paid + mobile compounding waste (requires checkout/thank_you coverage for conversion_rate)
+    if (c.mobile.session_count >= 10 && cohortHasCheckoutCoverage) {
       const paidConv = c.paid_traffic.conversion_rate;
       const mobileConv = c.mobile.conversion_rate;
       const overallConv = (c.first_session.conversion_rate * c.first_session.session_count +
@@ -5880,8 +5917,8 @@ function extractBehavioralCohortSignals(
   // ── Mobile Revenue Exposure signals ──
 
   if (c.mobile.session_count >= 10 && c.desktop.session_count >= 10) {
-    // Mobile conversion gap
-    if (c.desktop.conversion_rate > 0 && c.mobile.conversion_rate < c.desktop.conversion_rate * 0.6) {
+    // Mobile conversion gap (requires checkout coverage for meaningful conversion_rate)
+    if (cohortHasCheckoutCoverage && c.desktop.conversion_rate > 0 && c.mobile.conversion_rate < c.desktop.conversion_rate * 0.6) {
       const gap = c.desktop.conversion_rate - c.mobile.conversion_rate;
       signals.push(createSignal({
         signal_key: 'mobile_conversion_gap',
@@ -5953,19 +5990,21 @@ function extractBehavioralCohortSignals(
         }));
       }
 
-      // Checkout entry friction
-      const checkoutRate = overall.checkout_reached_rate;
-      const intentRate = overall.milestone_intent_count / (overall.session_count || 1);
-      if (intentRate > 0.1 && checkoutRate < intentRate * 0.4) {
-        signals.push(createSignal({
-          signal_key: 'checkout_entry_friction',
-          category: SignalCategory.Behavioral,
-          attribute: 'cohort.friction.checkout_entry',
-          value: checkoutRate < intentRate * 0.2 ? 'high' : 'medium',
-          numeric_value: Math.round((intentRate - checkoutRate) * 100),
-          confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
-          description: `${Math.round(intentRate * 100)}% of sessions express intent but only ${Math.round(checkoutRate * 100)}% reach checkout. ${Math.round((intentRate - checkoutRate) * 100)}pp drop at the conversion gate.`,
-        }));
+      // Checkout entry friction (requires checkout coverage)
+      if (cohortHasCheckoutCoverage) {
+        const checkoutRate = overall.checkout_reached_rate;
+        const intentRate = overall.milestone_intent_count / (overall.session_count || 1);
+        if (intentRate > 0.1 && checkoutRate < intentRate * 0.4) {
+          signals.push(createSignal({
+            signal_key: 'checkout_entry_friction',
+            category: SignalCategory.Behavioral,
+            attribute: 'cohort.friction.checkout_entry',
+            value: checkoutRate < intentRate * 0.2 ? 'high' : 'medium',
+            numeric_value: Math.round((intentRate - checkoutRate) * 100),
+            confidence: 65, scoping, cycle_ref, ids, evidence_refs: refs,
+            description: `${Math.round(intentRate * 100)}% of sessions express intent but only ${Math.round(checkoutRate * 100)}% reach checkout. ${Math.round((intentRate - checkoutRate) * 100)}pp drop at the conversion gate.`,
+          }));
+        }
       }
     }
   }
@@ -5975,9 +6014,9 @@ function extractBehavioralCohortSignals(
   {
     const overall = computeOverallSlice(c);
     if (overall.session_count >= 20) {
-      // Trust deficit conversion drag
+      // Trust deficit conversion drag (requires checkout coverage for conversion_rate comparison)
       const trustIndicator = overall.policy_opened_rate + overall.hesitation_pause_rate + overall.sensitive_input_abandon_rate;
-      if (trustIndicator > 0.15 && overall.conversion_rate < 0.05) {
+      if (trustIndicator > 0.15 && cohortHasCheckoutCoverage && overall.conversion_rate < 0.05) {
         signals.push(createSignal({
           signal_key: 'trust_deficit_conversion_drag',
           category: SignalCategory.Behavioral,
@@ -6023,8 +6062,8 @@ function extractBehavioralCohortSignals(
   if (c.first_session.session_count >= 10 || c.returning.session_count >= 10) {
     const overall = computeOverallSlice(c);
 
-    // Path length exceeds efficient
-    if (overall.avg_surface_progression_length > 5 && overall.conversion_rate < 0.05) {
+    // Path length exceeds efficient (requires checkout coverage for conversion_rate)
+    if (overall.avg_surface_progression_length > 5 && cohortHasCheckoutCoverage && overall.conversion_rate < 0.05) {
       signals.push(createSignal({
         signal_key: 'path_length_exceeds_efficient',
         category: SignalCategory.Behavioral,
@@ -6248,6 +6287,87 @@ function extractCommerceContextSignals(
       description: `${count} product(s) haven't sold in 30 days${total > count ? ` (${Math.round(ratio * 100)}% of catalog)` : ''}. Dead inventory dilutes search, clutters navigation, and wastes operational effort on items that generate no revenue.`,
     }));
   }
+
+  // 8. Coupon abuse risk (Nuvemshop-exclusive — Wave 7.11 Bug I)
+  if (commerce.expired_coupons_active !== null && commerce.expired_coupons_active > 0) {
+    const count = commerce.expired_coupons_active;
+    const hasStacking = commerce.coupon_stacking_enabled === true;
+    const severity = (count > 5 || hasStacking) ? 'high' : count > 2 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'coupon_abuse_risk',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.coupon_abuse_risk',
+      value: severity,
+      numeric_value: count,
+      confidence: 90,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `${count} expired coupon(s) are still usable${hasStacking ? ' and coupon stacking is enabled' : ''}. Expired-but-active coupons are shared freely on coupon sites — combined with stacking, they create a compounding discount path that erodes margin on every order.`,
+    }));
+  } else if (commerce.coupon_stacking_enabled === true && commerce.discount_usage_rate !== null && commerce.discount_usage_rate > 0.40) {
+    signals.push(createSignal({
+      signal_key: 'coupon_abuse_risk',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.coupon_abuse_risk',
+      value: 'medium',
+      numeric_value: Math.round((commerce.discount_usage_rate ?? 0) * 100),
+      confidence: 85,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Coupon stacking is enabled with ${Math.round((commerce.discount_usage_rate ?? 0) * 100)}% discount usage — buyers can combine multiple codes to compound discounts beyond intended levels.`,
+    }));
+  }
+
+  // 9. Shipping slow (Nuvemshop-exclusive — Wave 7.11 Bug I)
+  if (commerce.avg_shipping_days !== null && commerce.avg_shipping_days > 7) {
+    const days = commerce.avg_shipping_days;
+    const severity = days > 14 ? 'high' : days > 10 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'shipping_slow',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.avg_shipping_days',
+      value: severity,
+      numeric_value: Math.round(days),
+      confidence: 90,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Average shipping takes ${Math.round(days)} days. Slow delivery drives buyer anxiety, increases support inquiries, and elevates dispute risk — buyers who wait too long escalate to chargebacks before the order arrives.`,
+    }));
+  }
+
+  // 10. Subscriber churn elevated (> 5% monthly — Stripe-sourced)
+  if (commerce.subscriber_churn_rate !== null && commerce.subscriber_churn_rate > 0.05) {
+    const rate = commerce.subscriber_churn_rate;
+    const severity = rate > 0.10 ? 'high' : rate > 0.07 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'subscriber_churn_elevated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.subscriber_churn_rate',
+      value: severity,
+      numeric_value: Math.round(rate * 100),
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Monthly subscriber churn rate is ${(rate * 100).toFixed(1)}%. At this rate, you need to acquire ${Math.round(rate * 100)}% new subscribers every month just to stay flat — compounding churn erodes MRR even as new signups grow.`,
+    }));
+  }
+
+  // 9. Failed payment rate high (> 3% — Stripe-sourced)
+  if (commerce.failed_payment_rate !== null && commerce.failed_payment_rate > 0.03) {
+    const rate = commerce.failed_payment_rate;
+    const severity = rate > 0.08 ? 'high' : rate > 0.05 ? 'medium' : 'low';
+    signals.push(createSignal({
+      signal_key: 'failed_payment_rate_high',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.failed_payment_rate',
+      value: severity,
+      numeric_value: Math.round(rate * 100),
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `${(rate * 100).toFixed(1)}% of payment attempts are failing. Each failed payment is revenue that the customer intended to pay but couldn't — involuntary churn from card declines, expired cards, and insufficient funds is silently leaking subscribers.`,
+    }));
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -6339,6 +6459,35 @@ function extractAdsCreativeContextSignals(
           reachable: p.checkout_reachable,
         });
         break;
+      }
+    }
+  }
+
+  // Wave 7.11 Bug H: Ad budget concentration at creative level.
+  // Fires when >80% of spend goes to a single creative — indicates
+  // under-diversified creative testing (single point of failure for
+  // ad fatigue / audience saturation).
+  const creativeNodes = adNodes.filter(n => n.node_type === 'ad_creative');
+  if (creativeNodes.length >= 2) {
+    const spends = creativeNodes.map(n => ((n.metadata as Record<string, any>).spend_30d as number) ?? 0);
+    const totalCreativeSpend = spends.reduce((a, b) => a + b, 0);
+    if (totalCreativeSpend > 100) { // Only fire if meaningful spend
+      const maxCreativeSpend = Math.max(...spends);
+      const creativeConcentration = maxCreativeSpend / totalCreativeSpend;
+      if (creativeConcentration >= 0.80) {
+        const topCreative = creativeNodes[spends.indexOf(maxCreativeSpend)];
+        const topLabel = topCreative.label || `Creative ${topCreative.id}`;
+        signals.push(createSignal({
+          signal_key: 'ad_budget_creative_concentrated',
+          category: SignalCategory.Commerce,
+          attribute: 'commerce.ad_budget_creative_concentration',
+          value: creativeConcentration >= 0.95 ? 'high' : 'medium',
+          numeric_value: Math.round(creativeConcentration * 100),
+          confidence: 90,
+          scoping, cycle_ref, ids,
+          evidence_refs: [],
+          description: `${Math.round(creativeConcentration * 100)}% of ad spend ($${totalCreativeSpend.toFixed(0)}/mo) flows through a single creative ("${topLabel}"). Under-diversified creative testing means one audience fatigue event or policy disapproval halts most acquisition.`,
+        }));
       }
     }
   }

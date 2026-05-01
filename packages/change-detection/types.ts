@@ -39,6 +39,11 @@ export interface DecisionChange {
   // Context
   contributing_factors: string[];   // what caused the change
   summary: string;                  // human-readable explanation
+
+  // Wave 7.11: Change reason classification
+  /** Disambiguates whether a new_issue is a genuine site degradation or
+   *  an artifact of a newly connected data source. */
+  reason?: 'site_degradation' | 'data_source_expanded' | 'first_observation';
 }
 
 /**

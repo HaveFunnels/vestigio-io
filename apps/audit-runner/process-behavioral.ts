@@ -162,6 +162,17 @@ export async function processBehavioralEventsForEnv(
     }
   }
 
+  // ── Compute pixel coverage page types from raw event URLs ──
+  const coveragePageTypes = new Set<string>();
+  for (const [, bucket] of sessionMap.entries()) {
+    for (const ev of bucket.events) {
+      if (ev.url) {
+        const pt = classifyUrlPageType(ev.url);
+        if (pt) coveragePageTypes.add(pt);
+      }
+    }
+  }
+
   // ── Run aggregateSession() per session ──
   const aggregates: SessionAggregate[] = [];
   for (const [sessionId, bucket] of sessionMap.entries()) {
@@ -190,7 +201,7 @@ export async function processBehavioralEventsForEnv(
     if (!ua) return "desktop"; // unknown UA → conservative default
     return MOBILE_UA_REGEX.test(ua) ? "mobile" : "desktop";
   };
-  const sessionPayload = sessionsToBehavioralPayload(aggregates, deviceClassifier);
+  const sessionPayload = sessionsToBehavioralPayload(aggregates, deviceClassifier, coveragePageTypes);
 
   // ── Reduce to BehavioralCohortPayload (cohort-level metrics) ──
   // Powers the 7 pixel-dependent workspaces (first_impression, action_value,
@@ -246,6 +257,32 @@ const EMPTY_ATTRIBUTION: AttributionContext = {
 };
 
 // ──────────────────────────────────────────────
+// URL → page type classifier for pixel coverage metadata
+// ──────────────────────────────────────────────
+
+const PAGE_TYPE_PATTERNS: [RegExp, string][] = [
+  [/\/(checkout|check-out|pagamento|payment)\b/i, 'checkout'],
+  [/\/(cart|carrinho|bag|basket)\b/i, 'cart'],
+  [/\/(pricing|preco|precos|plans?|planos?)\b/i, 'pricing'],
+  [/\/(products?|produto|item)\b/i, 'product'],
+  [/\/(thank[_-]?you|obrigado|confirmation|order[_-]?confirmed|success)\b/i, 'thank_you'],
+  [/^\/?$/, 'homepage'],
+  [/^\/?(index|home)\b/i, 'homepage'],
+];
+
+function classifyUrlPageType(url: string): string | null {
+  try {
+    const pathname = new URL(url, 'http://placeholder').pathname;
+    for (const [pattern, pageType] of PAGE_TYPE_PATTERNS) {
+      if (pattern.test(pathname)) return pageType;
+    }
+  } catch {
+    // malformed URL — skip
+  }
+  return null;
+}
+
+// ──────────────────────────────────────────────
 // Pure reducer: SessionAggregate[] → BehavioralSessionPayload
 // ──────────────────────────────────────────────
 
@@ -261,6 +298,7 @@ const EMPTY_ATTRIBUTION: AttributionContext = {
 export function sessionsToBehavioralPayload(
   sessions: SessionAggregate[],
   deviceClassifier?: (s: SessionAggregate) => "mobile" | "desktop" | null,
+  pixelCoveragePageTypes?: Set<string>,
 ): BehavioralSessionPayload {
   const n = sessions.length;
   if (n === 0) return EMPTY_PAYLOAD;
@@ -568,6 +606,9 @@ export function sessionsToBehavioralPayload(
 
     sensitive_field_dropoff_count: sensitiveFieldDropoff,
     sensitive_field_dropoff_top_kinds: topSensitiveFieldDropoffKinds,
+
+    // Wave 7.11: Pixel coverage metadata
+    pixel_coverage_page_types: pixelCoveragePageTypes ? [...pixelCoveragePageTypes] : [],
   };
 }
 
@@ -677,4 +718,5 @@ const EMPTY_PAYLOAD: BehavioralSessionPayload = {
   handoff_without_confirmation_count: 0,
   sensitive_field_dropoff_count: 0,
   sensitive_field_dropoff_top_kinds: [],
+  pixel_coverage_page_types: [],
 };

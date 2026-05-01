@@ -719,10 +719,18 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // ─── Phase 26+27: Change detection — always produce a snapshot ───
   let changeReport: CycleChangeReport | null = null;
+
+  // Wave 7.11: Collect source_kinds from evidence for source expansion detection
+  const evidenceSourceKinds = new Set<string>();
+  for (const ev of evidence) {
+    if (ev.source_kind) evidenceSourceKinds.add(ev.source_kind);
+  }
+
   const cycleSnapshot: CycleSnapshot = {
     cycle_ref,
     decisions: allDecisions,
     signals: allSignals,
+    source_kinds: [...evidenceSourceKinds],
   };
   if (input.previous_snapshot) {
     changeReport = detectChanges(input.previous_snapshot, cycleSnapshot);
@@ -760,9 +768,11 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // ─── Phase 30B: Inject regression inference from change detection ───
   // Regressions are composite interpretations of cycle-to-cycle state,
   // injected as inferences so they flow canonically through impact/projections.
+  // Wave 7.11: Filter out regressions caused by data source expansion (false regressions).
   if (changeReport && changeReport.regressions.length > 0) {
     const materialRegressions = changeReport.regressions.filter(
-      r => r.severity === 'notable' || r.severity === 'significant' || r.severity === 'critical',
+      r => (r.severity === 'notable' || r.severity === 'significant' || r.severity === 'critical')
+        && r.reason !== 'data_source_expanded',
     );
     if (materialRegressions.length > 0) {
       const regressedKeys = materialRegressions.map(r => r.decision_key);
@@ -910,7 +920,23 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // Wave 4.7: Cross-domain compound findings detection
   const compoundInputs = buildCompoundInputs(allInferences, valueCases);
-  const compoundFindings = detectCompoundFindings(compoundInputs, commerceContext, null);
+
+  // Wave 7.11 Bug B: Extract behavioral context from evidence for compound findings.
+  // This upgrades compound findings like `ad_promise_reality_behavior` from 'heuristic'
+  // to 'confirmed' confidence when behavioral data is available.
+  let behavioralContext: { bounce_rate: number; avg_session_duration: number } | null = null;
+  for (const e of evidence) {
+    if (e.evidence_type !== EvidenceType.BehavioralSession) continue;
+    const payload = e.payload as { type?: string; checkout_reached_rate?: number; avg_session_duration_ms?: number };
+    if (payload.type === 'behavioral_cohort') continue; // use env-level payload
+    behavioralContext = {
+      bounce_rate: 1 - (payload.checkout_reached_rate || 0),
+      avg_session_duration: (payload.avg_session_duration_ms || 0) / 1000,
+    };
+    break;
+  }
+
+  const compoundFindings = detectCompoundFindings(compoundInputs, commerceContext, behavioralContext);
 
   assembledResult.composites = {
     trust_surface_score: trustSurfaceScore,

@@ -27,6 +27,10 @@ export interface CycleSnapshot {
   cycle_ref: string;
   decisions: Decision[];
   signals: Signal[];
+  /** Wave 7.11: Source kinds present in this snapshot's evidence pool.
+   *  Used to detect data source expansion (pixel connected, integration added)
+   *  which would otherwise appear as false regressions. */
+  source_kinds?: string[];
 }
 
 /**
@@ -37,6 +41,21 @@ export function detectChanges(
   current: CycleSnapshot,
 ): CycleChangeReport {
   const now = new Date();
+
+  // ── Wave 7.11: Detect source expansion ──
+  // If the current snapshot has source kinds that were not present in the
+  // previous snapshot, findings from those new sources are tagged as
+  // 'data_source_expanded' rather than 'new_issue' to prevent false regressions.
+  const prevSources = new Set<string>(previous.source_kinds || []);
+  const currSources = new Set<string>(current.source_kinds || []);
+  const newSources = new Set<string>();
+  for (const sk of currSources) {
+    if (!prevSources.has(sk)) newSources.add(sk);
+  }
+
+  // Map source kinds to signal categories for attribution
+  const BEHAVIORAL_SOURCES = new Set(['behavioral_snippet', 'pixel']);
+  const INTEGRATION_SOURCES = new Set(['integration', 'shopify_integration']);
 
   // Index decisions by key for lookup
   const prevByKey = new Map(previous.decisions.map(d => [d.decision_key, d]));
@@ -49,8 +68,24 @@ export function detectChanges(
     const prevDecision = prevByKey.get(key);
 
     if (!prevDecision) {
-      // New issue
-      decisionChanges.push(createNewIssueChange(currDecision, previous.cycle_ref, current.cycle_ref));
+      // New issue — check if it's from a newly expanded source
+      const change = createNewIssueChange(currDecision, previous.cycle_ref, current.cycle_ref);
+
+      if (newSources.size > 0) {
+        // Check if this decision's evidence comes from a new source
+        const isFromNewSource = isDecisionFromNewSource(currDecision, newSources, BEHAVIORAL_SOURCES, INTEGRATION_SOURCES);
+        if (isFromNewSource) {
+          change.reason = 'data_source_expanded';
+          change.contributing_factors = [`First observation from newly connected data source`];
+          change.summary = `New (source expanded): ${change.summary}`;
+        } else {
+          change.reason = 'first_observation';
+        }
+      } else {
+        change.reason = 'first_observation';
+      }
+
+      decisionChanges.push(change);
       continue;
     }
 
@@ -396,4 +431,48 @@ function buildChangeSummary(
     default:
       return `${decisionKey}: ${changeClass}`;
   }
+}
+
+/**
+ * Wave 7.11: Determine if a decision's primary evidence originates from
+ * a newly connected data source. Uses the decision's question_key as a
+ * heuristic for which source family produced it.
+ */
+function isDecisionFromNewSource(
+  decision: Decision,
+  newSources: Set<string>,
+  behavioralSources: Set<string>,
+  integrationSources: Set<string>,
+): boolean {
+  // Behavioral workspace questions map to behavioral/pixel sources
+  const BEHAVIORAL_QUESTIONS = new Set([
+    'is_first_session_conversion_leaking',
+    'are_user_actions_driving_revenue',
+    'is_paid_traffic_reaching_conversion',
+    'is_mobile_experience_costing_revenue',
+    'how_much_does_ux_friction_cost',
+    'is_trust_deficit_blocking_revenue',
+    'are_visitors_on_shortest_conversion_path',
+  ]);
+
+  if (BEHAVIORAL_QUESTIONS.has(decision.question_key)) {
+    for (const src of newSources) {
+      if (behavioralSources.has(src)) return true;
+    }
+  }
+
+  // Integration-driven decisions (shopify, etc.)
+  // Heuristic: if the decision's evidence_refs contain integration-style references
+  // or the question relates to data that only integrations provide
+  for (const src of newSources) {
+    if (integrationSources.has(src)) {
+      // Check if the decision's evidence references suggest integration origin
+      const hasIntegrationEvidence = decision.why.evidence_refs.some(
+        ref => ref.includes('shopify') || ref.includes('integration'),
+      );
+      if (hasIntegrationEvidence) return true;
+    }
+  }
+
+  return false;
 }

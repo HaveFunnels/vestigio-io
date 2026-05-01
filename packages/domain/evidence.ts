@@ -718,6 +718,12 @@ export interface BehavioralSessionPayload {
   /** Sensitive field dropoff (interaction with sensitive fields → abandonment) */
   sensitive_field_dropoff_count: number;
   sensitive_field_dropoff_top_kinds: string[];
+
+  // ── Wave 7.11: Pixel coverage metadata ──
+  /** Page types observed across any session in this window.
+   *  Used to gate signals that depend on specific page types being instrumented.
+   *  e.g. if 'checkout' is not in this array, checkout_reached_rate=0 is meaningless. */
+  pixel_coverage_page_types: string[];
 }
 
 export interface SurfaceVitalityPayload {

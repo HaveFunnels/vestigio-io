@@ -126,6 +126,7 @@ function makeHardenedPayload(overrides: Partial<BehavioralSessionPayload> = {}):
     handoff_without_confirmation_count: 0,
     sensitive_field_dropoff_count: 0,
     sensitive_field_dropoff_top_kinds: [],
+    pixel_coverage_page_types: ['homepage', 'checkout', 'cart', 'pricing', 'thank_you'],
     ...overrides,
   };
 }

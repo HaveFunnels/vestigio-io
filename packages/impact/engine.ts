@@ -230,9 +230,9 @@ function computeEstimate(
   business: BusinessInputs,
   isFallback: boolean,
 ): EstimatedImpact {
-  const revenue = business.monthly_revenue || FALLBACK_INPUTS.monthly_revenue!;
-  const transactions = business.monthly_transactions || FALLBACK_INPUTS.monthly_transactions!;
-  const chargebackRate = business.chargeback_rate || FALLBACK_INPUTS.chargeback_rate!;
+  const revenue = business.monthly_revenue ?? FALLBACK_INPUTS.monthly_revenue!;
+  const transactions = business.monthly_transactions ?? FALLBACK_INPUTS.monthly_transactions!;
+  const chargebackRate = business.chargeback_rate ?? FALLBACK_INPUTS.chargeback_rate!;
 
   let baseValue: number;
   switch (baseMetric) {
@@ -240,7 +240,7 @@ function computeEstimate(
       baseValue = revenue;
       break;
     case 'transactions':
-      baseValue = transactions * (business.average_order_value || FALLBACK_INPUTS.average_order_value!);
+      baseValue = transactions * (business.average_order_value ?? FALLBACK_INPUTS.average_order_value!);
       break;
     case 'chargeback_rate':
       // Chargeback impact = incremental chargeback rate × revenue

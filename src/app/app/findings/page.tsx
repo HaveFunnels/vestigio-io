@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTrack } from "@/hooks/useProductTrack";
@@ -16,6 +16,9 @@ import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
 import ViewSelector, { SavedViewData } from "@/components/console/ViewSelector";
 import SaveViewModal from "@/components/console/SaveViewModal";
+import ColumnSelector, {
+	DEFAULT_COLUMNS,
+} from "@/components/console/ColumnSelector";
 import FindingDetailPanel from "@/components/console/FindingDetailPanel";
 import { loadFindings } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -24,11 +27,11 @@ import { ShinyButton } from "@/components/ui/shiny-button";
 import type { FindingProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
-// Findings Page — Wave 3.20 Fase 2
+// Findings Page — Wave 3.20 Fase 3
 //
 // Primary findings view with saved views (ViewSelector),
-// groupBy rendering, and persistent filters.
-// Replaces /app/analysis as the top-level findings route.
+// groupBy rendering, persistent filters, column selection,
+// share toggle and pin-to-sidebar support.
 // ──────────────────────────────────────────────
 
 const polarityIcons: Record<string, string> = {
@@ -60,6 +63,7 @@ export default function FindingsPage() {
 	);
 	const [saveModalOpen, setSaveModalOpen] = useState(false);
 	const [savingView, setSavingView] = useState(false);
+	const [currentUserId, setCurrentUserId] = useState<string | undefined>();
 
 	// ── Findings data ──
 	const mcpData = useMcpData();
@@ -74,6 +78,9 @@ export default function FindingsPage() {
 	const [selectedFinding, setSelectedFinding] =
 		useState<FindingProjection | null>(null);
 
+	// ── Column save debounce ──
+	const columnSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 	// ── Fetch views on mount ──
 	useEffect(() => {
 		async function fetchViews() {
@@ -82,6 +89,9 @@ export default function FindingsPage() {
 				if (res.ok) {
 					const data = await res.json();
 					setViews(data.views || []);
+					if (data.currentUserId) {
+						setCurrentUserId(data.currentUserId);
+					}
 					// If no ?view= param, default to first view
 					if (!searchParams.get("view") && data.views?.length > 0) {
 						setActiveViewId(data.views[0].id);
@@ -100,6 +110,53 @@ export default function FindingsPage() {
 	const activeView = useMemo(
 		() => views.find((v) => v.id === activeViewId) || views[0] || null,
 		[views, activeViewId],
+	);
+
+	// ── Active columns ──
+	const activeColumns = useMemo(() => {
+		if (!activeView) return DEFAULT_COLUMNS;
+		const f = activeView.filters as Record<string, any>;
+		if (f.columns && Array.isArray(f.columns)) {
+			return f.columns as string[];
+		}
+		return DEFAULT_COLUMNS;
+	}, [activeView]);
+
+	// ── Column change handler (debounced save) ──
+	const handleColumnsChange = useCallback(
+		(newColumns: string[]) => {
+			if (!activeView) return;
+
+			// Update local state immediately
+			const updatedFilters = {
+				...((activeView.filters as Record<string, any>) || {}),
+				columns: newColumns,
+			};
+			setViews((prev) =>
+				prev.map((v) =>
+					v.id === activeView.id
+						? { ...v, filters: updatedFilters }
+						: v,
+				),
+			);
+
+			// Debounce API save
+			if (columnSaveTimer.current) {
+				clearTimeout(columnSaveTimer.current);
+			}
+			columnSaveTimer.current = setTimeout(async () => {
+				try {
+					await fetch(`/api/views/${activeView.id}`, {
+						method: "PATCH",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ filters: updatedFilters }),
+					});
+				} catch {
+					// silently fail
+				}
+			}, 500);
+		},
+		[activeView],
 	);
 
 	// ── Apply view filters ──
@@ -238,6 +295,22 @@ export default function FindingsPage() {
 		track("view_switch", { view_id: view.id, view_name: view.name });
 	}
 
+	// ── View updated handler (from ViewSelector share/pin/delete) ──
+	function handleViewUpdated(updatedView: SavedViewData) {
+		if (updatedView.id === "__deleted__") {
+			setViews((prev) => prev.filter((v) => v.id !== activeView?.id));
+			// Switch to first available view
+			const remaining = views.filter((v) => v.id !== activeView?.id);
+			if (remaining.length > 0) {
+				setActiveViewId(remaining[0].id);
+			}
+			return;
+		}
+		setViews((prev) =>
+			prev.map((v) => (v.id === updatedView.id ? updatedView : v)),
+		);
+	}
+
 	// ── Save view handler ──
 	async function handleSaveView(data: {
 		name: string;
@@ -262,7 +335,7 @@ export default function FindingsPage() {
 				const result = await res.json();
 				setViews((prev) => [...prev, result.view]);
 				setActiveViewId(result.view.id);
-				toast.success(tv("save_view") + " ✓");
+				toast.success(tv("save_view") + " \u2713");
 				setSaveModalOpen(false);
 			} else {
 				toast.error("Failed to save view");
@@ -274,7 +347,7 @@ export default function FindingsPage() {
 		}
 	}
 
-	// ── Columns ──
+	// ── All possible columns ──
 	const packLabels: Record<string, string> = {
 		scale_readiness: tc("pack_labels.scale_readiness"),
 		revenue_integrity: tc("pack_labels.revenue_integrity"),
@@ -291,7 +364,7 @@ export default function FindingsPage() {
 		none: tc("impact_types.none"),
 	};
 
-	const columns: Column<FindingProjection>[] = [
+	const allColumns: Column<FindingProjection>[] = [
 		{
 			key: "polarity",
 			label: "",
@@ -377,6 +450,48 @@ export default function FindingsPage() {
 			),
 		},
 		{
+			key: "surface",
+			label: tc("columns.surface") || "Surface",
+			className: "w-28",
+			render: (row) => (
+				<span className="text-xs text-content-muted">
+					{row.surface || "-"}
+				</span>
+			),
+		},
+		{
+			key: "root_cause",
+			label: tc("columns.root_cause") || "Root Cause",
+			className: "w-32",
+			render: (row) => (
+				<span className="text-xs text-content-muted">
+					{row.root_cause || "-"}
+				</span>
+			),
+		},
+		{
+			key: "confidence_tier",
+			label: tc("columns.confidence_tier") || "Confidence",
+			className: "w-24",
+			render: (row) => (
+				<span className="text-xs text-content-muted">
+					{(row as any).confidence_tier || "-"}
+				</span>
+			),
+		},
+		{
+			key: "first_seen",
+			label: tc("columns.first_seen") || "First Seen",
+			className: "w-24",
+			render: (row) => (
+				<span className="text-xs text-content-muted">
+					{(row as any).first_seen
+						? new Date((row as any).first_seen).toLocaleDateString()
+						: "-"}
+				</span>
+			),
+		},
+		{
 			key: "discuss",
 			label: "",
 			className: "w-20",
@@ -397,6 +512,13 @@ export default function FindingsPage() {
 				) : null,
 		},
 	];
+
+	// ── Filter columns based on activeColumns ──
+	const columns = allColumns.filter((col) => {
+		// Always include polarity (decorative, not toggleable) and discuss (action)
+		if (col.key === "polarity" || col.key === "discuss") return true;
+		return activeColumns.includes(col.key);
+	});
 
 	// ── Loading / empty states ──
 	if (!hasData) {
@@ -467,6 +589,8 @@ export default function FindingsPage() {
 					activeViewId={activeViewId}
 					onViewChange={handleViewChange}
 					onSaveView={() => setSaveModalOpen(true)}
+					onViewUpdated={handleViewUpdated}
+					currentUserId={currentUserId}
 				/>
 			)}
 
@@ -475,7 +599,7 @@ export default function FindingsPage() {
 				<SummaryCards cards={summaryCards} />
 			</div>
 
-			{/* Active view info */}
+			{/* Active view info + Column selector */}
 			{activeView && (
 				<div className="mb-4 flex items-center justify-between">
 					<span className="text-xs text-content-muted">
@@ -484,6 +608,10 @@ export default function FindingsPage() {
 							total: findings.length,
 						})}
 					</span>
+					<ColumnSelector
+						activeColumns={activeColumns}
+						onColumnsChange={handleColumnsChange}
+					/>
 				</div>
 			)}
 

@@ -13,6 +13,7 @@ import {
 	adminNav,
 	type NavItem,
 } from "./sidebar-nav-data";
+import { usePinnedViews } from "@/hooks/usePinnedViews";
 
 // ──────────────────────────────────────────────
 // AppSidebar
@@ -39,6 +40,7 @@ export default function AppSidebar({
 	const t = useTranslations("console.navigation");
 	const [hovered, setHovered] = useState(false);
 	const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const { pinnedViews } = usePinnedViews();
 
 	// Expandable submenus — auto-open groups containing the active route
 	const [expandedMenus, setExpandedMenus] = useState<Set<string>>(() => {
@@ -254,6 +256,41 @@ export default function AppSidebar({
 		);
 	};
 
+	// ── Render pinned views as sub-items below Findings ──
+
+	const renderPinnedViews = () => {
+		if (pinnedViews.length === 0) return null;
+		return pinnedViews.map((pv) => {
+			const href = `/app/findings?view=${pv.id}`;
+			const active = pathname === "/app/findings" && typeof window !== "undefined" && window.location.search.includes(pv.id);
+			return (
+				<Link
+					key={`pinned-${pv.id}`}
+					href={href}
+					className={cn(
+						"flex items-center gap-3 rounded-lg py-2 pl-10 pr-3 text-[12px] font-medium transition-all duration-200",
+						active
+							? "font-semibold text-accent-text"
+							: "text-content-faint hover:text-content-muted"
+					)}
+				>
+					<span
+						className="h-2 w-2 shrink-0 rounded-full"
+						style={{ backgroundColor: pv.color || "#10b981" }}
+					/>
+					<span
+						className={cn(
+							"whitespace-nowrap transition-all duration-300",
+							isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+						)}
+					>
+						{pv.name}
+					</span>
+				</Link>
+			);
+		});
+	};
+
 	// ── Render a section (items only — no visible title when collapsed) ──
 
 	const renderSection = (title: string, items: NavItem[]) => (
@@ -271,18 +308,28 @@ export default function AppSidebar({
 			<div className='flex flex-col gap-0.5'>
 				{items.flatMap((item) => {
 					const node = renderNavItem(item);
+					const nodes = [node];
+
+					// Inject pinned views after Findings
+					if (item.id === "findings" && pinnedViews.length > 0) {
+						nodes.push(
+							<div key="pinned-views-section" className="flex flex-col gap-0.5">
+								{renderPinnedViews()}
+							</div>
+						);
+					}
+
 					if (item.dividerAfter) {
-						return [
-							node,
+						nodes.push(
 							<div
 								key={`${item.id}-divider`}
 								role='separator'
 								aria-hidden='true'
 								className='mx-2 my-2 h-px bg-edge/40'
 							/>,
-						];
+						);
 					}
-					return [node];
+					return nodes;
 				})}
 			</div>
 		</div>

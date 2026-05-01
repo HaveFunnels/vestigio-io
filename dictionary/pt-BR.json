@@ -1501,7 +1501,10 @@
 				"change": "Mudança",
 				"sessions": "Sessões",
 				"findings": "Descobertas",
-				"sources": "Fontes"
+				"sources": "Fontes",
+				"root_cause": "Causa Raiz",
+				"confidence_tier": "Confianca",
+				"first_seen": "Primeira Vez"
 			},
 			"healthy": "Saudável",
 			"per_month_short": "/mês",
@@ -1644,11 +1647,30 @@
 				"save": "Salvar",
 				"cancel": "Cancelar",
 				"delete_view": "Excluir visualizacao",
-				"shared_badge": "Compartilhado",
+				"shared_badge": "Equipe",
 				"by_pack": "Por Pack",
 				"by_severity": "Por Severidade",
 				"by_root_cause": "Por Causa Raiz",
-				"by_surface": "Por Superficie"
+				"by_surface": "Por Superficie",
+				"columns": "Colunas",
+				"column_names": {
+					"title": "Titulo",
+					"severity": "Severidade",
+					"impact": "Impacto",
+					"pack": "Pack",
+					"surface": "Superficie",
+					"change": "Mudanca",
+					"verification": "Verificacao",
+					"root_cause": "Causa Raiz",
+					"confidence_tier": "Confianca",
+					"first_seen": "Primeira Vez"
+				},
+				"share": "Compartilhar com equipe",
+				"pin_to_sidebar": "Fixar na barra lateral",
+				"unpin": "Desafixar",
+				"max_pins": "Maximo de 5 visualizacoes fixadas",
+				"shared_by": "Compartilhado por {name}",
+				"read_only": "Somente leitura (compartilhado)"
 			}
 		},
 		"finding_drawer": {

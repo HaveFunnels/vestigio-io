@@ -1481,7 +1481,10 @@
 				"status": "__TODO__",
 				"sessions": "__TODO__",
 				"findings": "__TODO__",
-				"sources": "__TODO__"
+				"sources": "__TODO__",
+				"root_cause": "Ursache",
+				"confidence_tier": "Vertrauen",
+				"first_seen": "Erstmals gesehen"
 			},
 			"healthy": "__TODO__",
 			"per_month_short": "/Monat",
@@ -1544,11 +1547,30 @@
 				"save": "Speichern",
 				"cancel": "Abbrechen",
 				"delete_view": "Ansicht loeschen",
-				"shared_badge": "Geteilt",
+				"shared_badge": "Team",
 				"by_pack": "Nach Pack",
 				"by_severity": "Nach Schweregrad",
 				"by_root_cause": "Nach Ursache",
-				"by_surface": "Nach Oberflaeche"
+				"by_surface": "Nach Oberflaeche",
+				"columns": "Spalten",
+				"column_names": {
+					"title": "Titel",
+					"severity": "Schweregrad",
+					"impact": "Auswirkung",
+					"pack": "Pack",
+					"surface": "Oberflaeche",
+					"change": "Aenderung",
+					"verification": "Verifizierung",
+					"root_cause": "Ursache",
+					"confidence_tier": "Vertrauen",
+					"first_seen": "Erstmals gesehen"
+				},
+				"share": "Mit Team teilen",
+				"pin_to_sidebar": "An Seitenleiste anheften",
+				"unpin": "Losloesung",
+				"max_pins": "Maximal 5 angeheftete Ansichten",
+				"shared_by": "Geteilt von {name}",
+				"read_only": "Schreibgeschuetzt (geteilt)"
 			}
 		},
 		"finding_drawer": {

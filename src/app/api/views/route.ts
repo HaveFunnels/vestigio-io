@@ -9,6 +9,9 @@ import { prisma } from "@/libs/prismaDb";
 //
 // If the user has 0 views for the active environment,
 // seed the 4 default views on first GET.
+//
+// Query params:
+//   ?pinned=true — returns only pinned views (for sidebar)
 // ──────────────────────────────────────────────
 
 const DEFAULT_VIEWS = [
@@ -82,7 +85,7 @@ async function resolveEnvironment(userId: string) {
 	return env?.id || null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
 	const session = await getServerSession(authOptions);
 	const userId = (session?.user as any)?.id;
 	if (!userId) {
@@ -92,6 +95,31 @@ export async function GET() {
 	const environmentId = await resolveEnvironment(userId);
 	if (!environmentId) {
 		return NextResponse.json({ views: [] });
+	}
+
+	// Parse query params
+	const url = new URL(request.url);
+	const pinnedOnly = url.searchParams.get("pinned") === "true";
+
+	if (pinnedOnly) {
+		// Return only pinned views for this user
+		const pinned = await prisma.savedView.findMany({
+			where: {
+				userId,
+				environmentId,
+				isPinned: true,
+			},
+			orderBy: { order: "asc" },
+			select: {
+				id: true,
+				name: true,
+				color: true,
+				icon: true,
+				isPinned: true,
+				userId: true,
+			},
+		});
+		return NextResponse.json({ views: pinned });
 	}
 
 	// Check if user has views
@@ -121,6 +149,7 @@ export async function GET() {
 					layout: "table",
 					isDefault: true,
 					isShared: false,
+					isPinned: false,
 					order: dv.order,
 				},
 			})
@@ -128,7 +157,7 @@ export async function GET() {
 		views = await Promise.all(creates);
 	}
 
-	return NextResponse.json({ views });
+	return NextResponse.json({ views, currentUserId: userId });
 }
 
 export async function POST(request: Request) {
@@ -178,12 +207,13 @@ export async function POST(request: Request) {
 			name: body.name.trim(),
 			icon: body.icon || null,
 			color: body.color || null,
-			filters: body.filters || {},
+			filters: (body.filters || {}) as any,
 			groupBy: body.groupBy || null,
 			sortBy: body.sortBy || "impact_desc",
 			layout: body.layout || "table",
 			isDefault: false,
 			isShared: false,
+			isPinned: false,
 			order: nextOrder,
 		},
 	});

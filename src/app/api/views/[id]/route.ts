@@ -11,6 +11,7 @@ import { prisma } from "@/libs/prismaDb";
 //   - Cannot delete default views
 //   - Cannot modify default views (except reorder)
 //   - User must own the view
+//   - Max 5 pinned views per user/environment
 // ──────────────────────────────────────────────
 
 export async function PATCH(
@@ -43,6 +44,7 @@ export async function PATCH(
 		layout?: string;
 		order?: number;
 		isShared?: boolean;
+		isPinned?: boolean;
 	};
 
 	try {
@@ -51,15 +53,32 @@ export async function PATCH(
 		return NextResponse.json({ message: "Invalid body" }, { status: 400 });
 	}
 
-	// Block modification of default view content (allow reorder only)
+	// Block modification of default view content (allow reorder and pin only)
 	if (view.isDefault) {
-		const allowedKeys = ["order"];
+		const allowedKeys = ["order", "isPinned"];
 		const bodyKeys = Object.keys(body);
 		const hasDisallowed = bodyKeys.some((k) => !allowedKeys.includes(k));
 		if (hasDisallowed) {
 			return NextResponse.json(
 				{ message: "Cannot modify default views" },
 				{ status: 403 },
+			);
+		}
+	}
+
+	// Enforce max 5 pinned views
+	if (body.isPinned === true && !view.isPinned) {
+		const pinnedCount = await prisma.savedView.count({
+			where: {
+				userId,
+				environmentId: view.environmentId,
+				isPinned: true,
+			},
+		});
+		if (pinnedCount >= 5) {
+			return NextResponse.json(
+				{ message: "Maximum 5 pinned views" },
+				{ status: 400 },
 			);
 		}
 	}
@@ -74,6 +93,7 @@ export async function PATCH(
 	if (body.layout !== undefined) updateData.layout = body.layout;
 	if (body.order !== undefined) updateData.order = body.order;
 	if (body.isShared !== undefined) updateData.isShared = body.isShared;
+	if (body.isPinned !== undefined) updateData.isPinned = body.isPinned;
 
 	const updated = await prisma.savedView.update({
 		where: { id },

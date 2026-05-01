@@ -1531,12 +1531,13 @@ model SavedView {
   name          String
   icon          String?         // Phosphor icon name: "Flame", "SealCheck", "SquaresFour", "ShieldCheck"
   color         String?         // hex for tab accent
-  filters       Json            // { severity?, pack?, polarity?, verification?, change?, impact?, surface?, rootCause? }
+  filters       Json            // { severity?, pack?, polarity?, verification?, change?, impact?, surface?, rootCause?, columns? }
   groupBy       String?         // "workspace" | "severity" | "root_cause" | "surface" | "pack"
   sortBy        String  @default("impact_desc")
   layout        String  @default("table")
   isDefault     Boolean @default(false)
   isShared      Boolean @default(false)
+  isPinned      Boolean @default(false)
   order         Int     @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

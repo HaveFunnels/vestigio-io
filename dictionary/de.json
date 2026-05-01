@@ -2714,7 +2714,24 @@
 			"temporal_sequential": "Sequenziell",
 			"temporal_simultaneous": "Gleichzeitig",
 			"empty_title": "Noch keine Cross-Signal-Muster erkannt",
-			"empty_subtitle": "Cross-Signal-Muster erscheinen, wenn Befunde aus verschiedenen Analyse-Packs dieselbe Seite Ihrer Website betreffen."
+			"empty_subtitle": "Cross-Signal-Muster erscheinen, wenn Befunde aus verschiedenen Analyse-Packs dieselbe Seite Ihrer Website betreffen.",
+			"compound_findings": {
+				"section_title": "Zusammengesetzte Befunde",
+				"section_subtitle": "Kausale Ketten ueber mehrere Domaenen mit multiplikativem Impact.",
+				"badge_confirmed": "Bestaetigt",
+				"badge_likely": "Wahrscheinlich",
+				"badge_heuristic": "Heuristisch",
+				"remediation_title": "Geordnete Behebung",
+				"packs_involved": "Beteiligte Packs",
+				"affected_surfaces": "Betroffene Oberflaechen",
+				"types": {
+					"security_revenue_chain": "Sicherheitsproblem unterbricht Ihr Revenue-Tracking",
+					"ad_promise_reality_behavior": "Ihre Anzeige verspricht etwas, das Ihre Landing Page nicht liefert",
+					"trust_hesitation_revenue": "Fehlende Vertrauenssignale verursachen Checkout-Abbrueche",
+					"post_purchase_chain": "Schwache Post-Purchase-Erfahrung verursacht Chargebacks",
+					"brand_impersonation_revenue": "Aktive Markenimitierung erodiert Vertrauen"
+				}
+			}
 		},
 		"activity_heatmap": {
 			"eyebrow": "Aktivität · 90 Tage",

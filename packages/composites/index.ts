@@ -14,3 +14,6 @@ export type { BlastRadiusAlert, BlastRadiusSeverity } from './blast-radius-regre
 
 export { compressOpportunities } from './opportunity-compression';
 export type { OpportunityCluster, OpportunityCompressionResult, CompressibleFinding } from './opportunity-compression';
+
+export { detectCompoundFindings, buildCompoundInputs } from './compound-findings';
+export type { CompoundFinding, CompoundType, ChainLink, CompoundInput } from './compound-findings';

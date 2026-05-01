@@ -53,6 +53,9 @@ import {
   compressOpportunities,
   OpportunityCompressionResult,
   CompressibleFinding,
+  detectCompoundFindings,
+  buildCompoundInputs,
+  CompoundFinding,
 } from '../composites';
 import {
   IntegrationSnapshot,
@@ -254,6 +257,8 @@ export interface MultiPackResult {
     trust_surface_score: TrustSurfaceScore;
     blast_radius: BlastRadiusAlert;
     opportunity_compression: OpportunityCompressionResult;
+    /** Wave 4.7: Cross-domain compound findings — causal chains spanning multiple packs */
+    compound_findings: CompoundFinding[];
   } | null;
 
   // Integration data layer
@@ -903,10 +908,15 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   }));
   const opportunityCompression = compressOpportunities(compressibleFindings);
 
+  // Wave 4.7: Cross-domain compound findings detection
+  const compoundInputs = buildCompoundInputs(allInferences, valueCases);
+  const compoundFindings = detectCompoundFindings(compoundInputs, commerceContext, null);
+
   assembledResult.composites = {
     trust_surface_score: trustSurfaceScore,
     blast_radius: blastRadius,
     opportunity_compression: opportunityCompression,
+    compound_findings: compoundFindings,
   };
 
   return assembledResult;

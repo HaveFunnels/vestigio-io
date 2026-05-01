@@ -2541,7 +2541,24 @@
 			"temporal_sequential": "Sequential",
 			"temporal_simultaneous": "Simultaneous",
 			"empty_title": "No cross-signal patterns detected yet",
-			"empty_subtitle": "Cross-signal patterns appear when findings from different analysis packs affect the same page on your site."
+			"empty_subtitle": "Cross-signal patterns appear when findings from different analysis packs affect the same page on your site.",
+			"compound_findings": {
+				"section_title": "Compound Findings",
+				"section_subtitle": "Causal chains spanning multiple domains with multiplicative impact.",
+				"badge_confirmed": "Confirmed",
+				"badge_likely": "Likely",
+				"badge_heuristic": "Heuristic",
+				"remediation_title": "Ordered Remediation",
+				"packs_involved": "Packs involved",
+				"affected_surfaces": "Affected surfaces",
+				"types": {
+					"security_revenue_chain": "Security issue is breaking your revenue tracking",
+					"ad_promise_reality_behavior": "Your ad promises something your landing page doesn't deliver",
+					"trust_hesitation_revenue": "Missing trust signals are causing checkout abandonment",
+					"post_purchase_chain": "Weak post-purchase experience is driving chargebacks",
+					"brand_impersonation_revenue": "Active brand impersonation is eroding trust"
+				}
+			}
 		},
 		"activity_heatmap": {
 			"eyebrow": "Activity · 90 days",

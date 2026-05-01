@@ -2560,7 +2560,24 @@
 			"temporal_sequential": "Sequencial",
 			"temporal_simultaneous": "Simultaneo",
 			"empty_title": "Nenhum padrao cross-signal detectado ainda",
-			"empty_subtitle": "Padroes cross-signal aparecem quando findings de diferentes packs de analise afetam a mesma pagina do seu site."
+			"empty_subtitle": "Padroes cross-signal aparecem quando findings de diferentes packs de analise afetam a mesma pagina do seu site.",
+			"compound_findings": {
+				"section_title": "Findings Compostos",
+				"section_subtitle": "Cadeias causais que cruzam multiplos dominios com impacto multiplicativo.",
+				"badge_confirmed": "Confirmado",
+				"badge_likely": "Provavel",
+				"badge_heuristic": "Heuristico",
+				"remediation_title": "Remediacao Ordenada",
+				"packs_involved": "Packs envolvidos",
+				"affected_surfaces": "Superficies afetadas",
+				"types": {
+					"security_revenue_chain": "Problema de seguranca esta quebrando seu rastreamento de receita",
+					"ad_promise_reality_behavior": "Seu anuncio promete algo que sua landing page nao entrega",
+					"trust_hesitation_revenue": "Sinais de confianca ausentes estao causando abandono no checkout",
+					"post_purchase_chain": "Experiencia pos-compra fraca esta gerando chargebacks",
+					"brand_impersonation_revenue": "Imitacao ativa da marca esta erodindo a confianca"
+				}
+			}
 		},
 		"activity_heatmap": {
 			"eyebrow": "Atividade · 90 dias",

@@ -258,6 +258,15 @@ export const COPY_STRATEGY_ROOT_CAUSES = new Set([
   'ad_landing_promise_gap',  // Wave 3.10 Fase 3: ad-message-match integration
 ]);
 
+// Wave 4.7: Human-readable titles for compound finding types
+const COMPOUND_TYPE_TITLES: Record<string, string> = {
+  security_revenue_chain: 'Security issue is breaking your revenue tracking',
+  ad_promise_reality_behavior: 'Your ad promises something your landing page doesn\'t deliver',
+  trust_hesitation_revenue: 'Missing trust signals are causing checkout abandonment',
+  post_purchase_chain: 'Weak post-purchase experience is driving chargebacks',
+  brand_impersonation_revenue: 'Active brand impersonation is eroding trust',
+};
+
 // Inference → typical page surface
 const INFERENCE_SURFACES: Record<string, string> = {
   trust_boundary_crossed: '/checkout',
@@ -1185,6 +1194,47 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       cluster_count: rc ? (clusterByRootCauseKey.get(rc.root_cause_key)?.count ?? null) : null,
     };
   });
+
+  // ── Wave 4.7: Inject compound-finding actions ──
+  if (result.composites?.compound_findings) {
+    for (const cf of result.composites.compound_findings) {
+      const compoundAction: ActionProjection = {
+        id: cf.id,
+        title: COMPOUND_TYPE_TITLES[cf.compound_type] || cf.compound_type,
+        description: cf.narrative,
+        root_cause: null,
+        root_cause_key: cf.compound_type,
+        impact: {
+          monthly_range: { min: Math.round(cf.combined_impact_cents * 0.7), max: cf.combined_impact_cents },
+          midpoint: cf.combined_impact_cents,
+        },
+        confidence: cf.confidence === 'confirmed' ? 85 : cf.confidence === 'likely' ? 65 : 50,
+        confidence_tier: deriveConfidenceTier(cf.confidence === 'confirmed' ? 85 : cf.confidence === 'likely' ? 65 : 50),
+        cross_pack: true,
+        priority_score: Math.round(cf.combined_impact_cents * 1.5), // compound boost
+        severity: cf.severity,
+        action_type: 'risk_mitigation',
+        category: 'incident',
+        operational_status: null,
+        decision_status: null,
+        effort_hint: null,
+        remediation_steps: cf.remediation_chain,
+        estimated_effort_hours: null,
+        verification_strategy: 'heuristic_recompute',
+        verification_notes: `Resolving the ordered remediation chain will resolve this compound finding.`,
+        verification_eta_seconds: null,
+        change_class: null,
+        verification_maturity: null,
+        resolve_path: 'fix',
+        uplift_hypothesis: null,
+        upside_score: null,
+        value_case_basis: null,
+        cluster_key: null,
+        cluster_count: null,
+      };
+      actions.push(compoundAction);
+    }
+  }
 
   // Sort: PRIMARY impact midpoint DESC, SECONDARY confidence DESC, TERTIARY severity
   const severityOrder: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1, none: 0 };

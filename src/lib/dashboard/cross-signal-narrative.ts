@@ -1,4 +1,5 @@
 import type { CrossSignalChain } from "./types";
+import type { CompoundFinding } from "../../../packages/composites/compound-findings";
 
 // ──────────────────────────────────────────────
 // Cross-Signal Narrative Generator
@@ -81,4 +82,42 @@ export function generateNarrative(chain: CrossSignalChain): string {
 	}
 
 	return narrative;
+}
+
+// ──────────────────────────────────────────────
+// Wave 4.7: Compound Finding → CrossSignalChain
+//
+// Converts compound findings into CrossSignalChain
+// objects so the Cross-Signal Surface can render
+// them as priority chains (sorted above ad-hoc
+// surface correlations).
+// ──────────────────────────────────────────────
+
+/**
+ * Convert compound findings into CrossSignalChain format for the
+ * cross-signal surface. Compound chains carry their own narrative
+ * and have a `sequential` temporal pattern (causal chain by definition).
+ */
+export function compoundFindingsToChains(
+	compounds: CompoundFinding[],
+): CrossSignalChain[] {
+	return compounds.map((cf) => {
+		const links = cf.chain.map((link) => ({
+			pack: link.pack,
+			title: link.description,
+			severity: cf.severity,
+			impactCents: Math.round(cf.combined_impact_cents / cf.chain.length),
+			findingId: cf.id,
+			firstSeenAt: null,
+		}));
+
+		return {
+			surface: cf.affected_surfaces[0] || "/",
+			links,
+			totalImpactCents: cf.combined_impact_cents,
+			temporalPattern: "sequential" as const,
+			narrative: cf.narrative,
+			firstDetectedAt: null,
+		};
+	});
 }

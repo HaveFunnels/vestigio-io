@@ -2504,7 +2504,24 @@
 			"temporal_sequential": "Secuencial",
 			"temporal_simultaneous": "Simultaneo",
 			"empty_title": "Ningun patron cross-signal detectado aun",
-			"empty_subtitle": "Los patrones cross-signal aparecen cuando hallazgos de diferentes packs de analisis afectan la misma pagina de tu sitio."
+			"empty_subtitle": "Los patrones cross-signal aparecen cuando hallazgos de diferentes packs de analisis afectan la misma pagina de tu sitio.",
+			"compound_findings": {
+				"section_title": "Hallazgos Compuestos",
+				"section_subtitle": "Cadenas causales que cruzan multiples dominios con impacto multiplicativo.",
+				"badge_confirmed": "Confirmado",
+				"badge_likely": "Probable",
+				"badge_heuristic": "Heuristico",
+				"remediation_title": "Remediacion Ordenada",
+				"packs_involved": "Packs involucrados",
+				"affected_surfaces": "Superficies afectadas",
+				"types": {
+					"security_revenue_chain": "Un problema de seguridad esta rompiendo tu rastreo de ingresos",
+					"ad_promise_reality_behavior": "Tu anuncio promete algo que tu landing page no entrega",
+					"trust_hesitation_revenue": "Senales de confianza ausentes estan causando abandono en el checkout",
+					"post_purchase_chain": "Experiencia post-compra debil esta generando chargebacks",
+					"brand_impersonation_revenue": "Imitacion activa de marca esta erosionando la confianza"
+				}
+			}
 		},
 		"activity_heatmap": {
 			"eyebrow": "Actividad · 90 días",

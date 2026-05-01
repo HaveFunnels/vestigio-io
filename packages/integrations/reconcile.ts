@@ -206,6 +206,12 @@ function reconcileCommerceContext(
     total_ad_spend_monthly: null,
     ad_spend_by_platform: {},
 
+    // Nuvemshop-exclusive extended data (Wave 7.11)
+    coupon_stacking_enabled: null,
+    expired_coupons_active: null,
+    avg_shipping_days: null,
+    fraud_cancelled_rate: null,
+
     // Meta
     sources,
     basis_type: sources.length === 0 ? 'heuristic' : sources.length >= 2 ? 'data_driven' : 'mixed',
@@ -242,6 +248,24 @@ function reconcileCommerceContext(
     context.refund_rate = sd.refunds.refund_rate;
     context.discount_usage_rate = sd.discounts.discount_usage_rate;
     context.payment_gateway_concentration = sd.payment_methods.concentration_ratio;
+  }
+
+  // Populate Nuvemshop-exclusive extended data (Wave 7.11 Bug I)
+  if (ecommerce && ecommerceProvider === 'nuvemshop') {
+    const nd = ecommerce.data as NuvemshopSnapshotData;
+
+    if (nd.coupons) {
+      context.coupon_stacking_enabled = nd.coupons.stacking_enabled_count > 0;
+      context.expired_coupons_active = nd.coupons.expired_but_active;
+    }
+
+    if (nd.shipping) {
+      context.avg_shipping_days = nd.shipping.avg_shipping_days;
+    }
+
+    if (nd.channels && nd.revenue.order_count > 0) {
+      context.fraud_cancelled_rate = nd.channels.fraud_cancelled_count / nd.revenue.order_count;
+    }
   }
 
   // Populate from Stripe

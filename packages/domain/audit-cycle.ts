@@ -21,13 +21,34 @@ export interface AuditCycle extends Timestamped {
 
 export type TriggerSource = 'scheduled' | 'manual' | 'webhook' | 'incremental';
 
+/**
+ * CycleStatus — canonical state machine for audit cycles.
+ *
+ * Only 4 states are used in production (DB + runtime):
+ *   'pending'   — cycle created, awaiting worker pickup
+ *   'running'   — worker is actively processing this cycle
+ *   'completed' — cycle finished successfully
+ *   'failed'    — cycle encountered a fatal error
+ *
+ * DEPRECATED states (kept for backward compatibility with older DB rows):
+ *   'collecting'  — was intended as sub-state of 'running' (never used in prod)
+ *   'processing'  — was intended as sub-state of 'running' (never used in prod)
+ *   'computing'   — was intended as sub-state of 'running' (never used in prod)
+ *
+ * New code should only use the 4 production states. The deprecated states
+ * exist solely to prevent runtime errors on legacy rows that might still
+ * carry these values in the DB.
+ */
 export type CycleStatus =
   | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  // Deprecated: sub-states that were never used in production.
+  // Kept for DB backward-compat — do NOT use in new code.
   | 'collecting'
   | 'processing'
-  | 'computing'
-  | 'completed'
-  | 'failed';
+  | 'computing';
 
 export interface CoverageSummary {
   pages_discovered: number;

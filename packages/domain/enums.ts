@@ -40,10 +40,47 @@ export enum FreshnessState {
   Unknown = 'unknown',
 }
 
+/**
+ * CycleType — canonical cycle type taxonomy.
+ *
+ * Production uses 3 canonical cycle modes (defined in apps/audit-runner/cycle-modes.ts):
+ *   Hot  — critical-surface-only sweep (15min–1h cadence, Max tier)
+ *   Warm — critical + rotating sample (daily cadence, Pro tier)
+ *   Cold — full baseline reset (weekly cadence, all tiers)
+ *
+ * Legacy aliases (still stored in DB as string values):
+ *   'full'         = Cold  (legacy name from before hot/warm/cold taxonomy)
+ *   'incremental'  = Warm  (deprecated alias from Phase 1)
+ *   'verification' = Hot   (special-purpose hot cycle for verification dispatches)
+ *
+ * Use `normalizeCycleType()` when reading from DB to map legacy strings
+ * to canonical values. Do NOT change existing DB values — they're plain strings.
+ */
 export enum CycleType {
+  // Canonical production types
+  Hot = 'hot',
+  Warm = 'warm',
+  Cold = 'cold',
+  // Legacy aliases (kept for DB backward-compat)
   Full = 'full',
   Incremental = 'incremental',
   Verification = 'verification',
+}
+
+/**
+ * Normalize a raw cycle type string from the DB to a canonical CycleType.
+ * Maps legacy aliases to their canonical equivalents.
+ */
+export function normalizeCycleType(raw: string): CycleType {
+  switch (raw) {
+    case 'hot': return CycleType.Hot;
+    case 'warm': return CycleType.Warm;
+    case 'cold': return CycleType.Cold;
+    case 'full': return CycleType.Cold;           // legacy → cold
+    case 'incremental': return CycleType.Warm;    // legacy → warm
+    case 'verification': return CycleType.Hot;    // legacy → hot
+    default: return CycleType.Cold;               // unknown → safest default
+  }
 }
 
 export enum BusinessModel {
@@ -485,6 +522,9 @@ export enum InferenceCategory {
   AdCreativeMessageMismatch = 'ad_creative_message_mismatch',
   LowRepeatPurchaseRate = 'low_repeat_purchase_rate',
   DeadWeightProducts = 'dead_weight_products',
+  // Wave 7.11: SaaS/Stripe metrics
+  SubscriberChurnElevated = 'subscriber_churn_elevated',
+  FailedPaymentRateHigh = 'failed_payment_rate_high',
   // Wave 4.1: Cybersecurity Phase 2
   InformationDisclosure = 'information_disclosure',
   ScriptSupplyChainRisk = 'script_supply_chain_risk',

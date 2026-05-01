@@ -1,3 +1,10 @@
+// DEPRECATED: This file is superseded by apps/audit-runner/scheduler.ts (Wave 5, Fase 3).
+// Kept for reference only. Do not use.
+//
+// The active scheduler lives at apps/audit-runner/scheduler.ts and uses
+// Prisma + the priority queue system. This in-memory scheduler was the
+// Phase 1 implementation and is no longer called by any production code.
+
 import { PlanKey, AuditTrigger, AuditType, AuditFrequency, ScheduledAudit } from '../../packages/plans';
 import { getPlanLimits } from '../../packages/plans';
 

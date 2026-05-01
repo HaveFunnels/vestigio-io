@@ -930,7 +930,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     const payload = e.payload as { type?: string; checkout_reached_rate?: number; avg_session_duration_ms?: number };
     if (payload.type === 'behavioral_cohort') continue; // use env-level payload
     behavioralContext = {
-      bounce_rate: 1 - (payload.checkout_reached_rate || 0),
+      bounce_rate: (1 - (payload.checkout_reached_rate || 0)) * 100,
       avg_session_duration: (payload.avg_session_duration_ms || 0) / 1000,
     };
     break;

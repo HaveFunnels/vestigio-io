@@ -257,6 +257,9 @@ export function computeInferences(
   inferences.push(...inferAdCreativeMessageMismatch(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferLowRepeatPurchaseRate(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferDeadWeightProducts(byKey, scoping, cycle_ref, ids));
+  // Wave 7.11: SaaS/Stripe metric inferences
+  inferences.push(...inferSubscriberChurnElevated(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferFailedPaymentRateHigh(byKey, scoping, cycle_ref, ids));
 
   // Wave 4.1: Cybersecurity Phase 2
   inferences.push(...inferInformationDisclosure(first, byKey, scoping, cycle_ref, ids));
@@ -4206,4 +4209,46 @@ function inferBehavioralMicroPatternCascade(byKey: Map<string, Signal>, scoping:
   if (!sig) return [];
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
   return [createInference({ inference_key: 'behavioral_micro_pattern_cascade', category: InferenceCategory.BehavioralMicroPatternCascade, conclusion: 'behavioral_micro_pattern_cascade', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Multiple behavioral friction signals are firing simultaneously — users are hesitating, clicking dead elements, and navigating back repeatedly. ${sig.numeric_value} compound indicators triggered at once. This pattern indicates systematic UX confusion, not isolated issues. When hesitation, dead clicks, pricing doubt, form retries, and backtrack navigation combine, the root cause is architectural rather than cosmetic — the entire decision flow needs restructuring.`, reasoning_slots: { severity, factors: sig.numeric_value ?? 0 } })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 7.11: SaaS/Stripe Metric Inferences
+// ──────────────────────────────────────────────
+
+function inferSubscriberChurnElevated(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('subscriber_churn_elevated');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'subscriber_churn_elevated',
+    category: InferenceCategory.SubscriberChurnElevated,
+    conclusion: 'subscriber_churn_elevated',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Monthly subscriber churn rate of ${sig.numeric_value}% is above the 5% SaaS benchmark. At this rate, you lose your entire subscriber base in ${Math.round(100 / (sig.numeric_value ?? 5))} months without new signups. Churn compounds — every lost subscriber is lost LTV, and replacing them costs acquisition spend that would have otherwise expanded revenue.`,
+    reasoning_slots: { severity },
+  })];
+}
+
+function inferFailedPaymentRateHigh(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('failed_payment_rate_high');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'failed_payment_rate_high',
+    category: InferenceCategory.FailedPaymentRateHigh,
+    conclusion: 'failed_payment_rate_high',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${sig.numeric_value}% of payment attempts are failing — this is involuntary churn from expired cards, insufficient funds, and gateway errors. Each failed payment is a subscriber who intends to pay but cannot. Without dunning automation and card updater integration, these subscribers silently churn without ever making a conscious decision to leave.`,
+    reasoning_slots: { severity },
+  })];
 }

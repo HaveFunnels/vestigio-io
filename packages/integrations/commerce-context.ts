@@ -21,14 +21,20 @@ export interface CommerceContext {
   discount_usage_rate: number | null;
   payment_gateway_concentration: number | null;
 
-  // Stripe-sourced (future)
+  // Stripe-sourced
   mrr: number | null;
   subscriber_churn_rate: number | null;
   failed_payment_rate: number | null;
 
-  // Ad platforms (future)
+  // Ad platforms
   total_ad_spend_monthly: number | null;
   ad_spend_by_platform: Record<string, number>;
+
+  // Nuvemshop-exclusive extended data (Wave 7.11)
+  coupon_stacking_enabled: boolean | null;
+  expired_coupons_active: number | null;
+  avg_shipping_days: number | null;
+  fraud_cancelled_rate: number | null;
 
   // Meta
   sources: string[];

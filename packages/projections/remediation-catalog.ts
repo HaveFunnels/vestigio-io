@@ -2092,6 +2092,35 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 30,
 	},
 
+	// Wave 7.11: SaaS/Stripe metric findings
+	subscriber_churn_elevated: {
+		remediation_steps: [
+			'Implemente pesquisa de cancelamento (1-2 perguntas) pra mapear os motivos reais de churn.',
+			'Configure dunning automation com 3-5 retentativas + email avisando o cliente que o pagamento falhou.',
+			'Crie oferta de retenção (pause, downgrade, extensão) antes do cancelamento definitivo.',
+			'Monitore churn rate semanal com alerta quando ultrapassar 5% mensal.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Stripe pra verificar se churn rate caiu abaixo de 5% no próximo período de 30d.',
+		verification_eta_seconds: 30,
+	},
+
+	failed_payment_rate_high: {
+		remediation_steps: [
+			'Ative card updater no Stripe (automático pra cartões expirados).',
+			'Configure smart retry com backoff progressivo (Stripe Billing já suporta).',
+			'Envie email ao cliente no primeiro failure com link pra atualizar método de pagamento.',
+			'Implemente grace period de 3-7 dias antes de suspender acesso após failure.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Stripe pra verificar se failed_payment_rate caiu abaixo de 3% no próximo período de 30d.',
+		verification_eta_seconds: 30,
+	},
+
 	// ─────────────────────────────────────────────
 	// Behavioral (Phase 4B — pixel-dependent)
 	// ─────────────────────────────────────────────

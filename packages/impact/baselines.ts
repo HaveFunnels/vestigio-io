@@ -1725,6 +1725,23 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     high: { min: 0.02, max: 0.03 }, medium: { min: 0.01, max: 0.02 }, low: { min: 0.01, max: 0.01 },
     base_metric: 'revenue',
   },
+  // Wave 7.11: SaaS/Stripe metric baselines
+  subscriber_churn_elevated: {
+    inference_key: 'subscriber_churn_elevated',
+    impact_category: 'revenue_loss',
+    cause: 'Monthly subscriber churn is bleeding MRR faster than growth replaces it',
+    effect: 'Each churned subscriber is lost recurring revenue compounding monthly — at elevated churn the business must acquire proportionally more new subscribers every month just to maintain flat revenue, and the gap between required acquisition and organic growth widens over time',
+    high: { min: 0.10, max: 0.20 }, medium: { min: 0.05, max: 0.10 }, low: { min: 0.03, max: 0.05 },
+    base_metric: 'revenue',
+  },
+  failed_payment_rate_high: {
+    inference_key: 'failed_payment_rate_high',
+    impact_category: 'revenue_loss',
+    cause: 'Failed payments are silently churning subscribers who intend to pay',
+    effect: 'Involuntary churn from expired cards, insufficient funds, and gateway errors is revenue loss with zero customer intent to leave — each failed payment that is not recovered via dunning or card updater is pure preventable revenue loss',
+    high: { min: 0.06, max: 0.10 }, medium: { min: 0.03, max: 0.06 }, low: { min: 0.02, max: 0.03 },
+    base_metric: 'revenue',
+  },
 
   // ── Wave 4.6: Neglected Findings ──────────────────────
 

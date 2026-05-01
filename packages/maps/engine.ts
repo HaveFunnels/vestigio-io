@@ -4,6 +4,7 @@ import { RootCause, GlobalAction } from '../intelligence';
 import { MultiPackResult } from '../workspace';
 import { makeRef } from '../domain';
 import { MapNode, MapEdge, MapDefinition, MapNodeType } from './types';
+import { applyDagreLayout } from './layout';
 
 // English source-of-truth for map names + category labels. Translation
 // lookups fall back to these when no localized string is provided, so
@@ -115,11 +116,8 @@ export function buildRevenueLeakageMap(
     }
   }
 
-  // Auto-layout: root causes left, findings right
-  applyHierarchicalLayout(nodes, {
-    rootCauses: { x: 0, nodeTypes: ['root_cause'] },
-    findings: { x: 400, nodeTypes: ['finding'] },
-  });
+  // Auto-layout via dagre (LR, rankSep 280)
+  applyDagreLayout(nodes, edges, { direction: "LR", rankSeparation: 280 });
 
   return {
     id: 'revenue_leakage',
@@ -231,12 +229,8 @@ export function buildChargebackRiskMap(
     }
   }
 
-  // Auto-layout: categories left, root causes center, findings right
-  applyHierarchicalLayout(nodes, {
-    categories: { x: 0, nodeTypes: ['policy', 'support', 'trust'] },
-    rootCauses: { x: 400, nodeTypes: ['root_cause'] },
-    findings: { x: 800, nodeTypes: ['finding'] },
-  });
+  // Auto-layout via dagre (LR, rankSep 250)
+  applyDagreLayout(nodes, edges, { direction: "LR", rankSeparation: 250 });
 
   return {
     id: 'chargeback_risk',
@@ -338,12 +332,8 @@ export function buildRootCauseMap(
     }
   }
 
-  // Auto-layout: findings left, root causes center, actions right
-  applyHierarchicalLayout(nodes, {
-    findings: { x: 0, nodeTypes: ['finding'] },
-    rootCauses: { x: 400, nodeTypes: ['root_cause'] },
-    actions: { x: 800, nodeTypes: ['action'] },
-  });
+  // Auto-layout via dagre (LR, rankSep 300 — 3 columns: findings → RCs → actions)
+  applyDagreLayout(nodes, edges, { direction: "LR", rankSeparation: 300 });
 
   return {
     id: 'root_cause',
@@ -469,11 +459,8 @@ export function buildCustomMap(
     }
   }
 
-  applyHierarchicalLayout(nodes, {
-    findings: { x: 0, nodeTypes: ['finding'] },
-    rootCauses: { x: 400, nodeTypes: ['root_cause'] },
-    actions: { x: 800, nodeTypes: ['action'] },
-  });
+  // Auto-layout via dagre (LR, rankSep 280)
+  applyDagreLayout(nodes, edges, { direction: "LR", rankSeparation: 280 });
 
   const hasFindings = nodes.some(n => n.type === 'finding');
   const hasRCs = nodes.some(n => n.type === 'root_cause');
@@ -534,63 +521,63 @@ function computeRCImpact(
 }
 
 // ──────────────────────────────────────────────
-// Auto-layout — hierarchical column layout
+// [DEPRECATED] Auto-layout — hierarchical column layout
 //
-// Assigns X by column and Y by evenly spacing
-// nodes within each column (80px apart, centered).
+// Replaced by dagre-based layout (packages/maps/layout/dagre-layout.ts)
+// which produces proper graph-aware positioning. Kept for reference.
 // ──────────────────────────────────────────────
 
-interface ColumnConfig {
-  [columnName: string]: { x: number; nodeTypes: MapNodeType[] };
-}
-
-function applyHierarchicalLayout(nodes: MapNode[], columns: ColumnConfig): void {
-  const NODE_SPACING_Y = 80;
-
-  // Group nodes by their column
-  const columnGroups: Record<string, MapNode[]> = {};
-  for (const colName of Object.keys(columns)) {
-    columnGroups[colName] = [];
-  }
-
-  for (const node of nodes) {
-    for (const [colName, colDef] of Object.entries(columns)) {
-      if (colDef.nodeTypes.includes(node.type)) {
-        columnGroups[colName].push(node);
-        break;
-      }
-    }
-  }
-
-  // Compute the tallest column to center shorter columns
-  let maxColumnHeight = 0;
-  for (const colName of Object.keys(columns)) {
-    const count = columnGroups[colName].length;
-    const height = count > 0 ? (count - 1) * NODE_SPACING_Y : 0;
-    if (height > maxColumnHeight) maxColumnHeight = height;
-  }
-
-  // Assign positions
-  for (const [colName, colDef] of Object.entries(columns)) {
-    const group = columnGroups[colName];
-    if (group.length === 0) continue;
-
-    const totalHeight = (group.length - 1) * NODE_SPACING_Y;
-    const startY = (maxColumnHeight - totalHeight) / 2;
-
-    // Sort by severity priority, then by impact (descending)
-    const sevOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-    group.sort((a, b) => {
-      const sa = sevOrder[a.severity || 'low'] ?? 4;
-      const sb = sevOrder[b.severity || 'low'] ?? 4;
-      if (sa !== sb) return sa - sb;
-      const ia = a.impact?.midpoint ?? 0;
-      const ib = b.impact?.midpoint ?? 0;
-      return ib - ia;
-    });
-
-    for (let i = 0; i < group.length; i++) {
-      group[i].position = { x: colDef.x, y: startY + i * NODE_SPACING_Y };
-    }
-  }
-}
+// interface ColumnConfig {
+//   [columnName: string]: { x: number; nodeTypes: MapNodeType[] };
+// }
+//
+// function applyHierarchicalLayout(nodes: MapNode[], columns: ColumnConfig): void {
+//   const NODE_SPACING_Y = 80;
+//
+//   // Group nodes by their column
+//   const columnGroups: Record<string, MapNode[]> = {};
+//   for (const colName of Object.keys(columns)) {
+//     columnGroups[colName] = [];
+//   }
+//
+//   for (const node of nodes) {
+//     for (const [colName, colDef] of Object.entries(columns)) {
+//       if (colDef.nodeTypes.includes(node.type)) {
+//         columnGroups[colName].push(node);
+//         break;
+//       }
+//     }
+//   }
+//
+//   // Compute the tallest column to center shorter columns
+//   let maxColumnHeight = 0;
+//   for (const colName of Object.keys(columns)) {
+//     const count = columnGroups[colName].length;
+//     const height = count > 0 ? (count - 1) * NODE_SPACING_Y : 0;
+//     if (height > maxColumnHeight) maxColumnHeight = height;
+//   }
+//
+//   // Assign positions
+//   for (const [colName, colDef] of Object.entries(columns)) {
+//     const group = columnGroups[colName];
+//     if (group.length === 0) continue;
+//
+//     const totalHeight = (group.length - 1) * NODE_SPACING_Y;
+//     const startY = (maxColumnHeight - totalHeight) / 2;
+//
+//     // Sort by severity priority, then by impact (descending)
+//     const sevOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+//     group.sort((a, b) => {
+//       const sa = sevOrder[a.severity || 'low'] ?? 4;
+//       const sb = sevOrder[b.severity || 'low'] ?? 4;
+//       if (sa !== sb) return sa - sb;
+//       const ia = a.impact?.midpoint ?? 0;
+//       const ib = b.impact?.midpoint ?? 0;
+//       return ib - ia;
+//     });
+//
+//     for (let i = 0; i < group.length; i++) {
+//       group[i].position = { x: colDef.x, y: startY + i * NODE_SPACING_Y };
+//     }
+//   }
+// }

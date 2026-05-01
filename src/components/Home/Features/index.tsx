@@ -874,7 +874,7 @@ const Features = async () => {
 							{t("eyebrow")}
 						</span>
 					</div>
-					<h2 className='mb-3 text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:text-3xl lg:text-[2.25rem]'>
+					<h2 className='mb-3 text-xl font-bold leading-[1.15] tracking-tight text-white sm:text-2xl lg:text-3xl'>
 						{t("title_part1")}{" "}
 						<span className='text-zinc-500'>{t("title_part2")}</span>
 					</h2>

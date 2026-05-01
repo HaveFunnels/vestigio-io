@@ -1,9 +1,9 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-01 (4.7 Compound Findings shipped; 2.5 Prisma Migrate done)
+> Last updated: 2026-05-01 (Roadmap complete — 4.1, 4.2, 4.4, 4.7, 3.20 all shipped)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
-> **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.4, 3.7–3.19, 3.20 Fase 1, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
+> **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
 ---
 
@@ -70,7 +70,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~Unified Entity Architecture~~ | **✅ Fases 1-3 shipped.** Fase 1 (2026-04-21): FindingDetailPanel, cross-refs, canonical URL, filter state. Fase 2 (2026-05-01): SavedView model, 4 default views (Phosphor icons), ViewSelector, `/app/findings`, sidebar simplification, redirect, SaveViewModal. **Fase 3 (2026-05-01):** ColumnSelector (9 toggleable columns, auto-save), share with team (UsersThree badge, read-only for non-owners), pin to sidebar (isPinned, max 5, usePinnedViews hook, colored dots in sidebar). | Wave 3.20 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
 | ~~`prisma db push` → `prisma migrate`~~ | **✅ Shipped 2026-04-27** — Baseline migration `0_init` generated from current schema, `migration_lock.toml` added, package.json scripts updated (`db:migrate:deploy`, `db:migrate:dev`, `db:push:dev`), deployment guide at `docs/PRISMA_MIGRATE.md`. One-time `prisma migrate resolve --applied 0_init` required on prod before next deploy. | Wave 2.5 |
-| Conversation export/branching | Not started | Wave 4.4 |
+| ~~Conversation export/branching~~ | **✅ Shipped 2026-05-01** — Branching (fork) already existed. Export: JSON/Markdown/CSV formats, `/api/conversations/[id]/export` endpoint, ExportDropdown in CopilotPanel header, i18n. | Wave 4.4 |
 | Neglected Findings — data collected, findings missing | **Not started** — payment handoff (pixel), SaaS activation (auth sessions), oscillation clustering (pixel), network error weighting (Playwright), mobile trust gap (Playwright), behavioral micro-patterns (pixel) | Wave 4.6 |
 | ~~Cross-Domain Compound Findings~~ | **✅ Shipped 2026-05-01** — 5 compound types (security_revenue_chain, ad_promise_reality_behavior, trust_hesitation_revenue, post_purchase_chain, brand_impersonation_revenue). Detection engine in `packages/composites/compound-findings.ts`, wired into recompute + projections (1.5x priority boost) + cross-signal narratives. CompoundInput lightweight type, confidence tiers (confirmed/likely/heuristic), multiplicative impact. i18n (4 langs). | Wave 4.7 |
 
@@ -1092,24 +1092,24 @@ Power-user features. Opt-in, never forced.
 
 ---
 
-### 4.1 Cybersecurity Pack — Phase 2 (Minor Collection Extension)
+### 4.1 Cybersecurity Pack — Phase 2 ✅ COMPLETE
 
-| # | Finding | Collection Needed | Effort |
-|---|---------|-------------------|--------|
-| A | Cookie security assessment | Parse `Set-Cookie` header attributes | Low |
-| B | Information disclosure | Error page body text capture on 4xx/5xx | Low |
-| C | Script supply chain / SRI | Extract `integrity` attribute from `<script>` tags | Low |
-| D | Auth surface security | Password field type detection in forms | Low |
+| # | Finding | Status |
+|---|---------|--------|
+| A | Cookie security assessment | ✅ Already existed (signals/engine.ts:4334) |
+| B | Information disclosure | ✅ Shipped 2026-05-01 — server version + error page detection, `inferInformationDisclosure` |
+| C | Script supply chain / SRI | ✅ Shipped 2026-05-01 — `integrity` attr on ScriptPayload, `external_script_no_sri` signal, `inferScriptSupplyChainRisk` |
+| D | Auth surface security | ✅ Shipped 2026-05-01 — `field_types` on FormPayload, password-as-text detection, `inferAuthSurfaceInsecure` |
 
 ---
 
-### 4.2 LLM Enrichment — Pricing & Structured Data
+### 4.2 LLM Enrichment — Pricing & Structured Data ✅ COMPLETE
 
-| # | Enrichment | Input | Value |
-|---|-----------|-------|-------|
-| A | Pricing/offer clarity | Pricing page body text (expanded snippet) | Strengthens `expectation_misalignment` |
-| B | Page purpose validation | title + h1 + body_text_snippet vs URL classification | Improves commercial path accuracy |
-| C | Structured data cross-validation | JSON-LD claims vs visible page content | Detects schema/content mismatches |
+| # | Enrichment | Status |
+|---|-----------|--------|
+| A | Pricing/offer clarity | ✅ Shipped 2026-05-01 — `pricing_offer_unclear` signal when model unknown or no recommended plan |
+| B | Page purpose validation | ✅ Shipped 2026-05-01 — heuristic keyword alignment, `page_purpose_mismatch` signal, zero LLM cost |
+| C | Structured data cross-validation | ✅ Shipped 2026-05-01 — JSON-LD parser, compares name/price/rating vs visible content, `structured_data_mismatch` signal |
 
 ---
 

@@ -481,3 +481,336 @@ The five modules form a genuinely cohesive pipeline. Evidence flows from ingesti
 **The second risk is scaling.** Sequential upserts, quadratic behavioral re-aggregation, and 30-page crawl caps are acceptable at current load but will become blockers at scale. These are infrastructure problems with known solutions — they just need implementation priority.
 
 **Bottom line: 7.8/10 product maturity with clear path to 9.0+ by completing what's already started.**
+
+---
+---
+
+# Part II — Extended Analysis
+
+> Extended: 2026-05-01
+> Additional scope: Market pain points, competitive gaps, moat extensions, real-time architecture, future perspectives
+> Sources: G2/Capterra reviews, Reddit communities, industry benchmarks, Baymard Institute, competitor documentation, codebase deep-dive
+
+---
+
+## Extended Market Pain Points
+
+### Pain 6: "Checkout abandonment is costing me a fortune but I can't see what's broken" (Frequency: Very High)
+
+> "70.22% of shopping carts are abandoned. 48% cite unexpected costs. 19% don't trust the site with payment info. Payment success rate below 95% means you're losing revenue to technical failures." — Baymard Institute 2026, ecommerce payment statistics
+
+**Quantified impact**: $260 billion in recoverable lost orders in US+EU through better checkout flow alone. Trust badges near CTA increase conversions 42% for first-time visitors. Displaying security badges reduces abandonment by 32%.
+
+**Vestigio's answer**: Trust Surface Score (11-check composite), checkout integrity inference, policy quality analysis, `checkout_abandonment_revenue_leak` finding with $ amounts from Shopify data. **Score: 8.5/10** — strong structural detection, but `mobile_session_count` being always 0 means mobile checkout failures (85.65% abandonment on mobile) are invisible.
+
+**Gap to close**: Fix mobile behavioral detection + add Playwright-based checkout flow verification (Core Web Vitals on checkout page specifically).
+
+---
+
+### Pain 7: "Accessibility lawsuits are a ticking time bomb and we can't even audit it" (Frequency: High)
+
+> "95% of websites fail basic WCAG requirements. E-commerce accounted for 70% of all ADA digital accessibility lawsuits in 2025. Americans with disabilities have $490 billion in disposable income." — WebAIM Million 2025, accessibility revenue impact studies
+
+**Quantified impact**: 23% SEO boost for WCAG-compliant sites (Semrush study). 50% higher brand loyalty. Average ecommerce site has 51-86 accessibility errors per page.
+
+**Vestigio's answer**: Limited. Nuclei scans cover some security/compliance signals. No dedicated WCAG analysis. **Score: 3/10** — significant gap, but accessibility is within Vestigio's domain (it directly impacts revenue via conversion + legal risk).
+
+**Gap to close**: Add WCAG checks to the crawl parser (alt text, ARIA labels, contrast ratios, form labels, keyboard navigation). Quantify financial risk: legal exposure + lost conversion from disabled users.
+
+---
+
+### Pain 8: "Post-purchase experience is killing our retention" (Frequency: Medium-High)
+
+> "56% of customers are disappointed with post-purchase experience. Only 17% feel businesses care after purchase. Rising CAC makes retention the primary growth lever." — Post-purchase industry surveys 2026
+
+**Quantified impact**: Post-purchase optimization is the #1 lever for reducing CAC payback period. Confirmation page, order tracking, and follow-up copy are optimization surfaces most companies ignore.
+
+**Vestigio's answer**: Limited. Copy analysis pack covers commercial pages but doesn't specifically audit confirmation/thank-you/order-status pages. The page classifier categorizes them as `other`. **Score: 4/10** — structural gap; these pages are crawlable and analyzable with existing infrastructure.
+
+**Gap to close**: Add `post_purchase` page type to classifier. Extend copy analysis to confirmation/thank-you pages. Cross-reference with Shopify repeat purchase rate.
+
+---
+
+### Pain 9: "Analytics tracking breaks silently after deploys" (Frequency: High)
+
+> "AI-driven analytics audits detect 90% of discrepancies, cut detection time by 70%. Analysts save 12 hours/month. Deploy → analytics regression is invisible to most tools." — Trackingplan 2026
+
+**Vestigio's answer**: `measurement_coverage` signal detects missing analytics scripts. But this is a static check — it doesn't detect that analytics *was* present and *broke* after a deploy. **Score: 5/10** — has the signal but lacks the temporal dimension.
+
+**Gap to close**: Track analytics script presence in change detection. When a previously-present GA4/Segment/Mixpanel script disappears between cycles, fire a `measurement_regression` finding with "your analytics broke between deploy X and now."
+
+---
+
+### Pain 10: "Chargeback prevention is disconnected from conversion optimization" (Frequency: Medium)
+
+> "Chargeflow: $29/deflected chargeback, 90% reduction rate. Ethoca/Verifi provide alerts before disputes hit merchant. No tool connects chargeback risk signals to conversion optimization." — Chargeback prevention landscape 2026
+
+**Vestigio's answer**: `chargeback_resilience` decision pack, `dispute_risk_elevated` inference, refund policy quality analysis, Stripe dispute rate integration. **Score: 7/10** — strong structural analysis, but no integration with chargeback alert providers (Ethoca/Verifi) and no real-time dispute tracking.
+
+**Gap to close**: When Stripe `charge.dispute.created` webhook fires, immediately surface in the chargeback workspace. Cross-reference disputed transactions with behavioral sessions (did the buyer hesitate? was trust copy missing?).
+
+---
+
+### Pain 11: "CRO prioritization is subjective — we don't know what to fix first" (Frequency: Very High)
+
+> "ICE/PIE frameworks have '3 scoring variables leaving a lot open to interpretation.' Impact Quantification is a 'game-changer' but still emerging. Teams have 'dozens of potential ideas but limited development time.'" — CRO tools reviews 2026
+
+**Vestigio's answer**: Impact-ranked action queue with financial quantification, Opportunity Compression composite (groups findings by shared remediation), effort × impact scatter plot. **Score: 9.5/10** — this is Vestigio's strongest moat. No competitor quantifies impact in dollars AND ranks by effort.
+
+---
+
+### Pain 12: "My funnel visualization doesn't tell me what's actually happening" (Frequency: Medium)
+
+> "A funnel tracks pre-sale conversion stages. A journey map covers the full lifecycle. Funnelytics ($99/mo) provides visual mapping + forecasting but no audit capabilities. Amplitude's Pathfinder discovers common paths but doesn't diagnose." — Funnel tools landscape 2026
+
+**Vestigio's answer**: User Journey Map with behavioral enrichment (conversion rates, drop-off nodes), Engine Maps (Revenue Leakage, Chargeback Risk, Root Cause) with causal edges. **Score: 7/10** — functional but lacks temporal animation, export, and multi-select capabilities.
+
+**Gap to close**: Funnel timeline animation (show evolution over cycles), map export for stakeholder sharing, revenue heat overlay on nodes.
+
+---
+
+## Expanded Competitive Gaps (Where Vestigio Competes)
+
+### Only areas where Vestigio's product scope overlaps with the competitor's:
+
+| Capability | Competitor Ahead | Gap for Vestigio | Effort to Close | Strategic Priority |
+|------------|-----------------|------------------|-----------------|-------------------|
+| **24/7 content change detection** | ContentKing (Conductor) | Vestigio is cycle-based; changes between cycles are invisible. ContentKing catches changes "within minutes." | Medium (Option 4 Hybrid: 2-3 weeks) | **P0** — addressed by Hybrid Architecture below |
+| **Behavioral experience analytics** | Contentsquare (AI agent "Sense") | Contentsquare has session replay, zone-based heatmaps, frustration alerts. Vestigio has first-party pixel but no visual replay. | High (session replay is a separate product) | P3 — Vestigio's pixel feeds *decisions*, not visual replay. Different value prop. |
+| **AI-powered CRO recommendations** | Contentsquare, CROBenchmark | Contentsquare's "opportunity report" auto-prioritizes by AI. CROBenchmark audits 248 CRO best practices. Vestigio has 260+ inference rules but they're not framed as "CRO experiments." | Low (packaging, not engineering) | **P1** — reframe existing findings as testable CRO hypotheses |
+| **Chargeback prevention automation** | Chargeflow ($29/deflected) | Chargeflow integrates Ethoca/Verifi for pre-dispute alerts + auto-refund. Vestigio detects chargeback *risk* but doesn't prevent chargebacks. | Medium (Ethoca/Verifi webhook integration) | P2 — partner or integrate, don't build |
+| **Analytics tracking audit** | Trackingplan | Trackingplan monitors GA4 tag health, detects regressions, inventories 2,500+ tags. Vestigio only checks `measurement_coverage` (presence, not health). | Medium (tag inventory + regression detection) | **P1** — measurement integrity directly impacts financial quantification accuracy |
+| **Funnel mapping + forecasting** | Funnelytics ($99/mo) | Funnelytics has drag-and-drop funnel builder, conversion forecasting, white-label reports. Vestigio has User Journey maps but no forecasting or builder. | Medium (forecasting from historical data) | P2 — differentiate on *diagnosed* funnels vs. *planned* funnels |
+| **Post-purchase experience** | LateShipment, AfterShip, Narvar | These platforms audit delivery, returns, and order tracking. Vestigio doesn't audit post-purchase pages. | Low (page classifier + copy analysis extension) | **P1** — revenue leaks extend beyond checkout |
+| **WCAG accessibility** | Siteimprove, TestParty | Siteimprove combines accessibility + SEO + analytics. 70% of ADA lawsuits target ecommerce. Vestigio doesn't audit accessibility. | Medium (parser extension + new inference pack) | P2 — quantifiable legal + conversion risk fits the financial-impact model |
+| **Deploy regression detection** | Vercel Checks, DebugBear, Trackingplan | Vercel/DebugBear test Lighthouse scores post-deploy. Trackingplan detects analytics regression. Vestigio has no deploy hook integration. | Low-Medium (webhook endpoint + hot cycle trigger) | **P0** — addressed by Hybrid Architecture below |
+
+---
+
+## Moat Extension Strategies — Compound Value from Multi-Source Data
+
+These opportunities are **only possible because Vestigio has multiple data sources feeding the same inference pipeline**. No single-source competitor can replicate them.
+
+### Tier 1: Immediate (1-2 days each, single call-site changes)
+
+**1. Wire `behavioralContext` into compound findings** (currently hardcoded to `null`)
+- `recompute.ts:913` passes `null` as third argument to `detectCompoundFindings()`
+- With behavioral data: every `ad_creative_message_mismatch` finding upgrades from `heuristic` to `confirmed` confidence
+- The 3-source confirmed finding (ad data + crawl + behavioral) is unreplicable
+- **Files**: `recompute.ts:913`, `compound-findings.ts:381`
+
+**2. Behavioral-adjusted Trust Surface Score**
+- Current TrustSurfaceScore is crawl-only (checks if trust elements *exist*)
+- Behavioral data can show if trust elements *work* (policy page views → abandon = ineffective trust)
+- Result: "Structural trust: 7/10. Effective trust: 4/10. Your trust signals exist but don't reduce hesitation."
+- **Files**: `trust-surface-score.ts`, `recompute.ts:901`
+
+**3. Top-revenue product page health correlation**
+- Shopify poller already cross-references product handles with crawled URLs (lines 186-203)
+- Extension: pair `top_products_by_revenue` with page health signals (load time, trust indicators)
+- Finding: "Your top 3 revenue products have 5.2s average load time — estimated $3,400/mo impact"
+- **Files**: `shopify/poller.ts:186`, `reconcile.ts`, `signals/engine.ts`
+
+### Tier 2: Medium-term (1-2 weeks each)
+
+**4. Behavioral cohort × Shopify abandonment compound finding**
+- Shopify says: "73% abandonment, $12k/mo lost"
+- Behavioral cohort says: "Mobile paid traffic abandonment is 4x worse than desktop organic"
+- Compound: "$8,400 of the $12k loss is from mobile paid traffic specifically"
+- **Files**: `compound-findings.ts`, `recompute.ts`, `signals/engine.ts:5857-5895`
+
+**5. N-cycle behavioral trend detection**
+- `PrismaSnapshotStore.asyncGetNthRecent()` and `asyncList()` exist but are never called
+- Only N-1 vs. N comparison is used; N-cycle history is unexploited
+- Finding: "Paid traffic hesitation rate doubled from 9% to 24% over 3 cycles — deployment regression"
+- **Files**: `change-detection/engine.ts`, `change-detection/snapshot-store.ts`, `run-cycle.ts`
+
+**6. Upsell/order-bump analysis from behavioral pixel**
+- Pixel already fires `order_bump_seen`, `order_bump_accept`, `upsell_seen`, `upsell_accept` events
+- Explicitly marked "future" in code — collected but discarded
+- Cross with Shopify refund rates: "Upsell accepted 18% of time but product has 22% refund rate"
+- **Files**: `behavioral/types.ts:31-34`, `session-aggregator.ts:136-142`
+
+### Tier 3: High-effort, deepest moat (1+ month each)
+
+**7. Behavioral hypothesis → Playwright verification**
+- Behavioral pixel identifies *where* users abandon (field, page, step)
+- Playwright can verify *why* (focus order, validation timing, render speed, visual trust)
+- New `BehavioralHypothesisVerificationScenario` maps inference keys to browser test scenarios
+- **Files**: `verification/executors.ts`, `playwright-runtime.ts`, `verification/types.ts`
+
+**8. Per-campaign behavioral attribution reconciliation**
+- Pixel stores `gclid`/`fbclid` per session; ad pollers have campaign spend
+- Never joined: can't tell which *specific campaign* drives the highest friction
+- Finding: "'Summer Sale' campaign (340 sessions) has 41% backtrack rate vs. 9% organic — $1,312/mo wasted"
+- **Files**: `behavioral/session-aggregator.ts`, `meta-ads/poller.ts`, `google-ads/poller.ts`
+
+---
+
+## Real-Time Architecture — From Cycles to Continuous Detection
+
+### The Problem
+
+Vestigio's cycle-based model (cold: 1-7 days, warm: 1-4 hours, hot: 15min-1h) means changes between cycles are invisible. ContentKing catches changes "within minutes." A deploy that breaks checkout on Friday at 5pm won't be detected until the next scheduled cycle.
+
+### Four Options Analyzed (with concrete file-level implementation details)
+
+#### Option 1: Webhook-Triggered Micro-Audits
+- **Concept**: Shopify/Stripe webhooks push mutations → scoped re-audit of affected surfaces only
+- **Latency**: 20-60 seconds from commerce event to finding update
+- **Cost**: $0 LLM (shallow_plus mode, no semantic enrichment)
+- **Effort**: 3-4 days (Stripe webhook handler already exists as template)
+- **Limitation**: Only catches commerce-event changes, not page content changes
+
+#### Option 2: Event-Driven Streaming Architecture
+- **Concept**: Decouple ingestion from computation via Redis Streams
+- **Problem**: `recomputeAll()` is a pure function over complete evidence set — no delta path
+- **Effort**: 4-6 weeks minimum (requires incremental recompute engine rewrite)
+- **Verdict**: **Not recommended now.** Right long-term direction, wrong near-term priority. Risk of mid-state inconsistency would erode operator trust.
+
+#### Option 3: Continuous Monitoring with Change Detection
+- **Concept**: Lightweight HEAD/ETag polling of critical surfaces → hot cycle on detected changes
+- **Latency**: 2-5 minutes (pollInterval + cycle execution)
+- **Cost**: Near-zero (HEAD requests are free; triggered hot cycles skip LLM)
+- **Effort**: 5-7 days
+- **Limitation**: Catches content changes but not behavioral or integration changes
+
+#### Option 4: Hybrid Model — RECOMMENDED
+
+Layer three signal channels on top of existing cycle model. Each channel has different latency/cost characteristics. Together they provide near-real-time detection without replacing the authoritative cycle baseline.
+
+**Channel A — Behavioral Anomaly Trigger** (5-15 min latency)
+- Behavioral pixel already receives events continuously
+- Run micro-aggregation every 5 min, compare against cycle baseline
+- Trigger hot cycle when checkout/conversion rates deviate >15%
+- New file: `workers/monitoring/behavioral-anomaly-detector.ts`
+- Cost: $0 (reuses existing hot cycle machinery, no LLM)
+
+**Channel B — Content Change Watcher** (2-5 min latency)
+- HEAD/ETag polling of primary surfaces only (checkout, pricing, product, landing)
+- SHA256 body hash fallback when ETag is unreliable
+- Exponential backoff on Cloudflare/Akamai challenge detection
+- New file: `workers/monitoring/change-poller.ts`
+- Cost: Near-zero (HEAD requests + shallow_plus on change)
+
+**Channel C — Integration Event Router** (20-60 sec latency)
+- Shopify/Stripe webhook → cached `IntegrationSnapshot` in Redis
+- Hot cycle triggered only on material threshold crossings
+- Fast path: hot cycles read cached snapshot instead of polling API (saves 3-8s)
+- New file: `src/app/api/integrations/shopify/webhook/route.ts`
+- Cost: $0 LLM (webhook data replaces API poll)
+
+**Plan segmentation**:
+| Plan | Channel A | Channel B | Channel C |
+|------|-----------|-----------|-----------|
+| Starter ($99) | ❌ | ❌ | ❌ |
+| Pro ($199) | 5-min anomaly | 5-min polling | Shopify/Stripe webhooks |
+| Max ($399) | 5-min anomaly | 2-min polling | Shopify/Stripe webhooks |
+
+**Total implementation effort**: 2-3 weeks (phased: Foundation 3d → Channel B 3d → Channel C 3d → Channel A 2d → Hardening 2d)
+
+**Cost control invariant**: All monitoring-triggered cycles use `shallow_plus` mode. LLM calls are gated on `cycleMode === 'cold'`. Chromium is not launched for monitoring cycles. Zero incremental LLM cost.
+
+---
+
+## New Perspectives for Future Discussion
+
+### Perspective 1: Vestigio as a "Deploy Gate"
+
+**Thesis**: If Vestigio can detect regressions within 2 minutes of a deploy (via Hybrid Architecture), it becomes a CI/CD quality gate — not just an audit tool, but a deploy-time safety net.
+
+**How**: Vercel/Netlify/Railway deploy hooks → `POST /api/cycles/trigger` with `cycleType: 'monitor'` → immediate shallow_plus audit of critical surfaces → pass/fail response.
+
+**Why it matters**: This repositions Vestigio from "periodic audit tool" to "continuous deployment safeguard." The buyer becomes the CTO/engineering lead, not just the Growth lead. Pricing leverage: deploy gates are infrastructure, not optional.
+
+### Perspective 2: Self-Improving Heuristics from Resolution Data
+
+**Thesis**: When a user marks a finding as "resolved" and the next cycle confirms the fix, Vestigio has a labeled training pair: {evidence_before, evidence_after, fix_applied}. Over time, this creates a dataset that improves inference accuracy.
+
+**How**: `UserAction.verifiedResolvedAt` is already stamped by the post-cycle attribution job. The before/after evidence is in consecutive `CycleSnapshot` pairs. Extract resolution patterns → adjust confidence weights on inference rules that have high resolution rates.
+
+**Why it matters**: Creates a flywheel: more users → more resolutions → better heuristics → higher accuracy → more trust → more users. Competitors starting from zero can't replicate the labeled dataset.
+
+### Perspective 3: Platform Play via External MCP
+
+**Thesis**: With 97M monthly MCP SDK downloads and growing, exposing Vestigio's 22 tools via standard MCP transport would let third-party AI agents (Claude, ChatGPT, Copilot) query Vestigio's findings directly.
+
+**How**: The `apps/mcp/server.ts` already implements the full tool registry. Add HTTP or stdio transport layer. Gate by API key + plan tier.
+
+**Why it matters**: Vestigio becomes the "audit intelligence layer" that any AI agent can query. Instead of competing with Contentsquare's "Sense" agent, Vestigio becomes the data source that Sense (or any agent) consumes. This is a platform moat, not a feature moat.
+
+### Perspective 4: Industry Vertical Specialization
+
+**Thesis**: Vestigio's inference rules are horizontal. Vertical-specific rule packs (SaaS trial→paid, ecommerce checkout→delivery, marketplace buyer→seller) would deepen accuracy and enable vertical pricing.
+
+**How**: Add `industry_vertical` to `BusinessProfile`. Load vertical-specific inference modules at `recomputeAll()` time. Start with SaaS (already partially built via `saas-inference.ts`) and ecommerce (Shopify/Nuvemshop integration already exists).
+
+**Why it matters**: Vertical competitors (Chargeflow for chargeback, Funnelytics for funnels) own their niche. Vestigio's cross-domain architecture can produce vertical-depth findings while maintaining cross-domain breadth.
+
+### Perspective 5: Collaborative Audits (Multi-Stakeholder)
+
+**Thesis**: Findings need different audiences: CTO sees technical evidence, Growth lead sees financial impact, CEO sees the action queue. Currently all users see the same view.
+
+**How**: Role-based finding presentation. Same data, different emphasis. The `FindingProjection` already carries `reasoning`, `impact`, `remediation_steps`, and `evidence_refs` — the data supports multiple views; the UI just needs role-aware rendering.
+
+**Why it matters**: Enterprise deals require multi-stakeholder buy-in. A CMO who sees "your checkout copy misses 3 trust signals costing $42k/mo" and a CTO who sees "your CSP headers are missing on /checkout with CVSS 4.2" are looking at the same finding from different angles.
+
+### Perspective 6: Accessibility as Revenue Intelligence
+
+**Thesis**: WCAG compliance is typically framed as legal risk. Vestigio could frame it as revenue intelligence: "Your checkout has 23 WCAG violations. Americans with disabilities have $490B in disposable income. Your inaccessible checkout is losing an estimated $X/month."
+
+**How**: Add WCAG checks to the crawl parser (alt text, ARIA, contrast, focus order). Create an `accessibility_revenue_impact` inference pack that quantifies lost revenue from inaccessible surfaces, using disability population data as the base.
+
+**Why it matters**: No competitor frames accessibility as a financial finding. Siteimprove shows compliance scores. Vestigio would show dollars lost. This is the same "severity → dollars" transformation that made Vestigio's conversion findings unique.
+
+---
+
+## Updated Scoring After Extended Analysis
+
+| Category | Original Score | Extended Score | Delta | Key Driver |
+|----------|:-:|:-:|:-:|---|
+| **Competitive Differentiation** | 8.3 | 8.3 | 0 | Still strongest in the market; gaps are in adjacent spaces, not core |
+| **Feature Completeness** | 7.3 | 6.8 | -0.5 | Mobile behavioral broken + no accessibility + no deploy hooks + post-purchase gap |
+| **Moat Depth** | N/A | 9.0 | new | 8 compound-value opportunities identified; 3 are single-call-site changes |
+| **Real-Time Readiness** | N/A | 4.0 | new | Cycle-only model; Hybrid architecture designed but not implemented |
+| **Market Fit** | N/A | 8.0 | new | Strong for core ICP (SaaS/ecomm $1-50M); gaps in adjacent verticals |
+| **Revenue Expansion Potential** | N/A | 8.5 | new | Deploy gate, platform play, vertical packs all unlock new buyer personas |
+
+---
+
+## Consolidated Priority Roadmap (Extended)
+
+### Wave A: Close the Data Gaps (1-2 weeks)
+1. Fix `mobile_session_count` (~2h)
+2. Wire `behavioralContext` into compound findings (~2h)
+3. Wire embeddings to `search_findings` MCP tool (~3h)
+4. Consume Meta/Google Ads data in signal engine (~1d)
+5. Batch evidence/finding persistence (~2d)
+
+### Wave B: Hybrid Real-Time Architecture (2-3 weeks)
+1. Foundation: `SurfaceMonitorEntry` model + monitor queue tier + plan config
+2. Channel B: Content change poller (HEAD/ETag + SHA256)
+3. Channel C: Shopify/Stripe webhook integration + snapshot cache
+4. Channel A: Behavioral anomaly detector
+5. Hardening: observability, alerting, plan gating
+
+### Wave C: Moat Deepening (3-4 weeks)
+1. Behavioral-adjusted Trust Surface Score
+2. Top-revenue product × page health correlation
+3. Behavioral cohort × Shopify abandonment compound finding
+4. N-cycle behavioral trend detection
+5. Upsell/order-bump analysis from pixel events
+
+### Wave D: Category Expansion (1-2 months)
+1. Deploy gate integration (Vercel/Netlify/Railway hooks)
+2. Post-purchase page audit (classifier + copy analysis extension)
+3. Analytics tracking regression detection
+4. WCAG accessibility pack with revenue quantification
+5. External MCP transport (HTTP/stdio)
+
+### Wave E: Platform Play (Quarter)
+1. Self-improving heuristics from resolution data
+2. Industry vertical rule packs
+3. Role-based finding presentation
+4. Per-campaign behavioral attribution
+5. Behavioral hypothesis → Playwright verification

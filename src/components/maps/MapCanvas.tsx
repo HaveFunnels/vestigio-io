@@ -4,10 +4,13 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import {
 	ReactFlow,
+	ReactFlowProvider,
 	Background,
 	Controls,
 	MiniMap,
+	useReactFlow,
 	type NodeMouseHandler,
+	type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { AnimatePresence, motion } from "motion/react";
@@ -25,6 +28,8 @@ import {
 	InsightsDrawerContent,
 } from "./drawers";
 import MapLegend from "./MapLegend";
+import { MapToolbar } from "./controls";
+import MapSearch from "./controls/MapSearch";
 import type { MapDefinition, MapNode } from "../../../packages/maps";
 import type {
 	FindingProjection,
@@ -122,9 +127,56 @@ function edgeMatchesFilter(edgeType: string, filter: string): boolean {
 	return edgeType === edgeSwatch;
 }
 
-// ── Main MapCanvas ──
+// ── Multi-Select Action Bar ──
 
-export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
+function MultiSelectBar({
+	count,
+	selectedIds,
+	onClear,
+}: {
+	count: number;
+	selectedIds: Set<string>;
+	onClear: () => void;
+}) {
+	const t = useTranslations("console.maps.toolbar");
+
+	const handleDiscuss = () => {
+		const ids = Array.from(selectedIds).join(",");
+		window.location.href = `/app/chat?findings=${encodeURIComponent(ids)}`;
+	};
+
+	return (
+		<motion.div
+			initial={{ y: 20, opacity: 0 }}
+			animate={{ y: 0, opacity: 1 }}
+			exit={{ y: 20, opacity: 0 }}
+			transition={{ duration: 0.2 }}
+			className='absolute bottom-4 left-1/2 z-50 -translate-x-1/2'
+		>
+			<div className='flex items-center gap-3 rounded-xl border border-edge bg-zinc-900/80 px-4 py-2.5 shadow-2xl backdrop-blur-md'>
+				<span className='text-xs font-medium text-content-secondary'>
+					{t("selected_count", { count })}
+				</span>
+				<button
+					onClick={handleDiscuss}
+					className='rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-500'
+				>
+					{t("discuss_selected")}
+				</button>
+				<button
+					onClick={onClear}
+					className='rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-muted transition-colors hover:border-edge-strong hover:text-content-secondary'
+				>
+					{t("clear_selection")}
+				</button>
+			</div>
+		</motion.div>
+	);
+}
+
+// ── Inner canvas (needs ReactFlow context for useReactFlow) ──
+
+function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 	const t = useTranslations("console.maps");
 	const mcpData = useMcpData();
 	const searchParams = useSearchParams();
@@ -143,9 +195,47 @@ export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
 	const [focusHandled, setFocusHandled] = useState(false);
 	const [legendFilter, setLegendFilter] = useState<string | null>(null);
 
+	// Severity filter: all on by default
+	const [activeSeverities, setActiveSeverities] = useState<Set<string>>(
+		() => new Set(["critical", "high", "medium", "low"])
+	);
+
+	// Search state
+	const [searchOpen, setSearchOpen] = useState(false);
+
+	// Multi-select state
+	const [selectedNodes, setSelectedNodes] = useState<Set<string>>(
+		new Set()
+	);
+
 	const isMobile = useMediaQuery("(max-width: 768px)");
 
 	const activeMap = mapDef;
+
+	// Cmd+K listener
+	useEffect(() => {
+		const handler = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+				e.preventDefault();
+				setSearchOpen((prev) => !prev);
+			}
+		};
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, []);
+
+	// Severity toggle
+	const handleToggleSeverity = useCallback((severity: string) => {
+		setActiveSeverities((prev) => {
+			const next = new Set(prev);
+			if (next.has(severity)) {
+				next.delete(severity);
+			} else {
+				next.add(severity);
+			}
+			return next;
+		});
+	}, []);
 
 	// Build finding lookup: node ID "finding_{inference_key}" -> FindingProjection
 	const findingLookup = useMemo(() => {
@@ -205,53 +295,115 @@ export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
 		});
 	}, [activeMap, insightsMap]);
 
-	// Apply legend filter to nodes (opacity dimming)
+	// Apply legend filter + severity filter + multi-select ring to nodes
 	const nodes = useMemo(() => {
-		if (!legendFilter) return baseNodes;
-		return baseNodes.map((n) => {
-			const matches = legendFilter.startsWith("edge:")
-				? false // Edge filter: don't highlight nodes specially, just dim non-connected
-				: nodeMatchesFilter(n.type || "", legendFilter);
-			if (matches) {
+		let processed = baseNodes;
+
+		// Severity filter: dim nodes whose severity is toggled off
+		processed = processed.map((n) => {
+			const sev = (n.data?.severity as string) || "";
+			const severityDimmed =
+				sev && !activeSeverities.has(sev);
+
+			// Multi-select ring
+			const isSelected = selectedNodes.has(n.id);
+
+			let style = { ...(n.style || {}) };
+
+			if (severityDimmed) {
+				style.opacity = 0.12;
+				style.pointerEvents = "none";
+			}
+
+			if (isSelected) {
+				style.boxShadow = "0 0 0 2px rgba(16, 185, 129, 0.7)";
+				style.borderRadius = "8px";
+			}
+
+			return { ...n, style };
+		});
+
+		// Legend filter: overlay on top of severity
+		if (legendFilter) {
+			processed = processed.map((n) => {
+				const matches = legendFilter.startsWith("edge:")
+					? false
+					: nodeMatchesFilter(n.type || "", legendFilter);
+				if (matches) {
+					return {
+						...n,
+						style: {
+							...n.style,
+							boxShadow:
+								n.style?.boxShadow ||
+								"0 0 0 2px rgba(99, 91, 255, 0.5)",
+							borderRadius: "8px",
+						},
+					};
+				}
+				// Don't override severity dimming with legend dimming if already dimmed
+				const currentOpacity =
+					(n.style?.opacity as number) ?? 1;
 				return {
 					...n,
 					style: {
 						...n.style,
-						boxShadow: "0 0 0 2px rgba(99, 91, 255, 0.5)",
-						borderRadius: "8px",
+						opacity: Math.min(currentOpacity, 0.15),
 					},
-				};
-			}
-			return {
-				...n,
-				style: {
-					...n.style,
-					opacity: 0.15,
-				},
-			};
-		});
-	}, [baseNodes, legendFilter]);
-
-	const baseEdges = useMemo(() => toReactFlowEdges(activeMap), [activeMap]);
-
-	// Apply legend filter to edges
-	const edges = useMemo(() => {
-		if (!legendFilter) return baseEdges;
-		if (legendFilter.startsWith("edge:")) {
-			return baseEdges.map((e) => {
-				const matches = edgeMatchesFilter(e.type || "", legendFilter);
-				return {
-					...e,
-					style: matches ? e.style : { ...e.style, opacity: 0.15 },
 				};
 			});
 		}
-		// Node filter active — dim edges not connected to matching nodes
-		return baseEdges.map((e) => ({
-			...e,
-			style: { ...e.style, opacity: 0.15 },
-		}));
-	}, [baseEdges, legendFilter]);
+
+		return processed;
+	}, [baseNodes, legendFilter, activeSeverities, selectedNodes]);
+
+	const baseEdges = useMemo(() => toReactFlowEdges(activeMap), [activeMap]);
+
+	// Apply legend filter + severity filter to edges
+	const edges = useMemo(() => {
+		let processed = baseEdges;
+
+		// Severity filter: dim edges connected to dimmed nodes
+		const dimmedNodeIds = new Set<string>();
+		for (const n of baseNodes) {
+			const sev = (n.data?.severity as string) || "";
+			if (sev && !activeSeverities.has(sev)) {
+				dimmedNodeIds.add(n.id);
+			}
+		}
+
+		if (dimmedNodeIds.size > 0) {
+			processed = processed.map((e) => {
+				const sourceOrTargetDimmed =
+					dimmedNodeIds.has(e.source) || dimmedNodeIds.has(e.target);
+				if (sourceOrTargetDimmed) {
+					return { ...e, style: { ...e.style, opacity: 0.12 } };
+				}
+				return e;
+			});
+		}
+
+		// Legend filter
+		if (legendFilter) {
+			if (legendFilter.startsWith("edge:")) {
+				processed = processed.map((e) => {
+					const matches = edgeMatchesFilter(e.type || "", legendFilter);
+					return {
+						...e,
+						style: matches ? e.style : { ...e.style, opacity: 0.15 },
+					};
+				});
+			} else {
+				// Node filter active — dim edges not connected to matching nodes
+				processed = processed.map((e) => ({
+					...e,
+					style: { ...e.style, opacity: 0.15 },
+				}));
+			}
+		}
+
+		return processed;
+	}, [baseEdges, baseNodes, legendFilter, activeSeverities]);
 
 	// Build a lookup from node id -> MapNode for click/hover
 	const nodeMap = useMemo(() => {
@@ -261,7 +413,28 @@ export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
 	}, [activeMap]);
 
 	const onNodeClick: NodeMouseHandler = useCallback(
-		(_event, node) => {
+		(event, node) => {
+			const nativeEvent = event as unknown as MouseEvent;
+
+			// Multi-select with Shift
+			if (nativeEvent.shiftKey) {
+				setSelectedNodes((prev) => {
+					const next = new Set(prev);
+					if (next.has(node.id)) {
+						next.delete(node.id);
+					} else {
+						next.add(node.id);
+					}
+					return next;
+				});
+				return;
+			}
+
+			// Normal click: clear multi-select and open drawer
+			if (selectedNodes.size > 0) {
+				setSelectedNodes(new Set());
+			}
+
 			const mapNode = nodeMap.get(node.id);
 			if (!mapNode) return;
 
@@ -308,7 +481,7 @@ export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
 				setSelectedNode(mapNode);
 			}
 		},
-		[nodeMap, insightsMap, activeMap.edges, activeMap.nodes]
+		[nodeMap, insightsMap, activeMap.edges, activeMap.nodes, selectedNodes]
 	);
 
 	const onNodeMouseEnter: NodeMouseHandler = useCallback(
@@ -367,44 +540,25 @@ export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
 	const drawerOpen = selectedInsights !== null || selectedNode !== null;
 
 	return (
-		<div className='flex flex-1 flex-col'>
-			{/* Keyframes for critical glow + causal flow animations */}
-			<style>{`
-        /* Hide connection handle dots but keep them functional for edge routing */
-        .react-flow__handle {
-          opacity: 0 !important;
-          pointer-events: none !important;
-        }
-
-        /* Critical node pulsing glow */
-        .map-node-critical-glow {
-          box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-          animation: criticalPulse 2s ease-in-out infinite;
-        }
-        @keyframes criticalPulse {
-          0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
-          50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
-        }
-
-        /* Causal edge flowing animation */
-        @keyframes causal-flow {
-          0%   { stroke-dashoffset: 20; }
-          100% { stroke-dashoffset: 0; }
-        }
-
-        /* Edge drawing: stroke draws in progressively */
-        .react-flow__edge path:not([style*="dasharray: 5"]):not([style*="animation"]) {
-          stroke-dasharray: 1000;
-          stroke-dashoffset: 1000;
-          animation: edgeDraw 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
-        }
-        @keyframes edgeDraw {
-          to { stroke-dashoffset: 0; }
-        }
-      `}</style>
-
+		<>
 			{/* Canvas */}
 			<div className='relative h-full min-h-0 flex-1'>
+				{/* Toolbar */}
+				<MapToolbar
+					nodes={baseNodes}
+					mapTitle={activeMap.name || activeMap.id}
+					activeSeverities={activeSeverities}
+					onToggleSeverity={handleToggleSeverity}
+					onOpenSearch={() => setSearchOpen(true)}
+				/>
+
+				{/* Search overlay */}
+				<MapSearch
+					nodes={baseNodes}
+					open={searchOpen}
+					onClose={() => setSearchOpen(false)}
+				/>
+
 				<div className='absolute inset-0'>
 					<AnimatePresence mode='wait'>
 						<motion.div
@@ -462,6 +616,17 @@ export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
 
 				{/* Tooltip overlay */}
 				<NodeTooltip tooltip={tooltip} />
+
+				{/* Multi-select action bar */}
+				<AnimatePresence>
+					{selectedNodes.size >= 2 && (
+						<MultiSelectBar
+							count={selectedNodes.size}
+							selectedIds={selectedNodes}
+							onClear={() => setSelectedNodes(new Set())}
+						/>
+					)}
+				</AnimatePresence>
 			</div>
 
 			{/* Legend — per-map so it actually matches what's drawn */}
@@ -482,6 +647,63 @@ export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
 			>
 				{drawerContent}
 			</SideDrawer>
-		</div>
+		</>
+	);
+}
+
+// ── Main MapCanvas (provides ReactFlowProvider context) ──
+
+export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
+	return (
+		<ReactFlowProvider>
+			<div className='flex flex-1 flex-col'>
+				{/* Keyframes for critical glow + causal flow + search pulse animations */}
+				<style>{`
+        /* Hide connection handle dots but keep them functional for edge routing */
+        .react-flow__handle {
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+
+        /* Critical node pulsing glow */
+        .map-node-critical-glow {
+          box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+          animation: criticalPulse 2s ease-in-out infinite;
+        }
+        @keyframes criticalPulse {
+          0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+          50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
+        }
+
+        /* Causal edge flowing animation */
+        @keyframes causal-flow {
+          0%   { stroke-dashoffset: 20; }
+          100% { stroke-dashoffset: 0; }
+        }
+
+        /* Edge drawing: stroke draws in progressively */
+        .react-flow__edge path:not([style*="dasharray: 5"]):not([style*="animation"]) {
+          stroke-dasharray: 1000;
+          stroke-dashoffset: 1000;
+          animation: edgeDraw 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+        }
+        @keyframes edgeDraw {
+          to { stroke-dashoffset: 0; }
+        }
+
+        /* Search pulse highlight */
+        .map-search-pulse {
+          animation: searchPulse 1.5s ease-out;
+        }
+        @keyframes searchPulse {
+          0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+          50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.3); }
+          100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+      `}</style>
+
+				<MapCanvasInner mapDef={mapDef} />
+			</div>
+		</ReactFlowProvider>
 	);
 }

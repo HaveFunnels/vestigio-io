@@ -2406,6 +2406,18 @@
 					"90d": "Letzte 90 Tage",
 					"all_time": "Gesamter Zeitraum"
 				}
+			},
+			"toolbar": {
+				"export": "Exportieren",
+				"export_png": "Als PNG herunterladen",
+				"export_svg": "Als SVG herunterladen",
+				"search": "Knoten suchen",
+				"search_placeholder": "Nach Name suchen...",
+				"search_no_results": "Keine Knoten gefunden",
+				"severity_filter": "Nach Schweregrad filtern",
+				"selected_count": "{count} Knoten ausgewaehlt",
+				"discuss_selected": "Besprechen",
+				"clear_selection": "Aufheben"
 			}
 		},
 		"onboard": {

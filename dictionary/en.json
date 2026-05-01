@@ -3329,6 +3329,18 @@
 					"90d": "Last 90 days",
 					"all_time": "All time"
 				}
+			},
+			"toolbar": {
+				"export": "Export",
+				"export_png": "Download as PNG",
+				"export_svg": "Download as SVG",
+				"search": "Search nodes",
+				"search_placeholder": "Search by name...",
+				"search_no_results": "No nodes found",
+				"severity_filter": "Filter by severity",
+				"selected_count": "{count} nodes selected",
+				"discuss_selected": "Discuss",
+				"clear_selection": "Clear"
 			}
 		},
 		"onboard": {

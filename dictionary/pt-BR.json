@@ -3348,6 +3348,18 @@
 					"90d": "Últimos 90 dias",
 					"all_time": "Todo o período"
 				}
+			},
+			"toolbar": {
+				"export": "Exportar",
+				"export_png": "Baixar como PNG",
+				"export_svg": "Baixar como SVG",
+				"search": "Buscar nodos",
+				"search_placeholder": "Buscar por nome...",
+				"search_no_results": "Nenhum nodo encontrado",
+				"severity_filter": "Filtrar por severidade",
+				"selected_count": "{count} nodos selecionados",
+				"discuss_selected": "Discutir",
+				"clear_selection": "Limpar"
 			}
 		},
 		"onboard": {

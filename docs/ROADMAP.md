@@ -69,7 +69,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~Cancel Flow & Save Offers~~ | **✅ Shipped 2026-04-27** — CancelSurvey Prisma model, 3-step cancel page (`/app/settings/cancel`), dynamic save offers by reason (discount/pause/downgrade/support/roadmap), Paddle API integration (pause + cancel + discount), win-back email via Brevo, CancelSubscriptionButton in settings, i18n (4 langs). | Wave 3.19 |
 | Unified Entity Architecture — Findings as first-class citizens | **Fase 1 shipped 2026-04-21** — FindingDetailPanel unified, cross-refs wired (workspace_refs, action_refs, opportunity_ref), canonical /app/findings/[id], URL filter state on Analysis, finding-in-URL on drawer open/close. **Fase 2 (saved views + sidebar simplification) and Fase 3 (custom views) deferred.** | Wave 3.20 |
 | `integration_pull` executor | Scaffolded only | Wave 3 |
-| `prisma db push` → `prisma migrate` | Pending | Wave 2.5 |
+| ~~`prisma db push` → `prisma migrate`~~ | **✅ Shipped 2026-04-27** — Baseline migration `0_init` generated from current schema, `migration_lock.toml` added, package.json scripts updated (`db:migrate:deploy`, `db:migrate:dev`, `db:push:dev`), deployment guide at `docs/PRISMA_MIGRATE.md`. One-time `prisma migrate resolve --applied 0_init` required on prod before next deploy. | Wave 2.5 |
 | Conversation export/branching | Not started | Wave 4.4 |
 | Neglected Findings — data collected, findings missing | **Not started** — payment handoff (pixel), SaaS activation (auth sessions), oscillation clustering (pixel), network error weighting (Playwright), mobile trust gap (Playwright), behavioral micro-patterns (pixel) | Wave 4.6 |
 | Cross-Domain Compound Findings — multi-source moat | **Not started** — security×revenue, ad promise×reality×behavior, trust×hesitation×revenue, post-purchase chain, brand impersonation×revenue | Wave 4.7 |
@@ -78,14 +78,17 @@ These are env vars or external setups that the codebase can't ship for you. Each
 
 ## Wave 2 — Remaining
 
-### 2.5 Prisma Migrate
+### 2.5 Prisma Migrate ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `infra` |
 | **Priority** | P2 |
+| **Status** | **Shipped 2026-04-27** |
 | **What** | Project uses `prisma db push` (no migrations directory). Production data now exists. |
 | **Fix** | Initialize `prisma migrate` with baseline migration from current schema. Update deploy docs. |
+| **Deliverables** | `prisma/migrations/0_init/migration.sql` (baseline), `migration_lock.toml`, `docs/PRISMA_MIGRATE.md`, updated `package.json` scripts. |
+| **Remaining** | One-time `prisma migrate resolve --applied 0_init` must be run against production before next deploy. |
 
 ---
 
@@ -1438,7 +1441,7 @@ Feature-flag gated rollout with a kill switch. Order:
 |------|-------|-------------|--------|
 | **0** | Critical Pipeline Gaps | Onboarding auto-trigger, pixel ingest + worker, inventory auto-build, real inventory counts, verification UI wiring, finding persistence | **7 of 7 shipped** ✅ |
 | **1** | Core Experience Polish | Actions/Analysis/Inventory UX, billing, page tooltips, Stage D enrichment framework | **9 of 9 done** ✅ |
-| **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | 2.1-2.4 ✅ — **2.5 (Prisma Migrate) open** |
+| **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | **2.1-2.5 ✅ complete** |
 | **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
 | **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
 | **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.20 open** |

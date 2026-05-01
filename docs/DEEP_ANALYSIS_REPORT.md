@@ -344,7 +344,8 @@ Clean separation — `packages/maps` is pure TypeScript (no React dependency). L
 
 | Capability | Competitor | Gap for Vestigio |
 |------------|-----------|------------------|
-| Real-time monitoring (24/7) | ContentKing | Vestigio is cycle-based; misses between-cycle deploy regressions |
+| Real-time monitoring (24/7) | ContentKing | Vestigio is cycle-based; misses between-cycle deploy regressi
+ons |
 | Crawl graph visualization | Sitebulb | Sitebulb's graphs are visually superior with proper edge routing |
 | Core Web Vitals | Lighthouse, Sitebulb | Vestigio has Playwright but doesn't extract CWV |
 | Enterprise collaboration | Lumar | Segmentation, custom metrics, leadership dashboards |

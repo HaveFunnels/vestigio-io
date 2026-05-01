@@ -1439,15 +1439,187 @@ Feature-flag gated rollout with a kill switch. Order:
 
 | Wave | Theme | Key Outcomes | Status |
 |------|-------|-------------|--------|
-| **0** | Critical Pipeline Gaps | Onboarding auto-trigger, pixel ingest + worker, inventory auto-build, real inventory counts, verification UI wiring, finding persistence | **7 of 7 shipped** ✅ |
-| **1** | Core Experience Polish | Actions/Analysis/Inventory UX, billing, page tooltips, Stage D enrichment framework | **9 of 9 done** ✅ |
-| **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | **2.1-2.5 ✅ complete** |
-| **—** | Marketing Surface Polish | Homepage UX (Phases 11-14), mobile redesigns, section reordering, ProductTour Maps rewrite, ShinyButton redesign | ✅ |
-| **—** | SEO Overhaul | JSON-LD, OG image, metadataBase, canonical, hreflang, sitemap expansion, metadata on all pages, ISR | ✅ |
-| **3** | Semantic Enrichment, New Lenses & Product Experience | LLM enrichment, cybersecurity, copy analysis, integrations, workspace redesign + enrichment, opportunity actions, re-engagement, **AI copilot**, **cross-signal surface**, **product telemetry**, **upgrade moments** | 3.1-3.4 + 3.7 (F-H, L-R) + 3.7B + 3.9 (A-B, F, 4 compounds, 2 ctx signals) + 3.11 (~85%) ✅ — **3.5-3.6, 3.7 (I, M), 3.8 (A-C), 3.9 (C-E), 3.10 (A-P), 3.11B, 3.12-3.20 open** |
-| **4** | Expansion & Depth | Cybersecurity Phase 2+3, pricing/structured data enrichment, Trust & Conversion lens, platform maturity, **neglected findings (4.6)**, **cross-domain compounds (4.7)** | All open |
-| **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | Fases 1-3 ✅ — **Fase 4 (rollout) open** |
-| **6** | Future Cross-Domain Findings | Revenue attribution integrity, pricing exposure, vendor cost leakage, subscription revenue decay | All exploratory — not committed |
+| **0** | Critical Pipeline Gaps | Onboarding auto-trigger, pixel ingest + worker, inventory auto-build, real inventory counts, verification UI wiring, finding persistence | ✅ All shipped |
+| **1** | Core Experience Polish | Actions/Analysis/Inventory UX, billing, page tooltips, Stage D enrichment framework | ✅ All shipped |
+| **2** | Knowledge, Members & Confidence | Knowledge base, invite flow, root cause refinement (33→27), confidence reframed, prisma migrate | ✅ All shipped |
+| **3** | Semantic Enrichment, New Lenses & Product Experience | 20 sub-waves: integrations, copy analysis, workspace redesign, actions pipeline, copilot, cross-signal, telemetry, upgrade moments, cancel flow, saved views | ✅ All shipped |
+| **4** | Expansion & Depth | Cybersecurity Phase 2, LLM enrichment, conversation export, neglected findings, cross-domain compounds | ✅ All shipped |
+| **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | ✅ Fases 1-3 shipped |
+| **—** | Marketing/SEO | Homepage, /lp funnel, structured data, OG images, hreflang | ✅ All shipped |
+| **7** | Scaling & Moat Deepening | Batch writes, CWV, multi-cycle trends, revenue recovery, deploy webhooks, ELK maps, map export | **Open — new wave** |
+
+---
+
+## Wave 7 — Scaling & Moat Deepening
+
+**Goal:** Address scaling bottlenecks, add demo-winning features, and deepen the competitive moat identified in the Deep Analysis Report.
+
+---
+
+### 7.1 Multi-Cycle Trend Analysis ⭐
+
+| | |
+|---|---|
+| **Tag** | `engine` `frontend` `mcp` |
+| **Priority** | P1 |
+| **Status** | Not started — spec ready |
+| **Effort** | ~1 week |
+
+**Problem:** Only current vs previous cycle comparison exists. Users can't see "my checkout has been degrading for 3 weeks." No competitor offers trend-based regression detection.
+
+**Architecture:** `CycleSnapshot` store already retains 10 cycles. `detectChanges()` does pairwise comparison. Need: multi-snapshot loop + pattern classification + MCP tool + visual component.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Trend engine** | `packages/projections/trend-engine.ts` — loads N snapshots, runs pairwise detectChanges in sequence, classifies finding patterns: `consecutive_regressions`, `gradual_degradation`, `sudden_spike`, `improving`, `stable` | Medium |
+| B | **`get_trend_analysis` MCP tool** | Accepts `lookback_cycles` (3-20) + optional `filter_pattern`. Returns workspace-level trend + finding patterns with narratives | Low |
+| C | **TrendAnalysisCard widget** | Dashboard widget showing 10-cycle sparkline + top pattern findings (consecutive regressions, sudden spikes) | Medium |
+| D | **Findings page integration** | Trend badge on findings with patterns. Filter: `?trend=consecutive_regressions` | Low |
+
+---
+
+### 7.2 Revenue Recovery Tracker ⭐
+
+| | |
+|---|---|
+| **Tag** | `engine` `frontend` `mcp` |
+| **Priority** | P1 |
+| **Status** | Type scaffolded (`RevenueRecoveryEstimate`), attribution job exists, MoneyRecovered widget exists — needs cross-cycle revenue correlation |
+| **Effort** | ~1 week |
+
+**Problem:** When a finding is resolved, we don't track if revenue actually improved. No "before/after" proof. Proves ROI and justifies subscription renewal.
+
+**Architecture:** `attribution-confirmation.ts` already stamps `verifiedResolvedAt`. `MoneyRecoveredTicker` shows totals. Missing: revenue per cycle from integration snapshots, confidence scoring, before/after widget.
+
+| # | Part | Description | Effort |
+|---|------|-------------|--------|
+| A | **Revenue attribution engine** | `packages/integrations/revenue-attribution.ts` — correlates resolved actions with revenue deltas across cycles. Confidence: strong_correlation / correlation / inconclusive | Medium |
+| B | **Enhanced MoneyRecovered widget** | Before/after per action, confidence badge, "3 strong / 2 correlated / 1 inconclusive" breakdown | Medium |
+| C | **`get_recovery_impact` MCP tool** | "How much did fixing X actually recover?" — returns attribution with narrative | Low |
+| D | **Revenue per cycle persistence** | Store integration revenue snapshot per cycle for before/after queries | Low |
+
+---
+
+### 7.3 Batch Evidence/Finding Persistence (Scaling)
+
+| | |
+|---|---|
+| **Tag** | `infra` |
+| **Priority** | P1 |
+| **Status** | Not started |
+| **Effort** | ~2-3 days |
+
+**Problem:** `PrismaEvidenceStore.addMany()` loops individual upserts — N round-trips for N evidence items. With 300+ evidence items per cycle, persistence takes 10-15s. PostgreSQL `INSERT ... ON CONFLICT DO UPDATE` would be 1 round-trip.
+
+**Fix:** Replace sequential upserts with batched `$executeRawUnsafe()` using `INSERT ... ON CONFLICT DO UPDATE` with VALUES list. Batch size: 50-100 items. Expected: 10-50x faster persistence.
+
+---
+
+### 7.4 Core Web Vitals from Playwright
+
+| | |
+|---|---|
+| **Tag** | `engine` `collection` |
+| **Priority** | P2 |
+| **Status** | Not started — Playwright already launched but doesn't extract CWV |
+| **Effort** | ~3-4 days |
+
+**Problem:** Vestigio has Playwright (Chromium) running on every full cycle but doesn't extract LCP, CLS, or INP. Lighthouse does; Vestigio should too.
+
+**Fix:** Inject `web-vitals` library via `addInitScript()`, capture metrics post-navigation via `page.evaluate()`. New `CoreWebVitalsPayload` evidence type. New signals: `lcp_poor`, `cls_poor`, `inp_poor`. New inferences for performance-related findings.
+
+---
+
+### 7.5 Webhook-Triggered Audits (Deploy Integration)
+
+| | |
+|---|---|
+| **Tag** | `platform` `infra` |
+| **Priority** | P1 |
+| **Status** | Not started — enqueueAuditCycle() already supports hot priority |
+| **Effort** | ~2-3 days |
+
+**Problem:** Cycle-based model misses between-cycle deploy regressions. ContentKing does real-time monitoring. Deploy webhook → immediate hot cycle → regression detection in minutes.
+
+**Fix:** New `POST /api/webhooks/deploy` endpoint. HMAC auth (secret per environment). On POST: `enqueueAuditCycle(envId, 'hot')`. Supports GitHub Actions, Vercel, GitLab CI, custom. Returns `{ cycle_id, estimated_seconds }`.
+
+---
+
+### 7.6 ELK/Dagre Layout for Maps
+
+| | |
+|---|---|
+| **Tag** | `frontend` |
+| **Priority** | P2 |
+| **Status** | Not started — custom column layout produces edge crossings |
+| **Effort** | ~2 days |
+
+**Problem:** `applyHierarchicalLayout()` uses fixed column x-coordinates with no edge routing. Maps with 20+ nodes have overlapping edges. Sitebulb has superior graphs.
+
+**Fix:** Replace `applyHierarchicalLayout()` with `dagre.layout()` (LR direction). Keep current layout as fallback. Dagre handles edge routing, collision avoidance, and optimal node placement automatically.
+
+---
+
+### 7.7 Map Export (PNG/SVG)
+
+| | |
+|---|---|
+| **Tag** | `frontend` |
+| **Priority** | P2 |
+| **Status** | Not started — React Flow v12 supports toImage() |
+| **Effort** | ~1 day |
+
+**Fix:** Add "Export" button in map header. Use `html2canvas` or React Flow's `toImage()` for PNG. Programmatic SVG serialization for SVG format. Include map title + timestamp in filename.
+
+---
+
+### 7.8 Custom Map Persistence
+
+| | |
+|---|---|
+| **Tag** | `mcp` `frontend` |
+| **Priority** | P3 |
+| **Status** | `CustomMap` Prisma model exists, `buildCustomMap()` works, but result not persisted |
+| **Effort** | ~1 day |
+
+**Fix:** After `buildCustomMap()` returns, persist to `CustomMap` table. Add GET `/api/maps/custom/{id}` endpoint. "Save This Map" button in UI. Maps survive page reload.
+
+---
+
+### 7.9 Behavioral Delta Processing (Scaling)
+
+| | |
+|---|---|
+| **Tag** | `infra` |
+| **Priority** | P2 |
+| **Status** | Not started — re-processes ALL 30d events every cycle |
+| **Effort** | ~2-3 days |
+
+**Problem:** `processBehavioralEventsForEnv()` reads all events in 30d window every cycle. Quadratic growth: O(N×M) with N events and M cycles.
+
+**Fix:** Checkpoint-based delta processing. Add `lastBehavioralProcessedAt` on Environment. Only query events since last checkpoint. Load prior aggregate as baseline, merge delta, emit merged result. Fallback to full window on first run.
+
+---
+
+### Open items (Wave 7)
+
+| Item | Priority | Effort | Status |
+|------|----------|--------|--------|
+| **7.1** Multi-Cycle Trend Analysis | P1 | 1 week | Not started |
+| **7.2** Revenue Recovery Tracker | P1 | 1 week | Type scaffolded |
+| **7.3** Batch Evidence Persistence | P1 | 2-3 days | Not started |
+| **7.4** Core Web Vitals | P2 | 3-4 days | Not started |
+| **7.5** Webhook-Triggered Audits | P1 | 2-3 days | Not started |
+| **7.6** ELK/Dagre Layout | P2 | 2 days | Not started |
+| **7.7** Map Export (PNG/SVG) | P2 | 1 day | Not started |
+| **7.8** Custom Map Persistence | P3 | 1 day | Model exists |
+| **7.9** Behavioral Delta Processing | P2 | 2-3 days | Not started |
+
+**Implementation order:**
+1. **7.3** Batch writes (unblocks scaling) + **7.5** Webhooks (deploy integration)
+2. **7.1** Multi-cycle trends + **7.2** Revenue recovery (moat features)
+3. **7.9** Behavioral delta (scaling) + **7.4** CWV (new findings)
+4. **7.6** + **7.7** + **7.8** (maps polish)
 
 ---
 

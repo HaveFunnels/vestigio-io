@@ -3299,7 +3299,14 @@
 				"whats_up": "Was sind die wichtigsten Dinge, die ich jetzt ueber meine Seite wissen sollte?",
 				"revenue_audit_other": "Fuehre ein schnelles Umsatz-Leck-Audit durch. Wo verliere ich Geld?",
 				"trust_check": "Wie vertrauenswuerdig sieht meine Seite fuer Kaeufer aus? Pruefe Vertrauenssignale auf allen Seiten."
-			}
+			},
+			"export": "Exportieren",
+			"export_json": "Als JSON exportieren",
+			"export_markdown": "Als Markdown exportieren",
+			"export_csv": "Als CSV exportieren",
+			"exporting": "Wird exportiert...",
+			"export_success": "Gespraech exportiert",
+			"export_empty": "Keine Nachrichten zum Exportieren"
 		}
 	},
 	"engine": {

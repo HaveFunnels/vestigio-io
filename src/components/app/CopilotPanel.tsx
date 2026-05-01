@@ -9,7 +9,7 @@
 // Header: playbooks grid menu, expand, minimize.
 // ──────────────────────────────────────────────
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCopilot } from "./CopilotProvider";
@@ -240,6 +240,87 @@ function PlaybooksOverlay({
 	);
 }
 
+// ── Export dropdown ──
+
+function ExportDropdown({
+	conversationId,
+	onClose,
+}: {
+	conversationId: string;
+	onClose: () => void;
+}) {
+	const t = useTranslations("console.copilot");
+	const dropdownRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		function handleClickOutside(e: MouseEvent) {
+			if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+				onClose();
+			}
+		}
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [onClose]);
+
+	const handleExport = useCallback(
+		async (format: "json" | "markdown" | "csv") => {
+			try {
+				const res = await fetch(
+					`/api/conversations/${conversationId}/export?format=${format}`,
+				);
+				if (!res.ok) {
+					console.error("Export failed:", res.status);
+					return;
+				}
+				const blob = await res.blob();
+				const disposition = res.headers.get("Content-Disposition") || "";
+				const filenameMatch = disposition.match(/filename="([^"]+)"/);
+				const filename = filenameMatch?.[1] || `conversation.${format === "markdown" ? "md" : format}`;
+
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = filename;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+			} catch (err) {
+				console.error("Export error:", err);
+			} finally {
+				onClose();
+			}
+		},
+		[conversationId, onClose],
+	);
+
+	return (
+		<div
+			ref={dropdownRef}
+			className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-edge bg-card py-1 shadow-xl shadow-black/20"
+		>
+			<button
+				onClick={() => handleExport("json")}
+				className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover"
+			>
+				{t("export_json")}
+			</button>
+			<button
+				onClick={() => handleExport("markdown")}
+				className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover"
+			>
+				{t("export_markdown")}
+			</button>
+			<button
+				onClick={() => handleExport("csv")}
+				className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover"
+			>
+				{t("export_csv")}
+			</button>
+		</div>
+	);
+}
+
 // ── Main panel ──
 
 export default function CopilotPanel() {
@@ -271,6 +352,7 @@ export default function CopilotPanel() {
 
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const [playbooksOpen, setPlaybooksOpen] = useState(false);
+	const [exportOpen, setExportOpen] = useState(false);
 
 	// Auto-scroll on new messages
 	useEffect(() => {
@@ -339,6 +421,30 @@ export default function CopilotPanel() {
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 						</svg>
 					</button>
+				)}
+				{/* Export — only when there's an active conversation with messages */}
+				{hasMessages && conversationId && (
+					<div className="relative">
+						<button
+							onClick={() => setExportOpen(!exportOpen)}
+							className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+								exportOpen
+									? "bg-surface-inset text-content-secondary"
+									: "text-content-faint hover:bg-surface-card-hover hover:text-content-secondary"
+							}`}
+							title={t("export")}
+						>
+							<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+							</svg>
+						</button>
+						{exportOpen && (
+							<ExportDropdown
+								conversationId={conversationId}
+								onClose={() => setExportOpen(false)}
+							/>
+						)}
+					</div>
 				)}
 				{/* Playbooks menu (3x3 dots grid) */}
 				<button

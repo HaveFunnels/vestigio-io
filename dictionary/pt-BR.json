@@ -3787,7 +3787,14 @@
 				"whats_up": "Quais sao as coisas mais importantes que devo saber sobre meu site agora?",
 				"revenue_audit_other": "Faça uma auditoria rapida de vazamento de receita. Onde estou perdendo dinheiro?",
 				"trust_check": "Quao confiável meu site parece para compradores? Verifique sinais de confiança em todas as páginas."
-			}
+			},
+			"export": "Exportar",
+			"export_json": "Exportar como JSON",
+			"export_markdown": "Exportar como Markdown",
+			"export_csv": "Exportar como CSV",
+			"exporting": "Exportando...",
+			"export_success": "Conversa exportada",
+			"export_empty": "Nenhuma mensagem para exportar"
 		}
 	},
 	"engine": {

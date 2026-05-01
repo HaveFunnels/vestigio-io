@@ -3768,7 +3768,14 @@
 				"whats_up": "What are the most important things I should know about my site right now?",
 				"revenue_audit_other": "Perform a quick revenue leak audit. Where am I losing money?",
 				"trust_check": "How trustworthy does my site look to buyers? Check trust signals across all pages."
-			}
+			},
+			"export": "Export",
+			"export_json": "Export as JSON",
+			"export_markdown": "Export as Markdown",
+			"export_csv": "Export as CSV",
+			"exporting": "Exporting...",
+			"export_success": "Conversation exported",
+			"export_empty": "No messages to export"
 		}
 	},
 	"engine": {

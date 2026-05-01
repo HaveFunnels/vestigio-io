@@ -1432,6 +1432,52 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     base_metric: 'revenue',
   },
 
+  // Wave 4.1: Cybersecurity Phase 2
+  information_disclosure: {
+    inference_key: 'information_disclosure', impact_category: 'revenue_loss',
+    cause: 'Server exposes internal architecture details to anyone who triggers an error',
+    effect: 'Stack traces, framework versions, database errors, and file paths in responses give attackers a detailed map — targeted exploits replace guesswork, and breaches become cheaper to execute',
+    high: { min: 0.04, max: 0.10 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.005, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  script_supply_chain_risk: {
+    inference_key: 'script_supply_chain_risk', impact_category: 'revenue_loss',
+    cause: 'External scripts on payment pages load without integrity verification',
+    effect: 'If any CDN or third-party host is compromised, malicious code executes with full page access — silently skimming payment data, redirecting buyers, or injecting fake checkout forms',
+    high: { min: 0.08, max: 0.20 }, medium: { min: 0.03, max: 0.08 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  auth_surface_insecure: {
+    inference_key: 'auth_surface_insecure', impact_category: 'revenue_loss',
+    cause: 'Authentication forms expose credentials through insecure configuration',
+    effect: 'Passwords displayed as visible text or submitted over HTTP let attackers on the same network capture login credentials in plaintext — leading to account takeover, unauthorized purchases, and trust destruction',
+    high: { min: 0.05, max: 0.12 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+
+  // Wave 4.2: LLM Enrichment
+  pricing_offer_unclear: {
+    inference_key: 'pricing_offer_unclear', impact_category: 'conversion_loss',
+    cause: 'Pricing page does not clearly communicate what each tier includes',
+    effect: 'Buyers who cannot quickly determine what they get for each price experience decision paralysis — they leave to compare competitors who make the answer obvious, directly reducing pricing page conversion',
+    high: { min: 0.06, max: 0.15 }, medium: { min: 0.03, max: 0.07 }, low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  page_purpose_mismatch: {
+    inference_key: 'page_purpose_mismatch', impact_category: 'conversion_loss',
+    cause: 'Page content contradicts its intended purpose in the funnel',
+    effect: 'When a pricing page lacks pricing content or a product page reads like a blog post, visitors get confused about where they are in the journey — bounce rates rise and funnel attribution becomes unreliable',
+    high: { min: 0.04, max: 0.10 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  structured_data_mismatch: {
+    inference_key: 'structured_data_mismatch', impact_category: 'revenue_loss',
+    cause: 'JSON-LD structured data claims contradict visible page content',
+    effect: 'When schema.org claims (price, name, rating) differ from what users see, Google strips rich results and may penalize the page — organic traffic and click-through rate both decline',
+    high: { min: 0.05, max: 0.12 }, medium: { min: 0.02, max: 0.06 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+
   // ── Wave 3.1 Tier 2: LLM enrichment findings ──────────
   social_proof_generic: {
     inference_key: 'social_proof_generic', impact_category: 'conversion_loss',

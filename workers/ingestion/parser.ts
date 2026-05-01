@@ -39,12 +39,14 @@ export interface ParsedForm {
   is_external: boolean;
   field_names: string[];
   has_payment_fields: boolean;
+  field_types: Record<string, string>;
 }
 
 export interface ParsedScript {
   src: string;
   host: string;
   is_external: boolean;
+  integrity: string | null;
 }
 
 export interface ParsedIframe {
@@ -201,6 +203,7 @@ function extractForms(html: string, pageUrl: string, rootDomain: string): Parsed
     const targetHost = safeHostname(resolved);
 
     const fieldNames = extractFieldNames(match[1]);
+    const fieldTypes = extractFieldTypes(match[1]);
     const hasPaymentFields = fieldNames.some((f) =>
       PAYMENT_FIELD_PATTERNS.some((p) => f.toLowerCase().includes(p)),
     );
@@ -212,6 +215,7 @@ function extractForms(html: string, pageUrl: string, rootDomain: string): Parsed
       is_external: !isSameDomain(targetHost, rootDomain),
       field_names: fieldNames,
       has_payment_fields: hasPaymentFields,
+      field_types: fieldTypes,
     });
   }
 
@@ -229,11 +233,13 @@ function extractScripts(html: string, pageUrl: string, rootDomain: string): Pars
     const resolved = resolveUrl(src, pageUrl);
     if (!resolved) continue;
     const host = safeHostname(resolved);
+    const integrity = extractAttribute(match[0], 'integrity');
 
     scripts.push({
       src: resolved,
       host,
       is_external: !isSameDomain(host, rootDomain),
+      integrity: integrity || null,
     });
   }
 
@@ -289,6 +295,23 @@ function extractFieldNames(formInnerHtml: string): string[] {
   }
 
   return names;
+}
+
+function extractFieldTypes(formInnerHtml: string): Record<string, string> {
+  const types: Record<string, string> = {};
+  const regex = /<input\s[^>]*>/gi;
+  let match;
+
+  while ((match = regex.exec(formInnerHtml)) !== null) {
+    const tag = match[0];
+    const name = extractAttribute(tag, 'name');
+    const type = extractAttribute(tag, 'type') || 'text';
+    if (name) {
+      types[name] = type.toLowerCase();
+    }
+  }
+
+  return types;
 }
 
 function extractAttribute(tag: string, attr: string): string | null {

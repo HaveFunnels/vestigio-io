@@ -317,6 +317,7 @@ async function fetchAndParse(
               host: script.host,
               is_external: true,
               known_provider: detectProviderFromUrl(script.src),
+              integrity: script.integrity,
             } as ScriptPayload,
           }),
         );
@@ -341,6 +342,7 @@ async function fetchAndParse(
             is_external: form.is_external,
             field_names: form.field_names,
             has_payment_fields: form.has_payment_fields,
+            field_types: form.field_types,
           } as FormPayload,
         }),
       );

@@ -27,6 +27,7 @@ import { runLocalizationQualityEnrichment } from "./copy-localization";
 import { runMicroCopyEnrichment } from "./copy-micro-copy";
 import { runSeoConversionTensionEnrichment } from "./copy-seo-tension";
 import { runCopyStalenessEnrichment } from "./copy-staleness";
+import { runStructuredDataValidation } from "./structured-data-validation";
 import type { CopyElementsPayload } from "../../../packages/domain";
 
 // ──────────────────────────────────────────────
@@ -627,6 +628,112 @@ function inferFunnelStage(pageType: PageType): string {
   }
 }
 
+// ──────────────────────────────────────────────
+// Wave 4.2B: Page Purpose Validation (Heuristic)
+// ──────────────────────────────────────────────
+
+const PAGE_TYPE_KEYWORDS: Record<string, string[]> = {
+  homepage: ['welcome', 'get started', 'explore', 'discover', 'solutions', 'platform'],
+  pricing: ['pricing', 'plans', 'price', 'per month', '/mo', '/year', 'free tier', 'enterprise', 'starter'],
+  product: ['buy', 'add to cart', 'in stock', 'quantity', 'reviews', 'specifications'],
+  checkout: ['checkout', 'payment', 'order', 'shipping', 'billing address', 'card number'],
+  blog: ['read more', 'published', 'author', 'minutes read', 'article', 'posted on'],
+  onboarding: ['welcome', 'get started', 'set up', 'first steps', 'quick start'],
+};
+
+/**
+ * Wave 4.2B: Validate that page content matches its detected page type.
+ * Pure heuristic — no LLM call.
+ */
+async function runPagePurposeValidation(
+  ctx: EnrichmentContext,
+  pageContentEvidence: Evidence[],
+  evidenceAdded: Evidence[],
+  budget: { remaining: number; processed: number },
+): Promise<void> {
+  for (const e of pageContentEvidence) {
+    if (budget.remaining <= 0) break;
+
+    const p = e.payload as PageContentPayload;
+    const url = p.url;
+    const detectedType = classifyPageType(url);
+
+    // Skip ambiguous classifications
+    if (detectedType === 'all_commercial' || detectedType === 'error') continue;
+
+    const h1Lower = (p.h1 || '').toLowerCase();
+    const titleLower = (p.title || '').toLowerCase();
+    const combined = `${h1Lower} ${titleLower}`;
+
+    // Get expected keywords for this page type
+    const expectedKeywords = PAGE_TYPE_KEYWORDS[detectedType];
+    if (!expectedKeywords) continue;
+
+    // Check if at least one expected keyword is present in h1/title
+    const hasExpectedKeyword = expectedKeywords.some(kw => combined.includes(kw));
+
+    // Also check for CONFLICTING keywords (keywords from a different type)
+    let conflictType: string | null = null;
+    for (const [otherType, otherKeywords] of Object.entries(PAGE_TYPE_KEYWORDS)) {
+      if (otherType === detectedType) continue;
+      const conflictCount = otherKeywords.filter(kw => combined.includes(kw)).length;
+      if (conflictCount >= 2) {
+        conflictType = otherType;
+        break;
+      }
+    }
+
+    // Only flag if keywords are missing AND conflicting type detected
+    if (!hasExpectedKeyword && conflictType) {
+      const mismatchReason = `classified as "${detectedType}" but h1/title contains "${conflictType}" keywords instead`;
+
+      const now = new Date();
+      const evidence: Evidence = {
+        id: `enrich_ppv_${budget.processed}_${Date.now()}`,
+        evidence_key: `content_enrichment:page_purpose_validation:${url}`,
+        evidence_type: EvidenceType.ContentEnrichment,
+        subject_ref: ctx.scoping.subject_ref || `website:${ctx.root_domain}`,
+        scoping: ctx.scoping,
+        cycle_ref: ctx.cycle_ref,
+        freshness: {
+          observed_at: now,
+          fresh_until: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+          freshness_state: FreshnessState.Fresh,
+          staleness_reason: null,
+        },
+        source_kind: SourceKind.HttpFetch,
+        collection_method: CollectionMethod.StaticFetch,
+        payload: {
+          type: 'content_enrichment',
+          enrichment_type: 'page_purpose_validation',
+          source_evidence_key: e.evidence_key,
+          source_url: url,
+          scores: { clarity_score: 0, readability_grade: 'n/a' },
+          flags: { ambiguity_flags: [], regulatory_gaps: [] },
+          missing_elements: [],
+          results: {
+            mismatch_detected: true,
+            detected_page_type: detectedType,
+            expected_keywords_present: false,
+            mismatch_reason: mismatchReason,
+            conflict_type: conflictType,
+          },
+          confidence: 65,
+          model_used: 'heuristic',
+          cached: false,
+        } as ContentEnrichmentPayload,
+        quality_score: 65,
+        created_at: now,
+        updated_at: now,
+      };
+
+      evidenceAdded.push(evidence);
+      budget.processed++;
+      budget.remaining--;
+    }
+  }
+}
+
 /** Filter guidelines by specific categories */
 function filterGuidelinesByCategory(
   guidelines: ReturnType<typeof getGuidelinesForPageType>,
@@ -1140,6 +1247,14 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
     // ── Wave 3.10 Fase 4: Copy Staleness (Item P) ──
     // Zero LLM cost — pure regex/pattern matching, runs on every page.
     await runCopyStalenessEnrichment(ctx, pageContentEvidence, evidenceAdded);
+
+    // ── Wave 4.2B: Page Purpose Validation ──
+    // Zero LLM cost — pure heuristic keyword alignment check.
+    await runPagePurposeValidation(ctx, pageContentEvidence, evidenceAdded, w310Budget);
+
+    // ── Wave 4.2C: Structured Data Cross-Validation ──
+    // Zero LLM cost — compares JSON-LD claims vs visible content.
+    await runStructuredDataValidation(ctx, evidenceAdded, w310Budget);
 
     // ── Wave 3.10 Fase 3: Cross-Page Narrative Consistency (Item K) ──
     // Runs AFTER all per-page enrichments complete. Collects CopyElementsPayload

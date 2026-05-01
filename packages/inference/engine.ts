@@ -258,6 +258,16 @@ export function computeInferences(
   inferences.push(...inferLowRepeatPurchaseRate(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferDeadWeightProducts(byKey, scoping, cycle_ref, ids));
 
+  // Wave 4.1: Cybersecurity Phase 2
+  inferences.push(...inferInformationDisclosure(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferScriptSupplyChainRisk(first, byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferAuthSurfaceInsecure(first, byKey, scoping, cycle_ref, ids));
+
+  // Wave 4.2: LLM Enrichment
+  inferences.push(...inferPricingOfferUnclear(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPagePurposeMismatch(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferStructuredDataMismatch(byKey, scoping, cycle_ref, ids));
+
   return inferences;
 }
 
@@ -3934,5 +3944,198 @@ function inferDeadWeightProducts(byKey: Map<string, Signal>, scoping: Scoping, c
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value} product(s) haven't generated a single sale in 30 days. Dead inventory dilutes site search results, clutters category pages, and wastes operational bandwidth on listings that contribute nothing to revenue.`,
     reasoning_slots: { severity, count: sig.numeric_value ?? 0 },
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 4.1: Cybersecurity Phase 2 Inferences
+// ──────────────────────────────────────────────
+
+function inferInformationDisclosure(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const leaks = byKey.get('error_page_leaks_internals');
+  const serverVersion = byKey.get('server_version_disclosed');
+
+  if (!leaks && !serverVersion) return [];
+
+  const signals: Signal[] = [];
+  if (leaks) signals.push(leaks);
+  if (serverVersion) signals.push(serverVersion);
+
+  const totalCount = (leaks?.numeric_value ?? 0) + (serverVersion?.numeric_value ?? 0);
+  const severity = totalCount >= 5 ? 'high' : totalCount >= 2 ? 'medium' : 'low';
+  const best = leaks || serverVersion!;
+
+  return [createInference({
+    inference_key: 'information_disclosure',
+    category: InferenceCategory.InformationDisclosure,
+    conclusion: 'information_disclosure',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: best.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: signals.map(s => makeRef('signal', s.id)),
+    evidence_refs: signals.flatMap(s => s.evidence_refs),
+    reasoning: `Information disclosure ${severity}. ${totalCount} instance(s) of sensitive information exposed: ${leaks ? `${leaks.numeric_value} verbose error page(s)` : ''}${leaks && serverVersion ? ' + ' : ''}${serverVersion ? `${serverVersion.numeric_value} server version header(s)` : ''}. Attackers use exposed stack traces, framework versions, and internal paths to find known vulnerabilities and craft targeted exploits — turning opportunistic attacks into surgical ones.`,
+    reasoning_slots: { severity, count: totalCount },
+  })];
+}
+
+function inferScriptSupplyChainRisk(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const noSri = byKey.get('external_script_no_sri');
+  if (!noSri) return [];
+
+  const count = noSri.numeric_value || 0;
+  const severity = count >= 5 ? 'high' : count >= 2 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'script_supply_chain_risk',
+    category: InferenceCategory.ScriptSupplyChainRisk,
+    conclusion: 'script_supply_chain_risk',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: noSri.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', noSri.id)],
+    evidence_refs: noSri.evidence_refs,
+    reasoning: `Script supply chain risk ${severity}. ${count} external script(s) load on commercial pages without Subresource Integrity (SRI) protection. If any CDN or third-party host is compromised, attackers inject malicious code that executes with full page access — silently skimming payment data, redirecting buyers, or injecting fake forms. SRI ensures that only the exact expected file version loads.`,
+    reasoning_slots: { severity, count },
+  })];
+}
+
+function inferAuthSurfaceInsecure(
+  first: (attr: string) => Signal | undefined,
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const authInsecure = byKey.get('auth_surface_insecure');
+  if (!authInsecure) return [];
+
+  const count = authInsecure.numeric_value || 0;
+  const severity = count >= 2 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'auth_surface_insecure',
+    category: InferenceCategory.AuthSurfaceInsecure,
+    conclusion: 'auth_surface_insecure',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: authInsecure.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', authInsecure.id)],
+    evidence_refs: authInsecure.evidence_refs,
+    reasoning: `Authentication surface insecure ${severity}. ${count} login/password form(s) expose credentials: passwords displayed as visible text (type="text" instead of type="password") or submitted over unencrypted HTTP. Attackers on the same network capture credentials in plaintext, and shoulder-surfing reveals passwords on screen.`,
+    reasoning_slots: { severity, count },
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 4.2: LLM Enrichment Inferences
+// ──────────────────────────────────────────────
+
+function inferPricingOfferUnclear(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  // Collect all pricing_offer_unclear signals (one per pricing page URL)
+  const matches: Signal[] = [];
+  for (const [key, sig] of byKey.entries()) {
+    if (key.startsWith('pricing_offer_unclear_')) matches.push(sig);
+  }
+  if (matches.length === 0) return [];
+
+  const worst = matches.reduce((a, b) =>
+    (a.value === 'high' || (a.value === 'medium' && b.value === 'low')) ? a : b,
+  );
+
+  return [createInference({
+    inference_key: 'pricing_offer_unclear',
+    category: InferenceCategory.PricingOfferUnclear,
+    conclusion: 'pricing_offer_unclear',
+    conclusion_value: worst.value,
+    severity_hint: worst.value,
+    confidence: worst.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: matches.map(s => makeRef('signal', s.id)),
+    evidence_refs: matches.flatMap(s => s.evidence_refs),
+    reasoning: `Pricing offer unclear on ${matches.length} page(s). ${worst.value === 'high' ? 'Pricing structure could not be determined — visitors cannot understand what each tier includes.' : 'Multiple tiers presented without a highlighted recommendation — decision paralysis slows conversion.'} When buyers can't quickly answer "what do I get for this price?", they leave to compare competitors who make the answer obvious.`,
+    reasoning_slots: { severity: worst.value },
+  })];
+}
+
+function inferPagePurposeMismatch(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const matches: Signal[] = [];
+  for (const [key, sig] of byKey.entries()) {
+    if (key.startsWith('page_purpose_mismatch_')) matches.push(sig);
+  }
+  if (matches.length === 0) return [];
+
+  const severity = matches.length >= 3 ? 'high' : 'medium';
+
+  return [createInference({
+    inference_key: 'page_purpose_mismatch',
+    category: InferenceCategory.PagePurposeMismatch,
+    conclusion: 'page_purpose_mismatch',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: matches[0].confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: matches.map(s => makeRef('signal', s.id)),
+    evidence_refs: matches.flatMap(s => s.evidence_refs),
+    reasoning: `Page purpose mismatch on ${matches.length} page(s). Page classification doesn't match actual content (e.g. a "pricing" page without pricing content, or a "homepage" with checkout-style copy). This confuses visitors, degrades SEO relevance signals, and makes analytics unreliable — pages count toward the wrong funnel stage.`,
+    reasoning_slots: { severity, count: matches.length },
+  })];
+}
+
+function inferStructuredDataMismatch(
+  byKey: Map<string, Signal>,
+  scoping: Scoping,
+  cycle_ref: string,
+  ids: IdGenerator,
+): Inference[] {
+  const matches: Signal[] = [];
+  for (const [key, sig] of byKey.entries()) {
+    if (key.startsWith('structured_data_mismatch_')) matches.push(sig);
+  }
+  if (matches.length === 0) return [];
+
+  const worst = matches.reduce((a, b) =>
+    (a.numeric_value ?? 0) > (b.numeric_value ?? 0) ? a : b,
+  );
+  const totalMismatches = matches.reduce((sum, s) => sum + (s.numeric_value ?? 0), 0);
+  const severity = totalMismatches >= 5 ? 'high' : totalMismatches >= 2 ? 'medium' : 'low';
+
+  return [createInference({
+    inference_key: 'structured_data_mismatch',
+    category: InferenceCategory.StructuredDataMismatch,
+    conclusion: 'structured_data_mismatch',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: worst.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: matches.map(s => makeRef('signal', s.id)),
+    evidence_refs: matches.flatMap(s => s.evidence_refs),
+    reasoning: `Structured data (JSON-LD) contradicts visible page content on ${matches.length} page(s) with ${totalMismatches} total mismatch(es). When Google finds that your schema claims don't match what users see (different prices, names, or ratings), rich results get stripped and trust scores drop — costing organic traffic and click-through rate.`,
+    reasoning_slots: { severity, count: totalMismatches },
   })];
 }

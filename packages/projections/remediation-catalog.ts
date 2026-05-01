@@ -2632,6 +2632,98 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Aguardando sessões novas pra medir intent decay curve. {current}/{required}.',
 		verification_eta_seconds: null,
 	},
+
+	// ─────────────────────────────────────────────
+	// Wave 4.1: Cybersecurity Phase 2
+	// ─────────────────────────────────────────────
+
+	information_disclosure: {
+		remediation_steps: [
+			'Configure error handler genérico em produção — logue detalhes server-side, retorne mensagem amigável ao cliente.',
+			'Remova header Server com versão (Apache/nginx): use ServerTokens Prod ou server_tokens off.',
+			'Audite respostas 4xx/5xx — nenhuma deve conter stack trace, path interno, ou versão de framework.',
+			'Configure framework para modo produção (DEBUG=false, RAILS_ENV=production, NODE_ENV=production).',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos requisitar URLs de erro + checar header Server em respostas pra confirmar remoção de info sensível.',
+		verification_eta_seconds: 10,
+	},
+
+	script_supply_chain_risk: {
+		remediation_steps: [
+			'Adicione atributo integrity= (SRI hash) em todo <script> externo no checkout e páginas comerciais.',
+			'Gere hash SHA-384 ou SHA-512 do script versionado: openssl dgst -sha384 -binary file | base64.',
+			'Configure CSP require-sri-for pra bloquear scripts sem integrity automaticamente.',
+			'Monitore CDN provider pra alertas de comprometimento — troque hash quando versão muda.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar páginas comerciais e verificar presença do atributo integrity em scripts externos.',
+		verification_eta_seconds: 12,
+	},
+
+	auth_surface_insecure: {
+		remediation_steps: [
+			'Corrija campos de senha pra type="password" — nunca use type="text" pra senhas.',
+			'Garanta que form action do login/signup use HTTPS (nunca HTTP).',
+			'Adicione autocomplete="current-password" nos inputs de login e "new-password" nos de signup.',
+			'Implemente HSTS pra garantir que mesmo links HTTP sejam redirecionados pra HTTPS antes do submit.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-fetchar páginas de login e verificar tipo do campo de senha + protocolo do form action.',
+		verification_eta_seconds: 8,
+	},
+
+	// ─────────────────────────────────────────────
+	// Wave 4.2: LLM Enrichment
+	// ─────────────────────────────────────────────
+
+	pricing_offer_unclear: {
+		remediation_steps: [
+			'Adicione comparação clara entre tiers: tabela feature-por-feature com checkmarks explícitos.',
+			'Destaque um plano recomendado (badge "Mais Popular" ou "Melhor Valor") pra reduzir decision paralysis.',
+			'Inclua descrição de 1 linha por tier explicando pra quem é (freelancer, startup, enterprise).',
+			'Se pricing model não é determinável, simplifique — menos opções convertem mais.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-analisar a página de pricing com LLM pra validar clareza dos tiers e presença de recomendação.',
+		verification_eta_seconds: 15,
+	},
+
+	page_purpose_mismatch: {
+		remediation_steps: [
+			'Alinhe título e H1 com o propósito real da página — pricing page deve conter "planos/preços".',
+			'Se conteúdo migrou, reclassifique a página e atualize navegação + sitemap.',
+			'Revise meta description pra refletir conteúdo atual — desalinhamento prejudica CTR orgânico.',
+			'Audite funnel analytics — se buyers chegam esperando X e encontram Y, bounce rate sobe.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-classificar a página e comparar keywords do H1/título com o page type detectado.',
+		verification_eta_seconds: 10,
+	},
+
+	structured_data_mismatch: {
+		remediation_steps: [
+			'Audite JSON-LD vs conteúdo visível: preço no schema deve ser idêntico ao preço na página.',
+			'Use Google Rich Results Test pra validar que schema data reflete realidade.',
+			'Automatize geração de JSON-LD a partir do CMS/database — evite valores hardcoded que ficam stale.',
+			'Monitore mudanças de preço/nome — atualize schema junto quando produto muda.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos extrair JSON-LD e comparar claims (preço, nome, rating) contra conteúdo visível da página.',
+		verification_eta_seconds: 12,
+	},
 };
 
 /**

@@ -485,4 +485,12 @@ export enum InferenceCategory {
   AdCreativeMessageMismatch = 'ad_creative_message_mismatch',
   LowRepeatPurchaseRate = 'low_repeat_purchase_rate',
   DeadWeightProducts = 'dead_weight_products',
+  // Wave 4.1: Cybersecurity Phase 2
+  InformationDisclosure = 'information_disclosure',
+  ScriptSupplyChainRisk = 'script_supply_chain_risk',
+  AuthSurfaceInsecure = 'auth_surface_insecure',
+  // Wave 4.2: LLM Enrichment
+  PricingOfferUnclear = 'pricing_offer_unclear',
+  PagePurposeMismatch = 'page_purpose_mismatch',
+  StructuredDataMismatch = 'structured_data_mismatch',
 }

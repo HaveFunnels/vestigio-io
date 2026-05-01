@@ -122,6 +122,7 @@ export interface ScriptPayload {
   host: string;
   is_external: boolean;
   known_provider: string | null;
+  integrity?: string | null;
 }
 
 export interface FormPayload {
@@ -133,6 +134,7 @@ export interface FormPayload {
   is_external: boolean;
   field_names: string[];
   has_payment_fields: boolean;
+  field_types?: Record<string, string>;
 }
 
 export interface LinkPayload {
@@ -773,7 +775,10 @@ export interface ContentEnrichmentPayload {
     | 'localization_quality'
     | 'micro_copy'
     | 'seo_conversion_tension'
-    | 'copy_staleness';
+    | 'copy_staleness'
+    // Wave 4.2 — LLM enrichment
+    | 'page_purpose_validation'
+    | 'structured_data_validation';
   source_evidence_key: string;
   source_url: string;
   scores: { clarity_score: number; readability_grade: string };

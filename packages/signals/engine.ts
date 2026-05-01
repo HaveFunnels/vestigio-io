@@ -4590,6 +4590,121 @@ function extractSecurityPostureSignals(
       }));
     }
   }
+
+  // ── Finding 4.1B: Error Page Information Disclosure (Enhanced) ──
+  // Checks error page responses for server version disclosure in headers
+  if (httpResponses.length > 0) {
+    const serverVersionEvidence: Evidence[] = [];
+    const SERVER_VERSION_PATTERN = /^(Apache|nginx|Microsoft-IIS|LiteSpeed|Caddy|Tomcat|Jetty)\/?[\d.]+/i;
+
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      const serverHeader = secGetHeader(p.headers, 'server');
+      if (serverHeader && SERVER_VERSION_PATTERN.test(serverHeader.trim())) {
+        serverVersionEvidence.push(e);
+      }
+    }
+
+    if (serverVersionEvidence.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `server_version_disclosed`,
+        category: SignalCategory.Security,
+        attribute: 'security.disclosure.server_version',
+        value: 'true',
+        numeric_value: serverVersionEvidence.length,
+        confidence: 90,
+        scoping, cycle_ref,
+        evidence_refs: serverVersionEvidence.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${serverVersionEvidence.length} response(s) disclose server software version in headers (e.g. Apache/2.4.52, nginx/1.18). Attackers use exact version numbers to find known CVEs and craft targeted exploits.`,
+      }));
+    }
+  }
+
+  // ── Finding 4.1C: External Script Without SRI (Supply Chain Risk) ──
+  if (scripts.length > 0) {
+    const noSriScripts: Evidence[] = [];
+    const commercialPages = new Set<string>();
+
+    // Identify commercial page URLs from forms + http responses
+    for (const e of forms) {
+      const p = e.payload as FormPayload;
+      if (p.has_payment_fields) commercialPages.add(p.page_url);
+    }
+    for (const e of httpResponses) {
+      const p = e.payload as HttpResponsePayload;
+      if (secIsCheckoutUrl(p.url) || /(product|pricing|cart|checkout|billing)/.test(secPathOf(p.url))) {
+        commercialPages.add(p.url);
+      }
+    }
+
+    for (const e of scripts) {
+      const p = e.payload as ScriptPayload;
+      if (!p.is_external) continue;
+      if (p.known_provider) continue;
+      if (!p.integrity && commercialPages.has(p.page_url)) {
+        noSriScripts.push(e);
+      }
+    }
+
+    if (noSriScripts.length >= 2) {
+      const severity = noSriScripts.length >= 5 ? 'high' : 'medium';
+      signals.push(createSignal({ ids,
+        signal_key: `external_script_no_sri`,
+        category: SignalCategory.Security,
+        attribute: 'security.script.no_sri',
+        value: severity,
+        numeric_value: noSriScripts.length,
+        confidence: 80,
+        scoping, cycle_ref,
+        evidence_refs: noSriScripts.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${noSriScripts.length} external script(s) on commercial pages load without Subresource Integrity (SRI). If a CDN is compromised, attackers can inject malicious code that runs with full access to buyer payment data.`,
+      }));
+    }
+  }
+
+  // ── Finding 4.1D: Auth Surface Insecure ──
+  if (forms.length > 0) {
+    const insecureAuthForms: Evidence[] = [];
+
+    for (const e of forms) {
+      const p = e.payload as FormPayload;
+      const fieldTypes = p.field_types || {};
+      const fieldNames = p.field_names || [];
+
+      // Check if this form has password-like fields
+      const hasPasswordField = Object.values(fieldTypes).some(t => t === 'password')
+        || fieldNames.some(n => /password|passwd|secret|pin/i.test(n));
+
+      if (!hasPasswordField) continue;
+
+      // Check for insecure conditions:
+      // 1. Password field using type="text" instead of type="password"
+      const passwordAsText = Object.entries(fieldTypes).some(
+        ([name, type]) => /password|passwd|secret|pin/i.test(name) && type === 'text'
+      );
+
+      // 2. Form action is HTTP (not HTTPS)
+      const actionInsecure = p.action && p.action.startsWith('http://');
+
+      if (passwordAsText || actionInsecure) {
+        insecureAuthForms.push(e);
+      }
+    }
+
+    if (insecureAuthForms.length > 0) {
+      signals.push(createSignal({ ids,
+        signal_key: `auth_surface_insecure`,
+        category: SignalCategory.Security,
+        attribute: 'security.auth.insecure_surface',
+        value: 'true',
+        numeric_value: insecureAuthForms.length,
+        confidence: 85,
+        scoping, cycle_ref,
+        evidence_refs: insecureAuthForms.slice(0, 3).map((e) => makeRef('evidence', e.id)),
+        description: `${insecureAuthForms.length} authentication form(s) with insecure configuration: password fields using type="text" (visible on screen) or form submitting credentials over unencrypted HTTP.`,
+      }));
+    }
+  }
 }
 
 function extractPolicyEnrichmentSignals(
@@ -5154,6 +5269,29 @@ function extractCopyEnrichmentSignals(
           description: `Pricing page at ${p.source_url} scores ${psychScore}/100 on pricing psychology: ${results.pricing_model || 'unknown'} model with ${results.tier_count ?? 0} tier(s), ${(results.techniques_detected || []).length} technique(s) used. Missing high-impact techniques: ${missingTechniques || 'none'}. ${!results.has_recommended_plan ? 'No recommended plan highlighted. ' : ''}Issues found: ${(results.issues || []).length}`,
         }));
       }
+
+      // Wave 4.2A: Pricing Offer Unclear — pricing structure not determinable or no plan highlighted with 3+ tiers
+      const pricingModel = results.pricing_model || 'unknown';
+      const tierCount = results.tier_count ?? 0;
+      const hasRecommended = results.has_recommended_plan ?? true;
+
+      if (pricingModel === 'unknown' || (!hasRecommended && tierCount >= 3)) {
+        const offerSeverity = pricingModel === 'unknown' ? 'high' : 'medium';
+        const reason = pricingModel === 'unknown'
+          ? 'Pricing model could not be determined — visitors cannot understand what they get for each price'
+          : `${tierCount} pricing tiers without a recommended plan — visitors face decision paralysis with no clear choice`;
+        signals.push(createSignal({ ids,
+          signal_key: `pricing_offer_unclear_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.pricing_offer.unclear',
+          value: offerSeverity,
+          numeric_value: tierCount,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Pricing page at ${p.source_url}: ${reason}.`,
+        }));
+      }
     }
 
     // ── Wave 3.10 Fase 4: Localization Quality (Item M) ──
@@ -5293,6 +5431,58 @@ function extractCopyEnrichmentSignals(
           scoping, cycle_ref,
           evidence_refs: refs,
           description: `Ad "${(results.ad_headline || '').slice(0, 60)}" (${results.platform || 'unknown'}, $${spend.toFixed(0)}/mo) promises one thing but the landing page at ${p.source_url} delivers another (alignment ${alignmentScore}/100). Mismatches: ${(results.mismatch_points || []).join('; ')}`,
+        }));
+      }
+    }
+
+    // Wave 4.2B: Page Purpose Mismatch
+    if (p.enrichment_type === 'page_purpose_validation') {
+      const results = (p.results || {}) as {
+        mismatch_detected?: boolean;
+        detected_page_type?: string;
+        expected_keywords_present?: boolean;
+        mismatch_reason?: string;
+      };
+
+      if (results.mismatch_detected) {
+        signals.push(createSignal({ ids,
+          signal_key: `page_purpose_mismatch_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.page_purpose.mismatch',
+          value: 'medium',
+          numeric_value: 1,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `Page at ${p.source_url} classified as "${results.detected_page_type}" but content doesn't match: ${results.mismatch_reason || 'title/h1 keywords inconsistent with page type'}. Visitors landing on this page may be confused about its purpose.`,
+        }));
+      }
+    }
+
+    // Wave 4.2C: Structured Data Mismatch (JSON-LD vs visible content)
+    if (p.enrichment_type === 'structured_data_validation') {
+      const results = (p.results || {}) as {
+        mismatches_found?: number;
+        mismatch_details?: Array<{ field: string; schema_value: string; page_value: string }>;
+        severity?: string;
+      };
+      const mismatchCount = results.mismatches_found ?? 0;
+
+      if (mismatchCount > 0) {
+        const severity = mismatchCount >= 3 ? 'high' : mismatchCount >= 2 ? 'medium' : 'low';
+        const details = (results.mismatch_details || []).slice(0, 3).map(
+          d => `${d.field}: schema says "${d.schema_value}" but page shows "${d.page_value}"`
+        ).join('; ');
+        signals.push(createSignal({ ids,
+          signal_key: `structured_data_mismatch_${p.source_url}`,
+          category: SignalCategory.Clarity,
+          attribute: 'enrichment.structured_data.mismatch',
+          value: severity,
+          numeric_value: mismatchCount,
+          confidence: p.confidence,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `JSON-LD structured data at ${p.source_url} contradicts visible page content (${mismatchCount} mismatch(es)): ${details || 'schema claims differ from what buyers see on the page'}. Search engines may penalize or remove rich results.`,
         }));
       }
     }

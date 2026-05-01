@@ -285,6 +285,16 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   ad_creative_message_mismatch:         { root_cause_key: 'ad_landing_promise_gap', category: 'copy_strategy', impact_types: ['revenue_loss'] },
   low_repeat_purchase_rate:           { root_cause_key: 'weak_conversion_signal', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
   dead_weight_products:               { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
+
+  // Wave 4.1: Cybersecurity Phase 2
+  information_disclosure:             { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
+  script_supply_chain_risk:           { root_cause_key: 'channel_integrity_compromise', category: 'channel_integrity', impact_types: ['trust_erosion', 'revenue_loss'] },
+  auth_surface_insecure:              { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
+
+  // Wave 4.2: LLM Enrichment
+  pricing_offer_unclear:              { root_cause_key: 'objection_unaddressed', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  page_purpose_mismatch:              { root_cause_key: 'copy_funnel_misalignment', category: 'copy_strategy', impact_types: ['revenue_loss'] },
+  structured_data_mismatch:           { root_cause_key: 'brand_inconsistent_in_previews', category: 'discoverability_gap', impact_types: ['revenue_loss'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a

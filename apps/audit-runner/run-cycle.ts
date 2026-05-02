@@ -807,7 +807,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				cycle_ref: cycleRefStr,
 				root_domain: domain,
 				landing_url: landingUrl,
-				conversion_proximity: 0.5,
+				conversion_proximity: 3, // mid-funnel default (1=checkout, 5=homepage); <= 2 triggers severity escalation
 				is_production: env.isProduction,
 				onboarding_business_model: businessProfile?.businessModel ?? null,
 				onboarding_conversion_model: businessProfile?.conversionModel ?? null,

@@ -267,14 +267,19 @@ function buildResolvedSet(
 
   // Coherence score: higher = fewer/less-severe conflicts
   const maxSeverityScore = decisions.length * (decisions.length - 1) / 2; // max possible pairs
-  const conflictScore = conflicts.reduce((sum, c) => {
-    switch (c.severity) {
-      case 'critical': return sum + 4;
-      case 'high': return sum + 3;
-      case 'medium': return sum + 2;
-      case 'low': return sum + 1;
-    }
-  }, 0);
+  // Group conflicts by pair and take max weight per pair to avoid over-counting
+  // when a single pair triggers multiple conflict types (impact_contradiction + severity_divergence, etc.)
+  const pairWeights = new Map<string, number>();
+  for (const c of conflicts) {
+    const pairKey = [c.decision_a_ref, c.decision_b_ref].sort().join(':');
+    const weight = c.severity === 'critical' ? 4
+      : c.severity === 'high' ? 3
+      : c.severity === 'medium' ? 2
+      : 1;
+    const existing = pairWeights.get(pairKey) || 0;
+    pairWeights.set(pairKey, Math.max(existing, weight));
+  }
+  const conflictScore = Array.from(pairWeights.values()).reduce((a, b) => a + b, 0);
   const coherence = maxSeverityScore > 0
     ? Math.max(0, Math.round(100 - (conflictScore / maxSeverityScore) * 100))
     : 100;

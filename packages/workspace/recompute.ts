@@ -609,7 +609,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     }
   }
 
-  // Intelligence layer — root causes, linking, global action prioritization
+  // Intelligence layer — populated here, called AFTER all penalties below (E7 fix).
   const actionsByDecision = new Map<string, Action[]>();
   actionsByDecision.set(makeRef('decision', allDecisions[0].id), scaleActions);
   actionsByDecision.set(makeRef('decision', allDecisions[1].id), revenueActions);
@@ -619,13 +619,6 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   if (saasGrowthReadiness && allDecisions.length > 5) {
     actionsByDecision.set(makeRef('decision', allDecisions[5].id), saasGrowthReadiness.actions);
   }
-
-  const intelligence = produceIntelligence({
-    inferences: allInferences,
-    decisions: allDecisions,
-    actions_by_decision: actionsByDecision,
-    translations,
-  });
 
   // Impact estimation — with profile freshness penalty and reconciled inputs/amplifiers
   const valueCases = estimateImpact(allInferences, reconciledBusinessInputs, profilePenalty, reconciledAmplifiers);
@@ -643,8 +636,17 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
       const resolved = conflictReport.resolved_decisions?.decisions.find(
         rd => rd.decision_ref === makeRef('decision', d.id),
       );
-      // Only penalize decisions involved in conflicts
-      if (resolved && resolved.conflict_refs.length > 0) {
+      // Only penalize decisions involved in conflicts, but NOT winners of precedence-resolved conflicts.
+      // A decision that won every precedence conflict it's involved in should not be penalized for incoherence.
+      const decisionRef = makeRef('decision', d.id);
+      const isWinnerInAllConflicts = resolved && resolved.conflict_refs.length > 0 &&
+        conflictReport.conflicts
+          .filter(c => c.decision_a_ref === decisionRef || c.decision_b_ref === decisionRef)
+          .every(c => {
+            if (c.resolution.method !== 'precedence') return false; // non-precedence conflicts still get penalty
+            return c.resolution.winning_decision_ref === decisionRef;
+          });
+      if (resolved && resolved.conflict_refs.length > 0 && !isWinnerInAllConflicts) {
         const ref = makeRef('decision', d.id);
         const before = d.confidence_score;
         const after = Math.max(5, Math.round(before * coherencePenalty));
@@ -712,6 +714,24 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     return r;
   });
 
+  // ─── E7 fix: Remove actions from decisions whose confidence dropped below threshold ───
+  // All penalties (suppression, profile, coherence, budget) are now applied.
+  // Filter out actions from severely penalized decisions before intelligence engine.
+  const MIN_CONFIDENCE_FOR_ACTIONS = 20;
+  for (const [ref] of actionsByDecision) {
+    const decision = allDecisions.find(d => makeRef('decision', d.id) === ref);
+    if (decision && decision.confidence_score < MIN_CONFIDENCE_FOR_ACTIONS) {
+      actionsByDecision.delete(ref);
+    }
+  }
+
+  const intelligence = produceIntelligence({
+    inferences: allInferences,
+    decisions: allDecisions,
+    actions_by_decision: actionsByDecision,
+    translations,
+  });
+
   // Phase 25: Rigorous opportunity generation with gates
   const opportunityResult = generateOpportunities(
     allDecisions, allInferences, valueCases, scoping, cycle_ref,
@@ -738,7 +758,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // ─── Integration: Revenue recovery estimation ───
   let revenueRecovery: RevenueRecoveryResult | null = null;
-  if (changeReport && reconciledBusinessInputs?.monthly_revenue !== null && dataProvenance) {
+  if (changeReport && (reconciledBusinessInputs?.monthly_revenue ?? 0) > 0 && dataProvenance) {
     // Resolved findings from change detection
     const resolvedFindings = changeReport.resolved_issues.map(ri => {
       // Find matching value case for impact range

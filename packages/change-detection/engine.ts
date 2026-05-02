@@ -462,15 +462,24 @@ function isDecisionFromNewSource(
   }
 
   // Integration-driven decisions (shopify, etc.)
-  // Heuristic: if the decision's evidence_refs contain integration-style references
-  // or the question relates to data that only integrations provide
+  // Evidence refs are opaque IDs (e.g. "evidence:ev_abc123") — string matching on them
+  // never works. Instead, use question_key to identify commerce-dependent decisions,
+  // same approach as the behavioral detection above.
+  const COMMERCE_DEPENDENT_QUESTIONS = new Set([
+    'checkout_abandonment_revenue_leak',
+    'high_refund_rate_eroding_revenue',
+    'single_payment_gateway_risk',
+    'discount_abuse_pattern',
+    'promoted_product_out_of_stock',
+    'low_repeat_purchase_rate',
+    'dead_weight_products',
+  ]);
   for (const src of newSources) {
     if (integrationSources.has(src)) {
-      // Check if the decision's evidence references suggest integration origin
-      const hasIntegrationEvidence = decision.why.evidence_refs.some(
-        ref => ref.includes('shopify') || ref.includes('integration'),
-      );
-      if (hasIntegrationEvidence) return true;
+      if (COMMERCE_DEPENDENT_QUESTIONS.has(decision.question_key) ||
+          COMMERCE_DEPENDENT_QUESTIONS.has(decision.decision_key)) {
+        return true;
+      }
     }
   }
 

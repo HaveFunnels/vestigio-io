@@ -557,7 +557,20 @@
 				"unit": "/mo",
 				"sub": "across 9 ranked actions"
 			},
-			"data_sources_label": "Data Sources"
+			"data_sources_label": "Data Sources",
+			"guided": {
+				"step_labels": ["Decisions", "Investigation", "Map"],
+				"hero_label": "Total recoverable",
+				"hero_sub": "across 5 ranked actions",
+				"step1_hint": "Click to investigate ↓",
+				"step2_context": "P1 · Slow checkout — −$18k–42k/mo",
+				"step2_ai": "Just browsed your checkout. Payment stalls at **4.2s** — three scripts load before the form appears, and **12% of your users** are leaving at this point. That's **−$600/day** in revenue.\n\nMonthly cost: **−$18k–42k**.\n\nAlready prioritized the fix as P1 in your queue. Defer the scripts, compress checkout images, and move validation to async. Let me know when it's live — I'll run through again to confirm.\n\nCreated a map for you to monitor user behavior.",
+				"step2_chips": ["View map"],
+				"step3_leak": "Leak detected",
+				"step3_cta": "Diagnose my site",
+				"step3_micro": "60-second diagnostic. No credit card required.",
+				"step3_trust": "Connected data sources"
+			}
 		},
 		"client_gallery": {
 			"eyebrow": "Trusted by digital operators",

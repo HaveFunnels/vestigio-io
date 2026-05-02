@@ -106,7 +106,7 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 				<div className="mt-2 flex items-center justify-center gap-2.5">
 					<div className="flex -space-x-1.5">
 						{DATA_SOURCES.map((ds) => (
-							<div key={ds.alt} className="h-6 w-6 overflow-hidden rounded-full border border-white/[0.1] sm:h-7 sm:w-7">
+							<div key={ds.alt} className="h-6 w-6 overflow-hidden rounded-full sm:h-7 sm:w-7">
 								<img src={ds.src} alt={ds.alt} className="h-full w-full object-cover" loading="lazy" />
 							</div>
 						))}
@@ -142,17 +142,17 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 							<Icon className={`shrink-0 ${isP1 ? "h-5 w-5" : "h-4 w-4"} ${SEVERITY_DOT[a.severity].replace("bg-", "text-")}`} />
 							{/* Content */}
 							<div className="min-w-0 flex-1">
-								<p className={`font-medium leading-snug ${isP1 ? "text-[13px] text-zinc-100 sm:text-sm" : "text-[11px] text-zinc-300 sm:text-[12px]"}`}>
+								<p className={`font-medium leading-snug ${isP1 ? "text-[13px] text-zinc-100 sm:text-sm" : "text-[11px] text-zinc-500 sm:text-[12px]"}`}>
 									{a.title}
 								</p>
 								{isP1 && <p className="mt-0.5 hidden text-[11px] text-zinc-500 sm:block">{a.desc}</p>}
 							</div>
 							{/* Impact */}
-							<span className={`shrink-0 font-mono tabular-nums ${isP1 ? "text-[12px] sm:text-[13px]" : "hidden text-[10px] sm:block"} ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
+							<span className={`shrink-0 font-mono tabular-nums ${isP1 ? "text-[12px] sm:text-[13px]" : "text-[10px]"} ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
 								{a.impact}
 							</span>
 							{/* Severity badge */}
-							<span className={`hidden shrink-0 rounded border px-1.5 py-0.5 font-semibold uppercase md:inline-block ${isP1 ? "text-[10px]" : "text-[8px]"} ${SEVERITY_BADGE[a.severity]}`}>
+							<span className={`shrink-0 rounded border px-1.5 py-0.5 font-semibold uppercase ${isP1 ? "text-[9px] sm:text-[10px]" : "text-[7px] sm:text-[8px]"} ${SEVERITY_BADGE[a.severity]}`}>
 								{a.severity}
 							</span>
 							{/* P1 hotspot ping */}
@@ -255,7 +255,7 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
 										<span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-										<span className="text-[10px] font-semibold uppercase tracking-wider text-red-300">{tg("step2_context")}</span>
+										<span className="text-[9px] font-semibold text-red-300 sm:text-[10px]">{tg("step2_context")}</span>
 									</div>
 									<span className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-red-300">critical</span>
 								</div>

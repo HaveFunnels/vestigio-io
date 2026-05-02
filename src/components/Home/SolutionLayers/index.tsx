@@ -282,10 +282,10 @@ export default function SolutionLayers() {
 		alerts?: string[];
 	}>;
 
-	// Card order: [0] = O ciclo (top-left), [1] = O silêncio (bottom-left), [2] = O buraco (right tall)
-	const cycle = cards[0];
+	// Dictionary order: [0] = O buraco, [1] = O ciclo, [2] = O silêncio
+	const hole = cards[0];
+	const cycle = cards[1];
 	const silence = cards[2];
-	const hole = cards[1]; // "O ciclo" is [0], swap [1] and [2] for layout
 
 	return (
 		<section className="relative bg-[#090911] py-8 sm:py-10 lg:py-14">

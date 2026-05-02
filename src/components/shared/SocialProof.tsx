@@ -6,187 +6,205 @@ export interface Testimonial {
   role: string;
   company: string;
   avatar?: string;
+  /** CDN path for photo — falls back to initials if missing/broken */
+  photoSrc?: string;
+  /** Recovery value shown as emerald badge, e.g. "+R$47k/mês" */
+  recovered?: string;
 }
 
 // ── English testimonials ────────────────────────────────────────────
 const ROW1_EN: Testimonial[] = [
   {
-    quote:
-      "Vestigio found $47k in revenue leaks we had no idea existed. The ROI was obvious within the first audit cycle.",
+    quote: "I thought my site was fine. Vestigio showed me I was losing almost $12k a month just on checkout. We fixed it in two days.",
     name: "Sarah Chen",
-    role: "Head of Growth",
+    role: "E-commerce owner",
     company: "TechFlow",
+    recovered: "+$12k/mo",
   },
   {
-    quote:
-      "We stopped guessing and started deciding. The prioritized action queue changed how our team operates daily.",
-    name: "Marcus Rivera",
-    role: "CEO",
-    company: "ShopScale",
+    quote: "My patients were booking consultations online and half dropped off on the form. Vestigio pinpointed exactly where they got stuck.",
+    name: "Dr. Marcus Rivera",
+    role: "Orthopedic surgeon",
+    company: "Rivera Clinic",
+    recovered: "+$4k/mo",
   },
   {
-    quote:
-      "Every deploy, Vestigio catches regressions before customers notice. It's our revenue safety net.",
+    quote: "We were spending $5k on paid ads and didn't know the WhatsApp button wasn't even showing on mobile. Vestigio caught it on the first scan.",
     name: "Priya Patel",
-    role: "VP Engineering",
-    company: "CloudCart",
+    role: "Partner",
+    company: "Patel & Associates Law",
+    recovered: "+$3k/mo",
   },
   {
-    quote:
-      "The audit paid for itself in week one. Checkout friction was costing us $12k/month and we had no clue.",
+    quote: "I thought it was a traffic problem. Turns out checkout was freezing for 68% of mobile users. An infra issue, not a marketing one.",
     name: "David Kim",
     role: "Founder",
     company: "NexaCommerce",
+    recovered: "+$15k/mo",
   },
   {
-    quote:
-      "Finally, a tool that speaks revenue impact, not technical jargon. Our whole C-suite uses it.",
+    quote: "My accountant sent me the Vestigio report and for the first time I understood how much money I was leaving on the table every month.",
     name: "Ana Costa",
-    role: "COO",
-    company: "BrazilDigital",
+    role: "Store owner",
+    company: "Costa Boutique",
+    recovered: "+$7k/mo",
   },
   {
-    quote:
-      "Vestigio replaced our analytics, audit, and monitoring stack — one decision engine for everything.",
+    quote: "Ran the diagnostic on Friday, fixed two things Saturday. By Monday revenue was up 18%. No exaggeration.",
     name: "James Mitchell",
     role: "CTO",
     company: "ScaleOps",
+    recovered: "+$22k/mo",
   },
 ];
 
 const ROW2_EN: Testimonial[] = [
   {
-    quote:
-      "We hit 6X ROI in our second month. The impact quantification alone justified the investment.",
-    name: "Lisa Wang",
-    role: "Director of Commerce",
-    company: "PeakRetail",
+    quote: "I charge $200 per consultation and my site was losing 30% of bookings because of an SSL issue I didn't even know existed.",
+    name: "Dr. Lisa Wang",
+    role: "Dermatologist",
+    company: "Wang Dermatology",
+    recovered: "+$5k/mo",
   },
   {
-    quote:
-      "I showed the Vestigio report to our board and they immediately greenlit the budget. Data that speaks.",
+    quote: "Showed the report to my business partner and he approved the investment immediately. When you see the number in dollars, there's no argument.",
     name: "Rafael Santos",
     role: "CEO",
     company: "FunnelPro",
+    recovered: "+$10k/mo",
   },
   {
-    quote:
-      "Our checkout conversion jumped 23% after fixing what Vestigio flagged. No other tool caught it.",
+    quote: "Vestigio found our Meta pixel had been broken for 3 months. Three months throwing money away on blind retargeting.",
     name: "Emily Zhang",
-    role: "Growth Lead",
+    role: "Head of Performance",
     company: "CartGenius",
+    recovered: "+$9k/mo",
   },
   {
-    quote:
-      "The workspace perspectives let me see revenue risk from five angles. Nothing else gives that clarity.",
+    quote: "I'm an accountant and I recommend it to all my e-commerce clients. First time I've seen tech that speaks the language of finance.",
     name: "Tom Anderson",
-    role: "VP Revenue",
-    company: "DataDrive",
+    role: "CPA",
+    company: "Anderson Accounting",
+    recovered: "+$3k/mo",
   },
   {
-    quote:
-      "We were bleeding $8k/month on mobile friction alone. Vestigio found it, we fixed it in a day.",
+    quote: "On mobile my site was a disaster and I had no idea. Vestigio showed me 70% of my traffic was mobile and I was losing everything there.",
     name: "Kenji Tanaka",
-    role: "CTO",
+    role: "SaaS founder",
     company: "MobileFirst",
+    recovered: "+$6k/mo",
   },
   {
-    quote:
-      "Integration was 60 seconds. First actionable insight came 3 minutes later. That's what fast looks like.",
+    quote: "Integration took 60 seconds. First problem found came 3 minutes later. I've never seen anything this fast.",
     name: "Olivia Martinez",
     role: "Head of Digital",
     company: "GrowthLab",
+    recovered: "+$14k/mo",
   },
 ];
 
 // ── Portuguese (pt-BR) testimonials ─────────────────────────────────
+const CDN = process.env.NEXT_PUBLIC_CDN_URL || "";
+
 const ROW1_PT: Testimonial[] = [
   {
-    quote:
-      "A Vestigio encontrou R$180k em vazamentos de faturamento que não tínhamos ideia. O ROI foi óbvio no primeiro ciclo.",
+    quote: "Eu achava que meu site tava ok. A Vestigio mostrou que eu tava perdendo quase 40k por mês só no checkout. Corrigimos em dois dias.",
     name: "Lucas Mendes",
-    role: "Head de Crescimento",
+    role: "Dono de e-commerce",
     company: "TechBrasil",
+    photoSrc: `${CDN}/avatars/lucas-mendes.jpg`,
+    recovered: "+R$38k/mês",
   },
   {
-    quote:
-      "Paramos de adivinhar e começamos a decidir. A fila priorizada de ações mudou como operamos.",
-    name: "Carolina Silva",
-    role: "CEO",
-    company: "EscalaShop",
+    quote: "Meus clientes marcavam consulta pelo site e metade desistia no formulário. A Vestigio identificou exatamente onde eles travavam.",
+    name: "Dra. Carolina Silva",
+    role: "Médica dermatologista",
+    company: "Clínica Pele Viva",
+    photoSrc: `${CDN}/avatars/carolina-silva.jpg`,
+    recovered: "+R$12k/mês",
   },
   {
-    quote:
-      "Cada deploy, a Vestigio pega regressões antes dos clientes perceberem. É nossa rede de segurança.",
+    quote: "A gente gastava R$15k em tráfego pago e não sabia que o botão do WhatsApp nem aparecia no celular. Vestigio pegou isso no primeiro scan.",
     name: "Fernando Costa",
-    role: "VP Engenharia",
-    company: "CloudBR",
+    role: "Sócio",
+    company: "Costa & Advogados",
+    photoSrc: `${CDN}/avatars/fernando-costa.jpg`,
+    recovered: "+R$9k/mês",
   },
   {
-    quote:
-      "A auditoria se pagou na primeira semana. Fricção no checkout custava R$45k/mês e não sabíamos.",
+    quote: "Eu achava que era problema de tráfego. Na real, o checkout tava travando pra 68% dos clientes mobile. Problema de infra, não de marketing.",
     name: "Marcos Oliveira",
     role: "Fundador",
     company: "NexaCommerce",
+    photoSrc: `${CDN}/avatars/marcos-oliveira.jpg`,
+    recovered: "+R$45k/mês",
   },
   {
-    quote:
-      "Finalmente uma ferramenta que fala em impacto de faturamento, não jargão técnico. Todo o time usa.",
+    quote: "Meu contador me mandou o relatório da Vestigio e eu entendi pela primeira vez quanto dinheiro eu deixava na mesa todo mês.",
     name: "Ana Beatriz Santos",
-    role: "COO",
-    company: "DigitalBrasil",
+    role: "Dona de loja virtual",
+    company: "Ateliê AB",
+    photoSrc: `${CDN}/avatars/ana-santos.jpg`,
+    recovered: "+R$22k/mês",
   },
   {
-    quote:
-      "A Vestigio substituiu nosso stack de analytics, auditoria e monitoramento — uma engine de decisão.",
+    quote: "Rodei o diagnóstico na sexta, corrigi duas coisas no sábado. Na segunda o faturamento já tinha subido 18%. Sem exagero.",
     name: "Pedro Almeida",
     role: "CTO",
     company: "ScaleOps Brasil",
+    photoSrc: `${CDN}/avatars/pedro-almeida.jpg`,
+    recovered: "+R$67k/mês",
   },
 ];
 
 const ROW2_PT: Testimonial[] = [
   {
-    quote:
-      "Atingimos 6X de ROI no segundo mês. Só a quantificação de impacto já justificou o investimento.",
-    name: "Juliana Ferreira",
-    role: "Diretora Comercial",
-    company: "PeakRetail BR",
+    quote: "Eu cobro R$500 a consulta e meu site perdia 30% dos agendamentos por um problema de SSL que eu nem sabia que existia.",
+    name: "Dr. Thiago Martins",
+    role: "Cirurgião plástico",
+    company: "Instituto Martins",
+    photoSrc: `${CDN}/avatars/thiago-martins.jpg`,
+    recovered: "+R$15k/mês",
   },
   {
-    quote:
-      "Mostrei o relatório da Vestigio pro board e aprovaram o budget na hora. Dados que falam por si.",
+    quote: "Mostrei o relatório pro meu sócio e ele autorizou o investimento na hora. Quando você vê o número em reais, não tem discussão.",
     name: "Rafael Nascimento",
     role: "CEO",
     company: "FunnelPro",
+    photoSrc: `${CDN}/avatars/rafael-nascimento.jpg`,
+    recovered: "+R$31k/mês",
   },
   {
-    quote:
-      "Conversão do checkout subiu 23% depois de corrigir o que a Vestigio flagou. Nenhuma outra ferramenta pegou.",
+    quote: "A Vestigio encontrou que nosso pixel do Meta tava quebrado fazia 3 meses. Três meses jogando dinheiro fora em retargeting cego.",
     name: "Camila Rodrigues",
-    role: "Growth Lead",
+    role: "Head de Performance",
     company: "CartGenius BR",
+    photoSrc: `${CDN}/avatars/camila-rodrigues.jpg`,
+    recovered: "+R$28k/mês",
   },
   {
-    quote:
-      "As perspectivas dos workspaces me mostram risco de faturamento de 5 ângulos. Nada mais dá essa clareza.",
-    name: "Thiago Martins",
-    role: "VP Faturamento",
-    company: "DataDrive BR",
+    quote: "Sou contador e recomendo pra todos os meus clientes de e-commerce. É a primeira vez que vejo tecnologia que fala a língua do financeiro.",
+    name: "Roberto Freitas",
+    role: "Contador",
+    company: "Freitas Contabilidade",
+    photoSrc: `${CDN}/avatars/roberto-freitas.jpg`,
+    recovered: "+R$8k/mês",
   },
   {
-    quote:
-      "Estávamos perdendo R$30k/mês em fricção mobile. A Vestigio encontrou, corrigimos em um dia.",
+    quote: "No celular meu site era um desastre e eu não sabia. A Vestigio mostrou que 70% do meu tráfego era mobile e eu tava perdendo tudo ali.",
     name: "Kenji Tanaka",
-    role: "CTO",
+    role: "Dono de SaaS",
     company: "MobileFirst",
+    photoSrc: `${CDN}/avatars/kenji-tanaka.jpg`,
+    recovered: "+R$19k/mês",
   },
   {
-    quote:
-      "Integração levou 60 segundos. Primeiro insight acionável veio 3 minutos depois. Isso é velocidade.",
+    quote: "Integração levou 60 segundos. Primeiro problema encontrado veio 3 minutos depois. Nunca vi nada tão rápido.",
     name: "Mariana Costa",
     role: "Head Digital",
     company: "GrowthLab BR",
+    photoSrc: `${CDN}/avatars/mariana-costa.jpg`,
+    recovered: "+R$41k/mês",
   },
 ];
 
@@ -206,13 +224,25 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function Avatar({ name, avatar }: { name: string; avatar?: string }) {
-  if (avatar) {
+function Avatar({ name, avatar, photoSrc }: { name: string; avatar?: string; photoSrc?: string }) {
+  const src = photoSrc || avatar;
+  if (src) {
     return (
       <img
-        src={avatar}
+        src={src}
         alt={name}
         className="h-10 w-10 rounded-full object-cover"
+        onError={(e) => {
+          // Fallback to initials on load error
+          const el = e.currentTarget;
+          const parent = el.parentElement;
+          if (!parent) return;
+          el.style.display = "none";
+          const fallback = document.createElement("div");
+          fallback.className = "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-semibold text-emerald-400";
+          fallback.textContent = getInitials(name);
+          parent.appendChild(fallback);
+        }}
       />
     );
   }
@@ -225,18 +255,26 @@ function Avatar({ name, avatar }: { name: string; avatar?: string }) {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="flex w-[400px] shrink-0 flex-col justify-between rounded-xl border border-white/5 bg-white/[0.03] p-5 sm:w-[440px]">
-      <p className="mb-4 text-sm leading-relaxed text-zinc-300">
+    <div className="flex w-[340px] shrink-0 flex-col justify-between rounded-xl border border-white/5 bg-white/[0.03] p-5 sm:w-[400px]">
+      <p className="mb-4 text-sm italic leading-relaxed text-zinc-300">
         &ldquo;{t.quote}&rdquo;
       </p>
-      <div className="flex items-center gap-3">
-        <Avatar name={t.name} avatar={t.avatar} />
-        <div>
-          <p className="text-sm font-medium text-zinc-200">{t.name}</p>
-          <p className="text-xs text-zinc-400">
-            {t.role}, {t.company}
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Avatar name={t.name} avatar={t.avatar} photoSrc={t.photoSrc} />
+          <div>
+            <p className="text-sm font-medium text-zinc-200">{t.name}</p>
+            <p className="text-xs text-zinc-500">
+              {t.role}, {t.company}
+            </p>
+          </div>
         </div>
+        {t.recovered && (
+          <div className="shrink-0 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1.5">
+            <p className="text-[9px] font-medium uppercase tracking-wider text-emerald-400/70">Recuperado</p>
+            <p className="font-mono text-sm font-bold tabular-nums leading-none text-emerald-300">{t.recovered}</p>
+          </div>
+        )}
       </div>
     </div>
   );

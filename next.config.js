@@ -69,50 +69,71 @@ const nextConfig = {
 	},
 
 	async headers() {
-		return [
+		const sharedSecurityHeaders = [
 			{
-				source: "/(.*)",
+				key: "X-Content-Type-Options",
+				value: "nosniff",
+			},
+			{
+				key: "Referrer-Policy",
+				value: "strict-origin-when-cross-origin",
+			},
+			{
+				key: "X-DNS-Prefetch-Control",
+				value: "on",
+			},
+			{
+				key: "Strict-Transport-Security",
+				value: "max-age=31536000; includeSubDomains",
+			},
+			{
+				key: "Permissions-Policy",
+				value: "camera=(), microphone=(), geolocation=()",
+			},
+		];
+
+		const baseCspDirectives = [
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sanity.io https://*.paddle.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com",
+			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.sanity.io",
+			"img-src 'self' data: blob: https://cdn.sanity.io https://*.googleusercontent.com https://*.githubusercontent.com https://*.r2.cloudflarestorage.com https://cdn.vestigio.io",
+			"media-src 'self' https://cdn.vestigio.io",
+			"font-src 'self' https://fonts.gstatic.com",
+			"connect-src 'self' https://*.sanity.io https://*.paddle.com https://*.google-analytics.com wss://*.sanity.io https://cdn.vestigio.io",
+			"frame-src 'self' https://*.paddle.com https://*.sanity.io",
+			"object-src 'none'",
+			"base-uri 'self'",
+			"form-action 'self'",
+		];
+
+		return [
+			// Sanity Studio: needs frame-ancestors 'self' because NextStudio renders via iframe
+			{
+				source: "/studio/:path*",
 				headers: [
+					...sharedSecurityHeaders,
+					{
+						key: "X-Frame-Options",
+						value: "SAMEORIGIN",
+					},
+					{
+						key: "Content-Security-Policy",
+						value: [...baseCspDirectives, "frame-ancestors 'self'"].join("; "),
+					},
+				],
+			},
+			// Everything else: strict frame-ancestors 'none'
+			{
+				source: "/((?!studio).*)",
+				headers: [
+					...sharedSecurityHeaders,
 					{
 						key: "X-Frame-Options",
 						value: "DENY",
 					},
 					{
-						key: "X-Content-Type-Options",
-						value: "nosniff",
-					},
-					{
-						key: "Referrer-Policy",
-						value: "strict-origin-when-cross-origin",
-					},
-					{
-						key: "X-DNS-Prefetch-Control",
-						value: "on",
-					},
-					{
-						key: "Strict-Transport-Security",
-						value: "max-age=31536000; includeSubDomains",
-					},
-					{
-						key: "Permissions-Policy",
-						value: "camera=(), microphone=(), geolocation=()",
-					},
-					{
 						key: "Content-Security-Policy",
-						value: [
-							"default-src 'self'",
-							"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sanity.io https://*.paddle.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com",
-							"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.sanity.io",
-							"img-src 'self' data: blob: https://cdn.sanity.io https://*.googleusercontent.com https://*.githubusercontent.com https://*.r2.cloudflarestorage.com https://cdn.vestigio.io",
-							"media-src 'self' https://cdn.vestigio.io",
-							"font-src 'self' https://fonts.gstatic.com",
-							"connect-src 'self' https://*.sanity.io https://*.paddle.com https://*.google-analytics.com wss://*.sanity.io https://cdn.vestigio.io",
-							"frame-src 'self' https://*.paddle.com https://*.sanity.io",
-							"object-src 'none'",
-							"base-uri 'self'",
-							"form-action 'self'",
-							"frame-ancestors 'none'",
-						].join("; "),
+						value: [...baseCspDirectives, "frame-ancestors 'none'"].join("; "),
 					},
 				],
 			},

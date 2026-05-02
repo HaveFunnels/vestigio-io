@@ -5,7 +5,7 @@ import urlBuilder from "@sanity/image-url";
 import Image from "next/image";
 
 const config = {
-	projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "",
+	projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "9azjkl3r",
 	dataset: "production",
 	apiVersion: "2023-03-09",
 	useCdn: false,

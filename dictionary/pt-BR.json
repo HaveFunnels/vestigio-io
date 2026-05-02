@@ -48,7 +48,7 @@
 		},
 		"social_proof_strip": {
 			"before_highlight": "Empresas como a sua encontram em média 9 vazamentos críticos e ",
-			"highlight": "−R$81k/mês",
+			"highlight": "−R$31k/mês ou 27% a 43% do faturamento",
 			"after_highlight": " no primeiro diagnóstico Vestigio."
 		},
 		"hero_v2": {
@@ -1027,7 +1027,8 @@
 			"currency_symbol": "R$",
 			"url_placeholder": "Cole a URL do seu site aqui...",
 			"revenue_placeholder": "Faturamento mensal médio",
-			"cta_audit": "ANALISAR MINHA LANDING AGORA",
+			"cta_audit": "ANALISAR MEU SITE AGORA",
+			"url_nudge": "Cole a URL do seu site no campo acima para iniciar",
 			"trust_speed": "Resultado em segundos",
 			"trust_secure": "Seus dados 100% seguros",
 			"trust_free": "Gratuito e sem compromisso",

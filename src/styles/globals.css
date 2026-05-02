@@ -381,7 +381,7 @@
 
 	/* ── Shiny Input — animated emerald border for form fields ── */
 	.shiny-input {
-		--shiny-input-bg: #fafafa;
+		--shiny-input-bg: #12121e;
 		--shiny-input-highlight: #10b981;
 		border: 1.5px solid transparent;
 		background:
@@ -397,7 +397,7 @@
 	}
 
 	.shiny-input:focus {
-		--shiny-input-bg: #ffffff;
+		--shiny-input-bg: #16162a;
 		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 	}
 

@@ -217,6 +217,7 @@ const MiniCalculator = ({
 	const [state, setState] = useState<State>("input");
 	const [url, setUrl] = useState("");
 	const [revenue, setRevenue] = useState("");
+	const [urlNudge, setUrlNudge] = useState(false);
 	const [businessType, setBusinessType] = useState<BusinessType>("ecommerce");
 	const [showExtra, setShowExtra] = useState(false);
 	const [domain, setDomain] = useState("");
@@ -357,7 +358,7 @@ const MiniCalculator = ({
 				    Hover-lift, animated conic border on hover, soft inner
 				    glow. The whole section is "one big card" so the
 				    calculator stops looking like just-another-section. */}
-				<div className='vcalc-card shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] transition-[transform] duration-500 hover:-translate-y-1 sm:p-10 lg:p-14' style={{ "--shiny-card-bg": "#080812" } as React.CSSProperties}>
+				<div className='vcalc-card shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] transition-[transform] duration-500 hover:-translate-y-1 sm:p-10 lg:p-14' style={{ "--shiny-card-bg": "#0d0d18" } as React.CSSProperties}>
 					{/* Soft conic gradient halo behind the card edges */}
 					<div
 						className='pointer-events-none absolute inset-0 -z-1 opacity-50 transition-opacity duration-500 group-hover:opacity-80'
@@ -419,29 +420,44 @@ const MiniCalculator = ({
 
 								<div className='mx-auto flex max-w-[540px] flex-col items-center gap-4'>
 									{/* Domain input */}
-									<div className='flex w-full flex-col items-center gap-3 sm:flex-row'>
+									<div className='w-full'>
 										<input
 											type='text'
 											value={url}
-											onChange={(e) => setUrl(e.target.value)}
+											onChange={(e) => { setUrl(e.target.value); setUrlNudge(false); }}
 											onKeyDown={handleKeyDown}
 											placeholder={t("url_placeholder")}
 											className={domainInputClass}
 										/>
-										{!showExtra && domainReady && (
-											<div
-												className='w-full shrink-0 sm:w-auto'
-												style={{ animation: "fadeSlideUp 0.35s cubic-bezier(0.16,1,0.3,1) both" }}
-											>
-												<ShinyButton
-													onClick={handleSubmit}
-													className='w-full sm:w-auto'
-												>
-													{t("cta_audit")}
-												</ShinyButton>
-											</div>
+										{urlNudge && (
+											<p className='mt-2 text-center text-xs text-amber-400/80'>{t("url_nudge")}</p>
 										)}
 									</div>
+
+									{/* CTA — always visible below input */}
+									{!showExtra && (
+										<div className='relative w-full'>
+											{domainReady && (
+												<span className='absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5'>
+													<span className='absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60' style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
+													<span className='relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]'>
+														<svg className='h-2.5 w-2.5 text-white' fill='none' viewBox='0 0 24 24' strokeWidth={3} stroke='currentColor'>
+															<path strokeLinecap='round' strokeLinejoin='round' d='M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59' />
+														</svg>
+													</span>
+												</span>
+											)}
+											<ShinyButton
+												onClick={() => {
+													if (!domainReady) { setUrlNudge(true); return; }
+													handleSubmit();
+												}}
+												className='w-full text-base sm:w-auto sm:text-sm'
+											>
+												{t("cta_audit")}
+											</ShinyButton>
+										</div>
+									)}
 
 									{/* Revenue + Business Type — fade in from right */}
 									{showExtra && (
@@ -472,7 +488,7 @@ const MiniCalculator = ({
 											</div>
 											<ShinyButton
 												onClick={handleSubmit}
-												className='w-full sm:w-auto'
+												className='w-full text-base sm:w-auto sm:text-sm'
 											>
 												{t("cta_audit")}
 											</ShinyButton>

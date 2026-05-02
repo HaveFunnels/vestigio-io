@@ -331,10 +331,11 @@ function FlowNode({ node, size = "sm", highlighted }: { node: MapNode; size?: "s
 	);
 }
 
-// Map path builders
-const COL_X = [16.7, 50, 83.3];
-const ROW_Y = [6, 27, 50, 73, 94];
-const MAIN_COL = [1, 0, 1, 2, 1];
+// Map path builders — coordinates match CSS grid cell centers exactly
+// Mobile: 3 cols × 5 rows → col centers at 16.67/50/83.33%, row centers at 10/30/50/70/90%
+const COL_X = [16.67, 50, 83.33];
+const ROW_Y = [10, 30, 50, 70, 90];
+const MAIN_COL = [1, 0, 1, 2, 1]; // center→left→center→right→center
 
 function buildMobilePath(): string {
 	const pts = MAIN_COL.map((col, row) => ({ x: COL_X[col], y: ROW_Y[row] }));
@@ -348,9 +349,10 @@ function buildMobilePath(): string {
 	return d;
 }
 
-const DESK_COL_X = [6, 27, 50, 73, 94];
-const DESK_ROW_Y = [16.7, 50, 83.3];
-const DESK_MAIN_ROW = [1, 0, 1, 2, 1];
+// Desktop: 5 cols × 3 rows → col centers at 10/30/50/70/90%, row centers at 16.67/50/83.33%
+const DESK_COL_X = [10, 30, 50, 70, 90];
+const DESK_ROW_Y = [16.67, 50, 83.33];
+const DESK_MAIN_ROW = [1, 0, 1, 2, 1]; // middle→top→middle→bottom→middle
 
 function buildDesktopPath(): string {
 	const pts = DESK_MAIN_ROW.map((row, col) => ({ x: DESK_COL_X[col], y: DESK_ROW_Y[row] }));

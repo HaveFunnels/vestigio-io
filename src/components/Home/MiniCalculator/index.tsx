@@ -153,6 +153,7 @@ function BusinessTypeSelect({
 	t: ReturnType<typeof useTranslations>;
 }) {
 	const [open, setOpen] = useState(false);
+	const [touched, setTouched] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -168,9 +169,20 @@ function BusinessTypeSelect({
 
 	return (
 		<div ref={ref} className="relative w-full">
+			{/* Violet hotspot — disappears after first click */}
+			{!touched && (
+				<span className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5">
+					<span className="absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60" style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
+					<span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]">
+						<svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
+						</svg>
+					</span>
+				</span>
+			)}
 			<button
 				type="button"
-				onClick={() => setOpen((o) => !o)}
+				onClick={() => { setOpen((o) => !o); setTouched(true); }}
 				className="flex w-full items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3.5 text-left text-sm text-zinc-100 outline-none transition-all hover:border-zinc-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
 			>
 				<span>{t(IMPACT_PROFILES[value].label)}</span>

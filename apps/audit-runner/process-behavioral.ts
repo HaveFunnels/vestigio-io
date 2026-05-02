@@ -379,7 +379,7 @@ export function sessionsToBehavioralPayload(
     if (s.confirmation_seen) confirmation++;
 
     if (s.support_opened && s.checkout_reached) supportAfterCheckout++;
-    if (s.policy_opened && !s.reached_thank_you) policyThenAbandon++;
+    if (s.policy_opened && !s.reached_thank_you && (s.checkout_reached || (s.highest_milestone && ['intent_expressed', 'conversion_started'].includes(s.highest_milestone)))) policyThenAbandon++;
     if (s.checkout_reached && s.policy_opened && !s.reached_thank_you) highIntentDetour++;
     if (s.form_retry_count > 0 && !s.reached_thank_you) retryThenAbandon++;
 
@@ -444,9 +444,7 @@ export function sessionsToBehavioralPayload(
     ctaRenderedLate += s.cta_rendered_late_count;
 
     if (s.form_retry_count > 0) formRetry++;
-    for (const inv of s.field_inventories) {
-      if (inv.field_count > 6 || inv.has_sensitive_fields) formExcessive++;
-    }
+    if (s.field_inventories.some(inv => inv.field_count > 6 || inv.has_sensitive_fields)) formExcessive++;
 
     if (s.sensitive_input_abandon_kinds.length > 0) {
       sensitiveAbandon++;

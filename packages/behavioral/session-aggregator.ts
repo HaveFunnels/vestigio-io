@@ -294,12 +294,18 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
     }
   }
 
-  // Handle handoff return detection (if we have events after handoff)
+  // Handle handoff return detection — only count a true navigation event
+  // (page_view or route_change) after the handoff as a "return". Heartbeats,
+  // scroll_depth pings, and other background events do NOT indicate the user
+  // actually came back from the payment provider.
   if (handoffStarted) {
     const handoffIdx = events.findIndex(e => e.type === 'trusted_handoff');
-    if (handoffIdx >= 0 && handoffIdx < events.length - 1) {
-      handoffReturned = true;
-      if (confirmationSeen) handoffConfirmed = true;
+    if (handoffIdx >= 0) {
+      const hasReturnNavigation = events.slice(handoffIdx + 1).some(
+        e => e.type === 'page_view' || e.type === 'route_change'
+      );
+      handoffReturned = hasReturnNavigation;
+      if (handoffReturned && confirmationSeen) handoffConfirmed = true;
     }
   }
 

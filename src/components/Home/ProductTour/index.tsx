@@ -162,7 +162,12 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 	const [showChip, setShowChip] = useState(false);
 	const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-	// Typewriter effect
+	// Typewriter effect — click to finish instantly
+	const finishTypewriter = useCallback(() => {
+		if (intervalRef.current) clearInterval(intervalRef.current);
+		setCharIdx(fullText.length);
+	}, [fullText.length]);
+
 	useEffect(() => {
 		setCharIdx(0);
 		setShowChip(false);
@@ -172,16 +177,16 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 					clearInterval(intervalRef.current);
 					return prev;
 				}
-				return prev + 1;
+				return prev + 3; // 3 chars at a time for speed
 			});
-		}, 12);
+		}, 8);
 		return () => clearInterval(intervalRef.current);
 	}, [fullText]);
 
 	// Show chip after typewriter completes
 	useEffect(() => {
 		if (charIdx >= fullText.length) {
-			const timer = setTimeout(() => setShowChip(true), 400);
+			const timer = setTimeout(() => setShowChip(true), 300);
 			return () => clearTimeout(timer);
 		}
 	}, [charIdx, fullText.length]);
@@ -211,7 +216,7 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 							<span className="text-[10px] font-semibold text-violet-300">Vestigio AI</span>
 							<span className="h-1 w-1 rounded-full bg-violet-400 animate-pulse" />
 						</div>
-						<div className="rounded-xl rounded-tl-sm border border-violet-500/10 bg-violet-500/[0.04] px-4 py-3">
+						<div className="cursor-pointer rounded-xl rounded-tl-sm border border-violet-500/10 bg-violet-500/[0.04] px-4 py-3" onClick={finishTypewriter}>
 							<p className="whitespace-pre-line text-[12px] leading-relaxed text-zinc-300 sm:text-[13px]">
 								{renderRichText(visibleText)}
 								{charIdx < fullText.length && (
@@ -673,7 +678,7 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 						{/* Panel */}
 						<div
 							ref={panelRef}
-							className="h-[520px] shrink-0 overflow-y-auto p-4 sm:h-[540px] sm:p-6 md:h-[540px] md:p-7 lg:h-[560px] lg:p-8"
+							className="h-[520px] shrink-0 overflow-hidden p-4 sm:h-[540px] sm:p-6 md:h-[540px] md:p-7 lg:h-[560px] lg:p-8"
 						>
 							<div key={currentStep} className="h-full animate-[vptour-fade-in_0.25s_ease-out]" style={{ animationFillMode: "both" }}>
 								{currentStep === 0 && (

@@ -106,8 +106,23 @@ const nextConfig = {
 			"form-action 'self'",
 		];
 
+		// Studio CSP: extends base with core.sanity-cdn.com (bridge script)
+		const studioCspDirectives = [
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sanity.io https://core.sanity-cdn.com https://*.paddle.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com",
+			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.sanity.io",
+			"img-src 'self' data: blob: https://cdn.sanity.io https://*.googleusercontent.com https://*.githubusercontent.com https://*.r2.cloudflarestorage.com https://cdn.vestigio.io",
+			"media-src 'self' https://cdn.vestigio.io",
+			"font-src 'self' https://fonts.gstatic.com",
+			"connect-src 'self' https://*.sanity.io https://core.sanity-cdn.com https://*.paddle.com https://*.google-analytics.com wss://*.sanity.io https://cdn.vestigio.io",
+			"frame-src 'self' https://*.paddle.com https://*.sanity.io",
+			"object-src 'none'",
+			"base-uri 'self'",
+			"form-action 'self'",
+		];
+
 		return [
-			// Sanity Studio: needs frame-ancestors 'self' because NextStudio renders via iframe
+			// Sanity Studio: frame-ancestors 'self' + core.sanity-cdn.com for bridge script
 			{
 				source: "/studio/:path*",
 				headers: [
@@ -118,7 +133,7 @@ const nextConfig = {
 					},
 					{
 						key: "Content-Security-Policy",
-						value: [...baseCspDirectives, "frame-ancestors 'self'"].join("; "),
+						value: [...studioCspDirectives, "frame-ancestors 'self'"].join("; "),
 					},
 				],
 			},

@@ -111,6 +111,25 @@ const SECRET_FIELDS: Record<string, Set<string>> = {
 
 const MASK = "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"; // ••••••••
 
+// Map secret field names → env var names so the POST handler can
+// fall back to the env var when no DB row exists yet (prevents
+// writing empty string "" and permanently shadowing the env var).
+const SECRET_ENV_MAP: Record<string, string> = {
+  // smtp_config
+  password: "EMAIL_SERVER_PASSWORD",
+  // social_login_config
+  google_client_secret: "GOOGLE_CLIENT_SECRET",
+  github_client_secret: "GITHUB_CLIENT_SECRET",
+  apple_client_secret: "APPLE_CLIENT_SECRET",
+  // notification_config
+  whatsapp_api_key: "WHATSAPP_API_KEY",
+  // integrations_config
+  paddle_api_key: "PADDLE_API_KEY",
+  paddle_client_token: "NEXT_PUBLIC_PADDLE_CLIENT_TOKEN",
+  paddle_webhook_secret: "PADDLE_WEBHOOK_SECRET",
+  mailchimp_api_key: "MAILCHIMP_API_KEY",
+};
+
 function maskSecrets(
   key: string,
   data: Record<string, unknown>,
@@ -254,7 +273,7 @@ export async function POST(request: Request) {
 
       for (const field of secrets) {
         if (data[field] === MASK) {
-          data[field] = existing[field] ?? "";
+          data[field] = existing[field] ?? process.env[SECRET_ENV_MAP[field] || ""] ?? "";
         }
       }
     }

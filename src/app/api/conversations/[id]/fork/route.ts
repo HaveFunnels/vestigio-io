@@ -113,7 +113,7 @@ export const POST = withErrorTracking(
       const fork = await tx.conversation.create({
         data: {
           organizationId: source.organizationId,
-          userId: source.userId,
+          userId: userId,
           environmentId: source.environmentId,
           title: forkedTitle,
           status: "active",

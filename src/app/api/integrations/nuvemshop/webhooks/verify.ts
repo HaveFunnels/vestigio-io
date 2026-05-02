@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
 // ──────────────────────────────────────────────
 // Nuvemshop Webhook HMAC Verification
@@ -43,7 +43,7 @@ export async function verifyNuvemshopWebhook(
     .digest("hex");
 
   // Constant-time comparison to prevent timing attacks
-  if (!timingSafeEqual(hmacHeader, expectedHmac)) {
+  if (!safeCompare(hmacHeader, expectedHmac)) {
     console.warn("[nuvemshop-webhook] HMAC mismatch — rejecting request");
     return { valid: false, body: null, error: "Invalid HMAC signature" };
   }
@@ -59,12 +59,17 @@ export async function verifyNuvemshopWebhook(
 
 /**
  * Constant-time string comparison to prevent timing attacks.
+ * Uses Node.js crypto.timingSafeEqual with fixed-length buffers
+ * so length mismatches don't leak information via timing.
  */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+function safeCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    // Compare bufA against itself so the timing is constant
+    // regardless of whether lengths match.
+    timingSafeEqual(bufA, bufA);
+    return false;
   }
-  return result === 0;
+  return timingSafeEqual(bufA, bufB);
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/libs/prismaDb";
-import { decryptConfig } from "@/libs/integration-crypto";
 import { parseSignedRequest, extractMetaUserId } from "@/libs/meta-signed-request";
 
 // ──────────────────────────────────────────────
@@ -84,23 +83,26 @@ export async function POST(request: Request) {
 		);
 	}
 
-	// Find every IntegrationConnection where the encrypted config's
-	// meta_user_id matches the target. Can't filter in SQL because
-	// the config is encrypted — iterate and decrypt in memory. The
-	// cardinality is bounded by our tenant count; acceptable here.
+	// Query directly via syncMetadata JSON containment instead of
+	// bulk-decrypting all tenant credentials (O(1) vs O(N)).
+	// meta_user_id is stored in syncMetadata at connect time.
 	const candidates = await prisma.integrationConnection.findMany({
-		where: { provider: "meta_ads" },
+		where: {
+			provider: "meta_ads",
+			syncMetadata: { contains: metaUserId },
+		},
 	});
 
 	let disconnectedCount = 0;
 	for (const conn of candidates) {
-		let cfg: Record<string, string> = {};
+		// Verify the JSON match is exact (not a substring coincidence)
 		try {
-			cfg = decryptConfig(conn.config);
+			const meta = JSON.parse(conn.syncMetadata || "{}");
+			if (meta.meta_user_id !== metaUserId) continue;
 		} catch {
 			continue;
 		}
-		if (cfg.meta_user_id !== metaUserId) continue;
+
 		await prisma.integrationConnection.update({
 			where: { id: conn.id },
 			data: {

@@ -167,6 +167,7 @@ export async function GET(request: Request) {
 			status: "connected",
 			syncError: null,
 			syncMetadata: JSON.stringify({
+				meta_user_id: metaUserId,
 				token_type: tokenType,
 				token_expires_at: tokenIssuedAt + expiresInSec * 1000,
 				account_name: active.name,
@@ -179,6 +180,7 @@ export async function GET(request: Request) {
 			config: encryptedConfig,
 			status: "connected",
 			syncMetadata: JSON.stringify({
+				meta_user_id: metaUserId,
 				token_type: tokenType,
 				token_expires_at: tokenIssuedAt + expiresInSec * 1000,
 				account_name: active.name,

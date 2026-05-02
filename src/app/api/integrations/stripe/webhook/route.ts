@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { prisma } from "@/libs/prismaDb";
-import { decryptConfig } from "@/libs/integration-crypto";
 
 // ──────────────────────────────────────────────
 // Stripe Integration Webhook
@@ -128,36 +127,46 @@ export async function POST(request: Request) {
 		);
 
 		try {
-			// Find all Stripe connections and check which one matches this account
+			// Query directly via syncMetadata JSON containment instead
+			// of bulk-decrypting all tenant credentials (O(1) vs O(N)).
+			// syncMetadata is a Text column storing JSON; use $queryRaw
+			// with JSON_CONTAINS or LIKE depending on the DB engine.
+			// The stripe_user_id (acct_xxx) is public and non-sensitive,
+			// stored in syncMetadata at connect time.
 			const stripeConnections = await prisma.integrationConnection.findMany({
-				where: { provider: "stripe", status: "connected" },
+				where: {
+					provider: "stripe",
+					status: "connected",
+					syncMetadata: { contains: stripeAccountId },
+				},
 			});
 
+			// Verify the JSON match is exact (not a substring coincidence)
 			let matched = false;
 			for (const conn of stripeConnections) {
 				try {
-					const config = decryptConfig(conn.config);
-					if (config.stripe_user_id === stripeAccountId) {
-						await prisma.integrationConnection.update({
-							where: { id: conn.id },
-							data: {
-								status: "disconnected",
-								config: "", // Clear encrypted config — token is now invalid
-								syncError: "Account deauthorized by user via Stripe",
-								syncMetadata: JSON.stringify({
-									deauthorized_at: new Date().toISOString(),
-									stripe_user_id: stripeAccountId,
-								}),
-							},
-						});
-						matched = true;
-						console.log(
-							`[stripe-webhook] marked connection ${conn.id} (env=${conn.environmentId}) as disconnected`,
-						);
-					}
+					const meta = JSON.parse(conn.syncMetadata || "{}");
+					if (meta.stripe_user_id !== stripeAccountId) continue;
 				} catch {
-					// Decrypt failure — stale connection, skip
+					continue;
 				}
+
+				await prisma.integrationConnection.update({
+					where: { id: conn.id },
+					data: {
+						status: "disconnected",
+						config: "", // Clear encrypted config — token is now invalid
+						syncError: "Account deauthorized by user via Stripe",
+						syncMetadata: JSON.stringify({
+							deauthorized_at: new Date().toISOString(),
+							stripe_user_id: stripeAccountId,
+						}),
+					},
+				});
+				matched = true;
+				console.log(
+					`[stripe-webhook] marked connection ${conn.id} (env=${conn.environmentId}) as disconnected`,
+				);
 			}
 
 			if (!matched) {

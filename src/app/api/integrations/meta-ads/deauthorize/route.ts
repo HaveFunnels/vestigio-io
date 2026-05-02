@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/libs/prismaDb";
-import { decryptConfig } from "@/libs/integration-crypto";
 import { parseSignedRequest, extractMetaUserId } from "@/libs/meta-signed-request";
 
 // ──────────────────────────────────────────────
@@ -62,19 +61,27 @@ export async function POST(request: Request) {
 		return NextResponse.json({ error: "user_id_missing" }, { status: 400 });
 	}
 
+	// Query directly via syncMetadata JSON containment instead of
+	// bulk-decrypting all tenant credentials (O(1) vs O(N)).
+	// meta_user_id is stored in syncMetadata at connect time.
 	const candidates = await prisma.integrationConnection.findMany({
-		where: { provider: "meta_ads", status: "connected" },
+		where: {
+			provider: "meta_ads",
+			status: "connected",
+			syncMetadata: { contains: metaUserId },
+		},
 	});
 
 	let disconnected = 0;
 	for (const conn of candidates) {
-		let cfg: Record<string, string> = {};
+		// Verify the JSON match is exact (not a substring coincidence)
 		try {
-			cfg = decryptConfig(conn.config);
+			const meta = JSON.parse(conn.syncMetadata || "{}");
+			if (meta.meta_user_id !== metaUserId) continue;
 		} catch {
 			continue;
 		}
-		if (cfg.meta_user_id !== metaUserId) continue;
+
 		await prisma.integrationConnection.update({
 			where: { id: conn.id },
 			data: {

@@ -149,31 +149,36 @@ export async function POST(request: Request) {
   const modelTier: ModelTier = body.model_tier === "ultra" ? "ultra" : "default";
   const queryCost = TIER_QUERY_COST[modelTier];
 
-  // Check budget BEFORE consuming — verify we can afford the full cost
-  const budgetCheck = await safeIncrementMcpUsage(orgId, plan);
-  if (!budgetCheck.allowed) {
+  // Check the FULL cost upfront before any side effects. Previous
+  // code called safeIncrementMcpUsage (consuming 1 unit) then checked
+  // ultra cost separately — if ultra failed, the 1 unit was wasted.
+  const { getDailyUsageSummary } = await import("../../../../apps/platform/daily-usage");
+  const preCheck = await getDailyUsageSummary(orgId, plan);
+  const currentUsage = preCheck.usage.mcp_queries;
+  const budgetLimit = preCheck.limits.daily_mcp_budget;
+
+  if (currentUsage >= budgetLimit) {
     return NextResponse.json(
       { message: "Daily analysis budget exhausted. Try again tomorrow or upgrade your plan." },
       { status: 429 },
     );
   }
 
-  // Fire-and-forget: evaluate alert rules for mcp_usage and org_over_limit
-  evaluateAlerts("mcp_usage").catch(() => {});
-  evaluateAlerts("org_over_limit").catch(() => {});
-
-  // For ultra: check if remaining budget covers the extra cost
-  if (queryCost > 1 && budgetCheck.current + queryCost - 1 > budgetCheck.limit) {
+  if (currentUsage + queryCost > budgetLimit) {
     return NextResponse.json(
-      { message: `Not enough budget for Ultra analysis (needs ${queryCost} units, ${budgetCheck.limit - budgetCheck.current} remaining). Try Default mode.` },
+      { message: `Not enough budget for Ultra analysis (needs ${queryCost} units, ${budgetLimit - currentUsage} remaining). Try Default mode.` },
       { status: 429 },
     );
   }
 
-  // Consume extra units for ultra
-  for (let i = 1; i < queryCost; i++) {
+  // Budget confirmed — now consume all units for this query
+  for (let i = 0; i < queryCost; i++) {
     await safeIncrementMcpUsage(orgId, plan);
   }
+
+  // Fire-and-forget: evaluate alert rules for mcp_usage and org_over_limit
+  evaluateAlerts("mcp_usage").catch(() => {});
+  evaluateAlerts("org_over_limit").catch(() => {});
 
   // ── Get MCP server ─────────────────────────
   const { getMcpServer } = await import("@/lib/mcp-client");

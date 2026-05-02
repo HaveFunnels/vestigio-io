@@ -107,6 +107,13 @@ export async function GET(request: Request) {
 		connected_at: new Date().toISOString(),
 	});
 
+	// Store stripe_user_id in syncMetadata (non-sensitive, public acct_xxx)
+	// so the deauthorize webhook can query directly without bulk-decrypting.
+	const connectMetadata = JSON.stringify({
+		stripe_user_id: tokenData.stripe_user_id,
+		connected_at: new Date().toISOString(),
+	});
+
 	await prisma.integrationConnection.upsert({
 		where: {
 			environmentId_provider: { environmentId, provider: "stripe" },
@@ -115,12 +122,14 @@ export async function GET(request: Request) {
 			config: encryptedConfig,
 			status: "connected",
 			syncError: null,
+			syncMetadata: connectMetadata,
 		},
 		create: {
 			environmentId,
 			provider: "stripe",
 			config: encryptedConfig,
 			status: "connected",
+			syncMetadata: connectMetadata,
 		},
 	});
 

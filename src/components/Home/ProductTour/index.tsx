@@ -132,11 +132,17 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 							<span className={`hidden shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase md:inline-block ${SEVERITY_BADGE[a.severity]}`}>
 								{a.severity}
 							</span>
-							{/* P1 click hint */}
+							{/* P1 hotspot ping + hint */}
 							{isP1 && (
-								<span className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-60">
-									{tg("step1_hint")}
-								</span>
+								<>
+									<span className="absolute -right-1 -top-1 flex h-3 w-3">
+										<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+										<span className="relative inline-flex h-3 w-3 rounded-full bg-violet-500" />
+									</span>
+									<span className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-60">
+										{tg("step1_hint")}
+									</span>
+								</>
 							)}
 						</div>
 					);
@@ -169,7 +175,7 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 				}
 				return prev + 1;
 			});
-		}, 25);
+		}, 12);
 		return () => clearInterval(intervalRef.current);
 	}, [fullText]);
 
@@ -222,9 +228,13 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 									<button
 										key={chip}
 										onClick={onViewMap}
-										className="flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-emerald-300 transition-all hover:bg-white/[0.08]"
+										className="relative flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-3 py-1.5 text-[11px] font-medium text-emerald-300 transition-all hover:bg-emerald-500/[0.15]"
 										style={{ animation: "vptour-glow 2.5s ease-in-out infinite" }}
 									>
+										<span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+											<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+											<span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+										</span>
 										<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
 											<circle cx="5" cy="5" r="2" />
 											<circle cx="15" cy="5" r="2" />

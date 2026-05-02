@@ -568,7 +568,7 @@
 				"step2_ai": "Ich habe gerade Ihren Checkout durchsucht. Die Zahlung stockt bei **4.2s** — drei Skripte laden, bevor das Formular erscheint, und **12% Ihrer Nutzer** verlassen die Seite an diesem Punkt. Das sind **−$600/Tag** Umsatz.\n\nMonatliche Kosten: **−$18k–42k**.\n\nDie Korrektur wurde bereits als P1 in Ihrer Warteschlange priorisiert. Verschieben Sie die Skripte, komprimieren Sie die Checkout-Bilder und stellen Sie die Validierung auf async um. Sagen Sie mir Bescheid — ich prüfe erneut.\n\nIch habe eine Karte erstellt, um das Nutzerverhalten zu überwachen.",
 				"step2_chips": ["Karte ansehen"],
 				"step3_leak": "Leck erkannt",
-				"step3_cta": "Meine Website diagnostizieren",
+				"step3_cta": "Sehen, wie viel ich verliere",
 				"step3_micro": "60-Sekunden-Diagnose. Keine Kreditkarte erforderlich.",
 				"step3_trust": "Verbundene Datenquellen"
 			}

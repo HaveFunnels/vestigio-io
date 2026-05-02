@@ -567,7 +567,7 @@
 				"step2_ai": "Acabei de navegar seu checkout. O pagamento trava em **4.2s** — três scripts carregam antes do formulário aparecer, e **12% dos seus usuários** estão saindo nesse ponto. Isso representa **−R$3k por dia** no seu faturamento.\n\nCusto mensal: **−R$91k–212k**.\n\nJá priorizei a correção como P1 na sua fila. Adie os scripts, comprima as imagens do checkout e mova a validação pra async. Me avise quando aplicar — eu passo de novo pra confirmar.\n\nCriei um mapa pra você monitorar o comportamento dos usuários.",
 				"step2_chips": ["Ver mapa"],
 				"step3_leak": "Vazamento detectado",
-				"step3_cta": "Diagnosticar meu site",
+				"step3_cta": "Ver quanto estou perdendo",
 				"step3_micro": "Diagnóstico em 60 segundos. Sem cartão de crédito.",
 				"step3_trust": "Fontes de dados conectadas"
 			}

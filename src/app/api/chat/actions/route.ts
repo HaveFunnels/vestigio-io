@@ -55,11 +55,13 @@ export async function POST(request: Request) {
 
     if (!membership) return NextResponse.json({ message: "No organization" }, { status: 403 });
 
-    // Store as a platform-level note/action using McpPromptEvent table
-    // (repurposed — or create a dedicated ChatAction table in future)
-    // For now, we use the existing SuppressionRule table pattern to store user-created actions
-    // Actually, let's just use a clean approach: store in a simple JSON field on PlatformConfig
-    // or create an entry via the MCP engine's action system.
+    // F3: Verify the conversation belongs to the caller's org before writing
+    if (body.conversationId) {
+      const conv = await prisma.conversation.findFirst({
+        where: { id: body.conversationId, organizationId: membership.organizationId },
+      });
+      if (!conv) return NextResponse.json({ message: "Conversation not found" }, { status: 403 });
+    }
 
     // Simplest correct approach: create a ConversationMessage of type "action" to persist the action
     // alongside the conversation where it was discovered.

@@ -80,22 +80,14 @@ export async function GET(request: Request) {
   // The OAuth redirect is a browser GET, so the session cookie should be present.
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    // Session missing — redirect to login with a return URL that includes
-    // the store_id and token so we can complete the connection after login.
-    // For now, log the issue and redirect with an error.
+    // F2: Session missing — do NOT proceed with credential saving.
+    // Redirect to sign-in so the user can authenticate first.
     console.warn(
       `[nuvemshop-callback] No session found. Token was exchanged successfully ` +
       `(store_id=${storeId}) but user is not authenticated. ` +
-      `This can happen if the callback URL domain doesn't match the session cookie domain.`,
+      `Redirecting to sign-in. The user must re-initiate the OAuth flow after logging in.`,
     );
-    // Still try to save — find any environment that doesn't have a nuvemshop connection
-    // and save the credentials. The user can verify ownership via Data Sources.
-    try {
-      await saveNuvemshopCredentials(storeId, accessToken, null);
-      return redirect("/app/settings/data-sources?nuvemshop_connected=true");
-    } catch {
-      return redirect("/app/settings/data-sources?nuvemshop_error=unauthorized");
-    }
+    return redirect("/signin?callbackUrl=/app/settings/data-sources&nuvemshop_error=session_required");
   }
 
   const userId = (session.user as any).id;
@@ -113,36 +105,14 @@ export async function GET(request: Request) {
 async function saveNuvemshopCredentials(
   storeId: string,
   accessToken: string,
-  userId: string | null,
+  userId: string,
 ): Promise<void> {
-  // Find the environment to attach to
-  let environmentId: string | undefined;
-
-  if (userId) {
-    // User is authenticated — find their first environment
-    const membership = await prisma.membership.findFirst({
-      where: { userId },
-      include: { organization: { include: { environments: { take: 1 } } } },
-    });
-    environmentId = membership?.organization?.environments?.[0]?.id;
-  }
-
-  if (!environmentId) {
-    // Fallback: find any environment without a nuvemshop connection.
-    // This handles the no-session case and single-tenant setups.
-    // Relation is named `integrations` on Environment (Prisma schema), not
-    // `integrationConnections` — the filter is "no existing connected
-    // Nuvemshop row", which maps to the `none` filter on the relation.
-    const env = await prisma.environment.findFirst({
-      where: {
-        integrations: {
-          none: { provider: "nuvemshop", status: "connected" },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-    environmentId = env?.id;
-  }
+  // Find the environment to attach to — scoped to the user's org only
+  const membership = await prisma.membership.findFirst({
+    where: { userId },
+    include: { organization: { include: { environments: { take: 1 } } } },
+  });
+  const environmentId = membership?.organization?.environments?.[0]?.id;
 
   if (!environmentId) {
     throw new Error("No environment found to attach Nuvemshop credentials");

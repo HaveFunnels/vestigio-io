@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { z } from "zod";
@@ -61,6 +63,19 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   }
 
   const { token } = res.data;
+
+  // F4: Require authenticated session to accept invites
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { message: "Authentication required. Please sign in first.", redirect: `/signin?callbackUrl=/invite?token=${encodeURIComponent(token)}` },
+      { status: 401 },
+    );
+  }
+
+  const sessionEmail = (session.user as any).email;
+  const sessionUserId = (session.user as any).id;
+
   const result = await findValidInvite(token);
   if ("error" in result) {
     return NextResponse.json({ message: result.error }, { status: result.status });
@@ -68,13 +83,23 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 
   const { invite } = result;
 
-  // Find or create user by email
+  // F4: Enforce that the session user's email matches the invite email
+  if (!sessionEmail || sessionEmail.toLowerCase() !== invite.email.toLowerCase()) {
+    return NextResponse.json(
+      { message: `This invite was sent to ${invite.email}. Please sign in with that email address.` },
+      { status: 403 },
+    );
+  }
+
+  // Use the authenticated user — do NOT auto-create accounts from unauthenticated requests
   let user = await prisma.user.findUnique({ where: { email: invite.email } });
 
   if (!user) {
-    // Create a stub user — they will complete profile on first sign-in
+    // The session is valid but no user record exists yet (first sign-in via OAuth).
+    // Safe to create because we have verified the session email matches the invite.
     user = await prisma.user.create({
       data: {
+        id: sessionUserId,
         email: invite.email,
         name: invite.email.split("@")[0],
       },

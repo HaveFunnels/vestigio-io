@@ -54,8 +54,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "domain parameter required" }, { status: 400 });
   }
 
+  // F1+F5: Resolve org via membership (mirrors /api/chat pattern) and validate domain
+  const membershipForStream = await prisma.membership.findFirst({
+    where: { userId: user.id },
+    select: { organizationId: true },
+  });
+  const orgId = membershipForStream?.organizationId ?? user.id;
+
+  // F5: Validate that domain belongs to the user's org to prevent cross-tenant cache/data exposure
+  const env = await prisma.environment.findFirst({
+    where: { domain, organization: { memberships: { some: { userId: user.id } } } },
+    select: { id: true },
+  });
+  if (!env) {
+    return new Response('Unauthorized', { status: 403 });
+  }
+
   const encoder = new TextEncoder();
-  const cacheKey = getCacheKey(user.id, domain);
+  const cacheKey = `${user.id}:${env.id}`;
 
   // Reconnect support — replay missed events
   if (lastEventId) {
@@ -258,7 +274,7 @@ export async function GET(request: Request) {
         try {
           const server = getMcpServer();
           bootstrapMcpContextSync(server, {
-            organization_id: user.id,
+            organization_id: orgId,
             organization_name: '',
             environment_id: environmentId,
             domain: domain.replace(/^https?:\/\//, '').split('/')[0],
@@ -277,7 +293,7 @@ export async function GET(request: Request) {
           const jobRecord: AnalysisJobRecord = {
             id: jobId,
             environment_id: environmentId,
-            organization_id: user.id,
+            organization_id: orgId,
             status: 'complete',
             progress: 100,
             stages_completed: result.stages_completed,

@@ -134,7 +134,7 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 							</span>
 							{/* P1 click hint */}
 							{isP1 && (
-								<span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-60">
+								<span className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-60">
 									{tg("step1_hint")}
 								</span>
 							)}
@@ -332,16 +332,16 @@ function StepJourneyMap({ primaryCtaHref }: { primaryCtaHref: string }) {
 	return (
 		<div className="flex h-full flex-col">
 			{/* Header */}
-			<div className="mb-3 flex items-center justify-between">
-				<div>
+			<div className="mb-3">
+				<div className="flex items-center gap-2">
 					<h4 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
 						{t("header")}
 					</h4>
-					<p className="mt-0.5 text-[10px] text-zinc-600">{t("subtext")}</p>
+					<span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-semibold text-red-300">
+						{tg("step3_leak")}
+					</span>
 				</div>
-				<span className="rounded border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[9px] font-semibold text-red-300">
-					{tg("step3_leak")}
-				</span>
+				<p className="mt-0.5 text-[10px] text-zinc-600">{t("subtext")}</p>
 			</div>
 
 			{/* Mobile: vertical flowchart */}
@@ -418,25 +418,32 @@ function StepJourneyMap({ primaryCtaHref }: { primaryCtaHref: string }) {
 
 function StepIndicator({ current, labels, onSelect }: { current: Step; labels: string[]; onSelect: (s: Step) => void }) {
 	return (
-		<div className="flex items-center justify-center gap-4 py-3">
+		<div className="flex items-center justify-center gap-1 py-3">
 			{labels.map((label, i) => {
 				const isActive = current === i;
+				const isDone = i < current;
 				return (
 					<button
 						key={i}
 						onClick={() => onSelect(i as Step)}
-						className="flex items-center gap-1.5 transition-all"
-					>
-						<span className={`rounded-full transition-all duration-300 ${
+						className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
 							isActive
-								? "h-2 w-6 bg-violet-400"
-								: "h-2 w-2 bg-zinc-700 hover:bg-zinc-600"
-						}`} />
-						<span className={`text-[10px] transition-colors ${
-							isActive ? "text-zinc-300" : "text-zinc-600"
+								? "bg-violet-500/15 text-violet-300"
+								: isDone
+									? "text-emerald-400/70 hover:text-emerald-400"
+									: "text-zinc-600 hover:text-zinc-400"
+						}`}
+					>
+						<span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
+							isActive
+								? "bg-violet-400 text-white"
+								: isDone
+									? "bg-emerald-500/20 text-emerald-400"
+									: "bg-zinc-800 text-zinc-500"
 						}`}>
-							{label}
+							{i + 1}
 						</span>
+						<span>{label}</span>
 					</button>
 				);
 			})}
@@ -626,29 +633,11 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 					</div>
 
 					{/* App body */}
-					<div className="flex flex-col md:flex-row">
-						{/* Desktop sidebar */}
-						<div className="hidden w-[200px] shrink-0 border-r border-white/[0.06] bg-[#0a0a12]/60 md:block lg:w-[220px]">
-							<div className="flex h-full flex-col p-4 lg:p-5">
-								<div>
-									<div className="mb-5 flex items-center gap-2 px-2 py-2">
-										<div className="grid h-7 w-7 place-items-center rounded-md bg-violet-500/15">
-											<div className="h-2.5 w-2.5 rounded-sm bg-violet-400" />
-										</div>
-										<span className="text-sm font-semibold text-zinc-300">Vestigio</span>
-									</div>
-								</div>
-								<div className="mt-auto">
-									<SidebarRecoveryCard />
-									<SidebarDataSourcesCard />
-								</div>
-							</div>
-						</div>
-
+					<div className="flex flex-col">
 						{/* Panel */}
 						<div
 							ref={panelRef}
-							className="h-[420px] shrink-0 overflow-y-auto p-4 sm:p-6 md:h-[640px] md:flex-1 md:shrink md:p-7 lg:h-[680px] lg:p-8"
+							className="h-[520px] shrink-0 overflow-y-auto p-4 sm:h-[540px] sm:p-6 md:h-[540px] md:p-7 lg:h-[560px] lg:p-8"
 						>
 							<div key={currentStep} className="h-full animate-[vptour-fade-in_0.25s_ease-out]" style={{ animationFillMode: "both" }}>
 								{currentStep === 0 && (

@@ -70,7 +70,7 @@ const RAILS: RailDef[] = [
 
 const TrailLayer = () => (
 	<div
-		className='pointer-events-none absolute inset-x-0 top-0 -z-1 h-[300vh]'
+		className='pointer-events-none absolute inset-x-0 top-0 -z-1 h-full overflow-hidden'
 		aria-hidden
 	>
 		{RAILS.map((rail, i) => (

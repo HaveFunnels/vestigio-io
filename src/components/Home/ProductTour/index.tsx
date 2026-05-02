@@ -252,37 +252,40 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 function FlowNode({ node, size = "sm", highlighted }: { node: MapNode; size?: "sm" | "lg"; highlighted?: boolean }) {
 	const isMain = !!node.main;
 	return (
-		<div className="flex flex-col items-center gap-0.5">
-			<div
-				className={`grid place-items-center rounded-full font-mono font-bold tabular-nums ${
-					size === "lg"
-						? "h-11 w-11 text-[11px] md:h-12 md:w-12 md:text-xs"
-						: "h-8 w-8 text-[9px] md:h-9 md:w-9 md:text-[10px]"
-				} ${
-					highlighted
-						? "border-2 border-red-400/60 bg-red-950/40 text-red-300"
-						: isMain
-							? "border-2 border-emerald-400/50 bg-[#0c1a14] text-emerald-300"
-							: "border border-white/[0.08] bg-[#0d0d17] text-zinc-500"
-				}`}
-				style={highlighted ? { animation: "vptour-leak-glow 2s ease-in-out infinite" } : undefined}
-			>
-				{node.pct}%
+		<div className="flex flex-col items-center gap-1">
+			<div className="relative">
+				{/* Glow ring for highlighted */}
+				{highlighted && (
+					<div className="absolute -inset-1.5 rounded-full bg-red-500/20 blur-sm" style={{ animation: "vptour-leak-glow 2s ease-in-out infinite" }} />
+				)}
+				{isMain && !highlighted && (
+					<div className="absolute -inset-1 rounded-full bg-emerald-500/10 blur-sm" />
+				)}
+				<div
+					className={`relative grid place-items-center rounded-full font-mono font-bold tabular-nums ${
+						size === "lg"
+							? "h-10 w-10 text-[11px] md:h-11 md:w-11 md:text-xs"
+							: "h-8 w-8 text-[9px] md:h-9 md:w-9 md:text-[10px]"
+					} ${
+						highlighted
+							? "border border-red-400/60 bg-red-950/60 text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+							: isMain
+								? "border border-emerald-400/40 bg-emerald-950/40 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+								: "border border-white/[0.08] bg-[#0d0d17] text-zinc-500"
+					}`}
+				>
+					{node.pct}%
+				</div>
 			</div>
-			<span className={`max-w-[60px] truncate text-center leading-tight md:max-w-[80px] ${
+			<span className={`max-w-[70px] truncate text-center leading-tight md:max-w-[90px] ${
 				size === "lg"
-					? "text-[9px] font-semibold text-zinc-200 md:text-[11px]"
+					? "text-[9px] font-semibold text-zinc-300 md:text-[10px]"
 					: highlighted
 						? "text-[8px] font-semibold text-red-300 md:text-[9px]"
-						: "text-[8px] text-zinc-400 md:text-[9px]"
+						: "text-[8px] text-zinc-500 md:text-[9px]"
 			}`}>
 				{node.label}
 			</span>
-			{highlighted && (
-				<span className="mt-0.5 rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[8px] font-semibold text-red-300">
-					{/* Leak label injected via parent */}
-				</span>
-			)}
 		</div>
 	);
 }
@@ -347,7 +350,17 @@ function StepJourneyMap({ primaryCtaHref }: { primaryCtaHref: string }) {
 			{/* Mobile: vertical flowchart */}
 			<div className="relative flex-1 md:hidden">
 				<svg className="absolute inset-0 -z-10 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
-					<path d={buildMobilePath()} stroke="rgba(16,185,129,0.35)" strokeWidth="0.8" fill="none" vectorEffect="non-scaling-stroke" />
+					<defs>
+						<linearGradient id="pathGradMobile" x1="0%" y1="0%" x2="0%" y2="100%">
+							<stop offset="0%" stopColor="rgba(16,185,129,0.5)" />
+							<stop offset="50%" stopColor="rgba(16,185,129,0.25)" />
+							<stop offset="100%" stopColor="rgba(16,185,129,0.5)" />
+						</linearGradient>
+					</defs>
+					{/* Background path */}
+					<path d={buildMobilePath()} stroke="rgba(16,185,129,0.12)" strokeWidth="1.5" fill="none" vectorEffect="non-scaling-stroke" />
+					{/* Animated dash overlay */}
+					<path d={buildMobilePath()} stroke="url(#pathGradMobile)" strokeWidth="1.5" fill="none" vectorEffect="non-scaling-stroke" strokeDasharray="6 4" className="animate-[vptour-dash_3s_linear_infinite]" />
 				</svg>
 				<div className="relative grid h-full grid-cols-3 grid-rows-5 gap-y-2">
 					<div className="col-start-2 row-start-1 flex items-center justify-center">
@@ -369,7 +382,17 @@ function StepJourneyMap({ primaryCtaHref }: { primaryCtaHref: string }) {
 			{/* Desktop: horizontal flowchart */}
 			<div className="relative hidden flex-1 md:block">
 				<svg className="absolute inset-0 -z-10 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none">
-					<path d={buildDesktopPath()} stroke="rgba(16,185,129,0.35)" strokeWidth="0.8" fill="none" vectorEffect="non-scaling-stroke" />
+					<defs>
+						<linearGradient id="pathGradDesktop" x1="0%" y1="0%" x2="100%" y2="0%">
+							<stop offset="0%" stopColor="rgba(16,185,129,0.5)" />
+							<stop offset="50%" stopColor="rgba(16,185,129,0.25)" />
+							<stop offset="100%" stopColor="rgba(16,185,129,0.5)" />
+						</linearGradient>
+					</defs>
+					{/* Background path */}
+					<path d={buildDesktopPath()} stroke="rgba(16,185,129,0.12)" strokeWidth="1.5" fill="none" vectorEffect="non-scaling-stroke" />
+					{/* Animated dash overlay */}
+					<path d={buildDesktopPath()} stroke="url(#pathGradDesktop)" strokeWidth="1.5" fill="none" vectorEffect="non-scaling-stroke" strokeDasharray="6 4" className="animate-[vptour-dash_3s_linear_infinite]" />
 				</svg>
 				<div className="relative grid h-full grid-cols-5 grid-rows-3 gap-x-1">
 					<div className="col-start-1 row-start-2 flex items-center justify-center">
@@ -592,6 +615,10 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 				@keyframes vptour-leak-glow {
 					0%, 100% { box-shadow: 0 0 8px 2px rgba(239,68,68,0.3); }
 					50% { box-shadow: 0 0 20px 6px rgba(239,68,68,0.5); }
+				}
+				@keyframes vptour-dash {
+					0% { stroke-dashoffset: 0; }
+					100% { stroke-dashoffset: -20; }
 				}
 			`}</style>
 

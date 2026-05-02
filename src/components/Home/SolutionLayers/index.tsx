@@ -192,25 +192,36 @@ function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel:
 					{topLabel}
 				</text>
 
-				{/* THE GAP — crack zone */}
+				{/* THE GAP — crack zone with pulsing glow */}
+				<rect x="35" y="135" width="130" height="50" rx="4" fill="rgba(239,68,68,0.03)">
+					<animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite" />
+				</rect>
 				<line x1="40" y1="140" x2="160" y2="140" stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="4 3" />
 				<line x1="40" y1="180" x2="160" y2="180" stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="4 3" />
 
-				{/* Falling coins (animated) */}
-				{[0, 1, 2, 3].map((i) => (
-					<ellipse
-						key={`fall-${i}`}
-						cx={80 + i * 15}
-						rx="7"
-						ry="4"
-						fill="rgba(239,68,68,0.4)"
-						stroke="rgba(239,68,68,0.5)"
-						strokeWidth="1"
-					>
-						<animate attributeName="cy" values="135;185" dur="1.8s" begin={`${i * 0.4}s`} repeatCount="indefinite" />
-						<animate attributeName="opacity" values="0.8;0.1" dur="1.8s" begin={`${i * 0.4}s`} repeatCount="indefinite" />
-					</ellipse>
-				))}
+				{/* Falling coins — fall from top zone through gap into bottom zone */}
+				{[0, 1, 2, 3, 4].map((i) => {
+					const dur = 2.2 + i * 0.15;
+					const delay = i * 0.5;
+					const cx = 72 + i * 14;
+					return (
+						<g key={`fall-${i}`}>
+							{/* Coin body */}
+							<ellipse cx={cx} rx="8" ry="4.5" fill="rgba(16,185,129,0.5)" stroke="rgba(16,185,129,0.6)" strokeWidth="1">
+								<animate attributeName="cy" values={`55;160;250`} dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" keySplines="0.4 0 1 1;0.4 0 1 1" calcMode="spline" />
+								<animate attributeName="fill" values="rgba(16,185,129,0.5);rgba(239,68,68,0.5);rgba(239,68,68,0.15)" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
+								<animate attributeName="stroke" values="rgba(16,185,129,0.6);rgba(239,68,68,0.5);rgba(239,68,68,0.1)" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
+								<animate attributeName="opacity" values="0.9;0.7;0" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
+							</ellipse>
+							{/* Dollar sign on coin */}
+							<text x={cx} textAnchor="middle" fontSize="5" fontWeight="bold" fill="rgba(255,255,255,0.6)" fontFamily="ui-monospace">
+								$
+								<animate attributeName="y" values={`57;162;252`} dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" keySplines="0.4 0 1 1;0.4 0 1 1" calcMode="spline" />
+								<animate attributeName="opacity" values="0.7;0.4;0" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
+							</text>
+						</g>
+					);
+				})}
 
 				{/* Question mark in the gap */}
 				<text x={W / 2} y={167} textAnchor="middle" fontSize="28" fontWeight="bold" fill="rgba(255,255,255,0.06)" fontFamily="ui-sans-serif">?</text>

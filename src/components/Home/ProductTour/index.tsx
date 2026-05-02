@@ -106,10 +106,10 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 							onClick={isP1 ? onClickP1 : undefined}
 							className={`group relative flex items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-all sm:gap-3 sm:px-4 sm:py-3 ${
 								isP1
-									? "cursor-pointer border-white/[0.12] bg-white/[0.04] hover:bg-white/[0.06]"
+									? "cursor-pointer border-white/30 bg-white/[0.06] hover:bg-white/[0.10]"
 									: "border-white/[0.06] bg-white/[0.02]"
 							}`}
-							style={isP1 ? { animation: "vptour-click-pulse 2.5s ease-in-out infinite" } : undefined}
+							style={isP1 ? { animation: "vptour-click-pulse 1.5s ease-in-out infinite" } : undefined}
 						>
 							{/* Priority badge */}
 							<span className="mt-0.5 shrink-0 font-mono text-[10px] font-bold tabular-nums text-zinc-500">
@@ -132,17 +132,16 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 							<span className={`hidden shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase md:inline-block ${SEVERITY_BADGE[a.severity]}`}>
 								{a.severity}
 							</span>
-							{/* P1 hotspot ping + hint */}
+							{/* P1 hotspot ping */}
 							{isP1 && (
-								<>
-									<span className="absolute -right-1 -top-1 flex h-3 w-3">
-										<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
-										<span className="relative inline-flex h-3 w-3 rounded-full bg-violet-500" />
+								<span className="absolute -right-1.5 -top-1.5 flex h-5 w-5">
+									<span className="absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60" style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
+									<span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]">
+										<svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+											<path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
+										</svg>
 									</span>
-									<span className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-60">
-										{tg("step1_hint")}
-									</span>
-								</>
+								</span>
 							)}
 						</div>
 					);
@@ -231,9 +230,9 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 										className="relative flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-3 py-1.5 text-[11px] font-medium text-emerald-300 transition-all hover:bg-emerald-500/[0.15]"
 										style={{ animation: "vptour-glow 2.5s ease-in-out infinite" }}
 									>
-										<span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
-											<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-											<span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+										<span className="absolute -right-1 -top-1 flex h-4 w-4">
+											<span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
+											<span className="relative inline-flex h-4 w-4 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
 										</span>
 										<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
 											<circle cx="5" cy="5" r="2" />
@@ -615,8 +614,8 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 					to   { opacity: 1; transform: translateY(0); }
 				}
 				@keyframes vptour-click-pulse {
-					0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.3); }
-					50% { box-shadow: 0 0 0 6px rgba(255,255,255,0.0); }
+					0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.5); }
+					50% { box-shadow: 0 0 0 10px rgba(139,92,246,0.0); }
 				}
 				@keyframes vptour-glow {
 					0%, 100% { box-shadow: 0 0 8px 2px rgba(255,255,255,0.06); }

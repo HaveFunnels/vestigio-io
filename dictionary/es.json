@@ -558,7 +558,20 @@
 				"sub": "en 9 acciones priorizadas"
 			},
 			"data_sources_label": "Fuentes de Datos",
-			"section_headline": "Dentro de tu motor de decisiones"
+			"section_headline": "Dentro de tu motor de decisiones",
+			"guided": {
+				"step_labels": ["Decisiones", "Investigación", "Mapa"],
+				"hero_label": "Total recuperable",
+				"hero_sub": "en 5 acciones priorizadas",
+				"step1_hint": "Haz clic para investigar ↓",
+				"step2_context": "P1 · Checkout lento — −$18k–42k/mes",
+				"step2_ai": "Acabo de navegar tu checkout. El pago se traba en **4.2s** — tres scripts cargan antes de que aparezca el formulario, y **12% de tus usuarios** están saliendo en este punto. Eso representa **−$600/día** en tu facturación.\n\nCosto mensual: **−$18k–42k**.\n\nYa prioricé la corrección como P1 en tu cola. Aplaza los scripts, comprime las imágenes del checkout y mueve la validación a async. Avísame cuando lo apliques — paso de nuevo a confirmar.\n\nCreé un mapa para que monitorees el comportamiento de los usuarios.",
+				"step2_chips": ["Ver mapa"],
+				"step3_leak": "Fuga detectada",
+				"step3_cta": "Diagnosticar mi sitio",
+				"step3_micro": "Diagnóstico en 60 segundos. Sin tarjeta de crédito.",
+				"step3_trust": "Fuentes de datos conectadas"
+			}
 		},
 		"client_gallery": {
 			"eyebrow": "Confianza de operadores digitales",

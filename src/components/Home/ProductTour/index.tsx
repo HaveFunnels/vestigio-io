@@ -277,9 +277,9 @@ function FlowNode({ node, size = "sm", highlighted }: { node: MapNode; size?: "s
 							: "h-8 w-8 text-[9px] md:h-9 md:w-9 md:text-[10px]"
 					} ${
 						highlighted
-							? "border border-red-400/60 bg-red-950/60 text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+							? "border border-red-400/60 bg-[#1a0a0a] text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.3)]"
 							: isMain
-								? "border border-emerald-400/40 bg-emerald-950/40 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+								? "border border-emerald-400/40 bg-[#0a1510] text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
 								: "border border-white/[0.08] bg-[#0d0d17] text-zinc-500"
 					}`}
 				>

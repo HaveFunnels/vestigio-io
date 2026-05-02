@@ -13,7 +13,6 @@ import MiniCalculator from "./MiniCalculator";
 // browser needs it. This cuts the initial JS payload by ~60%.
 
 const SolutionLayers = dynamic(() => import("./SolutionLayers"));
-const FeaturesWithImage = dynamic(() => import("./FeaturesWithImage"));
 const Features = dynamic(() => import("./Features"));
 const Counter = dynamic(() => import("./Counter"));
 const VideoTestimonials = dynamic(() => import("./VideoTestimonials"));
@@ -44,7 +43,6 @@ const Home = () => {
 			</HomeBigCard>
 			<MiniCalculator />
 			<SocialProof rows="row1" />
-			<FeaturesWithImage />
 			<SolutionLayers />
 			<VideoTestimonials />
 			<Counter />

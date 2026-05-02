@@ -709,42 +709,26 @@
 			"section_label": "O problema",
 			"title": "Tráfego não é o problema. Escalar um sistema quebrado é.",
 			"subtitle": "",
-			"layers": [
+			"cards": [
 				{
-					"eyebrow": "O gap",
-					"title": "Cliques custam dinheiro. Drop-offs custam mais.",
-					"body": "Você vê o ad spend. Você vê a receita. O gap entre eles? É a parte que ninguém está medindo.",
-					"support": ""
+					"eyebrow": "O buraco",
+					"title": "Você paga pelo clique. Mas até a compra, tem um buraco.",
+					"body": "Você vê quanto gasta em ads. Vê o faturamento. Mas o que acontece no meio? Quem desistiu? Onde? Por quê? Ninguém mede quanto dói no seu bolso.",
+					"top_label": "R$15k ads",
+					"bottom_label": "R$8k receita"
 				},
 				{
 					"eyebrow": "O ciclo",
-					"title": "Você escala o problema junto com o tráfego.",
-					"body": "Você muda os anúncios esperando que os números melhorem. Mas a landing page agora contradiz o criativo. O drop-off mudou de lugar — não desapareceu. E você só vai saber quando os números chegarem mês que vem.",
-					"support": ""
+					"title": "Você tenta consertar, mas o problema só muda de lugar.",
+					"body": "Muda o anúncio achando que vai melhorar. Mas a landing agora não combina com o criativo. A desistência não sumiu. Só mudou de página. E você só descobre no fim do mês.",
+					"stages": ["Anúncio", "Landing", "Checkout"]
 				},
 				{
 					"eyebrow": "O silêncio",
-					"title": "Você não conserta o que não consegue ver.",
-					"body": "Sem log de erro. Sem ticket de suporte. Sem email irritado. Em algum ponto entre a landing page e o pagamento, o comprador desiste. Seu analytics diz \"sessão encerrada.\" Isso não é um insight. É um dar de ombros.",
-					"support": ""
+					"title": "Ninguém reclama. O dinheiro só para de entrar.",
+					"body": "Sem erro no sistema. Sem ticket de suporte. Sem email bravo. Em algum ponto entre sua landing e o pagamento, o comprador simplesmente saiu. Seu analytics diz 'sessão encerrada'. Isso não é resposta. É um ponto de interrogação.",
+					"alerts": ["0 alertas", "0 erros", "0 tickets"]
 				}
-			],
-			"tools": [
-				[
-					"Ad spend",
-					"Receita",
-					"O gap"
-				],
-				[
-					"Criativos",
-					"Landing pages",
-					"Drop-off"
-				],
-				[
-					"Sessões",
-					"Comportamento",
-					"Evidência"
-				]
 			],
 			"closing": "Você pode continuar escalando sem ver isso. Ou pode enxergar."
 		},

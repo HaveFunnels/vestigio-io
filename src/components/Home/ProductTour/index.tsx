@@ -103,10 +103,10 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 					<span className="ml-1 text-sm font-normal text-emerald-400/60">{recoveryUnit}</span>
 				</div>
 				{/* Stacked integration icons + subtext */}
-				<div className="mt-2 flex items-center justify-center gap-2">
+				<div className="mt-2 flex items-center justify-center gap-2.5">
 					<div className="flex -space-x-1.5">
 						{DATA_SOURCES.map((ds) => (
-							<div key={ds.alt} className="h-4 w-4 overflow-hidden rounded-full border border-white/[0.08]">
+							<div key={ds.alt} className="h-6 w-6 overflow-hidden rounded-full border border-white/[0.1] sm:h-7 sm:w-7">
 								<img src={ds.src} alt={ds.alt} className="h-full w-full object-cover" loading="lazy" />
 							</div>
 						))}
@@ -138,8 +138,8 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 								...(isP1 ? { animation: "vptour-click-pulse 1.5s ease-in-out infinite" } : {}),
 							}}
 						>
-							{/* Icon */}
-							<Icon className={`shrink-0 ${isP1 ? "h-4 w-4" : "h-3.5 w-3.5"} ${isPositive ? "text-emerald-400" : "text-zinc-500"}`} />
+							{/* Icon — color matches severity */}
+							<Icon className={`shrink-0 ${isP1 ? "h-5 w-5" : "h-4 w-4"} ${SEVERITY_DOT[a.severity].replace("bg-", "text-")}`} />
 							{/* Content */}
 							<div className="min-w-0 flex-1">
 								<p className={`font-medium leading-snug ${isP1 ? "text-[13px] text-zinc-100 sm:text-sm" : "text-[11px] text-zinc-300 sm:text-[12px]"}`}>
@@ -219,33 +219,57 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 
 	return (
 		<div className="flex h-full flex-col">
-			{/* Context breadcrumb */}
-			<div className="mb-4 flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-				<span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-				<span className="text-[11px] font-medium text-zinc-400">
-					{tg("step2_context")}
-				</span>
-			</div>
-
-			{/* AI response bubble */}
+			{/* AI response */}
 			<div className="flex-1">
-				<div className="flex items-start gap-3">
+				<div className="flex items-start gap-2.5 sm:gap-3">
 					{/* AI avatar */}
 					<div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-violet-500/15">
 						<div className="h-2 w-2 rounded-sm bg-violet-400" />
 					</div>
 					<div className="min-w-0 flex-1">
-						<div className="mb-1 flex items-center gap-2">
+						<div className="mb-1.5 flex items-center gap-2">
 							<span className="text-[10px] font-semibold text-violet-300">Vestigio AI</span>
 							<span className="h-1 w-1 rounded-full bg-violet-400 animate-pulse" />
 						</div>
-						<div className="cursor-pointer rounded-xl rounded-tl-sm border border-violet-500/10 bg-violet-500/[0.04] px-4 py-3" onClick={finishTypewriter}>
-							<p className="whitespace-pre-line text-[12px] leading-relaxed text-zinc-300 sm:text-[13px]">
-								{renderRichText(visibleText)}
-								{charIdx < fullText.length && (
-									<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-violet-400" />
-								)}
-							</p>
+
+						{/* Chat bubble with rich content */}
+						<div className="cursor-pointer overflow-hidden rounded-xl rounded-tl-sm border border-violet-500/10 bg-violet-500/[0.04]" onClick={finishTypewriter}>
+							{/* Reasoning badges — like Claude's thinking */}
+							<div className="flex flex-wrap gap-1.5 border-b border-violet-500/10 bg-violet-500/[0.03] px-3 py-2 sm:px-4">
+								<span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[9px] font-medium text-violet-300">
+									<svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+									25 páginas analisadas
+								</span>
+								<span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-medium text-emerald-300">
+									<svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+									Navegador verificou
+								</span>
+								<span className="hidden items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[9px] font-medium text-sky-300 sm:inline-flex">
+									<svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" /></svg>
+									3 fontes cruzadas
+								</span>
+							</div>
+
+							{/* Embedded finding card */}
+							<div className="mx-3 mt-3 rounded-lg border border-red-500/20 bg-red-500/[0.04] px-3 py-2 sm:mx-4">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+										<span className="text-[10px] font-semibold uppercase tracking-wider text-red-300">{tg("step2_context")}</span>
+									</div>
+									<span className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-red-300">critical</span>
+								</div>
+							</div>
+
+							{/* AI text */}
+							<div className="px-3 py-3 sm:px-4">
+								<p className="whitespace-pre-line text-[12px] leading-relaxed text-zinc-300 sm:text-[13px]">
+									{renderRichText(visibleText)}
+									{charIdx < fullText.length && (
+										<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-violet-400" />
+									)}
+								</p>
+							</div>
 						</div>
 
 						{/* Chips */}

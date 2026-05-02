@@ -184,8 +184,8 @@
 					},
 					{
 						"priority": "check",
-						"title": "Política de devolução já está no checkout",
-						"desc": "Sua taxa de chargeback está abaixo do benchmark do mercado — continue assim",
+						"title": "Usuários encontram o suporte mais rápido agora — continue monitorando",
+						"desc": "Tempo médio até o contato caiu 40% desde o último ciclo",
 						"impact": "+R$6k–15k",
 						"severity": "low"
 					},

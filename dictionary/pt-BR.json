@@ -155,39 +155,39 @@
 				"count": "9 ações priorizadas",
 				"rows": [
 					{
-						"priority": "P1",
-						"title": "Acelere seu checkout — está te custando −R$91k–210k/mês",
+						"priority": "cart",
+						"title": "Acelere seu checkout — está te custando −R$30k–70k/mês",
 						"desc": "68% dos seus compradores mobile desistem esperando sua página de pagamento carregar",
-						"impact": "−R$91k–210k",
+						"impact": "−R$30k–70k",
 						"severity": "critical"
 					},
 					{
-						"priority": "P2",
+						"priority": "cursor",
 						"title": "Coloque seu botão de compra acima da dobra no mobile",
 						"desc": "68% das suas sessões mobile exigem scroll pra encontrar o botão de compra",
-						"impact": "−R$60k–140k",
+						"impact": "−R$20k–47k",
 						"severity": "critical"
 					},
 					{
-						"priority": "P3",
+						"priority": "shield",
 						"title": "Corrija o alerta de segurança na sua página de pagamento",
 						"desc": "12% dos seus compradores veem um aviso de 'Não seguro' na hora de digitar o cartão",
-						"impact": "−R$40k–105k",
+						"impact": "−R$13k–35k",
 						"severity": "critical"
 					},
 					{
-						"priority": "P4",
+						"priority": "filter",
 						"title": "Pare de resetar seus filtros de produto na navegação",
 						"desc": "Seus compradores perdem a seleção toda vez que clicam — e recomeçam do zero",
-						"impact": "−R$25k–70k",
+						"impact": "−R$8k–23k",
 						"severity": "high"
 					},
 					{
-						"priority": "P5",
-						"title": "Adicione sua política de devolução ao fluxo de checkout",
-						"desc": "Sua taxa de chargeback está 2,1x acima do mercado quando a política não aparece",
-						"impact": "−R$18k–45k",
-						"severity": "high"
+						"priority": "check",
+						"title": "Política de devolução já está no checkout",
+						"desc": "Sua taxa de chargeback está abaixo do benchmark do mercado — continue assim",
+						"impact": "+R$6k–15k",
+						"severity": "low"
 					},
 					{
 						"priority": "P6",
@@ -553,7 +553,7 @@
 			},
 			"overlay_recovery": {
 				"eyebrow": "Recuperável",
-				"value": "+R$ 336k",
+				"value": "+R$ 112k",
 				"unit": "/mês",
 				"sub": "em 9 ações priorizadas"
 			},
@@ -561,10 +561,10 @@
 			"guided": {
 				"step_labels": ["Decisões", "Investigação", "Mapa"],
 				"hero_label": "Total recuperável",
-				"hero_sub": "em 5 ações ranqueadas",
+				"hero_sub": "baseado em suas integrações",
 				"step1_hint": "Clique para investigar ↓",
-				"step2_context": "P1 · Checkout lento — −R$91k–212k/mês",
-				"step2_ai": "Acabei de navegar seu checkout. O pagamento trava em **4.2s** — três scripts carregam antes do formulário aparecer, e **12% dos seus usuários** estão saindo nesse ponto. Isso representa **−R$3k por dia** no seu faturamento.\n\nCusto mensal: **−R$91k–212k**.\n\nJá priorizei a correção como P1 na sua fila. Adie os scripts, comprima as imagens do checkout e mova a validação pra async. Me avise quando aplicar — eu passo de novo pra confirmar.\n\nCriei um mapa pra você monitorar o comportamento dos usuários.",
+				"step2_context": "Checkout lento — −R$30k–70k/mês",
+				"step2_ai": "Acabei de navegar seu checkout. O pagamento trava em **4.2s** — três scripts carregam antes do formulário aparecer, e **12% dos seus usuários** estão saindo nesse ponto. Isso representa **−R$1k por dia** no seu faturamento.\n\nCusto mensal: **−R$30k–70k**.\n\nJá priorizei a correção na sua fila. Adie os scripts, comprima as imagens do checkout e mova a validação pra async. Me avise quando aplicar — eu passo de novo pra confirmar.\n\nCriei um mapa pra você monitorar o comportamento dos usuários.",
 				"step2_chips": ["Ver mapa"],
 				"step3_leak": "Vazamento detectado",
 				"step3_cta": "Ver quanto estou perdendo",

@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState, useRef, useCallback, useEffect, type ReactNode } from "react";
 import { ShinyButton } from "@/components/ui/shiny-button";
+import { ShoppingCart, MousePointerClick, ShieldCheck, SlidersHorizontal, CircleCheckBig } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────
 // Types
@@ -57,6 +58,14 @@ const SEVERITY_BADGE: Record<Severity, string> = {
 	low: "border-sky-500/30 bg-sky-500/10 text-sky-300",
 };
 
+const PRIORITY_ICON: Record<string, typeof ShoppingCart> = {
+	cart: ShoppingCart,
+	cursor: MousePointerClick,
+	shield: ShieldCheck,
+	filter: SlidersHorizontal,
+	check: CircleCheckBig,
+};
+
 // ─────────────────────────────────────────────────────────────────────
 // Rich text helper (renders **bold** markers from translation strings)
 // ─────────────────────────────────────────────────────────────────────
@@ -93,43 +102,57 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 					{recoveryValue}
 					<span className="ml-1 text-sm font-normal text-emerald-400/60">{recoveryUnit}</span>
 				</div>
-				<p className="mt-1 text-[10px] text-zinc-600">{tg("hero_sub")}</p>
+				{/* Stacked integration icons + subtext */}
+				<div className="mt-2 flex items-center justify-center gap-2">
+					<div className="flex -space-x-1.5">
+						{DATA_SOURCES.map((ds) => (
+							<div key={ds.alt} className="h-4 w-4 overflow-hidden rounded-full border border-white/[0.08]">
+								<img src={ds.src} alt={ds.alt} className="h-full w-full object-cover" loading="lazy" />
+							</div>
+						))}
+					</div>
+					<p className="text-[10px] text-zinc-500">{tg("hero_sub")}</p>
+				</div>
 			</div>
 
 			{/* Action rows */}
-			<div className="space-y-1.5">
+			<div className="space-y-1">
 				{rows.map((a, i) => {
 					const isP1 = i === 0;
+					const isPositive = a.impact.startsWith("+");
+					const Icon = PRIORITY_ICON[a.priority] || ShoppingCart;
+					// Gradually fade non-P1 rows
+					const fadeOpacity = isP1 ? 1 : 1 - i * 0.15;
+
 					return (
 						<div
 							key={a.priority}
 							onClick={isP1 ? onClickP1 : undefined}
-							className={`group relative flex items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-all sm:gap-3 sm:px-4 sm:py-3 ${
+							className={`group relative flex items-center gap-2.5 rounded-lg border transition-all sm:gap-3 ${
 								isP1
-									? "cursor-pointer border-white/30 bg-white/[0.06] hover:bg-white/[0.10]"
-									: "border-white/[0.06] bg-white/[0.02]"
+									? "cursor-pointer border-white/30 bg-white/[0.06] px-3 py-3 hover:bg-white/[0.10] sm:px-4 sm:py-3.5"
+									: "border-white/[0.06] bg-white/[0.02] px-3 py-2 sm:px-4 sm:py-2.5"
 							}`}
-							style={isP1 ? { animation: "vptour-click-pulse 1.5s ease-in-out infinite" } : undefined}
+							style={{
+								opacity: fadeOpacity,
+								...(isP1 ? { animation: "vptour-click-pulse 1.5s ease-in-out infinite" } : {}),
+							}}
 						>
-							{/* Priority badge */}
-							<span className="mt-0.5 shrink-0 font-mono text-[10px] font-bold tabular-nums text-zinc-500">
-								{a.priority}
-							</span>
-							{/* Severity dot */}
-							<span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[a.severity]}`} />
+							{/* Icon */}
+							<Icon className={`shrink-0 ${isP1 ? "h-4 w-4" : "h-3.5 w-3.5"} ${isPositive ? "text-emerald-400" : "text-zinc-500"}`} />
 							{/* Content */}
 							<div className="min-w-0 flex-1">
-								<p className="text-[12px] font-medium leading-snug text-zinc-200 sm:text-[13px]">
+								<p className={`font-medium leading-snug ${isP1 ? "text-[13px] text-zinc-100 sm:text-sm" : "text-[11px] text-zinc-300 sm:text-[12px]"}`}>
 									{a.title}
 								</p>
-								<p className="mt-0.5 hidden text-[11px] text-zinc-500 sm:block">{a.desc}</p>
+								{isP1 && <p className="mt-0.5 hidden text-[11px] text-zinc-500 sm:block">{a.desc}</p>}
 							</div>
 							{/* Impact */}
-							<span className="hidden shrink-0 font-mono text-[11px] tabular-nums text-red-400 sm:block">
+							<span className={`shrink-0 font-mono tabular-nums ${isP1 ? "text-[12px] sm:text-[13px]" : "hidden text-[10px] sm:block"} ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
 								{a.impact}
 							</span>
-							{/* Severity badge (desktop) */}
-							<span className={`hidden shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase md:inline-block ${SEVERITY_BADGE[a.severity]}`}>
+							{/* Severity badge */}
+							<span className={`hidden shrink-0 rounded border px-1.5 py-0.5 font-semibold uppercase md:inline-block ${isP1 ? "text-[10px]" : "text-[8px]"} ${SEVERITY_BADGE[a.severity]}`}>
 								{a.severity}
 							</span>
 							{/* P1 hotspot ping */}
@@ -235,9 +258,13 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 										className="relative flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-3 py-1.5 text-[11px] font-medium text-emerald-300 transition-all hover:bg-emerald-500/[0.15]"
 										style={{ animation: "vptour-glow 2.5s ease-in-out infinite" }}
 									>
-										<span className="absolute -right-1 -top-1 flex h-4 w-4">
-											<span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
-											<span className="relative inline-flex h-4 w-4 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+										<span className="absolute -right-1 -top-1 flex h-5 w-5">
+											<span className="absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60" style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
+											<span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]">
+												<svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+													<path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
+												</svg>
+											</span>
 										</span>
 										<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
 											<circle cx="5" cy="5" r="2" />
@@ -426,24 +453,13 @@ function StepJourneyMap({ primaryCtaHref }: { primaryCtaHref: string }) {
 			</div>
 
 			{/* CTA */}
-			<div className="mt-4 flex flex-col items-center gap-3 border-t border-white/[0.06] pt-4" style={{ animation: "vptour-fade-in 0.5s ease-out 0.5s both" }}>
+			<div className="mt-4 flex flex-col items-center gap-2 border-t border-white/[0.06] pt-4" style={{ animation: "vptour-fade-in 0.5s ease-out 0.5s both" }}>
 				<Link href={primaryCtaHref} className="inline-block" style={{ animation: "vptour-glow 2.5s ease-in-out infinite" }}>
 					<ShinyButton className="w-full sm:w-auto">
 						{tg("step3_cta")}
 					</ShinyButton>
 				</Link>
-				{/* Data sources */}
-				<div className="flex items-center gap-3">
-					<span className="text-[9px] text-zinc-600">{tg("step3_trust")}</span>
-					<div className="flex gap-1">
-						{DATA_SOURCES.map((ds) => (
-							<div key={ds.alt} className="h-4 w-4 overflow-hidden rounded-full border border-white/[0.08]">
-								<img src={ds.src} alt={ds.alt} className="h-full w-full object-cover" loading="lazy" />
-							</div>
-						))}
-					</div>
-				</div>
-				<p className="text-[10px] text-zinc-600">{tg("step3_micro")}</p>
+				<p className="text-[10px] text-zinc-400">{tg("step3_micro")}</p>
 			</div>
 		</div>
 	);
@@ -562,14 +578,28 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 	const [currentStep, setCurrentStep] = useState<Step>(0);
 	const [interactionMode, setInteractionMode] = useState<"auto" | "user">("auto");
 	const [typewriterDone, setTypewriterDone] = useState(false);
+	const [inView, setInView] = useState(false);
+	const sectionRef = useRef<HTMLDivElement>(null);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+	// Start tour only when scrolled into view
+	useEffect(() => {
+		const el = sectionRef.current;
+		if (!el) return;
+		const obs = new IntersectionObserver(
+			([entry]) => { if (entry.isIntersecting) { setInView(true); obs.disconnect(); } },
+			{ threshold: 0.3 },
+		);
+		obs.observe(el);
+		return () => obs.disconnect();
+	}, []);
+
 	const stepLabels = tg.raw("step_labels") as string[];
 
-	// Auto-advance
+	// Auto-advance (only after in view)
 	useEffect(() => {
-		if (interactionMode !== "auto") return;
+		if (interactionMode !== "auto" || !inView) return;
 
 		// Step 1 (actions): wait 6s then advance
 		if (currentStep === 0) {
@@ -592,7 +622,7 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 			}, STEP_DURATIONS[2]);
 			return () => clearTimeout(timerRef.current);
 		}
-	}, [currentStep, interactionMode, typewriterDone]);
+	}, [currentStep, interactionMode, typewriterDone, inView]);
 
 	// Track typewriter completion from StepInvestigation
 	useEffect(() => {
@@ -612,7 +642,7 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 	}, [pauseAndAdvance]);
 
 	return (
-		<section id="product-tour" className="relative scroll-mt-24 pt-2 pb-4 sm:pt-3 sm:pb-6 lg:pt-4 lg:pb-8">
+		<section ref={sectionRef} id="product-tour" className="relative scroll-mt-24 pt-2 pb-4 sm:pt-3 sm:pb-6 lg:pt-4 lg:pb-8">
 			<style>{`
 				@keyframes vptour-fade-in {
 					from { opacity: 0; transform: translateY(4px); }

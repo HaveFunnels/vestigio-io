@@ -198,14 +198,19 @@ export function summarizeImpact(valueCases: QuantifiedValueCase[]): ImpactSummar
   let totalConfidence = 0;
 
   for (const vc of valueCases) {
-    totalMin += vc.estimated_impact.range.min;
-    totalMax += vc.estimated_impact.range.max;
     totalConfidence += vc.confidence;
 
-    const mid = (vc.estimated_impact.range.min + vc.estimated_impact.range.max) / 2;
-    if (mid > highestValue) {
-      highestValue = mid;
-      highestIssue = vc.cause;
+    // Only sum loss cases (or undefined for backward compat) into the loss range.
+    // Retention cases represent value kept — mixing them in would understate losses.
+    if (vc.impact_role === 'loss' || !vc.impact_role) {
+      totalMin += vc.estimated_impact.range.min;
+      totalMax += vc.estimated_impact.range.max;
+
+      const mid = (vc.estimated_impact.range.min + vc.estimated_impact.range.max) / 2;
+      if (mid > highestValue) {
+        highestValue = mid;
+        highestIssue = vc.cause;
+      }
     }
   }
 
@@ -257,10 +262,14 @@ function computeEstimate(
   const minDelta = baseValue * pctRange.min;
   const maxDelta = baseValue * pctRange.max;
 
-  // If using fallback inputs, widen the range by 50% to reflect uncertainty
+  // If using fallback inputs, widen the range symmetrically around the midpoint
+  // to reflect uncertainty without shifting the center estimate.
   const uncertainty = isFallback ? 1.5 : 1.0;
-  const adjustedMin = Math.round(minDelta / uncertainty);
-  const adjustedMax = Math.round(maxDelta * uncertainty);
+  const midDelta = (minDelta + maxDelta) / 2;
+  const halfRange = (maxDelta - minDelta) / 2;
+  const adjustedHalfRange = halfRange * uncertainty;
+  const adjustedMin = Math.round(midDelta - adjustedHalfRange);
+  const adjustedMax = Math.round(midDelta + adjustedHalfRange);
 
   const midPct = (pctRange.min + pctRange.max) / 2;
 

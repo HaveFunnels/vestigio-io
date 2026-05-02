@@ -11,22 +11,22 @@ import type { Inference } from '../domain';
 export type TrustGrade = 'A' | 'B' | 'C' | 'D' | 'F';
 
 export interface TrustSurfaceScore {
-  score: number;        // 0-10
-  max_score: number;    // always 10
+  score: number;        // 0-N where N = TRUST_CHECKS.length
+  max_score: number;    // derived from TRUST_CHECKS.length
   passing_checks: string[];
   failing_checks: string[];
   grade: TrustGrade;
 }
 
 /**
- * The 10 trust-related inference keys that map 1:1 to the score.
+ * Trust-related inference keys that map 1:1 to the score.
  * Each key, when ABSENT from the inferences, contributes +1 to the score.
  * The label is the human-readable check name shown in the UI.
  */
 const TRUST_CHECKS = [
   { inference_key: 'mixed_content_exposure',               label: 'HTTPS everywhere' },
   { inference_key: 'security_header_weakness',             label: 'Security headers present' },
-  { inference_key: 'clickjack_protection_missing',         label: 'Clickjack protection' },
+  { inference_key: 'checkout_clickjack_risk',               label: 'Clickjack protection' },
   { inference_key: 'refund_policy_gap',                    label: 'Refund policy quality' },
   { inference_key: 'policy_deficiency',                    label: 'Policy pages quality' },
   { inference_key: 'trust_break_in_checkout',              label: 'Trust language on checkout' },
@@ -38,19 +38,21 @@ const TRUST_CHECKS = [
 ] as const;
 
 function gradeFromScore(score: number): TrustGrade {
-  if (score >= 9) return 'A';
-  if (score >= 7) return 'B';
-  if (score >= 5) return 'C';
-  if (score >= 3) return 'D';
+  const max = TRUST_CHECKS.length;
+  const pct = score / max;
+  if (pct >= 0.9) return 'A';
+  if (pct >= 0.7) return 'B';
+  if (pct >= 0.5) return 'C';
+  if (pct >= 0.3) return 'D';
   return 'F';
 }
 
 /**
  * Compute the Trust Surface Strength Score from the current set of inferences.
  *
- * Each of the 10 trust checks maps to a negative inference key. If the inference
- * is NOT present (i.e. the issue was not detected), the check passes and earns
- * one point. The total score is the count of passing checks out of 10.
+ * Each trust check maps to a negative inference key. If the inference is NOT
+ * present (i.e. the issue was not detected), the check passes and earns one
+ * point. The total score is the count of passing checks out of TRUST_CHECKS.length.
  */
 export function computeTrustSurfaceScore(inferences: Inference[]): TrustSurfaceScore {
   const activeKeys = new Set(inferences.map(i => i.inference_key));
@@ -70,7 +72,7 @@ export function computeTrustSurfaceScore(inferences: Inference[]): TrustSurfaceS
 
   return {
     score,
-    max_score: 10,
+    max_score: TRUST_CHECKS.length,
     passing_checks: passing,
     failing_checks: failing,
     grade: gradeFromScore(score),

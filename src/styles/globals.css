@@ -189,14 +189,18 @@
 		overflow: hidden;
 		cursor: pointer;
 		outline-offset: 4px;
-		padding: 0.75rem 1.5rem;
-		font-size: 0.875rem;
+		padding: 0.875rem 1.75rem;
+		font-size: 0.9375rem;
 		line-height: 1.25;
 		font-weight: 600;
+		min-height: 48px;
+		width: 100%;
 
 		@media (min-width: 640px) {
 			padding: 0.875rem 2.25rem;
 			font-size: 1rem;
+			min-height: auto;
+			width: auto;
 		}
 		border: 1px solid transparent;
 		border-radius: 0.875rem;

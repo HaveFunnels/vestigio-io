@@ -59,11 +59,11 @@ function CycleGraphic({ stages }: { stages: string[] }) {
 	const circumference = 2 * Math.PI * r;
 
 	return (
-		<div className="flex items-center justify-center py-4">
+		<div className="flex items-center justify-center py-2">
 			<style>{`
 				@keyframes sl-cycle-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 			`}</style>
-			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[220px] sm:max-w-[240px]">
+			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[160px] sm:max-w-[180px] lg:max-w-[160px]">
 				<defs>
 					<radialGradient id="cycle-glow" cx="50%" cy="50%" r="50%">
 						<stop offset="0%" stopColor="rgba(255,255,255,0.04)" />
@@ -106,7 +106,7 @@ function CycleGraphic({ stages }: { stages: string[] }) {
 
 function SilenceGraphic({ alerts, terminalTitle, noAlerts }: { alerts: string[]; terminalTitle: string; noAlerts: string }) {
 	return (
-		<div className="flex flex-col items-center gap-3 py-4">
+		<div className="flex flex-col items-center gap-2 py-2">
 			<style>{`
 				@keyframes sl-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 			`}</style>
@@ -135,7 +135,7 @@ function SilenceGraphic({ alerts, terminalTitle, noAlerts }: { alerts: string[];
 			</div>
 
 			{/* Empty terminal screen */}
-			<div className="w-full max-w-[280px] overflow-hidden rounded-xl border border-zinc-700/50 bg-[#07070e] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]">
+			<div className="w-full max-w-[240px] overflow-hidden rounded-xl border border-zinc-700/50 bg-[#07070e] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]">
 				{/* Title bar */}
 				<div className="flex items-center gap-1.5 border-b border-zinc-800/50 px-3 py-2">
 					<span className="h-2 w-2 rounded-full bg-zinc-700" />
@@ -144,7 +144,7 @@ function SilenceGraphic({ alerts, terminalTitle, noAlerts }: { alerts: string[];
 					<span className="ml-2 text-[10px] font-medium text-zinc-600">{terminalTitle}</span>
 				</div>
 				{/* Empty content with blinking cursor */}
-				<div className="flex h-20 items-start p-4">
+				<div className="flex h-14 items-start p-3">
 					<span className="inline-block h-4 w-[2px] bg-zinc-500" style={{ animation: "sl-blink 1s step-end infinite" }} />
 				</div>
 			</div>
@@ -193,7 +193,7 @@ function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel:
 	});
 
 	return (
-		<div className="flex items-center justify-center py-4">
+		<div className="flex items-center justify-center py-2">
 			<style>{`
 				@keyframes sl-drain-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 				@keyframes sl-drain-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
@@ -206,7 +206,7 @@ function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel:
 				.sl-dc${i} { animation: sl-drain-c${i} ${c.dur}s ease-in ${c.delay}s infinite; }
 				`).join("")}
 			`}</style>
-			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[200px] sm:max-w-[220px]">
+			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[160px] sm:max-w-[180px] lg:max-w-[200px]">
 				<defs>
 					<radialGradient id="drain-glow" cx="50%" cy="52%" r="45%">
 						<stop offset="0%" stopColor="rgba(239,68,68,0.2)" />
@@ -318,7 +318,7 @@ export default function SolutionLayers() {
 
 			{/* Bento grid: =| layout (2 stacked left, 1 tall right) */}
 			<div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">
-				<div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[1fr_1fr] lg:grid-rows-[1fr_1fr]">
+				<div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto]">
 
 					{/* Card 1: O ciclo — top-left */}
 					<BentoCard accent={ACCENTS[0]} className="lg:col-start-1 lg:row-start-1">

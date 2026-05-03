@@ -668,7 +668,7 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 	}, [pauseAndAdvance]);
 
 	return (
-		<section ref={sectionRef} id="product-tour" className="relative scroll-mt-24 pt-2 pb-4 sm:pt-3 sm:pb-6 lg:pt-4 lg:pb-8">
+		<section ref={sectionRef} id="product-tour" className="relative z-1 scroll-mt-24 pt-2 pb-4 sm:pt-3 sm:pb-6 lg:pt-4 lg:pb-8">
 			<style>{`
 				@keyframes vptour-fade-in {
 					from { opacity: 0; transform: translateY(4px); }

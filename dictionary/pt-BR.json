@@ -3677,7 +3677,11 @@
 				"event_newsletter": "Newsletter do produto",
 				"event_newsletter_desc": "Atualizações mensais do produto e destaques do roadmap.",
 				"event_product_updates": "Notas de lançamento",
-				"event_product_updates_desc": "Seja o primeiro a saber das novas funcionalidades."
+				"event_product_updates_desc": "Seja o primeiro a saber das novas funcionalidades.",
+				"event_verified_resolved": "Celebrações de resolução",
+				"event_verified_resolved_desc": "Quando uma correção que você aplicou for confirmada pela próxima auditoria.",
+				"event_digest": "Resumo diário",
+				"event_digest_desc": "Um resumo diário de achados, mudanças e métricas-chave."
 			},
 			"subscription": {
 				"title": "Assinatura",

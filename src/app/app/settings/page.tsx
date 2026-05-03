@@ -110,6 +110,8 @@ interface NotifPrefs {
 	alertOnImprovement: boolean;
 	newsletterSubscribed: boolean;
 	productUpdates: boolean;
+	alertOnVerifiedResolved: boolean;
+	alertOnDigest: boolean;
 }
 
 const DEFAULT_PREFS: NotifPrefs = {
@@ -122,6 +124,8 @@ const DEFAULT_PREFS: NotifPrefs = {
 	alertOnImprovement: false,
 	newsletterSubscribed: true,
 	productUpdates: true,
+	alertOnVerifiedResolved: true,
+	alertOnDigest: true,
 };
 
 function NotificationSettings() {
@@ -316,6 +320,18 @@ function NotificationSettings() {
 						description={t("event_product_updates_desc")}
 						enabled={prefs.productUpdates}
 						onChange={(v) => togglePref("productUpdates", v)}
+					/>
+					<ToggleRow
+						label={t("event_verified_resolved")}
+						description={t("event_verified_resolved_desc")}
+						enabled={prefs.alertOnVerifiedResolved}
+						onChange={(v) => togglePref("alertOnVerifiedResolved", v)}
+					/>
+					<ToggleRow
+						label={t("event_digest")}
+						description={t("event_digest_desc")}
+						enabled={prefs.alertOnDigest}
+						onChange={(v) => togglePref("alertOnDigest", v)}
 					/>
 				</div>
 			</div>

@@ -37,12 +37,14 @@ export async function triggerIncidentNotifications(args: {
 	);
 	if (critical.length === 0) return;
 
-	// Resolve org from user (most users have a single membership)
+	// Resolve org + user locale (most users have a single membership)
 	const membership = await prisma.membership.findFirst({
 		where: { userId: args.userId, organization: { status: "active" } },
 		select: { organizationId: true },
 	});
 	if (!membership) return;
+
+	const userLocale = await getUserLocale(args.userId);
 
 	// Pick the most impactful one to headline (avoid spam — single notification per cycle)
 	const headline = critical.sort(
@@ -59,8 +61,8 @@ export async function triggerIncidentNotifications(args: {
 		rootCauseSuffix: headline.root_cause ? ` — ${escapeHtml(headline.root_cause)}` : "",
 	};
 
-	const email = renderEmailFromTemplate("incident", vars, getBaseUrl())!;
-	const smsText = renderSmsFromTemplate("incident", vars)!;
+	const email = renderEmailFromTemplate("incident", vars, getBaseUrl(), userLocale)!;
+	const smsText = renderSmsFromTemplate("incident", vars, userLocale)!;
 
 	await notifyOrganization(membership.organizationId, {
 		event: "incident",
@@ -95,6 +97,8 @@ export async function triggerRegressionNotifications(args: {
 	});
 	if (!membership) return;
 
+	const userLocale = await getUserLocale(args.userId);
+
 	const headline = args.regressions.sort(
 		(a, b) => (b.impact?.midpoint || 0) - (a.impact?.midpoint || 0),
 	)[0];
@@ -109,8 +113,8 @@ export async function triggerRegressionNotifications(args: {
 		rootCauseSuffix: headline.root_cause ? `<br/><br/>${escapeHtml(headline.root_cause)}` : "",
 	};
 
-	const email = renderEmailFromTemplate("regression", vars, getBaseUrl())!;
-	const smsText = renderSmsFromTemplate("regression", vars)!;
+	const email = renderEmailFromTemplate("regression", vars, getBaseUrl(), userLocale)!;
+	const smsText = renderSmsFromTemplate("regression", vars, userLocale)!;
 
 	await notifyOrganization(membership.organizationId, {
 		event: "regression",
@@ -349,9 +353,10 @@ export async function sendMiniAuditEmail(args: {
 }
 
 export async function sendPasswordResetEmail(userId: string, email: string, link: string): Promise<void> {
+	const userLocale = await getUserLocale(userId);
 	const vars = { link };
-	const rendered = renderEmailFromTemplate("password_reset", vars, getBaseUrl())!;
-	const smsText = renderSmsFromTemplate("password_reset", vars)!;
+	const rendered = renderEmailFromTemplate("password_reset", vars, getBaseUrl(), userLocale)!;
+	const smsText = renderSmsFromTemplate("password_reset", vars, userLocale)!;
 
 	await notifyUser({
 		userId,
@@ -388,6 +393,19 @@ async function wasRecentlySent(tag: string, userId?: string): Promise<boolean> {
 
 function getBaseUrl(): string {
 	return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://vestigio.io";
+}
+
+/** Look up a user's preferred locale for template i18n. Best-effort. */
+async function getUserLocale(userId: string): Promise<string | null> {
+	try {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { locale: true },
+		});
+		return user?.locale ?? null;
+	} catch {
+		return null;
+	}
 }
 
 function escapeHtml(s: string): string {

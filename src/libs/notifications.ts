@@ -110,6 +110,8 @@ export async function notifyUser(payload: UserNotification): Promise<NotifyResul
 		alertOnImprovement: false,
 		newsletterSubscribed: true,
 		productUpdates: true,
+		alertOnVerifiedResolved: true,
+		alertOnDigest: true,
 	};
 
 	// Event gating: respect per-event opt-outs
@@ -428,6 +430,8 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 	alertOnImprovement: boolean;
 	newsletterSubscribed: boolean;
 	productUpdates: boolean;
+	alertOnVerifiedResolved?: boolean;
+	alertOnDigest?: boolean;
 }): boolean {
 	switch (event) {
 		case "page_down": return prefs.alertOnPageDown;
@@ -443,16 +447,13 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 		case "billing":
 			return true; // critical / transactional always sent
 		case "verified_resolved":
-			// Celebration / attribution event — treated as always-send
-			// at v1. The copy is positive ("we confirmed your fix
-			// recovered $X"), so this isn't a spam vector like regular
-			// alerts. A dedicated preference toggle can come later
-			// once we see real engagement.
-			return true;
+			// Celebration / attribution event — opt-out via preference toggle.
+			// Defaults to true (enabled) when preference hasn't been set yet.
+			return prefs.alertOnVerifiedResolved ?? true;
 		case "digest":
-			// Daily digest respects emailEnabled (general toggle).
-			// Skipping if user has turned off email entirely.
-			return true;
+			// Daily digest — opt-out via preference toggle.
+			// Defaults to true (enabled) when preference hasn't been set yet.
+			return prefs.alertOnDigest ?? true;
 		case "mini_audit_complete":
 			// Anonymous lead email — always sent (they just requested it)
 			return true;

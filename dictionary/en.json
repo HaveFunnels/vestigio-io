@@ -3658,7 +3658,11 @@
 				"event_newsletter": "Product newsletter",
 				"event_newsletter_desc": "Monthly product updates and roadmap highlights.",
 				"event_product_updates": "Release notes",
-				"event_product_updates_desc": "Be first to know about new features."
+				"event_product_updates_desc": "Be first to know about new features.",
+				"event_verified_resolved": "Resolution celebrations",
+				"event_verified_resolved_desc": "When a fix you applied is confirmed resolved by the next audit.",
+				"event_digest": "Daily digest",
+				"event_digest_desc": "A daily summary of findings, changes, and key metrics."
 			},
 			"subscription": {
 				"title": "Subscription",

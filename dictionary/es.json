@@ -3609,7 +3609,11 @@
 				"event_newsletter": "Newsletter del producto",
 				"event_newsletter_desc": "Novedades mensuales del producto y roadmap.",
 				"event_product_updates": "Notas de versión",
-				"event_product_updates_desc": "Sé el primero en enterarte de las novedades."
+				"event_product_updates_desc": "Sé el primero en enterarte de las novedades.",
+				"event_verified_resolved": "Celebraciones de resolución",
+				"event_verified_resolved_desc": "Cuando una corrección aplicada se confirma resuelta en la siguiente auditoría.",
+				"event_digest": "Resumen diario",
+				"event_digest_desc": "Un resumen diario de hallazgos, cambios y métricas clave."
 			},
 			"subscription": {
 				"title": "Suscripcion",

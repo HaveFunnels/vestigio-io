@@ -3073,7 +3073,11 @@
 				"event_newsletter": "Produkt-Newsletter",
 				"event_newsletter_desc": "Monatliche Produkt-Updates und Roadmap-Highlights.",
 				"event_product_updates": "Release Notes",
-				"event_product_updates_desc": "Erfahre als Erstes von neuen Funktionen."
+				"event_product_updates_desc": "Erfahre als Erstes von neuen Funktionen.",
+				"event_verified_resolved": "Behebungsbestaetigungen",
+				"event_verified_resolved_desc": "Wenn eine von dir angewandte Korrektur durch das naechste Audit bestaetigt wird.",
+				"event_digest": "Taegliche Zusammenfassung",
+				"event_digest_desc": "Eine taegliche Zusammenfassung von Ergebnissen, Aenderungen und wichtigen Kennzahlen."
 			},
 			"subscription": {
 				"title": "Abonnement",

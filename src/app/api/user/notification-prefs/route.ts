@@ -19,6 +19,8 @@ const prefsSchema = z.object({
 	alertOnImprovement: z.boolean().optional(),
 	newsletterSubscribed: z.boolean().optional(),
 	productUpdates: z.boolean().optional(),
+	alertOnVerifiedResolved: z.boolean().optional(),
+	alertOnDigest: z.boolean().optional(),
 });
 
 const DEFAULT_PREFS = {
@@ -31,6 +33,8 @@ const DEFAULT_PREFS = {
 	alertOnImprovement: false,
 	newsletterSubscribed: true,
 	productUpdates: true,
+	alertOnVerifiedResolved: true,
+	alertOnDigest: true,
 };
 
 export async function GET() {

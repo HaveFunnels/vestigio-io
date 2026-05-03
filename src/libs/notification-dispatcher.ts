@@ -55,10 +55,10 @@ interface QueuedRow {
 function buildEmailBody(
 	event: string,
 	subject: string | null,
-	ctx: { domain?: string; appUrl: string },
+	ctx: { domain?: string; appUrl: string; locale?: string | null },
 ): { html: string; text: string; subject: string } | null {
 	const vars = { domain: ctx.domain || "your environment" };
-	const rendered = renderEmailFromTemplate(event, vars, ctx.appUrl);
+	const rendered = renderEmailFromTemplate(event, vars, ctx.appUrl, ctx.locale);
 	if (!rendered) return null;
 	return {
 		subject: subject || rendered.subject,
@@ -131,9 +131,25 @@ export async function runNotificationDispatcher(): Promise<DispatcherResult> {
 		// env domain, which we can parse out of the subject line that the
 		// pause cron already formatted ("Audits paused for {domain}").
 		const domain = extractDomainFromSubject(row.subject);
+
+		// Look up user locale for i18n template selection
+		let userLocale: string | null = null;
+		if (row.userId) {
+			try {
+				const u = await prisma.user.findUnique({
+					where: { id: row.userId },
+					select: { locale: true },
+				});
+				userLocale = u?.locale ?? null;
+			} catch {
+				// Best-effort — locale lookup failure should not block dispatch
+			}
+		}
+
 		const body = buildEmailBody(row.event, row.subject, {
 			domain,
 			appUrl,
+			locale: userLocale,
 		});
 
 		if (!body) {

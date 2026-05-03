@@ -70,7 +70,7 @@ const RAILS: RailDef[] = [
 
 const TrailLayer = () => (
 	<div
-		className='pointer-events-none absolute inset-x-0 top-0 -z-1 h-full overflow-hidden'
+		className='pointer-events-none absolute inset-x-0 top-0 -z-1 h-[300%]'
 		aria-hidden
 	>
 		{RAILS.map((rail, i) => (
@@ -170,8 +170,8 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aut
 			    `overflow-hidden` is removed from the section so these
 			    can bleed out. */}
 			<div className='pointer-events-none absolute -inset-x-40 -top-20 -z-1 h-[200%]' aria-hidden>
-				<div className='absolute left-1/2 top-0 h-[700px] w-[1100px] -translate-x-1/2 rounded-full bg-emerald-500/[0.07] blur-[120px]' />
-				<div className='absolute left-1/2 top-[300px] h-[600px] w-[1000px] -translate-x-1/2 rounded-full bg-indigo-500/[0.05] blur-[120px]' />
+				<div className='absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/[0.04] blur-[100px] sm:h-[700px] sm:w-[1100px] sm:bg-emerald-500/[0.07] sm:blur-[120px]' />
+				<div className='absolute left-1/2 top-[300px] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-indigo-500/[0.03] blur-[100px] sm:h-[600px] sm:w-[1000px] sm:bg-indigo-500/[0.05] sm:blur-[120px]' />
 			</div>
 
 			{/* Animated descending vestigio trails */}

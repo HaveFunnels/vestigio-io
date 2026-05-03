@@ -5,7 +5,6 @@ import {
 	sendBrevoWhatsApp,
 } from "@/libs/brevo";
 import { isTwilioConfigured, sendTwilioSms } from "@/libs/twilio-sms";
-import { sendEmail as sendNodemailerEmail } from "@/libs/email";
 import {
 	isMetaWhatsAppConfigured,
 	sendWhatsAppTemplate,
@@ -257,50 +256,9 @@ async function sendOneEmail(args: {
 	userId?: string;
 	event: NotificationEvent;
 }): Promise<{ sent: boolean; error?: string }> {
-	// Prefer Brevo, fall back to Nodemailer
-	if (isBrevoConfigured()) {
-		const res = await sendBrevoEmail({
-			to: args.to,
-			toName: args.toName,
-			subject: args.subject,
-			html: args.html,
-			text: args.text,
-			tags: args.tag ? [args.tag] : undefined,
-			senderProfile: senderProfileForEvent(args.event),
-		});
-		await logNotification({
-			userId: args.userId,
-			channel: "email",
-			event: args.event,
-			recipient: args.to,
-			subject: args.subject,
-			status: res.ok ? "sent" : "failed",
-			provider: "brevo",
-			providerId: res.messageId,
-			errorMsg: res.error,
-		});
-		return { sent: res.ok, error: res.error };
-	}
-
-	// Legacy SMTP fallback
-	try {
-		await sendNodemailerEmail({
-			to: args.to,
-			subject: args.subject,
-			html: args.html,
-		});
-		await logNotification({
-			userId: args.userId,
-			channel: "email",
-			event: args.event,
-			recipient: args.to,
-			subject: args.subject,
-			status: "sent",
-			provider: "nodemailer",
-		});
-		return { sent: true };
-	} catch (err: any) {
-		const msg = err?.message || "smtp error";
+	if (!isBrevoConfigured()) {
+		const error = "BREVO_API_KEY not configured — email not sent";
+		console.error(`[notifications] ${error}`);
 		await logNotification({
 			userId: args.userId,
 			channel: "email",
@@ -308,11 +266,33 @@ async function sendOneEmail(args: {
 			recipient: args.to,
 			subject: args.subject,
 			status: "failed",
-			provider: "nodemailer",
-			errorMsg: msg,
+			provider: "brevo",
+			errorMsg: error,
 		});
-		return { sent: false, error: msg };
+		return { sent: false, error };
 	}
+
+	const res = await sendBrevoEmail({
+		to: args.to,
+		toName: args.toName,
+		subject: args.subject,
+		html: args.html,
+		text: args.text,
+		tags: args.tag ? [args.tag] : undefined,
+		senderProfile: senderProfileForEvent(args.event),
+	});
+	await logNotification({
+		userId: args.userId,
+		channel: "email",
+		event: args.event,
+		recipient: args.to,
+		subject: args.subject,
+		status: res.ok ? "sent" : "failed",
+		provider: "brevo",
+		providerId: res.messageId,
+		errorMsg: res.error,
+	});
+	return { sent: res.ok, error: res.error };
 }
 
 async function sendOneSms(args: {

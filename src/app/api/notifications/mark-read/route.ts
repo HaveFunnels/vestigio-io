@@ -19,16 +19,17 @@ export async function POST(req: Request) {
 		const prisma = new PrismaClient();
 
 		if (body.id) {
-			// Mark single notification
+			// Mark single notification as read — set readAt timestamp
+			// instead of changing delivery status
 			await prisma.notificationLog.updateMany({
-				where: { id: body.id, userId },
-				data: { status: "read" },
+				where: { id: body.id, userId, readAt: null },
+				data: { readAt: new Date() },
 			});
 		} else {
 			// Mark all as read
 			await prisma.notificationLog.updateMany({
-				where: { userId, status: "sent" },
-				data: { status: "read" },
+				where: { userId, readAt: null, status: { in: ["sent", "delivered"] } },
+				data: { readAt: new Date() },
 			});
 		}
 

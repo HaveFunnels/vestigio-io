@@ -1,7 +1,7 @@
-import { sendEmail } from "@/libs/email";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { checkRateLimit } from "@/libs/limiter";
 import { prisma } from "@/libs/prismaDb";
+import { sendPasswordResetEmail } from "@/libs/notification-triggers";
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { resetPasswordSchema } from "./schema";
@@ -51,17 +51,7 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 	const resetURL = `${process.env.SITE_URL}/auth/reset-password/${resetToken}`;
 
 	try {
-		await sendEmail({
-			to: email,
-			subject: "Reset your password",
-			html: ` 
-      <div>
-        <h1>You requested a password reset</h1>
-        <p>Click the link below to reset your password</p>
-        <a href="${resetURL}" target="_blank">Reset Password</a>
-      </div>
-      `,
-		});
+		await sendPasswordResetEmail(user.id, email, resetURL);
 
 		return NextResponse.json(
 			{ message: "An email has been sent to your email" },

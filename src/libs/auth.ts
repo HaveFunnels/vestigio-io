@@ -260,30 +260,9 @@ export const authOptions: NextAuthOptions = {
 				},
 			},
 			from: process.env.EMAIL_FROM,
-			// Use Brevo via the unified notification service when configured.
-			// Falls back to NextAuth's built-in nodemailer transport otherwise.
+			// All magic-link emails go through Brevo via the notification service.
 			sendVerificationRequest: async ({ identifier, url }) => {
-				if (process.env.BREVO_API_KEY) {
-					await sendMagicLink(identifier, url);
-					return;
-				}
-				// Default nodemailer path — re-emit using SMTP env vars
-				const nodemailer = await import("nodemailer");
-				const transport = nodemailer.createTransport({
-					host: process.env.EMAIL_SERVER_HOST,
-					port: Number(process.env.EMAIL_SERVER_PORT) || 587,
-					auth: {
-						user: process.env.EMAIL_SERVER_USER,
-						pass: process.env.EMAIL_SERVER_PASSWORD,
-					},
-				});
-				await transport.sendMail({
-					to: identifier,
-					from: process.env.EMAIL_FROM,
-					subject: "Sign in to Vestigio",
-					text: `Sign in to Vestigio: ${url}`,
-					html: `<p>Click the link to sign in: <a href="${url}">${url}</a></p>`,
-				});
+				await sendMagicLink(identifier, url);
 			},
 		}),
 

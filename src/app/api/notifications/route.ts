@@ -18,7 +18,10 @@ export async function GET() {
 		const prisma = new PrismaClient();
 
 		const logs = await prisma.notificationLog.findMany({
-			where: { userId },
+			where: {
+				userId,
+				status: { in: ["sent", "delivered"] },
+			},
 			orderBy: { createdAt: "desc" },
 			take: 20,
 			select: {
@@ -27,6 +30,7 @@ export async function GET() {
 				subject: true,
 				channel: true,
 				status: true,
+				readAt: true,
 				createdAt: true,
 			},
 		});
@@ -39,7 +43,7 @@ export async function GET() {
 			title: log.subject || "Notification",
 			body: "",
 			timestamp: formatRelative(log.createdAt),
-			unread: log.status === "sent", // treat "sent" as unread until explicitly read
+			unread: log.readAt === null, // readAt null = unread; independent of delivery status
 		}));
 
 		return NextResponse.json({ notifications });

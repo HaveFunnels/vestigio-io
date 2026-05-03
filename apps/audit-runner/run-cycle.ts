@@ -39,7 +39,7 @@ import { pollStripeData } from "../../workers/stripe/poller";
 import { decryptConfig } from "@/libs/integration-crypto";
 import type { IntegrationSnapshot } from "../../packages/integrations/types";
 import type { Evidence } from "../../packages/domain";
-import { triggerIncidentNotifications } from "@/libs/notification-triggers";
+import { triggerIncidentNotifications, triggerRegressionNotifications } from "@/libs/notification-triggers";
 import { analyzeAdMessageMatch } from "../../workers/ingestion/enrichment/ad-message-match";
 
 export interface RunAuditCycleResult {
@@ -393,6 +393,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		let persistenceInProgress = false;
 		let cycleMarkedComplete = false;
 		let projectionsForNotifications: any[] = [];
+		let changeReportForNotifications: any = null;
 		try {
 			const workspaceRef = `workspace:${cycle.organizationId}`;
 			const environmentRef = `environment:${env.id}`;
@@ -900,6 +901,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			cycleMarkedComplete = true;
 
 			projectionsForNotifications = projections.findings;
+			changeReportForNotifications = projections.change_report;
 
 			// (f) Retention prune — best-effort, outside the transaction
 			try {
@@ -940,6 +942,32 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				});
 			} catch {
 				// Non-fatal: notification failure shouldn't block the audit
+			}
+		}
+
+		// (e2b) Trigger regression notifications for material regressions
+		// from the change report — best-effort, same pattern as incidents.
+		if (changeReportForNotifications?.regressions?.length > 0) {
+			const materialRegressions = changeReportForNotifications.regressions.filter(
+				(r: any) => r.change_severity === "significant" || r.change_severity === "critical",
+			);
+			if (materialRegressions.length > 0) {
+				try {
+					await triggerRegressionNotifications({
+						userId: cycle.organization.ownerId,
+						domain: env.domain,
+						regressions: materialRegressions.map((r: any) => ({
+							id: r.decision_key,
+							title: r.title,
+							severity: r.current_severity || r.change_severity,
+							change_class: r.change_class,
+							impact: r.risk_score_delta ? { midpoint: Math.abs(r.risk_score_delta) } : undefined,
+							root_cause: r.contributing_factors?.join(", ") || null,
+						})),
+					});
+				} catch {
+					// Non-fatal: notification failure shouldn't block the audit
+				}
 			}
 		}
 

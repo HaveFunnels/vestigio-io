@@ -134,6 +134,14 @@ export async function triggerRegressionNotifications(args: {
 // Today the health-checker only monitors Vestigio infrastructure;
 // when client domain monitoring lands, call this with the failing
 // page so we fan out to the affected org.
+//
+// TODO: Activate this trigger when user-facing surface monitoring
+// ships (Wave 7 — Hybrid Architecture Channel B). Currently the
+// health-checker only monitors Vestigio's own infrastructure, so
+// this function is never called from production code paths. Once
+// Channel B adds external domain monitoring, wire this from the
+// health-check worker's failure handler so page_down events reach
+// the affected org's owners/admins.
 // ──────────────────────────────────────────────
 
 export async function triggerPageDownNotification(args: {

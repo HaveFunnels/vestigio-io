@@ -1,6 +1,5 @@
 import { prisma } from "@/libs/prismaDb";
 import { isBrevoConfigured, sendBrevoEmail } from "@/libs/brevo";
-import { sendEmail as sendNodemailerEmail } from "@/libs/email";
 import { renderEmailFromTemplate } from "@/libs/notification-templates";
 
 // ──────────────────────────────────────────────
@@ -148,49 +147,46 @@ export async function runNotificationDispatcher(): Promise<DispatcherResult> {
 			continue;
 		}
 
-		// Send. Brevo first, Nodemailer second. Both paths update the
-		// original row with the final outcome.
+		// Send via Brevo. Update the original row with the final outcome.
 		try {
-			if (isBrevoConfigured()) {
-				const send = await sendBrevoEmail({
-					to: row.recipient,
-					subject: body.subject,
-					html: body.html,
-					text: body.text,
-					tags: [row.event],
-					senderProfile: "notifications",
+			if (!isBrevoConfigured()) {
+				await safeMarkStatus(row.id, {
+					status: "failed",
+					provider: "brevo",
+					errorMsg: "BREVO_API_KEY not configured",
 				});
-				if (send.ok) {
-					await safeMarkStatus(row.id, {
-						status: "sent",
-						provider: "brevo",
-						providerId: send.messageId,
-					});
-					result.sent += 1;
-				} else {
-					await safeMarkStatus(row.id, {
-						status: "failed",
-						provider: "brevo",
-						errorMsg: send.error,
-					});
-					result.failed += 1;
-				}
-			} else {
-				await sendNodemailerEmail({
-					to: row.recipient,
-					subject: body.subject,
-					html: body.html,
-				});
+				result.failed += 1;
+				continue;
+			}
+
+			const send = await sendBrevoEmail({
+				to: row.recipient,
+				subject: body.subject,
+				html: body.html,
+				text: body.text,
+				tags: [row.event],
+				senderProfile: "notifications",
+			});
+			if (send.ok) {
 				await safeMarkStatus(row.id, {
 					status: "sent",
-					provider: "nodemailer",
+					provider: "brevo",
+					providerId: send.messageId,
 				});
 				result.sent += 1;
+			} else {
+				await safeMarkStatus(row.id, {
+					status: "failed",
+					provider: "brevo",
+					errorMsg: send.error,
+				});
+				result.failed += 1;
 			}
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : "unknown error";
 			await safeMarkStatus(row.id, {
 				status: "failed",
+				provider: "brevo",
 				errorMsg: msg,
 			});
 			result.failed += 1;

@@ -1,5 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
-import { sendEmail } from "@/libs/email";
+import { sendBrevoEmail } from "@/libs/brevo";
+import { renderBrandedEmail } from "@/libs/notifications";
 
 /**
  * Event-driven alert evaluation.
@@ -142,21 +143,26 @@ export async function evaluateAlerts(metric: string): Promise<void> {
             const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
             const recipient = adminEmails[0]; // primary admin
             if (recipient) {
-              await sendEmail({
+              const descLine = rule.description ? `<br/><br/><strong>Description:</strong> ${rule.description}` : "";
+              const html = renderBrandedEmail({
+                headline: `Alert: ${rule.name}`,
+                intro: `<strong>${metric}</strong> is <strong>${value}</strong> (${rule.condition} ${rule.threshold}) in the last ${rule.window} minutes.${descLine}`,
+                ctaLabel: "Open Dashboard",
+                ctaUrl: `${process.env.NEXTAUTH_URL || "https://vestigio.io"}/admin/alerts`,
+                footerNote: `Triggered at ${now.toISOString()}.`,
+              });
+              const res = await sendBrevoEmail({
                 to: recipient,
                 subject: `[Vestigio Alert] ${rule.name}`,
-                html: `
-                  <h2>Alert Triggered</h2>
-                  <p><strong>Rule:</strong> ${rule.name}</p>
-                  <p><strong>Metric:</strong> ${metric}</p>
-                  <p><strong>Condition:</strong> ${rule.condition} ${rule.threshold}</p>
-                  <p><strong>Current value:</strong> ${value}</p>
-                  <p><strong>Window:</strong> last ${rule.window} minutes</p>
-                  <p><strong>Time:</strong> ${now.toISOString()}</p>
-                  ${rule.description ? `<p><strong>Description:</strong> ${rule.description}</p>` : ""}
-                `,
+                html,
+                tags: ["platform-alert"],
+                senderProfile: "notifications",
               });
-              console.log(`[alert-evaluator] Email sent to ${recipient} for rule "${rule.name}"`);
+              if (res.ok) {
+                console.log(`[alert-evaluator] Email sent to ${recipient} for rule "${rule.name}"`);
+              } else {
+                console.error(`[alert-evaluator] Brevo error for rule "${rule.name}": ${res.error}`);
+              }
             }
           } catch (emailErr) {
             console.error(`[alert-evaluator] Failed to send email for rule "${rule.name}":`, emailErr);

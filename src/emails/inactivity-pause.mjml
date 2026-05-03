@@ -1,0 +1,77 @@
+<mjml>
+  <mj-head>
+    <mj-title>Audits Paused - Vestigio</mj-title>
+    <mj-attributes>
+      <mj-all font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" />
+      <mj-body background-color="#0a0a0a" />
+      <mj-section background-color="#18181b" border="1px solid #27272a" border-radius="12px" padding="0" />
+      <mj-text color="#d4d4d8" font-size="15px" line-height="1.6" />
+      <mj-button background-color="#10b981" color="#ffffff" border-radius="6px" font-weight="600" font-size="14px" inner-padding="12px 24px" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      a { color: #10b981; text-decoration: none; }
+    </mj-style>
+    <mj-style>
+      @media (prefers-color-scheme: light) {
+        .light-bg { background-color: #ffffff !important; }
+        .light-card { background-color: #f4f4f5 !important; border-color: #e4e4e7 !important; }
+        .light-text { color: #18181b !important; }
+        .light-secondary { color: #3f3f46 !important; }
+        .light-muted { color: #71717a !important; }
+        .light-faint { color: #a1a1aa !important; }
+        .light-inner { background-color: #e4e4e7 !important; }
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#0a0a0a" css-class="light-bg" width="600px">
+    <!-- Brand header -->
+    <mj-section background-color="transparent" border="none" border-radius="0" padding="20px 0 0 0">
+      <mj-column>
+        <mj-text align="center" color="#10b981" font-size="14px" font-weight="600" letter-spacing="0.5px">VESTIGIO</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Amber/faint bar for pause state -->
+    <mj-section css-class="light-card" padding="0" border-radius="12px">
+      <mj-column padding="0">
+        <mj-divider border-color="#f59e0b" border-width="4px" padding="0" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Main content -->
+    <mj-section css-class="light-card" padding="28px 32px 8px 32px" border-radius="0">
+      <mj-column>
+        <mj-text color="#f59e0b" font-size="12px" font-weight="700" letter-spacing="0.5px" padding="0 0 8px 0">PAUSED</mj-text>
+        <mj-text css-class="light-text" font-size="22px" color="#fafafa" font-weight="700" padding="0 0 16px 0">Your audits have been paused</mj-text>
+        <mj-text css-class="light-secondary" color="#d4d4d8" font-size="15px" line-height="1.6" padding="0 0 24px 0">We haven't detected any activity on your environment in a while, so we've paused your audit cycles to conserve resources. Your data and findings are still available.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Info box -->
+    <mj-section css-class="light-card" padding="0 32px 24px 32px" border-radius="0">
+      <mj-column css-class="light-inner" background-color="#27272a" border-radius="8px" padding="16px 20px">
+        <mj-text color="#a1a1aa" font-size="12px" font-weight="600" letter-spacing="0.5px" padding="0 0 4px 0">REASON</mj-text>
+        <mj-text css-class="light-text" color="#fafafa" font-size="14px" font-weight="600" padding="0 0 8px 0">Inactivity detected</mj-text>
+        <mj-text color="#a1a1aa" font-size="13px" line-height="1.5" padding="0">No dashboard logins or API activity in the monitoring period. Resume monitoring to restart your audit cycles.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- CTA -->
+    <mj-section css-class="light-card" padding="0 32px 32px 32px" border-radius="0 0 12px 12px">
+      <mj-column>
+        <mj-button href="{{ctaUrl}}" background-color="#10b981" color="#ffffff" border-radius="6px" font-weight="600" font-size="14px" inner-padding="14px 32px">Resume Monitoring</mj-button>
+        <mj-text css-class="light-faint" color="#71717a" font-size="13px" line-height="1.5" align="center" padding="16px 0 0 0">While paused, you won't receive findings or regression alerts. Revenue leaks may go undetected.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="transparent" border="none" border-radius="0" padding="16px 32px">
+      <mj-column>
+        <mj-text color="#52525b" font-size="12px" line-height="1.5" align="center" css-class="light-faint">
+          You're receiving this because you have notifications enabled.
+          <a href="https://vestigio.io/app/settings" style="color:#10b981;text-decoration:none;">Manage preferences</a>.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

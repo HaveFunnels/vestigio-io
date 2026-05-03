@@ -129,10 +129,12 @@ model NotificationPreference {
   alertOnIncident      Boolean  @default(true)
   alertOnRegression    Boolean  @default(true)
   alertOnImprovement   Boolean  @default(false)
-  newsletterSubscribed Boolean  @default(true)
-  productUpdates       Boolean  @default(true)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  newsletterSubscribed   Boolean  @default(true)
+  productUpdates         Boolean  @default(true)
+  alertOnVerifiedResolved Boolean @default(true)
+  alertOnDigest          Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -142,22 +144,24 @@ model NotificationPreference {
 // ──────────────────────────────────────────────
 
 model NotificationLog {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String?
   channel    String // email | sms | whatsapp
   event      String // page_down | incident | regression | newsletter | magic_link | etc.
   recipient  String // email or phone
   subject    String?
-  status     String // sent | failed | skipped | delivered | read
-  provider   String   @default("brevo") // brevo | nodemailer | meta_whatsapp
+  status     String // sent | failed | skipped | delivered (delivery tracking only — don't use for read state)
+  readAt     DateTime? // null = unread; set when user marks as read in bell UI. Separate from delivery status.
+  provider   String    @default("brevo") // brevo | twilio | meta_whatsapp
   providerId String? // provider's message id (wamid for meta)
   errorMsg   String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
 
   @@index([userId, createdAt])
   @@index([event, createdAt])
   @@index([providerId])
+  @@index([userId, readAt]) // for efficient unread-count queries
 }
 
 // ──────────────────────────────────────────────

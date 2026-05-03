@@ -19,7 +19,8 @@ export async function GET() {
 		const count = await prisma.notificationLog.count({
 			where: {
 				userId,
-				status: "sent", // "sent" = delivered but not yet read
+				readAt: null, // null = unread, independent of delivery status
+				status: { in: ["sent", "delivered"] },
 			},
 		});
 

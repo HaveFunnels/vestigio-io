@@ -32,12 +32,21 @@ export default function InviteUserModal({ isOpen, setIsOpen }: PropsType) {
 			return toast.error(t("form.missing_field_error"));
 		}
 
+		// Map legacy role values to org invite roles
+		const roleMap: Record<string, string> = {
+			ADMIN: "admin",
+			USER: "member",
+		};
+
 		try {
-			const invite = await axios.post("/api/user/invite/send", data);
-			toast.success(invite.data);
+			const invite = await axios.post("/api/organization/invites", {
+				email: data.email,
+				role: roleMap[data.role] || "member",
+			});
+			toast.success(invite.data?.message || "Invitation sent");
 			setLoading(false);
 		} catch (error: any) {
-			toast.error(error?.response.data);
+			toast.error(error?.response?.data?.message || "Failed to send invitation");
 			setLoading(false);
 		}
 

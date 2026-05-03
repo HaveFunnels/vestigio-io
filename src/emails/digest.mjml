@@ -1,0 +1,115 @@
+<mjml>
+  <mj-head>
+    <mj-title>Daily Digest - Vestigio</mj-title>
+    <mj-attributes>
+      <mj-all font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" />
+      <mj-body background-color="#0a0a0a" />
+      <mj-section background-color="#18181b" border="1px solid #27272a" border-radius="12px" padding="0" />
+      <mj-text color="#d4d4d8" font-size="15px" line-height="1.6" />
+      <mj-button background-color="#10b981" color="#ffffff" border-radius="6px" font-weight="600" font-size="14px" inner-padding="12px 24px" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      a { color: #10b981; text-decoration: none; }
+      .health-badge { display: inline-block; width: 64px; height: 64px; line-height: 64px; border-radius: 50%; background-color: #10b981; color: #ffffff; font-size: 22px; font-weight: 700; text-align: center; }
+      .stat-value { font-size: 24px; font-weight: 700; color: #fafafa; margin: 0; }
+      .stat-label { font-size: 12px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; margin: 4px 0 0 0; }
+      .finding-row { border-bottom: 1px solid #27272a; padding: 12px 0; }
+      .finding-title { font-size: 14px; color: #fafafa; font-weight: 600; margin: 0; }
+      .finding-impact { font-size: 13px; color: #ef4444; font-weight: 600; margin: 4px 0 0 0; }
+    </mj-style>
+    <mj-style>
+      @media (prefers-color-scheme: light) {
+        .light-bg { background-color: #ffffff !important; }
+        .light-card { background-color: #f4f4f5 !important; border-color: #e4e4e7 !important; }
+        .light-text { color: #18181b !important; }
+        .light-secondary { color: #3f3f46 !important; }
+        .light-muted { color: #71717a !important; }
+        .light-faint { color: #a1a1aa !important; }
+        .light-inner { background-color: #e4e4e7 !important; border-color: #d4d4d8 !important; }
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#0a0a0a" css-class="light-bg" width="600px">
+    <!-- Brand header -->
+    <mj-section background-color="transparent" border="none" border-radius="0" padding="20px 0 0 0">
+      <mj-column>
+        <mj-text align="center" color="#10b981" font-size="14px" font-weight="600" letter-spacing="0.5px">VESTIGIO</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Health score + headline -->
+    <mj-section css-class="light-card" padding="32px 32px 8px 32px" border-radius="12px 12px 0 0">
+      <mj-column>
+        <mj-text align="center" padding="0 0 16px 0">
+          <span class="health-badge">{{healthScore}}</span>
+        </mj-text>
+        <mj-text css-class="light-text" font-size="22px" color="#fafafa" font-weight="700" align="center" padding="0 0 8px 0">Daily Digest</mj-text>
+        <mj-text css-class="light-secondary" color="#d4d4d8" font-size="15px" align="center" padding="0 0 24px 0">Here's what changed in the last 24 hours.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Stats row -->
+    <mj-section css-class="light-card" padding="0 16px 24px 16px" border-radius="0">
+      <mj-column css-class="light-inner" background-color="#27272a" border-radius="8px" padding="16px">
+        <mj-text align="center" css-class="light-text" color="#fafafa" font-size="24px" font-weight="700" padding="0">{{findingCount}}</mj-text>
+        <mj-text align="center" color="#a1a1aa" font-size="12px" letter-spacing="0.5px" padding="4px 0 0 0">FINDINGS</mj-text>
+      </mj-column>
+      <mj-column css-class="light-inner" background-color="#27272a" border-radius="8px" padding="16px">
+        <mj-text align="center" color="#ef4444" font-size="24px" font-weight="700" padding="0">{{impactAmount}}</mj-text>
+        <mj-text align="center" color="#a1a1aa" font-size="12px" letter-spacing="0.5px" padding="4px 0 0 0">TOTAL IMPACT</mj-text>
+      </mj-column>
+      <mj-column css-class="light-inner" background-color="#27272a" border-radius="8px" padding="16px">
+        <mj-text align="center" color="#10b981" font-size="24px" font-weight="700" padding="0">{{resolvedCount}}</mj-text>
+        <mj-text align="center" color="#a1a1aa" font-size="12px" letter-spacing="0.5px" padding="4px 0 0 0">RESOLVED</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Top findings -->
+    <mj-section css-class="light-card" padding="0 32px 8px 32px" border-radius="0">
+      <mj-column>
+        <mj-text color="#a1a1aa" font-size="12px" font-weight="600" letter-spacing="0.5px" padding="0 0 12px 0">TOP FINDINGS</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Finding 1 -->
+    <mj-section css-class="light-card" padding="0 32px" border-radius="0">
+      <mj-column css-class="light-inner" background-color="#27272a" border-radius="6px" padding="12px 16px">
+        <mj-text css-class="light-text" color="#fafafa" font-size="14px" font-weight="600" padding="0 0 4px 0">{{finding1Title}}</mj-text>
+        <mj-text color="#ef4444" font-size="13px" font-weight="600" padding="0">{{finding1Impact}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Finding 2 -->
+    <mj-section css-class="light-card" padding="8px 32px 0 32px" border-radius="0">
+      <mj-column css-class="light-inner" background-color="#27272a" border-radius="6px" padding="12px 16px">
+        <mj-text css-class="light-text" color="#fafafa" font-size="14px" font-weight="600" padding="0 0 4px 0">{{finding2Title}}</mj-text>
+        <mj-text color="#ef4444" font-size="13px" font-weight="600" padding="0">{{finding2Impact}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Finding 3 -->
+    <mj-section css-class="light-card" padding="8px 32px 0 32px" border-radius="0">
+      <mj-column css-class="light-inner" background-color="#27272a" border-radius="6px" padding="12px 16px">
+        <mj-text css-class="light-text" color="#fafafa" font-size="14px" font-weight="600" padding="0 0 4px 0">{{finding3Title}}</mj-text>
+        <mj-text color="#ef4444" font-size="13px" font-weight="600" padding="0">{{finding3Impact}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- CTA -->
+    <mj-section css-class="light-card" padding="24px 32px 24px 32px" border-radius="0 0 12px 12px">
+      <mj-column>
+        <mj-button href="{{ctaUrl}}" background-color="#10b981" color="#ffffff" border-radius="6px" font-weight="600" font-size="14px" inner-padding="12px 24px">Open Dashboard</mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="transparent" border="none" border-radius="0" padding="16px 32px">
+      <mj-column>
+        <mj-text color="#52525b" font-size="12px" line-height="1.5" align="center" css-class="light-faint">
+          You're receiving this because you have notifications enabled.
+          <a href="https://vestigio.io/app/settings" style="color:#10b981;text-decoration:none;">Manage preferences</a>.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

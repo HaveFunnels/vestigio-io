@@ -131,13 +131,27 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     footerNote: "This invitation expires in 7 days. If you didn't expect this, you can safely ignore this email.",
   });
 
-  await sendBrevoEmail({
+  const emailResult = await sendBrevoEmail({
     to: email,
     subject: `You're invited to join ${org.name} on Vestigio`,
     html,
     tags: ["org-invite"],
     senderProfile: "noreply",
   });
+
+  if (!emailResult.ok) {
+    console.error(`[org-invites] Failed to send invite email to ${email}: ${emailResult.error}`);
+    // The invite record was created, but email delivery failed.
+    // Return 201 with a warning so the UI can inform the user.
+    return NextResponse.json(
+      {
+        message: "Invite created but email delivery failed. The user can still accept via the invite link.",
+        invite: { id: invite.id, email, role, expiresAt },
+        emailError: emailResult.error,
+      },
+      { status: 201 },
+    );
+  }
 
   return NextResponse.json(
     { message: "Invitation sent", invite: { id: invite.id, email, role, expiresAt } },

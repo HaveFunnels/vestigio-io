@@ -602,12 +602,20 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 	const t = useTranslations("homepage.product_tour");
 	const tg = useTranslations("homepage.product_tour.guided");
 	const [currentStep, setCurrentStep] = useState<Step>(0);
+	const [slideDir, setSlideDir] = useState<"left" | "right">("left");
 	const [interactionMode, setInteractionMode] = useState<"auto" | "user">("auto");
 	const [typewriterDone, setTypewriterDone] = useState(false);
 	const [inView, setInView] = useState(false);
 	const sectionRef = useRef<HTMLDivElement>(null);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+	const prevStepRef = useRef<Step>(0);
+
+	const goToStep = useCallback((next: Step, forceDir?: "left" | "right") => {
+		setSlideDir(forceDir ?? (next > prevStepRef.current ? "left" : "right"));
+		prevStepRef.current = next;
+		setCurrentStep(next);
+	}, []);
 
 	// Start tour only when scrolled into view
 	useEffect(() => {
@@ -629,21 +637,21 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 
 		// Step 1 (actions): wait 6s then advance
 		if (currentStep === 0) {
-			timerRef.current = setTimeout(() => setCurrentStep(1), STEP_DURATIONS[0]);
+			timerRef.current = setTimeout(() => goToStep(1), STEP_DURATIONS[0]);
 			return () => clearTimeout(timerRef.current);
 		}
 
 		// Step 1 (investigation): wait for typewriter to finish + 4s
 		if (currentStep === 1) {
 			if (!typewriterDone) return; // wait
-			timerRef.current = setTimeout(() => setCurrentStep(2), 4000);
+			timerRef.current = setTimeout(() => goToStep(2), 4000);
 			return () => clearTimeout(timerRef.current);
 		}
 
 		// Step 2 (map): wait 7s then loop
 		if (currentStep === 2) {
 			timerRef.current = setTimeout(() => {
-				setCurrentStep(0);
+				goToStep(0, "left");
 				setTypewriterDone(false);
 			}, STEP_DURATIONS[2]);
 			return () => clearTimeout(timerRef.current);
@@ -660,8 +668,8 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 		setInteractionMode("user");
 		clearTimeout(timerRef.current);
 		if (step === 1) setTypewriterDone(false);
-		setCurrentStep(step);
-	}, []);
+		goToStep(step);
+	}, [goToStep]);
 
 	const handleStepSelect = useCallback((step: Step) => {
 		pauseAndAdvance(step);
@@ -673,6 +681,14 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 				@keyframes vptour-fade-in {
 					from { opacity: 0; transform: translateY(4px); }
 					to   { opacity: 1; transform: translateY(0); }
+				}
+				@keyframes vptour-slide-left {
+					from { opacity: 0; transform: translateX(30px); }
+					to   { opacity: 1; transform: translateX(0); }
+				}
+				@keyframes vptour-slide-right {
+					from { opacity: 0; transform: translateX(-30px); }
+					to   { opacity: 1; transform: translateX(0); }
 				}
 				@keyframes vptour-click-pulse {
 					0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.5); }
@@ -736,7 +752,7 @@ export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTou
 							ref={panelRef}
 							className="h-[520px] shrink-0 overflow-hidden p-4 sm:h-[540px] sm:p-6 md:h-[540px] md:p-7 lg:h-[560px] lg:p-8"
 						>
-							<div key={currentStep} className="h-full animate-[vptour-fade-in_0.25s_ease-out]" style={{ animationFillMode: "both" }}>
+							<div key={currentStep} className={`h-full ${slideDir === "left" ? "animate-[vptour-slide-left_0.35s_ease-out]" : "animate-[vptour-slide-right_0.35s_ease-out]"}`} style={{ animationFillMode: "both" }}>
 								{currentStep === 0 && (
 									<StepActionsQueue onClickP1={() => pauseAndAdvance(1)} />
 								)}

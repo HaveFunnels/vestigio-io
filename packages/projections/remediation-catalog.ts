@@ -2122,6 +2122,54 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 
 	// ─────────────────────────────────────────────
+	// Wave 8.1: Payment Health & Involuntary Churn
+	// ──────────────────────────────────────���──────
+
+	failed_payment_revenue_drain: {
+		remediation_steps: [
+			'Ative card updater automático no Stripe pra renovar cartões expirados sem intervenção do cliente.',
+			'Configure smart retry (Stripe Billing) com backoff progressivo — 3 a 5 tentativas antes de cancelar.',
+			'Envie email ao cliente no primeiro failure com link direto pra atualizar método de pagamento.',
+			'Implemente grace period de 5-7 dias antes de suspender acesso após falha de pagamento.',
+			'Monitore failed_payment_rate semanal com alerta quando ultrapassar 5%.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Stripe pra verificar se failed_payment_rate caiu abaixo de 5% no próximo ciclo de 30d.',
+		verification_eta_seconds: 30,
+	},
+
+	subscriber_churn_unsustainable: {
+		remediation_steps: [
+			'Implemente pesquisa de cancelamento (1-2 perguntas obrigatórias) pra mapear motivos reais de churn.',
+			'Crie ofertas de retenção escalonadas: pause → downgrade → extensão → desconto temporário.',
+			'Configure dunning automation com emails personalizados pra recuperar involuntary churn.',
+			'Analise cohorts de churn por tenure — identifique em qual mês os subscribers mais cancelam.',
+			'Implemente health score de subscriber baseado em uso do produto pra intervir antes do cancelamento.',
+		],
+		estimated_effort_hours: 24,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull Stripe pra verificar se subscriber_churn_rate caiu abaixo de 7% no próximo ciclo de 30d.',
+		verification_eta_seconds: 30,
+	},
+
+	payment_diversity_insufficient: {
+		remediation_steps: [
+			'Integre gateway secundário (ex: Stripe + Adyen, ou Stripe + PayPal) pra redundância.',
+			'Configure roteamento inteligente: PIX/boleto pra BR, cartão internacional via gateway secundário.',
+			'Implemente failover automático — se o gateway primário retorna erro, tenta no secundário.',
+			'Monitore uptime e taxa de sucesso por gateway pra detectar degradação antes que vire outage.',
+		],
+		estimated_effort_hours: 40,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Re-pull dados de pagamento pra verificar se há mais de um gateway ativo processando transações.',
+		verification_eta_seconds: 30,
+	},
+
+	// ─────────────────────────────────────────────
 	// Behavioral (Phase 4B — pixel-dependent)
 	// ─────────────────────────────────────────────
 	// All entries use pixel_accumulation strategy — verification

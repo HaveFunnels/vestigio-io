@@ -1457,14 +1457,22 @@
 				"revenue_integrity": "Revenue Integrity",
 				"chargeback_resilience": "Chargeback Resilience",
 				"copy_alignment": "Copy Alignment",
-				"saas_growth_readiness": "SaaS Growth"
+				"channel_integrity": "Channel Integrity",
+				"discoverability": "Discoverability",
+				"brand_integrity": "Brand Integrity",
+				"saas_growth_readiness": "SaaS Growth",
+				"payment_health": "Payment Health"
 			},
 			"pack_labels": {
 				"scale_readiness": "Scale",
 				"revenue_integrity": "Revenue",
 				"chargeback_resilience": "Chargeback",
 				"copy_alignment": "Copy",
-				"saas_growth_readiness": "SaaS"
+				"channel_integrity": "Channel",
+				"discoverability": "Discovery",
+				"brand_integrity": "Brand",
+				"saas_growth_readiness": "SaaS",
+				"payment_health": "Payments"
 			},
 			"polarity": {
 				"all": "All Findings",
@@ -1859,6 +1867,10 @@
 				"revenue": "Revenue Integrity",
 				"chargeback": "Chargeback Resilience",
 				"copy_alignment": "Copy Alignment",
+				"channel_integrity": "Channel Integrity",
+				"discoverability": "Discoverability",
+				"brand_integrity": "Brand Integrity",
+				"payment_health": "Payment Health",
 				"first_impression": "First Impression Revenue",
 				"action_value": "Action Value Map",
 				"acquisition_integrity": "Acquisition Integrity",
@@ -4165,6 +4177,9 @@
 			"moderate_chargeback_risk": "Moderate chargeback risk. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Some protective measures are missing.",
 			"low_chargeback_risk": "Low chargeback risk. Risk score: {risk_score}/100. Minor improvements available but not blocking.",
 			"chargeback_resilience_strong": "Chargeback resilience is strong. No significant dispute risk detected (score: {risk_score}/100).",
+			"payment_health_critical": "Payment health is critical. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Failed payment rate or subscriber churn has crossed dangerous thresholds.",
+			"payment_health_at_risk": "Payment health is at risk. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Elevated failed payments or subscriber churn are creating preventable revenue loss.",
+			"payment_health_stable": "Payment health is stable. Failed payment and churn rates are within acceptable ranges (score: {risk_score}/100).",
 			"default_summary": "Decision: {decision_key}. Risk: {risk_score}/100, Confidence: {confidence_score}/100."
 		},
 		"confidence_narrative": {

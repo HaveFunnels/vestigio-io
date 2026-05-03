@@ -1457,6 +1457,9 @@
 				"revenue_integrity": "Integridad de Ingresos",
 				"chargeback_resilience": "Resiliencia ante Chargebacks",
 				"copy_alignment": "Alineamiento de Copy",
+				"channel_integrity": "Integridad del Canal",
+				"discoverability": "Descubrimiento",
+				"brand_integrity": "Integridad de Marca",
 				"saas_growth_readiness": "Crecimiento SaaS"
 			},
 			"pack_labels": {
@@ -1464,6 +1467,9 @@
 				"revenue_integrity": "Ingresos",
 				"chargeback_resilience": "Chargeback",
 				"copy_alignment": "Copy",
+				"channel_integrity": "Canal",
+				"discoverability": "Descubrimiento",
+				"brand_integrity": "Marca",
 				"saas_growth_readiness": "SaaS"
 			},
 			"polarity": {
@@ -1864,6 +1870,9 @@
 				"revenue": "Integridad de Ingresos",
 				"chargeback": "Resiliencia de Chargeback",
 				"copy_alignment": "Alineamiento de Copy",
+				"channel_integrity": "Integridad del Canal",
+				"discoverability": "Descubrimiento",
+				"brand_integrity": "Integridad de Marca",
 				"first_impression": "Ingresos de Primera Impresión",
 				"action_value": "Mapa de Valor de Acciones",
 				"acquisition_integrity": "Integridad de Adquisición",

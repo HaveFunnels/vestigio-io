@@ -525,6 +525,10 @@ export enum InferenceCategory {
   // Wave 7.11: SaaS/Stripe metrics
   SubscriberChurnElevated = 'subscriber_churn_elevated',
   FailedPaymentRateHigh = 'failed_payment_rate_high',
+  // Wave 8.1: Payment Health & Involuntary Churn
+  FailedPaymentRevenueDrain = 'failed_payment_revenue_drain',
+  SubscriberChurnUnsustainable = 'subscriber_churn_unsustainable',
+  PaymentDiversityInsufficient = 'payment_diversity_insufficient',
   // Wave 4.1: Cybersecurity Phase 2
   InformationDisclosure = 'information_disclosure',
   ScriptSupplyChainRisk = 'script_supply_chain_risk',

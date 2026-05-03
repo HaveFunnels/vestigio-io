@@ -260,6 +260,10 @@ export function computeInferences(
   // Wave 7.11: SaaS/Stripe metric inferences
   inferences.push(...inferSubscriberChurnElevated(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferFailedPaymentRateHigh(byKey, scoping, cycle_ref, ids));
+  // Wave 8.1: Payment Health & Involuntary Churn inferences
+  inferences.push(...inferFailedPaymentRevenueDrain(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferSubscriberChurnUnsustainable(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferPaymentDiversityInsufficient(byKey, scoping, cycle_ref, ids));
 
   // Wave 4.1: Cybersecurity Phase 2
   inferences.push(...inferInformationDisclosure(first, byKey, scoping, cycle_ref, ids));
@@ -4249,6 +4253,70 @@ function inferFailedPaymentRateHigh(byKey: Map<string, Signal>, scoping: Scoping
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value}% of payment attempts are failing — this is involuntary churn from expired cards, insufficient funds, and gateway errors. Each failed payment is a subscriber who intends to pay but cannot. Without dunning automation and card updater integration, these subscribers silently churn without ever making a conscious decision to leave.`,
+    reasoning_slots: { severity },
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 8.1: Payment Health & Involuntary Churn Inferences
+// ──────────────────────────────────────────────
+
+function inferFailedPaymentRevenueDrain(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('failed_payment_rate_elevated');
+  if (!sig) return [];
+  const rate = sig.numeric_value ?? 0;
+  const severity = rate > 10 ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'failed_payment_revenue_drain',
+    category: InferenceCategory.FailedPaymentRevenueDrain,
+    conclusion: 'failed_payment_revenue_drain',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Failed payments are draining revenue through involuntary churn at a rate of ${rate}%. Every failed charge is a subscriber who wants to pay but can't — expired cards, insufficient funds, and gateway errors are silently converting paying customers into churned ones. Without dunning automation, card updater integration, and grace periods, this revenue loss compounds monthly.`,
+    reasoning_slots: { severity, rate },
+  })];
+}
+
+function inferSubscriberChurnUnsustainable(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('subscriber_churn_rate_elevated');
+  if (!sig) return [];
+  const rate = sig.numeric_value ?? 0;
+  const severity = rate > 12 ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'subscriber_churn_unsustainable',
+    category: InferenceCategory.SubscriberChurnUnsustainable,
+    conclusion: 'subscriber_churn_unsustainable',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Subscriber churn rate of ${rate}% exceeds the sustainable threshold of 7%. At this rate, the subscriber base turns over completely in ${Math.round(100 / rate)} months. Growth cannot outpace attrition — every new subscriber acquired is offset by churn. This requires immediate intervention through retention offers, cancellation surveys, and involuntary churn recovery via dunning automation.`,
+    reasoning_slots: { severity, rate },
+  })];
+}
+
+function inferPaymentDiversityInsufficient(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  // Reuse the existing single_payment_gateway_risk signal
+  const sig = byKey.get('payment_gateway_concentrated');
+  if (!sig) return [];
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'payment_diversity_insufficient',
+    category: InferenceCategory.PaymentDiversityInsufficient,
+    conclusion: 'payment_diversity_insufficient',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `${sig.numeric_value}% of payment volume flows through a single gateway. A single provider outage, rate limit change, or policy update halts all recurring revenue collection. Payment infrastructure diversity is a prerequisite for subscription business resilience — without a fallback gateway, any disruption converts a technical issue into a mass involuntary churn event.`,
     reasoning_slots: { severity },
   })];
 }

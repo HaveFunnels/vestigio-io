@@ -289,6 +289,11 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   subscriber_churn_elevated:          { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss', 'scale_risk'] },
   failed_payment_rate_high:           { root_cause_key: 'commerce_operations_exposed', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
 
+  // Wave 8.1: Payment Health & Involuntary Churn
+  failed_payment_revenue_drain:       { root_cause_key: 'payment_infrastructure_weakness', category: 'commerce_continuity', impact_types: ['revenue_loss'] },
+  subscriber_churn_unsustainable:     { root_cause_key: 'subscriber_retention_failure', category: 'commerce_continuity', impact_types: ['revenue_loss', 'scale_risk'] },
+  payment_diversity_insufficient:     { root_cause_key: 'payment_infrastructure_weakness', category: 'commerce_continuity', impact_types: ['revenue_loss', 'scale_risk'] },
+
   // Wave 4.1: Cybersecurity Phase 2
   information_disclosure:             { root_cause_key: 'security_posture_inadequate', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
   script_supply_chain_risk:           { root_cause_key: 'channel_integrity_compromise', category: 'channel_integrity', impact_types: ['trust_erosion', 'revenue_loss'] },
@@ -370,6 +375,9 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   copy_cross_page_inconsistent: 'Your pages contradict each other or shift tone',
   // Wave 3.10 Fase 3 — ad-message-match integration into copy pack
   ad_landing_promise_gap: 'Your ads promise one thing but your landing page delivers another',
+  // Wave 8.1: Payment Health & Involuntary Churn
+  payment_infrastructure_weakness: 'Your payment infrastructure is silently losing subscribers',
+  subscriber_retention_failure: 'Subscribers are churning faster than you can replace them',
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -478,6 +486,11 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
 
   // Wave 3.10 Fase 3 — ad-message-match integration into copy pack
   ad_landing_promise_gap: "Your paid ads make promises your landing pages don't keep. The ad headline says one thing, but when the buyer clicks through, the landing page delivers a different message, different value proposition, or different offer entirely. Every mismatched click costs you money twice — once for the ad spend, and again for the lost conversion. The buyer arrived expecting exactly what the ad said; instead they got a bait-and-switch experience that drives bounce rates up and ROAS down.",
+
+  // Wave 8.1: Payment Health & Involuntary Churn
+  payment_infrastructure_weakness: "Your payment infrastructure is losing subscribers who want to pay. Failed charges from expired cards, insufficient funds, and gateway errors silently convert paying customers into churned ones. Without dunning automation, card updaters, and a fallback payment gateway, every failed payment is permanent revenue loss from a customer who never decided to leave. The compounding effect means that even a small failure rate translates to significant monthly revenue drain — and it gets worse every month you don't fix it.",
+
+  subscriber_retention_failure: "Your subscriber base is shrinking faster than you can grow it. Monthly churn has crossed the threshold where acquisition cannot keep pace with attrition. Every new subscriber you acquire is immediately offset by subscribers leaving — and the economics get worse each month as the base shrinks. This requires both immediate tactical intervention (cancellation surveys, retention offers, dunning recovery) and structural changes to the subscription experience that address why subscribers are leaving in the first place.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

@@ -174,6 +174,30 @@ export function isBehavioralPackEligible(
   return { eligible: blockers.length === 0, confidence, blockers, reasons };
 }
 
+// ── Payment Health (Wave 8.1) ────────────────
+
+export function isPaymentHealthEligible(
+  hasStripeData: boolean,
+): EligibilityResult {
+  const blockers: string[] = [];
+  const reasons: string[] = [];
+
+  if (!hasStripeData) {
+    blockers.push('No Stripe integration data — payment health analysis requires Stripe connection');
+  }
+
+  if (blockers.length === 0) {
+    reasons.push('Stripe payment data available — failed payment rate, subscriber churn, and MRR data connected');
+  }
+
+  return {
+    eligible: blockers.length === 0,
+    confidence: hasStripeData ? 1 : 0,
+    blockers,
+    reasons,
+  };
+}
+
 // ── Pack Eligibility Summary ──────────────────
 
 export interface PackEligibility {
@@ -189,6 +213,8 @@ export interface PackEligibility {
   money_moment_exposure: EligibilityResult;
   // Behavioral workspaces (pixel-dependent) — shared gate for all 7
   behavioral_workspaces: EligibilityResult;
+  // Wave 8.1: Payment Health — gated on Stripe integration data
+  payment_health: EligibilityResult;
 }
 
 export function computePackEligibility(
@@ -196,6 +222,7 @@ export function computePackEligibility(
   saasProfile: SaasProfile | null,
   accessConfig: SaasAccessConfig | null,
   behavioralContext?: { hasBehavioralEvidence: boolean; sessionCount: number },
+  stripeContext?: { hasStripeData: boolean },
 ): PackEligibility {
   return {
     // Scale readiness is always eligible (applicable to all businesses)
@@ -216,6 +243,10 @@ export function computePackEligibility(
     behavioral_workspaces: isBehavioralPackEligible(
       behavioralContext?.hasBehavioralEvidence ?? false,
       behavioralContext?.sessionCount ?? 0,
+    ),
+    // Wave 8.1: Payment Health — gated on Stripe integration data
+    payment_health: isPaymentHealthEligible(
+      stripeContext?.hasStripeData ?? false,
     ),
   };
 }

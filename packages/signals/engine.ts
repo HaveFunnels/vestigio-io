@@ -6368,6 +6368,71 @@ function extractCommerceContextSignals(
       description: `${(rate * 100).toFixed(1)}% of payment attempts are failing. Each failed payment is revenue that the customer intended to pay but couldn't — involuntary churn from card declines, expired cards, and insufficient funds is silently leaking subscribers.`,
     }));
   }
+
+  // ── Wave 8.1: Payment Health & Involuntary Churn signals (Stripe-sourced) ──
+
+  // 11. Failed payment rate elevated (> 5% — payment_health pack threshold)
+  if (commerce.failed_payment_rate !== null && commerce.failed_payment_rate > 0.05) {
+    const rate = commerce.failed_payment_rate;
+    const severity = rate > 0.10 ? 'high' : 'medium';
+    signals.push(createSignal({
+      signal_key: 'failed_payment_rate_elevated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.failed_payment_rate_elevated',
+      value: severity,
+      numeric_value: Math.round(rate * 100),
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Failed payment rate of ${(rate * 100).toFixed(1)}% exceeds the 5% involuntary churn threshold. At this rate, failed payments are draining approximately $${commerce.mrr ? Math.round(commerce.mrr * rate).toLocaleString() : '?'}/mo in revenue from subscribers who intend to pay but can't.`,
+    }));
+  }
+
+  // 12. Subscriber churn rate elevated (> 7% — payment_health pack threshold)
+  if (commerce.subscriber_churn_rate !== null && commerce.subscriber_churn_rate > 0.07) {
+    const rate = commerce.subscriber_churn_rate;
+    const severity = rate > 0.12 ? 'high' : 'medium';
+    signals.push(createSignal({
+      signal_key: 'subscriber_churn_rate_elevated',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.subscriber_churn_rate_elevated',
+      value: severity,
+      numeric_value: Math.round(rate * 100),
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Subscriber churn rate of ${(rate * 100).toFixed(1)}% exceeds the sustainable 7% threshold. At this rate, the entire subscriber base turns over in ${Math.round(100 / (rate * 100))} months — growth cannot outpace attrition.`,
+    }));
+  }
+
+  // 13. MRR available (informational — Stripe-sourced)
+  if (commerce.mrr != null && commerce.mrr > 0) {
+    signals.push(createSignal({
+      signal_key: 'mrr_available',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.mrr',
+      value: 'present',
+      numeric_value: Math.round(commerce.mrr),
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Monthly Recurring Revenue (MRR) is $${Math.round(commerce.mrr).toLocaleString()}/mo from Stripe subscription data. This anchors impact calculations for payment health findings to real revenue figures.`,
+    }));
+  }
+
+  // 14. Payment health data present (meta-signal — Stripe integration connected)
+  if (commerce.failed_payment_rate != null || commerce.subscriber_churn_rate != null) {
+    signals.push(createSignal({
+      signal_key: 'payment_health_data_present',
+      category: SignalCategory.Commerce,
+      attribute: 'commerce.payment_health_data',
+      value: 'present',
+      confidence: 95,
+      scoping, cycle_ref, ids,
+      evidence_refs: integrationRefs,
+      description: `Stripe payment health data is available. Failed payment rate${commerce.failed_payment_rate != null ? `: ${(commerce.failed_payment_rate * 100).toFixed(1)}%` : ': unavailable'}, subscriber churn rate${commerce.subscriber_churn_rate != null ? `: ${(commerce.subscriber_churn_rate * 100).toFixed(1)}%` : ': unavailable'}.`,
+    }));
+  }
 }
 
 // ──────────────────────────────────────────────

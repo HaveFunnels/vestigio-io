@@ -1743,6 +1743,32 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     base_metric: 'revenue',
   },
 
+  // ── Wave 8.1: Payment Health & Involuntary Churn ──────────────────────
+  failed_payment_revenue_drain: {
+    inference_key: 'failed_payment_revenue_drain',
+    impact_category: 'revenue_loss',
+    cause: 'Failed payments are draining monthly revenue through involuntary churn',
+    effect: 'Each failed payment attempt converts a paying subscriber into a churned one with zero intent to leave — without dunning automation and card updater integration, the revenue loss from expired cards, insufficient funds, and gateway errors compounds monthly',
+    high: { min: 0.05, max: 0.08 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  subscriber_churn_unsustainable: {
+    inference_key: 'subscriber_churn_unsustainable',
+    impact_category: 'revenue_loss',
+    cause: 'Subscriber churn rate exceeds sustainable threshold — MRR is contracting',
+    effect: 'At unsustainable churn rates, the business must acquire disproportionately more subscribers every month just to maintain flat revenue — the gap between required acquisition and organic growth widens exponentially, making growth mathematically impossible without intervention',
+    high: { min: 0.08, max: 0.15 }, medium: { min: 0.04, max: 0.08 }, low: { min: 0.02, max: 0.04 },
+    base_metric: 'revenue',
+  },
+  payment_diversity_insufficient: {
+    inference_key: 'payment_diversity_insufficient',
+    impact_category: 'revenue_loss',
+    cause: 'All recurring revenue flows through a single payment gateway with no fallback',
+    effect: 'A single gateway outage, rate limit change, or policy update halts all subscription billing — the expected cost is a function of gateway downtime frequency multiplied by MRR, turning a temporary technical issue into permanent subscriber loss',
+    high: { min: 0.05, max: 0.08 }, medium: { min: 0.02, max: 0.05 }, low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+
   // ── Wave 4.6: Neglected Findings ──────────────────────
 
   payment_handoff_dropoff: {

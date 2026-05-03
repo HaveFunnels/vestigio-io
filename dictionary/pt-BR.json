@@ -1457,14 +1457,22 @@
 				"revenue_integrity": "Integridade de Faturamento",
 				"chargeback_resilience": "Resiliência a Chargeback",
 				"copy_alignment": "Alinhamento de Copy",
-				"saas_growth_readiness": "Crescimento SaaS"
+				"channel_integrity": "Integridade do Canal",
+				"discoverability": "Descoberta",
+				"brand_integrity": "Integridade da Marca",
+				"saas_growth_readiness": "Crescimento SaaS",
+				"payment_health": "Saúde de Pagamentos"
 			},
 			"pack_labels": {
 				"scale_readiness": "Escala",
 				"revenue_integrity": "Faturamento",
 				"chargeback_resilience": "Chargeback",
 				"copy_alignment": "Copy",
-				"saas_growth_readiness": "SaaS"
+				"channel_integrity": "Canal",
+				"discoverability": "Descoberta",
+				"brand_integrity": "Marca",
+				"saas_growth_readiness": "SaaS",
+				"payment_health": "Pagamentos"
 			},
 			"polarity": {
 				"all": "Todas as Descobertas",
@@ -1878,6 +1886,10 @@
 				"revenue": "Integridade de Faturamento",
 				"chargeback": "Resiliência de Chargeback",
 				"copy_alignment": "Alinhamento de Copy",
+				"channel_integrity": "Integridade do Canal",
+				"discoverability": "Descoberta",
+				"brand_integrity": "Integridade da Marca",
+				"payment_health": "Saúde de Pagamentos",
 				"first_impression": "Faturamento de Primeira Impressão",
 				"action_value": "Mapa de Valor de Ações",
 				"acquisition_integrity": "Integridade de Aquisição",
@@ -4209,6 +4221,9 @@
 			"moderate_chargeback_risk": "Risco moderado de Chargeback. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Algumas medidas de proteção estão ausentes.",
 			"low_chargeback_risk": "Baixo risco de Chargeback. Pontuação de risco: {risk_score}/100. Melhorias menores disponíveis mas não bloqueantes.",
 			"chargeback_resilience_strong": "A resiliência contra Chargeback está forte. Nenhum risco significativo de disputas detectado (pontuação: {risk_score}/100).",
+			"payment_health_critical": "Saúde de pagamentos crítica. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Taxa de falha de pagamento ou churn de assinantes ultrapassou limites perigosos.",
+			"payment_health_at_risk": "Saúde de pagamentos em risco. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Falhas de pagamento ou churn elevado estão gerando perda de receita evitável.",
+			"payment_health_stable": "Saúde de pagamentos estável. Taxas de falha de pagamento e churn estão dentro dos limites aceitáveis (pontuação: {risk_score}/100).",
 			"default_summary": "Decisão: {decision_key}. Risco: {risk_score}/100, Confiança: {confidence_score}/100."
 		},
 		"confidence_narrative": {

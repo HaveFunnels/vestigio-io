@@ -306,6 +306,66 @@ function resolveDecisionOutcome(
     return { decision_key: 'copy_aligned', category: DecisionClass.State, primary_outcome: 'observation' };
   }
 
+  // ── Channel Integrity ──
+
+  if (questionKey === 'is_channel_integrity_compromised') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'channel_integrity_critical', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'channel_integrity_elevated', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'channel_integrity_weak', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'channel_integrity_strong', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  // ── Discoverability ──
+
+  if (questionKey === 'is_discoverability_limiting_growth') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'discoverability_critically_weak', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'discoverability_gaps_significant', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'discoverability_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'discoverability_adequate', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  // ── Brand Integrity ──
+
+  if (questionKey === 'is_brand_integrity_at_risk') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'brand_integrity_critical', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'brand_integrity_elevated', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'brand_integrity_weak', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'brand_integrity_strong', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  // ── Payment Health (Wave 8.1) ──
+
+  if (questionKey === 'is_payment_health_creating_revenue_risk') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'payment_health_critical', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'payment_health_at_risk', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'payment_health_at_risk', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'payment_health_stable', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
   // ── Security posture (Wave 3.3) ──
 
   if (questionKey === 'is_visible_security_posture_creating_financial_risk') {
@@ -362,6 +422,9 @@ function buildActions(
   }
   if (questionKey === 'is_copy_aligned_with_commercial_intent') {
     return buildCopyAlignmentActions(risk, inferences, translations);
+  }
+  if (questionKey === 'is_payment_health_creating_revenue_risk') {
+    return buildPaymentHealthActions(risk, inferences, translations);
   }
 
   const ta = translations?.actions;
@@ -722,6 +785,70 @@ function buildCopyAlignmentActions(
   };
 }
 
+function buildPaymentHealthActions(
+  risk: RiskEvaluation,
+  inferences: Inference[],
+  translations?: EngineTranslations,
+): { primary: string; secondary: string[]; verification: string[] } {
+  const ts = translations?.actions?.payment_health;
+  const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
+
+  const secondary: string[] = [];
+  const verification: string[] = [];
+
+  const failedPayment = inferences.find(i => i.inference_key === 'failed_payment_revenue_drain');
+  const churnUnsustainable = inferences.find(i => i.inference_key === 'subscriber_churn_unsustainable');
+  const diversityInsufficient = inferences.find(i => i.inference_key === 'payment_diversity_insufficient');
+
+  if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+    const primary = tr('incident_primary', 'Your payment infrastructure is actively losing revenue. Failed payments and churn require immediate intervention.');
+
+    if (failedPayment && failedPayment.conclusion_value !== 'low') {
+      secondary.push(tr('incident_failed_payments', 'Activate card updater and smart retry in Stripe. Send dunning emails on first failure with a direct link to update payment method.'));
+    }
+    if (churnUnsustainable && churnUnsustainable.conclusion_value !== 'low') {
+      secondary.push(tr('incident_churn', 'Implement cancellation survey and retention offers (pause, downgrade, extension) before final cancellation.'));
+    }
+    if (diversityInsufficient && diversityInsufficient.conclusion_value !== 'low') {
+      secondary.push(tr('incident_diversity', 'Add a secondary payment gateway with automatic failover to prevent single-point-of-failure outages.'));
+    }
+
+    verification.push(tr('incident_verify', 'Re-pull Stripe data after 30 days to confirm failed payment rate dropped below 5%.'));
+    return { primary, secondary, verification };
+  }
+
+  if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+    const primary = tr('fix_primary', 'Payment health has issues that will compound as you grow. Fix before scaling subscriber acquisition.');
+
+    if (failedPayment) {
+      secondary.push(tr('fix_failed_payments', 'Configure dunning automation with progressive retry and customer notification.'));
+    }
+    if (churnUnsustainable) {
+      secondary.push(tr('fix_churn', 'Analyze churn cohorts by tenure to identify the month where most subscribers cancel.'));
+    }
+
+    verification.push(tr('fix_verify', 'Re-pull Stripe data after implementing changes to track improvement.'));
+    return { primary, secondary, verification };
+  }
+
+  if (risk.decision_impact === DecisionImpact.Optimize) {
+    return {
+      primary: tr('optimize_primary', 'Payment health is acceptable but has room for improvement.'),
+      secondary: [
+        ...(failedPayment ? [tr('optimize_dunning', 'Consider adding grace periods before access suspension on failed payments.')] : []),
+        ...(diversityInsufficient ? [tr('optimize_diversity', 'Consider adding a backup payment gateway for resilience.')] : []),
+      ],
+      verification: [tr('optimize_verify', 'Monitor payment health metrics monthly via Stripe integration.')],
+    };
+  }
+
+  return {
+    primary: tr('stable_primary', 'Payment health is stable. Failed payment and churn rates are within acceptable ranges.'),
+    secondary: [],
+    verification: [tr('stable_verify', 'Continue monitoring payment health through Stripe integration.')],
+  };
+}
+
 function buildSummary(decisionKey: string, risk: RiskEvaluation, translations?: EngineTranslations): string {
   const ts = translations?.summaries;
 
@@ -780,6 +907,40 @@ function buildSummary(decisionKey: string, risk: RiskEvaluation, translations?: 
       return `Copy has minor alignment gaps. Risk score: ${risk.raw_risk_score}/100. Messaging is mostly effective but refinements could lift conversion.`;
     case 'copy_aligned':
       return `Copy is aligned with commercial intent. No significant gaps detected (score: ${risk.raw_risk_score}/100).`;
+    // Channel Integrity
+    case 'channel_integrity_critical':
+      return `Critical channel integrity compromise detected. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Payment surfaces, scripts, or infrastructure are exposed to tampering or hijack.`;
+    case 'channel_integrity_elevated':
+      return `Elevated channel integrity risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Abuse vectors or brittle infrastructure need attention before scaling.`;
+    case 'channel_integrity_weak':
+      return `Channel integrity has minor gaps. Risk score: ${risk.raw_risk_score}/100. Hardening opportunities exist but are not blocking.`;
+    case 'channel_integrity_strong':
+      return `Channel integrity is strong. No significant compromise vectors detected (score: ${risk.raw_risk_score}/100).`;
+    // Discoverability
+    case 'discoverability_critically_weak':
+      return `Discoverability is critically weak. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Commercial pages are invisible to search engines and social platforms.`;
+    case 'discoverability_gaps_significant':
+      return `Significant discoverability gaps. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Search representation and social previews need improvement before scaling traffic.`;
+    case 'discoverability_improvable':
+      return `Discoverability has optimization opportunities. Risk score: ${risk.raw_risk_score}/100. Pages are indexable but not well-represented.`;
+    case 'discoverability_adequate':
+      return `Discoverability is adequate. No significant gaps detected (score: ${risk.raw_risk_score}/100).`;
+    // Brand Integrity
+    case 'brand_integrity_critical':
+      return `Critical brand integrity threat. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Active impersonation or phishing surfaces are diverting customer trust and revenue.`;
+    case 'brand_integrity_elevated':
+      return `Elevated brand integrity risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Lookalike domains or deceptive surfaces are competing for brand traffic.`;
+    case 'brand_integrity_weak':
+      return `Brand integrity has minor exposure. Risk score: ${risk.raw_risk_score}/100. Brand presence is diluted but not under active threat.`;
+    case 'brand_integrity_strong':
+      return `Brand integrity is strong. No significant impersonation or dilution detected (score: ${risk.raw_risk_score}/100).`;
+    // Payment Health (Wave 8.1)
+    case 'payment_health_critical':
+      return `Payment health is critical. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Failed payment rate or subscriber churn has crossed dangerous thresholds — revenue is being lost to involuntary churn.`;
+    case 'payment_health_at_risk':
+      return `Payment health is at risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Elevated failed payments or subscriber churn are creating preventable revenue loss.`;
+    case 'payment_health_stable':
+      return `Payment health is stable. Failed payment and churn rates are within acceptable ranges (score: ${risk.raw_risk_score}/100).`;
     default:
       return `Decision: ${decisionKey}. Risk: ${risk.raw_risk_score}/100, Confidence: ${risk.confidence_score}/100.`;
   }

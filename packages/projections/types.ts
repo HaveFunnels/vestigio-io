@@ -309,6 +309,9 @@ export type WorkspaceProjectionType =
   | 'chargeback'
   | 'security_posture'
   | 'copy_alignment'
+  | 'channel_integrity'
+  | 'discoverability'
+  | 'brand_integrity'
   // Behavioral workspaces (pixel-dependent)
   | 'first_impression'
   | 'action_value'
@@ -541,6 +544,8 @@ export interface EngineTranslations {
      */
     security_posture?: Record<string, string>;
     copy_alignment?: Record<string, string>;
+    /** Wave 8.1: Payment Health pack actions. Optional — falls back to English. */
+    payment_health?: Record<string, string>;
   };
   summaries: Record<string, string>;
   confidence_narrative: Record<string, string>;

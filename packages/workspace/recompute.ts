@@ -206,6 +206,30 @@ export interface MultiPackResult {
     actions: Action[];
     workspace: WorkspaceResult;
   };
+  channel_integrity: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: WorkspaceResult;
+  };
+  discoverability: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: WorkspaceResult;
+  };
+  brand_integrity: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: WorkspaceResult;
+  };
+  payment_health: {
+    decision: Decision;
+    risk_evaluation: RiskEvaluation;
+    actions: Action[];
+    workspace: WorkspaceResult;
+  } | null; // null when Stripe not connected
   intelligence: DecisionIntelligenceResult;
   impact: {
     value_cases: QuantifiedValueCase[];
@@ -372,6 +396,63 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     copyAlignmentResult.decision, copyAlignmentActions, inferences,
   );
 
+  // Channel Integrity decision
+  const channelIntegrityResult: DecisionResult = produceDecision({
+    question_key: 'is_channel_integrity_compromised',
+    scoping, cycle_ref, signals, inferences,
+    conversion_proximity, is_production, translations,
+  });
+  const channelIntegrityActions = deriveActions(channelIntegrityResult.decision);
+  const channelIntegrityWorkspace = createPreflightWorkspace(
+    { name: 'Channel Integrity', type: 'analysis', scoping, landing_url, cycle_ref },
+    channelIntegrityResult.decision, channelIntegrityActions, inferences,
+  );
+
+  // Discoverability decision
+  const discoverabilityResult: DecisionResult = produceDecision({
+    question_key: 'is_discoverability_limiting_growth',
+    scoping, cycle_ref, signals, inferences,
+    conversion_proximity, is_production, translations,
+  });
+  const discoverabilityActions = deriveActions(discoverabilityResult.decision);
+  const discoverabilityWorkspace = createPreflightWorkspace(
+    { name: 'Discoverability', type: 'analysis', scoping, landing_url, cycle_ref },
+    discoverabilityResult.decision, discoverabilityActions, inferences,
+  );
+
+  // Brand Integrity decision
+  const brandIntegrityResult: DecisionResult = produceDecision({
+    question_key: 'is_brand_integrity_at_risk',
+    scoping, cycle_ref, signals, inferences,
+    conversion_proximity, is_production, translations,
+  });
+  const brandIntegrityActions = deriveActions(brandIntegrityResult.decision);
+  const brandIntegrityWorkspace = createPreflightWorkspace(
+    { name: 'Brand Integrity', type: 'analysis', scoping, landing_url, cycle_ref },
+    brandIntegrityResult.decision, brandIntegrityActions, inferences,
+  );
+
+  // Wave 8.1: Payment Health decision (gated on Stripe integration data)
+  let paymentHealthPack: MultiPackResult['payment_health'] = null;
+  if (commerceContext?.failed_payment_rate != null || commerceContext?.subscriber_churn_rate != null) {
+    const paymentHealthResult: DecisionResult = produceDecision({
+      question_key: 'is_payment_health_creating_revenue_risk',
+      scoping, cycle_ref, signals, inferences,
+      conversion_proximity, is_production, translations,
+    });
+    const paymentHealthActions = deriveActions(paymentHealthResult.decision);
+    const paymentHealthWorkspace = createPreflightWorkspace(
+      { name: 'Payment Health', type: 'analysis', scoping, landing_url, cycle_ref },
+      paymentHealthResult.decision, paymentHealthActions, inferences,
+    );
+    paymentHealthPack = {
+      decision: paymentHealthResult.decision,
+      risk_evaluation: paymentHealthResult.risk_evaluation,
+      actions: paymentHealthActions,
+      workspace: paymentHealthWorkspace,
+    };
+  }
+
   // Classification — probabilistic business model + surface hypotheses
   const classInput = extractClassificationInput(
     evidence,
@@ -400,9 +481,17 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     }
   }
 
+  // Detect Stripe integration data for payment_health eligibility
+  const hasStripeData = commerceContext != null && (
+    commerceContext.failed_payment_rate != null ||
+    commerceContext.subscriber_churn_rate != null
+  );
+
   const packEligibility = computePackEligibility(classification, null, null, {
     hasBehavioralEvidence,
     sessionCount: behavioralSessionCount,
+  }, {
+    hasStripeData,
   });
 
   // SaaS growth readiness (only if eligible)
@@ -490,8 +579,13 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   const allInferences = [...inferences, ...saasInferences];
 
   // Collect all decisions and risk evaluations
-  let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision, copyAlignmentResult.decision];
-  let allRiskEvals = [scaleResult.risk_evaluation, revenueResult.risk_evaluation, chargebackResult.risk_evaluation, securityResult.risk_evaluation, copyAlignmentResult.risk_evaluation];
+  let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision, copyAlignmentResult.decision, channelIntegrityResult.decision, discoverabilityResult.decision, brandIntegrityResult.decision];
+  let allRiskEvals = [scaleResult.risk_evaluation, revenueResult.risk_evaluation, chargebackResult.risk_evaluation, securityResult.risk_evaluation, copyAlignmentResult.risk_evaluation, channelIntegrityResult.risk_evaluation, discoverabilityResult.risk_evaluation, brandIntegrityResult.risk_evaluation];
+  // Wave 8.1: Include payment_health in decision arrays
+  if (paymentHealthPack) {
+    allDecisions.push(paymentHealthPack.decision);
+    allRiskEvals.push(paymentHealthPack.risk_evaluation);
+  }
   if (saasGrowthReadiness) {
     allDecisions.push(saasGrowthReadiness.decision);
     allRiskEvals.push(saasGrowthReadiness.risk_evaluation);
@@ -616,8 +710,17 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   actionsByDecision.set(makeRef('decision', allDecisions[2].id), chargebackActions);
   actionsByDecision.set(makeRef('decision', allDecisions[3].id), securityActions);
   actionsByDecision.set(makeRef('decision', allDecisions[4].id), copyAlignmentActions);
-  if (saasGrowthReadiness && allDecisions.length > 5) {
-    actionsByDecision.set(makeRef('decision', allDecisions[5].id), saasGrowthReadiness.actions);
+  actionsByDecision.set(makeRef('decision', allDecisions[5].id), channelIntegrityActions);
+  actionsByDecision.set(makeRef('decision', allDecisions[6].id), discoverabilityActions);
+  actionsByDecision.set(makeRef('decision', allDecisions[7].id), brandIntegrityActions);
+  // Wave 8.1: payment_health actions (index 8 when present, pushing SaaS to 9)
+  let nextDecisionIdx = 8;
+  if (paymentHealthPack) {
+    actionsByDecision.set(makeRef('decision', allDecisions[nextDecisionIdx].id), paymentHealthPack.actions);
+    nextDecisionIdx++;
+  }
+  if (saasGrowthReadiness && allDecisions.length > nextDecisionIdx) {
+    actionsByDecision.set(makeRef('decision', allDecisions[nextDecisionIdx].id), saasGrowthReadiness.actions);
   }
 
   // Impact estimation — with profile freshness penalty and reconciled inputs/amplifiers
@@ -878,9 +981,34 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
       actions: copyAlignmentActions,
       workspace: copyAlignmentWorkspace,
     },
+    channel_integrity: {
+      decision: allDecisions[5],
+      risk_evaluation: allRiskEvals[5],
+      actions: channelIntegrityActions,
+      workspace: channelIntegrityWorkspace,
+    },
+    discoverability: {
+      decision: allDecisions[6],
+      risk_evaluation: allRiskEvals[6],
+      actions: discoverabilityActions,
+      workspace: discoverabilityWorkspace,
+    },
+    brand_integrity: {
+      decision: allDecisions[7],
+      risk_evaluation: allRiskEvals[7],
+      actions: brandIntegrityActions,
+      workspace: brandIntegrityWorkspace,
+    },
+    // Wave 8.1: Payment Health (index 8 when present, null when Stripe not connected)
+    payment_health: paymentHealthPack ? {
+      decision: allDecisions[8] || paymentHealthPack.decision,
+      risk_evaluation: allRiskEvals[8] || paymentHealthPack.risk_evaluation,
+      actions: paymentHealthPack.actions,
+      workspace: paymentHealthPack.workspace,
+    } : null,
     saas_growth_readiness: saasGrowthReadiness ? {
-      decision: allDecisions[5] || saasGrowthReadiness.decision,
-      risk_evaluation: allRiskEvals[5] || saasGrowthReadiness.risk_evaluation,
+      decision: allDecisions[paymentHealthPack ? 9 : 8] || saasGrowthReadiness.decision,
+      risk_evaluation: allRiskEvals[paymentHealthPack ? 9 : 8] || saasGrowthReadiness.risk_evaluation,
       actions: saasGrowthReadiness.actions,
       workspace: saasGrowthReadiness.workspace,
     } : null,

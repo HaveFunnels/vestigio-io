@@ -205,6 +205,7 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   // Wave 3.3: Security posture
   security_header_weakness: 'money_moment_exposure',
   mixed_content_exposure: 'money_moment_exposure',
+  open_redirect_indicator: 'money_moment_exposure',
   sensitive_endpoint_exposed: 'money_moment_exposure',
   // Wave 3.3 expansion: cybersecurity pack
   checkout_script_hijack_risk: 'money_moment_exposure',
@@ -216,6 +217,10 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   cors_misconfiguration_risk: 'money_moment_exposure',
   rate_limiting_absent_on_commerce: 'money_moment_exposure',
   predictable_order_urls: 'money_moment_exposure',
+  // Wave 4.1: Cybersecurity Phase 2
+  information_disclosure: 'money_moment_exposure',
+  script_supply_chain_risk: 'money_moment_exposure',
+  auth_surface_insecure: 'money_moment_exposure',
   // Wave 3.1 Tier 2: LLM enrichment findings
   social_proof_generic: 'revenue_integrity',
   form_error_messages_unhelpful: 'revenue_integrity',
@@ -240,6 +245,10 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   ad_creative_message_mismatch: 'revenue_integrity',
   low_repeat_purchase_rate: 'revenue_integrity',
   dead_weight_products: 'revenue_integrity',
+  // Wave 8.1: Payment Health & Involuntary Churn
+  failed_payment_revenue_drain: 'payment_health',
+  subscriber_churn_unsustainable: 'payment_health',
+  payment_diversity_insufficient: 'payment_health',
 };
 
 // Wave 3.10 Fase 3 — Root causes that belong to the copy alignment context.
@@ -437,6 +446,10 @@ const INFERENCE_SURFACES: Record<string, string> = {
   ad_creative_message_mismatch: 'Meta Ads / Google Ads → landing page copy',
   low_repeat_purchase_rate: '/store (retention)',
   dead_weight_products: '/products (catalog)',
+  // Wave 8.1: Payment Health & Involuntary Churn
+  failed_payment_revenue_drain: 'Stripe (failed payments)',
+  subscriber_churn_unsustainable: 'Stripe (subscriber churn)',
+  payment_diversity_insufficient: 'Stripe (payment gateway)',
   // Wave 3.10: Copy alignment
   value_proposition_buried: '/, /product, /pricing (hero section)',
   social_proof_ineffective: '/, /product (testimonials & social proof)',
@@ -639,6 +652,10 @@ export const INFERENCE_TITLES: Record<string, string> = {
   ad_creative_message_mismatch: 'An ad promises one thing but the landing page delivers another — the message disconnect wastes ad spend',
   low_repeat_purchase_rate: "Buyers aren't coming back — acquisition cost isn't being recovered",
   dead_weight_products: "Listed products haven't sold in 30 days — dead weight",
+  // Wave 8.1: Payment Health & Involuntary Churn
+  failed_payment_revenue_drain: 'Failed payments are draining revenue from subscribers who want to pay',
+  subscriber_churn_unsustainable: 'Subscriber churn rate has crossed the sustainable threshold',
+  payment_diversity_insufficient: 'All recurring revenue depends on a single payment gateway',
 };
 
 // ── Parametric Title Resolution ──
@@ -800,6 +817,9 @@ function enrichFindingsWithCrossRefs(
       result.revenue_integrity?.decision,
       result.chargeback_resilience?.decision,
       result.copy_alignment?.decision,
+      result.channel_integrity?.decision,
+      result.discoverability?.decision,
+      result.brand_integrity?.decision,
       result.saas_growth_readiness?.decision,
     ].filter(Boolean);
     for (const d of allDecisions) {
@@ -1039,6 +1059,9 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
     result.revenue_integrity.decision,
     result.chargeback_resilience.decision,
     result.copy_alignment.decision,
+    result.channel_integrity.decision,
+    result.discoverability.decision,
+    result.brand_integrity.decision,
     ...(result.saas_growth_readiness ? [result.saas_growth_readiness.decision] : []),
   ];
   for (const d of allDecisions) {
@@ -1051,6 +1074,9 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
     ...result.revenue_integrity.actions,
     ...result.chargeback_resilience.actions,
     ...result.copy_alignment.actions,
+    ...result.channel_integrity.actions,
+    ...result.discoverability.actions,
+    ...result.brand_integrity.actions,
     ...(result.saas_growth_readiness?.actions || []),
   ];
   const domainActionByRef = new Map<string, { effort_hint: string | null }>();
@@ -1421,6 +1447,9 @@ export function projectWorkspaces(
   const chargebackFindings = findings.filter(f => f.pack === 'chargeback_resilience');
   const securityFindings = findings.filter(f => f.pack === 'money_moment_exposure');
   const copyAlignmentFindings = findings.filter(f => f.pack === 'copy_alignment');
+  const channelIntegrityFindings = findings.filter(f => f.pack === 'channel_integrity');
+  const discoverabilityFindings = findings.filter(f => f.pack === 'discoverability');
+  const brandIntegrityFindings = findings.filter(f => f.pack === 'brand_integrity');
   const saasFindings = findings.filter(f => f.pack === 'saas_growth_readiness');
 
   const wn = translations?.workspace_names;
@@ -1480,6 +1509,54 @@ export function projectWorkspaces(
         coherenceByDecisionRef.get(makeRef('decision', result.copy_alignment.decision.id)) || null,
         narrative,
         changeSummaryMap.get('copy_alignment_pack') ?? null,
+      ),
+    );
+  }
+
+  // Add Channel Integrity workspace when findings exist
+  if (channelIntegrityFindings.length > 0) {
+    workspaces.push(
+      buildWorkspaceProjection(
+        'channel_integrity', wn?.channel_integrity ?? 'Channel Integrity', 'channel_integrity',
+        'channel_integrity_pack',
+        result.channel_integrity.decision.decision_key,
+        result.channel_integrity.decision.decision_impact,
+        channelIntegrityFindings,
+        coherenceByDecisionRef.get(makeRef('decision', result.channel_integrity.decision.id)) || null,
+        narrative,
+        changeSummaryMap.get('channel_integrity_pack') ?? null,
+      ),
+    );
+  }
+
+  // Add Discoverability workspace when findings exist
+  if (discoverabilityFindings.length > 0) {
+    workspaces.push(
+      buildWorkspaceProjection(
+        'discoverability', wn?.discoverability ?? 'Discoverability', 'discoverability',
+        'discoverability_pack',
+        result.discoverability.decision.decision_key,
+        result.discoverability.decision.decision_impact,
+        discoverabilityFindings,
+        coherenceByDecisionRef.get(makeRef('decision', result.discoverability.decision.id)) || null,
+        narrative,
+        changeSummaryMap.get('discoverability_pack') ?? null,
+      ),
+    );
+  }
+
+  // Add Brand Integrity workspace when findings exist
+  if (brandIntegrityFindings.length > 0) {
+    workspaces.push(
+      buildWorkspaceProjection(
+        'brand_integrity', wn?.brand_integrity ?? 'Brand Integrity', 'brand_integrity',
+        'brand_integrity_pack',
+        result.brand_integrity.decision.decision_key,
+        result.brand_integrity.decision.decision_impact,
+        brandIntegrityFindings,
+        coherenceByDecisionRef.get(makeRef('decision', result.brand_integrity.decision.id)) || null,
+        narrative,
+        changeSummaryMap.get('brand_integrity_pack') ?? null,
       ),
     );
   }
@@ -1620,7 +1697,21 @@ const DECISION_KEY_TO_PACK: Record<string, string> = {
   // SaaS Growth Readiness
   is_saas_growth_ready_result: 'saas_growth_readiness_pack',
   // Channel Integrity
+  channel_integrity_critical: 'channel_integrity_pack',
+  channel_integrity_elevated: 'channel_integrity_pack',
+  channel_integrity_weak: 'channel_integrity_pack',
+  channel_integrity_strong: 'channel_integrity_pack',
   is_channel_integrity_compromised_result: 'channel_integrity_pack',
+  // Discoverability
+  discoverability_critically_weak: 'discoverability_pack',
+  discoverability_gaps_significant: 'discoverability_pack',
+  discoverability_improvable: 'discoverability_pack',
+  discoverability_adequate: 'discoverability_pack',
+  // Brand Integrity
+  brand_integrity_critical: 'brand_integrity_pack',
+  brand_integrity_elevated: 'brand_integrity_pack',
+  brand_integrity_weak: 'brand_integrity_pack',
+  brand_integrity_strong: 'brand_integrity_pack',
   // Behavioral workspaces (pixel-dependent)
   first_session_conversion_critically_low: 'first_impression_revenue_pack',
   first_session_conversion_below_benchmark: 'first_impression_revenue_pack',
@@ -1665,6 +1756,8 @@ function resolvePackKeyForDecision(decisionKey: string): string | null {
   if (decisionKey.includes('chargeback')) return 'chargeback_resilience_pack';
   if (decisionKey.includes('saas') || decisionKey.includes('growth')) return 'saas_growth_readiness_pack';
   if (decisionKey.includes('channel')) return 'channel_integrity_pack';
+  if (decisionKey.includes('discoverability')) return 'discoverability_pack';
+  if (decisionKey.includes('brand_integrity')) return 'brand_integrity_pack';
   if (decisionKey.includes('security_posture')) return 'money_moment_exposure_pack';
   return null;
 }
@@ -2350,6 +2443,7 @@ const PERSPECTIVE_PACK_MAP: Record<string, Set<string>> = {
   receita: new Set([
     'scale_readiness_pack',
     'revenue_integrity_pack',
+    'discoverability_pack',
     'first_impression_revenue_pack',
     'action_value_map_pack',
     'acquisition_integrity_pack',
@@ -2360,6 +2454,8 @@ const PERSPECTIVE_PACK_MAP: Record<string, Set<string>> = {
     'chargeback_resilience_pack',
     'money_moment_exposure_pack',
     'trust_revenue_gap_pack',
+    'channel_integrity_pack',
+    'brand_integrity_pack',
   ]),
   comportamento: new Set([
     'mobile_revenue_exposure_pack',
@@ -2478,8 +2574,12 @@ function packToPerspective(pack: string): string {
     return 'receita';
   }
   // Trust perspective
-  if (['chargeback_resilience', 'money_moment_exposure', 'trust_revenue_gap'].includes(pack)) {
+  if (['chargeback_resilience', 'money_moment_exposure', 'trust_revenue_gap', 'channel_integrity', 'brand_integrity'].includes(pack)) {
     return 'confianca';
+  }
+  // Discoverability → panorama (growth/visibility)
+  if (pack === 'discoverability') {
+    return 'panorama';
   }
   // Behavior perspective
   if (['mobile_revenue_exposure'].includes(pack)) {

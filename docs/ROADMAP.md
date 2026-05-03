@@ -74,8 +74,9 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~Neglected Findings~~ | **✅ Shipped 2026-05-01** — 6 findings: payment handoff dropoff (30%+ don't return), SaaS activation gap (heuristic proxy via first-action failure), oscillation clustering (same pair 3+ times), network error weighting (payment×3/measurement×2), mobile trust gap (trust degraded on mobile), behavioral micro-pattern cascade (2+ friction signals simultaneous). All with signals, inferences, root cause mappings, baselines, remediation, i18n. | Wave 4.6 |
 | ~~Cross-Domain Compound Findings~~ | **✅ Shipped 2026-05-01** — 5 compound types (security_revenue_chain, ad_promise_reality_behavior, trust_hesitation_revenue, post_purchase_chain, brand_impersonation_revenue). Detection engine in `packages/composites/compound-findings.ts`, wired into recompute + projections (1.5x priority boost) + cross-signal narratives. CompoundInput lightweight type, confidence tiers (confirmed/likely/heuristic), multiplicative impact. i18n (4 langs). | Wave 4.7 |
 | ~~Critical Fixes — Deep Analysis Issues~~ | **✅ All 15 fixed 2026-05-01** — 3 critical (pixel coverage gating, source expansion tagging, revenue=0 fallback), 5 earlier (mobile detection, embeddings, MCP schema×3), 7 remaining (behavioralContext wiring, Stripe signals, Ads consumption, Nuvemshop mapping, state machine, legacy scheduler, CycleType normalization). | Wave 7.11 |
-| Activate Declared-but-Unimplemented Packs | **Not started** — Channel Integrity, Discoverability, Brand Integrity: gate logic + inference categories + projection mappings exist, `produceDecision()` never called | Wave 7.12 |
-| Payment Health & Involuntary Churn Pack | **Not started** — Stripe data (`failed_payment_rate`, `subscriber_churn_rate`, `mrr`) already in CommerceContext but feeds zero signals. 20-40% of all SaaS churn is involuntary. | Wave 8.1 |
+| ~~24 Additional Bugs (Deep Code Review)~~ | **✅ All 24 fixed 2026-05-02** — 6 CRITICAL (trust score clickjack, formExcessive, coherence penalty, MCP tenant isolation, Nuvemshop OAuth, chat actions ownership), 10 HIGH (conversion_proximity, impact retention/loss, handoff_returned, pre-penalty actions, integration source detection, admin params, Stripe bulk-decrypt, config secret clearing, invite accept, SSE cache), 8 MEDIUM (coherence normalization, asymmetric uncertainty, policy abandon, revenue recovery gate, trust max_score, HMAC timing, fork author, budget TOCTOU). | Wave 7.11+ |
+| Activate Declared-but-Unimplemented Packs | **In progress** — Channel Integrity, Discoverability, Brand Integrity: gate logic + inference categories + projection mappings exist, wiring `produceDecision()` | Wave 7.12 |
+| Payment Health & Involuntary Churn Pack | **In progress** — Stripe data activation: signals, inferences, impact baselines, pack decision, i18n | Wave 8.1 |
 | Dark Pattern & Compliance Risk Pack | **Not started** — `urgency_dark_pattern` signal exists as foundation. DSA Art. 25 enforcement ramping 2026. Fines up to 4% global revenue. | Wave 8.2 |
 | Content Freshness & Decay Pack | **Not started** — `copy_staleness` enrichment exists (Wave 3.10), `asyncGetNthRecent()` built but never called. Content half-life collapsed to 6 months in AI era. | Wave 8.3 |
 
@@ -1451,8 +1452,8 @@ Feature-flag gated rollout with a kill switch. Order:
 | **4** | Expansion & Depth | Cybersecurity Phase 2, LLM enrichment, conversation export, neglected findings, cross-domain compounds | ✅ All shipped |
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | ✅ Fases 1-3 shipped |
 | **—** | Marketing/SEO | Homepage, /lp funnel, structured data, OG images, hreflang | ✅ All shipped |
-| **7** | Scaling & Moat Deepening | Batch writes, CWV, multi-cycle trends, revenue recovery, deploy webhooks, maps modernization, critical fixes, activate declared packs | **Open — active** |
-| **8** | New Analysis Packs | Payment Health (Stripe data activation), Dark Pattern & Compliance (DSA enforcement), Content Freshness (AI-era decay) | **Open — new wave** |
+| **7** | Scaling & Moat Deepening | ✅ 7.11 critical fixes (15+24 bugs), 7.12 activate packs (in progress). Open: batch writes, CWV, trends, recovery, webhooks, maps | **Active** |
+| **8** | New Analysis Packs | 8.1 Payment Health (in progress). Open: Dark Pattern & Compliance, Content Freshness | **Active** |
 
 ---
 

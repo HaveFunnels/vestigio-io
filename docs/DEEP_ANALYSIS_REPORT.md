@@ -439,13 +439,12 @@ The five modules form a genuinely cohesive pipeline. Evidence flows from ingesti
 
 ## Strategic Recommendations
 
-### Priority 1: Critical Fixes (Days, Not Weeks)
+### Priority 1: Critical Fixes (Days, Not Weeks) — ✅ ALL COMPLETE (2026-05-02)
 
-1. **Fix `mobile_session_count`** — `isMobileSession()` returns `false` as placeholder. This silences 50%+ of user traffic from behavioral analysis. **1-2 hours of work.**
-2. **Wire embeddings to `search_findings` MCP tool** — infrastructure is built. Just needs a tool definition + executor. **2-4 hours.**
-3. **Add `saas_growth_readiness` to `get_decision_explainability` schema** — schema inconsistency blocks SaaS finding exploration. **30 minutes.**
-4. **Hide `integration_pull` from tool schema** until implemented — prevents user-facing failures. **30 minutes.**
-5. **Fix SSE progress counter** — count current cycle's inventory items, not all-time. **1 hour.**
+> All 15 critical fixes from Wave 7.11 + 24 additional bugs (6 CRITICAL, 10 HIGH, 8 MEDIUM) identified and resolved.
+> Security fixes: tenant isolation, OAuth session validation, conversation ownership, SSE cache validation.
+> Engine fixes: trust score, impact calculation, coherence penalty, behavioral pipeline, change detection.
+> See git log for commits `bd4f338` through `13345e1`.
 
 ### Priority 2: High-Impact Feature Gaps (1-2 Weeks Each)
 
@@ -770,7 +769,7 @@ Layer three signal channels on top of existing cycle model. Each channel has dif
 | Category | Original Score | Extended Score | Delta | Key Driver |
 |----------|:-:|:-:|:-:|---|
 | **Competitive Differentiation** | 8.3 | 8.3 | 0 | Still strongest in the market; gaps are in adjacent spaces, not core |
-| **Feature Completeness** | 7.3 | 6.8 | -0.5 | Mobile behavioral broken + no accessibility + no deploy hooks + post-purchase gap |
+| **Feature Completeness** | 7.3 | 7.5 | +0.2 | Mobile behavioral fixed, Stripe/Ads signals consuming, 24 bugs fixed. Remaining: no accessibility, no deploy hooks, post-purchase gap |
 | **Moat Depth** | N/A | 9.0 | new | 8 compound-value opportunities identified; 3 are single-call-site changes |
 | **Real-Time Readiness** | N/A | 4.0 | new | Cycle-only model; Hybrid architecture designed but not implemented |
 | **Market Fit** | N/A | 8.0 | new | Strong for core ICP (SaaS/ecomm $1-50M); gaps in adjacent verticals |
@@ -780,12 +779,13 @@ Layer three signal channels on top of existing cycle model. Each channel has dif
 
 ## Consolidated Priority Roadmap (Extended)
 
-### Wave A: Close the Data Gaps (1-2 weeks)
-1. Fix `mobile_session_count` (~2h)
-2. Wire `behavioralContext` into compound findings (~2h)
-3. Wire embeddings to `search_findings` MCP tool (~3h)
-4. Consume Meta/Google Ads data in signal engine (~1d)
-5. Batch evidence/finding persistence (~2d)
+### Wave A: Close the Data Gaps (1-2 weeks) — ✅ COMPLETE (2026-05-02)
+> All 15 items from Wave 7.11 resolved + 24 additional bugs fixed.
+> Mobile behavioral, behavioralContext, embeddings, MCP schema, SSE, Stripe/Ads signals,
+> Nuvemshop mapping, state machine, legacy scheduler, CycleType, pixel coverage metadata,
+> change detection tagging, revenue=0 fallback — all done.
+> Plus: trust score, impact calc, coherence penalty, handoff detection, form counting,
+> policy abandon gating, conversion proximity, security/auth fixes, platform fixes.
 
 ### Wave B: Hybrid Real-Time Architecture (2-3 weeks)
 1. Foundation: `SurfaceMonitorEntry` model + monitor queue tier + plan config

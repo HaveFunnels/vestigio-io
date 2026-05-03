@@ -198,7 +198,7 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		});
 	}
 
-	revalidatePath("/user/billing");
+	revalidatePath("/app/billing");
 
 	return new Response(null, { status: 200 });
 }, { endpoint: "/api/stripe/webhook", method: "POST" });

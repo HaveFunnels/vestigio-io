@@ -35,7 +35,7 @@ export async function createApiKey(keyName: string) {
 		},
 	});
 
-	revalidatePath("/admin/api");
+	revalidatePath("/app/admin/platform-config");
 
 	// Return the raw key so the UI can show it once
 	return rawKey;
@@ -61,6 +61,6 @@ export async function deleteApiKey(id: string) {
 		where: { id },
 	});
 
-	revalidatePath("/admin/api");
+	revalidatePath("/app/admin/platform-config");
 	return res;
 }

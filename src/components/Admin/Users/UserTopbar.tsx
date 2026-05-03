@@ -136,7 +136,7 @@ export default function UserTopbar() {
 							if (search) {
 								router.push(`/admin/manage-users?search=${search}`);
 							} else {
-								router.push("/admin/manage-users");
+								router.push("/app/admin/users");
 							}
 						}}
 					>

@@ -2,7 +2,7 @@ export const sidebarData = [
 	{
 		id: 1,
 		titleKey: "account_settings",
-		path: "/user",
+		path: "/app/settings",
 		icon: (
 			<svg
 				width='24'
@@ -29,7 +29,7 @@ export const sidebarData = [
 	{
 		id: 11,
 		titleKey: "billing",
-		path: "/user/billing",
+		path: "/app/billing",
 		icon: (
 			<svg
 				width='22'
@@ -50,7 +50,7 @@ export const sidebarData = [
 	{
 		id: 2,
 		titleKey: "invoice",
-		path: "/user/invoice",
+		path: "/app/billing",
 		icon: (
 			<svg
 				width='20'
@@ -71,7 +71,7 @@ export const sidebarData = [
 	{
 		id: 3,
 		titleKey: "api",
-		path: "/user/api",
+		path: "/app/settings",
 		icon: (
 			<svg
 				width='24'
@@ -92,7 +92,7 @@ export const sidebarData = [
 	{
 		id: 4,
 		titleKey: "support",
-		path: "/user/support",
+		path: "/app/customer-center/support",
 		icon: (
 			<svg
 				width='24'
@@ -117,7 +117,7 @@ export const userMenuData = [
 		id: 1,
 		title: "Account Settings",
 		titleKey: "account_settings",
-		path: "/user",
+		path: "/app/settings",
 		icon: (
 			<svg
 				width='18'
@@ -148,7 +148,7 @@ export const adminMenuData = [
 		id: 1,
 		title: "Account Settings",
 		titleKey: "account_settings",
-		path: "/admin/account-settings",
+		path: "/app/admin/overview",
 		icon: (
 			<svg
 				width='18'
@@ -176,7 +176,7 @@ export const adminMenuData = [
 		id: 2,
 		title: "Dashboard",
 		titleKey: "dashboard",
-		path: "/admin",
+		path: "/app/admin/overview",
 		icon: (
 			<svg
 				width='16'
@@ -218,7 +218,7 @@ export const adminSidebarData = [
 	{
 		id: 1,
 		titleKey: "dashboard",
-		path: "/admin",
+		path: "/app/admin/overview",
 		icon: (
 			<svg
 				width='24'
@@ -257,7 +257,7 @@ export const adminSidebarData = [
 	{
 		id: 2,
 		titleKey: "users",
-		path: "/admin/manage-users",
+		path: "/app/admin/users",
 		icon: (
 			<svg
 				width='24'
@@ -292,7 +292,7 @@ export const adminSidebarData = [
 	{
 		id: 3,
 		titleKey: "ai_integration",
-		path: "/admin/ai-integration",
+		path: "/app/admin/platform-config",
 		icon: (
 			<svg
 				width='24'
@@ -313,7 +313,7 @@ export const adminSidebarData = [
 	{
 		id: 5,
 		titleKey: "api",
-		path: "/admin/api",
+		path: "/app/admin/platform-config",
 		icon: (
 			<svg
 				width='24'
@@ -334,7 +334,7 @@ export const adminSidebarData = [
 	{
 		id: 4,
 		titleKey: "send_notification",
-		path: "/admin/send-notification",
+		path: "/app/admin/alerts",
 		comingSoon: true,
 		icon: (
 			<svg
@@ -356,7 +356,7 @@ export const adminSidebarData = [
 	{
 		id: 6,
 		titleKey: "send_newsletter",
-		path: "/admin/send-newsletter",
+		path: "/app/admin/newsletters",
 		comingSoon: true,
 		icon: (
 			<svg
@@ -378,18 +378,18 @@ export const adminSidebarData = [
 ];
 
 export const vestigioAdminData = [
-	{ id: 101, titleKey: "organizations", path: "/admin/organizations", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 18.86h-.76c-.8 0-1.56.31-2.12.88l-1.71 1.69c-.78.77-2.05.77-2.83 0l-1.71-1.69c-.56-.57-1.32-.88-2.12-.88H6c-1.66 0-3-1.33-3-2.97V4.98c0-1.64 1.34-2.97 3-2.97h12c1.66 0 3 1.33 3 2.97v10.91c0 1.63-1.34 2.97-3 2.97Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 10a2.33 2.33 0 1 0 0-4.66A2.33 2.33 0 0 0 12 10ZM16 15.66c0-1.8-1.79-3.26-4-3.26s-4 1.46-4 3.26" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
-	{ id: 102, titleKey: "environments", path: "/admin/environments", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 3h1a28.42 28.42 0 0 0 0 18H8M15 3a28.42 28.42 0 0 1 0 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 16v-1a28.42 28.42 0 0 0 18 0v1M3 9a28.42 28.42 0 0 1 18 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
-	{ id: 103, titleKey: "usage_billing", path: "/admin/usage-billing", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 13.75c0 .97.75 1.75 1.67 1.75h1.88c.8 0 1.45-.68 1.45-1.53 0-.91-.4-1.24-.99-1.45l-3.01-1.05c-.59-.22-.99-.54-.99-1.46 0-.84.65-1.53 1.45-1.53h1.88c.92 0 1.67.78 1.67 1.75M12 7.5v9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
-	{ id: 104, titleKey: "pricing", path: "/admin/pricing", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
-	{ id: 105, titleKey: "system_health", path: "/admin/system-health", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
+	{ id: 101, titleKey: "organizations", path: "/app/admin/organizations", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 18.86h-.76c-.8 0-1.56.31-2.12.88l-1.71 1.69c-.78.77-2.05.77-2.83 0l-1.71-1.69c-.56-.57-1.32-.88-2.12-.88H6c-1.66 0-3-1.33-3-2.97V4.98c0-1.64 1.34-2.97 3-2.97h12c1.66 0 3 1.33 3 2.97v10.91c0 1.63-1.34 2.97-3 2.97Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 10a2.33 2.33 0 1 0 0-4.66A2.33 2.33 0 0 0 12 10ZM16 15.66c0-1.8-1.79-3.26-4-3.26s-4 1.46-4 3.26" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
+	{ id: 102, titleKey: "environments", path: "/app/admin/environments", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 3h1a28.42 28.42 0 0 0 0 18H8M15 3a28.42 28.42 0 0 1 0 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 16v-1a28.42 28.42 0 0 0 18 0v1M3 9a28.42 28.42 0 0 1 18 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
+	{ id: 103, titleKey: "usage_billing", path: "/app/admin/usage-billing", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 13.75c0 .97.75 1.75 1.67 1.75h1.88c.8 0 1.45-.68 1.45-1.53 0-.91-.4-1.24-.99-1.45l-3.01-1.05c-.59-.22-.99-.54-.99-1.46 0-.84.65-1.53 1.45-1.53h1.88c.92 0 1.67.78 1.67 1.75M12 7.5v9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
+	{ id: 104, titleKey: "pricing", path: "/app/admin/pricing", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
+	{ id: 105, titleKey: "system_health", path: "/app/admin/system-health", icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
 ];
 
 export const adminSidebarOtherData = [
 	{
 		id: 1,
 		titleKey: "account_settings",
-		path: "/admin/account-settings",
+		path: "/app/admin/overview",
 		icon: (
 			<svg
 				width='24'

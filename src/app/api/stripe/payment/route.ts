@@ -27,8 +27,8 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 	let successUrl;
 
 	if (user) {
-		successUrl = absoluteUrl("/user/");
-		billingUrl = absoluteUrl("/user/billing");
+		successUrl = absoluteUrl("/app/settings");
+		billingUrl = absoluteUrl("/app/billing");
 	} else {
 		successUrl = absoluteUrl("/thank-you");
 		billingUrl = absoluteUrl("/");

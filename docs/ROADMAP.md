@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-03 (7.12 Activate 3 Packs shipped + 8.1 Payment Health shipped)
+> Last updated: 2026-05-03 (7.3 Batch Persistence + 7.12 Activate 3 Packs + 8.1 Payment Health shipped)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -1877,7 +1877,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |------|----------|--------|--------|
 | **7.1** Multi-Cycle Trend Analysis | P1 | 1 week | Not started |
 | **7.2** Revenue Recovery Tracker | P1 | 1 week | Type scaffolded |
-| **7.3** Batch Evidence Persistence | P1 | 2-3 days | Not started |
+| **7.3** ~~Batch Evidence Persistence~~ | P1 | 2-3 days | **✅ Shipped 2026-05-03** |
 | **7.4** Core Web Vitals | P2 | 3-4 days | Not started |
 | **7.5** Webhook-Triggered Audits | P1 | 2-3 days | Not started |
 | **7.6** ~~ELK/Dagre Layout~~ | — | — | Subsumed by 7.10 Phase 1A |

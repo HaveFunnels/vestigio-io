@@ -924,6 +924,9 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
     } else if (packKey === 'brand_integrity') {
       findingEligible = packElig.brand_integrity.eligible;
       findingEligConf = packElig.brand_integrity.confidence;
+    } else if (packKey === 'payment_health') {
+      findingEligible = packElig.payment_health.eligible;
+      findingEligConf = packElig.payment_health.confidence;
     } else if (
       // Behavioral packs share a single pixel-data eligibility gate.
       // When pack_eligibility.behavioral_workspaces is false, every
@@ -1879,6 +1882,7 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
       if (check.pack === 'revenue_integrity') eligible = packElig.revenue_integrity.eligible;
       if (check.pack === 'chargeback_resilience') eligible = packElig.chargeback_resilience.eligible;
       if (check.pack === 'saas_growth_readiness') eligible = packElig.saas_pack.eligible;
+      if (check.pack === 'payment_health') eligible = packElig.payment_health.eligible;
 
       if (!eligible) continue;
 

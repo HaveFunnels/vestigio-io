@@ -5,6 +5,7 @@ export {
   isAuthenticatedVerificationEligible,
   isCheckoutAnalysisEligible,
   isChargebackRelevant,
+  isPaymentHealthEligible,
   computePackEligibility,
   type EligibilityResult,
   type PackEligibility,

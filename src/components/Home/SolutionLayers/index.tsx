@@ -161,88 +161,102 @@ function SilenceGraphic({ alerts }: { alerts: string[] }) {
 	);
 }
 
-// ── Graphic 3: The Hole — coins draining through gap ──
+// ── Graphic 3: The Hole — coins sucked into a drain ──
 
 function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel: string }) {
-	const W = 200;
-	const H = 320;
-	const coins = [0, 1, 2, 3, 4];
+	const SIZE = 220;
+	const cx = SIZE / 2; // drain center x
+	const cy = SIZE / 2 + 5; // drain center y (slightly below middle)
+
+	// Coins start around the drain, each with unique position & angle
+	const COINS = [
+		{ x: 38,  y: 40,  dur: 2.6, delay: 0   },
+		{ x: 158, y: 52,  dur: 2.3, delay: 0.6 },
+		{ x: 26,  y: 108, dur: 2.8, delay: 1.2 },
+		{ x: 170, y: 100, dur: 2.1, delay: 0.3 },
+		{ x: 100, y: 28,  dur: 2.5, delay: 0.9 },
+		{ x: 60,  y: 170, dur: 2.4, delay: 1.6 },
+		{ x: 148, y: 165, dur: 2.7, delay: 0.5 },
+	];
+
+	// Drain grate slots (radial lines)
+	const SLOT_COUNT = 8;
+	const drainR = 28;
+	const slots = Array.from({ length: SLOT_COUNT }, (_, i) => {
+		const angle = (i * Math.PI * 2) / SLOT_COUNT;
+		const innerR = 8;
+		return {
+			x1: cx + Math.cos(angle) * innerR,
+			y1: cy + Math.sin(angle) * innerR,
+			x2: cx + Math.cos(angle) * drainR,
+			y2: cy + Math.sin(angle) * drainR,
+		};
+	});
 
 	return (
 		<div className="flex items-center justify-center py-4">
 			<style>{`
-				@keyframes sl-gap-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-				${coins.map((i) => {
-					const dur = 2.2 + i * 0.15;
-					const delay = i * 0.5;
+				@keyframes sl-drain-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+				@keyframes sl-drain-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+				${COINS.map((c, i) => {
+					const dx = cx - c.x;
+					const dy = cy - c.y;
 					return `
-				@keyframes sl-coin-fall-${i} {
-					0% { transform: translateY(0); opacity: 0.9; }
-					50% { opacity: 0.7; }
-					100% { transform: translateY(195px); opacity: 0; }
+				@keyframes sl-drain-coin-${i} {
+					0%   { transform: translate(0, 0) scale(1); opacity: 0.85; }
+					70%  { transform: translate(${dx * 0.8}px, ${dy * 0.8}px) scale(0.5); opacity: 0.6; }
+					100% { transform: translate(${dx}px, ${dy}px) scale(0); opacity: 0; }
 				}
-				.sl-coin-${i} { animation: sl-coin-fall-${i} ${dur}s ease-in ${delay}s infinite; }`;
+				.sl-drain-c${i} { animation: sl-drain-coin-${i} ${c.dur}s ease-in ${c.delay}s infinite; }`;
 				}).join("")}
 			`}</style>
-			<svg width="100%" viewBox={`0 0 ${W} ${H}`} className="max-w-[180px] sm:max-w-[200px]">
+			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[200px] sm:max-w-[220px]">
 				<defs>
-					<linearGradient id="hole-fade-green" x1="0" y1="0" x2="0" y2="1">
-						<stop offset="0%" stopColor="rgba(16,185,129,0.35)" />
-						<stop offset="100%" stopColor="rgba(16,185,129,0.05)" />
-					</linearGradient>
-					<linearGradient id="hole-fade-red" x1="0" y1="0" x2="0" y2="1">
-						<stop offset="0%" stopColor="rgba(239,68,68,0.05)" />
-						<stop offset="100%" stopColor="rgba(239,68,68,0.25)" />
-					</linearGradient>
+					<radialGradient id="drain-glow" cx="50%" cy="52%" r="45%">
+						<stop offset="0%" stopColor="rgba(239,68,68,0.2)" />
+						<stop offset="60%" stopColor="rgba(239,68,68,0.05)" />
+						<stop offset="100%" stopColor="rgba(239,68,68,0)" />
+					</radialGradient>
+					<radialGradient id="drain-hole" cx="50%" cy="50%" r="50%">
+						<stop offset="0%" stopColor="rgba(0,0,0,0.9)" />
+						<stop offset="100%" stopColor="rgba(239,68,68,0.1)" />
+					</radialGradient>
 				</defs>
 
-				{/* Top zone — healthy (emerald) */}
-				<rect x="50" y="20" width="100" height="90" rx="12" fill="url(#hole-fade-green)" stroke="rgba(16,185,129,0.3)" strokeWidth="1" />
+				{/* Ambient red glow behind drain */}
+				<circle cx={cx} cy={cy} r="80" fill="url(#drain-glow)" style={{ animation: "sl-drain-pulse 3s ease-in-out infinite" }} />
 
-				{/* Coin stack at top */}
-				{[0, 1, 2, 3, 4].map((i) => (
-					<g key={`top-${i}`}>
-						<ellipse cx={75 + i * 12} cy={55} rx="10" ry="6" fill="none" stroke="rgba(16,185,129,0.5)" strokeWidth="1.5" />
-						<ellipse cx={75 + i * 12} cy={55} rx="6" ry="3" fill="rgba(16,185,129,0.15)" />
+				{/* Drain outer ring */}
+				<circle cx={cx} cy={cy} r={drainR} fill="none" stroke="rgba(239,68,68,0.35)" strokeWidth="2" />
+				{/* Drain middle ring */}
+				<circle cx={cx} cy={cy} r={drainR * 0.6} fill="none" stroke="rgba(239,68,68,0.2)" strokeWidth="1" />
+				{/* Drain inner dark hole */}
+				<circle cx={cx} cy={cy} r="8" fill="url(#drain-hole)" />
+
+				{/* Drain grate slots — radial lines, slowly spinning */}
+				<g style={{ transformOrigin: `${cx}px ${cy}px`, animation: "sl-drain-spin 12s linear infinite" }}>
+					{slots.map((s, i) => (
+						<line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke="rgba(239,68,68,0.25)" strokeWidth="1.5" strokeLinecap="round" />
+					))}
+				</g>
+
+				{/* Coins — each starts at a position around the drain, gets sucked toward center */}
+				{COINS.map((c, i) => (
+					<g key={i} className={`sl-drain-c${i}`}>
+						{/* Coin body */}
+						<circle cx={c.x} cy={c.y} r="11" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.5)" strokeWidth="1.5" />
+						{/* $ sign */}
+						<text x={c.x} y={c.y + 4} textAnchor="middle" fontSize="10" fontWeight="700" fill="rgba(16,185,129,0.7)" fontFamily="ui-monospace, monospace">$</text>
 					</g>
 				))}
 
-				{/* Top label */}
-				<text x={W / 2} y={95} textAnchor="middle" fontSize="11" fontWeight="600" fontFamily="ui-monospace, monospace" fill="rgba(16,185,129,0.8)">
+				{/* Top label — what you spend */}
+				<text x={cx} y={22} textAnchor="middle" fontSize="11" fontWeight="600" fontFamily="ui-monospace, monospace" fill="rgba(16,185,129,0.7)">
 					{topLabel}
 				</text>
 
-				{/* THE GAP — crack zone with pulsing glow */}
-				<rect x="35" y="135" width="130" height="50" rx="4" fill="rgba(239,68,68,0.03)" style={{ animation: "sl-gap-pulse 2.5s ease-in-out infinite" }} />
-				<line x1="40" y1="140" x2="160" y2="140" stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="4 3" />
-				<line x1="40" y1="180" x2="160" y2="180" stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="4 3" />
-
-				{/* Falling coins — CSS animated, fall from top (cy=55) through gap to bottom (cy=250) */}
-				{coins.map((i) => {
-					const cx = 72 + i * 14;
-					return (
-						<g key={`fall-${i}`} className={`sl-coin-${i}`} style={{ transformOrigin: `${cx}px 55px` }}>
-							<ellipse cx={cx} cy={55} rx="8" ry="4.5" fill="rgba(16,185,129,0.5)" stroke="rgba(16,185,129,0.6)" strokeWidth="1" />
-							<text x={cx} y={58} textAnchor="middle" fontSize="5" fontWeight="bold" fill="rgba(255,255,255,0.6)" fontFamily="ui-monospace">$</text>
-						</g>
-					);
-				})}
-
-				{/* Question mark in the gap */}
-				<text x={W / 2} y={167} textAnchor="middle" fontSize="28" fontWeight="bold" fill="rgba(255,255,255,0.06)" fontFamily="ui-sans-serif">?</text>
-
-				{/* Bottom zone — depleted (red) */}
-				<rect x="50" y="210" width="100" height="90" rx="12" fill="url(#hole-fade-red)" stroke="rgba(239,68,68,0.2)" strokeWidth="1" />
-
-				{/* Depleted coins at bottom — fewer, smaller */}
-				{[0, 1, 2].map((i) => (
-					<g key={`bot-${i}`}>
-						<ellipse cx={82 + i * 18} cy={250} rx="8" ry="4" fill="none" stroke="rgba(239,68,68,0.35)" strokeWidth="1" />
-					</g>
-				))}
-
-				{/* Bottom label */}
-				<text x={W / 2} y={285} textAnchor="middle" fontSize="11" fontWeight="600" fontFamily="ui-monospace, monospace" fill="rgba(239,68,68,0.7)">
+				{/* Bottom label — what you get */}
+				<text x={cx} y={SIZE - 8} textAnchor="middle" fontSize="11" fontWeight="600" fontFamily="ui-monospace, monospace" fill="rgba(239,68,68,0.65)">
 					{bottomLabel}
 				</text>
 			</svg>

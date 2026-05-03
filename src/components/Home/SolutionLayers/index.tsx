@@ -46,9 +46,9 @@ const ACCENTS = [
 // ── Graphic 1: Cycle — shimmer looping through ring ──
 
 function CycleGraphic({ stages }: { stages: string[] }) {
-	const SIZE = 200;
+	const SIZE = 240;
 	const center = SIZE / 2;
-	const r = 65;
+	const r = 80;
 
 	// Stage positions: top, bottom-right, bottom-left (triangle)
 	const positions = [
@@ -57,17 +57,17 @@ function CycleGraphic({ stages }: { stages: string[] }) {
 		{ x: center - r * 0.87, y: center + r * 0.5, label: stages[1] || "" },
 	];
 
+	// Circumference for dash animation
+	const circumference = 2 * Math.PI * r;
+
 	return (
 		<div className="flex items-center justify-center py-4">
-			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[200px] sm:max-w-[220px]">
+			<style>{`
+				@keyframes sl-cycle-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+				@keyframes sl-cycle-dash { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -${circumference}; } }
+			`}</style>
+			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[220px] sm:max-w-[240px]">
 				<defs>
-					<linearGradient id="cycle-shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
-						<stop offset="0%" stopColor="rgba(139,92,246,0)" />
-						<stop offset="40%" stopColor="rgba(139,92,246,0.6)" />
-						<stop offset="60%" stopColor="rgba(167,139,250,0.8)" />
-						<stop offset="100%" stopColor="rgba(139,92,246,0)" />
-						<animateTransform attributeName="gradientTransform" type="rotate" from="0 0.5 0.5" to="360 0.5 0.5" dur="3s" repeatCount="indefinite" />
-					</linearGradient>
 					<radialGradient id="cycle-glow" cx="50%" cy="50%" r="50%">
 						<stop offset="0%" stopColor="rgba(139,92,246,0.12)" />
 						<stop offset="100%" stopColor="rgba(139,92,246,0)" />
@@ -80,21 +80,26 @@ function CycleGraphic({ stages }: { stages: string[] }) {
 				{/* Track ring — dashed */}
 				<circle cx={center} cy={center} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="3 4" />
 
-				{/* Shimmer ring — animated gradient */}
-				<circle cx={center} cy={center} r={r} fill="none" stroke="url(#cycle-shimmer)" strokeWidth="2.5" strokeLinecap="round" />
+				{/* Shimmer dash — CSS animated */}
+				<circle
+					cx={center} cy={center} r={r}
+					fill="none" stroke="rgba(139,92,246,0.5)" strokeWidth="2.5" strokeLinecap="round"
+					strokeDasharray={`${circumference * 0.25} ${circumference * 0.75}`}
+					style={{ transformOrigin: `${center}px ${center}px`, animation: "sl-cycle-spin 4s linear infinite" }}
+				/>
 
-				{/* Stage nodes */}
+				{/* Stage nodes — larger for text */}
 				{positions.map((pos, i) => (
 					<g key={i}>
-						<circle cx={pos.x} cy={pos.y} r="16" fill="#0a0a14" stroke="rgba(139,92,246,0.4)" strokeWidth="1.5" />
-						<text x={pos.x} y={pos.y + 3} textAnchor="middle" fontSize="8" fontWeight="600" fill="rgba(196,181,253,0.9)" fontFamily="ui-sans-serif, system-ui">
+						<circle cx={pos.x} cy={pos.y} r="26" fill="#0a0a14" stroke="rgba(139,92,246,0.4)" strokeWidth="1.5" />
+						<text x={pos.x} y={pos.y + 4} textAnchor="middle" fontSize="10" fontWeight="600" fill="rgba(196,181,253,0.9)" fontFamily="ui-sans-serif, system-ui">
 							{pos.label}
 						</text>
 					</g>
 				))}
 
 				{/* Center infinity */}
-				<text x={center} y={center + 4} textAnchor="middle" fontSize="22" fill="rgba(139,92,246,0.25)" fontFamily="ui-sans-serif">∞</text>
+				<text x={center} y={center + 4} textAnchor="middle" fontSize="24" fill="rgba(139,92,246,0.25)" fontFamily="ui-sans-serif">∞</text>
 			</svg>
 		</div>
 	);
@@ -161,9 +166,24 @@ function SilenceGraphic({ alerts }: { alerts: string[] }) {
 function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel: string }) {
 	const W = 200;
 	const H = 320;
+	const coins = [0, 1, 2, 3, 4];
 
 	return (
 		<div className="flex items-center justify-center py-4">
+			<style>{`
+				@keyframes sl-gap-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+				${coins.map((i) => {
+					const dur = 2.2 + i * 0.15;
+					const delay = i * 0.5;
+					return `
+				@keyframes sl-coin-fall-${i} {
+					0% { transform: translateY(0); opacity: 0.9; }
+					50% { opacity: 0.7; }
+					100% { transform: translateY(195px); opacity: 0; }
+				}
+				.sl-coin-${i} { animation: sl-coin-fall-${i} ${dur}s ease-in ${delay}s infinite; }`;
+				}).join("")}
+			`}</style>
 			<svg width="100%" viewBox={`0 0 ${W} ${H}`} className="max-w-[180px] sm:max-w-[200px]">
 				<defs>
 					<linearGradient id="hole-fade-green" x1="0" y1="0" x2="0" y2="1">
@@ -193,32 +213,17 @@ function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel:
 				</text>
 
 				{/* THE GAP — crack zone with pulsing glow */}
-				<rect x="35" y="135" width="130" height="50" rx="4" fill="rgba(239,68,68,0.03)">
-					<animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite" />
-				</rect>
+				<rect x="35" y="135" width="130" height="50" rx="4" fill="rgba(239,68,68,0.03)" style={{ animation: "sl-gap-pulse 2.5s ease-in-out infinite" }} />
 				<line x1="40" y1="140" x2="160" y2="140" stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="4 3" />
 				<line x1="40" y1="180" x2="160" y2="180" stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="4 3" />
 
-				{/* Falling coins — fall from top zone through gap into bottom zone */}
-				{[0, 1, 2, 3, 4].map((i) => {
-					const dur = 2.2 + i * 0.15;
-					const delay = i * 0.5;
+				{/* Falling coins — CSS animated, fall from top (cy=55) through gap to bottom (cy=250) */}
+				{coins.map((i) => {
 					const cx = 72 + i * 14;
 					return (
-						<g key={`fall-${i}`}>
-							{/* Coin body */}
-							<ellipse cx={cx} rx="8" ry="4.5" fill="rgba(16,185,129,0.5)" stroke="rgba(16,185,129,0.6)" strokeWidth="1">
-								<animate attributeName="cy" values={`55;160;250`} dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" keySplines="0.4 0 1 1;0.4 0 1 1" calcMode="spline" />
-								<animate attributeName="fill" values="rgba(16,185,129,0.5);rgba(239,68,68,0.5);rgba(239,68,68,0.15)" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
-								<animate attributeName="stroke" values="rgba(16,185,129,0.6);rgba(239,68,68,0.5);rgba(239,68,68,0.1)" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
-								<animate attributeName="opacity" values="0.9;0.7;0" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
-							</ellipse>
-							{/* Dollar sign on coin */}
-							<text x={cx} textAnchor="middle" fontSize="5" fontWeight="bold" fill="rgba(255,255,255,0.6)" fontFamily="ui-monospace">
-								$
-								<animate attributeName="y" values={`57;162;252`} dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" keySplines="0.4 0 1 1;0.4 0 1 1" calcMode="spline" />
-								<animate attributeName="opacity" values="0.7;0.4;0" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
-							</text>
+						<g key={`fall-${i}`} className={`sl-coin-${i}`} style={{ transformOrigin: `${cx}px 55px` }}>
+							<ellipse cx={cx} cy={55} rx="8" ry="4.5" fill="rgba(16,185,129,0.5)" stroke="rgba(16,185,129,0.6)" strokeWidth="1" />
+							<text x={cx} y={58} textAnchor="middle" fontSize="5" fontWeight="bold" fill="rgba(255,255,255,0.6)" fontFamily="ui-monospace">$</text>
 						</g>
 					);
 				})}

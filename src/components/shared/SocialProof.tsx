@@ -215,25 +215,23 @@ function Avatar({ name }: { name: string }) {
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
     <div className="flex w-[300px] shrink-0 flex-col justify-between rounded-xl border border-white/5 bg-white/[0.03] p-5 sm:w-[360px]">
+      {t.recovered && (
+        <div className="mb-3 inline-flex self-start rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1">
+          <span className="font-mono text-[11px] font-semibold tabular-nums text-emerald-300">{t.recovered}</span>
+          <span className="ml-1.5 text-[11px] text-emerald-400/70">recuperado</span>
+        </div>
+      )}
       <p className="mb-4 text-sm italic leading-relaxed text-zinc-300">
         &ldquo;{t.quote}&rdquo;
       </p>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Avatar name={t.name} />
-          <div>
-            <p className="text-sm font-medium text-zinc-200">{t.name}</p>
-            <p className="text-xs text-zinc-500">
-              {t.role}, {t.company}
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <Avatar name={t.name} />
+        <div>
+          <p className="text-sm font-medium text-zinc-200">{t.name}</p>
+          <p className="text-xs text-zinc-500">
+            {t.role}, {t.company}
+          </p>
         </div>
-        {t.recovered && (
-          <div className="flex shrink-0 flex-col items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1.5">
-            <p className="text-[9px] font-medium uppercase tracking-wider text-emerald-400/70">Recuperado</p>
-            <p className="font-mono text-sm font-bold tabular-nums leading-none text-emerald-300">{t.recovered}</p>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -727,7 +727,9 @@
 					"eyebrow": "O silêncio",
 					"title": "Ninguém reclama. O dinheiro só para de entrar.",
 					"body": "Sem erro no sistema. Sem ticket de suporte. Sem email bravo. Em algum ponto entre sua landing e o pagamento, o comprador simplesmente saiu. Seu analytics diz 'sessão encerrada'. Isso não é resposta. É um ponto de interrogação.",
-					"alerts": ["0 alertas", "0 erros", "0 tickets"]
+					"alerts": ["0 alertas", "0 erros", "0 tickets"],
+					"terminal_title": "analytics",
+					"no_alerts": "Sem alertas"
 				}
 			],
 			"closing": "Você pode continuar escalando sem ver isso. Ou pode enxergar."

@@ -50,27 +50,24 @@ function CycleGraphic({ stages }: { stages: string[] }) {
 	const center = SIZE / 2;
 	const r = 80;
 
-	// Stage positions: top, bottom-right, bottom-left (triangle)
 	const positions = [
 		{ x: center, y: center - r, label: stages[0] || "" },
 		{ x: center + r * 0.87, y: center + r * 0.5, label: stages[2] || "" },
 		{ x: center - r * 0.87, y: center + r * 0.5, label: stages[1] || "" },
 	];
 
-	// Circumference for dash animation
 	const circumference = 2 * Math.PI * r;
 
 	return (
 		<div className="flex items-center justify-center py-4">
 			<style>{`
 				@keyframes sl-cycle-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-				@keyframes sl-cycle-dash { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -${circumference}; } }
 			`}</style>
 			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[220px] sm:max-w-[240px]">
 				<defs>
 					<radialGradient id="cycle-glow" cx="50%" cy="50%" r="50%">
-						<stop offset="0%" stopColor="rgba(139,92,246,0.12)" />
-						<stop offset="100%" stopColor="rgba(139,92,246,0)" />
+						<stop offset="0%" stopColor="rgba(255,255,255,0.04)" />
+						<stop offset="100%" stopColor="rgba(255,255,255,0)" />
 					</radialGradient>
 				</defs>
 
@@ -78,28 +75,28 @@ function CycleGraphic({ stages }: { stages: string[] }) {
 				<circle cx={center} cy={center} r={r + 30} fill="url(#cycle-glow)" />
 
 				{/* Track ring — dashed */}
-				<circle cx={center} cy={center} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="3 4" />
+				<circle cx={center} cy={center} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="3 4" />
 
 				{/* Shimmer dash — CSS animated */}
 				<circle
 					cx={center} cy={center} r={r}
-					fill="none" stroke="rgba(139,92,246,0.5)" strokeWidth="2.5" strokeLinecap="round"
+					fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round"
 					strokeDasharray={`${circumference * 0.25} ${circumference * 0.75}`}
 					style={{ transformOrigin: `${center}px ${center}px`, animation: "sl-cycle-spin 4s linear infinite" }}
 				/>
 
-				{/* Stage nodes — larger for text */}
+				{/* Stage nodes */}
 				{positions.map((pos, i) => (
 					<g key={i}>
-						<circle cx={pos.x} cy={pos.y} r="26" fill="#0a0a14" stroke="rgba(139,92,246,0.4)" strokeWidth="1.5" />
-						<text x={pos.x} y={pos.y + 4} textAnchor="middle" fontSize="10" fontWeight="600" fill="rgba(196,181,253,0.9)" fontFamily="ui-sans-serif, system-ui">
+						<circle cx={pos.x} cy={pos.y} r="26" fill="#0a0a14" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+						<text x={pos.x} y={pos.y + 4} textAnchor="middle" fontSize="10" fontWeight="600" fill="rgba(255,255,255,0.85)" fontFamily="ui-sans-serif, system-ui">
 							{pos.label}
 						</text>
 					</g>
 				))}
 
 				{/* Center infinity */}
-				<text x={center} y={center + 4} textAnchor="middle" fontSize="24" fill="rgba(139,92,246,0.25)" fontFamily="ui-sans-serif">∞</text>
+				<text x={center} y={center + 4} textAnchor="middle" fontSize="24" fill="rgba(255,255,255,0.1)" fontFamily="ui-sans-serif">∞</text>
 			</svg>
 		</div>
 	);
@@ -107,9 +104,12 @@ function CycleGraphic({ stages }: { stages: string[] }) {
 
 // ── Graphic 2: Silence — empty terminal with zero badges ──
 
-function SilenceGraphic({ alerts }: { alerts: string[] }) {
+function SilenceGraphic({ alerts, terminalTitle, noAlerts }: { alerts: string[]; terminalTitle: string; noAlerts: string }) {
 	return (
 		<div className="flex flex-col items-center gap-3 py-4">
+			<style>{`
+				@keyframes sl-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+			`}</style>
 			{/* Notification badges — all zero */}
 			<div className="flex items-center gap-2">
 				{alerts.map((label, i) => (
@@ -141,11 +141,11 @@ function SilenceGraphic({ alerts }: { alerts: string[] }) {
 					<span className="h-2 w-2 rounded-full bg-zinc-700" />
 					<span className="h-2 w-2 rounded-full bg-zinc-700" />
 					<span className="h-2 w-2 rounded-full bg-zinc-700" />
-					<span className="ml-2 text-[10px] font-medium text-zinc-600">analytics</span>
+					<span className="ml-2 text-[10px] font-medium text-zinc-600">{terminalTitle}</span>
 				</div>
 				{/* Empty content with blinking cursor */}
 				<div className="flex h-20 items-start p-4">
-					<span className="inline-block h-4 w-[2px] animate-pulse bg-zinc-500" />
+					<span className="inline-block h-4 w-[2px] bg-zinc-500" style={{ animation: "sl-blink 1s step-end infinite" }} />
 				</div>
 			</div>
 
@@ -155,7 +155,7 @@ function SilenceGraphic({ alerts }: { alerts: string[] }) {
 					<path strokeLinecap="round" strokeLinejoin="round" d="M9.143 17.082a24.248 24.248 0 005.714 0m-5.714 0a3 3 0 115.714 0M3.124 10.054A8.998 8.998 0 013 9.75V9a6 6 0 0112 0v.75c0 1.632-.217 3.213-.624 4.713M3.124 10.054A23.933 23.933 0 012 10.054" />
 					<line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="1.5" />
 				</svg>
-				<span className="text-[11px] font-medium text-zinc-600">Sem alertas</span>
+				<span className="text-[11px] font-medium text-zinc-600">{noAlerts}</span>
 			</div>
 		</div>
 	);
@@ -165,21 +165,20 @@ function SilenceGraphic({ alerts }: { alerts: string[] }) {
 
 function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel: string }) {
 	const SIZE = 220;
-	const cx = SIZE / 2; // drain center x
-	const cy = SIZE / 2 + 5; // drain center y (slightly below middle)
+	const cx = SIZE / 2;
+	const cy = SIZE / 2 + 5;
 
-	// Coins start around the drain, each with unique position & angle
+	// Coins: offset from center (where they START), animate TO center (0,0)
 	const COINS = [
-		{ x: 38,  y: 40,  dur: 2.6, delay: 0   },
-		{ x: 158, y: 52,  dur: 2.3, delay: 0.6 },
-		{ x: 26,  y: 108, dur: 2.8, delay: 1.2 },
-		{ x: 170, y: 100, dur: 2.1, delay: 0.3 },
-		{ x: 100, y: 28,  dur: 2.5, delay: 0.9 },
-		{ x: 60,  y: 170, dur: 2.4, delay: 1.6 },
-		{ x: 148, y: 165, dur: 2.7, delay: 0.5 },
+		{ ox: -72, oy: -75, dur: 2.6, delay: 0   },
+		{ ox:  48, oy: -63, dur: 2.3, delay: 0.6 },
+		{ ox: -84, oy:  -7, dur: 2.8, delay: 1.2 },
+		{ ox:  60, oy: -15, dur: 2.1, delay: 0.3 },
+		{ ox: -10, oy: -87, dur: 2.5, delay: 0.9 },
+		{ ox: -50, oy:  55, dur: 2.4, delay: 1.6 },
+		{ ox:  38, oy:  50, dur: 2.7, delay: 0.5 },
 	];
 
-	// Drain grate slots (radial lines)
 	const SLOT_COUNT = 8;
 	const drainR = 28;
 	const slots = Array.from({ length: SLOT_COUNT }, (_, i) => {
@@ -198,17 +197,14 @@ function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel:
 			<style>{`
 				@keyframes sl-drain-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 				@keyframes sl-drain-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
-				${COINS.map((c, i) => {
-					const dx = cx - c.x;
-					const dy = cy - c.y;
-					return `
-				@keyframes sl-drain-coin-${i} {
-					0%   { transform: translate(0, 0) scale(1); opacity: 0.85; }
-					70%  { transform: translate(${dx * 0.8}px, ${dy * 0.8}px) scale(0.5); opacity: 0.6; }
-					100% { transform: translate(${dx}px, ${dy}px) scale(0); opacity: 0; }
+				${COINS.map((c, i) => `
+				@keyframes sl-drain-c${i} {
+					0%   { transform: translate(${c.ox}px, ${c.oy}px); opacity: 0.9; }
+					80%  { transform: translate(${c.ox * 0.1}px, ${c.oy * 0.1}px); opacity: 0.5; }
+					100% { transform: translate(0, 0); opacity: 0; }
 				}
-				.sl-drain-c${i} { animation: sl-drain-coin-${i} ${c.dur}s ease-in ${c.delay}s infinite; }`;
-				}).join("")}
+				.sl-dc${i} { animation: sl-drain-c${i} ${c.dur}s ease-in ${c.delay}s infinite; }
+				`).join("")}
 			`}</style>
 			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[200px] sm:max-w-[220px]">
 				<defs>
@@ -240,22 +236,20 @@ function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel:
 					))}
 				</g>
 
-				{/* Coins — each starts at a position around the drain, gets sucked toward center */}
+				{/* Coins — all placed at center, CSS offsets them out then animates back to center */}
 				{COINS.map((c, i) => (
-					<g key={i} className={`sl-drain-c${i}`}>
-						{/* Coin body */}
-						<circle cx={c.x} cy={c.y} r="11" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.5)" strokeWidth="1.5" />
-						{/* $ sign */}
-						<text x={c.x} y={c.y + 4} textAnchor="middle" fontSize="10" fontWeight="700" fill="rgba(16,185,129,0.7)" fontFamily="ui-monospace, monospace">$</text>
+					<g key={i} className={`sl-dc${i}`}>
+						<circle cx={cx} cy={cy} r="11" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.5)" strokeWidth="1.5" />
+						<text x={cx} y={cy + 4} textAnchor="middle" fontSize="10" fontWeight="700" fill="rgba(16,185,129,0.7)" fontFamily="ui-monospace, monospace">$</text>
 					</g>
 				))}
 
-				{/* Top label — what you spend */}
+				{/* Top label */}
 				<text x={cx} y={22} textAnchor="middle" fontSize="11" fontWeight="600" fontFamily="ui-monospace, monospace" fill="rgba(16,185,129,0.7)">
 					{topLabel}
 				</text>
 
-				{/* Bottom label — what you get */}
+				{/* Bottom label */}
 				<text x={cx} y={SIZE - 8} textAnchor="middle" fontSize="11" fontWeight="600" fontFamily="ui-monospace, monospace" fill="rgba(239,68,68,0.65)">
 					{bottomLabel}
 				</text>
@@ -299,6 +293,8 @@ export default function SolutionLayers() {
 		bottom_label?: string;
 		stages?: string[];
 		alerts?: string[];
+		terminal_title?: string;
+		no_alerts?: string;
 	}>;
 
 	// Dictionary order: [0] = O buraco, [1] = O ciclo, [2] = O silêncio
@@ -338,7 +334,7 @@ export default function SolutionLayers() {
 
 					{/* Card 2: O silêncio — bottom-left */}
 					<BentoCard accent={ACCENTS[1]} className="lg:col-start-2 lg:row-start-1 lg:row-span-2">
-						<SilenceGraphic alerts={silence?.alerts || []} />
+						<SilenceGraphic alerts={silence?.alerts || []} terminalTitle={silence?.terminal_title || "analytics"} noAlerts={silence?.no_alerts || "No alerts"} />
 						<div className="mt-auto">
 							<span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${ACCENTS[1].pill}`}>
 								{silence?.eyebrow}

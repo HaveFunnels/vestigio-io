@@ -709,42 +709,28 @@
 			"section_label": "The problem",
 			"title": "Traffic is not the problem. Scaling a broken system is.",
 			"subtitle": "",
-			"layers": [
+			"cards": [
 				{
-					"eyebrow": "The gap",
-					"title": "Clicks cost money. Drop-offs cost more.",
-					"body": "You see the ad spend. You see the revenue. The gap between them? That's the part nobody's measuring.",
-					"support": ""
+					"eyebrow": "The hole",
+					"title": "You pay for the click. But between click and purchase, there's a hole.",
+					"body": "You see the ad spend. You see the revenue. But what happens in between? Who dropped off? Where? Why? Nobody measures how much it costs you.",
+					"top_label": "$5k ads",
+					"bottom_label": "$2.8k revenue"
 				},
 				{
 					"eyebrow": "The cycle",
-					"title": "You scale the problem with the traffic.",
-					"body": "You change the ads hoping it fixes the numbers. But the landing page now contradicts the creative. The drop-off moved — it didn't disappear. And you won't know until the numbers come in next month.",
-					"support": ""
+					"title": "You try to fix it, but the problem just moves.",
+					"body": "You change the ad thinking it'll help. But the landing page no longer matches the creative. The drop-off didn't disappear. It just moved pages. And you only find out at the end of the month.",
+					"stages": ["Ad", "Landing", "Checkout"]
 				},
 				{
 					"eyebrow": "The silence",
-					"title": "You can't fix what you can't see.",
-					"body": "No error log. No support ticket. No angry email. Somewhere between the landing page and the payment, the buyer gives up. Your analytics says \"session ended.\" That's not an insight. That's a shrug.",
-					"support": ""
+					"title": "Nobody complains. The money just stops coming in.",
+					"body": "No system error. No support ticket. No angry email. Somewhere between your landing page and payment, the buyer simply left. Your analytics says 'session ended.' That's not an answer. It's a question mark.",
+					"alerts": ["0 alerts", "0 errors", "0 tickets"],
+					"terminal_title": "analytics",
+					"no_alerts": "No alerts"
 				}
-			],
-			"tools": [
-				[
-					"Ad spend",
-					"Revenue",
-					"The gap"
-				],
-				[
-					"Creatives",
-					"Landing pages",
-					"Drop-off"
-				],
-				[
-					"Sessions",
-					"Behavior",
-					"Evidence"
-				]
 			],
 			"closing": "You can keep scaling without seeing this. Or you can look."
 		},

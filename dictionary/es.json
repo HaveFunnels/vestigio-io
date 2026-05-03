@@ -710,42 +710,28 @@
 			"section_label": "El problema",
 			"title": "El tráfico no es el problema. Escalar un sistema roto sí.",
 			"subtitle": "",
-			"layers": [
+			"cards": [
 				{
-					"eyebrow": "La brecha",
-					"title": "Los clics cuestan dinero. Los drop-offs cuestan más.",
-					"body": "Ves el gasto en ads. Ves los ingresos. La brecha entre ellos? Es la parte que nadie está midiendo.",
-					"support": ""
+					"eyebrow": "El agujero",
+					"title": "Pagas por el clic. Pero entre el clic y la compra, hay un agujero.",
+					"body": "Ves el gasto en ads. Ves los ingresos. Pero qué pasa en el medio? Quién abandonó? Dónde? Por qué? Nadie mide cuánto te cuesta.",
+					"top_label": "$5k ads",
+					"bottom_label": "$2.8k ingresos"
 				},
 				{
 					"eyebrow": "El ciclo",
-					"title": "Escalas el problema junto con el tráfico.",
-					"body": "Cambias los anuncios esperando que los números mejoren. Pero la landing page ahora contradice el creativo. El drop-off se movió — no desapareció. Y no lo sabrás hasta que lleguen los números el próximo mes.",
-					"support": ""
+					"title": "Intentas arreglar, pero el problema solo se mueve.",
+					"body": "Cambias el anuncio pensando que va a mejorar. Pero la landing ya no combina con el creativo. El abandono no desapareció. Solo cambió de página. Y solo te enteras a fin de mes.",
+					"stages": ["Anuncio", "Landing", "Checkout"]
 				},
 				{
 					"eyebrow": "El silencio",
-					"title": "No puedes arreglar lo que no puedes ver.",
-					"body": "Sin log de error. Sin ticket de soporte. Sin email enojado. En algún punto entre la landing page y el pago, el comprador se rinde. Tu analytics dice \"sesión terminada.\" Eso no es un insight. Es un encogimiento de hombros.",
-					"support": ""
+					"title": "Nadie se queja. El dinero simplemente deja de entrar.",
+					"body": "Sin error en el sistema. Sin ticket de soporte. Sin email enojado. En algún punto entre tu landing y el pago, el comprador simplemente se fue. Tu analytics dice 'sesión terminada.' Eso no es una respuesta. Es un signo de interrogación.",
+					"alerts": ["0 alertas", "0 errores", "0 tickets"],
+					"terminal_title": "analytics",
+					"no_alerts": "Sin alertas"
 				}
-			],
-			"tools": [
-				[
-					"Ad spend",
-					"Ingresos",
-					"La brecha"
-				],
-				[
-					"Creativos",
-					"Landing pages",
-					"Drop-off"
-				],
-				[
-					"Sesiones",
-					"Comportamiento",
-					"Evidencia"
-				]
 			],
 			"closing": "Puedes seguir escalando sin ver esto. O puedes ver de verdad."
 		},

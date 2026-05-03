@@ -710,42 +710,28 @@
 			"section_label": "Das Problem",
 			"title": "Traffic ist nicht das Problem. Ein kaputtes System zu skalieren schon.",
 			"subtitle": "",
-			"layers": [
+			"cards": [
 				{
-					"eyebrow": "Die Lücke",
-					"title": "Klicks kosten Geld. Drop-offs kosten mehr.",
-					"body": "Sie sehen die Werbeausgaben. Sie sehen den Umsatz. Die Lücke dazwischen? Das ist der Teil, den niemand misst.",
-					"support": ""
+					"eyebrow": "Das Loch",
+					"title": "Sie zahlen für den Klick. Aber bis zum Kauf gibt es ein Loch.",
+					"body": "Sie sehen die Werbeausgaben. Sie sehen den Umsatz. Aber was passiert dazwischen? Wer hat abgebrochen? Wo? Warum? Niemand misst, wie viel das kostet.",
+					"top_label": "5k€ Ads",
+					"bottom_label": "2,8k€ Umsatz"
 				},
 				{
 					"eyebrow": "Der Kreislauf",
-					"title": "Sie skalieren das Problem mit dem Traffic.",
-					"body": "Sie ändern die Anzeigen in der Hoffnung, dass sich die Zahlen verbessern. Aber die Landing Page widerspricht jetzt dem Creative. Der Drop-off hat sich verschoben — er ist nicht verschwunden. Und Sie erfahren es erst, wenn die Zahlen nächsten Monat kommen.",
-					"support": ""
+					"title": "Sie versuchen es zu reparieren, aber das Problem verschiebt sich nur.",
+					"body": "Sie ändern die Anzeige und hoffen auf Besserung. Aber die Landing Page passt nicht mehr zum Creative. Der Abbruch ist nicht verschwunden. Er hat nur die Seite gewechselt. Und Sie merken es erst am Monatsende.",
+					"stages": ["Anzeige", "Landing", "Checkout"]
 				},
 				{
 					"eyebrow": "Die Stille",
-					"title": "Was Sie nicht sehen, können Sie nicht beheben.",
-					"body": "Kein Fehlerprotokoll. Kein Support-Ticket. Keine wütende E-Mail. Irgendwo zwischen der Landing Page und der Zahlung gibt der Käufer auf. Ihre Analyse sagt \"Sitzung beendet.\" Das ist kein Insight. Das ist ein Achselzucken.",
-					"support": ""
+					"title": "Niemand beschwert sich. Das Geld hört einfach auf zu kommen.",
+					"body": "Kein Systemfehler. Kein Support-Ticket. Keine wütende E-Mail. Irgendwo zwischen Landing Page und Zahlung hat der Käufer einfach aufgegeben. Ihre Analyse sagt 'Sitzung beendet.' Das ist keine Antwort. Das ist ein Fragezeichen.",
+					"alerts": ["0 Warnungen", "0 Fehler", "0 Tickets"],
+					"terminal_title": "analytics",
+					"no_alerts": "Keine Warnungen"
 				}
-			],
-			"tools": [
-				[
-					"Werbeausgaben",
-					"Umsatz",
-					"Die Lücke"
-				],
-				[
-					"Creatives",
-					"Landing Pages",
-					"Drop-off"
-				],
-				[
-					"Sitzungen",
-					"Verhalten",
-					"Evidenz"
-				]
 			],
 			"closing": "Sie können weiter skalieren, ohne das zu sehen. Oder Sie können hinschauen."
 		},

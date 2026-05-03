@@ -279,7 +279,7 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 									<button
 										key={chip}
 										onClick={onViewMap}
-										className="relative flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-3 py-1.5 text-[11px] font-medium text-emerald-300 transition-all hover:bg-emerald-500/[0.15]"
+										className="relative flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-zinc-300 transition-all hover:bg-white/[0.08]"
 										style={{ animation: "vptour-glow 2.5s ease-in-out infinite" }}
 									>
 										<span className="absolute -right-1 -top-1 flex h-5 w-5">

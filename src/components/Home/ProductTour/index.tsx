@@ -104,10 +104,10 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 				</div>
 				{/* Stacked integration icons + subtext */}
 				<div className="mt-2 flex items-center justify-center gap-2.5">
-					<div className="flex -space-x-1.5">
+					<div className="flex -space-x-1">
 						{DATA_SOURCES.map((ds) => (
-							<div key={ds.alt} className="h-6 w-6 overflow-hidden rounded-full sm:h-7 sm:w-7">
-								<img src={ds.src} alt={ds.alt} className="h-full w-full object-cover" loading="lazy" />
+							<div key={ds.alt} className="h-5 w-5 rounded-full ring-2 ring-[#0a0a14]">
+								<img src={ds.src} alt={ds.alt} className="h-full w-full rounded-full object-cover" loading="lazy" />
 							</div>
 						))}
 					</div>

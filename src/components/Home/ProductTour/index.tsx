@@ -229,14 +229,14 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 					<div className="min-w-0 flex-1">
 						<div className="mb-1.5 flex items-center gap-2">
 							<span className="text-[10px] font-semibold text-violet-300">Vestigio AI</span>
-							<span className="h-1 w-1 rounded-full bg-violet-400 animate-pulse" />
+							<span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
 						</div>
 
 						{/* Chat bubble with rich content */}
-						<div className="cursor-pointer overflow-hidden rounded-xl rounded-tl-sm border border-violet-500/10 bg-violet-500/[0.04]" onClick={finishTypewriter}>
-							{/* Reasoning badges — like Claude's thinking */}
-							<div className="flex flex-wrap gap-1.5 border-b border-violet-500/10 bg-violet-500/[0.03] px-3 py-2 sm:px-4">
-								<span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[9px] font-medium text-violet-300">
+						<div className="cursor-pointer overflow-hidden rounded-xl rounded-tl-sm border border-white/[0.06] bg-white/[0.02]" onClick={finishTypewriter}>
+							{/* Reasoning badges */}
+							<div className="flex flex-wrap gap-1.5 border-b border-white/[0.06] bg-white/[0.02] px-3 py-2 sm:px-4">
+								<span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-[9px] font-medium text-zinc-400">
 									<svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
 									25 páginas analisadas
 								</span>
@@ -266,7 +266,7 @@ function StepInvestigation({ onViewMap }: { onViewMap: () => void }) {
 								<p className="whitespace-pre-line text-[12px] leading-relaxed text-zinc-300 sm:text-[13px]">
 									{renderRichText(visibleText)}
 									{charIdx < fullText.length && (
-										<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-violet-400" />
+										<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-zinc-500" />
 									)}
 								</p>
 							</div>

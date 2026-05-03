@@ -316,9 +316,9 @@ export default function SolutionLayers() {
 				<h2 className="text-[1.75rem] font-bold leading-[1.1] tracking-tight text-white sm:text-3xl lg:text-[2.25rem]">{t("title")}</h2>
 			</div>
 
-			{/* Bento grid: =| layout */}
+			{/* Bento grid: =| layout (2 stacked left, 1 tall right) */}
 			<div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">
-				<div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[1fr_1fr_1fr] lg:grid-rows-[1fr_1fr]">
+				<div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[1fr_1fr] lg:grid-rows-[1fr_1fr]">
 
 					{/* Card 1: O ciclo — top-left */}
 					<BentoCard accent={ACCENTS[0]} className="lg:col-start-1 lg:row-start-1">
@@ -333,7 +333,7 @@ export default function SolutionLayers() {
 					</BentoCard>
 
 					{/* Card 2: O silêncio — bottom-left */}
-					<BentoCard accent={ACCENTS[1]} className="lg:col-start-2 lg:row-start-1 lg:row-span-2">
+					<BentoCard accent={ACCENTS[1]} className="lg:col-start-1 lg:row-start-2">
 						<SilenceGraphic alerts={silence?.alerts || []} terminalTitle={silence?.terminal_title || "analytics"} noAlerts={silence?.no_alerts || "No alerts"} />
 						<div className="mt-auto">
 							<span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${ACCENTS[1].pill}`}>
@@ -345,7 +345,7 @@ export default function SolutionLayers() {
 					</BentoCard>
 
 					{/* Card 3: O buraco — right, spans 2 rows (tall) */}
-					<BentoCard accent={ACCENTS[2]} className="lg:col-start-3 lg:row-span-2">
+					<BentoCard accent={ACCENTS[2]} className="lg:col-start-2 lg:row-start-1 lg:row-span-2">
 						<HoleGraphic topLabel={hole?.top_label || ""} bottomLabel={hole?.bottom_label || ""} />
 						<div className="mt-auto">
 							<span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${ACCENTS[2].pill}`}>
@@ -355,14 +355,6 @@ export default function SolutionLayers() {
 							<p className="text-[13px] leading-relaxed text-zinc-400">{hole?.body}</p>
 						</div>
 					</BentoCard>
-
-					{/* Card 1 bottom — O ciclo occupies only top-left, this fills bottom-left */}
-					{/* We need a 4th element or restructure. Let's use closing text as bottom-left card */}
-					<div className="flex items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.01] p-6 lg:col-start-1 lg:row-start-2">
-						<p className="text-center text-base font-medium leading-relaxed text-zinc-300 sm:text-lg">
-							{t("closing")}
-						</p>
-					</div>
 				</div>
 			</div>
 		</section>

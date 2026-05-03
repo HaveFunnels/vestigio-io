@@ -156,51 +156,51 @@
 				"rows": [
 					{
 						"priority": "cart",
-						"title": "Acelere seu checkout — está te custando −R$30k–70k/mês",
+						"title": "Acelere seu checkout — está te custando −R$42k/mês",
 						"desc": "68% dos seus compradores mobile desistem esperando sua página de pagamento carregar",
-						"impact": "−R$30k–70k",
+						"impact": "−R$42k",
 						"severity": "critical"
 					},
 					{
 						"priority": "cursor",
 						"title": "Coloque seu botão de compra acima da dobra no mobile",
 						"desc": "68% das suas sessões mobile exigem scroll pra encontrar o botão de compra",
-						"impact": "−R$20k–47k",
+						"impact": "−R$31k",
 						"severity": "critical"
 					},
 					{
 						"priority": "shield",
 						"title": "Corrija o alerta de segurança na sua página de pagamento",
 						"desc": "12% dos seus compradores veem um aviso de 'Não seguro' na hora de digitar o cartão",
-						"impact": "−R$13k–35k",
+						"impact": "−R$22k",
 						"severity": "critical"
 					},
 					{
 						"priority": "filter",
 						"title": "Pare de resetar seus filtros de produto na navegação",
 						"desc": "Seus compradores perdem a seleção toda vez que clicam — e recomeçam do zero",
-						"impact": "−R$8k–23k",
+						"impact": "−R$14k",
 						"severity": "high"
 					},
 					{
 						"priority": "check",
 						"title": "Usuários encontram o suporte mais rápido agora — continue monitorando",
 						"desc": "Tempo médio até o contato caiu 40% desde o último ciclo",
-						"impact": "+R$6k–15k",
+						"impact": "+R$9k",
 						"severity": "low"
 					},
 					{
 						"priority": "P6",
 						"title": "Simplifique o passo 3 do seu cadastro — você está perdendo metade",
 						"desc": "Sua conversão despenca de 78% pra 41% nesse passo nos últimos 2 ciclos",
-						"impact": "−R$20k–55k",
+						"impact": "−R$35k",
 						"severity": "high"
 					},
 					{
 						"priority": "P7",
 						"title": "Adicione rastreamento entre seu carrinho e a compra",
 						"desc": "Você não tem visibilidade de onde seus compradores desistem nos passos finais",
-						"impact": "−R$45k–120k",
+						"impact": "−R$78k",
 						"severity": "medium"
 					},
 					{
@@ -283,12 +283,12 @@
 					{
 						"title": "Sua conversão de cadastro cai de 78% pra 41% no passo 3",
 						"severity": "high",
-						"impact": "−R$20k–55k"
+						"impact": "−R$35k"
 					},
 					{
 						"title": "Seu funil carrinho-compra não tem rastreamento — ponto cego detectado",
 						"severity": "medium",
-						"impact": "−R$45k–120k"
+						"impact": "−R$78k"
 					},
 					{
 						"title": "Seu campo de e-mail não tem sinais de confiança — 9% de abandono",
@@ -563,8 +563,8 @@
 				"hero_label": "Total recuperável",
 				"hero_sub": "baseado em suas integrações",
 				"step1_hint": "Clique para investigar ↓",
-				"step2_context": "Checkout lento — −R$30k–70k/mês",
-				"step2_ai": "Acabei de navegar seu checkout. O pagamento trava em **4.2s** — três scripts carregam antes do formulário aparecer, e **12% dos seus usuários** estão saindo nesse ponto. Isso representa **−R$1k por dia** no seu faturamento.\n\nCusto mensal: **−R$30k–70k**.\n\nJá priorizei a correção na sua fila. Adie os scripts, comprima as imagens do checkout e mova a validação pra async. Me avise quando aplicar — eu passo de novo pra confirmar.\n\nCriei um mapa pra você monitorar o comportamento dos usuários.",
+				"step2_context": "Checkout lento — −R$42k/mês",
+				"step2_ai": "Acabei de navegar seu checkout. O pagamento trava em **4.2s** — três scripts carregam antes do formulário aparecer, e **12% dos seus usuários** estão saindo nesse ponto. Isso representa **−R$1k por dia** no seu faturamento.\n\nCusto mensal: **−R$42k**.\n\nJá priorizei a correção na sua fila. Adie os scripts, comprima as imagens do checkout e mova a validação pra async. Me avise quando aplicar — eu passo de novo pra confirmar.\n\nCriei um mapa pra você monitorar o comportamento dos usuários.",
 				"step2_chips": ["Ver mapa"],
 				"step3_leak": "Vazamento detectado",
 				"step3_cta": "Ver quanto estou perdendo",

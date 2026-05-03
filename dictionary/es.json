@@ -156,65 +156,65 @@
 				"rows": [
 					{
 						"priority": "P1",
-						"title": "Acelera tu checkout — te está costando −$18k–42k/mes",
+						"title": "Acelera tu checkout — te está costando −$28k/mes",
 						"desc": "68% de tus compradores móviles abandonan esperando que tu página de pago cargue",
-						"impact": "−$18k–42k",
+						"impact": "−$28k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P2",
 						"title": "Mueve tu botón de compra arriba del pliegue en móvil",
 						"desc": "68% de tus sesiones móviles requieren scroll para encontrar el botón de compra",
-						"impact": "−$12k–28k",
+						"impact": "−$19k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P3",
 						"title": "Corrige la alerta de seguridad en tu página de pago",
 						"desc": "12% de tus compradores ven un aviso de 'No seguro' al ingresar su tarjeta",
-						"impact": "−$8k–21k",
+						"impact": "−$13k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P4",
 						"title": "Deja de resetear tus filtros de producto al navegar",
 						"desc": "Tus compradores pierden su selección cada vez que hacen clic — y empiezan de nuevo",
-						"impact": "−$5k–14k",
+						"impact": "−$9k",
 						"severity": "high"
 					},
 					{
 						"priority": "P5",
 						"title": "Agrega tu política de devolución al flujo de checkout",
 						"desc": "Tu tasa de chargeback está 2,1x sobre el mercado cuando la política no aparece",
-						"impact": "−$3.6k–9k",
+						"impact": "−$6k",
 						"severity": "high"
 					},
 					{
 						"priority": "P6",
 						"title": "Simplifica el paso 3 de tu registro — estás perdiendo la mitad",
 						"desc": "Tu conversión cae de 78% a 41% en ese paso en los últimos 2 ciclos",
-						"impact": "−$4k–11k",
+						"impact": "−$7k",
 						"severity": "high"
 					},
 					{
 						"priority": "P7",
 						"title": "Agrega rastreo entre tu carrito y la compra",
 						"desc": "No tienes visibilidad de dónde tus compradores abandonan en los pasos finales",
-						"impact": "−$9k–24k",
+						"impact": "−$15k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P8",
 						"title": "Agrega señales de confianza cerca de tu campo de email",
 						"desc": "9% de tus leads abandonan en ese campo — no se sienten seguros para enviar",
-						"impact": "−$2k–6k",
+						"impact": "−$4k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P9",
 						"title": "Aumenta el contraste de tu botón principal",
 						"desc": "4% de tus visitantes no lo encuentran en fondos oscuros",
-						"impact": "−$1.5k–4k",
+						"impact": "−$2.5k",
 						"severity": "low"
 					}
 				]
@@ -258,52 +258,52 @@
 					{
 						"title": "Tu checkout carga en 4,2s — el benchmark es 1,8s",
 						"severity": "critical",
-						"impact": "−$18k–42k"
+						"impact": "−$28k"
 					},
 					{
 						"title": "Tu botón de compra está debajo del pliegue en 68% de sesiones móviles",
 						"severity": "critical",
-						"impact": "−$12k–28k"
+						"impact": "−$19k"
 					},
 					{
 						"title": "Tu página de pago muestra alerta de 'No seguro' en el navegador",
 						"severity": "critical",
-						"impact": "−$8k–21k"
+						"impact": "−$13k"
 					},
 					{
 						"title": "Tus filtros de producto pierden estado en cada clic de navegación",
 						"severity": "high",
-						"impact": "−$5k–14k"
+						"impact": "−$9k"
 					},
 					{
 						"title": "Tu checkout no tiene política de devolución visible — chargeback 2,1x sobre el mercado",
 						"severity": "high",
-						"impact": "−$3.6k–9k"
+						"impact": "−$6k"
 					},
 					{
 						"title": "Tu conversión de registro cae de 78% a 41% en el paso 3",
 						"severity": "high",
-						"impact": "−$4k–11k"
+						"impact": "−$7k"
 					},
 					{
 						"title": "Tu embudo carrito-compra no tiene rastreo — punto ciego detectado",
 						"severity": "medium",
-						"impact": "−$9k–24k"
+						"impact": "−$15k"
 					},
 					{
 						"title": "Tu campo de email no tiene señales de confianza — 9% de abandono",
 						"severity": "medium",
-						"impact": "−$2k–6k"
+						"impact": "−$4k"
 					},
 					{
 						"title": "Tu CTA principal tiene ratio de contraste 1.2:1 en fondos oscuros",
 						"severity": "low",
-						"impact": "−$1.5k–4k"
+						"impact": "−$2.5k"
 					},
 					{
 						"title": "Tu footer no tiene sellos de confianza — SSL, pago, garantía ausentes",
 						"severity": "low",
-						"impact": "−$0.8k–2k"
+						"impact": "−$1.3k"
 					}
 				]
 			},
@@ -564,8 +564,8 @@
 				"hero_label": "Total recuperable",
 				"hero_sub": "en 5 acciones priorizadas",
 				"step1_hint": "Haz clic para investigar ↓",
-				"step2_context": "P1 · Checkout lento — −$18k–42k/mes",
-				"step2_ai": "Acabo de navegar tu checkout. El pago se traba en **4.2s** — tres scripts cargan antes de que aparezca el formulario, y **12% de tus usuarios** están saliendo en este punto. Eso representa **−$600/día** en tu facturación.\n\nCosto mensual: **−$18k–42k**.\n\nYa prioricé la corrección como P1 en tu cola. Aplaza los scripts, comprime las imágenes del checkout y mueve la validación a async. Avísame cuando lo apliques — paso de nuevo a confirmar.\n\nCreé un mapa para que monitorees el comportamiento de los usuarios.",
+				"step2_context": "P1 · Checkout lento — −$28k/mes",
+				"step2_ai": "Acabo de navegar tu checkout. El pago se traba en **4.2s** — tres scripts cargan antes de que aparezca el formulario, y **12% de tus usuarios** están saliendo en este punto. Eso representa **−$600/día** en tu facturación.\n\nCosto mensual: **−$28k**.\n\nYa prioricé la corrección como P1 en tu cola. Aplaza los scripts, comprime las imágenes del checkout y mueve la validación a async. Avísame cuando lo apliques — paso de nuevo a confirmar.\n\nCreé un mapa para que monitorees el comportamiento de los usuarios.",
 				"step2_chips": ["Ver mapa"],
 				"step3_leak": "Fuga detectada",
 				"step3_cta": "Ver cuánto estoy perdiendo",

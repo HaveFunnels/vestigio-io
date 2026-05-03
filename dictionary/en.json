@@ -156,65 +156,65 @@
 				"rows": [
 					{
 						"priority": "P1",
-						"title": "Speed up your checkout — it's costing you −$18k–42k/mo",
+						"title": "Speed up your checkout — it's costing you −$28k/mo",
 						"desc": "68% of your mobile buyers drop off waiting for your payment page to load",
-						"impact": "−$18k–42k",
+						"impact": "−$28k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P2",
 						"title": "Move your buy button above the fold on mobile",
 						"desc": "68% of your mobile sessions require scrolling to find the purchase button",
-						"impact": "−$12k–28k",
+						"impact": "−$19k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P3",
 						"title": "Fix the security warning on your payment page",
 						"desc": "12% of your buyers see a 'Not secure' alert right when entering their card",
-						"impact": "−$8k–21k",
+						"impact": "−$13k",
 						"severity": "critical"
 					},
 					{
 						"priority": "P4",
 						"title": "Stop resetting your product filters on navigation",
 						"desc": "Your shoppers lose their selection every time they click — and start over",
-						"impact": "−$5k–14k",
+						"impact": "−$9k",
 						"severity": "high"
 					},
 					{
 						"priority": "P5",
 						"title": "Add your return policy to the checkout flow",
 						"desc": "Your chargeback rate is 2.1x above market average when the policy is missing",
-						"impact": "−$3.6k–9k",
+						"impact": "−$6k",
 						"severity": "high"
 					},
 					{
 						"priority": "P6",
 						"title": "Simplify step 3 of your signup — you're losing half",
 						"desc": "Your conversion drops from 78% to 41% at that step in the last 2 cycles",
-						"impact": "−$4k–11k",
+						"impact": "−$7k",
 						"severity": "high"
 					},
 					{
 						"priority": "P7",
 						"title": "Add tracking between your cart and purchase",
 						"desc": "You have no visibility into where your buyers drop off in the final steps",
-						"impact": "−$9k–24k",
+						"impact": "−$15k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P8",
 						"title": "Add trust signals near your email field",
 						"desc": "9% of your leads abandon at that field — they don't feel safe submitting",
-						"impact": "−$2k–6k",
+						"impact": "−$4k",
 						"severity": "medium"
 					},
 					{
 						"priority": "P9",
 						"title": "Increase contrast on your main CTA button",
 						"desc": "4% of your visitors can't find it on dark backgrounds",
-						"impact": "−$1.5k–4k",
+						"impact": "−$2.5k",
 						"severity": "low"
 					}
 				]
@@ -258,52 +258,52 @@
 					{
 						"title": "Your checkout loads in 4.2s — benchmark is 1.8s",
 						"severity": "critical",
-						"impact": "−$18k–42k"
+						"impact": "−$28k"
 					},
 					{
 						"title": "Your buy button is below the fold on 68% of mobile sessions",
 						"severity": "critical",
-						"impact": "−$12k–28k"
+						"impact": "−$19k"
 					},
 					{
 						"title": "Your payment page triggers a 'Not secure' browser warning",
 						"severity": "critical",
-						"impact": "−$8k–21k"
+						"impact": "−$13k"
 					},
 					{
 						"title": "Your product filters lose state on every navigation click",
 						"severity": "high",
-						"impact": "−$5k–14k"
+						"impact": "−$9k"
 					},
 					{
 						"title": "Your checkout has no visible return policy — chargeback rate 2.1x above market",
 						"severity": "high",
-						"impact": "−$3.6k–9k"
+						"impact": "−$6k"
 					},
 					{
 						"title": "Your signup conversion drops from 78% to 41% at step 3",
 						"severity": "high",
-						"impact": "−$4k–11k"
+						"impact": "−$7k"
 					},
 					{
 						"title": "Your cart-to-purchase funnel has zero tracking — blind spot detected",
 						"severity": "medium",
-						"impact": "−$9k–24k"
+						"impact": "−$15k"
 					},
 					{
 						"title": "Your email field has no trust signals — 9% abandon rate",
 						"severity": "medium",
-						"impact": "−$2k–6k"
+						"impact": "−$4k"
 					},
 					{
 						"title": "Your main CTA has 1.2:1 contrast ratio on dark backgrounds",
 						"severity": "low",
-						"impact": "−$1.5k–4k"
+						"impact": "−$2.5k"
 					},
 					{
 						"title": "Your footer has no trust badges — SSL, payment, guarantee absent",
 						"severity": "low",
-						"impact": "−$0.8k–2k"
+						"impact": "−$1.3k"
 					}
 				]
 			},
@@ -563,8 +563,8 @@
 				"hero_label": "Total recoverable",
 				"hero_sub": "across 5 ranked actions",
 				"step1_hint": "Click to investigate ↓",
-				"step2_context": "P1 · Slow checkout — −$18k–42k/mo",
-				"step2_ai": "Just browsed your checkout. Payment stalls at **4.2s** — three scripts load before the form appears, and **12% of your users** are leaving at this point. That's **−$600/day** in revenue.\n\nMonthly cost: **−$18k–42k**.\n\nAlready prioritized the fix as P1 in your queue. Defer the scripts, compress checkout images, and move validation to async. Let me know when it's live — I'll run through again to confirm.\n\nCreated a map for you to monitor user behavior.",
+				"step2_context": "P1 · Slow checkout — −$28k/mo",
+				"step2_ai": "Just browsed your checkout. Payment stalls at **4.2s** — three scripts load before the form appears, and **12% of your users** are leaving at this point. That's **−$600/day** in revenue.\n\nMonthly cost: **−$28k**.\n\nAlready prioritized the fix as P1 in your queue. Defer the scripts, compress checkout images, and move validation to async. Let me know when it's live — I'll run through again to confirm.\n\nCreated a map for you to monitor user behavior.",
 				"step2_chips": ["View map"],
 				"step3_leak": "Leak detected",
 				"step3_cta": "See how much I'm losing",

@@ -148,11 +148,11 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 								{isP1 && <p className="mt-0.5 hidden text-[11px] text-zinc-500 sm:block">{a.desc}</p>}
 							</div>
 							{/* Impact */}
-							<span className={`shrink-0 font-mono tabular-nums ${isP1 ? "text-[12px] sm:text-[13px]" : "text-[10px]"} ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
+							<span className={`shrink-0 font-mono tabular-nums ${isP1 ? "text-[10px] sm:text-[11px]" : "text-[9px]"} ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
 								{a.impact}
 							</span>
 							{/* Severity badge */}
-							<span className={`shrink-0 rounded border px-1.5 py-0.5 font-semibold uppercase ${isP1 ? "text-[9px] sm:text-[10px]" : "text-[7px] sm:text-[8px]"} ${SEVERITY_BADGE[a.severity]}`}>
+							<span className={`shrink-0 rounded border px-1 py-0.5 font-semibold uppercase ${isP1 ? "text-[8px] sm:text-[9px]" : "text-[7px]"} ${SEVERITY_BADGE[a.severity]}`}>
 								{a.severity}
 							</span>
 							{/* P1 hotspot ping */}

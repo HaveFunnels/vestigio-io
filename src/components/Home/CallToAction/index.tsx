@@ -26,7 +26,7 @@ const CallToAction = async ({
 						{t("subtitle")}
 					</p>
 
-					<Link href={primaryCtaHref} className="inline-block">
+					<Link href={primaryCtaHref} className="block sm:inline-block">
 						<ShinyButton>{t("primary")}</ShinyButton>
 					</Link>
 

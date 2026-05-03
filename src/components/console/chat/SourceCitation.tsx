@@ -19,7 +19,7 @@ const TYPE_STYLES: Record<string, { bg: string; text: string; border: string; hr
     bg: "bg-red-500/5",
     text: "text-red-400",
     border: "border-red-800/20",
-    href: (id) => `/app/analysis?finding=${id}`,
+    href: (id) => `/app/findings?finding=${id}`,
   },
   action: {
     bg: "bg-emerald-500/5",

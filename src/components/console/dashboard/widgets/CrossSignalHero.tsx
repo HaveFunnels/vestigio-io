@@ -59,7 +59,7 @@ function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boole
 					<button
 						type="button"
 						disabled={editing}
-						onClick={() => !editing && router.push(`/app/analysis?chain=${encodeURIComponent(chain.surface)}`)}
+						onClick={() => !editing && router.push(`/app/findings?chain=${encodeURIComponent(chain.surface)}`)}
 						className="truncate font-mono text-[10px] text-content-faint transition-colors hover:text-content-secondary disabled:cursor-default"
 					>
 						{surface}
@@ -83,7 +83,7 @@ function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boole
 								<button
 									type="button"
 									disabled={editing}
-									onClick={() => !editing && router.push(`/app/analysis?finding=${link.findingId}`)}
+									onClick={() => !editing && router.push(`/app/findings?finding=${link.findingId}`)}
 									className="inline-flex items-center gap-1 text-[11px] transition-colors hover:opacity-80 disabled:cursor-default"
 								>
 									<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />

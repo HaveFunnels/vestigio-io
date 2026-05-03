@@ -1721,7 +1721,7 @@ function UserActionDrawerContent({
 			{/* Finding link — for navigation back to the source finding */}
 			<DrawerSection title={t("sourceFinding")}>
 				<a
-					href={`/app/analysis?finding=${encodeURIComponent(action.finding_id)}`}
+					href={`/app/findings?finding=${encodeURIComponent(action.finding_id)}`}
 					className='inline-flex items-center gap-1 text-xs text-content-muted hover:text-content-secondary hover:underline'
 				>
 					{action.finding_id}

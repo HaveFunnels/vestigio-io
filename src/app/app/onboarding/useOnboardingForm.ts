@@ -234,7 +234,7 @@ export default function useOnboardingForm() {
 						try {
 							sessionStorage.removeItem(DRAFT_KEY);
 						} catch {}
-						router.replace("/app/analysis");
+						router.replace("/app/findings");
 					}
 				})
 				.catch(() => {});

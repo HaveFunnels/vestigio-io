@@ -60,7 +60,7 @@ export default function FindingPage({
 					{decodedId}
 				</p>
 				<Link
-					href="/app/analysis"
+					href="/app/findings"
 					className="mt-4 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
 				>
 					&larr; {tc("back") || "Back to Findings"}
@@ -74,7 +74,7 @@ export default function FindingPage({
 			{/* Breadcrumb */}
 			<nav className="mb-6 flex items-center gap-2 text-xs text-content-muted">
 				<Link
-					href="/app/analysis"
+					href="/app/findings"
 					className="transition-colors hover:text-content"
 				>
 					{tc("findings") || "Findings"}

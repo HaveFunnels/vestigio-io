@@ -49,7 +49,7 @@ export default function AdminEnvironmentsPage() {
   }
 
   function handleViewFindings(env: EnvRow) {
-    router.push(`/app/analysis?environment=${env.id}`);
+    router.push(`/app/findings?environment=${env.id}`);
   }
 
   return (

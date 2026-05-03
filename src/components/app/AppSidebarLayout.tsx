@@ -22,7 +22,7 @@ import { orgDropdownNav } from "./sidebar-nav-data";
 // showing it on e.g. Settings would be distracting.
 const CYCLE_BANNER_ROUTES = new Set([
 	"/app/inventory",
-	"/app/analysis",
+	"/app/findings",
 	"/app/actions",
 ]);
 

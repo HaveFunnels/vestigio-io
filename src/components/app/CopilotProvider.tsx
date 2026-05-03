@@ -119,7 +119,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		if (pathname.match(/^\/app\/workspaces\/[^/]+$/))
 			return { type: "workspace", id: pathname.split("/").pop() || "" };
 		if (pathname === "/app/workspaces") return { type: "workspaces" };
-		if (pathname.startsWith("/app/analysis")) return { type: "analysis" };
+		if (pathname.startsWith("/app/findings")) return { type: "analysis" };
 		if (pathname.startsWith("/app/actions")) return { type: "actions" };
 		if (pathname.startsWith("/app/dashboard")) return { type: "dashboard" };
 		if (pathname.startsWith("/app/inventory")) return { type: "inventory" };

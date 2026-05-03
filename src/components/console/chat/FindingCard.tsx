@@ -34,7 +34,7 @@ export function FindingCard({ block, onNavigate }: FindingCardProps) {
 
   return (
     <button
-      onClick={() => onNavigate?.(`/app/analysis?finding=${finding.id}`)}
+      onClick={() => onNavigate?.(`/app/findings?finding=${finding.id}`)}
       className="my-1.5 flex w-full items-start gap-3 rounded-lg border border-edge bg-surface-card/60 px-3.5 py-3 text-left transition-colors hover:border-edge hover:bg-surface-inset/60"
     >
       {/* Severity indicator bar */}

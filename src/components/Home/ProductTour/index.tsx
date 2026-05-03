@@ -116,7 +116,7 @@ function StepActionsQueue({ onClickP1 }: { onClickP1: () => void }) {
 			</div>
 
 			{/* Action rows */}
-			<div className="space-y-1">
+			<div className="space-y-2 sm:space-y-1">
 				{rows.map((a, i) => {
 					const isP1 = i === 0;
 					const isPositive = a.impact.startsWith("+");

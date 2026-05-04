@@ -47,7 +47,10 @@ export function toReactFlowNodes(mapDef: MapDefinition): Node[] {
 			className: classNames.join(" ") || undefined,
 			style:
 				scaleFactor !== 1.0
-					? { transform: `scale(${scaleFactor.toFixed(3)})` }
+					? {
+							transform: `scale(${scaleFactor.toFixed(3)})`,
+							transformOrigin: "center center",
+						}
 					: undefined,
 		};
 	});

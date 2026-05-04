@@ -9,6 +9,7 @@ import type {
 	MapEdgeType,
 	MapNodeType,
 } from "../../../../../packages/maps";
+import { applyDagreLayout } from "../../../../../packages/maps";
 
 /**
  * GET /api/maps/user-journey — Authenticated.
@@ -172,17 +173,13 @@ export async function GET(request: Request) {
       ["support", "policy", "blog"].includes(p.pageType?.toLowerCase() || "") && p.tier !== "excluded"
     ).slice(0, 5);
 
-    // Build nodes
-    const NODE_SPACING_X = 280;
-    const NODE_SPACING_Y = 120;
+    // Build nodes (positions computed by dagre after all nodes+edges are ready)
     const allJourneyPages = [...journeyPages, ...supportPages];
     const usedPageIds = new Set<string>();
 
     const nodes: MapNode[] = [];
 
-    // Position commercial pages in a horizontal flow
-    let x = 0;
-    let commercialY = 200;
+    // Commercial pages
     for (const page of journeyPages) {
       if (usedPageIds.has(page.id)) continue;
       usedPageIds.add(page.id);
@@ -206,14 +203,11 @@ export async function GET(request: Request) {
           tier: page.tier,
           stage: stageOrder[pageType] ?? 99,
         },
-        position: { x, y: commercialY },
+        position: { x: 0, y: 0 }, // dagre will compute
       });
-      x += NODE_SPACING_X;
     }
 
-    // Position support pages below
-    let supportX = NODE_SPACING_X;
-    const supportY = commercialY + NODE_SPACING_Y * 2;
+    // Support pages
     for (const page of supportPages) {
       if (usedPageIds.has(page.id)) continue;
       usedPageIds.add(page.id);
@@ -232,9 +226,8 @@ export async function GET(request: Request) {
           statusCode: page.statusCode,
           tier: page.tier,
         },
-        position: { x: supportX, y: supportY },
+        position: { x: 0, y: 0 }, // dagre will compute
       });
-      supportX += NODE_SPACING_X;
     }
 
     // Build edges from surface relations
@@ -378,8 +371,6 @@ export async function GET(request: Request) {
           }
 
           // Insert pseudo-nodes between consecutive commercial steps
-          const NODE_SPACING_X = 280;
-          const PSEUDO_Y = commercialY + 160;
           for (let i = 0; i < commercialNodes.length - 1; i++) {
             const prevRate = (commercialNodes[i].metadata.conversionRate as number) ?? 0;
             const nextRate = (commercialNodes[i + 1].metadata.conversionRate as number) ?? 0;
@@ -387,7 +378,6 @@ export async function GET(request: Request) {
             if (dropoff <= 0) continue;
             const otherShare = Math.round(dropoff * 0.6);
             const dropShare = Math.max(0, dropoff - otherShare);
-            const pseudoX = commercialNodes[i].position.x + NODE_SPACING_X / 2;
 
             if (otherShare > 0) {
               nodes.push({
@@ -398,7 +388,7 @@ export async function GET(request: Request) {
                 impact: null,
                 pack: null,
                 metadata: { pseudo: true, kind: "other_events", conversionRate: otherShare },
-                position: { x: pseudoX, y: PSEUDO_Y },
+                position: { x: 0, y: 0 }, // dagre will compute
               });
               edges.push({
                 id: `edge_other_${i}`,
@@ -417,7 +407,7 @@ export async function GET(request: Request) {
                 impact: null,
                 pack: null,
                 metadata: { pseudo: true, kind: "dropoff", conversionRate: dropShare },
-                position: { x: pseudoX, y: PSEUDO_Y + 80 },
+                position: { x: 0, y: 0 }, // dagre will compute
               });
               edges.push({
                 id: `edge_drop_${i}`,
@@ -432,6 +422,12 @@ export async function GET(request: Request) {
       }
     } catch (err) {
       console.warn("[User Journey API] behavioral enrichment skipped:", err);
+    }
+
+    // Wave 7.10: Apply dagre layout to compute optimal positions.
+    // LR direction creates the horizontal funnel flow naturally.
+    if (nodes.length > 0) {
+      applyDagreLayout(nodes, edges, { direction: "LR", rankSeparation: 300 });
     }
 
     // Legend is derived from what's actually in the map. We include every
@@ -523,11 +519,6 @@ export async function GET(request: Request) {
 function buildDemoJourneyMap(
   filters: JourneyFilters,
 ): MapDefinition & { metadata: Record<string, unknown> } {
-  const NODE_SPACING_X = 280;
-  const COMMERCIAL_Y = 200;
-  const PSEUDO_Y = COMMERCIAL_Y + 160;
-  const SUPPORT_Y = COMMERCIAL_Y + 340;
-
   // Stage key → display order. Matches the live-flow stageOrder so
   // filter semantics are identical across demo + real data.
   const demoStageOrder: Record<string, number> = {
@@ -602,7 +593,7 @@ function buildDemoJourneyMap(
         stage: demoStageOrder[p.pageType] ?? idx,
         conversionRate: p.conversionRateOfVisible,
       },
-      position: { x: idx * NODE_SPACING_X, y: COMMERCIAL_Y },
+      position: { x: 0, y: 0 }, // dagre will compute
     });
   });
 
@@ -621,8 +612,6 @@ function buildDemoJourneyMap(
     const otherShare = Math.round(dropoff * 0.6);
     const dropShare = Math.max(0, dropoff - otherShare);
 
-    const pseudoX = i * NODE_SPACING_X + NODE_SPACING_X / 2;
-
     if (otherShare > 0) {
       nodes.push({
         id: `demo_other_${i}`,
@@ -636,7 +625,7 @@ function buildDemoJourneyMap(
           kind: "other_events",
           conversionRate: otherShare,
         },
-        position: { x: pseudoX, y: PSEUDO_Y },
+        position: { x: 0, y: 0 }, // dagre will compute
       });
     }
 
@@ -653,7 +642,7 @@ function buildDemoJourneyMap(
           kind: "dropoff",
           conversionRate: dropShare,
         },
-        position: { x: pseudoX, y: PSEUDO_Y + 80 },
+        position: { x: 0, y: 0 }, // dagre will compute
       });
     }
   }
@@ -673,7 +662,7 @@ function buildDemoJourneyMap(
         statusCode: 200,
         tier: "extended",
       },
-      position: { x: (idx + 1) * NODE_SPACING_X, y: SUPPORT_Y },
+      position: { x: 0, y: 0 }, // dagre will compute
     });
   });
 
@@ -760,6 +749,11 @@ function buildDemoJourneyMap(
   }
   if (edges.some((e) => e.type === "redirect")) {
     legendEdges.push({ labelKey: "redirect", swatch: "redirect" });
+  }
+
+  // Wave 7.10: Apply dagre for optimal layout
+  if (nodes.length > 0) {
+    applyDagreLayout(nodes, edges, { direction: "LR", rankSeparation: 300 });
   }
 
   return {

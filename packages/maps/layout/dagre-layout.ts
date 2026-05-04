@@ -11,10 +11,10 @@ export interface LayoutConfig {
 
 const DEFAULT_CONFIG: LayoutConfig = {
   direction: "LR",
-  rankSeparation: 250,
-  nodeSeparation: 80,
-  nodeWidth: 200,
-  nodeHeight: 60,
+  rankSeparation: 280,
+  nodeSeparation: 100,
+  nodeWidth: 250,
+  nodeHeight: 90,
 };
 
 export function applyDagreLayout(

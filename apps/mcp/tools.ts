@@ -185,6 +185,12 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
       filter_pattern: { type: 'string', enum: ['consecutive_regressions', 'gradual_degradation', 'sudden_spike', 'improving', 'oscillating', 'stable'], nullable: true, description: 'Optional: only return findings matching this trend pattern' },
     },
   },
+  // Wave 8.3
+  {
+    name: 'get_content_freshness',
+    description: 'Get content freshness analysis — shows which pages have stale content (outdated dates, expired promotions, old social proof) and the revenue impact of content decay. Ask "which pages have stale content?" or "is my content hurting conversions?"',
+    input_schema: {},
+  },
   // Wave 7.2
   {
     name: 'get_recovery_impact',
@@ -233,6 +239,7 @@ export type ToolResult =
   | { type: 'search_findings'; data: SearchFindingsView }
   | { type: 'trend_analysis'; data: TrendAnalysisView }
   | { type: 'recovery_impact'; data: RecoveryImpactView }
+  | { type: 'content_freshness'; data: ContentFreshnessView }
   | { type: 'error'; data: { message: string } };
 
 export interface CopyAnalysisView {
@@ -256,6 +263,20 @@ export interface VerificationSkippedView {
 export interface SearchFindingsView {
   query: string;
   results: { id: string; type: 'finding' | 'action'; title: string; severity: string; impact_mid: number; pack: string }[];
+}
+
+// Wave 8.3
+export interface ContentFreshnessView {
+  pages_with_stale_content: number;
+  worst_staleness_score: number;
+  stale_pages: {
+    url: string;
+    staleness_score: number;
+    stale_elements: { type: string; text: string }[];
+    page_type: string;
+  }[];
+  pack_status: string; // healthy | at_risk | critical
+  summary: string;
 }
 
 // Wave 7.1

@@ -158,6 +158,11 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   micro_copy_friction_high: 'copy_alignment',
   seo_conversion_conflict: 'copy_alignment',
   copy_stale_references: 'copy_alignment',
+  // Wave 8.3: Content Freshness & Decay
+  commercial_page_stale: 'content_freshness',
+  pricing_page_outdated: 'content_freshness',
+  social_proof_expired: 'content_freshness',
+  content_decay_progression: 'content_freshness',
   // Behavioral workspace findings (pixel-dependent)
   first_session_milestone_stall: 'first_impression_revenue',
   first_session_trust_barrier: 'first_impression_revenue',

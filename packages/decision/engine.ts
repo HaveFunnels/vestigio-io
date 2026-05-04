@@ -366,6 +366,21 @@ function resolveDecisionOutcome(
     return { decision_key: 'payment_health_stable', category: DecisionClass.State, primary_outcome: 'observation' };
   }
 
+  // ── Wave 8.3: Content Freshness & Decay ──
+
+  if (questionKey === 'is_stale_content_eroding_trust_and_visibility') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'content_freshness_critical', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'content_freshness_at_risk', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'content_freshness_at_risk', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'content_freshness_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
   // ── Security posture (Wave 3.3) ──
 
   if (questionKey === 'is_visible_security_posture_creating_financial_risk') {

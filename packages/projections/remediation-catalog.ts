@@ -1098,6 +1098,63 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 
 	// ─────────────────────────────────────────────
+	// Wave 8.3: Content Freshness & Decay
+	// ─────────────────────────────────────────────
+
+	commercial_page_stale: {
+		remediation_steps: [
+			'Audit all commercial pages (checkout, pricing, product, homepage) for outdated references — dates, promotions, metrics.',
+			'Update or remove any hard-coded dates, expired offers, and stale competitive claims.',
+			'Set up a quarterly content review calendar specifically for high-conversion pages.',
+			'Implement dynamic copyright year and "last updated" timestamps that auto-refresh.',
+			'Create a content freshness checklist for each page type with specific review criteria.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes: 'Re-crawl will check for updated dates, removed stale references, and fresh content indicators on commercial pages.',
+		verification_eta_seconds: 10,
+	},
+	pricing_page_outdated: {
+		remediation_steps: [
+			'Review all pricing page claims — competitor comparisons, feature lists, promotional offers — and update to current state.',
+			'Remove or update any "limited time" language that has expired.',
+			'Verify that plan names, pricing tiers, and feature comparisons match the current product.',
+			'Update any ROI calculators, case studies, or metrics cited on the pricing page.',
+			'Set a monthly reminder to review pricing page content (pricing pages age fastest).',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes: 'Re-crawl will verify pricing page content is updated — no stale dates, expired offers, or outdated competitive claims.',
+		verification_eta_seconds: 8,
+	},
+	social_proof_expired: {
+		remediation_steps: [
+			'Update all testimonial dates to recent ones — or remove dates entirely if testimonials are evergreen.',
+			'Refresh customer count metrics, revenue numbers, and usage statistics to current values.',
+			'Replace logo walls with current customer logos and add "as of [date]" qualifiers to any metrics.',
+			'Implement dynamic social proof (real-time user counts, recent review scores) where possible.',
+			'Set up quarterly social proof refresh — request new testimonials, update case study numbers.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes: 'Re-crawl will check for updated social proof — no stale dates on testimonials, current metrics, fresh customer references.',
+		verification_eta_seconds: 8,
+	},
+	content_decay_progression: {
+		remediation_steps: [
+			'Run a full content audit across all commercial pages — flag everything with dates > 6 months old.',
+			'Prioritize updates by page traffic and conversion impact — start with checkout and pricing pages.',
+			'Implement an automated content freshness monitoring system (this Vestigio finding will re-check each cycle).',
+			'Assign content ownership per page — each commercial page should have a named owner responsible for quarterly reviews.',
+			'Consider AI-assisted content refresh tools to accelerate updates across multiple pages.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes: 'Multi-cycle monitoring — this finding will track whether staleness scores improve across subsequent audit cycles.',
+		verification_eta_seconds: 10,
+	},
+
+	// ─────────────────────────────────────────────
 	// Security Posture (Wave 3.3)
 	// ─────────────────────────────────────────────
 

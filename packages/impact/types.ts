@@ -46,7 +46,8 @@ export type ImpactCategory =
   | 'conversion_loss'
   | 'chargeback_risk'
   | 'traffic_waste'
-  | 'lifetime_value_loss';
+  | 'lifetime_value_loss'
+  | 'trust_erosion';
 
 export interface EstimatedImpact {
   monthly_revenue_delta: number | null;  // absolute $

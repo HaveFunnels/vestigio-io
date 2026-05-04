@@ -453,6 +453,30 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     };
   }
 
+  // Wave 8.3: Content Freshness decision (always eligible — crawl evidence only)
+  const contentFreshnessInferences = inferences.filter(inf =>
+    ['commercial_page_stale', 'pricing_page_outdated', 'social_proof_expired', 'content_decay_progression'].includes(inf.inference_key),
+  );
+  let contentFreshnessPack: { decision: any; risk_evaluation: any; actions: any; workspace: any } | null = null;
+  if (contentFreshnessInferences.length > 0) {
+    const contentFreshnessResult: DecisionResult = produceDecision({
+      question_key: 'is_stale_content_eroding_trust_and_visibility',
+      scoping, cycle_ref, signals, inferences,
+      conversion_proximity, is_production, translations,
+    });
+    const contentFreshnessActions = deriveActions(contentFreshnessResult.decision);
+    const contentFreshnessWorkspace = createPreflightWorkspace(
+      { name: 'Content Freshness', type: 'analysis', scoping, landing_url, cycle_ref },
+      contentFreshnessResult.decision, contentFreshnessActions, inferences,
+    );
+    contentFreshnessPack = {
+      decision: contentFreshnessResult.decision,
+      risk_evaluation: contentFreshnessResult.risk_evaluation,
+      actions: contentFreshnessActions,
+      workspace: contentFreshnessWorkspace,
+    };
+  }
+
   // Classification — probabilistic business model + surface hypotheses
   const classInput = extractClassificationInput(
     evidence,
@@ -586,6 +610,11 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     allDecisions.push(paymentHealthPack.decision);
     allRiskEvals.push(paymentHealthPack.risk_evaluation);
   }
+  // Wave 8.3: Include content_freshness in decision arrays
+  if (contentFreshnessPack) {
+    allDecisions.push(contentFreshnessPack.decision);
+    allRiskEvals.push(contentFreshnessPack.risk_evaluation);
+  }
   if (saasGrowthReadiness) {
     allDecisions.push(saasGrowthReadiness.decision);
     allRiskEvals.push(saasGrowthReadiness.risk_evaluation);
@@ -717,6 +746,11 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   let nextDecisionIdx = 8;
   if (paymentHealthPack) {
     actionsByDecision.set(makeRef('decision', allDecisions[nextDecisionIdx].id), paymentHealthPack.actions);
+    nextDecisionIdx++;
+  }
+  // Wave 8.3: content_freshness actions
+  if (contentFreshnessPack) {
+    actionsByDecision.set(makeRef('decision', allDecisions[nextDecisionIdx].id), contentFreshnessPack.actions);
     nextDecisionIdx++;
   }
   if (saasGrowthReadiness && allDecisions.length > nextDecisionIdx) {

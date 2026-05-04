@@ -1461,7 +1461,8 @@
 				"discoverability": "Discoverability",
 				"brand_integrity": "Brand Integrity",
 				"saas_growth_readiness": "SaaS Growth",
-				"payment_health": "Payment Health"
+				"payment_health": "Payment Health",
+				"content_freshness": "Content Freshness"
 			},
 			"pack_labels": {
 				"scale_readiness": "Scale",
@@ -1472,7 +1473,8 @@
 				"discoverability": "Discovery",
 				"brand_integrity": "Brand",
 				"saas_growth_readiness": "SaaS",
-				"payment_health": "Payments"
+				"payment_health": "Payments",
+				"content_freshness": "Freshness"
 			},
 			"polarity": {
 				"all": "All Findings",

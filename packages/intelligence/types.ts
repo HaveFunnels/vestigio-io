@@ -56,7 +56,9 @@ export type RootCauseCategory =
   // Tier 1 Copy Analysis
   | 'copy_clarity'
   // Wave 3.10 Copy Analysis Pack
-  | 'copy_strategy';
+  | 'copy_strategy'
+  // Wave 8.3: Content Freshness & Decay
+  | 'content_freshness';
 
 export type RootCauseSeverity = 'critical' | 'high' | 'medium' | 'low';
 

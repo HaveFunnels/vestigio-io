@@ -1612,6 +1612,36 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     base_metric: 'revenue',
   },
 
+  // ── Wave 8.3: Content Freshness & Decay ──
+  commercial_page_stale: {
+    inference_key: 'commercial_page_stale', impact_category: 'conversion_loss',
+    cause: 'High-conversion pages have stale content',
+    effect: 'Checkout, pricing, and product pages with outdated references signal neglect at the exact moment buyers are deciding whether to pay — conversion confidence drops when the page looks abandoned',
+    high: { min: 0.02, max: 0.04 }, medium: { min: 0.01, max: 0.02 }, low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
+  pricing_page_outdated: {
+    inference_key: 'pricing_page_outdated', impact_category: 'conversion_loss',
+    cause: 'Your pricing page has stale claims',
+    effect: 'Outdated competitor comparisons, old feature lists, or expired promotional claims on the pricing page reduce willingness to pay — buyers cross-reference pricing with competitors and instantly detect stale information',
+    high: { min: 0.03, max: 0.05 }, medium: { min: 0.015, max: 0.03 }, low: { min: 0.005, max: 0.015 },
+    base_metric: 'revenue',
+  },
+  social_proof_expired: {
+    inference_key: 'social_proof_expired', impact_category: 'trust_erosion',
+    cause: 'Your social proof has expired dates and metrics',
+    effect: 'Testimonials with old dates, outdated customer counts, or stale revenue numbers tell buyers the product may not have current users — fresh social proof converts 42% better than dated references',
+    high: { min: 0.015, max: 0.03 }, medium: { min: 0.008, max: 0.015 }, low: { min: 0.003, max: 0.008 },
+    base_metric: 'revenue',
+  },
+  content_decay_progression: {
+    inference_key: 'content_decay_progression', impact_category: 'conversion_loss',
+    cause: 'Your content is systematically decaying across multiple pages',
+    effect: 'When multiple commercial pages show signs of neglect simultaneously, the site signals systemic content abandonment — AI search engines deprioritize stale content, reducing both organic traffic and AI citation likelihood',
+    high: { min: 0.02, max: 0.035 }, medium: { min: 0.01, max: 0.02 }, low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
+
   // ── Phase 4A: Commerce context (Shopify-powered) ──
   checkout_abandonment_revenue_leak: {
     inference_key: 'checkout_abandonment_revenue_leak',

@@ -215,6 +215,8 @@ export interface PackEligibility {
   behavioral_workspaces: EligibilityResult;
   // Wave 8.1: Payment Health — gated on Stripe integration data
   payment_health: EligibilityResult;
+  // Wave 8.3: Content Freshness — always eligible (content freshness detectable from any crawl)
+  content_freshness: EligibilityResult;
 }
 
 export function computePackEligibility(
@@ -248,5 +250,7 @@ export function computePackEligibility(
     payment_health: isPaymentHealthEligible(
       stripeContext?.hasStripeData ?? false,
     ),
+    // Wave 8.3: Content Freshness — always eligible (detectable from any crawl)
+    content_freshness: { eligible: true, confidence: 1, blockers: [], reasons: ['Always applicable — content freshness detectable from crawl evidence'] },
   };
 }

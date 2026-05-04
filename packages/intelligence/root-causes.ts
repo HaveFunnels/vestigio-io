@@ -269,6 +269,11 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   micro_copy_friction_high:           { root_cause_key: 'cta_competing_or_unclear', category: 'copy_strategy', impact_types: ['revenue_loss'] },
   seo_conversion_conflict:            { root_cause_key: 'value_proposition_buried', category: 'copy_strategy', impact_types: ['revenue_loss'] },
   copy_stale_references:              { root_cause_key: 'copy_cross_page_inconsistent', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
+  // Wave 8.3: Content Freshness & Decay
+  commercial_page_stale:              { root_cause_key: 'content_decay_neglect', category: 'content_freshness', impact_types: ['revenue_loss', 'trust_erosion'] },
+  pricing_page_outdated:              { root_cause_key: 'content_decay_neglect', category: 'content_freshness', impact_types: ['revenue_loss'] },
+  social_proof_expired:               { root_cause_key: 'content_decay_neglect', category: 'content_freshness', impact_types: ['trust_erosion'] },
+  content_decay_progression:          { root_cause_key: 'content_decay_neglect', category: 'content_freshness', impact_types: ['revenue_loss', 'trust_erosion'] },
 
   // Phase 4A: Commerce context findings (Shopify-powered)
   checkout_abandonment_revenue_leak:  { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss'] },
@@ -378,6 +383,8 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   // Wave 8.1: Payment Health & Involuntary Churn
   payment_infrastructure_weakness: 'Your payment infrastructure is silently losing subscribers',
   subscriber_retention_failure: 'Subscribers are churning faster than you can replace them',
+  // Wave 8.3: Content Freshness & Decay
+  content_decay_neglect: 'Your content is aging without review and eroding buyer confidence',
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -491,6 +498,9 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   payment_infrastructure_weakness: "Your payment infrastructure is losing subscribers who want to pay. Failed charges from expired cards, insufficient funds, and gateway errors silently convert paying customers into churned ones. Without dunning automation, card updaters, and a fallback payment gateway, every failed payment is permanent revenue loss from a customer who never decided to leave. The compounding effect means that even a small failure rate translates to significant monthly revenue drain — and it gets worse every month you don't fix it.",
 
   subscriber_retention_failure: "Your subscriber base is shrinking faster than you can grow it. Monthly churn has crossed the threshold where acquisition cannot keep pace with attrition. Every new subscriber you acquire is immediately offset by subscribers leaving — and the economics get worse each month as the base shrinks. This requires both immediate tactical intervention (cancellation surveys, retention offers, dunning recovery) and structural changes to the subscription experience that address why subscribers are leaving in the first place.",
+
+  // Wave 8.3: Content Freshness & Decay
+  content_decay_neglect: "Your commercial pages are aging without regular review. Copyright years are outdated, promotional references have expired, testimonial dates are old, and metrics cited as social proof no longer reflect reality. In the AI search era, content freshness directly impacts citation likelihood — AI-cited content is 25.7% fresher than the average organic result. Every month of neglect compounds: buyers notice stale copy and interpret it as a sign the business is dormant, AI search engines deprioritize pages that haven't been updated, and competitors with fresher content capture the traffic and citations you're losing.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

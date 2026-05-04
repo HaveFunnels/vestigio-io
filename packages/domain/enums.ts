@@ -507,6 +507,11 @@ export enum InferenceCategory {
   MicroCopyFrictionHigh = 'micro_copy_friction_high',
   SeoConversionConflict = 'seo_conversion_conflict',
   CopyStaleReferences = 'copy_stale_references',
+  // Wave 8.3: Content Freshness & Decay
+  CommercialPageStale = 'commercial_page_stale',
+  PricingPageOutdated = 'pricing_page_outdated',
+  SocialProofExpired = 'social_proof_expired',
+  ContentDecayProgression = 'content_decay_progression',
   // Phase 4A: Commerce context findings (Shopify-powered)
   CheckoutAbandonmentRevenueLeak = 'checkout_abandonment_revenue_leak',
   PromotedProductOutOfStock = 'promoted_product_out_of_stock',

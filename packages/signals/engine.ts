@@ -5571,6 +5571,45 @@ function extractCopyEnrichmentSignals(
           description: `Stale content at ${p.source_url}: staleness score ${stalenessScore}/100, ${results.stale_element_count || 0} outdated element(s). ${topIssues || 'Past dates, old copyright, or expired promotions detected.'}`,
         }));
       }
+
+      // ── Wave 8.3: Content Freshness — granular signals ──
+      // Pricing page staleness (highest conversion leverage surface)
+      if (stalenessScore > 40) {
+        const pageType = (p.source_url || '').toLowerCase();
+        const isPricing = pageType.includes('/pricing') || pageType.includes('/plans') || pageType.includes('/precos');
+        if (isPricing) {
+          signals.push(createSignal({ ids,
+            signal_key: `pricing_page_stale_${p.source_url}`,
+            category: SignalCategory.Clarity,
+            attribute: 'enrichment.copy_staleness.pricing',
+            value: stalenessScore > 60 ? 'high' : 'medium',
+            numeric_value: stalenessScore,
+            confidence: 85,
+            scoping, cycle_ref,
+            evidence_refs: refs,
+            description: `Pricing page at ${p.source_url} has stale content (score ${stalenessScore}/100). Outdated pricing claims erode buyer confidence at the highest-leverage decision point.`,
+          }));
+        }
+      }
+
+      // Social proof expired (testimonials/metrics with old dates)
+      const staleElements = results.stale_elements || [];
+      const socialProofStale = staleElements.filter(
+        e => e.type === 'past_date' || e.type === 'old_metric'
+      );
+      if (socialProofStale.length >= 2) {
+        signals.push(createSignal({ ids,
+          signal_key: `social_proof_expired_${p.source_url}`,
+          category: SignalCategory.Trust,
+          attribute: 'enrichment.copy_staleness.social_proof',
+          value: socialProofStale.length >= 4 ? 'high' : 'medium',
+          numeric_value: socialProofStale.length,
+          confidence: 80,
+          scoping, cycle_ref,
+          evidence_refs: refs,
+          description: `${socialProofStale.length} expired social proof elements at ${p.source_url}: ${socialProofStale.slice(0, 2).map(e => e.text).join('; ')}. Outdated testimonials and metrics undermine trust.`,
+        }));
+      }
     }
 
     // Wave 3.9 C-E: Ad-LP message mismatch

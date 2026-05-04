@@ -56,6 +56,7 @@ export default function CrossSignalChainCard({
 	narrative,
 }: Props) {
 	const t = useTranslations("console.cross_signals");
+	const tc = useTranslations("console.common");
 	const tp = useTranslations("console.workspaces.detail.enrichment.packs");
 	const [expanded, setExpanded] = useState(false);
 
@@ -74,7 +75,7 @@ export default function CrossSignalChainCard({
 							{surface}
 						</span>
 						<span className="shrink-0 font-mono text-xs tabular-nums text-red-400">
-							−{formatCurrency(totalImpactCents)}/mo
+							−{formatCurrency(totalImpactCents)}{tc("per_month_short")}
 						</span>
 					</div>
 
@@ -117,7 +118,7 @@ export default function CrossSignalChainCard({
 							</span>
 						)}
 						<span className="text-[10px] text-content-faint">
-							{links.length} {links.length === 1 ? "finding" : "findings"}
+							{links.length} {links.length === 1 ? t("finding_singular") : t("finding_plural")}
 						</span>
 					</div>
 				</div>
@@ -162,7 +163,7 @@ export default function CrossSignalChainCard({
 								</div>
 								<div className="flex items-center gap-2">
 									<span className="font-mono text-[10px] text-red-400">
-										−{formatCurrency(link.impactCents)}/mo
+										−{formatCurrency(link.impactCents)}{tc("per_month_short")}
 									</span>
 									<SeverityBadge value={link.severity} />
 								</div>

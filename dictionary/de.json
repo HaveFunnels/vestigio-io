@@ -1507,7 +1507,8 @@
 				"inventory": "Alle Seiten und Oberflächen, die Vestigio auf Ihrer Website entdeckt hat.",
 				"maps": "Visuelle Ursache-Wirkungs-Ketten von Befunden zu Aktionen.",
 				"knowledge_base": "Dokumentation zu Befunden, Packs und Plattformkonzepten.",
-				"data_sources": "Integrationen und Zugriffsquellen für die Vestigio-Analyse konfigurieren."
+				"data_sources": "Integrationen und Zugriffsquellen für die Vestigio-Analyse konfigurieren.",
+				"cross_signals": "Seiten, auf denen Befunde aus verschiedenen Analyse-Packs konvergieren — Vestigios einzigartige Multi-Domain-Korrelation."
 			}
 		},
 		"analysis": {
@@ -2777,12 +2778,21 @@
 			"hero_at_risk": "Monatliche Exposition",
 			"hero_sequential": "Kausale Muster",
 			"filter_severity": "Schweregrad",
+			"filter_severity_all": "Alle",
+			"severity_critical": "Kritisch",
+			"severity_high": "Hoch",
+			"severity_medium": "Mittel",
+			"severity_low": "Niedrig",
 			"filter_temporal_all": "Alle Muster",
 			"filter_temporal_sequential": "Sequenziell (kausal)",
 			"filter_temporal_simultaneous": "Gleichzeitig",
+			"search_placeholder": "Oberflächen-URL suchen...",
 			"chain_card_view_analysis": "In der Analyse anzeigen",
 			"temporal_sequential": "Sequenziell",
 			"temporal_simultaneous": "Gleichzeitig",
+			"result_count": "{filtered} von {total} Muster",
+			"finding_singular": "Befund",
+			"finding_plural": "Befunde",
 			"empty_title": "Noch keine Cross-Signal-Muster erkannt",
 			"empty_subtitle": "Cross-Signal-Muster erscheinen, wenn Befunde aus verschiedenen Analyse-Packs dieselbe Seite Ihrer Website betreffen.",
 			"compound_findings": {

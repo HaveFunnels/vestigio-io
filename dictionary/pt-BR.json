@@ -1528,7 +1528,8 @@
 				"inventory": "Todas as páginas e superfícies que a Vestigio descobriu no seu site.",
 				"maps": "Cadeias visuais de causa e efeito das descobertas às ações.",
 				"knowledge_base": "Documentação sobre descobertas, packs e conceitos da plataforma.",
-				"data_sources": "Configure integrações e fontes de acesso para análise da Vestigio."
+				"data_sources": "Configure integrações e fontes de acesso para análise da Vestigio.",
+				"cross_signals": "Superfícies onde findings de múltiplas perspectivas convergem na mesma página — a correlação multi-domínio exclusiva da Vestigio."
 			}
 		},
 		"verification_badge": {
@@ -2612,13 +2613,22 @@
 			"hero_at_risk": "Exposicao Mensal",
 			"hero_sequential": "Padroes Causais",
 			"filter_severity": "Severidade",
-			"filter_temporal_all": "Todos os padroes",
+			"filter_severity_all": "Todos",
+			"severity_critical": "Crítico",
+			"severity_high": "Alto",
+			"severity_medium": "Médio",
+			"severity_low": "Baixo",
+			"filter_temporal_all": "Todos os padrões",
 			"filter_temporal_sequential": "Sequencial (causal)",
-			"filter_temporal_simultaneous": "Simultaneo",
-			"chain_card_view_analysis": "Ver na Analise",
+			"filter_temporal_simultaneous": "Simultâneo",
+			"search_placeholder": "Buscar URL da superfície...",
+			"chain_card_view_analysis": "Ver na Análise",
 			"temporal_sequential": "Sequencial",
-			"temporal_simultaneous": "Simultaneo",
-			"empty_title": "Nenhum padrao cross-signal detectado ainda",
+			"temporal_simultaneous": "Simultâneo",
+			"result_count": "{filtered} de {total} padrões",
+			"finding_singular": "finding",
+			"finding_plural": "findings",
+			"empty_title": "Nenhum padrão cross-signal detectado ainda",
 			"empty_subtitle": "Padroes cross-signal aparecem quando findings de diferentes packs de analise afetam a mesma pagina do seu site.",
 			"compound_findings": {
 				"section_title": "Findings Compostos",

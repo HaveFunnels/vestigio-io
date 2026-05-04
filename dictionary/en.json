@@ -1527,7 +1527,8 @@
 				"inventory": "Every page and surface Vestigio discovered on your site.",
 				"maps": "Visual cause-and-effect chains from findings to actions.",
 				"knowledge_base": "Documentation on findings, packs, and platform concepts.",
-				"data_sources": "Configure integrations and access sources for Vestigio analysis."
+				"data_sources": "Configure integrations and access sources for Vestigio analysis.",
+				"cross_signals": "Surfaces where findings from multiple analysis packs converge on the same page — Vestigio's unique multi-domain correlation."
 			}
 		},
 		"verification_badge": {
@@ -2593,12 +2594,21 @@
 			"hero_at_risk": "Monthly Exposure",
 			"hero_sequential": "Causal Patterns",
 			"filter_severity": "Severity",
+			"filter_severity_all": "All",
+			"severity_critical": "Critical",
+			"severity_high": "High",
+			"severity_medium": "Medium",
+			"severity_low": "Low",
 			"filter_temporal_all": "All patterns",
 			"filter_temporal_sequential": "Sequential (causal)",
 			"filter_temporal_simultaneous": "Simultaneous",
+			"search_placeholder": "Search surface URL...",
 			"chain_card_view_analysis": "View in Analysis",
 			"temporal_sequential": "Sequential",
 			"temporal_simultaneous": "Simultaneous",
+			"result_count": "{filtered} of {total} patterns",
+			"finding_singular": "finding",
+			"finding_plural": "findings",
 			"empty_title": "No cross-signal patterns detected yet",
 			"empty_subtitle": "Cross-signal patterns appear when findings from different analysis packs affect the same page on your site.",
 			"compound_findings": {

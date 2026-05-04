@@ -27,6 +27,7 @@ function formatCurrency(cents: number): string {
 
 export default function CrossSignalsShell({ chains }: Props) {
 	const t = useTranslations("console.cross_signals");
+	const tc = useTranslations("console.common");
 	const { isStarter } = usePlan();
 	const { track } = useTrack();
 
@@ -75,7 +76,7 @@ export default function CrossSignalsShell({ chains }: Props) {
 		},
 		{
 			label: t("hero_at_risk"),
-			value: formatCurrency(totalImpact) + "/mo",
+			value: formatCurrency(totalImpact) + tc("per_month_short"),
 			variant: "danger",
 		},
 		{
@@ -99,7 +100,7 @@ export default function CrossSignalsShell({ chains }: Props) {
 
 	return (
 		<div className="space-y-6 p-6">
-			<PageHeader title={t("title")} subtitle={t("subtitle")} />
+			<PageHeader title={t("title")} tooltip={tc("page_tooltips.cross_signals")} />
 
 			{/* Hero stats */}
 			<SummaryCards cards={summaryCards} />
@@ -111,11 +112,11 @@ export default function CrossSignalsShell({ chains }: Props) {
 					onChange={(e) => setSeverityFilter(e.target.value)}
 					className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary"
 				>
-					<option value="all">{t("filter_severity")}: All</option>
-					<option value="critical">Critical</option>
-					<option value="high">High</option>
-					<option value="medium">Medium</option>
-					<option value="low">Low</option>
+					<option value="all">{t("filter_severity")}: {t("filter_severity_all")}</option>
+					<option value="critical">{t("severity_critical")}</option>
+					<option value="high">{t("severity_high")}</option>
+					<option value="medium">{t("severity_medium")}</option>
+					<option value="low">{t("severity_low")}</option>
 				</select>
 
 				<select
@@ -132,7 +133,7 @@ export default function CrossSignalsShell({ chains }: Props) {
 					type="text"
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
-					placeholder="Search surface URL..."
+					placeholder={t("search_placeholder")}
 					className="flex-1 rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content placeholder:text-content-faint/50 focus:border-indigo-500/50 focus:outline-none"
 				/>
 			</div>
@@ -164,7 +165,7 @@ export default function CrossSignalsShell({ chains }: Props) {
 
 			{/* Result count */}
 			<p className="text-center text-[10px] text-content-faint">
-				{filtered.length} of {chains.length} patterns
+				{t("result_count", { filtered: filtered.length, total: chains.length })}
 			</p>
 		</div>
 	);

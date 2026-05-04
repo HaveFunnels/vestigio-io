@@ -1526,7 +1526,8 @@
 				"inventory": "Todas las páginas y superficies que Vestigio descubrió en tu sitio.",
 				"maps": "Cadenas visuales de causa y efecto de hallazgos a acciones.",
 				"knowledge_base": "Documentación sobre hallazgos, packs y conceptos de la plataforma.",
-				"data_sources": "Configura integraciones y fuentes de acceso para el análisis de Vestigio."
+				"data_sources": "Configura integraciones y fuentes de acceso para el análisis de Vestigio.",
+				"cross_signals": "Superficies donde hallazgos de múltiples perspectivas convergen en la misma página — la correlación multi-dominio exclusiva de Vestigio."
 			}
 		},
 		"verification_badge": {
@@ -2553,12 +2554,21 @@
 			"hero_at_risk": "Exposicion Mensual",
 			"hero_sequential": "Patrones Causales",
 			"filter_severity": "Severidad",
+			"filter_severity_all": "Todos",
+			"severity_critical": "Crítico",
+			"severity_high": "Alto",
+			"severity_medium": "Medio",
+			"severity_low": "Bajo",
 			"filter_temporal_all": "Todos los patrones",
 			"filter_temporal_sequential": "Secuencial (causal)",
 			"filter_temporal_simultaneous": "Simultaneo",
+			"search_placeholder": "Buscar URL de superficie...",
 			"chain_card_view_analysis": "Ver en Analisis",
 			"temporal_sequential": "Secuencial",
 			"temporal_simultaneous": "Simultaneo",
+			"result_count": "{filtered} de {total} patrones",
+			"finding_singular": "hallazgo",
+			"finding_plural": "hallazgos",
 			"empty_title": "Ningun patron cross-signal detectado aun",
 			"empty_subtitle": "Los patrones cross-signal aparecen cuando hallazgos de diferentes packs de analisis afectan la misma pagina de tu sitio.",
 			"compound_findings": {

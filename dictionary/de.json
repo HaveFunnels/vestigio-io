@@ -714,20 +714,20 @@
 				{
 					"eyebrow": "Das Loch",
 					"title": "Sie zahlen für den Klick. Aber bis zum Kauf gibt es ein Loch.",
-					"body": "Sie sehen die Werbeausgaben. Sie sehen den Umsatz. Aber was passiert dazwischen? Wer hat abgebrochen? Wo? Warum? Niemand misst, wie viel das kostet.",
+					"body": "Zwischen Klick und Kauf **verschwinden bis zu 67% der Besucher**. Sie zahlen für jeden einzelnen.",
 					"top_label": "5k€ Ads",
 					"bottom_label": "2,8k€ Umsatz"
 				},
 				{
 					"eyebrow": "Der Kreislauf",
 					"title": "Sie versuchen es zu reparieren, aber das Problem verschiebt sich nur.",
-					"body": "Sie ändern die Anzeige und hoffen auf Besserung. Aber die Landing Page passt nicht mehr zum Creative. Der Abbruch ist nicht verschwunden. Er hat nur die Seite gewechselt. Und Sie merken es erst am Monatsende.",
+					"body": "Sie ändern die Anzeige, der Abbruch **wechselt die Seite**. Ohne End-to-End-Sicht schafft jede Korrektur ein neues Problem.",
 					"stages": ["Anzeige", "Landing", "Checkout"]
 				},
 				{
 					"eyebrow": "Die Stille",
 					"title": "Niemand beschwert sich. Das Geld hört einfach auf zu kommen.",
-					"body": "Kein Systemfehler. Kein Support-Ticket. Keine wütende E-Mail. Irgendwo zwischen Landing Page und Zahlung hat der Käufer einfach aufgegeben. Ihre Analyse sagt 'Sitzung beendet.' Das ist keine Antwort. Das ist ein Fragezeichen.",
+					"body": "Kein Fehler, kein Ticket, keine Warnung. Der Käufer hat einfach **aufgegeben** — und Ihre Analyse sagt nur 'Sitzung beendet'.",
 					"alerts": ["0 Warnungen", "0 Fehler", "0 Tickets"],
 					"terminal_title": "analytics",
 					"no_alerts": "Keine Warnungen"

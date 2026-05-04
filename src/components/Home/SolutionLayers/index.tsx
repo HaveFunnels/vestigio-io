@@ -1,6 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
+
+function renderRichText(input: string): ReactNode[] {
+	return input.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
+		if (part.startsWith("**") && part.endsWith("**")) {
+			return <strong key={i} className="text-white">{part.slice(2, -2)}</strong>;
+		}
+		return <span key={i}>{part}</span>;
+	});
+}
 
 // ──────────────────────────────────────────────
 // "O problema" — bento grid with visceral graphics
@@ -328,7 +338,7 @@ export default function SolutionLayers() {
 								{cycle?.eyebrow}
 							</span>
 							<h3 className="mb-2 text-base font-bold tracking-tight text-white sm:text-lg">{cycle?.title}</h3>
-							<p className="text-[13px] leading-relaxed text-zinc-400">{cycle?.body}</p>
+							<p className="text-[13px] leading-relaxed text-zinc-400">{renderRichText(cycle?.body || "")}</p>
 						</div>
 					</BentoCard>
 
@@ -340,7 +350,7 @@ export default function SolutionLayers() {
 								{silence?.eyebrow}
 							</span>
 							<h3 className="mb-2 text-base font-bold tracking-tight text-white sm:text-lg">{silence?.title}</h3>
-							<p className="text-[13px] leading-relaxed text-zinc-400">{silence?.body}</p>
+							<p className="text-[13px] leading-relaxed text-zinc-400">{renderRichText(silence?.body || "")}</p>
 						</div>
 					</BentoCard>
 
@@ -352,7 +362,7 @@ export default function SolutionLayers() {
 								{hole?.eyebrow}
 							</span>
 							<h3 className="mb-2 text-base font-bold tracking-tight text-white sm:text-lg">{hole?.title}</h3>
-							<p className="text-[13px] leading-relaxed text-zinc-400">{hole?.body}</p>
+							<p className="text-[13px] leading-relaxed text-zinc-400">{renderRichText(hole?.body || "")}</p>
 						</div>
 					</BentoCard>
 				</div>

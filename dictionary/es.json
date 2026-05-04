@@ -714,20 +714,20 @@
 				{
 					"eyebrow": "El agujero",
 					"title": "Pagas por el clic. Pero entre el clic y la compra, hay un agujero.",
-					"body": "Ves el gasto en ads. Ves los ingresos. Pero qué pasa en el medio? Quién abandonó? Dónde? Por qué? Nadie mide cuánto te cuesta.",
+					"body": "Entre el clic y la compra, **hasta el 67% de los visitantes desaparecen**. Estás pagando por cada uno de ellos.",
 					"top_label": "$5k ads",
 					"bottom_label": "$2.8k ingresos"
 				},
 				{
 					"eyebrow": "El ciclo",
 					"title": "Intentas arreglar, pero el problema solo se mueve.",
-					"body": "Cambias el anuncio pensando que va a mejorar. Pero la landing ya no combina con el creativo. El abandono no desapareció. Solo cambió de página. Y solo te enteras a fin de mes.",
+					"body": "Cambias el anuncio, el abandono **cambia de página**. Sin visibilidad de punta a punta, cada corrección crea un problema nuevo.",
 					"stages": ["Anuncio", "Landing", "Checkout"]
 				},
 				{
 					"eyebrow": "El silencio",
 					"title": "Nadie se queja. El dinero simplemente deja de entrar.",
-					"body": "Sin error en el sistema. Sin ticket de soporte. Sin email enojado. En algún punto entre tu landing y el pago, el comprador simplemente se fue. Tu analytics dice 'sesión terminada.' Eso no es una respuesta. Es un signo de interrogación.",
+					"body": "Sin error, sin ticket, sin alerta. El comprador simplemente **se fue** — y tu analytics solo dice 'sesión terminada'.",
 					"alerts": ["0 alertas", "0 errores", "0 tickets"],
 					"terminal_title": "analytics",
 					"no_alerts": "Sin alertas"

@@ -713,20 +713,20 @@
 				{
 					"eyebrow": "O buraco",
 					"title": "Você paga pelo clique. Mas até a compra, tem um buraco.",
-					"body": "Você vê quanto gasta em ads. Vê o faturamento. Mas o que acontece no meio? Quem desistiu? Onde? Por quê? Ninguém mede quanto dói no seu bolso.",
+					"body": "Entre o clique e a compra, **até 67% dos visitantes somem**. Você paga por cada um deles.",
 					"top_label": "R$15k ads",
 					"bottom_label": "R$8k receita"
 				},
 				{
 					"eyebrow": "O ciclo",
 					"title": "Você tenta consertar, mas o problema só muda de lugar.",
-					"body": "Muda o anúncio achando que vai melhorar. Mas a landing agora não combina com o criativo. A desistência não sumiu. Só mudou de página. E você só descobre no fim do mês.",
+					"body": "Você muda o anúncio, a desistência **muda de página**. Sem visão ponta a ponta, cada correção cria um problema novo.",
 					"stages": ["Anúncio", "Landing", "Checkout"]
 				},
 				{
 					"eyebrow": "O silêncio",
 					"title": "Ninguém reclama. O dinheiro só para de entrar.",
-					"body": "Sem erro no sistema. Sem ticket de suporte. Sem email bravo. Em algum ponto entre sua landing e o pagamento, o comprador simplesmente saiu. Seu analytics diz 'sessão encerrada'. Isso não é resposta. É um ponto de interrogação.",
+					"body": "Sem erro, sem ticket, sem alerta. O comprador simplesmente **saiu** — e seu analytics só diz 'sessão encerrada'.",
 					"alerts": ["0 alertas", "0 erros", "0 tickets"],
 					"terminal_title": "analytics",
 					"no_alerts": "Sem alertas"

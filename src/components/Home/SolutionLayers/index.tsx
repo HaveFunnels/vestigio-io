@@ -82,7 +82,7 @@ function CycleGraphic({ stages }: { stages: string[] }) {
 					cx={center} cy={center} r={r}
 					fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round"
 					strokeDasharray={`${circumference * 0.25} ${circumference * 0.75}`}
-					style={{ transformOrigin: `${center}px ${center}px`, animation: "sl-cycle-spin 4s linear infinite" }}
+					style={{ transformOrigin: `${center}px ${center}px`, animation: "sl-cycle-spin 4s linear infinite", willChange: "transform" }}
 				/>
 
 				{/* Stage nodes */}
@@ -203,7 +203,7 @@ function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel:
 					80%  { transform: translate(${c.ox * 0.1}px, ${c.oy * 0.1}px); opacity: 0.5; }
 					100% { transform: translate(0, 0); opacity: 0; }
 				}
-				.sl-dc${i} { animation: sl-drain-c${i} ${c.dur}s ease-in ${c.delay}s infinite; }
+				.sl-dc${i} { animation: sl-drain-c${i} ${c.dur}s ease-in ${c.delay}s infinite; will-change: transform, opacity; }
 				`).join("")}
 			`}</style>
 			<svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="max-w-[160px] sm:max-w-[180px] lg:max-w-[200px]">
@@ -230,7 +230,7 @@ function HoleGraphic({ topLabel, bottomLabel }: { topLabel: string; bottomLabel:
 				<circle cx={cx} cy={cy} r="8" fill="url(#drain-hole)" />
 
 				{/* Drain grate slots — radial lines, slowly spinning */}
-				<g style={{ transformOrigin: `${cx}px ${cy}px`, animation: "sl-drain-spin 12s linear infinite" }}>
+				<g style={{ transformOrigin: `${cx}px ${cy}px`, animation: "sl-drain-spin 12s linear infinite", willChange: "transform" }}>
 					{slots.map((s, i) => (
 						<line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke="rgba(239,68,68,0.25)" strokeWidth="1.5" strokeLinecap="round" />
 					))}

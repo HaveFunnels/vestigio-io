@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin Error Tracking — smart grouping, muting, frequency trends
@@ -417,32 +418,34 @@ export default function AdminErrorsPage() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <select
+          <CustomSelect
+            size="sm"
             value={filter.severity}
-            onChange={(e) => {
-              setFilter((f) => ({ ...f, severity: e.target.value }));
+            onChange={(val) => {
+              setFilter((f) => ({ ...f, severity: val }));
               setPage(0);
             }}
-            className="rounded-lg border border-edge bg-surface-inset px-2.5 py-1.5 text-xs text-content outline-none transition-colors focus:border-accent/40"
-          >
-            <option value="">All Severities</option>
-            <option value="critical">Critical</option>
-            <option value="error">Error</option>
-            <option value="warning">Warning</option>
-          </select>
+            options={[
+              { value: "", label: "All Severities" },
+              { value: "critical", label: "Critical" },
+              { value: "error", label: "Error" },
+              { value: "warning", label: "Warning" },
+            ]}
+          />
 
-          <select
+          <CustomSelect
+            size="sm"
             value={filter.resolved}
-            onChange={(e) => {
-              setFilter((f) => ({ ...f, resolved: e.target.value }));
+            onChange={(val) => {
+              setFilter((f) => ({ ...f, resolved: val }));
               setPage(0);
             }}
-            className="rounded-lg border border-edge bg-surface-inset px-2.5 py-1.5 text-xs text-content outline-none transition-colors focus:border-accent/40"
-          >
-            <option value="false">Unresolved</option>
-            <option value="true">Resolved</option>
-            <option value="">All</option>
-          </select>
+            options={[
+              { value: "false", label: "Unresolved" },
+              { value: "true", label: "Resolved" },
+              { value: "", label: "All" },
+            ]}
+          />
 
           <input
             type="text"

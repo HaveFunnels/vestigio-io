@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin — Create Organization
@@ -330,54 +331,51 @@ export default function AdminCreateOrganizationPage() {
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Plan *
               </label>
-              <select
+              <CustomSelect
                 value={plan}
-                onChange={(e) => setPlan(e.target.value)}
+                onChange={setPlan}
                 disabled={plansLoading}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:opacity-50"
-              >
-                {plansLoading ? (
-                  <option>Loading plans...</option>
-                ) : plans.length === 0 ? (
-                  <option>No plans available</option>
-                ) : (
-                  plans.map((p) => (
-                    <option key={p.key} value={p.key}>
-                      {p.label} — ${(p.monthlyPriceCents / 100).toFixed(0)}/mo
-                    </option>
-                  ))
-                )}
-              </select>
+                options={
+                  plansLoading
+                    ? [{ value: "", label: "Loading plans..." }]
+                    : plans.length === 0
+                      ? [{ value: "", label: "No plans available" }]
+                      : plans.map((p) => ({
+                          value: p.key,
+                          label: `${p.label} — $${(p.monthlyPriceCents / 100).toFixed(0)}/mo`,
+                        }))
+                }
+              />
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Org type
               </label>
-              <select
+              <CustomSelect
                 value={orgType}
-                onChange={(e) => setOrgType(e.target.value as any)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-              >
-                <option value="customer">Customer (paying)</option>
-                <option value="trial">Trial</option>
-                <option value="demo">Demo</option>
-              </select>
+                onChange={(val) => setOrgType(val as "customer" | "demo" | "trial")}
+                options={[
+                  { value: "customer", label: "Customer (paying)" },
+                  { value: "trial", label: "Trial" },
+                  { value: "demo", label: "Demo" },
+                ]}
+              />
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Status
               </label>
-              <select
+              <CustomSelect
                 value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-              >
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-                <option value="suspended">Suspended</option>
-              </select>
+                onChange={(val) => setStatus(val as "active" | "pending" | "suspended")}
+                options={[
+                  { value: "active", label: "Active" },
+                  { value: "pending", label: "Pending" },
+                  { value: "suspended", label: "Suspended" },
+                ]}
+              />
             </div>
 
             {orgType === "trial" && (
@@ -514,31 +512,31 @@ export default function AdminCreateOrganizationPage() {
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Business model
               </label>
-              <select
+              <CustomSelect
                 value={businessModel}
-                onChange={(e) => setBusinessModel(e.target.value as any)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-              >
-                <option value="ecommerce">E-commerce</option>
-                <option value="lead_gen">Lead gen</option>
-                <option value="saas">SaaS</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
+                onChange={(val) => setBusinessModel(val as "ecommerce" | "lead_gen" | "saas" | "hybrid")}
+                options={[
+                  { value: "ecommerce", label: "E-commerce" },
+                  { value: "lead_gen", label: "Lead gen" },
+                  { value: "saas", label: "SaaS" },
+                  { value: "hybrid", label: "Hybrid" },
+                ]}
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Conversion model
               </label>
-              <select
+              <CustomSelect
                 value={conversionModel}
-                onChange={(e) => setConversionModel(e.target.value as any)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-              >
-                <option value="checkout">Checkout</option>
-                <option value="whatsapp">WhatsApp</option>
-                <option value="form">Form</option>
-                <option value="external">External</option>
-              </select>
+                onChange={(val) => setConversionModel(val as "checkout" | "whatsapp" | "form" | "external")}
+                options={[
+                  { value: "checkout", label: "Checkout" },
+                  { value: "whatsapp", label: "WhatsApp" },
+                  { value: "form", label: "Form" },
+                  { value: "external", label: "External" },
+                ]}
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">

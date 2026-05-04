@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import InviteMemberModal from "@/components/app/InviteMemberModal";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Members — org member management + pending invites
@@ -252,18 +253,19 @@ export default function MembersPage() {
                     <td className="px-4 py-3">
                       {member.role !== "owner" ? (
                         <div className="flex items-center gap-2">
-                          <select
+                          <CustomSelect
+                            size="sm"
                             value={member.role}
-                            onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                            onChange={(val) => handleRoleChange(member.id, val)}
                             disabled={actionLoading === member.id}
-                            className="rounded border border-edge bg-surface px-2 py-1 text-xs text-content focus:border-emerald-500 focus:outline-none"
-                          >
-                            {currentUserRole === "owner" && (
-                              <option value="admin">{t("roles.admin")}</option>
-                            )}
-                            <option value="member">{t("roles.member")}</option>
-                            <option value="viewer">{t("roles.viewer")}</option>
-                          </select>
+                            options={[
+                              ...(currentUserRole === "owner"
+                                ? [{ value: "admin", label: t("roles.admin") }]
+                                : []),
+                              { value: "member", label: t("roles.member") },
+                              { value: "viewer", label: t("roles.viewer") },
+                            ]}
+                          />
                           <button
                             onClick={() => handleRemoveMember(member.id)}
                             disabled={actionLoading === member.id}

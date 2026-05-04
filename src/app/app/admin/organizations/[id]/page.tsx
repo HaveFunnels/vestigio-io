@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin — Organization Detail Page
@@ -557,53 +558,48 @@ export default function AdminOrganizationDetailPage() {
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Plan
               </label>
-              <select
+              <CustomSelect
                 value={editPlan}
-                onChange={(e) => setEditPlan(e.target.value)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-              >
-                {/* Fallback to the current plan so we don't render an empty
-                    select while plan options are still loading. */}
-                {planOptions.length === 0 ? (
-                  <option value={org.plan}>{org.plan}</option>
-                ) : (
-                  planOptions.map((p) => (
-                    <option key={p.key} value={p.key}>
-                      {p.label}
-                    </option>
-                  ))
-                )}
-              </select>
+                onChange={setEditPlan}
+                options={
+                  planOptions.length === 0
+                    ? [{ value: org.plan, label: org.plan }]
+                    : planOptions.map((p) => ({
+                        value: p.key,
+                        label: p.label,
+                      }))
+                }
+              />
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Status
               </label>
-              <select
+              <CustomSelect
                 value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value as any)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-              >
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-                <option value="suspended">Suspended</option>
-              </select>
+                onChange={(val) => setEditStatus(val as "active" | "pending" | "suspended")}
+                options={[
+                  { value: "active", label: "Active" },
+                  { value: "pending", label: "Pending" },
+                  { value: "suspended", label: "Suspended" },
+                ]}
+              />
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Org type
               </label>
-              <select
+              <CustomSelect
                 value={editOrgType}
-                onChange={(e) => setEditOrgType(e.target.value as any)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-              >
-                <option value="customer">Customer</option>
-                <option value="trial">Trial</option>
-                <option value="demo">Demo</option>
-              </select>
+                onChange={(val) => setEditOrgType(val as "customer" | "demo" | "trial")}
+                options={[
+                  { value: "customer", label: "Customer" },
+                  { value: "trial", label: "Trial" },
+                  { value: "demo", label: "Demo" },
+                ]}
+              />
             </div>
 
             {editOrgType === "trial" && (

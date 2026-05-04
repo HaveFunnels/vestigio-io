@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin Audit Log — searchable, filterable log
@@ -276,18 +277,18 @@ export default function AuditLogPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <select
+        <CustomSelect
+          size="sm"
           value={actionFilter}
-          onChange={(e) => setActionFilter(e.target.value)}
-          className="rounded-lg border border-edge bg-surface-card px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-        >
-          <option value="">All Actions</option>
-          {ALL_ACTIONS.map((a) => (
-            <option key={a} value={a}>
-              {ACTION_CATEGORIES[a]?.label || a}
-            </option>
-          ))}
-        </select>
+          onChange={setActionFilter}
+          options={[
+            { value: "", label: "All Actions" },
+            ...ALL_ACTIONS.map((a) => ({
+              value: a,
+              label: ACTION_CATEGORIES[a]?.label || a,
+            })),
+          ]}
+        />
 
         <input
           type="text"

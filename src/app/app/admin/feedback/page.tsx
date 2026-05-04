@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin Feedback — grouped view modeled after error tracking
@@ -612,16 +613,16 @@ export default function AdminFeedbackPage() {
                         {timeAgo(fb.createdAt)}
                       </td>
                       <td className="px-5 py-3">
-                        <select
+                        <CustomSelect
+                          size="sm"
                           value={fb.status}
-                          onChange={(e) => handleUpdateStatus(fb.id, e.target.value)}
+                          onChange={(val) => handleUpdateStatus(fb.id, val)}
                           disabled={updatingId === fb.id}
-                          className="rounded-lg border border-edge bg-surface-inset px-2 py-1 text-xs text-content outline-none focus:border-accent/40 disabled:opacity-50"
-                        >
-                          {FEEDBACK_STATUSES.map((s) => (
-                            <option key={s} value={s}>{formatStatus(s)}</option>
-                          ))}
-                        </select>
+                          options={FEEDBACK_STATUSES.map((s) => ({
+                            value: s,
+                            label: formatStatus(s),
+                          }))}
+                        />
                       </td>
                     </tr>
                   ))

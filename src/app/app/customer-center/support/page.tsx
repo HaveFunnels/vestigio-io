@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Support — Authenticated ticket management
@@ -160,15 +161,14 @@ export default function SupportPage() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-content-muted">{t("form.category")}</label>
-              <select
+              <CustomSelect
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-md border border-edge bg-surface-inset px-3 py-2 text-sm text-content-secondary focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-              >
-                {categoryOptions.map((cat) => (
-                  <option key={cat} value={cat}>{t(`categories.${cat}`)}</option>
-                ))}
-              </select>
+                onChange={setCategory}
+                options={categoryOptions.map((cat) => ({
+                  value: cat,
+                  label: t(`categories.${cat}`),
+                }))}
+              />
             </div>
           </div>
 

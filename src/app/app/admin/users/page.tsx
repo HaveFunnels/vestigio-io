@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin Users Management — invite, role management, removal
@@ -383,17 +384,14 @@ export default function AdminUsersPage() {
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
                   Role
                 </label>
-                <select
+                <CustomSelect
                   value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label} -- {r.description}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setInviteRole}
+                  options={ROLES.map((r) => ({
+                    value: r.value,
+                    label: `${r.label} -- ${r.description}`,
+                  }))}
+                />
               </div>
             </div>
 
@@ -465,19 +463,18 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-5 py-3">
                       {editingRoleId === user.id ? (
-                        <select
+                        <CustomSelect
+                          size="sm"
                           value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                          onBlur={() => setEditingRoleId(null)}
-                          autoFocus
-                          className="rounded-lg border border-edge bg-surface-inset px-2 py-1 text-xs text-content outline-none focus:border-accent/40"
-                        >
-                          {ROLES.map((r) => (
-                            <option key={r.value} value={r.value}>
-                              {r.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => {
+                            handleRoleChange(user.id, val);
+                            setEditingRoleId(null);
+                          }}
+                          options={ROLES.map((r) => ({
+                            value: r.value,
+                            label: r.label,
+                          }))}
+                        />
                       ) : (
                         <button
                           onClick={() => setEditingRoleId(user.id)}

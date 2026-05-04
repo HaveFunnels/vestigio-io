@@ -13,6 +13,7 @@ import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import VerificationBadge from "@/components/console/VerificationBadge";
 import ChangeBadge from "@/components/console/ChangeBadge";
+import CustomSelect from "@/components/console/CustomSelect";
 import ChangeTimeline from "@/components/console/ChangeTimeline";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
@@ -710,26 +711,26 @@ function ActionsContent({
 			{/* Fase 3: Filter bar — only visible on pipeline tab */}
 			{activeTab === "pipeline" && (
 				<div className="flex flex-wrap items-center gap-2 mt-3 mb-4">
-					<select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary">
-						<option value="all">{t("filters.type_all")}</option>
-						<option value="incident">{t("filters.incidents")}</option>
-						<option value="opportunity">{t("filters.opportunities")}</option>
-						<option value="verification">{t("filters.verifications")}</option>
-						<option value="observation">{t("filters.observations")}</option>
-					</select>
-					<select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)} className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary">
-						<option value="all">{t("filters.severity_all")}</option>
-						<option value="critical">Critical</option>
-						<option value="high">High</option>
-						<option value="medium">Medium</option>
-						<option value="low">Low</option>
-					</select>
-					<select value={effortFilter} onChange={e => setEffortFilter(e.target.value)} className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary">
-						<option value="all">{t("filters.effort_all")}</option>
-						<option value="low">{t("filters.effort_low")}</option>
-						<option value="medium">{t("filters.effort_medium")}</option>
-						<option value="high">{t("filters.effort_high")}</option>
-					</select>
+					<CustomSelect size="sm" value={typeFilter} onChange={setTypeFilter} options={[
+						{ value: "all", label: t("filters.type_all") },
+						{ value: "incident", label: t("filters.incidents") },
+						{ value: "opportunity", label: t("filters.opportunities") },
+						{ value: "verification", label: t("filters.verifications") },
+						{ value: "observation", label: t("filters.observations") },
+					]} />
+					<CustomSelect size="sm" value={severityFilter} onChange={setSeverityFilter} options={[
+						{ value: "all", label: t("filters.severity_all") },
+						{ value: "critical", label: "Critical" },
+						{ value: "high", label: "High" },
+						{ value: "medium", label: "Medium" },
+						{ value: "low", label: "Low" },
+					]} />
+					<CustomSelect size="sm" value={effortFilter} onChange={setEffortFilter} options={[
+						{ value: "all", label: t("filters.effort_all") },
+						{ value: "low", label: t("filters.effort_low") },
+						{ value: "medium", label: t("filters.effort_medium") },
+						{ value: "high", label: t("filters.effort_high") },
+					]} />
 
 					{/* View toggle: list / scatter */}
 					<div className="ml-auto flex rounded-lg border border-edge overflow-hidden">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin Alerts — Rules management + Event log
@@ -429,29 +430,28 @@ export default function AlertsPage() {
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                   Metric
                 </label>
-                <select
+                <CustomSelect
                   value={formMetric}
-                  onChange={(e) => setFormMetric(e.target.value)}
-                  className="w-full rounded-lg border border-edge bg-surface-card px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-                >
-                  {Object.entries(METRIC_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
+                  onChange={setFormMetric}
+                  options={Object.entries(METRIC_LABELS).map(([k, v]) => ({
+                    value: k,
+                    label: v,
+                  }))}
+                />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                   Condition
                 </label>
-                <select
+                <CustomSelect
                   value={formCondition}
-                  onChange={(e) => setFormCondition(e.target.value)}
-                  className="w-full rounded-lg border border-edge bg-surface-card px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-                >
-                  <option value="gt">Greater than (&gt;)</option>
-                  <option value="lt">Less than (&lt;)</option>
-                  <option value="eq">Equal to (=)</option>
-                </select>
+                  onChange={setFormCondition}
+                  options={[
+                    { value: "gt", label: "Greater than (>)" },
+                    { value: "lt", label: "Less than (<)" },
+                    { value: "eq", label: "Equal to (=)" },
+                  ]}
+                />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
@@ -479,15 +479,14 @@ export default function AlertsPage() {
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
                   Channel
                 </label>
-                <select
+                <CustomSelect
                   value={formChannel}
-                  onChange={(e) => setFormChannel(e.target.value)}
-                  className="w-full rounded-lg border border-edge bg-surface-card px-3 py-2 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-                >
-                  {Object.entries(CHANNEL_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
+                  onChange={setFormChannel}
+                  options={Object.entries(CHANNEL_LABELS).map(([k, v]) => ({
+                    value: k,
+                    label: v,
+                  }))}
+                />
               </div>
               <div className="sm:col-span-2 lg:col-span-3">
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">

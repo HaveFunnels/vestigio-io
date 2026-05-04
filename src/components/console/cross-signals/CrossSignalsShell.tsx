@@ -7,6 +7,7 @@ import { useTrack } from "@/hooks/useProductTrack";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import PageHeader from "@/components/console/PageHeader";
 import UpgradeNudge from "@/components/console/UpgradeNudge";
+import CustomSelect from "@/components/console/CustomSelect";
 import CrossSignalChainCard from "./CrossSignalChainCard";
 import type { CrossSignalChain } from "@/lib/dashboard/types";
 
@@ -107,27 +108,29 @@ export default function CrossSignalsShell({ chains }: Props) {
 
 			{/* Filter bar */}
 			<div className="flex flex-wrap items-center gap-3">
-				<select
+				<CustomSelect
+					size="sm"
 					value={severityFilter}
-					onChange={(e) => setSeverityFilter(e.target.value)}
-					className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary"
-				>
-					<option value="all">{t("filter_severity")}: {t("filter_severity_all")}</option>
-					<option value="critical">{t("severity_critical")}</option>
-					<option value="high">{t("severity_high")}</option>
-					<option value="medium">{t("severity_medium")}</option>
-					<option value="low">{t("severity_low")}</option>
-				</select>
+					onChange={setSeverityFilter}
+					options={[
+						{ value: "all", label: `${t("filter_severity")}: ${t("filter_severity_all")}` },
+						{ value: "critical", label: t("severity_critical") },
+						{ value: "high", label: t("severity_high") },
+						{ value: "medium", label: t("severity_medium") },
+						{ value: "low", label: t("severity_low") },
+					]}
+				/>
 
-				<select
+				<CustomSelect
+					size="sm"
 					value={temporalFilter}
-					onChange={(e) => setTemporalFilter(e.target.value)}
-					className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary"
-				>
-					<option value="all">{t("filter_temporal_all")}</option>
-					<option value="sequential">{t("filter_temporal_sequential")}</option>
-					<option value="simultaneous">{t("filter_temporal_simultaneous")}</option>
-				</select>
+					onChange={setTemporalFilter}
+					options={[
+						{ value: "all", label: t("filter_temporal_all") },
+						{ value: "sequential", label: t("filter_temporal_sequential") },
+						{ value: "simultaneous", label: t("filter_temporal_simultaneous") },
+					]}
+				/>
 
 				<input
 					type="text"

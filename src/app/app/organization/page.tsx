@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Organization — full management page
@@ -488,15 +489,15 @@ export default function OrganizationPage() {
                 {/* Business Model */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-content-muted">{t("business_model")}</span>
-                  <select
+                  <CustomSelect
                     value={editBusinessModel}
-                    onChange={(e) => setEditBusinessModel(e.target.value)}
-                    className="w-48 rounded-md border border-edge bg-surface-inset px-2 py-1 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                  >
-                    {Object.entries(BUSINESS_MODEL_LABELS).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
-                    ))}
-                  </select>
+                    onChange={setEditBusinessModel}
+                    options={Object.entries(BUSINESS_MODEL_LABELS).map(([k, v]) => ({
+                      value: k,
+                      label: v,
+                    }))}
+                    className="w-48"
+                  />
                 </div>
 
                 {/* Monthly Revenue */}
@@ -560,15 +561,15 @@ export default function OrganizationPage() {
                 {/* Conversion Model */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-content-muted">{t("conversion_model")}</span>
-                  <select
+                  <CustomSelect
                     value={editConversionModel}
-                    onChange={(e) => setEditConversionModel(e.target.value)}
-                    className="w-48 rounded-md border border-edge bg-surface-inset px-2 py-1 text-right text-sm text-content outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                  >
-                    {Object.entries(CONVERSION_MODEL_LABELS).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
-                    ))}
-                  </select>
+                    onChange={setEditConversionModel}
+                    options={Object.entries(CONVERSION_MODEL_LABELS).map(([k, v]) => ({
+                      value: k,
+                      label: v,
+                    }))}
+                    className="w-48"
+                  />
                 </div>
               </div>
             ) : (

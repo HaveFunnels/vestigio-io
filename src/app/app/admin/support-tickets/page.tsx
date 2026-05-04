@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin Support Tickets — mini support platform with reply threads
@@ -529,46 +530,46 @@ export default function AdminSupportTicketsPage() {
                     <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-muted">
                       Status
                     </label>
-                    <select
+                    <CustomSelect
+                      size="sm"
                       value={selectedTicket.status}
-                      onChange={(e) => handleUpdateTicket("status", e.target.value)}
+                      onChange={(val) => handleUpdateTicket("status", val)}
                       disabled={updatingTicket}
-                      className="w-full rounded-lg border border-edge bg-surface-inset px-2 py-1.5 text-xs text-content outline-none focus:border-accent/40 disabled:opacity-50"
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s} value={s}>{formatStatus(s)}</option>
-                      ))}
-                    </select>
+                      options={STATUSES.map((s) => ({
+                        value: s,
+                        label: formatStatus(s),
+                      }))}
+                    />
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-muted">
                       Priority
                     </label>
-                    <select
+                    <CustomSelect
+                      size="sm"
                       value={selectedTicket.priority}
-                      onChange={(e) => handleUpdateTicket("priority", e.target.value)}
+                      onChange={(val) => handleUpdateTicket("priority", val)}
                       disabled={updatingTicket}
-                      className="w-full rounded-lg border border-edge bg-surface-inset px-2 py-1.5 text-xs text-content outline-none focus:border-accent/40 disabled:opacity-50"
-                    >
-                      {PRIORITIES.map((p) => (
-                        <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
-                      ))}
-                    </select>
+                      options={PRIORITIES.map((p) => ({
+                        value: p,
+                        label: p.charAt(0).toUpperCase() + p.slice(1),
+                      }))}
+                    />
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-muted">
                       Category
                     </label>
-                    <select
+                    <CustomSelect
+                      size="sm"
                       value={selectedTicket.category}
-                      onChange={(e) => handleUpdateTicket("category", e.target.value)}
+                      onChange={(val) => handleUpdateTicket("category", val)}
                       disabled={updatingTicket}
-                      className="w-full rounded-lg border border-edge bg-surface-inset px-2 py-1.5 text-xs text-content outline-none focus:border-accent/40 disabled:opacity-50"
-                    >
-                      {CATEGORIES.map((c) => (
-                        <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                      ))}
-                    </select>
+                      options={CATEGORIES.map((c) => ({
+                        value: c,
+                        label: c.charAt(0).toUpperCase() + c.slice(1),
+                      }))}
+                    />
                   </div>
                 </div>
                 <div className="mt-3 flex items-center gap-2">

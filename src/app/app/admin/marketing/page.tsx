@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import ExportButton from "@/components/app/ExportButton";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin — Marketing Dashboard & Analytics
@@ -1852,17 +1853,18 @@ export default function AdminMarketingPage() {
                     <label className="mb-1 block text-xs font-medium text-content-muted">
                       Type
                     </label>
-                    <select
+                    <CustomSelect
+                      size="sm"
                       value={newPixelType}
-                      onChange={(e) => setNewPixelType(e.target.value)}
-                      className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-sm text-content focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-                    >
-                      <option value="google_analytics">Google Analytics</option>
-                      <option value="google_ads">Google Ads</option>
-                      <option value="facebook">Facebook</option>
-                      <option value="taboola">Taboola</option>
-                      <option value="custom">Custom</option>
-                    </select>
+                      onChange={setNewPixelType}
+                      options={[
+                        { value: "google_analytics", label: "Google Analytics" },
+                        { value: "google_ads", label: "Google Ads" },
+                        { value: "facebook", label: "Facebook" },
+                        { value: "taboola", label: "Taboola" },
+                        { value: "custom", label: "Custom" },
+                      ]}
+                    />
                   </div>
                   <div className="flex-1">
                     <label className="mb-1 block text-xs font-medium text-content-muted">

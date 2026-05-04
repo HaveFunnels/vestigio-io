@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
 // Admin Newsletters — rich editor, templates, compose, list, send
@@ -515,17 +516,14 @@ export default function AdminNewslettersPage() {
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Template
               </label>
-              <select
+              <CustomSelect
                 value={selectedTemplate}
-                onChange={(e) => applyTemplate(e.target.value)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
-              >
-                {TEMPLATES.map((tpl) => (
-                  <option key={tpl.id} value={tpl.id}>
-                    {tpl.label}
-                  </option>
-                ))}
-              </select>
+                onChange={applyTemplate}
+                options={TEMPLATES.map((tpl) => ({
+                  value: tpl.id,
+                  label: tpl.label,
+                }))}
+              />
             </div>
 
             {/* Subject */}
@@ -547,16 +545,16 @@ export default function AdminNewslettersPage() {
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
                 Audience
               </label>
-              <select
+              <CustomSelect
                 value={audience}
-                onChange={(e) => setAudience(e.target.value)}
-                className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
-              >
-                <option value="all">All Users</option>
-                <option value="free">Free Plan</option>
-                <option value="pro">Pro Plan</option>
-                <option value="max">Max Plan</option>
-              </select>
+                onChange={setAudience}
+                options={[
+                  { value: "all", label: "All Users" },
+                  { value: "free", label: "Free Plan" },
+                  { value: "pro", label: "Pro Plan" },
+                  { value: "max", label: "Max Plan" },
+                ]}
+              />
             </div>
 
             {/* Content with Edit/Preview toggle */}

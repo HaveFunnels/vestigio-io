@@ -14,6 +14,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useTrack } from "@/hooks/useProductTrack";
+import CustomSelect from "@/components/console/CustomSelect";
 import type { ActionProjection } from "../../../../packages/projections/types";
 
 const AI_TOOLS = [
@@ -107,17 +108,16 @@ export default function FixWithAiSection({
 						{t("description")}
 					</p>
 					<div className="flex items-center gap-2">
-						<select
+						<CustomSelect
+							size="sm"
 							value={selectedTool}
-							onChange={(e) => setSelectedTool(e.target.value)}
-							className="flex-1 rounded-md border border-edge bg-surface-card px-2.5 py-1.5 text-xs text-content-secondary outline-none focus:border-edge"
-						>
-							{AI_TOOLS.map((tool) => (
-								<option key={tool.id} value={tool.id}>
-									{tool.label}
-								</option>
-							))}
-						</select>
+							onChange={setSelectedTool}
+							options={AI_TOOLS.map((tool) => ({
+								value: tool.id,
+								label: tool.label,
+							}))}
+							className="flex-1"
+						/>
 						<button
 							onClick={handleGenerate}
 							disabled={loading}

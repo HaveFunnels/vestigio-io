@@ -582,8 +582,8 @@ export default function FindingsPage() {
 				tooltip={tc("page_tooltips.analysis")}
 			/>
 
-			{/* View Selector */}
-			{!viewsLoading && views.length > 0 && (
+			{/* View Selector — always show after loading so the "+" button is accessible */}
+			{!viewsLoading && (
 				<ViewSelector
 					views={views}
 					activeViewId={activeViewId}

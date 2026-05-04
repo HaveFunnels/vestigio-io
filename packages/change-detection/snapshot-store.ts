@@ -34,6 +34,10 @@ export interface VersionedSnapshot {
   snapshot: CycleSnapshot;
   /** Optional metadata for audit/debugging */
   metadata: SnapshotMetadata;
+  /** Wave 7.2: Monthly revenue in cents at this cycle (null = no integration) */
+  revenue_snapshot_cents?: number | null;
+  /** Wave 7.2: Which integration provider supplied the revenue data */
+  revenue_source?: string | null;
 }
 
 export interface SnapshotMetadata {

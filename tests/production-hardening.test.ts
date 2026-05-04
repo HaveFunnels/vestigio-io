@@ -115,6 +115,8 @@ function mockFinding(key: string, polarity: 'negative' | 'positive' | 'neutral' 
     verification_maturity: null,
     verification_method: 'unknown',
     change_class: null,
+    trend_pattern: null,
+    trend_streak: null,
     evidence_quality: null,
     remediation_steps: null,
     estimated_effort_hours: null,

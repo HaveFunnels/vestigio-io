@@ -176,6 +176,23 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
       query: { type: 'string', description: 'Natural language search query' },
     },
   },
+  // Wave 7.1
+  {
+    name: 'get_trend_analysis',
+    description: 'Get multi-cycle trend analysis — shows how findings have been evolving over N cycles. Detects patterns like consecutive regressions, sudden spikes, gradual degradation. Ask "how has checkout been trending?" or "what findings are getting worse?"',
+    input_schema: {
+      lookback_cycles: { type: 'number', description: 'Number of cycles to analyze (3-20, default 10)' },
+      filter_pattern: { type: 'string', enum: ['consecutive_regressions', 'gradual_degradation', 'sudden_spike', 'improving', 'oscillating', 'stable'], nullable: true, description: 'Optional: only return findings matching this trend pattern' },
+    },
+  },
+  // Wave 7.2
+  {
+    name: 'get_recovery_impact',
+    description: 'Get revenue recovery attribution — shows which resolved findings correlate with actual revenue improvements, with confidence scoring. Ask "how much did fixing X actually recover?" or "what is the ROI of our fixes?"',
+    input_schema: {
+      action_key: { type: 'string', nullable: true, description: 'Optional: filter to a specific action/finding key. Omit for all resolved actions.' },
+    },
+  },
 ];
 
 // ──────────────────────────────────────────────
@@ -214,6 +231,8 @@ export type ToolResult =
   | { type: 'copy_analysis'; data: CopyAnalysisView }
   | { type: 'verification_skipped'; data: VerificationSkippedView }
   | { type: 'search_findings'; data: SearchFindingsView }
+  | { type: 'trend_analysis'; data: TrendAnalysisView }
+  | { type: 'recovery_impact'; data: RecoveryImpactView }
   | { type: 'error'; data: { message: string } };
 
 export interface CopyAnalysisView {
@@ -237,6 +256,35 @@ export interface VerificationSkippedView {
 export interface SearchFindingsView {
   query: string;
   results: { id: string; type: 'finding' | 'action'; title: string; severity: string; impact_mid: number; pack: string }[];
+}
+
+// Wave 7.1
+export interface TrendAnalysisView {
+  lookback_cycles: number;
+  workspace_direction: string;
+  volatility: number;
+  alerts: {
+    finding_key: string;
+    pattern: string;
+    streak_length: number;
+    total_delta: number;
+    narrative: string;
+  }[];
+  summary: string;
+}
+
+// Wave 7.2
+export interface RecoveryImpactView {
+  total_recovery_monthly_cents: number;
+  data_source: string;
+  estimates: {
+    finding_key: string;
+    confidence: string;
+    estimated_impact_cents: number;
+    revenue_delta_cents: number | null;
+    narrative: string;
+  }[];
+  summary: string;
 }
 
 // ──────────────────────────────────────────────

@@ -30,3 +30,7 @@ import "./StreakKpi";
 import "./TopPackKpi";
 // Paid acquisition — ad spend from Meta/Google integration
 import "./AdSpendKpi";
+// Wave 7.1: Multi-cycle trend analysis
+import "./TrendAnalysisCard";
+// Wave 7.2: Revenue recovery attribution breakdown
+import "./RecoveryBreakdown";

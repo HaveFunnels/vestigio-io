@@ -1001,6 +1001,10 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       verification_maturity: verificationCtx.maturity,
       verification_method: verificationCtx.method,
       change_class: changeClass,
+      // Wave 7.1: Trend data is null at projection time; enriched by dashboard
+      // aggregator when multi-cycle snapshots are loaded.
+      trend_pattern: null,
+      trend_streak: null,
       evidence_quality: evidenceQualityCtx,
       // Phase 2.5: resolve remediation + verification from the
       // catalog keyed by inference_key. Null when the entry hasn't
@@ -1221,6 +1225,10 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       ...resolveOpportunityData(action.source_decisions, category, opportunityByDecisionRef),
       cluster_key: rc ? (clusterByRootCauseKey.has(rc.root_cause_key) ? rc.root_cause_key : null) : null,
       cluster_count: rc ? (clusterByRootCauseKey.get(rc.root_cause_key)?.count ?? null) : null,
+      // Wave 7.2: Recovery fields — enriched by dashboard aggregator
+      recovery_delta_cents: null,
+      recovery_confidence: null,
+      recovery_narrative: null,
     };
   });
 
@@ -1260,6 +1268,9 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
         value_case_basis: null,
         cluster_key: null,
         cluster_count: null,
+        recovery_delta_cents: null,
+        recovery_confidence: null,
+        recovery_narrative: null,
       };
       actions.push(compoundAction);
     }
@@ -1920,6 +1931,8 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         verification_maturity: null,
         verification_method: 'unknown',
         change_class: null,
+        trend_pattern: null,
+        trend_streak: null,
         evidence_quality: null,
         // Positive findings skip remediation (nothing to fix) but
         // still get verification metadata from the catalog so users
@@ -2285,6 +2298,10 @@ export function projectChangeReport(result: MultiPackResult): ChangeReportProjec
     resolved,
     previous_cycle_ref: report.previous_cycle_ref,
     current_cycle_ref: report.current_cycle_ref,
+    // Wave 7.1: Multi-cycle trend data — null at projection time,
+    // enriched by the dashboard aggregator when snapshots are loaded
+    multi_cycle_trend: null,
+    trend_alerts_count: 0,
   };
 }
 

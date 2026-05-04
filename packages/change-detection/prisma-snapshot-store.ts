@@ -45,6 +45,8 @@ export class PrismaSnapshotStore {
 		snapshot: VersionedSnapshot,
 		cycleId?: string,
 		tx?: PrismaLike,
+		/** Wave 7.2: Persist per-cycle revenue for cross-cycle correlation */
+		revenueData?: { cents: number; source: string } | null,
 	): Promise<string> {
 		const client = tx ?? this.prisma;
 		await client.cycleSnapshot.create({
@@ -60,6 +62,8 @@ export class PrismaSnapshotStore {
 				auditMode: snapshot.metadata.audit_mode,
 				recomputeMs: snapshot.metadata.recompute_duration_ms,
 				contentHash: snapshot.metadata.content_hash,
+				revenueSnapshotCents: revenueData?.cents ?? null,
+				revenueSource: revenueData?.source ?? null,
 				createdAt: snapshot.created_at,
 			},
 		});
@@ -218,6 +222,8 @@ export class PrismaSnapshotStore {
 			created_at: row.createdAt,
 			snapshot,
 			metadata,
+			revenue_snapshot_cents: row.revenueSnapshotCents ?? null,
+			revenue_source: row.revenueSource ?? null,
 		};
 	}
 }

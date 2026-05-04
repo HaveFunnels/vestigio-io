@@ -850,10 +850,14 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			await prisma.$transaction(
 				async (tx: any) => {
 					if (multiPackResult.current_snapshot) {
+						// Wave 7.2: Extract per-cycle revenue from integration snapshots
+						// for cross-cycle revenue correlation in the Revenue Recovery Tracker.
+						const revenueData = extractRevenueFromIntegrations(integrationSnapshots);
 						await snapshotStore.asyncSave(
 							multiPackResult.current_snapshot,
 							cycleId,
 							tx,
+							revenueData,
 						);
 						console.log(
 							`[audit-runner ${cycleId}] snapshot saved (${multiPackResult.current_snapshot.metadata.decision_count} decisions, ${multiPackResult.current_snapshot.metadata.signal_count} signals, recompute ${recomputeMs}ms)`,
@@ -1134,4 +1138,39 @@ export async function redispatchOrphanedPending(): Promise<number> {
 		}
 	}
 	return orphans.length;
+}
+
+// ──────────────────────────────────────────────
+// Wave 7.2: Extract per-cycle revenue from integration snapshots
+// ──────────────────────────────────────────────
+
+function extractRevenueFromIntegrations(
+	snapshots: IntegrationSnapshot[],
+): { cents: number; source: string } | null {
+	// Priority: Stripe > Shopify > Nuvemshop (SaaS MRR is more authoritative than order revenue)
+	const stripe = snapshots.find(s => s.provider === 'stripe');
+	if (stripe && 'revenue' in stripe.data) {
+		const data = stripe.data as { revenue: { total: number }; mrr: number | null };
+		// Use MRR for SaaS if available, otherwise total revenue
+		const revenueCents = data.mrr != null
+			? Math.round(data.mrr * 100)
+			: Math.round(data.revenue.total * 100);
+		if (revenueCents > 0) return { cents: revenueCents, source: 'stripe' };
+	}
+
+	const shopify = snapshots.find(s => s.provider === 'shopify');
+	if (shopify && 'revenue' in shopify.data) {
+		const data = shopify.data as { revenue: { total: number } };
+		const revenueCents = Math.round(data.revenue.total * 100);
+		if (revenueCents > 0) return { cents: revenueCents, source: 'shopify' };
+	}
+
+	const nuvemshop = snapshots.find(s => s.provider === 'nuvemshop');
+	if (nuvemshop && 'revenue' in nuvemshop.data) {
+		const data = nuvemshop.data as { revenue: { total: number } };
+		const revenueCents = Math.round(data.revenue.total * 100);
+		if (revenueCents > 0) return { cents: revenueCents, source: 'nuvemshop' };
+	}
+
+	return null;
 }

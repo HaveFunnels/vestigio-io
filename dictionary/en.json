@@ -2156,6 +2156,36 @@
 					"empty_title": "No cross-domain patterns detected yet",
 					"empty_subtitle": "Patterns appear when findings from different packs affect the same page",
 					"view_all": "View all"
+				},
+				"trend_analysis": {
+					"name": "Trend Analysis",
+					"description": "Multi-cycle trend patterns — consecutive regressions, sudden spikes, gradual degradation.",
+					"eyebrow": "Multi-Cycle Trends",
+					"cycles_count": "{count} cycles",
+					"cycles_analyzed": "{count} cycles analyzed — all findings stable",
+					"needs_cycles": "Needs at least 3 audit cycles to detect trends",
+					"no_alerts": "No actionable trend patterns",
+					"more_alerts": "+{count} more alerts",
+					"consecutive_regressions": "Degrading {streak} cycles",
+					"sudden_spike": "Sudden spike",
+					"gradual_degradation": "Gradual degradation",
+					"oscillating": "Oscillating",
+					"direction_improving": "Improving",
+					"direction_degrading": "Degrading",
+					"direction_stable": "Stable",
+					"direction_mixed": "Mixed"
+				},
+				"recovery_breakdown": {
+					"name": "Recovery Attribution",
+					"description": "Per-action revenue recovery with confidence scoring.",
+					"eyebrow": "Revenue Recovery",
+					"no_data": "No recovery data yet",
+					"no_data_hint": "Resolve findings with an integration connected to see revenue attribution",
+					"strong": "Strong",
+					"correlated": "Correlated",
+					"inconclusive": "Inconclusive",
+					"pending": "pending",
+					"inconclusive_count": "{count} inconclusive (no revenue change detected)"
 				}
 			},
 			"editing_subtitle": "Drag widgets to rearrange. Resize from the corner. Add or remove from the catalog.",
@@ -2481,6 +2511,18 @@
 			"new_issue": "New",
 			"resolved": "Resolved",
 			"stable_risk": "Stable Risk"
+		},
+		"trend_badge": {
+			"consecutive_regressions": "Degrading",
+			"consecutive_regressions_with_streak": "Degrading {streak} cycles",
+			"gradual_degradation": "Gradual decline",
+			"gradual_degradation_with_streak": "Declining over {streak} cycles",
+			"sudden_spike": "Sudden spike",
+			"sudden_spike_with_streak": "Sudden spike",
+			"improving": "Improving",
+			"improving_with_streak": "Improving {streak} cycles",
+			"oscillating": "Oscillating",
+			"oscillating_with_streak": "Oscillating {streak} cycles"
 		},
 		"change_timeline": {
 			"no_changes": "No changes to display",

@@ -15,3 +15,10 @@ export {
 	type VerificationStrategyKey,
 } from './verification-plan-template';
 export * from './types';
+export {
+	analyzeTrends,
+	type TrendAnalysis,
+	type FindingTrend,
+	type WorkspaceTrend,
+	type TrendPattern,
+} from './trend-engine';

@@ -363,6 +363,11 @@ model CycleSnapshot {
   recomputeMs    Int? // duration of the recompute that produced this snapshot
   contentHash    String? // optional integrity check
   isBaseline     Boolean  @default(false)
+  // Wave 7.2: Monthly revenue (in cents) from integration data at this cycle.
+  // Null when no integration is connected. Used for cross-cycle revenue
+  // correlation in the Revenue Recovery Tracker.
+  revenueSnapshotCents Int?
+  revenueSource        String? // shopify | stripe | nuvemshop | null
   createdAt      DateTime @default(now())
 
   cycle AuditCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)

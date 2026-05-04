@@ -103,6 +103,8 @@ const BASE: Omit<
 		composite: 81,
 	},
 	verification_eta_seconds: null,
+	trend_pattern: null,
+	trend_streak: null,
 	workspace_refs: [],
 	action_refs: [],
 	opportunity_ref: null,
@@ -444,6 +446,8 @@ function buildChangeReport(): ChangeReportProjection {
 		resolved: [],
 		previous_cycle_ref: "demo_cycle:previous",
 		current_cycle_ref: "demo_cycle:latest",
+		multi_cycle_trend: null,
+		trend_alerts_count: 0,
 	};
 }
 

@@ -160,6 +160,10 @@ export interface FindingProjection {
   verification_method: 'static_only' | 'browser_verified' | 'mixed' | 'unknown';
   /** Phase 0 UX: Change class from cycle-to-cycle change detection */
   change_class: 'regression' | 'improvement' | 'new_issue' | 'resolved' | 'stable_risk' | null;
+  /** Wave 7.1: Multi-cycle trend pattern for this finding */
+  trend_pattern: 'consecutive_regressions' | 'gradual_degradation' | 'sudden_spike' | 'improving' | 'oscillating' | 'stable' | null;
+  /** Wave 7.1: Number of consecutive cycles the current trend has held */
+  trend_streak: number | null;
   /** Phase 0 UX: Aggregated evidence quality scores */
   evidence_quality: {
     source_reliability: number;
@@ -301,6 +305,14 @@ export interface ActionProjection {
   cluster_key: string | null;
   /** Number of findings sharing the same cluster */
   cluster_count: number | null;
+
+  // Wave 7.2: Revenue Recovery fields
+  /** Revenue delta attributed to this action's resolution (cents, null if unresolved/no data) */
+  recovery_delta_cents: number | null;
+  /** Confidence of the revenue attribution */
+  recovery_confidence: 'strong_correlation' | 'correlation' | 'inconclusive' | null;
+  /** Narrative explaining the recovery attribution */
+  recovery_narrative: string | null;
 }
 
 export type WorkspaceProjectionType =
@@ -435,6 +447,10 @@ export interface ChangeReportProjection {
   resolved: DecisionChangeProjection[];
   previous_cycle_ref: string | null;
   current_cycle_ref: string | null;
+  /** Wave 7.1: Multi-cycle workspace trend direction (null if <3 cycles) */
+  multi_cycle_trend: 'improving' | 'degrading' | 'stable' | 'mixed' | null;
+  /** Wave 7.1: Findings with actionable trend patterns */
+  trend_alerts_count: number;
 }
 
 export interface ProjectionResult {

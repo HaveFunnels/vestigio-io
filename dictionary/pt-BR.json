@@ -2175,6 +2175,36 @@
 					"empty_title": "Nenhum padrão cross-domain detectado ainda",
 					"empty_subtitle": "Padrões aparecem quando findings de diferentes packs afetam a mesma página",
 					"view_all": "Ver todos"
+				},
+				"trend_analysis": {
+					"name": "Análise de Tendências",
+					"description": "Padrões multi-ciclo — regressões consecutivas, picos repentinos, degradação gradual.",
+					"eyebrow": "Tendências Multi-Ciclo",
+					"cycles_count": "{count} ciclos",
+					"cycles_analyzed": "{count} ciclos analisados — todos os findings estáveis",
+					"needs_cycles": "Precisa de pelo menos 3 ciclos de auditoria para detectar tendências",
+					"no_alerts": "Nenhum padrão de tendência acionável",
+					"more_alerts": "+{count} alertas adicionais",
+					"consecutive_regressions": "Degradando há {streak} ciclos",
+					"sudden_spike": "Pico repentino",
+					"gradual_degradation": "Degradação gradual",
+					"oscillating": "Oscilando",
+					"direction_improving": "Melhorando",
+					"direction_degrading": "Degradando",
+					"direction_stable": "Estável",
+					"direction_mixed": "Misto"
+				},
+				"recovery_breakdown": {
+					"name": "Atribuição de Recuperação",
+					"description": "Recuperação de receita por ação com pontuação de confiança.",
+					"eyebrow": "Recuperação de Receita",
+					"no_data": "Sem dados de recuperação ainda",
+					"no_data_hint": "Resolva findings com uma integração conectada para ver a atribuição de receita",
+					"strong": "Forte",
+					"correlated": "Correlacionado",
+					"inconclusive": "Inconclusivo",
+					"pending": "pendente",
+					"inconclusive_count": "{count} inconclusivos (nenhuma mudança de receita detectada)"
 				}
 			},
 			"editing_subtitle": "Arraste widgets para reorganizar. Redimensione pelo canto. Adicione ou remova pelo catálogo.",
@@ -2500,6 +2530,18 @@
 			"new_issue": "Novo",
 			"resolved": "Resolvido",
 			"stable_risk": "Risco Estável"
+		},
+		"trend_badge": {
+			"consecutive_regressions": "Degradando",
+			"consecutive_regressions_with_streak": "Degradando há {streak} ciclos",
+			"gradual_degradation": "Declínio gradual",
+			"gradual_degradation_with_streak": "Em declínio por {streak} ciclos",
+			"sudden_spike": "Pico repentino",
+			"sudden_spike_with_streak": "Pico repentino",
+			"improving": "Melhorando",
+			"improving_with_streak": "Melhorando há {streak} ciclos",
+			"oscillating": "Oscilando",
+			"oscillating_with_streak": "Oscilando há {streak} ciclos"
 		},
 		"change_timeline": {
 			"no_changes": "Nenhuma mudança para exibir",

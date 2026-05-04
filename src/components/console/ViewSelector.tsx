@@ -73,20 +73,12 @@ export default function ViewSelector({
 	currentUserId,
 }: ViewSelectorProps) {
 	const t = useTranslations("console.findings.views");
-	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [optionsViewId, setOptionsViewId] = useState<string | null>(null);
-	const dropdownRef = useRef<HTMLDivElement>(null);
 	const optionsRef = useRef<HTMLDivElement>(null);
 
-	// Close dropdown on outside click
+	// Close options menu on outside click
 	useEffect(() => {
 		function handleClickOutside(e: MouseEvent) {
-			if (
-				dropdownRef.current &&
-				!dropdownRef.current.contains(e.target as Node)
-			) {
-				setDropdownOpen(false);
-			}
 			if (
 				optionsRef.current &&
 				!optionsRef.current.contains(e.target as Node)
@@ -94,11 +86,11 @@ export default function ViewSelector({
 				setOptionsViewId(null);
 			}
 		}
-		if (dropdownOpen || optionsViewId) {
+		if (optionsViewId) {
 			document.addEventListener("mousedown", handleClickOutside);
 			return () => document.removeEventListener("mousedown", handleClickOutside);
 		}
-	}, [dropdownOpen, optionsViewId]);
+	}, [optionsViewId]);
 
 	// Default views are always shown as tabs; custom views go in the dropdown
 	const defaultViews = views.filter((v) => v.isDefault);
@@ -330,54 +322,15 @@ export default function ViewSelector({
 				);
 			})}
 
-			{/* Plus button with dropdown */}
-			<div className="relative ml-1" ref={dropdownRef}>
+			{/* Plus button — opens Save View modal directly */}
+			<div className="ml-1">
 				<button
-					onClick={() => setDropdownOpen(!dropdownOpen)}
+					onClick={() => onSaveView()}
 					className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
 					title={t("save_view")}
 				>
 					<PlusIcon size={16} weight="bold" />
 				</button>
-
-				{dropdownOpen && (
-					<div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-edge bg-surface-card py-1 shadow-xl">
-						<button
-							onClick={() => {
-								setDropdownOpen(false);
-								onSaveView();
-							}}
-							className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-content-secondary transition-colors hover:bg-surface-card-hover"
-						>
-							<PlusIcon size={14} />
-							{t("save_view")}
-						</button>
-						{customViews.length > 0 && (
-							<>
-								<div className="my-1 border-t border-edge" />
-								{customViews.map((view) => {
-									const Icon = view.icon ? ICON_MAP[view.icon] : null;
-									return (
-										<button
-											key={view.id}
-											onClick={() => {
-												setDropdownOpen(false);
-												onViewChange(view);
-											}}
-											className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-content-secondary transition-colors hover:bg-surface-card-hover"
-										>
-											{Icon && <Icon size={14} style={{ color: view.color || undefined }} />}
-											<span>{view.name}</span>
-											{view.isShared && (
-												<UsersThreeIcon size={12} className="ml-auto text-blue-500" />
-											)}
-										</button>
-									);
-								})}
-							</>
-						)}
-					</div>
-				)}
 			</div>
 		</div>
 	);

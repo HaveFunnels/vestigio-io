@@ -70,6 +70,7 @@ const PERSPECTIVE_META: Record<string, {
 function classifyWorkspacePerspective(ws: WorkspaceProjection): string {
   if (ws.category === "behavioral") return "behavior";
   if (ws.type === "revenue" || ws.type === "chargeback") return "revenue";
+  if (ws.type === "copy_alignment") return "copy";
   if (ws.type === "preflight") return "trust";
   return "trust";
 }

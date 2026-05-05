@@ -24,7 +24,7 @@ interface Badge {
 const BADGES: Badge[] = [
 	{ src: "/images/awards/product-hunt.svg", alt: "Product Hunt" },
 	{ src: "/images/awards/trustpilot.svg", alt: "Trustpilot" },
-	{ src: "/images/awards/soc2.svg", alt: "SOC 2" },
+	{ src: "/images/awards/reclame-aqui.svg", alt: "Reclame Aqui RA1000" },
 ];
 
 interface AwardsStripProps {

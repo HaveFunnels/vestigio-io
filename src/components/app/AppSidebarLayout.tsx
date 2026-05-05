@@ -325,8 +325,9 @@ export default function AppSidebarLayout({
 }: AppSidebarLayoutProps) {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const pathnameForBanner = usePathname();
+	const isOnboarding = pathnameForBanner?.startsWith("/app/onboarding");
 	const showCycleBanner =
-		!isAdmin && shouldShowCycleBanner(pathnameForBanner);
+		!isAdmin && !isOnboarding && shouldShowCycleBanner(pathnameForBanner);
 
 	// Ensure active_env cookie is always set so client components
 	// (Data Sources, etc.) can resolve the real environment ID.
@@ -338,6 +339,22 @@ export default function AppSidebarLayout({
 		}
 	}, [orgCtx.envId]);
 	const pausedBannerT = useTranslations("console.paused_banner");
+
+	// ── Onboarding: full-screen focused experience, no shell chrome ──
+	if (isOnboarding) {
+		return (
+			<PlanProvider plan={plan}>
+				<div className="flex h-screen bg-surface-shell text-content">
+					<TopProgressBar />
+					<div className="flex flex-1 flex-col overflow-hidden">
+						<div className="relative mx-2 mb-2 mt-2 flex min-h-0 flex-1 flex-col rounded-xl bg-surface shadow-lg ring-1 ring-edge/50">
+							{children}
+						</div>
+					</div>
+				</div>
+			</PlanProvider>
+		);
+	}
 
 	return (
 		<PlanProvider plan={plan}>

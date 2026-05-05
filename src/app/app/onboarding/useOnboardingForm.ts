@@ -80,11 +80,23 @@ export function parseRevenue(value: string): number | null {
 // ---------------------------------------------------------------------------
 // Step sequence
 // ---------------------------------------------------------------------------
-function getSteps(hasActiveOrg: boolean): StepId[] {
+// SaaS and Hybrid skip conversion_model — they have multiple conversion
+// mechanisms by nature (checkout + form + external). Ecommerce and Lead Gen
+// benefit from specifying their primary conversion path.
+const SKIP_CONVERSION_MODEL = new Set(["saas", "hybrid"]);
+
+function getSteps(hasActiveOrg: boolean, businessType?: string): StepId[] {
+	const includeConversion = !SKIP_CONVERSION_MODEL.has(businessType || "");
 	if (hasActiveOrg) {
-		return ["domain", "business_type", "conversion_model", "revenue", "ticket"];
+		const steps: StepId[] = ["domain", "business_type"];
+		if (includeConversion) steps.push("conversion_model");
+		steps.push("revenue", "ticket");
+		return steps;
 	}
-	return ["org", "domain", "business_type", "conversion_model", "revenue", "ticket", "plan"];
+	const steps: StepId[] = ["org", "domain", "business_type"];
+	if (includeConversion) steps.push("conversion_model");
+	steps.push("revenue", "ticket", "plan");
+	return steps;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,9 +114,7 @@ export default function useOnboardingForm() {
 	// ── Admin-provisioned detection ──
 	const hasActiveOrg = (session?.user as any)?.hasOrganization === true;
 
-	// ── Steps ──
-	const steps = useMemo(() => getSteps(hasActiveOrg), [hasActiveOrg]);
-	const totalSteps = steps.length;
+	// Steps computed after form state (below) — needs form.businessType
 
 	// ── Saved draft ──
 	const savedDraft = useMemo(() => {
@@ -148,6 +158,10 @@ export default function useOnboardingForm() {
 		...(prefillDomain ? { domain: prefillDomain } : {}),
 	}));
 
+	// ── Steps (dynamic based on business type — SaaS/Hybrid skip conversion model) ──
+	const steps = useMemo(() => getSteps(hasActiveOrg, form.businessType), [hasActiveOrg, form.businessType]);
+	const totalSteps = steps.length;
+
 	const [stepIndex, setStepIndex] = useState(savedDraft?.stepIndex ?? 0);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -157,6 +171,45 @@ export default function useOnboardingForm() {
 	const [domainError, setDomainError] = useState<string | null>(null);
 	const [domainChecking, setDomainChecking] = useState(false);
 	const [domainWarning, setDomainWarning] = useState<string | null>(null);
+
+	// ── Prefill from existing lead/profile data ──
+	// If the user was promoted from a lead (promoteLeadToOrg), their
+	// BusinessProfile + Environment already exist. Fetch and prefill
+	// the form so they don't re-enter data. Skip to last step if complete.
+	const [prefillLoaded, setPrefillLoaded] = useState(false);
+	useEffect(() => {
+		if (prefillLoaded) return;
+		async function loadPrefill() {
+			try {
+				const res = await fetch("/api/onboard/prefill");
+				if (!res.ok) return;
+				const { prefill } = await res.json();
+				if (!prefill) return;
+
+				const updates: Partial<OnboardState> = {};
+				if (prefill.domain) updates.domain = prefill.domain;
+				if (prefill.businessModel) updates.businessType = prefill.businessModel;
+				if (prefill.conversionModel) updates.conversionModel = prefill.conversionModel;
+				if (prefill.monthlyRevenue) updates.monthlyRevenue = prefill.monthlyRevenue;
+				if (prefill.averageOrderValue) updates.averageTicket = prefill.averageOrderValue;
+
+				if (Object.keys(updates).length > 0) {
+					setForm((prev) => ({ ...prev, ...updates }));
+
+					// If all key data exists, skip to the last step (activate)
+					if (prefill.domain && prefill.businessModel && prefill.monthlyRevenue && !prefill.activated) {
+						const lastIdx = steps.length - 1;
+						setStepIndex(lastIdx);
+					}
+				}
+			} catch {
+				// Non-fatal — proceed without prefill
+			} finally {
+				setPrefillLoaded(true);
+			}
+		}
+		loadPrefill();
+	}, [prefillLoaded, steps.length]);
 
 	// Plans
 	const defaultPlans = useMemo<Plan[]>(
@@ -321,6 +374,16 @@ export default function useOnboardingForm() {
 
 	// ── Activation ──
 	const handleActivate = useCallback(async () => {
+		// Client-side validation before attempting API call
+		if (!form.domain?.trim()) {
+			setError(t("errors.domain_required"));
+			return;
+		}
+		if (!form.businessType) {
+			setError(t("errors.business_type_required"));
+			return;
+		}
+
 		setLoading(true);
 		setError(null);
 
@@ -335,7 +398,7 @@ export default function useOnboardingForm() {
 						businessModel: form.businessType,
 						conversionModel: form.conversionModel,
 						monthlyRevenue: form.monthlyRevenue,
-						averageOrderValue: null,
+						averageOrderValue: form.averageTicket || null,
 					}),
 				});
 
@@ -343,7 +406,6 @@ export default function useOnboardingForm() {
 
 				if (!response.ok) {
 					setError(data.message || t("errors.something_wrong"));
-					setLoading(false);
 					return;
 				}
 
@@ -358,6 +420,7 @@ export default function useOnboardingForm() {
 				router.replace(`${target}${cycleQuery}`);
 			} catch {
 				setError(t("errors.network_error"));
+			} finally {
 				setLoading(false);
 			}
 			return;
@@ -384,7 +447,6 @@ export default function useOnboardingForm() {
 
 			if (!response.ok) {
 				setError(data.message || t("errors.something_wrong"));
-				setLoading(false);
 				return;
 			}
 
@@ -392,7 +454,6 @@ export default function useOnboardingForm() {
 
 			if (!window.Paddle) {
 				setError(t("errors.payment_loading"));
-				setLoading(false);
 				return;
 			}
 
@@ -406,10 +467,9 @@ export default function useOnboardingForm() {
 				successUrl: `${window.location.origin}/app/onboarding?payment_success=true&org=${orgId}`,
 				settings: { displayMode: "overlay" },
 			});
-
-			setLoading(false);
 		} catch {
 			setError(t("errors.network_error"));
+		} finally {
 			setLoading(false);
 		}
 	}, [hasActiveOrg, form, selectedPlan, session, t, updateSession, router]);

@@ -3,19 +3,29 @@
 // ──────────────────────────────────────────────
 // AwardsStrip — Product Hunt, Trustpilot, etc.
 //
-// Reusable strip of award/trust badges. Used in two places:
-// 1. Below ClientGallery on homepage (reinforces social proof)
-// 2. Footer (authority at the very end of the page)
+// Renders award badges from /public/images/awards/.
+// Place your badge images there:
+//   - product-hunt.svg
+//   - trustpilot.svg
+//   - soc2.svg
 //
-// Design: understated pill badges, centered row. Grayscale
-// icons with subtle borders. Doesn't compete with content.
+// Used in:
+//   1. Below ClientGallery on homepage
+//   2. Footer
 // ──────────────────────────────────────────────
 
-import {
-	Star as StarIcon,
-	Trophy as TrophyIcon,
-	ShieldCheck as ShieldIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import Image from "next/image";
+
+interface Badge {
+	src: string;
+	alt: string;
+}
+
+const BADGES: Badge[] = [
+	{ src: "/images/awards/product-hunt.svg", alt: "Product Hunt" },
+	{ src: "/images/awards/trustpilot.svg", alt: "Trustpilot" },
+	{ src: "/images/awards/soc2.svg", alt: "SOC 2" },
+];
 
 interface AwardsStripProps {
 	/** Smaller variant for footer */
@@ -23,29 +33,22 @@ interface AwardsStripProps {
 }
 
 export default function AwardsStrip({ compact = false }: AwardsStripProps) {
-	const gap = compact ? "gap-3" : "gap-3 sm:gap-4";
-	const pillClass = compact
-		? "flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1"
-		: "flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5";
-	const textClass = compact
-		? "text-[10px] font-medium text-zinc-500"
-		: "text-[10px] font-medium text-zinc-500 sm:text-[11px]";
-	const iconSize = compact ? 12 : 14;
+	const height = compact ? 24 : 32;
+	const gap = compact ? "gap-5" : "gap-6 sm:gap-8";
 
 	return (
 		<div className={`flex flex-wrap items-center justify-center ${gap}`}>
-			<div className={pillClass}>
-				<TrophyIcon size={iconSize} weight="fill" className="text-amber-500/60" />
-				<span className={textClass}>Product Hunt #1</span>
-			</div>
-			<div className={pillClass}>
-				<StarIcon size={iconSize} weight="fill" className="text-emerald-500/60" />
-				<span className={textClass}>Trustpilot 4.8</span>
-			</div>
-			<div className={pillClass}>
-				<ShieldIcon size={iconSize} weight="fill" className="text-blue-400/60" />
-				<span className={textClass}>SOC 2</span>
-			</div>
+			{BADGES.map((badge) => (
+				<Image
+					key={badge.alt}
+					src={badge.src}
+					alt={badge.alt}
+					width={height * 3}
+					height={height}
+					className="opacity-50 transition-opacity hover:opacity-90"
+					style={{ height: `${height}px`, width: "auto" }}
+				/>
+			))}
 		</div>
 	);
 }

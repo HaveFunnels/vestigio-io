@@ -18,8 +18,19 @@ import {
 	PlanSelectionStep,
 } from "@/components/form-steps";
 import type { CardOption } from "@/components/form-steps";
+import {
+	TShirt as FashionIcon,
+	CookingPot as FoodIcon,
+	HeartbeatIcon as HealthIcon,
+	Desktop as ElectronicsIcon,
+	GraduationCap as EducationIcon,
+	Briefcase as ServicesIcon,
+	Plant as HomeGardenIcon,
+	DotsThreeCircle as OtherIcon,
+} from "@phosphor-icons/react/dist/ssr";
+import CustomSelect, { type SelectOption } from "@/components/console/CustomSelect";
 import useOnboardingForm from "./useOnboardingForm";
-import type { BusinessType, ConversionModel } from "./useOnboardingForm";
+import type { BusinessType, ConversionModel, IndustryVertical } from "./useOnboardingForm";
 
 // ---------------------------------------------------------------------------
 // Card options (static — labels come from i18n inside the component)
@@ -200,6 +211,16 @@ export default function OnboardPage() {
 				/>
 			)}
 
+			{/* ── Industry Vertical (dropdown with icons) ── */}
+			{f.currentStep === "industry" && (
+				<IndustryStep
+					value={f.form.industryVertical}
+					onChange={(v) => f.update("industryVertical", v)}
+					onContinue={f.next}
+					t={f.t}
+				/>
+			)}
+
 			{/* ── Conversion Model (cards) ── */}
 			{f.currentStep === "conversion_model" && (
 				<CardSelectionStep
@@ -283,5 +304,87 @@ export default function OnboardPage() {
 				/>
 			)}
 		</StepShell>
+	);
+}
+
+// ──────────────────────────────────────────────
+// IndustryStep — dropdown with icons, mobile-optimized
+// No scrolling needed: a single select + skip button fits any viewport.
+// ──────────────────────────────────────────────
+
+const INDUSTRY_OPTIONS: (SelectOption & { icon: React.ComponentType<any> })[] = [
+	{ value: "fashion", label: "Moda & Vestuário", icon: FashionIcon },
+	{ value: "food", label: "Alimentos & Bebidas", icon: FoodIcon },
+	{ value: "health", label: "Saúde & Bem-estar", icon: HealthIcon },
+	{ value: "electronics", label: "Eletrônicos & Tech", icon: ElectronicsIcon },
+	{ value: "education", label: "Educação & Cursos", icon: EducationIcon },
+	{ value: "services", label: "Serviços & Consultorias", icon: ServicesIcon },
+	{ value: "home_garden", label: "Casa & Jardim", icon: HomeGardenIcon },
+	{ value: "other", label: "Outro segmento", icon: OtherIcon },
+];
+
+function IndustryStep({
+	value,
+	onChange,
+	onContinue,
+	t,
+}: {
+	value: string;
+	onChange: (v: IndustryVertical) => void;
+	onContinue: () => void;
+	t: ReturnType<typeof useOnboardingForm>["t"];
+}) {
+	return (
+		<div className="flex flex-1 flex-col">
+			{/* Title */}
+			<div>
+				<h2 className="text-[1.625rem] font-bold text-zinc-900 sm:text-3xl">
+					{t("industry.title")}
+				</h2>
+				<p className="mt-2 text-[15px] text-zinc-500 sm:text-base">
+					{t("industry.subtitle")}
+				</p>
+			</div>
+
+			{/* Center: dropdown */}
+			<div className="flex flex-1 items-center">
+				<div className="w-full">
+					<CustomSelect
+						size="md"
+						value={value}
+						onChange={(v) => onChange(v as IndustryVertical)}
+						options={INDUSTRY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+						placeholder={t("industry.placeholder")}
+						className="w-full"
+					/>
+				</div>
+			</div>
+
+			{/* Bottom: buttons */}
+			<div className="flex flex-col gap-3">
+				<button
+					type="button"
+					onClick={onContinue}
+					disabled={!value}
+					className={`w-full rounded-xl px-6 py-3.5 text-sm font-semibold transition-all ${
+						value
+							? "bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.98]"
+							: "cursor-not-allowed bg-zinc-200 text-zinc-400"
+					}`}
+				>
+					{t("continue")}
+				</button>
+				<button
+					type="button"
+					onClick={() => {
+						onChange("other");
+						onContinue();
+					}}
+					className="text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-600"
+				>
+					{t("industry.skip")}
+				</button>
+			</div>
+		</div>
 	);
 }

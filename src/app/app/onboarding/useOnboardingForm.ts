@@ -23,13 +23,15 @@ declare global {
 // ---------------------------------------------------------------------------
 export type BusinessType = "ecommerce" | "lead_gen" | "saas" | "hybrid";
 export type ConversionModel = "checkout" | "whatsapp" | "form" | "external";
-export type StepId = "org" | "domain" | "business_type" | "conversion_model" | "revenue" | "ticket" | "plan";
+export type IndustryVertical = "fashion" | "food" | "health" | "electronics" | "education" | "services" | "home_garden" | "other";
+export type StepId = "org" | "domain" | "business_type" | "industry" | "conversion_model" | "revenue" | "ticket" | "plan";
 
 export interface OnboardState {
 	organizationName: string;
 	domain: string;
 	ownershipConfirmed: boolean;
 	businessType: BusinessType;
+	industryVertical: IndustryVertical | "";
 	monthlyRevenue: number;
 	averageTicket: number;
 	conversionModel: ConversionModel;
@@ -84,16 +86,22 @@ export function parseRevenue(value: string): number | null {
 // mechanisms by nature (checkout + form + external). Ecommerce and Lead Gen
 // benefit from specifying their primary conversion path.
 const SKIP_CONVERSION_MODEL = new Set(["saas", "hybrid"]);
+// Industry vertical is relevant for ecommerce and lead_gen (not SaaS/hybrid
+// where industry is implied or too diverse to categorize simply).
+const SHOW_INDUSTRY = new Set(["ecommerce", "lead_gen"]);
 
 function getSteps(hasActiveOrg: boolean, businessType?: string): StepId[] {
 	const includeConversion = !SKIP_CONVERSION_MODEL.has(businessType || "");
+	const includeIndustry = SHOW_INDUSTRY.has(businessType || "");
 	if (hasActiveOrg) {
 		const steps: StepId[] = ["domain", "business_type"];
+		if (includeIndustry) steps.push("industry");
 		if (includeConversion) steps.push("conversion_model");
 		steps.push("revenue", "ticket");
 		return steps;
 	}
 	const steps: StepId[] = ["org", "domain", "business_type"];
+	if (includeIndustry) steps.push("industry");
 	if (includeConversion) steps.push("conversion_model");
 	steps.push("revenue", "ticket", "plan");
 	return steps;
@@ -147,6 +155,7 @@ export default function useOnboardingForm() {
 		domain: prefillDomain,
 		ownershipConfirmed: false,
 		businessType: "ecommerce",
+		industryVertical: "",
 		monthlyRevenue: 100000,
 		averageTicket: 300,
 		conversionModel: "checkout",
@@ -399,6 +408,7 @@ export default function useOnboardingForm() {
 						conversionModel: form.conversionModel,
 						monthlyRevenue: form.monthlyRevenue,
 						averageOrderValue: form.averageTicket || null,
+						targetIndustry: form.industryVertical || null,
 					}),
 				});
 

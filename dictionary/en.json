@@ -3621,6 +3621,12 @@
 			"ticket": {
 				"title": "What's your average ticket?",
 				"subtitle": "The average value of each sale or transaction."
+			},
+			"industry": {
+				"title": "What's your industry?",
+				"subtitle": "This helps us tailor the analysis to your specific market.",
+				"placeholder": "Select your industry",
+				"skip": "Skip for now"
 			}
 		},
 		"navigation": {

@@ -3640,6 +3640,12 @@
 			"ticket": {
 				"title": "Qual o ticket médio?",
 				"subtitle": "O valor médio de cada venda ou transação."
+			},
+			"industry": {
+				"title": "Qual seu segmento?",
+				"subtitle": "Isso nos permite adaptar a análise ao seu mercado específico.",
+				"placeholder": "Selecione seu segmento",
+				"skip": "Pular por enquanto"
 			}
 		},
 		"navigation": {

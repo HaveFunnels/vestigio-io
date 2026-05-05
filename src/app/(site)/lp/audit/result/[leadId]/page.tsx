@@ -125,6 +125,12 @@ export default function MiniAuditResultPage() {
 			return;
 		}
 		setLaunching(true);
+
+		// BUG-11 fix: Mark lead as checkout_started so we can distinguish
+		// "abandoned checkout" from "never reached checkout" in analytics,
+		// and prevent the result expiration timer from firing mid-checkout.
+		fetch(`/api/lead/${leadId}/checkout-started`, { method: "POST" }).catch(() => {});
+
 		try {
 			window.Paddle.Checkout.open({
 				items: [{ priceId: LP_PRICE_ID, quantity: 1 }],

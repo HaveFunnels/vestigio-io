@@ -64,6 +64,10 @@ export default function useLpAuditForm() {
 	// ── Step state ──
 	const [stepIndex, setStepIndex] = useState(0);
 	const [submitting, setSubmitting] = useState(false);
+	// BUG-03 fix: useRef guard prevents double-submit race condition.
+	// React state updates are async — two rapid clicks can both read
+	// submitting=false before the first re-render sets it to true.
+	const inFlightRef = useRef(false);
 	const [fieldError, setFieldError] = useState<{ field: string; message: string } | null>(null);
 	const [globalError, setGlobalError] = useState<string | null>(null);
 
@@ -249,6 +253,9 @@ export default function useLpAuditForm() {
 	const currentScreen = SCREENS[stepIndex];
 
 	const next = useCallback(async () => {
+		// BUG-03: Synchronous ref guard — prevents concurrent invocations
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
 		setSubmitting(true);
 		setFieldError(null);
 		setGlobalError(null);
@@ -265,6 +272,7 @@ export default function useLpAuditForm() {
 			const ok = await submitToBackend(backendStep);
 			if (!ok) {
 				setSubmitting(false);
+				inFlightRef.current = false;
 				return;
 			}
 		}
@@ -276,6 +284,7 @@ export default function useLpAuditForm() {
 				router.push(`/lp/audit/result/${leadId}`);
 			} else {
 				setSubmitting(false);
+				inFlightRef.current = false;
 			}
 			return;
 		}
@@ -283,6 +292,7 @@ export default function useLpAuditForm() {
 		// Advance
 		setStepIndex((s) => Math.min(s + 1, TOTAL_SCREENS - 1));
 		setSubmitting(false);
+		inFlightRef.current = false;
 	}, [currentScreen, checkDomainReachability, submitToBackend, fireAudit, leadId, router]);
 
 	const prev = useCallback(() => {

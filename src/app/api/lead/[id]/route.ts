@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/libs/prismaDb";
 
+// BUG-06 fix: Safe JSON parse that returns null on corrupt/empty data
+// instead of throwing and crashing the response with a 500.
+function safeJsonParse(value: string | null | undefined): unknown {
+	if (!value) return null;
+	try { return JSON.parse(value); }
+	catch { return null; }
+}
+
 // ──────────────────────────────────────────────
 // GET /api/lead/[id]
 //
@@ -58,9 +66,9 @@ export async function GET(
 		const expiredResult = lead.miniAudit
 			? {
 					id: lead.miniAudit.id,
-					preview: JSON.parse(lead.miniAudit.preview),
-					visibleFindings: JSON.parse(lead.miniAudit.visibleFindings),
-					blurredFindings: JSON.parse(lead.miniAudit.blurredFindings),
+					preview: safeJsonParse(lead.miniAudit.preview),
+					visibleFindings: safeJsonParse(lead.miniAudit.visibleFindings),
+					blurredFindings: safeJsonParse(lead.miniAudit.blurredFindings),
 					durationMs: lead.miniAudit.durationMs,
 					computedAt: lead.miniAudit.computedAt.toISOString(),
 				}
@@ -96,9 +104,9 @@ export async function GET(
 	const result = lead.miniAudit
 		? {
 				id: lead.miniAudit.id,
-				preview: JSON.parse(lead.miniAudit.preview),
-				visibleFindings: JSON.parse(lead.miniAudit.visibleFindings),
-				blurredFindings: JSON.parse(lead.miniAudit.blurredFindings),
+				preview: safeJsonParse(lead.miniAudit.preview),
+				visibleFindings: safeJsonParse(lead.miniAudit.visibleFindings),
+				blurredFindings: safeJsonParse(lead.miniAudit.blurredFindings),
 				durationMs: lead.miniAudit.durationMs,
 				computedAt: lead.miniAudit.computedAt.toISOString(),
 			}

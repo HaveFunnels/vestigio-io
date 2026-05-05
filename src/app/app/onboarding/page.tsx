@@ -21,7 +21,7 @@ import type { CardOption } from "@/components/form-steps";
 import {
 	TShirt as FashionIcon,
 	CookingPot as FoodIcon,
-	HeartbeatIcon as HealthIcon,
+	Heartbeat as HealthIcon,
 	Desktop as ElectronicsIcon,
 	GraduationCap as EducationIcon,
 	Briefcase as ServicesIcon,
@@ -353,7 +353,7 @@ function IndustryStep({
 						size="md"
 						value={value}
 						onChange={(v) => onChange(v as IndustryVertical)}
-						options={INDUSTRY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+						options={INDUSTRY_OPTIONS.map((o) => ({ value: o.value, label: o.label, icon: o.icon }))}
 						placeholder={t("industry.placeholder")}
 						className="w-full"
 					/>

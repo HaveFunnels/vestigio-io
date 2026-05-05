@@ -17,6 +17,8 @@ export interface SelectOption {
 	value: string;
 	label: string;
 	disabled?: boolean;
+	/** Optional icon component rendered before the label (Phosphor icons or any React component) */
+	icon?: React.ComponentType<any>;
 }
 
 interface CustomSelectProps {
@@ -45,6 +47,7 @@ export default function CustomSelect({
 
 	const selectedOption = options.find((o) => o.value === value);
 	const displayLabel = selectedOption?.label ?? placeholder ?? "";
+	const SelectedIcon = selectedOption?.icon;
 
 	const sizeClasses = size === "sm"
 		? "h-8 px-2.5 text-xs gap-1.5"
@@ -62,6 +65,7 @@ export default function CustomSelect({
 					className,
 				)}
 			>
+				{SelectedIcon && <SelectedIcon size={size === "sm" ? 14 : 16} className="shrink-0 text-content-muted" />}
 				<span className="truncate">{displayLabel}</span>
 				<CaretDownIcon
 					size={size === "sm" ? 12 : 14}
@@ -79,6 +83,7 @@ export default function CustomSelect({
 			>
 				{options.map((option) => {
 					const isActive = option.value === value;
+					const OptionIcon = option.icon;
 					return (
 						<button
 							key={option.value}
@@ -98,14 +103,24 @@ export default function CustomSelect({
 								option.disabled && "pointer-events-none opacity-40",
 							)}
 						>
-							<CheckIcon
-								size={14}
-								weight="bold"
-								className={cn(
-									"shrink-0",
-									isActive ? "text-emerald-400" : "invisible",
-								)}
-							/>
+							{OptionIcon ? (
+								<OptionIcon
+									size={16}
+									className={cn(
+										"shrink-0",
+										isActive ? "text-emerald-400" : "text-content-muted",
+									)}
+								/>
+							) : (
+								<CheckIcon
+									size={14}
+									weight="bold"
+									className={cn(
+										"shrink-0",
+										isActive ? "text-emerald-400" : "invisible",
+									)}
+								/>
+							)}
 							<span className="truncate">{option.label}</span>
 						</button>
 					);

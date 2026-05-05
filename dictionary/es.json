@@ -609,20 +609,24 @@
 			"subtitle": "Todo lo que necesitas saber sobre Vestigio.",
 			"items": [
 				{
-					"question": "¿Qué hace Vestigio en la práctica?",
-					"answer": "Vestigio es una capa de inteligencia para plataformas SaaS. Audita tu sitio, detecta regresiones entre ciclos, verifica hallazgos con evidencia del navegador y presenta insights accionables — todo con IA."
+					"question": "¿Qué hace Vestigio?",
+					"answer": "Vestigio analiza tu sitio y te muestra exactamente dónde estás perdiendo dinero — desde el clic en el anuncio hasta la compra. Encuentra los problemas, calcula el impacto en dólares y te dice qué corregir primero."
 				},
 				{
-					"question": "¿Cómo funciona el sistema de verificación?",
-					"answer": "Vestigio usa un pipeline de verificación en múltiples etapas: análisis estático, verificación vía navegador con Playwright y puntuación de corroboración. Cada hallazgo tiene un nivel de confianza — de no verificado a totalmente verificado."
+					"question": "¿Cuánto tiempo tarda en dar resultados?",
+					"answer": "El primer diagnóstico está listo en 60 segundos. Los clientes que aplican las correcciones prioritarias suelen ver impacto en la primera semana."
 				},
 				{
-					"question": "¿Puedo probarlo antes de contratar?",
-					"answer": "Sí. Puedes registrarte y ejecutar tu primera auditoría inmediatamente. No se requiere tarjeta de crédito para empezar."
+					"question": "¿Necesito un desarrollador para instalarlo?",
+					"answer": "No. Solo necesitas pegar la URL de tu sitio. Vestigio hace todo lo demás — sin código, sin tags, sin integración técnica para empezar."
 				},
 				{
-					"question": "¿Qué planes de precio están disponibles?",
-					"answer": "Ofrecemos tres planes: Vestigio (inicial), Pro y Max — cada uno con límites crecientes de consultas MCP, ejecuciones Playwright y funcionalidades. Consulta nuestra sección de precios para comparaciones detalladas."
+					"question": "¿Es gratis? ¿Cuánto cuesta después?",
+					"answer": "El primer diagnóstico es 100% gratis, sin tarjeta de crédito. Después, los planes comienzan en $19/mes con monitoreo continuo y acciones priorizadas por IA."
+				},
+				{
+					"question": "¿Funciona con mi plataforma?",
+					"answer": "Sí. Vestigio funciona con cualquier sitio — Shopify, WooCommerce, Nuvemshop, WordPress, sitios personalizados y landing pages. Si tiene URL, lo analizamos."
 				}
 			]
 		},

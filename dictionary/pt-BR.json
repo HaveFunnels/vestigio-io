@@ -608,20 +608,24 @@
 			"subtitle": "Tudo que você precisa saber sobre a Vestigio.",
 			"items": [
 				{
-					"question": "O que a Vestigio faz na prática?",
-					"answer": "A Vestigio é uma camada de inteligência para plataformas SaaS. Ela audita seu site, detecta regressões entre ciclos, verifica descobertas com evidências de navegador e apresenta insights acionáveis — tudo com IA."
+					"question": "O que a Vestigio faz?",
+					"answer": "A Vestigio analisa seu site e mostra exatamente onde você está perdendo dinheiro — desde o clique no anúncio até a compra. Ela encontra os problemas, calcula o impacto em reais e te diz o que corrigir primeiro."
 				},
 				{
-					"question": "Como funciona o sistema de verificação?",
-					"answer": "A Vestigio usa um pipeline de verificação em múltiplas etapas: análise estática, verificação via navegador com Playwright e pontuação de corroboração. Cada descoberta tem um nível de confiança — de não verificada a totalmente verificada — para que você sempre saiba a confiança por trás de cada decisão."
+					"question": "Quanto tempo leva pra ter resultado?",
+					"answer": "O primeiro diagnóstico fica pronto em 60 segundos. Clientes que aplicam as correções prioritárias costumam ver impacto na primeira semana."
 				},
 				{
-					"question": "Posso experimentar antes de contratar?",
-					"answer": "Sim. Você pode se cadastrar e rodar sua primeira auditoria imediatamente. Não é necessário cartão de crédito para começar."
+					"question": "Precisa de desenvolvedor pra instalar?",
+					"answer": "Não. Você só precisa colar a URL do seu site. A Vestigio faz todo o resto — sem código, sem tag, sem integração técnica pra começar."
 				},
 				{
-					"question": "Quais planos de preço estão disponíveis?",
-					"answer": "Oferecemos três planos: Vestigio (inicial), Pro e Max — cada um com limites crescentes de consultas MCP, execuções Playwright e funcionalidades. Confira nossa seção de preços para comparações detalhadas."
+					"question": "É grátis? Qual o custo depois?",
+					"answer": "O primeiro diagnóstico é 100% grátis, sem cartão de crédito. Depois, os planos começam em R$97/mês com monitoramento contínuo e ações priorizadas por IA."
+				},
+				{
+					"question": "Funciona com minha plataforma?",
+					"answer": "Sim. Vestigio funciona com qualquer site — Shopify, WooCommerce, Nuvemshop, WordPress, sites customizados e landing pages. Se tem URL, a gente analisa."
 				}
 			]
 		},

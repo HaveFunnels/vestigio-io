@@ -609,20 +609,24 @@
 			"subtitle": "Alles, was Sie über Vestigio wissen müssen.",
 			"items": [
 				{
-					"question": "Was macht Vestigio konkret?",
-					"answer": "Vestigio ist eine Intelligenzschicht für SaaS-Plattformen. Es auditiert Ihre Website, erkennt Regressionen zwischen Zyklen, verifiziert Befunde mit Browser-Evidenz und liefert umsetzbare Erkenntnisse — alles KI-gesteuert."
+					"question": "Was macht Vestigio?",
+					"answer": "Vestigio analysiert Ihre Website und zeigt Ihnen genau, wo Sie Geld verlieren — vom Anzeigenklick bis zum Kauf. Es findet die Probleme, berechnet den Einfluss in Euro und sagt Ihnen, was Sie zuerst beheben sollten."
 				},
 				{
-					"question": "Wie funktioniert das Verifizierungssystem?",
-					"answer": "Vestigio nutzt eine mehrstufige Verifizierungspipeline: statische Analyse, browserbasierte Verifizierung via Playwright und Korroborationsbewertung. Jeder Befund hat ein Vertrauensniveau — von nicht verifiziert bis vollständig verifiziert."
+					"question": "Wie schnell sehe ich Ergebnisse?",
+					"answer": "Die erste Diagnose ist in 60 Sekunden fertig. Kunden, die die priorisierten Korrekturen umsetzen, sehen in der Regel innerhalb der ersten Woche Ergebnisse."
 				},
 				{
-					"question": "Kann ich es vor dem Kauf testen?",
-					"answer": "Ja. Sie können sich anmelden und sofort Ihr erstes Audit durchführen. Keine Kreditkarte erforderlich."
+					"question": "Brauche ich einen Entwickler für die Einrichtung?",
+					"answer": "Nein. Fügen Sie einfach Ihre Website-URL ein. Vestigio erledigt den Rest — kein Code, keine Tags, keine technische Integration nötig."
 				},
 				{
-					"question": "Welche Preispläne gibt es?",
-					"answer": "Wir bieten drei Pläne: Vestigio (Starter), Pro und Max — jeweils mit steigenden MCP-Abfragelimits, Playwright-Läufen und Funktionen. Schauen Sie in unseren Preisbereich für detaillierte Vergleiche."
+					"question": "Ist es kostenlos? Was kostet es danach?",
+					"answer": "Die erste Diagnose ist 100% kostenlos, ohne Kreditkarte. Danach beginnen die Pläne ab 19€/Monat mit kontinuierlichem Monitoring und KI-priorisierten Maßnahmen."
+				},
+				{
+					"question": "Funktioniert es mit meiner Plattform?",
+					"answer": "Ja. Vestigio funktioniert mit jeder Website — Shopify, WooCommerce, Nuvemshop, WordPress, individuelle Seiten und Landing Pages. Wenn es eine URL hat, können wir es analysieren."
 				}
 			]
 		},

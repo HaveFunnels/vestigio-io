@@ -608,20 +608,24 @@
 			"subtitle": "Everything you need to know about Vestigio.",
 			"items": [
 				{
-					"question": "What does Vestigio actually do?",
-					"answer": "Vestigio is an intelligence layer for SaaS platforms. It audits your site, detects regressions between cycles, verifies findings with browser evidence, and surfaces actionable insights — all powered by AI."
+					"question": "What does Vestigio do?",
+					"answer": "Vestigio analyzes your site and shows you exactly where you're losing money — from the ad click to the purchase. It finds the problems, calculates the impact in dollars, and tells you what to fix first."
 				},
 				{
-					"question": "How does the verification system work?",
-					"answer": "Vestigio uses a multi-stage verification pipeline: static analysis, browser-based verification via Playwright, and corroboration scoring. Each finding carries a trust level — from unverified to fully verified — so you always know the confidence behind every decision."
+					"question": "How fast will I see results?",
+					"answer": "Your first diagnostic is ready in 60 seconds. Clients who apply the priority fixes typically see impact within the first week."
 				},
 				{
-					"question": "Can I try it before committing?",
-					"answer": "Yes. You can sign up and run your first audit immediately. No credit card required to get started."
+					"question": "Do I need a developer to set it up?",
+					"answer": "No. Just paste your site URL. Vestigio does everything else — no code, no tags, no technical integration needed to start."
 				},
 				{
-					"question": "What pricing plans are available?",
-					"answer": "We offer three plans: Vestigio (starter), Pro, and Max — each with increasing MCP query limits, Playwright runs, and features. Check our pricing section for detailed comparisons."
+					"question": "Is it free? What does it cost after?",
+					"answer": "The first diagnostic is 100% free, no credit card required. After that, plans start at $19/mo with continuous monitoring and AI-prioritized actions."
+				},
+				{
+					"question": "Does it work with my platform?",
+					"answer": "Yes. Vestigio works with any website — Shopify, WooCommerce, Nuvemshop, WordPress, custom sites, and landing pages. If it has a URL, we can analyze it."
 				}
 			]
 		},

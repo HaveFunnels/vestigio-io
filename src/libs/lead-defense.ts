@@ -37,8 +37,15 @@ const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 function getSecret(): string {
 	const secret = process.env.LEAD_FORM_SECRET || process.env.SECRET || "";
 	if (!secret || secret.length < 16) {
-		// In dev/test, fall back to a known-bad value so things still work.
-		// In production, env-validation should catch this earlier.
+		// SEC-02 fix: In production, refuse to operate with a weak/missing secret.
+		// This prevents the hardcoded fallback from being silently used in prod.
+		if (process.env.NODE_ENV === "production") {
+			throw new Error(
+				"[FATAL] LEAD_FORM_SECRET env var is missing or too short (min 16 chars). " +
+				"Set it in your deployment environment. Refusing to use insecure fallback in production.",
+			);
+		}
+		// Dev/test: allow fallback so local development works without env setup
 		return "vestigio-lead-form-dev-secret-do-not-use-in-prod";
 	}
 	return secret;

@@ -161,112 +161,124 @@ export async function promoteLeadToOrg(
 		);
 	}
 
-	// 2. Create the Organization
-	const org = await prisma.organization.create({
-		data: {
-			name: orgName,
-			ownerId: user.id,
-			plan: input.plan,
-			status: "active",
-		},
-	});
-
-	// 3. Membership (owner)
-	await prisma.membership.upsert({
-		where: {
-			userId_organizationId: {
-				userId: user.id,
-				organizationId: org.id,
-			},
-		},
-		create: {
-			userId: user.id,
-			organizationId: org.id,
-			role: "owner",
-		},
-		update: { role: "owner" },
-	});
-
-	// 4. Environment from lead.domain
+	// ── Transactional core (BUG-09 fix): Steps 2-7 + 9 in a single
+	// transaction. If ANY write fails, all roll back atomically. The
+	// user and activation email are outside the transaction intentionally
+	// (user may already exist; email is fire-and-forget). ──
 	const normalizedDomain = lead.domain
 		.replace(/^https?:\/\//, "")
 		.replace(/\/+$/, "");
 	const landingUrl = lead.domain.startsWith("http")
 		? lead.domain
 		: `https://${normalizedDomain}`;
-	const env = await prisma.environment.create({
-		data: {
-			organizationId: org.id,
-			domain: normalizedDomain,
-			landingUrl,
-			isProduction: true,
-		},
-	});
 
-	// 5. BusinessProfile from lead fields
-	await prisma.businessProfile.create({
-		data: {
-			organizationId: org.id,
-			businessModel: lead.businessModel || "ecommerce",
-			monthlyRevenue: lead.monthlyRevenue || null,
-			averageOrderValue: lead.averageTicket || null,
-			conversionModel: lead.conversionModel || "checkout",
-		},
-	});
-
-	// 6. Persist phone + notification prefs from lead
-	if (lead.phone) {
-		await prisma.user.update({
-			where: { id: user.id },
-			data: { phone: lead.phone },
+	const txResult = await prisma.$transaction(async (tx) => {
+		// 2. Create the Organization
+		const org = await tx.organization.create({
+			data: {
+				name: orgName,
+				ownerId: user.id,
+				plan: input.plan,
+				status: "active",
+			},
 		});
-		await prisma.notificationPreference
-			.upsert({
-				where: { userId: user.id },
-				create: {
+
+		// 3. Membership (owner)
+		await tx.membership.upsert({
+			where: {
+				userId_organizationId: {
 					userId: user.id,
-					emailEnabled: true,
-					smsEnabled: false,
-					whatsappEnabled: false,
+					organizationId: org.id,
 				},
-				update: {},
-			})
-			.catch((err) => {
-				console.warn(
-					`[promote-lead] notification prefs upsert failed for ${user!.id}:`,
-					err,
-				);
+			},
+			create: {
+				userId: user.id,
+				organizationId: org.id,
+				role: "owner",
+			},
+			update: { role: "owner" },
+		});
+
+		// 4. Environment from lead.domain
+		const env = await tx.environment.create({
+			data: {
+				organizationId: org.id,
+				domain: normalizedDomain,
+				landingUrl,
+				isProduction: true,
+			},
+		});
+
+		// 5. BusinessProfile from lead fields
+		await tx.businessProfile.create({
+			data: {
+				organizationId: org.id,
+				businessModel: lead.businessModel || "ecommerce",
+				monthlyRevenue: lead.monthlyRevenue || null,
+				averageOrderValue: lead.averageTicket || null,
+				conversionModel: lead.conversionModel || "checkout",
+			},
+		});
+
+		// 6. Persist phone + notification prefs from lead
+		if (lead.phone) {
+			await tx.user.update({
+				where: { id: user.id },
+				data: { phone: lead.phone },
 			});
-	}
+			await tx.notificationPreference
+				.upsert({
+					where: { userId: user.id },
+					create: {
+						userId: user.id,
+						emailEnabled: true,
+						smsEnabled: false,
+						whatsappEnabled: false,
+					},
+					update: {},
+				})
+				.catch((err) => {
+					console.warn(
+						`[promote-lead] notification prefs upsert failed for ${user!.id}:`,
+						err,
+					);
+				});
+		}
 
-	// 7. AuditCycle for the FULL audit (not shallow this time —
-	//    they paid, give them the real thing). Fire-and-forget worker.
-	const cycle = await prisma.auditCycle.create({
-		data: {
-			organizationId: org.id,
-			environmentId: env.id,
-			status: "pending",
-			cycleType: "full",
-		},
-	});
+		// 7. AuditCycle for the FULL audit
+		const cycle = await tx.auditCycle.create({
+			data: {
+				organizationId: org.id,
+				environmentId: env.id,
+				status: "pending",
+				cycleType: "full",
+			},
+		});
 
+		// 9. Mark lead converted (inside tx so it rolls back if anything above fails)
+		await tx.anonymousLead.update({
+			where: { id: input.leadId },
+			data: {
+				status: "converted",
+				promotedToUserId: user.id,
+				promotedToOrgId: org.id,
+			},
+		});
+
+		return { org, env, cycle };
+	}, { timeout: 15_000 });
+
+	// Fire-and-forget: dispatch the full audit OUTSIDE the transaction
 	import("./run-cycle")
-		.then((m) => m.runAuditCycle(cycle.id))
+		.then((m) => m.runAuditCycle(txResult.cycle.id))
 		.catch((err) => {
 			console.error(
-				`[promote-lead] audit dispatch failed for cycle ${cycle.id}:`,
+				`[promote-lead] audit dispatch failed for cycle ${txResult.cycle.id}:`,
 				err,
 			);
 		});
 
-	// 8. Send activation email. For NEW users, the link lands on
-	//    /activate/:token and offers Google/GitHub/password. For
-	//    existing users (returning buyers), we skip — they already
-	//    have a working auth method; they can sign in at /auth/signin
-	//    using whatever they set up originally.
-	//    Failure to send is non-fatal: Admin can regenerate the token
-	//    manually from /app/admin/users if a lead ever reports they
-	//    didn't receive anything.
+	// 8. Send activation email (outside transaction — non-fatal)
 	if (activationToken && !activationSkipReason) {
 		try {
 			await sendActivationEmail(email, activationToken, normalizedDomain);
@@ -280,26 +292,16 @@ export async function promoteLeadToOrg(
 		);
 	}
 
-	// 9. Mark lead converted
-	await prisma.anonymousLead.update({
-		where: { id: input.leadId },
-		data: {
-			status: "converted",
-			promotedToUserId: user.id,
-			promotedToOrgId: org.id,
-		},
-	});
-
 	console.log(
-		`[promote-lead] complete — lead ${input.leadId} → user ${user.id} / org ${org.id}`,
+		`[promote-lead] complete — lead ${input.leadId} → user ${user.id} / org ${txResult.org.id}`,
 	);
 
 	return {
 		leadId: input.leadId,
 		userId: user.id,
-		organizationId: org.id,
-		environmentId: env.id,
-		auditCycleId: cycle.id,
+		organizationId: txResult.org.id,
+		environmentId: txResult.env.id,
+		auditCycleId: txResult.cycle.id,
 		wasNewUser,
 	};
 }

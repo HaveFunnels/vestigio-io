@@ -177,15 +177,18 @@ export async function PATCH(
 		}
 
 		if (stepNum === 2) {
-			if (!body.businessModel) {
+			// BUG-02 fix: Validate against allowed enum values
+			const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "hybrid"]);
+			const VALID_CONVERSION_MODELS = new Set(["checkout", "whatsapp", "form", "external"]);
+			if (!body.businessModel || !VALID_BUSINESS_MODELS.has(body.businessModel)) {
 				return NextResponse.json(
-					{ message: "Please pick a business type.", field: "businessModel" },
+					{ message: "Please pick a valid business type.", field: "businessModel" },
 					{ status: 422 },
 				);
 			}
-			if (!body.conversionModel) {
+			if (!body.conversionModel || !VALID_CONVERSION_MODELS.has(body.conversionModel)) {
 				return NextResponse.json(
-					{ message: "Please pick a conversion model.", field: "conversionModel" },
+					{ message: "Please pick a valid conversion model.", field: "conversionModel" },
 					{ status: 422 },
 				);
 			}
@@ -203,6 +206,15 @@ export async function PATCH(
 				);
 			}
 			updates.monthlyRevenue = revenueParsed;
+			// BUG-01 fix: also persist averageTicket (was missing in V2)
+			if (body.averageTicket != null) {
+				const ticketNum = typeof body.averageTicket === "number"
+					? body.averageTicket
+					: parseFloat(String(body.averageTicket));
+				if (!isNaN(ticketNum) && ticketNum > 0) {
+					updates.averageTicket = ticketNum;
+				}
+			}
 		}
 
 		if (stepNum === 4) {

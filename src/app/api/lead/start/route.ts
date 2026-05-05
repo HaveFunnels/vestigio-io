@@ -21,11 +21,19 @@ export const dynamic = "force-dynamic";
 
 const LEAD_TTL_DAYS = 14;
 
+// SEC-03 fix: Prefer x-real-ip (set by trusted proxy: Railway/Vercel/Cloudflare)
+// over x-forwarded-for (client-spoofable). The trusted proxy always sets x-real-ip
+// to the actual client IP regardless of what the client sends in x-forwarded-for.
 function getClientIp(request: Request): string {
-	const forwarded = request.headers.get("x-forwarded-for");
-	if (forwarded) return forwarded.split(",")[0].trim();
 	const realIp = request.headers.get("x-real-ip");
-	if (realIp) return realIp;
+	if (realIp) return realIp.trim();
+	// Fallback: last entry in x-forwarded-for is the one added by the trusted proxy
+	const forwarded = request.headers.get("x-forwarded-for");
+	if (forwarded) {
+		const parts = forwarded.split(",");
+		// Railway/Vercel append the real IP as the rightmost entry
+		return parts[parts.length - 1].trim();
+	}
 	return "0.0.0.0";
 }
 

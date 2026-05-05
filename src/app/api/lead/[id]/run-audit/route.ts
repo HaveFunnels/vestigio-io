@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/libs/prismaDb";
+import { verifyFormToken } from "@/libs/lead-defense";
 
 // ──────────────────────────────────────────────
 // POST /api/lead/[id]/run-audit
@@ -8,6 +9,9 @@ import { prisma } from "@/libs/prismaDb";
 // after step 4 of the /lp/audit form is persisted (PATCH .../step/4
 // returned ok). Returns immediately so the frontend can redirect to
 // the result page where polling takes over.
+//
+// SEC-04 fix: Requires the form session token (X-Vestigio-Form-Session
+// header) to prevent unauthenticated SSRF via arbitrary lead IDs.
 //
 // The worker (apps/audit-runner/run-mini-audit.ts) runs the staged
 // pipeline in shallow mode, persists MiniAuditResult, and updates
@@ -21,9 +25,17 @@ import { prisma } from "@/libs/prismaDb";
 export const dynamic = "force-dynamic";
 
 export async function POST(
-	_request: Request,
+	request: Request,
 	context: { params: Promise<{ id: string }> },
 ) {
+	// SEC-04: Verify form session token to prevent unauthenticated SSRF
+	const formToken = request.headers.get("x-vestigio-form-session");
+	const clientIp = request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+	const verification = verifyFormToken(formToken, clientIp);
+	if (!verification.valid) {
+		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+	}
+
 	const { id } = await context.params;
 
 	const lead = await prisma.anonymousLead.findUnique({

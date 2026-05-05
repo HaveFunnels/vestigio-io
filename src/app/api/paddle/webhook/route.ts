@@ -2,7 +2,7 @@ import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
 import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 // ──────────────────────────────────────────────
 // Paddle Webhook Handler
@@ -28,7 +28,9 @@ const verifyPaddleSignature = (
 		const receivedH1 = h1Part.split("=")[1];
 		const signedPayload = `${ts}:${rawBody}`;
 		const hmac = createHmac("sha256", key).update(signedPayload).digest("hex");
-		return hmac === receivedH1;
+		// SEC-06 fix: timing-safe comparison prevents timing oracle attacks
+		if (hmac.length !== receivedH1.length) return false;
+		return timingSafeEqual(Buffer.from(hmac), Buffer.from(receivedH1));
 	} catch {
 		return false;
 	}
@@ -180,14 +182,10 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 				logEvent(eventType, `User ${user.email} subscribed to ${plan}`);
 			}
 
-			// Handle onboarding activation (same as transaction.completed)
-			// Two funnels: legacy /onboard (organizationId) + /lp lead (leadId)
-			if (
-				(custom_data?.onboarding === "true" && custom_data?.organizationId) ||
-				custom_data?.leadId
-			) {
-				await handleOnboardingActivation(custom_data, priceId, customer_id);
-			}
+			// BUG-08 fix: Do NOT call handleOnboardingActivation here.
+			// Paddle fires both subscription.created AND transaction.completed
+			// for the same checkout. Activation is handled exclusively in
+			// transaction.completed to prevent double audit cycle creation.
 		}
 
 		if (eventType === "subscription.updated") {

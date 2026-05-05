@@ -328,33 +328,41 @@ export default function SolutionLayers() {
 
 			{/* Bento grid: =| layout (2 stacked left, 1 tall right) */}
 			<div className="mx-auto w-full max-w-[1100px] px-4 sm:px-8 xl:px-0">
-				<div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[1fr_1fr] lg:grid-rows-[auto_auto]">
+				<div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[2fr_1fr] lg:grid-rows-[auto_auto]">
 
-					{/* Card 1: O ciclo — top-left */}
+					{/* Card 1: O ciclo — top-left, horizontal layout on desktop */}
 					<BentoCard accent={ACCENTS[0]} className="lg:col-start-1 lg:row-start-1">
-						<CycleGraphic stages={cycle?.stages || []} />
-						<div className="mt-auto">
-							<span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${ACCENTS[0].pill}`}>
-								{cycle?.eyebrow}
-							</span>
-							<h3 className="mb-2 text-base font-bold tracking-tight text-white sm:text-lg">{cycle?.title}</h3>
-							<p className="text-[13px] leading-relaxed text-zinc-400">{renderRichText(cycle?.body || "")}</p>
+						<div className="flex flex-col lg:flex-row lg:items-center lg:gap-6">
+							<div className="shrink-0 lg:w-[180px]">
+								<CycleGraphic stages={cycle?.stages || []} />
+							</div>
+							<div className="mt-auto lg:mt-0">
+								<span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${ACCENTS[0].pill}`}>
+									{cycle?.eyebrow}
+								</span>
+								<h3 className="mb-2 text-base font-bold tracking-tight text-white sm:text-lg">{cycle?.title}</h3>
+								<p className="text-[13px] leading-relaxed text-zinc-400">{renderRichText(cycle?.body || "")}</p>
+							</div>
 						</div>
 					</BentoCard>
 
-					{/* Card 2: O silêncio — bottom-left */}
+					{/* Card 2: O silêncio — bottom-left, horizontal layout on desktop */}
 					<BentoCard accent={ACCENTS[1]} className="lg:col-start-1 lg:row-start-2">
-						<SilenceGraphic alerts={silence?.alerts || []} terminalTitle={silence?.terminal_title || "analytics"} noAlerts={silence?.no_alerts || "No alerts"} />
-						<div className="mt-auto">
-							<span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${ACCENTS[1].pill}`}>
-								{silence?.eyebrow}
-							</span>
-							<h3 className="mb-2 text-base font-bold tracking-tight text-white sm:text-lg">{silence?.title}</h3>
-							<p className="text-[13px] leading-relaxed text-zinc-400">{renderRichText(silence?.body || "")}</p>
+						<div className="flex flex-col lg:flex-row lg:items-center lg:gap-6">
+							<div className="shrink-0 lg:w-[200px]">
+								<SilenceGraphic alerts={silence?.alerts || []} terminalTitle={silence?.terminal_title || "analytics"} noAlerts={silence?.no_alerts || "No alerts"} />
+							</div>
+							<div className="mt-auto lg:mt-0">
+								<span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] ${ACCENTS[1].pill}`}>
+									{silence?.eyebrow}
+								</span>
+								<h3 className="mb-2 text-base font-bold tracking-tight text-white sm:text-lg">{silence?.title}</h3>
+								<p className="text-[13px] leading-relaxed text-zinc-400">{renderRichText(silence?.body || "")}</p>
+							</div>
 						</div>
 					</BentoCard>
 
-					{/* Card 3: O buraco — right, spans 2 rows (tall) */}
+					{/* Card 3: O buraco — right, spans 2 rows */}
 					<BentoCard accent={ACCENTS[2]} className="lg:col-start-2 lg:row-start-1 lg:row-span-2">
 						<HoleGraphic topLabel={hole?.top_label || ""} bottomLabel={hole?.bottom_label || ""} />
 						<div className="mt-auto">

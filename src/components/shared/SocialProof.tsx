@@ -267,42 +267,24 @@ export function SocialProof({
   return (
     <section className="relative z-1 overflow-hidden bg-[#090911] py-2 sm:py-3 lg:py-4">
 
-      {/* Row 1 — mobile: native horizontal scroll | desktop: auto-scroll left */}
+      {/* Row 1 — auto-scroll left */}
       {showRow1 && (
-        <div className={`relative w-full ${showRow2 ? "mb-5" : ""}`}>
-          {/* Mobile: native scrollable */}
-          <div className="flex gap-4 overflow-x-auto px-4 no-scrollbar md:hidden">
-            {resolvedRow1.map((t, i) => (
-              <TestimonialCard key={`r1m-${t.name}-${i}`} t={t} />
+        <div className={`relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)] ${showRow2 ? "mb-5" : ""}`}>
+          <div className="vsp-track-left flex w-max gap-4 sm:gap-5">
+            {track1.map((t, i) => (
+              <TestimonialCard key={`r1-${t.name}-${i}`} t={t} />
             ))}
-          </div>
-          {/* Desktop: infinite marquee */}
-          <div className="hidden md:block [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
-            <div className="vsp-track-left flex w-max gap-5">
-              {track1.map((t, i) => (
-                <TestimonialCard key={`r1-${t.name}-${i}`} t={t} />
-              ))}
-            </div>
           </div>
         </div>
       )}
 
-      {/* Row 2 — mobile: native horizontal scroll | desktop: auto-scroll right */}
+      {/* Row 2 — auto-scroll right */}
       {showRow2 && (
-        <div className="relative w-full">
-          {/* Mobile: native scrollable */}
-          <div className="flex gap-4 overflow-x-auto px-4 no-scrollbar md:hidden">
-            {resolvedRow2.map((t, i) => (
-              <TestimonialCard key={`r2m-${t.name}-${i}`} t={t} />
+        <div className="relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
+          <div className="vsp-track-right flex w-max gap-4 sm:gap-5">
+            {track2.map((t, i) => (
+              <TestimonialCard key={`r2-${t.name}-${i}`} t={t} />
             ))}
-          </div>
-          {/* Desktop: infinite marquee */}
-          <div className="hidden md:block [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]">
-            <div className="vsp-track-right flex w-max gap-5">
-              {track2.map((t, i) => (
-                <TestimonialCard key={`r2-${t.name}-${i}`} t={t} />
-              ))}
-            </div>
           </div>
         </div>
       )}

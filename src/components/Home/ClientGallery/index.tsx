@@ -18,6 +18,7 @@
  */
 
 import brandData from "../Hero/brandData";
+import AwardsStrip from "@/components/shared/AwardsStrip";
 
 const ClientGallery = async () => {
 	// Duplicate the brand list so the marquee can loop seamlessly.
@@ -68,6 +69,11 @@ const ClientGallery = async () => {
 							</div>
 						))}
 					</div>
+				</div>
+
+				{/* Awards strip — centered below logos */}
+				<div className="mt-5 sm:mt-6">
+					<AwardsStrip />
 				</div>
 			</div>
 		</section>

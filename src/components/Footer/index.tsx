@@ -3,6 +3,7 @@ import { useBranding, useFeatureFlags } from "@/components/BrandingProvider";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import AwardsStrip from "@/components/shared/AwardsStrip";
 
 const Footer = () => {
 	const branding = useBranding();
@@ -161,6 +162,9 @@ const Footer = () => {
 
 				{/* Bottom bar */}
 				<div className='mt-10 border-t border-white/5 pt-6 sm:mt-12 sm:pt-8'>
+					<div className="mb-5">
+						<AwardsStrip compact />
+					</div>
 					<p className='text-center text-xs text-zinc-600'>
 						{t("copyright", { year })}
 					</p>

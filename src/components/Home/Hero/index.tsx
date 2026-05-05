@@ -36,6 +36,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import HeroPills, { type Pill } from "./HeroPills";
+import TrustMicrocopy from "./TrustMicrocopy";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
 // Pill icons and the pill interaction state live in HeroPills.tsx —
@@ -225,6 +226,8 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aut
 					<Link href={primaryCtaHref} className="block sm:inline-block">
 						<ShinyButton>{t("cta_primary")}</ShinyButton>
 					</Link>
+					{/* Trust microcopy — subtle guarantee + platform signals */}
+					<TrustMicrocopy />
 				</div>
 
 			</div>

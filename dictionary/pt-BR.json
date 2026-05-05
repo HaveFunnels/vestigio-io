@@ -88,9 +88,16 @@
 			"cta_primary": "Rodar diagnóstico gratuito",
 			"cta_secondary": "Ver tour do produto",
 			"cta_micro": "",
+			"trust_microcopy": {
+				"guarantee": "Garantia 4X — se não encontrar 4x o valor do plano, devolvemos 100%.",
+				"platforms": "Funciona com qualquer plataforma."
+			},
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			}
+		},
+		"logo_strip": {
+			"headline": "Confiada por empresas, marcas e especialistas em crescimento."
 		},
 		"hero_lp": {
 			"banner": {

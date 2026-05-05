@@ -88,9 +88,16 @@
 			"cta_primary": "Run free diagnostic",
 			"cta_secondary": "Watch product tour",
 			"cta_micro": "",
+			"trust_microcopy": {
+				"guarantee": "4X Guarantee — if we don't find 4x the plan value in opportunities, full refund.",
+				"platforms": "Works with any platform."
+			},
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			}
+		},
+		"logo_strip": {
+			"headline": "Trusted by companies, brands, and growth specialists."
 		},
 		"hero_lp": {
 			"banner": {

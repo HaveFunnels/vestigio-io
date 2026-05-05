@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import Hero from "./Hero";
 import HomeBigCard from "./HomeBigCard";
 import SocialProofStrip from "./SocialProofStrip";
+import LogoStrip from "./Hero/LogoStrip";
 import VSL from "./VSL";
 import ProductTour from "./ProductTour";
 import ClientGallery from "./ClientGallery";
@@ -37,6 +38,7 @@ const Home = () => {
 			<HomeBigCard>
 				<Hero />
 				<SocialProofStrip />
+				<LogoStrip />
 				<VSL />
 				<ProductTour />
 				<ClientGallery />

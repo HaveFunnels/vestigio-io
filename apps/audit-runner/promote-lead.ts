@@ -43,7 +43,10 @@ import { randomBytes } from "node:crypto";
 export interface PromoteLeadInput {
 	leadId: string;
 	plan: string; // "vestigio" | "pro" | "max"
+	/** Paddle customer ID (legacy naming: was stripeCustomerId before Paddle migration) */
 	stripeCustomerId?: string | null;
+	/** Preferred: use this field for new code. Alias for stripeCustomerId. */
+	paddleCustomerId?: string | null;
 }
 
 export interface PromoteLeadResult {
@@ -135,7 +138,7 @@ export async function promoteLeadToOrg(
 				activationTokenExpiresAt: new Date(
 					Date.now() + ACTIVATION_TOKEN_TTL_MS,
 				),
-				customerId: input.stripeCustomerId || null,
+				customerId: (input.paddleCustomerId || input.stripeCustomerId) || null,
 				// No password, no Account — user is pending until they
 				// visit /activate/:token and pick Google/GitHub/password.
 			},
@@ -144,8 +147,8 @@ export async function promoteLeadToOrg(
 	} else {
 		activationSkipReason = "existing_user";
 		const patch: Record<string, unknown> = {};
-		if (input.stripeCustomerId && !user.customerId) {
-			patch.customerId = input.stripeCustomerId;
+		if ((input.paddleCustomerId || input.stripeCustomerId) && !user.customerId) {
+			patch.customerId = (input.paddleCustomerId || input.stripeCustomerId);
 		}
 		if (!user.billingEmail) {
 			patch.billingEmail = email;

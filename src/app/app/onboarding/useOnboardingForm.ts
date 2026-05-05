@@ -202,11 +202,20 @@ export default function useOnboardingForm() {
 				if (prefill.monthlyRevenue) updates.monthlyRevenue = prefill.monthlyRevenue;
 				if (prefill.averageOrderValue) updates.averageTicket = prefill.averageOrderValue;
 
+				// BUG-12 fix: If environment is ALREADY activated, the user is
+				// stuck here due to a stale JWT (hasActivatedEnv=false in token).
+				// Force session refresh and redirect to the app.
+				if (prefill.activated) {
+					await updateSession();
+					router.replace("/app");
+					return;
+				}
+
 				if (Object.keys(updates).length > 0) {
 					setForm((prev) => ({ ...prev, ...updates }));
 
 					// If all key data exists, skip to the last step (activate)
-					if (prefill.domain && prefill.businessModel && prefill.monthlyRevenue && !prefill.activated) {
+					if (prefill.domain && prefill.businessModel && prefill.monthlyRevenue) {
 						const lastIdx = steps.length - 1;
 						setStepIndex(lastIdx);
 					}

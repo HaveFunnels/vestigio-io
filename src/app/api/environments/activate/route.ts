@@ -197,16 +197,25 @@ export const POST = withErrorTracking(
 				});
 			}
 
-			// Step 5: Create the first (or a fresh) AuditCycle and dispatch
-			// fire-and-forget. Same pattern as Stripe/Paddle webhooks.
-			const cycle = await prisma.auditCycle.create({
-				data: {
-					organizationId: org.id,
+			// Step 5: Create AuditCycle ONLY if one doesn't already exist
+			// (Gap 2 fix: promoteLeadToOrg may have already created one).
+			let cycle = await prisma.auditCycle.findFirst({
+				where: {
 					environmentId: env.id,
-					status: "pending",
-					cycleType: "full",
+					status: { in: ["pending", "running"] },
 				},
+				orderBy: { createdAt: "desc" },
 			});
+			if (!cycle) {
+				cycle = await prisma.auditCycle.create({
+					data: {
+						organizationId: org.id,
+						environmentId: env.id,
+						status: "pending",
+						cycleType: "full",
+					},
+				});
+			}
 
 			// Dispatch path (Wave 5 Fase 1A): prefer the Redis queue so a
 			// dedicated worker service drains the cycle, surviving web

@@ -520,6 +520,9 @@ async function handleOnboardingActivation(
 				`[paddle-webhook] lead promotion failed for ${customData.leadId}:`,
 				err,
 			);
+			// Gap 1 fix: Re-throw so the outer catch returns 500 and Paddle retries.
+			// Silent swallowing here means a paid customer permanently loses their account.
+			throw err;
 		}
 		return;
 	}

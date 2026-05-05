@@ -203,12 +203,15 @@ export async function promoteLeadToOrg(
 		});
 
 		// 4. Environment from lead.domain
+		// Gap 3 fix: Set activated=true immediately — the user already paid,
+		// no reason to force them through onboarding form just to flip this flag.
 		const env = await tx.environment.create({
 			data: {
 				organizationId: org.id,
 				domain: normalizedDomain,
 				landingUrl,
 				isProduction: true,
+				activated: true,
 			},
 		});
 
@@ -289,10 +292,18 @@ export async function promoteLeadToOrg(
 		} catch (err) {
 			console.error(`[promote-lead] activation email send failed:`, err);
 		}
-	} else {
-		console.log(
-			`[promote-lead] activation email skipped for ${email} — user already has auth set up`,
-		);
+	} else if (activationSkipReason === "existing_user") {
+		// Gap 7 fix: Notify existing users that a new workspace was added.
+		// They won't get an activation email (already have auth), so this
+		// is the only way they'll know a new org is attached to their account.
+		try {
+			const { sendNewWorkspaceNotification } = await import("@/libs/notification-triggers");
+			await sendNewWorkspaceNotification(email, normalizedDomain, txResult.org.name);
+			console.log(`[promote-lead] new workspace notification sent to ${email}`);
+		} catch (err) {
+			// Non-fatal — the user can still sign in and see the workspace
+			console.warn(`[promote-lead] new workspace notification failed:`, err);
+		}
 	}
 
 	console.log(

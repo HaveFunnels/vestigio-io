@@ -30,7 +30,10 @@ import { checkRateLimit } from "@/libs/limiter";
 // redirect chain.
 // ──────────────────────────────────────────────
 
-const ACTIVATION_COOKIE_TTL_SECONDS = 90;
+// Gap 4 fix: 90s was too short — mobile users on slow connections can
+// spend 2-3 minutes on the Google/GitHub consent screen. 10 minutes
+// gives ample room without being a security risk (token is single-use).
+const ACTIVATION_COOKIE_TTL_SECONDS = 600;
 const ALLOWED_PROVIDERS = new Set(["google", "github"]);
 
 export const POST = withErrorTracking(

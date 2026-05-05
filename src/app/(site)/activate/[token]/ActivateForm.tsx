@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 // ──────────────────────────────────────────────
 // ActivateForm — client-side branch of /activate/:token
@@ -90,13 +91,21 @@ export function ActivateForm({ token, providers, displayEmail }: Props) {
 				return;
 			}
 			const data = await res.json();
-			// Redirect to signin with the email pre-filled so the user
-			// just types (or pastes) the password they set and is in.
-			const params = new URLSearchParams({
-				email: data.email || displayEmail,
-				activated: "1",
+			// Gap 5 fix: Auto-signin after password activation — no extra
+			// redirect to /auth/signin required. Creates session immediately.
+			const email = data.email || displayEmail;
+			const signInResult = await signIn("credentials", {
+				email,
+				password,
+				redirect: false,
 			});
-			router.push(`/auth/signin?${params.toString()}`);
+			if (signInResult?.ok) {
+				router.push("/app");
+			} else {
+				// Fallback: if auto-signin fails for any reason, redirect to signin
+				const params = new URLSearchParams({ email, activated: "1" });
+				router.push(`/auth/signin?${params.toString()}`);
+			}
 		} catch {
 			setError("Network error. Please try again.");
 			setSubmitting(false);

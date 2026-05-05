@@ -242,6 +242,43 @@ export async function sendActivationEmail(
 }
 
 // ──────────────────────────────────────────────
+// Gap 7: New workspace notification — sent to existing users
+// when a new org is silently attached to their account via
+// lead promotion (email collision with existing account).
+// ──────────────────────────────────────────────
+
+export async function sendNewWorkspaceNotification(
+	email: string,
+	domain: string,
+	orgName: string,
+): Promise<void> {
+	const base =
+		process.env.NEXTAUTH_URL ||
+		process.env.NEXT_PUBLIC_APP_URL ||
+		"https://app.vestigio.io";
+	const link = `${base}/app`;
+
+	const subject = `Novo workspace adicionado: ${domain}`;
+	const bodyHtml = `
+		<p>Um novo workspace foi adicionado à sua conta Vestigio:</p>
+		<p><strong>${orgName}</strong> (${domain})</p>
+		<p>A primeira auditoria completa já está rodando. Acesse para ver os resultados:</p>
+		<p><a href="${link}">${link}</a></p>
+	`;
+	const bodyText = `Novo workspace "${orgName}" (${domain}) adicionado. Acesse: ${link}`;
+
+	const { notifyDirect } = await import("@/libs/notifications");
+	await notifyDirect({
+		event: "activation_link" as any, // Gap 7: reuse existing event type — the notification system routes by tag, not event
+		to: { email },
+		subject,
+		bodyHtml,
+		bodyText,
+		tag: "new_workspace",
+	});
+}
+
+// ──────────────────────────────────────────────
 // Mini-audit completion email — sent to the lead's email
 // when audit_complete fires. Includes findings summary
 // with severity + impact, and a CTA to the result page.

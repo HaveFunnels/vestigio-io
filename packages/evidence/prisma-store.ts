@@ -106,10 +106,23 @@ export class PrismaEvidenceStore {
   async addMany(items: Evidence[]): Promise<void> {
     if (items.length === 0) return;
 
+    // Deduplicate by (cycleRef, evidenceKey) — the pipeline can produce
+    // duplicate evidence keys (e.g. from overlapping enrichment passes).
+    // PostgreSQL's ON CONFLICT rejects duplicate constraint values within
+    // the same INSERT statement (error 21000), so we must dedup first.
+    const seen = new Set<string>();
+    const deduped = items.filter((e) => {
+      const data = toPrismaData(e);
+      const key = `${data.cycleRef}::${data.evidenceKey}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
     const BATCH_SIZE = 80;
 
-    for (let offset = 0; offset < items.length; offset += BATCH_SIZE) {
-      const batch = items.slice(offset, offset + BATCH_SIZE);
+    for (let offset = 0; offset < deduped.length; offset += BATCH_SIZE) {
+      const batch = deduped.slice(offset, offset + BATCH_SIZE);
       const params: unknown[] = [];
       const valueRows: string[] = [];
 

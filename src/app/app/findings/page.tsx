@@ -46,6 +46,13 @@ const polarityColors: Record<string, string> = {
 	neutral: "text-content-muted",
 };
 
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BRL: "R$", EUR: "€" };
+function fmtImpact(value: number, currency?: string): string {
+	const sym = CURRENCY_SYMBOLS[currency || "USD"] || "$";
+	if (value >= 1000) return `${sym}${(value / 1000).toFixed(1)}k`;
+	return `${sym}${value}`;
+}
+
 export default function FindingsPage() {
 	const t = useTranslations("console.analysis");
 	const tv = useTranslations("console.findings.views");
@@ -483,10 +490,7 @@ export default function FindingsPage() {
 			render: (row) =>
 				row.polarity === "positive" ? (
 					<span className="font-mono text-xs text-emerald-600 dark:text-emerald-400">
-						+
-						{row.impact.midpoint >= 1000
-							? `$${(row.impact.midpoint / 1000).toFixed(1)}k`
-							: `$${row.impact.midpoint}`}
+						+{fmtImpact(row.impact.midpoint, row.impact.currency)}
 						{tc("per_month_short")}
 					</span>
 				) : (
@@ -609,10 +613,7 @@ export default function FindingsPage() {
 		},
 		{
 			label: t("cards.est_monthly_impact"),
-			value:
-				totalImpactMid >= 1000
-					? `$${(totalImpactMid / 1000).toFixed(1)}k`
-					: `$${totalImpactMid}`,
+			value: fmtImpact(totalImpactMid, negativeFindings[0]?.impact?.currency),
 			variant:
 				totalImpactMid >= 20000
 					? "danger"

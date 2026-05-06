@@ -33,6 +33,8 @@ import "@/lib/dashboard/init"; // side-effect: registers all widgets
 import { isDemoOrg } from "@/lib/demo-account";
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
+import { cookies } from "next/headers";
+import { loadCaptionTranslations } from "@/lib/dashboard/load-caption-translations";
 import type { DashboardData } from "@/lib/dashboard/types";
 
 export const metadata = {
@@ -89,13 +91,18 @@ async function loadDashboard(): Promise<LoadResult> {
 			select: { id: true },
 		});
 
+		// Load locale-aware caption translations
+		const cookieStore = await cookies();
+		const locale = cookieStore.get("locale")?.value || "";
+		const captionT = loadCaptionTranslations(locale);
+
 		if (!environment) {
 			const layout = await layoutPromise;
-			return { data: emptyDashboardData(), layout };
+			return { data: emptyDashboardData(undefined, captionT), layout };
 		}
 
 		const [data, layout] = await Promise.all([
-			computeDashboardData(prisma, membership.organizationId, environment.id),
+			computeDashboardData(prisma, membership.organizationId, environment.id, undefined, captionT),
 			layoutPromise,
 		]);
 

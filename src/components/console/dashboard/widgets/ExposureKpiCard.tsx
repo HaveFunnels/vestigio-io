@@ -68,13 +68,9 @@ function formatCurrency(cents: number, currency: string): string {
 	}).format(dollars);
 }
 
-function packLabel(pack: string): string {
-	const cleaned = pack.replaceAll("_", " ");
-	return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-}
-
 function ExposureKpiCardComponent({ data }: WidgetProps) {
 	const t = useTranslations("console.dashboard.widgets.exposure");
+	const tp = useTranslations("console.common.pack_labels");
 	const { monthlyCents, deltaVsLastCycleCents, currency, byPack } =
 		data.exposure;
 	// Negative-number rule: exposure is a loss → display with leading
@@ -144,7 +140,7 @@ function ExposureKpiCardComponent({ data }: WidgetProps) {
 							aria-hidden
 						/>
 						<span className='min-w-0 flex-1 truncate text-content-secondary'>
-							{packLabel(p.pack)}
+							{tp.has(p.pack) ? tp(p.pack) : p.pack.replaceAll("_", " ")}
 						</span>
 						<span className='font-mono tabular-nums text-content-faint'>
 							−{formatCurrency(p.cents, currency)}

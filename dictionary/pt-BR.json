@@ -2273,6 +2273,71 @@
 					"actions": "Ações"
 				}
 			},
+			"captions": {
+				"money_recovered": {
+					"first_cycle": "Primeiro ciclo ainda processando — recuperações aparecerão aqui",
+					"claimed_pending": "{amount} marcados como resolvidos — próximo ciclo vai confirmar",
+					"claimed_and_confirmed": "{confirmed} confirmados, {claimed} aguardando verificação",
+					"quiet_month": "{amount} limpos ao todo — mês tranquilo até agora",
+					"strong_week": "Semana forte — {amount} recuperados nos últimos 7 dias",
+					"quiet_week": "Semana tranquila — {amount} limpos neste mês no total",
+					"last_30d": "{amount} recuperados nos últimos 30 dias"
+				},
+				"health_score": {
+					"first_cycle": "Score aparecerá após o primeiro ciclo completo",
+					"component_structural": "estrutural",
+					"component_action_quality": "qualidade das ações",
+					"component_verification": "verificação",
+					"climbing": "Subindo {delta} pontos — {component} está ganhando terreno",
+					"falling": "Caiu {delta} pontos — {component} está puxando pra baixo",
+					"strong": "Forte em torno de {score} — {component} liderando o composto",
+					"steady": "Estável em {score} — {component} é o próximo a corrigir",
+					"low": "Em {score} — comece por {component} para o maior ganho"
+				},
+				"exposure": {
+					"no_exposure": "Sem exposição aberta — primeira análise ainda em andamento",
+					"down": "Caiu {amount} neste ciclo",
+					"led_drop": "liderou a queda",
+					"up": "Subiu {amount} neste ciclo",
+					"needs_attention": "precisa de atenção",
+					"top_pack": "{pack} concentra {amount} da exposição",
+					"at_risk": "{amount} em risco este mês"
+				},
+				"change_report": {
+					"quiet": "Ciclo tranquilo — sem movimentação desde a última análise",
+					"regressions": "{count} {label} neste ciclo — vale investigar",
+					"regression_singular": "regressão",
+					"regression_plural": "regressões",
+					"net_improvement": "Saldo de {net} {label} — {resolved} resolvidas, {new} novas",
+					"improvement_singular": "melhoria",
+					"improvement_plural": "melhorias",
+					"new_findings": "{new} {new_label} novas, {resolved} resolvidas neste ciclo",
+					"finding_singular": "descoberta",
+					"finding_plural": "descobertas",
+					"verifications": "{count} {label} confirmadas neste ciclo",
+					"verification_singular": "verificação",
+					"verification_plural": "verificações",
+					"changes": "{count} {label} desde o último ciclo",
+					"change_singular": "mudança",
+					"change_plural": "mudanças"
+				},
+				"activity_heatmap": {
+					"no_activity": "Sem atividade na última semana — suas auditorias vão preencher isso",
+					"broken": "Sequência interrompida — retome amanhã",
+					"longest": "Sequência de {count} dias — sua melhor fase em um bom tempo",
+					"building": "{count} dias seguidos — o ritmo está crescendo",
+					"keep_going": "Sequência de {count} dias — continue assim"
+				},
+				"cross_signal": {
+					"detected": "{count} {label} cross-domain detectados no seu site",
+					"pattern_singular": "padrão",
+					"pattern_plural": "padrões",
+					"none": "Nenhum padrão cross-domain detectado ainda",
+					"narrative_two": "Sua {surface} tem um problema cross-domain: {first_title} ({first_pack}) contribui para {second_title} ({second_pack}), com ~{impact}/mês em risco.",
+					"narrative_multi": "Sua {surface} tem {count} problemas cross-domain: {links}, resultando em ~{impact}/mês de exposição combinada.",
+					"narrative_causal": " Cadeia de causa-efeito — findings de {first_pack} precederam findings de {last_pack}."
+				}
+			},
 			"mock_data": {
 				"payment_intent_loss": "Compradores estão desistindo na etapa de segurança 3DS",
 				"chargeback_proof_gap": "Você está perdendo chargebacks porque falta evidência",
@@ -4387,6 +4452,26 @@
 				"optimize_verify": "Revise a postura de segurança a cada poucos meses pra pegar regressões.",
 				"observe_primary": "Sua segurança está em bom estado. Sem exposições significativas no momento.",
 				"observe_verify": "Agende uma checagem periódica de segurança pra manter assim."
+			},
+			"copy_alignment": {
+				"incident_primary": "Seu copy está perdendo faturamento ativamente. A mensagem falha em converter visitantes de alta intenção.",
+				"incident_vp_buried": "Reescreva sua seção hero: a proposta de valor está enterrada abaixo da dobra ou escondida atrás de linguagem genérica.",
+				"incident_cta_unclear": "Consolide CTAs concorrentes: visitantes veem muitas ações e não escolhem nenhuma. Defina um CTA principal por página.",
+				"incident_trust_copy": "Adicione copy de confiança no ponto de decisão: depoimentos, garantias e linguagem de segurança perto do checkout ou cadastro.",
+				"incident_objection": "Endereçe objeções do comprador na página: FAQ ausente, sem linguagem de reversão de risco, preocupações de preço não tratadas.",
+				"incident_verify_rerun": "Rode a análise de copy novamente após a reescrita pra confirmar que o alinhamento melhorou.",
+				"incident_verify_conversion": "Monitore o aumento na taxa de conversão após as mudanças de copy pra medir o impacto no faturamento.",
+				"fix_primary": "Seu copy tem falhas estruturais que vão sangrar faturamento em escala. Corrija antes de aumentar investimento em anúncios.",
+				"fix_funnel_mismatch": "Alinhe o copy ao estágio do funil: páginas de awareness devem educar, páginas de decisão devem reassegurar e converter.",
+				"fix_social_proof": "Fortaleça a prova social: adicione números específicos, depoimentos nomeados e logos ao invés de afirmações genéricas.",
+				"fix_cross_page": "Harmonize a mensagem entre páginas: sua landing page promete uma coisa, mas pricing e checkout dizem outra.",
+				"fix_verify": "Rode a análise de copy novamente após as alterações pra confirmar que as lacunas foram fechadas.",
+				"optimize_primary": "O copy é funcional mas tem oportunidades de otimização. Refinar a mensagem pode levantar a conversão.",
+				"optimize_social_proof": "Considere atualizar a prova social de genérica para específica e quantificada.",
+				"optimize_vp": "Teste formulações alternativas de headline pra tornar a proposta de valor mais imediata.",
+				"optimize_verify": "Reavalie o alinhamento de copy periodicamente conforme você atualiza as páginas.",
+				"aligned_primary": "O copy está bem alinhado com a intenção comercial. Sem lacunas significativas detectadas.",
+				"aligned_verify": "Agende revisões periódicas de copy pra pegar desvios conforme os produtos evoluem."
 			}
 		},
 		"summaries": {
@@ -4405,6 +4490,10 @@
 			"payment_health_critical": "Saúde de pagamentos crítica. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Taxa de falha de pagamento ou churn de assinantes ultrapassou limites perigosos.",
 			"payment_health_at_risk": "Saúde de pagamentos em risco. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Falhas de pagamento ou churn elevado estão gerando perda de receita evitável.",
 			"payment_health_stable": "Saúde de pagamentos estável. Taxas de falha de pagamento e churn estão dentro dos limites aceitáveis (pontuação: {risk_score}/100).",
+			"copy_misaligned": "Copy desalinhado com a intenção comercial. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. A mensagem falha em converter visitantes de alta intenção em múltiplas dimensões.",
+			"copy_significant_gaps": "Copy com lacunas significativas de alinhamento. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Múltiplas dimensões de CRO precisam de atenção antes de escalar.",
+			"copy_minor_gaps": "Copy com lacunas menores de alinhamento. Pontuação de risco: {risk_score}/100. A mensagem é majoritariamente eficaz mas refinamentos podem levantar a conversão.",
+			"copy_aligned": "Copy alinhado com a intenção comercial. Sem lacunas significativas detectadas (pontuação: {risk_score}/100).",
 			"default_summary": "Decisão: {decision_key}. Risco: {risk_score}/100, Confiança: {confidence_score}/100."
 		},
 		"confidence_narrative": {

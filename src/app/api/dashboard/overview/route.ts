@@ -1,6 +1,7 @@
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { withErrorTracking } from "@/libs/error-tracker";
 import {
@@ -10,6 +11,7 @@ import {
 import { buildMockDashboardData } from "@/lib/dashboard/mock-data";
 import { isDemoOrg } from "@/lib/demo-account";
 import { currencyFromLocale } from "../../../../../packages/impact";
+import { loadCaptionTranslations } from "@/lib/dashboard/load-caption-translations";
 
 // ──────────────────────────────────────────────
 // GET /api/dashboard/overview
@@ -75,8 +77,14 @@ export const GET = withErrorTracking(
 			select: { id: true },
 		});
 
+		// Load locale-aware caption translations so dashboard text renders
+		// in the user's language instead of hardcoded English.
+		const cookieStore = await cookies();
+		const locale = cookieStore.get("locale")?.value || "";
+		const captionT = loadCaptionTranslations(locale);
+
 		if (!environment) {
-			return NextResponse.json(emptyDashboardData(resolvedCurrency));
+			return NextResponse.json(emptyDashboardData(resolvedCurrency, captionT));
 		}
 
 		const data = await computeDashboardData(
@@ -84,6 +92,7 @@ export const GET = withErrorTracking(
 			membership.organizationId,
 			environment.id,
 			resolvedCurrency,
+			captionT,
 		);
 		return NextResponse.json(data);
 	},

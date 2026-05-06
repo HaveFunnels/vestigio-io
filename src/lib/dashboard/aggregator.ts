@@ -39,13 +39,22 @@ import type {
 import {
 	captionForActivityHeatmap,
 	captionForChangeReport,
+	captionForCrossSignal,
 	captionForExposure,
 	captionForHealthScore,
 	captionForMoneyRecovered,
+	type CaptionTranslations,
 } from "./captions";
 
 /** Fallback when no org-level currency is resolved. Callers should pass the real currency. */
 const DEFAULT_CURRENCY = "USD";
+
+/**
+ * Module-scoped caption translations. Set at the start of computeDashboardData
+ * and emptyDashboardData so all caption functions produce locale-aware text.
+ * Undefined means English fallback (default behavior).
+ */
+let _captionT: CaptionTranslations | undefined;
 
 // Pack → segmented-bar color mapping. Mirrors the colors used in
 // MOCK_DASHBOARD_DATA so the visual identity stays stable when
@@ -202,7 +211,7 @@ async function computeMoneyRecovered(
 			lastUpdatedAt: (lastUpdatedAt ?? now).toISOString(),
 			caption: "",
 		};
-		result.caption = captionForMoneyRecovered(result);
+		result.caption = captionForMoneyRecovered(result, _captionT);
 		return result;
 	} catch (err) {
 		console.warn("[dashboard/aggregator] money_recovered failed:", err);
@@ -216,7 +225,7 @@ async function computeMoneyRecovered(
 			lastUpdatedAt: new Date().toISOString(),
 			caption: "",
 		};
-		fallback.caption = captionForMoneyRecovered(fallback);
+		fallback.caption = captionForMoneyRecovered(fallback, _captionT);
 		return fallback;
 	}
 }
@@ -269,7 +278,7 @@ async function computeHealthScore(
 				components: { structural: 0, actionQuality: 0, verification: 0 },
 				caption: "",
 			};
-			empty.caption = captionForHealthScore(empty);
+			empty.caption = captionForHealthScore(empty, _captionT);
 			return empty;
 		}
 
@@ -408,7 +417,7 @@ async function computeHealthScore(
 			components: { structural, actionQuality, verification },
 			caption: "",
 		};
-		result.caption = captionForHealthScore(result);
+		result.caption = captionForHealthScore(result, _captionT);
 		return result;
 	} catch (err) {
 		console.warn("[dashboard/aggregator] health_score failed:", err);
@@ -419,7 +428,7 @@ async function computeHealthScore(
 			components: { structural: 0, actionQuality: 0, verification: 0 },
 			caption: "",
 		};
-		fallback.caption = captionForHealthScore(fallback);
+		fallback.caption = captionForHealthScore(fallback, _captionT);
 		return fallback;
 	}
 }
@@ -460,7 +469,7 @@ async function computeExposure(
 				criticalOpenItems: [],
 				caption: "",
 			};
-			empty.caption = captionForExposure(empty);
+			empty.caption = captionForExposure(empty, _captionT);
 			return empty;
 		}
 
@@ -560,7 +569,7 @@ async function computeExposure(
 			criticalOpenItems,
 			caption: "",
 		};
-		result.caption = captionForExposure(result);
+		result.caption = captionForExposure(result, _captionT);
 		return result;
 	} catch (err) {
 		console.warn("[dashboard/aggregator] exposure failed:", err);
@@ -574,7 +583,7 @@ async function computeExposure(
 			criticalOpenItems: [],
 			caption: "",
 		};
-		fallback.caption = captionForExposure(fallback);
+		fallback.caption = captionForExposure(fallback, _captionT);
 		return fallback;
 	}
 }
@@ -637,7 +646,7 @@ async function computeChangeReport(
 				verificationsConfirmed: 0,
 				caption: "",
 			};
-			empty.caption = captionForChangeReport(empty);
+			empty.caption = captionForChangeReport(empty, _captionT);
 			return empty;
 		}
 
@@ -688,7 +697,7 @@ async function computeChangeReport(
 			verificationsConfirmed,
 			caption: "",
 		};
-		result.caption = captionForChangeReport(result);
+		result.caption = captionForChangeReport(result, _captionT);
 		return result;
 	} catch (err) {
 		console.warn("[dashboard/aggregator] change_report failed:", err);
@@ -699,7 +708,7 @@ async function computeChangeReport(
 			verificationsConfirmed: 0,
 			caption: "",
 		};
-		fallback.caption = captionForChangeReport(fallback);
+		fallback.caption = captionForChangeReport(fallback, _captionT);
 		return fallback;
 	}
 }
@@ -785,7 +794,7 @@ async function computeActivityHeatmap(
 		}
 
 		const result: ActivityHeatmapData = { days, currentStreak, caption: "" };
-		result.caption = captionForActivityHeatmap(result);
+		result.caption = captionForActivityHeatmap(result, _captionT);
 		return result;
 	} catch (err) {
 		console.warn("[dashboard/aggregator] activity_heatmap failed:", err);
@@ -794,7 +803,7 @@ async function computeActivityHeatmap(
 			currentStreak: 0,
 			caption: "",
 		};
-		fallback.caption = captionForActivityHeatmap(fallback);
+		fallback.caption = captionForActivityHeatmap(fallback, _captionT);
 		return fallback;
 	}
 }
@@ -805,7 +814,8 @@ async function computeActivityHeatmap(
 // shape so widgets render their proper empty/zero appearance instead
 // of mock numbers (which would mislead a paying customer).
 // ──────────────────────────────────────────────
-export function emptyDashboardData(currency: string = DEFAULT_CURRENCY): DashboardData {
+export function emptyDashboardData(currency: string = DEFAULT_CURRENCY, captionTranslations?: CaptionTranslations): DashboardData {
+	_captionT = captionTranslations;
 	const today = new Date();
 	const days: ActivityHeatmapDay[] = [];
 	for (let i = 89; i >= 0; i--) {
@@ -829,7 +839,7 @@ export function emptyDashboardData(currency: string = DEFAULT_CURRENCY): Dashboa
 		lastUpdatedAt: today.toISOString(),
 		caption: "",
 	};
-	moneyRecovered.caption = captionForMoneyRecovered(moneyRecovered);
+	moneyRecovered.caption = captionForMoneyRecovered(moneyRecovered, _captionT);
 
 	const healthScore: HealthScoreData = {
 		current: 0,
@@ -838,7 +848,7 @@ export function emptyDashboardData(currency: string = DEFAULT_CURRENCY): Dashboa
 		components: { structural: 0, actionQuality: 0, verification: 0 },
 		caption: "",
 	};
-	healthScore.caption = captionForHealthScore(healthScore);
+	healthScore.caption = captionForHealthScore(healthScore, _captionT);
 
 	const exposure: ExposureData = {
 		monthlyCents: 0,
@@ -850,7 +860,7 @@ export function emptyDashboardData(currency: string = DEFAULT_CURRENCY): Dashboa
 		criticalOpenItems: [],
 		caption: "",
 	};
-	exposure.caption = captionForExposure(exposure);
+	exposure.caption = captionForExposure(exposure, _captionT);
 
 	const changeReport: ChangeReportData = {
 		newFindings: [],
@@ -859,14 +869,14 @@ export function emptyDashboardData(currency: string = DEFAULT_CURRENCY): Dashboa
 		verificationsConfirmed: 0,
 		caption: "",
 	};
-	changeReport.caption = captionForChangeReport(changeReport);
+	changeReport.caption = captionForChangeReport(changeReport, _captionT);
 
 	const activityHeatmap: ActivityHeatmapData = {
 		days,
 		currentStreak: 0,
 		caption: "",
 	};
-	activityHeatmap.caption = captionForActivityHeatmap(activityHeatmap);
+	activityHeatmap.caption = captionForActivityHeatmap(activityHeatmap, _captionT);
 
 	return {
 		moneyRecovered,
@@ -1080,15 +1090,31 @@ function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalC
 			return (PRIORITY[a.pack] ?? 50) - (PRIORITY[b.pack] ?? 50);
 		});
 		const impact = totalImpactCents >= 100_000 ? `$${(totalImpactCents / 100_00).toFixed(1)}k` : `$${Math.round(totalImpactCents / 100)}`;
-		const LABELS: Record<string, string> = { security_posture: "Security", scale_readiness: "Scale", trust_gap: "Trust", chargeback_resilience: "Chargeback", chargeback: "Chargeback", behavioral: "Behavioral", friction_tax: "Friction", first_impression: "First Impression", revenue_integrity: "Revenue", revenue: "Revenue" };
-		const label = (p: string) => LABELS[p] ?? p.replace(/_/g, " ");
+		const LABELS_EN: Record<string, string> = { security_posture: "Security", scale_readiness: "Scale", trust_gap: "Trust", chargeback_resilience: "Chargeback", chargeback: "Chargeback", behavioral: "Behavioral", friction_tax: "Friction", first_impression: "First Impression", revenue_integrity: "Revenue", revenue: "Revenue" };
+		const label = (p: string) => _captionT?.pack_labels?.[p] ?? LABELS_EN[p] ?? p.replace(/_/g, " ");
+		const nt = _captionT?.cross_signal;
 		if (sorted.length === 2) {
-			chain.narrative = `Your ${surface} has a cross-domain issue: ${sorted[0].title} (${label(sorted[0].pack)}) contributes to ${sorted[1].title} (${label(sorted[1].pack)}), with ~${impact}/mo at risk.`;
+			const tpl = nt?.narrative_two ?? "Your {surface} has a cross-domain issue: {first_title} ({first_pack}) contributes to {second_title} ({second_pack}), with ~{impact}/mo at risk.";
+			chain.narrative = tpl
+				.replace("{surface}", surface)
+				.replace("{first_title}", sorted[0].title)
+				.replace("{first_pack}", label(sorted[0].pack))
+				.replace("{second_title}", sorted[1].title)
+				.replace("{second_pack}", label(sorted[1].pack))
+				.replace("{impact}", impact);
 		} else {
-			chain.narrative = `Your ${surface} has ${sorted.length} cross-domain issues: ${sorted.map((l) => `${l.title} (${label(l.pack)})`).join(", ")}, leading to ~${impact}/mo in combined exposure.`;
+			const tpl = nt?.narrative_multi ?? "Your {surface} has {count} cross-domain issues: {links}, leading to ~{impact}/mo in combined exposure.";
+			chain.narrative = tpl
+				.replace("{surface}", surface)
+				.replace("{count}", String(sorted.length))
+				.replace("{links}", sorted.map((l) => `${l.title} (${label(l.pack)})`).join(", "))
+				.replace("{impact}", impact);
 		}
 		if (temporalPattern === 'sequential' && sorted.length >= 2) {
-			chain.narrative += ` Cause-effect chain — ${label(sorted[0].pack)} findings preceded ${label(sorted[sorted.length - 1].pack)}.`;
+			const causalTpl = nt?.narrative_causal ?? " Cause-effect chain — {first_pack} findings preceded {last_pack}.";
+			chain.narrative += causalTpl
+				.replace("{first_pack}", label(sorted[0].pack))
+				.replace("{last_pack}", label(sorted[sorted.length - 1].pack));
 		}
 
 		chains.push(chain);
@@ -1155,9 +1181,7 @@ async function computeCrossSignal(
 			totalChains: allChains.length,
 			totalImpactCents,
 			allChainsImpactCents,
-			caption: allChains.length > 0
-				? `${allChains.length} cross-domain pattern${allChains.length > 1 ? "s" : ""} detected across your site`
-				: "No cross-domain patterns detected yet",
+			caption: captionForCrossSignal(allChains.length, _captionT),
 		};
 	} catch {
 		return { chains: [], allChains: [], totalChains: 0, totalImpactCents: 0, allChainsImpactCents: 0, caption: "" };
@@ -1184,7 +1208,9 @@ export async function computeDashboardData(
 	orgId: string,
 	envId: string,
 	currency: string = DEFAULT_CURRENCY,
+	captionTranslations?: CaptionTranslations,
 ): Promise<DashboardData> {
+	_captionT = captionTranslations;
 	const [moneyRecovered, healthScore, exposure, changeReport, activityHeatmap, adSpend, crossSignal] =
 		await Promise.all([
 			computeMoneyRecovered(prisma, envId, currency),

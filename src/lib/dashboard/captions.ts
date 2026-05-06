@@ -7,13 +7,13 @@
 // number — the captions answer "so what?" without making them
 // open another panel.
 //
-// **Why it lives here, not in the widgets:**
+// **Where this lives, not in the widgets:**
 //   - Captions need to be testable independently of React.
 //   - The aggregator computes them once on the server so the
 //     wording is consistent everywhere (widget, future digest
 //     emails, future PDF exports, future MCP chat answers).
-//   - Future i18n: replace these strings with i18n keys + format
-//     params, all in one place.
+//   - i18n: captions are locale-aware via the `CaptionTranslations`
+//     parameter. When no translations are provided, defaults to EN.
 //
 // **Tone rules:**
 //   - Lead with the fact, then the interpretation. ("Down $3.2k —
@@ -39,6 +39,21 @@ import type {
 	MoneyRecoveredData,
 } from "./types";
 
+/**
+ * Locale-aware caption translations. Keyed by template ID.
+ * The aggregator loads these from the dictionary at request time
+ * and passes them through so captions render in the user's language.
+ */
+export interface CaptionTranslations {
+	pack_labels?: Record<string, string>;
+	money_recovered?: Record<string, string>;
+	health_score?: Record<string, string>;
+	exposure?: Record<string, string>;
+	change_report?: Record<string, string>;
+	activity_heatmap?: Record<string, string>;
+	cross_signal?: Record<string, string>;
+}
+
 // Compact USD formatter — k for thousands, M for millions, no
 // decimals at the high end so the caption stays one short line.
 function formatUSD(cents: number): string {
@@ -52,10 +67,12 @@ function formatUSD(cents: number): string {
 	return `$${Math.round(dollars)}`;
 }
 
-// Strip the snake_case prefix and uppercase the first letter, so
-// "revenue_integrity" → "Revenue integrity" for human-readable
-// inline mentions.
-function packLabel(pack: string): string {
+// Locale-aware pack label. Checks translations first, then falls
+// back to the snake_case → human-readable conversion.
+function packLabel(pack: string, translations?: CaptionTranslations): string {
+	if (translations?.pack_labels?.[pack]) {
+		return translations.pack_labels[pack];
+	}
 	const cleaned = pack.replaceAll("_", " ");
 	return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
@@ -63,138 +80,174 @@ function packLabel(pack: string): string {
 // ──────────────────────────────────────────────
 // Money Recovered
 // ──────────────────────────────────────────────
-export function captionForMoneyRecovered(d: MoneyRecoveredData): string {
+export function captionForMoneyRecovered(d: MoneyRecoveredData, translations?: CaptionTranslations): string {
+	const t = translations?.money_recovered;
 	if (d.totalCents === 0) {
-		return "First cycle still computing — recoveries will appear here";
+		return t?.first_cycle ?? "First cycle still computing — recoveries will appear here";
 	}
-	// Honest-accounting captions — prefer language that reflects
-	// the split between evidence-backed confirmed recoveries and
-	// claimed-but-not-yet-verified UserActions. Falls back to the
-	// rolling-delta copy when there's nothing to distinguish.
 	if (d.claimedCents > 0 && d.confirmedCents === 0) {
-		return `${formatUSD(d.claimedCents)} marked done — next cycle will confirm`;
+		const tpl = t?.claimed_pending ?? "{amount} marked done — next cycle will confirm";
+		return tpl.replace("{amount}", formatUSD(d.claimedCents));
 	}
 	if (d.claimedCents > 0 && d.confirmedCents > 0) {
-		return `${formatUSD(d.confirmedCents)} confirmed, ${formatUSD(d.claimedCents)} awaiting verification`;
+		const tpl = t?.claimed_and_confirmed ?? "{confirmed} confirmed, {claimed} awaiting verification";
+		return tpl.replace("{confirmed}", formatUSD(d.confirmedCents)).replace("{claimed}", formatUSD(d.claimedCents));
 	}
 	if (d.last7dCents === 0 && d.last30dCents === 0) {
-		return `${formatUSD(d.confirmedCents)} cleared all-time — quiet stretch this month`;
+		const tpl = t?.quiet_month ?? "{amount} cleared all-time — quiet stretch this month";
+		return tpl.replace("{amount}", formatUSD(d.confirmedCents));
 	}
 	if (d.last7dCents > d.last30dCents * 0.5) {
-		return `Strong week — ${formatUSD(d.last7dCents)} reclaimed in the last 7 days`;
+		const tpl = t?.strong_week ?? "Strong week — {amount} reclaimed in the last 7 days";
+		return tpl.replace("{amount}", formatUSD(d.last7dCents));
 	}
 	if (d.last30dCents > 0 && d.last7dCents === 0) {
-		return `Quiet week — ${formatUSD(d.last30dCents)} cleared this month overall`;
+		const tpl = t?.quiet_week ?? "Quiet week — {amount} cleared this month overall";
+		return tpl.replace("{amount}", formatUSD(d.last30dCents));
 	}
-	return `${formatUSD(d.last30dCents)} recovered in the last 30 days`;
+	const tpl = t?.last_30d ?? "{amount} recovered in the last 30 days";
+	return tpl.replace("{amount}", formatUSD(d.last30dCents));
 }
 
 // ──────────────────────────────────────────────
 // Health Score
 // ──────────────────────────────────────────────
-export function captionForHealthScore(d: HealthScoreData): string {
+export function captionForHealthScore(d: HealthScoreData, translations?: CaptionTranslations): string {
+	const t = translations?.health_score;
 	if (d.current === 0) {
-		return "Score will appear after the first complete cycle";
+		return t?.first_cycle ?? "Score will appear after the first complete cycle";
 	}
 	const { structural, actionQuality, verification } = d.components;
-	// Find which sub-score is the strongest mover (highest gap from
-	// the average) so the caption can call out what's driving the
-	// composite up or down.
 	const avg = (structural + actionQuality + verification) / 3;
-	const gaps: Array<{ name: string; gap: number }> = [
-		{ name: "structural", gap: structural - avg },
-		{ name: "action quality", gap: actionQuality - avg },
-		{ name: "verification", gap: verification - avg },
+
+	const componentNames: Record<string, string> = {
+		structural: t?.component_structural ?? "structural",
+		action_quality: t?.component_action_quality ?? "action quality",
+		verification: t?.component_verification ?? "verification",
+	};
+
+	const gaps: Array<{ key: string; gap: number }> = [
+		{ key: "structural", gap: structural - avg },
+		{ key: "action_quality", gap: actionQuality - avg },
+		{ key: "verification", gap: verification - avg },
 	];
 	const leader = gaps.reduce((a, b) => (b.gap > a.gap ? b : a));
 	const laggard = gaps.reduce((a, b) => (b.gap < a.gap ? b : a));
+	const leaderName = componentNames[leader.key];
+	const laggardName = componentNames[laggard.key];
 
 	if (d.deltaVsLastCycle >= 3) {
-		return `Climbing ${d.deltaVsLastCycle} points — ${leader.name} is gaining ground`;
+		const tpl = t?.climbing ?? "Climbing {delta} points — {component} is gaining ground";
+		return tpl.replace("{delta}", String(d.deltaVsLastCycle)).replace("{component}", leaderName);
 	}
 	if (d.deltaVsLastCycle <= -3) {
-		return `Down ${Math.abs(d.deltaVsLastCycle)} points — ${laggard.name} is the drag`;
+		const tpl = t?.falling ?? "Down {delta} points — {component} is the drag";
+		return tpl.replace("{delta}", String(Math.abs(d.deltaVsLastCycle))).replace("{component}", laggardName);
 	}
 	if (d.current >= 80) {
-		return `Holding strong around ${d.current} — ${leader.name} leading the composite`;
+		const tpl = t?.strong ?? "Holding strong around {score} — {component} leading the composite";
+		return tpl.replace("{score}", String(d.current)).replace("{component}", leaderName);
 	}
 	if (d.current >= 60) {
-		return `Steady at ${d.current} — ${laggard.name} is the next thing to fix`;
+		const tpl = t?.steady ?? "Steady at {score} — {component} is the next thing to fix";
+		return tpl.replace("{score}", String(d.current)).replace("{component}", laggardName);
 	}
-	return `At ${d.current} — start with ${laggard.name} for the biggest lift`;
+	const tpl = t?.low ?? "At {score} — start with {component} for the biggest lift";
+	return tpl.replace("{score}", String(d.current)).replace("{component}", laggardName);
 }
 
 // ──────────────────────────────────────────────
 // Exposure
 // ──────────────────────────────────────────────
-export function captionForExposure(d: ExposureData): string {
+export function captionForExposure(d: ExposureData, translations?: CaptionTranslations): string {
+	const t = translations?.exposure;
 	if (d.monthlyCents === 0) {
-		return "No open exposure — first scan still in progress";
+		return t?.no_exposure ?? "No open exposure — first scan still in progress";
 	}
 	const topPack = d.byPack[0];
 	if (d.deltaVsLastCycleCents <= -100_000) {
-		// $1k+ decrease
-		const credit = topPack ? ` — ${packLabel(topPack.pack)} led the drop` : "";
-		return `Down ${formatUSD(d.deltaVsLastCycleCents)} this cycle${credit}`;
+		const credit = topPack
+			? ` — ${packLabel(topPack.pack, translations)} ${t?.led_drop ?? "led the drop"}`
+			: "";
+		const tpl = t?.down ?? "Down {amount} this cycle";
+		return tpl.replace("{amount}", formatUSD(d.deltaVsLastCycleCents)) + credit;
 	}
 	if (d.deltaVsLastCycleCents >= 100_000) {
 		const blame = topPack
-			? ` — ${packLabel(topPack.pack)} needs attention`
+			? ` — ${packLabel(topPack.pack, translations)} ${t?.needs_attention ?? "needs attention"}`
 			: "";
-		return `Up ${formatUSD(d.deltaVsLastCycleCents)} this cycle${blame}`;
+		const tpl = t?.up ?? "Up {amount} this cycle";
+		return tpl.replace("{amount}", formatUSD(d.deltaVsLastCycleCents)) + blame;
 	}
 	if (topPack) {
-		return `${packLabel(topPack.pack)} carries ${formatUSD(topPack.cents)} of the exposure`;
+		const tpl = t?.top_pack ?? "{pack} carries {amount} of the exposure";
+		return tpl.replace("{pack}", packLabel(topPack.pack, translations)).replace("{amount}", formatUSD(topPack.cents));
 	}
-	return `${formatUSD(d.monthlyCents)} at risk this month`;
+	const tpl = t?.at_risk ?? "{amount} at risk this month";
+	return tpl.replace("{amount}", formatUSD(d.monthlyCents));
 }
 
 // ──────────────────────────────────────────────
 // Change Report
 // ──────────────────────────────────────────────
-export function captionForChangeReport(d: ChangeReportData): string {
+export function captionForChangeReport(d: ChangeReportData, translations?: CaptionTranslations): string {
+	const t = translations?.change_report;
 	const newCount = d.newFindings.length;
 	const regCount = d.regressions.length;
 	const resCount = d.resolved.length;
 	const total = newCount + regCount + resCount;
 
 	if (total === 0 && d.verificationsConfirmed === 0) {
-		return "Quiet cycle — no new movement since the last scan";
+		return t?.quiet ?? "Quiet cycle — no new movement since the last scan";
 	}
 	if (regCount > 0 && resCount === 0) {
-		return `${regCount} ${regCount === 1 ? "regression" : "regressions"} this cycle — worth a closer look`;
+		const tpl = t?.regressions ?? "{count} {label} this cycle — worth a closer look";
+		const label = regCount === 1 ? (t?.regression_singular ?? "regression") : (t?.regression_plural ?? "regressions");
+		return tpl.replace("{count}", String(regCount)).replace("{label}", label);
 	}
 	if (resCount > newCount) {
 		const net = resCount - newCount;
-		return `Net ${net} ${net === 1 ? "improvement" : "improvements"} — ${resCount} resolved, ${newCount} new`;
+		const label = net === 1 ? (t?.improvement_singular ?? "improvement") : (t?.improvement_plural ?? "improvements");
+		const tpl = t?.net_improvement ?? "Net {net} {label} — {resolved} resolved, {new} new";
+		return tpl.replace("{net}", String(net)).replace("{label}", label).replace("{resolved}", String(resCount)).replace("{new}", String(newCount));
 	}
 	if (newCount > resCount) {
-		return `${newCount} new ${newCount === 1 ? "finding" : "findings"}, ${resCount} resolved this cycle`;
+		const tpl = t?.new_findings ?? "{new} new {new_label}, {resolved} resolved this cycle";
+		const newLabel = newCount === 1 ? (t?.finding_singular ?? "finding") : (t?.finding_plural ?? "findings");
+		return tpl.replace("{new}", String(newCount)).replace("{new_label}", newLabel).replace("{resolved}", String(resCount));
 	}
 	if (d.verificationsConfirmed > 0) {
-		return `${d.verificationsConfirmed} ${d.verificationsConfirmed === 1 ? "verification" : "verifications"} confirmed this cycle`;
+		const tpl = t?.verifications ?? "{count} {label} confirmed this cycle";
+		const label = d.verificationsConfirmed === 1 ? (t?.verification_singular ?? "verification") : (t?.verification_plural ?? "verifications");
+		return tpl.replace("{count}", String(d.verificationsConfirmed)).replace("{label}", label);
 	}
-	return `${total} ${total === 1 ? "change" : "changes"} since the last cycle`;
+	const tpl = t?.changes ?? "{count} {label} since the last cycle";
+	const label = total === 1 ? (t?.change_singular ?? "change") : (t?.change_plural ?? "changes");
+	return tpl.replace("{count}", String(total)).replace("{label}", label);
 }
 
 // ──────────────────────────────────────────────
 // Activity Heatmap
 // ──────────────────────────────────────────────
-export function captionForActivityHeatmap(d: ActivityHeatmapData): string {
+export function captionForActivityHeatmap(d: ActivityHeatmapData, translations?: CaptionTranslations): string {
+	const t = translations?.activity_heatmap;
 	if (d.currentStreak === 0) {
 		const recent = d.days.slice(-7).reduce((acc, day) => acc + day.count, 0);
 		if (recent === 0) {
-			return "No activity in the last week — your audits will fill this in";
+			return t?.no_activity ?? "No activity in the last week — your audits will fill this in";
 		}
-		return "Streak broken — pick it back up tomorrow";
+		return t?.broken ?? "Streak broken — pick it back up tomorrow";
 	}
 	if (d.currentStreak >= 14) {
-		return `${d.currentStreak}-day streak — your longest stretch in a while`;
+		const tpl = t?.longest ?? "{count}-day streak — your longest stretch in a while";
+		return tpl.replace("{count}", String(d.currentStreak));
 	}
 	if (d.currentStreak >= 7) {
-		return `${d.currentStreak} days in a row — momentum is building`;
+		const tpl = t?.building ?? "{count} days in a row — momentum is building";
+		return tpl.replace("{count}", String(d.currentStreak));
 	}
-	return `${d.currentStreak}-day streak — keep it going`;
+	const tpl = t?.keep_going ?? "{count}-day streak — keep it going";
+	return tpl.replace("{count}", String(d.currentStreak));
 }
 
 // ──────────────────────────────────────────────
@@ -223,4 +276,17 @@ export function captionForVerificationRate(rate: number): string {
 export function captionForTopPack(pack: string, cents: number): string {
 	if (cents === 0) return "No exposure recorded yet";
 	return `${formatUSD(cents)}/mo concentrated in this pack`;
+}
+
+// ──────────────────────────────────────────────
+// Cross-Signal caption
+// ──────────────────────────────────────────────
+export function captionForCrossSignal(chainCount: number, translations?: CaptionTranslations): string {
+	const t = translations?.cross_signal;
+	if (chainCount > 0) {
+		const tpl = t?.detected ?? "{count} cross-domain {label} detected across your site";
+		const label = chainCount === 1 ? (t?.pattern_singular ?? "pattern") : (t?.pattern_plural ?? "patterns");
+		return tpl.replace("{count}", String(chainCount)).replace("{label}", label);
+	}
+	return t?.none ?? "No cross-domain patterns detected yet";
 }

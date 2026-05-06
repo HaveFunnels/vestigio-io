@@ -22,14 +22,10 @@ import {
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
 
-function packLabel(pack: string): string {
-	const cleaned = pack.replaceAll("_", " ");
-	return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-}
-
 function TopPackKpiComponent({ data }: WidgetProps) {
 	const t = useTranslations("console.dashboard.widgets.top_pack_card");
 	const tc = useTranslations("console.common");
+	const tp = useTranslations("console.common.pack_labels");
 	const top = data.exposure.byPack[0];
 	const caption =
 		top && top.cents > 0
@@ -58,7 +54,7 @@ function TopPackKpiComponent({ data }: WidgetProps) {
 
 			<div className='relative mt-2 flex flex-col gap-0.5'>
 				<span className='truncate text-sm font-semibold leading-tight text-content'>
-					{top ? packLabel(top.pack) : "—"}
+					{top ? (tp.has(top.pack) ? tp(top.pack) : top.pack.replaceAll("_", " ")) : "—"}
 				</span>
 				{top && top.cents > 0 && (
 					<span className='font-mono text-[11px] tabular-nums text-red-400'>

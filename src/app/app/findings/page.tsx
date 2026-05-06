@@ -508,7 +508,7 @@ export default function FindingsPage() {
 		},
 		{
 			key: "surface",
-			label: tc("columns.surface") || "Surface",
+			label: tc("columns.surface"),
 			className: "w-28",
 			render: (row) => (
 				<span className="text-xs text-content-muted">
@@ -518,7 +518,7 @@ export default function FindingsPage() {
 		},
 		{
 			key: "root_cause",
-			label: tc("columns.root_cause") || "Root Cause",
+			label: tc("columns.root_cause"),
 			className: "w-32",
 			render: (row) => (
 				<span className="text-xs text-content-muted">
@@ -528,7 +528,7 @@ export default function FindingsPage() {
 		},
 		{
 			key: "confidence_tier",
-			label: tc("columns.confidence_tier") || "Confidence",
+			label: tc("columns.confidence_tier"),
 			className: "w-24",
 			render: (row) => (
 				<span className="text-xs text-content-muted">
@@ -538,7 +538,7 @@ export default function FindingsPage() {
 		},
 		{
 			key: "first_seen",
-			label: tc("columns.first_seen") || "First Seen",
+			label: tc("columns.first_seen"),
 			className: "w-24",
 			render: (row) => (
 				<span className="text-xs text-content-muted">

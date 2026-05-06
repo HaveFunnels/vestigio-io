@@ -111,7 +111,7 @@ function ThemeToggle() {
 		<button
 			onClick={() => setTheme(isDark ? "light" : "dark")}
 			className="flex h-7 w-7 items-center justify-center rounded-lg text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted"
-			aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+			aria-label={isDark ? "Light mode" : "Dark mode"}
 		>
 			{isDark ? (
 				<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -186,7 +186,7 @@ function UserMenu() {
 			{open && (
 				<div className="absolute right-0 top-full z-50 mt-1.5 w-56 rounded-lg border border-edge bg-surface-card p-1 shadow-xl">
 					<div className="border-b border-edge px-3 py-2">
-						<p className="truncate text-xs font-medium text-content">{session?.user?.name || "User"}</p>
+						<p className="truncate text-xs font-medium text-content">{session?.user?.name || t("account_settings")}</p>
 						<p className="truncate text-[10px] text-content-faint">{email}</p>
 					</div>
 					<div className="py-1">

@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface VoiceMessageBubbleProps {
 	audioSrc: string;
@@ -33,6 +34,7 @@ export default function VoiceMessageBubble({
 	transcript,
 	variant = "user",
 }: VoiceMessageBubbleProps) {
+	const t = useTranslations("console.voice_input");
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [progress, setProgress] = useState(0);
@@ -172,7 +174,7 @@ export default function VoiceMessageBubble({
 					onClick={() => setShowTranscript(!showTranscript)}
 					className="px-1 text-[10px] text-content-faint hover:text-content-muted transition-colors"
 				>
-					{showTranscript ? "Hide transcript" : "Show transcript"}
+					{showTranscript ? t("hide_transcript") : t("show_transcript")}
 				</button>
 			)}
 			{showTranscript && transcript && (

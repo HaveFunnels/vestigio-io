@@ -62,7 +62,7 @@ export default function CancelFlowPage() {
 
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
-				throw new Error(data.message || "Failed to submit survey");
+				throw new Error(data.message || t("error_generic"));
 			}
 
 			const data = await res.json();
@@ -70,7 +70,7 @@ export default function CancelFlowPage() {
 			setOffer(data.offer);
 			setStep(2);
 		} catch (err: any) {
-			setError(err.message || "Something went wrong");
+			setError(err.message || t("error_generic"));
 		} finally {
 			setLoading(false);
 		}
@@ -96,13 +96,13 @@ export default function CancelFlowPage() {
 
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
-				throw new Error(data.message || "Failed to accept offer");
+				throw new Error(data.message || t("error_generic"));
 			}
 
 			// Offer accepted — redirect back to settings
 			router.push("/app/settings");
 		} catch (err: any) {
-			setError(err.message || "Something went wrong");
+			setError(err.message || t("error_generic"));
 		} finally {
 			setLoading(false);
 		}
@@ -126,12 +126,12 @@ export default function CancelFlowPage() {
 
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
-				throw new Error(data.message || "Failed to cancel subscription");
+				throw new Error(data.message || t("error_generic"));
 			}
 
 			setCancelled(true);
 		} catch (err: any) {
-			setError(err.message || "Something went wrong");
+			setError(err.message || t("error_generic"));
 		} finally {
 			setLoading(false);
 		}

@@ -136,7 +136,7 @@ export default function DataSourcesPage() {
 			const res = await fetch(`/api/data-sources/saas?environment_id=${environmentId}`);
 			if (!res.ok) {
 				const body = await res.json().catch(() => ({}));
-				setError(body.message || "Failed to load configuration");
+				setError(body.message || t("error_load"));
 				return;
 			}
 			const { data } = await res.json() as { data: SaasPublicView | null };
@@ -245,7 +245,7 @@ export default function DataSourcesPage() {
 
 			if (!res.ok) {
 				const body = await res.json().catch(() => ({}));
-				setError(body.message || "Failed to save");
+				setError(body.message || t("error_save"));
 				return;
 			}
 
@@ -304,14 +304,14 @@ export default function DataSourcesPage() {
 			});
 			const data = await res.json();
 			if (!res.ok) {
-				setShopifyError(data.message || "Failed to connect Shopify.");
+				setShopifyError(data.message || t("error_connect"));
 				return;
 			}
 			setShopifyStatus("configured");
 			setShopifyToken("");
 			await fetchShopifyStatus();
 		} catch {
-			setShopifyError("Network error. Please try again.");
+			setShopifyError(t("error_network"));
 		} finally {
 			setShopifySaving(false);
 		}

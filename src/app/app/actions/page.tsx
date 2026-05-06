@@ -74,62 +74,62 @@ interface UserActionRow {
 
 const categoryConfig: Record<
 	string,
-	{ label: string; dotColor: string; badgeStyle: string }
+	{ labelKey: string; dotColor: string; badgeStyle: string }
 > = {
 	incident: {
-		label: "Incident",
+		labelKey: "incident",
 		dotColor: "bg-red-500",
 		badgeStyle:
 			"bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
 	},
 	opportunity: {
-		label: "Opportunity",
+		labelKey: "opportunity",
 		dotColor: "bg-emerald-500",
 		badgeStyle:
 			"bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
 	},
 	verification: {
-		label: "Verification",
+		labelKey: "verification",
 		dotColor: "bg-blue-500",
 		badgeStyle:
 			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
 	},
 	observation: {
-		label: "Observation",
+		labelKey: "observation",
 		dotColor: "bg-zinc-500",
 		badgeStyle: "bg-zinc-500/10 text-content-muted border-zinc-500/20",
 	},
 };
 
-const effortConfig: Record<string, { label: string; style: string }> = {
+const effortConfig: Record<string, { labelKey: string; style: string }> = {
 	trivial: {
-		label: "Trivial",
+		labelKey: "trivial",
 		style: "text-emerald-600 dark:text-emerald-400",
 	},
-	low: { label: "Low", style: "text-blue-600 dark:text-blue-400" },
-	medium: { label: "Medium", style: "text-amber-600 dark:text-amber-400" },
-	high: { label: "High", style: "text-orange-600 dark:text-orange-400" },
-	very_high: { label: "Very High", style: "text-red-600 dark:text-red-400" },
+	low: { labelKey: "low", style: "text-blue-600 dark:text-blue-400" },
+	medium: { labelKey: "medium", style: "text-amber-600 dark:text-amber-400" },
+	high: { labelKey: "high", style: "text-orange-600 dark:text-orange-400" },
+	very_high: { labelKey: "very_high", style: "text-red-600 dark:text-red-400" },
 };
 
-const resolveConfig: Record<string, { label: string; style: string }> = {
+const resolveConfig: Record<string, { labelKey: string; style: string }> = {
 	fix: {
-		label: "Mark Resolved",
+		labelKey: "fix",
 		style:
 			"bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 hover:bg-red-500/20",
 	},
 	verify: {
-		label: "Run Verification",
+		labelKey: "verify",
 		style:
 			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/20",
 	},
 	track: {
-		label: "Track Progress",
+		labelKey: "track",
 		style:
 			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20",
 	},
 	dismiss: {
-		label: "Dismiss",
+		labelKey: "dismiss",
 		style:
 			"bg-zinc-500/10 text-content-muted border-zinc-500/30 hover:bg-zinc-500/20",
 	},
@@ -209,6 +209,7 @@ function ActionsContent({
 	changeReport: ChangeReportProjection | null;
 }) {
 	const t = useTranslations("console.actions");
+	const tc = useTranslations("console.common");
 	const { track } = useTrack();
 	const router = useRouter();
 	const copilot = useCopilot();
@@ -635,11 +636,9 @@ function ActionsContent({
 				const status = row.operational_status || row.decision_status;
 				if (!status)
 					return <span className='text-xs text-content-faint'>--</span>;
-				const label = status.replace(/_/g, " ");
-				const capitalized = label.charAt(0).toUpperCase() + label.slice(1);
 				return (
 					<span className='inline-flex items-center rounded-full border border-edge px-2 py-0.5 text-xs text-content-secondary'>
-						{capitalized}
+						{t.has(`statuses.${status}`) ? t(`statuses.${status}`) : status.replace(/_/g, " ")}
 					</span>
 				);
 			},
@@ -680,7 +679,7 @@ function ActionsContent({
 						}}
 						className={`rounded border px-2.5 py-1 text-xs font-medium transition-colors ${cfg?.style || ""}`}
 					>
-						{cfg?.label || row.resolve_path}
+						{cfg ? t(`resolve.${cfg.labelKey}`) : row.resolve_path}
 					</button>
 				);
 			},
@@ -740,10 +739,10 @@ function ActionsContent({
 					]} />
 					<CustomSelect size="sm" value={severityFilter} onChange={setSeverityFilter} options={[
 						{ value: "all", label: t("filters.severity_all") },
-						{ value: "critical", label: "Critical" },
-						{ value: "high", label: "High" },
-						{ value: "medium", label: "Medium" },
-						{ value: "low", label: "Low" },
+						{ value: "critical", label: tc("severity.critical") },
+						{ value: "high", label: tc("severity.high") },
+						{ value: "medium", label: tc("severity.medium") },
+						{ value: "low", label: tc("severity.low") },
 					]} />
 					<CustomSelect size="sm" value={effortFilter} onChange={setEffortFilter} options={[
 						{ value: "all", label: t("filters.effort_all") },
@@ -972,6 +971,7 @@ function ChangeSummaryBanner({
 // ──────────────────────────────────────────────
 
 function CategoryBadge({ category }: { category: string }) {
+	const t = useTranslations("console.actions.categories");
 	const cfg = categoryConfig[category];
 	if (!cfg)
 		return <span className='text-xs text-content-muted'>{category}</span>;
@@ -982,7 +982,7 @@ function CategoryBadge({ category }: { category: string }) {
 			<span
 				className={`inline-block h-1.5 w-1.5 rounded-full ${cfg.dotColor}`}
 			/>
-			{cfg.label}
+			{t(cfg.labelKey)}
 		</span>
 	);
 }
@@ -1082,7 +1082,7 @@ function ActionDrawerContent({
 						<span
 							className={`inline-flex items-center rounded border border-edge px-2 py-0.5 text-xs font-medium ${effortConfig[action.effort_hint]?.style || "text-content-muted"}`}
 						>
-							{effortConfig[action.effort_hint]?.label || action.effort_hint}{" "}
+							{effortConfig[action.effort_hint] ? t(`effort.${effortConfig[action.effort_hint].labelKey}`) : action.effort_hint}{" "}
 							{t("drawer.effort")}
 						</span>
 					)}
@@ -1326,7 +1326,7 @@ function ActionDrawerContent({
 					>
 						{action.resolve_path === "verify" && isVerifying
 							? t("drawer.verificationRunning")
-							: resolveCfg.label}
+							: t(`resolve.${resolveCfg.labelKey}`)}
 					</button>
 				)}
 			</section>
@@ -1345,6 +1345,7 @@ function OperationalTimeline({
 	category: string;
 	currentStatus: string;
 }) {
+	const t = useTranslations("console.actions.statuses");
 	const steps = category === "incident" ? incidentSteps : opportunitySteps;
 	const currentIndex = steps.indexOf(currentStatus);
 
@@ -1381,7 +1382,7 @@ function OperationalTimeline({
 												: "text-content-faint"
 									}`}
 								>
-									{step.replace(/_/g, " ")}
+									{t.has(step) ? t(step) : step.replace(/_/g, " ")}
 								</span>
 							</div>
 
@@ -1407,25 +1408,25 @@ function OperationalTimeline({
 
 const USER_ACTION_STATUS_STYLES: Record<
 	UserActionRow["status"],
-	{ label: string; chip: string; dot: string }
+	{ labelKey: string; chip: string; dot: string }
 > = {
 	pending: {
-		label: "Pending",
+		labelKey: "pending",
 		chip: "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400",
 		dot: "bg-amber-500",
 	},
 	in_progress: {
-		label: "In progress",
+		labelKey: "in_progress",
 		chip: "bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400",
 		dot: "bg-sky-500",
 	},
 	done: {
-		label: "Done",
+		labelKey: "done",
 		chip: "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
 		dot: "bg-emerald-500",
 	},
 	dismissed: {
-		label: "Dismissed",
+		labelKey: "dismissed",
 		chip: "bg-zinc-500/10 border-zinc-500/30 text-content-muted",
 		dot: "bg-zinc-500",
 	},
@@ -1478,7 +1479,7 @@ function UserActionsTable({
 						className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${cfg.chip}`}
 					>
 						<span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-						{cfg.label}
+						{t(`user_action_statuses.${cfg.labelKey}`)}
 					</span>
 				);
 			},
@@ -1546,6 +1547,7 @@ function UserActionDrawerContent({
 }) {
 	const t = useTranslations("console.actions.drawer.mine");
 	const tcols = useTranslations("console.actions.columns");
+	const tStatus = useTranslations("console.actions.user_action_statuses");
 	const cfg = USER_ACTION_STATUS_STYLES[action.status];
 	const steps = Array.isArray(action.remediation_steps)
 		? action.remediation_steps
@@ -1592,7 +1594,7 @@ function UserActionDrawerContent({
 								className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${cfg.chip}`}
 							>
 								<span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-								{cfg.label}
+								{tStatus(cfg.labelKey)}
 							</span>
 						</div>
 						<DrawerStatRow

@@ -228,7 +228,7 @@ export default function ViewSelector({
 				onViewUpdated?.(data.view);
 			}
 		} catch {
-			toast.error("Failed to update view");
+			toast.error(t("save_error"));
 		}
 		setOptionsViewId(null);
 	}
@@ -257,7 +257,7 @@ export default function ViewSelector({
 				onViewUpdated?.(data.view);
 			}
 		} catch {
-			toast.error("Failed to update view");
+			toast.error(t("save_error"));
 		}
 		setOptionsViewId(null);
 	}
@@ -272,7 +272,7 @@ export default function ViewSelector({
 				onViewUpdated?.({ ...view, id: "__deleted__" });
 			}
 		} catch {
-			toast.error("Failed to delete view");
+			toast.error(t("save_error"));
 		}
 		setOptionsViewId(null);
 	}

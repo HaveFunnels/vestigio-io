@@ -165,7 +165,7 @@ export default function FindingDetailPanel({
 			{(finding.workspace_refs.length > 0 ||
 				finding.action_refs.length > 0 ||
 				finding.opportunity_ref) && (
-				<DrawerSection title={td("context") || "Context"}>
+				<DrawerSection title={td("context")}>
 					<div className="space-y-1.5">
 						{finding.workspace_refs.map((ws) => (
 							<Link
@@ -506,7 +506,7 @@ export default function FindingDetailPanel({
 								}
 								className="w-full rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-2.5 text-sm font-medium text-sky-600 transition-colors hover:border-sky-500 hover:bg-sky-500/15 dark:text-sky-400"
 							>
-								{td("see_action") || "See Action"} — {finding.action_refs[0].title}
+								{td("see_action")} — {finding.action_refs[0].title}
 							</button>
 						) : (
 							<ShinyButton

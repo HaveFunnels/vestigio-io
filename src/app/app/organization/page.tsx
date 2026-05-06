@@ -137,7 +137,7 @@ function AddEnvironmentModal({
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.message || "Failed to create environment");
+        setError(data.message || t("error_create_env"));
         return;
       }
 
@@ -233,7 +233,7 @@ export default function OrganizationPage() {
       const res = await fetch("/api/organization");
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setError(body.message || "Failed to load organization data");
+        setError(body.message || t("error_load"));
         return;
       }
       const json: OrgData = await res.json();
@@ -302,7 +302,7 @@ export default function OrganizationPage() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setSaveError(body.message || "Failed to save changes");
+        setSaveError(body.message || t("error_save"));
         return;
       }
 
@@ -310,7 +310,7 @@ export default function OrganizationPage() {
       setTimeout(() => setSaveSuccess(false), 2000);
       await fetchData();
     } catch {
-      setSaveError("Network error");
+      setSaveError(t("error_network"));
     } finally {
       setSaving(false);
     }
@@ -329,20 +329,20 @@ export default function OrganizationPage() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        alert(body.message || "Failed to delete environment");
+        alert(body.message || t("error_delete_env"));
         return;
       }
 
       await fetchData();
     } catch {
-      alert("Network error");
+      alert(t("error_network"));
     } finally {
       setDeletingEnv(null);
     }
   }
 
   async function handleRemoveMember(membershipId: string) {
-    if (!confirm("Are you sure you want to remove this member?")) return;
+    if (!confirm(t("confirm_remove_member"))) return;
     setDeletingMember(membershipId);
 
     try {
@@ -354,13 +354,13 @@ export default function OrganizationPage() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        alert(body.message || "Failed to remove member");
+        alert(body.message || t("error_remove_member"));
         return;
       }
 
       await fetchData();
     } catch {
-      alert("Network error");
+      alert(t("error_network"));
     } finally {
       setDeletingMember(null);
     }
@@ -389,7 +389,7 @@ export default function OrganizationPage() {
           </p>
         </div>
         <div className="rounded-lg border border-edge bg-surface-card px-6 py-12 text-center">
-          <p className="text-sm text-content-muted">{error || "No organization data available."}</p>
+          <p className="text-sm text-content-muted">{error || t("error_load")}</p>
           <button
             onClick={() => { setLoading(true); fetchData(); }}
             className="mt-4 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"

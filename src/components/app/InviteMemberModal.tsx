@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface InviteMemberModalProps {
 }
 
 export default function InviteMemberModal({ isOpen, onClose, onInvited }: InviteMemberModalProps) {
+  const t = useTranslations("console.invite_member");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member" | "viewer">("member");
   const [loading, setLoading] = useState(false);
@@ -67,14 +69,14 @@ export default function InviteMemberModal({ isOpen, onClose, onInvited }: Invite
         if (data.code === "SEAT_LIMIT") {
           setSeatLimitHit(true);
         }
-        setError(data.message || "Failed to send invite");
+        setError(data.message || t("error_send"));
         return;
       }
 
       onInvited();
       onClose();
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("error_network"));
     } finally {
       setLoading(false);
     }
@@ -89,7 +91,7 @@ export default function InviteMemberModal({ isOpen, onClose, onInvited }: Invite
         className="w-full max-w-md rounded-lg border border-edge bg-surface-card p-6 shadow-xl"
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-content">Invite Member</h2>
+          <h2 className="text-lg font-semibold text-content">{t("title")}</h2>
           <button
             onClick={onClose}
             className="rounded p-1 text-content-muted transition-colors hover:text-content"
@@ -104,7 +106,7 @@ export default function InviteMemberModal({ isOpen, onClose, onInvited }: Invite
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="invite-email" className="mb-1.5 block text-sm font-medium text-content">
-              Email address
+              {t("email_label")}
             </label>
             <input
               id="invite-email"
@@ -119,7 +121,7 @@ export default function InviteMemberModal({ isOpen, onClose, onInvited }: Invite
 
           <div>
             <label htmlFor="invite-role" className="mb-1.5 block text-sm font-medium text-content">
-              Role
+              {t("role_label")}
             </label>
             <select
               id="invite-role"
@@ -127,9 +129,9 @@ export default function InviteMemberModal({ isOpen, onClose, onInvited }: Invite
               onChange={(e) => setRole(e.target.value as "admin" | "member" | "viewer")}
               className="w-full rounded-md border border-edge bg-surface px-3 py-2 text-sm text-content focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             >
-              <option value="admin">Admin -- can manage members and settings</option>
-              <option value="member">Member -- can view and edit data</option>
-              <option value="viewer">Viewer -- read-only access</option>
+              <option value="admin">{t("role_admin")}</option>
+              <option value="member">{t("role_member")}</option>
+              <option value="viewer">{t("role_viewer")}</option>
             </select>
           </div>
 
@@ -141,7 +143,7 @@ export default function InviteMemberModal({ isOpen, onClose, onInvited }: Invite
                   href="/app/billing"
                   className="ml-1 font-medium text-emerald-400 underline hover:text-emerald-300"
                 >
-                  Upgrade plan
+                  {t("upgrade_plan")}
                 </a>
               )}
             </div>
@@ -153,14 +155,14 @@ export default function InviteMemberModal({ isOpen, onClose, onInvited }: Invite
               onClick={onClose}
               className="rounded-md border border-edge px-4 py-2 text-sm font-medium text-content-muted transition-colors hover:bg-surface"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
             >
-              {loading ? "Sending..." : "Send Invite"}
+              {loading ? t("sending") : t("send_invite")}
             </button>
           </div>
         </form>

@@ -1753,7 +1753,9 @@
 			"verification_strategy_label": "Método de verificação",
 			"verification_strategy_notes": "Ao clicar em Verificar",
 			"verification_strategy_eta": "~{seconds}s",
-			"see_action": "Ver ação"
+			"see_action": "Ver ação",
+			"not_found": "Finding não encontrado",
+			"back": "Voltar para Findings"
 		},
 		"customer_center": {
 			"title": "Central do Cliente",
@@ -1794,6 +1796,7 @@
 				"ticket_closed": "Este ticket foi resolvido. Abra um novo ticket se precisar de mais ajuda.",
 				"reply": "resposta",
 				"replies": "respostas",
+				"you": "Você",
 				"stats": {
 					"total": "Total de Tickets",
 					"open": "Abertos",
@@ -2912,7 +2915,14 @@
 			"production_env": "Ambiente de produção",
 			"create": "Criar",
 			"cancel": "Cancelar",
-			"retry": "Tentar Novamente"
+			"retry": "Tentar Novamente",
+			"error_load": "Falha ao carregar dados da organização",
+			"error_save": "Falha ao salvar alterações",
+			"error_network": "Erro de rede",
+			"error_create_env": "Falha ao criar ambiente",
+			"error_delete_env": "Falha ao excluir ambiente",
+			"error_remove_member": "Falha ao remover membro",
+			"confirm_remove_member": "Tem certeza que deseja remover este membro?"
 		},
 		"billing": {
 			"title": "Faturamento",
@@ -3009,7 +3019,11 @@
 		"data_sources_extra": {
 			"title": "Fontes de Dados",
 			"close": "Fechar",
-			"configure": "Configurar"
+			"configure": "Configurar",
+			"error_load": "Falha ao carregar configuração",
+			"error_save": "Falha ao salvar",
+			"error_connect": "Falha ao conectar",
+			"error_network": "Erro de rede. Tente novamente."
 		},
 		"actions": {
 			"title": "Ações",
@@ -3235,6 +3249,26 @@
 				"pick_different": "Escolher outra ação",
 				"error_generate": "Falha ao gerar o prompt",
 				"error_network": "Erro de rede"
+			},
+			"user_action_statuses": {
+				"pending": "Pendente",
+				"in_progress": "Em andamento",
+				"done": "Concluída",
+				"dismissed": "Dispensada"
+			},
+			"statuses": {
+				"opened": "Aberto",
+				"acknowledged": "Reconhecido",
+				"mitigated": "Mitigado",
+				"verified": "Verificado",
+				"closed": "Fechado",
+				"identified": "Identificado",
+				"sized": "Dimensionado",
+				"accepted": "Aceito",
+				"implemented": "Implementado",
+				"archived": "Arquivado",
+				"confirmed": "Confirmado",
+				"resolved": "Resolvido"
 			}
 		},
 		"data_sources": {
@@ -3926,7 +3960,28 @@
 			"changed_mind": "Mudei de ideia, quero manter minha assinatura",
 			"cancelled_title": "Sua assinatura foi cancelada",
 			"cancelled_description": "Seu acesso continua até o final do período de cobrança atual. Manteremos seus dados seguros por 30 dias.",
-			"back_to_settings": "Voltar para Configurações"
+			"back_to_settings": "Voltar para Configurações",
+			"error_generic": "Algo deu errado"
+		},
+		"voice_input": {
+			"stop_recording": "Parar gravação",
+			"voice_input": "Entrada por voz",
+			"hide_transcript": "Ocultar transcrição",
+			"show_transcript": "Mostrar transcrição"
+		},
+		"invite_member": {
+			"title": "Convidar Membro",
+			"email_label": "Endereço de email",
+			"role_label": "Função",
+			"role_admin": "Admin — pode gerenciar membros e configurações",
+			"role_member": "Membro — pode visualizar e editar dados",
+			"role_viewer": "Visualizador — acesso somente leitura",
+			"error_send": "Falha ao enviar convite",
+			"error_network": "Erro de rede. Tente novamente.",
+			"upgrade_plan": "Fazer upgrade",
+			"cancel": "Cancelar",
+			"sending": "Enviando...",
+			"send_invite": "Enviar Convite"
 		},
 		"copilot": {
 			"fab_label": "Vestigio AI",

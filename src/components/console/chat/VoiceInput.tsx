@@ -6,6 +6,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 interface VoiceInputProps {
   onTranscript: (text: string) => void;
@@ -13,6 +14,7 @@ interface VoiceInputProps {
 }
 
 export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
+  const t = useTranslations("console.voice_input");
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -62,7 +64,7 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
           ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
           : "text-content-muted hover:bg-surface-card-hover hover:text-content-muted"
       } disabled:opacity-30`}
-      title={listening ? "Stop recording" : "Voice input"}
+      title={listening ? t("stop_recording") : t("voice_input")}
     >
       {listening ? (
         // Recording indicator (pulsing)

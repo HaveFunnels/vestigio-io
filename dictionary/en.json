@@ -1744,7 +1744,9 @@
 			"verification_strategy_label": "Verification method",
 			"verification_strategy_notes": "When you click Verify",
 			"verification_strategy_eta": "~{seconds}s",
-			"see_action": "See action"
+			"see_action": "See action",
+			"not_found": "Finding not found",
+			"back": "Back to Findings"
 		},
 		"customer_center": {
 			"title": "Customer Center",
@@ -1785,6 +1787,7 @@
 				"ticket_closed": "This ticket has been resolved. Open a new ticket if you need further help.",
 				"reply": "reply",
 				"replies": "replies",
+				"you": "You",
 				"stats": {
 					"total": "Total Tickets",
 					"open": "Open",
@@ -2828,7 +2831,14 @@
 			"production_env": "Production environment",
 			"create": "Create",
 			"cancel": "Cancel",
-			"retry": "Retry"
+			"retry": "Retry",
+			"error_load": "Failed to load organization data",
+			"error_save": "Failed to save changes",
+			"error_network": "Network error",
+			"error_create_env": "Failed to create environment",
+			"error_delete_env": "Failed to delete environment",
+			"error_remove_member": "Failed to remove member",
+			"confirm_remove_member": "Are you sure you want to remove this member?"
 		},
 		"billing": {
 			"title": "Billing",
@@ -2925,7 +2935,11 @@
 		"data_sources_extra": {
 			"title": "Data Sources",
 			"close": "Close",
-			"configure": "Configure"
+			"configure": "Configure",
+			"error_load": "Failed to load configuration",
+			"error_save": "Failed to save",
+			"error_connect": "Failed to connect",
+			"error_network": "Network error. Please try again."
 		},
 		"actions": {
 			"title": "Actions",
@@ -3151,6 +3165,26 @@
 				"pick_different": "Pick a different action",
 				"error_generate": "Failed to generate prompt",
 				"error_network": "Network error"
+			},
+			"user_action_statuses": {
+				"pending": "Pending",
+				"in_progress": "In progress",
+				"done": "Done",
+				"dismissed": "Dismissed"
+			},
+			"statuses": {
+				"opened": "Opened",
+				"acknowledged": "Acknowledged",
+				"mitigated": "Mitigated",
+				"verified": "Verified",
+				"closed": "Closed",
+				"identified": "Identified",
+				"sized": "Sized",
+				"accepted": "Accepted",
+				"implemented": "Implemented",
+				"archived": "Archived",
+				"confirmed": "Confirmed",
+				"resolved": "Resolved"
 			}
 		},
 		"data_sources": {
@@ -3842,7 +3876,28 @@
 			"changed_mind": "I changed my mind, keep my subscription",
 			"cancelled_title": "Your subscription has been cancelled",
 			"cancelled_description": "Your access continues until the end of your current billing period. We'll keep your data safe for 30 days.",
-			"back_to_settings": "Back to Settings"
+			"back_to_settings": "Back to Settings",
+			"error_generic": "Something went wrong"
+		},
+		"voice_input": {
+			"stop_recording": "Stop recording",
+			"voice_input": "Voice input",
+			"hide_transcript": "Hide transcript",
+			"show_transcript": "Show transcript"
+		},
+		"invite_member": {
+			"title": "Invite Member",
+			"email_label": "Email address",
+			"role_label": "Role",
+			"role_admin": "Admin — can manage members and settings",
+			"role_member": "Member — can view and edit data",
+			"role_viewer": "Viewer — read-only access",
+			"error_send": "Failed to send invite",
+			"error_network": "Network error. Please try again.",
+			"upgrade_plan": "Upgrade plan",
+			"cancel": "Cancel",
+			"sending": "Sending...",
+			"send_invite": "Send Invite"
 		},
 		"copilot": {
 			"fab_label": "Vestigio AI",

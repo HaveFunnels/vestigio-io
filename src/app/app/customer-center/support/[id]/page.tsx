@@ -165,7 +165,7 @@ export default function TicketDetailPage() {
         {/* Original message */}
         <div className="mb-6 rounded-lg border border-edge bg-surface-card p-5">
           <div className="mb-2 flex items-center gap-2 text-xs text-content-faint">
-            <span className="font-medium text-content-secondary">{session?.user?.name || "You"}</span>
+            <span className="font-medium text-content-secondary">{session?.user?.name || t("you")}</span>
             <span>{new Date(ticket.createdAt).toLocaleString()}</span>
           </div>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-content-secondary">{ticket.message}</p>

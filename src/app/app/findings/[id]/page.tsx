@@ -37,7 +37,7 @@ export default function FindingPage({
 			<div className="flex flex-col items-center justify-center py-24 text-center">
 				<div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
 				<p className="mt-3 text-sm text-content-muted">
-					{tc("loading") || "Loading..."}
+					{tc("loading")}
 				</p>
 			</div>
 		);
@@ -54,7 +54,7 @@ export default function FindingPage({
 					&empty;
 				</div>
 				<h2 className="text-lg font-semibold text-zinc-300">
-					{t("not_found") || "Finding not found"}
+					{t("not_found")}
 				</h2>
 				<p className="mt-1 text-sm text-content-muted">
 					{decodedId}
@@ -63,7 +63,7 @@ export default function FindingPage({
 					href="/app/findings"
 					className="mt-4 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
 				>
-					&larr; {tc("back") || "Back to Findings"}
+					&larr; {t("back")}
 				</Link>
 			</div>
 		);
@@ -77,7 +77,7 @@ export default function FindingPage({
 					href="/app/findings"
 					className="transition-colors hover:text-content"
 				>
-					{tc("findings") || "Findings"}
+					{tc("columns.findings")}
 				</Link>
 				<span>/</span>
 				<span className="truncate text-content-secondary">

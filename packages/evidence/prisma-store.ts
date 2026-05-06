@@ -34,8 +34,8 @@ function toPrismaData(e: Evidence): Record<string, unknown> {
     // Wave 5 Fase 3 — null for evidence types that don't have a source
     // body (anything besides HttpResponse today).
     contentHash: e.content_hash ?? null,
-    createdAt: e.created_at,
-    updatedAt: e.updated_at,
+    createdAt: e.created_at ?? new Date(),
+    updatedAt: e.updated_at ?? new Date(),
   };
 }
 
@@ -100,7 +100,7 @@ export class PrismaEvidenceStore {
    * chunked raw SQL (ceil(N/80) round-trips). For 300 evidence items this
    * reduces persistence from ~10-15s to <500ms (10-50x improvement).
    *
-   * Batch size 80: each row has 18 columns → 80 × 18 = 1440 params per
+   * Batch size 80: each row has 19 columns → 80 × 19 = 1520 params per
    * statement, well within PostgreSQL's 65535 parameter limit.
    */
   async addMany(items: Evidence[]): Promise<void> {
@@ -135,8 +135,9 @@ export class PrismaEvidenceStore {
           data.payload,           // $baseIdx+16
           data.contentHash,       // $baseIdx+17
           data.createdAt,         // $baseIdx+18
+          data.updatedAt,         // $baseIdx+19
         );
-        const placeholders = Array.from({ length: 18 }, (_, i) => `$${baseIdx + i + 1}`);
+        const placeholders = Array.from({ length: 19 }, (_, i) => `$${baseIdx + i + 1}`);
         valueRows.push(`(${placeholders.join(', ')})`);
       }
 
@@ -146,7 +147,7 @@ export class PrismaEvidenceStore {
           "workspaceRef", "environmentRef", "pathScope", "cycleRef",
           "observedAt", "freshUntil", "freshnessState", "stalenessReason",
           "sourceKind", "collectionMethod", "qualityScore", "payload",
-          "contentHash", "createdAt"
+          "contentHash", "createdAt", "updatedAt"
         )
         VALUES ${valueRows.join(',\n               ')}
         ON CONFLICT ("cycleRef", "evidenceKey") DO UPDATE SET

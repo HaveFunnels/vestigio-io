@@ -1593,7 +1593,7 @@
 			"high": "Esta descoberta de severidade alta veio de análise estática. Rodar uma verificação a corrobora com uma execução real no navegador antes de você agir.",
 			"critical": "Esta descoberta crítica veio de análise estática. Rodar uma verificação a corrobora com uma execução real no navegador antes de você agir.",
 			"verify_cta": "Verificar esta descoberta",
-			"verify_cta_sub": "O copiloto analisa evidências e confirma o impacto com dados reais"
+			"verify_cta_sub": "A Vestigio AI analisa evidências e confirma o impacto com dados reais"
 		},
 		"analysis": {
 			"title": "Análise",

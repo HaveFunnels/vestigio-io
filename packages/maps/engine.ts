@@ -59,12 +59,13 @@ export function buildRevenueLeakageMap(
   // Build root cause nodes
   for (const rc of revenueRCs) {
     const rcNodeId = `rc_${rc.root_cause_key}`;
-    const rcImpact = computeRCImpact(rc, revenueFindings);
+    const rcTitle = resolveRCTitle(rc, translations);
+    const rcImpact = computeRCImpact(rc, revenueFindings, translations);
 
     nodes.push({
       id: rcNodeId,
       type: 'root_cause',
-      label: rc.title,
+      label: rcTitle,
       severity: rc.severity,
       impact: rcImpact,
       pack: null,
@@ -73,7 +74,7 @@ export function buildRevenueLeakageMap(
     });
 
     // Connect findings to this root cause
-    const linkedFindings = revenueFindings.filter(f => f.root_cause === rc.title);
+    const linkedFindings = revenueFindings.filter(f => f.root_cause === rcTitle);
     for (const finding of linkedFindings) {
       const fNodeId = `finding_${finding.inference_key}`;
       if (!nodes.find(n => n.id === fNodeId)) {
@@ -181,12 +182,13 @@ export function buildChargebackRiskMap(
     const catRCs = cbRCs.filter(rc => rcToCategory[rc.root_cause_key] === catKey);
     for (const rc of catRCs) {
       const rcNodeId = `rc_${rc.root_cause_key}`;
-      const rcImpact = computeRCImpact(rc, cbFindings);
+      const rcTitle = resolveRCTitle(rc, translations);
+      const rcImpact = computeRCImpact(rc, cbFindings, translations);
 
       nodes.push({
         id: rcNodeId,
         type: 'root_cause',
-        label: rc.title,
+        label: rcTitle,
         severity: rc.severity,
         impact: rcImpact,
         pack: null,
@@ -203,7 +205,7 @@ export function buildChargebackRiskMap(
       });
 
       // Connected findings
-      const linkedFindings = cbFindings.filter(f => f.root_cause === rc.title);
+      const linkedFindings = cbFindings.filter(f => f.root_cause === rcTitle);
       for (const f of linkedFindings) {
         const fNodeId = `finding_${f.inference_key}`;
         if (!nodes.find(n => n.id === fNodeId)) {
@@ -263,13 +265,14 @@ export function buildRootCauseMap(
 
   for (const rc of rootCauses) {
     const rcNodeId = `rc_${rc.root_cause_key}`;
-    const rcImpact = computeRCImpact(rc, projections.findings);
+    const rcTitle = resolveRCTitle(rc, translations);
+    const rcImpact = computeRCImpact(rc, projections.findings, translations);
 
     // Root cause node — center
     nodes.push({
       id: rcNodeId,
       type: 'root_cause',
-      label: rc.title,
+      label: rcTitle,
       severity: rc.severity,
       impact: rcImpact,
       pack: null,
@@ -282,7 +285,7 @@ export function buildRootCauseMap(
     });
 
     // Connected findings — left
-    const linkedFindings = projections.findings.filter(f => f.root_cause === rc.title);
+    const linkedFindings = projections.findings.filter(f => f.root_cause === rcTitle);
     for (const f of linkedFindings) {
       const fNodeId = `finding_${f.inference_key}`;
       if (!nodes.find(n => n.id === fNodeId)) {
@@ -307,7 +310,7 @@ export function buildRootCauseMap(
     }
 
     // Connected actions — right
-    const linkedActions = projections.actions.filter(a => a.root_cause === rc.title);
+    const linkedActions = projections.actions.filter(a => a.root_cause === rcTitle);
     for (const a of linkedActions) {
       const aNodeId = `action_${a.id}`;
       if (!nodes.find(n => n.id === aNodeId)) {
@@ -361,6 +364,7 @@ export function buildCustomMap(
   selectedFindingIds: string[],
   projections: ProjectionResult,
   result: MultiPackResult,
+  translations?: EngineTranslations,
 ): MapDefinition {
   const nodes: MapNode[] = [];
   const edges: MapEdge[] = [];
@@ -368,23 +372,27 @@ export function buildCustomMap(
   const findingIdSet = new Set(selectedFindingIds);
   const selectedFindings = projections.findings.filter(f => findingIdSet.has(f.id));
 
-  // Collect root causes referenced by selected findings
+  // Collect root causes referenced by selected findings. We match using
+  // the translated RC title because projections store `f.root_cause` as
+  // the localized string (pt-BR, es, etc.) while the raw intelligence
+  // RootCause holds the English title.
   const rootCauseTitles = new Set(
     selectedFindings.map(f => f.root_cause).filter((rc): rc is string => rc !== null),
   );
   const rootCauses = result.intelligence.root_causes.filter(rc =>
-    rootCauseTitles.has(rc.title),
+    rootCauseTitles.has(resolveRCTitle(rc, translations)),
   );
 
   // Build root cause nodes + edges
   for (const rc of rootCauses) {
     const rcNodeId = `rc_${rc.root_cause_key}`;
-    const rcImpact = computeRCImpact(rc, selectedFindings);
+    const rcTitle = resolveRCTitle(rc, translations);
+    const rcImpact = computeRCImpact(rc, selectedFindings, translations);
 
     nodes.push({
       id: rcNodeId,
       type: 'root_cause',
-      label: rc.title,
+      label: rcTitle,
       severity: rc.severity,
       impact: rcImpact,
       pack: null,
@@ -392,7 +400,7 @@ export function buildCustomMap(
       position: { x: 0, y: 0 },
     });
 
-    const linked = selectedFindings.filter(f => f.root_cause === rc.title);
+    const linked = selectedFindings.filter(f => f.root_cause === rcTitle);
     for (const f of linked) {
       const fNodeId = `finding_${f.inference_key}`;
       if (!nodes.find(n => n.id === fNodeId)) {
@@ -417,7 +425,7 @@ export function buildCustomMap(
     }
 
     // Actions that address this root cause
-    const linkedActions = projections.actions.filter(a => a.root_cause === rc.title);
+    const linkedActions = projections.actions.filter(a => a.root_cause === rcTitle);
     for (const a of linkedActions) {
       const aNodeId = `action_${a.id}`;
       if (!nodes.find(n => n.id === aNodeId)) {
@@ -503,11 +511,26 @@ export function buildAllMaps(
 // Helpers
 // ──────────────────────────────────────────────
 
+/**
+ * Resolve the display title for a root cause.
+ *
+ * Projections store `root_cause` as the translated title (pt-BR, etc.),
+ * while the raw RootCause object always holds the English title. This
+ * helper ensures we consistently produce the localized title for both
+ * display AND linking purposes — so `f.root_cause === translatedTitle`
+ * matches correctly regardless of locale.
+ */
+function resolveRCTitle(rc: RootCause, translations?: EngineTranslations): string {
+  return translations?.root_cause_titles?.[rc.root_cause_key] ?? rc.title;
+}
+
 function computeRCImpact(
   rc: RootCause,
   findings: FindingProjection[],
+  translations?: EngineTranslations,
 ): { min: number; max: number; midpoint: number } | null {
-  const linked = findings.filter(f => f.root_cause === rc.title);
+  const rcTitle = resolveRCTitle(rc, translations);
+  const linked = findings.filter(f => f.root_cause === rcTitle);
   if (linked.length === 0) return null;
 
   let min = 0;

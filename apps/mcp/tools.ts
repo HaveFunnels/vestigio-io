@@ -504,7 +504,7 @@ export function executeTool(
       if (!name) return { type: 'error', data: { message: 'name is required' } };
       if (!findingIds || findingIds.length === 0) return { type: 'error', data: { message: 'finding_ids is required' } };
       const projections = getProjections(ctx);
-      const mapDef = buildCustomMap(name, description, findingIds, projections, ctx.result);
+      const mapDef = buildCustomMap(name, description, findingIds, projections, ctx.result, ctx.translations);
       return {
         type: 'custom_map_created',
         data: {

@@ -464,8 +464,8 @@ export function buildDemoEngineMaps(): MapDefinition[] {
 		require("../../packages/maps/engine");
 
 	return [
-		buildRevenueLeakageMap(projections, result),
-		buildChargebackRiskMap(projections, result),
-		buildRootCauseMap(projections, result),
+		buildRevenueLeakageMap(projections, result, _translations),
+		buildChargebackRiskMap(projections, result, _translations),
+		buildRootCauseMap(projections, result, _translations),
 	];
 }

@@ -396,10 +396,15 @@ export default function FindingDetailPanel({
 				/>
 			</DrawerSection>
 
-			{/* Verification Sufficiency Warning */}
+			{/* Verification CTA */}
 			<VerificationSufficiencyWarning
 				severity={finding.severity}
 				maturity={finding.verification_maturity}
+				onVerify={() =>
+					router.push(
+						`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
+					)
+				}
 			/>
 
 			{/* Reasoning */}

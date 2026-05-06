@@ -1590,7 +1590,9 @@
 		},
 		"verification_sufficiency": {
 			"high": "This high-severity finding came from static analysis. Running a verification will corroborate it with a real browser run before you act on it.",
-			"critical": "This critical-severity finding came from static analysis. Running a verification will corroborate it with a real browser run before you act on it."
+			"critical": "This critical-severity finding came from static analysis. Running a verification will corroborate it with a real browser run before you act on it.",
+			"verify_cta": "Verify this finding",
+			"verify_cta_sub": "The copilot analyzes evidence and confirms impact with real data"
 		},
 		"analysis": {
 			"title": "Analysis",

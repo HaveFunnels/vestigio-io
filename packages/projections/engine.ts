@@ -631,6 +631,11 @@ export const INFERENCE_TITLES: Record<string, string> = {
   micro_copy_friction_high: 'Form labels, buttons, and error messages create friction',
   seo_conversion_conflict: 'Pages optimized for Google, not for buyers',
   copy_stale_references: 'Outdated content signals neglect to buyers',
+  // Wave 8.3: Content Freshness & Decay
+  social_proof_expired: 'Your social proof shows stale dates and outdated metrics',
+  commercial_page_stale: 'Your commercial pages contain outdated content that signals neglect',
+  pricing_page_outdated: 'Your pricing page has expired offers or stale competitive claims',
+  content_decay_progression: 'Content freshness is degrading across multiple audit cycles',
   // ── SaaS Growth Readiness ───────────────────────
   activation_blocked: 'New users get stuck before they ever see your product work',
   activation_friction_high: 'Your onboarding is losing trials before they become customers',

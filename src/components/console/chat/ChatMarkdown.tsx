@@ -12,6 +12,8 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 
 interface ChatMarkdownProps {
   content: string;
@@ -20,6 +22,7 @@ interface ChatMarkdownProps {
 
 export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
   const t = useTranslations("console.common");
+  const { currency } = useMcpData();
   const lines = content.split("\n");
   const elements: React.ReactNode[] = [];
   let i = 0;
@@ -88,7 +91,7 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
         <blockquote key={elements.length} className="my-2 border-l-2 border-edge pl-3">
           {quoteLines.map((ql, idx) => (
             <p key={idx} className="text-sm italic text-content-muted">
-              {renderInline(ql, t)}
+              {renderInline(ql, t, currency)}
             </p>
           ))}
         </blockquote>,
@@ -98,25 +101,25 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
 
     // ── Heading ──────────────────────────────
     if (line.startsWith("#### ")) {
-      elements.push(<h5 key={elements.length} className="mb-1 mt-2 text-xs font-medium text-content-muted">{renderInline(line.slice(5), t)}</h5>);
+      elements.push(<h5 key={elements.length} className="mb-1 mt-2 text-xs font-medium text-content-muted">{renderInline(line.slice(5), t, currency)}</h5>);
       i++; continue;
     }
     if (line.startsWith("### ")) {
-      elements.push(<h4 key={elements.length} className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wider text-content-muted">{renderInline(line.slice(4), t)}</h4>);
+      elements.push(<h4 key={elements.length} className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wider text-content-muted">{renderInline(line.slice(4), t, currency)}</h4>);
       i++; continue;
     }
     if (line.startsWith("## ")) {
-      elements.push(<h3 key={elements.length} className="mb-1.5 mt-3 text-sm font-semibold text-content-secondary">{renderInline(line.slice(3), t)}</h3>);
+      elements.push(<h3 key={elements.length} className="mb-1.5 mt-3 text-sm font-semibold text-content-secondary">{renderInline(line.slice(3), t, currency)}</h3>);
       i++; continue;
     }
     if (line.startsWith("# ")) {
-      elements.push(<h2 key={elements.length} className="mb-2 mt-4 text-base font-bold text-content">{renderInline(line.slice(2), t)}</h2>);
+      elements.push(<h2 key={elements.length} className="mb-2 mt-4 text-base font-bold text-content">{renderInline(line.slice(2), t, currency)}</h2>);
       i++; continue;
     }
 
     // ── Unordered list ───────────────────────
     if (/^\s*[-*]\s/.test(line)) {
-      const { node, endIndex } = parseList(lines, i, "ul", t);
+      const { node, endIndex } = parseList(lines, i, "ul", t, currency);
       elements.push(<React.Fragment key={elements.length}>{node}</React.Fragment>);
       i = endIndex;
       continue;
@@ -124,7 +127,7 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
 
     // ── Ordered list ─────────────────────────
     if (/^\s*\d+\.\s/.test(line)) {
-      const { node, endIndex } = parseList(lines, i, "ol", t);
+      const { node, endIndex } = parseList(lines, i, "ol", t, currency);
       elements.push(<React.Fragment key={elements.length}>{node}</React.Fragment>);
       i = endIndex;
       continue;
@@ -133,7 +136,7 @@ export function ChatMarkdown({ content, className = "" }: ChatMarkdownProps) {
     // ── Paragraph ────────────────────────────
     elements.push(
       <p key={elements.length} className="text-sm leading-relaxed text-content-secondary">
-        {renderInline(line, t)}
+        {renderInline(line, t, currency)}
       </p>,
     );
     i++;
@@ -154,6 +157,7 @@ function parseList(
   startIndex: number,
   type: "ul" | "ol",
   t: ReturnType<typeof useTranslations<"console.common">>,
+  currency: string,
 ): { node: React.ReactNode; endIndex: number } {
   const items: React.ReactNode[] = [];
   let i = startIndex;
@@ -173,7 +177,7 @@ function parseList(
     if (indent > baseIndent) {
       // Nested list
       const nestedType = isOl ? "ol" : "ul";
-      const nested = parseList(lines, i, nestedType, t);
+      const nested = parseList(lines, i, nestedType, t, currency);
       // Append to last item
       items.push(nested.node);
       i = nested.endIndex;
@@ -184,7 +188,7 @@ function parseList(
     const text = isOl ? trimmed.replace(/^\d+\.\s/, "") : trimmed.slice(2);
     items.push(
       <li key={items.length} className="text-sm leading-relaxed text-content-secondary">
-        {renderInline(text, t)}
+        {renderInline(text, t, currency)}
       </li>,
     );
     i++;
@@ -205,6 +209,7 @@ function parseList(
 
 function MarkdownTable({ lines }: { lines: string[] }) {
   const t = useTranslations("console.common");
+  const { currency } = useMcpData();
   if (lines.length < 2) return null;
 
   const parseRow = (line: string) =>
@@ -221,7 +226,7 @@ function MarkdownTable({ lines }: { lines: string[] }) {
           <tr className="border-b border-edge bg-surface-card">
             {headers.map((h, idx) => (
               <th key={idx} className="px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-content-muted">
-                {renderInline(h, t)}
+                {renderInline(h, t, currency)}
               </th>
             ))}
           </tr>
@@ -231,7 +236,7 @@ function MarkdownTable({ lines }: { lines: string[] }) {
             <tr key={rIdx}>
               {row.map((cell, cIdx) => (
                 <td key={cIdx} className="px-3 py-1.5 text-content-secondary">
-                  {renderInline(cell, t)}
+                  {renderInline(cell, t, currency)}
                 </td>
               ))}
             </tr>
@@ -246,7 +251,7 @@ function MarkdownTable({ lines }: { lines: string[] }) {
 // Supports: **bold**, *italic*, `code`, [link](url), ~~strikethrough~~
 // All length-bounded to prevent ReDoS.
 
-function renderInline(text: string, t: ReturnType<typeof useTranslations<"console.common">>): React.ReactNode {
+function renderInline(text: string, t: ReturnType<typeof useTranslations<"console.common">>, currency: string): React.ReactNode {
   const capped = text.length > 5000 ? text.slice(0, 5000) + "..." : text;
   const parts: React.ReactNode[] = [];
   let remaining = capped;
@@ -309,13 +314,12 @@ function renderInline(text: string, t: ReturnType<typeof useTranslations<"consol
       case "impact": {
         try {
           const data = JSON.parse(first.match[1]);
-          const fmt = (v: number) => v >= 1000 ? `$${(v / 1000).toFixed(1)}k` : `$${v}`;
           parts.push(
             <span key={key++} className="inline-flex items-center gap-1.5 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1 text-sm font-semibold text-red-600 dark:text-red-400">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
               </svg>
-              {fmt(data.min)} – {fmt(data.max)}
+              {fmtCurrency(data.min, currency)} – {fmtCurrency(data.max, currency)}
               {t("per_month_short")}
             </span>,
           );

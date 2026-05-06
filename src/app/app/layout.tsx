@@ -70,6 +70,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 		changeReport: loadChangeReport(),
 		workspaces: loadWorkspaces(),
 		maps: loadAllMaps(),
+		currency: orgCtx.currency,
 	};
 
 	const currentOrg = {

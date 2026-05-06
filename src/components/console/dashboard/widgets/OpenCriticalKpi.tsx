@@ -25,17 +25,18 @@ import {
 	registerWidget,
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 
-function formatCompactCurrency(cents: number): string {
+function formatCompactCurrency(cents: number, currency: string): string {
 	const dollars = Math.abs(cents) / 100;
-	if (dollars >= 1_000_000) return `$${(dollars / 1_000_000).toFixed(1)}M`;
-	if (dollars >= 1_000) return `$${(dollars / 1_000).toFixed(1)}k`;
-	return `$${Math.round(dollars)}`;
+	return fmtCurrency(dollars, currency);
 }
 
 function OpenCriticalKpiComponent({ data, editing }: WidgetProps) {
 	const t = useTranslations("console.dashboard.widgets.open_critical_card");
 	const router = useRouter();
+	const { currency } = useMcpData();
 	const { criticalOpenCount, criticalDeltaVsLastCycle, criticalOpenItems } =
 		data.exposure;
 	const isClean = criticalOpenCount === 0;
@@ -120,7 +121,7 @@ function OpenCriticalKpiComponent({ data, editing }: WidgetProps) {
 									{item.title}
 								</span>
 								<span className='shrink-0 font-mono text-[10px] tabular-nums text-red-400'>
-									−{formatCompactCurrency(item.impactCents)}
+									−{formatCompactCurrency(item.impactCents, currency)}
 								</span>
 							</button>
 						</li>

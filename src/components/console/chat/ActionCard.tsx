@@ -7,21 +7,26 @@
 
 import type { ActionCardBlock } from "@/lib/chat-types";
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
 
 interface ActionCardProps {
   block: ActionCardBlock;
   onNavigate?: (href: string) => void;
 }
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
-  return `$${value.toFixed(0)}`;
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BRL: "R$", EUR: "€" };
+
+function formatCurrency(value: number, sym: string): string {
+  if (value >= 1_000_000) return `${sym}${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${sym}${(value / 1_000).toFixed(1)}k`;
+  return `${sym}${value.toFixed(0)}`;
 }
 
 export function ActionCard({ block, onNavigate }: ActionCardProps) {
   const tc = useTranslations("console.common");
   const ta = useTranslations("console.actions");
+  const { currency } = useMcpData();
+  const currSym = CURRENCY_SYMBOLS[currency] || "$";
   const { action } = block;
 
   return (
@@ -46,7 +51,7 @@ export function ActionCard({ block, onNavigate }: ActionCardProps) {
             </span>
           )}
           <span className="text-[10px] text-content-muted">
-            {ta("columns.impact")}: {formatCurrency(action.impact_mid)}
+            {ta("columns.impact")}: {formatCurrency(action.impact_mid, currSym)}
             {tc("per_month_short")}
           </span>
         </div>

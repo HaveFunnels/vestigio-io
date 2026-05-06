@@ -61,6 +61,9 @@ interface TooltipState {
 
 function NodeTooltip({ tooltip }: { tooltip: TooltipState }) {
 	const tc = useTranslations("console.common");
+	const ts = useTranslations("console.common.severity");
+	const { currency } = useMcpData();
+	const currSym = CURRENCY_SYMBOLS[currency] || "$";
 	if (!tooltip.visible || !tooltip.node) return null;
 	const { node } = tooltip;
 
@@ -83,12 +86,12 @@ function NodeTooltip({ tooltip }: { tooltip: TooltipState }) {
 										: "border-edge/20 bg-surface-inset text-content-muted"
 						}`}
 					>
-						{node.severity}
+						{ts(node.severity)}
 					</span>
 				)}
 				{node.impact && (
 					<span className='font-mono text-xs text-content-muted'>
-						{formatCurrencyInline(node.impact.midpoint)}
+						{formatCurrencyInline(node.impact.midpoint, currSym)}
 						{tc("per_month_short")}
 					</span>
 				)}
@@ -97,10 +100,12 @@ function NodeTooltip({ tooltip }: { tooltip: TooltipState }) {
 	);
 }
 
-function formatCurrencyInline(value: number): string {
-	if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-	if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
-	return `$${Math.round(value)}`;
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BRL: "R$", EUR: "€" };
+
+function formatCurrencyInline(value: number, sym: string): string {
+	if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
+	if (value >= 1000) return `${sym}${(value / 1000).toFixed(1)}k`;
+	return `${sym}${Math.round(value)}`;
 }
 
 // ── Legend filter helpers ──

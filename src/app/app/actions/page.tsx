@@ -155,10 +155,11 @@ const opportunitySteps = [
 	"archived",
 ];
 
-function formatCurrency(value: number): string {
-	if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-	if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
-	return `$${Math.round(value)}`;
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BRL: "R$", EUR: "€" };
+function formatCurrency(value: number, sym: string = "$"): string {
+	if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
+	if (value >= 1000) return `${sym}${(value / 1000).toFixed(1)}k`;
+	return `${sym}${Math.round(value)}`;
 }
 
 // ──────────────────────────────────────────────
@@ -213,6 +214,8 @@ function ActionsContent({
 	const { track } = useTrack();
 	const router = useRouter();
 	const copilot = useCopilot();
+	const { currency: orgCurrency } = useMcpData();
+	const currSym = CURRENCY_SYMBOLS[orgCurrency] || "$";
 	const searchParams = useSearchParams();
 	const [selected, setSelected] = useState<ActionProjection | null>(null);
 	const [selectedUserAction, setSelectedUserAction] = useState<UserActionRow | null>(null);
@@ -542,8 +545,8 @@ function ActionsContent({
 			label: t("cards.totalExposure"),
 			value:
 				totalImpact >= 1000
-					? `${formatCurrency(totalImpact)}`
-					: `$${totalImpact}`,
+					? `${formatCurrency(totalImpact, currSym)}`
+					: `${currSym}${totalImpact}`,
 			variant: "danger",
 			negative: true,
 			subtext: t("cards.combinedExposure"),
@@ -564,8 +567,8 @@ function ActionsContent({
 			label: t("cards.captured"),
 			value:
 				capturedValue >= 1000
-					? `${formatCurrency(capturedValue)}`
-					: `$${capturedValue}`,
+					? `${formatCurrency(capturedValue, currSym)}`
+					: `${currSym}${capturedValue}`,
 			variant: "success",
 			subtext: t("cards.resolvedOrVerified"),
 		},
@@ -635,7 +638,7 @@ function ActionsContent({
 					<CategoryBadge category={row.category} />
 					{row.category === 'opportunity' && row.impact?.midpoint && (
 						<span className="text-[10px] font-mono text-emerald-400">
-							+{formatCurrency(row.impact.midpoint)}
+							+{formatCurrency(row.impact.midpoint, currSym)}
 						</span>
 					)}
 				</div>
@@ -1018,6 +1021,8 @@ function ActionDrawerContent({
 	isVerifying: boolean;
 }) {
 	const t = useTranslations("console.actions");
+	const { currency: orgCurrency } = useMcpData();
+	const currSym = CURRENCY_SYMBOLS[orgCurrency] || "$";
 	const cfg = categoryConfig[action.category];
 	const resolveCfg = action.resolve_path
 		? resolveConfig[action.resolve_path]
@@ -1452,6 +1457,8 @@ function UserActionsTable({
 	onRowClick: (row: UserActionRow) => void;
 }) {
 	const t = useTranslations("console.actions");
+	const { currency: orgCurrency } = useMcpData();
+	const currSym = CURRENCY_SYMBOLS[orgCurrency] || "$";
 
 	if (actions.length === 0) {
 		return (
@@ -1503,7 +1510,7 @@ function UserActionsTable({
 			render: (row) =>
 				row.baseline_impact_midpoint !== null ? (
 					<span className='font-mono text-xs text-content-secondary'>
-						{formatCurrency(row.baseline_impact_midpoint)}/mo
+						{formatCurrency(row.baseline_impact_midpoint, currSym)}/mo
 					</span>
 				) : (
 					<span className='text-xs text-content-faint'>--</span>
@@ -1560,6 +1567,8 @@ function UserActionDrawerContent({
 	const t = useTranslations("console.actions.drawer.mine");
 	const tcols = useTranslations("console.actions.columns");
 	const tStatus = useTranslations("console.actions.user_action_statuses");
+	const { currency: orgCurrency } = useMcpData();
+	const currSym = CURRENCY_SYMBOLS[orgCurrency] || "$";
 	const cfg = USER_ACTION_STATUS_STYLES[action.status];
 	const steps = Array.isArray(action.remediation_steps)
 		? action.remediation_steps
@@ -1632,7 +1641,7 @@ function UserActionDrawerContent({
 								label={tcols("baselineImpact")}
 								value={
 									<span className='font-mono text-xs text-content-secondary'>
-										{formatCurrency(action.baseline_impact_midpoint)}/mo
+										{formatCurrency(action.baseline_impact_midpoint, currSym)}/mo
 									</span>
 								}
 							/>

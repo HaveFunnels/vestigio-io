@@ -28,15 +28,14 @@ import {
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
 import { usePlan } from "@/hooks/usePlan";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 import type { ChangeReportEntry } from "@/lib/dashboard/types";
 
-function formatCurrency(cents?: number): string {
+function formatCurrencyWidget(cents: number | undefined, currency: string): string {
 	if (!cents) return "";
 	const dollars = cents / 100;
-	if (dollars >= 1_000) {
-		return `$${(dollars / 1_000).toFixed(1)}k`;
-	}
-	return `$${dollars.toFixed(0)}`;
+	return fmtCurrency(dollars, currency);
 }
 
 function severityClass(severity?: ChangeReportEntry["severity"]): string {
@@ -55,6 +54,7 @@ function severityClass(severity?: ChangeReportEntry["severity"]): string {
 }
 
 function EntryRow({ entry }: { entry: ChangeReportEntry }) {
+	const { currency } = useMcpData();
 	return (
 		<li className='group flex items-center gap-3 py-1.5'>
 			<div
@@ -65,7 +65,7 @@ function EntryRow({ entry }: { entry: ChangeReportEntry }) {
 			</span>
 			{entry.impactCents != null && (
 				<span className='font-mono text-[11px] tabular-nums text-content-faint'>
-					{formatCurrency(entry.impactCents)}
+					{formatCurrencyWidget(entry.impactCents, currency)}
 				</span>
 			)}
 		</li>

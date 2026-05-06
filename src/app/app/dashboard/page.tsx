@@ -101,8 +101,22 @@ async function loadDashboard(): Promise<LoadResult> {
 			return { data: emptyDashboardData(undefined, captionT), layout };
 		}
 
+		// Resolve currency: org override > owner locale > USD
+		let resolvedCurrency = "USD";
+		const orgRecord = membership.organization as any;
+		if (orgRecord.currency) {
+			resolvedCurrency = orgRecord.currency;
+		} else {
+			const owner = await prisma.user.findFirst({
+				where: { memberships: { some: { organizationId: membership.organizationId, role: "OWNER" } } },
+				select: { locale: true },
+			});
+			if (owner?.locale?.startsWith("pt")) resolvedCurrency = "BRL";
+			else if (owner?.locale?.startsWith("de")) resolvedCurrency = "EUR";
+		}
+
 		const [data, layout] = await Promise.all([
-			computeDashboardData(prisma, membership.organizationId, environment.id, undefined, captionT),
+			computeDashboardData(prisma, membership.organizationId, environment.id, resolvedCurrency, captionT),
 			layoutPromise,
 		]);
 

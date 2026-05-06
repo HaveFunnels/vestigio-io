@@ -21,7 +21,7 @@ export default function MapToolbar({
 	onOpenSearch,
 }: MapToolbarProps) {
 	return (
-		<div className='absolute left-3 right-3 top-3 z-40 flex items-center gap-2 rounded-xl border border-edge bg-zinc-900/60 p-2 backdrop-blur-md'>
+		<div className='absolute left-3 right-3 top-3 z-20 flex items-center gap-2 rounded-xl border border-edge bg-zinc-900/60 p-2 backdrop-blur-md'>
 			{/* Left: Severity Filter */}
 			<SeverityFilter
 				nodes={nodes}

@@ -20,6 +20,8 @@ export interface McpDataSnapshot {
   changeReport: DataState<ChangeReportProjection>;
   workspaces: DataState<WorkspaceProjection[]>;
   maps: DataState<MapDefinition[]>;
+  /** ISO 4217 currency code for the current org (e.g. "BRL", "USD", "EUR") */
+  currency: string;
 }
 
 const McpDataContext = createContext<McpDataSnapshot | null>(null);
@@ -46,6 +48,7 @@ export function useMcpData(): McpDataSnapshot {
       changeReport: { status: "not_ready", reason: "No data provider." },
       workspaces: { status: "not_ready", reason: "No data provider." },
       maps: { status: "not_ready", reason: "No data provider." },
+      currency: "USD",
     };
   }
   return ctx;

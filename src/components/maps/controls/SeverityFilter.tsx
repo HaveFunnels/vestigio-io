@@ -40,6 +40,7 @@ export default function SeverityFilter({
 	onToggle,
 }: SeverityFilterProps) {
 	const t = useTranslations("console.maps.toolbar");
+	const ts = useTranslations("console.common.severity");
 
 	const counts = useMemo(() => {
 		const map: Record<string, number> = {
@@ -80,7 +81,7 @@ export default function SeverityFilter({
 								!isActive ? "opacity-30" : ""
 							}`}
 						/>
-						<span>{sev}</span>
+						<span>{ts(sev)}</span>
 						<span
 							className={`ml-0.5 font-mono text-[10px] ${
 								!isActive ? "opacity-40" : "opacity-70"

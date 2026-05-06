@@ -9,13 +9,9 @@
  */
 
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 import type { FindingProjection } from "../../../../packages/projections/types";
-
-function formatDollars(amount: number): string {
-	if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}k`;
-	if (amount > 0) return `$${amount.toFixed(0)}`;
-	return "$0";
-}
 
 interface Opportunity {
 	id: string;
@@ -30,6 +26,8 @@ interface Props {
 
 export default function OpportunityPreview({ findings }: Props) {
 	const t = useTranslations("console.workspaces.detail.enrichment");
+	const { currency } = useMcpData();
+	const formatDollars = (amount: number) => fmtCurrency(amount, currency);
 	// Deduplicate opportunities from findings
 	const seen = new Set<string>();
 	const opportunities: Opportunity[] = [];

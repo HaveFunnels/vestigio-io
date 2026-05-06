@@ -27,6 +27,8 @@ export interface OrgContext {
 	isAdmin: boolean;
 	environments: OrgEnvironment[];
 	maxEnvironments: number;
+	/** ISO 4217 currency code resolved from org override or owner locale */
+	currency: string;
 }
 
 const DEMO_CONTEXT: OrgContext = {
@@ -39,6 +41,7 @@ const DEMO_CONTEXT: OrgContext = {
 	isAdmin: false,
 	environments: [{ id: "env_1", domain: "shop.com", isProduction: true, continuousPaused: false, activated: true }],
 	maxEnvironments: 1,
+	currency: "USD",
 };
 
 /**
@@ -85,6 +88,16 @@ export async function resolveOrgContext(): Promise<OrgContext> {
 		const planLimits: Record<string, number> = { vestigio: 1, pro: 3, max: 10 };
 		const maxEnvs = planLimits[org.plan || "vestigio"] || 1;
 
+		// Resolve currency: org override > owner locale > USD
+		let currency = "USD";
+		if ((org as any).currency) {
+			currency = (org as any).currency;
+		} else {
+			const userLocale = (session.user as any).locale as string | undefined;
+			if (userLocale?.startsWith("pt")) currency = "BRL";
+			else if (userLocale?.startsWith("de")) currency = "EUR";
+		}
+
 		return {
 			orgId: org.id,
 			orgName: org.name,
@@ -101,6 +114,7 @@ export async function resolveOrgContext(): Promise<OrgContext> {
 				activated: (e as any).activated ?? false,
 			})),
 			maxEnvironments: maxEnvs,
+			currency,
 		};
 	} catch {
 		// DB not available (dev without postgres, build phase, etc.)

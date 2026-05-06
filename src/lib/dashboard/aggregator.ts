@@ -55,6 +55,7 @@ const DEFAULT_CURRENCY = "USD";
  * Undefined means English fallback (default behavior).
  */
 let _captionT: CaptionTranslations | undefined;
+let _currency: string = DEFAULT_CURRENCY;
 
 // Pack → segmented-bar color mapping. Must match the global pack
 // identity in src/lib/pack-colors.ts (single source of truth for
@@ -956,7 +957,8 @@ async function computeAdSpend(
 		} else if (totalSpend > 0 && byPlatform.length > 1) {
 			const top = byPlatform[0];
 			const pct = Math.round((top.spend / totalSpend) * 100);
-			caption = `${top.label} leads with $${top.spend.toLocaleString()}/mo (${pct}% of total).`;
+			const adSym = ({"USD":"$","BRL":"R$","EUR":"€"} as Record<string,string>)[_currency] || "$";
+			caption = `${top.label} leads with ${adSym}${top.spend.toLocaleString()}/mo (${pct}% of total).`;
 		} else if (totalSpend > 0) {
 			caption = `All spend on ${byPlatform[0]?.label ?? "one platform"}.`;
 		} else if (!syncedAt) {
@@ -1089,7 +1091,10 @@ function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalC
 			const PRIORITY: Record<string, number> = { security_posture: 0, scale_readiness: 1, trust_gap: 2, chargeback: 3, chargeback_resilience: 3, behavioral: 4, friction_tax: 5, first_impression: 6, revenue_integrity: 7, revenue: 7 };
 			return (PRIORITY[a.pack] ?? 50) - (PRIORITY[b.pack] ?? 50);
 		});
-		const impact = totalImpactCents >= 100_000 ? `$${(totalImpactCents / 100_00).toFixed(1)}k` : `$${Math.round(totalImpactCents / 100)}`;
+		const SYMS: Record<string, string> = { USD: "$", BRL: "R$", EUR: "€" };
+		const sym = SYMS[_currency] || "$";
+		const impactDollars = totalImpactCents / 100;
+		const impact = impactDollars >= 1_000 ? `${sym}${(impactDollars / 1_000).toFixed(1)}k` : `${sym}${Math.round(impactDollars)}`;
 		const LABELS_EN: Record<string, string> = { security_posture: "Security", money_moment_exposure: "Security", scale_readiness: "Scale", trust_gap: "Trust", chargeback_resilience: "Chargeback", chargeback: "Chargeback", behavioral: "Behavioral", friction_tax: "Friction", first_impression: "First Impression", revenue_integrity: "Revenue", revenue: "Revenue", copy_alignment: "Copy", content_freshness: "Freshness", channel_integrity: "Channel", discoverability: "Discovery", brand_integrity: "Brand", saas_growth_readiness: "SaaS", payment_health: "Payments", vertical_specific: "Industry", cross_signal: "Cross-Signal" };
 		const label = (p: string) => _captionT?.pack_labels?.[p] ?? LABELS_EN[p] ?? p.replace(/_/g, " ");
 		const nt = _captionT?.cross_signal;
@@ -1225,6 +1230,7 @@ export async function computeDashboardData(
 	captionTranslations?: CaptionTranslations,
 ): Promise<DashboardData> {
 	_captionT = captionTranslations;
+	_currency = currency;
 	const [moneyRecovered, healthScore, exposure, changeReport, activityHeatmap, adSpend, crossSignal] =
 		await Promise.all([
 			computeMoneyRecovered(prisma, envId, currency),

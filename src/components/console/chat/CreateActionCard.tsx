@@ -8,6 +8,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { getCurrencySymbol } from "@/lib/format-currency";
 
 interface CreateActionCardProps {
   suggestedTitle: string;
@@ -26,6 +28,7 @@ export function CreateActionCard({
 }: CreateActionCardProps) {
   const t = useTranslations("console.chat.create_action");
   const tc = useTranslations("console.common");
+  const { currency } = useMcpData();
   const [saved, setSaved] = useState(false);
   const [title, setTitle] = useState(suggestedTitle);
 
@@ -66,7 +69,7 @@ export function CreateActionCard({
           {estimatedImpact != null && (
             <p className="mt-0.5 font-mono text-xs text-amber-400">
               {t("estimated_impact", {
-                amount: `$${estimatedImpact.toLocaleString()}`,
+                amount: `${getCurrencySymbol(currency)}${estimatedImpact.toLocaleString()}`,
                 perMonth: tc("per_month_short"),
               })}
             </p>

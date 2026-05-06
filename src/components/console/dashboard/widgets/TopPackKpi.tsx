@@ -21,16 +21,19 @@ import {
 	registerWidget,
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 
 function TopPackKpiComponent({ data }: WidgetProps) {
 	const t = useTranslations("console.dashboard.widgets.top_pack_card");
 	const tc = useTranslations("console.common");
 	const tp = useTranslations("console.common.pack_labels");
+	const { currency } = useMcpData();
 	const top = data.exposure.byPack[0];
 	const caption =
 		top && top.cents > 0
 			? t("caption", {
-					amount: `$${(top.cents / 100_000).toFixed(1)}k`,
+					amount: fmtCurrency(top.cents / 100, currency),
 					perMonth: tc("per_month_short"),
 				})
 			: t("empty_caption");

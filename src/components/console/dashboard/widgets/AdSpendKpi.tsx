@@ -25,10 +25,10 @@ const PLATFORM_COLORS: Record<string, { dot: string; text: string }> = {
 	google_ads: { dot: "bg-emerald-500", text: "text-emerald-400" },
 };
 
+import { fmtCurrency } from "@/lib/format-currency";
+
 function fmt(value: number, currency: string): string {
-	if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-	if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
-	return `$${Math.round(value)}`;
+	return fmtCurrency(value, currency);
 }
 
 function AdSpendKpiComponent({ data }: WidgetProps) {

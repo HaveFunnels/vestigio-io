@@ -8,6 +8,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ChatMessage, ContentBlock, ToolCallBlock } from "@/lib/chat-types";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { ToolCallStep } from "./ToolCallStep";
 import { FindingCard } from "./FindingCard";
@@ -33,11 +35,7 @@ interface ChatMessageRendererProps {
   onFork?: (messageId: string) => void;
 }
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
-  return `$${value.toFixed(0)}`;
-}
+// Currency formatting moved to shared fmtCurrency util
 
 // Smart timestamp formatter — short and contextual:
 //   - same day  → "2:34 PM"
@@ -77,6 +75,8 @@ export function ChatMessageRenderer({
   onRegenerate,
   onFork,
 }: ChatMessageRendererProps) {
+  const { currency } = useMcpData();
+
   // Thinking state: streaming with no blocks yet
   if (message.streaming && message.blocks.length === 0) {
     return <ThinkingIndicator />;
@@ -195,6 +195,7 @@ function BlockRenderer({
 }) {
   const t = useTranslations("console.chat");
   const tc = useTranslations("console.common");
+  const { currency } = useMcpData();
   switch (block.type) {
     case "markdown":
       return <ChatMarkdown content={block.content} />;
@@ -227,8 +228,8 @@ function BlockRenderer({
         <div className="my-2 rounded-md border border-red-800/30 bg-red-500/5 px-3.5 py-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-content-muted">{t("est_monthly_loss")}</div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="font-mono text-lg font-bold text-red-400">{formatCurrency(block.summary.mid)}</span>
-            <span className="font-mono text-xs text-content-muted">({formatCurrency(block.summary.min)} – {formatCurrency(block.summary.max)})</span>
+            <span className="font-mono text-lg font-bold text-red-400">{fmtCurrency(block.summary.mid, currency)}</span>
+            <span className="font-mono text-xs text-content-muted">({fmtCurrency(block.summary.min, currency)} – {fmtCurrency(block.summary.max, currency)})</span>
             <span className="text-[10px] text-content-faint">{tc("per_month_short")}</span>
           </div>
           <div className="mt-0.5 text-[10px] text-content-faint">{tc(`impact_types.${block.summary.type}` as never)}</div>

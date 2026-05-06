@@ -2,6 +2,8 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 import type { WorkspaceProjection } from "../../../packages/projections";
 
 // ──────────────────────────────────────────────
@@ -32,11 +34,7 @@ function classifyWorkspacePerspective(ws: WorkspaceProjection): string {
   return "trust";
 }
 
-function fmt(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
-  return `$${Math.round(value)}`;
-}
+// fmt delegates to shared currency formatter — resolved per-component via useMcpData
 
 interface RevenueMapProps {
   workspaces: WorkspaceProjection[];
@@ -45,6 +43,8 @@ interface RevenueMapProps {
 
 export default function RevenueMap({ workspaces, filterPerspective }: RevenueMapProps) {
   const t = useTranslations("console.workspaces");
+  const { currency } = useMcpData();
+  const fmt = (value: number) => fmtCurrency(value, currency);
   const [animated, setAnimated] = useState(false);
 
   useEffect(() => {

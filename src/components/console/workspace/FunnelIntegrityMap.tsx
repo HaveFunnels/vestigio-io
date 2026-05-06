@@ -15,6 +15,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import { classifyPageType } from "../../../../packages/behavioral/surface-normalizer";
 import type { FindingProjection } from "../../../../packages/projections/types";
@@ -47,11 +49,7 @@ function classifyStage(surface: string): string {
 	return PAGE_TYPE_TO_STAGE[pageType] || "awareness";
 }
 
-function formatDollars(amount: number): string {
-	if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}k`;
-	if (amount > 0) return `$${amount.toFixed(0)}`;
-	return "$0";
-}
+// formatDollars resolved inside component via useMcpData
 
 const STAGE_COLORS: Record<string, { bg: string; text: string; border: string; activeBg: string }> = {
 	awareness: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/30", activeBg: "bg-blue-500/15" },
@@ -68,6 +66,8 @@ interface Props {
 
 export default function FunnelIntegrityMap({ findings, onFindingClick }: Props) {
 	const t = useTranslations("console.workspaces");
+	const { currency } = useMcpData();
+	const formatDollars = (amount: number) => fmtCurrency(amount, currency);
 	const [expandedStage, setExpandedStage] = useState<string | null>(null);
 
 	// Classify findings into stages using the engine's classifyPageType

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
 
 interface ImpactBadgeProps {
   min: number;
@@ -9,14 +10,18 @@ interface ImpactBadgeProps {
   compact?: boolean;
 }
 
-function formatCurrency(value: number): string {
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
-  return `$${Math.round(value)}`;
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BRL: "R$", EUR: "€" };
+
+function formatCurrency(value: number, sym: string): string {
+  if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `${sym}${(value / 1000).toFixed(1)}k`;
+  return `${sym}${Math.round(value)}`;
 }
 
-export default function ImpactBadge({ min, max, compact = false }: ImpactBadgeProps) {
+export default function ImpactBadge({ min, max, currency, compact = false }: ImpactBadgeProps) {
   const t = useTranslations("console.common");
+  const { currency: orgCurrency } = useMcpData();
+  const sym = CURRENCY_SYMBOLS[currency || orgCurrency] || "$";
   const midpoint = (min + max) / 2;
 
   const color =
@@ -29,7 +34,7 @@ export default function ImpactBadge({ min, max, compact = false }: ImpactBadgePr
   if (compact) {
     return (
       <span className={`font-mono text-xs ${color}`}>
-        {formatCurrency(midpoint)}
+        {formatCurrency(midpoint, sym)}
         {t("per_month_short")}
       </span>
     );
@@ -37,13 +42,15 @@ export default function ImpactBadge({ min, max, compact = false }: ImpactBadgePr
 
   return (
     <span className={`font-mono text-xs ${color}`}>
-      {formatCurrency(min)} – {formatCurrency(max)}
+      {formatCurrency(min, sym)} – {formatCurrency(max, sym)}
       {t("per_month_short")}
     </span>
   );
 }
 
-export function ImpactValue({ value, label }: { value: number; label?: string }) {
+export function ImpactValue({ value, label, currency }: { value: number; label?: string; currency?: string }) {
+  const { currency: orgCurrency } = useMcpData();
+  const sym = CURRENCY_SYMBOLS[currency || orgCurrency] || "$";
   const color =
     value >= 5000
       ? "text-red-600 dark:text-red-400"
@@ -53,7 +60,7 @@ export function ImpactValue({ value, label }: { value: number; label?: string })
 
   return (
     <div>
-      <span className={`text-xl font-bold ${color}`}>{formatCurrency(value)}</span>
+      <span className={`text-xl font-bold ${color}`}>{formatCurrency(value, sym)}</span>
       {label && <span className="ml-1 text-xs text-content-muted">{label}</span>}
     </div>
   );

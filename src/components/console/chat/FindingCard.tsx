@@ -8,6 +8,8 @@
 
 import type { FindingCardBlock } from "@/lib/chat-types";
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 import SeverityBadge from "../SeverityBadge";
 
 interface FindingCardProps {
@@ -15,15 +17,10 @@ interface FindingCardProps {
   onNavigate?: (href: string) => void;
 }
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
-  return `$${value.toFixed(0)}`;
-}
-
 export function FindingCard({ block, onNavigate }: FindingCardProps) {
   const tc = useTranslations("console.common");
   const td = useTranslations("console.finding_drawer");
+  const { currency } = useMcpData();
   const { finding } = block;
   const impactColor =
     finding.impact_mid >= 5000
@@ -55,7 +52,7 @@ export function FindingCard({ block, onNavigate }: FindingCardProps) {
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-medium text-content-secondary">{finding.title}</p>
           <span className={`shrink-0 font-mono text-sm font-bold ${impactColor}`}>
-            {formatCurrency(finding.impact_mid)}
+            {fmtCurrency(finding.impact_mid, currency)}
             <span className="text-[10px] font-normal text-content-faint">{tc("per_month_short")}</span>
           </span>
         </div>

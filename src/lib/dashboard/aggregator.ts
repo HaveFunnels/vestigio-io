@@ -56,22 +56,14 @@ const DEFAULT_CURRENCY = "USD";
  */
 let _captionT: CaptionTranslations | undefined;
 
-// Pack → segmented-bar color mapping. Mirrors the colors used in
-// MOCK_DASHBOARD_DATA so the visual identity stays stable when
-// the page flips from mock to real data.
-const PACK_COLORS: Record<string, string> = {
-	revenue_integrity: "bg-emerald-500",
-	revenue: "bg-emerald-500",
-	scale_readiness: "bg-amber-500",
-	scale: "bg-amber-500",
-	chargeback_resilience: "bg-red-500",
-	chargeback: "bg-red-500",
-	behavioral: "bg-blue-500",
-	saas: "bg-violet-500",
-};
+// Pack → segmented-bar color mapping. Must match the global pack
+// identity in src/lib/pack-colors.ts (single source of truth for
+// client components). Duplicated here because the aggregator runs
+// server-side and returns the class strings in the JSON payload.
+import { getPackBg } from "../pack-colors";
 
 function colorForPack(pack: string): string {
-	return PACK_COLORS[pack] ?? "bg-content-faint";
+	return getPackBg(pack);
 }
 
 // Truncate impact midpoint (stored as monthly $ value) to cents.

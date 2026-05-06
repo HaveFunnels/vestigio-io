@@ -21,31 +21,7 @@ import {
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
 import type { CrossSignalChain } from "@/lib/dashboard/types";
-
-const PACK_STYLES: Record<string, { text: string; dot: string }> = {
-	revenue: { text: "text-red-400", dot: "bg-red-500" },
-	revenue_integrity: { text: "text-red-400", dot: "bg-red-500" },
-	chargeback: { text: "text-amber-400", dot: "bg-amber-500" },
-	chargeback_resilience: { text: "text-amber-400", dot: "bg-amber-500" },
-	security_posture: { text: "text-blue-400", dot: "bg-blue-500" },
-	money_moment_exposure: { text: "text-blue-400", dot: "bg-blue-500" },
-	scale_readiness: { text: "text-emerald-400", dot: "bg-emerald-500" },
-	behavioral: { text: "text-violet-400", dot: "bg-violet-500" },
-	first_impression: { text: "text-violet-400", dot: "bg-violet-500" },
-	friction_tax: { text: "text-rose-400", dot: "bg-rose-500" },
-	trust_gap: { text: "text-indigo-400", dot: "bg-indigo-500" },
-	copy_alignment: { text: "text-pink-400", dot: "bg-pink-500" },
-	content_freshness: { text: "text-orange-400", dot: "bg-orange-500" },
-	channel_integrity: { text: "text-cyan-400", dot: "bg-cyan-500" },
-	discoverability: { text: "text-teal-400", dot: "bg-teal-500" },
-	brand_integrity: { text: "text-purple-400", dot: "bg-purple-500" },
-	saas_growth_readiness: { text: "text-violet-400", dot: "bg-violet-500" },
-	payment_health: { text: "text-yellow-400", dot: "bg-yellow-500" },
-	vertical_specific: { text: "text-lime-400", dot: "bg-lime-500" },
-	cross_signal: { text: "text-fuchsia-400", dot: "bg-fuchsia-500" },
-};
-
-const FALLBACK_STYLE = { text: "text-content-muted", dot: "bg-content-faint" };
+import { getPackStyle } from "@/lib/pack-colors";
 
 // Locale hint for Intl.NumberFormat — ensures R$ for BRL, $ for USD, etc.
 const CURRENCY_LOCALE: Record<string, string> = {
@@ -110,7 +86,7 @@ function ChainRow({ chain, editing, currency }: { chain: CrossSignalChain; editi
 				{/* Chain links — inline flow */}
 				<div className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-0.5">
 					{chain.links.map((link, i) => {
-						const style = PACK_STYLES[link.pack] || FALLBACK_STYLE;
+						const style = getPackStyle(link.pack);
 						return (
 							<span key={link.findingId} className="flex items-center gap-1">
 								{i > 0 && (

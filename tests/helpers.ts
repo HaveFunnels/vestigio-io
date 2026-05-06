@@ -106,6 +106,7 @@ export function pageContentEvidence(url: string, title: string = 'Test'): Eviden
     external_script_count: 0,
     internal_link_count: 5,
     external_link_count: 0,
+    body_word_count: 200,
   } as PageContentPayload);
 }
 

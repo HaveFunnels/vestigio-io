@@ -308,9 +308,10 @@ export async function runStagedPipeline(
 
   // Try sitemap.xml and robots.txt (non-blocking, fast).
   // Skipped in shallow_plus mode to keep the budget tight.
+  let sitemapUrls: string[] = [];
   if (mode === 'full') {
     emitStep('Understanding how users enter your funnel');
-    await tryFetchMeta(rootUrl, scoping, input.cycle_ref, evidence, errors, coverage);
+    sitemapUrls = await tryFetchMeta(rootUrl, scoping, input.cycle_ref, evidence, errors, coverage);
   }
 
   // Compute initial classification
@@ -343,7 +344,23 @@ export async function runStagedPipeline(
   const criticalPaths = ['/checkout', '/cart', '/login', '/contact', '/pricing',
     '/privacy', '/terms', '/refund-policy', '/return-policy', '/shipping', '/about'];
 
-  let candidates = discoverHighValueCandidates(homepageParsed!, rootDomain, rootUrl, criticalPaths);
+  let candidates = discoverHighValueCandidates(homepageParsed!, rootDomain, rootUrl, criticalPaths, mode);
+
+  // Merge sitemap-discovered URLs into the candidate list. These are
+  // added AFTER the homepage-link candidates so that speculative
+  // critical paths and actually-linked pages get priority. Dedup
+  // against existing candidates to avoid double-fetching.
+  if (sitemapUrls.length > 0) {
+    const seen = new Set<string>(candidates.map(normalizeUrlForDedup));
+    seen.add(normalizeUrlForDedup(rootUrl));
+    for (const sUrl of sitemapUrls) {
+      const key = normalizeUrlForDedup(sUrl);
+      if (!seen.has(key)) {
+        seen.add(key);
+        candidates.push(sUrl);
+      }
+    }
+  }
 
   // Wave 5 Fase 3 — incremental URL filter. The audit-runner resolves
   // which URLs this cycle is allowed to crawl (critical set for hot,
@@ -604,6 +621,7 @@ function addPageContentEvidence(evidence: Evidence[], parsed: ParsedPage, finalU
     external_script_count: parsed.scripts.filter(s => s.is_external).length,
     internal_link_count: parsed.links.filter(l => !l.is_external).length,
     external_link_count: parsed.links.filter(l => l.is_external).length,
+    body_word_count: parsed.body_word_count ?? 0,
   } as PageContentPayload));
 }
 
@@ -694,7 +712,9 @@ function detectPlatforms(evidence: Evidence[], response: HttpResponse, parsed: P
   }
 }
 
-async function tryFetchMeta(rootUrl: string, scoping: Scoping, cycleRef: string, evidence: Evidence[], errors: any[], coverage: Map<string, CoverageEntry>): Promise<void> {
+async function tryFetchMeta(rootUrl: string, scoping: Scoping, cycleRef: string, evidence: Evidence[], errors: any[], coverage: Map<string, CoverageEntry>): Promise<string[]> {
+  const discoveredUrls: string[] = [];
+  const rootDomain = getRootDomain(new URL(rootUrl).hostname);
   const metaUrls = [`${rootUrl}/robots.txt`, `${rootUrl}/sitemap.xml`];
   for (const url of metaUrls) {
     try {
@@ -702,9 +722,43 @@ async function tryFetchMeta(rootUrl: string, scoping: Scoping, cycleRef: string,
       if (response.status_code === 200) {
         addHttpEvidence(evidence, response, url, scoping, cycleRef);
         coverage.set(url, { url, discovered: true, validated: true, critical: false, confidence: 60 });
+
+        // Parse sitemap.xml to discover additional page URLs
+        if (url.endsWith('/sitemap.xml') && response.body) {
+          const sitemapUrls = parseSitemapUrls(response.body, rootDomain);
+          discoveredUrls.push(...sitemapUrls);
+        }
       }
     } catch { /* non-critical, skip */ }
   }
+  return discoveredUrls;
+}
+
+/**
+ * Extract page URLs from a sitemap.xml body. Lightweight regex-based
+ * parser -- handles standard <url><loc>...</loc></url> sitemaps and
+ * ignores sitemap index files (those contain <sitemap> not <url>).
+ * Only returns URLs on the same root domain to avoid cross-site crawls.
+ */
+function parseSitemapUrls(xml: string, rootDomain: string): string[] {
+  const urls: string[] = [];
+  const locRegex = /<loc>\s*(https?:\/\/[^<\s]+)\s*<\/loc>/gi;
+  let match;
+  while ((match = locRegex.exec(xml)) !== null) {
+    const foundUrl = match[1].trim();
+    try {
+      const host = new URL(foundUrl).hostname;
+      // Only include same-domain URLs
+      if (host === rootDomain || host.endsWith('.' + rootDomain)) {
+        // Skip non-page resources
+        const path = new URL(foundUrl).pathname;
+        if (!/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|pdf|zip|xml|json)$/i.test(path)) {
+          urls.push(foundUrl);
+        }
+      }
+    } catch { /* invalid URL, skip */ }
+  }
+  return urls;
 }
 
 function detectChallenge(response: HttpResponse): string | null {
@@ -727,27 +781,47 @@ function detectChallenge(response: HttpResponse): string | null {
   return null;
 }
 
-function discoverHighValueCandidates(parsed: ParsedPage, rootDomain: string, rootUrl: string, criticalPaths: string[]): string[] {
+function discoverHighValueCandidates(parsed: ParsedPage, rootDomain: string, rootUrl: string, criticalPaths: string[], mode: PipelineMode = 'full'): string[] {
   const seen = new Set<string>([normalizeUrlForDedup(rootUrl)]);
   const candidates: string[] = [];
 
+  // 1. Always seed speculative critical paths first (highest priority).
   for (const p of criticalPaths) {
     const url = new URL(p, rootUrl).toString();
     const key = normalizeUrlForDedup(url);
     if (!seen.has(key)) { seen.add(key); candidates.push(url); }
   }
 
+  // 2. Discover from homepage links.
+  //    - In full mode: include ALL unique internal links so we reach
+  //      pages like /helpcenter, /docs/gethelp, /termos-de-uso, /blog
+  //      that don't match the high-value regex. The crawl session's
+  //      max_pages_per_domain (30) still caps total fetches.
+  //    - In shallow/shallow_plus: keep the old high-value filter to
+  //      stay within tight budgets.
+  const includeAllInternal = mode === 'full';
   for (const link of parsed.links) {
     if (link.is_external) continue;
     const key = normalizeUrlForDedup(link.href);
     if (seen.has(key)) continue;
     seen.add(key);
-    const path = new URL(link.href).pathname.toLowerCase();
-    const text = (link.text || '').toLowerCase();
-    if (isHighValue(path, text)) candidates.push(link.href);
+
+    if (includeAllInternal) {
+      // Skip obvious non-page resources (images, stylesheets, etc.)
+      const path = safePathname(link.href);
+      if (/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|pdf|zip|xml|json)$/i.test(path)) continue;
+      candidates.push(link.href);
+    } else {
+      const path = new URL(link.href).pathname.toLowerCase();
+      const text = (link.text || '').toLowerCase();
+      if (isHighValue(path, text)) candidates.push(link.href);
+    }
   }
 
-  return candidates.slice(0, 20);
+  // In full mode allow up to 50 candidates (the crawl session's
+  // max_pages_per_domain still caps actual fetches at 30).
+  const cap = mode === 'full' ? 50 : 20;
+  return candidates.slice(0, cap);
 }
 
 function isHighValue(path: string, text: string): boolean {

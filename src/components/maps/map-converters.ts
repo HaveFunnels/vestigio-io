@@ -42,16 +42,15 @@ export function toReactFlowNodes(mapDef: MapDefinition): Node[] {
 				impact: n.impact,
 				pack: n.pack,
 				_nodeIndex: index,
+				_scaleFactor: scaleFactor !== 1.0 ? scaleFactor : undefined,
 				...n.metadata,
 			},
 			className: classNames.join(" ") || undefined,
-			style:
-				scaleFactor !== 1.0
-					? {
-							transform: `scale(${scaleFactor.toFixed(3)})`,
-							transformOrigin: "center center",
-						}
-					: undefined,
+			// NOTE: Do NOT set style.transform here — React Flow uses
+			// transform: translate(x,y) on the node wrapper for positioning.
+			// Setting a custom transform in node.style overrides it and breaks
+			// node placement. Instead, pass _scaleFactor via data and apply
+			// scaling inside the custom node component's inner element.
 		};
 	});
 }

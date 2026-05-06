@@ -19,8 +19,8 @@ export default function JourneyDropoffNode({ data }: { data: any }) {
 
 	return (
 		<motion.div
-			initial={{ opacity: 0, scale: 0.8, filter: "blur(4px)" }}
-			animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+			initial={{ opacity: 0, filter: "blur(4px)" }}
+			animate={{ opacity: 1, filter: "blur(0px)" }}
 			transition={{
 				duration: 0.5,
 				ease: [0.22, 1, 0.36, 1],

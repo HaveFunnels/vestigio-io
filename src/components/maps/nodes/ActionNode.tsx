@@ -9,16 +9,19 @@ export default function ActionNode({ data }: { data: any }) {
 	const t = useTranslations("console.maps");
 	const nodeIndex = data._nodeIndex ?? 0;
 
+	const scaleFactor: number | undefined = data._scaleFactor;
+
 	return (
 		<motion.div
-			initial={{ opacity: 0, scale: 0.8, filter: "blur(4px)" }}
-			animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+			initial={{ opacity: 0, filter: "blur(4px)" }}
+			animate={{ opacity: 1, filter: "blur(0px)" }}
 			transition={{
 				duration: 0.5,
 				ease: [0.22, 1, 0.36, 1],
 				delay: nodeIndex * 0.05,
 			}}
 			className='min-w-[180px] cursor-pointer rounded-md border border-emerald-600/50 bg-emerald-500/10 px-3 py-2 transition-shadow hover:shadow-lg hover:shadow-emerald-500/10'
+			style={scaleFactor ? { zoom: scaleFactor } : undefined}
 		>
 			<Handle
 				type='target'

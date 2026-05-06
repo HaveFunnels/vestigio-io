@@ -10,16 +10,19 @@ export default function FindingNode({ data }: { data: any }) {
 	const tc = useTranslations("console.common");
 	const nodeIndex = data._nodeIndex ?? 0;
 
+	const scaleFactor: number | undefined = data._scaleFactor;
+
 	return (
 		<motion.div
-			initial={{ opacity: 0, scale: 0.8, filter: "blur(4px)" }}
-			animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+			initial={{ opacity: 0, filter: "blur(4px)" }}
+			animate={{ opacity: 1, filter: "blur(0px)" }}
 			transition={{
 				duration: 0.5,
 				ease: [0.22, 1, 0.36, 1],
 				delay: nodeIndex * 0.05,
 			}}
 			className={`min-w-[180px] cursor-pointer rounded-md border px-3 py-2 transition-shadow hover:shadow-lg hover:shadow-amber-500/10 ${severityColors[data.severity] || "border-edge bg-surface-inset/50"}`}
+			style={scaleFactor ? { zoom: scaleFactor } : undefined}
 		>
 			<Handle
 				type='target'

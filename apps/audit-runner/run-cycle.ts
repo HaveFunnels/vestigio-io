@@ -313,6 +313,14 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 
 		evidenceCount = result.evidence.length;
 
+		// Diagnostic: log enrichment pass status so we can see why
+		// semantic enrichment skipped (LLM off? no evidence? mode?)
+		console.log(`[audit-runner ${cycleId}] pipeline mode=${pipelineMode}, evidence=${evidenceCount}, LLM=${process.env.VESTIGIO_LLM_ENABLED === 'true'}, ANTHROPIC_KEY=${process.env.ANTHROPIC_API_KEY ? 'set' : 'MISSING'}`);
+		const contentEv = result.evidence.filter((e: any) => e.evidence_type === 'page_content').length;
+		const policyEv = result.evidence.filter((e: any) => e.evidence_type === 'policy_page').length;
+		const enrichEv = result.evidence.filter((e: any) => e.evidence_type === 'content_enrichment').length;
+		console.log(`[audit-runner ${cycleId}] page_content=${contentEv}, policy_page=${policyEv}, content_enrichment=${enrichEv}`);
+
 		// 5. Persist evidence to Postgres
 		try {
 			const store = new PrismaEvidenceStore(prisma);

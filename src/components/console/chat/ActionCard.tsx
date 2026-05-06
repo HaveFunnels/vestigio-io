@@ -29,11 +29,11 @@ export function ActionCard({ block, onNavigate }: ActionCardProps) {
       onClick={() => onNavigate?.(`/app/actions?action=${action.id}`)}
       className="my-1.5 flex w-full items-center gap-3 rounded-lg border border-emerald-800/20 bg-emerald-500/5 px-3.5 py-2.5 text-left transition-colors hover:border-emerald-700/30 hover:bg-emerald-500/10"
     >
-      {/* Priority number */}
+      {/* Priority icon */}
       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-emerald-700/30 bg-emerald-500/10">
-        <span className="font-mono text-[10px] font-bold text-emerald-400">
-          {action.priority_score}
-        </span>
+        <svg className="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+        </svg>
       </div>
 
       {/* Content */}

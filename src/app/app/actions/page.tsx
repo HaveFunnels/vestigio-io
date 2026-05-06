@@ -1158,8 +1158,7 @@ function ActionDrawerContent({
 						/>
 						<DrawerStatRow
 							label={t("drawer.priorityScore")}
-							value={action.priority_score}
-							mono
+							value={action.priority_score >= 5000 ? t("drawer.priority_critical") : action.priority_score >= 2000 ? t("drawer.priority_high") : action.priority_score >= 500 ? t("drawer.priority_medium") : t("drawer.priority_low")}
 						/>
 					</DrawerStatBox>
 				</DrawerSection>

@@ -4142,7 +4142,14 @@
 			"navigation_traps_commercial_flow": "Suas páginas de conteúdo prendem o visitante sem caminho de volta pra compra",
 			"social_proof_loads_too_late": "Seus depoimentos carregam tarde demais pra influenciar a decisão de compra",
 			"consent_banner_obscures_first_action": "Seu banner de cookies bloqueia a primeira coisa que o comprador quer clicar",
-			"price_hidden_behind_interaction": "Comprador não vê preço até clicar — a maioria vai embora antes de clicar"
+			"price_hidden_behind_interaction": "Comprador não vê preço até clicar — a maioria vai embora antes de clicar",
+			"brand_trust_cliff_at_payment": "Sua marca desaparece no checkout e o comprador sente que caiu em armadilha",
+			"ad_landing_experience_disconnect": "Sua página entrega algo diferente do que as meta tags prometeram",
+			"checkout_form_mobile_hostile": "Seu formulário de checkout castiga compradores mobile com digitação infinita",
+			"pricing_page_complexity_paralysis": "Opções demais na página de preços paralisam o comprador",
+			"support_promise_impossible_to_fulfill": "Você promete suporte rápido mas não tem canal pra cumprir",
+			"trust_journey_inconsistency": "Sinais de confiança somem justo nas páginas onde o comprador mais precisa",
+			"multilingual_conversion_leak": "Idioma muda no meio do funil e confunde o comprador até desistir"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Falha de confiança no checkout",

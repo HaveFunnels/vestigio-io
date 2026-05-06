@@ -132,6 +132,14 @@ export function computeCrossDomainInferences(
   results.push(...inferFaqAnswersWrongQuestions(scoping, cycleRef, evidence, corpus, enrichments, hasLLM));
   results.push(...inferTestimonialsFeelFabricated(scoping, cycleRef, evidence, corpus, enrichments, hasLLM));
 
+  // Static + Playwright cross-domain findings (heuristic fallback when no browser evidence)
+  results.push(...inferFormSubmitUnreachableMobile(scoping, cycleRef, evidence, corpus, enrichments, hasLLM));
+  results.push(...inferTrustBadgesInvisibleAtCheckout(scoping, cycleRef, evidence, corpus, enrichments, hasLLM));
+  results.push(...inferNavigationTrapsCommercialFlow(scoping, cycleRef, evidence, corpus, enrichments, hasLLM));
+  results.push(...inferSocialProofLoadsTooLate(scoping, cycleRef, evidence, corpus, enrichments, hasLLM));
+  results.push(...inferConsentBannerObscuresFirstAction(scoping, cycleRef, evidence, corpus, enrichments, hasLLM));
+  results.push(...inferPriceHiddenBehindInteraction(scoping, cycleRef, evidence, corpus, enrichments, hasLLM));
+
   return results;
 }
 

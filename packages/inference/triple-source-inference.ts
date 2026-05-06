@@ -456,7 +456,7 @@ function inferMultilingualConversionLeak(
   const nonCrit = pageLangs.filter(pl => { const p = pl.page.payload as { url?: string }; return !(p.url ?? '').match(/\/checkout|\/cart|\/product|\/produto|\/pricing|\/pay/i); });
   const cL = new Set(crit.map(pl => pl.lang));
   const nL = new Set(nonCrit.map(pl => pl.lang));
-  const conflict = [...cL].some(l => !nL.has(l)) || [...nL].some(l => !cL.has(l));
+  const conflict = Array.from(cL).some(l => !nL.has(l)) || Array.from(nL).some(l => !cL.has(l));
   if (!conflict && langAttrs.size < 2) return [];
 
   const bt = getNavTraces(evidence);

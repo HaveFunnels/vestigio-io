@@ -38,7 +38,22 @@ export type CompoundType =
   | 'ad_promise_reality_behavior'
   | 'trust_hesitation_revenue'
   | 'post_purchase_chain'
-  | 'brand_impersonation_revenue';
+  | 'brand_impersonation_revenue'
+  | 'security_trust_double_exposure'
+  | 'security_chargeback_compound'
+  | 'copy_conversion_paralysis'
+  | 'copy_pricing_confusion'
+  | 'vertical_saas_trial_trust'
+  | 'vertical_ecommerce_size_returns'
+  | 'vertical_food_friction_chain'
+  | 'performance_conversion_bleed'
+  | 'mobile_revenue_compound'
+  | 'stale_content_trust_erosion'
+  | 'freshness_brand_decay'
+  | 'invisible_commercial_pages'
+  | 'seo_conversion_misalignment'
+  | 'exposed_infrastructure_risk'
+  | 'subdomain_trust_fragmentation';
 
 export interface ChainLink {
   order: number;
@@ -128,6 +143,89 @@ const BRAND_TRUST_KEYS = new Set([
   'brand_inconsistent_across_surfaces',
   'social_proof_ineffective',
   'social_previews_fail_commercial_value',
+]);
+
+const COPY_WEAK_KEYS = new Set([
+  'cta_clarity_weak_on_commercial',
+  'social_proof_ineffective',
+  'social_proof_generic',
+  'value_proposition_buried',
+  'copy_cross_page_inconsistent',
+]);
+
+const FRESHNESS_KEYS = new Set([
+  'commercial_page_stale',
+  'pricing_page_outdated',
+  'social_proof_expired',
+  'content_decay_progression',
+]);
+
+const VERTICAL_SAAS_KEYS = new Set([
+  'no_free_trial_offered',
+  'integration_ecosystem_invisible',
+  'changelog_stale_or_missing',
+  'annual_discount_not_highlighted',
+  'no_product_screenshot_visible',
+]);
+
+const VERTICAL_ECOMMERCE_KEYS = new Set([
+  'size_guide_missing',
+  'product_images_insufficient',
+  'no_urgency_indicators',
+  'cross_sell_absent',
+  'return_policy_not_on_product',
+]);
+
+const MOBILE_KEYS = new Set([
+  'mobile_commercial_path_blocked',
+  'mobile_fails_first_commercial_action',
+  'mobile_heavy_runtime_chain',
+  'checkout_form_mobile_hostile',
+  'form_submit_unreachable_mobile',
+]);
+
+const PRICING_KEYS = new Set([
+  'pricing_page_framing_unclear',
+  'pricing_hidden_behind_interaction',
+  'pricing_currency_mismatch',
+  'pricing_page_outdated',
+]);
+
+const DISCOVERABILITY_KEYS = new Set([
+  'commercial_pages_not_exposed_for_discovery',
+  'social_previews_fail_commercial_value',
+  'brand_inconsistent_across_surfaces',
+  'sitemap_missing_commercial_pages',
+  'organic_cannibalization',
+]);
+
+const CHARGEBACK_KEYS = new Set([
+  'refund_policy_gap',
+  'refund_process_unclear',
+  'refund_terms_too_thin',
+  'post_purchase_proof_too_weak',
+  'post_purchase_confirmation_absent',
+]);
+
+const SCALE_PERFORMANCE_KEYS = new Set([
+  'commercial_pages_slow',
+  'checkout_heavy_javascript',
+  'lcp_above_threshold_on_commerce',
+  'render_blocking_on_commercial_path',
+]);
+
+const SUBDOMAIN_EXPOSURE_KEYS = new Set([
+  'admin_panel_exposed',
+  'staging_environment_public',
+  'internal_tool_indexed',
+  'debug_endpoint_reachable',
+]);
+
+const CHANNEL_INTEGRITY_PAYMENT_KEYS = new Set([
+  'payment_surface_compromised',
+  'channel_traffic_divertible',
+  'checkout_trust_brittle_infrastructure',
+  'multiple_payment_subdomains',
 ]);
 
 function severityRank(sev: string): number {
@@ -265,6 +363,53 @@ export function detectCompoundFindings(
 
   const brandImpersonation = detectBrandImpersonationRevenue(items, commerceContext);
   if (brandImpersonation) compounds.push(brandImpersonation);
+
+  // ── New Wave 4.8 Compound Detectors ──
+
+  const securityTrustDouble = detectSecurityTrustDoubleExposure(items);
+  if (securityTrustDouble) compounds.push(securityTrustDouble);
+
+  const securityChargeback = detectSecurityChargebackCompound(items);
+  if (securityChargeback) compounds.push(securityChargeback);
+
+  const copyParalysis = detectCopyConversionParalysis(items);
+  if (copyParalysis) compounds.push(copyParalysis);
+
+  const copyPricing = detectCopyPricingConfusion(items);
+  if (copyPricing) compounds.push(copyPricing);
+
+  const verticalSaasTrial = detectVerticalSaasTrialTrust(items);
+  if (verticalSaasTrial) compounds.push(verticalSaasTrial);
+
+  const verticalEcommerceSize = detectVerticalEcommerceSizeReturns(items);
+  if (verticalEcommerceSize) compounds.push(verticalEcommerceSize);
+
+  const verticalFoodFriction = detectVerticalFoodFrictionChain(items);
+  if (verticalFoodFriction) compounds.push(verticalFoodFriction);
+
+  const performanceBleed = detectPerformanceConversionBleed(items);
+  if (performanceBleed) compounds.push(performanceBleed);
+
+  const mobileRevenue = detectMobileRevenueCompound(items);
+  if (mobileRevenue) compounds.push(mobileRevenue);
+
+  const staleContent = detectStaleContentTrustErosion(items);
+  if (staleContent) compounds.push(staleContent);
+
+  const freshnessBrand = detectFreshnessBrandDecay(items);
+  if (freshnessBrand) compounds.push(freshnessBrand);
+
+  const invisiblePages = detectInvisibleCommercialPages(items);
+  if (invisiblePages) compounds.push(invisiblePages);
+
+  const seoMisalignment = detectSeoConversionMisalignment(items);
+  if (seoMisalignment) compounds.push(seoMisalignment);
+
+  const exposedInfra = detectExposedInfrastructureRisk(items);
+  if (exposedInfra) compounds.push(exposedInfra);
+
+  const subdomainTrust = detectSubdomainTrustFragmentation(items);
+  if (subdomainTrust) compounds.push(subdomainTrust);
 
   // Sort by impact descending
   compounds.sort((a, b) => b.combined_impact_cents - a.combined_impact_cents);

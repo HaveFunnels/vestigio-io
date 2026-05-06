@@ -820,11 +820,14 @@ function parseJsonResponse(raw: string): (Record<string, unknown> & { confidence
 // ──────────────────────────────────────────────
 
 function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
-  // Gate 1: Only full audit cycles
-  if (ctx.mode !== "full") {
+  // Gate 1: full or shallow_plus (warm) cycles. Hot cycles skip LLM
+  // to stay within the 15-min budget. Warm cycles benefit from
+  // semantic enrichment because without it, copy/freshness findings
+  // never appear between cold cycles (which may be 24h+ apart).
+  if (ctx.mode !== "full" && ctx.mode !== "shallow_plus") {
     return {
       run: false,
-      reason: `mode is '${ctx.mode}' — semantic enrichment only runs in 'full' mode`,
+      reason: `mode is '${ctx.mode}' — semantic enrichment runs in 'full' and 'shallow_plus' modes`,
     };
   }
 

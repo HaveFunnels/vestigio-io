@@ -1686,7 +1686,25 @@
 				"unpin": "Unpin",
 				"max_pins": "Maximum 5 pinned views",
 				"shared_by": "Shared by {name}",
-				"read_only": "Read-only (shared)"
+				"read_only": "Read-only (shared)",
+				"edit_view": "Edit view",
+				"view_saved": "View saved",
+				"save_error": "Failed to save view",
+				"save_view_btn": "Save View",
+				"edit_polarity": "Polarity",
+				"edit_pack": "Pack",
+				"edit_impact": "Impact",
+				"edit_change": "Change",
+				"edit_group_by": "Group By",
+				"impact_any": "Any impact",
+				"change_new_issue": "New",
+				"change_regression": "Worsened",
+				"change_stable_risk": "Stable",
+				"change_improvement": "Improved",
+				"group_by_none": "None",
+				"group_by_pack": "By Pack",
+				"group_by_severity": "By Severity",
+				"group_by_surface": "By Surface"
 			}
 		},
 		"finding_drawer": {

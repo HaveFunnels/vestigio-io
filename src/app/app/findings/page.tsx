@@ -64,6 +64,7 @@ export default function FindingsPage() {
 	const [saveModalOpen, setSaveModalOpen] = useState(false);
 	const [savingView, setSavingView] = useState(false);
 	const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+	const [newViewFilters, setNewViewFilters] = useState<{ filters: Record<string, unknown>; groupBy: string | null } | null>(null);
 
 	// ── Findings data ──
 	const mcpData = useMcpData();
@@ -321,6 +322,10 @@ export default function FindingsPage() {
 	}) {
 		setSavingView(true);
 		try {
+			// Use newViewFilters from edit panel if available, otherwise fallback to active view
+			const filtersToSave = newViewFilters?.filters || activeView?.filters || {};
+			const groupByToSave = newViewFilters?.groupBy ?? activeView?.groupBy ?? null;
+
 			const res = await fetch("/api/views", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -328,8 +333,8 @@ export default function FindingsPage() {
 					name: data.name,
 					icon: data.icon,
 					color: data.color,
-					filters: activeView?.filters || {},
-					groupBy: activeView?.groupBy || null,
+					filters: filtersToSave,
+					groupBy: groupByToSave,
 					sortBy: activeView?.sortBy || "impact_desc",
 				}),
 			});
@@ -339,6 +344,7 @@ export default function FindingsPage() {
 				setActiveViewId(result.view.id);
 				toast.success(tv("save_view") + " \u2713");
 				setSaveModalOpen(false);
+				setNewViewFilters(null);
 			} else {
 				toast.error("Failed to save view");
 			}
@@ -346,6 +352,47 @@ export default function FindingsPage() {
 			toast.error("Failed to save view");
 		} finally {
 			setSavingView(false);
+		}
+	}
+
+	// ── Edit view save handler (from ViewSelector edit panel) ──
+	async function handleEditViewSave(
+		viewId: string | null,
+		data: { filters: Record<string, unknown>; groupBy: string | null },
+	) {
+		if (viewId) {
+			// Editing existing view: merge filters preserving columns
+			const existingView = views.find((v) => v.id === viewId);
+			const existingFilters = (existingView?.filters as Record<string, any>) || {};
+			const mergedFilters = { ...existingFilters, ...data.filters };
+			// Remove cleared filter keys
+			for (const key of ["severity", "polarity", "pack", "impact", "change"]) {
+				if (!(key in data.filters)) delete mergedFilters[key];
+			}
+
+			try {
+				const res = await fetch(`/api/views/${viewId}`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ filters: mergedFilters, groupBy: data.groupBy }),
+				});
+				if (res.ok) {
+					const result = await res.json();
+					setViews((prev) =>
+						prev.map((v) => (v.id === result.view.id ? result.view : v)),
+					);
+					toast.success(tv("view_saved"));
+				} else {
+					toast.error(tv("save_error"));
+				}
+			} catch {
+				toast.error(tv("save_error"));
+			}
+		} else {
+			// New view: open the save modal (user picks name/icon/color)
+			// but first store the filters in a temp ref to pass when saving
+			setNewViewFilters(data);
+			setSaveModalOpen(true);
 		}
 	}
 
@@ -600,6 +647,7 @@ export default function FindingsPage() {
 					onViewChange={handleViewChange}
 					onSaveView={() => setSaveModalOpen(true)}
 					onViewUpdated={handleViewUpdated}
+					onEditViewSave={handleEditViewSave}
 					currentUserId={currentUserId}
 				/>
 			)}

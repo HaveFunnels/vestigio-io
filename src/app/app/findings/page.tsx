@@ -578,10 +578,13 @@ export default function FindingsPage() {
 	});
 
 	// ── Loading / empty states ──
-	if (!hasData) {
+	// Wait for BOTH findings data AND views to load before rendering content.
+	// Without this, the page briefly shows unfiltered findings then "jumps"
+	// when the active view's filters apply — feels like a double redirect.
+	if (!hasData || viewsLoading) {
 		return (
 			<div className="p-4 sm:p-6">
-				<ConsoleState state={existingState} loadingLabel={t("loading")} emptyLabel={t("empty")}>
+				<ConsoleState state={viewsLoading ? { status: "loading" } : existingState} loadingLabel={t("loading")} emptyLabel={t("empty")}>
 					{() => null}
 				</ConsoleState>
 			</div>

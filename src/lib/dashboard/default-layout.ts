@@ -150,4 +150,22 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		w: 2,
 		h: 3,
 	},
+
+	// ── Row 14-17 (h=4): Trend analysis + Recovery breakdown ──
+	{
+		instanceId: "default-trend-analysis",
+		defId: "trend_analysis",
+		x: 0,
+		y: 14,
+		w: 6,
+		h: 4,
+	},
+	{
+		instanceId: "default-recovery-breakdown",
+		defId: "recovery_breakdown",
+		x: 6,
+		y: 14,
+		w: 6,
+		h: 4,
+	},
 ];

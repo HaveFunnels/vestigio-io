@@ -540,6 +540,158 @@ export function executeTool(
       };
     }
 
+    // Wave 7.1: Trend analysis — uses change report from the current context
+    case 'get_trend_analysis': {
+      const filterPattern = (params.filter_pattern as string) || null;
+      const changeReport = ctx.result.change_report;
+
+      if (!changeReport) {
+        return {
+          type: 'trend_analysis',
+          data: {
+            lookback_cycles: 1,
+            workspace_direction: 'stable',
+            volatility: 0,
+            alerts: [],
+            summary: 'Insufficient cycle history for trend analysis. At least 2 cycles are required.',
+          },
+        };
+      }
+
+      // Synthesize trend alerts from change report regressions
+      const alerts: { finding_key: string; pattern: string; streak_length: number; total_delta: number; narrative: string }[] = [];
+
+      if (!filterPattern || filterPattern === 'consecutive_regressions') {
+        for (const r of changeReport.regressions) {
+          alerts.push({
+            finding_key: r.decision_key,
+            pattern: 'consecutive_regressions',
+            streak_length: 2,
+            total_delta: r.risk_score_delta,
+            narrative: `${r.decision_key} regressed by ${r.risk_score_delta} risk points since last cycle.`,
+          });
+        }
+      }
+
+      // Add improvements if filtering for 'improving'
+      if (!filterPattern || filterPattern === 'improving') {
+        for (const imp of changeReport.improvements) {
+          alerts.push({
+            finding_key: imp.decision_key,
+            pattern: 'improving',
+            streak_length: 2,
+            total_delta: imp.risk_score_delta,
+            narrative: `${imp.decision_key} improved by ${Math.abs(imp.risk_score_delta)} risk points since last cycle.`,
+          });
+        }
+      }
+
+      return {
+        type: 'trend_analysis',
+        data: {
+          lookback_cycles: 2,
+          workspace_direction: changeReport.summary.overall_trend,
+          volatility: changeReport.summary.regression_count / Math.max(1, changeReport.summary.total_decisions_compared),
+          alerts,
+          summary: changeReport.summary.headline,
+        },
+      };
+    }
+
+    // Wave 7.2: Recovery impact — uses pre-computed revenue recovery from engine result
+    case 'get_recovery_impact': {
+      const actionKey = (params.action_key as string) || null;
+      const recovery = ctx.result.revenue_recovery;
+
+      if (!recovery) {
+        return {
+          type: 'recovery_impact',
+          data: {
+            total_recovery_monthly_cents: 0,
+            data_source: 'none',
+            estimates: [],
+            summary: 'No revenue recovery data available. Ensure integrations are connected and findings have been resolved.',
+          },
+        };
+      }
+
+      const estimates = recovery.estimates
+        .filter(e => !actionKey || e.finding_key === actionKey)
+        .map(e => ({
+          finding_key: e.finding_key,
+          confidence: e.confidence,
+          estimated_impact_cents: (e.estimated_impact_at_resolution.min + e.estimated_impact_at_resolution.max) / 2,
+          revenue_delta_cents: e.revenue_delta_next_cycle,
+          narrative: e.narrative,
+        }));
+
+      const totalCents = estimates.reduce((sum, e) => sum + e.estimated_impact_cents, 0);
+
+      return {
+        type: 'recovery_impact',
+        data: {
+          total_recovery_monthly_cents: totalCents,
+          data_source: recovery.data_source,
+          estimates,
+          summary: estimates.length > 0
+            ? `${estimates.length} resolved finding(s) tracked. Estimated monthly recovery: $${(totalCents / 100).toFixed(0)}.`
+            : 'No resolved findings match the filter.',
+        },
+      };
+    }
+
+    // Wave 8.3: Content freshness — filters findings to content_freshness pack
+    case 'get_content_freshness': {
+      const allFindings = getFindingProjections(ctx);
+      const freshFindings = allFindings.filter(f => f.pack === 'content_freshness');
+
+      if (freshFindings.length === 0) {
+        return {
+          type: 'content_freshness',
+          data: {
+            pages_with_stale_content: 0,
+            worst_staleness_score: 0,
+            stale_pages: [],
+            pack_status: 'healthy',
+            summary: 'No content freshness issues detected.',
+          },
+        };
+      }
+
+      // Group by surface (URL)
+      const pageMap = new Map<string, typeof freshFindings>();
+      for (const f of freshFindings) {
+        const url = f.surface || 'unknown';
+        const existing = pageMap.get(url) || [];
+        existing.push(f);
+        pageMap.set(url, existing);
+      }
+
+      const severityToScore = (s: string) =>
+        s === 'critical' ? 95 : s === 'high' ? 75 : s === 'medium' ? 50 : 25;
+
+      const stalePages = [...pageMap.entries()].map(([url, findings]) => ({
+        url,
+        staleness_score: Math.max(...findings.map(f => severityToScore(f.severity))),
+        stale_elements: findings.map(f => ({ type: f.inference_key || 'unknown', text: f.title })),
+        page_type: 'page',
+      })).sort((a, b) => b.staleness_score - a.staleness_score);
+
+      const worstScore = stalePages.length > 0 ? stalePages[0].staleness_score : 0;
+      const packStatus = worstScore >= 75 ? 'critical' : worstScore >= 50 ? 'at_risk' : 'healthy';
+
+      return {
+        type: 'content_freshness',
+        data: {
+          pages_with_stale_content: stalePages.length,
+          worst_staleness_score: worstScore,
+          stale_pages: stalePages.slice(0, 20),
+          pack_status: packStatus,
+          summary: `${stalePages.length} page(s) with stale content detected. Worst staleness score: ${worstScore}/100.`,
+        },
+      };
+    }
+
     // Verification status tools — these are dispatched via the server
     // which has access to the orchestrator. If they reach here, no orchestrator is loaded.
     case 'get_verification_status':

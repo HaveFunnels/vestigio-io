@@ -1090,7 +1090,7 @@ function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalC
 			return (PRIORITY[a.pack] ?? 50) - (PRIORITY[b.pack] ?? 50);
 		});
 		const impact = totalImpactCents >= 100_000 ? `$${(totalImpactCents / 100_00).toFixed(1)}k` : `$${Math.round(totalImpactCents / 100)}`;
-		const LABELS_EN: Record<string, string> = { security_posture: "Security", scale_readiness: "Scale", trust_gap: "Trust", chargeback_resilience: "Chargeback", chargeback: "Chargeback", behavioral: "Behavioral", friction_tax: "Friction", first_impression: "First Impression", revenue_integrity: "Revenue", revenue: "Revenue" };
+		const LABELS_EN: Record<string, string> = { security_posture: "Security", money_moment_exposure: "Security", scale_readiness: "Scale", trust_gap: "Trust", chargeback_resilience: "Chargeback", chargeback: "Chargeback", behavioral: "Behavioral", friction_tax: "Friction", first_impression: "First Impression", revenue_integrity: "Revenue", revenue: "Revenue", copy_alignment: "Copy", content_freshness: "Freshness", channel_integrity: "Channel", discoverability: "Discovery", brand_integrity: "Brand", saas_growth_readiness: "SaaS", payment_health: "Payments", vertical_specific: "Industry", cross_signal: "Cross-Signal" };
 		const label = (p: string) => _captionT?.pack_labels?.[p] ?? LABELS_EN[p] ?? p.replace(/_/g, " ");
 		const nt = _captionT?.cross_signal;
 		if (sorted.length === 2) {
@@ -1135,8 +1135,19 @@ const CROSS_SIGNAL_SELECT = {
 	cycleId: true,
 } as const;
 
-const CROSS_SIGNAL_WHERE = (envId: string) => ({
+/** Resolve the latest completed cycle for an environment. */
+async function latestCycleId(prisma: PrismaClient, envId: string): Promise<string | null> {
+	const cycle = await prisma.auditCycle.findFirst({
+		where: { environmentId: envId, status: "complete" },
+		orderBy: { createdAt: "desc" },
+		select: { id: true },
+	});
+	return cycle?.id ?? null;
+}
+
+const CROSS_SIGNAL_WHERE = (envId: string, cycleId: string | null) => ({
 	environmentId: envId,
+	...(cycleId ? { cycleId } : {}),
 	polarity: { not: "positive" as const },
 	OR: [{ changeClass: null }, { changeClass: { not: "resolved" as const } }],
 	NOT: { surface: "" },
@@ -1147,8 +1158,9 @@ async function computeCrossSignal(
 	envId: string
 ): Promise<CrossSignalData> {
 	try {
+		const cycleId = await latestCycleId(prisma, envId);
 		const findings = await prisma.finding.findMany({
-			where: CROSS_SIGNAL_WHERE(envId),
+			where: CROSS_SIGNAL_WHERE(envId, cycleId),
 			select: CROSS_SIGNAL_SELECT,
 		});
 
@@ -1196,8 +1208,9 @@ export async function computeAllCrossSignals(
 	prisma: PrismaClient,
 	envId: string,
 ): Promise<CrossSignalChain[]> {
+	const cycleId = await latestCycleId(prisma, envId);
 	const findings = await prisma.finding.findMany({
-		where: CROSS_SIGNAL_WHERE(envId),
+		where: CROSS_SIGNAL_WHERE(envId, cycleId),
 		select: CROSS_SIGNAL_SELECT,
 	});
 	return buildCrossSignalChains(findings).slice(0, 50);

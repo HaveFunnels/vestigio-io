@@ -970,13 +970,28 @@ interface CrossSignalFindingRow {
 	cycleId: string | null;
 }
 
+/**
+ * Normalize a finding's surface for cross-signal grouping.
+ * Surfaces like "/checkout, /payment (clickjack protection)" → "/checkout"
+ * This ensures findings from different packs that affect the same page
+ * get grouped together even if their INFERENCE_SURFACES are descriptive.
+ */
+function normalizeSurface(raw: string): string {
+	// Take the first path segment (before comma or parenthesis)
+	const first = raw.split(/[,(]/)[0].trim();
+	// Collapse sitewide markers to "/"
+	if (first === "/" || first.startsWith("/ ")) return "/";
+	return first || "/";
+}
+
 function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalChain[] {
 	const bySurface = new Map<string, CrossSignalFindingRow[]>();
 	for (const f of findings) {
 		if (!f.surface) continue;
-		const group = bySurface.get(f.surface) || [];
+		const normalized = normalizeSurface(f.surface);
+		const group = bySurface.get(normalized) || [];
 		group.push(f);
-		bySurface.set(f.surface, group);
+		bySurface.set(normalized, group);
 	}
 
 	const chains: CrossSignalChain[] = [];

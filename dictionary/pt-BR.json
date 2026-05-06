@@ -2771,7 +2771,7 @@
 			"filter_temporal_sequential": "Sequencial (causal)",
 			"filter_temporal_simultaneous": "Simultâneo",
 			"search_placeholder": "Buscar URL da superfície...",
-			"chain_card_view_analysis": "Ver na Análise",
+			"chain_card_view_analysis": "Ver descobertas",
 			"temporal_sequential": "Sequencial",
 			"temporal_simultaneous": "Simultâneo",
 			"result_count": "{filtered} de {total} padrões",

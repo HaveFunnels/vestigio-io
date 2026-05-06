@@ -15,11 +15,21 @@ const PACK_STYLES: Record<string, { text: string; dot: string }> = {
 	chargeback: { text: "text-amber-400", dot: "bg-amber-500" },
 	chargeback_resilience: { text: "text-amber-400", dot: "bg-amber-500" },
 	security_posture: { text: "text-blue-400", dot: "bg-blue-500" },
+	money_moment_exposure: { text: "text-blue-400", dot: "bg-blue-500" },
 	scale_readiness: { text: "text-emerald-400", dot: "bg-emerald-500" },
 	behavioral: { text: "text-violet-400", dot: "bg-violet-500" },
 	first_impression: { text: "text-violet-400", dot: "bg-violet-500" },
 	friction_tax: { text: "text-rose-400", dot: "bg-rose-500" },
 	trust_gap: { text: "text-indigo-400", dot: "bg-indigo-500" },
+	copy_alignment: { text: "text-pink-400", dot: "bg-pink-500" },
+	content_freshness: { text: "text-orange-400", dot: "bg-orange-500" },
+	channel_integrity: { text: "text-cyan-400", dot: "bg-cyan-500" },
+	discoverability: { text: "text-teal-400", dot: "bg-teal-500" },
+	brand_integrity: { text: "text-purple-400", dot: "bg-purple-500" },
+	saas_growth_readiness: { text: "text-violet-400", dot: "bg-violet-500" },
+	payment_health: { text: "text-yellow-400", dot: "bg-yellow-500" },
+	vertical_specific: { text: "text-lime-400", dot: "bg-lime-500" },
+	cross_signal: { text: "text-fuchsia-400", dot: "bg-fuchsia-500" },
 };
 const FALLBACK_STYLE = { text: "text-content-muted", dot: "bg-content-faint" };
 
@@ -122,9 +132,7 @@ export default function CrossSignalChainCard({
 									)}
 									<span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
 									<span className={`text-[11px] font-semibold ${style.text}`}>
-										{tp.has(link.pack.replace(/_integrity|_resilience|_posture|_readiness|_tax|_gap|_impression/, ""))
-											? tp(link.pack.replace(/_integrity|_resilience|_posture|_readiness|_tax|_gap|_impression/, ""))
-											: link.pack.replace(/_/g, " ")}
+										{tp.has(link.pack) ? tp(link.pack) : link.pack.replace(/_/g, " ")}
 									</span>
 									<span className="max-w-[200px] truncate text-[11px] text-content-secondary lg:max-w-[300px]">
 										{link.title}

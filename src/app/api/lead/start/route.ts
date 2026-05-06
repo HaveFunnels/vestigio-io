@@ -37,9 +37,20 @@ function getClientIp(request: Request): string {
 	return "0.0.0.0";
 }
 
+function parseLocale(acceptLanguage: string | null): string {
+	if (!acceptLanguage) return "en";
+	const primary = acceptLanguage.split(",")[0].split(";")[0].trim();
+	const SUPPORTED = ["pt-BR", "en", "es", "de"];
+	const match = SUPPORTED.find(
+		(s) => s.toLowerCase() === primary.toLowerCase() || s.split("-")[0] === primary.split("-")[0].toLowerCase(),
+	);
+	return match || "en";
+}
+
 export async function POST(request: Request) {
 	const ip = getClientIp(request);
 	const userAgent = request.headers.get("user-agent")?.slice(0, 1000) || null;
+	const locale = parseLocale(request.headers.get("accept-language"));
 
 	// Per-IP rate limit: max 5 lead starts per IP per hour. Enforced
 	// via a count query on AnonymousLead — no Redis dependency, just
@@ -71,6 +82,7 @@ export async function POST(request: Request) {
 			currentStep: 1,
 			ipAddress: ip,
 			userAgent,
+			locale,
 			formStartedAt,
 			expiresAt,
 		},

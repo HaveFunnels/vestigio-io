@@ -1255,6 +1255,11 @@ model AnonymousLead {
   promotedToUserId String? // User created on checkout
   promotedToOrgId  String? // Organization created on checkout
 
+  // Browser locale captured from Accept-Language header at lead creation.
+  // Propagated to User.locale on promotion so findings are generated in
+  // the customer's language from the very first audit cycle.
+  locale          String?
+
   // Anti-abuse signals (collected for the heuristic stack — no captcha)
   ipAddress       String?
   userAgent       String?   @db.Text

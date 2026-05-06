@@ -134,6 +134,7 @@ export async function promoteLeadToOrg(
 				email,
 				name: orgName,
 				billingEmail: email,
+				locale: lead.locale || "pt-BR",
 				activationToken,
 				activationTokenExpiresAt: new Date(
 					Date.now() + ACTIVATION_TOKEN_TTL_MS,

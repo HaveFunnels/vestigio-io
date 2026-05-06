@@ -209,6 +209,8 @@ export enum EvidenceType {
   SurfaceVitality = 'surface_vitality',
   // Wave 3.1: LLM enrichment evidence
   ContentEnrichment = 'content_enrichment',
+  // Wave 9: Subdomain discovery via Certificate Transparency
+  SubdomainDiscovery = 'subdomain_discovery',
 }
 
 export enum SourceKind {
@@ -222,6 +224,7 @@ export enum SourceKind {
   NucleiScan = 'nuclei_scan',
   KatanaCrawl = 'katana_crawl',
   BrandIntelScan = 'brand_intel_scan',
+  SubdomainEnum = 'subdomain_enum',
   ShopifyIntegration = 'shopify_integration',
   BehavioralSnippet = 'behavioral_snippet',
 }

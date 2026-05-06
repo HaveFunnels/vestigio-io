@@ -9,6 +9,7 @@ import { semanticEnrichmentPass } from "./semantic-enrichment";
 import { nucleiScanPass } from "./nuclei-scan";
 import { katanaDiscoveryPass } from "./katana-discovery";
 import { brandIntelScanPass } from "./brand-intel-scan";
+import { subdomainDiscoveryPass } from "./subdomain-discovery";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -33,6 +34,7 @@ import { brandIntelScanPass } from "./brand-intel-scan";
  *      passes' evidence in their context)
  */
 const PASS_REGISTRY: EnrichmentPass[] = [
+  subdomainDiscoveryPass,
   selectiveHeadlessPass,
   katanaDiscoveryPass,
   nucleiScanPass,

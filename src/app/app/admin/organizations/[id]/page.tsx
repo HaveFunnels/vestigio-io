@@ -447,6 +447,28 @@ export default function AdminOrganizationDetailPage() {
     }
   }
 
+  async function handleTriggerAudit() {
+    if (!org) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/trigger-audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: orgId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Audit cycle started: ${data.cycleId}`);
+      } else {
+        alert(data.message || "Failed to trigger audit");
+      }
+    } catch {
+      alert("Failed to trigger audit");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   /* ---------- Error state ---------- */
 
   if (error && !loading) {
@@ -525,6 +547,13 @@ export default function AdminOrganizationDetailPage() {
               }`}
             >
               {org.status === "suspended" ? "Reactivate" : "Suspend"}
+            </button>
+            <button
+              onClick={handleTriggerAudit}
+              disabled={actionLoading}
+              className="rounded-lg border border-emerald-500/30 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+            >
+              Run Full Audit
             </button>
             <button
               onClick={handleImpersonate}

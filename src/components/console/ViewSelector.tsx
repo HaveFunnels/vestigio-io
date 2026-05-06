@@ -19,6 +19,7 @@ import {
 	PencilSimpleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import toast from "react-hot-toast";
+import CustomSelect from "./CustomSelect";
 
 // ──────────────────────────────────────────────
 // ViewSelector — horizontal tab bar for saved views
@@ -552,16 +553,15 @@ export default function ViewSelector({
 							<span className="text-[11px] font-medium uppercase tracking-wide text-content-muted">
 								{t("edit_impact")}
 							</span>
-							<select
+							<CustomSelect
 								value={editImpact}
-								onChange={(e) => setEditImpact(e.target.value)}
-								className="rounded-md border border-edge bg-surface-inset px-2.5 py-1 text-xs text-content-secondary focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-							>
-								<option value="any">{t("impact_any")}</option>
-								<option value="gt1000">&gt; $1k</option>
-								<option value="gt5000">&gt; $5k</option>
-								<option value="gt10000">&gt; $10k</option>
-							</select>
+								onChange={setEditImpact}
+								size="sm"
+								options={IMPACT_OPTIONS.map((opt) => ({
+									value: opt,
+									label: opt === "any" ? t("impact_any") : opt === "gt1000" ? "> $1k" : opt === "gt5000" ? "> $5k" : "> $10k",
+								}))}
+							/>
 						</div>
 
 						{/* Change multi-select chips */}
@@ -591,17 +591,15 @@ export default function ViewSelector({
 							<span className="text-[11px] font-medium uppercase tracking-wide text-content-muted">
 								{t("edit_group_by")}
 							</span>
-							<select
+							<CustomSelect
 								value={editGroupBy}
-								onChange={(e) => setEditGroupBy(e.target.value)}
-								className="rounded-md border border-edge bg-surface-inset px-2.5 py-1 text-xs text-content-secondary focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-							>
-								{GROUP_BY_OPTIONS.map((opt) => (
-									<option key={opt} value={opt}>
-										{t(`group_by_${opt}`)}
-									</option>
-								))}
-							</select>
+								onChange={setEditGroupBy}
+								size="sm"
+								options={GROUP_BY_OPTIONS.map((opt) => ({
+									value: opt,
+									label: t(`group_by_${opt}`),
+								}))}
+							/>
 						</div>
 
 						{/* Action buttons — pushed to the right */}

@@ -60,7 +60,9 @@ export type RootCauseCategory =
   // Wave 8.3: Content Freshness & Decay
   | 'content_freshness'
   // Vertical-specific purchase barriers
-  | 'vertical_purchase_barrier';
+  | 'vertical_purchase_barrier'
+  // Cross-domain: Static + LLM correlation
+  | 'cross_signal_correlation';
 
 export type RootCauseSeverity = 'critical' | 'high' | 'medium' | 'low';
 

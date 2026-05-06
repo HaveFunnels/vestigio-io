@@ -254,6 +254,14 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   failed_payment_revenue_drain: 'payment_health',
   subscriber_churn_unsustainable: 'payment_health',
   payment_diversity_insufficient: 'payment_health',
+  // Triple-source cross-domain findings
+  brand_trust_cliff_at_payment: 'revenue_integrity',
+  ad_landing_experience_disconnect: 'revenue_integrity',
+  checkout_form_mobile_hostile: 'scale_readiness',
+  pricing_page_complexity_paralysis: 'revenue_integrity',
+  support_promise_impossible_to_fulfill: 'chargeback_resilience',
+  trust_journey_inconsistency: 'revenue_integrity',
+  multilingual_conversion_leak: 'revenue_integrity',
   // Vertical-specific findings
   size_guide_missing: 'vertical_specific',
   product_images_insufficient: 'vertical_specific',
@@ -285,6 +293,28 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   enterprise_signals_missing: 'vertical_specific',
   contact_form_excessive_fields: 'vertical_specific',
   response_time_not_promised: 'vertical_specific',
+  // Cross-domain: Static + LLM correlation findings
+  meta_promise_content_mismatch: 'cross_signal',
+  pricing_terms_contradictory: 'cross_signal',
+  urgency_claim_unverifiable: 'cross_signal',
+  value_prop_diluted_by_navigation: 'cross_signal',
+  checkout_copy_creates_anxiety: 'cross_signal',
+  faq_answers_wrong_questions: 'cross_signal',
+  testimonials_feel_fabricated: 'cross_signal',
+  // Wave 9: Subdomain discovery × cross-domain findings
+  staging_environment_publicly_accessible: 'brand_integrity',
+  admin_panel_exposed_to_internet: 'brand_integrity',
+  subdomain_brand_visual_fragmentation: 'brand_integrity',
+  app_subdomain_disconnected_from_site: 'revenue_integrity',
+  whatsapp_channel_disconnected: 'channel_integrity',
+  multiple_payment_subdomains_fragmenting_trust: 'revenue_integrity',
+  // Static + Playwright cross-domain findings
+  form_submit_unreachable_mobile: 'scale_readiness',
+  trust_badges_invisible_at_checkout: 'revenue_integrity',
+  navigation_traps_commercial_flow: 'revenue_integrity',
+  social_proof_loads_too_late: 'scale_readiness',
+  consent_banner_obscures_first_action: 'revenue_integrity',
+  price_hidden_behind_interaction: 'revenue_integrity',
 };
 
 // Wave 3.10 Fase 3 — Root causes that belong to the copy alignment context.
@@ -499,6 +529,14 @@ const INFERENCE_SURFACES: Record<string, string> = {
   micro_copy_friction_high: '/contact, /signup, /app (forms & micro-copy)',
   seo_conversion_conflict: '/, /product, /pricing (SEO vs conversion)',
   copy_stale_references: '/ (sitewide content freshness)',
+  // Triple-source cross-domain findings
+  brand_trust_cliff_at_payment: '/ → /checkout (domain handoff)',
+  ad_landing_experience_disconnect: '/ (meta tags vs page content)',
+  checkout_form_mobile_hostile: '/checkout (mobile form)',
+  pricing_page_complexity_paralysis: '/pricing, /planos (choice overload)',
+  support_promise_impossible_to_fulfill: '/support, /contact (SLA vs reality)',
+  trust_journey_inconsistency: '/ → /checkout (trust signal gap)',
+  multilingual_conversion_leak: '/ → /checkout (language switch)',
   // Vertical-specific findings — Fashion/E-commerce
   size_guide_missing: '/product, /shop',
   product_images_insufficient: '/product, /shop',
@@ -535,6 +573,28 @@ const INFERENCE_SURFACES: Record<string, string> = {
   enterprise_signals_missing: '/, /contact, /services',
   contact_form_excessive_fields: '/, /contact, /services',
   response_time_not_promised: '/, /contact, /services',
+  // Cross-domain: Static + LLM correlation findings
+  meta_promise_content_mismatch: '/ (meta vs page content)',
+  pricing_terms_contradictory: '/pricing, /product (price inconsistency)',
+  urgency_claim_unverifiable: '/, /product, /pricing (fake urgency)',
+  value_prop_diluted_by_navigation: '/ (homepage value propositions)',
+  checkout_copy_creates_anxiety: '/checkout, /cart (anxiety copy)',
+  faq_answers_wrong_questions: '/faq, /help (objection coverage)',
+  testimonials_feel_fabricated: '/, /product (testimonials)',
+  // Wave 9: Subdomain discovery findings
+  staging_environment_publicly_accessible: 'staging.*, dev.*, test.* (subdomain)',
+  admin_panel_exposed_to_internet: 'admin.*, panel.*, dashboard.* (subdomain)',
+  subdomain_brand_visual_fragmentation: '*.domain (multiple subdomains)',
+  app_subdomain_disconnected_from_site: 'app.*, portal.*, my.* (subdomain)',
+  whatsapp_channel_disconnected: 'wa.*, whatsapp.*, zap.* (subdomain)',
+  multiple_payment_subdomains_fragmenting_trust: 'pay.*, checkout.*, secure.* (subdomain)',
+  // Static + Playwright cross-domain findings
+  form_submit_unreachable_mobile: '/contact, /checkout (long form, mobile)',
+  trust_badges_invisible_at_checkout: '/checkout (trust badges below fold)',
+  navigation_traps_commercial_flow: '/blog, /about → dead-end (no CTA back)',
+  social_proof_loads_too_late: '/, /product (lazy-loaded testimonials)',
+  consent_banner_obscures_first_action: '/ (consent banner × CTA overlap)',
+  price_hidden_behind_interaction: '/pricing, /plans (no static price)',
 };
 
 // Human-readable titles for inference findings
@@ -765,6 +825,28 @@ export const INFERENCE_TITLES: Record<string, string> = {
   enterprise_signals_missing: 'Corporate buyers disqualify you before reading further',
   contact_form_excessive_fields: 'Your first impression asks for too much commitment',
   response_time_not_promised: "Buyers assume they'll be ignored after submitting",
+  // Cross-domain: Static + LLM correlation findings
+  meta_promise_content_mismatch: 'Your page promises one thing in Google but delivers something else',
+  pricing_terms_contradictory: 'Different pages show conflicting prices for the same thing',
+  urgency_claim_unverifiable: 'Your urgency claims are permanent — buyers notice the trick',
+  value_prop_diluted_by_navigation: 'Your homepage tries to say too many things at once',
+  checkout_copy_creates_anxiety: 'Your checkout text scares buyers instead of reassuring them',
+  faq_answers_wrong_questions: 'Your FAQ answers technical questions instead of buying objections',
+  testimonials_feel_fabricated: 'Your testimonials look fabricated — buyers distrust them',
+  // Wave 9: Subdomain discovery findings
+  staging_environment_publicly_accessible: 'Your staging/dev environment is publicly accessible without protection',
+  admin_panel_exposed_to_internet: 'Your admin panel is publicly accessible to anyone on the internet',
+  subdomain_brand_visual_fragmentation: 'Multiple subdomains create a fragmented brand experience for customers',
+  app_subdomain_disconnected_from_site: "Your app exists but customers can't find how to log in from your site",
+  whatsapp_channel_disconnected: 'Your WhatsApp channel exists but nobody can find it from your pages',
+  multiple_payment_subdomains_fragmenting_trust: 'Buyers are redirected to unfamiliar domains at payment time',
+  // Static + Playwright cross-domain findings
+  form_submit_unreachable_mobile: 'Mobile buyers never find the submit button on your long forms',
+  trust_badges_invisible_at_checkout: 'Your trust badges exist but buyers never see them at checkout',
+  navigation_traps_commercial_flow: 'Your content pages trap visitors with no path back to buying',
+  social_proof_loads_too_late: 'Your testimonials load too late to influence the buying decision',
+  consent_banner_obscures_first_action: 'Your cookie banner blocks the first thing buyers want to click',
+  price_hidden_behind_interaction: 'Buyers see no price until they click — most leave before clicking',
 };
 
 // ── Parametric Title Resolution ──

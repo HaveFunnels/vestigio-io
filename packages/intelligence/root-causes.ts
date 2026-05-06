@@ -358,6 +358,23 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   enterprise_signals_missing:          { root_cause_key: 'vertical_b2b_internal_justification', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
   contact_form_excessive_fields:       { root_cause_key: 'vertical_b2b_internal_justification', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
   response_time_not_promised:          { root_cause_key: 'vertical_b2b_internal_justification', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+
+  // Cross-domain: Static + LLM correlation findings
+  meta_promise_content_mismatch:       { root_cause_key: 'cross_signal_correlation', category: 'cross_signal_correlation', impact_types: ['revenue_loss', 'trust_erosion'] },
+  pricing_terms_contradictory:         { root_cause_key: 'cross_signal_correlation', category: 'cross_signal_correlation', impact_types: ['revenue_loss', 'trust_erosion'] },
+  urgency_claim_unverifiable:          { root_cause_key: 'cross_signal_correlation', category: 'cross_signal_correlation', impact_types: ['revenue_loss', 'trust_erosion'] },
+  value_prop_diluted_by_navigation:    { root_cause_key: 'cross_signal_correlation', category: 'cross_signal_correlation', impact_types: ['revenue_loss'] },
+  checkout_copy_creates_anxiety:       { root_cause_key: 'cross_signal_correlation', category: 'cross_signal_correlation', impact_types: ['revenue_loss'] },
+  faq_answers_wrong_questions:         { root_cause_key: 'cross_signal_correlation', category: 'cross_signal_correlation', impact_types: ['revenue_loss'] },
+  testimonials_feel_fabricated:        { root_cause_key: 'cross_signal_correlation', category: 'cross_signal_correlation', impact_types: ['revenue_loss', 'trust_erosion'] },
+
+  // Wave 9: Subdomain discovery × cross-domain findings
+  staging_environment_publicly_accessible: { root_cause_key: 'subdomain_surface_exposure', category: 'channel_integrity', impact_types: ['revenue_loss', 'trust_erosion'] },
+  admin_panel_exposed_to_internet:         { root_cause_key: 'subdomain_surface_exposure', category: 'channel_integrity', impact_types: ['revenue_loss', 'trust_erosion'] },
+  subdomain_brand_visual_fragmentation:    { root_cause_key: 'subdomain_surface_exposure', category: 'channel_integrity', impact_types: ['trust_erosion', 'revenue_loss'] },
+  app_subdomain_disconnected_from_site:    { root_cause_key: 'subdomain_surface_exposure', category: 'channel_integrity', impact_types: ['revenue_loss'] },
+  whatsapp_channel_disconnected:           { root_cause_key: 'subdomain_surface_exposure', category: 'channel_integrity', impact_types: ['revenue_loss'] },
+  multiple_payment_subdomains_fragmenting_trust: { root_cause_key: 'subdomain_surface_exposure', category: 'trust_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a
@@ -434,6 +451,10 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   vertical_health_trust_deficit: 'Health buyers need clinical proof before applying to their body',
   vertical_education_commitment_anxiety: 'Students need proof of value before investing time',
   vertical_b2b_internal_justification: 'B2B buyers need ammunition to convince their team',
+  // Cross-domain: Static + LLM correlation
+  cross_signal_correlation: 'Your static pages and content analysis disagree — buyers notice the inconsistency',
+  // Wave 9: Subdomain discovery
+  subdomain_surface_exposure: 'Your subdomain architecture exposes internal surfaces, fragments trust, or disconnects revenue channels',
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -563,6 +584,12 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
   vertical_education_commitment_anxiety: "Education purchases require time commitment, not just money. Students need to know what they'll learn, who's teaching, how long it takes, whether they get a credential, and what the experience feels like — before investing hours of their life. Every missing signal amplifies the risk of wasted time, which students fear more than wasted money. Curriculum previews, instructor credentials, and sample content reduce commitment anxiety and convert browsers into enrolled students.",
 
   vertical_b2b_internal_justification: "B2B buyers don't buy alone — they buy in committees. The person evaluating your service needs ammunition to convince their manager, procurement, and finance team. Without case studies with measurable ROI, a clear methodology, enterprise credibility signals, and proof of responsive service, the internal champion has nothing to present at the budget meeting. Every missing justification asset is a deal that dies in an internal email chain you'll never see.",
+
+  // Cross-domain: Static + LLM correlation
+  cross_signal_correlation: "Your site tells different stories depending on where the buyer looks. Meta descriptions promise one thing while the page delivers another. Pricing changes between pages. Urgency claims are permanent. Testimonials look copy-pasted. When Vestigio's static crawl data and semantic analysis both flag the same inconsistency, it's not a minor gap — it's a pattern that erodes buyer trust across multiple surfaces simultaneously. Buyers who notice one inconsistency start questioning everything else.",
+
+  // Wave 9: Subdomain discovery
+  subdomain_surface_exposure: "Your subdomain infrastructure reveals internal surfaces (staging, admin panels), fragments brand identity across disconnected properties, or leaves revenue-generating channels (app login, WhatsApp, payment) unreachable from your main site. Each exposed or disconnected subdomain is either a security risk, a trust erosion point, or wasted investment in infrastructure that nobody uses because nobody can find it.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

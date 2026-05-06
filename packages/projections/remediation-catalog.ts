@@ -3369,6 +3369,200 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos re-crawlar a página de contato e verificar presença de compromisso de tempo de resposta próximo ao formulário.',
 		verification_eta_seconds: 20,
 	},
+
+	// ─────────────────────────────────────────────
+	// Cross-Domain: Static + LLM Correlation
+	// ─────────────────────────────────────────────
+
+	meta_promise_content_mismatch: {
+		remediation_steps: [
+			'Reescreva a meta description de cada página pra refletir exatamente o que o visitante encontra no H1 e primeiro parágrafo.',
+			'Garanta que o benefício principal mencionado na meta description aparece acima da dobra na página.',
+			'Revise as meta descriptions das 10 páginas com maior tráfego orgânico — comece pelas comerciais.',
+			'Configure alerta no Search Console pra monitorar taxa de rejeição por página e identificar novas divergências.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas afetadas, extrair meta description e H1/primeiro parágrafo, e comparar alinhamento semântico entre os dois.',
+		verification_eta_seconds: 15,
+	},
+
+	pricing_terms_contradictory: {
+		remediation_steps: [
+			'Audite todas as páginas que mencionam preço — produto, pricing, landing pages, FAQ — e unifique os valores.',
+			'Centralize a tabela de preços em um componente reutilizável pra evitar divergências futuras.',
+			'Remova preços hardcoded de textos livres — referência sempre deve vir de uma fonte única.',
+			'Configure teste automatizado que compara preços exibidos entre as páginas comerciais.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar todas as páginas com menção a preço e verificar consistência entre os valores encontrados.',
+		verification_eta_seconds: 20,
+	},
+
+	urgency_claim_unverifiable: {
+		remediation_steps: [
+			'Remova toda linguagem de urgência que não tem data de expiração real ("últimas vagas" permanente, "oferta limitada" que nunca acaba).',
+			'Se a oferta for genuinamente limitada, vincule a um countdown real com data de término.',
+			'Substitua urgência artificial por prova social real ("127 pessoas compraram esta semana").',
+			'Se usar escassez, conecte ao estoque real — "3 unidades restantes" com backend de inventário.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas e verificar se a linguagem de urgência foi removida ou vinculada a mecanismo temporal real (countdown, data de expiração).',
+		verification_eta_seconds: 15,
+	},
+
+	value_prop_diluted_by_navigation: {
+		remediation_steps: [
+			'Escolha UMA proposta de valor principal e posicione como H1 + subtítulo acima da dobra.',
+			'Mova propostas secundárias para seções abaixo da dobra, cada uma com sua CTA específica.',
+			'Crie hierarquia visual clara: a proposta principal deve ter 3x o destaque das secundárias.',
+			'Teste com 5 pessoas: peça pra descrever o que você faz em uma frase após 5 segundos na homepage. Se não conseguem, simplifique.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a homepage e contar H2s/propostas de valor acima do link de pricing. Passa se ≤3 propostas com hierarquia clara.',
+		verification_eta_seconds: 15,
+	},
+
+	checkout_copy_creates_anxiety: {
+		remediation_steps: [
+			'Remova ou reescreva toda frase no checkout que usa negativa ("não garantimos", "não reembolsável").',
+			'Substitua por copy positiva: "Entrega garantida em X dias" em vez de "Prazo não garantido".',
+			'Adicione micro-copy de reassurance próximo a cada campo de pagamento ("Seus dados estão protegidos", "Satisfação garantida").',
+			'Exiba selos de segurança + política de reembolso resumida no checkout, não apenas no footer.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar o checkout e buscar padrões de linguagem ansiogênica. Passa quando nenhuma frase negativa sobre pagamento/entrega for encontrada.',
+		verification_eta_seconds: 15,
+	},
+
+	faq_answers_wrong_questions: {
+		remediation_steps: [
+			'Adicione ao FAQ as 5 objeções de compra mais comuns: preço, reembolso, garantia, prazo, e "funciona pra mim?".',
+			'Coloque as perguntas sobre compra no topo do FAQ — antes das perguntas técnicas.',
+			'Cada resposta deve eliminar a objeção e terminar com link pra CTA ("Pronto pra começar? Comece aqui").',
+			'Revise o FAQ mensalmente com os tickets de suporte mais frequentes.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar o FAQ e verificar presença de perguntas sobre preço, reembolso, garantia e prazo. Passa quando pelo menos 3 dessas objeções estão cobertas.',
+		verification_eta_seconds: 15,
+	},
+
+	testimonials_feel_fabricated: {
+		remediation_steps: [
+			'Substitua depoimentos genéricos por depoimentos com resultado específico ("Aumentei 32% em 60 dias").',
+			'Varie o comprimento e formato dos depoimentos — alguns curtos, alguns longos, alguns em vídeo.',
+			'Adicione foto real, nome completo e empresa/cargo ao lado de cada depoimento.',
+			'Inclua pelo menos um depoimento com número concreto de resultado por seção de social proof.',
+			'Se possível, vincule ao perfil LinkedIn ou review verificado (Google, G2, Trustpilot).',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas com depoimentos e avaliar diversidade de comprimento, presença de resultados concretos e identificação verificável dos autores.',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Wave 9: Subdomain Discovery Findings
+	// ─────────────────────────────────────────────
+
+	staging_environment_publicly_accessible: {
+		remediation_steps: [
+			'Restrinja o acesso ao subdomínio staging/dev com autenticação básica (HTTP Basic Auth) ou VPN.',
+			'Configure regras de firewall ou Cloudflare Access para permitir apenas IPs internos.',
+			'Remova dados reais de clientes do ambiente de staging — use dados sintéticos.',
+			'Adicione o subdomínio ao robots.txt com Disallow: / para evitar indexação.',
+			'Configure monitoramento para alertar se o ambiente ficar público novamente.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-probar o subdomínio de staging e verificar se retorna 401/403 ou se está inacessível publicamente.',
+		verification_eta_seconds: 15,
+	},
+
+	admin_panel_exposed_to_internet: {
+		remediation_steps: [
+			'Restrinja o acesso ao painel admin com VPN, IP whitelist ou Cloudflare Access.',
+			'Implemente autenticação de dois fatores (2FA/MFA) obrigatória para todos os acessos admin.',
+			'Mova o painel para um subdomínio não-adivinhável ou caminho interno não-público.',
+			'Configure rate limiting agressivo (max 5 tentativas/minuto) nas rotas de login.',
+			'Monitore tentativas de acesso e configure alertas para tentativas de brute force.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-probar o subdomínio admin e verificar se retorna 401/403 ou redirecionamento para VPN/login protegido.',
+		verification_eta_seconds: 15,
+	},
+
+	subdomain_brand_visual_fragmentation: {
+		remediation_steps: [
+			'Crie um design system compartilhado (header, footer, cores, logo) entre todos os subdomínios.',
+			'Implemente um header global consistente via iframe, web component ou CDN compartilhado.',
+			'Garanta que navegação entre subdomínios mantém sessão e identidade visual contínua.',
+			'Documente as diretrizes de marca para equipes que mantêm subdomínios diferentes.',
+		],
+		estimated_effort_hours: 24,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos visitar cada subdomínio ativo em headless browser e comparar presença de elementos de marca (logo, cores, header) entre as superfícies.',
+		verification_eta_seconds: 60,
+	},
+
+	app_subdomain_disconnected_from_site: {
+		remediation_steps: [
+			'Adicione link visível "Entrar" ou "Minha Conta" no header do site principal apontando para o app.',
+			'Inclua o link do app no footer de todas as páginas comerciais.',
+			'Crie uma página /login ou /acesso no domínio principal que redirecione para o app.',
+			'Adicione o subdomínio do app no menu mobile de forma proeminente.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar o site principal e verificar presença de link para o subdomínio do app no header, footer ou navegação.',
+		verification_eta_seconds: 15,
+	},
+
+	whatsapp_channel_disconnected: {
+		remediation_steps: [
+			'Adicione botão de WhatsApp flutuante ou link no header/footer das páginas comerciais.',
+			'Inclua CTA de WhatsApp na página de produto e na página de preços.',
+			'Configure deep link direto (wa.me/numero) em vez de depender do subdomínio.',
+			'Teste se o link de WhatsApp funciona em desktop e mobile.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas comerciais e verificar presença de link para WhatsApp (wa.me, whatsapp.com ou subdomínio) no conteúdo visível.',
+		verification_eta_seconds: 15,
+	},
+
+	multiple_payment_subdomains_fragmenting_trust: {
+		remediation_steps: [
+			'Consolide o checkout no mesmo domínio usando checkout embedded do gateway (Stripe Elements, MercadoPago Bricks).',
+			'Se a mudança de domínio for inevitável, adicione logotipo da loja e selo de segurança na página de pagamento.',
+			'Implemente um loading state entre domínios explicando "Você está sendo direcionado para pagamento seguro".',
+			'Garanta HTTPS e certificado válido no subdomínio de pagamento — visível ao comprador.',
+			'Adicione breadcrumb visual mostrando progresso (Carrinho → Dados → Pagamento → Confirmação).',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos simular o fluxo de checkout em headless browser, seguir redirects e verificar se pagamento fica no domínio principal ou se há sinais de confiança no domínio externo.',
+		verification_eta_seconds: 45,
+	},
 };
 
 /**

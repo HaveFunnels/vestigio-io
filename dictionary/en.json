@@ -1488,7 +1488,8 @@
 				"behavioral_heuristics": "Behavior",
 				"payment_health": "Payments",
 				"content_freshness": "Freshness",
-				"vertical_specific": "Industry"
+				"vertical_specific": "Industry",
+				"cross_signal": "Cross-Signal"
 			},
 			"polarity": {
 				"all": "All Findings",
@@ -4083,7 +4084,20 @@
 			"methodology_not_explained": "Buyers don't understand how you'll solve their problem",
 			"enterprise_signals_missing": "Large companies don't see signs you can handle their size",
 			"contact_form_excessive_fields": "Your contact form asks so much that nobody finishes filling it out",
-			"response_time_not_promised": "Buyers don't know when they'll hear back after reaching out"
+			"response_time_not_promised": "Buyers don't know when they'll hear back after reaching out",
+			"meta_promise_content_mismatch": "Your page promises one thing in Google but delivers something else",
+			"pricing_terms_contradictory": "Different pages show conflicting prices for the same thing",
+			"urgency_claim_unverifiable": "Your urgency claims are permanent — buyers notice the trick",
+			"value_prop_diluted_by_navigation": "Your homepage tries to say too many things at once",
+			"checkout_copy_creates_anxiety": "Your checkout text scares buyers instead of reassuring them",
+			"faq_answers_wrong_questions": "Your FAQ answers technical questions instead of buying objections",
+			"testimonials_feel_fabricated": "Your testimonials look fabricated — buyers distrust them",
+			"staging_environment_publicly_accessible": "Your staging/dev environment is publicly accessible without protection",
+			"admin_panel_exposed_to_internet": "Your admin panel is publicly accessible to anyone on the internet",
+			"subdomain_brand_visual_fragmentation": "Multiple subdomains create a fragmented brand experience for customers",
+			"app_subdomain_disconnected_from_site": "Your app exists but customers can't find how to log in from your site",
+			"whatsapp_channel_disconnected": "Your WhatsApp channel exists but nobody can find it from your pages",
+			"multiple_payment_subdomains_fragmenting_trust": "Buyers are redirected to unfamiliar domains at payment time"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Buyers lose trust at the checkout moment",
@@ -4127,7 +4141,8 @@
 			"vertical_food_ordering_friction": "Food ordering friction",
 			"vertical_health_trust_deficit": "Health and beauty trust deficit",
 			"vertical_education_commitment_anxiety": "Education commitment anxiety",
-			"vertical_b2b_internal_justification": "Missing ammunition for internal B2B justification"
+			"vertical_b2b_internal_justification": "Missing ammunition for internal B2B justification",
+			"cross_signal_correlation": "Your static pages and content analysis disagree — buyers notice the inconsistency"
 		},
 		"root_cause_descriptions": {
 			"trust_failure_at_checkout": "Buyers reach the moment of payment but trust signals around them weaken instead of strengthen. Off-domain handoffs, unrecognized payment providers, and missing security cues at the wrong moment cause buyers to back out — exactly when conversion is closest. The buyer wanted to pay; the experience scared them off.",
@@ -4260,7 +4275,20 @@
 			"methodology_not_explained": "Work methodology not explained to buyers",
 			"enterprise_signals_missing": "Enterprise-readiness signals absent from site",
 			"contact_form_excessive_fields": "Contact form with excessive fields for a first interaction",
-			"response_time_not_promised": "No response time commitment after contact"
+			"response_time_not_promised": "No response time commitment after contact",
+			"meta_promise_content_mismatch": "Meta description promises benefits that the page content does not deliver",
+			"pricing_terms_contradictory": "Different pages display conflicting prices for the same product or plan",
+			"urgency_claim_unverifiable": "Urgency language is permanently present in static HTML without time-bound mechanism",
+			"value_prop_diluted_by_navigation": "Homepage presents 4+ competing value propositions without clear hierarchy",
+			"checkout_copy_creates_anxiety": "Checkout page contains anxiety-inducing language about fees, guarantees, or processing",
+			"faq_answers_wrong_questions": "FAQ section addresses only technical questions, not purchase objections",
+			"testimonials_feel_fabricated": "Testimonials share suspiciously uniform length, structure, and lack concrete results",
+			"staging_environment_publicly_accessible": "Staging/dev environment publicly accessible without authentication",
+			"admin_panel_exposed_to_internet": "Admin panel subdomain publicly accessible to anyone",
+			"subdomain_brand_visual_fragmentation": "Multiple live subdomains without brand consistency",
+			"app_subdomain_disconnected_from_site": "App/portal subdomain exists but not linked from main site",
+			"whatsapp_channel_disconnected": "WhatsApp channel subdomain exists but not linked from commercial pages",
+			"multiple_payment_subdomains_fragmenting_trust": "Payment subdomains separate from main domain fragmenting buyer trust"
 		},
 		"inference_effects": {
 			"size_guide_missing": "Buyers unsure about sizing don't buy — and those who gamble return 52% of the time, costing 3x shipping in reverse logistics",
@@ -4292,7 +4320,20 @@
 			"methodology_not_explained": "Corporate buyers who don't understand how you work don't trust the result — they need to visualize the process before approving the budget",
 			"enterprise_signals_missing": "Large companies that don't see signs you serve their size assume you're too small — and don't even reach out to find out",
 			"contact_form_excessive_fields": "Each extra field in the contact form reduces completion by 10-15% — a long form scares off the lead before the first conversation",
-			"response_time_not_promised": "Buyers who don't know when they'll hear back assume you're slow — and send the same request to the competitor who promises a response within 24 hours"
+			"response_time_not_promised": "Buyers who don't know when they'll hear back assume you're slow — and send the same request to the competitor who promises a response within 24 hours",
+			"meta_promise_content_mismatch": "Organic visitors arrive expecting what Google showed them — when the page delivers something else, they bounce in seconds and the qualified click is wasted forever",
+			"pricing_terms_contradictory": "Buyers who notice different prices on different pages lose trust immediately — price inconsistency signals either negligence or deception, and both kill the sale",
+			"urgency_claim_unverifiable": "Savvy buyers recognize permanently displayed urgency as manipulation — once they see the trick, they distrust everything else on the page and never return",
+			"value_prop_diluted_by_navigation": "Visitors who can't understand what you do in 5 seconds leave — each competing value proposition above the fold dilutes all others and converts nobody",
+			"checkout_copy_creates_anxiety": "Anxiety-inducing text at the payment moment triggers immediate abandonment — buyers who were ready to pay close the tab instead of risking the unknown",
+			"faq_answers_wrong_questions": "A FAQ that ignores buying objections wastes its conversion potential — visitors who came for reassurance leave with more doubt, not less",
+			"testimonials_feel_fabricated": "Fabricated-looking testimonials damage trust more than having none at all — buyers who spot the pattern assume everything on the page is equally dishonest",
+			"staging_environment_publicly_accessible": "Exposed staging environments let attackers find vulnerabilities in non-hardened code and access real customer test data — one breach away from a compliance violation and customer trust collapse",
+			"admin_panel_exposed_to_internet": "Anyone can attempt credential stuffing or brute force against your admin panel — a single compromised account means total operational control by an attacker",
+			"subdomain_brand_visual_fragmentation": "Customers navigating between your subdomains experience visual discontinuity — trust erodes at each surface transition, increasing bounce rate between properties",
+			"app_subdomain_disconnected_from_site": "Existing customers who can't find how to log in from your site call support or simply churn — support costs rise while retention drops silently",
+			"whatsapp_channel_disconnected": "Your WhatsApp sales channel exists but nobody can find it — pre-purchase questions go unanswered and buyers with intent leave without converting",
+			"multiple_payment_subdomains_fragmenting_trust": "Buyer is redirected to an unfamiliar domain at the most sensitive moment — triggers fraud anxiety and suppresses conversion at the payment step"
 		},
 		"actions": {
 			"default_primary": "Review findings and address highest severity issues first.",

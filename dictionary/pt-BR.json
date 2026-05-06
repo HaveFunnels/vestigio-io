@@ -1488,7 +1488,8 @@
 				"behavioral_heuristics": "Comportamento",
 				"payment_health": "Pagamentos",
 				"content_freshness": "Frescor",
-				"vertical_specific": "Indústria"
+				"vertical_specific": "Indústria",
+				"cross_signal": "Sinal Cruzado"
 			},
 			"polarity": {
 				"all": "Todas as Descobertas",
@@ -4122,7 +4123,20 @@
 			"methodology_not_explained": "Cliente não entende como você vai resolver o problema dele",
 			"enterprise_signals_missing": "Empresas grandes não veem sinais de que você atende o porte delas",
 			"contact_form_excessive_fields": "Seu formulário de contato pede tanta coisa que ninguém termina de preencher",
-			"response_time_not_promised": "Cliente não sabe quando vai receber uma resposta depois de entrar em contato"
+			"response_time_not_promised": "Cliente não sabe quando vai receber uma resposta depois de entrar em contato",
+			"meta_promise_content_mismatch": "Sua página promete uma coisa no Google mas entrega outra",
+			"pricing_terms_contradictory": "Páginas diferentes mostram preços conflitantes pro mesmo produto",
+			"urgency_claim_unverifiable": "Suas mensagens de urgência são permanentes — comprador percebe o truque",
+			"value_prop_diluted_by_navigation": "Sua homepage tenta dizer coisas demais ao mesmo tempo",
+			"checkout_copy_creates_anxiety": "O texto do checkout assusta o comprador ao invés de tranquilizar",
+			"faq_answers_wrong_questions": "Seu FAQ responde perguntas técnicas ao invés de objeções de compra",
+			"testimonials_feel_fabricated": "Seus depoimentos parecem fabricados — comprador desconfia",
+			"staging_environment_publicly_accessible": "Seu ambiente de staging/dev está acessível publicamente sem proteção",
+			"admin_panel_exposed_to_internet": "Seu painel administrativo está acessível a qualquer pessoa na internet",
+			"subdomain_brand_visual_fragmentation": "Múltiplos subdomínios criam experiência fragmentada de marca pros clientes",
+			"app_subdomain_disconnected_from_site": "Seu app existe mas clientes não encontram como acessar pelo site",
+			"whatsapp_channel_disconnected": "Seu canal de WhatsApp existe mas ninguém encontra pelas páginas comerciais",
+			"multiple_payment_subdomains_fragmenting_trust": "Compradores são redirecionados pra domínios desconhecidos na hora do pagamento"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Falha de confiança no checkout",
@@ -4171,7 +4185,8 @@
 			"vertical_food_ordering_friction": "Fricção no pedido de comida",
 			"vertical_health_trust_deficit": "Déficit de confiança em saúde/beleza",
 			"vertical_education_commitment_anxiety": "Ansiedade de compromisso em educação",
-			"vertical_b2b_internal_justification": "Falta de argumentos para justificativa interna B2B"
+			"vertical_b2b_internal_justification": "Falta de argumentos para justificativa interna B2B",
+			"cross_signal_correlation": "Suas páginas e a análise de conteúdo discordam — comprador percebe a inconsistência"
 		},
 		"root_cause_descriptions": {
 			"trust_failure_at_checkout": "O comprador chega no momento do pagamento, mas os sinais de confiança ao redor enfraquecem em vez de fortalecer. Redirecionamento pra outro domínio, provedores de pagamento desconhecidos e falta de pistas de segurança na hora errada fazem o comprador desistir — justo quando a conversão estava mais próxima. O comprador queria pagar; a experiência assustou ele.",
@@ -4937,7 +4952,20 @@
 			"methodology_not_explained": "Metodologia de trabalho não explicada pro cliente",
 			"enterprise_signals_missing": "Sinais de atendimento corporativo ausentes no site",
 			"contact_form_excessive_fields": "Formulário de contato com campos excessivos pra primeira interação",
-			"response_time_not_promised": "Nenhuma promessa de tempo de resposta após contato"
+			"response_time_not_promised": "Nenhuma promessa de tempo de resposta após contato",
+			"meta_promise_content_mismatch": "Meta description promete benefícios que o conteúdo da página não entrega",
+			"pricing_terms_contradictory": "Páginas diferentes exibem preços conflitantes pro mesmo produto ou plano",
+			"urgency_claim_unverifiable": "Linguagem de urgência permanente no HTML sem mecanismo temporal real",
+			"value_prop_diluted_by_navigation": "Homepage apresenta 4+ propostas de valor competindo sem hierarquia clara",
+			"checkout_copy_creates_anxiety": "Página de checkout contém linguagem ansiogênica sobre taxas, garantias ou processamento",
+			"faq_answers_wrong_questions": "Seção de FAQ aborda apenas perguntas técnicas, não objeções de compra",
+			"testimonials_feel_fabricated": "Depoimentos compartilham tamanho, estrutura e ausência de resultados concretos de forma suspeita",
+			"staging_environment_publicly_accessible": "Ambiente de staging/dev acessível publicamente sem autenticação",
+			"admin_panel_exposed_to_internet": "Subdomínio de painel administrativo acessível publicamente",
+			"subdomain_brand_visual_fragmentation": "Múltiplos subdomínios ativos sem consistência de marca",
+			"app_subdomain_disconnected_from_site": "Subdomínio de app/portal existe mas não é linkado no site principal",
+			"whatsapp_channel_disconnected": "Subdomínio de WhatsApp existe mas não é linkado nas páginas comerciais",
+			"multiple_payment_subdomains_fragmenting_trust": "Subdomínios de pagamento separados do domínio principal fragmentando confiança"
 		},
 		"inference_effects": {
 			"trust_boundary_crossed": "Compradores abandonam a conversão quando redirecionados para domínios desconhecidos — a quebra de confiança no momento da compra reduz diretamente a conclusão do checkout",
@@ -5188,7 +5216,20 @@
 			"methodology_not_explained": "Cliente corporativo que não entende como você trabalha não confia no resultado — ele precisa visualizar o processo antes de aprovar o orçamento",
 			"enterprise_signals_missing": "Empresa grande que não vê sinais de que você atende o porte dela assume que você é pequeno demais — e nem entra em contato pra descobrir",
 			"contact_form_excessive_fields": "Cada campo a mais no formulário de contato reduz o preenchimento em 10-15% — formulário longo espanta o lead antes da primeira conversa",
-			"response_time_not_promised": "Cliente que não sabe quando vai receber resposta assume que você demora — e manda o mesmo pedido pro concorrente que promete responder em 24h"
+			"response_time_not_promised": "Cliente que não sabe quando vai receber resposta assume que você demora — e manda o mesmo pedido pro concorrente que promete responder em 24h",
+			"meta_promise_content_mismatch": "Visitante orgânico chega esperando o que o Google mostrou — quando a página entrega outra coisa, sai em segundos e o clique qualificado se perde pra sempre",
+			"pricing_terms_contradictory": "Comprador que percebe preços diferentes em páginas diferentes perde confiança imediata — inconsistência de preço sinaliza negligência ou enganação, e ambos matam a venda",
+			"urgency_claim_unverifiable": "Comprador sofisticado reconhece urgência permanente como manipulação — quando percebe o truque, desconfia de tudo na página e nunca mais volta",
+			"value_prop_diluted_by_navigation": "Visitante que não entende o que você faz em 5 segundos vai embora — cada proposta de valor competindo acima da dobra dilui todas as outras e não converte ninguém",
+			"checkout_copy_creates_anxiety": "Texto ansiogênico na hora do pagamento dispara abandono imediato — comprador que estava pronto pra pagar fecha a aba ao invés de arriscar o desconhecido",
+			"faq_answers_wrong_questions": "FAQ que ignora objeções de compra desperdiça potencial de conversão — visitante que veio buscar tranquilidade sai com mais dúvida, não menos",
+			"testimonials_feel_fabricated": "Depoimentos que parecem fabricados causam mais dano do que não ter nenhum — comprador que percebe o padrão assume que tudo na página é igualmente desonesto",
+			"staging_environment_publicly_accessible": "Ambientes de staging expostos permitem que atacantes encontrem vulnerabilidades em código não endurecido e acessem dados reais de clientes usados em testes — uma violação de conformidade e perda de confiança do cliente",
+			"admin_panel_exposed_to_internet": "Qualquer pessoa pode tentar credential stuffing ou brute force no seu painel admin — uma única conta comprometida significa controle total das operações por um atacante",
+			"subdomain_brand_visual_fragmentation": "Clientes navegando entre subdomínios experimentam descontinuidade visual — confiança erode a cada transição de superfície, aumentando taxa de abandono entre propriedades",
+			"app_subdomain_disconnected_from_site": "Clientes existentes que não encontram como fazer login no seu site ligam pro suporte ou simplesmente cancelam — custo de suporte sobe enquanto retenção cai silenciosamente",
+			"whatsapp_channel_disconnected": "Canal de vendas por WhatsApp existe mas ninguém encontra — dúvidas pré-compra ficam sem resposta e compradores com intenção saem sem converter",
+			"multiple_payment_subdomains_fragmenting_trust": "Comprador é redirecionado pra domínio desconhecido no momento mais sensível — gatilho de ansiedade de fraude suprime conversão no passo de pagamento"
 		},
 		"reasoning_templates": {
 			"security_header_weakness": "Sinais de confiança do navegador {severity}. {factors}. Navegadores mostram avisos de \"Não seguro\" e removem o cadeado quando esses headers estão ausentes — compradores veem esses sinais e abandonam.",

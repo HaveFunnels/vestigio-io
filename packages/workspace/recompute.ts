@@ -26,6 +26,7 @@ import { detectMaturityStage, MaturityStage } from '../classification/maturity';
 import { extractSaasSignals } from '../signals/saas-signals';
 import { computeSaasInferences } from '../inference/saas-inference';
 import { computeVerticalInferences } from '../inference/vertical-inference';
+import { computeCrossDomainInferences, computeSubdomainCrossDomainInferences } from '../inference/cross-domain-inference';
 import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
 import { adjustConfidenceByQuality, QualityAdjustmentResult } from '../evidence/confidence-adjuster';
 import { harmonizeSignals, HarmonizationResult } from '../truth';
@@ -622,9 +623,15 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     });
   }
 
+  // Wave 9: Subdomain discovery cross-domain inferences
+  const subdomainInferences = computeSubdomainCrossDomainInferences(evidence, scoping, cycle_ref);
+
+  // Cross-domain inferences (Static + LLM correlation)
+  const crossDomainInferences = computeCrossDomainInferences(signals, [...inferences, ...saasInferences, ...verticalInferences], scoping, cycle_ref, evidence);
+
   // Merge SaaS signals + additional static-check signals into main arrays
   const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
-  const allInferences = [...inferences, ...saasInferences, ...verticalInferences];
+  const allInferences = [...inferences, ...saasInferences, ...verticalInferences, ...subdomainInferences, ...crossDomainInferences];
 
   // Collect all decisions and risk evaluations
   let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision, copyAlignmentResult.decision, channelIntegrityResult.decision, discoverabilityResult.decision, brandIntegrityResult.decision];

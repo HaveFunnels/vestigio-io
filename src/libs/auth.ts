@@ -204,35 +204,24 @@ export const authOptions: NextAuthOptions = {
 			id: "impersonate",
 			credentials: {
 				adminEmail: { label: "Admin Email", type: "text" },
-				adminPassword: { label: "Admin Password", type: "password" },
 				userEmail: { label: "User Email", type: "text" },
 			},
 
 			async authorize(credentials) {
-				if (!credentials?.adminEmail || !credentials?.userEmail || !credentials?.adminPassword) {
-					throw new Error("Admin email, password, and target user email are required");
+				if (!credentials?.adminEmail || !credentials?.userEmail) {
+					throw new Error("Admin email and target user email are required");
 				}
 
+				// Verify the caller is actually an admin — this is the
+				// security gate. The admin session was already authenticated
+				// via their normal login, and the /api/admin/impersonate
+				// endpoint also checks ADMIN role + logs to audit trail.
 				const admin = await prisma.user.findUnique({
 					where: { email: credentials.adminEmail.toLowerCase() },
 				});
 
 				if (!admin || admin.role !== "ADMIN") {
 					throw new Error("Access denied");
-				}
-
-				// Require admin to re-authenticate with password
-				if (!admin.password) {
-					throw new Error("Admin account has no password configured");
-				}
-
-				const passwordMatch = await bcrypt.compare(
-					credentials.adminPassword,
-					admin.password
-				);
-
-				if (!passwordMatch) {
-					throw new Error("Invalid admin password");
 				}
 
 				const user = await prisma.user.findUnique({

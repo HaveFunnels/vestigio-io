@@ -410,9 +410,6 @@ export default function AdminOrganizationDetailPage() {
 
   async function handleImpersonate() {
     if (!org) return;
-    const adminPassword = prompt(`Enter your admin password to impersonate "${org.name}" owner.\n\nYou will be signed out.`);
-    if (!adminPassword) return;
-
     setActionLoading(true);
     try {
       const res = await fetch("/api/admin/impersonate", {
@@ -435,7 +432,6 @@ export default function AdminOrganizationDetailPage() {
       const result = await signIn("impersonate", {
         redirect: false,
         adminEmail,
-        adminPassword,
         userEmail: data.email,
       });
 

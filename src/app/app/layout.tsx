@@ -27,6 +27,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 	// Load engine translations for the user's locale (server-side only)
 	const engineTranslations = await loadEngineTranslations();
 
+	// Session + impersonation state — needed by both the MCP bootstrap
+	// and the layout shell (impersonation banner).
+	const session = await getServerSession(authOptions);
+	const isImpersonating = (session?.user as any)?.isImpersonating === true;
+
 	// Auto-bootstrap: load persisted evidence into MCP server singleton
 	// so Analysis / Actions / Maps / Chat pages render data on first visit.
 	if (!orgCtx.isAdmin) {
@@ -45,8 +50,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 		// owner — otherwise an ops/sales session keeps resetting the
 		// owner's lastAccessedAt and indefinitely defers the inactivity
 		// pause for an org the customer hasn't actually opened.
-		const session = await getServerSession(authOptions);
-		const isImpersonating = (session?.user as any)?.isImpersonating === true;
 		if (
 			orgCtx.envId &&
 			orgCtx.envId !== "default" &&
@@ -85,6 +88,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 					isAdmin={orgCtx.isAdmin}
 					orgCtx={currentOrg}
 					plan={orgCtx.plan}
+					isImpersonating={isImpersonating}
+					impersonatingEmail={(session?.user as any)?.email}
 				>
 					{children}
 				</AppSidebarLayout>

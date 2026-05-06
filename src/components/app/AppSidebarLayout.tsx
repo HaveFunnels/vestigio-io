@@ -53,6 +53,8 @@ interface AppSidebarLayoutProps {
 	isAdmin: boolean;
 	orgCtx: OrgCtx;
 	plan: string;
+	isImpersonating?: boolean;
+	impersonatingEmail?: string;
 	children: React.ReactNode;
 }
 
@@ -322,6 +324,8 @@ export default function AppSidebarLayout({
 	isAdmin,
 	orgCtx,
 	plan,
+	isImpersonating,
+	impersonatingEmail,
 	children,
 }: AppSidebarLayoutProps) {
 	const [mobileOpen, setMobileOpen] = useState(false);
@@ -371,6 +375,22 @@ export default function AppSidebarLayout({
 			/>
 
 			<div className="flex flex-1 flex-col overflow-hidden">
+				{/* ── Impersonation banner ── */}
+				{isImpersonating && (
+					<div className="flex h-8 shrink-0 items-center justify-between bg-amber-500/10 px-4 text-xs text-amber-400 border-b border-amber-500/20">
+						<span>
+							Impersonating <strong>{impersonatingEmail}</strong> ({orgCtx.orgName})
+						</span>
+						<button
+							onClick={() => {
+								signOut({ callbackUrl: "/app/admin/organizations" });
+							}}
+							className="rounded px-2 py-0.5 font-medium text-amber-300 transition-colors hover:bg-amber-500/20 hover:text-amber-200"
+						>
+							Exit impersonation
+						</button>
+					</div>
+				)}
 				{/* ── Top bar (part of the shell) ── */}
 				<header className="flex h-12 shrink-0 items-center justify-between px-4">
 					<div className="flex items-center gap-3">

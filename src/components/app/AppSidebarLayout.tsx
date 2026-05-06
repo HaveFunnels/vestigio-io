@@ -377,7 +377,7 @@ export default function AppSidebarLayout({
 			<div className="flex flex-1 flex-col overflow-hidden">
 				{/* ── Impersonation banner ── */}
 				{isImpersonating && (
-					<div className="flex h-8 shrink-0 items-center justify-between bg-amber-500/10 px-4 text-xs text-amber-400 border-b border-amber-500/20">
+					<div className="flex h-8 shrink-0 items-center justify-between bg-amber-600 px-4 text-xs text-white border-b border-amber-700">
 						<span>
 							Impersonating <strong>{impersonatingEmail}</strong> ({orgCtx.orgName})
 						</span>
@@ -385,7 +385,7 @@ export default function AppSidebarLayout({
 							onClick={() => {
 								signOut({ callbackUrl: "/app/admin/organizations" });
 							}}
-							className="rounded px-2 py-0.5 font-medium text-amber-300 transition-colors hover:bg-amber-500/20 hover:text-amber-200"
+							className="rounded px-2 py-0.5 font-medium text-amber-100 transition-colors hover:bg-amber-700 hover:text-white"
 						>
 							Exit impersonation
 						</button>

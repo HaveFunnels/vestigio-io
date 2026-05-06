@@ -999,6 +999,7 @@ async function computeAdSpend(
 
 interface CrossSignalFindingRow {
 	id: string;
+	inferenceKey: string;
 	severity: string | null;
 	pack: string | null;
 	surface: string | null;
@@ -1037,20 +1038,27 @@ function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalC
 		const packs = new Set(group.map((f) => f.pack).filter(Boolean));
 		if (packs.size < 2) continue;
 
-		const links = group.map((f) => {
+		// Deduplicate by inferenceKey within each chain — the same finding
+		// (e.g. security_header_weakness) can appear multiple times if it
+		// was in multiple cycles. Keep the first occurrence only.
+		const seenKeys = new Set<string>();
+		const links = group.flatMap((f) => {
+			const key = f.inferenceKey || f.id;
+			if (seenKeys.has(key)) return [];
+			seenKeys.add(key);
 			let title = "Untitled";
 			try {
 				const proj = JSON.parse(f.projection || "{}");
 				title = proj.title || title;
 			} catch { /* ignore */ }
-			return {
+			return [{
 				pack: f.pack || "unknown",
 				title,
 				severity: f.severity || "medium",
 				impactCents: dollarsToCents(f.impactMidpoint || 0),
 				findingId: f.id,
 				firstSeenAt: f.createdAt ? f.createdAt.toISOString() : null,
-			};
+			}];
 		});
 
 		// Temporal pattern detection: compare cycleIds across packs
@@ -1126,6 +1134,7 @@ function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalC
 
 const CROSS_SIGNAL_SELECT = {
 	id: true,
+	inferenceKey: true,
 	severity: true,
 	pack: true,
 	surface: true,

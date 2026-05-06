@@ -3637,6 +3637,12 @@
 				"title": "Suscripcion",
 				"description": "Administra tu plan de suscripcion. Los cambios se aplican al final del periodo de facturacion actual.",
 				"cancel_button": "Cancelar Suscripcion"
+			},
+			"currency": {
+				"title": "Moneda",
+				"description": "Elige la moneda para los valores de impacto financiero. En modo automatico, la moneda se deriva del idioma configurado.",
+				"auto": "Automatico (del idioma)",
+				"saved": "Preferencia de moneda guardada."
 			}
 		},
 		"cancel_flow": {

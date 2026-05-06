@@ -33,11 +33,19 @@ import {
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
 
+// Locale hint for Intl.NumberFormat — ensures R$ for BRL, $ for USD, etc.
+const CURRENCY_LOCALE: Record<string, string> = {
+	BRL: "pt-BR",
+	EUR: "de-DE",
+	USD: "en-US",
+};
+
 function formatCurrency(cents: number, currency: string): string {
+	const locale = CURRENCY_LOCALE[currency] || "en-US";
 	const dollars = cents / 100;
 	if (dollars >= 1_000_000) {
 		return (
-			new Intl.NumberFormat("en-US", {
+			new Intl.NumberFormat(locale, {
 				style: "currency",
 				currency,
 				maximumFractionDigits: 1,
@@ -46,14 +54,14 @@ function formatCurrency(cents: number, currency: string): string {
 	}
 	if (dollars >= 1_000) {
 		return (
-			new Intl.NumberFormat("en-US", {
+			new Intl.NumberFormat(locale, {
 				style: "currency",
 				currency,
 				maximumFractionDigits: 1,
 			}).format(dollars / 1_000) + "k"
 		);
 	}
-	return new Intl.NumberFormat("en-US", {
+	return new Intl.NumberFormat(locale, {
 		style: "currency",
 		currency,
 		maximumFractionDigits: 0,

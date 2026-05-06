@@ -3770,6 +3770,12 @@
 				"title": "Subscription",
 				"description": "Manage your subscription plan. Changes take effect at the end of your current billing period.",
 				"cancel_button": "Cancel Subscription"
+			},
+			"currency": {
+				"title": "Currency",
+				"description": "Choose the currency for financial impact values. When set to automatic, the currency is derived from your language setting.",
+				"auto": "Automatic (from language)",
+				"saved": "Currency preference saved."
 			}
 		},
 		"cancel_flow": {

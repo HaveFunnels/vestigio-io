@@ -4,6 +4,17 @@
 // If low certainty → wider range + lower confidence. NEVER null.
 // ──────────────────────────────────────────────
 
+/**
+ * Derive ISO 4217 currency code from the user's locale string.
+ * Returns 'USD' as the default for unrecognized or null locales.
+ */
+export function currencyFromLocale(locale: string | null | undefined): string {
+  if (!locale) return 'USD';
+  if (locale.startsWith('pt')) return 'BRL';
+  if (locale.startsWith('de')) return 'EUR';
+  return 'USD';
+}
+
 export interface QuantifiedValueCase {
   cause: string;
   effect: string;

@@ -168,6 +168,8 @@ export interface MultiPackInput {
   integration_snapshots?: IntegrationSnapshot[];
   /** Additional signals from static checks (post-crawl) — merged before inference */
   additional_signals?: Signal[];
+  /** ISO 4217 currency code for financial impact values (default: 'USD') */
+  currency?: string;
 }
 
 export interface MultiPackResult {
@@ -793,8 +795,9 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   }
 
   // Impact estimation — with profile freshness penalty and reconciled inputs/amplifiers
-  const valueCases = estimateImpact(allInferences, reconciledBusinessInputs, profilePenalty, reconciledAmplifiers);
-  const impactSummary = summarizeImpact(valueCases);
+  const resolvedCurrency = input.currency || 'USD';
+  const valueCases = estimateImpact(allInferences, reconciledBusinessInputs, profilePenalty, reconciledAmplifiers, resolvedCurrency);
+  const impactSummary = summarizeImpact(valueCases, resolvedCurrency);
 
   // Phase 25: Decision conflict resolution
   const conflictReport = resolveDecisionConflicts(allDecisions);

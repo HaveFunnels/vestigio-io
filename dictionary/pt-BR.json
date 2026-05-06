@@ -3789,6 +3789,12 @@
 				"title": "Assinatura",
 				"description": "Gerencie seu plano de assinatura. Alterações entram em vigor no final do período de cobrança atual.",
 				"cancel_button": "Cancelar Assinatura"
+			},
+			"currency": {
+				"title": "Moeda",
+				"description": "Escolha a moeda para valores de impacto financeiro. No modo automático, a moeda é derivada do idioma configurado.",
+				"auto": "Automático (do idioma)",
+				"saved": "Preferência de moeda salva."
 			}
 		},
 		"cancel_flow": {

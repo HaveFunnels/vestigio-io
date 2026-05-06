@@ -66,6 +66,7 @@ export const GET = withErrorTracking(async function GET() {
       ownerId: organization.ownerId,
       plan: organization.plan,
       status: organization.status,
+      currency: organization.currency,
       createdAt: organization.createdAt,
     },
     environments: organization.environments.map((env) => ({
@@ -101,6 +102,7 @@ export const GET = withErrorTracking(async function GET() {
 
 const patchSchema = z.object({
   name: z.string().min(1).max(100).optional(),
+  currency: z.enum(["USD", "BRL", "EUR"]).nullable().optional(),
   businessModel: z.enum(["ecommerce", "lead_gen", "saas", "hybrid"]).optional(),
   monthlyRevenue: z.number().nullable().optional(),
   averageOrderValue: z.number().nullable().optional(),
@@ -140,13 +142,17 @@ export const PATCH = withErrorTracking(async function PATCH(request: Request) {
     );
   }
 
-  const { name, businessModel, monthlyRevenue, averageOrderValue, monthlyTransactions, conversionRate, conversionModel } = res.data;
+  const { name, currency, businessModel, monthlyRevenue, averageOrderValue, monthlyTransactions, conversionRate, conversionModel } = res.data;
 
-  // Update organization name if provided
-  if (name) {
+  // Update organization-level fields (name, currency) if provided
+  const orgUpdate: Record<string, any> = {};
+  if (name) orgUpdate.name = name;
+  if (currency !== undefined) orgUpdate.currency = currency; // null clears to auto
+
+  if (Object.keys(orgUpdate).length > 0) {
     await prisma.organization.update({
       where: { id: membership.organizationId },
-      data: { name },
+      data: orgUpdate,
     });
   }
 

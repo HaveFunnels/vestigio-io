@@ -3101,6 +3101,12 @@
 				"title": "Abonnement",
 				"description": "Verwalte deinen Abo-Plan. Aenderungen werden am Ende des aktuellen Abrechnungszeitraums wirksam.",
 				"cancel_button": "Abonnement kuendigen"
+			},
+			"currency": {
+				"title": "Waehrung",
+				"description": "Waehle die Waehrung fuer finanzielle Auswirkungswerte. Im automatischen Modus wird die Waehrung aus der Spracheinstellung abgeleitet.",
+				"auto": "Automatisch (aus Sprache)",
+				"saved": "Waehrungseinstellung gespeichert."
 			}
 		},
 		"cancel_flow": {

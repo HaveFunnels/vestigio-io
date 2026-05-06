@@ -44,6 +44,7 @@ import {
 	captionForMoneyRecovered,
 } from "./captions";
 
+/** Fallback when no org-level currency is resolved. Callers should pass the real currency. */
 const DEFAULT_CURRENCY = "USD";
 
 // Pack → segmented-bar color mapping. Mirrors the colors used in
@@ -81,7 +82,8 @@ function dollarsToCents(dollars: number): number {
 // ──────────────────────────────────────────────
 async function computeMoneyRecovered(
 	prisma: PrismaClient,
-	envId: string
+	envId: string,
+	currency: string = DEFAULT_CURRENCY,
 ): Promise<MoneyRecoveredData> {
 	try {
 		const now = new Date();
@@ -196,7 +198,7 @@ async function computeMoneyRecovered(
 			claimedCents,
 			last7dCents,
 			last30dCents,
-			currency: DEFAULT_CURRENCY,
+			currency,
 			lastUpdatedAt: (lastUpdatedAt ?? now).toISOString(),
 			caption: "",
 		};
@@ -210,7 +212,7 @@ async function computeMoneyRecovered(
 			claimedCents: 0,
 			last7dCents: 0,
 			last30dCents: 0,
-			currency: DEFAULT_CURRENCY,
+			currency,
 			lastUpdatedAt: new Date().toISOString(),
 			caption: "",
 		};
@@ -411,7 +413,8 @@ async function computeHealthScore(
 // ──────────────────────────────────────────────
 async function computeExposure(
 	prisma: PrismaClient,
-	envId: string
+	envId: string,
+	currency: string = DEFAULT_CURRENCY,
 ): Promise<ExposureData> {
 	try {
 		const cycles = await prisma.auditCycle.findMany({
@@ -425,7 +428,7 @@ async function computeExposure(
 			const empty: ExposureData = {
 				monthlyCents: 0,
 				deltaVsLastCycleCents: 0,
-				currency: DEFAULT_CURRENCY,
+				currency,
 				byPack: [],
 				criticalOpenCount: 0,
 				criticalDeltaVsLastCycle: 0,
@@ -523,7 +526,7 @@ async function computeExposure(
 		const result: ExposureData = {
 			monthlyCents: latest.total,
 			deltaVsLastCycleCents: previous ? latest.total - previous.total : 0,
-			currency: DEFAULT_CURRENCY,
+			currency,
 			byPack,
 			criticalOpenCount: latest.critical,
 			criticalDeltaVsLastCycle: previous
@@ -539,7 +542,7 @@ async function computeExposure(
 		const fallback: ExposureData = {
 			monthlyCents: 0,
 			deltaVsLastCycleCents: 0,
-			currency: DEFAULT_CURRENCY,
+			currency,
 			byPack: [],
 			criticalOpenCount: 0,
 			criticalDeltaVsLastCycle: 0,
@@ -777,7 +780,7 @@ async function computeActivityHeatmap(
 // shape so widgets render their proper empty/zero appearance instead
 // of mock numbers (which would mislead a paying customer).
 // ──────────────────────────────────────────────
-export function emptyDashboardData(): DashboardData {
+export function emptyDashboardData(currency: string = DEFAULT_CURRENCY): DashboardData {
 	const today = new Date();
 	const days: ActivityHeatmapDay[] = [];
 	for (let i = 89; i >= 0; i--) {
@@ -797,7 +800,7 @@ export function emptyDashboardData(): DashboardData {
 		claimedCents: 0,
 		last7dCents: 0,
 		last30dCents: 0,
-		currency: DEFAULT_CURRENCY,
+		currency,
 		lastUpdatedAt: today.toISOString(),
 		caption: "",
 	};
@@ -815,7 +818,7 @@ export function emptyDashboardData(): DashboardData {
 	const exposure: ExposureData = {
 		monthlyCents: 0,
 		deltaVsLastCycleCents: 0,
-		currency: DEFAULT_CURRENCY,
+		currency,
 		byPack: [],
 		criticalOpenCount: 0,
 		criticalDeltaVsLastCycle: 0,
@@ -1136,13 +1139,14 @@ export async function computeAllCrossSignals(
 export async function computeDashboardData(
 	prisma: PrismaClient,
 	orgId: string,
-	envId: string
+	envId: string,
+	currency: string = DEFAULT_CURRENCY,
 ): Promise<DashboardData> {
 	const [moneyRecovered, healthScore, exposure, changeReport, activityHeatmap, adSpend, crossSignal] =
 		await Promise.all([
-			computeMoneyRecovered(prisma, envId),
+			computeMoneyRecovered(prisma, envId, currency),
 			computeHealthScore(prisma, orgId, envId),
-			computeExposure(prisma, envId),
+			computeExposure(prisma, envId, currency),
 			computeChangeReport(prisma, envId),
 			computeActivityHeatmap(prisma, orgId, envId),
 			computeAdSpend(prisma, envId),

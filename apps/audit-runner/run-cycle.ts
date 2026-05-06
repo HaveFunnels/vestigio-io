@@ -41,6 +41,7 @@ import type { IntegrationSnapshot } from "../../packages/integrations/types";
 import type { Evidence } from "../../packages/domain";
 import { triggerIncidentNotifications, triggerRegressionNotifications } from "@/libs/notification-triggers";
 import { analyzeAdMessageMatch } from "../../workers/ingestion/enrichment/ad-message-match";
+import { currencyFromLocale } from "../../packages/impact";
 
 export interface RunAuditCycleResult {
 	cycleId: string;
@@ -823,6 +824,23 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 
 			// (b) Engine
+			// Resolve currency: org override > owner locale > default USD
+			let resolvedCurrency = 'USD';
+			try {
+				const orgCurrency = (cycle.organization as any).currency;
+				if (orgCurrency) {
+					resolvedCurrency = orgCurrency;
+				} else {
+					const owner = await prisma.user.findUnique({
+						where: { id: cycle.organization.ownerId },
+						select: { locale: true },
+					});
+					resolvedCurrency = currencyFromLocale(owner?.locale);
+				}
+			} catch {
+				// Fallback to USD on any resolution error
+			}
+
 			const recomputeStartMs = Date.now();
 			const multiPackResult = recomputeAll({
 				evidence: result.evidence,
@@ -843,6 +861,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				previous_snapshot: previousSnapshot,
 				translations,
 				integration_snapshots: integrationSnapshots.length > 0 ? integrationSnapshots : undefined,
+				currency: resolvedCurrency,
 			});
 			const recomputeMs = Date.now() - recomputeStartMs;
 

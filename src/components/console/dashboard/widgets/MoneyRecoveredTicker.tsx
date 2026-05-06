@@ -25,9 +25,16 @@ import {
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
 
+const CURRENCY_LOCALE: Record<string, string> = {
+	BRL: "pt-BR",
+	EUR: "de-DE",
+	USD: "en-US",
+};
+
 function formatCurrency(cents: number, currency: string): string {
+	const locale = CURRENCY_LOCALE[currency] || "en-US";
 	const dollars = cents / 100;
-	return new Intl.NumberFormat("en-US", {
+	return new Intl.NumberFormat(locale, {
 		style: "currency",
 		currency,
 		minimumFractionDigits: 0,

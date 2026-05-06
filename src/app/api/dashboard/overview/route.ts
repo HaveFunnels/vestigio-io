@@ -9,6 +9,7 @@ import {
 } from "@/lib/dashboard/aggregator";
 import { buildMockDashboardData } from "@/lib/dashboard/mock-data";
 import { isDemoOrg } from "@/lib/demo-account";
+import { currencyFromLocale } from "../../../../../packages/impact";
 
 // ──────────────────────────────────────────────
 // GET /api/dashboard/overview
@@ -37,7 +38,7 @@ export const GET = withErrorTracking(
 
 		const membership = await prisma.membership.findFirst({
 			where: { userId: user.id },
-			include: { organization: { select: { id: true, orgType: true } } },
+			include: { organization: { select: { id: true, orgType: true, currency: true, ownerId: true } } },
 		});
 
 		// Mock dashboard text routes through the user's locale so the
@@ -55,6 +56,19 @@ export const GET = withErrorTracking(
 			return NextResponse.json(buildMockDashboardData(tMock));
 		}
 
+		// Resolve currency: org override > owner locale > default USD
+		let resolvedCurrency = "USD";
+		const org = membership.organization;
+		if ((org as any).currency) {
+			resolvedCurrency = (org as any).currency;
+		} else {
+			const owner = await prisma.user.findUnique({
+				where: { id: (org as any).ownerId },
+				select: { locale: true },
+			});
+			resolvedCurrency = currencyFromLocale(owner?.locale);
+		}
+
 		const environment = await prisma.environment.findFirst({
 			where: { organizationId: membership.organizationId },
 			orderBy: [{ isProduction: "desc" }, { createdAt: "asc" }],
@@ -62,13 +76,14 @@ export const GET = withErrorTracking(
 		});
 
 		if (!environment) {
-			return NextResponse.json(emptyDashboardData());
+			return NextResponse.json(emptyDashboardData(resolvedCurrency));
 		}
 
 		const data = await computeDashboardData(
 			prisma,
 			membership.organizationId,
-			environment.id
+			environment.id,
+			resolvedCurrency,
 		);
 		return NextResponse.json(data);
 	},

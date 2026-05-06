@@ -37,6 +37,17 @@ export default function SettingsPage() {
 				<LanguageSelector />
 			</section>
 
+			{/* Currency */}
+			<section className='mb-10'>
+				<h2 className='mb-4 text-lg font-semibold text-content'>
+					{t("currency.title")}
+				</h2>
+				<p className='mb-4 text-sm text-content-muted'>
+					{t("currency.description")}
+				</p>
+				<CurrencySelector />
+			</section>
+
 			{/* Notifications */}
 			<section className='mb-10'>
 				<h2 className='mb-4 text-lg font-semibold text-content'>
@@ -369,6 +380,79 @@ function ToggleRow(props: {
 				/>
 			</div>
 		</button>
+	);
+}
+
+// ──────────────────────────────────────────────
+// Currency Selector — org-level currency override
+// ──────────────────────────────────────────────
+
+const CURRENCY_OPTIONS = [
+	{ value: "", label: "auto" }, // auto = null in DB
+	{ value: "BRL", label: "BRL (R$)" },
+	{ value: "USD", label: "USD ($)" },
+	{ value: "EUR", label: "EUR (\u20AC)" },
+] as const;
+
+function CurrencySelector() {
+	const t = useTranslations("console.settings.currency");
+	const [selected, setSelected] = useState<string>("");
+	const [loading, setLoading] = useState(true);
+	const [saving, setSaving] = useState(false);
+	const [savedAt, setSavedAt] = useState<number | null>(null);
+
+	useEffect(() => {
+		fetch("/api/organization")
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (data?.organization?.currency) {
+					setSelected(data.organization.currency);
+				}
+			})
+			.catch(() => {})
+			.finally(() => setLoading(false));
+	}, []);
+
+	async function handleChange(value: string) {
+		setSelected(value);
+		setSaving(true);
+		try {
+			await fetch("/api/organization", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ currency: value || null }),
+			});
+			setSavedAt(Date.now());
+		} finally {
+			setSaving(false);
+		}
+	}
+
+	if (loading) {
+		return <div className='text-sm text-content-muted'>...</div>;
+	}
+
+	return (
+		<div className='space-y-3'>
+			<div className='grid grid-cols-2 gap-2 sm:grid-cols-4'>
+				{CURRENCY_OPTIONS.map((opt) => (
+					<button
+						key={opt.value}
+						type='button'
+						disabled={saving}
+						onClick={() => handleChange(opt.value)}
+						className={`rounded-md border px-4 py-2.5 text-sm font-medium transition-colors ${
+							selected === opt.value
+								? "border-accent bg-accent/10 text-accent"
+								: "border-edge bg-surface-input text-content-muted hover:border-accent/40"
+						} disabled:opacity-50`}
+					>
+						{opt.value === "" ? t("auto") : opt.label}
+					</button>
+				))}
+			</div>
+			{savedAt && <p className='text-xs text-content-faint'>{t("saved")}</p>}
+		</div>
 	);
 }
 

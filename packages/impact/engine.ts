@@ -96,12 +96,14 @@ const AMPLIFIER_MAPPING: Record<string, keyof OperationalAmplifiers> = {
 /**
  * @param profileConfidencePenalty - multiplier (0..1) from business profile freshness.
  * @param amplifiers - optional operational amplifiers from integration data.
+ * @param currency - ISO 4217 currency code (default: 'USD'). Passed through to EstimatedImpact.
  */
 export function estimateImpact(
   inferences: Inference[],
   inputs: BusinessInputs | null,
   profileConfidencePenalty: number = 1.0,
   amplifiers?: OperationalAmplifiers,
+  currency: string = 'USD',
 ): QuantifiedValueCase[] {
   const business = inputs || FALLBACK_INPUTS;
   const inputQuality = classifyInputQuality(inputs);
@@ -140,7 +142,7 @@ export function estimateImpact(
     const pctRange = baseline[severity];
 
     const isFallback = inputQuality.basis_type === 'heuristic';
-    const estimated = computeEstimate(pctRange, baseline.base_metric, business, isFallback);
+    const estimated = computeEstimate(pctRange, baseline.base_metric, business, isFallback, currency);
 
     // Phase 4A.1: Apply operational amplifier if available for this
     // inference — only on loss-modeled findings. A working control
@@ -178,7 +180,7 @@ export function estimateImpact(
   return valueCases;
 }
 
-export function summarizeImpact(valueCases: QuantifiedValueCase[]): ImpactSummary {
+export function summarizeImpact(valueCases: QuantifiedValueCase[], currency: string = 'USD'): ImpactSummary {
   if (valueCases.length === 0) {
     return {
       total_monthly_loss_range: { min: 0, max: 0 },
@@ -187,7 +189,7 @@ export function summarizeImpact(valueCases: QuantifiedValueCase[]): ImpactSummar
       highest_impact_value: 0,
       issue_count: 0,
       average_confidence: 0,
-      currency: 'USD',
+      currency,
     };
   }
 
@@ -234,6 +236,7 @@ function computeEstimate(
   baseMetric: string,
   business: BusinessInputs,
   isFallback: boolean,
+  currency: string = 'USD',
 ): EstimatedImpact {
   const revenue = business.monthly_revenue ?? FALLBACK_INPUTS.monthly_revenue!;
   const transactions = business.monthly_transactions ?? FALLBACK_INPUTS.monthly_transactions!;
@@ -277,7 +280,7 @@ function computeEstimate(
     monthly_revenue_delta: Math.round((adjustedMin + adjustedMax) / 2),
     percentage_delta: midPct,
     range: { min: adjustedMin, max: adjustedMax },
-    currency: 'USD',
+    currency,
   };
 }
 

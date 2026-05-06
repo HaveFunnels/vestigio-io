@@ -788,6 +788,14 @@ export const INFERENCE_TITLES: Record<string, string> = {
   failed_payment_revenue_drain: 'Failed payments are draining revenue from subscribers who want to pay',
   subscriber_churn_unsustainable: 'Subscriber churn rate has crossed the sustainable threshold',
   payment_diversity_insufficient: 'All recurring revenue depends on a single payment gateway',
+  // ── Triple-Source Cross-Domain Findings ─────────
+  brand_trust_cliff_at_payment: 'Your brand disappears at checkout and buyers feel tricked',
+  ad_landing_experience_disconnect: 'Your page delivers something different from what meta tags promised',
+  checkout_form_mobile_hostile: 'Your checkout form punishes mobile buyers with endless typing',
+  pricing_page_complexity_paralysis: 'Too many pricing options paralyze buyers into choosing nothing',
+  support_promise_impossible_to_fulfill: 'You promise fast support but have no channel to deliver it',
+  trust_journey_inconsistency: 'Trust signals vanish on the pages where buyers need them most',
+  multilingual_conversion_leak: 'Language switches mid-funnel and confuses buyers into leaving',
   // ── Vertical-Specific Findings ─────────────────
   // Fashion/E-commerce
   size_guide_missing: "Buyers can't check if products will fit them",

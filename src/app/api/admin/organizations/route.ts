@@ -109,6 +109,9 @@ interface CreateOrgBody {
   trialEndsAt?: string | null;  // ISO date, required if orgType="trial"
   ownerEmail: string;
   ownerName?: string | null;
+  // Locale for the owner — determines the language of audit findings.
+  // Defaults to "pt-BR" (product's primary market) if omitted.
+  locale?: "en" | "pt-BR" | "es" | "de" | null;
   // Mode (B) fields — all optional; presence of `domain` flips to provisioned mode.
   domain?: string | null;
   landingUrl?: string | null;   // derived from domain if omitted
@@ -239,6 +242,10 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
             email: ownerEmail,
             name: body.ownerName?.trim() || null,
             role: "USER",
+            // Set locale so the first audit cycle generates findings in the
+            // customer's language. Default to "pt-BR" (primary market) when
+            // the admin doesn't specify — prevents English findings for BR customers.
+            locale: body.locale || "pt-BR",
             activationToken,
             activationTokenExpiresAt: new Date(Date.now() + tokenTTL),
           },

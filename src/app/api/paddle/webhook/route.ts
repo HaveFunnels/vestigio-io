@@ -410,18 +410,30 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 			// never receives their "ative sua conta" email.
 			let user = await findUser(customer_id, customer?.email);
 			if (!user && customer?.email && !custom_data?.leadId) {
+				// Resolve locale from Paddle's customer locale field (e.g. "pt-BR",
+				// "en") or default to "pt-BR" (primary market). Paddle's customer
+				// object includes the locale detected from the checkout session.
+				const SUPPORTED_LOCALES = ["en", "pt-BR", "es", "de"];
+				const paddleLocale = customer?.locale || "";
+				const resolvedLocale = SUPPORTED_LOCALES.includes(paddleLocale)
+					? paddleLocale
+					: paddleLocale.startsWith("pt") ? "pt-BR"
+					: paddleLocale.startsWith("es") ? "es"
+					: paddleLocale.startsWith("de") ? "de"
+					: "pt-BR";
 				user = await prisma.user.create({
 					data: {
 						name: customer.name || "guest",
 						email: customer.email,
 						password: "",
+						locale: resolvedLocale,
 						subscriptionId: subscription_id || null,
 						customerId: customer_id,
 						priceId: priceId || null,
 						currentPeriodEnd: billing_period?.ends_at ? new Date(billing_period.ends_at) : null,
 					},
 				});
-				logEvent(eventType, `Created user ${customer.email}`);
+				logEvent(eventType, `Created user ${customer.email} locale=${resolvedLocale}`);
 			} else if (user && subscription_id) {
 				await updateUserSubscription(user.id, {
 					subscriptionId: subscription_id,

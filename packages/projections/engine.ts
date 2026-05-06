@@ -315,6 +315,32 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   social_proof_loads_too_late: 'scale_readiness',
   consent_banner_obscures_first_action: 'revenue_integrity',
   price_hidden_behind_interaction: 'revenue_integrity',
+  // Funnel journey findings
+  hero_outcome_absent: 'funnel_journey',
+  cognitive_load_first_screen: 'funnel_journey',
+  primary_cta_delayed: 'funnel_journey',
+  specificity_deficit: 'funnel_journey',
+  proof_of_work_missing: 'funnel_journey',
+  navigation_dead_ends: 'funnel_journey',
+  page_depth_before_conversion: 'funnel_journey',
+  feature_benefit_disconnect: 'funnel_journey',
+  comparison_absent: 'funnel_journey',
+  objection_echo_chamber: 'funnel_journey',
+  social_channels_decorative: 'funnel_journey',
+  pricing_without_context: 'funnel_journey',
+  checkout_identity_break: 'funnel_journey',
+  payment_options_invisible: 'funnel_journey',
+  guarantee_invisible_at_decision: 'funnel_journey',
+  urgency_mechanics_absent: 'funnel_journey',
+  first_value_path_unclear: 'funnel_journey',
+  support_response_expectation_gap: 'funnel_journey',
+  billing_transparency_absent: 'funnel_journey',
+  upgrade_value_gap: 'funnel_journey',
+  referral_path_nonexistent: 'funnel_journey',
+  success_story_feedback_loop_broken: 'funnel_journey',
+  tone_shift_across_journey: 'funnel_journey',
+  mobile_journey_friction_compound: 'funnel_journey',
+  trust_gradient_inverted: 'funnel_journey',
 };
 
 // Wave 3.10 Fase 3 — Root causes that belong to the copy alignment context.
@@ -595,6 +621,37 @@ const INFERENCE_SURFACES: Record<string, string> = {
   social_proof_loads_too_late: '/, /product (lazy-loaded testimonials)',
   consent_banner_obscures_first_action: '/ (consent banner × CTA overlap)',
   price_hidden_behind_interaction: '/pricing, /plans (no static price)',
+  // Funnel journey — Moment 1: First Impression
+  hero_outcome_absent: '/',
+  cognitive_load_first_screen: '/',
+  primary_cta_delayed: '/',
+  specificity_deficit: '/',
+  // Funnel journey — Moment 2: Consideration
+  proof_of_work_missing: '/, /about, /features, /support',
+  navigation_dead_ends: '/, /about, /features, /support',
+  page_depth_before_conversion: '/, /about, /features, /support',
+  feature_benefit_disconnect: '/, /about, /features, /support',
+  comparison_absent: '/, /about, /features, /support',
+  objection_echo_chamber: '/, /about, /features, /support',
+  social_channels_decorative: '/, /about, /features, /support',
+  // Funnel journey — Moment 3: Decision
+  pricing_without_context: '/pricing, /checkout',
+  checkout_identity_break: '/pricing, /checkout',
+  payment_options_invisible: '/pricing, /checkout',
+  guarantee_invisible_at_decision: '/pricing, /checkout',
+  urgency_mechanics_absent: '/pricing, /checkout',
+  // Funnel journey — Moment 4: Post-purchase
+  first_value_path_unclear: '/app, /dashboard',
+  support_response_expectation_gap: '/app, /dashboard',
+  billing_transparency_absent: '/app, /dashboard',
+  // Funnel journey — Moment 5: Expansion
+  upgrade_value_gap: '/pricing, /account',
+  referral_path_nonexistent: '/pricing, /account',
+  success_story_feedback_loop_broken: '/pricing, /account',
+  // Funnel journey — Cross-journey
+  tone_shift_across_journey: '/ (sitewide)',
+  mobile_journey_friction_compound: '/ (sitewide)',
+  trust_gradient_inverted: '/ (sitewide)',
 };
 
 // Human-readable titles for inference findings
@@ -860,6 +917,38 @@ export const INFERENCE_TITLES: Record<string, string> = {
   social_proof_loads_too_late: 'Your testimonials load too late to influence the buying decision',
   consent_banner_obscures_first_action: 'Your cookie banner blocks the first thing buyers want to click',
   price_hidden_behind_interaction: 'Buyers see no price until they click — most leave before clicking',
+  // ── Funnel Journey Findings ────────────────────
+  // Moment 1 — First Impression
+  hero_outcome_absent: 'Your headline describes what you do but not what the buyer gets',
+  cognitive_load_first_screen: "Your homepage says too many things at once — visitors can't focus",
+  primary_cta_delayed: 'Visitors have to scroll past content walls to find the first action',
+  specificity_deficit: 'Your commercial text uses adjectives every competitor also uses',
+  // Moment 2 — Consideration
+  proof_of_work_missing: 'No page shows evidence that real customers bought and got results',
+  navigation_dead_ends: 'Support and help pages are dead ends with no path back to buying',
+  page_depth_before_conversion: 'Too many clicks between landing and checkout',
+  feature_benefit_disconnect: "Features are listed without explaining what they mean for the buyer",
+  comparison_absent: 'Nothing positions your product against alternatives',
+  objection_echo_chamber: 'Your FAQ answers questions you want to answer, not buying objections',
+  social_channels_decorative: 'Social media links point to inactive or abandoned profiles',
+  // Moment 3 — Decision
+  pricing_without_context: "Prices appear without ROI context — buyers see cost, not investment",
+  checkout_identity_break: "Visual identity breaks at the payment moment — brand continuity lost",
+  payment_options_invisible: "Accepted payment methods aren't visible before checkout",
+  guarantee_invisible_at_decision: 'Your guarantee exists but is hidden when buyers need it most',
+  urgency_mechanics_absent: 'Nothing tells the buyer why acting today is better than tomorrow',
+  // Moment 4 — Post-purchase
+  first_value_path_unclear: "New users don't see a clear path to their first result after signup",
+  support_response_expectation_gap: "Support page exists but doesn't promise response time",
+  billing_transparency_absent: 'No page explains billing cycle, cancellation, or data retention',
+  // Moment 5 — Expansion
+  upgrade_value_gap: "Higher plan features are listed but their business value isn't explained",
+  referral_path_nonexistent: 'No mechanism exists for satisfied customers to bring others',
+  success_story_feedback_loop_broken: 'Customer success happens but is never captured as social proof',
+  // Cross-journey
+  tone_shift_across_journey: "Brand voice changes between pages — feels like different companies",
+  mobile_journey_friction_compound: 'Small mobile issues compound into an unbearable purchase experience',
+  trust_gradient_inverted: "Trust signals are strongest where buyers already trust and absent where they don't",
 };
 
 // ── Parametric Title Resolution ──

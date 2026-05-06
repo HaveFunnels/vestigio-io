@@ -392,6 +392,43 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   social_proof_loads_too_late:           { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
   consent_banner_obscures_first_action:  { root_cause_key: 'friction_barrier_on_path', category: 'friction_barrier', impact_types: ['revenue_loss'] },
   price_hidden_behind_interaction:       { root_cause_key: 'fragmented_conversion_path', category: 'conversion_fragmentation', impact_types: ['revenue_loss'] },
+
+  // Funnel journey — Moment 1: First Impression
+  hero_outcome_absent:                   { root_cause_key: 'first_impression_failure', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  cognitive_load_first_screen:           { root_cause_key: 'first_impression_failure', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  primary_cta_delayed:                   { root_cause_key: 'first_impression_failure', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  specificity_deficit:                   { root_cause_key: 'first_impression_failure', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+
+  // Funnel journey — Moment 2: Consideration
+  proof_of_work_missing:                 { root_cause_key: 'consideration_friction', category: 'funnel_journey_friction', impact_types: ['revenue_loss', 'trust_erosion'] },
+  navigation_dead_ends:                  { root_cause_key: 'consideration_friction', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  page_depth_before_conversion:          { root_cause_key: 'consideration_friction', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  feature_benefit_disconnect:            { root_cause_key: 'consideration_friction', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  comparison_absent:                     { root_cause_key: 'consideration_friction', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  objection_echo_chamber:                { root_cause_key: 'consideration_friction', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  social_channels_decorative:            { root_cause_key: 'consideration_friction', category: 'funnel_journey_friction', impact_types: ['trust_erosion'] },
+
+  // Funnel journey — Moment 3: Decision
+  pricing_without_context:               { root_cause_key: 'decision_moment_anxiety', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  checkout_identity_break:               { root_cause_key: 'decision_moment_anxiety', category: 'funnel_journey_friction', impact_types: ['revenue_loss', 'trust_erosion'] },
+  payment_options_invisible:             { root_cause_key: 'decision_moment_anxiety', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  guarantee_invisible_at_decision:       { root_cause_key: 'decision_moment_anxiety', category: 'funnel_journey_friction', impact_types: ['revenue_loss', 'trust_erosion'] },
+  urgency_mechanics_absent:              { root_cause_key: 'decision_moment_anxiety', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+
+  // Funnel journey — Moment 4: Post-purchase
+  first_value_path_unclear:              { root_cause_key: 'post_purchase_abandonment', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  support_response_expectation_gap:      { root_cause_key: 'post_purchase_abandonment', category: 'funnel_journey_friction', impact_types: ['revenue_loss', 'trust_erosion'] },
+  billing_transparency_absent:           { root_cause_key: 'post_purchase_abandonment', category: 'funnel_journey_friction', impact_types: ['revenue_loss', 'chargeback_risk'] },
+
+  // Funnel journey — Moment 5: Expansion
+  upgrade_value_gap:                     { root_cause_key: 'expansion_ceiling', category: 'funnel_journey_friction', impact_types: ['revenue_loss'] },
+  referral_path_nonexistent:             { root_cause_key: 'expansion_ceiling', category: 'funnel_journey_friction', impact_types: ['revenue_loss', 'scale_risk'] },
+  success_story_feedback_loop_broken:    { root_cause_key: 'expansion_ceiling', category: 'funnel_journey_friction', impact_types: ['revenue_loss', 'trust_erosion'] },
+
+  // Funnel journey — Cross-journey
+  tone_shift_across_journey:             { root_cause_key: 'first_impression_failure', category: 'funnel_journey_friction', impact_types: ['trust_erosion', 'revenue_loss'] },
+  mobile_journey_friction_compound:      { root_cause_key: 'consideration_friction', category: 'funnel_journey_friction', impact_types: ['revenue_loss', 'scale_risk'] },
+  trust_gradient_inverted:               { root_cause_key: 'decision_moment_anxiety', category: 'funnel_journey_friction', impact_types: ['trust_erosion', 'revenue_loss'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a
@@ -472,6 +509,12 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   cross_signal_correlation: 'Your static pages and content analysis disagree — buyers notice the inconsistency',
   // Wave 9: Subdomain discovery
   subdomain_surface_exposure: 'Your subdomain architecture exposes internal surfaces, fragments trust, or disconnects revenue channels',
+  // Funnel journey root causes
+  first_impression_failure: "First contact doesn't communicate value fast enough",
+  consideration_friction: 'The exploration journey creates barriers instead of building confidence',
+  decision_moment_anxiety: 'The payment moment amplifies doubt instead of reducing it',
+  post_purchase_abandonment: "New customers don't find value fast enough to stay",
+  expansion_ceiling: "Growth mechanisms don't exist — revenue depends entirely on new acquisition",
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -607,6 +650,17 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
 
   // Wave 9: Subdomain discovery
   subdomain_surface_exposure: "Your subdomain infrastructure reveals internal surfaces (staging, admin panels), fragments brand identity across disconnected properties, or leaves revenue-generating channels (app login, WhatsApp, payment) unreachable from your main site. Each exposed or disconnected subdomain is either a security risk, a trust erosion point, or wasted investment in infrastructure that nobody uses because nobody can find it.",
+
+  // Funnel journey root causes
+  first_impression_failure: "Visitors land on your homepage and can't tell what you do, who it's for, or why they should care — within the 5 seconds that determine whether they stay or leave. The headline talks about what you built, not what the buyer gets. The screen is packed with competing messages. The first action is buried below the fold. And your copy sounds like every other competitor in the market. Every visitor who leaves in the first 10 seconds is someone you paid to bring but failed to hold. The first impression is the most expensive failure because it happens to 100% of your traffic.",
+
+  consideration_friction: "Visitors who survived the first impression try to learn more — but the experience works against them. There's no evidence that real customers exist. Support pages are dead ends with no path back to buying. Features are listed without explaining what they mean for the buyer. Nothing positions your product against alternatives. And your FAQ answers the questions you want to answer, not the ones buyers are actually asking. Each barrier erodes the confidence your first impression built. By the time buyers reach the decision, they've accumulated enough doubt to leave.",
+
+  decision_moment_anxiety: "Buyers arrive at the pricing page or checkout with intent to pay — and everything amplifies their doubt instead of reducing it. Prices appear without ROI context, so buyers see cost instead of investment. The visual identity breaks at the payment moment. Accepted payment methods aren't visible. Your guarantee exists but is hidden when buyers need it most. And nothing tells the buyer why acting today is better than tomorrow. The decision moment is where the highest percentage of ready-to-pay buyers are lost — not because of price, but because of anxiety the experience creates.",
+
+  post_purchase_abandonment: "New customers complete the purchase but can't find value fast enough to justify staying. There's no clear path to their first result. The support page exists but doesn't promise response time. And no page explains billing cycle, cancellation, or data retention. The gap between paying and getting value is where retention dies. Every customer who churns in the first 30 days costs you the full acquisition price plus the revenue they would have generated over their lifetime.",
+
+  expansion_ceiling: "Your revenue depends entirely on bringing new customers because existing ones have no way to spend more. Higher plan features are listed without explaining their business value. No mechanism exists for satisfied customers to bring others. And customer success stories happen but are never captured as social proof. Without expansion revenue, your business runs on a treadmill — running faster just to stay in place. Companies that solve this grow 2-3x faster because every existing customer becomes a revenue multiplier.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

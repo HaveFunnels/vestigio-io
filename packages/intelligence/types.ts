@@ -62,7 +62,9 @@ export type RootCauseCategory =
   // Vertical-specific purchase barriers
   | 'vertical_purchase_barrier'
   // Cross-domain: Static + LLM correlation
-  | 'cross_signal_correlation';
+  | 'cross_signal_correlation'
+  // Funnel journey friction
+  | 'funnel_journey_friction';
 
 export type RootCauseSeverity = 'critical' | 'high' | 'medium' | 'low';
 

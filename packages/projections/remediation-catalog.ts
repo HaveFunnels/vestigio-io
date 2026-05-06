@@ -3747,6 +3747,355 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos fazer request HTTP GET na página de pricing e buscar padrões de preço (R$, $, €, /mês) no HTML retornado — sem executar JavaScript.',
 		verification_eta_seconds: 15,
 	},
+
+	// ─────────────────────────────────────────────
+	// Funnel Journey — Moment 1: First Impression
+	// ─────────────────────────────────────────────
+
+	hero_outcome_absent: {
+		remediation_steps: [
+			'Reescreva o título principal da homepage pra responder "o que o comprador ganha" em vez de "o que você faz".',
+			'Adicione um subtítulo com resultado concreto (número, prazo, benefício tangível) logo abaixo do headline.',
+			'Teste A/B o novo headline contra o atual e meça taxa de scroll e clique no CTA.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos buscar o HTML da homepage e verificar se o h1 ou hero section contém linguagem orientada a resultado do comprador.',
+		verification_eta_seconds: 20,
+	},
+
+	cognitive_load_first_screen: {
+		remediation_steps: [
+			'Reduza o número de mensagens acima da dobra pra no máximo 1 proposta de valor + 1 CTA.',
+			'Remova sliders, carrosséis e banners competidores da primeira tela.',
+			'Priorize hierarquia visual: headline > subtítulo > CTA — nada mais deve competir por atenção.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos analisar o HTML acima da dobra e contar quantos elementos de texto e CTAs competem por atenção no primeiro viewport.',
+		verification_eta_seconds: 20,
+	},
+
+	primary_cta_delayed: {
+		remediation_steps: [
+			'Mova o CTA principal pra acima da dobra — o visitante deve ver a primeira ação sem rolar.',
+			'Adicione um CTA fixo (sticky) no header ou bottom bar pra mobile.',
+			'Reduza o conteúdo entre o hero e o primeiro botão de ação pra no máximo 2 blocos.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe um elemento de CTA (link ou botão com texto de ação) nos primeiros 600px do HTML da homepage.',
+		verification_eta_seconds: 20,
+	},
+
+	specificity_deficit: {
+		remediation_steps: [
+			'Substitua adjetivos genéricos (melhor, inovador, líder) por números e resultados concretos.',
+			'Inclua pelo menos 1 dado quantitativo no hero (ex: "usado por 2.000 empresas", "entrega em 24h").',
+			'Revise todo texto comercial e substitua linguagem de fornecedor por linguagem de comprador.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Vamos re-analisar o copy da homepage buscando presença de números concretos e ausência de adjetivos genéricos no hero.',
+		verification_eta_seconds: 25,
+	},
+
+	// ─────────────────────────────────────────────
+	// Funnel Journey — Moment 2: Consideration
+	// ─────────────────────────────────────────────
+
+	proof_of_work_missing: {
+		remediation_steps: [
+			'Publique pelo menos 3 depoimentos de clientes reais com nome, empresa e resultado mensurável.',
+			'Crie uma página dedicada de cases/resultados com métricas antes e depois.',
+			'Adicione logos de clientes ou "Usado por X empresas" na homepage e páginas de produto.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos crawlar a homepage e páginas comerciais buscando padrões de depoimento (nome + resultado) e logos de clientes.',
+		verification_eta_seconds: 25,
+	},
+
+	navigation_dead_ends: {
+		remediation_steps: [
+			'Adicione CTA de retorno à jornada de compra em todas as páginas de suporte, FAQ e help.',
+			'Inclua sidebar ou banner lateral com link pro produto/pricing nas páginas de conteúdo.',
+			'Revise o breadcrumb e footer pra garantir que toda página tenha caminho de volta pro fluxo comercial.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se páginas de suporte e help contêm links que levam de volta a páginas comerciais (pricing, produto, checkout).',
+		verification_eta_seconds: 20,
+	},
+
+	page_depth_before_conversion: {
+		remediation_steps: [
+			'Mapeie o caminho mais comum entre landing e checkout — reduza pra no máximo 3 cliques.',
+			'Adicione atalho direto pro checkout/pricing no hero da homepage e páginas de produto.',
+			'Remova etapas intermediárias obrigatórias que não agregam valor na decisão de compra.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos navegar os links da homepage até o checkout e contar quantos cliques são necessários pra chegar na página de conversão.',
+		verification_eta_seconds: 25,
+	},
+
+	feature_benefit_disconnect: {
+		remediation_steps: [
+			'Reescreva cada feature listada no formato "Feature → O que isso significa pra você".',
+			'Adicione exemplos de uso real ou mini-cases ao lado de cada funcionalidade principal.',
+			'Priorize benefícios de negócio (economia de tempo, aumento de receita) sobre especificações técnicas.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Vamos re-analisar as páginas de features e produto buscando linguagem orientada a benefício em vez de especificação técnica.',
+		verification_eta_seconds: 25,
+	},
+
+	comparison_absent: {
+		remediation_steps: [
+			'Crie uma página de comparação posicionando seu produto contra as 2-3 principais alternativas.',
+			'Adicione tabela comparativa na página de pricing com diferenciais claros.',
+			'Use linguagem de "por que somos diferentes" em vez de "por que somos melhores" pra parecer genuíno.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe página de comparação (vs, compare, alternativas) ou tabela comparativa na página de pricing.',
+		verification_eta_seconds: 20,
+	},
+
+	objection_echo_chamber: {
+		remediation_steps: [
+			'Reescreva o FAQ com as 5-7 principais objeções de compra (preço, prazo, garantia, suporte, segurança).',
+			'Posicione o FAQ perto do CTA principal ou na página de pricing — não em página separada.',
+			'Cada resposta deve desarmar a objeção e terminar com reforço de confiança (dado, garantia, depoimento).',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos analisar o conteúdo do FAQ buscando linguagem de objeção de compra (preço, reembolso, garantia) vs perguntas técnicas.',
+		verification_eta_seconds: 20,
+	},
+
+	social_channels_decorative: {
+		remediation_steps: [
+			'Remova links pra redes sociais inativas ou com menos de 1 post nos últimos 30 dias.',
+			'Se manter os links, garanta que os perfis tenham conteúdo recente e profissional.',
+			'Substitua links decorativos por prova social real (número de seguidores, avaliações, menções).',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se os links de redes sociais no footer e header apontam pra perfis com conteúdo recente.',
+		verification_eta_seconds: 25,
+	},
+
+	// ─────────────────────────────────────────────
+	// Funnel Journey — Moment 3: Decision
+	// ─────────────────────────────────────────────
+
+	pricing_without_context: {
+		remediation_steps: [
+			'Adicione contexto de ROI ao lado do preço (ex: "equivale a R$ X por lead" ou "economia de Y horas/mês").',
+			'Inclua comparação de valor: o que o comprador gasta hoje vs o que gasta com seu produto.',
+			'Posicione depoimento de cliente com resultado mensurável perto da tabela de preços.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar a página de pricing buscando linguagem de ROI, economia ou valor comparativo próximo aos preços.',
+		verification_eta_seconds: 20,
+	},
+
+	checkout_identity_break: {
+		remediation_steps: [
+			'Aplique logo, cores e tipografia da marca na página de checkout/pagamento.',
+			'Se usa checkout externo (Stripe, PayPal), personalize com sua marca ou use checkout embedded.',
+			'Adicione barra de progresso com identidade visual consistente no fluxo de pagamento.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos comparar os elementos visuais da homepage com os do checkout pra verificar continuidade de marca.',
+		verification_eta_seconds: 25,
+	},
+
+	payment_options_invisible: {
+		remediation_steps: [
+			'Mostre os logos dos meios de pagamento aceitos na página de pricing e no footer.',
+			'Adicione ícones de bandeiras de cartão, Pix, boleto (se aplicável) perto do botão de compra.',
+			'Mencione opções de parcelamento antes do checkout — não espere o comprador descobrir sozinho.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existem imagens ou texto de meios de pagamento visíveis nas páginas de pricing e produto.',
+		verification_eta_seconds: 20,
+	},
+
+	guarantee_invisible_at_decision: {
+		remediation_steps: [
+			'Mova a menção à garantia pra perto do botão de compra na página de pricing e checkout.',
+			'Crie badge visual de "Garantia de X dias" e posicione próximo ao CTA principal.',
+			'Repita a garantia em pelo menos 3 pontos do funil: produto, pricing e checkout.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe menção a garantia ou reembolso nas páginas de pricing e checkout, próximo aos CTAs.',
+		verification_eta_seconds: 20,
+	},
+
+	urgency_mechanics_absent: {
+		remediation_steps: [
+			'Implemente pelo menos 1 mecanismo legítimo de urgência (vagas limitadas, preço por tempo, bônus temporário).',
+			'Evite urgência falsa (contadores permanentes) — use mecanismos verificáveis e limitados no tempo.',
+			'Comunique escassez real quando existir: "restam X vagas" ou "oferta válida até DD/MM".',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe linguagem temporal ou de escassez nas páginas de pricing e produto.',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Funnel Journey — Moment 4: Post-purchase
+	// ─────────────────────────────────────────────
+
+	first_value_path_unclear: {
+		remediation_steps: [
+			'Crie um onboarding com 3 passos claros que leve o novo usuário ao primeiro resultado em menos de 5 minutos.',
+			'Envie email pós-compra com guia visual do "primeiro resultado" — não apenas confirmação de pagamento.',
+			'Adicione checklist de progresso no dashboard mostrando o caminho até o primeiro valor.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe conteúdo de onboarding ou guia de primeiro uso nas páginas pós-login e emails transacionais.',
+		verification_eta_seconds: 25,
+	},
+
+	support_response_expectation_gap: {
+		remediation_steps: [
+			'Publique SLA de resposta na página de suporte (ex: "respondemos em até 4 horas úteis").',
+			'Adicione estimativa de tempo de resposta no formulário de contato e no chat.',
+			'Se não consegue prometer resposta rápida, ofereça base de conhecimento ou FAQ como alternativa imediata.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se a página de suporte/contato contém menção a tempo de resposta ou SLA.',
+		verification_eta_seconds: 20,
+	},
+
+	billing_transparency_absent: {
+		remediation_steps: [
+			'Crie página dedicada explicando ciclo de cobrança, como cancelar e o que acontece com os dados.',
+			'Adicione link pra essa página no footer e no checkout, próximo ao botão de pagamento.',
+			'Inclua informação de cancelamento no email de boas-vindas e na área do cliente.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe página explicando billing, cancelamento e retenção de dados, linkada no footer e checkout.',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Funnel Journey — Moment 5: Expansion
+	// ─────────────────────────────────────────────
+
+	upgrade_value_gap: {
+		remediation_steps: [
+			'Reescreva a comparação de planos mostrando o valor de negócio de cada feature premium (não apenas o nome).',
+			'Adicione calculadora de ROI ou exemplo de uso real pra justificar o upgrade.',
+			'Mostre depoimento de cliente que fez upgrade e o resultado que obteve.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se a página de pricing/planos contém linguagem de valor de negócio nas features dos planos superiores.',
+		verification_eta_seconds: 20,
+	},
+
+	referral_path_nonexistent: {
+		remediation_steps: [
+			'Implemente programa simples de indicação com link compartilhável e benefício claro pros dois lados.',
+			'Adicione botão "Indique e ganhe" na área do cliente e no email pós-compra.',
+			'Ofereça incentivo relevante (desconto, crédito, feature extra) que motive a indicação.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe página ou link de referral/indicação acessível na área logada ou nas páginas do site.',
+		verification_eta_seconds: 20,
+	},
+
+	success_story_feedback_loop_broken: {
+		remediation_steps: [
+			'Crie processo automático pra coletar depoimentos após marcos de sucesso do cliente (ex: 30 dias, primeiro resultado).',
+			'Publique os depoimentos coletados nas páginas comerciais, pricing e homepage.',
+			'Integre reviews de Google, Trustpilot ou Reclame Aqui diretamente nas páginas de produto.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existem depoimentos recentes com nome e resultado nas páginas comerciais principais.',
+		verification_eta_seconds: 25,
+	},
+
+	// ─────────────────────────────────────────────
+	// Funnel Journey — Cross-journey
+	// ─────────────────────────────────────────────
+
+	tone_shift_across_journey: {
+		remediation_steps: [
+			'Documente tom de voz da marca com exemplos de "sim" e "não" pra cada tipo de página.',
+			'Revise homepage, pricing, checkout e suporte garantindo consistência de tom e vocabulário.',
+			'Use o mesmo nível de formalidade e personalidade em todas as páginas comerciais.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Vamos re-analisar o tom e vocabulário das páginas principais buscando inconsistências de voz entre elas.',
+		verification_eta_seconds: 30,
+	},
+
+	mobile_journey_friction_compound: {
+		remediation_steps: [
+			'Audite o funil completo no celular: homepage → produto → pricing → checkout — anote cada ponto de fricção.',
+			'Corrija botões pequenos demais, formulários que não cabem na tela e elementos que travam o scroll.',
+			'Priorize mobile-first: se funciona bem no celular, funciona em tudo.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Vamos re-analisar a jornada mobile completa buscando fricções acumulativas que impactam a experiência de compra.',
+		verification_eta_seconds: 30,
+	},
+
+	trust_gradient_inverted: {
+		remediation_steps: [
+			'Mapeie onde estão seus sinais de confiança (selos, garantias, depoimentos) e onde estão ausentes.',
+			'Mova sinais de confiança pra perto dos pontos de decisão: pricing, checkout e formulários de pagamento.',
+			'Reduza sinais de confiança redundantes na homepage e redistribua pras páginas de conversão.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'Vamos comparar a densidade de sinais de confiança entre homepage e páginas de decisão (pricing, checkout).',
+		verification_eta_seconds: 30,
+	},
 };
 
 /**

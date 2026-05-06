@@ -64,6 +64,9 @@ export const PACK_STYLE_MAP: Record<string, PackStyle> = {
 	// Vertical-specific
 	vertical_specific:    { text: "text-lime-400",    dot: "bg-lime-500",    bg: "bg-lime-500" },
 
+	// Funnel journey
+	funnel_journey:       { text: "text-sky-400",     dot: "bg-sky-500",     bg: "bg-sky-500" },
+
 	// Cross-signal
 	cross_signal:         { text: "text-fuchsia-400", dot: "bg-fuchsia-500", bg: "bg-fuchsia-500" },
 

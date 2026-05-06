@@ -375,6 +375,14 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   app_subdomain_disconnected_from_site:    { root_cause_key: 'subdomain_surface_exposure', category: 'channel_integrity', impact_types: ['revenue_loss'] },
   whatsapp_channel_disconnected:           { root_cause_key: 'subdomain_surface_exposure', category: 'channel_integrity', impact_types: ['revenue_loss'] },
   multiple_payment_subdomains_fragmenting_trust: { root_cause_key: 'subdomain_surface_exposure', category: 'trust_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
+
+  // Static + Playwright cross-domain findings
+  form_submit_unreachable_mobile:        { root_cause_key: 'friction_barrier_on_path', category: 'friction_barrier', impact_types: ['revenue_loss', 'scale_risk'] },
+  trust_badges_invisible_at_checkout:    { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
+  navigation_traps_commercial_flow:      { root_cause_key: 'fragmented_conversion_path', category: 'conversion_fragmentation', impact_types: ['revenue_loss'] },
+  social_proof_loads_too_late:           { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['trust_erosion', 'revenue_loss'] },
+  consent_banner_obscures_first_action:  { root_cause_key: 'friction_barrier_on_path', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+  price_hidden_behind_interaction:       { root_cause_key: 'fragmented_conversion_path', category: 'conversion_fragmentation', impact_types: ['revenue_loss'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a

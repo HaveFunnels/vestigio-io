@@ -771,6 +771,985 @@ function detectPostPurchaseChain(
 
 // ── 5. Brand Impersonation Revenue ──
 
+// ── 6. Security Trust Double Exposure ──
+
+function detectSecurityTrustDoubleExposure(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const securityFindings = findings.filter(f =>
+    (SECURITY_PACKS.has(f.pack) || SECURITY_INFERENCE_KEYS.has(f.inference_key)) &&
+    severityRank(f.severity) >= 2 &&
+    f.surface.includes('checkout'),
+  );
+  if (securityFindings.length === 0) return null;
+
+  const trustFindings = findings.filter(f =>
+    TRUST_DECISION_KEYS.has(f.inference_key) &&
+    f.surface.includes('checkout'),
+  );
+  if (trustFindings.length === 0) return null;
+
+  const topSecurity = securityFindings[0];
+  const topTrust = trustFindings[0];
+
+  const combinedImpact = Math.round(
+    (topSecurity.impact_midpoint_cents + topTrust.impact_midpoint_cents) * 1.5,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topSecurity.inference_key,
+      pack: topSecurity.pack,
+      role: 'trigger',
+      surface: topSecurity.surface,
+      description: topSecurity.title,
+    },
+    {
+      order: 2,
+      finding_key: topTrust.inference_key,
+      pack: topTrust.pack,
+      role: 'trigger',
+      surface: topTrust.surface,
+      description: topTrust.title,
+    },
+    {
+      order: 3,
+      finding_key: 'double_exposure_revenue_loss',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: '/checkout',
+      description: 'Perda de receita por exposição dupla no checkout',
+    },
+  ];
+
+  return {
+    id: `compound_security_trust_double_exposure_checkout`,
+    compound_type: 'security_trust_double_exposure',
+    severity: 'critical',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Seu checkout tem falhas de segurança E nada tranquiliza o comprador — risco duplo que custa ${formatDollars(combinedImpact)}/mês em abandonos.`,
+    affected_surfaces: ['/checkout'],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Corrigir vulnerabilidades de segurança no checkout',
+      'Adicionar selos de confiança e garantias visíveis',
+      'Verificar queda na taxa de abandono após correções',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 7. Security Chargeback Compound ──
+
+function detectSecurityChargebackCompound(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const securityFindings = findings.filter(f =>
+    (SECURITY_PACKS.has(f.pack) || SECURITY_INFERENCE_KEYS.has(f.inference_key)) &&
+    severityRank(f.severity) >= 2,
+  );
+  if (securityFindings.length === 0) return null;
+
+  const chargebackFindings = findings.filter(f => CHARGEBACK_KEYS.has(f.inference_key));
+  if (chargebackFindings.length === 0) return null;
+
+  const topSecurity = securityFindings[0];
+  const topChargeback = chargebackFindings[0];
+
+  const combinedImpact = Math.round(
+    (topSecurity.impact_midpoint_cents + topChargeback.impact_midpoint_cents) * 1.8,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topSecurity.inference_key,
+      pack: topSecurity.pack,
+      role: 'trigger',
+      surface: topSecurity.surface,
+      description: topSecurity.title,
+    },
+    {
+      order: 2,
+      finding_key: topChargeback.inference_key,
+      pack: topChargeback.pack,
+      role: 'trigger',
+      surface: topChargeback.surface,
+      description: topChargeback.title,
+    },
+    {
+      order: 3,
+      finding_key: 'chargeback_escalation',
+      pack: 'chargeback_resilience',
+      role: 'consequence',
+      surface: '/ (sitewide)',
+      description: 'Escalada de chargebacks por insegurança + políticas ausentes',
+    },
+  ];
+
+  return {
+    id: `compound_security_chargeback_${topSecurity.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'security_chargeback_compound',
+    severity: 'critical',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Falhas de segurança + políticas ausentes = receita para chargebacks em massa. Custo estimado: ${formatDollars(combinedImpact)}/mês entre estornos e taxas.`,
+    affected_surfaces: [...new Set([topSecurity.surface, topChargeback.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Corrigir falhas de segurança prioritárias',
+      'Publicar política de reembolso clara e acessível',
+      'Adicionar canal de suporte visível antes do estorno',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 8. Copy Conversion Paralysis ──
+
+function detectCopyConversionParalysis(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const ctaFindings = findings.filter(f => f.inference_key === 'cta_clarity_weak_on_commercial');
+  if (ctaFindings.length === 0) return null;
+
+  const socialProofFindings = findings.filter(f =>
+    f.inference_key === 'social_proof_ineffective' || f.inference_key === 'social_proof_generic',
+  );
+  if (socialProofFindings.length === 0) return null;
+
+  const topCta = ctaFindings[0];
+  const topSocial = socialProofFindings[0];
+
+  const combinedImpact = Math.round(
+    (topCta.impact_midpoint_cents + topSocial.impact_midpoint_cents) * 1.6,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topCta.inference_key,
+      pack: topCta.pack,
+      role: 'trigger',
+      surface: topCta.surface,
+      description: topCta.title,
+    },
+    {
+      order: 2,
+      finding_key: topSocial.inference_key,
+      pack: topSocial.pack,
+      role: 'trigger',
+      surface: topSocial.surface,
+      description: topSocial.title,
+    },
+    {
+      order: 3,
+      finding_key: 'conversion_paralysis',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: topCta.surface,
+      description: 'Paralisia de conversão — visitante não sabe o que fazer nem por que confiar',
+    },
+  ];
+
+  return {
+    id: `compound_copy_conversion_paralysis_${topCta.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'copy_conversion_paralysis',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Ninguém sabe o que clicar E não tem motivo para confiar — dois bloqueios simultâneos que custam ${formatDollars(combinedImpact)}/mês em conversões perdidas.`,
+    affected_surfaces: [...new Set([topCta.surface, topSocial.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Reescrever CTAs com ação clara e benefício explícito',
+      'Substituir prova social genérica por depoimentos específicos com números',
+      'Testar variações e medir taxa de clique',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 9. Copy Pricing Confusion ──
+
+function detectCopyPricingConfusion(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const copyFindings = findings.filter(f => COPY_WEAK_KEYS.has(f.inference_key));
+  if (copyFindings.length === 0) return null;
+
+  const pricingFindings = findings.filter(f => PRICING_KEYS.has(f.inference_key));
+  if (pricingFindings.length === 0) return null;
+
+  const topCopy = copyFindings[0];
+  const topPricing = pricingFindings[0];
+
+  const combinedImpact = Math.round(
+    (topCopy.impact_midpoint_cents + topPricing.impact_midpoint_cents) * 1.5,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topCopy.inference_key,
+      pack: topCopy.pack,
+      role: 'trigger',
+      surface: topCopy.surface,
+      description: topCopy.title,
+    },
+    {
+      order: 2,
+      finding_key: topPricing.inference_key,
+      pack: topPricing.pack,
+      role: 'trigger',
+      surface: topPricing.surface,
+      description: topPricing.title,
+    },
+    {
+      order: 3,
+      finding_key: 'double_confusion_drop',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: topPricing.surface,
+      description: 'Desistência dupla — mensagem não convence e preço não faz sentido',
+    },
+  ];
+
+  return {
+    id: `compound_copy_pricing_confusion_${topPricing.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'copy_pricing_confusion',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `A mensagem não convence E o preço não faz sentido — o comprador desiste duas vezes antes de chegar no checkout. Perda: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topCopy.surface, topPricing.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Alinhar proposta de valor com a estrutura de preços',
+      'Reescrever copy da página de preços com ancoragem de valor',
+      'Adicionar comparativo claro entre planos',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 10. Vertical SaaS Trial Trust ──
+
+function detectVerticalSaasTrialTrust(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const saasFindings = findings.filter(f => VERTICAL_SAAS_KEYS.has(f.inference_key));
+  if (saasFindings.length === 0) return null;
+
+  const copyFindings = findings.filter(f => COPY_WEAK_KEYS.has(f.inference_key));
+  if (copyFindings.length === 0) return null;
+
+  const topSaas = saasFindings[0];
+  const topCopy = copyFindings[0];
+
+  const combinedImpact = Math.round(
+    (topSaas.impact_midpoint_cents + topCopy.impact_midpoint_cents) * 1.4,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topSaas.inference_key,
+      pack: topSaas.pack,
+      role: 'trigger',
+      surface: topSaas.surface,
+      description: topSaas.title,
+    },
+    {
+      order: 2,
+      finding_key: topCopy.inference_key,
+      pack: topCopy.pack,
+      role: 'trigger',
+      surface: topCopy.surface,
+      description: topCopy.title,
+    },
+    {
+      order: 3,
+      finding_key: 'saas_barrier_compound',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: topSaas.surface,
+      description: 'Barreira dupla — incompreensão do produto + risco financeiro sem trial',
+    },
+  ];
+
+  return {
+    id: `compound_vertical_saas_trial_trust_${topSaas.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'vertical_saas_trial_trust',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `O comprador não entende o produto E não pode testar — barreira dupla que bloqueia ${formatDollars(combinedImpact)}/mês em assinaturas potenciais.`,
+    affected_surfaces: [...new Set([topSaas.surface, topCopy.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Implementar trial gratuito ou demo interativa',
+      'Reescrever proposta de valor com benefícios concretos',
+      'Adicionar screenshots e vídeo do produto em uso',
+    ],
+    confidence: 'likely',
+  };
+}
+
+// ── 11. Vertical Ecommerce Size Returns ──
+
+function detectVerticalEcommerceSizeReturns(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const sizeFindings = findings.filter(f => f.inference_key === 'size_guide_missing');
+  if (sizeFindings.length === 0) return null;
+
+  const returnFindings = findings.filter(f =>
+    f.inference_key === 'refund_policy_gap' ||
+    f.inference_key === 'refund_process_unclear' ||
+    f.inference_key === 'return_policy_not_on_product',
+  );
+  if (returnFindings.length === 0) return null;
+
+  const topSize = sizeFindings[0];
+  const topReturn = returnFindings[0];
+
+  const combinedImpact = Math.round(
+    (topSize.impact_midpoint_cents + topReturn.impact_midpoint_cents) * 1.7,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topSize.inference_key,
+      pack: topSize.pack,
+      role: 'trigger',
+      surface: topSize.surface,
+      description: topSize.title,
+    },
+    {
+      order: 2,
+      finding_key: topReturn.inference_key,
+      pack: topReturn.pack,
+      role: 'trigger',
+      surface: topReturn.surface,
+      description: topReturn.title,
+    },
+    {
+      order: 3,
+      finding_key: 'return_cost_escalation',
+      pack: 'chargeback_resilience',
+      role: 'consequence',
+      surface: topSize.surface,
+      description: 'Devoluções em massa por tamanho errado + política confusa',
+    },
+  ];
+
+  return {
+    id: `compound_vertical_ecommerce_size_returns_${topSize.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'vertical_ecommerce_size_returns',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Sem guia de tamanho E sem política clara de devolução — o comprador que arrisca VAI devolver. Custo em logística reversa: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topSize.surface, topReturn.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Criar guia de tamanhos com medidas reais e comparações',
+      'Publicar política de devolução na página do produto',
+      'Monitorar taxa de devolução por categoria',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 12. Vertical Food Friction Chain ──
+
+function detectVerticalFoodFrictionChain(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const menuFindings = findings.filter(f => f.inference_key === 'menu_requires_signup');
+  if (menuFindings.length === 0) return null;
+
+  const deliveryFindings = findings.filter(f => f.inference_key === 'delivery_area_unclear');
+  if (deliveryFindings.length === 0) return null;
+
+  const topMenu = menuFindings[0];
+  const topDelivery = deliveryFindings[0];
+
+  const combinedImpact = Math.round(
+    (topMenu.impact_midpoint_cents + topDelivery.impact_midpoint_cents) * 1.6,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topMenu.inference_key,
+      pack: topMenu.pack,
+      role: 'trigger',
+      surface: topMenu.surface,
+      description: topMenu.title,
+    },
+    {
+      order: 2,
+      finding_key: topDelivery.inference_key,
+      pack: topDelivery.pack,
+      role: 'trigger',
+      surface: topDelivery.surface,
+      description: topDelivery.title,
+    },
+    {
+      order: 3,
+      finding_key: 'food_order_abandonment',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: topMenu.surface,
+      description: 'Abandono antes do pedido — duas barreiras pré-decisão',
+    },
+  ];
+
+  return {
+    id: `compound_vertical_food_friction_${topMenu.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'vertical_food_friction_chain',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `O cliente não vê o cardápio E não sabe se entrega na região dele — duas barreiras antes de PENSAR em pedir. Pedidos perdidos: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topMenu.surface, topDelivery.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Liberar cardápio sem exigir cadastro',
+      'Mostrar área de entrega com CEP ou mapa antes do pedido',
+      'Medir taxa de conversão visitante → pedido após mudanças',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 13. Performance Conversion Bleed ──
+
+function detectPerformanceConversionBleed(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const perfFindings = findings.filter(f => SCALE_PERFORMANCE_KEYS.has(f.inference_key));
+  if (perfFindings.length === 0) return null;
+
+  const revenueFindings = findings.filter(f =>
+    f.pack === 'revenue_integrity' && severityRank(f.severity) >= 2,
+  );
+  if (revenueFindings.length === 0) return null;
+
+  const topPerf = perfFindings[0];
+  const topRevenue = revenueFindings[0];
+
+  const combinedImpact = Math.round(
+    (topPerf.impact_midpoint_cents + topRevenue.impact_midpoint_cents) * 1.5,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topPerf.inference_key,
+      pack: topPerf.pack,
+      role: 'trigger',
+      surface: topPerf.surface,
+      description: topPerf.title,
+    },
+    {
+      order: 2,
+      finding_key: topRevenue.inference_key,
+      pack: topRevenue.pack,
+      role: 'evidence',
+      surface: topRevenue.surface,
+      description: topRevenue.title,
+    },
+    {
+      order: 3,
+      finding_key: 'speed_revenue_multiplier',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: topPerf.surface,
+      description: 'Cada segundo de atraso multiplica o abandono nas páginas com vazamento',
+    },
+  ];
+
+  return {
+    id: `compound_performance_conversion_bleed_${topPerf.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'performance_conversion_bleed',
+    severity: 'critical',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Suas páginas comerciais são as mais lentas do site E já estão vazando receita — cada segundo de atraso multiplica o abandono. Impacto: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topPerf.surface, topRevenue.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Otimizar LCP e remover JS bloqueante nas páginas comerciais',
+      'Corrigir vazamentos de receita identificados',
+      'Medir conversão antes/depois da otimização de velocidade',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 14. Mobile Revenue Compound ──
+
+function detectMobileRevenueCompound(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const mobileFindings = findings.filter(f => MOBILE_KEYS.has(f.inference_key));
+  if (mobileFindings.length === 0) return null;
+
+  const formCheckoutFindings = findings.filter(f =>
+    f.inference_key === 'checkout_form_mobile_hostile' ||
+    f.inference_key === 'form_submit_unreachable_mobile' ||
+    (f.pack === 'revenue_integrity' && f.surface.includes('checkout')),
+  );
+  // Need mobile nav issue + form/checkout issue (can be from same MOBILE_KEYS set)
+  const navFindings = mobileFindings.filter(f =>
+    f.inference_key === 'mobile_commercial_path_blocked' ||
+    f.inference_key === 'mobile_fails_first_commercial_action',
+  );
+  if (navFindings.length === 0) return null;
+
+  const frictionFindings = formCheckoutFindings.length > 0
+    ? formCheckoutFindings
+    : mobileFindings.filter(f =>
+        f.inference_key === 'checkout_form_mobile_hostile' ||
+        f.inference_key === 'form_submit_unreachable_mobile',
+      );
+  if (frictionFindings.length === 0) return null;
+
+  const topNav = navFindings[0];
+  const topFriction = frictionFindings[0];
+
+  const combinedImpact = Math.round(
+    (topNav.impact_midpoint_cents + topFriction.impact_midpoint_cents) * 1.8,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topNav.inference_key,
+      pack: topNav.pack,
+      role: 'trigger',
+      surface: topNav.surface,
+      description: topNav.title,
+    },
+    {
+      order: 2,
+      finding_key: topFriction.inference_key,
+      pack: topFriction.pack,
+      role: 'trigger',
+      surface: topFriction.surface,
+      description: topFriction.title,
+    },
+    {
+      order: 3,
+      finding_key: 'mobile_revenue_blocked',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: '/checkout (mobile)',
+      description: 'Receita mobile bloqueada em dois pontos do funil',
+    },
+  ];
+
+  return {
+    id: `compound_mobile_revenue_${topNav.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'mobile_revenue_compound',
+    severity: 'critical',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Compradores no celular não conseguem nem navegar até o checkout — e quando conseguem, o formulário é hostil ao toque. Receita mobile perdida: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topNav.surface, topFriction.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Destravar caminho comercial no mobile (menu, navegação, CTAs)',
+      'Redesenhar formulário de checkout para touch-first',
+      'Testar fluxo completo em dispositivos reais',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 15. Stale Content Trust Erosion ──
+
+function detectStaleContentTrustErosion(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const freshnessFindings = findings.filter(f => FRESHNESS_KEYS.has(f.inference_key));
+  if (freshnessFindings.length < 2) return null;
+
+  const totalImpact = freshnessFindings.reduce((sum, f) => sum + f.impact_midpoint_cents, 0);
+  const combinedImpact = Math.round(totalImpact * 1.4);
+
+  const chain: ChainLink[] = freshnessFindings.slice(0, 3).map((f, i) => ({
+    order: i + 1,
+    finding_key: f.inference_key,
+    pack: f.pack,
+    role: (i === 0 ? 'trigger' : 'evidence') as 'trigger' | 'evidence',
+    surface: f.surface,
+    description: f.title,
+  }));
+
+  chain.push({
+    order: chain.length + 1,
+    finding_key: 'perceived_abandonment',
+    pack: 'revenue_integrity',
+    role: 'consequence',
+    surface: '/ (sitewide)',
+    description: 'Comprador conclui que a empresa não existe mais',
+  });
+
+  return {
+    id: `compound_stale_content_trust_erosion`,
+    compound_type: 'stale_content_trust_erosion',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Nada no site foi atualizado — conteúdo velho, prova social desatualizada. O comprador conclui que a empresa morreu. Custo: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set(freshnessFindings.map(f => f.surface))],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Atualizar depoimentos e provas sociais com dados recentes',
+      'Revisar conteúdo comercial com datas e números atuais',
+      'Implementar rotina mensal de atualização de conteúdo',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 16. Freshness Brand Decay ──
+
+function detectFreshnessBrandDecay(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const freshnessFindings = findings.filter(f => FRESHNESS_KEYS.has(f.inference_key));
+  if (freshnessFindings.length === 0) return null;
+
+  const brandFindings = findings.filter(f =>
+    f.inference_key === 'brand_inconsistent_across_surfaces' ||
+    (DISCOVERABILITY_KEYS.has(f.inference_key) && f.pack === 'discoverability'),
+  );
+  if (brandFindings.length === 0) return null;
+
+  const topFreshness = freshnessFindings[0];
+  const topBrand = brandFindings[0];
+
+  const combinedImpact = Math.round(
+    (topFreshness.impact_midpoint_cents + topBrand.impact_midpoint_cents) * 1.3,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topFreshness.inference_key,
+      pack: topFreshness.pack,
+      role: 'trigger',
+      surface: topFreshness.surface,
+      description: topFreshness.title,
+    },
+    {
+      order: 2,
+      finding_key: topBrand.inference_key,
+      pack: topBrand.pack,
+      role: 'trigger',
+      surface: topBrand.surface,
+      description: topBrand.title,
+    },
+    {
+      order: 3,
+      finding_key: 'brand_decay_compound',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: '/ (sitewide)',
+      description: 'Percepção de marca abandonada afasta compradores',
+    },
+  ];
+
+  return {
+    id: `compound_freshness_brand_decay_${topFreshness.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'freshness_brand_decay',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Conteúdo desatualizado + marca inconsistente entre plataformas — o comprador não sabe se está no site oficial ou num clone abandonado. Perda: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topFreshness.surface, topBrand.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Unificar identidade visual em todas as plataformas',
+      'Atualizar conteúdo com datas e informações correntes',
+      'Sincronizar perfis sociais com site principal',
+    ],
+    confidence: 'likely',
+  };
+}
+
+// ── 17. Invisible Commercial Pages ──
+
+function detectInvisibleCommercialPages(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const discoverFindings = findings.filter(f =>
+    f.inference_key === 'commercial_pages_not_exposed_for_discovery' ||
+    f.inference_key === 'sitemap_missing_commercial_pages',
+  );
+  if (discoverFindings.length === 0) return null;
+
+  const revenueFindings = findings.filter(f =>
+    f.pack === 'revenue_integrity' && severityRank(f.severity) >= 2,
+  );
+  if (revenueFindings.length === 0) return null;
+
+  const topDiscover = discoverFindings[0];
+  const topRevenue = revenueFindings[0];
+
+  const combinedImpact = Math.round(
+    (topDiscover.impact_midpoint_cents + topRevenue.impact_midpoint_cents) * 1.6,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topDiscover.inference_key,
+      pack: topDiscover.pack,
+      role: 'trigger',
+      surface: topDiscover.surface,
+      description: topDiscover.title,
+    },
+    {
+      order: 2,
+      finding_key: topRevenue.inference_key,
+      pack: topRevenue.pack,
+      role: 'trigger',
+      surface: topRevenue.surface,
+      description: topRevenue.title,
+    },
+    {
+      order: 3,
+      finding_key: 'invisible_and_broken',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: topDiscover.surface,
+      description: 'Páginas de venda invisíveis + caminho de compra quebrado',
+    },
+  ];
+
+  return {
+    id: `compound_invisible_commercial_pages_${topDiscover.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'invisible_commercial_pages',
+    severity: 'critical',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Suas páginas de venda são invisíveis pro Google E quando alguém chega, o caminho de compra está quebrado. Receita invisível: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topDiscover.surface, topRevenue.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Incluir páginas comerciais no sitemap e schema markup',
+      'Corrigir problemas de revenue path nas páginas afetadas',
+      'Submeter URLs para indexação e monitorar cobertura',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 18. SEO Conversion Misalignment ──
+
+function detectSeoConversionMisalignment(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const discoverFindings = findings.filter(f => DISCOVERABILITY_KEYS.has(f.inference_key));
+  if (discoverFindings.length === 0) return null;
+
+  const copyFindings = findings.filter(f => COPY_WEAK_KEYS.has(f.inference_key));
+  if (copyFindings.length === 0) return null;
+
+  const topDiscover = discoverFindings[0];
+  const topCopy = copyFindings[0];
+
+  const combinedImpact = Math.round(
+    (topDiscover.impact_midpoint_cents + topCopy.impact_midpoint_cents) * 1.4,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topDiscover.inference_key,
+      pack: topDiscover.pack,
+      role: 'trigger',
+      surface: topDiscover.surface,
+      description: topDiscover.title,
+    },
+    {
+      order: 2,
+      finding_key: topCopy.inference_key,
+      pack: topCopy.pack,
+      role: 'trigger',
+      surface: topCopy.surface,
+      description: topCopy.title,
+    },
+    {
+      order: 3,
+      finding_key: 'seo_copy_disconnect',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: topDiscover.surface,
+      description: 'Promessa do Google diferente da experiência na página',
+    },
+  ];
+
+  return {
+    id: `compound_seo_conversion_misalignment_${topDiscover.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'seo_conversion_misalignment',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `O Google mostra uma versão do seu site que não convence, e quem clica encontra uma mensagem diferente — duplo desperdício de tráfego orgânico. Custo: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topDiscover.surface, topCopy.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Alinhar meta descriptions e titles com conteúdo real da página',
+      'Reescrever copy da landing para entregar a promessa do snippet',
+      'Monitorar CTR orgânico e bounce rate pós-clique',
+    ],
+    confidence: 'likely',
+  };
+}
+
+// ── 19. Exposed Infrastructure Risk ──
+
+function detectExposedInfrastructureRisk(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const subdomainFindings = findings.filter(f => SUBDOMAIN_EXPOSURE_KEYS.has(f.inference_key));
+  if (subdomainFindings.length === 0) return null;
+
+  const securityFindings = findings.filter(f =>
+    (SECURITY_PACKS.has(f.pack) || SECURITY_INFERENCE_KEYS.has(f.inference_key)) &&
+    severityRank(f.severity) >= 2,
+  );
+  if (securityFindings.length === 0) return null;
+
+  const topSubdomain = subdomainFindings[0];
+  const topSecurity = securityFindings[0];
+
+  const combinedImpact = Math.round(
+    (topSubdomain.impact_midpoint_cents + topSecurity.impact_midpoint_cents) * 2.0,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topSubdomain.inference_key,
+      pack: topSubdomain.pack,
+      role: 'trigger',
+      surface: topSubdomain.surface,
+      description: topSubdomain.title,
+    },
+    {
+      order: 2,
+      finding_key: topSecurity.inference_key,
+      pack: topSecurity.pack,
+      role: 'trigger',
+      surface: topSecurity.surface,
+      description: topSecurity.title,
+    },
+    {
+      order: 3,
+      finding_key: 'infrastructure_takeover_risk',
+      pack: 'money_moment_exposure',
+      role: 'consequence',
+      surface: topSubdomain.surface,
+      description: 'Risco de alteração não-autorizada de preços, estoque ou dados',
+    },
+  ];
+
+  return {
+    id: `compound_exposed_infrastructure_risk_${topSubdomain.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'exposed_infrastructure_risk',
+    severity: 'critical',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `Painéis administrativos públicos + falhas de segurança = qualquer pessoa pode alterar preços, estoque ou dados de clientes. Risco: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topSubdomain.surface, topSecurity.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Remover acesso público a painéis admin e staging',
+      'Implementar autenticação e IP whitelist',
+      'Corrigir vulnerabilidades de segurança identificadas',
+      'Auditar logs de acesso para atividade suspeita',
+    ],
+    confidence: 'confirmed',
+  };
+}
+
+// ── 20. Subdomain Trust Fragmentation ──
+
+function detectSubdomainTrustFragmentation(
+  findings: CompoundInput[],
+): CompoundFinding | null {
+  const channelFindings = findings.filter(f => CHANNEL_INTEGRITY_PAYMENT_KEYS.has(f.inference_key));
+  if (channelFindings.length === 0) return null;
+
+  const trustFindings = findings.filter(f =>
+    TRUST_DECISION_KEYS.has(f.inference_key) ||
+    f.inference_key === 'checkout_trust_brittle_infrastructure',
+  );
+  if (trustFindings.length === 0) return null;
+
+  const topChannel = channelFindings[0];
+  const topTrust = trustFindings[0];
+
+  const combinedImpact = Math.round(
+    (topChannel.impact_midpoint_cents + topTrust.impact_midpoint_cents) * 1.5,
+  );
+
+  const chain: ChainLink[] = [
+    {
+      order: 1,
+      finding_key: topChannel.inference_key,
+      pack: topChannel.pack,
+      role: 'trigger',
+      surface: topChannel.surface,
+      description: topChannel.title,
+    },
+    {
+      order: 2,
+      finding_key: topTrust.inference_key,
+      pack: topTrust.pack,
+      role: 'trigger',
+      surface: topTrust.surface,
+      description: topTrust.title,
+    },
+    {
+      order: 3,
+      finding_key: 'trust_fragmentation_at_payment',
+      pack: 'revenue_integrity',
+      role: 'consequence',
+      surface: topChannel.surface,
+      description: 'Confiança se fragmenta em cada redirect entre subdomínios',
+    },
+  ];
+
+  return {
+    id: `compound_subdomain_trust_fragmentation_${topChannel.surface.replace(/[^a-z0-9]/gi, '_')}`,
+    compound_type: 'subdomain_trust_fragmentation',
+    severity: 'high',
+    chain,
+    combined_impact_cents: combinedImpact,
+    narrative: `O comprador é jogado entre subdomínios no checkout E cada um parece um site diferente — confiança se fragmenta em cada redirect. Perda: ${formatDollars(combinedImpact)}/mês.`,
+    affected_surfaces: [...new Set([topChannel.surface, topTrust.surface])],
+    packs_involved: [...new Set(chain.map(c => c.pack))],
+    remediation_chain: [
+      'Unificar checkout em domínio principal ou subdomínio consistente',
+      'Manter identidade visual idêntica em todos os passos de pagamento',
+      'Adicionar indicadores de progresso e segurança em cada etapa',
+    ],
+    confidence: 'likely',
+  };
+}
+
 function detectBrandImpersonationRevenue(
   findings: CompoundInput[],
   commerceContext: CommerceContext | null,

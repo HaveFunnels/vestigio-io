@@ -2951,6 +2951,424 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos monitorar os 5 indicadores comportamentais em conjunto e verificar se menos de 2 estão acima do threshold.',
 		verification_eta_seconds: null,
 	},
+
+	// ─────────────────────────────────────────────
+	// Vertical-Specific: Fashion/E-commerce
+	// ─────────────────────────────────────────────
+
+	size_guide_missing: {
+		remediation_steps: [
+			'Crie uma tabela de medidas com busto, cintura, quadril e comprimento para cada categoria de produto.',
+			'Adicione um botão "Guia de Tamanhos" visível ao lado do seletor de tamanho na página do produto.',
+			'Inclua instruções de como se medir com fita métrica dentro do modal do guia.',
+			'Considere adicionar um widget de recomendação de tamanho baseado em altura e peso.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas de produto e verificar a presença de guia de tamanhos linkado próximo ao seletor de tamanho.',
+		verification_eta_seconds: 20,
+	},
+
+	product_images_insufficient: {
+		remediation_steps: [
+			'Fotografe cada produto em no mínimo 5 ângulos: frontal, lateral, costas, detalhe, e vestido/em uso.',
+			'Adicione zoom habilitado por hover ou toque em cada imagem na página do produto.',
+			'Inclua pelo menos uma foto lifestyle mostrando o produto em contexto real de uso.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas de produto e contar o número de imagens por produto — mínimo 4 para passar.',
+		verification_eta_seconds: 25,
+	},
+
+	no_urgency_indicators: {
+		remediation_steps: [
+			'Exiba o nível de estoque quando restarem menos de 10 unidades (ex: "Últimas 3 unidades").',
+			'Adicione um contador de compradores recentes (ex: "12 pessoas compraram hoje").',
+			'Implemente badges de "Oferta por tempo limitado" quando houver promoções ativas.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas de produto e verificar presença de indicadores de urgência ou escassez.',
+		verification_eta_seconds: 20,
+	},
+
+	cross_sell_absent: {
+		remediation_steps: [
+			'Adicione uma seção "Completa o Look" ou "Compre Junto" na página do produto abaixo da descrição.',
+			'Configure recomendações automáticas baseadas em produtos frequentemente comprados juntos.',
+			'Adicione sugestões de cross-sell também na página do carrinho antes do checkout.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de produto e carrinho e verificar presença de seções de produtos relacionados ou complementares.',
+		verification_eta_seconds: 20,
+	},
+
+	return_policy_not_on_product: {
+		remediation_steps: [
+			'Adicione um resumo da política de devolução diretamente na página do produto, abaixo do botão de compra.',
+			'Inclua prazo de devolução, condições aceitas, e quem paga o frete de retorno.',
+			'Linke para a política completa mas mantenha os pontos essenciais inline e visíveis.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas de produto e verificar presença de informação de devolução próxima ao CTA de compra.',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Vertical-Specific: SaaS
+	// ─────────────────────────────────────────────
+
+	no_free_trial_offered: {
+		remediation_steps: [
+			'Implemente um trial gratuito de 7-14 dias sem necessidade de cartão de crédito.',
+			'Exiba o CTA de trial de forma proeminente na homepage e página de preços.',
+			'Crie um fluxo de onboarding que entregue valor na primeira sessão do trial.',
+			'Adicione email de follow-up automático mostrando o que o usuário pode experimentar.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar homepage e pricing page e verificar presença de CTA de free trial ou freemium.',
+		verification_eta_seconds: 20,
+	},
+
+	integration_ecosystem_invisible: {
+		remediation_steps: [
+			'Crie uma seção "Integrações" na homepage com logos das ferramentas mais populares do seu público.',
+			'Adicione uma página dedicada /integrações com descrições e status de cada integração.',
+			'Mencione integrações-chave na página de preços próximo aos planos que as incluem.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar homepage e pricing e verificar presença de seção de integrações com pelo menos 3 logos.',
+		verification_eta_seconds: 20,
+	},
+
+	changelog_stale_or_missing: {
+		remediation_steps: [
+			'Crie uma página /changelog ou /atualizações com as últimas mudanças do produto.',
+			'Publique pelo menos uma atualização por mês com data, título e descrição.',
+			'Linke o changelog no footer e considere um badge "Atualizado recentemente" na homepage.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe página de changelog acessível e se a última entrada tem menos de 60 dias.',
+		verification_eta_seconds: 20,
+	},
+
+	annual_discount_not_highlighted: {
+		remediation_steps: [
+			'Adicione um toggle "Mensal / Anual" na página de preços com o desconto percentual visível.',
+			'Exiba a economia anual em valor absoluto (ex: "Economize R$240/ano").',
+			'Pré-selecione o plano anual como default na página de preços.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página de preços e verificar se existe opção anual com desconto visível e calculado.',
+		verification_eta_seconds: 20,
+	},
+
+	no_product_screenshot_visible: {
+		remediation_steps: [
+			'Adicione pelo menos 3 screenshots do produto em uso na homepage acima do fold.',
+			'Inclua screenshots em contexto mostrando fluxos reais (não mockups genéricos).',
+			'Considere adicionar um vídeo demo de 60 segundos mostrando o produto em ação.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar homepage e landing pages e verificar presença de imagens do produto (screenshots ou vídeo).',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Vertical-Specific: Food/Restaurant
+	// ─────────────────────────────────────────────
+
+	menu_requires_signup: {
+		remediation_steps: [
+			'Remova o gate de login/cadastro para visualização do cardápio — permita acesso público completo.',
+			'Mova o requisito de cadastro para o momento do pedido, não da navegação.',
+			'Garanta que o cardápio completo seja indexável por buscadores (HTML, não apenas PDF).',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos acessar a URL do cardápio sem autenticação e verificar se o conteúdo é visível sem login.',
+		verification_eta_seconds: 20,
+	},
+
+	no_food_photos: {
+		remediation_steps: [
+			'Fotografe profissionalmente pelo menos os 10 pratos mais vendidos.',
+			'Adicione a foto ao lado de cada item no cardápio digital.',
+			'Use imagens reais (não banco de imagens) com boa iluminação e apresentação fiel ao prato servido.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar o cardápio e verificar se pelo menos 50% dos itens têm imagem associada.',
+		verification_eta_seconds: 20,
+	},
+
+	delivery_area_unclear: {
+		remediation_steps: [
+			'Adicione um mapa interativo ou lista de bairros/CEPs atendidos na página principal.',
+			'Permita que o cliente consulte cobertura por CEP antes de montar o pedido.',
+			'Exiba a área de entrega no header ou banner do site de forma permanente.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se existe informação de área de cobertura visível na página principal ou cardápio.',
+		verification_eta_seconds: 20,
+	},
+
+	delivery_time_not_shown: {
+		remediation_steps: [
+			'Exiba o tempo estimado de entrega na página do cardápio (ex: "30-45 min").',
+			'Atualize o tempo estimado em tempo real com base na demanda e distância.',
+			'Mostre o tempo também no carrinho antes da confirmação do pedido.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar cardápio e carrinho e verificar presença de estimativa de tempo de entrega.',
+		verification_eta_seconds: 20,
+	},
+
+	allergen_info_missing: {
+		remediation_steps: [
+			'Adicione ícones de alérgenos (glúten, lactose, amendoim, etc.) em cada item do cardápio.',
+			'Inclua uma legenda explicativa dos ícones no topo ou rodapé do cardápio.',
+			'Adicione filtro por restrição alimentar para facilitar a navegação.',
+		],
+		estimated_effort_hours: 5,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar o cardápio e verificar presença de informação de alérgenos ou restrições alimentares nos itens.',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Vertical-Specific: Health/Beauty
+	// ─────────────────────────────────────────────
+
+	ingredients_not_listed: {
+		remediation_steps: [
+			'Liste a composição completa (INCI) na página de cada produto.',
+			'Destaque os ingredientes-chave e seus benefícios em linguagem acessível.',
+			'Adicione um accordion ou tab "Ingredientes" visível sem necessidade de scroll excessivo.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de produto e verificar presença de lista de ingredientes ou composição.',
+		verification_eta_seconds: 20,
+	},
+
+	no_clinical_endorsement: {
+		remediation_steps: [
+			'Obtenha e exiba endosso dermatológico ou de profissional de saúde relevante.',
+			'Publique resultados de testes clínicos ou estudos com amostra e percentuais de eficácia.',
+			'Adicione selo "Dermatologicamente Testado" ou equivalente com referência ao estudo.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de produto e verificar presença de selos clínicos, menções a profissionais de saúde, ou resultados de testes.',
+		verification_eta_seconds: 20,
+	},
+
+	usage_instructions_absent: {
+		remediation_steps: [
+			'Adicione instruções de uso passo-a-passo na página do produto (frequência, quantidade, modo de aplicação).',
+			'Inclua dicas de quando e como usar para melhores resultados.',
+			'Considere um vídeo curto demonstrando a aplicação correta do produto.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de produto e verificar presença de seção de modo de uso ou instruções.',
+		verification_eta_seconds: 20,
+	},
+
+	subscription_not_offered: {
+		remediation_steps: [
+			'Implemente opção "Assine e Economize" com desconto de 10-15% na página do produto.',
+			'Ofereça frequências flexíveis (mensal, bimestral, trimestral) baseadas no consumo médio.',
+			'Destaque a economia acumulada e a conveniência de não precisar lembrar de recomprar.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de produto e verificar presença de opção de assinatura ou compra recorrente.',
+		verification_eta_seconds: 20,
+	},
+
+	no_results_evidence: {
+		remediation_steps: [
+			'Adicione fotos antes/depois com consentimento de clientes reais.',
+			'Publique resultados de testes com percentuais (ex: "89% notaram melhora em 4 semanas").',
+			'Inclua reviews com fotos de clientes mostrando resultados na página do produto.',
+		],
+		estimated_effort_hours: 5,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de produto e verificar presença de evidência visual de resultados ou dados de eficácia.',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Vertical-Specific: Education
+	// ─────────────────────────────────────────────
+
+	curriculum_not_visible: {
+		remediation_steps: [
+			'Publique a ementa completa do curso com módulos, aulas e duração de cada seção.',
+			'Adicione a ementa na página de vendas do curso em formato expandível (accordion).',
+			'Inclua objetivos de aprendizado claros para cada módulo.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página do curso e verificar presença de ementa ou grade curricular detalhada.',
+		verification_eta_seconds: 20,
+	},
+
+	instructor_credentials_missing: {
+		remediation_steps: [
+			'Adicione bio completa do instrutor com formação, experiência e resultados relevantes.',
+			'Inclua foto profissional e links para LinkedIn ou portfólio.',
+			'Destaque conquistas específicas que comprovem autoridade no tema do curso.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página do curso e verificar presença de seção de instrutor com credenciais.',
+		verification_eta_seconds: 20,
+	},
+
+	completion_certificate_absent: {
+		remediation_steps: [
+			'Implemente geração automática de certificado de conclusão ao finalizar o curso.',
+			'Exiba um exemplo do certificado na página de vendas do curso.',
+			'Mencione o certificado no hero ou benefícios da página de vendas.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página do curso e verificar menção a certificado de conclusão.',
+		verification_eta_seconds: 20,
+	},
+
+	time_commitment_unclear: {
+		remediation_steps: [
+			'Exiba carga horária total do curso de forma proeminente na página de vendas.',
+			'Adicione duração estimada por módulo/aula na ementa.',
+			'Inclua sugestão de ritmo de estudo (ex: "2h por semana durante 8 semanas").',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página do curso e verificar presença de informação de carga horária ou duração.',
+		verification_eta_seconds: 20,
+	},
+
+	no_sample_content: {
+		remediation_steps: [
+			'Libere 1-2 aulas do curso gratuitamente como preview na página de vendas.',
+			'Adicione um vídeo trailer de 2-3 minutos mostrando estilo de ensino e qualidade.',
+			'Permita acesso ao primeiro módulo sem cadastro para reduzir barreira de avaliação.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página do curso e verificar presença de conteúdo de amostra gratuito (vídeo ou aula aberta).',
+		verification_eta_seconds: 20,
+	},
+
+	// ─────────────────────────────────────────────
+	// Vertical-Specific: B2B Services
+	// ─────────────────────────────────────────────
+
+	no_case_study_with_metrics: {
+		remediation_steps: [
+			'Publique pelo menos 3 cases com problema, solução, e resultados mensuráveis (%, R$, tempo).',
+			'Inclua logo e nome do cliente (com permissão) para credibilidade.',
+			'Linke cases relevantes na homepage e nas páginas de serviço relacionadas.',
+			'Formate cada case com resultado em destaque (headline) antes do contexto.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar o site e verificar presença de cases com métricas numéricas em páginas comerciais.',
+		verification_eta_seconds: 25,
+	},
+
+	methodology_not_explained: {
+		remediation_steps: [
+			'Crie uma seção "Como Funciona" com 3-5 etapas visuais do seu processo.',
+			'Explique cada etapa com entregáveis concretos e prazos esperados.',
+			'Adicione esta seção na homepage e nas páginas de cada serviço.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar páginas de serviço e homepage e verificar presença de seção de metodologia ou processo.',
+		verification_eta_seconds: 20,
+	},
+
+	enterprise_signals_missing: {
+		remediation_steps: [
+			'Adicione logos de clientes enterprise na homepage (com permissão).',
+			'Exiba certificações relevantes (ISO, SOC2, LGPD compliance) no footer ou página de segurança.',
+			'Crie uma página /seguranca ou /compliance com detalhes das suas práticas.',
+			'Adicione número de clientes atendidos e volume processado como social proof.',
+		],
+		estimated_effort_hours: 5,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar homepage e footer e verificar presença de logos de clientes, certificações, ou sinais enterprise.',
+		verification_eta_seconds: 20,
+	},
+
+	contact_form_excessive_fields: {
+		remediation_steps: [
+			'Reduza o formulário de contato para máximo 4-5 campos essenciais (nome, email, empresa, mensagem).',
+			'Mova campos de qualificação (orçamento, segmento, cargo) para após o primeiro contato.',
+			'Adicione opção de agendar reunião diretamente (Calendly/Cal.com) como alternativa ao formulário.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página de contato e contar o número de campos obrigatórios — máximo 5 para passar.',
+		verification_eta_seconds: 20,
+	},
+
+	response_time_not_promised: {
+		remediation_steps: [
+			'Adicione um compromisso de tempo de resposta no formulário (ex: "Respondemos em até 24h úteis").',
+			'Configure autoresponder confirmando recebimento e informando prazo de retorno.',
+			'Exiba o SLA de resposta próximo ao botão de envio do formulário.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página de contato e verificar presença de compromisso de tempo de resposta próximo ao formulário.',
+		verification_eta_seconds: 20,
+	},
 };
 
 /**

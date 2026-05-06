@@ -316,6 +316,48 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   network_error_weighted:             { root_cause_key: 'runtime_commerce_fragility', category: 'runtime_fragility', impact_types: ['revenue_loss', 'scale_risk'] },
   mobile_trust_gap:                   { root_cause_key: 'trust_copy_absent_at_decision', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
   behavioral_micro_pattern_cascade:   { root_cause_key: 'friction_barrier_on_path', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+
+  // Vertical-specific findings — Fashion/E-commerce
+  size_guide_missing:                  { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  product_images_insufficient:         { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  no_urgency_indicators:               { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  cross_sell_absent:                   { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  return_policy_not_on_product:        { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+
+  // Vertical-specific findings — SaaS
+  no_free_trial_offered:               { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  integration_ecosystem_invisible:     { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  changelog_stale_or_missing:          { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  annual_discount_not_highlighted:     { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  no_product_screenshot_visible:       { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+
+  // Vertical-specific findings — Food/Restaurant
+  menu_requires_signup:                { root_cause_key: 'vertical_food_ordering_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  no_food_photos:                      { root_cause_key: 'vertical_food_ordering_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  delivery_area_unclear:               { root_cause_key: 'vertical_food_ordering_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  delivery_time_not_shown:             { root_cause_key: 'vertical_food_ordering_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  allergen_info_missing:               { root_cause_key: 'vertical_food_ordering_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+
+  // Vertical-specific findings — Health/Beauty
+  ingredients_not_listed:              { root_cause_key: 'vertical_health_trust_deficit', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  no_clinical_endorsement:             { root_cause_key: 'vertical_health_trust_deficit', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  usage_instructions_absent:           { root_cause_key: 'vertical_health_trust_deficit', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  subscription_not_offered:            { root_cause_key: 'vertical_health_trust_deficit', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  no_results_evidence:                 { root_cause_key: 'vertical_health_trust_deficit', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+
+  // Vertical-specific findings — Education
+  curriculum_not_visible:              { root_cause_key: 'vertical_education_commitment_anxiety', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  instructor_credentials_missing:      { root_cause_key: 'vertical_education_commitment_anxiety', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  completion_certificate_absent:       { root_cause_key: 'vertical_education_commitment_anxiety', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  time_commitment_unclear:             { root_cause_key: 'vertical_education_commitment_anxiety', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  no_sample_content:                   { root_cause_key: 'vertical_education_commitment_anxiety', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+
+  // Vertical-specific findings — B2B Services
+  no_case_study_with_metrics:          { root_cause_key: 'vertical_b2b_internal_justification', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  methodology_not_explained:           { root_cause_key: 'vertical_b2b_internal_justification', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  enterprise_signals_missing:          { root_cause_key: 'vertical_b2b_internal_justification', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  contact_form_excessive_fields:       { root_cause_key: 'vertical_b2b_internal_justification', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  response_time_not_promised:          { root_cause_key: 'vertical_b2b_internal_justification', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing titles. Every title speaks to a
@@ -385,6 +427,13 @@ export const ROOT_CAUSE_TITLES: Record<string, string> = {
   subscriber_retention_failure: 'Subscribers are churning faster than you can replace them',
   // Wave 8.3: Content Freshness & Decay
   content_decay_neglect: 'Your content is aging without review and eroding buyer confidence',
+  // Vertical-specific root causes
+  vertical_fashion_purchase_barriers: 'Fashion buyers need visual and sizing confidence',
+  vertical_saas_evaluation_friction: "Software buyers can't evaluate without trying",
+  vertical_food_ordering_friction: 'Hungry customers need fast, clear ordering',
+  vertical_health_trust_deficit: 'Health buyers need clinical proof before applying to their body',
+  vertical_education_commitment_anxiety: 'Students need proof of value before investing time',
+  vertical_b2b_internal_justification: 'B2B buyers need ammunition to convince their team',
 };
 
 // Wave 2.3 (2026-04-07) — operator-facing descriptions. Each one explains
@@ -501,6 +550,19 @@ export const ROOT_CAUSE_DESCRIPTIONS: Record<string, string> = {
 
   // Wave 8.3: Content Freshness & Decay
   content_decay_neglect: "Your commercial pages are aging without regular review. Copyright years are outdated, promotional references have expired, testimonial dates are old, and metrics cited as social proof no longer reflect reality. In the AI search era, content freshness directly impacts citation likelihood — AI-cited content is 25.7% fresher than the average organic result. Every month of neglect compounds: buyers notice stale copy and interpret it as a sign the business is dormant, AI search engines deprioritize pages that haven't been updated, and competitors with fresher content capture the traffic and citations you're losing.",
+
+  // Vertical-specific root causes
+  vertical_fashion_purchase_barriers: "Fashion buyers need to see and size the product before they commit. When product images are sparse, size guides are missing, and return policies are hidden from the product page, the buyer can't answer the fundamental question: 'Will this fit and look right on me?' Every missing confidence signal on a product page pushes the buyer toward a competitor who shows more. In fashion e-commerce, visual and sizing confidence are the conversion currency — without them, intent dies on the page.",
+
+  vertical_saas_evaluation_friction: "Software buyers evaluate before they commit. When there's no free trial, no screenshots, no visible integration ecosystem, and no proof of active development, the buyer has no way to answer 'Will this actually work for me?' before paying. SaaS purchasing requires proof-of-fit — and every missing evaluation surface forces the buyer to take your word for it. Most won't. They'll find a competitor who lets them try first.",
+
+  vertical_food_ordering_friction: "Hungry customers are impatient by nature. When your menu requires signup to view, photos are absent, delivery coverage is unclear, and wait times aren't shown, you're adding friction to someone who's already decided to spend money. Restaurant ordering is impulse-driven — every second of confusion is a lost order to the next option on their screen. The window between 'I'm hungry' and 'I'll order somewhere else' is shorter than you think.",
+
+  vertical_health_trust_deficit: "Health and beauty products go on or in the buyer's body. Without ingredient lists, clinical endorsements, usage instructions, and evidence of results, buyers face an asymmetric risk: the downside of choosing wrong is physical, not just financial. This category demands a higher proof threshold than general commerce. Buyers who can't verify safety and efficacy don't just hesitate — they actively avoid. Professional backing and transparent ingredients are table stakes, not differentiators.",
+
+  vertical_education_commitment_anxiety: "Education purchases require time commitment, not just money. Students need to know what they'll learn, who's teaching, how long it takes, whether they get a credential, and what the experience feels like — before investing hours of their life. Every missing signal amplifies the risk of wasted time, which students fear more than wasted money. Curriculum previews, instructor credentials, and sample content reduce commitment anxiety and convert browsers into enrolled students.",
+
+  vertical_b2b_internal_justification: "B2B buyers don't buy alone — they buy in committees. The person evaluating your service needs ammunition to convince their manager, procurement, and finance team. Without case studies with measurable ROI, a clear methodology, enterprise credibility signals, and proof of responsive service, the internal champion has nothing to present at the budget meeting. Every missing justification asset is a deal that dies in an internal email chain you'll never see.",
 };
 
 export function groupIntoRootCauses(inferences: Inference[], translations?: EngineTranslations): RootCause[] {

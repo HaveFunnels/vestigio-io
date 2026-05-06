@@ -58,7 +58,9 @@ export type RootCauseCategory =
   // Wave 3.10 Copy Analysis Pack
   | 'copy_strategy'
   // Wave 8.3: Content Freshness & Decay
-  | 'content_freshness';
+  | 'content_freshness'
+  // Vertical-specific purchase barriers
+  | 'vertical_purchase_barrier';
 
 export type RootCauseSeverity = 'critical' | 'high' | 'medium' | 'low';
 

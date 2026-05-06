@@ -254,6 +254,37 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   failed_payment_revenue_drain: 'payment_health',
   subscriber_churn_unsustainable: 'payment_health',
   payment_diversity_insufficient: 'payment_health',
+  // Vertical-specific findings
+  size_guide_missing: 'vertical_specific',
+  product_images_insufficient: 'vertical_specific',
+  no_urgency_indicators: 'vertical_specific',
+  cross_sell_absent: 'vertical_specific',
+  return_policy_not_on_product: 'vertical_specific',
+  no_free_trial_offered: 'vertical_specific',
+  integration_ecosystem_invisible: 'vertical_specific',
+  changelog_stale_or_missing: 'vertical_specific',
+  annual_discount_not_highlighted: 'vertical_specific',
+  no_product_screenshot_visible: 'vertical_specific',
+  menu_requires_signup: 'vertical_specific',
+  no_food_photos: 'vertical_specific',
+  delivery_area_unclear: 'vertical_specific',
+  delivery_time_not_shown: 'vertical_specific',
+  allergen_info_missing: 'vertical_specific',
+  ingredients_not_listed: 'vertical_specific',
+  no_clinical_endorsement: 'vertical_specific',
+  usage_instructions_absent: 'vertical_specific',
+  subscription_not_offered: 'vertical_specific',
+  no_results_evidence: 'vertical_specific',
+  curriculum_not_visible: 'vertical_specific',
+  instructor_credentials_missing: 'vertical_specific',
+  completion_certificate_absent: 'vertical_specific',
+  time_commitment_unclear: 'vertical_specific',
+  no_sample_content: 'vertical_specific',
+  no_case_study_with_metrics: 'vertical_specific',
+  methodology_not_explained: 'vertical_specific',
+  enterprise_signals_missing: 'vertical_specific',
+  contact_form_excessive_fields: 'vertical_specific',
+  response_time_not_promised: 'vertical_specific',
 };
 
 // Wave 3.10 Fase 3 — Root causes that belong to the copy alignment context.
@@ -468,6 +499,42 @@ const INFERENCE_SURFACES: Record<string, string> = {
   micro_copy_friction_high: '/contact, /signup, /app (forms & micro-copy)',
   seo_conversion_conflict: '/, /product, /pricing (SEO vs conversion)',
   copy_stale_references: '/ (sitewide content freshness)',
+  // Vertical-specific findings — Fashion/E-commerce
+  size_guide_missing: '/product, /shop',
+  product_images_insufficient: '/product, /shop',
+  no_urgency_indicators: '/product, /shop',
+  cross_sell_absent: '/product, /shop',
+  return_policy_not_on_product: '/product, /shop',
+  // Vertical-specific findings — SaaS
+  no_free_trial_offered: '/, /pricing',
+  integration_ecosystem_invisible: '/, /pricing',
+  changelog_stale_or_missing: '/, /pricing',
+  annual_discount_not_highlighted: '/, /pricing',
+  no_product_screenshot_visible: '/, /pricing',
+  // Vertical-specific findings — Food/Restaurant
+  menu_requires_signup: '/menu, /cardapio',
+  no_food_photos: '/menu, /cardapio',
+  delivery_area_unclear: '/menu, /cardapio',
+  delivery_time_not_shown: '/menu, /cardapio',
+  allergen_info_missing: '/menu, /cardapio',
+  // Vertical-specific findings — Health/Beauty
+  ingredients_not_listed: '/product, /shop',
+  no_clinical_endorsement: '/product, /shop',
+  usage_instructions_absent: '/product, /shop',
+  subscription_not_offered: '/product, /shop',
+  no_results_evidence: '/product, /shop',
+  // Vertical-specific findings — Education
+  curriculum_not_visible: '/, /curso, /course',
+  instructor_credentials_missing: '/, /curso, /course',
+  completion_certificate_absent: '/, /curso, /course',
+  time_commitment_unclear: '/, /curso, /course',
+  no_sample_content: '/, /curso, /course',
+  // Vertical-specific findings — B2B Services
+  no_case_study_with_metrics: '/, /contact, /services',
+  methodology_not_explained: '/, /contact, /services',
+  enterprise_signals_missing: '/, /contact, /services',
+  contact_form_excessive_fields: '/, /contact, /services',
+  response_time_not_promised: '/, /contact, /services',
 };
 
 // Human-readable titles for inference findings
@@ -661,6 +728,43 @@ export const INFERENCE_TITLES: Record<string, string> = {
   failed_payment_revenue_drain: 'Failed payments are draining revenue from subscribers who want to pay',
   subscriber_churn_unsustainable: 'Subscriber churn rate has crossed the sustainable threshold',
   payment_diversity_insufficient: 'All recurring revenue depends on a single payment gateway',
+  // ── Vertical-Specific Findings ─────────────────
+  // Fashion/E-commerce
+  size_guide_missing: "Buyers can't check if products will fit them",
+  product_images_insufficient: "Buyers can't see enough of the product to commit",
+  no_urgency_indicators: 'Nothing tells buyers they should act now',
+  cross_sell_absent: "You're leaving money on the table after each sale",
+  return_policy_not_on_product: "Buyers can't find return rules where they decide to buy",
+  // SaaS
+  no_free_trial_offered: "Buyers can't try before they commit money",
+  integration_ecosystem_invisible: "Buyers don't know if your product fits their workflow",
+  changelog_stale_or_missing: 'Your product looks abandoned to potential buyers',
+  annual_discount_not_highlighted: "Buyers don't see the savings from committing longer",
+  no_product_screenshot_visible: "Buyers can't see what they're signing up for",
+  // Food/Restaurant
+  menu_requires_signup: 'Hungry customers leave before seeing what you offer',
+  no_food_photos: 'Customers choose with their eyes — text-only menus lose',
+  delivery_area_unclear: "Customers don't know if you deliver to them",
+  delivery_time_not_shown: "Customers won't wait without knowing how long",
+  allergen_info_missing: "Customers with dietary needs can't safely order from you",
+  // Health/Beauty
+  ingredients_not_listed: "Buyers won't put something on their skin without knowing what's in it",
+  no_clinical_endorsement: "Buyers don't trust health claims without professional backing",
+  usage_instructions_absent: 'Buyers worry the product will be too complicated to use',
+  subscription_not_offered: "You're losing repeat revenue on products people use monthly",
+  no_results_evidence: 'Buyers see promises but no proof they work',
+  // Education
+  curriculum_not_visible: "Students won't pay for a course they can't preview",
+  instructor_credentials_missing: "Students don't know why they should learn from you",
+  completion_certificate_absent: 'Career-motivated students need proof of completion',
+  time_commitment_unclear: "Students won't start what they can't schedule",
+  no_sample_content: "Students won't buy without tasting the teaching style",
+  // B2B Services
+  no_case_study_with_metrics: "Buyers can't justify the purchase to their boss",
+  methodology_not_explained: "Buyers don't understand what they're actually getting",
+  enterprise_signals_missing: 'Corporate buyers disqualify you before reading further',
+  contact_form_excessive_fields: 'Your first impression asks for too much commitment',
+  response_time_not_promised: "Buyers assume they'll be ignored after submitting",
 };
 
 // ── Parametric Title Resolution ──

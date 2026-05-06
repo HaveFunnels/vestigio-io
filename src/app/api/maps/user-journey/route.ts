@@ -120,20 +120,29 @@ export async function GET(request: Request) {
       return NextResponse.json({ map: null });
     }
 
-    // Fetch surface relations (links between pages)
-    const relations = await prisma.surfaceRelation.findMany({
-      where: {
-        websiteRef: env.id,
-        relationType: { in: ["anchor", "form_action", "redirect", "runtime_navigation", "runtime_checkout_handoff"] },
-        isSameDomain: true,
-      },
-      select: {
-        sourceUrl: true,
-        targetUrl: true,
-        relationType: true,
-        confidence: true,
-      },
+    // Resolve the Website record for this environment — SurfaceRelation
+    // is keyed by websiteRef (Website.id), NOT by environmentRef.
+    const website = await prisma.website.findFirst({
+      where: { environmentRef: env.id },
+      select: { id: true },
     });
+
+    // Fetch surface relations (links between pages)
+    const relations = website
+      ? await prisma.surfaceRelation.findMany({
+          where: {
+            websiteRef: website.id,
+            relationType: { in: ["anchor", "form_action", "redirect", "runtime_navigation", "runtime_checkout_handoff"] },
+            isSameDomain: true,
+          },
+          select: {
+            sourceUrl: true,
+            targetUrl: true,
+            relationType: true,
+            confidence: true,
+          },
+        })
+      : [];
 
     // Build page lookup
     const pageByUrl = new Map<string, typeof pages[0]>();

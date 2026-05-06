@@ -382,6 +382,38 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 		}
 
+		// 6b. Persist SurfaceRelation records from crawled link graph.
+		// These power the User Journey map by providing the edge data
+		// between pages. Deduplicated per (source, target, relation).
+		if (result.surface_relations && result.surface_relations.length > 0) {
+			const relDedup = new Set<string>();
+			let relCount = 0;
+			for (const rel of result.surface_relations) {
+				const key = `${rel.sourceUrl}|${rel.targetUrl}|${rel.relationType}`;
+				if (relDedup.has(key)) continue;
+				relDedup.add(key);
+				try {
+					await prisma.surfaceRelation.create({
+						data: {
+							websiteRef: website.id,
+							sourceUrl: rel.sourceUrl,
+							targetUrl: rel.targetUrl,
+							relationType: rel.relationType,
+							sourceHost: rel.sourceHost,
+							targetHost: rel.targetHost,
+							isSameDomain: rel.isSameDomain,
+							confidence: 1.0,
+							cycleRef: cycleId,
+						},
+					});
+					relCount++;
+				} catch {
+					// Duplicate or constraint failure — non-fatal, skip.
+				}
+			}
+			console.log(`[audit-runner ${cycleId}] surface relations persisted: ${relCount} (from ${result.surface_relations.length} raw)`);
+		}
+
 		// 7. Run the engine + project findings + persist snapshot & findings.
 		// This is the part that makes change detection actually work and
 		// what populates the real `finding_count` per surface in /api/inventory.

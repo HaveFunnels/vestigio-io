@@ -133,6 +133,15 @@ const MODE_CONSTRAINTS: Record<PipelineMode, Partial<CrawlConstraints>> = {
   },
 };
 
+export interface SurfaceRelationEntry {
+  sourceUrl: string;
+  targetUrl: string;
+  relationType: string;
+  sourceHost: string;
+  targetHost: string;
+  isSameDomain: boolean;
+}
+
 export interface StagedPipelineResult {
   evidence: Evidence[];
   classification: ClassificationState;
@@ -140,6 +149,8 @@ export interface StagedPipelineResult {
   // Per-URL coverage data — exposed so the audit-runner worker can persist
   // PageInventoryItem rows. Existing callers (the SSE stream route) can ignore this.
   coverage_entries: CoverageEntry[];
+  // Internal link graph — persisted as SurfaceRelation records by audit-runner.
+  surface_relations: SurfaceRelationEntry[];
   stages_completed: PipelineStage[];
   errors: { url: string; error: string }[];
   duration_ms: number;
@@ -223,6 +234,7 @@ export async function runStagedPipeline(
 ): Promise<StagedPipelineResult> {
   const startTime = Date.now();
   const evidence: Evidence[] = [];
+  const surfaceRelations: SurfaceRelationEntry[] = [];
   const errors: { url: string; error: string }[] = [];
   const coverage = new Map<string, CoverageEntry>();
   const stagesCompleted: PipelineStage[] = [];
@@ -480,6 +492,33 @@ export async function runStagedPipeline(
         addFormEvidence(evidence, parsed, response.final_url, scoping, input.cycle_ref);
         extractIndicators(parsed, response.final_url, scoping, input.cycle_ref, evidence);
 
+        // Collect internal links for SurfaceRelation persistence
+        for (const link of parsed.links) {
+          if (!link.is_external && link.href) {
+            surfaceRelations.push({
+              sourceUrl: response.final_url,
+              targetUrl: link.href,
+              relationType: 'anchor',
+              sourceHost: parsed.host,
+              targetHost: link.target_host || parsed.host,
+              isSameDomain: true,
+            });
+          }
+        }
+        // Collect form actions
+        for (const form of parsed.forms) {
+          if (form.action && !form.is_external) {
+            surfaceRelations.push({
+              sourceUrl: response.final_url,
+              targetUrl: form.action,
+              relationType: 'form_action',
+              sourceHost: parsed.host,
+              targetHost: form.target_host || parsed.host,
+              isSameDomain: true,
+            });
+          }
+        }
+
         coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: 75 });
 
         // SPA detection — flag for Stage D
@@ -582,7 +621,7 @@ export async function runStagedPipeline(
     coverage: buildCoverageSummary(coverage),
   }, timestamp: new Date() });
 
-  return buildResult(evidence, input, coverage, stagesCompleted, errors, startTime);
+  return buildResult(evidence, input, coverage, stagesCompleted, errors, startTime, surfaceRelations);
 }
 
 // ──────────────────────────────────────────────
@@ -832,13 +871,14 @@ function isHighValue(path: string, text: string): boolean {
 // Helpers
 // ──────────────────────────────────────────────
 
-function buildResult(evidence: Evidence[], input: StagedPipelineInput, coverage: Map<string, CoverageEntry>, stages: PipelineStage[], errors: any[], startTime: number): StagedPipelineResult {
+function buildResult(evidence: Evidence[], input: StagedPipelineInput, coverage: Map<string, CoverageEntry>, stages: PipelineStage[], errors: any[], startTime: number, surfaceRelations: SurfaceRelationEntry[] = []): StagedPipelineResult {
   const classInput = extractClassificationInput(evidence, input.onboarding_business_model || null, input.onboarding_conversion_model || null);
   return {
     evidence,
     classification: computeClassification(classInput),
     coverage: buildCoverageSummary(coverage),
     coverage_entries: Array.from(coverage.values()),
+    surface_relations: surfaceRelations,
     stages_completed: stages,
     errors,
     duration_ms: Date.now() - startTime,

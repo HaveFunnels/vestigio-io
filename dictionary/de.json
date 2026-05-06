@@ -3734,6 +3734,29 @@
 			"moderate_chargeback_risk": "Moderates Chargeback-Risiko. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Einige Schutzmaßnahmen fehlen.",
 			"low_chargeback_risk": "Niedriges Chargeback-Risiko. Risikobewertung: {risk_score}/100. Kleinere Verbesserungen verfügbar aber nicht blockierend.",
 			"chargeback_resilience_strong": "Chargeback-Resilienz ist stark. Kein signifikantes Streitrisiko erkannt (Bewertung: {risk_score}/100).",
+			"payment_health_critical": "Zahlungsgesundheit ist kritisch. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Die Rate fehlgeschlagener Zahlungen oder Abonnenten-Churn hat gefaehrliche Schwellenwerte ueberschritten.",
+			"payment_health_at_risk": "Zahlungsgesundheit ist gefaehrdet. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Erhoehte Zahlungsausfaelle oder Abonnenten-Churn erzeugen vermeidbaren Umsatzverlust.",
+			"payment_health_stable": "Zahlungsgesundheit ist stabil. Zahlungsausfall- und Churn-Raten liegen im akzeptablen Bereich (Bewertung: {risk_score}/100).",
+			"copy_misaligned": "Copy ist nicht auf die kommerzielle Absicht ausgerichtet. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Die Botschaft versagt bei der Konvertierung von Besuchern mit hoher Kaufabsicht ueber mehrere Dimensionen.",
+			"copy_significant_gaps": "Copy hat signifikante Ausrichtungsluecken. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Mehrere CRO-Dimensionen benoetigen Aufmerksamkeit vor der Skalierung.",
+			"copy_minor_gaps": "Copy hat kleinere Ausrichtungsluecken. Risikobewertung: {risk_score}/100. Die Botschaft ist groesstenteils effektiv, aber Verfeinerungen koennten die Konversion steigern.",
+			"copy_aligned": "Copy ist auf die kommerzielle Absicht ausgerichtet. Keine signifikanten Luecken erkannt (Bewertung: {risk_score}/100).",
+			"channel_integrity_critical": "Kritische Kanalintegritaets-Kompromittierung erkannt. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Zahlungsoberflaechen, Skripte oder Infrastruktur sind fuer Manipulation oder Uebernahme exponiert.",
+			"channel_integrity_elevated": "Erhoehtes Kanalintegritaets-Risiko. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Missbrauchsvektoren oder fragile Infrastruktur benoetigen Aufmerksamkeit vor der Skalierung.",
+			"channel_integrity_weak": "Kanalintegritaet hat kleinere Luecken. Risikobewertung: {risk_score}/100. Haertungsmoeglichkeiten vorhanden aber nicht blockierend.",
+			"channel_integrity_strong": "Kanalintegritaet ist stark. Keine signifikanten Kompromittierungsvektoren erkannt (Bewertung: {risk_score}/100).",
+			"discoverability_critically_weak": "Auffindbarkeit ist kritisch schwach. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Kommerzielle Seiten sind fuer Suchmaschinen und soziale Plattformen unsichtbar.",
+			"discoverability_gaps_significant": "Signifikante Auffindbarkeitsluecken. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Suchdarstellung und Social Previews muessen vor der Traffic-Skalierung verbessert werden.",
+			"discoverability_improvable": "Auffindbarkeit hat Optimierungsmoeglichkeiten. Risikobewertung: {risk_score}/100. Seiten sind indexierbar aber nicht gut repraesentiert.",
+			"discoverability_adequate": "Auffindbarkeit ist ausreichend. Keine signifikanten Luecken erkannt (Bewertung: {risk_score}/100).",
+			"brand_integrity_critical": "Kritische Markenintegritaetsbedrohung. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Aktive Nachahmungs- oder Phishing-Oberflaechen leiten Kundenvertrauen und Umsatz um.",
+			"brand_integrity_elevated": "Erhoehtes Markenintegritaets-Risiko. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Aehnliche Domains oder taeuschende Oberflaechen konkurrieren um Marken-Traffic.",
+			"brand_integrity_weak": "Markenintegritaet hat geringfuegige Exposition. Risikobewertung: {risk_score}/100. Markenpraesenz ist verwaessert aber nicht unter aktiver Bedrohung.",
+			"brand_integrity_strong": "Markenintegritaet ist stark. Keine signifikante Nachahmung oder Verwaesserung erkannt (Bewertung: {risk_score}/100).",
+			"security_posture_critical": "Kritische Sicherheitsexpositionen erkannt. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Sensible Dateien oder gemischte Inhalte auf kommerziellen Seiten erzeugen sofortiges finanzielles Risiko.",
+			"security_posture_elevated": "Erhoehtes Sicherheitsrisiko. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Schwache Header oder offene Weiterleitungen erhoehen die Exposition.",
+			"security_posture_weak": "Sicherheitslage hat kleinere Luecken. Risikobewertung: {risk_score}/100. Haertungsmoeglichkeiten vorhanden aber nicht blockierend.",
+			"security_posture_adequate": "Sicherheitslage ist ausreichend. Keine signifikanten Expositionen erkannt (Bewertung: {risk_score}/100).",
 			"default_summary": "Entscheidung: {decision_key}. Risiko: {risk_score}/100, Vertrauen: {confidence_score}/100."
 		},
 		"confidence_narrative": {
@@ -3782,6 +3805,13 @@
 			"path_length_exceeds_efficient": "Der Weg vom Interesse zum Kauf ist zu lang, als dass Käufer dranbleiben",
 			"intent_absorber_detected": "Einige Seiten stehlen die Aufmerksamkeit von Käufern, ohne sie zum Kauf zu führen",
 			"intent_decay_time_excessive": "Zwischen dem Moment, in dem ein Käufer kaufen will, und dem, in dem er tatsächlich kaufen kann, vergeht zu viel Zeit"
+		},
+		"compound_type_titles": {
+			"security_revenue_chain": "Sicherheitsproblem unterbricht Ihr Revenue-Tracking",
+			"ad_promise_reality_behavior": "Ihre Anzeige verspricht etwas, das Ihre Landing Page nicht liefert",
+			"trust_hesitation_revenue": "Fehlende Vertrauenssignale verursachen Checkout-Abbrueche",
+			"post_purchase_chain": "Schwache Post-Purchase-Erfahrung verursacht Chargebacks",
+			"brand_impersonation_revenue": "Aktive Markennachahmung erodiert das Vertrauen"
 		},
 		"maps": {
 			"names": {

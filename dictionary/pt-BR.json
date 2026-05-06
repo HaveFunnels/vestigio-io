@@ -4549,6 +4549,22 @@
 			"copy_significant_gaps": "Copy com lacunas significativas de alinhamento. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Múltiplas dimensões de CRO precisam de atenção antes de escalar.",
 			"copy_minor_gaps": "Copy com lacunas menores de alinhamento. Pontuação de risco: {risk_score}/100. A mensagem é majoritariamente eficaz mas refinamentos podem levantar a conversão.",
 			"copy_aligned": "Copy alinhado com a intenção comercial. Sem lacunas significativas detectadas (pontuação: {risk_score}/100).",
+			"channel_integrity_critical": "Comprometimento crítico da integridade do canal detectado. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Superfícies de pagamento, scripts ou infraestrutura estão expostos a adulteração ou sequestro.",
+			"channel_integrity_elevated": "Risco elevado de integridade do canal. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Vetores de abuso ou infraestrutura frágil precisam de atenção antes de escalar.",
+			"channel_integrity_weak": "Integridade do canal com lacunas menores. Pontuação de risco: {risk_score}/100. Oportunidades de fortalecimento existem mas não são bloqueantes.",
+			"channel_integrity_strong": "Integridade do canal está forte. Nenhum vetor de comprometimento significativo detectado (pontuação: {risk_score}/100).",
+			"discoverability_critically_weak": "Descobribilidade criticamente fraca. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Páginas comerciais estão invisíveis para mecanismos de busca e plataformas sociais.",
+			"discoverability_gaps_significant": "Lacunas significativas de descobribilidade. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Representação em buscas e previews sociais precisam de melhoria antes de escalar o tráfego.",
+			"discoverability_improvable": "Descobribilidade com oportunidades de otimização. Pontuação de risco: {risk_score}/100. Páginas são indexáveis mas não bem representadas.",
+			"discoverability_adequate": "Descobribilidade adequada. Sem lacunas significativas detectadas (pontuação: {risk_score}/100).",
+			"brand_integrity_critical": "Ameaça crítica à integridade da marca. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Superfícies ativas de imitação ou phishing estão desviando a confiança e o faturamento dos clientes.",
+			"brand_integrity_elevated": "Risco elevado de integridade da marca. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Domínios semelhantes ou superfícies enganosas estão competindo pelo tráfego da marca.",
+			"brand_integrity_weak": "Integridade da marca com exposição menor. Pontuação de risco: {risk_score}/100. Presença da marca está diluída mas não sob ameaça ativa.",
+			"brand_integrity_strong": "Integridade da marca está forte. Nenhuma imitação ou diluição significativa detectada (pontuação: {risk_score}/100).",
+			"security_posture_critical": "Exposições críticas de segurança detectadas. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Arquivos sensíveis ou conteúdo misto em páginas comerciais criam risco financeiro imediato.",
+			"security_posture_elevated": "Risco elevado de postura de segurança. Pontuação de risco: {risk_score}/100, confiança: {confidence_score}/100. Headers fracos ou redirecionamentos abertos aumentam a exposição.",
+			"security_posture_weak": "Postura de segurança com lacunas menores. Pontuação de risco: {risk_score}/100. Oportunidades de fortalecimento existem mas não são bloqueantes.",
+			"security_posture_adequate": "Postura de segurança adequada. Nenhuma exposição significativa detectada (pontuação: {risk_score}/100).",
 			"default_summary": "Decisão: {decision_key}. Risco: {risk_score}/100, Confiança: {confidence_score}/100."
 		},
 		"confidence_narrative": {
@@ -4597,6 +4613,13 @@
 			"path_length_exceeds_efficient": "O caminho até a compra é longo demais pro comprador aguentar",
 			"intent_absorber_detected": "Algumas páginas estão roubando a atenção do comprador sem levar à venda",
 			"intent_decay_time_excessive": "Passa tempo demais entre o comprador querer comprar e conseguir comprar de verdade"
+		},
+		"compound_type_titles": {
+			"security_revenue_chain": "Problema de segurança está quebrando seu rastreamento de receita",
+			"ad_promise_reality_behavior": "Seu anúncio promete algo que sua landing page não entrega",
+			"trust_hesitation_revenue": "Sinais de confiança ausentes estão causando abandono no checkout",
+			"post_purchase_chain": "Experiência pós-compra fraca está gerando chargebacks",
+			"brand_impersonation_revenue": "Imitação ativa da marca está erodindo a confiança"
 		},
 		"maps": {
 			"names": {

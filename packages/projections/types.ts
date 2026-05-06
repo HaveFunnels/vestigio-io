@@ -602,4 +602,16 @@ export interface EngineTranslations {
    * Falls back to the English reasoning built inline in the inference engine.
    */
   reasoning_templates?: Record<string, string>;
+  /**
+   * Human-readable titles for compound finding types (security_revenue_chain,
+   * ad_promise_reality_behavior, etc.). Optional — falls back to the English
+   * constants in COMPOUND_TYPE_TITLES when missing.
+   */
+  compound_type_titles?: Record<string, string>;
+  /**
+   * The locale code (e.g. "pt-BR", "es", "de") for this translation set.
+   * Used by the change-detection projection layer to translate static
+   * contributing-factor strings. Undefined or "en" means no translation.
+   */
+  locale?: string;
 }

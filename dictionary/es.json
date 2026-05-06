@@ -4157,6 +4157,29 @@
 			"moderate_chargeback_risk": "Riesgo moderado de Chargeback. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Algunas medidas de protección están faltantes.",
 			"low_chargeback_risk": "Riesgo bajo de Chargeback. Puntuación de riesgo: {risk_score}/100. Mejoras menores disponibles pero no bloqueantes.",
 			"chargeback_resilience_strong": "La resiliencia ante Chargeback es fuerte. No se detectó riesgo significativo de disputas (puntuación: {risk_score}/100).",
+			"payment_health_critical": "La salud de pagos es crítica. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. La tasa de fallo de pago o el churn de suscriptores ha cruzado umbrales peligrosos.",
+			"payment_health_at_risk": "La salud de pagos está en riesgo. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Pagos fallidos o churn elevado están creando pérdida de ingresos evitable.",
+			"payment_health_stable": "La salud de pagos es estable. Las tasas de fallo de pago y churn están dentro de rangos aceptables (puntuación: {risk_score}/100).",
+			"copy_misaligned": "El copy no está alineado con la intención comercial. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. El mensaje falla en convertir visitantes de alta intención en múltiples dimensiones.",
+			"copy_significant_gaps": "El copy tiene brechas significativas de alineación. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Múltiples dimensiones de CRO necesitan atención antes de escalar.",
+			"copy_minor_gaps": "El copy tiene brechas menores de alineación. Puntuación de riesgo: {risk_score}/100. El mensaje es mayormente efectivo pero refinamientos podrían mejorar la conversión.",
+			"copy_aligned": "El copy está alineado con la intención comercial. Sin brechas significativas detectadas (puntuación: {risk_score}/100).",
+			"channel_integrity_critical": "Compromiso crítico de integridad del canal detectado. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Superficies de pago, scripts o infraestructura están expuestos a manipulación o secuestro.",
+			"channel_integrity_elevated": "Riesgo elevado de integridad del canal. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Vectores de abuso o infraestructura frágil necesitan atención antes de escalar.",
+			"channel_integrity_weak": "Integridad del canal con brechas menores. Puntuación de riesgo: {risk_score}/100. Oportunidades de fortalecimiento existen pero no son bloqueantes.",
+			"channel_integrity_strong": "La integridad del canal es fuerte. Ningún vector de compromiso significativo detectado (puntuación: {risk_score}/100).",
+			"discoverability_critically_weak": "La descubribilidad es críticamente débil. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Las páginas comerciales son invisibles para motores de búsqueda y plataformas sociales.",
+			"discoverability_gaps_significant": "Brechas significativas de descubribilidad. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. La representación en búsquedas y previews sociales necesitan mejora antes de escalar el tráfico.",
+			"discoverability_improvable": "La descubribilidad tiene oportunidades de optimización. Puntuación de riesgo: {risk_score}/100. Las páginas son indexables pero no están bien representadas.",
+			"discoverability_adequate": "La descubribilidad es adecuada. Sin brechas significativas detectadas (puntuación: {risk_score}/100).",
+			"brand_integrity_critical": "Amenaza crítica a la integridad de la marca. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Superficies activas de suplantación o phishing están desviando la confianza y los ingresos de los clientes.",
+			"brand_integrity_elevated": "Riesgo elevado de integridad de la marca. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Dominios parecidos o superficies engañosas están compitiendo por el tráfico de la marca.",
+			"brand_integrity_weak": "Integridad de la marca con exposición menor. Puntuación de riesgo: {risk_score}/100. La presencia de la marca está diluida pero no bajo amenaza activa.",
+			"brand_integrity_strong": "La integridad de la marca es fuerte. Ninguna suplantación o dilución significativa detectada (puntuación: {risk_score}/100).",
+			"security_posture_critical": "Exposiciones críticas de seguridad detectadas. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Archivos sensibles o contenido mixto en páginas comerciales crean riesgo financiero inmediato.",
+			"security_posture_elevated": "Riesgo elevado de postura de seguridad. Puntuación de riesgo: {risk_score}/100, confianza: {confidence_score}/100. Headers débiles o redirecciones abiertas aumentan la exposición.",
+			"security_posture_weak": "Postura de seguridad con brechas menores. Puntuación de riesgo: {risk_score}/100. Oportunidades de fortalecimiento existen pero no son bloqueantes.",
+			"security_posture_adequate": "Postura de seguridad adecuada. Ninguna exposición significativa detectada (puntuación: {risk_score}/100).",
 			"default_summary": "Decisión: {decision_key}. Riesgo: {risk_score}/100, Confianza: {confidence_score}/100."
 		},
 		"confidence_narrative": {
@@ -4205,6 +4228,13 @@
 			"path_length_exceeds_efficient": "El camino desde el interés hasta la compra es demasiado largo para que el comprador aguante",
 			"intent_absorber_detected": "Algunas páginas están robando la atención del comprador sin llevarlo a la venta",
 			"intent_decay_time_excessive": "Pasa demasiado tiempo entre que el comprador quiere comprar y puede comprar de verdad"
+		},
+		"compound_type_titles": {
+			"security_revenue_chain": "Un problema de seguridad esta rompiendo tu rastreo de ingresos",
+			"ad_promise_reality_behavior": "Tu anuncio promete algo que tu landing page no entrega",
+			"trust_hesitation_revenue": "Senales de confianza ausentes estan causando abandono en el checkout",
+			"post_purchase_chain": "Experiencia post-compra debil esta generando chargebacks",
+			"brand_impersonation_revenue": "Suplantacion activa de la marca esta erosionando la confianza"
 		},
 		"maps": {
 			"names": {

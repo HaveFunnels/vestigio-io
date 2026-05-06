@@ -930,7 +930,7 @@ export function projectAll(result: MultiPackResult, translations?: EngineTransla
 
   const coherenceScore = result.conflict_report?.resolved_decisions?.coherence_score ?? 100;
   const systemHealth = buildSystemHealth(result);
-  const changeReport = projectChangeReport(result);
+  const changeReport = projectChangeReport(result, translations, translations?.locale);
   return { findings: enrichedFindings, actions, workspaces, coherence_score: coherenceScore, system_health: systemHealth, change_report: changeReport };
 }
 
@@ -1436,7 +1436,7 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
     for (const cf of result.composites.compound_findings) {
       const compoundAction: ActionProjection = {
         id: cf.id,
-        title: COMPOUND_TYPE_TITLES[cf.compound_type] || cf.compound_type,
+        title: translations?.compound_type_titles?.[cf.compound_type] || COMPOUND_TYPE_TITLES[cf.compound_type] || cf.compound_type,
         description: cf.narrative,
         root_cause: null,
         root_cause_key: cf.compound_type,
@@ -1652,7 +1652,7 @@ export function projectWorkspaces(
   const narrative = buildConfidenceNarrative(result, translations);
 
   // Phase 2 UX: Build workspace-level change summaries
-  const changeReport = projectChangeReport(result);
+  const changeReport = projectChangeReport(result, translations, translations?.locale);
   const changeSummaryMap = buildWorkspaceChangeSummaries(changeReport);
 
   const scaleFindings = findings.filter(f => f.pack === 'scale_readiness');
@@ -2457,10 +2457,55 @@ function buildConfidenceNarrative(result: MultiPackResult, translations?: Engine
 // Phase 1C: Change report projection
 // ──────────────────────────────────────────────
 
-function mapDecisionChange(dc: DecisionChange): DecisionChangeProjection {
+// Known static contributing-factor strings produced by the change-
+// detection engine. Translated at projection time so the ChangeTimeline
+// component renders localised text.
+const CONTRIBUTING_FACTOR_TRANSLATIONS: Record<string, Record<string, string>> = {
+  'First observation of this decision': {
+    'pt-BR': 'Primeira observação desta decisão',
+    es: 'Primera observación de esta decisión',
+    de: 'Erste Beobachtung dieser Entscheidung',
+  },
+  'First observation from newly connected data source': {
+    'pt-BR': 'Primeira observação de fonte de dados recém-conectada',
+    es: 'Primera observación de fuente de datos recién conectada',
+    de: 'Erste Beobachtung einer neu verbundenen Datenquelle',
+  },
+  'Issue no longer detected in current cycle': {
+    'pt-BR': 'Problema não detectado mais no ciclo atual',
+    es: 'Problema ya no detectado en el ciclo actual',
+    de: 'Problem im aktuellen Zyklus nicht mehr erkannt',
+  },
+};
+
+function translateContributingFactors(factors: string[], locale?: string): string[] {
+  if (!locale || locale === 'en') return factors;
+  return factors.map(f => CONTRIBUTING_FACTOR_TRANSLATIONS[f]?.[locale] ?? f);
+}
+
+function mapDecisionChange(dc: DecisionChange, translations?: EngineTranslations, locale?: string): DecisionChangeProjection {
+  // Build a translated title from the summaries dictionary when available.
+  // The raw dc.summary contains English text like "New: copy_misaligned
+  // (severity: critical, impact: incident)" which shouldn't be rendered
+  // directly in non-English locales.
+  let title = dc.summary;
+  const summaryTemplate = translations?.summaries?.[dc.decision_key];
+  if (summaryTemplate) {
+    // The summaries use ICU-style placeholders but here we only need
+    // a short human-readable title, so strip the risk/confidence
+    // interpolation tokens and use the leading sentence.
+    title = summaryTemplate
+      .replace(/\{risk_score\}/g, String(Math.abs(dc.risk_score_delta)))
+      .replace(/\{confidence_score\}/g, String(Math.abs(dc.confidence_score_delta)))
+      .replace(/\{decision_key\}/g, dc.decision_key);
+    // Trim to the first sentence for brevity in the timeline
+    const firstSentence = title.split('. ')[0];
+    if (firstSentence) title = firstSentence;
+  }
+
   return {
     decision_key: dc.decision_key,
-    title: dc.summary,
+    title,
     change_class: dc.change_class,
     change_severity: dc.severity,
     risk_score_delta: dc.risk_score_delta,
@@ -2468,20 +2513,21 @@ function mapDecisionChange(dc: DecisionChange): DecisionChangeProjection {
     current_severity: dc.severity_change?.to ?? null,
     previous_impact: dc.impact_change?.from ?? null,
     current_impact: dc.impact_change?.to ?? null,
-    contributing_factors: dc.contributing_factors,
+    contributing_factors: translateContributingFactors(dc.contributing_factors, locale),
   };
 }
 
-export function projectChangeReport(result: MultiPackResult): ChangeReportProjection | null {
+export function projectChangeReport(result: MultiPackResult, translations?: EngineTranslations, locale?: string): ChangeReportProjection | null {
   if (!result.change_report) return null;
 
   const report = result.change_report;
   const summary = report.summary;
 
-  const regressions = report.regressions.map(mapDecisionChange);
-  const improvements = report.improvements.map(mapDecisionChange);
-  const newIssues = report.new_issues.map(mapDecisionChange);
-  const resolved = report.resolved_issues.map(mapDecisionChange);
+  const mapper = (dc: DecisionChange) => mapDecisionChange(dc, translations, locale);
+  const regressions = report.regressions.map(mapper);
+  const improvements = report.improvements.map(mapper);
+  const newIssues = report.new_issues.map(mapper);
+  const resolved = report.resolved_issues.map(mapper);
 
   return {
     headline: summary.headline,

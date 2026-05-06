@@ -504,23 +504,36 @@ function ActionsContent({
 		return resolved.reduce((sum, a) => sum + (a.impact?.midpoint || 0), 0);
 	}, [actions]);
 
-	// Reconcile change report counts with actual action projections.
-	// The change report counts decisions (finding-level), but the table
-	// shows actions (root-cause-grouped). Without reconciliation, the
-	// banner can show "4 new" while only 3 rows exist in the table,
-	// confusing users who expect a 1:1 match.
+	// Reconcile change report counts and detail arrays with actual action
+	// projections. The change report counts decisions (finding-level), but
+	// the table shows actions (root-cause-grouped). Without reconciliation,
+	// the banner can show "4 new" while only 3 rows exist in the table,
+	// confusing users who expect a 1:1 match. We also filter the detail
+	// arrays so the expanded timeline only shows changes that produced a
+	// visible action row.
 	const reconciledChangeReport = useMemo(() => {
 		if (!changeReport) return null;
-		const newActionsCount = actions.filter(a => a.change_class === "new_issue").length;
-		const regressionActionsCount = actions.filter(a => a.change_class === "regression").length;
-		const resolvedActionsCount = actions.filter(a => a.change_class === "resolved").length;
-		const improvementActionsCount = actions.filter(a => a.change_class === "improvement").length;
+
+		// Filter helper: keep a decision change only if its decision_key
+		// matches an action (same fuzzy logic as buildActionChangeClass).
+		const hasMatchingAction = (dk: string) =>
+			actions.some(a => a.id.includes(dk) || dk.includes(a.id));
+
+		const newIssues = changeReport.new_issues.filter(c => hasMatchingAction(c.decision_key));
+		const regressions = changeReport.regressions.filter(c => hasMatchingAction(c.decision_key));
+		const resolved = changeReport.resolved.filter(c => hasMatchingAction(c.decision_key));
+		const improvements = changeReport.improvements.filter(c => hasMatchingAction(c.decision_key));
+
 		return {
 			...changeReport,
-			new_issue_count: newActionsCount,
-			regression_count: regressionActionsCount,
-			resolved_count: resolvedActionsCount,
-			improvement_count: improvementActionsCount,
+			new_issues: newIssues,
+			regressions,
+			resolved,
+			improvements,
+			new_issue_count: newIssues.length,
+			regression_count: regressions.length,
+			resolved_count: resolved.length,
+			improvement_count: improvements.length,
 		};
 	}, [changeReport, actions]);
 

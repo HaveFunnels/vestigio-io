@@ -28,7 +28,9 @@ export function loadEngineTranslationsForLocale(locale: string | null | undefine
     const filePath = path.join(process.cwd(), "dictionary", `${locale}.json`);
     const raw = fs.readFileSync(filePath, "utf-8");
     const dict = JSON.parse(raw);
-    return dict.engine as EngineTranslations | undefined;
+    const engine = dict.engine as EngineTranslations | undefined;
+    if (engine) engine.locale = locale;
+    return engine;
   } catch {
     return undefined;
   }

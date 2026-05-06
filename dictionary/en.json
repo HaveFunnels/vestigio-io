@@ -4506,6 +4506,26 @@
 			"payment_health_critical": "Payment health is critical. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Failed payment rate or subscriber churn has crossed dangerous thresholds.",
 			"payment_health_at_risk": "Payment health is at risk. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Elevated failed payments or subscriber churn are creating preventable revenue loss.",
 			"payment_health_stable": "Payment health is stable. Failed payment and churn rates are within acceptable ranges (score: {risk_score}/100).",
+			"copy_misaligned": "Copy is misaligned with commercial intent. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Messaging is failing to convert high-intent visitors across multiple dimensions.",
+			"copy_significant_gaps": "Copy has significant alignment gaps. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Multiple CRO dimensions need attention before scaling.",
+			"copy_minor_gaps": "Copy has minor alignment gaps. Risk score: {risk_score}/100. Messaging is mostly effective but refinements could lift conversion.",
+			"copy_aligned": "Copy is aligned with commercial intent. No significant gaps detected (score: {risk_score}/100).",
+			"channel_integrity_critical": "Critical channel integrity compromise detected. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Payment surfaces, scripts, or infrastructure are exposed to tampering or hijack.",
+			"channel_integrity_elevated": "Elevated channel integrity risk. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Abuse vectors or brittle infrastructure need attention before scaling.",
+			"channel_integrity_weak": "Channel integrity has minor gaps. Risk score: {risk_score}/100. Hardening opportunities exist but are not blocking.",
+			"channel_integrity_strong": "Channel integrity is strong. No significant compromise vectors detected (score: {risk_score}/100).",
+			"discoverability_critically_weak": "Discoverability is critically weak. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Commercial pages are invisible to search engines and social platforms.",
+			"discoverability_gaps_significant": "Significant discoverability gaps. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Search representation and social previews need improvement before scaling traffic.",
+			"discoverability_improvable": "Discoverability has optimization opportunities. Risk score: {risk_score}/100. Pages are indexable but not well-represented.",
+			"discoverability_adequate": "Discoverability is adequate. No significant gaps detected (score: {risk_score}/100).",
+			"brand_integrity_critical": "Critical brand integrity threat. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Active impersonation or phishing surfaces are diverting customer trust and revenue.",
+			"brand_integrity_elevated": "Elevated brand integrity risk. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Lookalike domains or deceptive surfaces are competing for brand traffic.",
+			"brand_integrity_weak": "Brand integrity has minor exposure. Risk score: {risk_score}/100. Brand presence is diluted but not under active threat.",
+			"brand_integrity_strong": "Brand integrity is strong. No significant impersonation or dilution detected (score: {risk_score}/100).",
+			"security_posture_critical": "Critical security exposures detected. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Sensitive files or mixed content on commercial pages create immediate financial risk.",
+			"security_posture_elevated": "Elevated security posture risk. Risk score: {risk_score}/100, confidence: {confidence_score}/100. Weak headers or open redirects increase exposure.",
+			"security_posture_weak": "Security posture has minor gaps. Risk score: {risk_score}/100. Hardening opportunities exist but are not blocking.",
+			"security_posture_adequate": "Security posture is adequate. No significant exposures detected (score: {risk_score}/100).",
 			"default_summary": "Decision: {decision_key}. Risk: {risk_score}/100, Confidence: {confidence_score}/100."
 		},
 		"confidence_narrative": {
@@ -4554,6 +4574,13 @@
 			"path_length_exceeds_efficient": "The path from interest to purchase is too long for buyers to stick with",
 			"intent_absorber_detected": "Some pages are stealing attention from buyers without moving them toward a sale",
 			"intent_decay_time_excessive": "Too much time passes between when a buyer wants to buy and when they can actually buy"
+		},
+		"compound_type_titles": {
+			"security_revenue_chain": "Security issue is breaking your revenue tracking",
+			"ad_promise_reality_behavior": "Your ad promises something your landing page doesn't deliver",
+			"trust_hesitation_revenue": "Missing trust signals are causing checkout abandonment",
+			"post_purchase_chain": "Weak post-purchase experience is driving chargebacks",
+			"brand_impersonation_revenue": "Active brand impersonation is eroding trust"
 		},
 		"maps": {
 			"names": {

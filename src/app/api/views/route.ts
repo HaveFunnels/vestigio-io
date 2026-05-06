@@ -16,6 +16,15 @@ import { prisma } from "@/libs/prismaDb";
 
 const DEFAULT_VIEWS = [
 	{
+		name: "all",
+		icon: "FunnelSimple",
+		color: "#71717a",
+		filters: {},
+		sortBy: "impact_desc",
+		groupBy: null,
+		order: -1,
+	},
+	{
 		name: "on_fire",
 		icon: "Flame",
 		color: "#ef4444",

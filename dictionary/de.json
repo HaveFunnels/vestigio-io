@@ -1543,10 +1543,12 @@
 		"findings": {
 			"views": {
 				"page_title": "Erkenntnisse",
+				"all": "Alle",
 				"on_fire": "Dringend",
 				"awaiting_verification": "Warten auf Verifizierung",
 				"by_domain": "Nach Bereich",
 				"winning": "Funktioniert gut",
+				"all_desc": "Alle Erkenntnisse nach Einfluss sortiert",
 				"on_fire_desc": "Kritische Probleme, die Aufmerksamkeit erfordern",
 				"awaiting_verification_desc": "Erkenntnisse mit hohem Einfluss zur Bestaetigung",
 				"by_domain_desc": "Zustand nach Perspektive",
@@ -1585,6 +1587,7 @@
 			}
 		},
 		"finding_drawer": {
+			"context": "Kontext",
 			"summary": "__TODO__",
 			"effect": "__TODO__",
 			"root_cause": "__TODO__",
@@ -1600,7 +1603,8 @@
 			"verification_tooltip": "Die Verifizierungsreife zeigt, wie die Evidenz dieses Befunds validiert wurde. Nicht verifiziert = nur statische Analyse. Verifiziert = durch Browser bestätigt.",
 			"learn_more": "Mehr erfahren",
 			"browse_related_docs": "Verwandte Dokumente durchsuchen",
-			"docs_coming_soon": "Die Dokumentation für diesen Befund wird gerade geschrieben."
+			"docs_coming_soon": "Die Dokumentation für diesen Befund wird gerade geschrieben.",
+			"see_action": "Aktion ansehen"
 		},
 		"customer_center": {
 			"title": "Kundencenter",

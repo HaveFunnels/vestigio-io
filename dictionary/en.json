@@ -1608,7 +1608,7 @@
 				"est_monthly_impact": "Est. Monthly Impact",
 				"per_month_midpoint": "/month (midpoint)",
 				"high_impact_issues": "High Impact Issues",
-				"high_impact_threshold": "> $10k/mo",
+				"high_impact_threshold": "> $5k/mo",
 				"verified_findings": "Verified"
 			},
 			"discuss": "Discuss",
@@ -1650,10 +1650,12 @@
 		"findings": {
 			"views": {
 				"page_title": "Findings",
+				"all": "All",
 				"on_fire": "On Fire",
 				"awaiting_verification": "Awaiting Verification",
 				"by_domain": "By Domain",
 				"winning": "Winning",
+				"all_desc": "All findings ordered by impact",
 				"on_fire_desc": "Critical issues needing attention",
 				"awaiting_verification_desc": "High-impact findings to confirm",
 				"by_domain_desc": "Health by perspective",
@@ -1710,6 +1712,7 @@
 			}
 		},
 		"finding_drawer": {
+			"context": "Context",
 			"summary": "Summary",
 			"effect": "Effect",
 			"root_cause": "Root Cause",
@@ -1740,7 +1743,8 @@
 			"estimated_effort_hours": "~{hours}h dev time",
 			"verification_strategy_label": "Verification method",
 			"verification_strategy_notes": "When you click Verify",
-			"verification_strategy_eta": "~{seconds}s"
+			"verification_strategy_eta": "~{seconds}s",
+			"see_action": "See action"
 		},
 		"customer_center": {
 			"title": "Customer Center",

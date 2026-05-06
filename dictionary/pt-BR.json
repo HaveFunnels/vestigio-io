@@ -1609,7 +1609,7 @@
 				"est_monthly_impact": "Impacto Mensal Est.",
 				"per_month_midpoint": "/mês (ponto médio)",
 				"high_impact_issues": "Problemas de Alto Impacto",
-				"high_impact_threshold": "> $10k/mês",
+				"high_impact_threshold": "> $5k/mês",
 				"avg_confidence": "Confiança Média",
 				"verified_findings": "Verificadas"
 			},
@@ -1658,10 +1658,12 @@
 		"findings": {
 			"views": {
 				"page_title": "Descobertas",
+				"all": "Todas",
 				"on_fire": "Pegando Fogo",
 				"awaiting_verification": "Aguardando Verificacao",
 				"by_domain": "Por Dominio",
 				"winning": "Funcionando Bem",
+				"all_desc": "Todas as descobertas ordenadas por impacto",
 				"on_fire_desc": "Problemas criticos que precisam de atencao",
 				"awaiting_verification_desc": "Descobertas de alto impacto para confirmar",
 				"by_domain_desc": "Saude por perspectiva",
@@ -1718,6 +1720,7 @@
 			}
 		},
 		"finding_drawer": {
+			"context": "Contexto",
 			"summary": "Resumo",
 			"effect": "Efeito",
 			"root_cause": "Causa Raiz",
@@ -1749,7 +1752,8 @@
 			"estimated_effort_hours": "~{hours}h de dev",
 			"verification_strategy_label": "Método de verificação",
 			"verification_strategy_notes": "Ao clicar em Verificar",
-			"verification_strategy_eta": "~{seconds}s"
+			"verification_strategy_eta": "~{seconds}s",
+			"see_action": "Ver ação"
 		},
 		"customer_center": {
 			"title": "Central do Cliente",

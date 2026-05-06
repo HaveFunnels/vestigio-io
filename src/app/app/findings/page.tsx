@@ -621,7 +621,7 @@ export default function FindingsPage() {
 		},
 		{
 			label: t("cards.high_impact_issues"),
-			value: negativeFindings.filter((f) => f.impact.midpoint >= 10000).length,
+			value: negativeFindings.filter((f) => f.impact.midpoint >= 5000).length,
 			variant: "danger",
 			subtext: t("cards.high_impact_threshold"),
 		},

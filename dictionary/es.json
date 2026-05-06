@@ -1594,7 +1594,7 @@
 				"est_monthly_impact": "Impacto Mensual Est.",
 				"per_month_midpoint": "/mes (punto medio)",
 				"high_impact_issues": "Problemas de Alto Impacto",
-				"high_impact_threshold": "> $10k/mes",
+				"high_impact_threshold": "> $5k/mes",
 				"avg_confidence": "Confianza Promedio",
 				"verified_findings": "Verificados"
 			},
@@ -1643,10 +1643,12 @@
 		"findings": {
 			"views": {
 				"page_title": "Hallazgos",
+				"all": "Todas",
 				"on_fire": "En Llamas",
 				"awaiting_verification": "Esperando Verificacion",
 				"by_domain": "Por Dominio",
 				"winning": "Funcionando Bien",
+				"all_desc": "Todos los hallazgos ordenados por impacto",
 				"on_fire_desc": "Problemas criticos que necesitan atencion",
 				"awaiting_verification_desc": "Hallazgos de alto impacto para confirmar",
 				"by_domain_desc": "Salud por perspectiva",
@@ -1685,6 +1687,7 @@
 			}
 		},
 		"finding_drawer": {
+			"context": "Contexto",
 			"summary": "Resumen",
 			"effect": "Efecto",
 			"root_cause": "Causa Raíz",
@@ -1709,7 +1712,8 @@
 			"verification_tooltip": "La madurez de verificación muestra cómo se ha validado la evidencia de este hallazgo. No verificado = solo análisis estático. Verificado = confirmado por navegador.",
 			"learn_more": "Saber más",
 			"browse_related_docs": "Ver artículos relacionados",
-			"docs_coming_soon": "La documentación para este hallazgo se está escribiendo."
+			"docs_coming_soon": "La documentaci��n para este hallazgo se está escribiendo.",
+			"see_action": "Ver acción"
 		},
 		"customer_center": {
 			"title": "Centro de Clientes",

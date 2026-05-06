@@ -40,6 +40,11 @@ export type DataState<T> =
 let _demoMode = false;
 export function isDemoMode(): boolean { return _demoMode; }
 
+// Track the DB cycle ref that was last loaded into the MCP server.
+// Used to detect when a new cycle completed after the initial load,
+// so ensureContext can reload instead of serving stale projections.
+let _loadedCycleRef: string | null = null;
+
 export async function ensureContext(orgCtx: {
   orgId: string;
   orgName: string;
@@ -65,7 +70,6 @@ export async function ensureContext(orgCtx: {
     // A synchronous require() fails silently because webpack wraps McpServer
     // in an async module (due to playwright deps), returning undefined exports.
     const server = await initMcpServer();
-    if (server.getContext()) return; // already loaded
 
     // Dynamic imports to keep Prisma out of client bundles
     const { prisma } = await import('@/libs/prismaDb');
@@ -79,6 +83,13 @@ export async function ensureContext(orgCtx: {
 
     const { evidence, cycleRef } = await store.loadLatestCycle(workspaceRef, environmentRef);
     if (evidence.length === 0 || !cycleRef) return; // no persisted data yet
+
+    // Check if context is already loaded AND fresh (same cycle). If a new
+    // cycle completed since the last load, we must reload so the UI shows
+    // the latest findings/actions/workspaces. Without this check, the MCP
+    // singleton stays stale until the next server restart — causing the
+    // "copy shows em breve" and "new actions missing" bugs.
+    if (server.getContext() && _loadedCycleRef === cycleRef) return;
 
     // Wave 0.7: load the previous snapshot so the rehydrated MCP context
     // produces a change_report and findings carry change_class. The
@@ -107,6 +118,8 @@ export async function ensureContext(orgCtx: {
       landing_url: landingUrl,
       is_production: process.env.NODE_ENV === 'production',
     }, evidence, store, orgCtx.engineTranslations, previousSnapshot);
+
+    _loadedCycleRef = cycleRef;
   } catch (err) {
     console.error('[ensureContext] Failed to bootstrap MCP context:', err);
   }

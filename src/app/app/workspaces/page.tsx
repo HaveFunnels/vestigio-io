@@ -84,20 +84,20 @@ const PERSPECTIVES = [
     hoverBg: "hover:bg-amber-500/[0.06]",
   },
   {
-    key: "behavior",
-    icon: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z",
-    borderColor: "border-l-violet-500/60",
-    accentText: "text-violet-400",
-    accentBg: "bg-violet-500/[0.04]",
-    hoverBg: "hover:bg-violet-500/[0.06]",
-  },
-  {
     key: "copy",
     icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z",
     borderColor: "border-l-sky-500/60",
     accentText: "text-sky-400",
     accentBg: "bg-sky-500/[0.04]",
     hoverBg: "hover:bg-sky-500/[0.06]",
+  },
+  {
+    key: "behavior",
+    icon: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z",
+    borderColor: "border-l-violet-500/60",
+    accentText: "text-violet-400",
+    accentBg: "bg-violet-500/[0.04]",
+    hoverBg: "hover:bg-violet-500/[0.06]",
   },
 ] as const;
 
@@ -221,7 +221,6 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
           {PERSPECTIVES.map((pDef) => {
             const data = perspectiveData[pDef.key];
             const isLocked = data?.isLocked;
-            const isCopyEmpty = pDef.key === "copy" && !data?.hasData;
             const hasData = data?.hasData;
 
             return (
@@ -232,7 +231,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                   else router.push(`/app/workspaces/perspective/${pDef.key}`);
                 }}
                 className={`group relative overflow-hidden rounded-2xl border border-edge bg-surface-card px-5 py-4 text-left shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl ${
-                  isLocked || isCopyEmpty ? "opacity-50" : "hover:border-content-faint"
+                  isLocked ? "opacity-50" : "hover:border-content-faint"
                 }`}
               >
                 {/* Subtle gradient per perspective — intensifies on hover */}
@@ -259,10 +258,6 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                   {isLocked ? (
                     <span className="text-[11px] text-amber-500">
                       {t("pixel_required")}
-                    </span>
-                  ) : isCopyEmpty ? (
-                    <span className="text-[11px] text-content-faint">
-                      {t("coming_soon")}
                     </span>
                   ) : hasData ? (
                     <>
@@ -296,7 +291,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                 </div>
 
                 {/* Action count badge */}
-                {hasData && !isLocked && !isCopyEmpty && (perspectiveActionCounts[pDef.key] ?? 0) > 0 && (
+                {hasData && !isLocked && (perspectiveActionCounts[pDef.key] ?? 0) > 0 && (
                   <div className="relative mt-2">
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                       {perspectiveActionCounts[pDef.key] === 1
@@ -307,7 +302,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                 )}
 
                 {/* Hover arrow */}
-                {!isLocked && !isCopyEmpty && (
+                {!isLocked && (
                   <div className="absolute top-4 right-4 text-content-faint opacity-0 transition-opacity group-hover:opacity-100">
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />

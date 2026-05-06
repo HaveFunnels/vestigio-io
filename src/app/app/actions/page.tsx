@@ -503,6 +503,26 @@ function ActionsContent({
 		return resolved.reduce((sum, a) => sum + (a.impact?.midpoint || 0), 0);
 	}, [actions]);
 
+	// Reconcile change report counts with actual action projections.
+	// The change report counts decisions (finding-level), but the table
+	// shows actions (root-cause-grouped). Without reconciliation, the
+	// banner can show "4 new" while only 3 rows exist in the table,
+	// confusing users who expect a 1:1 match.
+	const reconciledChangeReport = useMemo(() => {
+		if (!changeReport) return null;
+		const newActionsCount = actions.filter(a => a.change_class === "new_issue").length;
+		const regressionActionsCount = actions.filter(a => a.change_class === "regression").length;
+		const resolvedActionsCount = actions.filter(a => a.change_class === "resolved").length;
+		const improvementActionsCount = actions.filter(a => a.change_class === "improvement").length;
+		return {
+			...changeReport,
+			new_issue_count: newActionsCount,
+			regression_count: regressionActionsCount,
+			resolved_count: resolvedActionsCount,
+			improvement_count: improvementActionsCount,
+		};
+	}, [changeReport, actions]);
+
 	const cards: SummaryCard[] = [
 		{
 			label: t("cards.totalExposure"),
@@ -675,9 +695,9 @@ function ActionsContent({
 			</div>
 
 			{/* Change Summary Banner — only shown when there are actual changes */}
-			{changeReport && (changeReport.regression_count > 0 || changeReport.improvement_count > 0 || changeReport.new_issue_count > 0 || changeReport.resolved_count > 0) && (
+			{reconciledChangeReport && (reconciledChangeReport.regression_count > 0 || reconciledChangeReport.improvement_count > 0 || reconciledChangeReport.new_issue_count > 0 || reconciledChangeReport.resolved_count > 0) && (
 				<div className='mb-4'>
-					<ChangeSummaryBanner report={changeReport} />
+					<ChangeSummaryBanner report={reconciledChangeReport} />
 				</div>
 			)}
 

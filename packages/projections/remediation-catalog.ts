@@ -3474,6 +3474,102 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 
 	// ─────────────────────────────────────────────
+	// Triple-Source Cross-Domain Findings
+	// ─────────────────────────────────────────────
+
+	brand_trust_cliff_at_payment: {
+		remediation_steps: [
+			'Mova o checkout para o mesmo domínio da loja ou use checkout embedded que mantém a URL do seu site.',
+			'Se a mudança de domínio for inevitável, adicione logotipo, cores da marca e selo de segurança na página externa.',
+			'Adicione copy no botão de checkout explicando para onde o comprador será levado ("Pagamento seguro via [gateway]").',
+			'Garanta que o certificado SSL esteja válido e o cadeado verde visível em ambas as URLs.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos executar o fluxo de checkout em headless browser, seguir os redirects e verificar se a marca permanece visível na página de pagamento.',
+		verification_eta_seconds: 45,
+	},
+	ad_landing_experience_disconnect: {
+		remediation_steps: [
+			'Revise as meta descriptions e OG tags para que reflitam exatamente o conteúdo acima da dobra.',
+			'Garanta que o H1 da página contenha as mesmas palavras-chave prometidas na meta description.',
+			'Crie variações de landing page para cada meta tag/campanha com mensagem consistente.',
+			'Teste o preview do Google (Search Console) e redes sociais (Facebook Debugger) para confirmar alinhamento.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas e comparar keywords da meta description/OG com o H1 e conteúdo above-fold para confirmar alinhamento.',
+		verification_eta_seconds: 15,
+	},
+	checkout_form_mobile_hostile: {
+		remediation_steps: [
+			'Adicione atributo autocomplete correto em cada campo (name, email, tel, address, cc-number).',
+			'Use input type="email" para email, type="tel" para telefone e inputmode="numeric" para números.',
+			'Reduza campos ao mínimo necessário — elimine campos opcionais ou mova para pós-compra.',
+			'Aumente o tamanho dos campos para tap target mínimo de 44px no mobile.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos re-crawlar o formulário de checkout e verificar presença de autocomplete, input types especializados e contagem de campos.',
+		verification_eta_seconds: 30,
+	},
+	pricing_page_complexity_paralysis: {
+		remediation_steps: [
+			'Reduza para no máximo 3 planos visíveis — oculte o 4o atrás de "ver todos os planos".',
+			'Destaque um plano como "Mais Popular" ou "Recomendado" com badge visual e borda diferenciada.',
+			'Simplifique a tabela de funcionalidades — mostre apenas as 5-7 diferenças mais relevantes.',
+			'Adicione um CTA claro em cada plano que indique o próximo passo imediato.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar a página de pricing e verificar se há indicação de plano recomendado e se a contagem de planos/funcionalidades está dentro do ideal.',
+		verification_eta_seconds: 15,
+	},
+	support_promise_impossible_to_fulfill: {
+		remediation_steps: [
+			'Remova promessas de SLA que não pode cumprir — substitua por expectativas realistas ("Respondemos em até 24h úteis").',
+			'Instale um chat widget funcional se promete "chat ao vivo" ou "tempo real".',
+			'Configure autoresponder no formulário de contato confirmando recebimento e informando prazo real.',
+			'Se promete 24/7, garanta cobertura real ou substitua por horário comercial honesto.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos verificar se o chat widget carrega e responde, se promessas de SLA foram atualizadas e se o autoresponder do formulário está ativo.',
+		verification_eta_seconds: 30,
+	},
+	trust_journey_inconsistency: {
+		remediation_steps: [
+			'Adicione pelo menos 2 selos de confiança (SSL, avaliações, garantia) nas páginas de checkout e produto.',
+			'Replique os depoimentos/avaliações mais relevantes na página de checkout próximo ao botão de compra.',
+			'Inclua garantia de satisfação ou badge de devolução visível em todas as páginas comerciais.',
+			'Padronize um footer de confiança com selos e políticas em TODAS as páginas do funil.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar homepage, checkout e páginas de produto para conferir presença consistente de elementos de confiança em cada tier.',
+		verification_eta_seconds: 15,
+	},
+	multilingual_conversion_leak: {
+		remediation_steps: [
+			'Garanta que o atributo lang do HTML seja consistente em todas as páginas do mesmo funil.',
+			'Implemente detecção automática de idioma por sessão — uma vez escolhido, mantenha em todo o fluxo.',
+			'Traduza completamente as páginas de checkout e produto — não misture idiomas na mesma página.',
+			'Adicione seletor de idioma visível no header com flag para que o usuário controle a escolha.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos navegar pelo funil em headless browser e verificar se o lang attribute e o idioma do conteúdo se mantêm consistentes entre páginas.',
+		verification_eta_seconds: 40,
+	},
+
+	// ─────────────────────────────────────────────
 	// Wave 9: Subdomain Discovery Findings
 	// ─────────────────────────────────────────────
 
@@ -3562,6 +3658,94 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_notes:
 			'Vamos simular o fluxo de checkout em headless browser, seguir redirects e verificar se pagamento fica no domínio principal ou se há sinais de confiança no domínio externo.',
 		verification_eta_seconds: 45,
+	},
+
+	// ─────────────────────────────────────────────
+	// Static + Playwright Cross-Domain Findings
+	// ─────────────────────────────────────────────
+
+	form_submit_unreachable_mobile: {
+		remediation_steps: [
+			'Adicione position:sticky ou position:fixed ao botão de submit em formulários com mais de 5 campos.',
+			'Reduza o número de campos obrigatórios — mova campos opcionais para depois do primeiro envio.',
+			'Teste o formulário em viewport de 375px de largura e verifique se o botão fica sempre visível.',
+			'Considere dividir o formulário em etapas (wizard) com botão de próximo visível em cada passo.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos abrir o formulário em viewport mobile (375×667) e verificar se o botão de submit está visível sem scroll ou fixo na tela.',
+		verification_eta_seconds: 30,
+	},
+
+	trust_badges_invisible_at_checkout: {
+		remediation_steps: [
+			'Mova selos de confiança (SSL, gateway, garantia) para próximo ao botão de pagamento — não no rodapé.',
+			'Adicione selo de "Compra Segura" ou "Pagamento Protegido" imediatamente acima ou ao lado do formulário de cartão.',
+			'Garanta que os selos estejam visíveis sem scroll na resolução mais comum do checkout (mobile e desktop).',
+			'Teste com heatmap para confirmar que a área de confiança recebe atenção visual antes do clique de compra.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos abrir o checkout e verificar se elementos de confiança (selo, badge, garantia) estão visíveis acima do fold sem necessidade de scroll.',
+		verification_eta_seconds: 30,
+	},
+
+	navigation_traps_commercial_flow: {
+		remediation_steps: [
+			'Adicione CTA de conversão (link para /pricing, /produto, ou /checkout) em todas as páginas de blog e about.',
+			'Insira banner lateral ou barra inferior fixa com link comercial em páginas de conteúdo.',
+			'Garanta que a navegação principal inclua link direto para página de preços ou produto em todas as páginas.',
+			'Revise páginas mais acessadas via Google Analytics e priorize as que não têm CTA de conversão.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-crawlar as páginas de conteúdo e verificar se existem links para URLs comerciais (/pricing, /checkout, /product).',
+		verification_eta_seconds: 25,
+	},
+
+	social_proof_loads_too_late: {
+		remediation_steps: [
+			'Remova lazy-load dos primeiros 2-3 depoimentos — carregue-os inline no HTML estático.',
+			'Mova pelo menos um bloco de social proof para acima do fold na página principal e de produto.',
+			'Se usar widget externo (Trustpilot, Google Reviews), configure server-side rendering ou cache estático.',
+			'Adicione contagem de avaliações (ex: "4.8/5 — 127 avaliações") como texto estático, sem dependência de JS.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos verificar se elementos de social proof estão presentes no HTML estático inicial (sem lazy-load) e acima do fold.',
+		verification_eta_seconds: 20,
+	},
+
+	consent_banner_obscures_first_action: {
+		remediation_steps: [
+			'Configure o banner de consentimento para não sobrepor o CTA principal — posicione-o no rodapé ou como barra fina no topo.',
+			'Reduza a altura do banner de cookies para no máximo 80px em mobile.',
+			'Implemente dismiss automático após interação com qualquer elemento da página (não apenas o botão "Aceitar").',
+			'Teste A/B o posicionamento do banner — bottom-bar vs overlay — e meça impacto na taxa de clique do CTA.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos carregar a página em headless browser e verificar se o CTA primário está clicável sem interagir com o banner de consentimento primeiro.',
+		verification_eta_seconds: 30,
+	},
+
+	price_hidden_behind_interaction: {
+		remediation_steps: [
+			'Renderize pelo menos o preço base de cada plano no HTML estático da página de pricing (server-side).',
+			'Se o preço depende de configuração, mostre um "a partir de R$ X/mês" visível sem JavaScript.',
+			'Adicione schema markup de preço (PriceSpecification) para que buscadores e AI também vejam o preço.',
+			'Teste a página com JavaScript desabilitado — se nenhum preço aparece, o problema está confirmado.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos fazer request HTTP GET na página de pricing e buscar padrões de preço (R$, $, €, /mês) no HTML retornado — sem executar JavaScript.',
+		verification_eta_seconds: 15,
 	},
 };
 

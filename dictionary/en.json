@@ -4097,7 +4097,20 @@
 			"subdomain_brand_visual_fragmentation": "Multiple subdomains create a fragmented brand experience for customers",
 			"app_subdomain_disconnected_from_site": "Your app exists but customers can't find how to log in from your site",
 			"whatsapp_channel_disconnected": "Your WhatsApp channel exists but nobody can find it from your pages",
-			"multiple_payment_subdomains_fragmenting_trust": "Buyers are redirected to unfamiliar domains at payment time"
+			"multiple_payment_subdomains_fragmenting_trust": "Buyers are redirected to unfamiliar domains at payment time",
+			"form_submit_unreachable_mobile": "Mobile buyers never find the submit button on your long forms",
+			"trust_badges_invisible_at_checkout": "Your trust badges exist but buyers never see them at checkout",
+			"navigation_traps_commercial_flow": "Your content pages trap visitors with no path back to buying",
+			"social_proof_loads_too_late": "Your testimonials load too late to influence the buying decision",
+			"consent_banner_obscures_first_action": "Your cookie banner blocks the first thing buyers want to click",
+			"price_hidden_behind_interaction": "Buyers see no price until they click — most leave before clicking",
+			"brand_trust_cliff_at_payment": "Your brand disappears at checkout and buyers feel tricked",
+			"ad_landing_experience_disconnect": "Your page delivers something different from what meta tags promised",
+			"checkout_form_mobile_hostile": "Your checkout form punishes mobile buyers with endless typing",
+			"pricing_page_complexity_paralysis": "Too many pricing options paralyze buyers into choosing nothing",
+			"support_promise_impossible_to_fulfill": "You promise fast support but have no channel to deliver it",
+			"trust_journey_inconsistency": "Trust signals vanish on the pages where buyers need them most",
+			"multilingual_conversion_leak": "Language switches mid-funnel and confuses buyers into leaving"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Buyers lose trust at the checkout moment",

@@ -317,6 +317,15 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   mobile_trust_gap:                   { root_cause_key: 'trust_copy_absent_at_decision', category: 'copy_strategy', impact_types: ['revenue_loss', 'trust_erosion'] },
   behavioral_micro_pattern_cascade:   { root_cause_key: 'friction_barrier_on_path', category: 'friction_barrier', impact_types: ['revenue_loss'] },
 
+  // Triple-source cross-domain findings
+  brand_trust_cliff_at_payment:              { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
+  ad_landing_experience_disconnect:          { root_cause_key: 'expectation_failure', category: 'expectation_failure', impact_types: ['revenue_loss'] },
+  checkout_form_mobile_hostile:              { root_cause_key: 'mobile_conversion_failure', category: 'friction_barrier', impact_types: ['revenue_loss', 'scale_risk'] },
+  pricing_page_complexity_paralysis:         { root_cause_key: 'weak_conversion_signal', category: 'conversion_clarity', impact_types: ['revenue_loss'] },
+  support_promise_impossible_to_fulfill:     { root_cause_key: 'support_gap', category: 'support_gap', impact_types: ['chargeback_risk', 'trust_erosion'] },
+  trust_journey_inconsistency:               { root_cause_key: 'trust_failure_at_checkout', category: 'trust_failure', impact_types: ['revenue_loss', 'trust_erosion'] },
+  multilingual_conversion_leak:              { root_cause_key: 'friction_barrier_on_path', category: 'friction_barrier', impact_types: ['revenue_loss'] },
+
   // Vertical-specific findings — Fashion/E-commerce
   size_guide_missing:                  { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
   product_images_insufficient:         { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },

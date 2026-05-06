@@ -4136,7 +4136,13 @@
 			"subdomain_brand_visual_fragmentation": "Múltiplos subdomínios criam experiência fragmentada de marca pros clientes",
 			"app_subdomain_disconnected_from_site": "Seu app existe mas clientes não encontram como acessar pelo site",
 			"whatsapp_channel_disconnected": "Seu canal de WhatsApp existe mas ninguém encontra pelas páginas comerciais",
-			"multiple_payment_subdomains_fragmenting_trust": "Compradores são redirecionados pra domínios desconhecidos na hora do pagamento"
+			"multiple_payment_subdomains_fragmenting_trust": "Compradores são redirecionados pra domínios desconhecidos na hora do pagamento",
+			"form_submit_unreachable_mobile": "Comprador mobile nunca acha o botão de enviar nos seus formulários longos",
+			"trust_badges_invisible_at_checkout": "Seus selos de confiança existem mas o comprador não vê no checkout",
+			"navigation_traps_commercial_flow": "Suas páginas de conteúdo prendem o visitante sem caminho de volta pra compra",
+			"social_proof_loads_too_late": "Seus depoimentos carregam tarde demais pra influenciar a decisão de compra",
+			"consent_banner_obscures_first_action": "Seu banner de cookies bloqueia a primeira coisa que o comprador quer clicar",
+			"price_hidden_behind_interaction": "Comprador não vê preço até clicar — a maioria vai embora antes de clicar"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Falha de confiança no checkout",

@@ -213,10 +213,10 @@ export default function ViewSelector({
 				const owned = isOwner(view);
 
 				return (
-					<div key={view.id} className="relative flex items-center">
+					<div key={view.id} className="group/tab relative flex items-center">
 						<button
 							onClick={() => onViewChange(view)}
-							className={`group relative flex shrink-0 items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+							className={`relative flex shrink-0 items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
 								isActive
 									? "text-content"
 									: "text-content-muted hover:text-content-secondary"
@@ -251,9 +251,9 @@ export default function ViewSelector({
 							)}
 						</button>
 
-						{/* Options button for active custom view */}
-						{isActive && owned && (
-							<div className="relative" ref={optionsViewId === view.id ? optionsRef : undefined}>
+						{/* Options button for custom views — visible on active or group hover */}
+						{owned && !view.isDefault && (
+							<div className={`relative transition-opacity ${isActive || optionsViewId === view.id ? "opacity-100" : "opacity-0 group-hover/tab:opacity-100"}`} ref={optionsViewId === view.id ? optionsRef : undefined}>
 								<button
 									onClick={(e) => {
 										e.stopPropagation();

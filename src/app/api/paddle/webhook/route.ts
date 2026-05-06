@@ -207,11 +207,40 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 				const plan = await resolvePlan(priceId);
 				const org = await findUserOrg(user.id);
 				if (org && org.plan !== plan) {
+					const previousPlan = org.plan;
 					await prisma.organization.update({
 						where: { id: org.id },
 						data: { plan },
 					});
 					logEvent(eventType, `Org ${org.id} plan changed to ${plan}`);
+
+					// Trigger a new audit cycle on upgrade so the customer
+					// immediately benefits from expanded coverage (e.g.
+					// Playwright mode on Max, additional packs on Pro).
+					const PLAN_TIER: Record<string, number> = { vestigio: 1, pro: 2, max: 3 };
+					const isUpgrade = (PLAN_TIER[plan] ?? 0) > (PLAN_TIER[previousPlan] ?? 0);
+					if (isUpgrade) {
+						const env = await prisma.environment.findFirst({
+							where: { organizationId: org.id, isProduction: true },
+							select: { id: true },
+						});
+						if (env) {
+							const cycle = await prisma.auditCycle.create({
+								data: {
+									organizationId: org.id,
+									environmentId: env.id,
+									status: "pending",
+									cycleType: "full",
+								},
+							});
+							logEvent(eventType, `Triggered upgrade audit cycle ${cycle.id} for org ${org.id}`);
+							import("../../../../../apps/audit-runner/run-cycle")
+								.then((m) => m.runAuditCycle(cycle.id))
+								.catch((err) => {
+									console.error(`[paddle/webhook] upgrade audit dispatch failed for cycle ${cycle.id}:`, err);
+								});
+						}
+					}
 				}
 			}
 		}

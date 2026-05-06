@@ -1479,11 +1479,13 @@
 				"scale_readiness": "Escala",
 				"revenue_integrity": "Faturamento",
 				"chargeback_resilience": "Chargeback",
+				"money_moment_exposure": "Segurança",
 				"copy_alignment": "Copy",
 				"channel_integrity": "Canal",
 				"discoverability": "Descoberta",
 				"brand_integrity": "Marca",
 				"saas_growth_readiness": "SaaS",
+				"behavioral_heuristics": "Comportamento",
 				"payment_health": "Pagamentos",
 				"content_freshness": "Frescor"
 			},
@@ -3647,6 +3649,11 @@
 				"placeholder": "Selecione seu segmento",
 				"skip": "Pular por enquanto"
 			}
+		},
+		"audit_status": {
+			"analyzing": "Analisando…",
+			"last_audit": "Última: {time}",
+			"last_audit_tooltip": "Última auditoria concluída em {time}"
 		},
 		"navigation": {
 			"dashboard": "Dashboard",

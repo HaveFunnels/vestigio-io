@@ -187,9 +187,11 @@ export default function FindingsPage() {
 				if (!f.verification.includes(item.verification_maturity)) return false;
 			}
 
-			// Change filter
+			// Change filter — on first cycle changeClass is null for all
+			// findings. Treat null as "new_issue" since everything is new.
 			if (f.change && Array.isArray(f.change)) {
-				if (!f.change.includes(item.change_class)) return false;
+				const effectiveClass = item.change_class ?? "new_issue";
+				if (!f.change.includes(effectiveClass)) return false;
 			}
 
 			// Impact filter
@@ -352,7 +354,15 @@ export default function FindingsPage() {
 		scale_readiness: tc("pack_labels.scale_readiness"),
 		revenue_integrity: tc("pack_labels.revenue_integrity"),
 		chargeback_resilience: tc("pack_labels.chargeback_resilience"),
+		money_moment_exposure: tc("pack_labels.money_moment_exposure"),
 		saas_growth_readiness: tc("pack_labels.saas_growth_readiness"),
+		behavioral_heuristics: tc("pack_labels.behavioral_heuristics"),
+		copy_alignment: tc("pack_labels.copy_alignment"),
+		content_freshness: tc("pack_labels.content_freshness"),
+		payment_health: tc("pack_labels.payment_health"),
+		channel_integrity: tc("pack_labels.channel_integrity"),
+		discoverability: tc("pack_labels.discoverability"),
+		brand_integrity: tc("pack_labels.brand_integrity"),
 	};
 
 	const impactTypeLabels: Record<string, string> = {
@@ -695,7 +705,15 @@ function GroupedFindings({
 		scale_readiness: tc("pack_labels.scale_readiness"),
 		revenue_integrity: tc("pack_labels.revenue_integrity"),
 		chargeback_resilience: tc("pack_labels.chargeback_resilience"),
+		money_moment_exposure: tc("pack_labels.money_moment_exposure"),
 		saas_growth_readiness: tc("pack_labels.saas_growth_readiness"),
+		behavioral_heuristics: tc("pack_labels.behavioral_heuristics"),
+		copy_alignment: tc("pack_labels.copy_alignment"),
+		content_freshness: tc("pack_labels.content_freshness"),
+		payment_health: tc("pack_labels.payment_health"),
+		channel_integrity: tc("pack_labels.channel_integrity"),
+		discoverability: tc("pack_labels.discoverability"),
+		brand_integrity: tc("pack_labels.brand_integrity"),
 	};
 
 	function getGroupLabel(key: string): string {

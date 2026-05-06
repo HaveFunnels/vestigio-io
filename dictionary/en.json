@@ -1479,11 +1479,13 @@
 				"scale_readiness": "Scale",
 				"revenue_integrity": "Revenue",
 				"chargeback_resilience": "Chargeback",
+				"money_moment_exposure": "Security",
 				"copy_alignment": "Copy",
 				"channel_integrity": "Channel",
 				"discoverability": "Discovery",
 				"brand_integrity": "Brand",
 				"saas_growth_readiness": "SaaS",
+				"behavioral_heuristics": "Behavior",
 				"payment_health": "Payments",
 				"content_freshness": "Freshness"
 			},
@@ -3628,6 +3630,11 @@
 				"placeholder": "Select your industry",
 				"skip": "Skip for now"
 			}
+		},
+		"audit_status": {
+			"analyzing": "Analyzing…",
+			"last_audit": "Last: {time}",
+			"last_audit_tooltip": "Last audit completed at {time}"
 		},
 		"navigation": {
 			"dashboard": "Dashboard",

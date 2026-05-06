@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import AppSidebar from "./AppSidebar";
+import { AuditStatusBadge } from "./AuditStatusBadge";
 import CommandPalette from "./CommandPalette";
 import CycleProgressBanner from "./CycleProgressBanner";
 import CopilotPanel from "./CopilotPanel";
@@ -385,7 +386,10 @@ export default function AppSidebarLayout({
 						</button>
 						{/* Org name + environment switcher */}
 						{!isAdmin && (
-							<EnvironmentSwitcher orgCtx={orgCtx} plan={plan} />
+							<>
+								<EnvironmentSwitcher orgCtx={orgCtx} plan={plan} />
+								<AuditStatusBadge />
+							</>
 						)}
 						{isAdmin && (
 							<span className="text-sm font-medium text-content-secondary">

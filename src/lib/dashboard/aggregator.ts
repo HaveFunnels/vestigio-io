@@ -446,7 +446,7 @@ async function computeExposure(
 		// extract titles for the criticalOpenItems list); previous-cycle
 		// rows skip projection to keep the query light.
 		const latestRows = await prisma.finding.findMany({
-			where: { cycleId: latestCycleId, NOT: { changeClass: "resolved" } },
+			where: { cycleId: latestCycleId, OR: [{ changeClass: null }, { changeClass: { not: "resolved" } }] },
 			select: {
 				id: true,
 				impactMidpoint: true,
@@ -462,7 +462,7 @@ async function computeExposure(
 			? await prisma.finding.findMany({
 					where: {
 						cycleId: previousCycleId,
-						NOT: { changeClass: "resolved" },
+						OR: [{ changeClass: null }, { changeClass: { not: "resolved" } }],
 					},
 					select: { impactMidpoint: true, pack: true, severity: true },
 				})
@@ -1069,7 +1069,7 @@ const CROSS_SIGNAL_SELECT = {
 const CROSS_SIGNAL_WHERE = (envId: string) => ({
 	environmentId: envId,
 	polarity: { not: "positive" as const },
-	changeClass: { not: "resolved" as const },
+	OR: [{ changeClass: null }, { changeClass: { not: "resolved" as const } }],
 	NOT: { surface: "" },
 });
 

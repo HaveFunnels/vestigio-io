@@ -52,7 +52,7 @@ export class PrismaSnapshotStore {
 		await client.cycleSnapshot.create({
 			data: {
 				cycleRef: snapshot.cycle_ref,
-				cycleId: cycleId || null,
+				...(cycleId ? { cycle: { connect: { id: cycleId } } } : {}),
 				workspaceRef: snapshot.workspace_ref,
 				environmentRef: snapshot.environment_ref,
 				schemaVersion: snapshot.schema_version,

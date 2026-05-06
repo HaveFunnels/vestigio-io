@@ -37,14 +37,42 @@ const PACK_STYLES: Record<string, { text: string; dot: string; labelKey: string 
 
 const FALLBACK_STYLE = { text: "text-content-muted", dot: "bg-content-faint", labelKey: "analysis" };
 
-function formatCurrency(cents: number): string {
-	const d = Math.abs(cents) / 100;
-	if (d >= 1_000_000) return `$${(d / 1_000_000).toFixed(1)}M`;
-	if (d >= 1_000) return `$${(d / 1_000).toFixed(1)}k`;
-	return `$${Math.round(d)}`;
+// Locale hint for Intl.NumberFormat — ensures R$ for BRL, $ for USD, etc.
+const CURRENCY_LOCALE: Record<string, string> = {
+	BRL: "pt-BR",
+	EUR: "de-DE",
+	USD: "en-US",
+};
+
+function formatCurrency(cents: number, currency: string = "USD"): string {
+	const locale = CURRENCY_LOCALE[currency] || "en-US";
+	const dollars = Math.abs(cents) / 100;
+	if (dollars >= 1_000_000) {
+		return (
+			new Intl.NumberFormat(locale, {
+				style: "currency",
+				currency,
+				maximumFractionDigits: 1,
+			}).format(dollars / 1_000_000) + "M"
+		);
+	}
+	if (dollars >= 1_000) {
+		return (
+			new Intl.NumberFormat(locale, {
+				style: "currency",
+				currency,
+				maximumFractionDigits: 1,
+			}).format(dollars / 1_000) + "k"
+		);
+	}
+	return new Intl.NumberFormat(locale, {
+		style: "currency",
+		currency,
+		maximumFractionDigits: 0,
+	}).format(dollars);
 }
 
-function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boolean }) {
+function ChainRow({ chain, editing, currency }: { chain: CrossSignalChain; editing?: boolean; currency: string }) {
 	const router = useRouter();
 	const tp = useTranslations("console.workspaces.detail.enrichment.packs");
 	const surface = chain.surface.length > 35
@@ -65,7 +93,7 @@ function ChainRow({ chain, editing }: { chain: CrossSignalChain; editing?: boole
 						{surface}
 					</button>
 					<span className="shrink-0 font-mono text-[10px] tabular-nums text-red-400">
-						−{formatCurrency(chain.totalImpactCents)}/mo
+						−{formatCurrency(chain.totalImpactCents, currency)}/mo
 					</span>
 				</div>
 
@@ -106,6 +134,8 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 	const tu = useTranslations("console.upgrade_moments");
 	const { isStarter } = usePlan();
 	const { crossSignal } = data;
+	// Use the org's currency from the exposure data (always present in DashboardData)
+	const currency = data.exposure?.currency || "USD";
 
 	if (!crossSignal || crossSignal.chains.length === 0) {
 		return (
@@ -150,7 +180,7 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 					{chainCount}
 				</span>
 				<span className="text-[11px] text-content-secondary">
-					{chainCount === 1 ? t("pattern_singular") : t("pattern_plural")} · {formatCurrency(crossSignal.totalImpactCents)}/mo
+					{chainCount === 1 ? t("pattern_singular") : t("pattern_plural")} · {formatCurrency(crossSignal.totalImpactCents, currency)}/mo
 				</span>
 			</div>
 
@@ -169,7 +199,7 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 					<>
 						<ul className="relative mt-3 flex-1 space-y-0 overflow-y-auto">
 							{visibleChains.map((chain, i) => (
-								<ChainRow key={i} chain={chain} editing={editing} />
+								<ChainRow key={i} chain={chain} editing={editing} currency={currency} />
 							))}
 						</ul>
 						{hiddenCount > 0 && isStarter && (

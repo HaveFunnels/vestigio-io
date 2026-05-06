@@ -303,22 +303,33 @@ async function computeHealthScore(
 			sevCounts.medium
 		);
 
-		const totalLatest = latestFindings.length;
+		// Verification score: only count if the customer has actually
+		// attempted verification (at least 1 finding with verificationMaturity != null).
+		const hasVerificationData = latestFindings.some(
+			(f) => f.verificationMaturity != null
+		);
 		const confirmedLatest = latestFindings.filter(
 			(f) => f.verificationMaturity === "confirmed"
 		).length;
-		const verification =
-			totalLatest > 0 ? Math.round((confirmedLatest / totalLatest) * 100) : 50;
+		const totalWithVerification = latestFindings.filter(
+			(f) => f.verificationMaturity != null
+		).length;
+		const verification = hasVerificationData
+			? Math.round((confirmedLatest / totalWithVerification) * 100)
+			: 0;
 
 		// Action quality: completed PlaybookRuns / total over the last 30 days.
+		// Only included in the composite if the customer has at least 1 run.
 		const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-		let actionQuality = 50;
+		let actionQuality = 0;
+		let hasActionData = false;
 		try {
 			const runs = await prisma.playbookRun.findMany({
 				where: { orgId, startedAt: { gte: thirtyDaysAgo } },
 				select: { status: true },
 			});
 			if (runs.length > 0) {
+				hasActionData = true;
 				const completed = runs.filter((r) => r.status === "completed").length;
 				actionQuality = Math.round((completed / runs.length) * 100);
 			}
@@ -326,7 +337,21 @@ async function computeHealthScore(
 			console.warn("[dashboard/aggregator] playbook query failed:", err);
 		}
 
-		const current = Math.round((structural + actionQuality + verification) / 3);
+		// Composite: weighted average of ONLY components that have data.
+		// - structural: always included (based on findings which always exist after first audit)
+		// - actionQuality: only if user has 1+ PlaybookRuns
+		// - verification: only if user has 1+ findings with verificationMaturity != null
+		let compositeSum = structural;
+		let compositeCount = 1;
+		if (hasActionData) {
+			compositeSum += actionQuality;
+			compositeCount += 1;
+		}
+		if (hasVerificationData) {
+			compositeSum += verification;
+			compositeCount += 1;
+		}
+		const current = Math.round(compositeSum / compositeCount);
 
 		// Compute the 30-day trend by walking the last 30 cycles and
 		// re-running the structural formula on each cycle's findings.
@@ -1103,8 +1128,26 @@ async function computeCrossSignal(
 
 		const allChains = buildCrossSignalChains(findings);
 		const topChains = allChains.slice(0, 5);
-		const totalImpactCents = topChains.reduce((sum, c) => sum + c.totalImpactCents, 0);
-		const allChainsImpactCents = allChains.reduce((sum, c) => sum + c.totalImpactCents, 0);
+
+		// Deduplicate by findingId when computing aggregate impact.
+		// A single finding can appear in multiple chains (e.g. same finding
+		// affecting "/" and "/checkout") — summing chain.totalImpactCents
+		// would double-count that finding's impact.
+		const dedup = (chains: CrossSignalChain[]): number => {
+			const seen = new Set<string>();
+			let total = 0;
+			for (const chain of chains) {
+				for (const link of chain.links) {
+					if (!seen.has(link.findingId)) {
+						seen.add(link.findingId);
+						total += link.impactCents;
+					}
+				}
+			}
+			return total;
+		};
+		const totalImpactCents = dedup(topChains);
+		const allChainsImpactCents = dedup(allChains);
 
 		return {
 			chains: topChains,

@@ -17,16 +17,45 @@ import type { CrossSignalChain } from "@/lib/dashboard/types";
 
 interface Props {
 	chains: CrossSignalChain[];
+	currency?: string;
 }
 
-function formatCurrency(cents: number): string {
-	const d = Math.abs(cents) / 100;
-	if (d >= 1_000_000) return `$${(d / 1_000_000).toFixed(1)}M`;
-	if (d >= 1_000) return `$${(d / 1_000).toFixed(1)}k`;
-	return `$${Math.round(d)}`;
+// Locale hint for Intl.NumberFormat — ensures R$ for BRL, $ for USD, etc.
+const CURRENCY_LOCALE: Record<string, string> = {
+	BRL: "pt-BR",
+	EUR: "de-DE",
+	USD: "en-US",
+};
+
+function formatCurrency(cents: number, currency: string = "USD"): string {
+	const locale = CURRENCY_LOCALE[currency] || "en-US";
+	const dollars = Math.abs(cents) / 100;
+	if (dollars >= 1_000_000) {
+		return (
+			new Intl.NumberFormat(locale, {
+				style: "currency",
+				currency,
+				maximumFractionDigits: 1,
+			}).format(dollars / 1_000_000) + "M"
+		);
+	}
+	if (dollars >= 1_000) {
+		return (
+			new Intl.NumberFormat(locale, {
+				style: "currency",
+				currency,
+				maximumFractionDigits: 1,
+			}).format(dollars / 1_000) + "k"
+		);
+	}
+	return new Intl.NumberFormat(locale, {
+		style: "currency",
+		currency,
+		maximumFractionDigits: 0,
+	}).format(dollars);
 }
 
-export default function CrossSignalsShell({ chains }: Props) {
+export default function CrossSignalsShell({ chains, currency = "USD" }: Props) {
 	const t = useTranslations("console.cross_signals");
 	const tc = useTranslations("console.common");
 	const { isStarter } = usePlan();
@@ -37,8 +66,21 @@ export default function CrossSignalsShell({ chains }: Props) {
 	const [temporalFilter, setTemporalFilter] = useState("all");
 	const [search, setSearch] = useState("");
 
-	// Summary stats
-	const totalImpact = chains.reduce((sum, c) => sum + c.totalImpactCents, 0);
+	// Summary stats — deduplicate by findingId so that the same finding
+	// appearing in multiple chains isn't double-counted in the aggregate total.
+	const totalImpact = useMemo(() => {
+		const seen = new Set<string>();
+		let total = 0;
+		for (const chain of chains) {
+			for (const link of chain.links) {
+				if (!seen.has(link.findingId)) {
+					seen.add(link.findingId);
+					total += link.impactCents;
+				}
+			}
+		}
+		return total;
+	}, [chains]);
 	const sequentialCount = chains.filter((c) => c.temporalPattern === "sequential").length;
 
 	// Filtered chains
@@ -77,7 +119,7 @@ export default function CrossSignalsShell({ chains }: Props) {
 		},
 		{
 			label: t("hero_at_risk"),
-			value: formatCurrency(totalImpact) + tc("per_month_short"),
+			value: formatCurrency(totalImpact, currency) + tc("per_month_short"),
 			variant: "danger",
 		},
 		{
@@ -152,6 +194,7 @@ export default function CrossSignalsShell({ chains }: Props) {
 						temporalPattern={chain.temporalPattern}
 						narrative={chain.narrative}
 						firstDetectedAt={chain.firstDetectedAt}
+						currency={currency}
 					/>
 				))}
 			</div>

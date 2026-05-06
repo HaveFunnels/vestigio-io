@@ -39,13 +39,42 @@ interface Props {
 	temporalPattern: "sequential" | "simultaneous" | null;
 	narrative: string;
 	firstDetectedAt: string | null;
+	currency?: string;
 }
 
-function formatCurrency(cents: number): string {
-	const d = Math.abs(cents) / 100;
-	if (d >= 1_000_000) return `$${(d / 1_000_000).toFixed(1)}M`;
-	if (d >= 1_000) return `$${(d / 1_000).toFixed(1)}k`;
-	return `$${Math.round(d)}`;
+// Locale hint for Intl.NumberFormat — ensures R$ for BRL, $ for USD, etc.
+const CURRENCY_LOCALE: Record<string, string> = {
+	BRL: "pt-BR",
+	EUR: "de-DE",
+	USD: "en-US",
+};
+
+function formatCurrency(cents: number, currency: string = "USD"): string {
+	const locale = CURRENCY_LOCALE[currency] || "en-US";
+	const dollars = Math.abs(cents) / 100;
+	if (dollars >= 1_000_000) {
+		return (
+			new Intl.NumberFormat(locale, {
+				style: "currency",
+				currency,
+				maximumFractionDigits: 1,
+			}).format(dollars / 1_000_000) + "M"
+		);
+	}
+	if (dollars >= 1_000) {
+		return (
+			new Intl.NumberFormat(locale, {
+				style: "currency",
+				currency,
+				maximumFractionDigits: 1,
+			}).format(dollars / 1_000) + "k"
+		);
+	}
+	return new Intl.NumberFormat(locale, {
+		style: "currency",
+		currency,
+		maximumFractionDigits: 0,
+	}).format(dollars);
 }
 
 export default function CrossSignalChainCard({
@@ -54,6 +83,7 @@ export default function CrossSignalChainCard({
 	totalImpactCents,
 	temporalPattern,
 	narrative,
+	currency = "USD",
 }: Props) {
 	const t = useTranslations("console.cross_signals");
 	const tc = useTranslations("console.common");
@@ -75,7 +105,7 @@ export default function CrossSignalChainCard({
 							{surface}
 						</span>
 						<span className="shrink-0 font-mono text-xs tabular-nums text-red-400">
-							−{formatCurrency(totalImpactCents)}{tc("per_month_short")}
+							−{formatCurrency(totalImpactCents, currency)}{tc("per_month_short")}
 						</span>
 					</div>
 
@@ -163,7 +193,7 @@ export default function CrossSignalChainCard({
 								</div>
 								<div className="flex items-center gap-2">
 									<span className="font-mono text-[10px] text-red-400">
-										−{formatCurrency(link.impactCents)}{tc("per_month_short")}
+										−{formatCurrency(link.impactCents, currency)}{tc("per_month_short")}
 									</span>
 									<SeverityBadge value={link.severity} />
 								</div>

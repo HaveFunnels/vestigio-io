@@ -15,7 +15,7 @@ import type { CrossSignalChain } from "@/lib/dashboard/types";
 
 type DataState =
 	| { status: "loading" }
-	| { status: "loaded"; chains: CrossSignalChain[] }
+	| { status: "loaded"; chains: CrossSignalChain[]; currency: string }
 	| { status: "error"; message: string };
 
 export default function CrossSignalsPage() {
@@ -29,7 +29,7 @@ export default function CrossSignalsPage() {
 				return r.json();
 			})
 			.then((data) => {
-				setState({ status: "loaded", chains: data.chains || [] });
+				setState({ status: "loaded", chains: data.chains || [], currency: data.currency || "USD" });
 			})
 			.catch((err) => {
 				setState({ status: "error", message: err.message });
@@ -40,9 +40,9 @@ export default function CrossSignalsPage() {
 		<ConsoleState state={
 			state.status === "loading" ? { status: "loading" }
 			: state.status === "error" ? { status: "error", message: state.message }
-			: { status: "ready", data: state.chains }
+			: { status: "ready", data: { chains: state.chains, currency: state.currency } }
 		}>
-			{(chains) => <CrossSignalsShell chains={chains} />}
+			{(data) => <CrossSignalsShell chains={data.chains} currency={data.currency} />}
 		</ConsoleState>
 	);
 }

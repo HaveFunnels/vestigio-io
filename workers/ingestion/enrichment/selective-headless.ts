@@ -67,19 +67,17 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
     };
   }
 
-  // Gate 2: SPA detection from Stage C. If shouldTriggerPlaywright()
-  // didn't fire, the static crawl already captured everything useful
-  // and Playwright wouldn't reveal more. Skip.
-  if (!ctx.spa_detected) {
-    return {
-      run: false,
-      reason: "no JavaScript-heavy pages detected during Stage C",
-    };
-  }
+  // Gate 2 RELAXED: Playwright now runs even for non-SPA sites.
+  // Even server-rendered sites benefit from browser verification:
+  //   - Detects cookie consent banners blocking CTAs
+  //   - Reveals lazy-loaded trust signals (reviews, logos)
+  //   - Captures real above-the-fold visual hierarchy
+  //   - Finds JS-generated dynamic pricing/CTA content
+  //   - Exposes pop-ups and exit-intent overlays
+  // For non-SPA sites, scenarios run with reduced budget (homepage +
+  // primary commercial page only) to keep cost proportional.
 
-  // Gate 3: landing URL must be valid. The pipeline normally guarantees
-  // this but defensive check keeps us from invoking Playwright with
-  // garbage input.
+  // Gate 3: landing URL must be valid.
   if (!ctx.landing_url || !ctx.landing_url.startsWith("http")) {
     return {
       run: false,
@@ -87,7 +85,10 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
     };
   }
 
-  return { run: true, reason: "SPA detected, mode=full, landing URL valid" };
+  const reason = ctx.spa_detected
+    ? "SPA detected, mode=full, landing URL valid"
+    : "Non-SPA site, mode=full — running with reduced budget for overlay/CTA verification";
+  return { run: true, reason };
 }
 
 // ──────────────────────────────────────────────
@@ -139,12 +140,20 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
     timestamp: new Date(),
   });
 
-  // Build scenarios — business-aware. Always 2 scenarios:
-  // commercial path probe + support reach probe.
-  const scenarios: VerificationScenario[] = buildStageDScenarios(
+  // Build scenarios — business-aware.
+  // SPA sites: full 2 scenarios (commercial path + support reach)
+  // Non-SPA sites: reduced budget — only homepage probe for overlays/CTAs
+  let scenarios: VerificationScenario[] = buildStageDScenarios(
     ctx.business_model,
     ctx.landing_url,
   );
+
+  // Non-SPA: limit to first scenario only (homepage/commercial probe)
+  // to keep cost proportional. The key value from Playwright on static
+  // sites is detecting overlays, consent banners, and above-the-fold state.
+  if (!ctx.spa_detected && scenarios.length > 1) {
+    scenarios = [scenarios[0]];
+  }
 
   const request: BrowserVerificationRequest = {
     type: "browser_verification",

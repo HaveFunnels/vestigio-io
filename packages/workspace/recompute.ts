@@ -164,6 +164,8 @@ export interface MultiPackInput {
   translations?: EngineTranslations;
   /** Integration snapshots from connected data sources */
   integration_snapshots?: IntegrationSnapshot[];
+  /** Additional signals from static checks (post-crawl) — merged before inference */
+  additional_signals?: Signal[];
 }
 
 export interface MultiPackResult {
@@ -598,8 +600,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     }
   }
 
-  // Merge SaaS signals/inferences into main arrays
-  const allSignals = [...signals, ...saasSignals];
+  // Merge SaaS signals + additional static-check signals into main arrays
+  const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
   const allInferences = [...inferences, ...saasInferences];
 
   // Collect all decisions and risk evaluations

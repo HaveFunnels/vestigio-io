@@ -323,6 +323,9 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 
 		// 6. Persist PageInventoryItem rows from coverage map
 		// Each entry in coverage_entries represents a discovered surface (URL).
+		// Only persist pages that were actually fetched (have a confirmed statusCode).
+		// Pages discovered from sitemap/links but never fetched would pollute
+		// the inventory with ghost URLs the customer can't navigate to.
 		for (const entry of result.coverage_entries || []) {
 			try {
 				const url = entry.url;
@@ -330,6 +333,10 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				const { pageType, tier } = inferPageType(path);
 				const title = findTitleForUrl(result.evidence, url);
 				const statusCode = findStatusForUrl(result.evidence, url);
+
+				// Skip URLs that were never actually fetched — no confirmed status
+				if (statusCode == null && !entry.validated) continue;
+
 				const isFresh = entry.validated && (statusCode == null || statusCode < 400);
 
 				await prisma.pageInventoryItem.upsert({
@@ -795,10 +802,31 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				}
 			}
 
+			// (b-static) Run static checks for supplementary signals
+			let staticCheckSignals: import("../../packages/domain").Signal[] = [];
+			try {
+				const { runStaticChecks } = await import("../../workers/ingestion/stages/static-checks");
+				staticCheckSignals = await runStaticChecks({
+					evidence: result.evidence,
+					rootDomain: domain,
+					scoping: {
+						workspace_ref: workspaceRef,
+						environment_ref: environmentRef,
+						subject_ref: `website:${website.id}`,
+						path_scope: null,
+					},
+					cycle_ref: `audit_cycle:${cycleId}`,
+				});
+				console.log(`[audit-runner ${cycleId}] static checks: ${staticCheckSignals.length} signals`);
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] static checks failed (non-fatal):`, err);
+			}
+
 			// (b) Engine
 			const recomputeStartMs = Date.now();
 			const multiPackResult = recomputeAll({
 				evidence: result.evidence,
+				additional_signals: staticCheckSignals,
 				scoping: {
 					workspace_ref: workspaceRef,
 					environment_ref: environmentRef,

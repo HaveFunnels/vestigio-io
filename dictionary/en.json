@@ -1562,7 +1562,7 @@
 				"static_only": "Collected from static analysis",
 				"browser_verified": "Corroborated by browser verification",
 				"mixed": "Static analysis + browser corroboration",
-				"unknown": "Source not specified"
+				"unknown": "Automatically detected by Vestigio AI"
 			},
 			"confirmed_at": "Confirmed {time}",
 			"expires_at": "Expires {time}",

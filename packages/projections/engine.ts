@@ -2562,9 +2562,18 @@ function buildFindingVerificationContext(
   else if (hasBrowser) method = 'browser_verified';
   else if (hasStatic) method = 'static_only';
 
-  // Verification maturity: not yet tracked at finding level in the lifecycle module,
-  // so default to null. Future phases will integrate VerificationState per finding.
-  return { maturity: null, method };
+  // Derive verification maturity from the method + inference state.
+  // Static-only findings are "unverified" (awaiting browser/chat verification).
+  // Browser-verified findings are "partially" verified (confirmed by Playwright).
+  // Mixed evidence = "partially". UserAction-based verification upgrades
+  // to "verified" happens at the DB level via the chat verify flow.
+  let maturity: FindingProjection['verification_maturity'] = null;
+  if (method === 'static_only') maturity = 'static_evidence';
+  else if (method === 'browser_verified') maturity = 'partial_confirmation';
+  else if (method === 'mixed') maturity = 'partial_confirmation';
+  // 'unknown' method (positive findings, etc.) keeps null — they don't need verification
+
+  return { maturity, method };
 }
 
 // ──────────────────────────────────────────────

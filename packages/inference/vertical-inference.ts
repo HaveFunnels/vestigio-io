@@ -182,7 +182,7 @@ function inferSizeGuideMissing(
   return [buildInference(
     'size_guide_missing',
     InferenceCategory.ConversionFlow,
-    scoping, cycleRef, 'true', 'high', 55,
+    scoping, cycleRef, 'true', 'high', 75,
     [],
     productPages.map(e => makeRef('evidence', e.id)),
     'Compradores de moda devolvem 52% dos produtos por problemas de tamanho — sem guia de medidas, cada venda vira risco de devolução e custo logístico reverso que consome a margem.',
@@ -208,7 +208,7 @@ function inferProductImagesInsufficient(
   return [buildInference(
     'product_images_insufficient',
     InferenceCategory.ConversionFlow,
-    scoping, cycleRef, 'true', 'high', 50,
+    scoping, cycleRef, 'true', 'high', 72,
     [],
     productPages.slice(0, 3).map(e => makeRef('evidence', e.id)),
     'Produtos com menos de 3 fotos vendem 40% menos — o comprador não consegue avaliar textura, caimento ou detalhe e abandona antes de arriscar.',
@@ -236,7 +236,7 @@ function inferNoUrgencyIndicators(
   return [buildInference(
     'no_urgency_indicators',
     InferenceCategory.ConversionFlow,
-    scoping, cycleRef, 'true', 'medium', 45,
+    scoping, cycleRef, 'true', 'medium', 68,
     [],
     copyEls.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem indicadores de escassez ou urgência, o visitante adia a compra "para depois" — e 70% não volta. Cada sessão sem gatilho de decisão é receita adiada indefinidamente.',
@@ -263,7 +263,7 @@ function inferCrossSellAbsent(
   return [buildInference(
     'cross_sell_absent',
     InferenceCategory.RevenuePath,
-    scoping, cycleRef, 'true', 'medium', 50,
+    scoping, cycleRef, 'true', 'medium', 70,
     [],
     productPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem recomendações de "complete o look" ou produtos relacionados, o ticket médio fica limitado a 1 item — lojas com cross-sell aumentam AOV em 10-30%.',
@@ -305,7 +305,7 @@ function inferReturnPolicyNotOnProduct(
   return [buildInference(
     'return_policy_not_on_product',
     InferenceCategory.ConversionClarity,
-    scoping, cycleRef, 'true', 'medium', 55,
+    scoping, cycleRef, 'true', 'medium', 72,
     [],
     [...policyPages.slice(0, 1), ...productPages.slice(0, 1)].map(e => makeRef('evidence', e.id)),
     'A política de devolução existe mas fica escondida no rodapé — 67% dos compradores verificam condições de troca ANTES de comprar. Sem essa informação na página do produto, a dúvida vira abandono.',
@@ -337,7 +337,7 @@ function inferNoFreeTrialOffered(
   return [buildInference(
     'no_free_trial_offered',
     InferenceCategory.ActivationBlocked,
-    scoping, cycleRef, 'true', 'high', 60,
+    scoping, cycleRef, 'true', 'high', 78,
     [],
     copyEls.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem trial, freemium ou demo self-serve, o visitante precisa confiar cegamente antes de pagar — SaaS com trial gratuito convertem 2-5x mais que os que exigem cartão imediato.',
@@ -360,7 +360,7 @@ function inferIntegrationEcosystemInvisible(
   return [buildInference(
     'integration_ecosystem_invisible',
     InferenceCategory.ConversionClarity,
-    scoping, cycleRef, 'true', 'medium', 50,
+    scoping, cycleRef, 'true', 'medium', 70,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Nenhuma menção a integrações ou ecossistema — compradores B2B descartam ferramentas que não conectam com seu stack existente. Sem logos ou lista de integrações, o visitante assume incompatibilidade.',
@@ -382,7 +382,7 @@ function inferChangelogStaleOrMissing(
   return [buildInference(
     'changelog_stale_or_missing',
     InferenceCategory.ExpectationAlignment,
-    scoping, cycleRef, 'true', 'medium', 45,
+    scoping, cycleRef, 'true', 'medium', 68,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem changelog ou atualizações visíveis, o comprador não sabe se o produto está ativo — software sem sinais de evolução parece abandonado e perde contra concorrentes que mostram ritmo de entrega.',
@@ -408,7 +408,7 @@ function inferAnnualDiscountNotHighlighted(
   return [buildInference(
     'annual_discount_not_highlighted',
     InferenceCategory.RevenuePath,
-    scoping, cycleRef, 'true', 'medium', 50,
+    scoping, cycleRef, 'true', 'medium', 70,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem destaque para economia do plano anual, clientes escolhem mensal por padrão — churn mensal é 3-4x maior que anual. Cada assinante mensal que poderia ser anual é receita em risco a cada 30 dias.',
@@ -445,7 +445,7 @@ function inferNoProductScreenshotVisible(
   return [buildInference(
     'no_product_screenshot_visible',
     InferenceCategory.ConversionClarity,
-    scoping, cycleRef, 'true', 'high', 55,
+    scoping, cycleRef, 'true', 'high', 75,
     [],
     homeCopy.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'A hero da página não mostra o produto em uso — visitantes B2B precisam "ver antes de experimentar". Sem screenshot real, a proposta de valor fica abstrata e a taxa de cadastro cai 30-50%.',
@@ -480,7 +480,7 @@ function inferMenuRequiresSignup(
   return [buildInference(
     'menu_requires_signup',
     InferenceCategory.FrictionPath,
-    scoping, cycleRef, 'true', 'high', 50,
+    scoping, cycleRef, 'true', 'high', 72,
     [],
     formEvidence.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'O cardápio exige login ou download para ser visto — 80% dos clientes de restaurante abandonam se não conseguem ver os pratos em 2 cliques. Cada barreira entre fome e decisão é um pedido perdido.',
@@ -504,7 +504,7 @@ function inferNoFoodPhotos(
   return [buildInference(
     'no_food_photos',
     InferenceCategory.ConversionFlow,
-    scoping, cycleRef, 'true', 'high', 50,
+    scoping, cycleRef, 'true', 'high', 72,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Itens do cardápio sem fotos vendem 30% menos — o cliente come com os olhos primeiro. Sem imagem, a decisão depende apenas de texto descritivo e o ticket médio cai porque ninguém arrisca o desconhecido.',
@@ -531,7 +531,7 @@ function inferDeliveryAreaUnclear(
   return [buildInference(
     'delivery_area_unclear',
     InferenceCategory.ConversionClarity,
-    scoping, cycleRef, 'true', 'medium', 50,
+    scoping, cycleRef, 'true', 'medium', 70,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'O site menciona delivery mas não informa a área de cobertura — clientes fora da zona descobrem só no checkout e abandonam frustrados. Cada sessão desperdiçada é custo de aquisição sem retorno.',
@@ -558,7 +558,7 @@ function inferDeliveryTimeNotShown(
   return [buildInference(
     'delivery_time_not_shown',
     InferenceCategory.ExpectationAlignment,
-    scoping, cycleRef, 'true', 'medium', 45,
+    scoping, cycleRef, 'true', 'medium', 68,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem tempo estimado de entrega, o cliente não sabe se vai esperar 30 minutos ou 2 horas — a incerteza favorece o concorrente que mostra prazo. Expectativa não gerenciada vira avaliação negativa.',
@@ -581,7 +581,7 @@ function inferAllergenInfoMissing(
   return [buildInference(
     'allergen_info_missing',
     InferenceCategory.PolicyGap,
-    scoping, cycleRef, 'true', 'high', 55,
+    scoping, cycleRef, 'true', 'high', 75,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem informações de alérgenos ou restrições alimentares, famílias com restrições descartam o restaurante imediatamente — além do risco legal, cada cliente alérgico que desiste representa o grupo inteiro (4-5 pessoas) perdido.',
@@ -612,7 +612,7 @@ function inferIngredientsNotListed(
   return [buildInference(
     'ingredients_not_listed',
     InferenceCategory.ConversionClarity,
-    scoping, cycleRef, 'true', 'high', 55,
+    scoping, cycleRef, 'true', 'high', 75,
     [],
     productPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Produtos sem lista de ingredientes perdem o comprador consciente — 73% dos consumidores de cosméticos checam composição antes de comprar. Sem transparência, o visitante vai para quem mostra.',
@@ -637,7 +637,7 @@ function inferNoClinicalEndorsement(
   return [buildInference(
     'no_clinical_endorsement',
     InferenceCategory.TrustRevenue,
-    scoping, cycleRef, 'true', 'medium', 50,
+    scoping, cycleRef, 'true', 'medium', 70,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem menção a teste dermatológico ou endosso clínico, o produto compete apenas por preço — marcas com selo "dermatologicamente testado" convertem 25-40% mais porque eliminam o medo de reação adversa.',
@@ -664,7 +664,7 @@ function inferUsageInstructionsAbsent(
   return [buildInference(
     'usage_instructions_absent',
     InferenceCategory.ConversionFlow,
-    scoping, cycleRef, 'true', 'medium', 45,
+    scoping, cycleRef, 'true', 'medium', 68,
     [],
     productPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem instruções de uso, o comprador não se imagina utilizando o produto — e a dúvida sobre resultado gera hesitação. Produtos com tutoriais integrados têm taxa de recompra 35% maior.',
@@ -687,7 +687,7 @@ function inferSubscriptionNotOffered(
   return [buildInference(
     'subscription_not_offered',
     InferenceCategory.RevenuePath,
-    scoping, cycleRef, 'true', 'medium', 45,
+    scoping, cycleRef, 'true', 'medium', 68,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Produtos de uso recorrente (skincare, suplementos) sem opção de assinatura forçam o cliente a lembrar de recomprar — taxa de recompra cai 60% sem automação, e cada falha é abertura para o concorrente.',
@@ -718,7 +718,7 @@ function inferNoResultsEvidence(
   return [buildInference(
     'no_results_evidence',
     InferenceCategory.TrustRevenue,
-    scoping, cycleRef, 'true', 'high', 55,
+    scoping, cycleRef, 'true', 'high', 75,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem prova de resultado (antes/depois, dados clínicos, depoimentos com métricas), o produto é promessa sem evidência — marcas de saúde/beleza com prova visual convertem 4x mais que as que só descrevem benefícios.',
@@ -745,7 +745,7 @@ function inferCurriculumNotVisible(
   return [buildInference(
     'curriculum_not_visible',
     InferenceCategory.ConversionClarity,
-    scoping, cycleRef, 'true', 'high', 60,
+    scoping, cycleRef, 'true', 'high', 78,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem lista de módulos ou aulas visível, o aluno não sabe o que vai receber pelo investimento — cursos com ementa detalhada convertem 3x mais porque eliminam a dúvida "será que cobre o que preciso?".',
@@ -769,7 +769,7 @@ function inferInstructorCredentialsMissing(
   return [buildInference(
     'instructor_credentials_missing',
     InferenceCategory.TrustRevenue,
-    scoping, cycleRef, 'true', 'high', 55,
+    scoping, cycleRef, 'true', 'high', 75,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem bio verificável do instrutor, o aluno não sabe se quem ensina tem autoridade real — cursos com credenciais visíveis (linkedin, publicações, resultados) vendem 2-3x mais porque confiança é pré-requisito para educação.',
@@ -792,7 +792,7 @@ function inferCompletionCertificateAbsent(
   return [buildInference(
     'completion_certificate_absent',
     InferenceCategory.ConversionFlow,
-    scoping, cycleRef, 'true', 'medium', 50,
+    scoping, cycleRef, 'true', 'medium', 70,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem menção a certificado de conclusão, o investimento no curso não tem "prova tangível" para o aluno — certificados são o segundo fator de decisão depois do conteúdo, e sua ausência favorece concorrentes que oferecem.',
@@ -815,7 +815,7 @@ function inferTimeCommitmentUnclear(
   return [buildInference(
     'time_commitment_unclear',
     InferenceCategory.ExpectationAlignment,
-    scoping, cycleRef, 'true', 'medium', 50,
+    scoping, cycleRef, 'true', 'medium', 70,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem informação de duração ou carga horária, o aluno não sabe se o curso cabe na rotina — a dúvida "vou conseguir terminar?" é o principal motivo de abandono e pedido de reembolso em educação online.',
@@ -845,7 +845,7 @@ function inferNoSampleContent(
   return [buildInference(
     'no_sample_content',
     InferenceCategory.ActivationBlocked,
-    scoping, cycleRef, 'true', 'high', 55,
+    scoping, cycleRef, 'true', 'high', 75,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem aula demonstrativa ou preview gratuito, o aluno compra no escuro — plataformas de educação com conteúdo de amostra convertem 4-6x mais porque o aluno experimenta a didática antes de investir.',
@@ -882,7 +882,7 @@ function inferNoCaseStudyWithMetrics(
   return [buildInference(
     'no_case_study_with_metrics',
     InferenceCategory.TrustRevenue,
-    scoping, cycleRef, 'true', 'high', 60,
+    scoping, cycleRef, 'true', 'high', 78,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem case de sucesso com métricas concretas de ROI, o serviço é promessa sem prova — decisores B2B precisam justificar o investimento internamente, e sem números, perdem a argumentação para aprovar.',
@@ -905,7 +905,7 @@ function inferMethodologyNotExplained(
   return [buildInference(
     'methodology_not_explained',
     InferenceCategory.ConversionClarity,
-    scoping, cycleRef, 'true', 'medium', 50,
+    scoping, cycleRef, 'true', 'medium', 70,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem explicação do processo ou metodologia, o comprador B2B não consegue avaliar competência — serviços que mostram "como entregam" reduzem ciclo de venda em 40% porque antecipam perguntas do comitê.',
@@ -929,7 +929,7 @@ function inferEnterpriseSignalsMissing(
   return [buildInference(
     'enterprise_signals_missing',
     InferenceCategory.TrustRevenue,
-    scoping, cycleRef, 'true', 'medium', 45,
+    scoping, cycleRef, 'true', 'medium', 68,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem menções a SSO, SLA ou compliance (LGPD/SOC2), empresas médias e grandes descartam o fornecedor na triagem inicial — o time de segurança/jurídico veta antes mesmo de uma demo acontecer.',
@@ -957,7 +957,7 @@ function inferContactFormExcessiveFields(
     return [buildInference(
       'contact_form_excessive_fields',
       InferenceCategory.FrictionPath,
-      scoping, cycleRef, 'true', 'high', 60,
+      scoping, cycleRef, 'true', 'high', 78,
       [makeRef('signal', formFriction.id)],
       formFriction.evidence_refs,
       'Formulário de contato com 7+ campos perde 50% dos leads qualificados — cada campo adicional após o 4o reduz conversão em 10%. O lead quente desiste antes de pedir ajuda.',
@@ -967,7 +967,7 @@ function inferContactFormExcessiveFields(
   return [buildInference(
     'contact_form_excessive_fields',
     InferenceCategory.FrictionPath,
-    scoping, cycleRef, 'true', 'high', 65,
+    scoping, cycleRef, 'true', 'high', 80,
     [],
     excessiveForms.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Formulário de contato com 7+ campos perde 50% dos leads qualificados — cada campo adicional após o 4o reduz conversão em 10%. O lead quente desiste antes de pedir ajuda.',
@@ -996,7 +996,7 @@ function inferResponseTimeNotPromised(
   return [buildInference(
     'response_time_not_promised',
     InferenceCategory.ExpectationAlignment,
-    scoping, cycleRef, 'true', 'medium', 45,
+    scoping, cycleRef, 'true', 'medium', 68,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem SLA de tempo de resposta prometido, o lead qualificado não sabe quando terá retorno — e vai procurar o concorrente que promete "resposta em até 2h". A ansiedade pós-envio de formulário é onde se perde o deal.',

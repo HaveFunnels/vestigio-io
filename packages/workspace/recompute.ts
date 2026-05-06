@@ -25,6 +25,7 @@ import { computePackEligibility, PackEligibility } from '../classification/eligi
 import { detectMaturityStage, MaturityStage } from '../classification/maturity';
 import { extractSaasSignals } from '../signals/saas-signals';
 import { computeSaasInferences } from '../inference/saas-inference';
+import { computeVerticalInferences } from '../inference/vertical-inference';
 import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
 import { adjustConfidenceByQuality, QualityAdjustmentResult } from '../evidence/confidence-adjuster';
 import { harmonizeSignals, HarmonizationResult } from '../truth';
@@ -600,9 +601,30 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     }
   }
 
+  // Vertical-specific inferences (gated by businessModel)
+  const verticalInferences = computeVerticalInferences(
+    [...signals, ...saasSignals],
+    scoping,
+    cycle_ref,
+    input.onboarding_business_model || null,
+    evidence,
+  );
+
+  // If vertical inferences fired, produce a decision for them
+  let verticalDecisionResult: DecisionResult | null = null;
+  if (verticalInferences.length > 0) {
+    verticalDecisionResult = produceDecision({
+      question_key: 'are_vertical_specific_issues_present',
+      scoping, cycle_ref,
+      signals: [...signals, ...saasSignals],
+      inferences: [...inferences, ...saasInferences, ...verticalInferences],
+      conversion_proximity, is_production, translations,
+    });
+  }
+
   // Merge SaaS signals + additional static-check signals into main arrays
   const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
-  const allInferences = [...inferences, ...saasInferences];
+  const allInferences = [...inferences, ...saasInferences, ...verticalInferences];
 
   // Collect all decisions and risk evaluations
   let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision, copyAlignmentResult.decision, channelIntegrityResult.decision, discoverabilityResult.decision, brandIntegrityResult.decision];
@@ -620,6 +642,10 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   if (saasGrowthReadiness) {
     allDecisions.push(saasGrowthReadiness.decision);
     allRiskEvals.push(saasGrowthReadiness.risk_evaluation);
+  }
+  if (verticalDecisionResult) {
+    allDecisions.push(verticalDecisionResult.decision);
+    allRiskEvals.push(verticalDecisionResult.risk_evaluation);
   }
   // Add behavioral workspace decisions
   for (const bp of Object.values(behavioralPacks)) {

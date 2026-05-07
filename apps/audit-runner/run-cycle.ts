@@ -518,8 +518,8 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					sourceUrl: rel.sourceUrl,
 					targetUrl: rel.targetUrl,
 					relationType: rel.relationType,
-					linkText: null, // Will be enhanced when parser adds position
-					position: undefined,
+					linkText: rel.linkText ?? null,
+					position: (rel.position as any) ?? undefined,
 					targetPageType: classifications.get(rel.targetUrl)?.classifiedPageType ?? null,
 				}));
 
@@ -1013,6 +1013,41 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// Fallback to USD on any resolution error
 			}
 
+			// Build funnel stage multipliers from classified pages.
+			// Deeper funnel stages get higher multipliers.
+			const STAGE_MULTIPLIERS: Record<number, number> = {
+				0: 1.0,  // awareness (homepage/landing)
+				1: 1.3,  // consideration (features/category)
+				2: 1.8,  // evaluation/decision (pricing/demo)
+				3: 2.5,  // conversion (checkout/signup/cart)
+				4: 1.2,  // activation/retention (onboarding/account)
+			};
+
+			let funnelMultipliers: import("../../packages/impact").FunnelStageMultipliers | undefined;
+			try {
+				const funnelModelForEngine = await prisma.funnelModel.findUnique({ where: { environmentRef: env.id } });
+				if (funnelModelForEngine) {
+					const stages = JSON.parse(funnelModelForEngine.stageDefinitions) as Array<{ order: number; pageTypes: string[] }>;
+					const classifiedPages = await prisma.pageInventoryItem.findMany({
+						where: { environmentRef: env.id, classifiedPageType: { not: null } },
+						select: { path: true, classifiedPageType: true },
+					});
+
+					const byPath = new Map<string, number>();
+					for (const page of classifiedPages) {
+						const stage = stages.find(s => s.pageTypes.includes(page.classifiedPageType!));
+						if (stage) {
+							byPath.set(page.path, STAGE_MULTIPLIERS[stage.order] ?? 1.0);
+						}
+					}
+					if (byPath.size > 0) {
+						funnelMultipliers = { byPath, default: 1.0 };
+					}
+				}
+			} catch {
+				// Non-fatal — proceed without funnel multipliers
+			}
+
 			const recomputeStartMs = Date.now();
 			const multiPackResult = recomputeAll({
 				evidence: result.evidence,
@@ -1034,6 +1069,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				translations,
 				integration_snapshots: integrationSnapshots.length > 0 ? integrationSnapshots : undefined,
 				currency: resolvedCurrency,
+				funnel_multipliers: funnelMultipliers,
 			});
 			const recomputeMs = Date.now() - recomputeStartMs;
 

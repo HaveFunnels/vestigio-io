@@ -19,7 +19,7 @@ import { resolveDecisionConflicts, ConflictReport } from '../decision/conflict-r
 import { generateOpportunities, OpportunityGenerationResult } from '../decision/opportunity-gate';
 import { deriveActions } from '../actions';
 import { produceIntelligence, DecisionIntelligenceResult } from '../intelligence';
-import { estimateImpact, summarizeImpact, QuantifiedValueCase, ImpactSummary, BusinessInputs, OperationalAmplifiers } from '../impact';
+import { estimateImpact, summarizeImpact, QuantifiedValueCase, ImpactSummary, BusinessInputs, OperationalAmplifiers, FunnelStageMultipliers } from '../impact';
 import { computeClassification, extractClassificationInput, ClassificationState } from '../classification';
 import { computePackEligibility, PackEligibility } from '../classification/eligibility';
 import { detectMaturityStage, MaturityStage } from '../classification/maturity';
@@ -171,6 +171,9 @@ export interface MultiPackInput {
   additional_signals?: Signal[];
   /** ISO 4217 currency code for financial impact values (default: 'USD') */
   currency?: string;
+  /** Funnel stage multipliers from User Journey Intelligence Layer.
+   *  Maps surface paths → impact multiplier (checkout=2.5x, awareness=1.0x). */
+  funnel_multipliers?: FunnelStageMultipliers;
 }
 
 export interface MultiPackResult {
@@ -806,7 +809,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // Impact estimation — with profile freshness penalty and reconciled inputs/amplifiers
   const resolvedCurrency = input.currency || 'USD';
-  const valueCases = estimateImpact(allInferences, reconciledBusinessInputs, profilePenalty, reconciledAmplifiers, resolvedCurrency);
+  const valueCases = estimateImpact(allInferences, reconciledBusinessInputs, profilePenalty, reconciledAmplifiers, resolvedCurrency, input.funnel_multipliers);
   const impactSummary = summarizeImpact(valueCases, resolvedCurrency);
 
   // Phase 25: Decision conflict resolution

@@ -24,12 +24,15 @@ export interface ParsedPage {
   body_text_snippet: string | null;
 }
 
+export type LinkPosition = 'header' | 'nav' | 'footer' | 'main' | 'aside' | 'unknown';
+
 export interface ParsedLink {
   href: string;
   text: string | null;
   rel: string | null;
   is_external: boolean;
   target_host: string;
+  position: LinkPosition;
 }
 
 export interface ParsedForm {
@@ -160,8 +163,43 @@ function extractCanonical(html: string): string | null {
   return match2 ? match2[1] : null;
 }
 
+/**
+ * Detect structural zones (header, nav, footer, main, aside) in HTML
+ * and return their start/end character offsets for position classification.
+ */
+function detectZones(html: string): Array<{ tag: string; start: number; end: number }> {
+  const zones: Array<{ tag: string; start: number; end: number }> = [];
+  const zoneRegex = /<(header|nav|footer|main|aside|article)[\s>]/gi;
+  let m;
+  while ((m = zoneRegex.exec(html)) !== null) {
+    const tag = m[1].toLowerCase();
+    const start = m.index;
+    const closeTag = `</${tag}`;
+    const closeIdx = html.toLowerCase().indexOf(closeTag, start + m[0].length);
+    if (closeIdx > start) {
+      zones.push({ tag, start, end: closeIdx });
+    }
+  }
+  return zones;
+}
+
+function classifyPosition(offset: number, zones: Array<{ tag: string; start: number; end: number }>): LinkPosition {
+  const sorted = [...zones].sort((a, b) => (a.end - a.start) - (b.end - b.start));
+  for (const zone of sorted) {
+    if (offset >= zone.start && offset <= zone.end) {
+      if (zone.tag === 'header') return 'header';
+      if (zone.tag === 'nav') return 'nav';
+      if (zone.tag === 'footer') return 'footer';
+      if (zone.tag === 'main' || zone.tag === 'article') return 'main';
+      if (zone.tag === 'aside') return 'aside';
+    }
+  }
+  return 'unknown';
+}
+
 function extractLinks(html: string, pageUrl: string, rootDomain: string): ParsedLink[] {
   const links: ParsedLink[] = [];
+  const zones = detectZones(html);
   const regex = /<a\s[^>]*href=["']([^"'#]*?)["'][^>]*>(.*?)<\/a>/gis;
   let match;
 
@@ -177,6 +215,7 @@ function extractLinks(html: string, pageUrl: string, rootDomain: string): Parsed
     const targetHost = safeHostname(resolved);
     const rel = extractAttribute(match[0], 'rel');
     const text = match[2].replace(/<[^>]*>/g, '').trim() || null;
+    const position = classifyPosition(match.index, zones);
 
     links.push({
       href: resolved,
@@ -184,6 +223,7 @@ function extractLinks(html: string, pageUrl: string, rootDomain: string): Parsed
       rel,
       is_external: !isSameDomain(targetHost, rootDomain),
       target_host: targetHost,
+      position,
     });
   }
 

@@ -140,6 +140,8 @@ export interface SurfaceRelationEntry {
   sourceHost: string;
   targetHost: string;
   isSameDomain: boolean;
+  linkText?: string | null;
+  position?: string;
 }
 
 export interface StagedPipelineResult {
@@ -502,6 +504,8 @@ export async function runStagedPipeline(
               sourceHost: parsed.host,
               targetHost: link.target_host || parsed.host,
               isSameDomain: true,
+              linkText: link.text,
+              position: link.position,
             });
           }
         }
@@ -515,6 +519,8 @@ export async function runStagedPipeline(
               sourceHost: parsed.host,
               targetHost: form.target_host || parsed.host,
               isSameDomain: true,
+              linkText: null,
+              position: 'main',
             });
           }
         }

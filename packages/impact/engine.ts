@@ -94,9 +94,22 @@ const AMPLIFIER_MAPPING: Record<string, keyof OperationalAmplifiers> = {
 };
 
 /**
+ * Funnel stage multipliers — findings deeper in the funnel have exponentially
+ * higher revenue impact because they affect buyers closer to conversion.
+ * A checkout friction issue is worth 2.5x a homepage copy issue.
+ */
+export interface FunnelStageMultipliers {
+  /** Maps surface path → multiplier (e.g., "/pricing" → 2.0) */
+  byPath: Map<string, number>;
+  /** Default multiplier when path not in map */
+  default: number;
+}
+
+/**
  * @param profileConfidencePenalty - multiplier (0..1) from business profile freshness.
  * @param amplifiers - optional operational amplifiers from integration data.
  * @param currency - ISO 4217 currency code (default: 'USD'). Passed through to EstimatedImpact.
+ * @param funnelMultipliers - optional funnel stage multipliers by surface path.
  */
 export function estimateImpact(
   inferences: Inference[],
@@ -104,6 +117,7 @@ export function estimateImpact(
   profileConfidencePenalty: number = 1.0,
   amplifiers?: OperationalAmplifiers,
   currency: string = 'USD',
+  funnelMultipliers?: FunnelStageMultipliers,
 ): QuantifiedValueCase[] {
   const business = inputs || FALLBACK_INPUTS;
   const inputQuality = classifyInputQuality(inputs);
@@ -155,6 +169,20 @@ export function estimateImpact(
       if (ampValue !== 1.0) {
         estimated.range.min = Math.round(estimated.range.min * ampValue);
         estimated.range.max = Math.round(estimated.range.max * ampValue);
+        estimated.monthly_revenue_delta = Math.round((estimated.range.min + estimated.range.max) / 2);
+      }
+    }
+
+    // Funnel stage multiplier: findings deeper in the funnel (checkout, pricing)
+    // have proportionally higher impact than awareness-stage findings.
+    if (funnelMultipliers && !isPositive) {
+      const surfacePath = inf.scoping?.path_scope;
+      const funnelMult = surfacePath
+        ? (funnelMultipliers.byPath.get(surfacePath) ?? funnelMultipliers.default)
+        : funnelMultipliers.default;
+      if (funnelMult !== 1.0) {
+        estimated.range.min = Math.round(estimated.range.min * funnelMult);
+        estimated.range.max = Math.round(estimated.range.max * funnelMult);
         estimated.monthly_revenue_delta = Math.round((estimated.range.min + estimated.range.max) / 2);
       }
     }

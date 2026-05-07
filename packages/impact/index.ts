@@ -1,5 +1,5 @@
 export { estimateImpact, summarizeImpact } from './engine';
-export type { OperationalAmplifiers } from './engine';
+export type { OperationalAmplifiers, FunnelStageMultipliers } from './engine';
 export { IMPACT_BASELINES } from './baselines';
 export { currencyFromLocale } from './types';
 export * from './types';

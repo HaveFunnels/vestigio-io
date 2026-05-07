@@ -645,6 +645,18 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     input.classified_pages,
   );
 
+  // Produce a decision for funnel-moment findings so they get actions derived
+  let funnelJourneyDecisionResult: DecisionResult | null = null;
+  if (funnelMomentInferences.length > 0) {
+    funnelJourneyDecisionResult = produceDecision({
+      question_key: 'are_funnel_journey_issues_present',
+      scoping, cycle_ref,
+      signals: [...signals, ...saasSignals],
+      inferences: [...inferences, ...funnelMomentInferences],
+      conversion_proximity, is_production, translations,
+    });
+  }
+
   // Wave 9: Subdomain discovery cross-domain inferences
   const subdomainInferences = computeSubdomainCrossDomainInferences(evidence, scoping, cycle_ref);
 
@@ -675,6 +687,10 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   if (verticalDecisionResult) {
     allDecisions.push(verticalDecisionResult.decision);
     allRiskEvals.push(verticalDecisionResult.risk_evaluation);
+  }
+  if (funnelJourneyDecisionResult) {
+    allDecisions.push(funnelJourneyDecisionResult.decision);
+    allRiskEvals.push(funnelJourneyDecisionResult.risk_evaluation);
   }
   // Add behavioral workspace decisions
   for (const bp of Object.values(behavioralPacks)) {

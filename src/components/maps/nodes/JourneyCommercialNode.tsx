@@ -59,6 +59,67 @@ const journeyPageTypeStyles: Record<
 		text: "text-emerald-600 dark:text-emerald-400",
 		icon: "Confirmation",
 	},
+	// SaaS / lead-gen page types
+	features: {
+		border: "border-indigo-500/50",
+		bg: "bg-indigo-500/10",
+		text: "text-indigo-600 dark:text-indigo-400",
+		icon: "Features",
+	},
+	signup: {
+		border: "border-red-500/50",
+		bg: "bg-red-500/10",
+		text: "text-red-600 dark:text-red-400",
+		icon: "Signup",
+	},
+	demo: {
+		border: "border-violet-500/50",
+		bg: "bg-violet-500/10",
+		text: "text-violet-600 dark:text-violet-400",
+		icon: "Demo",
+	},
+	account: {
+		border: "border-sky-500/50",
+		bg: "bg-sky-500/10",
+		text: "text-sky-600 dark:text-sky-400",
+		icon: "Account",
+	},
+	onboarding: {
+		border: "border-teal-500/50",
+		bg: "bg-teal-500/10",
+		text: "text-teal-600 dark:text-teal-400",
+		icon: "Onboarding",
+	},
+	support: {
+		border: "border-zinc-500/50",
+		bg: "bg-zinc-500/10",
+		text: "text-zinc-400",
+		icon: "Support",
+	},
+	contact: {
+		border: "border-orange-500/50",
+		bg: "bg-orange-500/10",
+		text: "text-orange-600 dark:text-orange-400",
+		icon: "Contact",
+	},
+	about: {
+		border: "border-slate-500/50",
+		bg: "bg-slate-500/10",
+		text: "text-slate-400",
+		icon: "About",
+	},
+	blog: {
+		border: "border-pink-500/50",
+		bg: "bg-pink-500/10",
+		text: "text-pink-600 dark:text-pink-400",
+		icon: "Blog",
+	},
+	policy: {
+		border: "border-zinc-500/50",
+		bg: "bg-zinc-500/10",
+		text: "text-zinc-400",
+		icon: "Policy",
+	},
 };
 
 // ── InsightBadge subcomponent ──
@@ -118,8 +179,8 @@ export default function JourneyCommercialNode({ data }: { data: any }) {
 	const t = useTranslations("console.maps");
 	const nodeIndex = data._nodeIndex ?? 0;
 	const style = journeyPageTypeStyles[data.pageType] || {
-		border: "border-edge",
-		bg: "bg-surface-inset/50",
+		border: "border-zinc-600/50",
+		bg: "bg-zinc-700/20",
 		text: "text-content-muted",
 		icon: "Page",
 	};

@@ -422,6 +422,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		// Uses evidence from the pipeline to classify pages more accurately
 		// than pathname regex alone. Writes classifiedPageType + confidence
 		// to PageInventoryItem for journey map + engine consumption.
+		let classifiedPageMap = new Map<string, string>();
 		try {
 			// Build page context from evidence
 			const pageContexts: PageForClassification[] = [];
@@ -492,6 +493,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 
 			console.log(`[audit-runner ${cycleId}] page classification: ${classifiedCount} pages classified (business_model=${businessModel || 'inferred'})`);
+
+			// Build URL→pageType map for funnel-moment inference engine
+			for (const [url, cls] of classifications) {
+				classifiedPageMap.set(url, cls.classifiedPageType);
+			}
 
 			// 6d. Resolve and persist funnel model.
 			const classifiedTypes = new Set(
@@ -1133,6 +1139,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				currency: resolvedCurrency,
 				funnel_multipliers: funnelMultipliers,
 				additional_inferences: funnelGapInferences.inferences.length > 0 ? funnelGapInferences.inferences : undefined,
+				classified_pages: classifiedPageMap.size > 0 ? classifiedPageMap : undefined,
 			});
 			const recomputeMs = Date.now() - recomputeStartMs;
 

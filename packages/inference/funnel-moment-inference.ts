@@ -51,56 +51,72 @@ function getPageContentEvidence(evidence: readonly Evidence[]): Evidence[] {
   return evidence.filter(e => e.evidence_type === EvidenceType.PageContent);
 }
 
-function getHomepageEvidence(evidence: readonly Evidence[]): Evidence[] {
-  return evidence.filter(e => {
-    if (e.evidence_type !== EvidenceType.PageContent) return false;
-    const p = e.payload as { url?: string; page_type?: string };
-    const url = (p.url ?? '').toLowerCase();
-    return p.page_type === 'homepage' || url.endsWith('/') || url.match(/^https?:\/\/[^/]+\/?$/);
-  });
+// ── Multi-signal page type bucketing ──
+// Priority: classifiedPageType from multi-signal classifier > URL regex fallback.
+// If classifiedPages is provided and the URL is in the map, that result is authoritative.
+// Falls back to URL regex only when classifiedPages is absent or the URL isn't in the map.
+
+function isPageType(
+  e: Evidence,
+  classifiedPages: Map<string, string> | undefined,
+  matchedTypes: string[],
+  urlFallback: (url: string) => boolean,
+): boolean {
+  if (e.evidence_type !== EvidenceType.PageContent) return false;
+  const rawUrl = (e.payload as { url?: string }).url ?? '';
+  if (classifiedPages) {
+    const classified = classifiedPages.get(rawUrl);
+    if (classified !== undefined) {
+      return matchedTypes.includes(classified);
+    }
+    // URL not in classification map — fall through to URL regex
+  }
+  return urlFallback(rawUrl.toLowerCase());
 }
 
-function getPricingEvidence(evidence: readonly Evidence[]): Evidence[] {
-  return evidence.filter(e => {
-    if (e.evidence_type !== EvidenceType.PageContent) return false;
-    const url = ((e.payload as { url?: string }).url ?? '').toLowerCase();
-    return url.includes('/pricing') || url.includes('/preco') || url.includes('/planos') || url.includes('/plans');
-  });
+function getHomepageEvidence(evidence: readonly Evidence[], classifiedPages?: Map<string, string>): Evidence[] {
+  return evidence.filter(e => isPageType(e, classifiedPages,
+    ['homepage', 'landing'],
+    url => url.endsWith('/') || /^https?:\/\/[^/]+\/?$/.test(url),
+  ));
 }
 
-function getCheckoutEvidence(evidence: readonly Evidence[]): Evidence[] {
-  return evidence.filter(e => {
-    if (e.evidence_type !== EvidenceType.PageContent) return false;
-    const url = ((e.payload as { url?: string }).url ?? '').toLowerCase();
-    return url.includes('/checkout') || url.includes('/cart') || url.includes('/carrinho') || url.includes('/payment');
-  });
+function getPricingEvidence(evidence: readonly Evidence[], classifiedPages?: Map<string, string>): Evidence[] {
+  return evidence.filter(e => isPageType(e, classifiedPages,
+    ['pricing'],
+    url => url.includes('/pricing') || url.includes('/preco') || url.includes('/planos') || url.includes('/plans'),
+  ));
 }
 
-function getSupportEvidence(evidence: readonly Evidence[]): Evidence[] {
-  return evidence.filter(e => {
-    if (e.evidence_type !== EvidenceType.PageContent) return false;
-    const url = ((e.payload as { url?: string }).url ?? '').toLowerCase();
-    return url.includes('/help') || url.includes('/support') || url.includes('/suporte') ||
-           url.includes('/contact') || url.includes('/contato') || url.includes('/faq');
-  });
+function getCheckoutEvidence(evidence: readonly Evidence[], classifiedPages?: Map<string, string>): Evidence[] {
+  return evidence.filter(e => isPageType(e, classifiedPages,
+    ['checkout', 'cart'],
+    url => url.includes('/checkout') || url.includes('/cart') || url.includes('/carrinho') || url.includes('/payment'),
+  ));
 }
 
-function getAppEvidence(evidence: readonly Evidence[]): Evidence[] {
-  return evidence.filter(e => {
-    if (e.evidence_type !== EvidenceType.PageContent) return false;
-    const url = ((e.payload as { url?: string }).url ?? '').toLowerCase();
-    return url.includes('/app') || url.includes('/dashboard') || url.includes('/onboarding');
-  });
+function getSupportEvidence(evidence: readonly Evidence[], classifiedPages?: Map<string, string>): Evidence[] {
+  return evidence.filter(e => isPageType(e, classifiedPages,
+    ['support', 'contact'],
+    url => url.includes('/help') || url.includes('/support') || url.includes('/suporte') ||
+           url.includes('/contact') || url.includes('/contato') || url.includes('/faq'),
+  ));
 }
 
-function getNonCommercialEvidence(evidence: readonly Evidence[]): Evidence[] {
-  return evidence.filter(e => {
-    if (e.evidence_type !== EvidenceType.PageContent) return false;
-    const url = ((e.payload as { url?: string }).url ?? '').toLowerCase();
-    return url.includes('/help') || url.includes('/support') || url.includes('/suporte') ||
+function getAppEvidence(evidence: readonly Evidence[], classifiedPages?: Map<string, string>): Evidence[] {
+  return evidence.filter(e => isPageType(e, classifiedPages,
+    ['account', 'onboarding'],
+    url => url.includes('/app') || url.includes('/dashboard') || url.includes('/onboarding'),
+  ));
+}
+
+function getNonCommercialEvidence(evidence: readonly Evidence[], classifiedPages?: Map<string, string>): Evidence[] {
+  return evidence.filter(e => isPageType(e, classifiedPages,
+    ['support', 'contact', 'about', 'blog'],
+    url => url.includes('/help') || url.includes('/support') || url.includes('/suporte') ||
            url.includes('/about') || url.includes('/sobre') || url.includes('/docs') ||
-           url.includes('/faq') || url.includes('/blog');
-  });
+           url.includes('/faq') || url.includes('/blog'),
+  ));
 }
 
 function getCopyElements(evidence: readonly Evidence[]): Evidence[] {
@@ -162,6 +178,7 @@ export function computeFunnelMomentInferences(
   cycleRef: string,
   businessModel: string | null,
   evidence: readonly Evidence[],
+  classifiedPages?: Map<string, string>,
 ): Inference[] {
   const inferences: Inference[] = [];
   const sigMap = new Map<string, Signal>();
@@ -169,43 +186,44 @@ export function computeFunnelMomentInferences(
 
   const model = (businessModel ?? '').toLowerCase();
   const corpus = buildCorpus(evidence);
+  const cp = classifiedPages; // short alias for threading
 
   // ── Moment 1: First Impression (0-5 seconds) — 4 findings ──
-  inferences.push(...inferHeroOutcomeAbsent(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferCognitiveLoadFirstScreen(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferPrimaryCtaDelayed(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferSpecificityDeficit(sigMap, scoping, cycleRef, evidence, corpus, model));
+  inferences.push(...inferHeroOutcomeAbsent(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
+  inferences.push(...inferCognitiveLoadFirstScreen(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
+  inferences.push(...inferPrimaryCtaDelayed(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
+  inferences.push(...inferSpecificityDeficit(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
 
   // ── Moment 2: Consideration (exploring the site) — 7 findings ──
   inferences.push(...inferProofOfWorkMissing(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferNavigationDeadEnds(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferPageDepthBeforeConversion(sigMap, scoping, cycleRef, evidence, corpus, model));
+  inferences.push(...inferNavigationDeadEnds(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
+  inferences.push(...inferPageDepthBeforeConversion(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
   inferences.push(...inferFeatureBenefitDisconnect(sigMap, scoping, cycleRef, evidence, corpus, model));
   inferences.push(...inferComparisonAbsent(sigMap, scoping, cycleRef, evidence, corpus, model));
   inferences.push(...inferObjectionEchoChamber(sigMap, scoping, cycleRef, evidence, corpus, model));
   inferences.push(...inferSocialChannelsDecorative(sigMap, scoping, cycleRef, evidence, corpus, model));
 
   // ── Moment 3: Decision (pricing/checkout) — 5 findings ──
-  inferences.push(...inferPricingWithoutContext(sigMap, scoping, cycleRef, evidence, corpus, model));
+  inferences.push(...inferPricingWithoutContext(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
   inferences.push(...inferCheckoutIdentityBreak(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferPaymentOptionsInvisible(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferGuaranteeInvisibleAtDecision(sigMap, scoping, cycleRef, evidence, corpus, model));
+  inferences.push(...inferPaymentOptionsInvisible(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
+  inferences.push(...inferGuaranteeInvisibleAtDecision(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
   inferences.push(...inferUrgencyMechanicsAbsent(sigMap, scoping, cycleRef, evidence, corpus, model));
 
   // ── Moment 4: Post-purchase (onboarding/retention) — 3 findings ──
-  inferences.push(...inferFirstValuePathUnclear(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferSupportResponseExpectationGap(sigMap, scoping, cycleRef, evidence, corpus, model));
+  inferences.push(...inferFirstValuePathUnclear(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
+  inferences.push(...inferSupportResponseExpectationGap(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
   inferences.push(...inferBillingTransparencyAbsent(sigMap, scoping, cycleRef, evidence, corpus, model));
 
   // ── Moment 5: Expansion (upgrade/referral) — 3 findings ──
-  inferences.push(...inferUpgradeValueGap(sigMap, scoping, cycleRef, evidence, corpus, model));
+  inferences.push(...inferUpgradeValueGap(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
   inferences.push(...inferReferralPathNonexistent(sigMap, scoping, cycleRef, evidence, corpus, model));
   inferences.push(...inferSuccessStoryFeedbackLoopBroken(sigMap, scoping, cycleRef, evidence, corpus, model));
 
   // ── Cross-journey — 3 findings ──
   inferences.push(...inferToneShiftAcrossJourney(sigMap, scoping, cycleRef, evidence, corpus, model));
   inferences.push(...inferMobileJourneyFrictionCompound(sigMap, scoping, cycleRef, evidence, corpus, model));
-  inferences.push(...inferTrustGradientInverted(sigMap, scoping, cycleRef, evidence, corpus, model));
+  inferences.push(...inferTrustGradientInverted(sigMap, scoping, cycleRef, evidence, corpus, model, cp));
 
   return inferences;
 }
@@ -221,8 +239,9 @@ export function computeFunnelMomentInferences(
 function inferHeroOutcomeAbsent(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], _corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
-  const homePages = getHomepageEvidence(evidence);
+  const homePages = getHomepageEvidence(evidence, cp);
   if (homePages.length === 0) return [];
 
   const homeCorpus = corpusForPages(homePages);
@@ -264,8 +283,9 @@ function inferHeroOutcomeAbsent(
 function inferCognitiveLoadFirstScreen(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], _corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
-  const homePages = getHomepageEvidence(evidence);
+  const homePages = getHomepageEvidence(evidence, cp);
   if (homePages.length === 0) return [];
 
   // Count H2-like sections in above-fold text
@@ -325,8 +345,9 @@ function inferCognitiveLoadFirstScreen(
 function inferPrimaryCtaDelayed(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], _corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
-  const homePages = getHomepageEvidence(evidence);
+  const homePages = getHomepageEvidence(evidence, cp);
   if (homePages.length === 0) return [];
 
   // Check if CTA appears in above-fold text
@@ -396,8 +417,9 @@ function inferPrimaryCtaDelayed(
 function inferSpecificityDeficit(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], _corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
-  const homePages = getHomepageEvidence(evidence);
+  const homePages = getHomepageEvidence(evidence, cp);
   if (homePages.length === 0) return [];
 
   const homeCorpus = corpusForPages(homePages);
@@ -496,8 +518,9 @@ function inferProofOfWorkMissing(
 function inferNavigationDeadEnds(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], _corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
-  const nonCommercial = getNonCommercialEvidence(evidence);
+  const nonCommercial = getNonCommercialEvidence(evidence, cp);
   if (nonCommercial.length === 0) return [];
 
   const commercialPatterns = ['/pricing', '/signup', '/checkout', '/register',
@@ -533,11 +556,12 @@ function inferNavigationDeadEnds(
 function inferPageDepthBeforeConversion(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
   // Heuristic: check if homepage links to pricing, and pricing links to checkout
   // If we can't find direct homepage→checkout or homepage→pricing links, flag
 
-  const homePages = getHomepageEvidence(evidence);
+  const homePages = getHomepageEvidence(evidence, cp);
   if (homePages.length === 0) return [];
 
   const checkoutPatterns = ['checkout', 'carrinho', 'cart', 'comprar', 'buy now', 'purchase'];
@@ -555,7 +579,7 @@ function inferPageDepthBeforeConversion(
   const hasPricingLink = pricingPatterns.some(p => homeCorpus.includes(p));
 
   if (hasPricingLink) {
-    const pricingPages = getPricingEvidence(evidence);
+    const pricingPages = getPricingEvidence(evidence, cp);
     if (pricingPages.length > 0) {
       const pricingCorpus = corpusForPages(pricingPages);
       const pricingLinksCheckout = checkoutPatterns.some(p => pricingCorpus.includes(p)) ||
@@ -811,8 +835,9 @@ function inferSocialChannelsDecorative(
 function inferPricingWithoutContext(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
-  const pricingPages = getPricingEvidence(evidence);
+  const pricingPages = getPricingEvidence(evidence, cp);
   if (pricingPages.length === 0) {
     // Check if pricing exists in generic content
     const hasPricing = corpus.includes('/pricing') || corpus.includes('/preco') ||
@@ -939,6 +964,7 @@ function inferCheckoutIdentityBreak(
 function inferPaymentOptionsInvisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
   // Brazil-specific payment methods
   const brPaymentPatterns = ['pix', 'boleto', 'boleto bancário', 'cartão de crédito', 'cartão de débito'];
@@ -967,7 +993,7 @@ function inferPaymentOptionsInvisible(
     corpus.includes('accepted payments') || corpus.includes('meios de pagamento');
   if (hasPaymentIcons) return [];
 
-  const pricingPages = getPricingEvidence(evidence);
+  const pricingPages = getPricingEvidence(evidence, cp);
   const refs = pricingPages.length > 0
     ? pricingPages.slice(0, 2).map(e => makeRef('evidence', e.id))
     : getPageContentEvidence(evidence).slice(0, 2).map(e => makeRef('evidence', e.id));
@@ -989,6 +1015,7 @@ function inferPaymentOptionsInvisible(
 function inferGuaranteeInvisibleAtDecision(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
   const guaranteePatterns = [
     'garantia', 'guarantee', 'satisfação', 'satisfaction', 'money back',
@@ -1002,7 +1029,7 @@ function inferGuaranteeInvisibleAtDecision(
   if (!hasGuaranteeAnywhere) return []; // No guarantee at all — different problem
 
   // Now check if it appears on pricing/checkout pages specifically
-  const decisionPages = [...getPricingEvidence(evidence), ...getCheckoutEvidence(evidence)];
+  const decisionPages = [...getPricingEvidence(evidence, cp), ...getCheckoutEvidence(evidence, cp)];
 
   if (decisionPages.length === 0) return []; // No pricing/checkout pages to check
 
@@ -1072,10 +1099,11 @@ function inferUrgencyMechanicsAbsent(
 function inferFirstValuePathUnclear(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string, model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
   if (!isSaas(model)) return [];
 
-  const appPages = getAppEvidence(evidence);
+  const appPages = getAppEvidence(evidence, cp);
   if (appPages.length === 0) return []; // No authenticated pages crawled
 
   const appCorpus = corpusForPages(appPages);
@@ -1114,8 +1142,9 @@ function inferFirstValuePathUnclear(
 function inferSupportResponseExpectationGap(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
-  const supportPages = getSupportEvidence(evidence);
+  const supportPages = getSupportEvidence(evidence, cp);
   if (supportPages.length === 0) return []; // No support pages
 
   const supportCorpus = corpusForPages(supportPages);
@@ -1197,10 +1226,11 @@ function inferBillingTransparencyAbsent(
 function inferUpgradeValueGap(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string, model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
   if (!isSaas(model)) return [];
 
-  const pricingPages = getPricingEvidence(evidence);
+  const pricingPages = getPricingEvidence(evidence, cp);
   if (pricingPages.length === 0) return [];
 
   const pricingCorpus = corpusForPages(pricingPages);
@@ -1478,9 +1508,10 @@ function inferMobileJourneyFrictionCompound(
 function inferTrustGradientInverted(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], _corpus: string, _model: string,
+  cp?: Map<string, string>,
 ): Inference[] {
-  const homePages = getHomepageEvidence(evidence);
-  const decisionPages = [...getPricingEvidence(evidence), ...getCheckoutEvidence(evidence)];
+  const homePages = getHomepageEvidence(evidence, cp);
+  const decisionPages = [...getPricingEvidence(evidence, cp), ...getCheckoutEvidence(evidence, cp)];
 
   if (homePages.length === 0 || decisionPages.length === 0) return [];
 

@@ -172,6 +172,9 @@ export interface MultiPackInput {
   additional_signals?: Signal[];
   /** Pre-computed inferences from external sources (funnel-gap, etc.) — merged into allInferences */
   additional_inferences?: Inference[];
+  /** Multi-signal classified page types (URL → classifiedPageType string).
+   *  Used by funnel-moment inference to bucket evidence by page type. */
+  classified_pages?: Map<string, string>;
   /** ISO 4217 currency code for financial impact values (default: 'USD') */
   currency?: string;
   /** Funnel stage multipliers from User Journey Intelligence Layer.
@@ -639,6 +642,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     cycle_ref,
     input.onboarding_business_model || null,
     evidence,
+    input.classified_pages,
   );
 
   // Wave 9: Subdomain discovery cross-domain inferences

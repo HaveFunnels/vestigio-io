@@ -307,8 +307,8 @@ export default function FindingDetailPanel({
 				</DrawerSection>
 			)}
 
-			{/* Fix with AI — vibecoding bridge */}
-			{isFull && finding.polarity !== "positive" && (
+			{/* Fix with AI — only shown when linked actions have remediation steps */}
+			{isFull && finding.polarity !== "positive" && linkedActions.length > 0 && (
 				<>
 					{linkedActions.length === 1 &&
 						linkedActions[0].remediation_steps &&
@@ -317,11 +317,6 @@ export default function FindingDetailPanel({
 						)}
 					{linkedActions.length > 1 && (
 						<FixWithAiPicker actions={linkedActions} />
-					)}
-					{finding.action_refs.length === 0 && (
-						<p className="text-[11px] text-content-faint italic">
-							{tFix("no_action")}
-						</p>
 					)}
 				</>
 			)}

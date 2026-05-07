@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { resolveOrgContext } from "@/libs/resolve-org";
+import { deserializeStageDefinitions, buildStageOrderMap, type FunnelStageDefinition } from "../../../../../packages/classification";
 import type {
 	MapDefinition,
 	MapNode,
@@ -101,7 +102,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ map: null });
     }
 
-    // Fetch page inventory
+    // Fetch page inventory (including multi-signal classification fields)
     const pages = await prisma.pageInventoryItem.findMany({
       where: { environmentRef: env.id },
       select: {
@@ -109,6 +110,8 @@ export async function GET(request: Request) {
         normalizedUrl: true,
         path: true,
         pageType: true,
+        classifiedPageType: true,
+        classificationConfidence: true,
         title: true,
         statusCode: true,
         tier: true,
@@ -127,7 +130,7 @@ export async function GET(request: Request) {
       select: { id: true },
     });
 
-    // Fetch surface relations (links between pages)
+    // Fetch surface relations with metadata (edge scores)
     const relations = website
       ? await prisma.surfaceRelation.findMany({
           where: {
@@ -140,9 +143,39 @@ export async function GET(request: Request) {
             targetUrl: true,
             relationType: true,
             confidence: true,
+            metadata: true,
           },
         })
       : [];
+
+    // Load the funnel model (from classification layer) or fall back to hardcoded
+    const funnelModelRow = await prisma.funnelModel.findUnique({
+      where: { environmentRef: env.id },
+    });
+
+    let stageOrder: Record<string, number>;
+    let commercialTypes: Set<string>;
+    let funnelStages: FunnelStageDefinition[] | null = null;
+
+    if (funnelModelRow) {
+      funnelStages = deserializeStageDefinitions(funnelModelRow.stageDefinitions);
+      stageOrder = buildStageOrderMap({ modelType: funnelModelRow.modelType, stages: funnelStages, commercialPageTypes: new Set() });
+      commercialTypes = new Set<string>();
+      for (const stage of funnelStages) {
+        for (const pt of stage.pageTypes) commercialTypes.add(pt);
+      }
+    } else {
+      // Fallback: hardcoded ecommerce stages (backward-compatible)
+      stageOrder = {
+        homepage: 0, landing: 1, category: 2, product: 3, pricing: 3,
+        cart: 4, checkout: 5, login: 5, account: 6, thank_you: 7,
+      };
+      commercialTypes = new Set(["checkout", "cart", "product", "pricing", "landing", "homepage", "features", "signup", "demo"]);
+    }
+
+    // Resolve effective page type: prefer classifiedPageType over regex-only pageType
+    const getEffectiveType = (p: typeof pages[0]): string =>
+      p.classifiedPageType || p.pageType?.toLowerCase() || "other";
 
     // Build page lookup
     const pageByUrl = new Map<string, typeof pages[0]>();
@@ -152,34 +185,25 @@ export async function GET(request: Request) {
       pageByPath.set(p.path || p.normalizedUrl, p);
     }
 
-    // Classify pages by commercial importance
-    const commercialTypes = new Set(["checkout", "cart", "product", "pricing", "landing", "homepage"]);
-    const commercialPages = pages.filter((p) => commercialTypes.has(p.pageType?.toLowerCase() || ""));
-
-    // Build the journey path: sort commercial pages by funnel stage
-    const stageOrder: Record<string, number> = {
-      homepage: 0, landing: 1, category: 2, product: 3, pricing: 3,
-      cart: 4, checkout: 5, login: 5, account: 6, thank_you: 7,
-    };
+    // Classify pages by commercial importance using the funnel model
+    const commercialPages = pages.filter((p) => commercialTypes.has(getEffectiveType(p)));
 
     const sortedCommercial = [...commercialPages]
-      .sort((a, b) => (stageOrder[a.pageType?.toLowerCase() || ""] ?? 99) - (stageOrder[b.pageType?.toLowerCase() || ""] ?? 99));
+      .sort((a, b) => (stageOrder[getEffectiveType(a)] ?? 99) - (stageOrder[getEffectiveType(b)] ?? 99));
 
-    // Apply start/end filters: narrow the commercial funnel to the
-    // window [start..end] by stage order. "any" endpoints are open,
-    // so { start: "any", end: "any" } returns the whole funnel.
+    // Apply start/end filters
     const startStage =
       filters.start === "any" ? -Infinity : (stageOrder[filters.start] ?? -Infinity);
     const endStage =
       filters.end === "any" ? Infinity : (stageOrder[filters.end] ?? Infinity);
     const journeyPages = sortedCommercial.filter((p) => {
-      const stage = stageOrder[p.pageType?.toLowerCase() || ""] ?? 99;
+      const stage = stageOrder[getEffectiveType(p)] ?? 99;
       return stage >= startStage && stage <= endStage;
     });
 
     // Also include important non-commercial pages that appear in relations
     const supportPages = pages.filter((p) =>
-      ["support", "policy", "blog"].includes(p.pageType?.toLowerCase() || "") && p.tier !== "excluded"
+      ["support", "policy", "blog", "contact", "about"].includes(getEffectiveType(p)) && p.tier !== "excluded"
     ).slice(0, 5);
 
     // Build nodes (positions computed by dagre after all nodes+edges are ready)
@@ -192,7 +216,7 @@ export async function GET(request: Request) {
     for (const page of journeyPages) {
       if (usedPageIds.has(page.id)) continue;
       usedPageIds.add(page.id);
-      const pageType = page.pageType?.toLowerCase() || "other";
+      const pageType = getEffectiveType(page);
 
       const nodeType: MapNodeType = commercialTypes.has(pageType)
         ? "journey_commercial"
@@ -211,6 +235,7 @@ export async function GET(request: Request) {
           statusCode: page.statusCode,
           tier: page.tier,
           stage: stageOrder[pageType] ?? 99,
+          classificationConfidence: (page as any).classificationConfidence ?? 0,
         },
         position: { x: 0, y: 0 }, // dagre will compute
       });
@@ -239,7 +264,7 @@ export async function GET(request: Request) {
       });
     }
 
-    // Build edges from surface relations
+    // Build edges from surface relations (filtered by edge quality score)
     const nodeIdByUrl = new Map<string, string>();
     for (const page of allJourneyPages) {
       if (usedPageIds.has(page.id)) {
@@ -252,8 +277,19 @@ export async function GET(request: Request) {
     const edges: MapEdge[] = [];
 
     for (const rel of relations) {
-      const sourceId = nodeIdByUrl.get(rel.sourceUrl) || nodeIdByUrl.get(new URL(rel.sourceUrl).pathname);
-      const targetId = nodeIdByUrl.get(rel.targetUrl) || nodeIdByUrl.get(new URL(rel.targetUrl).pathname);
+      // Filter by edge weight: skip low-quality links (nav/footer/utility)
+      let linkWeight = 0.5; // default for unscored edges
+      try {
+        const meta = typeof rel.metadata === 'string' ? JSON.parse(rel.metadata) : rel.metadata;
+        if (meta && typeof meta.linkWeight === 'number') {
+          linkWeight = meta.linkWeight;
+        }
+      } catch { /* invalid JSON — use default */ }
+
+      if (linkWeight < 0.3) continue; // skip footer/nav/utility links
+
+      const sourceId = nodeIdByUrl.get(rel.sourceUrl) || nodeIdByUrl.get((() => { try { return new URL(rel.sourceUrl).pathname; } catch { return ''; } })());
+      const targetId = nodeIdByUrl.get(rel.targetUrl) || nodeIdByUrl.get((() => { try { return new URL(rel.targetUrl).pathname; } catch { return ''; } })());
 
       if (sourceId && targetId && sourceId !== targetId) {
         const edgeKey = `${sourceId}->${targetId}`;
@@ -267,7 +303,7 @@ export async function GET(request: Request) {
           source: sourceId,
           target: targetId,
           type: edgeType,
-          label: null,
+          label: linkWeight >= 0.7 ? null : null, // future: edge labels for CTAs
         });
       }
     }

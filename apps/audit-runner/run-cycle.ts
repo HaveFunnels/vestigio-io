@@ -42,6 +42,7 @@ import type { Evidence } from "../../packages/domain";
 import { triggerIncidentNotifications, triggerRegressionNotifications } from "@/libs/notification-triggers";
 import { analyzeAdMessageMatch } from "../../workers/ingestion/enrichment/ad-message-match";
 import { currencyFromLocale } from "../../packages/impact";
+import { classifyPages, resolveFunnelModel, serializeStageDefinitions, scoreEdges, type PageForClassification, type SurfaceRelationForScoring } from "../../packages/classification";
 
 export interface RunAuditCycleResult {
 	cycleId: string;
@@ -412,6 +413,137 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				}
 			}
 			console.log(`[audit-runner ${cycleId}] surface relations persisted: ${relCount} (from ${result.surface_relations.length} raw)`);
+		}
+
+		// 6c. Multi-signal page classification (User Journey Intelligence Layer).
+		// Uses evidence from the pipeline to classify pages more accurately
+		// than pathname regex alone. Writes classifiedPageType + confidence
+		// to PageInventoryItem for journey map + engine consumption.
+		try {
+			// Build page context from evidence
+			const pageContexts: PageForClassification[] = [];
+			const pageContentByUrl = new Map<string, { title: string | null; h1: string | null; metaDescription: string | null; hasForms: boolean; formCount: number; bodyWordCount: number }>();
+
+			for (const ev of result.evidence) {
+				if (ev.evidence_type === 'page_content') {
+					const p = ev.payload as any;
+					if (p?.url) {
+						pageContentByUrl.set(p.url, {
+							title: p.title || null,
+							h1: p.h1 || null,
+							metaDescription: p.meta_description || null,
+							hasForms: p.has_forms ?? false,
+							formCount: p.form_count ?? 0,
+							bodyWordCount: p.body_word_count ?? 0,
+						});
+					}
+				}
+			}
+
+			// Build classification input for each page in inventory
+			for (const entry of result.coverage_entries || []) {
+				if (!entry.validated) continue;
+				const url = entry.url;
+				const path = safePathname(url);
+				const content = pageContentByUrl.get(url);
+				const { pageType } = inferPageType(path);
+
+				pageContexts.push({
+					url,
+					path,
+					title: content?.title ?? null,
+					h1: content?.h1 ?? null,
+					metaDescription: content?.metaDescription ?? null,
+					hasForms: content?.hasForms ?? false,
+					formCount: content?.formCount ?? 0,
+					bodyWordCount: content?.bodyWordCount ?? 0,
+					existingPageType: pageType,
+				});
+			}
+
+			// Resolve business model
+			const businessModel = (cycle.organization as any)?.businessProfile?.businessModel
+				|| result.classification?.primary_model
+				|| null;
+
+			// Run multi-signal classification
+			const classifications = classifyPages(pageContexts, result.evidence, businessModel);
+
+			// Persist classifications
+			let classifiedCount = 0;
+			for (const [url, classification] of classifications) {
+				try {
+					await prisma.pageInventoryItem.updateMany({
+						where: { environmentRef: env.id, normalizedUrl: url },
+						data: {
+							classifiedPageType: classification.classifiedPageType,
+							classificationConfidence: classification.classificationConfidence,
+							classificationSignals: JSON.stringify(classification.classificationSignals),
+						},
+					});
+					classifiedCount++;
+				} catch {
+					// Non-fatal — continue
+				}
+			}
+
+			console.log(`[audit-runner ${cycleId}] page classification: ${classifiedCount} pages classified (business_model=${businessModel || 'inferred'})`);
+
+			// 6d. Resolve and persist funnel model.
+			const classifiedTypes = new Set(
+				[...classifications.values()].map(c => c.classifiedPageType)
+			);
+			const funnelModel = resolveFunnelModel(businessModel, result.classification?.primary_model, classifiedTypes as any);
+
+			await prisma.funnelModel.upsert({
+				where: { environmentRef: env.id },
+				create: {
+					environmentRef: env.id,
+					modelType: funnelModel.modelType,
+					stageDefinitions: serializeStageDefinitions(funnelModel.stages),
+					isAutoDetected: true,
+				},
+				update: {
+					modelType: funnelModel.modelType,
+					stageDefinitions: serializeStageDefinitions(funnelModel.stages),
+					isAutoDetected: true,
+				},
+			});
+
+			console.log(`[audit-runner ${cycleId}] funnel model: ${funnelModel.modelType} (${funnelModel.stages.length} stages)`);
+
+			// 6e. Score edges for link intent classification.
+			if (result.surface_relations && result.surface_relations.length > 0) {
+				const relationsForScoring: SurfaceRelationForScoring[] = result.surface_relations.map(rel => ({
+					sourceUrl: rel.sourceUrl,
+					targetUrl: rel.targetUrl,
+					relationType: rel.relationType,
+					linkText: null, // Will be enhanced when parser adds position
+					position: undefined,
+					targetPageType: classifications.get(rel.targetUrl)?.classifiedPageType ?? null,
+				}));
+
+				const edgeScores = scoreEdges(relationsForScoring, pageContexts.length);
+
+				// Update SurfaceRelation metadata with scores (batch for performance)
+				let scoredCount = 0;
+				for (const [key, score] of edgeScores) {
+					const [sourceUrl, targetUrl] = key.split('|');
+					if (score.linkWeight < 0.1) continue; // skip utility links
+					try {
+						await prisma.surfaceRelation.updateMany({
+							where: { websiteRef: website.id, sourceUrl, targetUrl },
+							data: { metadata: JSON.stringify(score) },
+						});
+						scoredCount++;
+					} catch {
+						// Non-fatal
+					}
+				}
+				console.log(`[audit-runner ${cycleId}] edge scoring: ${scoredCount} edges scored`);
+			}
+		} catch (err) {
+			console.error(`[audit-runner ${cycleId}] classification/funnel error (non-fatal):`, err);
 		}
 
 		// 7. Run the engine + project findings + persist snapshot & findings.

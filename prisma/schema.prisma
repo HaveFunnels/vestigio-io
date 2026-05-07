@@ -808,6 +808,10 @@ model PageInventoryItem {
   statusCode     Int?
   freshnessState String   @default("unknown") // fresh | stale | expired | unknown
   freshnessAge   Int? // seconds since last check
+  // Multi-signal classification (User Journey Intelligence Layer)
+  classifiedPageType       String?  // resolved type from multi-signal voter (overrides pageType)
+  classificationConfidence Int      @default(0) // 0-100 agreement ratio
+  classificationSignals    String   @default("[]") @db.Text // JSON: [{ source, vote, weight }]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -816,6 +820,7 @@ model PageInventoryItem {
   @@unique([environmentRef, normalizedUrl])
   @@index([websiteRef])
   @@index([environmentRef, pageType])
+  @@index([environmentRef, classifiedPageType])
   @@index([environmentRef, tier])
 }
 
@@ -839,6 +844,16 @@ model SurfaceRelation {
   @@index([sourceUrl])
   @@index([targetUrl])
   @@index([cycleRef])
+}
+
+model FunnelModel {
+  id               String   @id @default(cuid())
+  environmentRef   String   @unique
+  modelType        String   // ecommerce | saas | lead_gen | services | hybrid
+  stageDefinitions String   @db.Text // JSON: [{ key, label, order, pageTypes[], color }]
+  isAutoDetected   Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 // ──────────────────────────────────────────────

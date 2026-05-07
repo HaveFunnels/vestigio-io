@@ -92,10 +92,10 @@ export async function GET(request: Request) {
   try {
     const { prisma } = await import("@/libs/prismaDb");
 
-    // Get the latest environment
+    // Get the production environment (prefer isProduction, fallback to newest)
     const env = await prisma.environment.findFirst({
       where: { organizationId: orgCtx.orgId },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ isProduction: "desc" }, { createdAt: "desc" }],
     });
 
     if (!env) {
@@ -549,6 +549,8 @@ export async function GET(request: Request) {
         funnelStages: funnelStages?.map(s => ({ key: s.key, label: s.label, order: s.order })) ?? null,
       },
     };
+
+    console.log(`[User Journey API] orgId=${orgCtx.orgId} envId=${env.id} pages=${pages.length} commercialPages=${sortedCommercial.length} nodes=${nodes.length} edges=${edges.length} model=${funnelModelRow?.modelType ?? 'fallback-ecommerce'}`);
 
     return NextResponse.json({ map });
   } catch (err) {

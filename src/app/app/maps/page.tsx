@@ -64,18 +64,28 @@ export default function MapsGalleryPage() {
 			</div>
 
 			<div className='flex-1 overflow-auto'>
-				<ConsoleState
-					state={enginesState}
-					loadingLabel={t("loading")}
-					emptyLabel={t("empty")}
-				>
-					{(engineMaps) => (
-						<GalleryGrid
-							maps={journeyMap ? [journeyMap, ...engineMaps] : engineMaps}
-							customMaps={customMaps}
-						/>
-					)}
-				</ConsoleState>
+				{/* Render gallery regardless of engine map status.
+				    The journey map (fetched from its own API) should always
+				    appear even when engine maps are loading/empty. */}
+				{enginesState.status === "ready" ? (
+					<GalleryGrid
+						maps={journeyMap ? [journeyMap, ...enginesState.data] : enginesState.data}
+						customMaps={customMaps}
+					/>
+				) : journeyMap || customMaps.length > 0 ? (
+					<GalleryGrid
+						maps={journeyMap ? [journeyMap] : []}
+						customMaps={customMaps}
+					/>
+				) : (
+					<ConsoleState
+						state={enginesState}
+						loadingLabel={t("loading")}
+						emptyLabel={t("empty")}
+					>
+						{() => null}
+					</ConsoleState>
+				)}
 			</div>
 		</div>
 	);

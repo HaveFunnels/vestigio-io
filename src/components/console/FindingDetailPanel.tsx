@@ -65,6 +65,7 @@ export default function FindingDetailPanel({
 }: FindingDetailPanelProps) {
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
+	const tp = useTranslations("console.copilot.shared_prompts");
 	const tFix = useTranslations("console.actions.fix_with_ai");
 	const router = useRouter();
 	const copilot = useCopilot();
@@ -512,7 +513,7 @@ export default function FindingDetailPanel({
 								onClick={() =>
 									copilot.open({
 										finding,
-										prompt: `Discuss this finding: "${finding.title}". What's the impact and what should I do about it?`,
+										prompt: tp("discuss_finding", { title: finding.title }),
 									})
 								}
 								className="w-full"

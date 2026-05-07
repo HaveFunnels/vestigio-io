@@ -414,6 +414,7 @@ export default function InventoryPage() {
 	const t = useTranslations("console.inventory");
 	const tc = useTranslations("console.common.columns");
 	const tTooltip = useTranslations("console.common");
+	const tp = useTranslations("console.copilot.shared_prompts");
 	const [liveFilter, setLiveFilter] = useState<LiveFilter>("all");
 	const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 	const [httpStatusFilter, setHttpStatusFilter] =
@@ -582,7 +583,7 @@ export default function InventoryPage() {
 	const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
 	const handleUseAsContext = useCallback(() => {
-		copilot.open({ prompt: `Analyze these ${selectedIds.size} pages from my inventory. What issues should I look at first?` });
+		copilot.open({ prompt: tp("inventory_bulk_analysis", { count: String(selectedIds.size) }) });
 	}, [selectedIds, copilot]);
 
 	// ── Down pages count ──
@@ -856,7 +857,7 @@ export default function InventoryPage() {
 							count={selectedIds.size}
 							onUseAsContext={handleUseAsContext}
 							onAnalyzeTogether={() =>
-								copilot.open({ prompt: `Analyze these ${selectedIds.size} surfaces together. Are there cross-signal patterns or shared issues?` })
+								copilot.open({ prompt: tp("inventory_cross_signal", { count: String(selectedIds.size) }) })
 							}
 							onClear={clearSelection}
 						/>

@@ -120,8 +120,12 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'get_finding_projections',
-    description: 'Get all findings with quantified financial impact, sorted by impact midpoint descending.',
-    input_schema: {},
+    description: 'Get findings with quantified financial impact, sorted by impact midpoint descending. Supports optional filters to reduce output size — prefer filters for targeted queries.',
+    input_schema: {
+      pack: { type: 'string', nullable: true, description: 'Filter by pack (e.g. revenue_integrity, scale_readiness, chargeback_resilience, copy_alignment)' },
+      severity: { type: 'string', nullable: true, enum: ['critical', 'high', 'medium', 'low'], description: 'Filter by minimum severity' },
+      limit: { type: 'number', nullable: true, description: 'Max findings to return (default: all)' },
+    },
   },
   {
     name: 'get_action_projections',
@@ -368,8 +372,17 @@ export function executeTool(
     case 'answer_fix_first':
       return { type: 'answer', data: composeFixFirstAnswer(ctx) };
 
-    case 'get_finding_projections':
-      return { type: 'finding_projections', data: getFindingProjections(ctx) };
+    case 'get_finding_projections': {
+      const severityOrder = ['critical', 'high', 'medium', 'low'];
+      let findings = getFindingProjections(ctx);
+      if (params.pack) findings = findings.filter(f => f.pack === params.pack);
+      if (params.severity) {
+        const minIdx = severityOrder.indexOf(params.severity as string);
+        if (minIdx >= 0) findings = findings.filter(f => severityOrder.indexOf(f.severity) <= minIdx);
+      }
+      if (params.limit && typeof params.limit === 'number') findings = findings.slice(0, params.limit);
+      return { type: 'finding_projections', data: findings };
+    }
 
     case 'get_action_projections':
       return { type: 'action_projections', data: getActionProjections(ctx) };

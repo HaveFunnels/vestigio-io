@@ -103,7 +103,7 @@ export function incrementUsage(orgId: string, amount: number = 1): number {
   usageCache.set(key, next);
 
   // Fire-and-forget DB write
-  activeStore.recordUsage(orgId, 'mcp_chat', amount, p).catch(() => {});
+  activeStore.recordUsage(orgId, 'mcp_chat', amount, p).catch((err) => console.warn('[mcp:usage] recordUsage failed:', err?.message || err));
 
   return next;
 }

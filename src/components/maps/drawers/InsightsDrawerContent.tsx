@@ -21,6 +21,7 @@ export default function InsightsDrawerContent({
   nodeLabel: string;
 }) {
   const t = useTranslations("console.maps.insights");
+  const tp = useTranslations("console.copilot.shared_prompts");
   const router = useRouter();
   const copilot = useCopilot();
 
@@ -182,11 +183,11 @@ export default function InsightsDrawerContent({
           if (selected.length === 1) {
             copilot.open({
               finding: selected[0],
-              prompt: `Discuss this finding: "${selected[0].title}". What's the impact and what should I do about it?`,
+              prompt: tp("map_discuss_single", { title: selected[0].title }),
             });
           } else {
             copilot.open({
-              prompt: `Analyze these ${selected.length} findings together and identify cross-signal patterns:\n${selected.map((f) => `- ${f.title}`).join("\n")}`,
+              prompt: tp("map_analyze_multi", { count: String(selected.length), list: selected.map((f) => `- ${f.title}`).join("\n") }),
             });
           }
         }}

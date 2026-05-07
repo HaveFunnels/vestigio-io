@@ -436,7 +436,7 @@ export async function executePipeline(
     allToolCalls.map((tc) => tc.tool_name),
     findingRefs,
     [],
-  ).catch(() => {});
+  ).catch((err) => console.warn('[mcp:pipeline] memory update failed:', err?.message || err));
 
   return {
     response_text: responseText,

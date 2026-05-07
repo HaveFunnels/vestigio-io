@@ -3098,6 +3098,7 @@
 				"prompt_analyzing": "Analyzing: \"{title}\" (severity: {severity})",
 				"prompt_root_cause": "Root cause: {cause}",
 				"prompt_root_cause_unknown": "not identified",
+				"prompt_estimated_recovery": "Estimated recovery: {impact}/month",
 				"prompt_steps_heading": "Suggested remediation steps:",
 				"prompt_instruction": "Help me plan the resolution of this action. Prioritize the steps, identify dependencies, and suggest a concrete implementation plan."
 			},
@@ -4022,6 +4023,14 @@
 				"whats_up": "What are the most important things I should know about my site right now?",
 				"revenue_audit_other": "Perform a quick revenue leak audit. Where am I losing money?",
 				"trust_check": "How trustworthy does my site look to buyers? Check trust signals across all pages."
+			},
+			"shared_prompts": {
+				"inventory_bulk_analysis": "Audit these {count} pages: rank by estimated revenue leak, flag the root causes, and tell me which fix recovers the most money first.",
+				"inventory_cross_signal": "Compare these {count} surfaces for shared root causes and cross-signal patterns. Estimate the combined dollar impact and recommend a single fix that addresses the most surfaces at once.",
+				"verify_finding": "Verify finding: \"{title}\". Check current evidence, confirm or invalidate, and if still valid, state the dollar impact.",
+				"discuss_finding": "Finding: \"{title}\". Trace the root cause, estimate how much revenue this is costing per month, and give me the highest-leverage fix.",
+				"map_discuss_single": "Finding from map: \"{title}\". What's the root cause, which other nodes in the funnel does it affect, and what's the estimated monthly revenue at risk?",
+				"map_analyze_multi": "Analyze these {count} findings together from this map node. Identify shared root causes, estimate the combined monthly revenue at risk, and prioritize fixes by recovery potential:\n{list}"
 			},
 			"export": "Export",
 			"export_json": "Export as JSON",

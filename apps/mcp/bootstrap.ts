@@ -79,7 +79,7 @@ export function bootstrapMcpContextSync(
 
   // Persist evidence to DB (best-effort, fire-and-forget)
   if (prismaEvidenceStore) {
-    prismaEvidenceStore.addMany(evidence).catch(() => {});
+    prismaEvidenceStore.addMany(evidence).catch((err) => console.warn('[mcp:bootstrap] fire-and-forget failed:', err?.message || err));
   }
 
   return { status: 'ready', evidence_count: evidence.length, cycle_ref: cycleRef };
@@ -155,7 +155,7 @@ export async function bootstrapMcpContext(
 
   // Persist newly ingested evidence to DB (best-effort)
   if (prismaEvidenceStore) {
-    prismaEvidenceStore.addMany(evidence).catch(() => {});
+    prismaEvidenceStore.addMany(evidence).catch((err) => console.warn('[mcp:bootstrap] fire-and-forget failed:', err?.message || err));
   }
 
   return { status: 'ready', evidence_count: evidence.length, cycle_ref: effectiveCycleRef };

@@ -60,11 +60,18 @@ export async function guardInput(sanitizedInput: string): Promise<InputGuardResu
 
 function parseGuardResponse(text: string): InputGuardResult | null {
   try {
-    // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
+    // Extract FIRST JSON object (brace-depth matching, not greedy regex)
+    const start = text.indexOf('{');
+    if (start < 0) return null;
+    let depth = 0;
+    let end = -1;
+    for (let i = start; i < text.length; i++) {
+      if (text[i] === '{') depth++;
+      else if (text[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+    }
+    if (end < 0) return null;
 
-    const data = JSON.parse(jsonMatch[0]);
+    const data = JSON.parse(text.slice(start, end + 1));
 
     if (typeof data.safe !== 'boolean' || typeof data.category !== 'string') {
       return null;

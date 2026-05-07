@@ -519,6 +519,7 @@ function PreflightChecklist({
 function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjection; onDiscuss: () => void }) {
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
+	const tp = useTranslations("console.copilot.shared_prompts");
 	const router = useRouter();
 	const copilot = useCopilot();
 
@@ -615,7 +616,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 					reTriggerReason={null}
 					decisionStatus={null}
 					onRequestVerification={() =>
-						copilot.open({ finding, prompt: `Verify this finding: "${finding.title}". Run a verification check and tell me if it's still valid.` })
+						copilot.open({ finding, prompt: tp("verify_finding", { title: finding.title }) })
 					}
 				/>
 			</section>

@@ -3182,6 +3182,7 @@
 				"prompt_analyzing": "Analisando: \"{title}\" (severidade: {severity})",
 				"prompt_root_cause": "Causa raiz: {cause}",
 				"prompt_root_cause_unknown": "não identificada",
+				"prompt_estimated_recovery": "Recuperação estimada: {impact}/mês",
 				"prompt_steps_heading": "Passos de remediação sugeridos:",
 				"prompt_instruction": "Me ajude a planejar a resolução desta ação. Priorize os passos, identifique dependências, e sugira um plano de implementação concreto."
 			},
@@ -4106,6 +4107,14 @@
 				"whats_up": "Quais sao as coisas mais importantes que devo saber sobre meu site agora?",
 				"revenue_audit_other": "Faça uma auditoria rapida de vazamento de receita. Onde estou perdendo dinheiro?",
 				"trust_check": "Quao confiável meu site parece para compradores? Verifique sinais de confiança em todas as páginas."
+			},
+			"shared_prompts": {
+				"inventory_bulk_analysis": "Audite estas {count} páginas: classifique por vazamento estimado de receita, aponte as causas-raiz e diga qual correção recupera mais dinheiro primeiro.",
+				"inventory_cross_signal": "Compare estas {count} superfícies buscando causas-raiz compartilhadas e padrões entre sinais. Estime o impacto combinado em dinheiro e recomende a correção única que resolve o maior número de superfícies de uma vez.",
+				"verify_finding": "Verificar finding: \"{title}\". Cheque as evidências atuais, confirme ou invalide, e se ainda for válido, declare o impacto em dinheiro.",
+				"discuss_finding": "Finding: \"{title}\". Trace a causa-raiz, estime quanto de receita isso está custando por mês e me dê a correção de maior alavancagem.",
+				"map_discuss_single": "Finding do mapa: \"{title}\". Qual é a causa-raiz, quais outros nós do funil são afetados e qual é a receita mensal estimada em risco?",
+				"map_analyze_multi": "Analise estes {count} findings juntos deste nó do mapa. Identifique causas-raiz compartilhadas, estime a receita mensal combinada em risco e priorize correções por potencial de recuperação:\n{list}"
 			},
 			"export": "Exportar",
 			"export_json": "Exportar como JSON",

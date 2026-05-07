@@ -11,7 +11,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type { ConversationState, ConversationMessage } from './types';
 
-const SLIDING_WINDOW_SIZE = 6; // Keep last 6 messages (3 turns) in full
+const SLIDING_WINDOW_SIZE = 10; // Keep last 10 messages (5 turns) in full
 const ROUGH_CHARS_PER_TOKEN = 4;
 const MAX_CONTEXT_TOKENS = 8000;
 const MAX_SUMMARY_CHARS = 600; // Hard cap on summary length (~150 tokens)

@@ -57,6 +57,7 @@ export default function FindingsPage() {
 	const t = useTranslations("console.analysis");
 	const tv = useTranslations("console.findings.views");
 	const tc = useTranslations("console.common");
+	const tp = useTranslations("console.copilot.shared_prompts");
 	const { track } = useTrack();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -565,7 +566,7 @@ export default function FindingsPage() {
 							e.stopPropagation();
 							copilot.open({
 								finding: row,
-								prompt: `Discuss this finding: "${row.title}". What's the impact and what should I do about it?`,
+								prompt: tp("discuss_finding", { title: row.title }),
 							});
 						}}
 					>

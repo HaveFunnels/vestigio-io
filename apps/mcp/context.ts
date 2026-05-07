@@ -40,6 +40,9 @@ export interface EngineContext {
   /** Persisted findings from DB — used as supplement when hot-path recompute
    *  misses findings that depend on LLM enrichment from previous cycles. */
   persistedFindings?: FindingProjection[];
+  /** Cached projectAll() output — avoids redundant recomputation across
+   *  multiple tool calls within the same request. Invalidated on loadContext(). */
+  _projectionCache?: ProjectionResult;
 }
 
 export function assembleContext(
@@ -78,6 +81,17 @@ export function assembleContext(
   });
 
   return { result, scope, cycle_ref, root_domain, landing_url, translations };
+}
+
+// ── Cached projection accessor ──────────────────
+// projectAll() is pure (same input → same output) so we cache
+// on first call and reuse across all tool invocations in the request.
+
+function getCachedProjections(ctx: EngineContext): ProjectionResult {
+  if (!ctx._projectionCache) {
+    ctx._projectionCache = projectAll(ctx.result, ctx.translations);
+  }
+  return ctx._projectionCache;
 }
 
 // Accessors — typed getters over context, no business logic
@@ -138,11 +152,11 @@ export function getValueCases(ctx: EngineContext): import('../../packages/impact
 }
 
 export function getProjections(ctx: EngineContext): ProjectionResult {
-  return projectAll(ctx.result, ctx.translations);
+  return getCachedProjections(ctx);
 }
 
 export function getFindingProjections(ctx: EngineContext): FindingProjection[] {
-  const recomputed = projectAll(ctx.result, ctx.translations).findings;
+  const recomputed = getCachedProjections(ctx).findings;
 
   // Merge persisted findings that the hot-path didn't reproduce.
   // This happens when the latest evidence cycle is warm (no LLM) but a
@@ -163,11 +177,11 @@ export function getFindingProjections(ctx: EngineContext): FindingProjection[] {
 }
 
 export function getActionProjections(ctx: EngineContext): ActionProjection[] {
-  return projectAll(ctx.result, ctx.translations).actions;
+  return getCachedProjections(ctx).actions;
 }
 
 export function getWorkspaceProjections(ctx: EngineContext): WorkspaceProjection[] {
-  const projections = projectAll(ctx.result, ctx.translations);
+  const projections = getCachedProjections(ctx);
 
   // Supplement workspace findings with persisted data from previous cycles
   if (ctx.persistedFindings && ctx.persistedFindings.length > 0) {
@@ -192,11 +206,11 @@ export function getWorkspaceProjections(ctx: EngineContext): WorkspaceProjection
 }
 
 export function getChangeReport(ctx: EngineContext): ChangeReportProjection | null {
-  return projectAll(ctx.result, ctx.translations).change_report;
+  return getCachedProjections(ctx).change_report;
 }
 
 export function getMaps(ctx: EngineContext): MapDefinition[] {
-  const projections = projectAll(ctx.result, ctx.translations);
+  const projections = getCachedProjections(ctx);
   return buildAllMaps(projections, ctx.result, ctx.translations);
 }
 

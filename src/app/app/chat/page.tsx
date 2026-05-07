@@ -1366,11 +1366,16 @@ export default function ChatPage() {
 // in the dictionary, with the long-form prompts already living under
 // `console.chat.playbook_prompts.<id>` (that namespace pre-existed).
 
-const QUICK_PRESET_IDS = [
+// Presets shown to all users
+const QUICK_PRESET_IDS_ALWAYS = [
 	"losing_money",
 	"scale_traffic",
 	"fix_first",
 	"chargeback_risk",
+] as const;
+
+// These only make sense after 2+ audit cycles — hidden on first visit
+const QUICK_PRESET_IDS_RETURNING = [
 	"recent_changes",
 	"regressions",
 ] as const;
@@ -2047,7 +2052,7 @@ function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
 
 			{/* Quick questions — 3x2 grid styled as dashboard widget cards */}
 			<div className="mt-6 grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
-				{QUICK_PRESET_IDS.map((id) => {
+				{[...QUICK_PRESET_IDS_ALWAYS, ...QUICK_PRESET_IDS_RETURNING].map((id, idx) => {
 					const style = PRESET_STYLE[id] || PRESET_STYLE.losing_money;
 					return (
 						<button
@@ -2057,7 +2062,7 @@ function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
 						>
 							<div className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${style.gradient} via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100`} />
 							<span className={`relative block font-mono text-[11px] font-medium tabular-nums ${style.accent} mb-1 opacity-60`}>
-								{String(QUICK_PRESET_IDS.indexOf(id) + 1).padStart(2, "0")}
+								{String(idx + 1).padStart(2, "0")}
 							</span>
 							<span className="relative block text-[12px] font-medium leading-snug text-content-secondary group-hover:text-content">
 								{t(`quick_presets.${id}.label`)}

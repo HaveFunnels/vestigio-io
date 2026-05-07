@@ -174,9 +174,11 @@ function buildRemediationPrompt(
 	const cause = action.root_cause || t("decidir.prompt_root_cause_unknown");
 	const lines = [
 		t("decidir.prompt_analyzing", { title: action.title, severity: action.severity }),
-		"",
-		t("decidir.prompt_root_cause", { cause }),
 	];
+	if (action.impact?.midpoint) {
+		lines.push(t("decidir.prompt_estimated_recovery", { impact: formatCurrency(action.impact.midpoint, "$") }));
+	}
+	lines.push("", t("decidir.prompt_root_cause", { cause }));
 	if (steps) {
 		lines.push("", t("decidir.prompt_steps_heading"), steps);
 	}

@@ -10,7 +10,7 @@
 // ──────────────────────────────────────────────
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCopilot } from "./CopilotProvider";
 import { usePlan } from "@/hooks/usePlan";
@@ -325,6 +325,7 @@ function ExportDropdown({
 
 export default function CopilotPanel() {
 	const router = useRouter();
+	const pathname = usePathname();
 	const t = useTranslations("console.copilot");
 	const tu = useTranslations("console.upgrade_moments");
 	const { isStarter } = usePlan();
@@ -385,8 +386,8 @@ export default function CopilotPanel() {
 			window.removeEventListener("vestigio:sidedrawer", handler);
 	}, [isOpen, minimize]);
 
-	// Don't render when closed or minimized
-	if (!isOpen || isMinimized) return null;
+	// Don't render when closed, minimized, or on the full-screen chat page
+	if (!isOpen || isMinimized || pathname === "/app/chat") return null;
 
 	const hasMessages = messages.length > 0 || streamingMessage;
 	const budgetText = usage

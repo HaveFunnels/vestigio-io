@@ -107,11 +107,14 @@ export default function ChatPage() {
 	// useEffect below also picks the most recent conversation when no
 	// stored ID is present, so a brand-new login lands on the user's
 	// latest conversation instead of an empty state.
+	// Unified storage key — shared with CopilotProvider so the side panel
+	// and full-page chat always reference the same active conversation.
+	const STORAGE_KEY = "vestigio_copilot_conv";
 	const [activeConversationId, setActiveConversationId] = useState<
 		string | null
 	>(() => {
 		if (typeof window !== "undefined") {
-			return localStorage.getItem("vestigio_active_conv") || null;
+			return localStorage.getItem(STORAGE_KEY) || null;
 		}
 		return null;
 	});
@@ -386,9 +389,9 @@ export default function ChatPage() {
 	// ── Persist active conversation ID ─────────
 	useEffect(() => {
 		if (activeConversationId) {
-			localStorage.setItem("vestigio_active_conv", activeConversationId);
+			localStorage.setItem(STORAGE_KEY, activeConversationId);
 		} else {
-			localStorage.removeItem("vestigio_active_conv");
+			localStorage.removeItem(STORAGE_KEY);
 		}
 	}, [activeConversationId]);
 
@@ -416,7 +419,7 @@ export default function ChatPage() {
 			loadConversation(explicitConv);
 			return;
 		}
-		const stored = localStorage.getItem("vestigio_active_conv");
+		const stored = localStorage.getItem(STORAGE_KEY);
 		if (stored && messages.length === 0) {
 			loadConversation(stored);
 		}

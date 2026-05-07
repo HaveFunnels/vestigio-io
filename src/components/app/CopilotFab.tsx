@@ -10,6 +10,7 @@
 // ──────────────────────────────────────────────
 
 import { useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCopilot } from "./CopilotProvider";
 import { usePlan } from "@/hooks/usePlan";
@@ -93,10 +94,12 @@ function ColorOrb({ size = 24 }: { size?: number }) {
 
 export default function CopilotFab() {
 	const t = useTranslations("console.copilot");
+	const pathname = usePathname();
 	const { isOpen, isMinimized, open, restore } = useCopilot();
 	const { isStarter } = usePlan();
 
-	const visible = !(isOpen && !isMinimized);
+	// Hide on the full-screen chat page (it IS the copilot)
+	const visible = pathname !== "/app/chat" && !(isOpen && !isMinimized);
 
 	return (
 		<AnimatePresence>

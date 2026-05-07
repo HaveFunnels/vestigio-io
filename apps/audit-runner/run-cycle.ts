@@ -1349,6 +1349,20 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			`[audit-runner ${cycleId}] complete — ${pagesDiscovered} pages, ${evidenceCount} evidence, ${durationMs}ms`,
 		);
 
+		// Prune findings from old cycles — keep only the 2 most recent.
+		// Without this, findings accumulate across cycles causing duplicates
+		// in the UI and inflated counts in workspace perspectives.
+		try {
+			const { PrismaFindingStore } = await import("../../packages/projections");
+			const findingStore = new PrismaFindingStore(prisma);
+			const pruned = await findingStore.pruneOlderThan(env.id, 2);
+			if (pruned > 0) {
+				console.log(`[audit-runner ${cycleId}] pruned ${pruned} findings from old cycles`);
+			}
+		} catch (err) {
+			console.warn(`[audit-runner ${cycleId}] finding prune failed:`, err);
+		}
+
 		// Wave 5 Fase 1B — pay-as-you-go meter. Best-effort write of
 		// cycles_run + pages_crawled + compute_seconds for this org. Failure
 		// here must NOT change the cycle outcome; the helper swallows.

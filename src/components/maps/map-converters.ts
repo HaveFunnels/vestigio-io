@@ -2,7 +2,7 @@
 // Conversion functions: MapDefinition -> ReactFlow nodes/edges
 // ──────────────────────────────────────────────
 
-import type { Node, Edge } from "@xyflow/react";
+import { MarkerType, Position, type Node, type Edge } from "@xyflow/react";
 import type { MapDefinition } from "../../../packages/maps";
 
 export function toReactFlowNodes(mapDef: MapDefinition): Node[] {
@@ -37,8 +37,8 @@ export function toReactFlowNodes(mapDef: MapDefinition): Node[] {
 			// Dagre produces real positions — no manual scaling needed
 			position: { x: n.position.x, y: n.position.y },
 			// LR layout: edges exit from the right handle, enter from the left
-			sourcePosition: "right" as const,
-			targetPosition: "left" as const,
+			sourcePosition: Position.Right,
+			targetPosition: Position.Left,
 			data: {
 				label: n.label,
 				severity: n.severity,
@@ -65,22 +65,25 @@ export function toReactFlowEdges(mapDef: MapDefinition): Edge[] {
 		source: e.source,
 		target: e.target,
 		label: e.label || undefined,
-		// Use custom edge types that match our edge component registry
 		type: e.type,
 		animated: e.type === "causal",
-		// Pass severity context to custom edge components for animation speed
+		// Arrow marker shows direction of flow
+		markerEnd: {
+			type: MarkerType.ArrowClosed,
+			width: 16,
+			height: 16,
+			color: e.type === "redirect" ? "#f59e0b" : "#3b82f6",
+		},
 		data: {
 			severity:
 				nodeSeverityMap.get(e.target) || nodeSeverityMap.get(e.source) || null,
 		},
-		// Compact pill-style label at mid-edge (drop-off / conversion %).
 		labelStyle: {
 			fill: "var(--color-content-secondary, #a1a1aa)",
 			fontSize: 10,
 			fontFamily:
 				"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
 		},
-		// Part G: Glass morphism label background
 		labelBgStyle: {
 			fill: "rgba(24, 24, 27, 0.6)",
 			backdropFilter: "blur(8px)",

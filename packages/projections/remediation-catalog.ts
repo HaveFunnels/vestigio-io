@@ -4096,7 +4096,72 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos comparar a densidade de sinais de confiança entre homepage e páginas de decisão (pricing, checkout).',
 		verification_eta_seconds: 30,
 	},
+
+	// ── Funnel integrity (User Journey Intelligence Layer) ──
+
+	funnel_dead_end_page: {
+		remediation_steps: [
+			'Identifique a página comercial sem CTA para o próximo estágio do funil.',
+			'Adicione um botão ou link CTA claro direcionando ao próximo passo (ex: "Ver Preços", "Começar Agora").',
+			'Posicione o CTA acima da dobra ou em local de alta visibilidade.',
+			'Verifique que o texto do CTA comunica o valor do próximo passo, não apenas a ação.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes: 'Vamos re-analisar os links da página para confirmar que um CTA para o próximo estágio do funil foi adicionado.',
+		verification_eta_seconds: 30,
+	},
 };
+
+/**
+ * Dynamic remediation resolver for funnel-gap keys with variable suffixes.
+ * Called by the projection layer when a key isn't found in REMEDIATION_CATALOG.
+ */
+export function getDynamicRemediation(key: string): typeof REMEDIATION_CATALOG[string] | null {
+	if (key.startsWith('funnel_missing_stage_')) {
+		return {
+			remediation_steps: [
+				'Identifique qual estágio do funil está ausente (ex: página de features, pricing, ou signup).',
+				'Crie uma página dedicada para esse estágio com conteúdo que guie o visitante adiante.',
+				'Adicione links de navegação e CTAs que conectem os estágios anterior e posterior.',
+				'Certifique-se de que o menu principal inclui acesso a essa nova página.',
+			],
+			estimated_effort_hours: 8,
+			verification_strategy: 'heuristic_recompute' as const,
+			verification_notes: 'Vamos re-crawlear o site e verificar se uma página para o estágio ausente foi criada e está linkada.',
+			verification_eta_seconds: 60,
+		};
+	}
+	if (key.startsWith('funnel_broken_path_')) {
+		return {
+			remediation_steps: [
+				'Acesse a página do estágio anterior e verifique que não há CTA visível para o próximo estágio.',
+				'Adicione um botão CTA primário claro (ex: "Ver Preços →", "Começar Teste Grátis").',
+				'Posicione o CTA no corpo principal da página (não apenas no menu de navegação).',
+				'Teste a experiência completa: o visitante consegue chegar ao próximo estágio em 1 clique?',
+			],
+			estimated_effort_hours: 3,
+			verification_strategy: 'heuristic_recompute' as const,
+			verification_notes: 'Vamos verificar se um link CTA (não apenas navegação) foi adicionado entre os dois estágios.',
+			verification_eta_seconds: 30,
+		};
+	}
+	if (key.startsWith('funnel_weak_connection_')) {
+		return {
+			remediation_steps: [
+				'A conexão entre esses estágios existe apenas via menu de navegação — não há CTA no corpo da página.',
+				'Adicione um CTA contextual no conteúdo principal que guie o visitante ao próximo passo.',
+				'Use texto que comunique benefício (ex: "Descubra nossos planos" em vez de apenas "Pricing").',
+				'Considere adicionar prova social ou urgência ao CTA para aumentar conversão.',
+			],
+			estimated_effort_hours: 2,
+			verification_strategy: 'heuristic_recompute' as const,
+			verification_notes: 'Vamos verificar se um link com peso alto (CTA no corpo) foi adicionado entre os estágios.',
+			verification_eta_seconds: 30,
+		};
+	}
+	return null;
+}
 
 /**
  * Default floor for the session-accumulation threshold the behavioral
@@ -4181,7 +4246,7 @@ export function resolveVerificationNotes(
 export function lookupRemediation(
 	inferenceKey: string,
 ): CatalogEntry | null {
-	const entry = REMEDIATION_CATALOG[inferenceKey];
+	const entry = REMEDIATION_CATALOG[inferenceKey] ?? getDynamicRemediation(inferenceKey);
 	if (!entry) return null;
 	return {
 		...entry,

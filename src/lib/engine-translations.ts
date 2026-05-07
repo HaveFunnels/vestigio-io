@@ -38,12 +38,20 @@ export function loadEngineTranslationsForLocale(locale: string | null | undefine
 
 /**
  * Loads the engine translations for the current request locale.
+ * Priority: locale cookie > Accept-Language header > undefined (English).
  * Returns undefined if i18n is disabled or locale is English (no translation needed).
  */
 export async function loadEngineTranslations(): Promise<EngineTranslations | undefined> {
   if (!integrations.isI18nEnabled) return undefined;
 
   const cookieStore = await cookies();
-  const locale = cookieStore.get("locale")?.value || "";
+  let locale = cookieStore.get("locale")?.value || "";
+
+  // Fallback: if no cookie, try to detect from Accept-Language header
+  // via the NEXT_LOCALE cookie that the i18n middleware sets
+  if (!locale || locale === "en") {
+    locale = cookieStore.get("NEXT_LOCALE")?.value || "";
+  }
+
   return loadEngineTranslationsForLocale(locale);
 }

@@ -248,6 +248,23 @@ export default function FindingDetailPanel({
 				</DrawerSection>
 			)}
 
+			{/* Reasoning */}
+			<DrawerSection
+				title={
+					finding.polarity === "positive"
+						? td("why_good")
+						: td("reasoning")
+				}
+			>
+				<DrawerStatBox>
+					<div className="px-4 py-3">
+						<p className="text-sm leading-relaxed text-content-secondary">
+							{finding.reasoning}
+						</p>
+					</div>
+				</DrawerStatBox>
+			</DrawerSection>
+
 			{/* Remediation Steps (full variant only) */}
 			{isFull && finding.polarity !== "positive" && (
 				<DrawerSection title={td("remediation")} accent={severityAccent}>
@@ -406,23 +423,6 @@ export default function FindingDetailPanel({
 					)
 				}
 			/>
-
-			{/* Reasoning */}
-			<DrawerSection
-				title={
-					finding.polarity === "positive"
-						? td("why_good")
-						: td("reasoning")
-				}
-			>
-				<DrawerStatBox>
-					<div className="px-4 py-3">
-						<p className="text-sm leading-relaxed text-content-secondary">
-							{finding.reasoning}
-						</p>
-					</div>
-				</DrawerStatBox>
-			</DrawerSection>
 
 			{/* Truth Context */}
 			{finding.truth_context?.has_contradictions && (

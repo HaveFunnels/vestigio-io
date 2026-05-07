@@ -53,9 +53,13 @@ export default function TrendSparkline({
     const usableW = width - padding * 2;
     const usableH = height - padding * 2;
 
+    const isFlat = max === min;
     const pts = data.map((v, i) => {
       const x = padding + (i / (data.length - 1)) * usableW;
-      const y = padding + usableH - ((v - min) / range) * usableH;
+      // When all values are equal (flat/stable), center the line vertically
+      const y = isFlat
+        ? height / 2
+        : padding + usableH - ((v - min) / range) * usableH;
       return { x, y };
     });
 

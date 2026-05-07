@@ -580,6 +580,9 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 								nodeTypes={nodeTypes}
 								edgeTypes={edgeTypes}
 								fitView
+								fitViewOptions={{ padding: 0.15, maxZoom: 1.2 }}
+								minZoom={0.05}
+								maxZoom={2}
 								nodesConnectable={false}
 								onNodeClick={onNodeClick}
 								onNodeMouseEnter={onNodeMouseEnter}

@@ -345,8 +345,10 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				const title = findTitleForUrl(result.evidence, url);
 				const statusCode = findStatusForUrl(result.evidence, url);
 
-				// Skip URLs that were never actually fetched — no confirmed status
-				if (statusCode == null && !entry.validated) continue;
+				// Skip URLs that were never actually fetched — no confirmed HTTP status.
+				// A page without statusCode was only discovered via links/sitemap but
+				// never requested. It may not exist (404) and shouldn't pollute inventory.
+				if (statusCode == null) continue;
 
 				const isFresh = entry.validated && (statusCode == null || statusCode < 400);
 

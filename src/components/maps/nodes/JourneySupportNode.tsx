@@ -17,7 +17,8 @@ export default function JourneySupportNode({ data }: { data: any }) {
 				ease: [0.22, 1, 0.36, 1],
 				delay: nodeIndex * 0.05,
 			}}
-			className='min-w-[160px] max-w-[200px] rounded-md border border-dashed border-edge bg-surface-card/50 px-3 py-2'
+			className='min-w-[160px] max-w-[200px] rounded-md border border-dashed border-edge px-3 py-2'
+			style={{ backgroundColor: "#1c1c20" }}
 		>
 			<Handle
 				type='target'

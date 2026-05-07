@@ -3512,6 +3512,26 @@
 				"contact": "Contato",
 				"other": "Outro"
 			},
+			"funnel_stages": {
+				"awareness": "Descoberta",
+				"consideration": "Consideração",
+				"evaluation": "Avaliação",
+				"conversion": "Conversão",
+				"activation": "Ativação",
+				"browse": "Navegação",
+				"decision": "Decisão",
+				"purchase": "Compra",
+				"retention": "Retenção",
+				"education": "Educação",
+				"intent": "Intenção",
+				"capture": "Captura",
+				"nurture": "Nutrição",
+				"discover": "Descoberta",
+				"learn": "Aprendizado",
+				"contact": "Contato",
+				"retain": "Retenção",
+				"other": "Outro"
+			},
 			"edge_types": {
 				"causal": "Causal",
 				"contributes": "Contribui",

@@ -3391,6 +3391,26 @@
 				"journey_other_events": "Other events",
 				"journey_dropoff": "Drop-off"
 			},
+			"funnel_stages": {
+				"awareness": "Awareness",
+				"consideration": "Consideration",
+				"evaluation": "Evaluation",
+				"conversion": "Conversion",
+				"activation": "Activation",
+				"browse": "Browse",
+				"decision": "Decision",
+				"purchase": "Purchase",
+				"retention": "Retention",
+				"education": "Education",
+				"intent": "Intent",
+				"capture": "Capture",
+				"nurture": "Nurture",
+				"discover": "Discover",
+				"learn": "Learn",
+				"contact": "Contact",
+				"retain": "Retain",
+				"other": "Other"
+			},
 			"edge_types": {
 				"causal": "Causal",
 				"contributes": "Contributes",

@@ -6,6 +6,8 @@
  * Non-interactive — just a visual container for the stage's page nodes.
  */
 
+import { useTranslations } from "next-intl";
+
 interface StageLaneData {
   label: string;
   stageKey: string;
@@ -13,6 +15,9 @@ interface StageLaneData {
 }
 
 export default function StageLaneNode({ data }: { data: StageLaneData }) {
+  const t = useTranslations("console.maps.funnel_stages");
+  const label = t.has(data.stageKey as never) ? t(data.stageKey as never) : data.label;
+
   return (
     <div className="flex h-full w-full flex-col">
       <div
@@ -27,7 +32,7 @@ export default function StageLaneNode({ data }: { data: StageLaneData }) {
           className="text-[10px] font-bold uppercase tracking-[0.14em]"
           style={{ color: data.stageColor }}
         >
-          {data.label}
+          {label}
         </span>
       </div>
     </div>

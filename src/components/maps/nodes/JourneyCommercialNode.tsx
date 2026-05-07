@@ -138,6 +138,7 @@ export default function JourneyCommercialNode({ data }: { data: any }) {
 				delay: nodeIndex * 0.05,
 			}}
 			className={`relative min-w-[180px] max-w-[220px] rounded-lg border-2 px-4 py-3 ${style.border} ${style.bg}`}
+		style={{ backgroundColor: "#18181b" }}
 		>
 			<Handle
 				type='target'

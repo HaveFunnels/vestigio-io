@@ -67,13 +67,13 @@ export default function ScatterPlot({ actions, onSelect }: Props) {
 		return Math.ceil(max / 100) * 100; // round up to nearest $100
 	}, [actions]);
 
-	// Map actions to dot positions
+	// Map actions to dot positions — default effort to 'medium' when missing
 	const dots = useMemo(() => {
 		return actions
-			.filter((a) => a.effort_hint && a.impact?.midpoint)
+			.filter((a) => a.impact?.midpoint != null)
 			.map((a) => {
-				const x = EFFORT_X[a.effort_hint!] ?? 0.5;
-				const y = (a.impact!.midpoint / maxImpact);
+				const x = EFFORT_X[a.effort_hint ?? 'medium'] ?? 0.5;
+				const y = Math.max(0.02, a.impact!.midpoint / maxImpact);
 				return {
 					action: a,
 					cx: PAD.left + x * plotW,

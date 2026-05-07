@@ -1491,7 +1491,14 @@
 				"vertical_specific": "Industry",
 				"cross_signal": "Cross-Signal",
 				"funnel_journey": "Buyer Journey",
-				"funnel_integrity": "Funnel Integrity"
+				"funnel_integrity": "Funnel Integrity",
+				"first_impression_revenue": "First Impression",
+				"action_value_map": "Action Value",
+				"acquisition_integrity": "Acquisition",
+				"mobile_revenue_exposure": "Mobile",
+				"friction_tax": "Friction",
+				"trust_revenue_gap": "Trust Gap",
+				"path_efficiency": "Path Efficiency"
 			},
 			"polarity": {
 				"all": "All Findings",

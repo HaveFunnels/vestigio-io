@@ -1491,7 +1491,14 @@
 				"vertical_specific": "Indústria",
 				"cross_signal": "Sinal Cruzado",
 				"funnel_journey": "Jornada de Compra",
-				"funnel_integrity": "Integridade do Funil"
+				"funnel_integrity": "Integridade do Funil",
+				"first_impression_revenue": "Primeira Impressão",
+				"action_value_map": "Valor da Ação",
+				"acquisition_integrity": "Aquisição",
+				"mobile_revenue_exposure": "Mobile",
+				"friction_tax": "Fricção",
+				"trust_revenue_gap": "Lacuna de Confiança",
+				"path_efficiency": "Eficiência do Caminho"
 			},
 			"polarity": {
 				"all": "Todas as Descobertas",

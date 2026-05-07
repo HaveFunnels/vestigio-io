@@ -163,23 +163,24 @@ function formatCurrency(value: number, sym: string = "$"): string {
 	return `${sym}${Math.round(value)}`;
 }
 
-function buildRemediationPrompt(action: ActionProjection): string {
+function buildRemediationPrompt(
+	action: ActionProjection,
+	t: (key: string, values?: Record<string, string>) => string,
+): string {
 	const steps =
 		action.remediation_steps
 			?.map((s, i) => `${i + 1}. ${s}`)
 			.join("\n") || "";
+	const cause = action.root_cause || t("decidir.prompt_root_cause_unknown");
 	const lines = [
-		`Analisando: "${action.title}" (severidade: ${action.severity})`,
+		t("decidir.prompt_analyzing", { title: action.title, severity: action.severity }),
 		"",
-		`Causa raiz: ${action.root_cause || "não identificada"}`,
+		t("decidir.prompt_root_cause", { cause }),
 	];
 	if (steps) {
-		lines.push("", "Passos de remediação sugeridos:", steps);
+		lines.push("", t("decidir.prompt_steps_heading"), steps);
 	}
-	lines.push(
-		"",
-		"Me ajude a planejar a resolução desta ação. Priorize os passos, identifique dependências, e sugira um plano de implementação concreto.",
-	);
+	lines.push("", t("decidir.prompt_instruction"));
 	return lines.join("\n");
 }
 
@@ -708,7 +709,7 @@ function ActionsContent({
 				<DecidirPopover
 					action={row}
 					onPlanRemediation={(a) => {
-						copilot.open({ prompt: buildRemediationPrompt(a) });
+						copilot.open({ prompt: buildRemediationPrompt(a, t) });
 						track("decidir_plan", { action_id: a.id });
 					}}
 					onDiscuss={() => {
@@ -848,7 +849,7 @@ function ActionsContent({
 				{selected && (
 					<ActionDrawerContent
 						action={selected}
-						onNavigateChat={(id) => copilot.open({ prompt: `Discuss action ${id}. What should I prioritize and how do I fix it?` })}
+						onNavigateChat={() => copilot.open({ prompt: t("drawer.prompt_discuss", { title: selected!.title }) })}
 						onRunVerification={(intent) => runVerification(selected, intent)}
 						isVerifying={verifyingId === selected.id}
 					/>
@@ -872,7 +873,7 @@ function ActionsContent({
 							runVerificationForUserAction(selectedUserAction)
 						}
 						onReopenConversation={() =>
-							copilot.open({ prompt: "Continue our previous conversation about this action." })
+							copilot.open({ prompt: t("drawer.prompt_continue") })
 						}
 					/>
 				)}
@@ -1044,7 +1045,7 @@ function ActionDrawerContent({
 	isVerifying,
 }: {
 	action: ActionProjection;
-	onNavigateChat: (id: string) => void;
+	onNavigateChat: () => void;
 	onRunVerification: (intent: "re_verify" | "confirm_resolution") => void;
 	isVerifying: boolean;
 }) {
@@ -1352,7 +1353,7 @@ function ActionDrawerContent({
 			{/* Action Buttons */}
 			<section className='space-y-2 pt-2'>
 				<button
-					onClick={() => onNavigateChat(action.id)}
+					onClick={() => onNavigateChat()}
 					className='w-full rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-600 transition-colors hover:border-emerald-500 hover:bg-emerald-500/15 dark:text-emerald-400'
 				>
 					{t("drawer.discussInChat")}

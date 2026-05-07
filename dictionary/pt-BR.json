@@ -3178,7 +3178,12 @@
 				"planRemediation": "Planejar Resolução",
 				"discuss": "Discutir",
 				"runVerification": "Executar Verificação",
-				"markResolved": "Marcar como Resolvido"
+				"markResolved": "Marcar como Resolvido",
+				"prompt_analyzing": "Analisando: \"{title}\" (severidade: {severity})",
+				"prompt_root_cause": "Causa raiz: {cause}",
+				"prompt_root_cause_unknown": "não identificada",
+				"prompt_steps_heading": "Passos de remediação sugeridos:",
+				"prompt_instruction": "Me ajude a planejar a resolução desta ação. Priorize os passos, identifique dependências, e sugira um plano de implementação concreto."
 			},
 			"explainer": "Ações são próximos passos priorizados derivados de decisões. Cada ação pode abordar múltiplas descobertas. As descobertas fornecem a evidência de suporte.",
 			"changeBanner": {
@@ -3222,6 +3227,8 @@
 				"affectsMultiplePacks": "Afeta múltiplos packs",
 				"singlePack": "Pack único",
 				"discussInChat": "Discutir no Chat",
+				"prompt_discuss": "Discutir ação \"{title}\". O que devo priorizar e como resolver?",
+				"prompt_continue": "Continuar nossa conversa anterior sobre esta ação.",
 				"this": "este",
 				"action": "ação",
 				"requestVerification": "Solicitar Verificação",

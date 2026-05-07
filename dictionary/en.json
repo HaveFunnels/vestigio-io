@@ -3094,7 +3094,12 @@
 				"planRemediation": "Plan Resolution",
 				"discuss": "Discuss",
 				"runVerification": "Run Verification",
-				"markResolved": "Mark as Resolved"
+				"markResolved": "Mark as Resolved",
+				"prompt_analyzing": "Analyzing: \"{title}\" (severity: {severity})",
+				"prompt_root_cause": "Root cause: {cause}",
+				"prompt_root_cause_unknown": "not identified",
+				"prompt_steps_heading": "Suggested remediation steps:",
+				"prompt_instruction": "Help me plan the resolution of this action. Prioritize the steps, identify dependencies, and suggest a concrete implementation plan."
 			},
 			"explainer": "Actions are prioritized next steps derived from decisions. Each action may address multiple findings. Findings provide the supporting evidence.",
 			"changeBanner": {
@@ -3138,6 +3143,8 @@
 				"affectsMultiplePacks": "Affects multiple packs",
 				"singlePack": "Single pack",
 				"discussInChat": "Discuss in Chat",
+				"prompt_discuss": "Discuss action \"{title}\". What should I prioritize and how do I fix it?",
+				"prompt_continue": "Continue our previous conversation about this action.",
 				"this": "this",
 				"action": "action",
 				"requestVerification": "Request Verification",

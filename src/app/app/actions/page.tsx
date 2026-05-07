@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
 import FixWithAiSection from "@/components/console/actions/FixWithAiSection";
 import ScatterPlot from "@/components/console/actions/ScatterPlot";
+import DecidirPopover from "@/components/console/actions/DecidirPopover";
 import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import VerificationBadge from "@/components/console/VerificationBadge";
@@ -160,6 +161,26 @@ function formatCurrency(value: number, sym: string = "$"): string {
 	if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
 	if (value >= 1000) return `${sym}${(value / 1000).toFixed(1)}k`;
 	return `${sym}${Math.round(value)}`;
+}
+
+function buildRemediationPrompt(action: ActionProjection): string {
+	const steps =
+		action.remediation_steps
+			?.map((s, i) => `${i + 1}. ${s}`)
+			.join("\n") || "";
+	const lines = [
+		`Analisando: "${action.title}" (severidade: ${action.severity})`,
+		"",
+		`Causa raiz: ${action.root_cause || "não identificada"}`,
+	];
+	if (steps) {
+		lines.push("", "Passos de remediação sugeridos:", steps);
+	}
+	lines.push(
+		"",
+		"Me ajude a planejar a resolução desta ação. Priorize os passos, identifique dependências, e sugira um plano de implementação concreto.",
+	);
+	return lines.join("\n");
 }
 
 // ──────────────────────────────────────────────
@@ -680,25 +701,32 @@ function ActionsContent({
 			render: (row) => <SeverityBadge value={row.severity} />,
 		},
 		{
-			key: "resolve",
+			key: "decide",
 			label: t("columns.nextStep"),
-			className: "w-24",
-			render: (row) => {
-				if (!row.resolve_path)
-					return <span className='text-xs text-content-faint'>--</span>;
-				const cfg = resolveConfig[row.resolve_path];
-				return (
-					<button
-						onClick={(e) => {
-							e.stopPropagation();
-							setSelected(row);
-						}}
-						className={`rounded border px-2.5 py-1 text-xs font-medium transition-colors ${cfg?.style || ""}`}
-					>
-						{cfg ? t(`resolve.${cfg.labelKey}`) : row.resolve_path}
-					</button>
-				);
-			},
+			className: "w-28",
+			render: (row) => (
+				<DecidirPopover
+					action={row}
+					onPlanRemediation={(a) => {
+						copilot.open({ prompt: buildRemediationPrompt(a) });
+						track("decidir_plan", { action_id: a.id });
+					}}
+					onDiscuss={() => {
+						copilot.open();
+						track("decidir_discuss", { action_id: row.id });
+					}}
+					onRunVerification={(a) => {
+						runVerification(a, "re_verify");
+						track("decidir_verify", { action_id: a.id });
+					}}
+					onMarkResolved={(a) => {
+						runVerification(a, "confirm_resolution");
+						track("decidir_resolve", { action_id: a.id });
+					}}
+					verificationDisabled={!row.verification_strategy}
+					isVerifying={verifyingId !== null}
+				/>
+			),
 		},
 	];
 

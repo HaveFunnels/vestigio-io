@@ -3173,6 +3173,13 @@
 				"track": "Acompanhar Progresso",
 				"dismiss": "Dispensar"
 			},
+			"decidir": {
+				"label": "Decidir",
+				"planRemediation": "Planejar Resolução",
+				"discuss": "Discutir",
+				"runVerification": "Executar Verificação",
+				"markResolved": "Marcar como Resolvido"
+			},
 			"explainer": "Ações são próximos passos priorizados derivados de decisões. Cada ação pode abordar múltiplas descobertas. As descobertas fornecem a evidência de suporte.",
 			"changeBanner": {
 				"firstAnalysis": "Primeira análise — sem histórico de mudanças",

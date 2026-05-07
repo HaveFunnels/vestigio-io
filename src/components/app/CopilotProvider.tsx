@@ -306,11 +306,10 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 						title: context.finding.title,
 					},
 				]);
-				// Auto-send a contextualized prompt
-				if (context.prompt) {
-					// Defer send to next tick so panel is visible
-					setTimeout(() => send(context.prompt!), 100);
-				}
+			}
+			// Auto-send prompt regardless of finding context
+			if (context?.prompt) {
+				setTimeout(() => send(context.prompt!), 100);
 			}
 		},
 		[send],

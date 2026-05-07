@@ -3089,6 +3089,13 @@
 				"track": "Track Progress",
 				"dismiss": "Dismiss"
 			},
+			"decidir": {
+				"label": "Decide",
+				"planRemediation": "Plan Resolution",
+				"discuss": "Discuss",
+				"runVerification": "Run Verification",
+				"markResolved": "Mark as Resolved"
+			},
 			"explainer": "Actions are prioritized next steps derived from decisions. Each action may address multiple findings. Findings provide the supporting evidence.",
 			"changeBanner": {
 				"firstAnalysis": "First analysis — no change history yet",

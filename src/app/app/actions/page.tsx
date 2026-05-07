@@ -726,7 +726,11 @@ function ActionsContent({
 						runVerification(a, "confirm_resolution");
 						track("decidir_resolve", { action_id: a.id });
 					}}
-					verificationDisabled={!row.verification_strategy}
+					verificationDisabled={
+						!row.verification_strategy &&
+						row.category !== "verification" &&
+						row.category !== "opportunity"
+					}
 					isVerifying={verifyingId !== null}
 				/>
 			),

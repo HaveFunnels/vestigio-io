@@ -285,6 +285,39 @@ export async function runStagedPipeline(
     addScriptEvidence(evidence, homepageParsed, homepageResponse.final_url, scoping, input.cycle_ref);
     addFormEvidence(evidence, homepageParsed, homepageResponse.final_url, scoping, input.cycle_ref);
 
+    // Collect homepage surface relations (Stage A runs BEFORE the batch loop
+    // in Stage C where normal pages have their links collected. Without this,
+    // the homepage — typically the most important funnel origin — has 0 outbound
+    // edges in the user journey map.)
+    for (const link of homepageParsed.links) {
+      if (!link.is_external && link.href) {
+        surfaceRelations.push({
+          sourceUrl: homepageResponse.final_url,
+          targetUrl: link.href,
+          relationType: 'anchor',
+          sourceHost: homepageParsed.host,
+          targetHost: link.target_host || homepageParsed.host,
+          isSameDomain: true,
+          linkText: link.text,
+          position: link.position,
+        });
+      }
+    }
+    for (const form of homepageParsed.forms) {
+      if (form.action && !form.is_external) {
+        surfaceRelations.push({
+          sourceUrl: homepageResponse.final_url,
+          targetUrl: form.action,
+          relationType: 'form_action',
+          sourceHost: homepageParsed.host,
+          targetHost: form.target_host || homepageParsed.host,
+          isSameDomain: true,
+          linkText: null,
+          position: 'main',
+        });
+      }
+    }
+
     coverage.set(rootUrl, { url: rootUrl, discovered: true, validated: true, critical: true, confidence: 80 });
   } catch (err) {
     errors.push({ url: rootUrl, error: err instanceof Error ? err.message : String(err) });

@@ -391,7 +391,7 @@ export default function FindingDetailPanel({
 				</DrawerSection>
 			)}
 
-			{/* Verification Lifecycle Panel */}
+			{/* Verification Lifecycle Panel + CTA */}
 			<DrawerSection title={td("verification")} accent="info">
 				<VerificationPanel
 					maturity={finding.verification_maturity}
@@ -406,18 +406,16 @@ export default function FindingDetailPanel({
 						)
 					}
 				/>
+				<VerificationSufficiencyWarning
+					severity={finding.severity}
+					maturity={finding.verification_maturity}
+					onVerify={() =>
+						router.push(
+							`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
+						)
+					}
+				/>
 			</DrawerSection>
-
-			{/* Verification CTA */}
-			<VerificationSufficiencyWarning
-				severity={finding.severity}
-				maturity={finding.verification_maturity}
-				onVerify={() =>
-					router.push(
-						`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
-					)
-				}
-			/>
 
 			{/* Truth Context */}
 			{finding.truth_context?.has_contradictions && (

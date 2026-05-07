@@ -66,7 +66,14 @@ export default function AppSidebar({
 		setMobileOpen(false);
 	}, [pathname, setMobileOpen]);
 
-	const handleMouseEnter = useCallback(() => {
+	const handleMouseEnter = useCallback((e: React.MouseEvent) => {
+		// Ignore hover in the bottom 120px of the sidebar — that area overlaps
+		// with map controls (React Flow zoom/fit buttons) and other page content.
+		// Without this guard, moving the mouse near the bottom-left corner of
+		// the page triggers the sidebar expansion unexpectedly.
+		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		if (e.clientY > rect.bottom - 120) return;
+
 		if (leaveTimer.current) {
 			clearTimeout(leaveTimer.current);
 			leaveTimer.current = null;

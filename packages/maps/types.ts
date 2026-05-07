@@ -43,6 +43,8 @@ export interface MapEdge {
   target: string;
   type: MapEdgeType;
   label: string | null;
+  /** Optional edge metadata (linkWeight, linkIntent, etc.) */
+  metadata?: Record<string, unknown>;
 }
 
 export type MapType =

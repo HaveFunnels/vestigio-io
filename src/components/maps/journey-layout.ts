@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Journey Map ELK Layout — Produces stage-lane grouped layout
  *
@@ -200,7 +202,7 @@ export async function computeJourneyLayout(
 
   // Build edges with arrow markers + thickness by weight
   const rfEdges: Edge[] = mapDef.edges.map(e => {
-    const weight = (e as any).metadata?.linkWeight ?? 0.5;
+    const weight = (e.metadata?.linkWeight as number) ?? 0.5;
     const isHighWeight = weight >= 0.7;
 
     return {

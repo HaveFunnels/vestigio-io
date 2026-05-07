@@ -302,9 +302,10 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 
 	useEffect(() => {
 		if (!isJourney) return;
+		let cancelled = false;
 		setElkReady(false);
 		computeJourneyLayout(activeMap).then(({ nodes: n, edges: e }) => {
-			// Inject insights into node data
+			if (cancelled) return;
 			const withInsights = n.map(node => {
 				const ins = insightsMap.get(node.id);
 				if (!ins) return node;
@@ -314,6 +315,7 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 			setElkEdges(e);
 			setElkReady(true);
 		});
+		return () => { cancelled = true; };
 	}, [isJourney, activeMap, insightsMap]);
 
 	// Non-journey: sync dagre layout
@@ -564,7 +566,7 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 				setSelectedNode(mapNode);
 			}
 		},
-		[nodeMap, insightsMap, activeMap.edges, activeMap.nodes, selectedNodes]
+		[nodeMap, insightsMap, activeMap.edges, activeMap.nodes, selectedNodes, highlightedPath]
 	);
 
 	const onNodeMouseEnter: NodeMouseHandler = useCallback(

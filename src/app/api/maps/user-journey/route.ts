@@ -318,6 +318,7 @@ export async function GET(request: Request) {
           target: targetId,
           type: edgeType,
           label: null,
+          metadata: { linkWeight, linkIntent: (() => { try { const m = typeof rel.metadata === 'string' ? JSON.parse(rel.metadata) : rel.metadata; return m?.linkIntent ?? 'unknown'; } catch { return 'unknown'; } })() },
         });
       }
     }
@@ -639,7 +640,19 @@ function buildDemoJourneyMap(
 
   const nodes: MapNode[] = [];
 
+  const DEMO_STAGE_META: Record<string, { stageKey: string; stageLabel: string; stageColor: string }> = {
+    homepage: { stageKey: "awareness", stageLabel: "Awareness", stageColor: "blue" },
+    landing:  { stageKey: "awareness", stageLabel: "Awareness", stageColor: "blue" },
+    product:  { stageKey: "browse",    stageLabel: "Browse",    stageColor: "violet" },
+    category: { stageKey: "browse",    stageLabel: "Browse",    stageColor: "violet" },
+    pricing:  { stageKey: "decision",  stageLabel: "Decision",  stageColor: "amber" },
+    cart:     { stageKey: "decision",  stageLabel: "Decision",  stageColor: "amber" },
+    checkout: { stageKey: "purchase",  stageLabel: "Purchase",  stageColor: "red" },
+    thank_you:{ stageKey: "purchase",  stageLabel: "Purchase",  stageColor: "red" },
+  };
+
   commercialAdjusted.forEach((p, idx) => {
+    const stageMeta = DEMO_STAGE_META[p.pageType] || { stageKey: "other", stageLabel: "Other", stageColor: "zinc" };
     nodes.push({
       id: `demo_${p.id}`,
       type: "journey_commercial",
@@ -654,9 +667,12 @@ function buildDemoJourneyMap(
         statusCode: 200,
         tier: "core",
         stage: demoStageOrder[p.pageType] ?? idx,
+        stageKey: stageMeta.stageKey,
+        stageLabel: stageMeta.stageLabel,
+        stageColor: stageMeta.stageColor,
         conversionRate: p.conversionRateOfVisible,
       },
-      position: { x: 0, y: 0 }, // dagre will compute
+      position: { x: 0, y: 0 },
     });
   });
 

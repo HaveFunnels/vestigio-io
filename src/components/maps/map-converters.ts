@@ -36,6 +36,9 @@ export function toReactFlowNodes(mapDef: MapDefinition): Node[] {
 			type: n.type,
 			// Dagre produces real positions — no manual scaling needed
 			position: { x: n.position.x, y: n.position.y },
+			// LR layout: edges exit from the right handle, enter from the left
+			sourcePosition: "right" as const,
+			targetPosition: "left" as const,
 			data: {
 				label: n.label,
 				severity: n.severity,
@@ -46,11 +49,6 @@ export function toReactFlowNodes(mapDef: MapDefinition): Node[] {
 				...n.metadata,
 			},
 			className: classNames.join(" ") || undefined,
-			// NOTE: Do NOT set style.transform here — React Flow uses
-			// transform: translate(x,y) on the node wrapper for positioning.
-			// Setting a custom transform in node.style overrides it and breaks
-			// node placement. Instead, pass _scaleFactor via data and apply
-			// scaling inside the custom node component's inner element.
 		};
 	});
 }

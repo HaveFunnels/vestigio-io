@@ -294,6 +294,13 @@ export async function GET(request: Request) {
       if (sourceId && targetId && sourceId !== targetId) {
         const edgeKey = `${sourceId}->${targetId}`;
         if (edgeSet.has(edgeKey)) continue;
+
+        // Eliminate bidirectional edges (cycles) — keep only the forward direction
+        // (lower stage → higher stage). If both A→B and B→A exist, the reverse
+        // one creates visual clutter and confuses the funnel flow.
+        const reverseKey = `${targetId}->${sourceId}`;
+        if (edgeSet.has(reverseKey)) continue;
+
         edgeSet.add(edgeKey);
 
         const edgeType: MapEdgeType =
@@ -303,7 +310,7 @@ export async function GET(request: Request) {
           source: sourceId,
           target: targetId,
           type: edgeType,
-          label: linkWeight >= 0.7 ? null : null, // future: edge labels for CTAs
+          label: null,
         });
       }
     }

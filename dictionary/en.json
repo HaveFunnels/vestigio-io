@@ -3423,7 +3423,15 @@
 				"support": "Support",
 				"policy": "Policy",
 				"blog": "Blog",
-				"page": "Page"
+				"page": "Page",
+				"features": "Features",
+				"signup": "Signup",
+				"account": "Account",
+				"onboarding": "Onboarding",
+				"demo": "Demo",
+				"about": "About",
+				"contact": "Contact",
+				"other": "Other"
 			},
 			"impact_unlocks": "unlocks {amount}/mo",
 			"back_to_gallery": "Back to maps",

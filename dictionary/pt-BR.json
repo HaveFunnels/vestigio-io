@@ -3502,7 +3502,15 @@
 				"support": "Suporte",
 				"policy": "Política",
 				"blog": "Blog",
-				"page": "Página"
+				"page": "Página",
+				"features": "Funcionalidades",
+				"signup": "Cadastro",
+				"account": "Conta",
+				"onboarding": "Onboarding",
+				"demo": "Demo",
+				"about": "Sobre",
+				"contact": "Contato",
+				"other": "Outro"
 			},
 			"edge_types": {
 				"causal": "Causal",

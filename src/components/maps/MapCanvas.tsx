@@ -664,7 +664,7 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 export default function MapCanvas({ mapDef }: { mapDef: MapDefinition }) {
 	return (
 		<ReactFlowProvider>
-			<div className='flex flex-1 flex-col'>
+			<div className='flex h-full min-h-0 flex-1 flex-col'>
 				{/* Keyframes for critical glow + causal flow + search pulse animations */}
 				<style>{`
         /* Hide connection handle dots but keep them functional for edge routing */

@@ -177,7 +177,7 @@ function JourneyCanvasView({
     <div className="flex h-full flex-col">
       <MapCanvasHeader mapDef={journeyMap} t={t} tc={tc} />
       <JourneyFiltersBar filters={filters} onChange={updateFilter} mode={mode} dynamicStages={dynamicStages} />
-      <div className="flex-1">
+      <div className="min-h-0 flex-1">
         {!loaded ? (
           <MapLoadingShell label={t("loading")} />
         ) : !journeyMap ? (

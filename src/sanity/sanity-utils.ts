@@ -167,6 +167,7 @@ function foundationToKnowledgeArticle(article: AnyFoundationArticle): KnowledgeA
 function dedupeBySlug(articles: KnowledgeArticle[], locale: string): KnowledgeArticle[] {
 	const bySlug = new Map<string, KnowledgeArticle>();
 	for (const a of articles) {
+		if (!a.slug?.current) continue; // skip articles with null/missing slug
 		const slug = a.slug.current;
 		const existing = bySlug.get(slug);
 		if (!existing) {

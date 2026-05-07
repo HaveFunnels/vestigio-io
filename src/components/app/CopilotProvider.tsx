@@ -340,13 +340,15 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const expand = useCallback(() => {
-		// Navigate to the full-screen chat page with the same conversation.
-		// The chat page reads conversationId from CopilotProvider (same
-		// localStorage key) so the conversation carries over seamlessly.
-		setIsOpen(false);
-		setIsMinimized(false);
+		// Animate the panel to full-screen first, then navigate after
+		// the CSS transition completes so the user sees a smooth expansion.
 		setIsExpanded(true);
-		router.push("/app/chat");
+		setIsMinimized(false);
+		setIsOpen(true);
+		setTimeout(() => {
+			setIsOpen(false);
+			router.push("/app/chat");
+		}, 300); // matches transition-all duration-300
 	}, [router]);
 
 	const collapse = useCallback(() => {

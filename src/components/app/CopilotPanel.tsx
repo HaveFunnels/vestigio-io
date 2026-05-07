@@ -321,6 +321,31 @@ function ExportDropdown({
 	);
 }
 
+// ── Budget radial ring ──
+
+function BudgetRadial({ remaining, limit, usedPct }: { remaining: number; limit: number; usedPct: number }) {
+	const remainPct = 100 - usedPct;
+	const r = 8;
+	const circ = 2 * Math.PI * r;
+	const offset = circ * (1 - remainPct / 100);
+	const color = usedPct >= 90 ? "stroke-red-500" : usedPct >= 75 ? "stroke-amber-400" : "stroke-emerald-500";
+	return (
+		<div className="mr-auto flex items-center gap-1.5" title={`${remaining}/${limit}`}>
+			<svg width={20} height={20} className="-rotate-90">
+				<circle cx={10} cy={10} r={r} fill="none" strokeWidth={2} className="stroke-surface-inset" />
+				<circle
+					cx={10} cy={10} r={r} fill="none" strokeWidth={2}
+					className={color}
+					strokeDasharray={circ}
+					strokeDashoffset={offset}
+					strokeLinecap="round"
+				/>
+			</svg>
+			<span className="text-[10px] font-mono text-content-faint">{remaining}</span>
+		</div>
+	);
+}
+
 // ── Main panel ──
 
 export default function CopilotPanel() {
@@ -390,9 +415,9 @@ export default function CopilotPanel() {
 	if (!isOpen || isMinimized || pathname === "/app/chat") return null;
 
 	const hasMessages = messages.length > 0 || streamingMessage;
-	const budgetText = usage
-		? `${usage.remaining}/${usage.limit}`
-		: "";
+	const budgetUsedPct = usage && usage.limit > 0
+		? ((usage.limit - usage.remaining) / usage.limit) * 100
+		: 0;
 
 	return (
 		<div
@@ -406,10 +431,8 @@ export default function CopilotPanel() {
 		>
 			{/* ── Header ── */}
 			<div className="flex items-center justify-end gap-1 px-3 py-2">
-				{budgetText && (
-					<span className="mr-auto rounded-full bg-surface-inset px-2 py-0.5 text-[10px] font-mono text-content-faint">
-						{budgetText}
-					</span>
+				{usage && budgetUsedPct > 50 && (
+					<BudgetRadial remaining={usage.remaining} limit={usage.limit} usedPct={budgetUsedPct} />
 				)}
 				{/* New conversation — hide when conversation is already empty */}
 				{hasMessages && (

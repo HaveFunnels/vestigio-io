@@ -3275,6 +3275,7 @@
 				"dismissed": "Dispensada"
 			},
 			"statuses": {
+				"created": "Criado",
 				"opened": "Aberto",
 				"acknowledged": "Reconhecido",
 				"mitigated": "Mitigado",
@@ -3286,7 +3287,9 @@
 				"implemented": "Implementado",
 				"archived": "Arquivado",
 				"confirmed": "Confirmado",
-				"resolved": "Resolvido"
+				"resolved": "Resolvido",
+				"stale": "Obsoleto",
+				"regressed": "Regredido"
 			}
 		},
 		"data_sources": {

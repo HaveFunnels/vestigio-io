@@ -3191,6 +3191,7 @@
 				"dismissed": "Dismissed"
 			},
 			"statuses": {
+				"created": "Created",
 				"opened": "Opened",
 				"acknowledged": "Acknowledged",
 				"mitigated": "Mitigated",
@@ -3202,7 +3203,9 @@
 				"implemented": "Implemented",
 				"archived": "Archived",
 				"confirmed": "Confirmed",
-				"resolved": "Resolved"
+				"resolved": "Resolved",
+				"stale": "Stale",
+				"regressed": "Regressed"
 			}
 		},
 		"data_sources": {

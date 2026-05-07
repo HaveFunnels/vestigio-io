@@ -654,7 +654,7 @@ function ActionsContent({
 					return <span className='text-xs text-content-faint'>--</span>;
 				return (
 					<span className='inline-flex items-center rounded-full border border-edge px-2 py-0.5 text-xs text-content-secondary'>
-						{t.has(`statuses.${status}`) ? t(`statuses.${status}`) : status.replace(/_/g, " ")}
+						{t.has(`statuses.${status}`) ? t(`statuses.${status}`) : status.replace(/_/g, " ").replace(/^\w/, c => c.toUpperCase())}
 					</span>
 				);
 			},
@@ -1399,7 +1399,7 @@ function OperationalTimeline({
 												: "text-content-faint"
 									}`}
 								>
-									{t.has(step) ? t(step) : step.replace(/_/g, " ")}
+									{t.has(step) ? t(step) : step.replace(/_/g, " ").replace(/^\w/, c => c.toUpperCase())}
 								</span>
 							</div>
 

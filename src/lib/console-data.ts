@@ -119,6 +119,23 @@ export async function ensureContext(orgCtx: {
       is_production: process.env.NODE_ENV === 'production',
     }, evidence, store, orgCtx.engineTranslations, previousSnapshot);
 
+    // Load persisted findings from DB as supplement for the MCP context.
+    // This ensures findings from previous cold cycles (with LLM enrichment)
+    // don't disappear when the latest cycle is warm (no LLM).
+    try {
+      const { PrismaFindingStore } = await import('../../packages/projections');
+      const findingStore = new PrismaFindingStore(prisma);
+      const result = await findingStore.loadLatestForEnvironment(orgCtx.envId);
+      if (result && result.findings.length > 0) {
+        const ctx = server.getContext();
+        if (ctx) {
+          ctx.persistedFindings = result.findings;
+        }
+      }
+    } catch {
+      // Non-fatal — hot-path findings still work, just without supplement
+    }
+
     _loadedCycleRef = cycleRef;
   } catch (err) {
     console.error('[ensureContext] Failed to bootstrap MCP context:', err);

@@ -37,6 +37,9 @@ export interface EngineContext {
   root_domain: string;
   landing_url: string;
   translations?: EngineTranslations;
+  /** Persisted findings from DB — used as supplement when hot-path recompute
+   *  misses findings that depend on LLM enrichment from previous cycles. */
+  persistedFindings?: FindingProjection[];
 }
 
 export function assembleContext(
@@ -139,7 +142,24 @@ export function getProjections(ctx: EngineContext): ProjectionResult {
 }
 
 export function getFindingProjections(ctx: EngineContext): FindingProjection[] {
-  return projectAll(ctx.result, ctx.translations).findings;
+  const recomputed = projectAll(ctx.result, ctx.translations).findings;
+
+  // Merge persisted findings that the hot-path didn't reproduce.
+  // This happens when the latest evidence cycle is warm (no LLM) but a
+  // previous cold cycle produced LLM-dependent findings (copy_alignment, etc.).
+  // Without this merge, workspaces like "Copy" appear empty despite findings
+  // existing in the DB from a prior cycle.
+  if (!ctx.persistedFindings || ctx.persistedFindings.length === 0) {
+    return recomputed;
+  }
+
+  const recomputedKeys = new Set(recomputed.map(f => f.inference_key));
+  const supplemental = ctx.persistedFindings.filter(
+    f => !recomputedKeys.has(f.inference_key) && f.confidence_tier !== 'low'
+  );
+
+  if (supplemental.length === 0) return recomputed;
+  return [...recomputed, ...supplemental];
 }
 
 export function getActionProjections(ctx: EngineContext): ActionProjection[] {
@@ -147,7 +167,28 @@ export function getActionProjections(ctx: EngineContext): ActionProjection[] {
 }
 
 export function getWorkspaceProjections(ctx: EngineContext): WorkspaceProjection[] {
-  return projectAll(ctx.result, ctx.translations).workspaces;
+  const projections = projectAll(ctx.result, ctx.translations);
+
+  // Supplement workspace findings with persisted data from previous cycles
+  if (ctx.persistedFindings && ctx.persistedFindings.length > 0) {
+    const recomputedKeys = new Set(projections.findings.map(f => f.inference_key));
+    const supplemental = ctx.persistedFindings.filter(
+      f => !recomputedKeys.has(f.inference_key) && f.confidence_tier !== 'low'
+    );
+    if (supplemental.length > 0) {
+      // Inject supplemental findings into their matching workspaces
+      for (const ws of projections.workspaces) {
+        const packKey = (ws as any).pack_key?.replace('_pack', '') || '';
+        const matching = supplemental.filter(f => f.pack === packKey);
+        if (matching.length > 0) {
+          ws.findings = [...ws.findings, ...matching];
+          ws.summary.issue_count += matching.length;
+        }
+      }
+    }
+  }
+
+  return projections.workspaces;
 }
 
 export function getChangeReport(ctx: EngineContext): ChangeReportProjection | null {

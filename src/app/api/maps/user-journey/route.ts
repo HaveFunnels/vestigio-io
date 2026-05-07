@@ -323,20 +323,58 @@ export async function GET(request: Request) {
       }
     }
 
-    // If no edges from relations, create sequential edges based on funnel stage
-    if (edges.length === 0 && nodes.length > 1) {
+    // Ensure funnel continuity: for each pair of consecutive stages, if no
+    // forward edge connects them, add an inferred sequential edge.
+    // This prevents stages from being visually disconnected (e.g., pricing
+    // with no CTA to checkout still shows the expected funnel flow).
+    {
       const commercialNodes = nodes
         .filter((n) => n.type === "journey_commercial")
         .sort((a, b) => ((a.metadata.stage as number) ?? 99) - ((b.metadata.stage as number) ?? 99));
 
-      for (let i = 0; i < commercialNodes.length - 1; i++) {
-        edges.push({
-          id: `edge_seq_${i}`,
-          source: commercialNodes[i].id,
-          target: commercialNodes[i + 1].id,
-          type: "transition",
-          label: null,
-        });
+      // Group by stage
+      const byStage = new Map<number, typeof commercialNodes>();
+      for (const n of commercialNodes) {
+        const stage = (n.metadata.stage as number) ?? 99;
+        let list = byStage.get(stage);
+        if (!list) { list = []; byStage.set(stage, list); }
+        list.push(n);
+      }
+      const stageNums = [...byStage.keys()].sort((a, b) => a - b);
+
+      // Build set of existing forward edges (source stage < target stage)
+      const existingForwardPairs = new Set<string>();
+      for (const e of edges) {
+        const srcNode = nodes.find(n => n.id === e.source);
+        const tgtNode = nodes.find(n => n.id === e.target);
+        if (srcNode && tgtNode) {
+          const srcStage = (srcNode.metadata.stage as number) ?? 99;
+          const tgtStage = (tgtNode.metadata.stage as number) ?? 99;
+          if (tgtStage > srcStage) {
+            existingForwardPairs.add(`${srcStage}->${tgtStage}`);
+          }
+        }
+      }
+
+      // Add inferred edges between consecutive stages that lack connection
+      for (let i = 0; i < stageNums.length - 1; i++) {
+        const fromStage = stageNums[i];
+        const toStage = stageNums[i + 1];
+        if (existingForwardPairs.has(`${fromStage}->${toStage}`)) continue;
+
+        // Pick the first node in each stage as representative
+        const fromNode = byStage.get(fromStage)?.[0];
+        const toNode = byStage.get(toStage)?.[0];
+        if (fromNode && toNode) {
+          edges.push({
+            id: `edge_inferred_${fromStage}_${toStage}`,
+            source: fromNode.id,
+            target: toNode.id,
+            type: "transition",
+            label: null,
+            metadata: { linkWeight: 0.3, linkIntent: 'inferred' },
+          });
+        }
       }
     }
 

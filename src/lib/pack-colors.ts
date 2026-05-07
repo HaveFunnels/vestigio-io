@@ -66,6 +66,7 @@ export const PACK_STYLE_MAP: Record<string, PackStyle> = {
 
 	// Funnel journey
 	funnel_journey:       { text: "text-sky-400",     dot: "bg-sky-500",     bg: "bg-sky-500" },
+	funnel_integrity:     { text: "text-sky-400",     dot: "bg-sky-500",     bg: "bg-sky-500" },
 
 	// Cross-signal
 	cross_signal:         { text: "text-fuchsia-400", dot: "bg-fuchsia-500", bg: "bg-fuchsia-500" },

@@ -2711,7 +2711,65 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     low: { min: 0.01, max: 0.03 },
     base_metric: 'revenue',
   },
+
+  // ── Funnel integrity (User Journey Intelligence Layer) ──
+
+  funnel_dead_end_page: {
+    inference_key: 'funnel_dead_end_page',
+    impact_category: 'conversion_loss',
+    cause: 'Commercial page has no CTA linking to later funnel stages',
+    effect: 'Visitors reaching this page have no guided path toward conversion',
+    high: { min: 0.06, max: 0.12 },
+    medium: { min: 0.03, max: 0.06 },
+    low: { min: 0.01, max: 0.03 },
+    base_metric: 'conversion_rate',
+  },
 };
+
+// Dynamic baseline resolver for funnel-gap keys with variable suffixes
+export function getBaselineForKey(key: string): BaselineEntry | undefined {
+  if (IMPACT_BASELINES[key]) return IMPACT_BASELINES[key];
+
+  // Funnel gap findings have dynamic keys — match by prefix
+  if (key.startsWith('funnel_missing_stage_')) {
+    return {
+      inference_key: key,
+      impact_category: 'conversion_loss',
+      cause: 'Expected funnel stage has no pages',
+      effect: 'Visitors cannot progress through this stage of the buyer journey',
+      high: { min: 0.08, max: 0.15 },
+      medium: { min: 0.04, max: 0.08 },
+      low: { min: 0.02, max: 0.04 },
+      base_metric: 'conversion_rate',
+    };
+  }
+  if (key.startsWith('funnel_broken_path_')) {
+    return {
+      inference_key: key,
+      impact_category: 'conversion_loss',
+      cause: 'No CTA link between consecutive funnel stages',
+      effect: 'Visitors must navigate manually to reach the next conversion step',
+      high: { min: 0.10, max: 0.20 },
+      medium: { min: 0.05, max: 0.10 },
+      low: { min: 0.02, max: 0.05 },
+      base_metric: 'conversion_rate',
+    };
+  }
+  if (key.startsWith('funnel_weak_connection_')) {
+    return {
+      inference_key: key,
+      impact_category: 'conversion_loss',
+      cause: 'Connection between funnel stages exists only via navigation (no CTA)',
+      effect: 'Visitors are not actively guided toward conversion — passive discovery required',
+      high: { min: 0.05, max: 0.10 },
+      medium: { min: 0.03, max: 0.06 },
+      low: { min: 0.01, max: 0.03 },
+      base_metric: 'conversion_rate',
+    };
+  }
+
+  return undefined;
+}
 
 // ──────────────────────────────────────────────
 // Positive Impact Baselines (retention)

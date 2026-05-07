@@ -1490,7 +1490,8 @@
 				"content_freshness": "Frescor",
 				"vertical_specific": "Indústria",
 				"cross_signal": "Sinal Cruzado",
-				"funnel_journey": "Jornada de Compra"
+				"funnel_journey": "Jornada de Compra",
+				"funnel_integrity": "Integridade do Funil"
 			},
 			"polarity": {
 				"all": "Todas as Descobertas",

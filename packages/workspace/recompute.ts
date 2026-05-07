@@ -27,6 +27,7 @@ import { extractSaasSignals } from '../signals/saas-signals';
 import { computeSaasInferences } from '../inference/saas-inference';
 import { computeVerticalInferences } from '../inference/vertical-inference';
 import { computeFunnelMomentInferences } from '../inference/funnel-moment-inference';
+import { computeFunnelGapInferences, type FunnelGapInput } from '../inference/funnel-gap-inference';
 import { computeCrossDomainInferences, computeSubdomainCrossDomainInferences } from '../inference/cross-domain-inference';
 import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
 import { adjustConfidenceByQuality, QualityAdjustmentResult } from '../evidence/confidence-adjuster';
@@ -169,6 +170,8 @@ export interface MultiPackInput {
   integration_snapshots?: IntegrationSnapshot[];
   /** Additional signals from static checks (post-crawl) — merged before inference */
   additional_signals?: Signal[];
+  /** Pre-computed inferences from external sources (funnel-gap, etc.) — merged into allInferences */
+  additional_inferences?: Inference[];
   /** ISO 4217 currency code for financial impact values (default: 'USD') */
   currency?: string;
   /** Funnel stage multipliers from User Journey Intelligence Layer.
@@ -646,7 +649,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // Merge SaaS signals + additional static-check signals into main arrays
   const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
-  const allInferences = [...inferences, ...saasInferences, ...verticalInferences, ...funnelMomentInferences, ...subdomainInferences, ...crossDomainInferences];
+  const allInferences = [...inferences, ...saasInferences, ...verticalInferences, ...funnelMomentInferences, ...subdomainInferences, ...crossDomainInferences, ...(input.additional_inferences || [])];
 
   // Collect all decisions and risk evaluations
   let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision, copyAlignmentResult.decision, channelIntegrityResult.decision, discoverabilityResult.decision, brandIntegrityResult.decision];

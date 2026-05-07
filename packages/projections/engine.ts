@@ -961,6 +961,26 @@ const FIELD_KIND_LABELS: Record<string, string> = {
   name: 'name', company: 'company', coupon: 'coupon',
 };
 
+/** Resolve titles for dynamic inference keys (funnel-gap, etc.) */
+function resolveDynamicTitle(key: string): string | null {
+  if (key.startsWith('funnel_missing_stage_')) {
+    const stage = key.replace('funnel_missing_stage_', '').replace(/_/g, ' ');
+    return `Missing funnel stage: ${stage}`;
+  }
+  if (key.startsWith('funnel_broken_path_')) {
+    const parts = key.replace('funnel_broken_path_', '').split('_to_');
+    return `No CTA path: ${parts[0]?.replace(/_/g, ' ')} → ${parts[1]?.replace(/_/g, ' ')}`;
+  }
+  if (key.startsWith('funnel_weak_connection_')) {
+    const parts = key.replace('funnel_weak_connection_', '').split('_to_');
+    return `Weak connection: ${parts[0]?.replace(/_/g, ' ')} → ${parts[1]?.replace(/_/g, ' ')}`;
+  }
+  if (key === 'funnel_dead_end_page') {
+    return 'Dead-end commercial page (no CTA to next stage)';
+  }
+  return null;
+}
+
 function resolveParameterizedTitle(inferenceKey: string, conclusionValue: string, fallback: string, translations?: EngineTranslations): string {
   if (inferenceKey === 'sensitive_input_abandonment') {
     // conclusion_value = "severity:field_kind"
@@ -1192,7 +1212,9 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
 
     const midpoint = Math.round((vc.estimated_impact.range.min + vc.estimated_impact.range.max) / 2);
 
-    const packKey = INFERENCE_TO_PACK[vc.inference_key] || 'unknown';
+    const packKey = INFERENCE_TO_PACK[vc.inference_key]
+      || (vc.inference_key.startsWith('funnel_') ? 'funnel_integrity' : null)
+      || 'unknown';
 
     // Compute finding eligibility based on its pack
     const packElig = result.pack_eligibility;
@@ -1251,7 +1273,7 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
     const evidenceQualityCtx = buildFindingEvidenceQuality(inf, result);
 
     // Parameterize titles for findings that carry concrete parameters
-    let title = translations?.inference_titles?.[vc.inference_key] ?? INFERENCE_TITLES[vc.inference_key] ?? vc.cause;
+    let title = translations?.inference_titles?.[vc.inference_key] ?? INFERENCE_TITLES[vc.inference_key] ?? resolveDynamicTitle(vc.inference_key) ?? vc.cause;
     if (inf.conclusion_value) {
       title = resolveParameterizedTitle(vc.inference_key, inf.conclusion_value, title, translations);
     }
@@ -2973,7 +2995,9 @@ export function buildRevenueMap(
   const accumulator = new Map<string, { min: number; max: number; count: number }>();
 
   for (const vc of valueCases) {
-    const pack = INFERENCE_TO_PACK[vc.inference_key] || 'unknown';
+    const pack = INFERENCE_TO_PACK[vc.inference_key]
+      || (vc.inference_key.startsWith('funnel_') ? 'funnel_integrity' : null)
+      || 'unknown';
     const perspectiveId = packToPerspective(pack);
 
     if (!accumulator.has(perspectiveId)) {

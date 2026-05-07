@@ -5,7 +5,7 @@ import {
   BusinessInputs,
   ImpactSummary,
 } from './types';
-import { IMPACT_BASELINES, POSITIVE_IMPACT_BASELINES, BaselineEntry } from './baselines';
+import { IMPACT_BASELINES, POSITIVE_IMPACT_BASELINES, getBaselineForKey, BaselineEntry } from './baselines';
 
 // ──────────────────────────────────────────────
 // Impact Estimation Engine
@@ -136,7 +136,7 @@ export function estimateImpact(
     // still renders the positive check qualitatively).
     const baseline = isPositive
       ? POSITIVE_IMPACT_BASELINES[inf.inference_key]
-      : IMPACT_BASELINES[inf.inference_key];
+      : (IMPACT_BASELINES[inf.inference_key] || getBaselineForKey(inf.inference_key));
     if (!baseline) continue;
 
     // Loss path keeps the existing low-confidence filter; retention

@@ -43,6 +43,7 @@ import { triggerIncidentNotifications, triggerRegressionNotifications } from "@/
 import { analyzeAdMessageMatch } from "../../workers/ingestion/enrichment/ad-message-match";
 import { currencyFromLocale } from "../../packages/impact";
 import { classifyPages, resolveFunnelModel, serializeStageDefinitions, scoreEdges, type PageForClassification, type SurfaceRelationForScoring } from "../../packages/classification";
+import { computeFunnelGapInferences, type FunnelGapInput } from "../../packages/inference/funnel-gap-inference";
 
 export interface RunAuditCycleResult {
 	cycleId: string;
@@ -550,6 +551,57 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 		} catch (err) {
 			console.error(`[audit-runner ${cycleId}] classification/funnel error (non-fatal):`, err);
+		}
+
+		// 6f. Compute funnel-gap inferences (structural journey analysis).
+		// Runs after classification + edge scoring so it has all the data.
+		let funnelGapInferences: import("../../packages/inference/funnel-gap-inference").FunnelGapInput extends never ? never : ReturnType<typeof computeFunnelGapInferences> = { signals: [], inferences: [] };
+		try {
+			const funnelModelForGap = await prisma.funnelModel.findUnique({ where: { environmentRef: env.id } });
+			if (funnelModelForGap) {
+				const stages = JSON.parse(funnelModelForGap.stageDefinitions);
+				const classifiedPages = await prisma.pageInventoryItem.findMany({
+					where: { environmentRef: env.id, classifiedPageType: { not: null } },
+					select: { normalizedUrl: true, path: true, classifiedPageType: true, title: true },
+				});
+				const scoredRelations = await prisma.surfaceRelation.findMany({
+					where: { websiteRef: website.id },
+					select: { sourceUrl: true, targetUrl: true, metadata: true },
+				});
+
+				const gapInput: FunnelGapInput = {
+					pages: classifiedPages.map(p => ({
+						url: p.normalizedUrl,
+						path: p.path,
+						classifiedPageType: p.classifiedPageType!,
+						title: p.title,
+					})),
+					relations: scoredRelations.map(r => {
+						let weight = 0.5;
+						let intent = 'body_contextual';
+						try {
+							const meta = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata;
+							if (meta?.linkWeight != null) weight = meta.linkWeight;
+							if (meta?.linkIntent) intent = meta.linkIntent;
+						} catch {}
+						return { sourceUrl: r.sourceUrl, targetUrl: r.targetUrl, linkWeight: weight, linkIntent: intent };
+					}),
+					stages,
+					modelType: funnelModelForGap.modelType,
+					scoping: {
+						workspace_ref: `org:${cycle.organizationId}`,
+						environment_ref: env.id,
+						subject_ref: `website:${website.id}`,
+						path_scope: null,
+					},
+					cycleRef: cycleId,
+				};
+
+				funnelGapInferences = computeFunnelGapInferences(gapInput);
+				console.log(`[audit-runner ${cycleId}] funnel-gap findings: ${funnelGapInferences.inferences.length}`);
+			}
+		} catch (err) {
+			console.error(`[audit-runner ${cycleId}] funnel-gap inference error (non-fatal):`, err);
 		}
 
 		// 7. Run the engine + project findings + persist snapshot & findings.
@@ -1080,6 +1132,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				integration_snapshots: integrationSnapshots.length > 0 ? integrationSnapshots : undefined,
 				currency: resolvedCurrency,
 				funnel_multipliers: funnelMultipliers,
+				additional_inferences: funnelGapInferences.inferences.length > 0 ? funnelGapInferences.inferences : undefined,
 			});
 			const recomputeMs = Date.now() - recomputeStartMs;
 

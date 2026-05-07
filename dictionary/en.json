@@ -1490,7 +1490,8 @@
 				"content_freshness": "Freshness",
 				"vertical_specific": "Industry",
 				"cross_signal": "Cross-Signal",
-				"funnel_journey": "Buyer Journey"
+				"funnel_journey": "Buyer Journey",
+				"funnel_integrity": "Funnel Integrity"
 			},
 			"polarity": {
 				"all": "All Findings",

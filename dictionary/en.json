@@ -3063,7 +3063,10 @@
 				"effort_axis": "Effort \u2192",
 				"impact_axis": "Monthly Impact ($)",
 				"toggle_list": "List",
-				"toggle_scatter": "Scatter"
+				"toggle_scatter": "Scatter",
+				"legend_incident": "Incident",
+				"legend_opportunity": "Opportunity",
+				"legend_verification": "Verification"
 			},
 			"status_buttons": {
 				"accept": "Accept",

@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { useMcpData } from "@/components/app/McpDataProvider";
+import { fmtCurrency } from "@/lib/format-currency";
 import type { ActionProjection } from "../../../../packages/projections/types";
 
 // ──────────────────────────────────────────────
@@ -53,6 +55,10 @@ function getRadius(confidence: number): number {
 
 export default function ScatterPlot({ actions, onSelect }: Props) {
 	const t = useTranslations("console.actions.scatter");
+	const tc = useTranslations("console.common");
+	const { currency } = useMcpData();
+	const [hovered, setHovered] = useState<{ action: ActionProjection; x: number; y: number } | null>(null);
+	const svgRef = useRef<SVGSVGElement>(null);
 
 	// SVG dimensions
 	const W = 700;
@@ -89,12 +95,25 @@ export default function ScatterPlot({ actions, onSelect }: Props) {
 	const midX = PAD.left + plotW * 0.5;
 	const midY = PAD.top + plotH * 0.5;
 
+	const handleDotHover = (action: ActionProjection, e: React.MouseEvent) => {
+		const svg = svgRef.current;
+		if (!svg) return;
+		const rect = svg.getBoundingClientRect();
+		const scaleX = rect.width / W;
+		const scaleY = rect.height / H;
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		setHovered({ action, x, y });
+	};
+
 	return (
-		<div className="w-full overflow-x-auto rounded-lg border border-edge bg-surface-card/40 p-4">
+		<div className="relative w-full overflow-x-auto rounded-lg border border-edge bg-surface-card/40 p-4">
 			<svg
+				ref={svgRef}
 				viewBox={`0 0 ${W} ${H}`}
 				className="w-full"
 				style={{ minWidth: 500, maxHeight: 420 }}
+				onMouseLeave={() => setHovered(null)}
 			>
 				{/* Quadrant lines (dashed) */}
 				<line
@@ -165,35 +184,61 @@ export default function ScatterPlot({ actions, onSelect }: Props) {
 						key={i}
 						cx={dot.cx}
 						cy={dot.cy}
-						r={dot.r}
+						r={hovered?.action.id === dot.action.id ? dot.r + 2 : dot.r}
 						fill={dot.fill}
-						opacity={dot.opacity}
-						className="cursor-pointer transition-all hover:opacity-100"
-						strokeWidth={1}
+						opacity={hovered?.action.id === dot.action.id ? 1 : dot.opacity}
+						className="cursor-pointer transition-all"
+						strokeWidth={hovered?.action.id === dot.action.id ? 2 : 1}
 						stroke={dot.fill}
-						strokeOpacity={0.3}
+						strokeOpacity={hovered?.action.id === dot.action.id ? 0.8 : 0.3}
 						onClick={() => onSelect(dot.action)}
-					>
-						<title>
-							{dot.action.title} ({dot.action.category}) — ${dot.action.impact?.midpoint}/mo, {dot.action.effort_hint} effort
-						</title>
-					</circle>
+						onMouseEnter={(e) => handleDotHover(dot.action, e)}
+						onMouseMove={(e) => handleDotHover(dot.action, e)}
+						onMouseLeave={() => setHovered(null)}
+					/>
 				))}
 			</svg>
+
+			{/* Hover popover */}
+			{hovered && (
+				<div
+					className="pointer-events-none absolute z-50 w-64 rounded-lg border border-edge bg-surface-card px-3.5 py-2.5 shadow-xl"
+					style={{ left: Math.min(hovered.x + 12, (svgRef.current?.getBoundingClientRect().width ?? 500) - 280), top: hovered.y - 8 }}
+				>
+					<p className="text-sm font-medium text-content">{hovered.action.title}</p>
+					<div className="mt-1.5 flex items-center gap-3 text-[11px]">
+						<span className="flex items-center gap-1">
+							<span
+								className="inline-block h-2 w-2 rounded-full"
+								style={{ backgroundColor: getColor(hovered.action.category) }}
+							/>
+							<span className="capitalize text-content-muted">{hovered.action.category}</span>
+						</span>
+						<span className="font-mono text-content-secondary">
+							{fmtCurrency(hovered.action.impact?.midpoint ?? 0, currency)}{tc("per_month_short")}
+						</span>
+					</div>
+					{hovered.action.severity && (
+						<div className="mt-1 text-[10px] text-content-faint">
+							{tc(`severity.${hovered.action.severity}`)} · {hovered.action.effort_hint ?? 'medium'} effort
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* Legend */}
 			<div className="mt-2 flex items-center justify-center gap-4 text-[10px] text-content-faint">
 				<span className="flex items-center gap-1">
 					<span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-					Incident
+					{t("legend_incident")}
 				</span>
 				<span className="flex items-center gap-1">
 					<span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-					Opportunity
+					{t("legend_opportunity")}
 				</span>
 				<span className="flex items-center gap-1">
 					<span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
-					Verification
+					{t("legend_verification")}
 				</span>
 			</div>
 		</div>

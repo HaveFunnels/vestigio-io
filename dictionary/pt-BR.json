@@ -3147,7 +3147,10 @@
 				"effort_axis": "Esforço →",
 				"impact_axis": "Impacto Mensal ($)",
 				"toggle_list": "Lista",
-				"toggle_scatter": "Scatter"
+				"toggle_scatter": "Scatter",
+				"legend_incident": "Incidente",
+				"legend_opportunity": "Oportunidade",
+				"legend_verification": "Verificação"
 			},
 			"status_buttons": {
 				"accept": "Aceitar",

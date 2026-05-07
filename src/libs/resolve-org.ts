@@ -27,7 +27,9 @@ export interface OrgContext {
 	isAdmin: boolean;
 	environments: OrgEnvironment[];
 	maxEnvironments: number;
-	/** ISO 4217 currency code resolved from org override or owner locale */
+	/** Platform language for the entire org (single source of truth) */
+	locale: string;
+	/** ISO 4217 currency code resolved from org override or org locale */
 	currency: string;
 }
 
@@ -41,6 +43,7 @@ const DEMO_CONTEXT: OrgContext = {
 	isAdmin: false,
 	environments: [{ id: "env_1", domain: "shop.com", isProduction: true, continuousPaused: false, activated: true }],
 	maxEnvironments: 1,
+	locale: "en",
 	currency: "USD",
 };
 
@@ -88,14 +91,18 @@ export async function resolveOrgContext(): Promise<OrgContext> {
 		const planLimits: Record<string, number> = { vestigio: 1, pro: 3, max: 10 };
 		const maxEnvs = planLimits[org.plan || "vestigio"] || 1;
 
-		// Resolve currency: org override > owner locale > USD
+		// Resolve locale: org setting > owner User.locale > 'en'
+		const orgLocale = (org as any).locale
+			|| (session.user as any).locale
+			|| 'en';
+
+		// Resolve currency: org override > derived from org locale > USD
 		let currency = "USD";
 		if ((org as any).currency) {
 			currency = (org as any).currency;
 		} else {
-			const userLocale = (session.user as any).locale as string | undefined;
-			if (userLocale?.startsWith("pt")) currency = "BRL";
-			else if (userLocale?.startsWith("de")) currency = "EUR";
+			if (orgLocale?.startsWith("pt")) currency = "BRL";
+			else if (orgLocale?.startsWith("de")) currency = "EUR";
 		}
 
 		return {
@@ -106,6 +113,7 @@ export async function resolveOrgContext(): Promise<OrgContext> {
 			domain: defaultEnv?.domain || "unknown",
 			plan: org.plan || "vestigio",
 			isAdmin,
+			locale: orgLocale,
 			environments: allEnvs.map(e => ({
 				id: e.id,
 				domain: e.domain,

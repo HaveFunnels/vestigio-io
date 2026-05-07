@@ -211,7 +211,8 @@ model Organization {
   plan        String    @default("vestigio") // vestigio | pro | max
   status      String    @default("pending") // pending | active | suspended
   orgType     String    @default("customer") // customer | demo | trial
-  currency    String?   // ISO 4217: USD, BRL, EUR. Null = auto from owner locale
+  locale      String?   // Platform language: en | pt-BR | es | de. Single source of truth for the org.
+  currency    String?   // ISO 4217: USD, BRL, EUR. Null = auto from org locale
   trialEndsAt DateTime? // only set when orgType="trial"
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

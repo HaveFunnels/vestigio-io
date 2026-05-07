@@ -660,21 +660,21 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			const businessProfile = businessProfileForPipeline;
 
 			// Engine translations (locale-aware finding titles, root cause titles, etc.)
-			//
-			// We're in a worker context with no request cookie, so we can't read
-			// the locale via Next's cookies() — instead we look up the org
-			// owner's `User.locale` and pass it explicitly. Without this, the
-			// audit always wrote findings in English regardless of the user's
-			// preferred language, which is exactly what the user noticed in the
-			// app: positive checks rendering "Conversion intent is clear and
-			// unambiguous" instead of the translated equivalent.
+			// Resolve org locale for engine translations.
+			// Single source of truth: Organization.locale > owner User.locale > English.
 			let translations;
 			try {
-				const owner = await prisma.user.findUnique({
-					where: { id: cycle.organization.ownerId },
-					select: { locale: true },
-				});
-				translations = loadEngineTranslationsForLocale(owner?.locale);
+				const orgLocale = (cycle.organization as any).locale;
+				if (orgLocale) {
+					translations = loadEngineTranslationsForLocale(orgLocale);
+				} else {
+					// Fallback: owner's locale (legacy path for orgs without locale set)
+					const owner = await prisma.user.findUnique({
+						where: { id: cycle.organization.ownerId },
+						select: { locale: true },
+					});
+					translations = loadEngineTranslationsForLocale(owner?.locale);
+				}
 			} catch {
 				translations = undefined;
 			}
@@ -1060,18 +1060,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 
 			// (b) Engine
-			// Resolve currency: org override > owner locale > default USD
+			// Resolve currency: org.currency > derived from org.locale > USD
 			let resolvedCurrency = 'USD';
 			try {
 				const orgCurrency = (cycle.organization as any).currency;
 				if (orgCurrency) {
 					resolvedCurrency = orgCurrency;
 				} else {
-					const owner = await prisma.user.findUnique({
-						where: { id: cycle.organization.ownerId },
-						select: { locale: true },
-					});
-					resolvedCurrency = currencyFromLocale(owner?.locale);
+					const orgLocale = (cycle.organization as any).locale;
+					resolvedCurrency = currencyFromLocale(orgLocale);
 				}
 			} catch {
 				// Fallback to USD on any resolution error

@@ -20,9 +20,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
 	const orgCtx = await resolveOrgContext();
 
-	// Sync the user's persisted locale preference from DB → cookie
-	// so the i18n middleware picks it up on subsequent requests.
-	await syncUserLocale();
+	// Sync the org's locale to the cookie — single source of truth.
+	await syncUserLocale(orgCtx.locale);
 
 	// Load engine translations for the user's locale (server-side only)
 	const engineTranslations = await loadEngineTranslations();

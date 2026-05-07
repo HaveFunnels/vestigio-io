@@ -67,7 +67,7 @@ interface CopilotState {
 }
 
 interface CopilotActions {
-	open: (context?: { finding?: FindingProjection; prompt?: string }) => void;
+	open: (context?: { finding?: FindingProjection; action?: { id: string; title: string }; prompt?: string }) => void;
 	close: () => void;
 	minimize: () => void;
 	restore: () => void;
@@ -295,7 +295,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	// ── Actions ──
 
 	const open = useCallback(
-		(context?: { finding?: FindingProjection; prompt?: string }) => {
+		(context?: { finding?: FindingProjection; action?: { id: string; title: string }; prompt?: string }) => {
 			setIsOpen(true);
 			setIsMinimized(false);
 
@@ -307,8 +307,16 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 						title: context.finding.title,
 					},
 				]);
+			} else if (context?.action) {
+				setContextItems([
+					{
+						kind: "action",
+						id: context.action.id,
+						title: context.action.title,
+					},
+				]);
 			}
-			// Auto-send prompt regardless of finding context
+			// Auto-send prompt regardless of context type
 			if (context?.prompt) {
 				setTimeout(() => send(context.prompt!), 100);
 			}

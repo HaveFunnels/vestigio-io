@@ -711,12 +711,12 @@ function ActionsContent({
 				<DecidirPopover
 					action={row}
 					onPlanRemediation={(a) => {
-						copilot.open({ prompt: buildRemediationPrompt(a, t) });
+						copilot.open({ action: { id: a.id, title: a.title }, prompt: buildRemediationPrompt(a, t) });
 						track("decidir_plan", { action_id: a.id });
 					}}
-					onDiscuss={() => {
-						copilot.open();
-						track("decidir_discuss", { action_id: row.id });
+					onDiscuss={(a) => {
+						copilot.open({ action: { id: a.id, title: a.title } });
+						track("decidir_discuss", { action_id: a.id });
 					}}
 					onRunVerification={(a) => {
 						runVerification(a, "re_verify");

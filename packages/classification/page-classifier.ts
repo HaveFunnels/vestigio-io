@@ -299,14 +299,19 @@ export function classifyPage(ctx: PageContext, evidence: Evidence[]): PageClassi
     ? agreeingVotes.reduce((sum, v) => sum + v.confidence, 0) / agreeingVotes.length
     : 50;
 
-  const confidence = Math.round(avgConfidence * agreementRatio);
+  // Floor the agreement ratio at 0.5 to prevent confidence collapsing
+  // when signals disagree — even a split vote is better than no data.
+  const flooredRatio = Math.max(agreementRatio, 0.5);
+  const confidence = Math.round(avgConfidence * flooredRatio);
 
   // Cap confidence based on available signal count
   const maxConfidence = votes.length >= 3 ? 100 : votes.length === 2 ? 80 : 60;
+  // Floor: if we have any votes, confidence should be at least 20
+  const minConfidence = votes.length > 0 ? 20 : 0;
 
   return {
     classifiedPageType: bestType,
-    classificationConfidence: Math.min(confidence, maxConfidence),
+    classificationConfidence: Math.max(minConfidence, Math.min(confidence, maxConfidence)),
     classificationSignals: votes,
   };
 }

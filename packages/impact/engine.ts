@@ -175,11 +175,31 @@ export function estimateImpact(
 
     // Funnel stage multiplier: findings deeper in the funnel (checkout, pricing)
     // have proportionally higher impact than awareness-stage findings.
+    // Lookup chain: path_scope → first signal_ref path → default
     if (funnelMultipliers && !isPositive) {
+      let funnelMult = funnelMultipliers.default;
       const surfacePath = inf.scoping?.path_scope;
-      const funnelMult = surfacePath
-        ? (funnelMultipliers.byPath.get(surfacePath) ?? funnelMultipliers.default)
-        : funnelMultipliers.default;
+      if (surfacePath && funnelMultipliers.byPath.has(surfacePath)) {
+        funnelMult = funnelMultipliers.byPath.get(surfacePath)!;
+      } else {
+        // Try matching via signal_refs (evidence URLs/paths stored as "type:value" strings)
+        for (const ref of inf.signal_refs ?? []) {
+          // signal_refs format: "evidence:url" or just a URL/path
+          const refValue = ref.includes(':') ? ref.split(':').slice(1).join(':') : ref;
+          if (refValue && funnelMultipliers.byPath.has(refValue)) {
+            funnelMult = funnelMultipliers.byPath.get(refValue)!;
+            break;
+          }
+          // Try just the pathname portion
+          try {
+            const pathname = new URL(refValue).pathname;
+            if (funnelMultipliers.byPath.has(pathname)) {
+              funnelMult = funnelMultipliers.byPath.get(pathname)!;
+              break;
+            }
+          } catch { /* not a URL */ }
+        }
+      }
       if (funnelMult !== 1.0) {
         estimated.range.min = Math.round(estimated.range.min * funnelMult);
         estimated.range.max = Math.round(estimated.range.max * funnelMult);

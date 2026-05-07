@@ -361,7 +361,7 @@ export async function GET(request: Request) {
           try {
             const pathname = new URL(ev.url).pathname;
             const page = pageByUrl.get(ev.url) || pageByPath.get(pathname);
-            pt = page?.pageType?.toLowerCase() || null;
+            pt = page ? getEffectiveType(page) : null;
           } catch { /* malformed URL */ }
           if (!pt) continue;
           const stage = stageOrder[pt];

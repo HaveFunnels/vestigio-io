@@ -405,6 +405,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 							isSameDomain: rel.isSameDomain,
 							confidence: 1.0,
 							cycleRef: cycleId,
+							metadata: JSON.stringify({ linkText: rel.linkText ?? null, position: rel.position ?? 'unknown' }),
 						},
 					});
 					relCount++;
@@ -469,22 +470,23 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			// Run multi-signal classification
 			const classifications = classifyPages(pageContexts, result.evidence, businessModel);
 
-			// Persist classifications
+			// Persist classifications (batched to avoid N+1)
+			const classificationOps = [...classifications].map(([url, classification]) =>
+				prisma.pageInventoryItem.updateMany({
+					where: { environmentRef: env.id, normalizedUrl: url },
+					data: {
+						classifiedPageType: classification.classifiedPageType,
+						classificationConfidence: classification.classificationConfidence,
+						classificationSignals: JSON.stringify(classification.classificationSignals),
+					},
+				})
+			);
+			// Execute in chunks of 50 to avoid overwhelming connection pool
 			let classifiedCount = 0;
-			for (const [url, classification] of classifications) {
-				try {
-					await prisma.pageInventoryItem.updateMany({
-						where: { environmentRef: env.id, normalizedUrl: url },
-						data: {
-							classifiedPageType: classification.classifiedPageType,
-							classificationConfidence: classification.classificationConfidence,
-							classificationSignals: JSON.stringify(classification.classificationSignals),
-						},
-					});
-					classifiedCount++;
-				} catch {
-					// Non-fatal — continue
-				}
+			for (let i = 0; i < classificationOps.length; i += 50) {
+				const chunk = classificationOps.slice(i, i + 50);
+				const results = await Promise.allSettled(chunk);
+				classifiedCount += results.filter(r => r.status === 'fulfilled').length;
 			}
 
 			console.log(`[audit-runner ${cycleId}] page classification: ${classifiedCount} pages classified (business_model=${businessModel || 'inferred'})`);
@@ -525,20 +527,21 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 
 				const edgeScores = scoreEdges(relationsForScoring, pageContexts.length);
 
-				// Update SurfaceRelation metadata with scores (batch for performance)
-				let scoredCount = 0;
-				for (const [key, score] of edgeScores) {
-					const [sourceUrl, targetUrl] = key.split('|');
-					if (score.linkWeight < 0.1) continue; // skip utility links
-					try {
-						await prisma.surfaceRelation.updateMany({
+				// Update SurfaceRelation metadata with scores (batched)
+				const scoreOps = [...edgeScores]
+					.filter(([, score]) => score.linkWeight >= 0.1)
+					.map(([key, score]) => {
+						const [sourceUrl, targetUrl] = key.split('|');
+						return prisma.surfaceRelation.updateMany({
 							where: { websiteRef: website.id, sourceUrl, targetUrl },
 							data: { metadata: JSON.stringify(score) },
 						});
-						scoredCount++;
-					} catch {
-						// Non-fatal
-					}
+					});
+				let scoredCount = 0;
+				for (let i = 0; i < scoreOps.length; i += 50) {
+					const chunk = scoreOps.slice(i, i + 50);
+					const results = await Promise.allSettled(chunk);
+					scoredCount += results.filter(r => r.status === 'fulfilled').length;
 				}
 				console.log(`[audit-runner ${cycleId}] edge scoring: ${scoredCount} edges scored`);
 			}
@@ -1030,14 +1033,18 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					const stages = JSON.parse(funnelModelForEngine.stageDefinitions) as Array<{ order: number; pageTypes: string[] }>;
 					const classifiedPages = await prisma.pageInventoryItem.findMany({
 						where: { environmentRef: env.id, classifiedPageType: { not: null } },
-						select: { path: true, classifiedPageType: true },
+						select: { path: true, normalizedUrl: true, classifiedPageType: true },
 					});
 
 					const byPath = new Map<string, number>();
 					for (const page of classifiedPages) {
 						const stage = stages.find(s => s.pageTypes.includes(page.classifiedPageType!));
 						if (stage) {
-							byPath.set(page.path, STAGE_MULTIPLIERS[stage.order] ?? 1.0);
+							const mult = STAGE_MULTIPLIERS[stage.order] ?? 1.0;
+							byPath.set(page.path, mult);
+							byPath.set(page.normalizedUrl, mult);
+							// Also index by pathname portion of URL for signal_ref matching
+							try { byPath.set(new URL(page.normalizedUrl).pathname, mult); } catch {}
 						}
 					}
 					if (byPath.size > 0) {

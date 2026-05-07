@@ -78,16 +78,18 @@ export function resolveFunnelModel(
   inferredBusinessModel: string | null | undefined,
   availablePageTypes?: Set<SurfacePageType>,
 ): ResolvedFunnelModel {
-  // 1. Try declared model first
+  // 1. Try declared model first (trusted — never overridden by page validation)
   let modelType = normalizeModelType(declaredBusinessModel);
+  const isDeclared = !!modelType;
 
   // 2. Fall back to inferred
   if (!modelType) {
     modelType = normalizeModelType(inferredBusinessModel);
   }
 
-  // 3. If we have page types, validate the model makes sense
-  if (modelType && availablePageTypes) {
+  // 3. Only validate INFERRED models against pages — never override declared ones.
+  // This prevents oscillation when a shallow crawl misses expected page types.
+  if (modelType && availablePageTypes && !isDeclared) {
     modelType = validateModelAgainstPages(modelType, availablePageTypes);
   }
 

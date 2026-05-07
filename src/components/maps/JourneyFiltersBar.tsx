@@ -177,21 +177,32 @@ export default function JourneyFiltersBar({
   filters,
   onChange,
   mode,
+  dynamicStages,
 }: {
   filters: JourneyFilters;
   onChange: (patch: Partial<JourneyFilters>) => void;
   mode: unknown;
+  /** Dynamic stages from FunnelModel (when available, overrides hardcoded JOURNEY_STAGES) */
+  dynamicStages?: Array<{ key: string; label: string; order: number }> | null;
 }) {
   const t = useTranslations("console.maps.journey");
   const tStages = useTranslations("console.maps.page_types");
 
-  const stageOptions: PillOption<JourneyStage>[] = JOURNEY_STAGES.map((s) => ({
-    value: s,
-    label:
-      s === "any"
-        ? (t("any_page") as string)
-        : (tStages(s as never) as string),
-  }));
+  // Use dynamic stages from the funnel model if available, otherwise fall back to hardcoded
+  const stageOptions: PillOption<JourneyStage>[] = dynamicStages && dynamicStages.length > 0
+    ? [
+        { value: "any" as JourneyStage, label: t("any_page") as string },
+        ...dynamicStages
+          .sort((a, b) => a.order - b.order)
+          .map(s => ({ value: s.key as JourneyStage, label: s.label })),
+      ]
+    : JOURNEY_STAGES.map((s) => ({
+        value: s,
+        label:
+          s === "any"
+            ? (t("any_page") as string)
+            : (tStages(s as never) as string),
+      }));
   const rangeOptions: PillOption<JourneyRange>[] = JOURNEY_RANGES.map((r) => ({
     value: r,
     label: t(`ranges.${r}` as never) as string,

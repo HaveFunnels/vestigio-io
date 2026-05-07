@@ -384,36 +384,37 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		}
 
 		// 6b. Persist SurfaceRelation records from crawled link graph.
-		// These power the User Journey map by providing the edge data
-		// between pages. Deduplicated per (source, target, relation).
+		// Uses createMany + skipDuplicates for single-query batch insert.
 		if (result.surface_relations && result.surface_relations.length > 0) {
 			const relDedup = new Set<string>();
-			let relCount = 0;
+			const batchData: Array<{
+				websiteRef: string; sourceUrl: string; targetUrl: string;
+				relationType: string; sourceHost: string; targetHost: string;
+				isSameDomain: boolean; confidence: number; cycleRef: string; metadata: string;
+			}> = [];
 			for (const rel of result.surface_relations) {
 				const key = `${rel.sourceUrl}|${rel.targetUrl}|${rel.relationType}`;
 				if (relDedup.has(key)) continue;
 				relDedup.add(key);
-				try {
-					await prisma.surfaceRelation.create({
-						data: {
-							websiteRef: website.id,
-							sourceUrl: rel.sourceUrl,
-							targetUrl: rel.targetUrl,
-							relationType: rel.relationType,
-							sourceHost: rel.sourceHost,
-							targetHost: rel.targetHost,
-							isSameDomain: rel.isSameDomain,
-							confidence: 1.0,
-							cycleRef: cycleId,
-							metadata: JSON.stringify({ linkText: rel.linkText ?? null, position: rel.position ?? 'unknown' }),
-						},
-					});
-					relCount++;
-				} catch {
-					// Duplicate or constraint failure — non-fatal, skip.
-				}
+				batchData.push({
+					websiteRef: website.id,
+					sourceUrl: rel.sourceUrl,
+					targetUrl: rel.targetUrl,
+					relationType: rel.relationType,
+					sourceHost: rel.sourceHost,
+					targetHost: rel.targetHost,
+					isSameDomain: rel.isSameDomain,
+					confidence: 1.0,
+					cycleRef: cycleId,
+					metadata: JSON.stringify({ linkText: rel.linkText ?? null, position: rel.position ?? 'unknown' }),
+				});
 			}
-			console.log(`[audit-runner ${cycleId}] surface relations persisted: ${relCount} (from ${result.surface_relations.length} raw)`);
+			try {
+				const result2 = await prisma.surfaceRelation.createMany({ data: batchData, skipDuplicates: true });
+				console.log(`[audit-runner ${cycleId}] surface relations persisted: ${result2.count} (from ${batchData.length} deduped, ${result.surface_relations.length} raw)`);
+			} catch (err) {
+				console.error(`[audit-runner ${cycleId}] surface relation batch error:`, err);
+			}
 		}
 
 		// 6c. Multi-signal page classification (User Journey Intelligence Layer).
@@ -462,8 +463,8 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				});
 			}
 
-			// Resolve business model
-			const businessModel = (cycle.organization as any)?.businessProfile?.businessModel
+			// Resolve business model (prefer explicitly loaded profile over navigation)
+			const businessModel = businessProfileForPipeline?.businessModel
 				|| result.classification?.primary_model
 				|| null;
 
@@ -525,7 +526,9 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					targetPageType: classifications.get(rel.targetUrl)?.classifiedPageType ?? null,
 				}));
 
-				const edgeScores = scoreEdges(relationsForScoring, pageContexts.length);
+				// Use distinct source URLs as denominator (not pageContexts which only counts validated entries)
+				const totalSourcePages = new Set(result.surface_relations.map(r => r.sourceUrl)).size;
+				const edgeScores = scoreEdges(relationsForScoring, Math.max(totalSourcePages, 1));
 
 				// Update SurfaceRelation metadata with scores (batched)
 				const scoreOps = [...edgeScores]

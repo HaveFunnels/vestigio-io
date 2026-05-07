@@ -165,35 +165,77 @@ function extractCanonical(html: string): string | null {
 
 /**
  * Detect structural zones (header, nav, footer, main, aside) in HTML
- * and return their start/end character offsets for position classification.
+ * using stack-based nesting to handle nested tags correctly.
+ * E.g., <header><nav>...</nav></header> produces two zones with correct boundaries.
  */
 function detectZones(html: string): Array<{ tag: string; start: number; end: number }> {
+  const ZONE_TAGS = new Set(['header', 'nav', 'footer', 'main', 'aside', 'article']);
   const zones: Array<{ tag: string; start: number; end: number }> = [];
-  const zoneRegex = /<(header|nav|footer|main|aside|article)[\s>]/gi;
+  // Stack tracks open zone tags with their start positions
+  const stack: Array<{ tag: string; start: number }>[] = [];
+  const tagStacks = new Map<string, Array<{ start: number }>>();
+
+  // Single pass: find all opening and closing tags for zone elements
+  const tagRegex = /<\/?(\w+)[\s>]/gi;
   let m;
-  while ((m = zoneRegex.exec(html)) !== null) {
-    const tag = m[1].toLowerCase();
-    const start = m.index;
-    const closeTag = `</${tag}`;
-    const closeIdx = html.toLowerCase().indexOf(closeTag, start + m[0].length);
-    if (closeIdx > start) {
-      zones.push({ tag, start, end: closeIdx });
+  while ((m = tagRegex.exec(html)) !== null) {
+    const fullMatch = m[0];
+    const tagName = m[1].toLowerCase();
+    if (!ZONE_TAGS.has(tagName)) continue;
+
+    const isClosing = fullMatch.startsWith('</');
+    if (!isClosing) {
+      // Opening tag — push to stack for this tag type
+      let tagStack = tagStacks.get(tagName);
+      if (!tagStack) {
+        tagStack = [];
+        tagStacks.set(tagName, tagStack);
+      }
+      tagStack.push({ start: m.index });
+    } else {
+      // Closing tag — pop from stack and record zone
+      const tagStack = tagStacks.get(tagName);
+      if (tagStack && tagStack.length > 0) {
+        const opened = tagStack.pop()!;
+        zones.push({ tag: tagName, start: opened.start, end: m.index });
+      }
     }
   }
+
   return zones;
 }
 
-function classifyPosition(offset: number, zones: Array<{ tag: string; start: number; end: number }>): LinkPosition {
-  const sorted = [...zones].sort((a, b) => (a.end - a.start) - (b.end - b.start));
-  for (const zone of sorted) {
-    if (offset >= zone.start && offset <= zone.end) {
-      if (zone.tag === 'header') return 'header';
-      if (zone.tag === 'nav') return 'nav';
-      if (zone.tag === 'footer') return 'footer';
-      if (zone.tag === 'main' || zone.tag === 'article') return 'main';
-      if (zone.tag === 'aside') return 'aside';
-    }
+/**
+ * Classify a link's position within structural zones.
+ * Prefers the innermost (smallest) matching zone — e.g., a link in
+ * <header><nav>...</nav></header> is classified as 'nav', not 'header'.
+ *
+ * Fallback heuristic: if no zones detected (non-semantic HTML),
+ * uses document position — top 15% = header, bottom 15% = footer.
+ */
+function classifyPosition(offset: number, zones: Array<{ tag: string; start: number; end: number }>, htmlLength?: number): LinkPosition {
+  // Find all zones containing this offset
+  const containing = zones.filter(z => offset >= z.start && offset <= z.end);
+
+  if (containing.length > 0) {
+    // Pick innermost (smallest) zone
+    containing.sort((a, b) => (a.end - a.start) - (b.end - b.start));
+    const zone = containing[0];
+    if (zone.tag === 'nav') return 'nav';
+    if (zone.tag === 'header') return 'header';
+    if (zone.tag === 'footer') return 'footer';
+    if (zone.tag === 'main' || zone.tag === 'article') return 'main';
+    if (zone.tag === 'aside') return 'aside';
   }
+
+  // Fallback heuristic for non-semantic HTML (no zones detected)
+  if (zones.length === 0 && htmlLength && htmlLength > 0) {
+    const relativePosition = offset / htmlLength;
+    if (relativePosition < 0.15) return 'header';
+    if (relativePosition > 0.85) return 'footer';
+    return 'main'; // middle 70% assumed to be main content
+  }
+
   return 'unknown';
 }
 
@@ -215,7 +257,7 @@ function extractLinks(html: string, pageUrl: string, rootDomain: string): Parsed
     const targetHost = safeHostname(resolved);
     const rel = extractAttribute(match[0], 'rel');
     const text = match[2].replace(/<[^>]*>/g, '').trim() || null;
-    const position = classifyPosition(match.index, zones);
+    const position = classifyPosition(match.index, zones, html.length);
 
     links.push({
       href: resolved,

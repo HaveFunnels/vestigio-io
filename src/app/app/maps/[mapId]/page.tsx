@@ -169,13 +169,14 @@ function JourneyCanvasView({
     [filters, router],
   );
 
-  const mode =
-    (journeyMap?.metadata as Record<string, unknown> | undefined)?.mode;
+  const mapMeta = journeyMap?.metadata as Record<string, unknown> | undefined;
+  const mode = mapMeta?.mode;
+  const dynamicStages = mapMeta?.funnelStages as Array<{ key: string; label: string; order: number }> | null | undefined;
 
   return (
     <div className="flex h-full flex-col">
       <MapCanvasHeader mapDef={journeyMap} t={t} tc={tc} />
-      <JourneyFiltersBar filters={filters} onChange={updateFilter} mode={mode} />
+      <JourneyFiltersBar filters={filters} onChange={updateFilter} mode={mode} dynamicStages={dynamicStages} />
       <div className="flex-1">
         {!loaded ? (
           <MapLoadingShell label={t("loading")} />

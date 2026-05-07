@@ -545,6 +545,8 @@ export async function GET(request: Request) {
         pageCount: pages.length,
         relationCount: relations.length,
         filters,
+        modelType: funnelModelRow?.modelType ?? 'ecommerce',
+        funnelStages: funnelStages?.map(s => ({ key: s.key, label: s.label, order: s.order })) ?? null,
       },
     };
 

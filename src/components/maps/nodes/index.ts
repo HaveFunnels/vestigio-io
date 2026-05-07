@@ -7,8 +7,10 @@ import JourneyCommercialNode from "./JourneyCommercialNode";
 import JourneySupportNode from "./JourneySupportNode";
 import JourneyOtherEventsNode from "./JourneyOtherEventsNode";
 import JourneyDropoffNode from "./JourneyDropoffNode";
+import StageLaneNode from "./StageLaneNode";
 
 export const nodeTypes: NodeTypes = {
+  group: StageLaneNode,
   root_cause: RootCauseNode,
   finding: FindingNode,
   action: ActionNode,

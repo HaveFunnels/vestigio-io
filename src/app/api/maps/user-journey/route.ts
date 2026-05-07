@@ -221,6 +221,10 @@ export async function GET(request: Request) {
       const nodeType: MapNodeType = commercialTypes.has(pageType)
         ? "journey_commercial"
         : "journey_support";
+      // Resolve stage key + label for lane grouping
+      const stageNum = stageOrder[pageType] ?? 99;
+      const matchedStage = funnelStages?.find(s => s.pageTypes.includes(pageType as any));
+
       nodes.push({
         id: `page_${page.id}`,
         type: nodeType,
@@ -234,10 +238,13 @@ export async function GET(request: Request) {
           url: page.normalizedUrl,
           statusCode: page.statusCode,
           tier: page.tier,
-          stage: stageOrder[pageType] ?? 99,
+          stage: stageNum,
+          stageKey: matchedStage?.key ?? 'other',
+          stageLabel: matchedStage?.label ?? 'Other',
+          stageColor: matchedStage?.color ?? 'zinc',
           classificationConfidence: (page as any).classificationConfidence ?? 0,
         },
-        position: { x: 0, y: 0 }, // dagre will compute
+        position: { x: 0, y: 0 },
       });
     }
 

@@ -20,6 +20,7 @@ import SideDrawer from "@/components/console/SideDrawer";
 import { nodeTypes } from "./nodes";
 import { edgeTypes } from "./edges";
 import { toReactFlowNodes, toReactFlowEdges } from "./map-converters";
+import { computeJourneyLayout } from "./journey-layout";
 import { matchInsightsToNodes, type NodeInsights } from "./insights-matcher";
 import {
 	RichFindingDrawer,
@@ -213,6 +214,9 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 		new Set()
 	);
 
+	// Path highlighting: clicked node + all upstream/downstream connected nodes
+	const [highlightedPath, setHighlightedPath] = useState<Set<string> | null>(null);
+
 	const isMobile = useMediaQuery("(max-width: 768px)");
 
 	const activeMap = mapDef;
@@ -289,8 +293,32 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 		}, 600);
 	}, [focusNodeId, focusHandled, activeMap.nodes, insightsMap]);
 
-	// Inject insights into ReactFlow node data so JourneyCommercialNode can render badges
+	// Journey maps use ELK layout (async) for stage lanes + optimized edge routing.
+	// Non-journey maps use the sync dagre-based converter.
+	const isJourney = activeMap.type === "user_journey";
+	const [elkNodes, setElkNodes] = useState<import("@xyflow/react").Node[]>([]);
+	const [elkEdges, setElkEdges] = useState<import("@xyflow/react").Edge[]>([]);
+	const [elkReady, setElkReady] = useState(false);
+
+	useEffect(() => {
+		if (!isJourney) return;
+		setElkReady(false);
+		computeJourneyLayout(activeMap).then(({ nodes: n, edges: e }) => {
+			// Inject insights into node data
+			const withInsights = n.map(node => {
+				const ins = insightsMap.get(node.id);
+				if (!ins) return node;
+				return { ...node, data: { ...node.data, _insights: ins } };
+			});
+			setElkNodes(withInsights);
+			setElkEdges(e);
+			setElkReady(true);
+		});
+	}, [isJourney, activeMap, insightsMap]);
+
+	// Non-journey: sync dagre layout
 	const baseNodes = useMemo(() => {
+		if (isJourney) return elkNodes;
 		const base = toReactFlowNodes(activeMap);
 		if (insightsMap.size === 0) return base;
 		return base.map((n) => {
@@ -298,30 +326,36 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 			if (!ins) return n;
 			return { ...n, data: { ...n.data, _insights: ins } };
 		});
-	}, [activeMap, insightsMap]);
+	}, [isJourney, elkNodes, activeMap, insightsMap]);
 
-	// Apply legend filter + severity filter + multi-select ring to nodes
+	// Apply legend filter + severity filter + path highlight + multi-select ring to nodes
 	const nodes = useMemo(() => {
 		let processed = baseNodes;
 
-		// Severity filter: dim nodes whose severity is toggled off
 		processed = processed.map((n) => {
 			const sev = (n.data?.severity as string) || "";
-			const severityDimmed =
-				sev && !activeSeverities.has(sev);
-
-			// Multi-select ring
+			const severityDimmed = sev && !activeSeverities.has(sev);
 			const isSelected = selectedNodes.has(n.id);
+			const isGroupNode = n.type === "group";
+
+			// Path highlighting: dim nodes not in the highlighted path
+			const pathDimmed = highlightedPath && !isGroupNode && !highlightedPath.has(n.id);
 
 			let style = { ...(n.style || {}) };
 
-			if (severityDimmed) {
-				style.opacity = 0.12;
+			if (severityDimmed || pathDimmed) {
+				style.opacity = pathDimmed ? 0.15 : 0.12;
 				style.pointerEvents = "none";
 			}
 
 			if (isSelected) {
 				style.boxShadow = "0 0 0 2px rgba(16, 185, 129, 0.7)";
+				style.borderRadius = "8px";
+			}
+
+			// Highlight ring for nodes in the active path
+			if (highlightedPath && highlightedPath.has(n.id) && !isGroupNode) {
+				style.boxShadow = "0 0 0 2px rgba(59, 130, 246, 0.6)";
 				style.borderRadius = "8px";
 			}
 
@@ -360,9 +394,9 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 		}
 
 		return processed;
-	}, [baseNodes, legendFilter, activeSeverities, selectedNodes]);
+	}, [baseNodes, legendFilter, activeSeverities, selectedNodes, highlightedPath]);
 
-	const baseEdges = useMemo(() => toReactFlowEdges(activeMap), [activeMap]);
+	const baseEdges = useMemo(() => isJourney ? elkEdges : toReactFlowEdges(activeMap), [isJourney, elkEdges, activeMap]);
 
 	// Apply legend filter + severity filter to edges
 	const edges = useMemo(() => {
@@ -388,6 +422,18 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 			});
 		}
 
+		// Path highlighting: dim edges not connecting highlighted nodes
+		if (highlightedPath) {
+			processed = processed.map((e) => {
+				const inPath = highlightedPath.has(e.source) && highlightedPath.has(e.target);
+				if (!inPath) {
+					return { ...e, style: { ...e.style, opacity: 0.08 } };
+				}
+				// Brighten edges in the path
+				return { ...e, style: { ...e.style, opacity: 1, strokeWidth: 2.5 } };
+			});
+		}
+
 		// Legend filter
 		if (legendFilter) {
 			if (legendFilter.startsWith("edge:")) {
@@ -408,7 +454,7 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 		}
 
 		return processed;
-	}, [baseEdges, baseNodes, legendFilter, activeSeverities]);
+	}, [baseEdges, baseNodes, legendFilter, activeSeverities, highlightedPath]);
 
 	// Build a lookup from node id -> MapNode for click/hover
 	const nodeMap = useMemo(() => {
@@ -443,8 +489,40 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 			const mapNode = nodeMap.get(node.id);
 			if (!mapNode) return;
 
-			// Journey commercial nodes: open insights drawer if insights exist
-			if (mapNode.type === "journey_commercial") {
+			// Journey commercial/support nodes: toggle path highlight + open insights
+			if (mapNode.type === "journey_commercial" || mapNode.type === "journey_support") {
+				// Path highlighting: compute connected upstream + downstream nodes
+				if (highlightedPath?.has(node.id)) {
+					// Clicking the same node again: clear highlight
+					setHighlightedPath(null);
+				} else {
+					const connected = new Set<string>([node.id]);
+					// BFS upstream (find all nodes that lead TO this node)
+					const queue = [node.id];
+					while (queue.length > 0) {
+						const current = queue.shift()!;
+						for (const e of activeMap.edges) {
+							if (e.target === current && !connected.has(e.source)) {
+								connected.add(e.source);
+								queue.push(e.source);
+							}
+						}
+					}
+					// BFS downstream (find all nodes reachable FROM this node)
+					const queue2 = [node.id];
+					while (queue2.length > 0) {
+						const current = queue2.shift()!;
+						for (const e of activeMap.edges) {
+							if (e.source === current && !connected.has(e.target)) {
+								connected.add(e.target);
+								queue2.push(e.target);
+							}
+						}
+					}
+					setHighlightedPath(connected);
+				}
+
+				// Also open insights drawer if available
 				const ins = insightsMap.get(node.id);
 				if (ins && ins.items.length > 0) {
 					setSelectedInsights({ label: mapNode.label, insights: ins });
@@ -590,7 +668,8 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 								onNodeMouseLeave={onNodeMouseLeave}
 								proOptions={{ hideAttribution: true }}
 								defaultEdgeOptions={{ type: "default" }}
-								panOnDrag={isMobile ? [1, 2] : undefined}
+								onPaneClick={() => setHighlightedPath(null)}
+							panOnDrag={isMobile ? [1, 2] : undefined}
 							>
 								<Background
 									color='var(--color-border-edge, #27272a)'

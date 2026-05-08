@@ -59,12 +59,8 @@ export const productNav: NavItem[] = [
 	},
 	// Chat removed from sidenav — copilot panel is the primary AI access point (3.14)
 	// /app/chat route still works as a direct-URL fallback.
-	{
-		id: "cross-signals",
-		href: "/app/cross-signals",
-		labelKey: "cross_signals",
-		icon: "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",
-	},
+	// Cross-signals removed from sidenav — embedded as collapsible section in Workspaces.
+	// /app/cross-signals route still works as a deep-link fallback.
 	{
 		id: "maps",
 		href: "/app/maps",

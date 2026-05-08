@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
@@ -10,10 +10,12 @@ import PulseSummary from "@/components/console/PulseSummary";
 import RevenueMap from "@/components/console/RevenueMap";
 import CycleDelta from "@/components/console/CycleDelta";
 import BraggingRights from "@/components/console/BraggingRights";
+import CrossSignalChainCard from "@/components/console/cross-signals/CrossSignalChainCard";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type { WorkspaceProjection } from "../../../../packages/projections";
+import type { CrossSignalChain } from "@/lib/dashboard/types";
 
 // ──────────────────────────────────────────────
 // Panorama — workspace command center
@@ -105,6 +107,81 @@ const SEVERITY_RANK: Record<string, number> = {
   critical: 4, high: 3, medium: 2, low: 1, none: 0,
 };
 
+// ── Cross-Signal Chains — collapsible section ──
+
+const MAX_INLINE_CHAINS = 5;
+
+function CrossSignalSection() {
+  const t = useTranslations("console.cross_signals");
+  const { currency } = useMcpData();
+  const [chains, setChains] = useState<CrossSignalChain[]>([]);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/cross-signals")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.chains) setChains(data.chains);
+      })
+      .catch(() => {});
+  }, []);
+
+  if (chains.length === 0) return null;
+
+  const visible = expanded ? chains.slice(0, MAX_INLINE_CHAINS) : chains.slice(0, 2);
+
+  return (
+    <section className="rounded-2xl border border-edge bg-surface-card shadow-lg">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
+      >
+        <div className="flex items-center gap-2.5">
+          <svg className="h-4 w-4 text-indigo-400 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+          </svg>
+          <span className="text-[13px] font-semibold text-content">
+            {t("title")}
+          </span>
+          <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-indigo-400">
+            {chains.length}
+          </span>
+        </div>
+        <svg
+          className={`h-4 w-4 text-content-faint transition-transform ${expanded ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`space-y-2 px-5 pb-5 ${expanded ? "" : ""}`}>
+        {visible.map((chain, i) => (
+          <CrossSignalChainCard
+            key={`${chain.surface}-${i}`}
+            surface={chain.surface}
+            links={chain.links}
+            totalImpactCents={chain.totalImpactCents}
+            temporalPattern={chain.temporalPattern}
+            narrative={chain.narrative}
+            firstDetectedAt={chain.firstDetectedAt}
+            currency={currency}
+          />
+        ))}
+        {!expanded && chains.length > 2 && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
+            className="w-full rounded-lg border border-dashed border-edge py-2 text-[11px] text-content-faint transition-colors hover:border-edge-strong hover:text-content-muted"
+          >
+            {t("more_patterns", { count: chains.length - 2 })}
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) {
   const router = useRouter();
   const t = useTranslations("console.workspaces");
@@ -195,6 +272,9 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
     <div className="space-y-6">
       {/* ── Lens 1: Intel Briefing ── */}
       <PulseSummary />
+
+      {/* ── Cross-Signal Chains (collapsible) ── */}
+      <CrossSignalSection />
 
       {/* ── Lenses 2-4: Revenue Map | Delta + Rights ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">

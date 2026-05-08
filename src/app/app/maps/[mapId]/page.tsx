@@ -9,6 +9,7 @@ import PageHeader from "@/components/console/PageHeader";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { loadAllMaps } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import { useCopilot } from "@/components/app/CopilotProvider";
 import MapCanvas from "@/components/maps/MapCanvas";
 import JourneyFiltersBar, {
   type JourneyFilters,
@@ -225,6 +226,8 @@ function MapCanvasHeader({
   t: ReturnType<typeof useTranslations>;
   tc: ReturnType<typeof useTranslations>;
 }) {
+  const copilot = useCopilot();
+  const tp = useTranslations("console.copilot.shared_prompts");
   return (
     <div className="flex items-center justify-between gap-4 border-b border-edge px-6 py-4">
       <div className="flex min-w-0 items-center gap-3">
@@ -262,7 +265,10 @@ function MapCanvasHeader({
         <ShinyButton
           variant="console"
           onClick={() =>
-            (window.location.href = `/app/chat?context=map:${encodeURIComponent(mapDef.id)}`)
+            copilot.open({
+              map: { id: mapDef.id, title: mapDef.name || mapDef.type },
+              prompt: tp("map_discuss_single", { title: mapDef.name || mapDef.type }),
+            })
           }
         >
           {t("useAsContext")}

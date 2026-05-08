@@ -623,7 +623,9 @@ export default function CopilotPanel() {
 										? "bg-red-500"
 										: item.kind === "action"
 											? "bg-emerald-500"
-											: "bg-amber-500"
+											: item.kind === "map"
+												? "bg-indigo-500"
+												: "bg-amber-500"
 								}`}
 							/>
 							{item.title.length > 50

@@ -16,6 +16,7 @@ import "@xyflow/react/dist/style.css";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import { useCopilot } from "@/components/app/CopilotProvider";
 import SideDrawer from "@/components/console/SideDrawer";
 import { nodeTypes } from "./nodes";
 import { edgeTypes } from "./edges";
@@ -146,9 +147,15 @@ function MultiSelectBar({
 }) {
 	const t = useTranslations("console.maps.toolbar");
 
+	const copilot = useCopilot();
+	const tp = useTranslations("console.copilot.shared_prompts");
 	const handleDiscuss = () => {
-		const ids = Array.from(selectedIds).join(",");
-		window.location.href = `/app/chat?findings=${encodeURIComponent(ids)}`;
+		copilot.open({
+			prompt: tp("map_analyze_multi", {
+				count: String(selectedIds.size),
+				list: Array.from(selectedIds).map((id) => `- ${id}`).join("\n"),
+			}),
+		});
 	};
 
 	return (

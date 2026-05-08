@@ -31,7 +31,7 @@ import type { FindingProjection } from "../../../packages/projections/types";
 // ── Types ──
 
 export interface CopilotContextItem {
-	kind: "finding" | "action" | "workspace";
+	kind: "finding" | "action" | "workspace" | "map";
 	id: string;
 	title: string;
 }
@@ -67,7 +67,7 @@ interface CopilotState {
 }
 
 interface CopilotActions {
-	open: (context?: { finding?: FindingProjection; action?: { id: string; title: string }; prompt?: string }) => void;
+	open: (context?: { finding?: FindingProjection; action?: { id: string; title: string }; map?: { id: string; title: string }; prompt?: string }) => void;
 	close: () => void;
 	minimize: () => void;
 	restore: () => void;
@@ -294,7 +294,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	// ── Actions ──
 
 	const open = useCallback(
-		(context?: { finding?: FindingProjection; action?: { id: string; title: string }; prompt?: string }) => {
+		(context?: { finding?: FindingProjection; action?: { id: string; title: string }; map?: { id: string; title: string }; prompt?: string }) => {
 			setIsOpen(true);
 			setIsMinimized(false);
 
@@ -312,6 +312,14 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 						kind: "action",
 						id: context.action.id,
 						title: context.action.title,
+					},
+				]);
+			} else if (context?.map) {
+				setContextItems([
+					{
+						kind: "map",
+						id: context.map.id,
+						title: context.map.title,
 					},
 				]);
 			}

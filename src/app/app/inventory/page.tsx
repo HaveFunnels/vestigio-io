@@ -16,6 +16,7 @@ import {
 	type DataState,
 } from "@/lib/console-data";
 import { ShinyButton } from "@/components/ui/shiny-button";
+import { getPageTypeStyle } from "@/lib/page-type-colors";
 
 // ──────────────────────────────────────────────
 // Inventory Page — Surface-Level Intelligence
@@ -239,11 +240,11 @@ function SurfaceDrawer({
 									<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
 										{t("type")}
 									</div>
-									<span
-										className={`inline-block rounded px-2 py-0.5 text-xs ${surface.is_commercial ? "bg-blue-900/30 text-blue-400" : "bg-surface-inset text-content-muted"}`}
-									>
+									{(() => { const pts = getPageTypeStyle(surface.page_type); return (
+									<span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${pts.bg} ${pts.text}`}>
 										{titleCase(surface.page_type)}
 									</span>
+									); })()}
 								</div>
 								<div>
 									<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
@@ -682,13 +683,14 @@ export default function InventoryPage() {
 		{
 			key: "page_type",
 			label: tc("type"),
-			render: (row: InventorySurface) => (
-				<span
-					className={`rounded px-2 py-0.5 text-xs ${row.is_commercial ? "bg-blue-900/30 text-blue-400" : "bg-surface-inset text-content-muted"}`}
-				>
-					{titleCase(row.page_type)}
-				</span>
-			),
+			render: (row: InventorySurface) => {
+				const pts = getPageTypeStyle(row.page_type);
+				return (
+					<span className={`rounded px-2 py-0.5 text-xs font-medium ${pts.bg} ${pts.text}`}>
+						{titleCase(row.page_type)}
+					</span>
+				);
+			},
 		},
 		{
 			key: "is_live",

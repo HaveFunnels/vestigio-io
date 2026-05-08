@@ -486,7 +486,7 @@ export default function InventoryPage() {
 	const filtered = useMemo(() => {
 		return surfaces.filter((s) => {
 			if (liveFilter === "live" && !s.is_live) return false;
-			if (liveFilter === "not_live" && s.is_live) return false;
+			if (liveFilter === "not_live" && (s.http_status === null || s.http_status < 400)) return false;
 			if (typeFilter === "commercial" && !s.is_commercial) return false;
 			if (typeFilter === "support" && s.page_type !== "support") return false;
 			if (typeFilter === "policy" && s.page_type !== "policy") return false;
@@ -588,10 +588,12 @@ export default function InventoryPage() {
 
 	// ── Down pages count ──
 
+	// Only count pages with actual HTTP errors (4xx/5xx) — NOT stale pages
+	// we simply haven't re-checked. Stale != down.
 	const downCount = useMemo(
 		() =>
 			surfaces.filter(
-				(s) => !s.is_live || (s.http_status !== null && s.http_status >= 400)
+				(s) => s.http_status !== null && s.http_status >= 400
 			).length,
 		[surfaces]
 	);

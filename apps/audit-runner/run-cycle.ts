@@ -345,12 +345,25 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				const title = findTitleForUrl(result.evidence, url);
 				const statusCode = findStatusForUrl(result.evidence, url);
 
-				// Skip URLs that were never actually fetched — no confirmed HTTP status.
-				// A page without statusCode was only discovered via links/sitemap but
-				// never requested. It may not exist (404) and shouldn't pollute inventory.
-				if (statusCode == null) continue;
+				// Pages discovered via links/sitemap but never fetched (not in the
+				// crawl allow-list) get skipped — they may not exist at all.
+				// Pages that WERE fetched but failed (timeout/DNS/SSL) have a
+				// coverage entry with validated=false. These get persisted with
+				// statusCode=0 so the inventory shows them as "unreachable".
+				if (statusCode == null && entry.validated) {
+					// Fetched successfully but no http_response evidence — unusual,
+					// treat as unknown. Skip to avoid ghost entries.
+					continue;
+				}
+				if (statusCode == null && !entry.validated && !entry.discovered) {
+					// Never discovered, never fetched — skip.
+					continue;
+				}
+				// If statusCode is null but entry was discovered and fetch was
+				// attempted (validated=false after catch), persist as unreachable (0).
+				const effectiveStatus = statusCode ?? 0;
 
-				const isFresh = entry.validated && (statusCode == null || statusCode < 400);
+				const isFresh = entry.validated && effectiveStatus < 400;
 
 				await prisma.pageInventoryItem.upsert({
 					where: {
@@ -369,12 +382,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						priority: entry.critical ? 10 : 0,
 						criticality: Math.round(entry.confidence ?? 0),
 						title,
-						statusCode,
+						statusCode: effectiveStatus,
 						freshnessState: isFresh ? "fresh" : "stale",
 					},
 					update: {
 						title: title ?? undefined,
-						statusCode: statusCode ?? undefined,
+						statusCode: effectiveStatus,
 						freshnessState: isFresh ? "fresh" : "stale",
 						criticality: Math.round(entry.confidence ?? 0),
 					},

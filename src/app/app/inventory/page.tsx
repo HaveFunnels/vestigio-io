@@ -486,12 +486,7 @@ export default function InventoryPage() {
 	const filtered = useMemo(() => {
 		return surfaces.filter((s) => {
 			if (liveFilter === "live" && !s.is_live) return false;
-			if (liveFilter === "not_live") {
-				const isDown =
-					(s.http_status !== null && s.http_status >= 400) ||
-					(s.http_status === null && !s.is_live);
-				if (!isDown) return false;
-			}
+			if (liveFilter === "not_live" && !isPageDown(s)) return false;
 			if (typeFilter === "commercial" && !s.is_commercial) return false;
 			if (typeFilter === "support" && s.page_type !== "support") return false;
 			if (typeFilter === "policy" && s.page_type !== "policy") return false;
@@ -595,17 +590,15 @@ export default function InventoryPage() {
 
 	// "Unavailable" = pages that are genuinely unreachable or erroring:
 	//   - HTTP 4xx/5xx (explicit server error)
-	//   - http_status null + not live (legacy rows where fetch failed entirely —
-	//     connection refused, DNS failure, SSL error, timeout)
-	// Excludes stale-but-healthy pages (is_live=false just means we haven't
-	// re-checked recently, not that the page is down).
+	//   - http_status === 0 (fetch failed — timeout, DNS, SSL, connection refused)
+	//   - http_status null + not live (legacy rows before sentinel was added)
+	const isPageDown = (s: InventorySurface) =>
+		(s.http_status !== null && s.http_status >= 400) ||
+		s.http_status === 0 ||
+		(s.http_status === null && !s.is_live);
+
 	const downCount = useMemo(
-		() =>
-			surfaces.filter(
-				(s) =>
-					(s.http_status !== null && s.http_status >= 400) ||
-					(s.http_status === null && !s.is_live)
-			).length,
+		() => surfaces.filter(isPageDown).length,
 		[surfaces]
 	);
 
@@ -700,32 +693,35 @@ export default function InventoryPage() {
 		{
 			key: "is_live",
 			label: tc("status"),
-			render: (row: InventorySurface) => (
+			render: (row: InventorySurface) => {
+				const down = isPageDown(row);
+				return (
 				<span
 					className={`inline-flex items-center gap-1 text-xs ${
-						!row.is_live
-							? "text-content-faint"
-							: row.http_status !== null && row.http_status >= 400
-								? "text-red-400"
+						down
+							? "text-red-400"
+							: !row.is_live
+								? "text-content-faint"
 								: "text-emerald-400"
 					}`}
 				>
 					<span
 						className={`h-1.5 w-1.5 rounded-full ${
-							!row.is_live
-								? "bg-content-faint"
-								: row.http_status !== null && row.http_status >= 400
-									? "bg-red-400"
+							down
+								? "bg-red-400"
+								: !row.is_live
+									? "bg-content-faint"
 									: "bg-emerald-400"
 						}`}
 					/>
-					{!row.is_live
-						? t("status.not_seen")
-						: row.http_status !== null && row.http_status >= 400
-							? t("status.down")
+					{down
+						? t("status.down")
+						: !row.is_live
+							? t("status.not_seen")
 							: t("status.live")}
 				</span>
-			),
+				);
+			},
 		},
 		{
 			key: "http_status",
@@ -735,14 +731,14 @@ export default function InventoryPage() {
 					className={`font-mono text-xs ${
 						row.http_status === null
 							? "text-content-faint"
-							: row.http_status >= 400
+							: row.http_status === 0 || row.http_status >= 400
 								? "text-red-400"
 								: row.http_status >= 300
 									? "text-amber-400"
 									: "text-content-muted"
 					}`}
 				>
-					{row.http_status ?? "---"}
+					{row.http_status === null ? "---" : row.http_status === 0 ? "ERR" : row.http_status}
 				</span>
 			),
 		},

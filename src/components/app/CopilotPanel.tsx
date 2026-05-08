@@ -521,31 +521,6 @@ export default function CopilotPanel() {
 				/>
 			)}
 
-			{/* ── Context chips ── */}
-			{contextItems.length > 0 && (
-				<div className="flex flex-wrap justify-center gap-1.5 border-t border-edge/50 px-4 py-2">
-					{contextItems.map((item) => (
-						<span
-							key={item.id}
-							className="inline-flex items-center gap-1 rounded-full border border-edge bg-surface-inset px-2 py-0.5 text-[10px] text-content-muted"
-						>
-							<span
-								className={`h-1.5 w-1.5 rounded-full ${
-									item.kind === "finding"
-										? "bg-red-500"
-										: item.kind === "action"
-											? "bg-emerald-500"
-											: "bg-amber-500"
-								}`}
-							/>
-							{item.title.length > 40
-								? item.title.slice(0, 40) + "..."
-								: item.title}
-						</span>
-					))}
-				</div>
-			)}
-
 			{/* ── Messages or Empty State ── */}
 			<div
 				ref={scrollRef}
@@ -634,6 +609,30 @@ export default function CopilotPanel() {
 				</div>
 			)}
 
+			{/* ── Context chips (above input so user sees what they're discussing) ── */}
+			{contextItems.length > 0 && (
+				<div className="flex flex-wrap items-center gap-1.5 border-t border-edge/50 px-4 py-2">
+					{contextItems.map((item) => (
+						<span
+							key={item.id}
+							className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-inset px-2.5 py-1 text-[11px] text-content-secondary"
+						>
+							<span
+								className={`h-2 w-2 rounded-full ${
+									item.kind === "finding"
+										? "bg-red-500"
+										: item.kind === "action"
+											? "bg-emerald-500"
+											: "bg-amber-500"
+								}`}
+							/>
+							{item.title.length > 50
+								? item.title.slice(0, 50) + "..."
+								: item.title}
+						</span>
+					))}
+				</div>
+			)}
 			<div className="border-t border-edge">
 				<ChatInputBar
 					onSend={(text) => send(text)}

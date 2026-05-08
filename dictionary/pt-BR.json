@@ -2774,6 +2774,7 @@
 			"optional_note": "Algum feedback rápido? (opcional)",
 			"submit": "Enviar",
 			"not_now": "Agora não",
+			"later": "Deixar pra depois",
 			"thanks": "Obrigado pelo feedback!"
 		},
 		"cross_signals": {

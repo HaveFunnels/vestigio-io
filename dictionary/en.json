@@ -2690,6 +2690,7 @@
 			"optional_note": "Any quick feedback? (optional)",
 			"submit": "Submit",
 			"not_now": "Not now",
+			"later": "Maybe later",
 			"thanks": "Thanks for the feedback!"
 		},
 		"cross_signals": {

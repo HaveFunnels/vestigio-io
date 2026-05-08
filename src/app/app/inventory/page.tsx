@@ -486,7 +486,12 @@ export default function InventoryPage() {
 	const filtered = useMemo(() => {
 		return surfaces.filter((s) => {
 			if (liveFilter === "live" && !s.is_live) return false;
-			if (liveFilter === "not_live" && (s.http_status === null || s.http_status < 400)) return false;
+			if (liveFilter === "not_live") {
+				const isDown =
+					(s.http_status !== null && s.http_status >= 400) ||
+					(s.http_status === null && !s.is_live);
+				if (!isDown) return false;
+			}
 			if (typeFilter === "commercial" && !s.is_commercial) return false;
 			if (typeFilter === "support" && s.page_type !== "support") return false;
 			if (typeFilter === "policy" && s.page_type !== "policy") return false;
@@ -588,12 +593,18 @@ export default function InventoryPage() {
 
 	// ── Down pages count ──
 
-	// Only count pages with actual HTTP errors (4xx/5xx) — NOT stale pages
-	// we simply haven't re-checked. Stale != down.
+	// "Unavailable" = pages that are genuinely unreachable or erroring:
+	//   - HTTP 4xx/5xx (explicit server error)
+	//   - http_status null + not live (legacy rows where fetch failed entirely —
+	//     connection refused, DNS failure, SSL error, timeout)
+	// Excludes stale-but-healthy pages (is_live=false just means we haven't
+	// re-checked recently, not that the page is down).
 	const downCount = useMemo(
 		() =>
 			surfaces.filter(
-				(s) => s.http_status !== null && s.http_status >= 400
+				(s) =>
+					(s.http_status !== null && s.http_status >= 400) ||
+					(s.http_status === null && !s.is_live)
 			).length,
 		[surfaces]
 	);

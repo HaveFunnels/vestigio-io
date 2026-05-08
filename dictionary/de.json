@@ -636,8 +636,11 @@
 			"primary": "Kostenlose Diagnose starten",
 			"micro": "In 60 Sekunden sehen Sie Ihre erste Diagnose."
 		},
+		"client_gallery": {
+			"headline": "Schließen Sie sich 20.000+ Unternehmen an, die nicht im Dunkeln skalieren"
+		},
 		"video_testimonials": {
-			"title_before": "Sie entdeckten, ",
+			"title_before": "Sie entdeckten,",
 			"title_highlight": "wie viel",
 			"title_after": " sie verloren",
 			"items": [

@@ -642,8 +642,11 @@
 			"primary": "Rodar Diagnóstico Gratuito",
 			"micro": "Você pode estar olhando seu primeiro diagnóstico em 60 segundos."
 		},
+		"client_gallery": {
+			"headline": "Junte-se a mais de 20.000 empresas que não escalam no escuro"
+		},
 		"video_testimonials": {
-			"title_before": "Eles descobriram ",
+			"title_before": "Eles descobriram",
 			"title_highlight": "o quanto",
 			"title_after": " estavam perdendo",
 			"items": [

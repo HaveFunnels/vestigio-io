@@ -636,8 +636,11 @@
 			"primary": "Ejecutar Diagnóstico Gratuito",
 			"micro": "Puedes estar mirando tu primer diagnóstico en 60 segundos."
 		},
+		"client_gallery": {
+			"headline": "Únete a más de 20.000 empresas que no escalan a ciegas"
+		},
 		"video_testimonials": {
-			"title_before": "Descubrieron ",
+			"title_before": "Descubrieron",
 			"title_highlight": "cuánto",
 			"title_after": " estaban perdiendo",
 			"items": [

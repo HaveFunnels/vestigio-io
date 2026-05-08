@@ -1,28 +1,34 @@
 /**
- * Home > ClientGallery — quiet social-proof strip beneath the product
- * tour. Renders the brand SVGs from `Hero/brandData.tsx` as a single
- * row with a soft mask gradient on the edges, framed by a small
- * eyebrow / title / subtitle block.
+ * Home > ClientGallery — social-proof logo strip with real client logos.
  *
- * Honest social proof contract: the framing copy in
- * `homepage.client_gallery.*` is intentionally generic ("digital
- * operators that refuse to scale in the dark") so we don't claim any
- * specific Fortune 500 customer. The brand SVGs themselves are the
- * boilerplate vendor marks already shipping in the codebase. When
- * real client logos arrive, swap `brandData` for a curated
- * `clientLogos` data file — no callsite changes needed.
+ * Logos live in /public/images/clients/ as SVGs.
+ * Rendered grayscale + opacity for neutral dark-theme look,
+ * full color on hover. CSS-only marquee for seamless loop.
  *
- * Server component, i18n via `getTranslations`. The marquee is
- * CSS-only (`@keyframes vclient-marquee`) so we stay out of the
- * client bundle.
+ * Server component, i18n via `getTranslations`.
  */
 
-import brandData from "../Hero/brandData";
+import { getTranslations } from "next-intl/server";
 import AwardsStrip from "@/components/shared/AwardsStrip";
 
+const CLIENT_LOGOS = [
+	{ name: "Hotmart", src: "/images/clients/hotmart.svg" },
+	{ name: "iFood", src: "/images/clients/ifood.svg" },
+	{ name: "VTEX", src: "/images/clients/vtex.svg" },
+	{ name: "Vivara", src: "/images/clients/vivara.svg" },
+	{ name: "Cartpanda", src: "/images/clients/cartpanda.svg" },
+	{ name: "Pagar.me", src: "/images/clients/pagarme.svg" },
+	{ name: "RD Station", src: "/images/clients/rdstation.svg" },
+	{ name: "Insider", src: "/images/clients/insider.svg" },
+	{ name: "Exame", src: "/images/clients/exame.svg" },
+	{ name: "Reserva", src: "/images/clients/reserva.svg" },
+	{ name: "ElevenLabs", src: "/images/clients/eleven-labs.svg" },
+	{ name: "Minimal", src: "/images/clients/minimal.svg" },
+];
+
 const ClientGallery = async () => {
-	// Duplicate the brand list so the marquee can loop seamlessly.
-	const loopBrands = [...brandData, ...brandData];
+	const t = await getTranslations("homepage.client_gallery");
+	const loopLogos = [...CLIENT_LOGOS, ...CLIENT_LOGOS];
 
 	return (
 		<section
@@ -43,35 +49,26 @@ const ClientGallery = async () => {
 				}
 			`}</style>
 
-			{/* The ambient halo from previous versions was removed —
-			    it was an `emerald-500/[0.05]` blur that read fine on
-			    dark but added visual mud on the white bottom of the
-			    HomeBigCard gradient. */}
-
 			<div className='relative mx-auto w-full max-w-[1200px] px-4 sm:px-8 xl:px-0'>
 				<p className='mb-4 text-center text-[11px] text-zinc-500 sm:mb-5 sm:text-xs'>
-					Confiada por mais de <strong className='font-semibold text-zinc-400'>20.000 empresas</strong>, marcas e especialistas em crescimento.
+					{t("headline")}
 				</p>
 
-				{/* Marquee row — soft edge mask, paused on hover.
-				    Brand glyphs use `text-zinc-700` (dark) so they read
-				    against the white bottom of the HomeBigCard gradient. */}
 				<div className='relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]'>
-					<div className='vclient-track flex w-max items-center gap-x-14 sm:gap-x-20'>
-						{loopBrands.map((brand, i) => (
-							<div
-								key={`${brand.id}-${i}`}
-								className='flex h-10 shrink-0 items-center justify-center text-zinc-700 opacity-70 transition-opacity hover:opacity-100 sm:h-12'
-								title={brand.name}
-								aria-label={brand.name}
-							>
-								{brand.image}
-							</div>
+					<div className='vclient-track flex w-max items-center gap-x-12 sm:gap-x-16'>
+						{loopLogos.map((logo, i) => (
+							<img
+								key={`${logo.name}-${i}`}
+								src={logo.src}
+								alt={logo.name}
+								title={logo.name}
+								loading="lazy"
+								className="h-7 w-auto shrink-0 object-contain opacity-50 grayscale brightness-200 transition-all duration-300 hover:opacity-100 hover:grayscale-0 hover:brightness-100 sm:h-8"
+							/>
 						))}
 					</div>
 				</div>
 
-				{/* Awards strip — centered below logos */}
 				<div className="mt-5 sm:mt-6">
 					<AwardsStrip />
 				</div>

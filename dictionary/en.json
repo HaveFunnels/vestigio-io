@@ -642,8 +642,11 @@
 			"primary": "Run Free Diagnostic",
 			"micro": "You can be looking at your first diagnostic in 60 seconds."
 		},
+		"client_gallery": {
+			"headline": "Join 20,000+ businesses that don't scale in the dark"
+		},
 		"video_testimonials": {
-			"title_before": "They discovered ",
+			"title_before": "They discovered",
 			"title_highlight": "just how much",
 			"title_after": " they were losing",
 			"items": [

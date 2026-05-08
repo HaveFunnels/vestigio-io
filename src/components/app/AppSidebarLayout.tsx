@@ -203,6 +203,17 @@ function UserMenu() {
 						))}
 					</div>
 					<div className="border-t border-edge pt-1">
+						{(session?.user as any)?.isImpersonating && (
+							<button
+								onClick={() => signOut({ callbackUrl: "/app/admin/organizations" })}
+								className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-xs text-amber-400 transition-colors hover:bg-amber-500/10"
+							>
+								<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+								</svg>
+								Exit impersonation
+							</button>
+						)}
 						<button
 							onClick={() => signOut({ callbackUrl: "/" })}
 							className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-xs text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content"
@@ -371,20 +382,11 @@ export default function AppSidebarLayout({
 			/>
 
 			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-				{/* ── Impersonation banner ── */}
+				{/* ── Impersonation indicator ── */}
 				{isImpersonating && (
-					<div className="flex h-8 shrink-0 items-center justify-between bg-amber-600 px-4 text-xs text-white border-b border-amber-700">
-						<span>
-							Impersonating <strong>{impersonatingEmail}</strong> ({orgCtx.orgName})
-						</span>
-						<button
-							onClick={() => {
-								signOut({ callbackUrl: "/app/admin/organizations" });
-							}}
-							className="rounded px-2 py-0.5 font-medium text-amber-100 transition-colors hover:bg-amber-700 hover:text-white"
-						>
-							Exit impersonation
-						</button>
+					<div className="flex h-7 shrink-0 items-center justify-center gap-2 bg-amber-500/10 border-b border-amber-500/20 text-[11px] font-medium text-amber-400">
+						<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+						Impersonating <strong>{impersonatingEmail}</strong>
 					</div>
 				)}
 				{/* ── Top bar (part of the shell) ── */}

@@ -63,39 +63,39 @@ export default function AdminEnvironmentsPage() {
           className="rounded-md border border-stroke bg-transparent px-4 py-2 text-sm dark:border-stroke-dark" />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-stroke dark:border-stroke-dark">
+      <div className="overflow-x-auto rounded-md border border-edge">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-stroke bg-gray-1 dark:border-stroke-dark dark:bg-gray-dark">
-              <th className="px-4 py-3 font-medium">Domain</th>
-              <th className="px-4 py-3 font-medium">Organization</th>
-              <th className="px-4 py-3 font-medium">Production</th>
-              <th className="px-4 py-3 font-medium">Last Audit</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
+            <tr className="border-b border-edge bg-surface-inset/60">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">Domain</th>
+              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted sm:table-cell">Organization</th>
+              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted lg:table-cell">Production</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">Last Audit</th>
+              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted lg:table-cell">Created</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-body-color">Loading...</td></tr>
+              <tr><td colSpan={6} className="px-4 py-12 text-center text-content-faint">Loading...</td></tr>
             ) : environments.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-body-color">{search ? "No matches." : "No environments found."}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-12 text-center text-content-faint">{search ? "No matches." : "No environments found."}</td></tr>
             ) : (
               environments.map((env) => (
-                <tr key={env.id} className="border-b border-stroke dark:border-stroke-dark">
-                  <td className="px-4 py-3 font-medium">{env.domain}</td>
-                  <td className="px-4 py-3">{env.orgName}</td>
-                  <td className="px-4 py-3">{env.isProduction ? "Yes" : "No"}</td>
+                <tr key={env.id} className="border-b border-edge transition-colors hover:bg-surface-card-hover">
+                  <td className="px-4 py-3 font-medium text-content">{env.domain}</td>
+                  <td className="hidden px-4 py-3 text-content-tertiary sm:table-cell">{env.orgName}</td>
+                  <td className="hidden px-4 py-3 lg:table-cell">{env.isProduction ? "Yes" : "No"}</td>
                   <td className="px-4 py-3">
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${env.lastAuditStatus === "complete" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : env.lastAuditStatus === "running" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : env.lastAuditStatus === "failed" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"}`}>
+                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${env.lastAuditStatus === "complete" ? "bg-emerald-500/10 text-emerald-400" : env.lastAuditStatus === "running" ? "bg-blue-500/10 text-blue-400" : env.lastAuditStatus === "failed" ? "bg-red-500/10 text-red-400" : "bg-amber-500/10 text-amber-400"}`}>
                       {env.lastAuditStatus}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-body-color">{new Date(env.createdAt).toLocaleDateString()}</td>
+                  <td className="hidden px-4 py-3 text-content-muted lg:table-cell">{new Date(env.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <button onClick={() => handleTriggerAudit(env)} className="text-xs text-primary hover:underline">Trigger Audit</button>
-                      <button onClick={() => handleViewFindings(env)} className="text-xs text-body-color hover:underline">View Findings</button>
+                      <button onClick={() => handleTriggerAudit(env)} className="text-xs text-accent-text hover:underline">Trigger Audit</button>
+                      <button onClick={() => handleViewFindings(env)} className="text-xs text-content-muted hover:underline">View Findings</button>
                     </div>
                   </td>
                 </tr>

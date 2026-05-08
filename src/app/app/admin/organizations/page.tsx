@@ -4,6 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import ExportButton from "@/components/app/ExportButton";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 // ──────────────────────────────────────────────
 // Admin — Organizations
@@ -466,7 +471,7 @@ export default function AdminOrganizationsPage() {
               return (
                 <div key={org.id}>
                   {/* Org row */}
-                  <div className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-surface-card-hover">
+                  <div className="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-surface-card-hover sm:flex-row sm:items-center sm:gap-4">
                     {/* Expand toggle */}
                     <button
                       onClick={() => handleToggleDetail(org.id)}
@@ -500,37 +505,44 @@ export default function AdminOrganizationsPage() {
                       </p>
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Link
-                        href={`/app/admin/organizations/${org.id}`}
-                        className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
-                      >
-                        Detail
-                      </Link>
-                      <button
-                        onClick={() => handleToggleDetail(org.id)}
-                        className="rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
-                      >
-                        {isOpen ? "Close" : "View"}
-                      </button>
-                      <button
-                        onClick={() => handleSuspend(org)}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-                          org.status === "suspended"
-                            ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-                            : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
-                        }`}
-                      >
-                        {org.status === "suspended" ? "Reactivate" : "Suspend"}
-                      </button>
-                      <button
-                        onClick={() => handleImpersonate(org)}
-                        className="rounded-lg border border-accent/30 px-3 py-1.5 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/10"
-                      >
-                        Impersonate
-                      </button>
-                    </div>
+                    {/* Actions dropdown */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-secondary">
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                          </svg>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" sideOffset={4} className="w-44 p-1">
+                        <Link
+                          href={`/app/admin/organizations/${org.id}`}
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
+                        >
+                          Detail
+                        </Link>
+                        <button
+                          onClick={() => handleToggleDetail(org.id)}
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
+                        >
+                          {isOpen ? "Close" : "View"}
+                        </button>
+                        <button
+                          onClick={() => handleSuspend(org)}
+                          className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs transition-colors hover:bg-surface-card-hover ${
+                            org.status === "suspended" ? "text-emerald-400" : "text-amber-400"
+                          }`}
+                        >
+                          {org.status === "suspended" ? "Reactivate" : "Suspend"}
+                        </button>
+                        <button
+                          onClick={() => handleImpersonate(org)}
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-accent-text transition-colors hover:bg-surface-card-hover"
+                        >
+                          Impersonate
+                        </button>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   {/* Expanded detail panel */}

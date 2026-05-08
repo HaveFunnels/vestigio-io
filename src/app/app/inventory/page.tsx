@@ -602,14 +602,13 @@ export default function InventoryPage() {
 
 	// ── Down pages count ──
 
-	// "Unavailable" = pages that are genuinely unreachable or erroring:
+	// "Unavailable" = pages with a confirmed error or unreachable status:
 	//   - HTTP 4xx/5xx (explicit server error)
 	//   - http_status === 0 (fetch failed — timeout, DNS, SSL, connection refused)
-	//   - http_status null + not live (legacy rows before sentinel was added)
+	// Pages with http_status null are simply not yet checked — NOT down.
 	const isPageDown = (s: InventorySurface) =>
-		(s.http_status !== null && s.http_status >= 400) ||
 		s.http_status === 0 ||
-		(s.http_status === null && !s.is_live);
+		(s.http_status !== null && s.http_status >= 400);
 
 	const downCount = useMemo(
 		() => surfaces.filter(isPageDown).length,

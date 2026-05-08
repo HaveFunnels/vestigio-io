@@ -75,7 +75,7 @@ export default function CrossSignalChainCard({
 }: Props) {
 	const t = useTranslations("console.cross_signals");
 	const tc = useTranslations("console.common");
-	const tp = useTranslations("console.workspaces.detail.enrichment.packs");
+	const tp = useTranslations("console.analysis.packs");
 	const [expanded, setExpanded] = useState(false);
 
 	return (
@@ -110,7 +110,7 @@ export default function CrossSignalChainCard({
 									)}
 									<span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
 									<span className={`text-[11px] font-semibold ${style.text}`}>
-										{tp.has(link.pack) ? tp(link.pack) : link.pack.replace(/_/g, " ")}
+										{tp.has(link.pack) ? tp(link.pack) : link.pack.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
 									</span>
 									<span className="max-w-[200px] truncate text-[11px] text-content-secondary lg:max-w-[300px]">
 										{link.title}

@@ -1470,13 +1470,20 @@
 				"scale_readiness": "Prontidão para Escala",
 				"revenue_integrity": "Integridade de Faturamento",
 				"chargeback_resilience": "Resiliência a Chargeback",
+				"money_moment_exposure": "Postura de Segurança",
 				"copy_alignment": "Alinhamento de Copy",
 				"channel_integrity": "Integridade do Canal",
 				"discoverability": "Descoberta",
 				"brand_integrity": "Integridade da Marca",
 				"saas_growth_readiness": "Crescimento SaaS",
 				"payment_health": "Saúde de Pagamentos",
-				"content_freshness": "Frescor de Conteúdo"
+				"content_freshness": "Frescor de Conteúdo",
+				"security_posture": "Postura de Segurança",
+				"first_impression": "Primeira Impressão",
+				"friction_tax": "Custo de Fricção",
+				"trust_gap": "Lacuna de Confiança",
+				"funnel_integrity": "Integridade do Funil",
+				"behavioral": "Comportamental"
 			},
 			"pack_labels": {
 				"scale_readiness": "Escala",

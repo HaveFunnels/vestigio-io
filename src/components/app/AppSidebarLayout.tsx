@@ -21,15 +21,11 @@ import { orgDropdownNav } from "./sidebar-nav-data";
 // Routes where the in-flight audit banner should appear. Keep this list
 // tight — the banner takes vertical space above the page content, so
 // showing it on e.g. Settings would be distracting.
-const CYCLE_BANNER_ROUTES = new Set([
-	"/app/inventory",
-	"/app/findings",
-	"/app/actions",
-]);
-
 function shouldShowCycleBanner(pathname: string | null): boolean {
 	if (!pathname) return false;
-	return CYCLE_BANNER_ROUTES.has(pathname);
+	// Show on all console pages — the user should always know when an
+	// audit is running, regardless of which page they're viewing.
+	return pathname.startsWith("/app/");
 }
 
 interface OrgEnv {

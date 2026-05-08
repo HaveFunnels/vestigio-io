@@ -149,15 +149,18 @@ function TrendAnalysisCardComponent({ data: _data }: WidgetProps) {
 	}
 
 	if (!trendData || trendData.alerts.length === 0) {
+		const needsMore = !trendData || trendData.lookback_cycles < 2;
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
 				<TrendUpIcon size={28} className="text-zinc-500" />
-				<p className="text-sm text-zinc-400">{t("no_alerts")}</p>
-				<p className="text-xs text-zinc-500">
-					{trendData
-						? t("cycles_analyzed", { count: trendData.lookback_cycles })
-						: t("needs_cycles")}
+				<p className="text-sm text-zinc-400">
+					{needsMore ? t("needs_cycles") : t("no_alerts")}
 				</p>
+				{!needsMore && (
+					<p className="text-xs text-zinc-500">
+						{t("cycles_analyzed", { count: trendData!.lookback_cycles })}
+					</p>
+				)}
 			</div>
 		);
 	}

@@ -64,8 +64,8 @@ export default function CycleProgressBanner({ hidden = false }: Props) {
         if (cancelled) return;
         if (data?.cycle?.id) setCycleId(data.cycle.id);
       })
-      .catch(() => {
-        // no-op — banner stays hidden
+      .catch((err) => {
+        console.warn("[CycleProgressBanner] failed to check latest cycle:", err?.message || err);
       });
     return () => {
       cancelled = true;

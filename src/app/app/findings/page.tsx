@@ -20,7 +20,8 @@ import ColumnSelector, {
 	DEFAULT_COLUMNS,
 } from "@/components/console/ColumnSelector";
 import FindingDetailPanel from "@/components/console/FindingDetailPanel";
-import { loadFindings } from "@/lib/console-data";
+import { loadFindings, loadChangeReport } from "@/lib/console-data";
+import ChangeSummaryBanner from "@/components/console/ChangeSummaryBanner";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { useCopilot } from "@/components/app/CopilotProvider";
 import { ShinyButton } from "@/components/ui/shiny-button";
@@ -83,6 +84,11 @@ export default function FindingsPage() {
 		existingState.status === "ready" && existingState.data.length > 0;
 	const findings: FindingProjection[] =
 		existingState.status === "ready" ? existingState.data : [];
+	const changeState =
+		mcpData.changeReport.status !== "not_ready"
+			? mcpData.changeReport
+			: loadChangeReport();
+	const changeReport = changeState.status === "ready" ? changeState.data : null;
 
 	// ── Drawer state ──
 	const [selectedFinding, setSelectedFinding] =
@@ -662,6 +668,13 @@ export default function FindingsPage() {
 			<div className="mb-6">
 				<SummaryCards cards={summaryCards} />
 			</div>
+
+			{/* Change Summary Banner */}
+			{changeReport && (
+				<div className="mb-4">
+					<ChangeSummaryBanner report={changeReport} />
+				</div>
+			)}
 
 			{/* Active view info + Column selector */}
 			{activeView && (

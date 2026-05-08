@@ -17,7 +17,7 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useChatStream } from "@/lib/use-chat-stream";
 import { serializeBlocksToText } from "@/lib/chat-block-parser";
 import type {
@@ -90,7 +90,6 @@ const STORAGE_KEY = "vestigio_copilot_conv";
 
 export function CopilotProvider({ children }: { children: ReactNode }) {
 	const pathname = usePathname();
-	const router = useRouter();
 
 	// Visibility
 	const [isOpen, setIsOpen] = useState(false);
@@ -340,25 +339,14 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const expand = useCallback(() => {
-		// Animate the panel to full-screen first, then navigate after
-		// the CSS transition completes so the user sees a smooth expansion.
 		setIsExpanded(true);
-		setIsMinimized(false);
 		setIsOpen(true);
-		setTimeout(() => {
-			setIsOpen(false);
-			router.push("/app/chat");
-		}, 300); // matches transition-all duration-300
-	}, [router]);
+		setIsMinimized(false);
+	}, []);
 
 	const collapse = useCallback(() => {
 		setIsExpanded(false);
-		// If on the full-screen chat page, go back and open the side panel
-		if (pathname === "/app/chat") {
-			router.back();
-			setIsOpen(true);
-		}
-	}, [pathname, router]);
+	}, []);
 
 	const newConversation = useCallback(() => {
 		setConversationId(null);

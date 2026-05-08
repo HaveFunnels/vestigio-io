@@ -4801,7 +4801,22 @@
 			"ad_promise_reality_behavior": "Your ad promises something your landing page doesn't deliver",
 			"trust_hesitation_revenue": "Missing trust signals are causing checkout abandonment",
 			"post_purchase_chain": "Weak post-purchase experience is driving chargebacks",
-			"brand_impersonation_revenue": "Active brand impersonation is eroding trust"
+			"brand_impersonation_revenue": "Active brand impersonation is eroding trust",
+			"security_trust_double_exposure": "Security weakness is eroding buyer trust on two fronts",
+			"security_chargeback_compound": "Security gaps are creating chargeback exposure",
+			"copy_conversion_paralysis": "Unclear copy is freezing buyers before conversion",
+			"copy_pricing_confusion": "Pricing page copy is creating confusion and drop-off",
+			"vertical_saas_trial_trust": "Trial experience lacks trust signals for SaaS buyers",
+			"vertical_ecommerce_size_returns": "Sizing uncertainty is driving returns and refunds",
+			"vertical_food_friction_chain": "Ordering friction is losing impatient customers",
+			"performance_conversion_bleed": "Slow pages are bleeding conversion at every step",
+			"mobile_revenue_compound": "Mobile experience is compounding revenue loss",
+			"stale_content_trust_erosion": "Outdated content is eroding buyer trust",
+			"freshness_brand_decay": "Content decay is weakening brand perception",
+			"invisible_commercial_pages": "Commercial pages are invisible to search and AI",
+			"seo_conversion_misalignment": "SEO content attracts traffic that doesn't convert",
+			"exposed_infrastructure_risk": "Exposed infrastructure is creating security risk",
+			"subdomain_trust_fragmentation": "Subdomain sprawl is fragmenting brand trust"
 		},
 		"maps": {
 			"names": {

@@ -4760,7 +4760,22 @@
 			"ad_promise_reality_behavior": "Seu anúncio promete algo que sua landing page não entrega",
 			"trust_hesitation_revenue": "Sinais de confiança ausentes estão causando abandono no checkout",
 			"post_purchase_chain": "Experiência pós-compra fraca está gerando chargebacks",
-			"brand_impersonation_revenue": "Imitação ativa da marca está erodindo a confiança"
+			"brand_impersonation_revenue": "Imitação ativa da marca está erodindo a confiança",
+			"security_trust_double_exposure": "Fragilidade de segurança está erodindo a confiança do comprador em duas frentes",
+			"security_chargeback_compound": "Falhas de segurança estão criando exposição a chargebacks",
+			"copy_conversion_paralysis": "Copy confusa está travando compradores antes da conversão",
+			"copy_pricing_confusion": "Copy da página de preços está gerando confusão e abandono",
+			"vertical_saas_trial_trust": "Experiência de trial carece de sinais de confiança para compradores SaaS",
+			"vertical_ecommerce_size_returns": "Incerteza sobre tamanho está gerando devoluções e reembolsos",
+			"vertical_food_friction_chain": "Fricção no pedido está perdendo clientes impacientes",
+			"performance_conversion_bleed": "Páginas lentas estão sangrando conversão em cada etapa",
+			"mobile_revenue_compound": "Experiência mobile está compondo perda de receita",
+			"stale_content_trust_erosion": "Conteúdo desatualizado está erodindo a confiança do comprador",
+			"freshness_brand_decay": "Deterioração de conteúdo está enfraquecendo a percepção da marca",
+			"invisible_commercial_pages": "Páginas comerciais estão invisíveis para busca e IA",
+			"seo_conversion_misalignment": "Conteúdo SEO atrai tráfego que não converte",
+			"exposed_infrastructure_risk": "Infraestrutura exposta está criando risco de segurança",
+			"subdomain_trust_fragmentation": "Proliferação de subdomínios está fragmentando a confiança na marca"
 		},
 		"maps": {
 			"names": {

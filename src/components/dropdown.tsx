@@ -67,6 +67,13 @@ export function Dropdown({ children, isOpen, setIsOpen }: DropdownProps) {
 			document.body.style.removeProperty("pointer-events");
 			document.body.removeAttribute("data-scroll-locked");
 		}
+
+		// Cleanup on unmount — if component unmounts while open,
+		// the body stays locked forever without this.
+		return () => {
+			document.body.style.removeProperty("pointer-events");
+			document.body.removeAttribute("data-scroll-locked");
+		};
 	}, [isOpen]);
 
 	function handleClose() {

@@ -151,7 +151,7 @@
 				"actions": "Ações",
 				"analysis": "Análise",
 				"inventory": "Inventário",
-				"cross_signals": "Cross-Signals",
+				"cross_signals": "Insights Cruzados",
 				"workspaces": "Workspaces",
 				"chat": "Vestigio AI",
 				"maps": "Mapas"
@@ -2770,7 +2770,7 @@
 			"thanks": "Obrigado pelo feedback!"
 		},
 		"cross_signals": {
-			"title": "Insights Cross-Signal",
+			"title": "Insights Cruzados",
 			"subtitle": "Superfícies onde descobertas de múltiplas perspectivas convergem — a correlação exclusiva da Vestigio.",
 			"hero_chains": "Cadeias Cross-Signal",
 			"hero_at_risk": "Exposição Mensal",
@@ -3896,7 +3896,7 @@
 			"growth": "Crescimento",
 			"support": "Suporte",
 			"observability": "Observabilidade",
-			"cross_signals": "Cross-Signals",
+			"cross_signals": "Insights Cruzados",
 			"product_analytics": "Product Analytics",
 			"add_new_domain": "Adicionar novo domínio",
 			"upgrade_to_add_domains": "Faça upgrade do plano para adicionar mais domínios"

@@ -176,7 +176,7 @@ export function DropdownContent({
 			role='menu'
 			aria-orientation='vertical'
 			className={cn(
-				"pointer-events-auto fixed min-w-[8rem] origin-top-right rounded-lg",
+				"pointer-events-auto fixed z-50 min-w-[8rem] origin-top-right rounded-lg",
 				className
 			)}
 			data-state={isOpen ? "open" : "closed"}

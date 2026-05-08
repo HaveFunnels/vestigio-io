@@ -149,7 +149,7 @@ function PageFade({ children }: { children: React.ReactNode }) {
 
 	return (
 		<div
-			className="relative min-h-0 flex-1 overflow-auto transition-opacity duration-200 ease-out"
+			className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-opacity duration-200 ease-out"
 			style={{ opacity: fade ? 0.6 : 1 }}
 		>
 			{content}
@@ -374,7 +374,7 @@ export default function AppSidebarLayout({
 				setMobileOpen={setMobileOpen}
 			/>
 
-			<div className="flex flex-1 flex-col overflow-hidden">
+			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 				{/* ── Impersonation banner ── */}
 				{isImpersonating && (
 					<div className="flex h-8 shrink-0 items-center justify-between bg-amber-600 px-4 text-xs text-white border-b border-amber-700">
@@ -448,7 +448,7 @@ export default function AppSidebarLayout({
 				</header>
 
 				{/* ── Content area: floats on top of the shell ── */}
-				<div className="relative mx-2 mb-2 flex min-h-0 flex-1 flex-col rounded-xl bg-surface shadow-lg ring-1 ring-edge/50">
+				<div className="relative mx-2 mb-2 flex min-h-0 min-w-0 flex-1 flex-col rounded-xl bg-surface shadow-lg ring-1 ring-edge/50">
 					{/* Wave 5 Fase 2 — paused banner. The resume-on-access hook
 					    in the layout server component already dispatched a
 					    catch-up cycle for the CURRENT env, so we just

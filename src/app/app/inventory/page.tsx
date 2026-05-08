@@ -36,6 +36,19 @@ type HasFindingsFilter = "all" | "with" | "without";
 type TierFilter = "all" | "critical" | "high" | "medium" | "low";
 type ResponseTimeFilter = "all" | "lt500" | "500_2000" | "gt2000";
 
+function humanizeStatus(
+	status: number | null,
+	t: (key: string) => string,
+): { label: string; cls: string } {
+	if (status === null) return { label: "---", cls: "text-content-faint" };
+	if (status === 0) return { label: t("response.unreachable"), cls: "text-red-400" };
+	if (status >= 500) return { label: t("response.server_error"), cls: "text-red-400" };
+	if (status === 404) return { label: t("response.not_found"), cls: "text-red-400" };
+	if (status >= 400) return { label: t("response.client_error"), cls: "text-red-400" };
+	if (status >= 300) return { label: t("response.redirect"), cls: "text-amber-400" };
+	return { label: t("response.ok"), cls: "text-emerald-400" };
+}
+
 // ── Custom Dropdown ──────────────────────────
 
 interface DropdownOption<T extends string> {
@@ -727,22 +740,15 @@ export default function InventoryPage() {
 		},
 		{
 			key: "http_status",
-			label: t("columns.http"),
-			render: (row: InventorySurface) => (
-				<span
-					className={`font-mono text-xs ${
-						row.http_status === null
-							? "text-content-faint"
-							: row.http_status === 0 || row.http_status >= 400
-								? "text-red-400"
-								: row.http_status >= 300
-									? "text-amber-400"
-									: "text-content-muted"
-					}`}
-				>
-					{row.http_status === null ? "---" : row.http_status === 0 ? "ERR" : row.http_status}
-				</span>
-			),
+			label: t("columns.response"),
+			render: (row: InventorySurface) => {
+				const { label, cls } = humanizeStatus(row.http_status, t);
+				return (
+					<span className={`text-xs font-medium ${cls}`}>
+						{label}
+					</span>
+				);
+			},
 		},
 		// session_count and finding_count columns are conditionally included
 		// below based on hasAnySessionData / hasAnyFindingData. Until the

@@ -3292,7 +3292,16 @@
 				"with_findings": "With Findings"
 			},
 			"columns": {
-				"http": "HTTP"
+				"http": "HTTP",
+				"response": "Response"
+			},
+			"response": {
+				"ok": "OK",
+				"redirect": "Redirect",
+				"not_found": "Not Found",
+				"client_error": "Error",
+				"server_error": "Server Error",
+				"unreachable": "Unreachable"
 			},
 			"status": {
 				"live": "Live",

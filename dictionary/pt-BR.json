@@ -3376,7 +3376,16 @@
 				"with_findings": "Com Descobertas"
 			},
 			"columns": {
-				"http": "HTTP"
+				"http": "HTTP",
+				"response": "Resposta"
+			},
+			"response": {
+				"ok": "OK",
+				"redirect": "Redirecionamento",
+				"not_found": "Não Encontrada",
+				"client_error": "Erro",
+				"server_error": "Erro no Servidor",
+				"unreachable": "Inacessível"
 			},
 			"status": {
 				"live": "Ativa",

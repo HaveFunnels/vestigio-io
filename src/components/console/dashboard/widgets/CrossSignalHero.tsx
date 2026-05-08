@@ -198,7 +198,7 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 						)}
 						{crossSignal.totalChains > visibleChains.length && !isStarter && (
 							<a
-								href="/app/cross-signals"
+								href="/app/workspaces"
 								className="relative mt-2 flex items-center justify-center gap-1 border-t border-edge/40 pt-2 text-[10px] font-medium text-indigo-400 transition-colors hover:text-indigo-300"
 							>
 								{t("view_all")} {crossSignal.totalChains} {t("pattern_plural")} →

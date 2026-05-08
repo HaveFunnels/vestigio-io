@@ -111,7 +111,17 @@ export function DashboardShell({
 						body: JSON.stringify({ layout: next }),
 						signal: controller.signal,
 					});
-					if (!res.ok) throw new Error(`save failed: ${res.status}`);
+					if (!res.ok) {
+						// 400 = layout rejected by server validation (stale widget
+						// defId, duplicate instanceId, etc.). The server keeps the
+						// previous valid layout, so silently ignore — the next
+						// edit will retry with a clean state.
+						if (res.status === 400) {
+							setSaveStatus("idle");
+							return;
+						}
+						throw new Error(`save failed: ${res.status}`);
+					}
 					setSaveStatus("saved");
 					// Clear the "saved" pip after a moment so it doesn't stick.
 					setTimeout(

@@ -278,7 +278,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                           )}
                           <SeverityBadge value={data.topSeverity} />
                         </div>
-                        {data.sparkline.length >= 2 && (
+                        {data.sparkline.length >= 2 && new Set(data.sparkline).size > 1 && (
                           <TrendSparkline data={data.sparkline} width={64} height={20} />
                         )}
                       </div>

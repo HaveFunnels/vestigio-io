@@ -154,11 +154,19 @@ function PageFade({ children }: { children: React.ReactNode }) {
 }
 
 // ── User menu with logout ──
+const LOCALE_OPTIONS = [
+	{ code: "en", label: "English" },
+	{ code: "pt-BR", label: "Português" },
+	{ code: "es", label: "Español" },
+	{ code: "de", label: "Deutsch" },
+] as const;
+
 function UserMenu() {
-	const { data: session, status } = useSession();
+	const { data: session, status, update: updateSession } = useSession();
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 	const t = useTranslations("console.navigation");
+	const router = useRouter();
 
 	useEffect(() => {
 		function handleClick(e: MouseEvent) {
@@ -202,6 +210,41 @@ function UserMenu() {
 							</Link>
 						))}
 					</div>
+					{/* Admin-only language selector */}
+					{(session?.user as any)?.role === "ADMIN" && (
+						<div className="border-t border-edge px-3 py-2">
+							<p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-faint">Language</p>
+							<div className="flex flex-wrap gap-1">
+								{LOCALE_OPTIONS.map((opt) => {
+									const active = (session?.user as any)?.locale === opt.code || (!((session?.user as any)?.locale) && opt.code === "en");
+									return (
+										<button
+											key={opt.code}
+											onClick={async () => {
+												const { switchLanguage } = await import("@/components/Header/action");
+												await switchLanguage(opt.code);
+												await fetch("/api/user/update", {
+													method: "POST",
+													headers: { "Content-Type": "application/json" },
+													body: JSON.stringify({ locale: opt.code }),
+												});
+												await updateSession({ user: { locale: opt.code } });
+												setOpen(false);
+												router.refresh();
+											}}
+											className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+												active
+													? "bg-accent/20 text-accent-text"
+													: "text-content-faint hover:bg-surface-card-hover hover:text-content-muted"
+											}`}
+										>
+											{opt.label}
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					)}
 					<div className="border-t border-edge pt-1">
 						{(session?.user as any)?.isImpersonating && (
 							<button

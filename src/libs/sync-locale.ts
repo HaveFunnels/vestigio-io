@@ -2,17 +2,13 @@ import { cookies, headers } from "next/headers";
 import { SUPPORTED_LOCALES } from "@/i18n/supported-locales";
 
 /**
- * Sync the organization's locale to the locale cookie.
+ * Sync the locale cookie from org and user preferences.
  *
- * Single source of truth: Organization.locale (set in org settings).
- * When org has no explicit locale set (null or 'en'), we DON'T touch
- * an existing cookie. If there's NO cookie at all, we detect from
- * the browser's Accept-Language header (one-time bootstrap).
- *
- * This ensures coherence: if org says pt-BR → everything pt-BR.
- * If org has no preference → respect whatever the user already had.
+ * Priority: org locale > user locale (from DB/JWT) > existing cookie > browser detection.
+ * This ensures the locale survives logout/login: even if the cookie was cleared,
+ * the user's DB preference (carried in the JWT) restores it.
  */
-export async function syncUserLocale(orgLocale?: string): Promise<void> {
+export async function syncUserLocale(orgLocale?: string, userLocale?: string): Promise<void> {
   try {
     const cookieStore = await cookies();
     const currentCookie = cookieStore.get("locale")?.value;
@@ -25,7 +21,13 @@ export async function syncUserLocale(orgLocale?: string): Promise<void> {
       return;
     }
 
-    // Case 2: Org has no preference (null/'en') AND no cookie exists → bootstrap from browser
+    // Case 2: No cookie → restore from user's DB preference (survives logout)
+    if (!currentCookie && userLocale && userLocale !== 'en' && SUPPORTED_LOCALES.includes(userLocale)) {
+      cookieStore.set("locale", userLocale, { maxAge: 60 * 60 * 24 * 30 });
+      return;
+    }
+
+    // Case 3: No cookie, no user preference → bootstrap from browser Accept-Language
     if (!currentCookie) {
       const headerStore = await headers();
       const acceptLang = headerStore.get("accept-language") || "";
@@ -39,7 +41,7 @@ export async function syncUserLocale(orgLocale?: string): Promise<void> {
         }
       }
     }
-    // Case 3: Cookie already exists → don't touch it (user or previous detection set it)
+    // Case 4: Cookie already exists → don't touch it
   } catch {
     // Session/DB not available — skip silently
   }

@@ -20,15 +20,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
 	const orgCtx = await resolveOrgContext();
 
-	// Sync the org's locale to the cookie — single source of truth.
-	await syncUserLocale(orgCtx.locale);
-
-	// Load engine translations for the user's locale (server-side only)
-	const engineTranslations = await loadEngineTranslations();
-
 	// Session + impersonation state — needed by both the MCP bootstrap
 	// and the layout shell (impersonation banner).
 	const session = await getServerSession(authOptions);
+
+	// Sync locale cookie: org locale > user locale > browser detection.
+	const userLocale = (session?.user as any)?.locale as string | undefined;
+	await syncUserLocale(orgCtx.locale, userLocale);
+
+	// Load engine translations for the user's locale (server-side only)
+	const engineTranslations = await loadEngineTranslations();
 	const isImpersonating = (session?.user as any)?.isImpersonating === true;
 
 	// Auto-bootstrap: load persisted evidence into MCP server singleton

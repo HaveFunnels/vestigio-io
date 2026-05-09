@@ -37,7 +37,7 @@ export default function AwardsStrip({ compact = false }: AwardsStripProps) {
 	const gap = compact ? "gap-5" : "gap-6 sm:gap-8";
 
 	return (
-		<div className={`flex flex-wrap items-center justify-center ${gap}`}>
+		<div className={`flex flex-nowrap items-center justify-center ${gap}`}>
 			{BADGES.map((badge) => (
 				<Image
 					key={badge.alt}
@@ -45,8 +45,8 @@ export default function AwardsStrip({ compact = false }: AwardsStripProps) {
 					alt={badge.alt}
 					width={height * 3}
 					height={height}
-					className="opacity-80 transition-opacity hover:opacity-100"
-					style={{ height: `${height}px`, width: "auto" }}
+					className={`shrink opacity-80 transition-opacity hover:opacity-100 ${compact ? "h-6" : "h-7 sm:h-[38px]"} w-auto`}
+					style={{ width: "auto" }}
 				/>
 			))}
 		</div>

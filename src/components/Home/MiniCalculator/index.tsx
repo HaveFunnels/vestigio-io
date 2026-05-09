@@ -221,7 +221,7 @@ interface MiniCalculatorProps {
 }
 
 const MiniCalculator = ({
-	primaryCtaHref = "/auth/signup",
+	primaryCtaHref = "/lp/audit",
 }: MiniCalculatorProps = {}) => {
 	const t = useTranslations("homepage.mini_calculator");
 	const tCard = useTranslations("homepage.mini_calc_card");

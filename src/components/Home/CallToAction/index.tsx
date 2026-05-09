@@ -7,7 +7,7 @@ interface CallToActionProps {
 }
 
 const CallToAction = async ({
-	primaryCtaHref = "/auth/signup",
+	primaryCtaHref = "/lp/audit",
 }: CallToActionProps = {}) => {
 	const t = await getTranslations("homepage.cta");
 

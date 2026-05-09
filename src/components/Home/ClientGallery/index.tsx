@@ -12,18 +12,18 @@ import { getTranslations } from "next-intl/server";
 import AwardsStrip from "@/components/shared/AwardsStrip";
 
 const CLIENT_LOGOS = [
-	{ name: "Hotmart", src: "/images/clients/hotmart.svg" },
-	{ name: "iFood", src: "/images/clients/ifood.svg" },
-	{ name: "VTEX", src: "/images/clients/vtex.svg" },
-	{ name: "Vivara", src: "/images/clients/vivara.svg" },
-	{ name: "Cartpanda", src: "/images/clients/cartpanda.svg" },
-	{ name: "Pagar.me", src: "/images/clients/pagarme.svg" },
-	{ name: "RD Station", src: "/images/clients/rdstation.svg" },
-	{ name: "Insider", src: "/images/clients/insider.svg" },
-	{ name: "Exame", src: "/images/clients/exame.svg" },
-	{ name: "Reserva", src: "/images/clients/reserva.svg" },
-	{ name: "ElevenLabs", src: "/images/clients/eleven-labs.svg" },
-	{ name: "Minimal", src: "/images/clients/minimal.svg" },
+	{ name: "Hotmart", src: "/images/clients/hotmart.png" },
+	{ name: "iFood", src: "/images/clients/ifood.png" },
+	{ name: "VTEX", src: "/images/clients/vtex.png" },
+	{ name: "Vivara", src: "/images/clients/vivara.png" },
+	{ name: "Cartpanda", src: "/images/clients/cartpanda.png" },
+	{ name: "Pagar.me", src: "/images/clients/pagarme.png" },
+	{ name: "RD Station", src: "/images/clients/rdstation.png" },
+	{ name: "Insider", src: "/images/clients/insider.png" },
+	{ name: "Exame", src: "/images/clients/exame.png" },
+	{ name: "Reserva", src: "/images/clients/reserva.png" },
+	{ name: "ElevenLabs", src: "/images/clients/eleven-labs.png" },
+	{ name: "Minimal", src: "/images/clients/minimal.png" },
 ];
 
 const ClientGallery = async () => {
@@ -63,7 +63,7 @@ const ClientGallery = async () => {
 								alt={logo.name}
 								title={logo.name}
 								loading="lazy"
-								className="h-6 w-auto max-w-[100px] shrink-0 object-contain mix-blend-screen grayscale invert opacity-40 transition-opacity duration-300 hover:opacity-70 sm:h-7 sm:max-w-[120px]"
+								className="h-6 w-auto max-w-[100px] shrink-0 object-contain brightness-0 invert opacity-[0.25] transition-opacity duration-300 hover:opacity-50 sm:h-7 sm:max-w-[120px]"
 							/>
 						))}
 					</div>

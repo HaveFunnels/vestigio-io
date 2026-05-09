@@ -34,7 +34,7 @@ interface AwardsStripProps {
 
 export default function AwardsStrip({ compact = false }: AwardsStripProps) {
 	const height = compact ? 24 : 38;
-	const gap = compact ? "gap-5" : "gap-6 sm:gap-8";
+	const gap = compact ? "gap-5" : "gap-3 sm:gap-8";
 
 	return (
 		<div className={`flex flex-nowrap items-center justify-center ${gap}`}>

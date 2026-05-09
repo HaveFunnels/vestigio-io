@@ -33,7 +33,7 @@ interface AwardsStripProps {
 }
 
 export default function AwardsStrip({ compact = false }: AwardsStripProps) {
-	const height = compact ? 24 : 32;
+	const height = compact ? 24 : 38;
 	const gap = compact ? "gap-5" : "gap-6 sm:gap-8";
 
 	return (

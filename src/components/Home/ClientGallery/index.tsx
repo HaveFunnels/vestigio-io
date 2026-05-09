@@ -69,7 +69,7 @@ const ClientGallery = async () => {
 					</div>
 				</div>
 
-				<div className="mt-5 sm:mt-6">
+				<div className="mt-7 sm:mt-8">
 					<AwardsStrip />
 				</div>
 			</div>

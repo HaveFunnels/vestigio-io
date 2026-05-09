@@ -534,6 +534,8 @@ export default function useOnboardingForm() {
 		loading,
 		error,
 		activating,
+		// Prefill
+		prefillLoaded,
 		// i18n
 		t,
 	};

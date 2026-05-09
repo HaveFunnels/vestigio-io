@@ -1138,7 +1138,7 @@ function severityClasses(severity: MiniFindingSeverity): { dot: string; label: s
 
 // ── Countdown timer ──────────────────────────
 
-const RESULT_TTL_MS = 30 * 60 * 1000;
+const RESULT_TTL_MS = 24 * 60 * 60 * 1000;
 
 function CountdownTimer({ computedAt }: { computedAt: string }) {
 	const expiresAt = useMemo(() => new Date(computedAt).getTime() + RESULT_TTL_MS, [computedAt]);
@@ -1152,10 +1152,13 @@ function CountdownTimer({ computedAt }: { computedAt: string }) {
 	}, [expiresAt]);
 
 	const totalSecs = Math.ceil(remaining / 1000);
-	const mins = Math.floor(totalSecs / 60);
+	const hours = Math.floor(totalSecs / 3600);
+	const mins = Math.floor((totalSecs % 3600) / 60);
 	const secs = totalSecs % 60;
-	const label = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-	const isLow = totalSecs < 300; // less than 5 min
+	const label = hours > 0
+		? `${hours}h ${String(mins).padStart(2, "0")}m`
+		: `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+	const isLow = totalSecs < 3600; // less than 1 hour
 
 	return (
 		<span className={`font-mono tabular-nums ${isLow ? "font-semibold text-red-400" : "text-red-400/80"}`}>

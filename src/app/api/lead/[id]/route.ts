@@ -51,13 +51,13 @@ export async function GET(
 		);
 	}
 
-	// ── 30-minute result expiration ──
-	// After audit_complete, results are visible for 30 minutes.
+	// ── 24-hour result expiration ──
+	// After audit_complete, results are visible for 24 hours.
 	// After that, return the lead with status "expired" but include
 	// the result data so the frontend can show the impact reminder
 	// on the expired page (loss aversion + endowment effect).
 	// The actual DB row persists for 14 days (normal cleanup TTL).
-	const RESULT_TTL_MS = 30 * 60 * 1000; // 30 minutes
+	const RESULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 	if (
 		lead.status === "audit_complete" &&
 		lead.miniAudit?.computedAt &&

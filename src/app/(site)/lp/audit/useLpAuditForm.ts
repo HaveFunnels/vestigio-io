@@ -34,20 +34,35 @@ export interface LeadState {
 	email: string;
 }
 
-// Frontend screens → backend step mapping (v2)
-type ScreenId = "domain" | "business_type" | "conversion_model" | "revenue" | "ticket" | "email";
-const SCREENS: ScreenId[] = ["domain", "business_type", "conversion_model", "revenue", "ticket", "email"];
+// Infer conversion model from business type — fewer questions for the user
+const DEFAULT_CONVERSION: Record<BusinessType, ConversionModel> = {
+	ecommerce: "checkout",
+	lead_gen: "form",
+	saas: "checkout",
+	hybrid: "checkout",
+};
+
+// Default ticket by business type — avoids asking
+const DEFAULT_TICKET: Record<BusinessType, number> = {
+	ecommerce: 250,
+	lead_gen: 500,
+	saas: 300,
+	hybrid: 350,
+};
+
+// Frontend screens → backend step mapping (v3 — 3 screens)
+//   Screen 1 (domain)        → Backend step 1
+//   Screen 2 (business_type) → batched with inferred conversion_model into backend step 2
+//   Screen 3 (email)         → submits revenue+ticket as backend step 3, then email as step 4
+type ScreenId = "domain" | "business_type" | "email";
+const SCREENS: ScreenId[] = ["domain", "business_type", "email"];
 const TOTAL_SCREENS = SCREENS.length;
 
-// Which backend step to submit after each screen
 function backendStepForScreen(screen: ScreenId): number | null {
 	switch (screen) {
 		case "domain": return 1;
-		case "business_type": return null; // batched — submitted with conversion_model
-		case "conversion_model": return 2;
-		case "revenue": return null; // batched — submitted with ticket
-		case "ticket": return 3; // submits both revenue + ticket
-		case "email": return 4;
+		case "business_type": return 2; // submits businessModel + inferred conversionModel
+		case "email": return null; // handled specially — submits steps 3 + 4 + fires audit
 	}
 }
 
@@ -84,11 +99,11 @@ export default function useLpAuditForm() {
 	// ── Form data ──
 	const [form, setForm] = useState<LeadState>({
 		domain: "",
-		ownershipConfirmed: false,
+		ownershipConfirmed: true, // no longer gated by checkbox
 		businessModel: "ecommerce",
 		conversionModel: "checkout",
 		monthlyRevenue: 100000,
-		averageTicket: 300,
+		averageTicket: 250,
 		email: "",
 	});
 
@@ -139,7 +154,16 @@ export default function useLpAuditForm() {
 
 	// ── Helpers ──
 	const update = useCallback(<K extends keyof LeadState>(key: K, value: LeadState[K]) => {
-		setForm((f) => ({ ...f, [key]: value }));
+		setForm((f) => {
+			const next = { ...f, [key]: value };
+			// Auto-infer conversion model and ticket from business type
+			if (key === "businessModel") {
+				const bt = value as BusinessType;
+				next.conversionModel = DEFAULT_CONVERSION[bt];
+				next.averageTicket = DEFAULT_TICKET[bt];
+			}
+			return next;
+		});
 		if (fieldError && fieldError.field === key) setFieldError(null);
 	}, [fieldError]);
 
@@ -277,8 +301,12 @@ export default function useLpAuditForm() {
 			}
 		}
 
-		// If this is the last screen (email), fire the audit
+		// Last screen (email): submit revenue+ticket (step 3), email (step 4), then fire audit
 		if (currentScreen === "email") {
+			const step3ok = await submitToBackend(3);
+			if (!step3ok) { setSubmitting(false); inFlightRef.current = false; return; }
+			const step4ok = await submitToBackend(4);
+			if (!step4ok) { setSubmitting(false); inFlightRef.current = false; return; }
 			const ok = await fireAudit();
 			if (ok) {
 				router.push(`/lp/audit/result/${leadId}`);

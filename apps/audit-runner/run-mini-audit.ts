@@ -3,7 +3,7 @@ import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/s
 import { parsePage } from "../../workers/ingestion/parser";
 import { httpFetch } from "../../workers/ingestion/http-client";
 import { extractLandingPreview } from "../../workers/ingestion/landing-preview";
-import { deriveMiniAuditFindings } from "../../workers/ingestion/mini-audit-findings";
+import { deriveMiniAuditFindings, inferBusinessType } from "../../workers/ingestion/mini-audit-findings";
 import { hashDomain, normalizeDomain } from "@/libs/lead-validation";
 import { summarizeMiniImpact, formatBRL } from "../../packages/impact/mini-impact";
 
@@ -219,6 +219,23 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 			probes,
 			domain: normalized,
 		});
+
+		// 6b. Infer business type from crawl signals
+		const inference = inferBusinessType(parsed, response.body);
+		if (inference.confidence >= 0.3) {
+			await prisma.anonymousLead.update({
+				where: { id: leadId },
+				data: {
+					businessModel: inference.type,
+					...(inference.type === "ecommerce" ? { conversionModel: "checkout" } :
+						inference.type === "lead_gen" ? { conversionModel: "form" } :
+						{ conversionModel: "checkout" }),
+				},
+			});
+			console.log(
+				`[mini-audit ${leadId}] inferred business type: ${inference.type} (confidence: ${inference.confidence.toFixed(2)}, signals: ${inference.signals.join(", ")})`,
+			);
+		}
 
 		// 7. Persist MiniAuditResult (upsert by domainHash so the same
 		//    domain only ever has one current row). Update existing if

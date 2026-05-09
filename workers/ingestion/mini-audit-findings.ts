@@ -936,6 +936,99 @@ const SEVERITY_ORDER: Record<MiniFindingSeverity, number> = {
 	positive: 3,
 };
 
+// ──────────────────────────────────────────────
+// Business type inference from crawl signals
+// ──────────────────────────────────────────────
+
+export type InferredBusinessType = "ecommerce" | "lead_gen" | "saas" | "hybrid";
+
+export interface BusinessTypeInference {
+	type: InferredBusinessType;
+	confidence: number; // 0–1
+	signals: string[];
+}
+
+export function inferBusinessType(parsed: ParsedPage, rawHtml: string): BusinessTypeInference {
+	const scores = { ecommerce: 0, lead_gen: 0, saas: 0 };
+	const signals: string[] = [];
+	const lower = rawHtml.toLowerCase();
+	const linkHrefs = parsed.links.map((l) => l.href.toLowerCase()).join(" ");
+	const linkTexts = parsed.links.map((l) => l.text?.toLowerCase() || "").join(" ");
+
+	// ── Ecommerce signals ──
+	if (/\/cart|\/carrinho|\/checkout|\/product|\/produto/i.test(linkHrefs)) {
+		scores.ecommerce += 3; signals.push("cart/checkout/product paths");
+	}
+	if (parsed.forms.some((f) => f.has_payment_fields)) {
+		scores.ecommerce += 3; signals.push("payment form fields");
+	}
+	if (/shopify|nuvemshop|woocommerce|magento|vtex|tray\.com/i.test(lower)) {
+		scores.ecommerce += 4; signals.push("ecommerce platform detected");
+	}
+	if (parsed.structured_data.some((sd) => /Product|Offer/i.test(sd.type))) {
+		scores.ecommerce += 3; signals.push("Product/Offer schema");
+	}
+	if (/add.to.cart|adicionar.ao.carrinho|comprar|buy.now/i.test(lower)) {
+		scores.ecommerce += 2; signals.push("buy/add-to-cart CTA");
+	}
+	if (/R\$\s*\d|US\$\s*\d|\$\s*\d{1,3}[.,]\d{2}/i.test(lower)) {
+		scores.ecommerce += 1; signals.push("price patterns");
+	}
+
+	// ── Lead Gen signals ──
+	if (parsed.forms.some((f) => !f.has_payment_fields && f.field_names.length >= 2)) {
+		scores.lead_gen += 3; signals.push("lead capture form");
+	}
+	if (/wa\.me|api\.whatsapp\.com|whatsapp/i.test(lower)) {
+		scores.lead_gen += 3; signals.push("WhatsApp link");
+	}
+	if (/calendly\.com|tidycal|cal\.com/i.test(lower)) {
+		scores.lead_gen += 3; signals.push("booking embed");
+	}
+	if (/fale.conosco|entre.em.contato|contact.us|agende|schedule/i.test(lower)) {
+		scores.lead_gen += 2; signals.push("contact CTA");
+	}
+	if (/tel:\+?\d|href="tel:/i.test(lower)) {
+		scores.lead_gen += 1; signals.push("phone CTA");
+	}
+
+	// ── SaaS signals ──
+	if (/\/login|\/signin|\/signup|\/register|\/dashboard/i.test(linkHrefs)) {
+		scores.saas += 3; signals.push("login/signup paths");
+	}
+	if (/\/pricing|\/planos|\/plans/i.test(linkHrefs)) {
+		scores.saas += 3; signals.push("pricing page link");
+	}
+	if (/free.trial|teste.gr[aá]tis|start.free|comece.gr[aá]tis/i.test(lower)) {
+		scores.saas += 2; signals.push("free trial CTA");
+	}
+	if (/app\.\w+\.\w+/i.test(lower)) {
+		scores.saas += 1; signals.push("app subdomain reference");
+	}
+	if (/\/mo|\/m[eê]s|per.month|por.m[eê]s/i.test(linkTexts + " " + lower.slice(0, 5000))) {
+		scores.saas += 2; signals.push("recurring pricing language");
+	}
+
+	// Determine winner
+	const entries = Object.entries(scores) as [keyof typeof scores, number][];
+	entries.sort((a, b) => b[1] - a[1]);
+	const [topType, topScore] = entries[0];
+	const [, secondScore] = entries[1];
+	const totalScore = entries.reduce((sum, [, s]) => sum + s, 0);
+
+	// Hybrid if top two are close
+	if (topScore > 0 && secondScore > 0 && secondScore >= topScore * 0.6) {
+		return { type: "hybrid", confidence: totalScore > 8 ? 0.7 : 0.5, signals };
+	}
+
+	if (topScore === 0) {
+		return { type: "ecommerce", confidence: 0, signals: ["no signals — default"] };
+	}
+
+	const confidence = Math.min(1, topScore / 10);
+	return { type: topType, confidence, signals };
+}
+
 export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 	const detectors: Detector[] = [
 		// Original 6

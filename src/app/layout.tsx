@@ -50,11 +50,11 @@ export const metadata: Metadata = {
 		},
 	],
 	title: {
-		default: "Vestigio — Intelligence & Decision Engine for SaaS",
+		default: "Vestigio — Descubra onde seu site perde dinheiro",
 		template: "%s | Vestigio",
 	},
 	description:
-		"Vestigio is the intelligence layer that audits, monitors, and optimizes your SaaS platform.",
+		"Vestigio mostra exatamente onde seu site perde receita, quanto custa, e o que corrigir primeiro.",
 	alternates: {
 		canonical: "/",
 		languages: {
@@ -67,15 +67,15 @@ export const metadata: Metadata = {
 	openGraph: {
 		type: "website",
 		siteName: "Vestigio",
-		title: "Vestigio — Intelligence & Decision Engine for SaaS",
+		title: "Vestigio — Descubra onde seu site perde dinheiro",
 		description:
-			"Automated analysis, evidence-based decisions, and actionable insights for your SaaS platform.",
+			"Descubra quanto dinheiro seu site perde entre o clique e a conversão. Diagnóstico gratuito em 60 segundos.",
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Vestigio — Intelligence & Decision Engine for SaaS",
+		title: "Vestigio — Descubra onde seu site perde dinheiro",
 		description:
-			"Automated analysis, evidence-based decisions, and actionable insights for your SaaS platform.",
+			"Descubra quanto dinheiro seu site perde entre o clique e a conversão. Diagnóstico gratuito em 60 segundos.",
 	},
 };
 

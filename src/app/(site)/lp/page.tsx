@@ -19,24 +19,24 @@ import { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-	title: "Vestigio — Free Site Audit",
+	title: "Vestigio — Diagnóstico gratuito do seu site",
 	description:
-		"Get a free audit of your website. Vestigio crawls your landing in seconds and surfaces the conversion blockers, friction points, and trust gaps costing you revenue.",
+		"Descubra em 60 segundos onde seu site perde dinheiro. A Vestigio analisa cada página, calcula o impacto financeiro e mostra o que corrigir primeiro.",
 	robots: {
 		index: false,
 		follow: false,
 	},
 	openGraph: {
 		type: "website",
-		title: "Vestigio — Free Site Audit",
+		title: "Vestigio — Diagnóstico gratuito do seu site",
 		description:
-			"Get a free audit of your website. Vestigio crawls your landing in seconds and surfaces the conversion blockers, friction points, and trust gaps costing you revenue.",
+			"Descubra em 60 segundos onde seu site perde dinheiro. A Vestigio analisa cada página, calcula o impacto financeiro e mostra o que corrigir primeiro.",
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Vestigio — Free Site Audit",
+		title: "Vestigio — Diagnóstico gratuito do seu site",
 		description:
-			"Get a free audit of your website. Vestigio crawls your landing in seconds and surfaces the conversion blockers, friction points, and trust gaps costing you revenue.",
+			"Descubra em 60 segundos onde seu site perde dinheiro. A Vestigio analisa cada página, calcula o impacto financeiro e mostra o que corrigir primeiro.",
 	},
 };
 

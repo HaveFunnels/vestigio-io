@@ -45,7 +45,7 @@ export default function AwardsStrip({ compact = false }: AwardsStripProps) {
 					alt={badge.alt}
 					width={height * 3}
 					height={height}
-					className="opacity-50 transition-opacity hover:opacity-90"
+					className="opacity-80 transition-opacity hover:opacity-100"
 					style={{ height: `${height}px`, width: "auto" }}
 				/>
 			))}

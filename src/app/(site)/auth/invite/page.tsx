@@ -1,15 +1,7 @@
-import React from "react";
-import InvitedSignin from "@/components/Auth/InvitedSignin";
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-const InvitedSigninPage = () => {
-	return (
-		<main className='pt-[150px]'>
-			<Suspense fallback={<div>Loading...</div>}>
-				<InvitedSignin />
-			</Suspense>
-		</main>
-	);
-};
-
-export default InvitedSigninPage;
+// Old invite page — deprecated. Activation now happens at /activate/[token].
+// Redirect to signin for anyone who still has this bookmarked.
+export default function InvitedSigninPage() {
+	redirect("/auth/signin");
+}

@@ -51,24 +51,30 @@ export default function CycleProgressBanner({ hidden = false }: Props) {
   const [done, setDone] = useState<"complete" | "failed" | null>(null);
   const [hiddenLocal, setHiddenLocal] = useState(false);
 
-  // Discovery: if no cycle id in the URL, ask the server which cycle (if
-  // any) is still running for this user. A missing /api/cycles/latest
-  // route or a 404 just means "no running cycle" — we keep the banner
-  // hidden.
+  // Discovery: poll for running cycles every 10s until one is found.
+  // Covers the scenario where an admin triggers a cycle and then
+  // impersonates — the cycle may not be running yet when the page loads.
   useEffect(() => {
     if (cycleId) return;
     let cancelled = false;
-    fetch("/api/cycles/latest?status=running,pending")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        if (data?.cycle?.id) setCycleId(data.cycle.id);
-      })
-      .catch((err) => {
-        console.warn("[CycleProgressBanner] failed to check latest cycle:", err?.message || err);
-      });
+
+    function check() {
+      fetch("/api/cycles/latest?status=running,pending")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (cancelled) return;
+          if (data?.cycle?.id) setCycleId(data.cycle.id);
+        })
+        .catch((err) => {
+          console.warn("[CycleProgressBanner] failed to check latest cycle:", err?.message || err);
+        });
+    }
+
+    check();
+    const interval = setInterval(check, 10_000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [cycleId]);
 

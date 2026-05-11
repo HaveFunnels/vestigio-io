@@ -345,25 +345,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				const title = findTitleForUrl(result.evidence, url);
 				const statusCode = findStatusForUrl(result.evidence, url);
 
-				// Pages discovered via links/sitemap but never fetched (not in the
-				// crawl allow-list) get skipped — they may not exist at all.
-				// Pages that WERE fetched but failed (timeout/DNS/SSL) have a
-				// coverage entry with validated=false. These get persisted with
-				// statusCode=0 so the inventory shows them as "unreachable".
-				if (statusCode == null && entry.validated) {
-					// Fetched successfully but no http_response evidence — unusual,
-					// treat as unknown. Skip to avoid ghost entries.
-					continue;
-				}
-				if (statusCode == null && !entry.validated && !entry.discovered) {
-					// Never discovered, never fetched — skip.
-					continue;
-				}
-				// If statusCode is null but entry was discovered and fetch was
-				// attempted (validated=false after catch), persist as unreachable (0).
-				const effectiveStatus = statusCode ?? 0;
+				// Only persist pages that were actually fetched and got an HTTP response.
+				// Pages discovered via links but never fetched (crawl budget, allow-list)
+				// have no statusCode and should NOT enter inventory — they're not
+				// "unreachable", just "not checked". The coverage entry can't
+				// distinguish "never attempted" from "attempted and timed out" so
+				// the only reliable signal is the presence of an http_response evidence.
+				if (statusCode == null) continue;
 
-				const isFresh = entry.validated && effectiveStatus < 400;
+				const isFresh = entry.validated && statusCode < 400;
 
 				await prisma.pageInventoryItem.upsert({
 					where: {
@@ -382,12 +372,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						priority: entry.critical ? 10 : 0,
 						criticality: Math.round(entry.confidence ?? 0),
 						title,
-						statusCode: effectiveStatus,
+						statusCode: statusCode,
 						freshnessState: isFresh ? "fresh" : "stale",
 					},
 					update: {
 						title: title ?? undefined,
-						statusCode: effectiveStatus,
+						statusCode: statusCode,
 						freshnessState: isFresh ? "fresh" : "stale",
 						criticality: Math.round(entry.confidence ?? 0),
 					},
@@ -398,6 +388,17 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// Per-row failure is non-fatal — continue with the rest.
 			}
 		}
+
+		// 6a-cleanup: Remove rows with statusCode=0 (bad sentinel from a
+		// previous version that treated "not fetched" as "unreachable").
+		try {
+			const cleaned = await prisma.pageInventoryItem.deleteMany({
+				where: { environmentRef: env.id, statusCode: 0 },
+			});
+			if (cleaned.count > 0) {
+				console.log(`[audit-runner ${cycleId}] cleaned ${cleaned.count} inventory rows with statusCode=0`);
+			}
+		} catch { /* non-fatal */ }
 
 		// 6b. Persist SurfaceRelation records from crawled link graph.
 		// Uses createMany + skipDuplicates for single-query batch insert.

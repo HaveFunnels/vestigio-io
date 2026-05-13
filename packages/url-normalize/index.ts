@@ -105,3 +105,67 @@ export function membershipKey(raw: string): string {
 export function sameUrl(a: string, b: string): boolean {
 	return canonicalUrl(a) === canonicalUrl(b);
 }
+
+// ──────────────────────────────────────────────
+// Glob pattern matching for crawl exclusions
+//
+// Supports `*` (zero-or-more chars) and `?` (single char). Patterns are
+// matched against URL paths (not full URLs). Anchored: the pattern must
+// match the entire path. Matching is case-insensitive.
+//
+// Examples:
+//   "/admin/*"   matches "/admin", "/admin/", "/admin/users", "/admin/x/y"
+//   "*.pdf"      matches "/file.pdf", "/docs/report.pdf"
+//   "/test"      matches only "/test" (exact)
+// ──────────────────────────────────────────────
+
+function compileGlob(pattern: string): RegExp {
+	// Escape regex special chars except * and ?, then translate the two
+	// glob wildcards. `*` becomes `.*` so "/admin/*" also matches "/admin".
+	const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+	const translated = escaped.replace(/\*/g, ".*").replace(/\?/g, ".");
+	return new RegExp(`^${translated}$`, "i");
+}
+
+const globCache = new Map<string, RegExp>();
+function getGlobRegex(pattern: string): RegExp {
+	const cached = globCache.get(pattern);
+	if (cached) return cached;
+	const compiled = compileGlob(pattern.trim());
+	globCache.set(pattern, compiled);
+	return compiled;
+}
+
+/**
+ * Check whether a given path matches any of the supplied glob patterns.
+ * Special-cases the "/admin/*" form to also match the bare "/admin".
+ */
+export function matchesAnyPattern(path: string, patterns: string[]): boolean {
+	if (!patterns || patterns.length === 0) return false;
+	for (const raw of patterns) {
+		if (!raw || !raw.trim()) continue;
+		const pattern = raw.trim();
+		// "/admin/*" should also match "/admin"
+		if (pattern.endsWith("/*")) {
+			const stem = pattern.slice(0, -2);
+			if (path === stem) return true;
+		}
+		if (getGlobRegex(pattern).test(path)) return true;
+	}
+	return false;
+}
+
+/**
+ * Returns true when the URL's path matches any exclusion pattern.
+ * Pass the full URL — we extract the path for matching.
+ */
+export function urlMatchesExclusion(url: string, patterns: string[]): boolean {
+	if (!patterns || patterns.length === 0) return false;
+	let path: string;
+	try {
+		path = new URL(url).pathname;
+	} catch {
+		path = url.split("?")[0].split("#")[0];
+	}
+	return matchesAnyPattern(path, patterns);
+}

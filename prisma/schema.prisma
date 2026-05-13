@@ -276,6 +276,9 @@ model Environment {
   lastAccessedAt   DateTime? // updated (1h-debounced) when an owner/member loads /app/*; drives inactivity pause
   continuousPaused Boolean   @default(false) // true when >14d without access; cleared on next access, triggers catch-up cycle
   engagementScore  Int       @default(0) // 0-100, computed hourly by product telemetry cron (3.16)
+  // User-supplied glob patterns to exclude from crawl (e.g. "/admin/*", "/staging/*", "*.pdf").
+  // Applied at discovery + per-URL crawl gate. Empty array = no exclusions.
+  crawlExcludePatterns String[] @default([])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

@@ -16,7 +16,7 @@ import {
   type CrawlConstraints,
 } from './crawl-constraints';
 import { runEnrichmentPasses } from './enrichment/runner';
-import { canonicalUrl as canonicalUrlShared } from '../../packages/url-normalize';
+import { canonicalUrl as canonicalUrlShared, urlMatchesExclusion } from '../../packages/url-normalize';
 
 // ──────────────────────────────────────────────
 // Staged Pipeline — Progressive Analysis
@@ -112,6 +112,11 @@ export interface StagedPipelineInput {
   // (warm). Leaving this undefined means "crawl everything the
   // discovery finds", which is the cold cycle behavior.
   url_filter?: string[];
+  // User-configured glob patterns (e.g. "/admin/*", "*.pdf") to exclude
+  // from discovery + crawl. Stored on Environment.crawlExcludePatterns and
+  // applied here so the audit-runner doesn't need to know about glob
+  // syntax. Empty/undefined = no exclusions.
+  exclude_patterns?: string[];
 }
 
 // Constraint overrides per mode. Anything not set falls back to
@@ -157,6 +162,8 @@ export interface StagedPipelineResult {
   stages_completed: PipelineStage[];
   errors: { url: string; error: string }[];
   duration_ms: number;
+  // Diagnostic counters surfaced for telemetry (run-cycle logs these).
+  excluded_urls?: number;
 }
 
 // Challenge detection patterns
@@ -253,6 +260,10 @@ export async function runStagedPipeline(
     ...modeConstraints,
     ...input.crawl_constraints,
   });
+  // User-configured exclusion globs (e.g. "/admin/*"). Empty array when
+  // unset — `urlMatchesExclusion` is a fast no-op in that case.
+  const excludePatterns: string[] = (input.exclude_patterns || []).filter(p => p && p.trim().length > 0);
+  let excludedCount = 0;
   let stepIndex = 0;
 
   const emitStep = (message?: string) => {
@@ -410,6 +421,20 @@ export async function runStagedPipeline(
     }
   }
 
+  // Apply user-configured exclusion globs early so the rest of the
+  // pipeline (url_filter, page caps, coverage marking) never sees the
+  // excluded URLs. We retain the homepage even if it matches — without
+  // it the funnel/relations layers have no anchor.
+  if (excludePatterns.length > 0) {
+    const homepageKey = normalizeUrlForDedup(rootUrl);
+    const before = candidates.length;
+    candidates = candidates.filter((u) => {
+      if (normalizeUrlForDedup(u) === homepageKey) return true;
+      return !urlMatchesExclusion(u, excludePatterns);
+    });
+    excludedCount += before - candidates.length;
+  }
+
   // Wave 5 Fase 3 — incremental URL filter. The audit-runner resolves
   // which URLs this cycle is allowed to crawl (critical set for hot,
   // critical + rotating sample for warm, everything for cold) and
@@ -481,6 +506,16 @@ export async function runStagedPipeline(
   let fetchCount = 0;
   let spaDetected = false;
   for (const url of candidates) {
+    // User-supplied exclusion gate (also enforced at discovery, but a
+    // defense-in-depth check here catches URLs added via late merges
+    // and keeps a clear "excluded" marker in coverage).
+    if (excludePatterns.length > 0 && urlMatchesExclusion(url, excludePatterns)) {
+      const existing = coverage.get(url);
+      coverage.set(url, { url, discovered: existing?.discovered ?? true, validated: false, critical: existing?.critical ?? false, confidence: 0 });
+      excludedCount++;
+      continue;
+    }
+
     // Crawl constraint check
     const canFetch = crawlSession.canFetch(url);
     if (!canFetch.allowed) {
@@ -661,7 +696,9 @@ export async function runStagedPipeline(
     coverage: buildCoverageSummary(coverage),
   }, timestamp: new Date() });
 
-  return buildResult(evidence, input, coverage, stagesCompleted, errors, startTime, surfaceRelations);
+  const result = buildResult(evidence, input, coverage, stagesCompleted, errors, startTime, surfaceRelations);
+  result.excluded_urls = excludedCount;
+  return result;
 }
 
 // ──────────────────────────────────────────────

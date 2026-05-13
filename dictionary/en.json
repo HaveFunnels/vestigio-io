@@ -3854,6 +3854,19 @@
 				"title": "Domains",
 				"description": "Domains are configured through onboarding and managed per environment."
 			},
+			"crawl_exclusions": {
+				"title": "Crawl Exclusions",
+				"description": "Tell our crawler to skip specific paths during audit cycles — admin areas, staging subroutes, or asset extensions you don't want analyzed.",
+				"label": "Excluded path patterns",
+				"help": "One pattern per line. Use * for wildcards (e.g. /admin/* skips everything under /admin).",
+				"syntax_hint": "Glob syntax: * matches any chars, ? matches one.",
+				"save": "Save",
+				"saving": "Saving…",
+				"saved": "Saved.",
+				"save_error": "Could not save exclusions. Try again.",
+				"loading": "Loading…",
+				"no_env": "Select an environment to configure exclusions."
+			},
 			"data_overview": {
 				"title": "Data Overview",
 				"description": "Data overview will be available after the first audit cycle completes."

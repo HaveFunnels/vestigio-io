@@ -71,6 +71,17 @@ export default function SettingsPage() {
 				</div>
 			</section>
 
+			{/* Crawl Exclusions — per-environment paths to skip */}
+			<section className='mb-10'>
+				<h2 className='mb-4 text-lg font-semibold text-content'>
+					{t("crawl_exclusions.title")}
+				</h2>
+				<p className='mb-4 text-sm text-content-muted'>
+					{t("crawl_exclusions.description")}
+				</p>
+				<CrawlExclusionsSettings />
+			</section>
+
 			{/* Data Overview — populated after first audit */}
 			<section className='mb-10'>
 				<h2 className='mb-4 text-lg font-semibold text-content'>
@@ -582,6 +593,134 @@ function LanguageSelector() {
 						</li>
 					))}
 				</ul>
+			)}
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
+// Crawl Exclusions — per-environment glob patterns
+// (e.g. "/admin/*", "/staging/*", "*.pdf")
+// ──────────────────────────────────────────────
+
+function getEnvironmentIdFromBrowser(): string | null {
+	if (typeof window === "undefined") return null;
+	const params = new URLSearchParams(window.location.search);
+	const fromUrl = params.get("env");
+	if (fromUrl) return fromUrl;
+	const match = document.cookie.match(/(?:^|;\s*)active_env=([^;]*)/);
+	return match?.[1] ?? null;
+}
+
+function CrawlExclusionsSettings() {
+	const t = useTranslations("console.settings.crawl_exclusions");
+	const [text, setText] = useState("");
+	const [initial, setInitial] = useState("");
+	const [loading, setLoading] = useState(true);
+	const [saving, setSaving] = useState(false);
+	const [savedAt, setSavedAt] = useState<number | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const [envId, setEnvId] = useState<string | null>(null);
+
+	useEffect(() => {
+		const id = getEnvironmentIdFromBrowser();
+		setEnvId(id);
+		if (!id) {
+			setLoading(false);
+			return;
+		}
+		fetch(`/api/organization/environments/crawl-exclusions?environmentId=${encodeURIComponent(id)}`)
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (data?.patterns) {
+					const joined = (data.patterns as string[]).join("\n");
+					setText(joined);
+					setInitial(joined);
+				}
+			})
+			.catch(() => {})
+			.finally(() => setLoading(false));
+	}, []);
+
+	async function handleSave() {
+		if (!envId) return;
+		setSaving(true);
+		setError(null);
+		try {
+			const patterns = text
+				.split("\n")
+				.map((line) => line.trim())
+				.filter((line) => line.length > 0);
+			const res = await fetch("/api/organization/environments/crawl-exclusions", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ environmentId: envId, patterns }),
+			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}));
+				setError(body?.message || t("save_error"));
+				return;
+			}
+			const data = await res.json();
+			const joined = (data.patterns as string[]).join("\n");
+			setText(joined);
+			setInitial(joined);
+			setSavedAt(Date.now());
+		} catch {
+			setError(t("save_error"));
+		} finally {
+			setSaving(false);
+		}
+	}
+
+	if (loading) {
+		return <div className='text-sm text-content-muted'>{t("loading")}</div>;
+	}
+
+	if (!envId) {
+		return (
+			<div className='rounded-md border border-edge bg-surface-card p-5 text-sm text-content-muted'>
+				{t("no_env")}
+			</div>
+		);
+	}
+
+	const dirty = text !== initial;
+
+	return (
+		<div className='rounded-md border border-edge bg-surface-card p-5'>
+			<label
+				htmlFor='crawl-exclusions'
+				className='mb-1.5 block text-sm font-medium text-content'
+			>
+				{t("label")}
+			</label>
+			<p className='mb-3 text-xs text-content-muted'>{t("help")}</p>
+			<textarea
+				id='crawl-exclusions'
+				value={text}
+				onChange={(e) => setText(e.target.value)}
+				placeholder={"/admin/*\n/staging/*\n*.pdf"}
+				rows={6}
+				className='block w-full resize-y rounded-md border border-edge bg-surface-input px-3 py-2 font-mono text-xs text-content outline-none placeholder:text-content-faint focus:border-accent focus:ring-1 focus:ring-accent'
+			/>
+			<div className='mt-3 flex items-center justify-between'>
+				<p className='text-xs text-content-muted'>{t("syntax_hint")}</p>
+				<button
+					onClick={handleSave}
+					disabled={saving || !dirty}
+					className='hover:bg-accent-hover rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50'
+				>
+					{saving ? t("saving") : t("save")}
+				</button>
+			</div>
+			{error && (
+				<p className='mt-2 text-xs text-red-600 dark:text-red-400'>{error}</p>
+			)}
+			{savedAt && !dirty && !error && (
+				<p className='mt-2 text-xs text-emerald-600 dark:text-emerald-400'>
+					{t("saved")}
+				</p>
 			)}
 		</div>
 	);

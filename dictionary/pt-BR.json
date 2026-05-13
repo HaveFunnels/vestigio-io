@@ -3938,6 +3938,19 @@
 				"title": "Domínios",
 				"description": "Os domínios são configurados durante o onboarding e gerenciados por ambiente."
 			},
+			"crawl_exclusions": {
+				"title": "Exclusões de Crawl",
+				"description": "Diga ao nosso crawler para pular caminhos específicos durante os ciclos de auditoria — áreas de admin, subrotas de staging ou extensões de arquivo que você não quer analisadas.",
+				"label": "Padrões de caminhos excluídos",
+				"help": "Um padrão por linha. Use * como coringa (ex.: /admin/* exclui tudo sob /admin).",
+				"syntax_hint": "Sintaxe glob: * combina qualquer caractere, ? combina um.",
+				"save": "Salvar",
+				"saving": "Salvando…",
+				"saved": "Salvo.",
+				"save_error": "Não foi possível salvar as exclusões. Tente novamente.",
+				"loading": "Carregando…",
+				"no_env": "Selecione um ambiente para configurar exclusões."
+			},
 			"data_overview": {
 				"title": "Visão Geral dos Dados",
 				"description": "A visão geral dos dados estará disponível após a conclusão do primeiro ciclo de auditoria."

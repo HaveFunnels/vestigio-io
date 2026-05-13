@@ -338,6 +338,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// cycle's allow-list. Cold cycles pass null/undefined here
 				// and crawl everything.
 				url_filter: urlFilter ?? undefined,
+				exclude_patterns: (env as any).crawlExcludePatterns ?? [],
 				crawl_constraints: {
 					// Honor the per-mode wall-clock budget. Cold uses the
 					// default 60s; hot caps at 60s anyway but warm gets
@@ -446,9 +447,10 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			const ct = evIdx.contentTypeByUrl.get(e.url);
 			return ct && !ct.includes("text/html");
 		}).length;
+		const excludedCount = (result as any).excluded_urls ?? 0;
 		console.log(
 			`[audit-runner ${cycleId}] inventory: persisted=${pagesDiscovered} fetched=${fetchedCount}/${totalEntries} ` +
-			`skipped=${skippedCount} 4xx_5xx=${downCount} assets=${assetCount}`,
+			`skipped=${skippedCount} 4xx_5xx=${downCount} assets=${assetCount} excluded=${excludedCount}`,
 		);
 
 		// 6a-aging: pages NOT freshly fetched in this cycle get their

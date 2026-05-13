@@ -75,7 +75,7 @@ export default function CrossSignalChainCard({
 }: Props) {
 	const t = useTranslations("console.cross_signals");
 	const tc = useTranslations("console.common");
-	const tp = useTranslations("console.analysis.packs");
+	const tp = useTranslations("console.common.packs");
 	const [expanded, setExpanded] = useState(false);
 
 	return (

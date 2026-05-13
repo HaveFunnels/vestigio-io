@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Pulse Summary — Intelligence briefing
@@ -14,6 +14,7 @@ interface PulseSummaryProps {
 
 export default function PulseSummary({ perspective }: PulseSummaryProps) {
   const t = useTranslations("console.pulse_summary");
+  const locale = useLocale();
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
@@ -25,7 +26,7 @@ export default function PulseSummary({ perspective }: PulseSummaryProps) {
         const res = await fetch("/api/workspace/pulse-summary", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ perspective: perspective || "panorama", locale: "pt-BR" }),
+          body: JSON.stringify({ perspective: perspective || "panorama", locale }),
         });
         if (!res.ok) { if (!cancelled) { setLoading(false); setText(null); } return; }
         const data = await res.json();
@@ -34,7 +35,7 @@ export default function PulseSummary({ perspective }: PulseSummaryProps) {
     }
     fetchPulse();
     return () => { cancelled = true; };
-  }, [perspective]);
+  }, [perspective, locale]);
 
   useEffect(() => {
     if (text && !revealed) { const t = setTimeout(() => setRevealed(true), 50); return () => clearTimeout(t); }
@@ -65,7 +66,7 @@ export default function PulseSummary({ perspective }: PulseSummaryProps) {
         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">{t("label")}</span>
         <span className="font-mono text-[10px] tabular-nums text-content-faint">
-          {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+          {new Date().toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
         </span>
       </div>
       <p className={`relative text-[13px] leading-[1.7] text-content-secondary transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>

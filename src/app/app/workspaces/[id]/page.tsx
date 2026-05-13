@@ -302,40 +302,44 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			</div>
 
 			{/* ── Summary strip: Change Summary + Quick Stats (full width) ── */}
-			<div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
-				{/* Change Summary */}
-				{(workspace.change_summary || workspaceChanges.length > 0) ? (
-					<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-						<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-							{t("detail.change_summary")}
-						</h2>
-						{workspace.change_summary && <TrendHeadline summary={workspace.change_summary} />}
-						{workspaceChanges.length > 0 && (
-							<div className="mt-3">
-								<ChangeTimeline changes={workspaceChanges} maxItems={8} />
-							</div>
+			{(() => {
+				const hasChangeContent = !!workspace.change_summary || workspaceChanges.length > 0;
+				return (
+					<div className={`mt-5 grid grid-cols-1 gap-5 ${hasChangeContent ? "lg:grid-cols-[3fr_2fr]" : ""}`}>
+						{hasChangeContent && (
+							<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+								<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+									{t("detail.change_summary")}
+								</h2>
+								{workspace.change_summary && <TrendHeadline summary={workspace.change_summary} />}
+								{workspaceChanges.length > 0 && (
+									<div className="mt-3">
+										<ChangeTimeline changes={workspaceChanges} maxItems={8} />
+									</div>
+								)}
+							</section>
 						)}
-					</section>
-				) : <div />}
 
-				{/* Quick Stats */}
-				<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-					<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-						{t("detail.quick_stats")}
-					</h2>
-					<div className="grid grid-cols-3 gap-3">
-						<StatCard label={t("detail.negative_findings")} value={negativeFindings.length} color="text-red-500 dark:text-red-400" />
-						<StatCard label={t("detail.positive_findings")} value={positiveFindings.length} color="text-emerald-600 dark:text-emerald-400" />
-						<StatCard
-							label={t("detail.top_severity")}
-							value={topSeverity.charAt(0).toUpperCase() + topSeverity.slice(1)}
-							color={topSeverity === "critical" ? "text-red-500 dark:text-red-400" :
-								topSeverity === "high" ? "text-orange-500 dark:text-orange-400" :
-								topSeverity === "medium" ? "text-amber-500 dark:text-amber-400" : "text-zinc-400 dark:text-zinc-500"}
-						/>
+						{/* Quick Stats */}
+						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+							<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+								{t("detail.quick_stats")}
+							</h2>
+							<div className="grid grid-cols-3 gap-3">
+								<StatCard label={t("detail.negative_findings")} value={negativeFindings.length} color="text-red-500 dark:text-red-400" />
+								<StatCard label={t("detail.positive_findings")} value={positiveFindings.length} color="text-emerald-600 dark:text-emerald-400" />
+								<StatCard
+									label={t("detail.top_severity")}
+									value={tc(`severity.${topSeverity}`)}
+									color={topSeverity === "critical" ? "text-red-500 dark:text-red-400" :
+										topSeverity === "high" ? "text-orange-500 dark:text-orange-400" :
+										topSeverity === "medium" ? "text-amber-500 dark:text-amber-400" : "text-zinc-400 dark:text-zinc-500"}
+								/>
+							</div>
+						</section>
 					</div>
-				</section>
-			</div>
+				);
+			})()}
 
 			{/* ── Domain-specific enrichment (3.11B) — full width, no card wrapper ── */}
 			{isChargeback && (

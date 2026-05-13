@@ -67,7 +67,7 @@ function buildSystemMessage(locale: Locale): string {
     "Adapt tone to the business situation — urgent when there are critical issues, encouraging when things are improving.",
     `Respond in ${lang}.`,
     "Output ONLY the briefing text — no headings, no bullet points, no markdown.",
-    "STRICT LENGTH: 2-3 sentences, maximum 280 characters. Be concise like a telegram.",
+    "TARGET LENGTH: 3 complete sentences. Always finish your final sentence.",
   ].join(" ");
 }
 
@@ -119,8 +119,9 @@ function buildUserMessage(perspective: string, context: {
   if (delta.length > 0) parts.push(`Changes since last cycle: ${delta.join(", ")}`);
 
   parts.push(
-    "Write a 3-4 sentence briefing as an analyst speaking directly to the business owner. " +
-    "Be specific about dollar amounts. Prioritize actionable insight over general observations."
+    "Write a 3-sentence briefing as an analyst speaking directly to the business owner. " +
+    "Be specific about dollar amounts. Prioritize actionable insight over general observations. " +
+    "Always complete your final sentence."
   );
 
   return parts.join("\n\n");
@@ -258,7 +259,7 @@ export async function POST(request: Request) {
         positiveChecks,
       }) }],
       {
-        max_tokens: 150,
+        max_tokens: 300,
         temperature: 0.4,
         system: buildSystemMessage(locale),
       },

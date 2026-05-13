@@ -1015,21 +1015,29 @@ export default function InventoryPage() {
 							    to surfaces.length so the table count always
 							    matches the cards. Each bucket toggles the
 							    status filter on/off. */}
-							<div className='flex w-full shrink-0 overflow-hidden rounded-xl border border-edge bg-surface-card lg:w-64'>
+							{/* Grid-rows layout pins the number to a fixed
+							    vertical center across all three buckets.
+							    Row 1 (`1fr`) holds the number and absorbs
+							    any extra card height; row 2 (`auto`) sizes
+							    to the label. Because every button shares the
+							    same py-3 + same row heights, the number's
+							    baseline lines up across cards regardless of
+							    whether a label wraps. */}
+							<div className='flex w-full shrink-0 overflow-hidden rounded-xl border border-edge bg-surface-card lg:w-72'>
 								<button
 									onClick={() =>
 										setLiveFilter(liveFilter === "live" ? "all" : "live")
 									}
-									className={`flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors ${
+									className={`grid flex-1 grid-rows-[1fr_auto] gap-1 py-3 transition-colors ${
 										liveFilter === "live"
 											? "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/30"
 											: "hover:bg-surface-card-hover"
 									}`}
 								>
-									<span className='font-mono text-xl font-medium tabular-nums text-emerald-600 dark:text-emerald-400'>
+									<span className='self-center font-mono text-xl font-medium tabular-nums leading-none text-emerald-600 dark:text-emerald-400'>
 										{liveCount}
 									</span>
-									<span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-600/70 dark:text-emerald-400/70'>
+									<span className='text-[9px] font-semibold uppercase tracking-wider text-emerald-600/70 dark:text-emerald-400/70'>
 										{t("status.live")}
 									</span>
 								</button>
@@ -1038,16 +1046,16 @@ export default function InventoryPage() {
 									onClick={() =>
 										setLiveFilter(liveFilter === "not_checked" ? "all" : "not_checked")
 									}
-									className={`flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors ${
+									className={`grid flex-1 grid-rows-[1fr_auto] gap-1 py-3 transition-colors ${
 										liveFilter === "not_checked"
 											? "bg-zinc-500/15 ring-1 ring-inset ring-zinc-500/30"
 											: "hover:bg-surface-card-hover"
 									}`}
 								>
-									<span className='font-mono text-xl font-medium tabular-nums text-zinc-600 dark:text-zinc-300'>
+									<span className='self-center font-mono text-xl font-medium tabular-nums leading-none text-zinc-600 dark:text-zinc-300'>
 										{notCheckedCount}
 									</span>
-									<span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600/80 dark:text-zinc-400'>
+									<span className='text-[9px] font-semibold uppercase tracking-wider text-zinc-600/80 dark:text-zinc-400'>
 										{t("status.not_checked")}
 									</span>
 								</button>
@@ -1056,16 +1064,16 @@ export default function InventoryPage() {
 									onClick={() =>
 										setLiveFilter(liveFilter === "down" ? "all" : "down")
 									}
-									className={`flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors ${
+									className={`grid flex-1 grid-rows-[1fr_auto] gap-1 py-3 transition-colors ${
 										liveFilter === "down"
 											? "bg-red-500/10 ring-1 ring-inset ring-red-500/30"
 											: "hover:bg-surface-card-hover"
 									}`}
 								>
-									<span className='font-mono text-xl font-medium tabular-nums text-red-600 dark:text-red-400'>
+									<span className='self-center font-mono text-xl font-medium tabular-nums leading-none text-red-600 dark:text-red-400'>
 										{downCount}
 									</span>
-									<span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-red-600/70 dark:text-red-400/70'>
+									<span className='text-[9px] font-semibold uppercase tracking-wider text-red-600/70 dark:text-red-400/70'>
 										{t("status.down")}
 									</span>
 								</button>

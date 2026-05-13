@@ -19,8 +19,10 @@ interface UseChatStreamOptions {
   onFirstToken?: (ttftMs: number) => void;
   /** Fires when a tool starts executing on the server. */
   onToolStart?: (tool: string, label?: string) => void;
-  /** Fires when a tool completes. durationMs measured client-side (includes SSE latency). cached = result served from per-request cache. */
-  onToolEnd?: (tool: string, durationMs: number, cached: boolean) => void;
+  /** Fires when a tool completes. durationMs measured client-side (includes SSE latency). cached = result served from per-request cache. slow = server-side execution exceeded the slow threshold. */
+  onToolEnd?: (tool: string, durationMs: number, cached: boolean, slow: boolean) => void;
+  /** Fires when the server signals it's still working past the threshold (default 10s). */
+  onStillWorking?: (round: number, elapsedMs: number) => void;
 }
 
 interface UseChatStreamReturn {
@@ -223,16 +225,26 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
                       existing.status = "complete";
                       existing.resultPreview = data.summary?.slice(0, 300);
                       existing.cached = data.cached === true;
+                      existing.slow = data.slow === true;
                     }
                     activeToolCalls.delete(data.tool);
                     const startedAt = toolStartedAt.get(data.tool);
                     if (startedAt) {
-                      options?.onToolEnd?.(data.tool, Date.now() - startedAt, data.cached === true);
+                      options?.onToolEnd?.(
+                        data.tool,
+                        Date.now() - startedAt,
+                        data.cached === true,
+                        data.slow === true,
+                      );
                       toolStartedAt.delete(data.tool);
                     }
                     scheduleUpdate();
                     break;
                   }
+
+                  case "still_working":
+                    options?.onStillWorking?.(data.round, data.elapsed_ms);
+                    break;
 
                   case "delta":
                     if (!firstTokenFired && data.text) {

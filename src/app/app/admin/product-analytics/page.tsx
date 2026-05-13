@@ -53,6 +53,8 @@ interface ProductAnalyticsData {
 		tool_cache_hit_rate_pct: number | null;
 		tool_calls_total: number;
 		tool_calls_cached: number;
+		slow_tool_events: number;
+		still_working_events: number;
 	};
 }
 
@@ -405,7 +407,26 @@ export default function ProductAnalyticsPage() {
 								<span className="text-[10px] text-content-faint">
 									{data.chat_dynamics.opens} opens ·{" "}
 									{data.chat_dynamics.sends} sends ·{" "}
-									{data.chat_dynamics.errors} errors
+									{data.chat_dynamics.errors} errors ·{" "}
+									<span
+										className={
+											data.chat_dynamics.slow_tool_events > 0
+												? "text-amber-400"
+												: ""
+										}
+									>
+										{data.chat_dynamics.slow_tool_events} slow tools
+									</span>{" "}
+									·{" "}
+									<span
+										className={
+											data.chat_dynamics.still_working_events > 0
+												? "text-amber-400"
+												: ""
+										}
+									>
+										{data.chat_dynamics.still_working_events} still-working
+									</span>
 								</span>
 							</div>
 

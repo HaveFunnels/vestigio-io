@@ -65,6 +65,8 @@ interface CopilotState {
 	isStreaming: boolean;
 	streamingMessage: ChatMessage | null;
 	selectedModel: ModelId;
+	/** Server signaled it's still working past STILL_WORKING_THRESHOLD_MS — show explicit hint. */
+	stillWorking: { round: number; elapsedMs: number } | null;
 }
 
 interface CopilotActions {
@@ -110,6 +112,11 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	// Usage
 	const [usage, setUsage] = useState<CopilotUsage | null>(null);
 
+	// "Ainda processando" hint — cleared on stream done/error/abort
+	const [stillWorking, setStillWorking] = useState<
+		{ round: number; elapsedMs: number } | null
+	>(null);
+
 	// Queue for messages sent before conversation is created
 	const pendingSendRef = useRef<string | null>(null);
 
@@ -145,6 +152,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 					};
 					setMessages((prev) => [...prev, assistantMsg]);
 				}
+				setStillWorking(null);
 				// Refresh budget after each response
 				fetchUsage();
 			},
@@ -161,16 +169,33 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 					model: selectedModel,
 				});
 			},
-			onToolEnd: (tool, durationMs, cached) => {
+			onToolEnd: (tool, durationMs, cached, slow) => {
 				track("chat_tool_call", {
 					tool,
 					phase: "end",
 					duration_ms: durationMs,
 					cached,
+					slow,
+					model: selectedModel,
+				});
+				if (slow) {
+					track("chat_tool_slow", {
+						tool,
+						duration_ms: durationMs,
+						model: selectedModel,
+					});
+				}
+			},
+			onStillWorking: (round, elapsedMs) => {
+				setStillWorking({ round, elapsedMs });
+				track("chat_still_working", {
+					round,
+					elapsed_ms: elapsedMs,
 					model: selectedModel,
 				});
 			},
 			onError: (message) => {
+				setStillWorking(null);
 				track("chat_error", {
 					message: message.slice(0, 200),
 					model: selectedModel,
@@ -454,6 +479,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			isStreaming,
 			streamingMessage,
 			selectedModel,
+			stillWorking,
 			open,
 			close,
 			minimize,
@@ -478,6 +504,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			isStreaming,
 			streamingMessage,
 			selectedModel,
+			stillWorking,
 			open,
 			close,
 			minimize,
@@ -514,6 +541,7 @@ export function useCopilot(): CopilotContextValue {
 			isStreaming: false,
 			streamingMessage: null,
 			selectedModel: "sonnet_4_6",
+			stillWorking: null,
 			open: () => {},
 			close: () => {},
 			minimize: () => {},

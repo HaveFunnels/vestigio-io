@@ -361,6 +361,7 @@ export default function CopilotPanel() {
 		messages,
 		streamingMessage,
 		isStreaming,
+		stillWorking,
 		conversationId,
 		contextItems,
 		pageContext,
@@ -550,6 +551,14 @@ export default function CopilotPanel() {
 								key="streaming"
 								message={streamingMessage}
 							/>
+						)}
+						{stillWorking && (
+							<div className="my-2 flex items-center gap-2 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-300/90">
+								<div className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+								<span>
+									Ainda processando (round {stillWorking.round}, {Math.round(stillWorking.elapsedMs / 1000)}s) — perguntas complexas levam mais alguns segundos.
+								</span>
+							</div>
 						)}
 					</div>
 				) : (

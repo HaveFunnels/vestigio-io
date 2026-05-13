@@ -43,6 +43,18 @@ const MAX_TOOL_ROUNDS = 8;
 const MAX_VERIFICATION_CALLS = 1;
 const MAX_TOTAL_INPUT_CHARS = 30_000; // Hard cap: message + files + conversation context
 
+// Tools are sync, in-memory projections — they should complete in
+// sub-millisecond time. Anything >500ms is a regression signal worth
+// surfacing in telemetry so we catch N+1 walks or accidentally heavy
+// loops before they show up in customer reports.
+const SLOW_TOOL_THRESHOLD_MS = 500;
+
+// Wall-clock threshold after which we send a "still_working" SSE event
+// so the UI can swap from idle spinner to an explicit "ainda
+// processando" hint. The user's perception of a stuck chat starts
+// around 10s.
+const STILL_WORKING_THRESHOLD_MS = 10_000;
+
 // ── SSE Callback Types ───────────────────────
 
 export interface PipelineCallbacks {
@@ -51,11 +63,14 @@ export interface PipelineCallbacks {
   /**
    * Fires when a tool finishes. `meta.cached` is true when the result
    * was served from the per-request cache instead of re-executed.
+   * `meta.slow` is true when sync execution exceeded SLOW_TOOL_THRESHOLD_MS.
    */
-  onToolDone?: (toolName: string, summary: string, meta?: { cached?: boolean }) => void;
+  onToolDone?: (toolName: string, summary: string, meta?: { cached?: boolean; slow?: boolean; durationMs?: number }) => void;
   onTextDelta?: (text: string) => void;
   onError?: (message: string, code: string) => void;
   onPromptSuggestion?: (original: string, suggested: string, reason: string) => void;
+  /** Fires when a round of tool+LLM execution exceeds STILL_WORKING_THRESHOLD_MS. */
+  onStillWorking?: (round: number, elapsedMs: number) => void;
 }
 
 export interface PipelineOptions {
@@ -291,6 +306,14 @@ export async function executePipeline(
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     if (options?.signal?.aborted) break;
 
+    // Schedule a "still working" notification if this round drags
+    // past the threshold. Cleared as soon as the round completes.
+    const stillWorkingTimer = setTimeout(() => {
+      if (!options?.signal?.aborted) {
+        callbacks?.onStillWorking?.(round + 1, STILL_WORKING_THRESHOLD_MS);
+      }
+    }, STILL_WORKING_THRESHOLD_MS);
+
     try {
       const result = await callModel(modelId, currentMessages, {
         max_tokens: 4096,
@@ -379,7 +402,18 @@ export async function executePipeline(
           }
         }
 
-        callbacks?.onToolDone?.(toolName, summary, { cached: servedFromCache });
+        const isSlow = !servedFromCache && execution_ms > SLOW_TOOL_THRESHOLD_MS;
+        if (isSlow) {
+          console.warn(
+            `[mcp:pipeline] slow tool ${toolName} took ${execution_ms}ms (threshold ${SLOW_TOOL_THRESHOLD_MS}ms) in request ${requestId}`,
+          );
+        }
+
+        callbacks?.onToolDone?.(toolName, summary, {
+          cached: servedFromCache,
+          slow: isSlow,
+          durationMs: execution_ms,
+        });
         if (!blocked) {
           allToolCalls.push(buildToolCallRecord(toolName, toolInput, toolResult, summary, execution_ms));
         }
@@ -398,10 +432,16 @@ export async function executePipeline(
       ];
     } catch (err) {
       if (err instanceof LlmError) {
-        callbacks?.onError?.(err.message, err.category);
-        return buildErrorResponse(err.category, getErrorMessage(err), request, pipelineStart, requestId, guardTokens);
+        // Include the round number so the user (and our telemetry) can
+        // tell whether the timeout hit on the first model call or after
+        // several rounds of tool use. Hugely improves prod debugging.
+        const phaseSuffix = ` (round ${round + 1}/${MAX_TOOL_ROUNDS})`;
+        callbacks?.onError?.(err.message + phaseSuffix, err.category);
+        return buildErrorResponse(err.category, getErrorMessage(err) + phaseSuffix, request, pipelineStart, requestId, guardTokens);
       }
       throw err;
+    } finally {
+      clearTimeout(stillWorkingTimer);
     }
   }
 

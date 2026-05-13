@@ -70,6 +70,15 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
             cached
           </span>
         )}
+        {/* Slow badge — server flagged this execution as above threshold */}
+        {block.slow && !block.cached && (
+          <span
+            title="Server-side execution exceeded the slow-tool threshold"
+            className="rounded-sm bg-amber-500/10 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-amber-400"
+          >
+            slow
+          </span>
+        )}
 
         {/* Duration */}
         {block.durationMs != null && (

@@ -197,38 +197,59 @@ interface ChatDynamicsView {
 	tool_cache_hit_rate_pct: number | null;
 	tool_calls_total: number;
 	tool_calls_cached: number;
+	// Sync tools that breached the slow threshold (sub-ms expected;
+	// >500ms is a signal of engine regression).
+	slow_tool_events: number;
+	// Times the server signaled "still working" past the threshold —
+	// these turns felt slow to the user even when they ultimately
+	// succeeded. High value here = the chat feels sluggish.
+	still_working_events: number;
 }
 
 async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
-	const [opens, sends, firstTokenEvents, toolEvents, errors, cacheAgg] =
-		await Promise.all([
-			prisma.productEvent.count({
-				where: { event: "chat_opened", createdAt: { gte: cutoff } },
-			}),
-			prisma.productEvent.findMany({
-				where: { event: "chat_send", createdAt: { gte: cutoff } },
-				select: { properties: true },
-			}),
-			prisma.productEvent.findMany({
-				where: { event: "chat_first_token", createdAt: { gte: cutoff } },
-				select: { properties: true },
-			}),
-			prisma.productEvent.findMany({
-				where: { event: "chat_tool_call", createdAt: { gte: cutoff } },
-				select: { properties: true },
-			}),
-			prisma.productEvent.count({
-				where: { event: "chat_error", createdAt: { gte: cutoff } },
-			}),
-			prisma.tokenCostLedger.aggregate({
-				where: { purpose: "core_chat", createdAt: { gte: cutoff } },
-				_sum: {
-					inputTokens: true,
-					cacheCreationInputTokens: true,
-					cacheReadInputTokens: true,
-				},
-			}),
-		]);
+	const [
+		opens,
+		sends,
+		firstTokenEvents,
+		toolEvents,
+		errors,
+		cacheAgg,
+		slowToolEvents,
+		stillWorkingEvents,
+	] = await Promise.all([
+		prisma.productEvent.count({
+			where: { event: "chat_opened", createdAt: { gte: cutoff } },
+		}),
+		prisma.productEvent.findMany({
+			where: { event: "chat_send", createdAt: { gte: cutoff } },
+			select: { properties: true },
+		}),
+		prisma.productEvent.findMany({
+			where: { event: "chat_first_token", createdAt: { gte: cutoff } },
+			select: { properties: true },
+		}),
+		prisma.productEvent.findMany({
+			where: { event: "chat_tool_call", createdAt: { gte: cutoff } },
+			select: { properties: true },
+		}),
+		prisma.productEvent.count({
+			where: { event: "chat_error", createdAt: { gte: cutoff } },
+		}),
+		prisma.tokenCostLedger.aggregate({
+			where: { purpose: "core_chat", createdAt: { gte: cutoff } },
+			_sum: {
+				inputTokens: true,
+				cacheCreationInputTokens: true,
+				cacheReadInputTokens: true,
+			},
+		}),
+		prisma.productEvent.count({
+			where: { event: "chat_tool_slow", createdAt: { gte: cutoff } },
+		}),
+		prisma.productEvent.count({
+			where: { event: "chat_still_working", createdAt: { gte: cutoff } },
+		}),
+	]);
 
 	// TTFT percentiles
 	const ttfts: number[] = [];
@@ -327,5 +348,7 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 				: null,
 		tool_calls_total: toolCallsTotal,
 		tool_calls_cached: toolCallsCached,
+		slow_tool_events: slowToolEvents,
+		still_working_events: stillWorkingEvents,
 	};
 }

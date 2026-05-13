@@ -115,6 +115,8 @@ export interface ToolCallBlock {
   resultPreview?: string;
   /** True when the result was served from the per-request tool cache instead of re-executed. */
   cached?: boolean;
+  /** True when server-side execution exceeded the slow threshold (signals engine regression). */
+  slow?: boolean;
 }
 
 export interface SuggestedPromptsBlock {

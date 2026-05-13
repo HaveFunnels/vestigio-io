@@ -2091,6 +2091,47 @@
 					"view_finding": "View finding",
 					"empty": "No monthly losses detected in this workspace.",
 					"uncategorized": "No root cause mapped"
+				},
+				"spof_map": {
+					"label": "Single points of failure",
+					"subtitle": "Services with no redundancy in your stack",
+					"loading": "Loading detected stack...",
+					"empty_title": "Stack not detected yet",
+					"empty_description": "The next analysis cycle will map your technology stack automatically.",
+					"status_spof": "Single point",
+					"status_resilient": "Has redundancy",
+					"status_undetected": "Not detected",
+					"impact_label": "If it goes down:",
+					"detected_on": "{count} page",
+					"detected_on_plural": "{count} pages",
+					"severity_critical": "Critical",
+					"severity_high": "High",
+					"severity_medium": "Medium",
+					"severity_low": "Low",
+					"categories": {
+						"payment_provider": "Payments",
+						"platform": "Hosting platform",
+						"cdn": "CDN",
+						"email_marketing": "Email (transactional + marketing)",
+						"error_tracking": "Error observability",
+						"tag_manager": "Tag manager",
+						"consent_manager": "Consent manager (LGPD/GDPR)",
+						"analytics": "Analytics",
+						"ab_testing": "A/B testing",
+						"support_widget": "Customer support"
+					},
+					"impacts": {
+						"payment_provider": "Checkout dies and revenue stops. Each hour of downtime is a full business day of lost sales.",
+						"platform": "Whole site down. With no failover host, recovery depends on the provider.",
+						"cdn": "Global performance degrades. Pages slow, conversion drops 1-3%.",
+						"email_marketing": "Order confirmations, password resets, and nurturing stop. CSAT drops and chargebacks rise.",
+						"error_tracking": "You lose visibility into new production errors until it's back.",
+						"tag_manager": "Pixel and tracking changes freeze. Doesn't affect the live site directly.",
+						"consent_manager": "Consent banner vanishes — immediate regulatory risk.",
+						"analytics": "You lose data during the outage but the site keeps working.",
+						"ab_testing": "Active experiments pause. Visitors may see an unexpected default variant.",
+						"support_widget": "Live chat disappears — extra ticket friction, but email support still works."
+					}
 				}
 			},
 			"copy": {

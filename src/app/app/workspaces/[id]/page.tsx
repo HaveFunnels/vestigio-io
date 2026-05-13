@@ -24,6 +24,7 @@ import RevenueIntelligence from "@/components/console/workspace/RevenueIntellige
 import SecurityPosture from "@/components/console/workspace/SecurityPosture";
 import CopyAlignment from "@/components/console/workspace/CopyAlignment";
 import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
+import SpofMap from "@/components/console/workspace/SpofMap";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -364,6 +365,13 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			{(isRevenue || isChargeback) && (
 				<div className="mt-5">
 					<MoneyOnTheTable findings={workspace.findings} onFindingClick={openFinding} />
+				</div>
+			)}
+
+			{/* ── SPOF map — Wave 11.3b — Preflight workspace ── */}
+			{isPreflight && (
+				<div className="mt-5">
+					<SpofMap />
 				</div>
 			)}
 

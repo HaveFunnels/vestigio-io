@@ -2069,6 +2069,47 @@
 					"view_finding": "Ver finding",
 					"empty": "Sem perdas mensais detectadas neste workspace.",
 					"uncategorized": "Sem causa-raiz mapeada"
+				},
+				"spof_map": {
+					"label": "Pontos únicos de falha",
+					"subtitle": "Serviços sem redundância no seu stack",
+					"loading": "Carregando stack detectado...",
+					"empty_title": "Stack ainda não detectado",
+					"empty_description": "O próximo ciclo de análise mapeia automaticamente seu stack de tecnologia.",
+					"status_spof": "Ponto único",
+					"status_resilient": "Com redundância",
+					"status_undetected": "Não detectado",
+					"impact_label": "Se cair:",
+					"detected_on": "{count} página",
+					"detected_on_plural": "{count} páginas",
+					"severity_critical": "Crítico",
+					"severity_high": "Alto",
+					"severity_medium": "Médio",
+					"severity_low": "Baixo",
+					"categories": {
+						"payment_provider": "Pagamentos",
+						"platform": "Plataforma de hosting",
+						"cdn": "CDN",
+						"email_marketing": "E-mail (transacional + marketing)",
+						"error_tracking": "Observabilidade de erros",
+						"tag_manager": "Tag manager",
+						"consent_manager": "Gestor de consentimento (LGPD/GDPR)",
+						"analytics": "Analytics",
+						"ab_testing": "A/B testing",
+						"support_widget": "Atendimento ao cliente"
+					},
+					"impacts": {
+						"payment_provider": "Checkout dorme e a receita para. Cada hora de queda equivale a um dia útil de vendas perdido.",
+						"platform": "Site inteiro fora do ar. Sem hospedagem alternativa, recuperação depende do fornecedor.",
+						"cdn": "Performance degrada globalmente. Páginas demoram a carregar, conversão cai 1-3%.",
+						"email_marketing": "Confirmações de compra, reset de senha e nurturing param. Aumenta CSAT e chargebacks.",
+						"error_tracking": "Você perde visibilidade sobre erros novos em produção até voltar.",
+						"tag_manager": "Mudanças em pixels e tracking ficam congeladas. Não impacta o site direto.",
+						"consent_manager": "Banner de consentimento some — risco regulatório imediato.",
+						"analytics": "Você perde dados do período de queda, mas funcionalidade do site segue.",
+						"ab_testing": "Testes ativos pausam. Visitantes podem ver versão default inesperada.",
+						"support_widget": "Chat de suporte some — fricção em tickets, mas resolução por e-mail continua."
+					}
 				}
 			},
 			"copy": {

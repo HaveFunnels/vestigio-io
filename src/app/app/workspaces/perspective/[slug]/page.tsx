@@ -19,6 +19,7 @@ import PulseSummary from "@/components/console/PulseSummary";
 import OpportunityPreview from "@/components/console/workspace/OpportunityPreview";
 import TrustScoreCard from "@/components/console/workspace/TrustScoreCard";
 import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
+import SpofMap from "@/components/console/workspace/SpofMap";
 import RevenueMap from "@/components/console/RevenueMap";
 import CycleDelta from "@/components/console/CycleDelta";
 import BraggingRights from "@/components/console/BraggingRights";
@@ -339,7 +340,9 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
         </div>
       )}
       {slug === "trust" && allFindings.length > 0 && (
-        <div className="mt-5">
+        <div className="mt-5 space-y-4">
+          {/* Wave 11.3b — SPOF map, perspective-wide */}
+          <SpofMap />
           <TrustScoreCard findings={allFindings} filterPacks={["security_posture", "scale_readiness"]} />
         </div>
       )}

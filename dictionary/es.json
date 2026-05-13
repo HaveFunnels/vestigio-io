@@ -1998,6 +1998,47 @@
 					"view_finding": "Ver finding",
 					"empty": "No se detectaron pérdidas mensuales en este workspace.",
 					"uncategorized": "Sin causa raíz mapeada"
+				},
+				"spof_map": {
+					"label": "Puntos únicos de falla",
+					"subtitle": "Servicios sin redundancia en tu stack",
+					"loading": "Cargando stack detectado...",
+					"empty_title": "Stack aún no detectado",
+					"empty_description": "El próximo ciclo de análisis mapeará tu stack tecnológico automáticamente.",
+					"status_spof": "Punto único",
+					"status_resilient": "Con redundancia",
+					"status_undetected": "No detectado",
+					"impact_label": "Si cae:",
+					"detected_on": "{count} página",
+					"detected_on_plural": "{count} páginas",
+					"severity_critical": "Crítico",
+					"severity_high": "Alto",
+					"severity_medium": "Medio",
+					"severity_low": "Bajo",
+					"categories": {
+						"payment_provider": "Pagos",
+						"platform": "Plataforma de hosting",
+						"cdn": "CDN",
+						"email_marketing": "Email (transaccional + marketing)",
+						"error_tracking": "Observabilidad de errores",
+						"tag_manager": "Tag manager",
+						"consent_manager": "Gestor de consentimiento (LGPD/GDPR)",
+						"analytics": "Analytics",
+						"ab_testing": "A/B testing",
+						"support_widget": "Atención al cliente"
+					},
+					"impacts": {
+						"payment_provider": "El checkout se cae y los ingresos paran. Cada hora de caída equivale a un día completo de ventas perdidas.",
+						"platform": "Sitio entero fuera. Sin hosting alternativo, la recuperación depende del proveedor.",
+						"cdn": "Performance global se degrada. Páginas lentas, conversión cae 1-3%.",
+						"email_marketing": "Confirmaciones, reseteos de contraseña y nurturing paran. CSAT baja y los chargebacks suben.",
+						"error_tracking": "Pierdes visibilidad sobre errores nuevos en producción hasta que vuelva.",
+						"tag_manager": "Cambios en pixels y tracking se congelan. No afecta el sitio directamente.",
+						"consent_manager": "El banner de consentimiento desaparece — riesgo regulatorio inmediato.",
+						"analytics": "Pierdes datos durante la caída pero el sitio sigue funcionando.",
+						"ab_testing": "Los experimentos activos se pausan. Los visitantes pueden ver una variante por defecto inesperada.",
+						"support_widget": "El chat de soporte desaparece — más fricción en tickets, pero el email sigue funcionando."
+					}
 				}
 			},
 			"copy": {

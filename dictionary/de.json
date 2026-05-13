@@ -1877,6 +1877,47 @@
 					"view_finding": "Finding ansehen",
 					"empty": "Keine monatlichen Verluste in diesem Workspace.",
 					"uncategorized": "Keine Grundursache zugeordnet"
+				},
+				"spof_map": {
+					"label": "Einzelne Ausfallpunkte",
+					"subtitle": "Dienste ohne Redundanz in Ihrem Stack",
+					"loading": "Lade erkannten Stack...",
+					"empty_title": "Stack noch nicht erkannt",
+					"empty_description": "Der naechste Analysezyklus erstellt automatisch Ihre Tech-Stack-Karte.",
+					"status_spof": "Einzelpunkt",
+					"status_resilient": "Mit Redundanz",
+					"status_undetected": "Nicht erkannt",
+					"impact_label": "Wenn ausgefallen:",
+					"detected_on": "{count} Seite",
+					"detected_on_plural": "{count} Seiten",
+					"severity_critical": "Kritisch",
+					"severity_high": "Hoch",
+					"severity_medium": "Mittel",
+					"severity_low": "Niedrig",
+					"categories": {
+						"payment_provider": "Zahlungen",
+						"platform": "Hosting-Plattform",
+						"cdn": "CDN",
+						"email_marketing": "E-Mail (transaktional + Marketing)",
+						"error_tracking": "Fehler-Observability",
+						"tag_manager": "Tag-Manager",
+						"consent_manager": "Consent-Manager (LGPD/GDPR)",
+						"analytics": "Analytics",
+						"ab_testing": "A/B-Tests",
+						"support_widget": "Kundenservice"
+					},
+					"impacts": {
+						"payment_provider": "Checkout faellt aus und Umsatz stoppt. Jede Stunde Ausfall entspricht einem Geschaeftstag verlorener Verkaeufe.",
+						"platform": "Gesamte Website offline. Ohne Failover-Hosting haengt die Wiederherstellung vom Anbieter ab.",
+						"cdn": "Globale Performance verschlechtert sich. Seiten laden langsam, Conversion sinkt 1-3%.",
+						"email_marketing": "Bestaetigungen, Passwort-Resets und Nurturing stoppen. CSAT sinkt, Chargebacks steigen.",
+						"error_tracking": "Sie verlieren Sichtbarkeit auf neue Produktionsfehler bis es zurueck ist.",
+						"tag_manager": "Aenderungen an Pixeln und Tracking eingefroren. Beeinflusst die Live-Site nicht direkt.",
+						"consent_manager": "Consent-Banner verschwindet — unmittelbares regulatorisches Risiko.",
+						"analytics": "Sie verlieren Daten waehrend des Ausfalls, die Site funktioniert weiter.",
+						"ab_testing": "Aktive Experimente pausieren. Besucher sehen evtl. eine unerwartete Default-Variante.",
+						"support_widget": "Live-Chat verschwindet — mehr Ticket-Friktion, aber E-Mail-Support funktioniert weiter."
+					}
 				}
 			},
 			"copy": {

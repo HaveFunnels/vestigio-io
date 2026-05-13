@@ -305,7 +305,6 @@ export interface InventorySurface {
   freshness_age: number | null;
   session_count: number | null;
   finding_count: number | null;
-  discovery_sources: string[];
   http_status: number | null;
   title: string | null;
   description: string | null;

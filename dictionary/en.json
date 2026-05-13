@@ -3367,17 +3367,6 @@
 				"500_2000": "500ms - 2s",
 				"gt2000": "> 2s"
 			},
-			"discovery_source_filter": {
-				"all": "All Sources"
-			},
-			"discovery_source_labels": {
-				"surface": "Crawled page",
-				"sitemap": "Sitemap",
-				"homepage_link": "Homepage link",
-				"critical_path": "Critical path",
-				"redirect": "Redirect target",
-				"behavioral_event": "Behavioral pixel"
-			},
 			"empty": {
 				"title": "No surfaces discovered yet",
 				"description": "Install the Vestigio snippet to start collecting behavioral data and surface inventory."
@@ -3411,7 +3400,6 @@
 				"response_time": "Response Time",
 				"last_checked": "Last Checked",
 				"never": "Never",
-				"discovery_sources": "Discovery Sources",
 				"classification_confidence_tooltip": "How strongly the signals agreed on this page type (0–100%)",
 				"classification_signals_label": "How we classified this page",
 				"classification_signals_weight_tooltip": "Voting weight for this signal (higher = more trusted)",

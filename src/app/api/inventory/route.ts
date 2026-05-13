@@ -287,7 +287,11 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       freshness_age: item.freshnessAge ?? null,
       session_count: hasSessionData ? matchSessions(item.normalizedUrl, item.path) : null,
       finding_count: hasFindingData ? matchSurface(item.normalizedUrl, item.path) : null,
-      discovery_sources: ["surface"],
+      // discovery_sources removed (2026-05-12) — the field was always
+      // ["surface"], so the inventory UI was rendering a single dead
+      // tag per row. Wave 9.3 (per-URL audit trail) will repopulate
+      // with real values (sitemap / homepage_link / critical_path /
+      // behavioral_event / redirect).
       http_status: item.statusCode ?? null,
       title: item.title ?? null,
       description: null,

@@ -250,9 +250,7 @@ function SurfaceDrawer({
 	const t = useTranslations("console.inventory.drawer");
 	const tTooltip = useTranslations("console.common");
 	const tPageType = useTranslations("console.maps.page_types");
-	const tDiscovery = useTranslations("console.inventory.discovery_source_labels");
 	const localizePageType = (type: string) => tPageType.has(type) ? tPageType(type) : titleCase(type);
-	const localizeSource = (src: string) => tDiscovery.has(src) ? tDiscovery(src) : titleCase(src);
 	const isOpen = surface !== null;
 
 	useEffect(() => {
@@ -490,22 +488,10 @@ function SurfaceDrawer({
 								</span>
 							</div>
 
-							{/* Discovery Sources */}
-							<div>
-								<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
-									{t("discovery_sources")}
-								</div>
-								<div className='flex flex-wrap gap-1.5'>
-									{surface.discovery_sources.map((src) => (
-										<span
-											key={src}
-											className='rounded bg-surface-inset px-1.5 py-0.5 text-[10px] text-content-faint'
-										>
-											{localizeSource(src)}
-										</span>
-									))}
-								</div>
-							</div>
+							{/* Discovery sources block intentionally removed —
+							    see comment in the parent component about
+							    the column being noise until Wave 9.3 wires
+							    per-URL audit-trail data. */}
 						</div>
 
 						{/* Actions */}
@@ -582,11 +568,6 @@ export default function InventoryPage() {
 	const tTooltip = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
 	const tPageType = useTranslations("console.maps.page_types");
-	const tDiscovery = useTranslations("console.inventory.discovery_source_labels");
-	const localizeSource = useCallback(
-		(src: string) => (tDiscovery.has(src) ? tDiscovery(src) : titleCase(src)),
-		[tDiscovery],
-	);
 	const localizePageType = useCallback(
 		(type: string) => (tPageType.has(type) ? tPageType(type) : titleCase(type)),
 		[tPageType]
@@ -600,8 +581,6 @@ export default function InventoryPage() {
 	const [tierFilter, setTierFilter] = useState<TierFilter>("all");
 	const [responseTimeFilter, setResponseTimeFilter] =
 		useState<ResponseTimeFilter>("all");
-	const [discoverySourceFilter, setDiscoverySourceFilter] =
-		useState<string>("all");
 	const [searchText, setSearchText] = useState("");
 	// Default sort surfaces broken pages first (Down → Live → Not checked).
 	// The Not checked bucket sits last on purpose: it represents URLs our
@@ -667,16 +646,6 @@ export default function InventoryPage() {
 	const hasAnySessionData = surfaces.some((s) => s.session_count !== null);
 	const hasAnyFindingData = surfaces.some((s) => s.finding_count !== null);
 
-	const discoverySourceOptions = useMemo(() => {
-		const unique = Array.from(
-			new Set(surfaces.flatMap((s) => s.discovery_sources))
-		).sort();
-		return [
-			{ value: "all" as const, label: t("discovery_source_filter.all") },
-			...unique.map((src) => ({ value: src, label: localizeSource(src) })),
-		];
-	}, [surfaces, t]);
-
 	const filtered = useMemo(() => {
 		return surfaces.filter((s) => {
 			if (liveFilter !== "all" && classifySurfaceStatus(s) !== liveFilter) return false;
@@ -724,11 +693,6 @@ export default function InventoryPage() {
 				if (responseTimeFilter === "gt2000" && s.response_time_ms < 2000)
 					return false;
 			}
-			if (
-				discoverySourceFilter !== "all" &&
-				!s.discovery_sources.includes(discoverySourceFilter)
-			)
-				return false;
 			if (searchText) {
 				const q = searchText.toLowerCase();
 				if (
@@ -750,7 +714,6 @@ export default function InventoryPage() {
 		hasFindingsFilter,
 		tierFilter,
 		responseTimeFilter,
-		discoverySourceFilter,
 		searchText,
 	]);
 
@@ -983,22 +946,12 @@ export default function InventoryPage() {
 					} as Column<InventorySurface>,
 				]
 			: []),
-		{
-			key: "discovery_sources",
-			label: tc("sources"),
-			render: (row: InventorySurface) => (
-				<div className='flex gap-1'>
-					{row.discovery_sources.map((src) => (
-						<span
-							key={src}
-							className='rounded bg-surface-inset px-1.5 py-0.5 text-[10px] text-content-faint'
-						>
-							{localizeSource(src)}
-						</span>
-					))}
-				</div>
-			),
-		},
+		// Discovery sources column intentionally removed (2026-05-12).
+		// The crawler only emits "surface" for every row today, so the
+		// column was 100% noise. Wave 9.3 adds per-URL audit-trail data
+		// (sitemap / homepage_link / critical_path / behavioral_event /
+		// redirect) — bring the column back at that point with real
+		// values that vary per row.
 	];
 
 	return (
@@ -1170,11 +1123,6 @@ export default function InventoryPage() {
 									{ value: "gt2000", label: t("response_time_filter.gt2000") },
 								]}
 							/>
-							<FilterDropdown
-								value={discoverySourceFilter}
-								onChange={setDiscoverySourceFilter}
-								options={discoverySourceOptions}
-							/>
 							<input
 								type='text'
 								placeholder={t("search_placeholder")}
@@ -1197,7 +1145,6 @@ export default function InventoryPage() {
 								hasFindingsFilter !== "all" ||
 								tierFilter !== "all" ||
 								responseTimeFilter !== "all" ||
-								discoverySourceFilter !== "all" ||
 								searchText) && (
 								<button
 									onClick={() => {
@@ -1207,7 +1154,6 @@ export default function InventoryPage() {
 										setHasFindingsFilter("all");
 										setTierFilter("all");
 										setResponseTimeFilter("all");
-										setDiscoverySourceFilter("all");
 										setSearchText("");
 									}}
 									className='rounded-lg px-3 py-1.5 text-xs text-content-faint transition-colors hover:text-content-secondary'

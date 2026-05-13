@@ -109,7 +109,11 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
     returnToMuted();
   }, [returnToMuted]);
 
-  // Mute + reset when card scrolls out of view
+  // Lifecycle:
+  //  - Entering viewport: resume muted autoplay (iOS Safari pauses
+  //    off-screen videos to save battery; without this, the user
+  //    scrolls back and sees only the bg color or a stuck frame)
+  //  - Leaving viewport: mute + reset if unmuted (privacy)
   useEffect(() => {
     const card = cardRef.current;
     const video = videoRef.current;
@@ -117,15 +121,21 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (!entry.isIntersecting && !video.muted) {
+        if (entry.isIntersecting) {
+          // Force muted autoplay loop if the browser paused it
+          if (video.paused && video.muted) {
+            video.play().catch(() => {});
+          }
+        } else if (!video.muted) {
+          // Off-screen + unmuted: reset to muted loop
           video.muted = true;
           video.loop = true;
           video.currentTime = 0;
-          video.play();
+          video.play().catch(() => {});
           setState("muted");
         }
       },
-      { threshold: 0.25 },
+      { threshold: 0.1 },
     );
     observer.observe(card);
     return () => observer.disconnect();
@@ -144,12 +154,21 @@ function VideoCard({ item, videoSrc, posterSrc }: { item: VideoTestimonialItem; 
           className="absolute inset-0 h-full w-full object-cover"
           src={videoSrc}
           poster={posterSrc}
-          preload="auto"
+          preload="metadata"
           playsInline
           autoPlay
           muted
           loop
+          // iOS Safari requires lowercase webkit-playsinline (some
+          // older iOS versions still need this even with playsInline)
+          {...({ "webkit-playsinline": "true" } as Record<string, string>)}
           onEnded={handleEnded}
+          onCanPlay={(e) => {
+            // Some mobile browsers don't fire autoplay even with muted+playsInline
+            // until canplay is available. Force play() here as a safety net.
+            const v = e.currentTarget;
+            if (v.paused && v.muted) v.play().catch(() => {});
+          }}
         />
 
         {/* Gradient overlay at bottom for name legibility */}

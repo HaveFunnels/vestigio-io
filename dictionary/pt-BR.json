@@ -3451,17 +3451,6 @@
 				"500_2000": "500ms - 2s",
 				"gt2000": "> 2s"
 			},
-			"discovery_source_filter": {
-				"all": "Todas as Fontes"
-			},
-			"discovery_source_labels": {
-				"surface": "Página rastreada",
-				"sitemap": "Sitemap",
-				"homepage_link": "Link na home",
-				"critical_path": "Caminho crítico",
-				"redirect": "Destino de redirect",
-				"behavioral_event": "Pixel comportamental"
-			},
 			"empty": {
 				"title": "Nenhuma superfície descoberta ainda",
 				"description": "Instale o snippet da Vestigio para começar a coletar dados comportamentais e inventário de superfícies."
@@ -3495,7 +3484,6 @@
 				"response_time": "Tempo de Resposta",
 				"last_checked": "Última Verificação",
 				"never": "Nunca",
-				"discovery_sources": "Fontes de Descoberta",
 				"classification_confidence_tooltip": "Quão fortemente os sinais concordaram sobre o tipo desta página (0–100%)",
 				"classification_signals_label": "Como classificamos esta página",
 				"classification_signals_weight_tooltip": "Peso de voto deste sinal (maior = mais confiável)",

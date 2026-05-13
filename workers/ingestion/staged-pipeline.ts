@@ -61,12 +61,49 @@ export interface PipelineEvent {
   timestamp: Date;
 }
 
+// Where a URL was first surfaced from. Drives the "Source" badge in
+// the inventory table and lets us answer "how did this page end up in
+// the crawl?". Each candidate gets stamped at the moment we add it to
+// the queue; later sightings of the same URL keep the first-seen
+// source so users see the most authoritative origin.
+export type DiscoverySource =
+  | 'homepage'         // the root URL itself
+  | 'homepage_link'    // <a> anchored from the homepage
+  | 'critical_path'    // speculative critical-path probe (/checkout, /cart, etc.)
+  | 'sitemap'          // /sitemap.xml (or sitemap-index child)
+  | 'robots_txt'       // /robots.txt
+  | 'redirect'         // destination of a redirect chain
+  | 'pagination'       // rel=next / numbered-pagination link
+  | 'internal_link'    // <a> from a non-homepage crawled page
+  | 'behavioral_event' // sent from the in-browser pixel
+  | 'manual';          // user-added (admin form, API)
+
+// Why a discovered URL did not get persisted as a fetched surface.
+// `null` (or absent) means the URL was either successfully fetched OR
+// is still pending. Surfaced in the inventory "Why skipped?" column
+// so customers can tell apart "we tried and failed" from "we never
+// tried" and reason about coverage gaps.
+export type SkipReason =
+  | 'over_budget'      // max_pages_per_domain reached before we got here
+  | 'excluded'         // matched a user-supplied exclusion pattern
+  | 'deduped'          // canonical URL already fetched this cycle
+  | 'loop_detected'    // content hash matched another already-fetched URL
+  | 'challenge'        // Cloudflare/recaptcha/datadome blocked the fetch
+  | 'asset'            // non-HTML response (PDF, image, …)
+  | 'fetch_failed'     // network error (timeout, DNS, connection refused)
+  | 'disallowed'       // robots.txt Disallow rule
+  | 'aborted';         // crawl session aborted before reaching this URL
+
 export interface CoverageEntry {
   url: string;
   discovered: boolean;
   validated: boolean;
   critical: boolean;
   confidence: number;
+  /** Where this URL was first surfaced. */
+  discoverySource?: DiscoverySource;
+  /** Set when validated=false to explain why. */
+  skipReason?: SkipReason;
 }
 
 export interface CoverageSummary {
@@ -356,7 +393,7 @@ export async function runStagedPipeline(
       }
     }
 
-    coverage.set(rootUrl, { url: rootUrl, discovered: true, validated: true, critical: true, confidence: 80 });
+    coverage.set(rootUrl, { url: rootUrl, discovered: true, validated: true, critical: true, confidence: 80, discoverySource: 'homepage' });
   } catch (err) {
     errors.push({ url: rootUrl, error: err instanceof Error ? err.message : String(err) });
     emit({ type: 'stage_complete', stage: 'bootstrap', data: { success: false, error: errors[0].error }, timestamp: new Date() });
@@ -434,15 +471,17 @@ export async function runStagedPipeline(
   // Merge sitemap-discovered URLs into the candidate list. These are
   // added AFTER the homepage-link candidates so that speculative
   // critical paths and actually-linked pages get priority. Dedup
-  // against existing candidates to avoid double-fetching.
+  // against existing candidates to avoid double-fetching. Sitemap-
+  // sourced URLs are tagged so the inventory column can attribute
+  // them correctly.
   if (sitemapUrls.length > 0) {
-    const seen = new Set<string>(candidates.map(normalizeUrlForDedup));
+    const seen = new Set<string>(candidates.map(c => normalizeUrlForDedup(c.url)));
     seen.add(normalizeUrlForDedup(rootUrl));
     for (const sUrl of sitemapUrls) {
       const key = normalizeUrlForDedup(sUrl);
       if (!seen.has(key)) {
         seen.add(key);
-        candidates.push(sUrl);
+        candidates.push({ url: sUrl, source: 'sitemap' });
       }
     }
   }
@@ -454,9 +493,9 @@ export async function runStagedPipeline(
   if (excludePatterns.length > 0) {
     const homepageKey = normalizeUrlForDedup(rootUrl);
     const before = candidates.length;
-    candidates = candidates.filter((u) => {
-      if (normalizeUrlForDedup(u) === homepageKey) return true;
-      return !urlMatchesExclusion(u, excludePatterns);
+    candidates = candidates.filter((c) => {
+      if (normalizeUrlForDedup(c.url) === homepageKey) return true;
+      return !urlMatchesExclusion(c.url, excludePatterns);
     });
     excludedCount += before - candidates.length;
   }
@@ -502,7 +541,7 @@ export async function runStagedPipeline(
     const allow = new Set<string>(input.url_filter.map(canon));
     const homepageUrl = canon(rootUrl);
     candidates = candidates.filter((c) => {
-      const cc = canon(c);
+      const cc = canon(c.url);
       return allow.has(cc) || cc === homepageUrl;
     });
   }
@@ -519,33 +558,68 @@ export async function runStagedPipeline(
     candidates = candidates.slice(0, 5);
   }
 
-  // Mark all candidates in coverage
-  for (const url of candidates) {
-    const path = safePathname(url);
+  // Mark all candidates in coverage with their discovery source. Source
+  // is sticky: later sightings of the same URL never overwrite it, so
+  // the inventory always shows where the URL was *first* surfaced.
+  for (const c of candidates) {
+    const path = safePathname(c.url);
     const isCritical = criticalPaths.some(p => path.includes(p.slice(1)));
-    coverage.set(url, { url, discovered: true, validated: false, critical: isCritical, confidence: 0 });
+    coverage.set(c.url, {
+      url: c.url,
+      discovered: true,
+      validated: false,
+      critical: isCritical,
+      confidence: 0,
+      discoverySource: c.source,
+    });
+  }
+  // The root URL itself was marked as `homepage` earlier with no
+  // source set — backfill so the inventory column has a value.
+  const rootCoverage = coverage.get(rootUrl);
+  if (rootCoverage && !rootCoverage.discoverySource) {
+    coverage.set(rootUrl, { ...rootCoverage, discoverySource: 'homepage' });
   }
 
   emit({ type: 'coverage_update', stage: 'crawl', data: buildCoverageSummary(coverage), timestamp: new Date() });
 
-  // Fetch high-value pages with step emissions (constrained by CrawlSession)
+  // Fetch high-value pages with step emissions (constrained by CrawlSession).
+  // Every "skip" branch below stamps a `skipReason` on the coverage entry
+  // so the inventory can explain why a discovered URL didn't get persisted.
   let fetchCount = 0;
   let spaDetected = false;
-  for (const url of candidates) {
+  for (const c of candidates) {
+    const url = c.url;
     // User-supplied exclusion gate (also enforced at discovery, but a
     // defense-in-depth check here catches URLs added via late merges
     // and keeps a clear "excluded" marker in coverage).
     if (excludePatterns.length > 0 && urlMatchesExclusion(url, excludePatterns)) {
       const existing = coverage.get(url);
-      coverage.set(url, { url, discovered: existing?.discovered ?? true, validated: false, critical: existing?.critical ?? false, confidence: 0 });
+      coverage.set(url, {
+        url,
+        discovered: existing?.discovered ?? true,
+        validated: false,
+        critical: existing?.critical ?? false,
+        confidence: 0,
+        discoverySource: existing?.discoverySource ?? c.source,
+        skipReason: 'excluded',
+      });
       excludedCount++;
       continue;
     }
 
-    // Crawl constraint check
+    // Crawl constraint check (over budget, dedup, global timeout, abort)
     const canFetch = crawlSession.canFetch(url);
     if (!canFetch.allowed) {
-      coverage.set(url, { ...coverage.get(url)!, validated: false, confidence: 0 });
+      // Translate CrawlSession's prose reason into a structured tag
+      // so the UI can render it. The session only returns a string,
+      // so we pattern-match keywords from canFetch.reason.
+      const reason = canFetch.reason ?? '';
+      const tag: SkipReason =
+        /global timeout|aborted/i.test(reason) ? 'aborted'
+        : /max pages/i.test(reason) ? 'over_budget'
+        : /dedup/i.test(reason) ? 'deduped'
+        : 'over_budget';
+      coverage.set(url, { ...coverage.get(url)!, validated: false, confidence: 0, skipReason: tag });
       continue;
     }
 
@@ -564,7 +638,7 @@ export async function runStagedPipeline(
 
       // Loop detection — if same content as another URL, skip
       if (crawlSession.isLoopDetected(url, cHash)) {
-        coverage.set(url, { ...coverage.get(url)!, validated: false, confidence: 5 });
+        coverage.set(url, { ...coverage.get(url)!, validated: false, confidence: 5, skipReason: 'loop_detected' });
         continue;
       }
 
@@ -572,7 +646,7 @@ export async function runStagedPipeline(
       const challenge = detectChallenge(response);
       if (challenge) {
         emit({ type: 'challenge_detected', stage: 'crawl', data: { challenge_type: challenge, url }, timestamp: new Date() });
-        coverage.set(url, { ...coverage.get(url)!, validated: false, confidence: 10 });
+        coverage.set(url, { ...coverage.get(url)!, validated: false, confidence: 10, skipReason: 'challenge' });
         continue;
       }
 
@@ -692,10 +766,14 @@ export async function runStagedPipeline(
           }
         }
 
-        coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: renderedViaPlaywright ? 85 : 75 });
+        coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: renderedViaPlaywright ? 85 : 75, skipReason: undefined });
       } else {
+        // Non-HTML response — still successful fetch, but tagged as
+        // `asset` so the inventory can show "PDF / image / etc."
+        // instead of pretending it's a page. Asset rows are still
+        // useful for analytics so we mark validated=true.
         addHttpEvidence(evidence, response, url, scoping, input.cycle_ref, cHash);
-        coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: 50 });
+        coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: 50, skipReason: 'asset' });
       }
 
       // Emit progressive finding ready events
@@ -704,7 +782,7 @@ export async function runStagedPipeline(
       }
     } catch (err) {
       errors.push({ url, error: err instanceof Error ? err.message : String(err) });
-      coverage.set(url, { ...coverage.get(url)!, validated: false, confidence: 0 });
+      coverage.set(url, { ...coverage.get(url)!, validated: false, confidence: 0, skipReason: 'fetch_failed' });
     }
     fetchCount++;
   }
@@ -940,7 +1018,7 @@ async function tryFetchMeta(rootUrl: string, scoping: Scoping, cycleRef: string,
     const response = await httpFetch(robotsUrl);
     if (response.status_code === 200 && response.body) {
       addHttpEvidence(evidence, response, robotsUrl, scoping, cycleRef);
-      coverage.set(robotsUrl, { url: robotsUrl, discovered: true, validated: true, critical: false, confidence: 60 });
+      coverage.set(robotsUrl, { url: robotsUrl, discovered: true, validated: true, critical: false, confidence: 60, discoverySource: 'robots_txt' });
       const { sitemaps, disallows } = parseRobotsTxt(response.body);
       sitemapsToFetch.push(...sitemaps);
       disallowPaths.push(...disallows);
@@ -957,7 +1035,7 @@ async function tryFetchMeta(rootUrl: string, scoping: Scoping, cycleRef: string,
       const response = await httpFetch(sitemapUrl);
       if (response.status_code === 200 && response.body) {
         addHttpEvidence(evidence, response, sitemapUrl, scoping, cycleRef);
-        coverage.set(sitemapUrl, { url: sitemapUrl, discovered: true, validated: true, critical: false, confidence: 60 });
+        coverage.set(sitemapUrl, { url: sitemapUrl, discovered: true, validated: true, critical: false, confidence: 60, discoverySource: 'sitemap' });
         const parsed = parseSitemap(response.body, rootDomain);
         // If this was a sitemap-index, recurse into child sitemaps (one level)
         for (const childSitemap of parsed.childSitemaps) {
@@ -1072,18 +1150,29 @@ function detectChallenge(response: HttpResponse): string | null {
   return null;
 }
 
-function discoverHighValueCandidates(parsed: ParsedPage, rootDomain: string, rootUrl: string, criticalPaths: string[], mode: PipelineMode = 'full'): string[] {
+interface DiscoveredCandidate {
+  url: string;
+  source: DiscoverySource;
+}
+
+function discoverHighValueCandidates(parsed: ParsedPage, rootDomain: string, rootUrl: string, criticalPaths: string[], mode: PipelineMode = 'full'): DiscoveredCandidate[] {
   const seen = new Set<string>([normalizeUrlForDedup(rootUrl)]);
-  const candidates: string[] = [];
+  const candidates: DiscoveredCandidate[] = [];
 
   // 1. Always seed speculative critical paths first (highest priority).
+  //    These are tagged as `critical_path` because they were guessed by
+  //    Vestigio, not extracted from the customer's site.
   for (const p of criticalPaths) {
     const url = new URL(p, rootUrl).toString();
     const key = normalizeUrlForDedup(url);
-    if (!seen.has(key)) { seen.add(key); candidates.push(url); }
+    if (!seen.has(key)) {
+      seen.add(key);
+      candidates.push({ url, source: 'critical_path' });
+    }
   }
 
-  // 2. Discover from homepage links.
+  // 2. Discover from homepage links. Tag as `homepage_link` since the
+  //    URL was extracted from the root document's <a> tags.
   //    - In full mode: include ALL unique internal links so we reach
   //      pages like /helpcenter, /docs/gethelp, /termos-de-uso, /blog
   //      that don't match the high-value regex. The crawl session's
@@ -1101,11 +1190,11 @@ function discoverHighValueCandidates(parsed: ParsedPage, rootDomain: string, roo
       // Skip obvious non-page resources (images, stylesheets, etc.)
       const path = safePathname(link.href);
       if (/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|pdf|zip|xml|json)$/i.test(path)) continue;
-      candidates.push(link.href);
+      candidates.push({ url: link.href, source: 'homepage_link' });
     } else {
       const path = new URL(link.href).pathname.toLowerCase();
       const text = (link.text || '').toLowerCase();
-      if (isHighValue(path, text)) candidates.push(link.href);
+      if (isHighValue(path, text)) candidates.push({ url: link.href, source: 'homepage_link' });
     }
   }
 

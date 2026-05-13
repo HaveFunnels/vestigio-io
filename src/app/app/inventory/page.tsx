@@ -72,7 +72,7 @@ function exportToCsv(rows: InventorySurface[], filename: string) {
 	const headers = [
 		"URL", "Host", "Page Type", "Tier", "Status",
 		"HTTP Code", "Sessions (30d)", "Findings", "Response Time (ms)",
-		"Last Seen",
+		"Last Seen", "Discovery Source", "Skip Reason",
 	];
 	const csv = [
 		headers.join(","),
@@ -87,6 +87,8 @@ function exportToCsv(rows: InventorySurface[], filename: string) {
 			r.finding_count ?? "",
 			r.response_time_ms ?? "",
 			r.last_seen_at ?? "",
+			r.discovery_source ?? "",
+			r.skip_reason ?? "",
 		].join(",")),
 	].join("\n");
 	const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -250,7 +252,11 @@ function SurfaceDrawer({
 	const t = useTranslations("console.inventory.drawer");
 	const tTooltip = useTranslations("console.common");
 	const tPageType = useTranslations("console.maps.page_types");
+	const tDiscovery = useTranslations("console.inventory.discovery_source_labels");
+	const tSkipReason = useTranslations("console.inventory.skip_reason_labels");
 	const localizePageType = (type: string) => tPageType.has(type) ? tPageType(type) : titleCase(type);
+	const localizeSource = (src: string) => tDiscovery.has(src) ? tDiscovery(src) : titleCase(src);
+	const localizeSkipReason = (reason: string) => tSkipReason.has(reason) ? tSkipReason(reason) : titleCase(reason);
 	const isOpen = surface !== null;
 
 	useEffect(() => {
@@ -488,10 +494,33 @@ function SurfaceDrawer({
 								</span>
 							</div>
 
-							{/* Discovery sources block intentionally removed —
-							    see comment in the parent component about
-							    the column being noise until Wave 9.3 wires
-							    per-URL audit-trail data. */}
+							{/* Audit trail — where this URL was first surfaced
+							    from and (when applicable) why we didn't get
+							    a fresh fetch this cycle. */}
+							{(surface.discovery_source || surface.skip_reason) && (
+								<div className='grid grid-cols-2 gap-4'>
+									{surface.discovery_source && (
+										<div>
+											<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
+												{t("discovery_source")}
+											</div>
+											<span className='inline-block rounded bg-surface-inset px-1.5 py-0.5 text-[11px] text-content-secondary'>
+												{localizeSource(surface.discovery_source)}
+											</span>
+										</div>
+									)}
+									{surface.skip_reason && (
+										<div>
+											<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
+												{t("skip_reason")}
+											</div>
+											<span className='inline-block rounded bg-amber-500/10 px-1.5 py-0.5 text-[11px] text-amber-300'>
+												{localizeSkipReason(surface.skip_reason)}
+											</span>
+										</div>
+									)}
+								</div>
+							)}
 						</div>
 
 						{/* Actions */}
@@ -568,6 +597,16 @@ export default function InventoryPage() {
 	const tTooltip = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
 	const tPageType = useTranslations("console.maps.page_types");
+	const tDiscovery = useTranslations("console.inventory.discovery_source_labels");
+	const tSkipReason = useTranslations("console.inventory.skip_reason_labels");
+	const localizeSource = useCallback(
+		(src: string) => (tDiscovery.has(src) ? tDiscovery(src) : titleCase(src)),
+		[tDiscovery],
+	);
+	const localizeSkipReason = useCallback(
+		(reason: string) => (tSkipReason.has(reason) ? tSkipReason(reason) : titleCase(reason)),
+		[tSkipReason],
+	);
 	const localizePageType = useCallback(
 		(type: string) => (tPageType.has(type) ? tPageType(type) : titleCase(type)),
 		[tPageType]
@@ -581,6 +620,8 @@ export default function InventoryPage() {
 	const [tierFilter, setTierFilter] = useState<TierFilter>("all");
 	const [responseTimeFilter, setResponseTimeFilter] =
 		useState<ResponseTimeFilter>("all");
+	const [discoverySourceFilter, setDiscoverySourceFilter] =
+		useState<string>("all");
 	const [searchText, setSearchText] = useState("");
 	// Default sort surfaces broken pages first (Down → Live → Not checked).
 	// The Not checked bucket sits last on purpose: it represents URLs our
@@ -693,6 +734,9 @@ export default function InventoryPage() {
 				if (responseTimeFilter === "gt2000" && s.response_time_ms < 2000)
 					return false;
 			}
+			if (discoverySourceFilter !== "all" && s.discovery_source !== discoverySourceFilter) {
+				return false;
+			}
 			if (searchText) {
 				const q = searchText.toLowerCase();
 				if (
@@ -714,6 +758,7 @@ export default function InventoryPage() {
 		hasFindingsFilter,
 		tierFilter,
 		responseTimeFilter,
+		discoverySourceFilter,
 		searchText,
 	]);
 
@@ -946,12 +991,18 @@ export default function InventoryPage() {
 					} as Column<InventorySurface>,
 				]
 			: []),
-		// Discovery sources column intentionally removed (2026-05-12).
-		// The crawler only emits "surface" for every row today, so the
-		// column was 100% noise. Wave 9.3 adds per-URL audit-trail data
-		// (sitemap / homepage_link / critical_path / behavioral_event /
-		// redirect) — bring the column back at that point with real
-		// values that vary per row.
+		{
+			key: "discovery_source",
+			label: tc("source"),
+			render: (row: InventorySurface) => {
+				if (!row.discovery_source) return <span className='text-content-faint'>—</span>;
+				return (
+					<span className='rounded bg-surface-inset px-1.5 py-0.5 text-[10px] text-content-faint'>
+						{localizeSource(row.discovery_source)}
+					</span>
+				);
+			},
+		},
 	];
 
 	return (
@@ -1123,6 +1174,23 @@ export default function InventoryPage() {
 									{ value: "gt2000", label: t("response_time_filter.gt2000") },
 								]}
 							/>
+							<FilterDropdown
+								value={discoverySourceFilter}
+								onChange={setDiscoverySourceFilter}
+								options={(() => {
+									const unique = Array.from(
+										new Set(
+											surfaces
+												.map((s) => s.discovery_source)
+												.filter((src): src is string => Boolean(src)),
+										),
+									).sort();
+									return [
+										{ value: "all" as const, label: t("discovery_source_filter.all") },
+										...unique.map((src) => ({ value: src, label: localizeSource(src) })),
+									];
+								})()}
+							/>
 							<input
 								type='text'
 								placeholder={t("search_placeholder")}
@@ -1145,6 +1213,7 @@ export default function InventoryPage() {
 								hasFindingsFilter !== "all" ||
 								tierFilter !== "all" ||
 								responseTimeFilter !== "all" ||
+								discoverySourceFilter !== "all" ||
 								searchText) && (
 								<button
 									onClick={() => {
@@ -1154,6 +1223,7 @@ export default function InventoryPage() {
 										setHasFindingsFilter("all");
 										setTierFilter("all");
 										setResponseTimeFilter("all");
+										setDiscoverySourceFilter("all");
 										setSearchText("");
 									}}
 									className='rounded-lg px-3 py-1.5 text-xs text-content-faint transition-colors hover:text-content-secondary'

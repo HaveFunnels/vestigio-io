@@ -435,8 +435,22 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		// Postgres connections, and small enough that a tx retry won't
 		// stall the whole loop.
 		const inventoryUpserts: Array<{ url: string; create: any; update: any }> = [];
+		// Skip reasons that should NOT result in a persisted inventory
+		// row. These are URLs we never actually attempted (excluded by
+		// pattern, over the per-domain budget, or aborted) — persisting
+		// them would bloat the inventory with thousands of sitemap URLs
+		// on big sites and clutter the customer's view with pages they
+		// either opted out of (excluded) or simply weren't budgeted.
+		// Other skip reasons (loop_detected, challenge, asset, fetch_failed,
+		// deduped, disallowed) DO get persisted so the customer can see
+		// the audit trail of what we tried.
+		const NON_PERSISTED_SKIP_REASONS = new Set(["excluded", "over_budget", "aborted"]);
+
 		for (const entry of result.coverage_entries || []) {
 			const url = entry.url;
+			const skipReason: string | null = ((entry as any).skipReason as string | null) ?? null;
+			if (skipReason && NON_PERSISTED_SKIP_REASONS.has(skipReason)) continue;
+
 			const path = safePathname(url);
 			const { pageType, tier } = inferPageType(path);
 			const title = evIdx.titleByUrl.get(url) ?? null;
@@ -452,6 +466,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			const ct = evIdx.contentTypeByUrl.get(url) ?? null;
 			const isAssetContent = ct !== null && !ct.includes("text/html");
 			const finalPageType = isAssetContent ? "asset" : pageType;
+
+			// Wave 9.3 — per-URL audit trail. discoverySource is sticky:
+			// once we attribute "homepage_link", a later sitemap sighting
+			// won't reattribute. skipReason flips between null (success)
+			// and a tag (loop_detected / challenge / asset / fetch_failed
+			// / deduped / disallowed). Reasons in NON_PERSISTED_SKIP_REASONS
+			// never reach this line because of the early continue above.
+			const discoverySource = (entry as any).discoverySource ?? null;
+			const persistedSkipReason = isFresh ? null : skipReason;
 
 			inventoryUpserts.push({
 				url,
@@ -469,6 +492,8 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					freshnessState: isFresh ? "fresh" : "stale",
 					freshnessAge: isFresh ? 0 : null,
 					lastSeenCycleId: isFresh ? cycleId : null,
+					discoverySource,
+					skipReason: persistedSkipReason,
 				},
 				update: {
 					title: title ?? undefined,
@@ -482,6 +507,10 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					pageType: finalPageType,
 					criticality: Math.round(entry.confidence ?? 0),
 					...(isFresh ? { lastSeenCycleId: cycleId, removedAt: null } : {}),
+					// discoverySource is sticky — only set on create.
+					// skipReason updates every cycle so the UI reflects
+					// the most recent state.
+					skipReason: persistedSkipReason,
 				},
 			});
 		}

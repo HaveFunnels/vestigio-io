@@ -305,6 +305,10 @@ export interface InventorySurface {
   freshness_age: number | null;
   session_count: number | null;
   finding_count: number | null;
+  /** Where this URL was first surfaced (homepage_link, sitemap, etc.); null on legacy rows. */
+  discovery_source: string | null;
+  /** Reason a discovered URL didn't return a fresh fetch this cycle; null on fresh rows. */
+  skip_reason: string | null;
   http_status: number | null;
   title: string | null;
   description: string | null;

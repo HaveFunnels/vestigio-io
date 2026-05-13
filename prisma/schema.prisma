@@ -827,6 +827,14 @@ model PageInventoryItem {
   // multiple cycles) — soft-delete marker. Re-discovery clears it.
   lastSeenCycleId String?
   removedAt       DateTime?
+  // Wave 9.3 — per-URL audit trail. discoverySource records where the
+  // URL was first surfaced (homepage_link, sitemap, critical_path, …).
+  // skipReason is set when we discovered the URL but decided not to
+  // persist a fetch result; the UI renders it next to the status so
+  // the customer can tell "we never got there" apart from "the page
+  // is broken".
+  discoverySource String?
+  skipReason      String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

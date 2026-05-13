@@ -1546,6 +1546,7 @@
 				"sessions": "Sessions",
 				"findings": "Findings",
 				"sources": "Sources",
+				"source": "Source",
 				"root_cause": "Root Cause",
 				"confidence_tier": "Confidence",
 				"first_seen": "First Seen"
@@ -3367,6 +3368,32 @@
 				"500_2000": "500ms - 2s",
 				"gt2000": "> 2s"
 			},
+			"discovery_source_filter": {
+				"all": "All Sources"
+			},
+			"discovery_source_labels": {
+				"homepage": "Homepage",
+				"homepage_link": "Homepage link",
+				"critical_path": "Critical path",
+				"sitemap": "Sitemap",
+				"robots_txt": "Robots.txt",
+				"redirect": "Redirect",
+				"pagination": "Pagination",
+				"internal_link": "Internal link",
+				"behavioral_event": "Behavioral pixel",
+				"manual": "Manually added"
+			},
+			"skip_reason_labels": {
+				"over_budget": "Over crawl budget",
+				"excluded": "Excluded by pattern",
+				"deduped": "Duplicate URL",
+				"loop_detected": "Crawl loop detected",
+				"challenge": "Blocked by challenge",
+				"asset": "Non-HTML asset",
+				"fetch_failed": "Fetch failed",
+				"disallowed": "Disallowed by robots.txt",
+				"aborted": "Crawl aborted"
+			},
 			"empty": {
 				"title": "No surfaces discovered yet",
 				"description": "Install the Vestigio snippet to start collecting behavioral data and surface inventory."
@@ -3403,6 +3430,8 @@
 				"classification_confidence_tooltip": "How strongly the signals agreed on this page type (0–100%)",
 				"classification_signals_label": "How we classified this page",
 				"classification_signals_weight_tooltip": "Voting weight for this signal (higher = more trusted)",
+				"discovery_source": "Discovery source",
+				"skip_reason": "Why we didn't refetch",
 				"view_in_journey": "View in journey map",
 				"view_findings": "View {count, plural, one {# finding} other {# findings}} on this page"
 			}

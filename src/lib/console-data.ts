@@ -289,11 +289,15 @@ export interface InventorySurface {
   normalized_path: string;
   host: string;
   page_type: string;
+  /** Multi-signal classified type (null if not yet classified). */
+  classified_page_type: string | null;
+  /** 0-100 agreement ratio between classification signals. */
+  classification_confidence: number | null;
   is_commercial: boolean;
   is_live: boolean;
   last_seen_at: string | null;
-  // Null until pixel pipeline (Wave 0.2/0.3) and findings persistence (0.7) ship.
-  // The UI hides the column when 100% of rows have a null value.
+  /** Seconds since last HTTP check (null when never checked). */
+  freshness_age: number | null;
   session_count: number | null;
   finding_count: number | null;
   discovery_sources: string[];
@@ -311,9 +315,28 @@ export interface InventoryAuditStatus {
   completed_at: string | null;
 }
 
+export interface InventoryPagination {
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface InventoryDeltas {
+  total: number;
+  findings: number;
+}
+
+export interface InventoryLookups {
+  findings: boolean;
+  sessions: boolean;
+}
+
 export interface InventoryPayload {
   surfaces: InventorySurface[];
   audit_status: InventoryAuditStatus | null;
+  pagination: InventoryPagination;
+  deltas: InventoryDeltas | null;
+  lookups: InventoryLookups;
 }
 
 /**
@@ -322,27 +345,33 @@ export interface InventoryPayload {
  * caller can still inspect `audit_status` to know whether the audit is
  * in progress (data will arrive shortly) or there genuinely isn't any.
  */
-export async function loadInventory(): Promise<DataState<InventoryPayload>> {
+export async function loadInventory(params?: { limit?: number; offset?: number }): Promise<DataState<InventoryPayload>> {
   try {
-    const res = await fetch('/api/inventory');
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.offset) qs.set('offset', String(params.offset));
+    const res = await fetch('/api/inventory' + (qs.size > 0 ? `?${qs}` : ''));
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       if (res.status === 401) {
         return { status: 'not_ready', reason: 'Authentication required. Please sign in.' };
+      }
+      if (res.status === 404) {
+        return { status: 'empty' };
       }
       return { status: 'error', message: body.message || `HTTP ${res.status}` };
     }
     const json = await res.json();
     const surfaces: InventorySurface[] = json.data ?? [];
     const audit_status: InventoryAuditStatus | null = json.audit_status ?? null;
+    const pagination: InventoryPagination = json.pagination ?? { total: surfaces.length, limit: 200, offset: 0 };
+    const deltas: InventoryDeltas | null = json.deltas ?? null;
+    const lookups: InventoryLookups = json.lookups ?? { findings: true, sessions: true };
 
-    // If there are no surfaces AND no audit is in progress, show the empty
-    // state. If an audit IS in progress, return ready with the empty list
-    // so the page can render the banner with a "discovering pages…" message.
     if (surfaces.length === 0 && (!audit_status || audit_status.status === 'complete' || audit_status.status === 'failed')) {
       return { status: 'empty' };
     }
-    return { status: 'ready', data: { surfaces, audit_status } };
+    return { status: 'ready', data: { surfaces, audit_status, pagination, deltas, lookups } };
   } catch (err) {
     return { status: 'error', message: err instanceof Error ? err.message : 'Unknown error loading inventory' };
   }

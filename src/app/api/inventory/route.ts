@@ -7,31 +7,21 @@ import { PrismaFindingStore } from "../../../../packages/projections";
 // ──────────────────────────────────────────────
 // Inventory API — Page Inventory Items
 //
-// GET → returns all PageInventoryItem rows for the user's first active
-//       environment's website, plus the audit_status of the most recent
-//       AuditCycle so the UI can show the "audit ongoing" banner.
+// GET → returns paginated PageInventoryItem rows for the user's active
+//       environment's website, plus audit status and period-over-period
+//       deltas computed from the previous cycle snapshot.
+//
+// Query params:
+//   limit  — page size (1-500, default 200)
+//   offset — pagination offset (default 0)
 //
 // Auth: requires authenticated user with org membership.
-// Scoping: user → membership → org → environment → website → pages
-//
-// Wave 0.7: finding_count is real (computed from the Finding table for
-// the most recent cycle of this env, joined per-surface).
-//
-// Wave 0.3: session_count is real now too — counted from
-// RawBehavioralEvent over the last 30 days, distinct sessionId per
-// URL. Null only when no behavioral events exist at all for the env
-// (snippet not installed yet). 0 means snippet IS installed but this
-// particular surface had no traffic, which is signal not absence.
 // ──────────────────────────────────────────────
 
 const COMMERCIAL_PAGE_TYPES = new Set(["checkout", "cart", "product", "pricing"]);
+const DEFAULT_LIMIT = 200;
+const MAX_LIMIT = 500;
 
-// Match a PageInventoryItem path to a finding surface. Findings declare
-// their surface as a path string (e.g. "/checkout") which may differ
-// slightly from the inventory's normalizedUrl. We match in priority:
-//   1. Exact normalized path match (`/checkout` === `/checkout`)
-//   2. Substring match in the URL (`/checkout` ∈ `/en/checkout/step-1`)
-//   3. Surface "/" matches landing inventory items
 function buildPathMatcher(surfaceCounts: Map<string, number>) {
   const surfaceList = [...surfaceCounts.entries()];
   return (normalizedUrl: string, path: string): number => {
@@ -43,7 +33,6 @@ function buildPathMatcher(surfaceCounts: Map<string, number>) {
         matched = true;
         continue;
       }
-      // "/" surface only counts toward the landing item, not every page.
       if (surface === "/") {
         if (path === "/" || path === "") {
           total += count;
@@ -51,8 +40,6 @@ function buildPathMatcher(surfaceCounts: Map<string, number>) {
         }
         continue;
       }
-      // Substring fallback so that surface "/checkout" still matches an
-      // inventory row at "/en/checkout/step-2".
       if (path.includes(surface)) {
         total += count;
         matched = true;
@@ -62,41 +49,48 @@ function buildPathMatcher(surfaceCounts: Map<string, number>) {
   };
 }
 
-export const GET = withErrorTracking(async function GET() {
+export const GET = withErrorTracking(async function GET(request: Request) {
   const user = await isAuthorized();
   if (!user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  // Find user's org via membership
+  // Parse pagination params
+  const url = new URL(request.url);
+  const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(url.searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10)));
+  const offset = Math.max(0, parseInt(url.searchParams.get("offset") ?? "0", 10));
+
   const membership = await prisma.membership.findFirst({
     where: { userId: user.id },
     select: { organizationId: true },
   });
 
   if (!membership) {
-    return NextResponse.json({
-      data: [],
-      audit_status: null,
-      message: "No organization found",
-    });
+    return NextResponse.json({ message: "No organization found" }, { status: 404 });
   }
 
-  // Find the first environment for this org
-  const environment = await prisma.environment.findFirst({
-    where: { organizationId: membership.organizationId },
-    select: { id: true },
-  });
+  // Respect active_env cookie so users with multiple envs see the right one
+  const cookieStore = await import("next/headers").then((m) => m.cookies());
+  const activeEnvId = cookieStore.get("active_env")?.value;
+
+  let environment = activeEnvId
+    ? await prisma.environment.findFirst({
+        where: { id: activeEnvId, organizationId: membership.organizationId },
+        select: { id: true },
+      })
+    : null;
+  if (!environment) {
+    environment = await prisma.environment.findFirst({
+      where: { organizationId: membership.organizationId },
+      orderBy: [{ isProduction: "desc" }, { createdAt: "asc" }],
+      select: { id: true },
+    });
+  }
 
   if (!environment) {
-    return NextResponse.json({
-      data: [],
-      audit_status: null,
-      message: "No environment found",
-    });
+    return NextResponse.json({ message: "No environment found" }, { status: 404 });
   }
 
-  // Pull the latest audit cycle so the UI can show the live status banner.
   const latestCycle = await prisma.auditCycle.findFirst({
     where: { environmentId: environment.id },
     orderBy: { createdAt: "desc" },
@@ -106,119 +100,188 @@ export const GET = withErrorTracking(async function GET() {
   const auditStatus = latestCycle
     ? {
         cycle_id: latestCycle.id,
-        status: latestCycle.status, // pending | running | complete | failed
+        status: latestCycle.status,
         started_at: latestCycle.createdAt.toISOString(),
         completed_at: latestCycle.completedAt?.toISOString() ?? null,
       }
     : null;
 
-  // Find the website for this environment
   const website = await prisma.website.findFirst({
     where: { environmentRef: environment.id },
     select: { id: true },
   });
 
   if (!website) {
-    // Website is created lazily by the audit-runner worker. If it doesn't
-    // exist yet, return an empty inventory but keep the audit_status so
-    // the UI can show "audit pending..." instead of an empty state.
     return NextResponse.json({
       data: [],
       audit_status: auditStatus,
+      pagination: { total: 0, limit, offset },
+      deltas: null,
+      lookups: { findings: false, sessions: false },
       message: "No website yet — first audit hasn't completed",
     });
   }
 
-  // Query all PageInventoryItem rows for this website
-  const items = await prisma.pageInventoryItem.findMany({
-    where: { websiteRef: website.id },
-    orderBy: { updatedAt: "desc" },
+  // Total count (for pagination) + paginated query in parallel
+  const [total, items] = await Promise.all([
+    prisma.pageInventoryItem.count({ where: { websiteRef: website.id } }),
+    prisma.pageInventoryItem.findMany({
+      where: { websiteRef: website.id },
+      orderBy: { updatedAt: "desc" },
+      take: limit,
+      skip: offset,
+    }),
+  ]);
+
+  // Lookup finding/session counts in parallel with Promise.allSettled so
+  // one failure doesn't hide both columns silently.
+  const findingStore = new PrismaFindingStore(prisma);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  // Previous completed cycle for period-over-period deltas
+  const prevCyclePromise = prisma.auditCycle.findFirst({
+    where: {
+      environmentId: environment.id,
+      status: "complete",
+      NOT: latestCycle ? { id: latestCycle.id } : undefined,
+    },
+    orderBy: { completedAt: "desc" },
+    select: { id: true, completedAt: true },
   });
 
-  // Wave 0.7: pull real per-surface finding counts from the latest
-  // complete cycle. Returns an empty Map if there are no findings yet
-  // (e.g. very first audit hasn't completed) — in that case every
-  // surface gets finding_count = 0 (visible) instead of null (hidden).
-  const findingStore = new PrismaFindingStore(prisma);
-  let surfaceCounts = new Map<string, number>();
-  let hasFindingData = false;
-  try {
-    surfaceCounts = await findingStore.countBySurfaceForLatestCycle(environment.id);
-    // We have finding data if EITHER the map has entries OR the latest
-    // cycle exists with status complete (which means it ran but found 0).
-    hasFindingData =
-      surfaceCounts.size > 0 ||
-      (latestCycle?.status === "complete" && latestCycle.completedAt !== null);
-  } catch (err) {
-    console.warn("[api/inventory] finding_count lookup failed:", err);
-  }
-  const matchSurface = buildPathMatcher(surfaceCounts);
-
-  // Wave 0.3: per-surface session count from behavioral pixel events.
-  // Distinct sessionId grouped by url over the last 30 days. Stored
-  // urls are full canonical URLs (https://host/path) so the matcher
-  // below also handles substring path matches like /checkout matching
-  // /en/checkout/step-2 (same logic as findings).
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  let sessionCounts = new Map<string, number>();
-  let hasSessionData = false;
-  try {
-    const rows = await prisma.$queryRaw<Array<{ url: string; session_count: number }>>`
+  const [findingResult, sessionResult, prevCycleResult] = await Promise.allSettled([
+    findingStore.countBySurfaceForLatestCycle(environment.id),
+    prisma.$queryRaw<Array<{ url: string; session_count: number }>>`
       SELECT url, COUNT(DISTINCT "sessionId")::int AS session_count
       FROM "RawBehavioralEvent"
       WHERE "envId" = ${environment.id}
         AND "occurredAt" >= ${thirtyDaysAgo}
       GROUP BY url
-    `;
-    for (const row of rows) {
+    `,
+    prevCyclePromise,
+  ]);
+
+  let surfaceCounts = new Map<string, number>();
+  let hasFindingData = false;
+  let findingsLookupOk = true;
+  if (findingResult.status === "fulfilled") {
+    surfaceCounts = findingResult.value;
+    hasFindingData =
+      surfaceCounts.size > 0 ||
+      (latestCycle?.status === "complete" && latestCycle.completedAt !== null);
+  } else {
+    findingsLookupOk = false;
+    console.warn("[api/inventory] finding_count lookup failed:", findingResult.reason);
+  }
+
+  let sessionCounts = new Map<string, number>();
+  let hasSessionData = false;
+  let sessionsLookupOk = true;
+  if (sessionResult.status === "fulfilled") {
+    for (const row of sessionResult.value) {
       sessionCounts.set(row.url, Number(row.session_count));
     }
-    hasSessionData = rows.length > 0;
-  } catch (err) {
-    // RawBehavioralEvent table missing or query failed — drop to null
-    // gracefully so the UI hides the column instead of showing 0s.
-    console.warn("[api/inventory] session_count lookup failed:", err);
+    hasSessionData = sessionResult.value.length > 0;
+  } else {
+    sessionsLookupOk = false;
+    console.warn("[api/inventory] session_count lookup failed:", sessionResult.reason);
   }
+
+  const matchSurface = buildPathMatcher(surfaceCounts);
   const matchSessions = buildPathMatcher(sessionCounts);
 
-  // Map to InventorySurface shape
+  // Period-over-period deltas: count rows + findings created since previous cycle
+  const prevCycle = prevCycleResult.status === "fulfilled" ? prevCycleResult.value : null;
+  let deltas: { total: number; findings: number } | null = null;
+  if (prevCycle?.completedAt) {
+    try {
+      const [newPages, newFindings] = await Promise.all([
+        prisma.pageInventoryItem.count({
+          where: { websiteRef: website.id, createdAt: { gt: prevCycle.completedAt } },
+        }),
+        prisma.finding.count({
+          where: { environmentId: environment.id, createdAt: { gt: prevCycle.completedAt } },
+        }),
+      ]);
+      deltas = { total: newPages, findings: newFindings };
+    } catch (err) {
+      console.warn("[api/inventory] deltas computation failed:", err);
+    }
+  }
+
+  // Pull response time from HttpResponse evidence for paginated rows.
+  // We use the most recent evidence per URL with a duration_ms payload.
+  let responseTimes = new Map<string, number>();
+  if (items.length > 0) {
+    try {
+      const urls = items.map(i => i.normalizedUrl);
+      const evidenceRows = await prisma.evidence.findMany({
+        where: {
+          environmentRef: environment.id,
+          evidenceType: "http_response",
+          subjectRef: { in: urls },
+        },
+        orderBy: { observedAt: "desc" },
+        select: { subjectRef: true, payload: true, observedAt: true },
+        take: 2000,
+      });
+      // Keep most recent per URL (orderBy desc, first one wins).
+      // Evidence.payload is JSON-as-text — parse to read duration_ms.
+      for (const ev of evidenceRows) {
+        if (responseTimes.has(ev.subjectRef)) continue;
+        try {
+          const payload = JSON.parse(ev.payload);
+          const duration = payload?.duration_ms;
+          if (typeof duration === "number" && duration >= 0) {
+            responseTimes.set(ev.subjectRef, Math.round(duration));
+          }
+        } catch { /* skip malformed */ }
+      }
+    } catch (err) {
+      console.warn("[api/inventory] response_time lookup failed:", err);
+    }
+  }
+
   const surfaces = items.map((item) => {
     let host = "";
     try {
       host = new URL(item.normalizedUrl).hostname;
     } catch {
-      // If normalizedUrl is a relative path, extract host from path
       const parts = item.normalizedUrl.split("/");
       host = parts[0] || "";
     }
+
+    // Multi-signal classified type takes priority over regex-based pageType
+    const effectiveType = item.classifiedPageType || item.pageType;
 
     return {
       surface_id: item.id,
       label: item.title || item.path,
       normalized_path: item.normalizedUrl,
       host,
-      page_type: item.pageType,
-      is_commercial: COMMERCIAL_PAGE_TYPES.has(item.pageType),
+      page_type: effectiveType,
+      classified_page_type: item.classifiedPageType ?? null,
+      classification_confidence: item.classificationConfidence ?? null,
+      is_commercial: COMMERCIAL_PAGE_TYPES.has(effectiveType),
       is_live: item.freshnessState === "fresh",
       last_seen_at: item.updatedAt.toISOString(),
-      // Wave 0.3: real session count from pixel events. Null only when
-      // no behavioral data exists for the env at all (snippet not
-      // installed yet). 0 means snippet IS installed but this surface
-      // had no traffic in the last 30 days — distinct from null.
+      freshness_age: item.freshnessAge ?? null,
       session_count: hasSessionData ? matchSessions(item.normalizedUrl, item.path) : null,
-      // Wave 0.7: real finding count per surface from the latest cycle.
-      // Null only when there's NO finding data at all (first audit
-      // hasn't completed). 0 means audit ran and this surface had no
-      // findings — which is good news, not missing data.
       finding_count: hasFindingData ? matchSurface(item.normalizedUrl, item.path) : null,
       discovery_sources: ["surface"],
       http_status: item.statusCode ?? null,
       title: item.title ?? null,
       description: null,
-      response_time_ms: null,
+      response_time_ms: responseTimes.get(item.normalizedUrl) ?? null,
       tier: item.tier,
     };
   });
 
-  return NextResponse.json({ data: surfaces, audit_status: auditStatus });
+  return NextResponse.json({
+    data: surfaces,
+    audit_status: auditStatus,
+    pagination: { total, limit, offset },
+    deltas,
+    lookups: { findings: findingsLookupOk, sessions: sessionsLookupOk },
+  });
 }, { endpoint: "/api/inventory", method: "GET" });

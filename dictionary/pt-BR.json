@@ -1438,6 +1438,7 @@
 	},
 	"console": {
 		"common": {
+			"close": "Fechar",
 			"severity": {
 				"all": "Todas as Severidades",
 				"critical": "Crítica",
@@ -3377,6 +3378,25 @@
 			"search_placeholder": "Buscar...",
 			"clear_filters": "Limpar filtros",
 			"n_of_total": "{filtered} de {total} superfícies",
+			"audit_banner": {
+				"queued": "Auditoria na fila — começando em instantes…",
+				"running": "Auditoria em progresso — descobrindo páginas ao vivo",
+				"live_updates": "· novas páginas aparecerão aqui automaticamente"
+			},
+			"lookup_warning": {
+				"findings_failed": "Não foi possível carregar as descobertas por página. Tente atualizar a página.",
+				"sessions_failed": "Não foi possível carregar as sessões. O pixel comportamental pode estar inacessível."
+			},
+			"sort": {
+				"asc": "Crescente",
+				"desc": "Decrescente"
+			},
+			"export_csv": "Exportar CSV",
+			"pagination": {
+				"showing": "Mostrando {from}–{to} de {total}",
+				"prev": "Anterior",
+				"next": "Próximo"
+			},
 			"cards": {
 				"total_surfaces": "Total de Superfícies",
 				"live": "Ativas",
@@ -3462,7 +3482,9 @@
 				"response_time": "Tempo de Resposta",
 				"last_checked": "Última Verificação",
 				"never": "Nunca",
-				"discovery_sources": "Fontes de Descoberta"
+				"discovery_sources": "Fontes de Descoberta",
+				"view_in_journey": "Ver no mapa da jornada",
+				"view_findings": "Ver {count, plural, one {# descoberta} other {# descobertas}} nesta página"
 			}
 		},
 		"maps": {

@@ -1438,6 +1438,7 @@
 	},
 	"console": {
 		"common": {
+			"close": "Close",
 			"severity": {
 				"all": "All Severities",
 				"critical": "Critical",
@@ -3293,6 +3294,25 @@
 			"search_placeholder": "Search...",
 			"clear_filters": "Clear filters",
 			"n_of_total": "{filtered} of {total} surfaces",
+			"audit_banner": {
+				"queued": "Audit queued — starting in a moment…",
+				"running": "Audit in progress — discovering pages live",
+				"live_updates": "· new pages will appear here automatically"
+			},
+			"lookup_warning": {
+				"findings_failed": "Couldn't load finding counts. Try refreshing the page.",
+				"sessions_failed": "Couldn't load session counts. Behavioral pixel may be unreachable."
+			},
+			"sort": {
+				"asc": "Ascending",
+				"desc": "Descending"
+			},
+			"export_csv": "Export CSV",
+			"pagination": {
+				"showing": "Showing {from}–{to} of {total}",
+				"prev": "Previous",
+				"next": "Next"
+			},
 			"cards": {
 				"total_surfaces": "Total Surfaces",
 				"live": "Live",
@@ -3378,7 +3398,9 @@
 				"response_time": "Response Time",
 				"last_checked": "Last Checked",
 				"never": "Never",
-				"discovery_sources": "Discovery Sources"
+				"discovery_sources": "Discovery Sources",
+				"view_in_journey": "View in journey map",
+				"view_findings": "View {count, plural, one {# finding} other {# findings}} on this page"
 			}
 		},
 		"maps": {

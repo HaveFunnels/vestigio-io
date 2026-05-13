@@ -49,6 +49,38 @@ function humanizeStatus(
 	return { label: t("response.ok"), cls: "text-emerald-400" };
 }
 
+function exportToCsv(rows: InventorySurface[], filename: string) {
+	const headers = [
+		"URL", "Host", "Page Type", "Tier", "Status",
+		"HTTP Code", "Sessions (30d)", "Findings", "Response Time (ms)",
+		"Last Seen",
+	];
+	const csv = [
+		headers.join(","),
+		...rows.map(r => [
+			JSON.stringify(r.normalized_path),
+			JSON.stringify(r.host),
+			JSON.stringify(r.page_type),
+			JSON.stringify(r.tier),
+			r.is_live ? "live" : (r.http_status !== null && r.http_status >= 400 ? "down" : "stale"),
+			r.http_status ?? "",
+			r.session_count ?? "",
+			r.finding_count ?? "",
+			r.response_time_ms ?? "",
+			r.last_seen_at ?? "",
+		].join(",")),
+	].join("\n");
+	const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
 // ── Custom Dropdown ──────────────────────────
 
 interface DropdownOption<T extends string> {
@@ -82,12 +114,42 @@ function FilterDropdown<T extends string>({
 
 	const activeLabel = options.find((o) => o.value === value)?.label ?? value;
 
+	// Keyboard navigation (Arrow keys, Enter, Escape)
+	function handleKeyDown(e: React.KeyboardEvent) {
+		if (e.key === "Escape") {
+			setOpen(false);
+			return;
+		}
+		if (!open) {
+			if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+				e.preventDefault();
+				setOpen(true);
+			}
+			return;
+		}
+		const currentIdx = options.findIndex((o) => o.value === value);
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			const next = options[(currentIdx + 1) % options.length];
+			if (next) onChange(next.value);
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			const prev = options[currentIdx <= 0 ? options.length - 1 : currentIdx - 1];
+			if (prev) onChange(prev.value);
+		} else if (e.key === "Enter") {
+			setOpen(false);
+		}
+	}
+
 	return (
-		<div className='relative' ref={ref}>
+		<div className='relative' ref={ref} onKeyDown={handleKeyDown}>
 			<button
 				type='button'
 				onClick={() => setOpen((o) => !o)}
-				className='flex items-center gap-2 whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover'
+				aria-haspopup="listbox"
+				aria-expanded={open}
+				aria-label={activeLabel}
+				className='flex items-center gap-2 whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover focus:outline-none focus:ring-2 focus:ring-accent/50'
 			>
 				<span>{activeLabel}</span>
 				<svg
@@ -96,6 +158,7 @@ function FilterDropdown<T extends string>({
 					viewBox='0 0 24 24'
 					strokeWidth={2}
 					stroke='currentColor'
+					aria-hidden="true"
 				>
 					<path
 						strokeLinecap='round'
@@ -106,11 +169,16 @@ function FilterDropdown<T extends string>({
 			</button>
 
 			{open && (
-				<div className='absolute left-0 top-full z-50 mt-1.5 min-w-[10rem] rounded-lg border border-edge bg-surface-card p-1 shadow-xl'>
+				<div
+					role="listbox"
+					className='absolute left-0 top-full z-50 mt-1.5 min-w-[10rem] rounded-lg border border-edge bg-surface-card p-1 shadow-xl'
+				>
 					{options.map((opt) => (
 						<button
 							key={opt.value}
 							type='button'
+							role="option"
+							aria-selected={opt.value === value}
 							onClick={() => {
 								onChange(opt.value);
 								setOpen(false);
@@ -161,6 +229,9 @@ function SurfaceDrawer({
 	onClose: () => void;
 }) {
 	const t = useTranslations("console.inventory.drawer");
+	const tTooltip = useTranslations("console.common");
+	const tPageType = useTranslations("console.maps.page_types");
+	const localizePageType = (type: string) => tPageType.has(type) ? tPageType(type) : titleCase(type);
 	const isOpen = surface !== null;
 
 	useEffect(() => {
@@ -183,7 +254,10 @@ function SurfaceDrawer({
 
 			{/* Drawer panel */}
 			<div
-				className={`fixed right-0 top-0 z-50 flex h-full w-96 flex-col border-l border-edge bg-surface-card transition-transform duration-200 ease-out ${
+				role="dialog"
+				aria-modal="true"
+				aria-label={t("title")}
+				className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-[420px] flex-col border-l border-edge bg-surface-card transition-transform duration-200 ease-out sm:w-96 ${
 					isOpen ? "translate-x-0" : "translate-x-full"
 				}`}
 			>
@@ -195,6 +269,7 @@ function SurfaceDrawer({
 							</h2>
 							<button
 								onClick={onClose}
+								aria-label={tTooltip("close")}
 								className='flex h-7 w-7 items-center justify-center rounded-lg text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content-muted'
 							>
 								<svg
@@ -254,9 +329,16 @@ function SurfaceDrawer({
 										{t("type")}
 									</div>
 									{(() => { const pts = getPageTypeStyle(surface.page_type); return (
-									<span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${pts.bg} ${pts.text}`}>
-										{titleCase(surface.page_type)}
-									</span>
+									<div className="flex items-center gap-1.5">
+										<span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${pts.bg} ${pts.text}`}>
+											{localizePageType(surface.page_type)}
+										</span>
+										{surface.classification_confidence !== null && surface.classification_confidence > 0 && (
+											<span className="text-[10px] font-mono text-content-faint" title={`Classification confidence`}>
+												{surface.classification_confidence}%
+											</span>
+										)}
+									</div>
 									); })()}
 								</div>
 								<div>
@@ -375,6 +457,26 @@ function SurfaceDrawer({
 								</div>
 							</div>
 						</div>
+
+						{/* Actions */}
+						<div className="border-t border-edge bg-surface-card px-5 py-3">
+							<div className="flex flex-col gap-2">
+								<a
+									href="/app/maps/user_journey"
+									className="rounded-md border border-edge bg-surface-inset px-3 py-2 text-center text-xs text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
+								>
+									{t("view_in_journey")}
+								</a>
+								{surface.finding_count !== null && surface.finding_count > 0 && (
+									<a
+										href={`/app/findings?surface=${encodeURIComponent(surface.normalized_path)}`}
+										className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-center text-xs text-amber-300 transition-colors hover:bg-amber-500/10"
+									>
+										{t("view_findings", { count: surface.finding_count })}
+									</a>
+								)}
+							</div>
+						</div>
 					</>
 				)}
 			</div>
@@ -429,6 +531,11 @@ export default function InventoryPage() {
 	const tc = useTranslations("console.common.columns");
 	const tTooltip = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
+	const tPageType = useTranslations("console.maps.page_types");
+	const localizePageType = useCallback(
+		(type: string) => (tPageType.has(type) ? tPageType(type) : titleCase(type)),
+		[tPageType]
+	);
 	const [liveFilter, setLiveFilter] = useState<LiveFilter>("all");
 	const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 	const [httpStatusFilter, setHttpStatusFilter] =
@@ -441,6 +548,17 @@ export default function InventoryPage() {
 	const [discoverySourceFilter, setDiscoverySourceFilter] =
 		useState<string>("all");
 	const [searchText, setSearchText] = useState("");
+	const [sortKey, setSortKey] = useState<string | null>(null);
+	const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+	function handleSort(key: string) {
+		if (sortKey === key) {
+			if (sortDir === "desc") setSortDir("asc");
+			else { setSortKey(null); setSortDir("desc"); }
+		} else {
+			setSortKey(key);
+			setSortDir("desc");
+		}
+	}
 	const [dataState, setDataState] = useState<DataState<InventoryPayload>>({
 		status: "loading",
 	});
@@ -478,6 +596,8 @@ export default function InventoryPage() {
 	const surfaces = dataState.status === "ready" ? dataState.data.surfaces : [];
 	const auditStatus: InventoryAuditStatus | null =
 		dataState.status === "ready" ? dataState.data.audit_status : null;
+	const deltas = dataState.status === "ready" ? dataState.data.deltas : null;
+	const lookups = dataState.status === "ready" ? dataState.data.lookups : null;
 	const isAuditOngoing =
 		auditStatus?.status === "pending" || auditStatus?.status === "running";
 
@@ -575,6 +695,28 @@ export default function InventoryPage() {
 		searchText,
 	]);
 
+	const sorted = useMemo(() => {
+		if (!sortKey) return filtered;
+		const dir = sortDir === "asc" ? 1 : -1;
+		const getVal = (s: InventorySurface): number | string => {
+			switch (sortKey) {
+				case "page_type": return s.page_type;
+				case "tier": return s.tier;
+				case "http_status": return s.http_status ?? -1;
+				case "session_count": return s.session_count ?? -1;
+				case "finding_count": return s.finding_count ?? -1;
+				case "response_time_ms": return s.response_time_ms ?? -1;
+				case "label": return s.label;
+				default: return s.normalized_path;
+			}
+		};
+		return [...filtered].sort((a, b) => {
+			const va = getVal(a), vb = getVal(b);
+			if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+			return String(va).localeCompare(String(vb)) * dir;
+		});
+	}, [filtered, sortKey, sortDir]);
+
 	// ── Selection ──
 
 	const toggleSelect = useCallback((id: string) => {
@@ -615,15 +757,8 @@ export default function InventoryPage() {
 		[surfaces]
 	);
 
-	// TODO: Replace mocked deltas with real period-over-period data from the API
-	// when backend supports it. These are placeholder values for UI development.
-	const mockDeltas = {
-		total: +3,
-		live: +2,
-		commercial: +1,
-		findings: -1,
-		down: 0,
-	};
+	// Real period-over-period deltas from API (null when no prior cycle)
+	const formatDelta = (n: number) => (n === 0 ? undefined : `${n > 0 ? "+" : ""}${n} ${t("from_last_period")}`);
 
 	const liveCount = surfaces.filter((s) => s.is_live).length;
 
@@ -631,28 +766,18 @@ export default function InventoryPage() {
 		{
 			label: t("cards.total_surfaces"),
 			value: surfaces.length,
-			subtext:
-				mockDeltas.total !== 0
-					? `${mockDeltas.total > 0 ? "+" : ""}${mockDeltas.total} ${t("from_last_period")}`
-					: undefined,
+			subtext: deltas ? formatDelta(deltas.total) : undefined,
 		},
 		{
 			label: t("cards.commercial"),
 			value: surfaces.filter((s) => s.is_commercial).length,
 			variant: "info",
-			subtext:
-				mockDeltas.commercial !== 0
-					? `${mockDeltas.commercial > 0 ? "+" : ""}${mockDeltas.commercial} ${t("from_last_period")}`
-					: undefined,
 		},
 		{
 			label: t("cards.with_findings"),
 			value: surfaces.filter((s) => (s.finding_count ?? 0) > 0).length,
 			variant: "warning",
-			subtext:
-				mockDeltas.findings !== 0
-					? `${mockDeltas.findings > 0 ? "+" : ""}${mockDeltas.findings} ${t("from_last_period")}`
-					: undefined,
+			subtext: deltas ? formatDelta(deltas.findings) : undefined,
 		},
 	];
 
@@ -669,6 +794,7 @@ export default function InventoryPage() {
 			render: (row: InventorySurface) => (
 				<input
 					type='checkbox'
+					aria-label={`Select ${row.normalized_path}`}
 					checked={selectedIds.has(row.surface_id)}
 					onChange={(e) => {
 						e.stopPropagation();
@@ -698,8 +824,15 @@ export default function InventoryPage() {
 			render: (row: InventorySurface) => {
 				const pts = getPageTypeStyle(row.page_type);
 				return (
-					<span className={`rounded px-2 py-0.5 text-xs font-medium ${pts.bg} ${pts.text}`}>
-						{titleCase(row.page_type)}
+					<span
+						className={`rounded px-2 py-0.5 text-xs font-medium ${pts.bg} ${pts.text}`}
+						title={
+							row.classification_confidence !== null
+								? `Confidence: ${row.classification_confidence}%`
+								: undefined
+						}
+					>
+						{localizePageType(row.page_type)}
 					</span>
 				);
 			},
@@ -822,6 +955,12 @@ export default function InventoryPage() {
 			>
 				{() => (
 					<>
+						{lookups && (!lookups.findings || !lookups.sessions) && (
+							<div className='mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-300'>
+								{!lookups.findings && <div>{t("lookup_warning.findings_failed")}</div>}
+								{!lookups.sessions && <div>{t("lookup_warning.sessions_failed")}</div>}
+							</div>
+						)}
 						<div className='flex flex-col items-stretch gap-4 lg:flex-row'>
 							<div className='min-w-0 flex-1'>
 								<SummaryCards cards={summaryCards} />
@@ -985,6 +1124,14 @@ export default function InventoryPage() {
 									total: surfaces.length,
 								})}
 							</span>
+							<button
+								type="button"
+								onClick={() => exportToCsv(filtered, "vestigio-inventory.csv")}
+								className='rounded border border-edge bg-surface-card px-2.5 py-1 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content'
+								title={t("export_csv")}
+							>
+								{t("export_csv")}
+							</button>
 						</div>
 
 						{filtered.length === 0 && !isAuditOngoing ? (
@@ -1000,19 +1147,33 @@ export default function InventoryPage() {
 											<th className='w-10 px-4 py-3'>
 												<input
 													type='checkbox'
+													aria-label="Select all rows"
 													checked={isAllSelected}
 													onChange={toggleSelectAll}
 													className='h-4 w-4 cursor-pointer rounded border-edge bg-surface-inset accent-accent'
 												/>
 											</th>
-											{columns.slice(1).map((col) => (
-												<th
-													key={col.key}
-													className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted ${col.className || ""}`}
-												>
-													{col.label}
-												</th>
-											))}
+											{columns.slice(1).map((col) => {
+												const sortable = ["label", "page_type", "tier", "http_status", "session_count", "finding_count", "response_time_ms"].includes(col.key);
+												const active = sortKey === col.key;
+												return (
+													<th
+														key={col.key}
+														className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted ${col.className || ""} ${sortable ? "cursor-pointer select-none hover:text-content-secondary" : ""}`}
+														onClick={sortable ? () => handleSort(col.key) : undefined}
+														aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+													>
+														<span className="inline-flex items-center gap-1">
+															{col.label}
+															{active && (
+																<span className="text-[10px] text-accent">
+																	{sortDir === "asc" ? "▲" : "▼"}
+																</span>
+															)}
+														</span>
+													</th>
+												);
+											})}
 										</tr>
 									</thead>
 									<tbody>
@@ -1030,17 +1191,17 @@ export default function InventoryPage() {
 														</span>
 														<span className='font-medium text-emerald-300'>
 															{auditStatus?.status === "pending"
-																? "Audit queued — starting in a moment…"
-																: "Audit in progress — discovering pages live"}
+																? t("audit_banner.queued")
+																: t("audit_banner.running")}
 														</span>
 														<span className='text-emerald-500/60'>
-															· new pages will appear here automatically
+															{t("audit_banner.live_updates")}
 														</span>
 													</div>
 												</td>
 											</tr>
 										)}
-										{filtered.map((row) => (
+										{sorted.map((row) => (
 											<tr
 												key={row.surface_id}
 												onClick={() => setDrawerSurface(row)}

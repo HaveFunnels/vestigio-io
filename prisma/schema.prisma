@@ -326,6 +326,12 @@ model AuditCycle {
   cycleType      String    @default("full") // full | incremental | verification
   createdAt      DateTime  @default(now())
   completedAt    DateTime?
+  // Partial-failure visibility. Set when a write step inside the cycle
+  // throws — the heal cron and admin debugging UIs read this to know
+  // *where* the run got stuck instead of just "running > 10min".
+  lastError      String?
+  lastErrorAt    DateTime?
+  retryCount     Int       @default(0)
 
   organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   environment  Environment     @relation(fields: [environmentId], references: [id], onDelete: Cascade)

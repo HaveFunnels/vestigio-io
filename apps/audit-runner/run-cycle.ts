@@ -54,6 +54,38 @@ export interface RunAuditCycleResult {
 	error?: string;
 }
 
+// Step-level transaction helpers. Each cycle step runs as one short
+// transaction (chunked when batched) so a mid-write crash leaves the
+// DB in a consistent state instead of half-written. The heal cron
+// reads `AuditCycle.lastError` to know which step failed and whether
+// to retry. Per-tx timeout is enforced at the connection level via
+// Postgres `statement_timeout`; the array-form $transaction below
+// doesn't accept a `timeout` option (only the callback form does).
+
+async function stampCycleError(cycleId: string, step: string, err: unknown): Promise<void> {
+	const message = err instanceof Error ? err.message : String(err);
+	try {
+		await prisma.auditCycle.update({
+			where: { id: cycleId },
+			data: {
+				lastError: `${step}: ${message}`.slice(0, 1000),
+				lastErrorAt: new Date(),
+				retryCount: { increment: 1 },
+			},
+		});
+	} catch {
+		// Stamping is best-effort — don't mask the original error by throwing here.
+	}
+}
+
+function chunked<T>(items: T[], size: number): T[][] {
+	const out: T[][] = [];
+	for (let i = 0; i < items.length; i += size) {
+		out.push(items.slice(i, i + size));
+	}
+	return out;
+}
+
 // Per-plan Playwright budget for ingestion. Kept tight on purpose:
 // renders are the most expensive thing the pipeline does, and the
 // long tail of "javascript-heavy" pages is large. Plans without a
@@ -397,60 +429,74 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		// (was O(N²) before — 3 full evidence scans per page).
 		const evIdx = buildEvidenceIndex(result.evidence);
 
+		// Build the upsert payloads once. Chunks of 50 keep each tx
+		// short enough to stay under the 15s timeout even on cold-cache
+		// Postgres connections, and small enough that a tx retry won't
+		// stall the whole loop.
+		const inventoryUpserts: Array<{ url: string; create: any; update: any }> = [];
 		for (const entry of result.coverage_entries || []) {
+			const url = entry.url;
+			const path = safePathname(url);
+			const { pageType, tier } = inferPageType(path);
+			const title = evIdx.titleByUrl.get(url) ?? null;
+			const statusCode = evIdx.statusByUrl.get(url) ?? null;
+			if (statusCode == null) continue; // only persist fetched pages
+
+			const isFresh = entry.validated && statusCode < 400;
+			const ct = evIdx.contentTypeByUrl.get(url) ?? null;
+			const isAssetContent = ct !== null && !ct.includes("text/html");
+			const finalPageType = isAssetContent ? "asset" : pageType;
+
+			inventoryUpserts.push({
+				url,
+				create: {
+					websiteRef: website.id,
+					environmentRef: env.id,
+					normalizedUrl: url,
+					path,
+					pageType: finalPageType,
+					tier,
+					priority: entry.critical ? 10 : 0,
+					criticality: Math.round(entry.confidence ?? 0),
+					title,
+					statusCode,
+					freshnessState: isFresh ? "fresh" : "stale",
+					freshnessAge: isFresh ? 0 : null,
+					lastSeenCycleId: isFresh ? cycleId : null,
+				},
+				update: {
+					title: title ?? undefined,
+					statusCode,
+					freshnessState: isFresh ? "fresh" : "stale",
+					freshnessAge: isFresh ? 0 : undefined,
+					pageType: finalPageType,
+					criticality: Math.round(entry.confidence ?? 0),
+					...(isFresh ? { lastSeenCycleId: cycleId, removedAt: null } : {}),
+				},
+			});
+		}
+
+		for (const batch of chunked(inventoryUpserts, 50)) {
 			try {
-				const url = entry.url;
-				const path = safePathname(url);
-				const { pageType, tier } = inferPageType(path);
-				const title = evIdx.titleByUrl.get(url) ?? null;
-				const statusCode = evIdx.statusByUrl.get(url) ?? null;
-
-				// Only persist pages that were actually fetched and got an HTTP response.
-				if (statusCode == null) continue;
-
-				const isFresh = entry.validated && statusCode < 400;
-				const ct = evIdx.contentTypeByUrl.get(url) ?? null;
-				const isAssetContent = ct !== null && !ct.includes("text/html");
-				const finalPageType = isAssetContent ? "asset" : pageType;
-
-				await prisma.pageInventoryItem.upsert({
-					where: {
-						environmentRef_normalizedUrl: {
-							environmentRef: env.id,
-							normalizedUrl: url,
+				const ops = batch.map((item) =>
+					prisma.pageInventoryItem.upsert({
+						where: {
+							environmentRef_normalizedUrl: {
+								environmentRef: env.id,
+								normalizedUrl: item.url,
+							},
 						},
-					},
-					create: {
-						websiteRef: website.id,
-						environmentRef: env.id,
-						normalizedUrl: url,
-						path,
-						pageType: finalPageType,
-						tier,
-						priority: entry.critical ? 10 : 0,
-						criticality: Math.round(entry.confidence ?? 0),
-						title,
-						statusCode: statusCode,
-						freshnessState: isFresh ? "fresh" : "stale",
-						// Freshly fetched in this cycle → age = 0
-						freshnessAge: isFresh ? 0 : null,
-						lastSeenCycleId: isFresh ? cycleId : null,
-					},
-					update: {
-						title: title ?? undefined,
-						statusCode: statusCode,
-						freshnessState: isFresh ? "fresh" : "stale",
-						freshnessAge: isFresh ? 0 : undefined,
-						pageType: finalPageType,
-						criticality: Math.round(entry.confidence ?? 0),
-						// Stamp lastSeen + resurrect (clear removedAt) on every successful fetch.
-						...(isFresh ? { lastSeenCycleId: cycleId, removedAt: null } : {}),
-					},
-				});
-				pagesDiscovered++;
+						create: item.create,
+						update: item.update,
+					}),
+				);
+				await prisma.$transaction(ops);
+				pagesDiscovered += batch.length;
 			} catch (err) {
-				console.error(`[audit-runner ${cycleId}] inventory upsert error for ${entry.url}:`, err);
-				// Per-row failure is non-fatal — continue with the rest.
+				console.error(`[audit-runner ${cycleId}] inventory upsert tx failed (chunk size=${batch.length}):`, err);
+				await stampCycleError(cycleId, "inventory_upsert", err);
+				// Non-fatal: subsequent chunks still get a chance. Heal
+				// cron retry will replay the cycle on next pass.
 			}
 		}
 
@@ -478,56 +524,35 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			`playwright=${pwRenders}(skip=${pwSkipped},avg=${pwAvgMs}ms)`,
 		);
 
-		// 6a-aging: pages NOT freshly fetched in this cycle get their
-		// freshnessAge bumped by the cycle duration. Rows upserted above
-		// already have freshnessAge=0. After this step, every row has an
-		// accurate "seconds since last successful check".
+		// 6a-maintenance: three post-upsert steps (aging, stale transition,
+		// statusCode=0 cleanup, orphan-marking) run atomically so the
+		// inventory view never reflects a partially-aged state.
 		try {
 			const cycleDurationSec = Math.round((Date.now() - new Date(cycle.createdAt).getTime()) / 1000);
 			const updatedUrls = (result.coverage_entries || [])
 				.filter((e: any) => evIdx.statusByUrl.has(e.url))
 				.map((e: any) => e.url);
+			const orphanThresholdSec = 14 * 24 * 60 * 60;
+
+			const ops: any[] = [];
 			if (cycleDurationSec > 0) {
-				await prisma.pageInventoryItem.updateMany({
-					where: {
-						environmentRef: env.id,
-						normalizedUrl: { notIn: updatedUrls },
-					},
+				ops.push(prisma.pageInventoryItem.updateMany({
+					where: { environmentRef: env.id, normalizedUrl: { notIn: updatedUrls } },
 					data: { freshnessAge: { increment: cycleDurationSec } },
-				});
-				// Transition rows older than 7d to stale (typical cycle cadence)
-				await prisma.pageInventoryItem.updateMany({
+				}));
+				ops.push(prisma.pageInventoryItem.updateMany({
 					where: {
 						environmentRef: env.id,
 						freshnessAge: { gt: 7 * 24 * 60 * 60 },
 						freshnessState: "fresh",
 					},
 					data: { freshnessState: "stale" },
-				});
+				}));
 			}
-		} catch (err) {
-			console.warn(`[audit-runner ${cycleId}] freshness aging failed:`, err);
-		}
-
-		// 6a-cleanup: Remove rows with statusCode=0 (bad sentinel from a
-		// previous version that treated "not fetched" as "unreachable").
-		try {
-			const cleaned = await prisma.pageInventoryItem.deleteMany({
+			ops.push(prisma.pageInventoryItem.deleteMany({
 				where: { environmentRef: env.id, statusCode: 0 },
-			});
-			if (cleaned.count > 0) {
-				console.log(`[audit-runner ${cycleId}] cleaned ${cleaned.count} inventory rows with statusCode=0`);
-			}
-		} catch { /* non-fatal */ }
-
-		// 6a-orphan: pages not seen in 14d (across multiple cycles) get a
-		// removedAt timestamp. They stay in DB for analytics / resurrection
-		// but are filtered from the default inventory view. Hard-delete is
-		// the responsibility of a separate maintenance cron (cleanup
-		// after another 60d).
-		try {
-			const orphanThresholdSec = 14 * 24 * 60 * 60;
-			const orphaned = await prisma.pageInventoryItem.updateMany({
+			}));
+			ops.push(prisma.pageInventoryItem.updateMany({
 				where: {
 					environmentRef: env.id,
 					lastSeenCycleId: { not: cycleId },
@@ -535,12 +560,22 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					removedAt: null,
 				},
 				data: { removedAt: new Date() },
-			});
-			if (orphaned.count > 0) {
-				console.log(`[audit-runner ${cycleId}] orphan-marked ${orphaned.count} rows (not seen in >14d)`);
+			}));
+
+			const results = await prisma.$transaction(ops);
+			// Last two results are statusCode-0 cleanup + orphan-marking
+			// counts (positions depend on whether aging ran). Pluck by tail.
+			const orphanResult = results[results.length - 1] as { count: number } | undefined;
+			const cleanedResult = results[results.length - 2] as { count: number } | undefined;
+			if (cleanedResult?.count) {
+				console.log(`[audit-runner ${cycleId}] cleaned ${cleanedResult.count} inventory rows with statusCode=0`);
+			}
+			if (orphanResult?.count) {
+				console.log(`[audit-runner ${cycleId}] orphan-marked ${orphanResult.count} rows (not seen in >14d)`);
 			}
 		} catch (err) {
-			console.warn(`[audit-runner ${cycleId}] orphan marking failed:`, err);
+			console.warn(`[audit-runner ${cycleId}] inventory maintenance tx failed:`, err);
+			await stampCycleError(cycleId, "inventory_maintenance", err);
 		}
 
 		// 6b. Persist SurfaceRelation records from crawled link graph.

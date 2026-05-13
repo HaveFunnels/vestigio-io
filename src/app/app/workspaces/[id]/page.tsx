@@ -36,6 +36,7 @@ import ReadingLevel from "@/components/console/workspace/ReadingLevel";
 import TestRecommendations from "@/components/console/workspace/TestRecommendations";
 import PersonaRewrite from "@/components/console/workspace/PersonaRewrite";
 import ToneConsistency from "@/components/console/workspace/ToneConsistency";
+import CopyFrameworkLens from "@/components/console/workspace/CopyFrameworkLens";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -429,6 +430,10 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			)}
 			{isCopyAlignment && (
 				<>
+					{/* Wave 11.5g — Framework Lens (always-on, never empty) */}
+					<div className="mt-5">
+						<CopyFrameworkLens />
+					</div>
 					{/* Wave 11.5d — Persona rewrite of homepage copy */}
 					<div className="mt-5">
 						<PersonaRewrite />

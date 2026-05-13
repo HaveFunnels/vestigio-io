@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-13 (Wave 11 🟢 tier — Revenue 1/1, Preflight 4/4, Security 4/4, Copy 4/4 shipped. Money on table + SPOF + Dependency health + 10x simulator + Budget forecast + Pentester + Compliance gap + Phishing + Vendor advisories + Reading level + Test recommendations + Persona rewrite + Tone consistency. 13 widgets across 4 workspaces, two foundation APIs (tech-stack + copy-content).)
+> Last updated: 2026-05-13 (Wave 11 🟢 tier + 11.5g Framework Lens — Revenue 1/1, Preflight 4/4, Security 4/4, Copy 5/5 shipped. Framework Lens: always-on copy audit against 10 copywriting frameworks with Copilot integration. 14 widgets across 4 workspaces, two foundation APIs (tech-stack + copy-content).)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -2397,6 +2397,13 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 - **What:** Haiku batch-classifies each page's tone into one of 8 tags (playful, casual, confident, professional, corporate, technical, urgent, salesy). Computes consistency % (pages on dominant tone) and renders stacked bar + per-tone breakdown with sample URLs. Warns when consistency < 70%.
 - **Data deps:** PageContent (up to 25 pages) + LLM. Cached per (env, cycle).
 - **Implementation:** `/api/workspace/copy-tone` + `src/components/console/workspace/ToneConsistency.tsx`. i18n: 13 keys × 4 locales.
+
+#### g. Framework lens — always-on copy audit 🟢 — ✅ Shipped 2026-05-13
+- **What:** "ESLint for copy" — user picks a framework + page from two dropdowns and sees the page audited against that framework's criteria with per-criterion pass/warn/fail + evidence + concrete fix suggestion. Catalog of 10 copywriting frameworks: AIDA, PAS, 4 P's, BAB, SPIN, FAB, Dream-Obstacle-Solution, Pixar storytelling, QUEST, 4 Cs (38 criteria total). Score % shown alongside each framework in the dropdown so the user spots the biggest gap before clicking. Each failing criterion has a "Discuss with Copilot" button that opens the existing Copilot panel (Wave 3.14) with a pre-filled prompt containing the criterion, current copy, evidence, and suggested fix.
+- **Data deps:** PageContent (top 4 pages: home/pricing/features/about via URL pattern heuristic) + Copilot SDK + LLM. Cached server-side per (env, cycle, framework, page, locale) — re-selecting a previously visited combo is instant.
+- **Locked state:** Empty state when none of the top-4 pages detected on the cycle.
+- **Implementation:** `src/lib/copy-frameworks.ts` (catalog with `en` + `pt` text inline per criterion to avoid exploding i18n by ~150 keys) + `/api/workspace/copy-framework-audit` + `src/components/console/workspace/CopyFrameworkLens.tsx`. Component fires 10 parallel audit requests on page change to warm the dropdown score badges. i18n shell: 18 keys × 4 locales.
+- **Differentiator:** This is the "lens-switcher" — most copy tools generate generic critique. By framing through 10 known frameworks the user already trusts (or can quickly learn via the inline "About" toggle), Vestigio becomes a discovery surface. Users will toggle frameworks to see their site through different professional eyes.
 
 ---
 

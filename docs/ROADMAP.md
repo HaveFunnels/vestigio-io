@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-13 (Wave 11.1a + 11.3 🟢 tier shipped: Money on the table report for Revenue + SPOF map + Dependency health + What breaks at 10x + Budget forecast for Preflight. Foundation: tech-stack projection API now reads existing TechnologyDetected evidence)
+> Last updated: 2026-05-13 (Wave 11 🟢 tier — Revenue 1/1, Preflight 4/4, Security 4/4 shipped. Money on table, SPOF map, Dependency health, What breaks at 10x, Budget forecast, Pentester reframe, Compliance gap, Phishing surface, Vendor advisories. Foundation: tech-stack projection API)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -2327,17 +2327,15 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 
 ### 11.4 Security Posture
 
-#### a. Compliance gap analyzer ⭐ 🟢
-- **What:** Scorecard for LGPD/GDPR/PCI-DSS/SOC2 with current readiness % per framework. Drilling into each shows specific gaps as actionable items: "Designate a DPO", "Document data retention policy", "Encrypt PII at rest". Turns abstract compliance into measurable progress.
-- **Data deps:** Vestigio crawl (cookie banner, privacy policy presence, HTTPS, etc.) + cybersecurity pack findings.
-- **Locked state:** n/a.
-- **Effort:** 4-5 days (rubric design is the work).
+#### a. Compliance gap analyzer ⭐ 🟢 — ✅ Shipped 2026-05-13
+- **What:** Mechanical readiness scorecard for LGPD/GDPR/PCI-DSS/SOC 2. For each framework, evaluates 5-7 requirements against existing cybersecurity findings + tech-stack detection. Reports passed/total + readiness % + list of unmet requirements.
+- **Data deps:** FindingProjection (cybersecurity inference_keys) + TechnologyStackProjection (consent_manager + error_tracking categories + PCI Level 1 payment processors).
+- **Implementation:** `src/lib/compliance-frameworks.ts` (catalog with 4 frameworks × 5-7 requirements + small DSL for check shapes) + `src/components/console/workspace/ComplianceGap.tsx` (2×2 grid with progress bars + gap list). Explicit caveat: mechanical analysis, full legal audit needs specialist review. i18n: 24 keys × 4 locales.
 
-#### b. "What a pentester would find in 1 hour" ⭐ 🟢
-- **What:** Prioritized list of issues an attacker would exploit first: subdomain takeover candidates, exposed S3 buckets, leaked `.env`, weak security headers. More visceral framing than abstract checklist.
-- **Data deps:** Vestigio cybersecurity pack findings + DNS enumeration.
-- **Locked state:** n/a.
-- **Effort:** 2-3 days (mostly reframing existing findings).
+#### b. "What a pentester would find in 1 hour" ⭐ 🟢 — ✅ Shipped 2026-05-13
+- **What:** Reframes Wave 4.1 cybersecurity findings as visceral attack vectors. For each finding whose inference_key is in the curated catalog (15 vectors covering all 3 security pillars), shows the attack-vector name in operator language, what an attacker actually does with it, exploit-time estimate (2 min for MITM up to 30 min for brute force), and target surface. Sorted by exploit time ASC (fastest first), tiebreaker severity DESC.
+- **Data deps:** Workspace findings + curated `src/lib/pentester-vectors.ts`.
+- **Implementation:** `src/components/console/workspace/PentesterFinds.tsx`. i18n: ~37 keys per locale (15 vectors × 2 + shell).
 
 #### c. Token rotation aging 🔴
 - **What:** API keys older than 90 days, with last-use timestamp. "Rotate now" CTA.
@@ -2345,11 +2343,10 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 - **Locked state:** "Upload API key inventory (CSV)" or "Connect [Vault/AWS Secrets Manager]" CTA.
 - **Effort:** 3-4 days (depending on integration scope; ⚪ CSV import is 1-2 days).
 
-#### d. Phishing surface monitor 🟢
-- **What:** Typo-squat domains targeting your brand (vestlgio.io, vestigio.co, etc.) detected via DNS + similar-name search. Each flagged with brand-similarity score.
-- **Data deps:** External DNS APIs (already could integrate with `dnstwist` or similar libraries).
-- **Locked state:** n/a — but needs scheduled job for live monitoring.
-- **Effort:** 3-4 days.
+#### d. Phishing surface monitor 🟢 — ✅ Shipped 2026-05-13
+- **What:** Detects registered typo-squat / brand-impersonation domains targeting the customer apex. Generates ~30 variants per apex (character omission, adjacent-key substitution, visual swaps, TLD swaps, brand prefixes/suffixes), DNS-resolves them in parallel, returns the ones that resolve. Each hit classified by pattern with resolved IPs and a "Check whois" CTA.
+- **Data deps:** Env.domain + Node native `dns.resolve4`. No external paid API.
+- **Implementation:** `src/lib/typo-squat.ts` (variant generation) + `/api/workspace/phishing-surface` (1h in-memory cache) + `src/components/console/workspace/PhishingSurface.tsx`. i18n: 13 keys × 4 locales.
 
 #### e. Anomaly feed 🔴
 - **What:** Live stream of suspicious events on the customer's app: login from new country, new device, off-hours admin access. Sentry-style but auth-focused.
@@ -2357,11 +2354,10 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 - **Locked state:** "Connect your auth provider for live anomaly detection" CTA — integration to be built.
 - **Effort:** 5-7 days.
 
-#### f. CVE radar 🟢
-- **What:** Detected tech stack versions cross-referenced with the NVD CVE database. "Next.js 14.0.3 has CVE-2026-XXXX — upgrade to 14.0.5+". With mitigation links.
-- **Data deps:** Tech detection + scheduled CVE feed pull (NVD has a free JSON API).
-- **Locked state:** n/a.
-- **Effort:** 3 days.
+#### f. Vendor security advisories (pivoted from CVE radar) 🟢 — ✅ Shipped 2026-05-13
+- **What:** Without version detection in the existing pipeline, automatic CVE matching would generate noise. Pivot: surface canonical security feed for each detected vendor (one-click jump list) + highlight curated recent critical alerts worth verifying. Each notable advisory shows CVE ID + date + severity + summary + plain-English mitigation.
+- **Data deps:** TechnologyStackProjection + curated `src/lib/vendor-advisories.ts` (~20 vendors with official feed URLs + ~3 notable advisories curated for WordPress + Cloudflare).
+- **Implementation:** `src/components/console/workspace/VendorAdvisories.tsx`. Explicit caveat: no version matching — user verifies their version against affected ranges. UI already accommodates real CVE feed if version detection lands. i18n: 13 keys × 4 locales.
 
 ---
 

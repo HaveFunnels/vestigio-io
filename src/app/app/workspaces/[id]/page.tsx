@@ -31,6 +31,7 @@ import BudgetForecast from "@/components/console/workspace/BudgetForecast";
 import PentesterFinds from "@/components/console/workspace/PentesterFinds";
 import ComplianceGap from "@/components/console/workspace/ComplianceGap";
 import PhishingSurface from "@/components/console/workspace/PhishingSurface";
+import VendorAdvisories from "@/components/console/workspace/VendorAdvisories";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -412,6 +413,10 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					{/* Wave 11.4d — Phishing surface monitor */}
 					<div className="mt-5">
 						<PhishingSurface />
+					</div>
+					{/* Wave 11.4f — Vendor security advisories */}
+					<div className="mt-5">
+						<VendorAdvisories />
 					</div>
 					<div className="mt-5">
 						<SecurityPosture findings={workspace.findings} />

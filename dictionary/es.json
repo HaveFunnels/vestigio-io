@@ -1999,6 +1999,21 @@
 					"empty": "No se detectaron pérdidas mensuales en este workspace.",
 					"uncategorized": "Sin causa raíz mapeada"
 				},
+				"vendor_advisories": {
+					"label": "Advisories de seguridad de vendors",
+					"subtitle": "Feeds oficiales + alertas críticas recientes para los vendors en tu stack",
+					"loading": "Compilando advisories...",
+					"empty_title": "Sin vendors con feeds de advisory mapeados",
+					"empty_description": "Conforme el próximo ciclo detecte Stripe, Cloudflare, Sentry, etc, los feeds aparecerán aquí.",
+					"caveat": "Sin detección de versión automática — verifica si la versión que ejecutas está afectada antes de actuar.",
+					"view_feed": "Ver feed completo",
+					"severity_critical": "Crítica",
+					"severity_high": "Alta",
+					"severity_medium": "Media",
+					"mitigation_label": "Mitigación:",
+					"notable_label": "Alertas críticas recientes ({count})",
+					"no_notable": "Sin alertas críticas curadas por el momento — revisa el feed oficial."
+				},
 				"phishing_surface": {
 					"label": "Superficie de phishing",
 					"subtitle": "Dominios typo-squat registrados que podrían suplantar el tuyo",

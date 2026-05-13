@@ -1878,6 +1878,21 @@
 					"empty": "Keine monatlichen Verluste in diesem Workspace.",
 					"uncategorized": "Keine Grundursache zugeordnet"
 				},
+				"vendor_advisories": {
+					"label": "Vendor-Sicherheitshinweise",
+					"subtitle": "Offizielle Feeds und kuratierte kritische Hinweise fuer die Vendors in Ihrem Stack",
+					"loading": "Stelle Hinweise zusammen...",
+					"empty_title": "Keine Vendors mit zugeordneten Advisory-Feeds",
+					"empty_description": "Sobald der naechste Zyklus Stripe, Cloudflare, Sentry usw. erkennt, erscheinen die Feeds hier.",
+					"caveat": "Keine automatische Versionserkennung — vor dem Handeln verifizieren ob Ihre Version betroffen ist.",
+					"view_feed": "Vollstaendigen Feed ansehen",
+					"severity_critical": "Kritisch",
+					"severity_high": "Hoch",
+					"severity_medium": "Mittel",
+					"mitigation_label": "Mitigation:",
+					"notable_label": "Aktuelle kritische Warnungen ({count})",
+					"no_notable": "Derzeit keine kuratierten kritischen Warnungen — siehe offiziellen Feed."
+				},
 				"phishing_surface": {
 					"label": "Phishing-Oberflaeche",
 					"subtitle": "Registrierte Typo-Squat-Domains, die Ihre imitieren koennten",

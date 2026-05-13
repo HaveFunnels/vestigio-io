@@ -2092,6 +2092,21 @@
 					"empty": "No monthly losses detected in this workspace.",
 					"uncategorized": "No root cause mapped"
 				},
+				"vendor_advisories": {
+					"label": "Vendor security advisories",
+					"subtitle": "Official feeds + curated recent critical alerts for the vendors in your stack",
+					"loading": "Compiling advisories...",
+					"empty_title": "No vendors with mapped advisory feeds yet",
+					"empty_description": "As the next cycle detects Stripe, Cloudflare, Sentry, etc, the feeds appear here.",
+					"caveat": "No automatic version detection — verify if the version you run is affected before acting.",
+					"view_feed": "View full feed",
+					"severity_critical": "Critical",
+					"severity_high": "High",
+					"severity_medium": "Medium",
+					"mitigation_label": "Mitigation:",
+					"notable_label": "Recent critical alerts ({count})",
+					"no_notable": "No curated critical alerts at the moment — check the official feed."
+				},
 				"phishing_surface": {
 					"label": "Phishing surface",
 					"subtitle": "Registered typo-squat domains that could impersonate yours",

@@ -313,6 +313,26 @@ export interface ActionProjection {
   recovery_confidence: 'strong_correlation' | 'correlation' | 'inconclusive' | null;
   /** Narrative explaining the recovery attribution */
   recovery_narrative: string | null;
+
+  /**
+   * Wave 15: Findings that justify this action. Walks
+   * GlobalAction.root_cause_ref → RootCause.contributing_inferences →
+   * matching FindingProjections. Empty array when the action has no
+   * root_cause_ref or none of the contributing inferences produced a
+   * finding (e.g. compound-only actions).
+   *
+   * Surfaced in the action drawer so users can see WHICH findings the
+   * action addresses — closing the "why am I being told to do this?"
+   * gap that pure remediation_steps + description can't fully answer.
+   */
+  linked_findings: {
+    id: string;
+    inference_key: string;
+    title: string;
+    severity: string;
+    confidence_tier?: string;
+    pack_key?: string | null;
+  }[];
 }
 
 export type WorkspaceProjectionType =

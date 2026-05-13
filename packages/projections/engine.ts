@@ -1173,7 +1173,7 @@ function resolveReasoning(
 
 export function projectAll(result: MultiPackResult, translations?: EngineTranslations): ProjectionResult {
   const findings = projectFindings(result, translations);
-  const actions = projectActions(result, translations);
+  const actions = projectActions(result, findings, translations);
   const workspaces = projectWorkspaces(result, findings, translations);
 
   // 3.20: Resolve cross-references after all projections are available
@@ -1501,12 +1501,25 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
   return findings.filter((f) => f.confidence_tier !== 'low');
 }
 
-export function projectActions(result: MultiPackResult, translations?: EngineTranslations): ActionProjection[] {
+export function projectActions(
+  result: MultiPackResult,
+  findings: FindingProjection[],
+  translations?: EngineTranslations,
+): ActionProjection[] {
   const coherenceScore = result.conflict_report?.resolved_decisions?.coherence_score ?? 100;
   const globalActions = result.intelligence.global_actions;
   const rootCauses = result.intelligence.root_causes;
   const valueCases = result.impact.value_cases;
   const inferences = result.inferences;
+
+  // Wave 15: build inference.id → inference_key + inference_key → finding
+  // lookups so each ActionProjection can resolve its linked_findings.
+  // Same path used by enrichFindingsWithCrossRefs (line ~1207) but
+  // inverted — actions point AT findings, not findings point AT actions.
+  const inferenceIdToKey = new Map<string, string>();
+  for (const inf of inferences) inferenceIdToKey.set(inf.id, inf.inference_key);
+  const findingByInferenceKey = new Map<string, FindingProjection>();
+  for (const f of findings) findingByInferenceKey.set(f.inference_key, f);
 
   // Build map: root_cause_ref → sum of value case impacts
   const rcImpact = computeRootCauseImpact(rootCauses, valueCases, inferences);
@@ -1578,6 +1591,33 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
     const rc = action.root_cause_ref
       ? rootCauses.find(r => makeRef('root_cause', r.id) === action.root_cause_ref)
       : null;
+
+    // Wave 15: resolve linked findings from RC.contributing_inferences.
+    // Dedupes by inference_key (same finding linked via multiple paths).
+    const linkedFindings: ActionProjection['linked_findings'] = [];
+    if (rc) {
+      const seen = new Set<string>();
+      for (const infRef of rc.contributing_inferences) {
+        try {
+          const parsed = parseRef(infRef);
+          const inferenceKey = inferenceIdToKey.get(parsed.id);
+          if (!inferenceKey || seen.has(inferenceKey)) continue;
+          const fp = findingByInferenceKey.get(inferenceKey);
+          if (!fp) continue;
+          seen.add(inferenceKey);
+          linkedFindings.push({
+            id: fp.id,
+            inference_key: fp.inference_key,
+            title: fp.title,
+            severity: fp.severity,
+            confidence_tier: fp.confidence_tier,
+            pack_key: fp.workspace_refs?.[0]?.id ?? null,
+          });
+        } catch {
+          // Invalid ref — skip
+        }
+      }
+    }
 
     const impact = rc && rcImpact.has(rc.root_cause_key)
       ? rcImpact.get(rc.root_cause_key)!
@@ -1681,6 +1721,8 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
       recovery_delta_cents: null,
       recovery_confidence: null,
       recovery_narrative: null,
+      // Wave 15: findings that justify this action
+      linked_findings: linkedFindings,
     };
   });
 
@@ -1723,6 +1765,30 @@ export function projectActions(result: MultiPackResult, translations?: EngineTra
         recovery_delta_cents: null,
         recovery_confidence: null,
         recovery_narrative: null,
+        // Wave 15: compound actions link findings from their chain.
+        // ChainLink.finding_key IS the inference_key — resolve to the
+        // FindingProjection so the drawer shows them alongside the
+        // ordered remediation chain.
+        linked_findings: (() => {
+          const out: ActionProjection['linked_findings'] = [];
+          const seen = new Set<string>();
+          for (const link of cf.chain ?? []) {
+            const key = link?.finding_key;
+            if (!key || seen.has(key)) continue;
+            const fp = findingByInferenceKey.get(key);
+            if (!fp) continue;
+            seen.add(key);
+            out.push({
+              id: fp.id,
+              inference_key: fp.inference_key,
+              title: fp.title,
+              severity: fp.severity,
+              confidence_tier: fp.confidence_tier,
+              pack_key: fp.workspace_refs?.[0]?.id ?? null,
+            });
+          }
+          return out;
+        })(),
       };
       actions.push(compoundAction);
     }

@@ -3617,6 +3617,8 @@
 				"priority_low": "Baixa — monitorar",
 				"rootCause": "Causa Raiz",
 				"operationalStatus": "Status Operacional",
+				"linkedFindings": "Findings que justificam esta ação",
+				"linkedFindingsCount": "{count, plural, one {# finding vinculado} other {# findings vinculados}}",
 				"remediation": "Como corrigir",
 				"remediationEmpty": "A receita de correção desta ação está sendo escrita.",
 				"estimatedEffort": "Esforço estimado",

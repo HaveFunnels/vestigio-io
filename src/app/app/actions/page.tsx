@@ -1128,6 +1128,55 @@ function ActionDrawerContent({
 				<FixWithAiSection action={action} />
 			)}
 
+			{/* Wave 15 — Findings that justify this action.
+			    Walks RootCause.contributing_inferences → FindingProjections so
+			    the user sees WHICH findings the action addresses. Clicking a
+			    row deep-links to /app/findings filtered to that finding. */}
+			{action.linked_findings && action.linked_findings.length > 0 && (
+				<DrawerSection title={t("drawer.linkedFindings")}>
+					<DrawerStatBox>
+						<ul className='divide-y divide-edge/50'>
+							{action.linked_findings.map((f) => (
+								<li key={f.id} className='px-4 py-2.5'>
+									<a
+										href={`/app/findings?finding=${encodeURIComponent(f.id)}`}
+										className='group block'
+									>
+										<div className='flex items-start gap-2'>
+											<SeverityBadge value={f.severity} />
+											<div className='min-w-0 flex-1'>
+												<div className='truncate text-sm font-medium text-content-secondary group-hover:text-accent'>
+													{f.title}
+												</div>
+												<div className='mt-0.5 truncate text-[10px] text-content-faint'>
+													{f.inference_key}
+												</div>
+											</div>
+											<svg
+												className='mt-1 h-3.5 w-3.5 shrink-0 text-content-faint group-hover:text-accent'
+												fill='none'
+												viewBox='0 0 24 24'
+												strokeWidth={2}
+												stroke='currentColor'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													d='M8.25 4.5l7.5 7.5-7.5 7.5'
+												/>
+											</svg>
+										</div>
+									</a>
+								</li>
+							))}
+						</ul>
+						<div className='border-t border-edge/50 px-4 py-2 text-[10px] text-content-faint'>
+							{t("drawer.linkedFindingsCount", { count: action.linked_findings.length })}
+						</div>
+					</DrawerStatBox>
+				</DrawerSection>
+			)}
+
 			{/* Verification Lifecycle Panel */}
 			<DrawerSection title={t("drawer.verification")} accent='info'>
 				<VerificationPanel

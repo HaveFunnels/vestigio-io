@@ -3533,6 +3533,8 @@
 				"priority_low": "Low — monitor",
 				"rootCause": "Root Cause",
 				"operationalStatus": "Operational Status",
+				"linkedFindings": "Findings that justify this action",
+				"linkedFindingsCount": "{count, plural, one {# linked finding} other {# linked findings}}",
 				"remediation": "How to fix",
 				"remediationEmpty": "A remediation recipe for this action is being drafted.",
 				"estimatedEffort": "Estimated effort",

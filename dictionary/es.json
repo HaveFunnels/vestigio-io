@@ -3365,6 +3365,8 @@
 				"priorityScore": "Puntaje de Prioridad",
 				"rootCause": "Causa Raíz",
 				"operationalStatus": "Estado Operacional",
+				"linkedFindings": "Findings que justifican esta acción",
+				"linkedFindingsCount": "{count, plural, one {# finding vinculado} other {# findings vinculados}}",
 				"verification": "Verificación",
 				"verificationRequested": "Verificación solicitada",
 				"verificationRunning": "Ejecutando verificación…",

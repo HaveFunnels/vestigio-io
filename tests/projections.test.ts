@@ -131,13 +131,13 @@ runSuite('Finding Projections', () => {
 runSuite('Action Projections', () => {
   test('projectActions produces non-empty results', () => {
     const result = computeResult();
-    const actions = projectActions(result);
+    const actions = projectActions(result, projectFindings(result));
     assertGreater(actions.length, 0, 'should have actions');
   });
 
   test('actions are sorted by impact then confidence then severity', () => {
     const result = computeResult();
-    const actions = projectActions(result);
+    const actions = projectActions(result, projectFindings(result));
     for (let i = 1; i < actions.length; i++) {
       const prevMid = actions[i - 1].impact?.midpoint || 0;
       const currMid = actions[i].impact?.midpoint || 0;
@@ -150,7 +150,7 @@ runSuite('Action Projections', () => {
 
   test('actions with root cause have impact from value cases', () => {
     const result = computeResult();
-    const actions = projectActions(result);
+    const actions = projectActions(result, projectFindings(result));
     const withImpact = actions.filter(a => a.impact !== null);
     // At least some actions should have computed impact
     assertGreater(withImpact.length, 0, 'some actions should have impact');
@@ -162,7 +162,7 @@ runSuite('Action Projections', () => {
 
   test('cross_pack field is boolean for all actions', () => {
     const result = computeResult();
-    const actions = projectActions(result);
+    const actions = projectActions(result, projectFindings(result));
     for (const a of actions) {
       assert(typeof a.cross_pack === 'boolean', `${a.id}: cross_pack is boolean`);
     }
@@ -170,7 +170,7 @@ runSuite('Action Projections', () => {
 
   test('priority_score is computed', () => {
     const result = computeResult();
-    const actions = projectActions(result);
+    const actions = projectActions(result, projectFindings(result));
     for (const a of actions) {
       assert(typeof a.priority_score === 'number', `${a.id}: priority_score is number`);
     }

@@ -858,7 +858,15 @@ export type OffSiteReconSource =
   | 'reputation_trustpilot'
   | 'reputation_reclame_aqui'
   | 'reputation_hackernews'
-  | 'reputation_reddit';
+  | 'reputation_reddit'
+  // Wave 13 — AI Visibility audit. These probe whether AI assistants
+  // (ChatGPT, Perplexity, Google AI Overviews, Claude) can find, parse,
+  // and recommend the brand.
+  | 'ai_bot_access'              // robots.txt: are GPTBot/ClaudeBot/PerplexityBot allowed?
+  | 'ai_machine_readable'        // /llms.txt + /pricing.md / pricing.txt presence + content
+  | 'ai_schema_audit'            // JSON-LD coverage (Organization, Product, FAQ, HowTo, Article)
+  | 'ai_wikipedia_depth'         // Wikipedia article length, last-edit, link density
+  | 'ai_comparison_ownership';   // does the brand own "<brand> vs <competitor>" queries?
 
 export interface OffSiteReconPayload {
   type: 'off_site_recon';

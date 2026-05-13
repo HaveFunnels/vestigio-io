@@ -649,9 +649,24 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // Wave 12 — Brand Echo inferences (off-site reconnaissance).
   // Reads OffSiteRecon signals produced earlier in extractSignals.
+  // Wave 13 — also passes prior-cycle signals (from previous_snapshot)
+  // so trajectory inferences (score-up/score-down, new/lost citation)
+  // can fire. First-ever audits have no prior snapshot → trajectory is
+  // a no-op and only state-of-now inferences emit.
   const allSignalsForRecon = [...signals, ...saasSignals];
   const reconByKey = new Map<string, typeof signals[number]>();
   for (const s of allSignalsForRecon) reconByKey.set(s.signal_key, s);
+  let priorReconByKey: Map<string, typeof signals[number]> | undefined;
+  if (input.previous_snapshot?.signals && input.previous_snapshot.signals.length > 0) {
+    priorReconByKey = new Map();
+    for (const s of input.previous_snapshot.signals) {
+      // Only carry off_site.* signals into trajectory — keeps the map
+      // small and avoids accidental cross-domain key collisions.
+      if (s.signal_key.startsWith('off_site.')) {
+        priorReconByKey.set(s.signal_key, s);
+      }
+    }
+  }
   const externalReconInferences = computeExternalReconInferences({
     first: (attr) => allSignalsForRecon.find((s) => s.attribute === attr),
     byKey: reconByKey,
@@ -659,6 +674,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     cycle_ref,
     ids: new IdGenerator('inf'),
     business_model: input.onboarding_business_model || null,
+    prior_cycle_signals_by_key: priorReconByKey,
   });
 
   // Produce a decision for funnel-moment findings so they get actions derived

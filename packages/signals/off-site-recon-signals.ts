@@ -401,4 +401,195 @@ export function extractOffSiteReconSignals(
 			}
 		}
 	}
+
+	// ──────────────────────────────────────────────
+	// Wave 13 — AI Visibility signals (5 sources)
+	//
+	// We emit BOTH polarities (positive + negative) so the inference
+	// layer can produce "strength to protect" findings as well as
+	// "leak to fix." Polarity is encoded in the signal value (e.g.
+	// "blocked" vs "allowed", "comprehensive" vs "thin").
+	// ──────────────────────────────────────────────
+
+	// ── AI Bot Access (robots.txt) ──
+	const botAccess = sources.get("ai_bot_access");
+	if (botAccess) {
+		const p = botAccess.payload as OffSiteReconPayload;
+		if (p.reachable) {
+			const blockedBots = (p.data?.blocked_bots as string[]) ?? [];
+			const allAllowed = p.data?.all_ai_bots_allowed === true;
+			signals.push(
+				createSignal({
+					ids,
+					signal_key: "off_site.ai_bot_access",
+					category: SignalCategory.Discoverability,
+					attribute: "off_site.ai.bot_access",
+					value: allAllowed ? "optimal" : "blocked",
+					numeric_value: blockedBots.length,
+					confidence: 90,
+					scoping,
+					cycle_ref,
+					evidence_refs: [makeRef("evidence", botAccess.id)],
+					description: allAllowed
+						? `All major AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Bingbot) are allowed in robots.txt.`
+						: `${blockedBots.length} AI crawler(s) blocked in robots.txt: ${blockedBots.slice(0, 4).join(", ")}. These platforms cannot cite the brand.`,
+				}),
+			);
+		}
+	}
+
+	// ── AI Machine-Readable Artifacts (llms.txt + pricing.md) ──
+	const machineReadable = sources.get("ai_machine_readable");
+	if (machineReadable) {
+		const p = machineReadable.payload as OffSiteReconPayload;
+		if (p.reachable) {
+			const hasLlmsTxt = p.data?.has_llms_txt === true;
+			const hasMachineReadablePricing = p.data?.has_machine_readable_pricing === true;
+
+			// llms.txt presence signal — emit positive OR negative
+			signals.push(
+				createSignal({
+					ids,
+					signal_key: "off_site.ai_llms_txt_presence",
+					category: SignalCategory.Discoverability,
+					attribute: "off_site.ai.llms_txt",
+					value: hasLlmsTxt ? "present" : "absent",
+					confidence: 95,
+					scoping,
+					cycle_ref,
+					evidence_refs: [makeRef("evidence", machineReadable.id)],
+					description: hasLlmsTxt
+						? `/llms.txt is present (${p.data?.llms_txt_size ?? 0} bytes). AI assistants can read a tailored summary of the product.`
+						: `No /llms.txt — AI assistants infer what the product does from generic page parsing instead of a brand-authored summary.`,
+				}),
+			);
+
+			// pricing.md / pricing.txt presence signal
+			signals.push(
+				createSignal({
+					ids,
+					signal_key: "off_site.ai_machine_readable_pricing",
+					category: SignalCategory.Discoverability,
+					attribute: "off_site.ai.machine_readable_pricing",
+					value: hasMachineReadablePricing ? "present" : "absent",
+					confidence: 95,
+					scoping,
+					cycle_ref,
+					evidence_refs: [makeRef("evidence", machineReadable.id)],
+					description: hasMachineReadablePricing
+						? `Machine-readable pricing (/pricing.md or /pricing.txt) is present. AI agents doing programmatic comparison can parse it.`
+						: `No machine-readable pricing artifact — AI agents comparing tools programmatically may skip this brand entirely.`,
+				}),
+			);
+		}
+	}
+
+	// ── AI Schema Audit (JSON-LD coverage) ──
+	const schemaAudit = sources.get("ai_schema_audit");
+	if (schemaAudit) {
+		const p = schemaAudit.payload as OffSiteReconPayload;
+		if (p.reachable) {
+			const comprehensive = p.data?.schema_comprehensive === true;
+			const hasProduct = p.data?.has_product_schema === true;
+			const pricingHasProduct = p.data?.pricing_has_product_schema === true;
+			const missing = (p.data?.missing_ai_priorities as string[]) ?? [];
+
+			signals.push(
+				createSignal({
+					ids,
+					signal_key: "off_site.ai_schema_coverage",
+					category: SignalCategory.Discoverability,
+					attribute: "off_site.ai.schema_coverage",
+					value: comprehensive ? "comprehensive" : "thin",
+					numeric_value: ((p.data?.ai_relevant_types_present as string[]) ?? []).length,
+					confidence: 85,
+					scoping,
+					cycle_ref,
+					evidence_refs: [makeRef("evidence", schemaAudit.id)],
+					description: comprehensive
+						? `Schema markup is comprehensive — Organization/WebSite + Product/SoftwareApplication + FAQPage/HowTo all present. AI assistants get full structured context.`
+						: `Schema markup is thin. Missing AI-priority types: ${missing.join(", ")}. AI assistants must infer instead of extract.`,
+				}),
+			);
+
+			// Specific product-schema-on-pricing signal — critical for B2B SaaS
+			if (!hasProduct || !pricingHasProduct) {
+				signals.push(
+					createSignal({
+						ids,
+						signal_key: "off_site.ai_product_schema_missing",
+						category: SignalCategory.Discoverability,
+						attribute: "off_site.ai.product_schema_missing",
+						value: "true",
+						confidence: 80,
+						scoping,
+						cycle_ref,
+						evidence_refs: [makeRef("evidence", schemaAudit.id)],
+						description: `Product / SoftwareApplication JSON-LD missing${!pricingHasProduct ? " on /pricing" : ""}. AI agents comparing products programmatically skip pages without parseable Product entities.`,
+					}),
+				);
+			}
+		}
+	}
+
+	// ── AI Wikipedia Depth (article quality + freshness) ──
+	const wikiDepth = sources.get("ai_wikipedia_depth");
+	if (wikiDepth) {
+		const p = wikiDepth.payload as OffSiteReconPayload;
+		if (p.reachable && p.data?.exists === true) {
+			const isAuthoritative = p.data?.is_authoritative === true;
+			const isSubstantive = p.data?.is_substantive === true;
+			const isFresh = p.data?.is_fresh === true;
+
+			signals.push(
+				createSignal({
+					ids,
+					signal_key: "off_site.ai_wikipedia_authority",
+					category: SignalCategory.Discoverability,
+					attribute: "off_site.ai.wikipedia_authority",
+					value: isAuthoritative ? "authoritative" : "thin_or_outdated",
+					numeric_value: (p.data?.extract_length as number) ?? null,
+					confidence: 85,
+					scoping,
+					cycle_ref,
+					evidence_refs: [makeRef("evidence", wikiDepth.id)],
+					description: isAuthoritative
+						? `Wikipedia article is substantive (${p.data?.extract_length} chars) and recently edited (${p.data?.months_since_edit}mo ago). AI assistants will cite this confidently.`
+						: `Wikipedia article exists but is ${!isSubstantive ? "thin (<800 chars)" : ""}${!isSubstantive && !isFresh ? " AND " : ""}${!isFresh ? "stale (>18mo since last edit)" : ""}. AI assistants weight authoritativeness — stub/stale articles get cited less.`,
+				}),
+			);
+		}
+	}
+
+	// ── AI Comparison Ownership (<brand> vs queries) ──
+	const comparisonOwn = sources.get("ai_comparison_ownership");
+	if (comparisonOwn) {
+		const p = comparisonOwn.payload as OffSiteReconPayload;
+		if (p.reachable) {
+			const ownOwnsVs = p.data?.own_owns_vs_query === true;
+			const versusHitCount = (p.data?.versus_hit_count as number) ?? 0;
+			const competitorOwningDomains =
+				(p.data?.competitor_domains_owning_vs as string[]) ?? [];
+
+			signals.push(
+				createSignal({
+					ids,
+					signal_key: "off_site.ai_comparison_ownership",
+					category: SignalCategory.Discoverability,
+					attribute: "off_site.ai.comparison_ownership",
+					value: ownOwnsVs ? "owned" : versusHitCount > 0 ? "competitor_owned" : "no_comparison_presence",
+					numeric_value: versusHitCount,
+					confidence: 75,
+					scoping,
+					cycle_ref,
+					evidence_refs: [makeRef("evidence", comparisonOwn.id)],
+					description: ownOwnsVs
+						? `Brand owns the "<brand> vs" SERP (rank ${p.data?.own_vs_rank}). When AI compares products, this page anchors the narrative.`
+						: versusHitCount > 0
+						? `${versusHitCount} comparison pages exist for "<brand> vs ..." but the brand's own domain doesn't surface in top 3. Competitors authoring: ${competitorOwningDomains.slice(0, 3).join(", ")}.`
+						: `No "<brand> vs" comparison pages found on page 1. Either the brand is too small to be compared OR no one is publishing comparisons.`,
+				}),
+			);
+		}
+	}
 }

@@ -576,4 +576,36 @@ export enum InferenceCategory {
   HnTechAudienceInvisible = 'hn_tech_audience_invisible',
   RedditForumAbsence = 'reddit_forum_absence',
   RedditCategoryDemandUnmet = 'reddit_category_demand_unmet',
+  // Wave 13 — AI Visibility pack (negative findings)
+  AiBotsBlocked = 'ai_bots_blocked',
+  NoLlmsTxt = 'no_llms_txt',
+  NoMachineReadablePricing = 'no_machine_readable_pricing',
+  SchemaMarkupMissingForProduct = 'schema_markup_missing_for_product',
+  UnfindableInComparisonSearches = 'unfindable_in_comparison_searches',
+  BrandedQueryAiOverviewCompetitor = 'branded_query_ai_overview_competitor',
+  WikipediaArticleThinOrOutdated = 'wikipedia_article_thin_or_outdated',
+  // Wave 13 — AI Visibility pack (positive findings / strengths to protect)
+  WikipediaArticleAuthoritative = 'wikipedia_article_authoritative',
+  SchemaMarkupComprehensive = 'schema_markup_comprehensive',
+  AiBotAccessOptimal = 'ai_bot_access_optimal',
+  PricingMachineReadable = 'pricing_machine_readable',
+  BrandedQueryOwnsAiOverview = 'branded_query_owns_ai_overview',
+  ComparisonPageOwnsVsQuery = 'comparison_page_owns_vs_query',
+  HighAuthorityThirdPartyCitations = 'high_authority_third_party_citations',
+  // Wave 13 — AI Visibility composite state
+  AiVisibilityScore = 'ai_visibility_score',
+  // Wave 13 — AI Visibility Wave B: competitive citation intelligence
+  CompetitorOwnsCategoryQuery = 'competitor_owns_category_query',
+  CompetitorOwnsComparison = 'competitor_owns_comparison',
+  // Wave 13 — AI Visibility Wave B: action opportunities
+  WikipediaGapToFill = 'wikipedia_gap_to_fill',
+  LlmsTxtQuickWin = 'llms_txt_quick_win',
+  SchemaPriorityList = 'schema_priority_list',
+  ThirdPartyCitationTarget = 'third_party_citation_target',
+  HighLeverageQueryUnowned = 'high_leverage_query_unowned',
+  // Wave 13 — AI Visibility Wave B: trajectory (cross-audit deltas)
+  AiVisibilityTrajectoryImproved = 'ai_visibility_trajectory_improved',
+  AiVisibilityTrajectoryDeclined = 'ai_visibility_trajectory_declined',
+  NewCitationDetected = 'new_citation_detected',
+  LostCitationDetected = 'lost_citation_detected',
 }

@@ -19,6 +19,12 @@ import { scrapeTrustpilot } from "./external-recon/trustpilot";
 import { scrapeReclameAqui } from "./external-recon/reclame-aqui";
 import { scrapeHackerNews } from "./external-recon/hacker-news";
 import { queryReddit } from "./external-recon/reddit";
+// Wave 13 — AI Visibility audit
+import { probeAiBotAccess } from "./external-recon/ai-bot-access";
+import { probeMachineReadableArtifacts } from "./external-recon/ai-machine-readable";
+import { probeAiSchemaAudit } from "./external-recon/ai-schema-audit";
+import { probeWikipediaDepth } from "./external-recon/ai-wikipedia-depth";
+import { probeAiComparisonOwnership } from "./external-recon/ai-comparison-ownership";
 
 // ──────────────────────────────────────────────
 // External Reconnaissance — Wave 12 Brand Echo Pack
@@ -190,6 +196,12 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
 		scrapeReclameAqui(brand),
 		scrapeHackerNews(brand),
 		queryReddit(brand, { category: categoryHint }),
+		// Wave 13 — AI Visibility (5 additional sources)
+		probeAiBotAccess(ctx.root_domain),
+		probeMachineReadableArtifacts(ctx.root_domain),
+		probeAiSchemaAudit(ctx.root_domain),
+		probeWikipediaDepth(brand),
+		probeAiComparisonOwnership(brand, ctx.root_domain),
 	]);
 
 	const sources: OffSiteReconSource[][] = [
@@ -206,6 +218,12 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
 		["reputation_reclame_aqui"],
 		["reputation_hackernews"],
 		["reputation_reddit"],
+		// Wave 13 — AI Visibility source slots (1 evidence each)
+		["ai_bot_access"],
+		["ai_machine_readable"],
+		["ai_schema_audit"],
+		["ai_wikipedia_depth"],
+		["ai_comparison_ownership"],
 	];
 
 	for (let i = 0; i < results.length; i++) {

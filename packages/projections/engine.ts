@@ -164,6 +164,39 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   trustpilot_complaint_cluster: 'brand_integrity',
   trustpilot_response_silence: 'brand_integrity',
   reclame_aqui_reputation_critical: 'brand_integrity',
+  // Wave 13 — AI Visibility pack. All map to discoverability since AI
+  // search is a new discovery surface in addition to traditional SERP.
+  // Positive findings live alongside negative — UI distinguishes via
+  // severity_hint="none". Composite score lives here too.
+  ai_visibility_score: 'discoverability',
+  // Negative findings
+  ai_bots_blocked: 'discoverability',
+  no_llms_txt: 'discoverability',
+  no_machine_readable_pricing: 'discoverability',
+  schema_markup_missing_for_product: 'discoverability',
+  unfindable_in_comparison_searches: 'discoverability',
+  branded_query_ai_overview_competitor: 'discoverability',
+  wikipedia_article_thin_or_outdated: 'discoverability',
+  // Positive findings (strengths to protect)
+  wikipedia_article_authoritative: 'discoverability',
+  schema_markup_comprehensive: 'discoverability',
+  ai_bot_access_optimal: 'discoverability',
+  pricing_machine_readable: 'discoverability',
+  branded_query_owns_ai_overview: 'discoverability',
+  comparison_page_owns_vs_query: 'discoverability',
+  high_authority_third_party_citations: 'discoverability',
+  // Wave B: competitive citation intel + action opportunities + trajectory
+  competitor_owns_category_query: 'discoverability',
+  competitor_owns_comparison: 'discoverability',
+  wikipedia_gap_to_fill: 'discoverability',
+  llms_txt_quick_win: 'discoverability',
+  schema_priority_list: 'discoverability',
+  third_party_citation_target: 'discoverability',
+  high_leverage_query_unowned: 'discoverability',
+  ai_visibility_trajectory_improved: 'discoverability',
+  ai_visibility_trajectory_declined: 'discoverability',
+  new_citation_detected: 'discoverability',
+  lost_citation_detected: 'discoverability',
   // Wave 3.10: Copy alignment pack
   value_proposition_buried: 'copy_alignment',
   social_proof_ineffective: 'copy_alignment',

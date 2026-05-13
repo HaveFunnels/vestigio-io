@@ -1999,6 +1999,24 @@
 					"empty": "No se detectaron pérdidas mensuales en este workspace.",
 					"uncategorized": "Sin causa raíz mapeada"
 				},
+				"dependency_health": {
+					"label": "Salud de dependencias",
+					"subtitle": "Estado público en tiempo real de los servicios que usas",
+					"loading": "Verificando estado de proveedores...",
+					"empty_title": "No se detectaron proveedores monitoreables",
+					"empty_description": "Cuando el próximo ciclo detecte Stripe, Cloudflare, Vercel, Shopify, etc, aparecerán aquí con estado en vivo.",
+					"coverage_partial": "{covered} de {total} dependencias tienen estado público",
+					"coverage_full": "Todas las {total} dependencias tienen estado público",
+					"checked_at": "Actualizado a las {time}",
+					"indicator": {
+						"none": "Operacional",
+						"minor": "Degradación menor",
+						"major": "Outage parcial",
+						"critical": "Outage crítico",
+						"unknown": "Estado no disponible"
+					},
+					"view_status": "Ver página de estado"
+				},
 				"spof_map": {
 					"label": "Puntos únicos de falla",
 					"subtitle": "Servicios sin redundancia en tu stack",

@@ -25,6 +25,7 @@ import SecurityPosture from "@/components/console/workspace/SecurityPosture";
 import CopyAlignment from "@/components/console/workspace/CopyAlignment";
 import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
 import SpofMap from "@/components/console/workspace/SpofMap";
+import DependencyHealth from "@/components/console/workspace/DependencyHealth";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -368,10 +369,11 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 				</div>
 			)}
 
-			{/* ── SPOF map — Wave 11.3b — Preflight workspace ── */}
+			{/* ── SPOF map + Dependency health — Wave 11.3b + 11.3e — Preflight workspace ── */}
 			{isPreflight && (
-				<div className="mt-5">
+				<div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
 					<SpofMap />
+					<DependencyHealth />
 				</div>
 			)}
 

@@ -2070,6 +2070,24 @@
 					"empty": "Sem perdas mensais detectadas neste workspace.",
 					"uncategorized": "Sem causa-raiz mapeada"
 				},
+				"dependency_health": {
+					"label": "Saúde das dependências",
+					"subtitle": "Status público em tempo real dos serviços que você usa",
+					"loading": "Verificando status dos provedores...",
+					"empty_title": "Nenhum provedor monitorável detectado",
+					"empty_description": "Quando o próximo ciclo detectar Stripe, Cloudflare, Vercel, Shopify, etc, eles aparecem aqui com status ao vivo.",
+					"coverage_partial": "{covered} de {total} dependências têm status público",
+					"coverage_full": "Todas as {total} dependências têm status público",
+					"checked_at": "Atualizado às {time}",
+					"indicator": {
+						"none": "Operacional",
+						"minor": "Degradação leve",
+						"major": "Outage parcial",
+						"critical": "Outage crítico",
+						"unknown": "Status indisponível"
+					},
+					"view_status": "Ver página de status"
+				},
 				"spof_map": {
 					"label": "Pontos únicos de falha",
 					"subtitle": "Serviços sem redundância no seu stack",

@@ -1878,6 +1878,24 @@
 					"empty": "Keine monatlichen Verluste in diesem Workspace.",
 					"uncategorized": "Keine Grundursache zugeordnet"
 				},
+				"dependency_health": {
+					"label": "Abhaengigkeits-Gesundheit",
+					"subtitle": "Oeffentlicher Live-Status der Dienste, die Sie verwenden",
+					"loading": "Pruefe Provider-Status...",
+					"empty_title": "Keine ueberwachbaren Provider erkannt",
+					"empty_description": "Wenn der naechste Zyklus Stripe, Cloudflare, Vercel, Shopify usw. erkennt, erscheinen sie hier mit Live-Status.",
+					"coverage_partial": "{covered} von {total} Abhaengigkeiten haben oeffentlichen Status",
+					"coverage_full": "Alle {total} Abhaengigkeiten haben oeffentlichen Status",
+					"checked_at": "Aktualisiert um {time}",
+					"indicator": {
+						"none": "Operativ",
+						"minor": "Geringe Beeintraechtigung",
+						"major": "Teilweiser Ausfall",
+						"critical": "Kritischer Ausfall",
+						"unknown": "Status nicht verfuegbar"
+					},
+					"view_status": "Statusseite ansehen"
+				},
 				"spof_map": {
 					"label": "Einzelne Ausfallpunkte",
 					"subtitle": "Dienste ohne Redundanz in Ihrem Stack",

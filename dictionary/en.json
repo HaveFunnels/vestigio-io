@@ -2092,6 +2092,24 @@
 					"empty": "No monthly losses detected in this workspace.",
 					"uncategorized": "No root cause mapped"
 				},
+				"dependency_health": {
+					"label": "Dependency health",
+					"subtitle": "Live public status for the services you use",
+					"loading": "Checking provider status...",
+					"empty_title": "No monitorable providers detected",
+					"empty_description": "When the next cycle detects Stripe, Cloudflare, Vercel, Shopify, etc, they show up here with live status.",
+					"coverage_partial": "{covered} of {total} dependencies have public status",
+					"coverage_full": "All {total} dependencies have public status",
+					"checked_at": "Updated at {time}",
+					"indicator": {
+						"none": "Operational",
+						"minor": "Minor degradation",
+						"major": "Partial outage",
+						"critical": "Critical outage",
+						"unknown": "Status unavailable"
+					},
+					"view_status": "View status page"
+				},
 				"spof_map": {
 					"label": "Single points of failure",
 					"subtitle": "Services with no redundancy in your stack",

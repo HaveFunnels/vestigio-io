@@ -57,10 +57,18 @@ function getPerspective(type: string, category: string, t: (key: string) => stri
 	return { label: t(`perspectives.${slug}`), slug, ...colors };
 }
 
-function fmtCurrency(value: number): string {
-	if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-	if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
-	return `$${Math.round(value)}`;
+// Locale → BCP-47 hint for Intl.NumberFormat so R$ renders for BRL, € for EUR, etc.
+const CURRENCY_LOCALE: Record<string, string> = { BRL: "pt-BR", EUR: "de-DE", USD: "en-US" };
+
+function fmtCurrency(value: number, currency: string = "USD"): string {
+	const locale = CURRENCY_LOCALE[currency] || "en-US";
+	if (value >= 1_000_000) {
+		return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 1 }).format(value / 1_000_000) + "M";
+	}
+	if (value >= 1_000) {
+		return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 1 }).format(value / 1_000) + "k";
+	}
+	return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
 export default function WorkspaceDetailPage({
@@ -293,7 +301,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 						{workspace.summary.total_loss_mid > 0 && (
 							<div className="text-right">
 								<div className={`font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums ${perspective.color}`}>
-									{fmtCurrency(workspace.summary.total_loss_mid)}
+									{fmtCurrency(workspace.summary.total_loss_mid, mcpData.currency)}
 								</div>
 								<div className="text-[10px] text-zinc-400 dark:text-zinc-600">/mo</div>
 							</div>

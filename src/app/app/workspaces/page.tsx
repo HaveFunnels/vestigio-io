@@ -26,10 +26,18 @@ import type { CrossSignalChain } from "@/lib/dashboard/types";
 //   [Perspective cards — horizontal chapters]
 // ──────────────────────────────────────────────
 
-function fmtCurrency(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
-  return `${Math.round(value)}`;
+// Locale → BCP-47 hint for Intl.NumberFormat so R$ renders for BRL, € for EUR, etc.
+const CURRENCY_LOCALE: Record<string, string> = { BRL: "pt-BR", EUR: "de-DE", USD: "en-US" };
+
+function fmtCurrency(value: number, currency: string = "USD"): string {
+  const locale = CURRENCY_LOCALE[currency] || "en-US";
+  if (value >= 1_000_000) {
+    return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 1 }).format(value / 1_000_000) + "M";
+  }
+  if (value >= 1_000) {
+    return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 1 }).format(value / 1_000) + "k";
+  }
+  return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
 function classifyPerspective(ws: WorkspaceProjection): string {
@@ -185,6 +193,7 @@ function CrossSignalSection() {
 function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) {
   const router = useRouter();
   const t = useTranslations("console.workspaces");
+  const { currency } = useMcpData();
 
   const allFindings = useMemo(
     () => workspaces.flatMap((ws) => ws.findings),
@@ -353,7 +362,7 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                         <div className="flex items-center gap-2">
                           {data.loss > 0 && (
                             <span className={`font-mono text-sm font-medium tabular-nums ${pDef.accentText}`}>
-                              {fmtCurrency(data.loss)}
+                              {fmtCurrency(data.loss, currency)}
                             </span>
                           )}
                           <SeverityBadge value={data.topSeverity} />

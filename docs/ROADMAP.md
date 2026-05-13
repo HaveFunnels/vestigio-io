@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-13 (Wave 10 — Workspaces UI/UX audit logged; 7 fixes spanning i18n, breadcrumbs, card consistency, layout, content depth, Pulse truncation)
+> Last updated: 2026-05-13 (Wave 10 — Workspaces UI/UX: 7 fixes shipped — Cross-Signal i18n, perspective breadcrumb, unified card styling for perspective-internal workspaces, Resumo Rápido fallback, workspace-scoped Pulse, Pulse truncation, hardcoded locale)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -84,7 +84,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~Inventory features parity vs Screaming Frog/Sitebulb~~ | **✅ Shipped 2026-05-13** — All four milestones: (M1) per-URL `discoverySource` tracking with 10 source types — homepage / homepage_link / critical_path / sitemap / robots_txt / redirect / pagination / internal_link / behavioral_event / manual; (M2) `skipReason` audit trail with 9 reason tags — over_budget / excluded / deduped / loop_detected / challenge / asset / fetch_failed / disallowed / aborted (over_budget + excluded + aborted are NOT persisted to keep inventory bounded); (M3) A/B test platform detection — 11 platforms via substring matching on script srcs + inline JS (Optimizely, VWO, Google Optimize, Convert, AB Tasty, Kameleoon, Adobe Target, Statsig, LaunchDarkly, GrowthBook, Split); (M4) hreflang-driven discovery of localized variants + numbered pagination (rel=next/prev plus inferred ?page=N / /page/N / /p/N, capped at 5 inferred per page). Load-more pagination (JS-triggered) deferred until customer demand — needs brittle button-selector heuristics. | Wave 9.3 |
 | ~~Inventory frontend — polish residuals~~ | **✅ Shipped 2026-05-12** — Drawer surfaces `classificationSignals` as foldable Details with source/vote/weight per signal. Discovery sources now via `tDiscovery` (6 known labels + titleCase fallback). `isCommercialPageType` helper centralized in `lib/page-type-colors`; removed duplicate Set in inventory API. New `isDemoOrgCtx` helper consolidates the inline `orgType === "demo" \|\| orgId === "demo"` pattern (3 API routes refactored). Cycle banner already uses SSE for status — 10s polling left is just the cycle-discovery loop, which is the intended pattern. Bonus: status semantics reframed after user feedback to result-based (Live = 2xx/3xx, Down = 4xx/5xx, Not checked = fetch failed); inventory upserts now persist failed-fetch rows so Not checked actually populates. | Wave 9.4 |
 | Inventory observability / alerting parity (Sentry/Datadog/Hotjar tier) | **Not started** — Competitive-gap residuals from 2026-05-11 inventory frontend audit. (a) Core Web Vitals per page (LCP/FID/CLS/INP) — needs the behavioral pixel to send `web-vitals` library output; today inventory only has server-side response time. (b) Page template grouping — cluster pages by template signature (same nav/footer/structure) so 200 product pages collapse to one "Product Template" row. (c) Alert rules per page — Vestigio fires a notification when `${metric}` on `${page}` crosses `${threshold}` (e.g. checkout response_time > 2s). (d) Compare across environments — diff staging vs production inventory side-by-side. (e) Page hierarchy / funnel view — group inventory rows by funnel stage with collapse/expand. | Wave 9.5 |
-| Workspaces UI/UX audit — i18n, breadcrumbs, card consistency, content depth, Pulse truncation | **Not started** — From 2026-05-13 audit. 7 fixes: (1) Cross-Signal pack labels in English (`console.analysis.packs` namespace missing in all dictionaries — falls back to formatted key like "Money Moment Exposure"); (2) breadcrumbs absent on perspective pages (only a back-link instead of `Workspaces > [Perspective]`); (3) card styling drift between `/inventory` header (`SummaryCards`), perspective cards on workspaces home, and workspace cards inside perspectives — flat third bucket has no icon, gradient, or accent; (4) Resumo Rápido section becomes orphaned on right-side 2fr column when workspace lacks `change_summary`, "None" rendered untranslated; (5) workspace `[id]` page lacks `PulseSummary`/`CrossSignal`/`RevenueMap` widgets present on panorama; (6) Pulse summary truncated by `max_tokens: 150` + contradictory prompts (system says 2-3 sentences/280 chars, user asks 3-4 sentences); (6b) `locale: "pt-BR"` hardcoded in PulseSummary client + `toLocaleTimeString("pt-BR")` clock hardcoded. | Wave 10 |
+| ~~Workspaces UI/UX audit~~ | **✅ Shipped 2026-05-13** — All 7 fixes from the audit: (1) Cross-Signal pack labels switched from non-existent `console.analysis.packs` to `console.common.packs` (exists in en/pt-BR/es); (2) perspective page now has real `Panorama / [Perspective]` breadcrumb; (3) workspace-cards inside perspective now have icon + accent gradient + sparkline + hover state matching panorama design, plus locale-aware currency formatter (Intl.NumberFormat with `BRL`→`R$`, `EUR`→`€`, etc) across all 3 workspace pages; (4) Resumo Rápido grid collapses to single column when no change content + "None" severity translated via `tc("severity.{value}")`; (5) `<PulseSummary workspaceName findingIds />` rendered on workspace [id] page, API extended to accept those scope params and filter findings to the workspace's set (workspace-specific prompt); (6) Pulse prompts aligned to 3 sentences + `max_tokens` raised 150→300; (7) `useLocale()` replaces hardcoded `pt-BR` in PulseSummary client (fetch body + time formatter). | Wave 10 |
 
 ---
 
@@ -1460,7 +1460,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **—** | Marketing/SEO | Homepage, /lp funnel, structured data, OG images, hreflang | ✅ All shipped |
 | **7** | Scaling & Moat Deepening | ✅ 7.11 critical fixes (15+24 bugs), ✅ 7.12 activate 3 packs. Open: batch writes, CWV, trends, recovery, webhooks, maps | **Active** |
 | **8** | New Analysis Packs | ✅ 8.1 Payment Health. Open: Dark Pattern & Compliance, Content Freshness | **Active** |
-| **10** | Workspaces UI/UX Audit | 7 fixes: Cross-Signal i18n, perspective breadcrumb, unified card styling, Resumo Rápido fallback layout, workspace content depth, Pulse truncation, hardcoded locale | **Active** |
+| **10** | Workspaces UI/UX Audit | 7 fixes: Cross-Signal i18n, perspective breadcrumb, unified card styling, Resumo Rápido fallback layout, workspace content depth, Pulse truncation, hardcoded locale | ✅ All shipped 2026-05-13 |
 
 ---
 
@@ -2068,7 +2068,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |---|---|
 | **Tag** | `frontend` |
 | **Priority** | P0 |
-| **Status** | **Not started** |
+| **Status** | **✅ Shipped 2026-05-13** |
 | **Where** | [`src/components/console/cross-signals/CrossSignalChainCard.tsx:78,113`](../src/components/console/cross-signals/CrossSignalChainCard.tsx#L78-L113) |
 | **Symptom** | In `/workspaces` Cross-Signal card, pack names render as "Money Moment Exposure", "Scale Readiness", "Chargeback Resilience" even when the platform is in pt-BR. |
 | **Cause** | Component calls `useTranslations("console.analysis.packs")` but that namespace **does not exist** in any dictionary (en, pt-BR, es — confirmed via JSON parse). `tp.has()` always returns false, fallback formats the raw key (`money_moment_exposure` → "Money Moment Exposure"). Same bug in all locales, only visible in pt-BR because the surrounding UI is translated. |
@@ -2083,7 +2083,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |---|---|
 | **Tag** | `frontend` |
 | **Priority** | P1 |
-| **Status** | **Not started** |
+| **Status** | **✅ Shipped 2026-05-13** |
 | **Where** | [`src/app/app/workspaces/perspective/[slug]/page.tsx:247-255`](../src/app/app/workspaces/perspective/%5Bslug%5D/page.tsx#L247-L255) |
 | **Symptom** | When entering a perspective, breadcrumbs don't show all steps — just a `← Panorama` link. |
 | **Cause** | Page renders a single `<Link>` "back to panorama" instead of a `<nav>` breadcrumb. Compare with [`workspaces/[id]/page.tsx:243-256`](../src/app/app/workspaces/%5Bid%5D/page.tsx#L243-L256) which has the correct pattern `Workspaces / [Perspective] / [Workspace]`. |
@@ -2098,7 +2098,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |---|---|
 | **Tag** | `frontend` |
 | **Priority** | P2 |
-| **Status** | **Not started** |
+| **Status** | **✅ Shipped 2026-05-13** |
 | **Where** | [`SummaryCards.tsx:176`](../src/components/console/SummaryCards.tsx#L176) (reference), [`workspaces/page.tsx:313`](../src/app/app/workspaces/page.tsx#L313), [`perspective/[slug]/page.tsx:360`](../src/app/app/workspaces/perspective/%5Bslug%5D/page.tsx#L360) |
 | **Symptom** | Workspace cards inside perspective look "just like another card" — no gradient, no icon, no accent. Inventory header has a more polished card style. Perspective cards on the home are between the two. |
 | **Cause** | Three different card implementations: (a) `SummaryCards` with `variantShadow` + gradient overlay + dot + sparkline; (b) perspective cards custom-built with accentBg + icon + sparkline; (c) workspace-inside-perspective cards: bare `rounded-2xl border border-edge bg-surface-card`. Also `fmtCurrency` in [`perspective/[slug]/page.tsx:78-82`](../src/app/app/workspaces/perspective/%5Bslug%5D/page.tsx#L78-L82) and [`workspaces/[id]/page.tsx:59-63`](../src/app/app/workspaces/%5Bid%5D/page.tsx#L59-L63) hardcodes `$` — should use org currency. |
@@ -2113,7 +2113,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |---|---|
 | **Tag** | `frontend` |
 | **Priority** | P1 |
-| **Status** | **Not started** |
+| **Status** | **✅ Shipped 2026-05-13** |
 | **Where** | [`src/app/app/workspaces/[id]/page.tsx:305-338`](../src/app/app/workspaces/%5Bid%5D/page.tsx#L305-L338) |
 | **Symptom** | Quick Stats / Resumo Rápido section confined to right 2fr column with empty space on left. "Maior Severidade" card shows "None" in English even in pt-BR. |
 | **Cause** | Grid `lg:grid-cols-[3fr_2fr]` always assigns Quick Stats to right column. When workspace has no `change_summary` and no `workspaceChanges`, left column renders empty `<div />` (line 319). On [line 331](../src/app/app/workspaces/%5Bid%5D/page.tsx#L331), value renders as `topSeverity.charAt(0).toUpperCase() + topSeverity.slice(1)` — produces literal "None" instead of `tc("severity.none")`. |
@@ -2128,7 +2128,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |---|---|
 | **Tag** | `frontend` |
 | **Priority** | P1 |
-| **Status** | **Not started** |
+| **Status** | **✅ Shipped 2026-05-13** |
 | **Where** | [`src/app/app/workspaces/[id]/page.tsx`](../src/app/app/workspaces/%5Bid%5D/page.tsx) (no `PulseSummary` import) |
 | **Symptom** | Individual workspaces (e.g. "Análise de faturamento") only show: change summary + quick stats + domain enrichment + findings table. No Pulse, no Cross-Signal, no Revenue Map. Page feels like "just a finding table with a header." |
 | **Cause** | The detail page never imports `PulseSummary`, `CrossSignalSection`, `RevenueMap`, `CycleDelta`, `BraggingRights` — all present in the panorama [`workspaces/page.tsx:272-292`](../src/app/app/workspaces/page.tsx#L272-L292) and in the perspective page. |
@@ -2143,7 +2143,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |---|---|
 | **Tag** | `mcp` |
 | **Priority** | P0 |
-| **Status** | **Not started** |
+| **Status** | **✅ Shipped 2026-05-13** |
 | **Where** | [`src/app/api/workspace/pulse-summary/route.ts:70,122-123,261`](../src/app/api/workspace/pulse-summary/route.ts#L70) |
 | **Symptom** | Vestigio Pulse often cuts off mid-sentence — summary doesn't render the whole briefing. |
 | **Cause** | Three-way contradiction in the prompt + token budget: (a) line 70 system says "STRICT LENGTH: 2-3 sentences, maximum 280 characters"; (b) line 122-123 user says "Write a **3-4 sentence** briefing"; (c) `max_tokens: 150` on line 261 (~100 words of pt-BR output, very tight). Haiku tries to satisfy the user prompt and gets cut at the token cap. Truncation is **server-side**, not client — `PulseSummary.tsx` has no `line-clamp` or `max-h`. |
@@ -2158,7 +2158,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |---|---|
 | **Tag** | `frontend` |
 | **Priority** | P2 |
-| **Status** | **Not started** |
+| **Status** | **✅ Shipped 2026-05-13** |
 | **Where** | [`src/components/console/PulseSummary.tsx:28,68`](../src/components/console/PulseSummary.tsx#L28) |
 | **Symptom** | Users with locale `en`/`es`/`de` still get pt-BR briefing; clock timestamp also formatted in pt-BR. |
 | **Cause** | Line 28: `body: JSON.stringify({ perspective: ..., locale: "pt-BR" })` — hardcoded. Line 68: `toLocaleTimeString("pt-BR", { ... })` — also hardcoded. |

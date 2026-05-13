@@ -20,6 +20,7 @@ import OpportunityPreview from "@/components/console/workspace/OpportunityPrevie
 import TrustScoreCard from "@/components/console/workspace/TrustScoreCard";
 import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
 import SpofMap from "@/components/console/workspace/SpofMap";
+import CopyFrameworkLens from "@/components/console/workspace/CopyFrameworkLens";
 import RevenueMap from "@/components/console/RevenueMap";
 import CycleDelta from "@/components/console/CycleDelta";
 import BraggingRights from "@/components/console/BraggingRights";
@@ -344,6 +345,14 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
           {/* Wave 11.3b — SPOF map, perspective-wide */}
           <SpofMap />
           <TrustScoreCard findings={allFindings} filterPacks={["security_posture", "scale_readiness"]} />
+        </div>
+      )}
+      {/* Wave 11.5g — Framework Lens at perspective level (always-on, no
+          finding gate — works even when there's no copy_alignment workspace
+          yet). */}
+      {slug === "copy" && (
+        <div className="mt-5 space-y-4">
+          <CopyFrameworkLens />
         </div>
       )}
 

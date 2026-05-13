@@ -282,25 +282,8 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
       {/* ── Lens 1: Intel Briefing ── */}
       <PulseSummary />
 
-      {/* ── Cross-Signal Chains (collapsible) ── */}
-      <CrossSignalSection />
-
-      {/* ── Lenses 2-4: Revenue Map | Delta + Rights ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
-        <div className="overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
-          <RevenueMap workspaces={workspaces} />
-        </div>
-        <div className="flex flex-col gap-0 overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
-          <div className="flex-1 p-5">
-            <CycleDelta workspaces={workspaces} />
-          </div>
-          <div className="border-t border-edge/40 p-5">
-            <BraggingRights workspaces={workspaces} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Perspective Cards ── */}
+      {/* ── Perspective Cards (placed right below Pulse so users land on
+          their 4 lenses before scrolling through revenue map + chains) ── */}
       <section>
         <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
           {t("perspectives_heading")}
@@ -403,6 +386,24 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
           })}
         </div>
       </section>
+
+      {/* ── Cross-Signal Chains (collapsible) ── */}
+      <CrossSignalSection />
+
+      {/* ── Lenses 2-4: Revenue Map | Delta + Rights ── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
+        <div className="overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
+          <RevenueMap workspaces={workspaces} />
+        </div>
+        <div className="flex flex-col gap-0 overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
+          <div className="flex-1 p-5">
+            <CycleDelta workspaces={workspaces} />
+          </div>
+          <div className="border-t border-edge/40 p-5">
+            <BraggingRights workspaces={workspaces} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

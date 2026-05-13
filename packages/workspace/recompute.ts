@@ -16,6 +16,7 @@ import { buildGraph } from '../graph';
 import { extractSignals } from '../signals';
 import { computeInferences } from '../inference';
 import { produceDecision, DecisionResult } from '../decision';
+import { INFERENCE_TO_PACK } from '../projections/inference-to-pack';
 import { resolveDecisionConflicts, ConflictReport } from '../decision/conflict-resolver';
 import { generateOpportunities, OpportunityGenerationResult } from '../decision/opportunity-gate';
 import { deriveActions } from '../actions';
@@ -362,10 +363,22 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // ─── Inferences from quality-adjusted, truth-resolved signals ───
   const inferences = computeInferences(signals, scoping, cycle_ref);
 
+  // Wave 15.4 — pre-filter inferences per pack before each decision so
+  // builders only see inferences that actually belong to their pack.
+  // Without this, buildBrandIntegrityActions (etc.) saw the GLOBAL
+  // inferences list and `has(key)` checks broadcast actions even when
+  // the underlying inference was actually in a different pack — e.g. a
+  // brand_integrity action emitting Trustpilot/Reclame Aqui/UDRP
+  // secondaries while the only linked finding was `trust_boundary_crossed`
+  // (which lives in scale_readiness pack).
+  const forPack = (packName: string): Inference[] =>
+    inferences.filter(i => INFERENCE_TO_PACK[i.inference_key] === packName);
+
   // Scale readiness decision
   const scaleResult: DecisionResult = produceDecision({
     question_key: 'is_it_safe_to_scale_traffic',
-    scoping, cycle_ref, signals, inferences,
+    scoping, cycle_ref, signals,
+    inferences: forPack('scale_readiness'),
     conversion_proximity, is_production, translations,
   });
   const scaleActions = deriveActions(scaleResult.decision);
@@ -377,7 +390,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // Revenue integrity decision
   const revenueResult: DecisionResult = produceDecision({
     question_key: 'is_there_revenue_leakage_in_high_intent_paths',
-    scoping, cycle_ref, signals, inferences,
+    scoping, cycle_ref, signals,
+    inferences: forPack('revenue_integrity'),
     conversion_proximity, is_production, translations,
   });
   const revenueActions = deriveActions(revenueResult.decision);
@@ -389,7 +403,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // Chargeback resilience decision
   const chargebackResult: DecisionResult = produceDecision({
     question_key: 'is_chargeback_pressure_elevated',
-    scoping, cycle_ref, signals, inferences,
+    scoping, cycle_ref, signals,
+    inferences: forPack('chargeback_resilience'),
     conversion_proximity, is_production, translations,
   });
   const chargebackActions = deriveActions(chargebackResult.decision);
@@ -401,7 +416,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // Wave 3.3: Security posture decision
   const securityResult: DecisionResult = produceDecision({
     question_key: 'is_visible_security_posture_creating_financial_risk',
-    scoping, cycle_ref, signals, inferences,
+    scoping, cycle_ref, signals,
+    inferences: forPack('money_moment_exposure'),
     conversion_proximity, is_production, translations,
   });
   const securityActions = deriveActions(securityResult.decision);
@@ -413,7 +429,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // Wave 3.10: Copy alignment decision
   const copyAlignmentResult: DecisionResult = produceDecision({
     question_key: 'is_copy_aligned_with_commercial_intent',
-    scoping, cycle_ref, signals, inferences,
+    scoping, cycle_ref, signals,
+    inferences: forPack('copy_alignment'),
     conversion_proximity, is_production, translations,
   });
   const copyAlignmentActions = deriveActions(copyAlignmentResult.decision);
@@ -425,7 +442,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // Channel Integrity decision
   const channelIntegrityResult: DecisionResult = produceDecision({
     question_key: 'is_channel_integrity_compromised',
-    scoping, cycle_ref, signals, inferences,
+    scoping, cycle_ref, signals,
+    inferences: forPack('channel_integrity'),
     conversion_proximity, is_production, translations,
   });
   const channelIntegrityActions = deriveActions(channelIntegrityResult.decision);
@@ -437,7 +455,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // Discoverability decision
   const discoverabilityResult: DecisionResult = produceDecision({
     question_key: 'is_discoverability_limiting_growth',
-    scoping, cycle_ref, signals, inferences,
+    scoping, cycle_ref, signals,
+    inferences: forPack('discoverability'),
     conversion_proximity, is_production, translations,
   });
   const discoverabilityActions = deriveActions(discoverabilityResult.decision);
@@ -449,7 +468,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // Brand Integrity decision
   const brandIntegrityResult: DecisionResult = produceDecision({
     question_key: 'is_brand_integrity_at_risk',
-    scoping, cycle_ref, signals, inferences,
+    scoping, cycle_ref, signals,
+    inferences: forPack('brand_integrity'),
     conversion_proximity, is_production, translations,
   });
   const brandIntegrityActions = deriveActions(brandIntegrityResult.decision);
@@ -463,7 +483,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   if (commerceContext?.failed_payment_rate != null || commerceContext?.subscriber_churn_rate != null) {
     const paymentHealthResult: DecisionResult = produceDecision({
       question_key: 'is_payment_health_creating_revenue_risk',
-      scoping, cycle_ref, signals, inferences,
+      scoping, cycle_ref, signals,
+      inferences: forPack('payment_health'),
       conversion_proximity, is_production, translations,
     });
     const paymentHealthActions = deriveActions(paymentHealthResult.decision);
@@ -554,9 +575,16 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     saasInferences = computeSaasInferences([...signals, ...saasSignals], scoping, cycle_ref);
 
     if (saasInferences.length > 0) {
+      // Pack-pure inferences: SaaS-only inferences plus any
+      // inferences mapped explicitly to saas_growth_readiness pack.
+      const allCombined = [...inferences, ...saasInferences];
+      const saasPackInferences = allCombined.filter(
+        i => INFERENCE_TO_PACK[i.inference_key] === 'saas_growth_readiness',
+      );
       const saasResult: DecisionResult = produceDecision({
         question_key: 'is_saas_growth_ready',
-        scoping, cycle_ref, signals: [...signals, ...saasSignals], inferences: [...inferences, ...saasInferences],
+        scoping, cycle_ref, signals: [...signals, ...saasSignals],
+        inferences: saasPackInferences,
         conversion_proximity, is_production, translations,
       });
       const saasActions = deriveActions(saasResult.decision);
@@ -574,14 +602,14 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   }
 
   // ─── Behavioral workspaces (pixel-dependent) ───
-  const BEHAVIORAL_QUESTIONS: { type: BehavioralWorkspaceType; question_key: string; name: string }[] = [
-    { type: 'first_impression', question_key: 'is_first_session_conversion_leaking', name: 'First Impression Revenue' },
-    { type: 'action_value', question_key: 'are_user_actions_driving_revenue', name: 'Action Value Map' },
-    { type: 'acquisition_integrity', question_key: 'is_paid_traffic_reaching_conversion', name: 'Acquisition Integrity' },
-    { type: 'mobile_revenue', question_key: 'is_mobile_experience_costing_revenue', name: 'Mobile Revenue Exposure' },
-    { type: 'friction_tax', question_key: 'how_much_does_ux_friction_cost', name: 'Friction Tax' },
-    { type: 'trust_gap', question_key: 'is_trust_deficit_blocking_revenue', name: 'Trust Revenue Gap' },
-    { type: 'path_efficiency', question_key: 'are_visitors_on_shortest_conversion_path', name: 'Path to Purchase Efficiency' },
+  const BEHAVIORAL_QUESTIONS: { type: BehavioralWorkspaceType; question_key: string; name: string; pack: string }[] = [
+    { type: 'first_impression', question_key: 'is_first_session_conversion_leaking', name: 'First Impression Revenue', pack: 'first_impression_revenue' },
+    { type: 'action_value', question_key: 'are_user_actions_driving_revenue', name: 'Action Value Map', pack: 'action_value_map' },
+    { type: 'acquisition_integrity', question_key: 'is_paid_traffic_reaching_conversion', name: 'Acquisition Integrity', pack: 'acquisition_integrity' },
+    { type: 'mobile_revenue', question_key: 'is_mobile_experience_costing_revenue', name: 'Mobile Revenue Exposure', pack: 'mobile_revenue_exposure' },
+    { type: 'friction_tax', question_key: 'how_much_does_ux_friction_cost', name: 'Friction Tax', pack: 'friction_tax' },
+    { type: 'trust_gap', question_key: 'is_trust_deficit_blocking_revenue', name: 'Trust Revenue Gap', pack: 'trust_revenue_gap' },
+    { type: 'path_efficiency', question_key: 'are_visitors_on_shortest_conversion_path', name: 'Path to Purchase Efficiency', pack: 'path_efficiency' },
   ];
 
   const behavioralPacks: MultiPackResult['behavioral_packs'] = {
@@ -605,7 +633,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     for (const bq of BEHAVIORAL_QUESTIONS) {
       const bResult: DecisionResult = produceDecision({
         question_key: bq.question_key,
-        scoping, cycle_ref, signals, inferences,
+        scoping, cycle_ref, signals,
+        inferences: forPack(bq.pack),
         conversion_proximity, is_production, translations,
       });
       const bActions = deriveActions(bResult.decision);

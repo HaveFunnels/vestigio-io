@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-13 (Wave 11 🟢 tier — Revenue 1/1, Preflight 4/4, Security 4/4 shipped. Money on table, SPOF map, Dependency health, What breaks at 10x, Budget forecast, Pentester reframe, Compliance gap, Phishing surface, Vendor advisories. Foundation: tech-stack projection API)
+> Last updated: 2026-05-13 (Wave 11 🟢 tier — Revenue 1/1, Preflight 4/4, Security 4/4, Copy 4/4 shipped. Money on table + SPOF + Dependency health + 10x simulator + Budget forecast + Pentester + Compliance gap + Phishing + Vendor advisories + Reading level + Test recommendations + Persona rewrite + Tone consistency. 13 widgets across 4 workspaces, two foundation APIs (tech-stack + copy-content).)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -2375,29 +2375,28 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 - **Locked state:** "Configure your competitors in Settings" CTA → competitor URL config UI to be built.
 - **Effort:** 3-4 days (mostly UI + competitor crawl scheduling).
 
-#### c. Test recommendation engine 🟢
-- **What:** Based on copy weak spots, generates concrete A/B test specs: "Test variant: replace homepage H1 'Powerful analytics' with 'Stop bleeding revenue'. Expected lift: 12-18% based on similar tests."
-- **Data deps:** Vestigio findings + LLM + (optional) historical A/B test data.
-- **Locked state:** n/a.
-- **Effort:** 3 days.
+> **Foundation shipped 2026-05-13:** `GET /api/workspace/copy-content` reads `PageContent` evidence rows (title + h1 + meta_description) for the latest cycle. Full body HTML isn't persisted by the ingestion pipeline, so all Wave 11.5 widgets scope to the visible-on-SERP copy fields — which are also the most leverage-bearing.
 
-#### d. Persona-rewrite preview 🟢
-- **What:** Show your current copy rewritten for each ICP segment defined in `BusinessProfile`. Side-by-side comparison: "For technical founder: ... / For CFO: ... / For marketer: ...". Helps owners see what their copy could feel like for non-default personas.
-- **Data deps:** `BusinessProfile.icpFields` (already exists from Wave 3.10) + LLM.
-- **Locked state:** If `BusinessProfile.icpFields` is empty: "Define your ICPs in Settings" CTA.
-- **Effort:** 2 days.
+#### c. Test recommendation engine 🟢 — ✅ Shipped 2026-05-13
+- **What:** Haiku produces 3 concrete A/B test specs grounded in the top negative copy findings (copy_alignment + scale_readiness + revenue_integrity packs). Each spec includes target page, hypothesis referencing a specific finding, concrete variant copy, expected lift range, and priority tier.
+- **Data deps:** FindingProjection (workspace findings) + LLM via `apps/mcp/llm/client.callModel`. Cached per (env, cycle, locale).
+- **Implementation:** `/api/workspace/copy-test-recommendations` + `src/components/console/workspace/TestRecommendations.tsx`. i18n: 12 keys × 4 locales.
 
-#### e. Reading level per page 🟢
-- **What:** Flesch-Kincaid grade level per crawled page. Flags pages where reading level > funnel-expectation (checkout at grade 12 = friction; B2B home at grade 6 = potentially too simple).
-- **Data deps:** Vestigio crawl content.
-- **Locked state:** n/a.
-- **Effort:** 1 day.
+#### d. Persona-rewrite preview 🟢 — ✅ Shipped 2026-05-13
+- **What:** Haiku rewrites the homepage H1 + meta description for 3 distinct ICP personas. When `BusinessProfile.icpDescription` is set, the primary persona honors it and the other two are synthesized contrasting personas. Each variant: persona label, rewritten headline (<80 chars), rewritten subhead (<160 chars).
+- **Data deps:** PageContent (homepage = shortest path heuristic) + BusinessProfile.{icpDescription, targetIndustry, buyerSophistication} + LLM.
+- **Locked state:** Empty state when no homepage H1/meta detected.
+- **Implementation:** `/api/workspace/copy-persona-rewrite` + `src/components/console/workspace/PersonaRewrite.tsx`. i18n: 11 keys × 4 locales.
 
-#### f. Tone consistency timeline 🟢
-- **What:** Heatmap showing tone consistency across pages. Detects funnel breaks where tone shifts (e.g. casual "Hey!" homepage → corporate "Schedule a consultation" pricing).
-- **Data deps:** LLM tone analysis (cheap one-pass per page) on top of Vestigio crawl.
-- **Locked state:** n/a.
-- **Effort:** 3-4 days.
+#### e. Reading level per page 🟢 — ✅ Shipped 2026-05-13
+- **What:** Flesch-Kincaid grade level per crawled page, computed client-side on title + h1 + meta description. Pages sorted by grade desc, tiered into easy / moderate / complex / very_complex, friction note when any page hits grade ≥ 12.
+- **Data deps:** PageContent evidence only — no LLM, pure computation.
+- **Implementation:** `src/components/console/workspace/ReadingLevel.tsx`. Vowel-group syllable heuristic in-component (English-leaning but relative ordering stays valid for pt-BR). i18n: 14 keys × 4 locales.
+
+#### f. Tone consistency timeline 🟢 — ✅ Shipped 2026-05-13
+- **What:** Haiku batch-classifies each page's tone into one of 8 tags (playful, casual, confident, professional, corporate, technical, urgent, salesy). Computes consistency % (pages on dominant tone) and renders stacked bar + per-tone breakdown with sample URLs. Warns when consistency < 70%.
+- **Data deps:** PageContent (up to 25 pages) + LLM. Cached per (env, cycle).
+- **Implementation:** `/api/workspace/copy-tone` + `src/components/console/workspace/ToneConsistency.tsx`. i18n: 13 keys × 4 locales.
 
 ---
 

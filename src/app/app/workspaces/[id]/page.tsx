@@ -32,6 +32,10 @@ import PentesterFinds from "@/components/console/workspace/PentesterFinds";
 import ComplianceGap from "@/components/console/workspace/ComplianceGap";
 import PhishingSurface from "@/components/console/workspace/PhishingSurface";
 import VendorAdvisories from "@/components/console/workspace/VendorAdvisories";
+import ReadingLevel from "@/components/console/workspace/ReadingLevel";
+import TestRecommendations from "@/components/console/workspace/TestRecommendations";
+import PersonaRewrite from "@/components/console/workspace/PersonaRewrite";
+import ToneConsistency from "@/components/console/workspace/ToneConsistency";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -424,9 +428,27 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 				</>
 			)}
 			{isCopyAlignment && (
-				<div className="mt-5">
-					<CopyAlignment findings={workspace.findings} />
-				</div>
+				<>
+					{/* Wave 11.5d — Persona rewrite of homepage copy */}
+					<div className="mt-5">
+						<PersonaRewrite />
+					</div>
+					{/* Wave 11.5c — LLM-generated A/B test specs */}
+					<div className="mt-5">
+						<TestRecommendations />
+					</div>
+					{/* Wave 11.5f — Tone consistency across pages */}
+					<div className="mt-5">
+						<ToneConsistency />
+					</div>
+					{/* Wave 11.5e — Reading level per page */}
+					<div className="mt-5">
+						<ReadingLevel />
+					</div>
+					<div className="mt-5">
+						<CopyAlignment findings={workspace.findings} />
+					</div>
+				</>
 			)}
 
 			{/* ── Coherence (only if conflicts exist) ── */}

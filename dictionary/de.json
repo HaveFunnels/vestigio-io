@@ -1878,6 +1878,28 @@
 					"empty": "Keine monatlichen Verluste in diesem Workspace.",
 					"uncategorized": "Keine Grundursache zugeordnet"
 				},
+				"next_action": {
+					"label": "Naechste Aktion",
+					"subtitle": "Das eine, was jetzt zu tun ist — priorisiert nach Wirkung und Aufwand",
+					"empty_title": "Nichts dringendes gerade",
+					"empty_description": "Keine offenen Aktionen in diesem Workspace. Weitermachen.",
+					"impact_label": "Holt zurueck",
+					"effort_hours": "≈ {hours}h",
+					"effort_days": "≈ {days} Tage",
+					"effort_weeks": "≈ {weeks} Wochen",
+					"effort_unknown": "Aufwand offen",
+					"view_action": "In Aktionen oeffnen"
+				},
+				"cost_of_inaction": {
+					"label": "Kosten der Untaetigkeit",
+					"subtitle": "Wie viel durch offene Findings in diesem Workspace verloren ging",
+					"total_lost": "Bereits verloren",
+					"daily_burn": "/ Tag",
+					"days_open": "Offen seit ~{days} Tagen",
+					"top_burners": "Groesste Verluste",
+					"per_finding_lost": "−{amount} bereits verloren",
+					"empty": "Keine offenen Findings mit monetaerem Impact."
+				},
 				"framework_lens": {
 					"label": "Framework-Lens",
 					"subtitle": "Sehen Sie Ihre Copy durch 10 etablierte Copywriting-Frameworks geprueft",

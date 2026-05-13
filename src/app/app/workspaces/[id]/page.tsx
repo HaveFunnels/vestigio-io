@@ -37,6 +37,8 @@ import TestRecommendations from "@/components/console/workspace/TestRecommendati
 import PersonaRewrite from "@/components/console/workspace/PersonaRewrite";
 import ToneConsistency from "@/components/console/workspace/ToneConsistency";
 import CopyFrameworkLens from "@/components/console/workspace/CopyFrameworkLens";
+import NextActionStrip from "@/components/console/workspace/NextActionStrip";
+import CostOfInaction from "@/components/console/workspace/CostOfInaction";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -324,6 +326,11 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 				</div>
 			</div>
 
+			{/* ── Wave 11.7a — Next Action Strip (universal CTA) ── */}
+			<div className="mt-5">
+				<NextActionStrip findings={workspace.findings} />
+			</div>
+
 			{/* ── Vestigio Pulse — workspace-scoped briefing ── */}
 			<div className="mt-5">
 				<PulseSummary
@@ -331,6 +338,11 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					workspaceName={workspace.name}
 					findingIds={workspace.findings.map((f) => f.id)}
 				/>
+			</div>
+
+			{/* ── Wave 11.7c — Cost of inaction strip ── */}
+			<div className="mt-5">
+				<CostOfInaction findings={workspace.findings} />
 			</div>
 
 			{/* ── Summary strip: Change Summary + Quick Stats (full width) ── */}

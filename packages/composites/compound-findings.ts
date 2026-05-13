@@ -483,9 +483,12 @@ function detectSecurityRevenueChain(
   const packsInvolved = [...new Set(chain.map(c => c.pack))];
   const affectedSurfaces = [...surfaces];
 
-  const adSpendStr = adSpendMonthly > 0 ? formatDollars(adSpendMonthly * 100) : 'unknown';
-  const narrative = `Your ${topSecurity.title.toLowerCase()} on ${topSecurity.surface} is blocking tracking scripts. ` +
-    `With ${adSpendStr}/mo in ads, you're flying blind on which campaigns convert.`;
+  // Only mention ad spend in the narrative when we actually have a number
+  // — saying "With unknown/mo in ads" leaks the placeholder to the UI.
+  const adSpendClause = adSpendMonthly > 0
+    ? `With ${formatDollars(adSpendMonthly * 100)}/mo in ads, you're flying blind on which campaigns convert.`
+    : `Your tracking is broken across paid acquisition surfaces — campaign attribution is missing.`;
+  const narrative = `Your ${topSecurity.title.toLowerCase()} on ${topSecurity.surface} is blocking tracking scripts. ${adSpendClause}`;
 
   return {
     id: `compound_security_revenue_chain_${topSecurity.surface.replace(/[^a-z0-9]/gi, '_')}`,

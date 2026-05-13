@@ -4111,6 +4111,288 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_notes: 'Vamos re-analisar os links da página para confirmar que um CTA para o próximo estágio do funil foi adicionado.',
 		verification_eta_seconds: 30,
 	},
+
+	// ─────────────────────────────────────────────
+	// Wave 13/14 — Discoverability pack decision keys
+	// (Brand Echo + AI Visibility)
+	// ─────────────────────────────────────────────
+
+	discoverability_critically_weak: {
+		remediation_steps: [
+			'Audite quais crawlers de IA estão bloqueados no /robots.txt e libere GPTBot, ClaudeBot, PerplexityBot, Google-Extended.',
+			'Publique /llms.txt na raiz com um resumo de uma página do que o produto faz e links pra pricing + docs.',
+			'Adicione JSON-LD (Organization na home + Product/Offer no /pricing + FAQPage onde houver Q&A) — IAs preferem schema-rico.',
+			'Reivindique perfis em diretórios da sua categoria (G2/Capterra pra SaaS, listicles independentes pra ecommerce).',
+			'Construa páginas "<sua marca> vs <concorrente top>" no seu próprio domínio antes que concorrentes ownem essa narrativa.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-rodar o recon externo (DDG SERP + robots.txt + JSON-LD parse) e confirmar que AI Visibility Score subiu acima de 60.',
+		verification_eta_seconds: 90,
+	},
+	discoverability_gaps_significant: {
+		remediation_steps: [
+			'Comece pelos quick-wins: /llms.txt + Product schema no /pricing (30 minutos cada).',
+			'Reivindique listings em terceiros (G2 / Capterra / Product Hunt) — IAs citam mais marcas que aparecem em fontes terceiras.',
+			'Resolva o ponto mais visível: se a marca não aparece na busca branded, fix título + canonical + schema da home.',
+			'Publique uma página "best <categoria>" no seu domínio mirando queries de comparação que você não cobre hoje.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-rodar o recon externo em 30-60 dias e medir o lift no AI Visibility Score (meta: +10 pontos).',
+		verification_eta_seconds: 90,
+	},
+	discoverability_improvable: {
+		remediation_steps: [
+			'Core de discoverability já está OK — refine pra busca por IA pra compor visibilidade.',
+			'Considere /llms.txt + /pricing.md se ainda não tiver, pra destravar AI agent parsing.',
+			'Audite schema markup: adicione FAQPage onde houver Q&A relevante, HowTo nos docs.',
+			'Monitore o AI Visibility Score trimestralmente e investigue qualquer queda.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-rodar o recon externo trimestralmente pra acompanhar trajetória do AI Visibility Score.',
+		verification_eta_seconds: 90,
+	},
+	discoverability_adequate: {
+		remediation_steps: [
+			'Discoverability saudável — continue alimentando conteúdo fresco + estrutura.',
+			'Agende recon externo trimestral pra pegar regressões cedo (perda de citação, schema removido).',
+			'Mantenha presença em terceiros: responda reviews novas, atualize listings, monitore mentions.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-rodar o recon externo pra confirmar que sua visibilidade em IA continua sólida.',
+		verification_eta_seconds: 90,
+	},
+
+	// ─────────────────────────────────────────────
+	// Wave 12/13 — Brand Integrity pack decision keys
+	// ─────────────────────────────────────────────
+
+	brand_integrity_critical: {
+		remediation_steps: [
+			'Resolva reclamações públicas pendentes em Trustpilot / Reclame Aqui — comprador BR/EU verifica antes de comprar.',
+			'Configure alerta de review nova e mire taxa de resposta sub-48h acima de 70%.',
+			'Conteste páginas de concorrente rodando ads pagos no seu trademark via Google Ads Trademark Complaints.',
+			'Abra UDRP ou compre domínios lookalike capturando tráfego branded.',
+			'Submeta takedown requests pra sites mimicando a marca (Google Safe Browsing + Microsoft Defender).',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-rodar o recon externo (Trustpilot + Reclame Aqui + brand monitoring) e confirmar resposta a reviews + reputation labels melhoraram.',
+		verification_eta_seconds: 90,
+	},
+	brand_integrity_elevated: {
+		remediation_steps: [
+			'Responda reviews negativas pendentes em Trustpilot/RA com acknowledgment empático + próximo passo concreto.',
+			'Negocie deals diretos com top afiliados ganhando comissão no seu tráfego branded — margem melhor que rede.',
+			'Publique press kit + about page que owna brand authority nos SERPs.',
+			'Monitore lookalike domains semanalmente; faça takedown nos confirmados.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-rodar o recon externo em 60 dias pra confirmar que sinais de reputação + SERP melhoraram.',
+		verification_eta_seconds: 90,
+	},
+	brand_integrity_weak: {
+		remediation_steps: [
+			'Mantenha cadência de resposta em plataformas de review (Trustpilot, G2, Reclame Aqui).',
+			'Adicione varredura mensal de brand monitoring (DDG search "<marca>" + queries de domínios lookalike).',
+			'Atualize press kit + about page com fatos recentes pra Wikipedia editors usarem como fonte.',
+		],
+		estimated_effort_hours: 5,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-rodar o recon externo mensalmente pra detectar novas ameaças de lookalike ou degradação de reputação.',
+		verification_eta_seconds: 90,
+	},
+	brand_integrity_strong: {
+		remediation_steps: [
+			'Integridade da marca está forte — continue monitorando plataformas de review e lookalike domains.',
+			'Mantenha cadência de resposta sub-48h pra qualquer review nova.',
+			'Agende recon externo trimestral pra pegar regressões.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-rodar o recon externo trimestral pra confirmar que integridade da marca continua sólida.',
+		verification_eta_seconds: 90,
+	},
+
+	// ─────────────────────────────────────────────
+	// Wave 12/13 — High-impact inference-level entries
+	// (used by FindingProjection lookups; complement the
+	// pack-level decision entries above)
+	// ─────────────────────────────────────────────
+
+	ai_bots_blocked: {
+		remediation_steps: [
+			'Abra o robots.txt na raiz do site (ex: https://seudominio.com/robots.txt).',
+			'Remova qualquer Disallow: / aplicado aos User-agents GPTBot, ChatGPT-User, ClaudeBot, anthropic-ai, PerplexityBot, Google-Extended, Bingbot, Applebot-Extended.',
+			'Se houver bloqueio wildcard ("User-agent: * → Disallow: /"), adicione stanzas explícitas permissivas pra cada bot de IA.',
+			'Confirme deploy + teste cada bot bloqueado num validador online de robots.txt.',
+		],
+		estimated_effort_hours: 1,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-buscar /robots.txt e parsear pra confirmar que cada AI crawler tem acesso.',
+		verification_eta_seconds: 10,
+	},
+	no_llms_txt: {
+		remediation_steps: [
+			'Crie /llms.txt na raiz do site com markdown: linha 1 = "# <Nome do Produto>", linhas seguintes = resumo de 1-2 parágrafos do que faz + pra quem é.',
+			'Inclua links pra páginas chave: /pricing, /docs, /about, /contact.',
+			'Mantenha o arquivo abaixo de 2KB pra agentes parsearem rápido.',
+			'Spec completo: https://llmstxt.org',
+		],
+		estimated_effort_hours: 1,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos buscar /llms.txt e confirmar que tem conteúdo substantivo (>100 chars).',
+		verification_eta_seconds: 10,
+	},
+	no_machine_readable_pricing: {
+		remediation_steps: [
+			'Crie /pricing.md na raiz refletindo seus planos.',
+			'Pra cada plano: nome, preço mensal + anual, limites principais (assentos, requests, etc), e bullet list do que está incluso.',
+			'Adicione data de "last updated" no topo do arquivo.',
+			'Mantenha sincronizado quando alterar pricing público.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos buscar /pricing.md (ou /pricing.txt) e confirmar que tem conteúdo substantivo parseável.',
+		verification_eta_seconds: 10,
+	},
+	schema_markup_missing_for_product: {
+		remediation_steps: [
+			'Adicione JSON-LD do tipo Product (ou SoftwareApplication pra SaaS) na /pricing como primeira prioridade.',
+			'Inclua nested Offer com price + priceCurrency + availability.',
+			'Adicione Organization schema na homepage com logo + sameAs (perfis sociais).',
+			'Valide com Google Rich Results Test antes de promover.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos re-parsear o JSON-LD da homepage + /pricing pra confirmar que Product/Offer schemas estão presentes.',
+		verification_eta_seconds: 15,
+	},
+	branded_serp_invisible: {
+		remediation_steps: [
+			'Confirme que o <title> da homepage começa com o nome da marca.',
+			'Adicione H1 visível com o nome da marca verbatim.',
+			'Configure canonical apontando pra raiz do domínio na home.',
+			'Submeta o domínio ao Google Search Console e force re-indexação.',
+			'Adicione Organization schema com sameAs apontando pra todos os perfis sociais.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos refazer a query DDG pelo nome da marca e confirmar que seu domínio aparece no top 3.',
+		verification_eta_seconds: 30,
+	},
+	trustpilot_complaint_cluster: {
+		remediation_steps: [
+			'Liste todas reviews 1-2★ sem resposta no painel do Trustpilot.',
+			'Responda cada uma em até 48h com acknowledgment + próximo passo concreto.',
+			'Pra reviews antigas (>3 meses), responda mesmo assim — credibilidade ainda volta.',
+			'Configure alerta de notificação pra qualquer review nova.',
+			'Documente padrões nas reclamações e ajuste produto/UX pra reduzir reincidência.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-fetchar seu perfil Trustpilot e confirmar que reviews negativas têm resposta do owner.',
+		verification_eta_seconds: 60,
+	},
+	reclame_aqui_reputation_critical: {
+		remediation_steps: [
+			'Acesse o painel da empresa no Reclame Aqui e liste reclamações pendentes.',
+			'Resolva cada reclamação publicamente — marque como Resolvido após acordo com cliente.',
+			'Configure tempo de resposta sub-5 dias úteis pra novas reclamações.',
+			'Trabalhe pra subir o "Índice de Solução" acima de 7/10 em 90 dias.',
+			'Comprador BR confere RA antes de pagar — esse é um dos sinais de confiança mais críticos pro mercado BR.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-buscar seu perfil no Reclame Aqui via SERP e confirmar que reputation label saiu de Ruim/Não Recomendada.',
+		verification_eta_seconds: 60,
+	},
+	competitor_brand_hijack_serp: {
+		remediation_steps: [
+			'Liste os domínios de concorrente que rankeiam acima do seu no SERP do nome da marca.',
+			'Pra concorrentes rodando Google Ads no seu trademark: abra Google Ads Trademark Complaint.',
+			'Pra páginas de review/afiliado enganosas: notifique via DMCA ou contato direto.',
+			'Reforce sinais de autoridade: Wikipedia article, Organization schema, press releases recentes.',
+			'Publique página comparativa "marca vs concorrente" no seu domínio pra ownar a narrativa.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-buscar o nome da marca via DDG e confirmar que seu domínio voltou ao top 3.',
+		verification_eta_seconds: 30,
+	},
+	category_intent_invisible: {
+		remediation_steps: [
+			'Publique listicle "best <categoria> [ano]" no seu domínio cobrindo 5-7 ferramentas (inclusive a sua, justa).',
+			'Mire keywords de alternativa: "<categoria> alternatives", "best <categoria> for <use case>".',
+			'Faça outreach pra 3-5 autores independentes de listicles "best of" oferecendo inclusão.',
+			'Considere ads pagos no curto prazo enquanto SEO orgânico amadurece.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos refazer a query SERP da categoria via DDG e confirmar que seu domínio aparece no top 10.',
+		verification_eta_seconds: 30,
+	},
+	g2_listing_void: {
+		remediation_steps: [
+			'Acesse g2.com/sellers/contact e reivindique seu perfil de produto (grátis).',
+			'Adicione descrição completa, 5+ screenshots, integrações listadas, e categorias relevantes.',
+			'Convide 10-15 clientes felizes a deixar review honesto nos primeiros 30 dias.',
+			'Configure alerta de review nova e responda dentro de 48h.',
+			'Meta: chegar a 50+ reviews em 90 dias — IAs preferem marcas com volume de social proof verificado.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-tentar a URL G2 do seu produto e confirmar que tem perfil ativo com reviews.',
+		verification_eta_seconds: 30,
+	},
+	capterra_listing_void: {
+		remediation_steps: [
+			'Reivindique perfis em Capterra + GetApp + SoftwareAdvice (todos da Gartner, um único onboarding).',
+			'Adicione descrição, features, integrations, e screenshots.',
+			'Configure cadência de coleta de reviews mensal com clientes ativos.',
+			'Submeta a categorias relevantes — Gartner curated, leva 1-2 semanas pra aprovar.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-tentar a busca Capterra pela sua marca e confirmar perfil listado.',
+		verification_eta_seconds: 30,
+	},
+	wikipedia_article_thin_or_outdated: {
+		remediation_steps: [
+			'Liste fontes independentes existentes sobre a marca: imprensa, blogs editoriais, papers, awards.',
+			'Recrute editores Wikipedia independentes (NÃO escreva você mesmo — viola NPOV).',
+			'Forneça material fonte: press kit + factsheet com datas, equipe, milestones, customer logos.',
+			'Edição incrementa autoridade da marca em respostas de IA — Wikipedia é ~7.8% das citações ChatGPT.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'Vamos re-checar o artigo Wikipedia da marca e confirmar que extract length > 800 chars e última edição < 18 meses.',
+		verification_eta_seconds: 30,
+	},
 };
 
 /**

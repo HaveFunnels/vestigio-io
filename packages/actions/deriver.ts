@@ -15,10 +15,33 @@ import {
 
 import { IdGenerator } from '../domain';
 
+/**
+ * Strip the internal "Risk score: X/100, confidence: Y/100" sentence
+ * from a decision summary before showing it to the user as an action
+ * description. The numbers are valuable for engineers but read as
+ * jargon to the buyer-facing audience. Scores remain available on the
+ * structured Decision.risk_evaluation field for UI surfaces that want
+ * to render them as their own block.
+ */
+function stripDiagnosticScores(text: string): string {
+  // Matches the pattern across pt-BR, en, es summaries:
+  //   "Pontuação de risco: 90/100, confiança: 67/100. "
+  //   "Risk score: 75/100, confidence: 80/100. "
+  //   "Puntuación de riesgo: 60/100, confianza: 70/100. "
+  return text
+    .replace(
+      /\b(?:Pontuação de risco|Risk score|Puntuación de riesgo)\s*:\s*\d+\/100\s*,\s*(?:confiança|confidence|confianza)\s*:\s*\d+\/100\s*\.?\s*/gi,
+      '',
+    )
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 export function deriveActions(decision: Decision): Action[] {
   const actions: Action[] = [];
   const ids = new IdGenerator('act');
   const now = new Date();
+  const cleanDescription = stripDiagnosticScores(decision.why.summary);
 
   // Primary action
   if (decision.actions.primary) {
@@ -29,7 +52,7 @@ export function deriveActions(decision: Decision): Action[] {
       decision_ref: makeRef('decision', decision.id),
       action_type: decisionToActionType(decision),
       title: decision.actions.primary,
-      description: decision.why.summary,
+      description: cleanDescription,
       priority: impactToPriority(decision.decision_impact),
       severity: decision.effective_severity,
       decision_impact: decision.decision_impact,
@@ -46,7 +69,7 @@ export function deriveActions(decision: Decision): Action[] {
       decision_ref: makeRef('decision', decision.id),
       action_type: decisionToActionType(decision),
       title: decision.actions.secondary[i],
-      description: decision.why.summary,
+      description: cleanDescription,
       priority: impactToPriority(decision.decision_impact) + i + 1,
       severity: downgrade(decision.effective_severity),
       decision_impact: decision.decision_impact,
@@ -54,7 +77,10 @@ export function deriveActions(decision: Decision): Action[] {
     }));
   }
 
-  // Verification actions
+  // Verification actions — description carries the parent decision's
+  // cleaned summary so the drawer shows the WHY behind verifying, not
+  // a generic stub. The verification action's own `title` (verification
+  // sentence) supplies the WHAT.
   for (let i = 0; i < decision.actions.verification.length; i++) {
     actions.push(createAction(ids, {
       action_key: `${decision.decision_key}_verify_${i}`,
@@ -63,7 +89,7 @@ export function deriveActions(decision: Decision): Action[] {
       decision_ref: makeRef('decision', decision.id),
       action_type: 'verification',
       title: decision.actions.verification[i],
-      description: 'Verification step to confirm resolution.',
+      description: cleanDescription || decision.actions.primary,
       priority: 90 + i,
       severity: EffectiveSeverity.Low,
       decision_impact: DecisionImpact.Observe,

@@ -16,6 +16,56 @@ import { evaluateRisk, RiskInput } from '../risk';
 import type { EngineTranslations } from '../projections/types';
 
 // ──────────────────────────────────────────────
+// Wave 15.5 — gating threshold for action secondaries.
+//
+// Builders' local `has(key)` helpers route through isFiringInference()
+// so secondaries don't trigger on weak or low-confidence inferences.
+//
+//   severity_hint must be 'critical' | 'high' | 'medium'
+//     (excludes 'low' and 'none' — positive findings + advisory signals
+//      shouldn't surface as aggressive remediation prescriptions)
+//
+//   confidence must be ≥ 50
+//     (mirrors FindingProjection.confidence_tier='low' filter at the
+//      same threshold — keeps actions and findings aligned)
+//
+// Compound inferences hard-code severity='high' + confidence=85, so
+// they always pass. Positive findings hard-code severity='none', so
+// they never pass — they have their own primary action rendering.
+// ──────────────────────────────────────────────
+const MIN_ACTION_FIRING_CONFIDENCE = 50;
+const STRONG_SEVERITY_HINTS = new Set(['critical', 'high', 'medium']);
+
+function isFiringInference(inf: Inference | undefined): boolean {
+  if (!inf) return false;
+  if (!STRONG_SEVERITY_HINTS.has(inf.severity_hint ?? '')) return false;
+  if (inf.confidence < MIN_ACTION_FIRING_CONFIDENCE) return false;
+  return true;
+}
+
+/**
+ * Pull a concrete numeric count from an inference for data interpolation
+ * in action secondary text. Looks at reasoning_slots first (structured),
+ * falls back to first integer in inference.reasoning. Returns null when
+ * no usable count is available.
+ */
+function inferenceConcreteCount(inf: Inference | undefined): number | null {
+  if (!inf) return null;
+  const slots = inf.reasoning_slots ?? {};
+  const candidates = ['count', 'numeric_value', 'unanswered_count', 'hijack_count', 'thread_count', 'category_demand', 'prior_score', 'current_score'];
+  for (const k of candidates) {
+    const v = slots[k];
+    if (typeof v === 'number' && v > 0) return v;
+    if (typeof v === 'string') {
+      const parsed = parseInt(v, 10);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+  }
+  const m = inf.reasoning?.match(/\b(\d+)\b/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+// ──────────────────────────────────────────────
 // Decision Engine — answers business questions
 // ──────────────────────────────────────────────
 
@@ -555,7 +605,13 @@ function buildRevenueIntegrityActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.revenue_integrity;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const hasActive = (key: string): boolean => {
     const inf = has(key);
     return !!inf && inf.conclusion_value !== 'low' && inf.conclusion_value !== 'none' && inf.conclusion_value !== 'false';
@@ -1034,7 +1090,13 @@ function buildDiscoverabilityActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.discoverability;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
 
   const secondary: string[] = [];
   const verification: string[] = [];
@@ -1057,8 +1119,17 @@ function buildDiscoverabilityActions(
   if (has('no_machine_readable_pricing')) {
     secondary.push(tr('publish_pricing_md', 'Publish /pricing.md (or /pricing.txt) at the site root with plan names, monthly prices, key limits, and what is included per tier. AI agents comparing tools programmatically depend on parseable pricing.'));
   }
-  if (has('ai_bots_blocked')) {
-    secondary.push(tr('unblock_ai_bots', 'Edit robots.txt to allow GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Bingbot. Each blocked crawler is a platform that physically cannot cite the brand.'));
+  {
+    const inf = has('ai_bots_blocked');
+    if (inf) {
+      const count = inferenceConcreteCount(inf);
+      // Extract bot names from reasoning
+      const botsMatch = inf.reasoning?.match(/\b((?:GPTBot|ClaudeBot|PerplexityBot|Google-Extended|Bingbot|ChatGPT-User|anthropic-ai|Applebot-Extended|OAI-SearchBot)(?:,\s*[A-Za-z-]+)*)/);
+      const botNames = botsMatch?.[1] ?? null;
+      secondary.push(count != null && botNames
+        ? `${count} AI crawler(s) bloqueado(s) no robots.txt: ${botNames}. Cada bot bloqueado é uma plataforma que fisicamente não te cita. Remova Disallow ou adicione stanzas explícitas permissivas pra cada um.`
+        : tr('unblock_ai_bots', 'Edit robots.txt to allow GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Bingbot. Each blocked crawler is a platform that physically cannot cite the brand.'));
+    }
   }
   if (has('schema_markup_missing_for_product') || has('schema_priority_list')) {
     secondary.push(tr('add_product_schema', 'Add Product (or SoftwareApplication) + Offer JSON-LD to /pricing first, then Organization on homepage, then FAQPage on any page with Q&A content. AI assistants prefer schema-rich content for citation.'));
@@ -1116,14 +1187,23 @@ function buildDiscoverabilityActions(
     secondary.push(tr('expose_commercial_pages', 'Commercial pages (pricing, product, checkout entry) may not be indexed by search engines. Verify robots.txt allows crawling, add them to the sitemap, and link from the homepage.'));
   }
 
+  // Wave 15.5 — interpolate current AI Visibility Score into primary text.
+  // The score inference is always present (when external recon ran) and
+  // carries the actual 0-100 score in conclusion_value. We use raw lookup
+  // (bypass `has`) because the score might have severity='low' for healthy
+  // brands and still be useful context.
+  const scoreInf = inferences.find(i => i.inference_key === 'ai_visibility_score');
+  const aiVizScore = scoreInf ? parseInt(scoreInf.conclusion_value, 10) : null;
+  const scoreSuffix = aiVizScore != null ? ` AI Visibility Score atual: ${aiVizScore}/100.` : '';
+
   // Build primary by impact level
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = tr('incident_primary', 'AI assistants and search engines cannot find or recommend the brand. Buyers researching your category find competitors instead. Address visibility gaps before any paid acquisition push.');
+    const primary = tr('incident_primary', 'AI assistants and search engines cannot find or recommend the brand. Buyers researching your category find competitors instead. Address visibility gaps before any paid acquisition push.') + scoreSuffix;
     verification.push(tr('incident_verify', 'Re-run the external recon audit in 30 days to confirm AI Visibility Score moved above 60.'));
     return { primary, secondary: secondary.slice(0, 8), verification };
   }
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = tr('fix_primary', 'Discoverability gaps are limiting growth. Each blocked AI crawler, missing listing, or unowned comparison query is buying-intent traffic going to competitors. Fix high-leverage items first (llms.txt + schema + Wikipedia).');
+    const primary = tr('fix_primary', 'Discoverability gaps are limiting growth. Each blocked AI crawler, missing listing, or unowned comparison query is buying-intent traffic going to competitors. Fix high-leverage items first (llms.txt + schema + Wikipedia).') + scoreSuffix;
     verification.push(tr('fix_verify', 'Re-run external recon in 30-60 days and confirm AI Visibility Score improved by ≥10 points.'));
     return { primary, secondary: secondary.slice(0, 6), verification };
   }
@@ -1153,7 +1233,13 @@ function buildBrandIntegrityActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.brand_integrity;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
 
   const secondary: string[] = [];
   const verification: string[] = [];
@@ -1166,24 +1252,66 @@ function buildBrandIntegrityActions(
     secondary.push(tr('compound_brand_crisis', 'CROSS-PACK: Brand authority crisis on multiple fronts (branded SERP + competitor hijack + affiliate dominance). Three-prong response in parallel: (a) SEO/technical — fix title/canonical/schema; (b) IP enforcement — file Google Ads Trademark Complaints; (c) affiliate partnership — convert top affiliate domains from commission-takers to direct partners.'));
   }
 
-  // Wave 12 Brand Echo — reputation review platforms
-  if (has('trustpilot_complaint_cluster')) {
-    secondary.push(tr('respond_trustpilot_complaints', 'Negative Trustpilot reviews are sitting unanswered for prospects to read. Assign someone to respond within 48 hours of each new review with an empathetic acknowledgment + concrete next step. Reply to existing unanswered negatives now — even a 5-month-old reply restores credibility.'));
+  // Wave 12 Brand Echo — reputation review platforms.
+  // Wave 15.5: secondaries interpolate concrete counts/labels from the
+  // underlying inference's reasoning_slots/reasoning so users see
+  // "respond to 7 reviews" instead of "respond to reviews".
+  {
+    const inf = has('trustpilot_complaint_cluster');
+    if (inf) {
+      const count = inferenceConcreteCount(inf);
+      secondary.push(count != null
+        ? `Você tem ${count} reviews 1-2★ sem resposta no Trustpilot — comprador EU/US confere antes de pagar. Responda dentro de 48h, mesmo as antigas (resposta a review de 5 meses ainda recupera credibilidade).`
+        : tr('respond_trustpilot_complaints', 'Negative Trustpilot reviews are sitting unanswered for prospects to read. Assign someone to respond within 48 hours of each new review with an empathetic acknowledgment + concrete next step. Reply to existing unanswered negatives now — even a 5-month-old reply restores credibility.'));
+    }
   }
-  if (has('trustpilot_response_silence')) {
-    secondary.push(tr('trustpilot_response_cadence', 'Set up a Trustpilot alert that pages someone for any new review. Target sub-48h response rate above 70% — silence is the #1 reason high-intent prospects pick a competitor with similar features but visible care.'));
+  {
+    const inf = has('trustpilot_response_silence');
+    if (inf) {
+      const rate = inferenceConcreteCount(inf); // numeric_value carries % response rate
+      secondary.push(rate != null && rate < 70
+        ? `Owner response rate no Trustpilot está em ${rate}% (industry benchmark >70%). Configure alerta pra cada review nova e mire sub-48h — silêncio é razão #1 de comprador escolher concorrente com features parecidas mas cuidado visível.`
+        : tr('trustpilot_response_cadence', 'Set up a Trustpilot alert that pages someone for any new review. Target sub-48h response rate above 70% — silence is the #1 reason high-intent prospects pick a competitor with similar features but visible care.'));
+    }
   }
-  if (has('reclame_aqui_reputation_critical')) {
-    secondary.push(tr('reclame_aqui_recovery', 'Reclame Aqui flags the brand as critical — BR buyers verify before paying. Resolve pending complaints publicly (status = Resolvido), respond to every new complaint within 5 business days, and target index acima de 7/10 within 90 days.'));
+  {
+    const inf = has('reclame_aqui_reputation_critical');
+    if (inf) {
+      // Look for "Ruim"/"Não recomendada"/"Regular" label in reasoning
+      const labelMatch = inf.reasoning?.match(/"(Ruim|Não recomendada|Regular|Ótimo|Bom|RA1000)"/);
+      const indexMatch = inf.reasoning?.match(/index\s+(\d+(?:\.\d+)?)/);
+      const label = labelMatch?.[1] ?? null;
+      const idx = indexMatch?.[1] ?? null;
+      secondary.push(label || idx
+        ? `Reclame Aqui marca a marca como "${label ?? 'crítica'}"${idx ? ` (índice ${idx}/10)` : ''}. Comprador BR confere RA antes de pagar — resolva reclamações pendentes publicamente (status = Resolvido), responda novas em ≤5 dias úteis, mire índice >7/10 em 90 dias.`
+        : tr('reclame_aqui_recovery', 'Reclame Aqui flags the brand as critical — BR buyers verify before paying. Resolve pending complaints publicly (status = Resolvido), respond to every new complaint within 5 business days, and target index acima de 7/10 within 90 days.'));
+    }
   }
 
   // Wave 12 Brand Echo — SERP integrity (these overlap with discoverability
   // but the response is more about ownership/IP enforcement)
-  if (has('competitor_brand_hijack_serp')) {
-    secondary.push(tr('competitor_hijack_enforcement', 'Competitors outrank your own domain on your brand name. Publish a press kit + about page that aggressively owns brand signal. For repeat offenders running paid ads on your trademark, file Google Ads Trademark Complaints + Meta brand reports.'));
+  {
+    const inf = has('competitor_brand_hijack_serp');
+    if (inf) {
+      const count = inferenceConcreteCount(inf);
+      // Extract domain list from reasoning
+      const domainsMatch = inf.reasoning?.match(/(?:domains?|hijackers?):\s*([^.]+)/i);
+      const domains = domainsMatch?.[1]?.trim().slice(0, 80) ?? null;
+      secondary.push(count != null
+        ? `${count} domínios não-brand rankeiam acima do seu domínio no nome da sua marca${domains ? ` (top: ${domains})` : ''}. Pra concorrentes rodando Google Ads no seu trademark, abra Google Ads Trademark Complaints + Meta brand reports. Reforce sinais de marca (press kit + Wikipedia + Organization schema).`
+        : tr('competitor_hijack_enforcement', 'Competitors outrank your own domain on your brand name. Publish a press kit + about page that aggressively owns brand signal. For repeat offenders running paid ads on your trademark, file Google Ads Trademark Complaints + Meta brand reports.'));
+    }
   }
-  if (has('affiliate_outranks_own')) {
-    secondary.push(tr('affiliate_traffic_recovery', 'Affiliate/review sites earn commission on traffic that should be direct. Negotiate direct deals with the top 3 affiliate sites (better margin than network commissions), file trademark enforcement on misleading review pages, and invest in your own branded landing pages.'));
+  {
+    const inf = has('affiliate_outranks_own');
+    if (inf) {
+      const count = inferenceConcreteCount(inf);
+      const domainsMatch = inf.reasoning?.match(/(?:Domains?|domains?):\s*([^.]+)/);
+      const domains = domainsMatch?.[1]?.trim().slice(0, 80) ?? null;
+      secondary.push(count != null
+        ? `${count} sites afiliados ganhando comissão no seu tráfego branded${domains ? ` (${domains})` : ''}. Negocie deals diretos com os 3 maiores (melhor margem que comissão de rede), faça enforcement de trademark em páginas enganosas, invista nas suas próprias branded landing pages.`
+        : tr('affiliate_traffic_recovery', 'Affiliate/review sites earn commission on traffic that should be direct. Negotiate direct deals with the top 3 affiliate sites (better margin than network commissions), file trademark enforcement on misleading review pages, and invest in your own branded landing pages.'));
+    }
   }
 
   // Phase 3E — Brand impersonation / typosquats
@@ -1271,7 +1399,13 @@ function buildSaasGrowthReadinessActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.saas_growth_readiness;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1335,7 +1469,13 @@ function buildChannelIntegrityActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.channel_integrity;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1403,7 +1543,13 @@ function buildFrictionTaxActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.friction_tax;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1438,7 +1584,13 @@ function buildContentFreshnessActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.content_freshness;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1476,7 +1628,13 @@ function buildMobileRevenueExposureActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.mobile_revenue_exposure;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1516,7 +1674,13 @@ function buildTrustRevenueGapActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.trust_revenue_gap;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1556,7 +1720,13 @@ function buildFirstImpressionRevenueActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.first_impression_revenue;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1591,7 +1761,13 @@ function buildActionValueMapActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.action_value_map;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1626,7 +1802,13 @@ function buildAcquisitionIntegrityActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.acquisition_integrity;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 
@@ -1669,7 +1851,13 @@ function buildPathEfficiencyActions(
 ): { primary: string; secondary: string[]; verification: string[] } {
   const ts = translations?.actions?.path_efficiency;
   const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
-  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+  // Wave 15.5: `has` is gated — only returns inferences strong enough
+  // to justify firing a secondary action (severity ≥ medium + confidence ≥ 50).
+  // Weak/positive inferences don't surface as remediation prescriptions.
+  const has = (key: string): Inference | undefined => {
+    const inf = inferences.find((i) => i.inference_key === key);
+    return isFiringInference(inf) ? inf : undefined;
+  };
   const secondary: string[] = [];
   const verification: string[] = [];
 

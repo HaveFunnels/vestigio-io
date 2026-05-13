@@ -106,6 +106,8 @@ export interface CoverageEntry {
   skipReason?: SkipReason;
   /** Detected A/B test platform on this page, if any (Optimizely, VWO, …). */
   abTestPlatform?: string | null;
+  /** Page locale code from <html lang="…"> (e.g. "en-US", "pt-BR"). */
+  localeCode?: string | null;
 }
 
 export interface CoverageSummary {
@@ -396,7 +398,7 @@ export async function runStagedPipeline(
     }
 
     const homepageAbTest = detectAbTestPlatform(homepageParsed);
-    coverage.set(rootUrl, { url: rootUrl, discovered: true, validated: true, critical: true, confidence: 80, discoverySource: 'homepage', abTestPlatform: homepageAbTest });
+    coverage.set(rootUrl, { url: rootUrl, discovered: true, validated: true, critical: true, confidence: 80, discoverySource: 'homepage', abTestPlatform: homepageAbTest, localeCode: homepageParsed.lang });
   } catch (err) {
     errors.push({ url: rootUrl, error: err instanceof Error ? err.message : String(err) });
     emit({ type: 'stage_complete', stage: 'bootstrap', data: { success: false, error: errors[0].error }, timestamp: new Date() });
@@ -485,6 +487,46 @@ export async function runStagedPipeline(
       if (!seen.has(key)) {
         seen.add(key);
         candidates.push({ url: sUrl, source: 'sitemap' });
+      }
+    }
+  }
+
+  // Wave 9.3 — feed hreflang alternates from the homepage as additional
+  // candidates so multi-locale sites surface every variant of the home
+  // page. Same domain check is preserved because we never crawl
+  // external hosts.
+  if (homepageParsed && homepageParsed.hreflang_alternates.length > 0) {
+    const seen = new Set<string>(candidates.map(c => normalizeUrlForDedup(c.url)));
+    seen.add(normalizeUrlForDedup(rootUrl));
+    for (const alt of homepageParsed.hreflang_alternates) {
+      try {
+        const host = new URL(alt.href).hostname;
+        if (!host.endsWith(rootDomain)) continue;
+      } catch { continue; }
+      const key = normalizeUrlForDedup(alt.href);
+      if (!seen.has(key)) {
+        seen.add(key);
+        candidates.push({ url: alt.href, source: 'internal_link' });
+      }
+    }
+  }
+
+  // Wave 9.3 — homepage pagination links (rel=next/prev or numbered).
+  // These rarely apply to the home page itself but if they do, we want
+  // to discover page 2..N. Pagination links from inner pages are added
+  // dynamically when those pages are parsed below.
+  if (homepageParsed && homepageParsed.pagination_links.length > 0) {
+    const seen = new Set<string>(candidates.map(c => normalizeUrlForDedup(c.url)));
+    seen.add(normalizeUrlForDedup(rootUrl));
+    for (const p of homepageParsed.pagination_links) {
+      try {
+        const host = new URL(p.href).hostname;
+        if (!host.endsWith(rootDomain)) continue;
+      } catch { continue; }
+      const key = normalizeUrlForDedup(p.href);
+      if (!seen.has(key)) {
+        seen.add(key);
+        candidates.push({ url: p.href, source: 'pagination' });
       }
     }
   }
@@ -776,6 +818,7 @@ export async function runStagedPipeline(
           confidence: renderedViaPlaywright ? 85 : 75,
           skipReason: undefined,
           abTestPlatform,
+          localeCode: parsed.lang,
         });
       } else {
         // Non-HTML response — still successful fetch, but tagged as

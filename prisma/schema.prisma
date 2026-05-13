@@ -838,6 +838,10 @@ model PageInventoryItem {
   // Wave 9.3 — detected A/B test platform on this page (optimizely,
   // vwo, google_optimize, …). null when none detected.
   abTestPlatform  String?
+  // Wave 9.3 — locale advertised by the page (from <html lang="…">).
+  // E.g. "en", "en-US", "pt-BR". Lets the inventory group/filter
+  // multi-locale variants surfaced via hreflang.
+  localeCode      String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

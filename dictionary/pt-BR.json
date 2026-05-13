@@ -3492,6 +3492,10 @@
 				"split": "Split"
 			},
 			"ab_test_detected": "Teste A/B detectado: {platform}",
+			"locale_badge_tooltip": "Idioma da página: {locale}",
+			"locale_filter": {
+				"all": "Todos os Idiomas"
+			},
 			"empty": {
 				"title": "Nenhuma superfície descoberta ainda",
 				"description": "Instale o snippet da Vestigio para começar a coletar dados comportamentais e inventário de superfícies."
@@ -3531,6 +3535,7 @@
 				"discovery_source": "Como descobrimos",
 				"skip_reason": "Por que não verificamos",
 				"ab_test_platform": "Plataforma de teste A/B",
+				"locale": "Idioma",
 				"view_in_journey": "Ver no mapa da jornada",
 				"view_findings": "Ver {count, plural, one {# descoberta} other {# descobertas}} nesta página"
 			}

@@ -3408,6 +3408,10 @@
 				"split": "Split"
 			},
 			"ab_test_detected": "A/B test detected: {platform}",
+			"locale_badge_tooltip": "Page locale: {locale}",
+			"locale_filter": {
+				"all": "All Locales"
+			},
 			"empty": {
 				"title": "No surfaces discovered yet",
 				"description": "Install the Vestigio snippet to start collecting behavioral data and surface inventory."
@@ -3447,6 +3451,7 @@
 				"discovery_source": "Discovery source",
 				"skip_reason": "Why we didn't refetch",
 				"ab_test_platform": "A/B test platform",
+				"locale": "Locale",
 				"view_in_journey": "View in journey map",
 				"view_findings": "View {count, plural, one {# finding} other {# findings}} on this page"
 			}

@@ -291,6 +291,7 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       discovery_source: item.discoverySource ?? null,
       skip_reason: item.skipReason ?? null,
       ab_test_platform: item.abTestPlatform ?? null,
+      locale_code: item.localeCode ?? null,
       http_status: item.statusCode ?? null,
       title: item.title ?? null,
       description: null,

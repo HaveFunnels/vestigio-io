@@ -22,6 +22,19 @@ export interface ParsedPage {
   structured_data: ParsedStructuredData[];
   body_word_count: number;
   body_text_snippet: string | null;
+  // Wave 9.3 — hreflang alternates + structured pagination links.
+  hreflang_alternates: HreflangAlternate[];
+  pagination_links: PaginationLink[];
+}
+
+export interface HreflangAlternate {
+  href: string;
+  hreflang: string; // e.g. "en-US", "pt-BR", "x-default"
+}
+
+export interface PaginationLink {
+  href: string;
+  rel: 'next' | 'prev' | 'inferred'; // explicit rel="next/prev" or pattern-inferred /page/N/
 }
 
 export type LinkPosition = 'header' | 'nav' | 'footer' | 'main' | 'aside' | 'unknown';
@@ -161,6 +174,8 @@ export function parsePage(html: string, pageUrl: string): ParsedPage {
     structured_data: extractStructuredData(html),
     body_word_count: wordCount,
     body_text_snippet: bodyText ? bodyText.slice(0, 2000) : null,
+    hreflang_alternates: extractHreflang(html, pageUrl),
+    pagination_links: extractPagination(html, pageUrl),
   };
 }
 
@@ -214,6 +229,76 @@ function extractCanonical(html: string): string | null {
   if (match) return match[1];
   const match2 = /<link[^>]*href=["']([^"']*?)["'][^>]*rel=["']canonical["']/i.exec(html);
   return match2 ? match2[1] : null;
+}
+
+/**
+ * Extract hreflang alternate URLs from <link rel="alternate" hreflang="..." href="...">.
+ * The order of attributes is not guaranteed, so we run two passes (hreflang
+ * before href, then href before hreflang) and merge.
+ */
+function extractHreflang(html: string, pageUrl: string): HreflangAlternate[] {
+  const out: HreflangAlternate[] = [];
+  const seen = new Set<string>(); // dedup by href|hreflang
+  const patterns = [
+    /<link[^>]*rel=["']alternate["'][^>]*hreflang=["']([^"']+)["'][^>]*href=["']([^"']+)["'][^>]*>/gi,
+    /<link[^>]*rel=["']alternate["'][^>]*href=["']([^"']+)["'][^>]*hreflang=["']([^"']+)["'][^>]*>/gi,
+  ];
+  const push = (hreflang: string, href: string) => {
+    let absolute = href;
+    try { absolute = new URL(href, pageUrl).toString(); } catch { /* keep raw */ }
+    const key = `${absolute}|${hreflang}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ href: absolute, hreflang });
+  };
+  let m: RegExpExecArray | null;
+  while ((m = patterns[0].exec(html)) !== null) push(m[1], m[2]);
+  while ((m = patterns[1].exec(html)) !== null) push(m[2], m[1]);
+  return out;
+}
+
+/**
+ * Extract pagination links: explicit <link rel="next">/<link rel="prev">
+ * plus inferred page numbers (?page=N, /page/N/, /p/N/). Inferred links
+ * are limited to the next 5 page numbers to avoid runaway discovery
+ * on sites with hundreds of pages.
+ */
+function extractPagination(html: string, pageUrl: string): PaginationLink[] {
+  const out: PaginationLink[] = [];
+  const seen = new Set<string>();
+  const push = (href: string, rel: PaginationLink['rel']) => {
+    let absolute = href;
+    try { absolute = new URL(href, pageUrl).toString(); } catch { return; }
+    if (seen.has(absolute)) return;
+    seen.add(absolute);
+    out.push({ href: absolute, rel });
+  };
+
+  // Explicit rel=next/prev
+  const explicitPatterns: Array<[RegExp, PaginationLink['rel']]> = [
+    [/<link[^>]*rel=["']next["'][^>]*href=["']([^"']+)["']/gi, 'next'],
+    [/<link[^>]*href=["']([^"']+)["'][^>]*rel=["']next["']/gi, 'next'],
+    [/<link[^>]*rel=["']prev["'][^>]*href=["']([^"']+)["']/gi, 'prev'],
+    [/<link[^>]*href=["']([^"']+)["'][^>]*rel=["']prev["']/gi, 'prev'],
+  ];
+  for (const [pat, rel] of explicitPatterns) {
+    let m: RegExpExecArray | null;
+    while ((m = pat.exec(html)) !== null) push(m[1], rel);
+  }
+
+  // Inferred from anchors: ?page=N, /page/N, /p/N where N is small
+  // (we cap at the next 5 page numbers to bound discovery).
+  const PAGE_LIMIT = 5;
+  const inferredPattern = /<a[^>]*href=["']([^"']*(?:[?&]page=\d+|\/page\/\d+|\/p\/\d+)[^"']*)["']/gi;
+  let m: RegExpExecArray | null;
+  let inferredCount = 0;
+  while ((m = inferredPattern.exec(html)) !== null) {
+    if (inferredCount >= PAGE_LIMIT) break;
+    push(m[1], 'inferred');
+    inferredCount++;
+  }
+
+  return out;
 }
 
 /**

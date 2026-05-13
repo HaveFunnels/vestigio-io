@@ -475,6 +475,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			// never reach this line because of the early continue above.
 			const discoverySource = (entry as any).discoverySource ?? null;
 			const abTestPlatform = (entry as any).abTestPlatform ?? null;
+			const localeCode = (entry as any).localeCode ?? null;
 			const persistedSkipReason = isFresh ? null : skipReason;
 
 			inventoryUpserts.push({
@@ -496,6 +497,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					discoverySource,
 					skipReason: persistedSkipReason,
 					abTestPlatform,
+					localeCode,
 				},
 				update: {
 					title: title ?? undefined,
@@ -510,11 +512,14 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					criticality: Math.round(entry.confidence ?? 0),
 					...(isFresh ? { lastSeenCycleId: cycleId, removedAt: null } : {}),
 					// discoverySource is sticky — only set on create.
-					// skipReason + abTestPlatform refresh every cycle so
-					// the UI reflects the most recent state (an A/B test
-					// can be removed from a page between cycles).
+					// skipReason + abTestPlatform + localeCode refresh
+					// every cycle so the UI reflects the most recent
+					// state (an A/B test can be removed from a page
+					// between cycles; a localized variant can have its
+					// lang attribute fixed).
 					skipReason: persistedSkipReason,
 					abTestPlatform,
+					localeCode,
 				},
 			});
 		}

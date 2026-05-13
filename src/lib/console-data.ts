@@ -311,6 +311,8 @@ export interface InventorySurface {
   skip_reason: string | null;
   /** Detected A/B test platform (optimizely, vwo, google_optimize, …); null when none detected. */
   ab_test_platform: string | null;
+  /** Locale code from <html lang="…">; null if not set. Used to surface multi-locale variants. */
+  locale_code: string | null;
   http_status: number | null;
   title: string | null;
   description: string | null;

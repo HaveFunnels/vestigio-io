@@ -73,6 +73,7 @@ function exportToCsv(rows: InventorySurface[], filename: string) {
 		"URL", "Host", "Page Type", "Tier", "Status",
 		"HTTP Code", "Sessions (30d)", "Findings", "Response Time (ms)",
 		"Last Seen", "Discovery Source", "Skip Reason",
+		"Locale", "A/B Test Platform",
 	];
 	const csv = [
 		headers.join(","),
@@ -89,6 +90,8 @@ function exportToCsv(rows: InventorySurface[], filename: string) {
 			r.last_seen_at ?? "",
 			r.discovery_source ?? "",
 			r.skip_reason ?? "",
+			r.locale_code ?? "",
+			r.ab_test_platform ?? "",
 		].join(",")),
 	].join("\n");
 	const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -524,6 +527,20 @@ function SurfaceDrawer({
 								</div>
 							)}
 
+							{/* Locale advertised by the page. Useful when
+							    multiple variants of the same path exist
+							    (English vs. Portuguese, US vs. UK, …). */}
+							{surface.locale_code && (
+								<div>
+									<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
+										{t("locale")}
+									</div>
+									<span className='inline-block rounded bg-blue-500/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-blue-300'>
+										{surface.locale_code}
+									</span>
+								</div>
+							)}
+
 							{/* A/B test platform — only show when something was
 							    detected. Surfacing the platform helps the
 							    customer reason about variance in their
@@ -646,6 +663,7 @@ export default function InventoryPage() {
 		useState<ResponseTimeFilter>("all");
 	const [discoverySourceFilter, setDiscoverySourceFilter] =
 		useState<string>("all");
+	const [localeFilter, setLocaleFilter] = useState<string>("all");
 	const [searchText, setSearchText] = useState("");
 	// Default sort surfaces broken pages first (Down → Live → Not checked).
 	// The Not checked bucket sits last on purpose: it represents URLs our
@@ -761,6 +779,9 @@ export default function InventoryPage() {
 			if (discoverySourceFilter !== "all" && s.discovery_source !== discoverySourceFilter) {
 				return false;
 			}
+			if (localeFilter !== "all" && s.locale_code !== localeFilter) {
+				return false;
+			}
 			if (searchText) {
 				const q = searchText.toLowerCase();
 				if (
@@ -783,6 +804,7 @@ export default function InventoryPage() {
 		tierFilter,
 		responseTimeFilter,
 		discoverySourceFilter,
+		localeFilter,
 		searchText,
 	]);
 
@@ -918,6 +940,14 @@ export default function InventoryPage() {
 				<div>
 					<div className='flex items-center gap-1.5'>
 						<span className='text-sm text-content-secondary'>{row.label}</span>
+						{row.locale_code && (
+							<span
+								className='inline-flex items-center rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blue-400'
+								title={t("locale_badge_tooltip", { locale: row.locale_code })}
+							>
+								{row.locale_code}
+							</span>
+						)}
 						{row.ab_test_platform && (
 							<span
 								className='inline-flex items-center gap-1 rounded bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-400'
@@ -1226,6 +1256,29 @@ export default function InventoryPage() {
 									];
 								})()}
 							/>
+							{(() => {
+								const uniqueLocales = Array.from(
+									new Set(
+										surfaces
+											.map((s) => s.locale_code)
+											.filter((l): l is string => Boolean(l)),
+									),
+								).sort();
+								// Only render the locale filter when there is
+								// at least one localized variant beyond the
+								// default — single-locale sites don't need it.
+								if (uniqueLocales.length < 2) return null;
+								return (
+									<FilterDropdown
+										value={localeFilter}
+										onChange={setLocaleFilter}
+										options={[
+											{ value: "all" as const, label: t("locale_filter.all") },
+											...uniqueLocales.map((l) => ({ value: l, label: l.toUpperCase() })),
+										]}
+									/>
+								);
+							})()}
 							<input
 								type='text'
 								placeholder={t("search_placeholder")}
@@ -1249,6 +1302,7 @@ export default function InventoryPage() {
 								tierFilter !== "all" ||
 								responseTimeFilter !== "all" ||
 								discoverySourceFilter !== "all" ||
+								localeFilter !== "all" ||
 								searchText) && (
 								<button
 									onClick={() => {
@@ -1259,6 +1313,7 @@ export default function InventoryPage() {
 										setTierFilter("all");
 										setResponseTimeFilter("all");
 										setDiscoverySourceFilter("all");
+										setLocaleFilter("all");
 										setSearchText("");
 									}}
 									className='rounded-lg px-3 py-1.5 text-xs text-content-faint transition-colors hover:text-content-secondary'

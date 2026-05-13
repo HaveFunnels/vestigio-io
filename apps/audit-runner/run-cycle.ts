@@ -54,6 +54,19 @@ export interface RunAuditCycleResult {
 	error?: string;
 }
 
+// Per-plan Playwright budget for ingestion. Kept tight on purpose:
+// renders are the most expensive thing the pipeline does, and the
+// long tail of "javascript-heavy" pages is large. Plans without a
+// budget skip the renderer entirely (and we never pay the launch cost).
+// Mirrors packages/plans/entitlements.ts → PLAN_LIMITS.playwright_budget.
+function resolvePlaywrightBudget(plan: string | null | undefined): number {
+	switch (plan) {
+		case "max": return 20;
+		case "pro": return 5;
+		default: return 0;
+	}
+}
+
 // Page-type heuristics — keep in sync with /api/inventory expectations.
 // Falls back to "other" if nothing matches.
 const PAGE_TYPE_PATTERNS: Array<{ pattern: RegExp; type: string; tier: string }> = [
@@ -339,6 +352,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// and crawl everything.
 				url_filter: urlFilter ?? undefined,
 				exclude_patterns: (env as any).crawlExcludePatterns ?? [],
+				// Playwright budget per cycle, scoped by org plan. Cold
+				// cycles are the only mode where the renderer fires
+				// (it's gated by mode='full' inside the pipeline too,
+				// so a non-zero budget here is harmless for hot/warm).
+				playwright_budget: pipelineMode === 'full' ? resolvePlaywrightBudget(cycle.organization?.plan) : 0,
 				crawl_constraints: {
 					// Honor the per-mode wall-clock budget. Cold uses the
 					// default 60s; hot caps at 60s anyway but warm gets
@@ -451,9 +469,13 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			return ct && !ct.includes("text/html");
 		}).length;
 		const excludedCount = (result as any).excluded_urls ?? 0;
+		const pwRenders = (result as any).playwright_renders ?? 0;
+		const pwSkipped = (result as any).playwright_skipped_budget ?? 0;
+		const pwAvgMs = (result as any).playwright_avg_ms ?? 0;
 		console.log(
 			`[audit-runner ${cycleId}] inventory: persisted=${pagesDiscovered} fetched=${fetchedCount}/${totalEntries} ` +
-			`skipped=${skippedCount} 4xx_5xx=${downCount} assets=${assetCount} excluded=${excludedCount}`,
+			`skipped=${skippedCount} 4xx_5xx=${downCount} assets=${assetCount} excluded=${excludedCount} ` +
+			`playwright=${pwRenders}(skip=${pwSkipped},avg=${pwAvgMs}ms)`,
 		);
 
 		// 6a-aging: pages NOT freshly fetched in this cycle get their

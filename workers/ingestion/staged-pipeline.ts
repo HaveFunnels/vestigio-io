@@ -17,6 +17,7 @@ import {
 } from './crawl-constraints';
 import { runEnrichmentPasses } from './enrichment/runner';
 import { canonicalUrl as canonicalUrlShared, urlMatchesExclusion } from '../../packages/url-normalize';
+import { renderForIngestion } from './playwright-renderer';
 
 // ──────────────────────────────────────────────
 // Staged Pipeline — Progressive Analysis
@@ -117,6 +118,13 @@ export interface StagedPipelineInput {
   // applied here so the audit-runner doesn't need to know about glob
   // syntax. Empty/undefined = no exclusions.
   exclude_patterns?: string[];
+  // Per-cycle Playwright render budget. When set > 0, the pipeline
+  // promotes SPA pages (detected by shouldTriggerPlaywright) by
+  // re-fetching them with a headless browser and re-parsing the
+  // rendered HTML. The budget protects against runaway cost — we stop
+  // promoting once it's exhausted. Defaults to 0 (no Playwright in
+  // ingestion), which preserves the legacy behavior.
+  playwright_budget?: number;
 }
 
 // Constraint overrides per mode. Anything not set falls back to
@@ -164,6 +172,9 @@ export interface StagedPipelineResult {
   duration_ms: number;
   // Diagnostic counters surfaced for telemetry (run-cycle logs these).
   excluded_urls?: number;
+  playwright_renders?: number;
+  playwright_skipped_budget?: number;
+  playwright_avg_ms?: number;
 }
 
 // Challenge detection patterns
@@ -264,6 +275,16 @@ export async function runStagedPipeline(
   // unset — `urlMatchesExclusion` is a fast no-op in that case.
   const excludePatterns: string[] = (input.exclude_patterns || []).filter(p => p && p.trim().length > 0);
   let excludedCount = 0;
+  // Playwright budget tracking. Per-domain cap is a defense-in-depth
+  // limit so a site that's 100% client-rendered can't burn the entire
+  // budget on one host while leaving other domains starved.
+  const playwrightBudget = Math.max(0, input.playwright_budget ?? 0);
+  let playwrightUsed = 0;
+  let playwrightSkippedBudget = 0;
+  const playwrightDurations: number[] = [];
+  const playwrightPerDomain = new Map<string, number>();
+  const PLAYWRIGHT_PER_DOMAIN_CAP = 3;
+  const PLAYWRIGHT_TIMEOUT_MS = 15_000;
   let stepIndex = 0;
 
   const emitStep = (message?: string) => {
@@ -552,22 +573,94 @@ export async function runStagedPipeline(
 
       const isHtml = response.content_type?.includes('text/html');
       if (isHtml) {
-        const parsed = parsePage(response.body, response.final_url);
+        // Initial parse against the raw HTTP response body. We may
+        // replace `parsed` + `finalHtml` below with a Playwright-
+        // rendered version when the page looks like a thin SPA shell.
+        let parsed = parsePage(response.body, response.final_url);
+        let finalHtml = response.body;
+        let finalUrlForExtractors = response.final_url;
+        let renderedViaPlaywright = false;
+
+        // SPA detection — flag for downstream consumers AND promote to
+        // a Playwright render when budget allows. Without this, JS-
+        // hydrated pages are seen as a near-empty shell and downstream
+        // classification mis-types them.
+        const looksLikeSpa = shouldTriggerPlaywright(response.body, parsed.scripts.length, response.body.length);
+        if (looksLikeSpa) {
+          spaDetected = true;
+          emit({ type: 'step', stage: 'crawl', data: { message: 'Detected JavaScript-heavy page — headless verification may be needed', index: stepIndex }, timestamp: new Date() });
+
+          if (playwrightBudget > 0) {
+            const domainKey = parsed.host || rootDomain;
+            const perDomainUsed = playwrightPerDomain.get(domainKey) ?? 0;
+            if (playwrightUsed >= playwrightBudget) {
+              playwrightSkippedBudget++;
+            } else if (perDomainUsed >= PLAYWRIGHT_PER_DOMAIN_CAP) {
+              playwrightSkippedBudget++;
+            } else {
+              const render = await renderForIngestion(response.final_url, {
+                timeoutMs: PLAYWRIGHT_TIMEOUT_MS,
+                waitUntil: 'networkidle',
+              });
+              playwrightUsed++;
+              playwrightPerDomain.set(domainKey, perDomainUsed + 1);
+              playwrightDurations.push(render.durationMs);
+              if (render.success && render.html && render.html.length > response.body.length) {
+                // The rendered DOM is strictly richer than the raw HTML
+                // we started with — swap. Re-parse so extractors see
+                // the hydrated structure (forms, scripts, links, etc.).
+                finalHtml = render.html;
+                finalUrlForExtractors = render.finalUrl || response.final_url;
+                parsed = parsePage(finalHtml, finalUrlForExtractors);
+                renderedViaPlaywright = true;
+              }
+
+              // Always log a small PlaywrightRender evidence row so we
+              // can audit per-URL Playwright behavior later. We keep
+              // the body out of the payload (would balloon Postgres);
+              // the HttpResponse evidence above stores the raw HTML
+              // and `addPageContentEvidence` below stores the chosen
+              // parsed content. This row is the bridge.
+              evidence.push(createEvidence(
+                EvidenceType.PlaywrightRender,
+                `surface:${response.final_url}`,
+                scoping,
+                input.cycle_ref,
+                {
+                  type: 'playwright_render',
+                  url: response.final_url,
+                  rendered_url: render.finalUrl,
+                  success: render.success,
+                  rendered: renderedViaPlaywright,
+                  status_code: render.statusCode,
+                  content_type: render.contentType,
+                  console_error_count: render.consoleErrorCount,
+                  console_error_samples: render.consoleErrorSamples,
+                  duration_ms: render.durationMs,
+                  raw_body_length: response.body.length,
+                  rendered_body_length: render.html.length,
+                  error: render.error ?? null,
+                },
+              ));
+            }
+          }
+        }
+
         // Wave 5 Fase 3: attach the content hash the session already
         // computed so the evidence row carries it to Postgres. The
         // incremental runner reads this to decide whether to re-parse
         // the page or carry forward the previous cycle's evidence.
         addHttpEvidence(evidence, response, url, scoping, input.cycle_ref, cHash);
-        addPageContentEvidence(evidence, parsed, response.final_url, scoping, input.cycle_ref);
-        addScriptEvidence(evidence, parsed, response.final_url, scoping, input.cycle_ref);
-        addFormEvidence(evidence, parsed, response.final_url, scoping, input.cycle_ref);
-        extractIndicators(parsed, response.final_url, scoping, input.cycle_ref, evidence);
+        addPageContentEvidence(evidence, parsed, finalUrlForExtractors, scoping, input.cycle_ref);
+        addScriptEvidence(evidence, parsed, finalUrlForExtractors, scoping, input.cycle_ref);
+        addFormEvidence(evidence, parsed, finalUrlForExtractors, scoping, input.cycle_ref);
+        extractIndicators(parsed, finalUrlForExtractors, scoping, input.cycle_ref, evidence);
 
         // Collect internal links for SurfaceRelation persistence
         for (const link of parsed.links) {
           if (!link.is_external && link.href) {
             surfaceRelations.push({
-              sourceUrl: response.final_url,
+              sourceUrl: finalUrlForExtractors,
               targetUrl: link.href,
               relationType: 'anchor',
               sourceHost: parsed.host,
@@ -582,7 +675,7 @@ export async function runStagedPipeline(
         for (const form of parsed.forms) {
           if (form.action && !form.is_external) {
             surfaceRelations.push({
-              sourceUrl: response.final_url,
+              sourceUrl: finalUrlForExtractors,
               targetUrl: form.action,
               relationType: 'form_action',
               sourceHost: parsed.host,
@@ -594,13 +687,7 @@ export async function runStagedPipeline(
           }
         }
 
-        coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: 75 });
-
-        // SPA detection — flag for Stage D
-        if (!spaDetected && shouldTriggerPlaywright(response.body, parsed.scripts.length, response.body.length)) {
-          spaDetected = true;
-          emit({ type: 'step', stage: 'crawl', data: { message: 'Detected JavaScript-heavy page — headless verification may be needed', index: stepIndex }, timestamp: new Date() });
-        }
+        coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: renderedViaPlaywright ? 85 : 75 });
       } else {
         addHttpEvidence(evidence, response, url, scoping, input.cycle_ref, cHash);
         coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: 50 });
@@ -698,6 +785,11 @@ export async function runStagedPipeline(
 
   const result = buildResult(evidence, input, coverage, stagesCompleted, errors, startTime, surfaceRelations);
   result.excluded_urls = excludedCount;
+  result.playwright_renders = playwrightUsed;
+  result.playwright_skipped_budget = playwrightSkippedBudget;
+  result.playwright_avg_ms = playwrightDurations.length > 0
+    ? Math.round(playwrightDurations.reduce((a, b) => a + b, 0) / playwrightDurations.length)
+    : 0;
   return result;
 }
 

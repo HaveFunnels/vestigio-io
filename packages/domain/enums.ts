@@ -211,6 +211,10 @@ export enum EvidenceType {
   ContentEnrichment = 'content_enrichment',
   // Wave 9: Subdomain discovery via Certificate Transparency
   SubdomainDiscovery = 'subdomain_discovery',
+  // Inventory Wave: Playwright render of SPA pages (rendered HTML +
+  // post-render console errors). Sits alongside HttpResponse so both
+  // raw and rendered views of the same URL are inspectable.
+  PlaywrightRender = 'playwright_render',
 }
 
 export enum SourceKind {

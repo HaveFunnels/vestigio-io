@@ -44,6 +44,7 @@ import { analyzeAdMessageMatch } from "../../workers/ingestion/enrichment/ad-mes
 import { currencyFromLocale } from "../../packages/impact";
 import { classifyPages, resolveFunnelModel, serializeStageDefinitions, scoreEdges, type PageForClassification, type SurfaceRelationForScoring } from "../../packages/classification";
 import { computeFunnelGapInferences, type FunnelGapInput } from "../../packages/inference/funnel-gap-inference";
+import { computeFormFlowInferences, type FormFlowInput } from "../../packages/inference/form-flow-inference";
 
 export interface RunAuditCycleResult {
 	cycleId: string;
@@ -804,6 +805,75 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			console.error(`[audit-runner ${cycleId}] funnel-gap inference error (non-fatal):`, err);
 		}
 
+		// 6f-2. Form Flow inference (Fase A — static). Builds the form
+		// graph from Form evidence + form_action relations and surfaces
+		// multi-step checkout friction, external handoffs, and field
+		// overload findings. Fase B (dynamic submission via Playwright)
+		// is documented in docs/FORM_FLOW_PHASE_B.md.
+		let formFlowInferences: { signals: any[]; inferences: any[] } = { signals: [], inferences: [] };
+		try {
+			const formEvidencePayloads = (result.evidence || [])
+				.filter((e: any) => e.evidence_type === 'form')
+				.map((e: any) => {
+					const p = typeof e.payload === 'string' ? JSON.parse(e.payload) : e.payload;
+					return {
+						page_url: p?.page_url ?? '',
+						action: p?.action ?? '',
+						method: p?.method ?? 'get',
+						target_host: p?.target_host ?? null,
+						is_external: !!p?.is_external,
+						field_names: Array.isArray(p?.field_names) ? p.field_names : [],
+						has_payment_fields: !!p?.has_payment_fields,
+					};
+				})
+				.filter((f: any) => f.page_url);
+
+			if (formEvidencePayloads.length > 0) {
+				const formActionRelations = (result.surface_relations || [])
+					.filter((r: any) => r.relationType === 'form_action')
+					.map((r: any) => ({
+						sourceUrl: r.sourceUrl,
+						targetUrl: r.targetUrl,
+						sourceHost: r.sourceHost,
+						targetHost: r.targetHost,
+						isSameDomain: r.isSameDomain,
+					}));
+
+				const ctaRelations = (result.surface_relations || [])
+					.filter((r: any) => r.relationType === 'anchor' && r.isSameDomain)
+					.map((r: any) => ({ sourceUrl: r.sourceUrl, targetUrl: r.targetUrl }));
+
+				const pagesForFlow = await prisma.pageInventoryItem.findMany({
+					where: { environmentRef: env.id, removedAt: null },
+					select: { normalizedUrl: true, path: true, classifiedPageType: true },
+				});
+
+				const flowInput: FormFlowInput = {
+					formEvidence: formEvidencePayloads,
+					formActionRelations,
+					ctaRelations,
+					pages: pagesForFlow.map(p => ({
+						url: p.normalizedUrl,
+						path: p.path,
+						classifiedPageType: p.classifiedPageType,
+					})),
+					rootDomain: domain,
+					scoping: {
+						workspace_ref: `org:${cycle.organizationId}`,
+						environment_ref: env.id,
+						subject_ref: `website:${website.id}`,
+						path_scope: null,
+					},
+					cycleRef: cycleId,
+				};
+
+				formFlowInferences = computeFormFlowInferences(flowInput);
+				console.log(`[audit-runner ${cycleId}] form-flow findings: ${formFlowInferences.inferences.length}`);
+			}
+		} catch (err) {
+			console.error(`[audit-runner ${cycleId}] form-flow inference error (non-fatal):`, err);
+		}
+
 		// 7. Run the engine + project findings + persist snapshot & findings.
 		// This is the part that makes change detection actually work and
 		// what populates the real `finding_count` per surface in /api/inventory.
@@ -1329,7 +1399,13 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				integration_snapshots: integrationSnapshots.length > 0 ? integrationSnapshots : undefined,
 				currency: resolvedCurrency,
 				funnel_multipliers: funnelMultipliers,
-				additional_inferences: funnelGapInferences.inferences.length > 0 ? funnelGapInferences.inferences : undefined,
+				additional_inferences: (() => {
+					const merged = [
+						...(funnelGapInferences.inferences || []),
+						...(formFlowInferences.inferences || []),
+					];
+					return merged.length > 0 ? merged : undefined;
+				})(),
 				classified_pages: classifiedPageMap.size > 0 ? classifiedPageMap : undefined,
 			});
 			const recomputeMs = Date.now() - recomputeStartMs;

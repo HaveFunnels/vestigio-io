@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-13 (Wave 11 🟢 tier + 11.5g Framework Lens — Revenue 1/1, Preflight 4/4, Security 4/4, Copy 5/5 shipped. Framework Lens: always-on copy audit against 10 copywriting frameworks with Copilot integration. 14 widgets across 4 workspaces, two foundation APIs (tech-stack + copy-content).)
+> Last updated: 2026-05-13 (Wave 11 🟢 tier complete on workspace-specific + cross-cutting — Revenue 1/1, Preflight 4/4, Security 4/4, Copy 5/5, Cross-cutting 3/3 shipped. 17 widgets total. Behavioral 🟡 and 11.7d remain integration-gated.)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -2445,19 +2445,21 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 
 ### 11.7 Cross-cutting widgets (fit in any workspace)
 
-#### a. "Próxima ação recomendada" persistent strip ⭐ 🟢
-- **What:** Top-of-workspace single-CTA strip showing the ONE thing to do right now (not a list). Uses existing Wave 3.12 priority ranking but elevates to primary visual focus.
-- **Effort:** 1-2 days.
+#### a. "Próxima ação recomendada" persistent strip ⭐ 🟢 — ✅ Shipped 2026-05-13
+- **What:** Top-of-workspace single-CTA strip showing the ONE thing to do right now. Surfaces the highest-priority action linked to findings in this workspace (filters out resolved/completed) using existing Wave 3.12 `priority_score`. Shows title + description + impact recovery + effort tier + click-through to `/app/actions?action=<id>`.
+- **Data deps:** ActionProjection (existing) + FindingProjection.action_refs. No LLM, no new integration.
+- **Implementation:** `src/components/console/workspace/NextActionStrip.tsx`. Wired at the very top of `workspaces/[id]` above PulseSummary. i18n: 10 keys × 4 locales.
 
-#### b. Trend deltas vs last week 🟢
-- **What:** Every displayed number gets a `+12%` / `-3%` delta annotation next to it. Subtle but creates strong sense-of-movement.
-- **Data deps:** Cycle history (≥2 cycles). Already in place via Wave 7.1.
-- **Effort:** 1-2 days (mostly UI sprinkling).
+#### b. Trend deltas vs last week 🟢 — ✅ Shipped 2026-05-13 (V1, scope-limited)
+- **What:** Inline pill beside the workspace header issue count showing net change vs the previous cycle (green − or red +). Derived from existing `change_summary` fields: `net = improvement + resolved − regression`. Zero net hides the pill.
+- **Data deps:** `WorkspaceProjection.change_summary` (already populated by Wave 7.1 multi-cycle pipeline).
+- **Implementation:** `src/components/console/workspace/TrendDelta.tsx`. Wired beside `workspace.summary.issue_count` in the header.
+- **Scope note (deferred):** Magnitude deltas on dollar exposure (`total_loss −15%` style) require loading the previous cycle's WorkspaceProjection.summary which the current projection layer doesn't expose. Deferred until a previous-cycle summary loader lands; current V1 covers count delta only (which is the most-visible number in the header).
 
-#### c. Cost-of-inaction timer 🟢
-- **What:** For each finding, surface "This is costing $X/day. Open for Y days = $Z already lost." Healthy emotional pressure.
-- **Data deps:** Finding `firstSeenAt` + impact estimate. Both already present.
-- **Effort:** 1 day.
+#### c. Cost-of-inaction timer 🟢 — ✅ Shipped 2026-05-13
+- **What:** Aggregates dollar amount already lost across open negative findings in the workspace. Per-finding days_open ≈ `trend_streak × cycle_interval_days` (1 day default). Daily burn = `impact.midpoint / 30`. Shows total lost + daily burn + top 3 burners with per-finding loss + days open.
+- **Data deps:** FindingProjection (existing impact + trend_streak from Wave 7.1).
+- **Implementation:** `src/components/console/workspace/CostOfInaction.tsx`. Wired in `workspaces/[id]` below Pulse + Quick Stats. i18n: 9 keys × 4 locales.
 
 #### d. Customer-quote contextual 🔴
 - **What:** When a finding touches a theme (e.g. checkout friction), surface a real customer quote complaining about the same thing from support/NPS data. Makes findings emotional, not abstract.

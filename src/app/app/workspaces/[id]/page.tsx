@@ -39,6 +39,7 @@ import ToneConsistency from "@/components/console/workspace/ToneConsistency";
 import CopyFrameworkLens from "@/components/console/workspace/CopyFrameworkLens";
 import NextActionStrip from "@/components/console/workspace/NextActionStrip";
 import CostOfInaction from "@/components/console/workspace/CostOfInaction";
+import TrendDelta from "@/components/console/workspace/TrendDelta";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -309,8 +310,12 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					</div>
 					<div className="flex items-center gap-6">
 						<div className="text-right">
-							<div className="font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
-								{workspace.summary.issue_count}
+							<div className="inline-flex items-baseline justify-end gap-1.5">
+								<span className="font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
+									{workspace.summary.issue_count}
+								</span>
+								{/* Wave 11.7b — inline net delta vs last cycle */}
+								<TrendDelta summary={workspace.change_summary} />
 							</div>
 							<div className="text-[10px] text-zinc-400 dark:text-zinc-600">{t("issues")}</div>
 						</div>

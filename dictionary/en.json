@@ -566,13 +566,19 @@
 			},
 			"data_sources_label": "Data Sources",
 			"guided": {
-				"step_labels": ["Decisions", "Investigation", "Map"],
+				"step_labels": [
+					"Decisions",
+					"Investigation",
+					"Map"
+				],
 				"hero_label": "Total recoverable",
 				"hero_sub": "across 5 ranked actions",
 				"step1_hint": "Click to investigate ↓",
 				"step2_context": "P1 · Slow checkout — −$28k/mo",
 				"step2_ai": "Just browsed your checkout. Payment stalls at **4.2s** — three scripts load before the form appears, and **12% of your users** are leaving at this point. That's **−$600/day** in revenue.\n\nMonthly cost: **−$28k**.\n\nAlready prioritized the fix as P1 in your queue. Defer the scripts, compress checkout images, and move validation to async. Let me know when it's live — I'll run through again to confirm.\n\nCreated a map for you to monitor user behavior.",
-				"step2_chips": ["View map"],
+				"step2_chips": [
+					"View map"
+				],
 				"step3_leak": "Leak detected",
 				"step3_cta": "See how much I'm losing",
 				"step3_micro": "60-second diagnostic. No credit card required.",
@@ -580,9 +586,7 @@
 			}
 		},
 		"client_gallery": {
-			"eyebrow": "Trusted by digital operators",
-			"title": "Teams that refuse to scale in the dark",
-			"subtitle": "From ecommerce to SaaS to lead-gen, Vestigio is the decision engine operators reach for when something is costing them money — and they want to know exactly what."
+			"headline": "Join 20,000+ businesses that don't scale in the dark"
 		},
 		"use_cases": {
 			"eyebrow": "Built for",
@@ -641,9 +645,6 @@
 			"subtitle": "Every day without visibility is revenue you don't recover.",
 			"primary": "Run Free Diagnostic",
 			"micro": "You can be looking at your first diagnostic in 60 seconds."
-		},
-		"client_gallery": {
-			"headline": "Join 20,000+ businesses that don't scale in the dark"
 		},
 		"video_testimonials": {
 			"title_before": "They discovered",
@@ -735,13 +736,21 @@
 					"eyebrow": "The cycle",
 					"title": "You try to fix it, but the problem just moves.",
 					"body": "You change the ad, the drop-off **moves to another page**. Without end-to-end visibility, every fix creates a new problem.",
-					"stages": ["Ad", "Landing", "Checkout"]
+					"stages": [
+						"Ad",
+						"Landing",
+						"Checkout"
+					]
 				},
 				{
 					"eyebrow": "The silence",
 					"title": "Nobody complains. The money just stops coming in.",
 					"body": "No error, no ticket, no alert. The buyer simply **left** — and your analytics just says 'session ended.'",
-					"alerts": ["0 alerts", "0 errors", "0 tickets"],
+					"alerts": [
+						"0 alerts",
+						"0 errors",
+						"0 tickets"
+					],
 					"terminal_title": "analytics",
 					"no_alerts": "No alerts"
 				}
@@ -2950,12 +2959,12 @@
 		},
 		"upgrade_moments": {
 			"unlock_integration": "Connect an integration to unlock this data",
-			"ai_pro": "AI insights available on Pro \u2014 deeper analysis, playbooks, and more queries",
+			"ai_pro": "AI insights available on Pro — deeper analysis, playbooks, and more queries",
 			"cadence_weekly": "Updated weekly.",
 			"cadence_daily_upgrade": "Upgrade to Pro for daily insights",
 			"more_patterns": "{count} more patterns detected",
 			"see_all_upgrade": "Upgrade to see all",
-			"upgrade_cta": "Upgrade \u2192"
+			"upgrade_cta": "Upgrade →"
 		},
 		"feedback_moments": {
 			"finding_question": "Was this finding useful?",
@@ -2971,7 +2980,7 @@
 		},
 		"cross_signals": {
 			"title": "Cross-Signal Insights",
-			"subtitle": "Surfaces where findings from multiple perspectives converge \u2014 Vestigio\u2019s unique multi-domain correlation.",
+			"subtitle": "Surfaces where findings from multiple perspectives converge — Vestigio’s unique multi-domain correlation.",
 			"hero_chains": "Cross-Signal Chains",
 			"hero_at_risk": "Monthly Exposure",
 			"hero_sequential": "Causal Patterns",
@@ -3320,18 +3329,6 @@
 				"high": "High",
 				"very_high": "Very High"
 			},
-			"filters": {
-				"type_all": "All Types",
-				"incidents": "Incidents",
-				"opportunities": "Opportunities",
-				"verifications": "Verifications",
-				"observations": "Observations",
-				"severity_all": "Severity",
-				"effort_all": "Effort",
-				"effort_low": "Quick (trivial/low)",
-				"effort_medium": "Moderate",
-				"effort_high": "Significant (high+)"
-			},
 			"pipeline": {
 				"totalExposure": "Total Exposure",
 				"quickWins": "Quick Wins",
@@ -3347,7 +3344,7 @@
 				"big_bets": "Big Bets",
 				"fill_ins": "Fill-ins",
 				"strategic": "Strategic",
-				"effort_axis": "Effort \u2192",
+				"effort_axis": "Effort →",
 				"impact_axis": "Monthly Impact ($)",
 				"toggle_list": "List",
 				"toggle_scatter": "Scatter",
@@ -4669,7 +4666,21 @@
 			"success_story_feedback_loop_broken": "Customer success happens but is never captured as social proof",
 			"tone_shift_across_journey": "Brand voice changes between pages — feels like different companies",
 			"mobile_journey_friction_compound": "Small mobile issues compound into an unbearable purchase experience",
-			"trust_gradient_inverted": "Trust signals are strongest where buyers already trust and absent where they don't"
+			"trust_gradient_inverted": "Trust signals are strongest where buyers already trust and absent where they don't",
+			"g2_listing_void": "B2B buyers research you on G2 — there's no profile to find",
+			"capterra_listing_void": "Buyers comparing on Capterra never reach your brand",
+			"producthunt_listing_void": "Early-adopters scanning Product Hunt don't see you",
+			"wikipedia_listing_void": "Your brand has no Wikipedia presence to back up authority claims",
+			"branded_serp_invisible": "Searching your brand name doesn't return your own website",
+			"competitor_brand_hijack_serp": "Competitors outrank your own domain on your brand name",
+			"affiliate_outranks_own": "Affiliate and review sites earn commission on your branded traffic",
+			"category_intent_invisible": "Buyers shopping the category never see you on page 1",
+			"trustpilot_complaint_cluster": "Negative Trustpilot reviews sit unanswered for prospects to read",
+			"trustpilot_response_silence": "Owner barely responds on Trustpilot — buyers read silence as 'they don't care'",
+			"reclame_aqui_reputation_critical": "Reclame Aqui flags your brand — Brazilian buyers check this before paying",
+			"hn_tech_audience_invisible": "Tech early-adopters have never discussed you on Hacker News",
+			"reddit_forum_absence": "Reddit recommendation threads never mention your brand",
+			"reddit_category_demand_unmet": "Buyers shopping your category on Reddit — visible demand, invisible brand"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Buyers lose trust at the checkout moment",

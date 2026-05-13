@@ -145,6 +145,25 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   suspicious_domains_capturing_purchase_intent: 'brand_integrity',
   customers_exposed_to_phishing_surfaces: 'brand_integrity',
   brand_presence_diluted_across_variants: 'brand_integrity',
+  // Wave 12 — Brand Echo (off-site reconnaissance). Industry listing
+  // voids + SERP visibility findings sit under discoverability because
+  // they answer "where buyers find tools." Reputation + hijack
+  // findings sit under brand_integrity because they answer "who is
+  // representing the brand in the wild."
+  g2_listing_void: 'discoverability',
+  capterra_listing_void: 'discoverability',
+  producthunt_listing_void: 'discoverability',
+  wikipedia_listing_void: 'discoverability',
+  branded_serp_invisible: 'discoverability',
+  category_intent_invisible: 'discoverability',
+  hn_tech_audience_invisible: 'discoverability',
+  reddit_forum_absence: 'discoverability',
+  reddit_category_demand_unmet: 'discoverability',
+  competitor_brand_hijack_serp: 'brand_integrity',
+  affiliate_outranks_own: 'brand_integrity',
+  trustpilot_complaint_cluster: 'brand_integrity',
+  trustpilot_response_silence: 'brand_integrity',
+  reclame_aqui_reputation_critical: 'brand_integrity',
   // Wave 3.10: Copy alignment pack
   value_proposition_buried: 'copy_alignment',
   social_proof_ineffective: 'copy_alignment',

@@ -1,114 +1,119 @@
-import { reconFetch, unreachable, type ReconResult } from "./types";
+import { unreachable, type ReconResult } from "./types";
+import { fetchDdg } from "./ddg-serp";
 
 // ──────────────────────────────────────────────
-// Reclame Aqui HTML scraper — Wave 12
+// Reclame Aqui via DDG site:reclameaqui.com.br search — Wave 12
 //
-// Zero-cost. ra.com.br (Reclame Aqui) is the canonical BR consumer
-// complaint platform. Their public company pages live at
-// reclameaqui.com.br/empresa/<slug> — slug = brand kebab-case.
+// Reclame Aqui is the canonical BR consumer-complaint platform. We do
+// NOT scrape their HTML directly because:
+//   - The page is a React SPA — raw fetch returns a shell with no data
+//   - Cloudflare protection regularly returns 403 to non-browser UAs
+//   - They have no public API (or it's enterprise-paid)
 //
-// Reclame Aqui surfaces:
-//   - "Índice de Solução" (resolution index, 0-10)
-//   - "Reputação" badge (RA1000 / Bom / Regular / Ruim / Não recomendada)
-//   - complaints count last 6 months
-//   - response rate %
-//   - last complaint date
+// Solution: same as Reddit. Run `site:reclameaqui.com.br "<brand>"` via
+// DDG and read the SERP snippets. Google/DDG crawlers execute the JS
+// so the snippets contain the post-render data we need:
+//   - reputation label (RA1000, Bom, Regular, Ruim, Não recomendada)
+//   - resolution index (e.g. "7.2/10" or "78%")
+//   - complaint count (sometimes)
 //
-// Inferences read:
-//   - br_complaint_volume_high (>50 last 6mo)
-//   - reputation_index_critical (RA score < 6)
-//   - response_rate_decay (<70% answered)
-//
-// Brazilian consumers actively check Reclame Aqui before buying. A
-// "Não recomendada" badge here costs more than any on-site signal.
+// We extract what's available from the snippets and accept that the
+// data is shallower than direct scraping would be. The crucial signal
+// — "Reclame Aqui flags this brand as critical" — is still detectable
+// because the reputation badge is always in the page title or first
+// snippet line.
 // ──────────────────────────────────────────────
 
-interface ReclameAquiData {
-	listed: boolean;
-	resolution_index?: number | null;
-	reputation_label?: string | null;
-	response_rate_pct?: number | null;
-	complaints_last_6mo?: number | null;
-	complaints_total?: number | null;
-}
+const REPUTATION_LABELS = [
+	"RA1000",
+	"Ótimo",
+	"Bom",
+	"Regular",
+	"Ruim",
+	"Não recomendada",
+	"Sem reputação",
+] as const;
 
-/** Best-effort slugifier: kebab-case + drop trailing tlds. */
-function slugify(brand: string): string {
-	return brand
-		.toLowerCase()
-		.normalize("NFD")
-		.replace(/[̀-ͯ]/g, "")
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-|-$/g, "");
-}
-
-function extractNumber(html: string, label: string): number | null {
-	// Matches forms like:
-	//   "Índice de Solução</span><span>7.8"
-	//   <strong>50 reclamações<...
-	// We try to be forgiving but bounded.
-	const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	const patterns = [
-		new RegExp(`${escaped}[^0-9]{1,60}([0-9]+(?:[.,][0-9]+)?)`, "i"),
-		new RegExp(`([0-9]+(?:[.,][0-9]+)?)[^0-9]{1,40}${escaped}`, "i"),
-	];
-	for (const re of patterns) {
-		const m = html.match(re);
-		if (m) {
-			const n = parseFloat(m[1].replace(",", "."));
-			if (!isNaN(n)) return n;
-		}
+function extractReputationLabelFromText(text: string): string | null {
+	for (const lbl of REPUTATION_LABELS) {
+		const escaped = lbl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		const re = new RegExp(`\\b${escaped}\\b`, "i");
+		if (re.test(text)) return lbl;
 	}
 	return null;
 }
 
-function extractReputationLabel(html: string): string | null {
-	// Reclame Aqui shows a coloured badge with one of these strings.
-	const labels = [
-		"RA1000",
-		"Ótimo",
-		"Bom",
-		"Regular",
-		"Ruim",
-		"Não recomendada",
-		"Sem reputação",
-	];
-	for (const lbl of labels) {
-		const re = new RegExp(`\\b${lbl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-		if (re.test(html)) return lbl;
+function extractResolutionIndex(text: string): number | null {
+	// Common patterns we see in RA SERP snippets:
+	//   "Índice de Solução: 7.2"
+	//   "Resolveu 7.8 de 10"
+	//   "78% das reclamações"  — convert to /10
+	const decimalMatch = text.match(/(?:Índice|Solução|score)[^0-9]{0,30}(\d+(?:[.,]\d+)?)/i);
+	if (decimalMatch) {
+		const n = parseFloat(decimalMatch[1].replace(",", "."));
+		if (!isNaN(n) && n <= 10) return Math.round(n * 10) / 10;
+	}
+	const pctMatch = text.match(/(\d{1,3})\s*%[^0-9]{0,20}(?:reclamações|resolvi|resoluç)/i);
+	if (pctMatch) {
+		const n = parseInt(pctMatch[1], 10);
+		if (!isNaN(n) && n <= 100) return Math.round(n / 10);
+	}
+	return null;
+}
+
+function extractComplaintCount(text: string): number | null {
+	// "X reclamações" patterns — heuristic on text near the number.
+	const match = text.match(/(\d{1,5})\s*reclamaç(?:ões|ao)/i);
+	if (match) {
+		const n = parseInt(match[1], 10);
+		if (!isNaN(n) && n < 100_000) return n;
 	}
 	return null;
 }
 
 export async function scrapeReclameAqui(brand: string): Promise<ReconResult> {
-	const slug = slugify(brand);
-	const url = `https://www.reclameaqui.com.br/empresa/${slug}/`;
-	const res = await reconFetch(url);
-	if (!res) return unreachable(url, "timeout");
+	const query = `site:reclameaqui.com.br "${brand}"`;
+	const fetchedUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
 
-	if (res.status === 404) {
+	const serp = await fetchDdg(query);
+	if (!serp) return unreachable(fetchedUrl, "http_error");
+
+	// Filter to actual Reclame Aqui company-page results. They look like:
+	//   reclameaqui.com.br/empresa/<slug>/
+	//   reclameaqui.com.br/empresa/<slug>/?...
+	const raHits = serp.results.filter((r) =>
+		r.domain.endsWith("reclameaqui.com.br") &&
+		/\/empresa\/[a-z0-9-]+\/?/i.test(r.url),
+	);
+
+	if (raHits.length === 0) {
 		return {
 			reachable: true,
-			fetched_url: url,
-			data: { listed: false } satisfies ReclameAquiData,
+			fetched_url: fetchedUrl,
+			data: { listed: false, reason: "no_reclame_aqui_profile_in_serp" },
 		};
 	}
-	if (!res.ok) return unreachable(url, "http_error", { status: res.status });
 
-	const html = await res.text();
-
-	const data: ReclameAquiData = {
-		listed: true,
-		resolution_index: extractNumber(html, "Índice de Solução"),
-		reputation_label: extractReputationLabel(html),
-		response_rate_pct: extractNumber(html, "responde"),
-		complaints_last_6mo: extractNumber(html, "últimos 6 meses"),
-		complaints_total: extractNumber(html, "reclamações") ?? null,
-	};
+	// Take the first result (highest relevance) — that's the brand's
+	// canonical RA page. Combine title + snippet for signal extraction.
+	const top = raHits[0];
+	const corpus = `${top.title}\n${top.snippet}`;
+	const reputation_label = extractReputationLabelFromText(corpus);
+	const resolution_index = extractResolutionIndex(corpus);
+	const complaints_total = extractComplaintCount(corpus);
 
 	return {
 		reachable: true,
-		fetched_url: url,
-		data: data as unknown as Record<string, unknown>,
+		fetched_url: fetchedUrl,
+		data: {
+			listed: true,
+			fetched_via: "ddg_site_search",
+			company_page_url: top.url,
+			reputation_label,
+			resolution_index,
+			complaints_last_6mo: null, // not reliably available in SERP snippets
+			complaints_total,
+			snippet_excerpt: corpus.slice(0, 300),
+		},
 	};
 }

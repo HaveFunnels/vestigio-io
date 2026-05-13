@@ -566,13 +566,19 @@
 			},
 			"data_sources_label": "Fontes de Dados",
 			"guided": {
-				"step_labels": ["Decisões", "Investigação", "Mapa"],
+				"step_labels": [
+					"Decisões",
+					"Investigação",
+					"Mapa"
+				],
 				"hero_label": "Total recuperável",
 				"hero_sub": "baseado em suas integrações",
 				"step1_hint": "Clique para investigar ↓",
 				"step2_context": "Checkout lento — −R$42k/mês",
 				"step2_ai": "Acabei de navegar seu checkout. O pagamento trava em **4.2s** — três scripts carregam antes do formulário aparecer, e **12% dos seus usuários** estão saindo nesse ponto. Isso representa **−R$1k por dia** no seu faturamento.\n\nCusto mensal: **−R$42k**.\n\nJá priorizei a correção na sua fila. Adie os scripts, comprima as imagens do checkout e mova a validação pra async. Me avise quando aplicar — eu passo de novo pra confirmar.\n\nCriei um mapa pra você monitorar o comportamento dos usuários.",
-				"step2_chips": ["Ver mapa"],
+				"step2_chips": [
+					"Ver mapa"
+				],
 				"step3_leak": "Vazamento detectado",
 				"step3_cta": "Ver quanto estou perdendo",
 				"step3_micro": "Diagnóstico em 60 segundos. Sem cartão de crédito.",
@@ -580,9 +586,7 @@
 			}
 		},
 		"client_gallery": {
-			"eyebrow": "Confiança de operadores digitais",
-			"title": "Times que se recusam a escalar no escuro",
-			"subtitle": "De ecommerce a SaaS a captação de leads, a Vestigio é o motor de decisão que operadores buscam quando algo está custando dinheiro — e querem saber exatamente o quê."
+			"headline": "Junte-se a mais de 20.000 empresas que não escalam no escuro"
 		},
 		"use_cases": {
 			"eyebrow": "Feito para",
@@ -641,9 +645,6 @@
 			"subtitle": "Cada dia sem visibilidade é receita que você não recupera.",
 			"primary": "Rodar Diagnóstico Gratuito",
 			"micro": "Você pode estar olhando seu primeiro diagnóstico em 60 segundos."
-		},
-		"client_gallery": {
-			"headline": "Junte-se a mais de 20.000 empresas que não escalam no escuro"
 		},
 		"video_testimonials": {
 			"title_before": "Eles descobriram",
@@ -735,13 +736,21 @@
 					"eyebrow": "O ciclo",
 					"title": "Você tenta consertar, mas o problema só muda de lugar.",
 					"body": "Você muda o anúncio, a desistência **muda de página**. Sem visão ponta a ponta, cada correção cria um problema novo.",
-					"stages": ["Anúncio", "Landing", "Checkout"]
+					"stages": [
+						"Anúncio",
+						"Landing",
+						"Checkout"
+					]
 				},
 				{
 					"eyebrow": "O silêncio",
 					"title": "Ninguém reclama. O dinheiro só para de entrar.",
 					"body": "Sem erro, sem ticket, sem alerta. O comprador simplesmente **saiu** — e seu analytics só diz 'sessão encerrada'.",
-					"alerts": ["0 alertas", "0 erros", "0 tickets"],
+					"alerts": [
+						"0 alertas",
+						"0 erros",
+						"0 tickets"
+					],
 					"terminal_title": "analytics",
 					"no_alerts": "Sem alertas"
 				}
@@ -3404,18 +3413,6 @@
 				"high": "Alto",
 				"very_high": "Muito Alto"
 			},
-			"filters": {
-				"type_all": "Todos os Tipos",
-				"incidents": "Incidentes",
-				"opportunities": "Oportunidades",
-				"verifications": "Verificações",
-				"observations": "Observações",
-				"severity_all": "Severidade",
-				"effort_all": "Esforço",
-				"effort_low": "Rápido (trivial/baixo)",
-				"effort_medium": "Moderado",
-				"effort_high": "Significativo (alto+)"
-			},
 			"pipeline": {
 				"totalExposure": "Exposição Total",
 				"quickWins": "Quick Wins",
@@ -4773,7 +4770,21 @@
 			"success_story_feedback_loop_broken": "Sucesso do cliente acontece mas nunca vira prova social",
 			"tone_shift_across_journey": "Tom de voz muda entre as páginas — parece que são empresas diferentes",
 			"mobile_journey_friction_compound": "Problemas pequenos no mobile se acumulam numa experiência de compra insuportável",
-			"trust_gradient_inverted": "Sinais de confiança são mais fortes onde o comprador já confia e ausentes onde ele duvida"
+			"trust_gradient_inverted": "Sinais de confiança são mais fortes onde o comprador já confia e ausentes onde ele duvida",
+			"g2_listing_void": "Compradores B2B te pesquisam no G2 — sem perfil pra encontrar",
+			"capterra_listing_void": "Quem compara no Capterra nunca chega na sua marca",
+			"producthunt_listing_void": "Early-adopters varrendo Product Hunt não te veem",
+			"wikipedia_listing_void": "Marca sem Wikipedia — falta autoridade quando pesquisada",
+			"branded_serp_invisible": "Buscar pelo nome da marca não retorna seu próprio site",
+			"competitor_brand_hijack_serp": "Concorrentes rankeando acima do seu domínio no nome da sua marca",
+			"affiliate_outranks_own": "Sites afiliados ganham comissão em tráfego que deveria ser seu",
+			"category_intent_invisible": "Quem compara a categoria nunca te encontra na página 1",
+			"trustpilot_complaint_cluster": "Reviews negativas sem resposta no Trustpilot — prospects leem esse silêncio",
+			"trustpilot_response_silence": "Resposta a reviews no Trustpilot quase zero — compradores leem como 'não se importam'",
+			"reclame_aqui_reputation_critical": "Reclame Aqui sinaliza sua marca — comprador BR confere antes de pagar",
+			"hn_tech_audience_invisible": "Early-adopters tech nunca te discutiram no Hacker News",
+			"reddit_forum_absence": "Threads de recomendação no Reddit nunca citam sua marca",
+			"reddit_category_demand_unmet": "Compradores procurando sua categoria no Reddit — demanda visível, marca invisível"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Falha de confiança no checkout",

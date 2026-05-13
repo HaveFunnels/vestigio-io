@@ -560,13 +560,19 @@
 			"data_sources_label": "Fuentes de Datos",
 			"section_headline": "Dentro de tu motor de decisiones",
 			"guided": {
-				"step_labels": ["Decisiones", "Investigación", "Mapa"],
+				"step_labels": [
+					"Decisiones",
+					"Investigación",
+					"Mapa"
+				],
 				"hero_label": "Total recuperable",
 				"hero_sub": "en 5 acciones priorizadas",
 				"step1_hint": "Haz clic para investigar ↓",
 				"step2_context": "P1 · Checkout lento — −$28k/mes",
 				"step2_ai": "Acabo de navegar tu checkout. El pago se traba en **4.2s** — tres scripts cargan antes de que aparezca el formulario, y **12% de tus usuarios** están saliendo en este punto. Eso representa **−$600/día** en tu facturación.\n\nCosto mensual: **−$28k**.\n\nYa prioricé la corrección como P1 en tu cola. Aplaza los scripts, comprime las imágenes del checkout y mueve la validación a async. Avísame cuando lo apliques — paso de nuevo a confirmar.\n\nCreé un mapa para que monitorees el comportamiento de los usuarios.",
-				"step2_chips": ["Ver mapa"],
+				"step2_chips": [
+					"Ver mapa"
+				],
 				"step3_leak": "Fuga detectada",
 				"step3_cta": "Ver cuánto estoy perdiendo",
 				"step3_micro": "Diagnóstico en 60 segundos. Sin tarjeta de crédito.",
@@ -574,9 +580,7 @@
 			}
 		},
 		"client_gallery": {
-			"eyebrow": "Confianza de operadores digitales",
-			"title": "Equipos que se niegan a escalar a ciegas",
-			"subtitle": "De ecommerce a SaaS y captación de leads, Vestigio es el motor de decisión al que recurren los operadores cuando algo les cuesta dinero — y quieren saber exactamente qué."
+			"headline": "Únete a más de 20.000 empresas que no escalan a ciegas"
 		},
 		"use_cases": {
 			"eyebrow": "Hecho para",
@@ -635,9 +639,6 @@
 			"subtitle": "Cada día sin visibilidad es ingreso que no recuperas.",
 			"primary": "Ejecutar Diagnóstico Gratuito",
 			"micro": "Puedes estar mirando tu primer diagnóstico en 60 segundos."
-		},
-		"client_gallery": {
-			"headline": "Únete a más de 20.000 empresas que no escalan a ciegas"
 		},
 		"video_testimonials": {
 			"title_before": "Descubrieron",
@@ -729,13 +730,21 @@
 					"eyebrow": "El ciclo",
 					"title": "Intentas arreglar, pero el problema solo se mueve.",
 					"body": "Cambias el anuncio, el abandono **cambia de página**. Sin visibilidad de punta a punta, cada corrección crea un problema nuevo.",
-					"stages": ["Anuncio", "Landing", "Checkout"]
+					"stages": [
+						"Anuncio",
+						"Landing",
+						"Checkout"
+					]
 				},
 				{
 					"eyebrow": "El silencio",
 					"title": "Nadie se queja. El dinero simplemente deja de entrar.",
 					"body": "Sin error, sin ticket, sin alerta. El comprador simplemente **se fue** — y tu analytics solo dice 'sesión terminada'.",
-					"alerts": ["0 alertas", "0 errores", "0 tickets"],
+					"alerts": [
+						"0 alertas",
+						"0 errores",
+						"0 tickets"
+					],
 					"terminal_title": "analytics",
 					"no_alerts": "Sin alertas"
 				}
@@ -3172,18 +3181,6 @@
 				"high": "Alto",
 				"very_high": "Muy Alto"
 			},
-			"filters": {
-				"type_all": "Todos los Tipos",
-				"incidents": "Incidentes",
-				"opportunities": "Oportunidades",
-				"verifications": "Verificaciones",
-				"observations": "Observaciones",
-				"severity_all": "Severidad",
-				"effort_all": "Esfuerzo",
-				"effort_low": "Rápido (trivial/bajo)",
-				"effort_medium": "Moderado",
-				"effort_high": "Significativo (alto+)"
-			},
 			"pipeline": {
 				"totalExposure": "Exposición Total",
 				"quickWins": "Quick Wins",
@@ -4209,7 +4206,21 @@
 			"oscillation_clustering": "Los compradores quedan atrapados en bucles repetitivos entre las mismas páginas",
 			"network_error_weighted": "Scripts críticos están fallando en las páginas que generan tus ingresos",
 			"mobile_trust_gap": "Los compradores móviles ven menos señales de confianza que los de escritorio",
-			"behavioral_micro_pattern_cascade": "Múltiples señales de fricción disparándose a la vez — tu UX es sistemáticamente confusa"
+			"behavioral_micro_pattern_cascade": "Múltiples señales de fricción disparándose a la vez — tu UX es sistemáticamente confusa",
+			"g2_listing_void": "Compradores B2B te buscan en G2 — no hay perfil para encontrar",
+			"capterra_listing_void": "Quien compara en Capterra nunca llega a tu marca",
+			"producthunt_listing_void": "Early-adopters explorando Product Hunt no te ven",
+			"wikipedia_listing_void": "Tu marca sin Wikipedia — falta autoridad cuando te investigan",
+			"branded_serp_invisible": "Buscar el nombre de tu marca no devuelve tu propio sitio",
+			"competitor_brand_hijack_serp": "Competidores rankean sobre tu propio dominio en tu nombre de marca",
+			"affiliate_outranks_own": "Sitios afiliados ganan comisión sobre tráfico que debería ser tuyo",
+			"category_intent_invisible": "Quien compra la categoría no te encuentra en la página 1",
+			"trustpilot_complaint_cluster": "Reseñas negativas sin respuesta en Trustpilot — prospectos leen ese silencio",
+			"trustpilot_response_silence": "Respuestas en Trustpilot casi cero — compradores lo leen como 'no les importa'",
+			"reclame_aqui_reputation_critical": "Reclame Aqui marca tu marca — el comprador BR lo verifica antes de pagar",
+			"hn_tech_audience_invisible": "Early-adopters tech nunca te han discutido en Hacker News",
+			"reddit_forum_absence": "Hilos de recomendación en Reddit nunca mencionan tu marca",
+			"reddit_category_demand_unmet": "Compradores buscando tu categoría en Reddit — demanda visible, marca invisible"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Los compradores pierden la confianza en el momento del pago",

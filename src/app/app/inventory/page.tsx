@@ -243,6 +243,102 @@ function titleCase(str: string): string {
 	return str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// ── Pagination controls ────────────────────────
+//
+// Page number window: always shows first + last, the active page, and
+// one neighbor on each side. Pages outside that window collapse to "…".
+// For ≤7 pages the window is large enough to show everything inline.
+
+function PaginationControls({
+	currentPage,
+	totalPages,
+	pageRangeFrom,
+	pageRangeTo,
+	total,
+	onChange,
+}: {
+	currentPage: number;
+	totalPages: number;
+	pageRangeFrom: number;
+	pageRangeTo: number;
+	total: number;
+	onChange: (page: number) => void;
+}) {
+	const t = useTranslations("console.inventory.pagination");
+
+	// Build the visible page-number set. Index is 0-based internally,
+	// 1-based when shown to the user.
+	const pages: Array<number | "ellipsis"> = [];
+	const push = (p: number | "ellipsis") => {
+		const last = pages[pages.length - 1];
+		if (p === "ellipsis" && last === "ellipsis") return;
+		pages.push(p);
+	};
+	for (let i = 0; i < totalPages; i++) {
+		if (
+			i === 0 ||
+			i === totalPages - 1 ||
+			(i >= currentPage - 1 && i <= currentPage + 1)
+		) {
+			push(i);
+		} else {
+			push("ellipsis");
+		}
+	}
+
+	const baseBtn =
+		"flex h-7 min-w-[1.75rem] items-center justify-center rounded-md border border-edge bg-surface-card px-2 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-surface-card disabled:hover:text-content-secondary";
+
+	return (
+		<div className='mt-3 flex flex-wrap items-center justify-between gap-3 text-xs'>
+			<span className='text-content-faint'>
+				{t("showing", { from: pageRangeFrom, to: pageRangeTo, total })}
+			</span>
+			<div className='flex items-center gap-1'>
+				<button
+					type='button'
+					onClick={() => onChange(currentPage - 1)}
+					disabled={currentPage === 0}
+					className={baseBtn}
+					aria-label={t("prev")}
+				>
+					{t("prev")}
+				</button>
+				{pages.map((p, idx) =>
+					p === "ellipsis" ? (
+						<span
+							key={`gap-${idx}`}
+							className='px-1 text-content-faint'
+							aria-hidden='true'
+						>
+							…
+						</span>
+					) : (
+						<button
+							key={p}
+							type='button'
+							onClick={() => onChange(p)}
+							aria-current={p === currentPage ? "page" : undefined}
+							className={`${baseBtn} ${p === currentPage ? "border-accent/40 bg-accent/10 text-accent" : ""}`}
+						>
+							{p + 1}
+						</button>
+					),
+				)}
+				<button
+					type='button'
+					onClick={() => onChange(currentPage + 1)}
+					disabled={currentPage >= totalPages - 1}
+					className={baseBtn}
+					aria-label={t("next")}
+				>
+					{t("next")}
+				</button>
+			</div>
+		</div>
+	);
+}
+
 // ── Side Drawer ────────────────────────────────
 
 function SurfaceDrawer({
@@ -839,6 +935,40 @@ export default function InventoryPage() {
 		});
 	}, [filtered, sortKey, sortDir]);
 
+	// ── Client-side pagination ──
+	//
+	// The API already returns up to 500 rows in one shot; we paginate
+	// over the filtered+sorted result so the table never renders more
+	// than PAGE_SIZE rows at once. Page state resets to 0 whenever the
+	// filter/sort context changes (otherwise users could be looking at
+	// "page 5 of 2" after narrowing the filter).
+	const PAGE_SIZE = 50;
+	const [currentPage, setCurrentPage] = useState(0);
+	const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+	// Clamp the current page if the filtered result shrank. Doing this
+	// in render (not useEffect) avoids a flash of "no rows on this page".
+	const safePage = Math.min(currentPage, totalPages - 1);
+	useEffect(() => {
+		if (currentPage !== safePage) setCurrentPage(safePage);
+	}, [currentPage, safePage]);
+	useEffect(() => {
+		// Reset to page 0 whenever a filter/sort/search input flips.
+		// Listing them explicitly so the effect doesn't fire on row
+		// data changes (which would yank the user back to page 0 on
+		// every poll).
+		setCurrentPage(0);
+	}, [
+		liveFilter, typeFilter, httpStatusFilter, hasFindingsFilter,
+		tierFilter, responseTimeFilter, discoverySourceFilter, localeFilter,
+		searchText, sortKey, sortDir,
+	]);
+	const paged = useMemo(
+		() => sorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE),
+		[sorted, safePage],
+	);
+	const pageRangeFrom = sorted.length === 0 ? 0 : safePage * PAGE_SIZE + 1;
+	const pageRangeTo = Math.min(sorted.length, (safePage + 1) * PAGE_SIZE);
+
 	// ── Selection ──
 
 	const toggleSelect = useCallback((id: string) => {
@@ -1396,7 +1526,7 @@ export default function InventoryPage() {
 												</td>
 											</tr>
 										)}
-										{sorted.map((row) => (
+										{paged.map((row) => (
 											<tr
 												key={row.surface_id}
 												onClick={() => setDrawerSurface(row)}
@@ -1417,6 +1547,19 @@ export default function InventoryPage() {
 									</tbody>
 								</table>
 							</div>
+						)}
+						{/* Pagination footer — only render when there's more
+						    than one page of results. Showing it on a single
+						    page would just add visual noise. */}
+						{sorted.length > 0 && totalPages > 1 && (
+							<PaginationControls
+								currentPage={safePage}
+								totalPages={totalPages}
+								pageRangeFrom={pageRangeFrom}
+								pageRangeTo={pageRangeTo}
+								total={sorted.length}
+								onChange={setCurrentPage}
+							/>
 						)}
 					</>
 				)}

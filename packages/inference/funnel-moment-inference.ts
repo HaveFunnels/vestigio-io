@@ -830,13 +830,16 @@ function inferSocialChannelsDecorative(
 
 /**
  * 12. pricing_without_context — Pricing page shows values without
- * ROI context.
+ * ROI context. SaaS / lead_gen only — ROI framing ("$X per day saved",
+ * "payback in N months") is the B2B subscription/services frame. For
+ * ecommerce, product pricing doesn't carry ROI per-unit framing.
  */
 function inferPricingWithoutContext(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
-  evidence: readonly Evidence[], corpus: string, _model: string,
+  evidence: readonly Evidence[], corpus: string, model: string,
   cp?: Map<string, string>,
 ): Inference[] {
+  if (!isSaas(model) && model !== 'lead_gen') return [];
   const pricingPages = getPricingEvidence(evidence, cp);
   if (pricingPages.length === 0) {
     // Check if pricing exists in generic content
@@ -959,13 +962,16 @@ function inferCheckoutIdentityBreak(
 
 /**
  * 14. payment_options_invisible — No information about accepted payment
- * methods appears before checkout.
+ * methods appears before checkout. Ecommerce only — buyers comparing
+ * cart-style commerce care about PIX/boleto/cards visibility. SaaS
+ * pricing-page buyers know they'll pay by card or invoice.
  */
 function inferPaymentOptionsInvisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
-  evidence: readonly Evidence[], corpus: string, _model: string,
+  evidence: readonly Evidence[], corpus: string, model: string,
   cp?: Map<string, string>,
 ): Inference[] {
+  if (!isEcommerce(model)) return [];
   // Brazil-specific payment methods
   const brPaymentPatterns = ['pix', 'boleto', 'boleto bancário', 'cartão de crédito', 'cartão de débito'];
   // International payment methods

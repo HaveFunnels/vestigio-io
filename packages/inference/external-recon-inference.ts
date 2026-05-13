@@ -113,17 +113,29 @@ function listingVoidInference(
 }
 
 function inferIndustryListings(input: ReconInput): Inference[] {
-	return [
-		...listingVoidInference("off_site.g2_listing", {
-			label: "G2",
-			inference_key: "g2_listing_void",
-			category: InferenceCategory.G2ListingVoid,
-		}, input),
-		...listingVoidInference("off_site.capterra_listing", {
-			label: "Capterra",
-			inference_key: "capterra_listing_void",
-			category: InferenceCategory.CapterraListingVoid,
-		}, input),
+	// G2 + Capterra are SaaS-specific software directories. Listing voids on
+	// these platforms are signal only for SaaS / B2B software businesses —
+	// for ecommerce / lead-gen / consumer brands, a missing G2 page is
+	// neither a problem nor an opportunity.
+	// Product Hunt accepts non-SaaS launches (consumer apps, physical
+	// products, AI tools) so it stays universal. Wikipedia is universal.
+	const isSaas = input.business_model === "saas";
+	const out: Inference[] = [];
+	if (isSaas) {
+		out.push(
+			...listingVoidInference("off_site.g2_listing", {
+				label: "G2",
+				inference_key: "g2_listing_void",
+				category: InferenceCategory.G2ListingVoid,
+			}, input),
+			...listingVoidInference("off_site.capterra_listing", {
+				label: "Capterra",
+				inference_key: "capterra_listing_void",
+				category: InferenceCategory.CapterraListingVoid,
+			}, input),
+		);
+	}
+	out.push(
 		...listingVoidInference("off_site.producthunt_listing", {
 			label: "Product Hunt",
 			inference_key: "producthunt_listing_void",
@@ -134,7 +146,8 @@ function inferIndustryListings(input: ReconInput): Inference[] {
 			inference_key: "wikipedia_listing_void",
 			category: InferenceCategory.WikipediaListingVoid,
 		}, input),
-	];
+	);
+	return out;
 }
 
 function inferBrandedSerpInvisible(input: ReconInput): Inference[] {
@@ -417,18 +430,44 @@ function aiVisibilityScore(input: ReconInput): { score: number; breakdown: Recor
 	const llmsTxt = input.byKey.get("off_site.ai_llms_txt_presence");
 	if (llmsTxt?.value === "present") breakdown.llms_txt = AI_VIS_SIG_WEIGHTS.llms_txt;
 
+	// Machine-readable pricing (/pricing.md) is only relevant for SaaS +
+	// lead_gen — businesses with plan-tier pricing that AI agents compare
+	// programmatically. Ecommerce uses Product/Offer schema for the same
+	// purpose. For ecommerce we redistribute the machine_readable_pricing
+	// weight (10pts) to schema (becomes 25pts max) so the total score
+	// remains 0-100 across business models.
+	const isPricingPlanBased = input.business_model === "saas" || input.business_model === "lead_gen";
 	const mrPricing = input.byKey.get("off_site.ai_machine_readable_pricing");
-	if (mrPricing?.value === "present") breakdown.machine_readable_pricing = AI_VIS_SIG_WEIGHTS.machine_readable_pricing;
+	if (isPricingPlanBased) {
+		if (mrPricing?.value === "present") {
+			breakdown.machine_readable_pricing = AI_VIS_SIG_WEIGHTS.machine_readable_pricing;
+		}
+	} else {
+		// Ecommerce/hybrid: boost schema weight by the machine_readable_pricing slot.
+		if (schema?.value === "comprehensive") {
+			breakdown.schema = AI_VIS_SIG_WEIGHTS.schema + AI_VIS_SIG_WEIGHTS.machine_readable_pricing;
+		} else if (schema) {
+			breakdown.schema = Math.round((AI_VIS_SIG_WEIGHTS.schema + AI_VIS_SIG_WEIGHTS.machine_readable_pricing) / 3);
+		}
+	}
 
 	const comparison = input.byKey.get("off_site.ai_comparison_ownership");
 	if (comparison?.value === "owned") breakdown.comparison_ownership = AI_VIS_SIG_WEIGHTS.comparison_ownership;
 
-	// Third-party citations score: combine Wikipedia + G2 + Capterra +
-	// non-absent Reddit. Each present source adds proportionally.
-	const sources3p = [
+	// Third-party citations score: combine Wikipedia + (G2 + Capterra
+	// only for SaaS) + non-absent Reddit. Each present source adds
+	// proportionally. For ecommerce / lead-gen brands, G2 + Capterra
+	// are not part of the citation pool — counting them would penalize
+	// brands that have no reason to be there.
+	const isSaas = input.business_model === "saas";
+	const sources3p: boolean[] = [
 		input.byKey.get("off_site.wikipedia_listing")?.value === "true",
-		input.byKey.get("off_site.g2_listing")?.value === "true",
-		input.byKey.get("off_site.capterra_listing")?.value === "true",
+		...(isSaas
+			? [
+				input.byKey.get("off_site.g2_listing")?.value === "true",
+				input.byKey.get("off_site.capterra_listing")?.value === "true",
+			]
+			: []),
 		input.byKey.get("off_site.reddit_forum_absence")?.value !== "zero",
 	];
 	const presentCount = sources3p.filter(Boolean).length;
@@ -532,6 +571,10 @@ function inferNoLlmsTxt(input: ReconInput): Inference[] {
 }
 
 function inferNoMachineReadablePricing(input: ReconInput): Inference[] {
+	// /pricing.md is plan-tier specific (SaaS + lead_gen). Ecommerce uses
+	// Product/Offer schema for the same purpose — gating prevents false
+	// noise for ecommerce sites that have no /pricing page concept.
+	if (input.business_model !== "saas" && input.business_model !== "lead_gen") return [];
 	const sig = input.byKey.get("off_site.ai_machine_readable_pricing");
 	if (!sig || sig.value === "present") return [];
 	return [
@@ -687,6 +730,8 @@ function inferAiBotAccessOptimal(input: ReconInput): Inference[] {
 }
 
 function inferPricingMachineReadable(input: ReconInput): Inference[] {
+	// Mirror of the negative case — only meaningful for plan-tier pricing.
+	if (input.business_model !== "saas" && input.business_model !== "lead_gen") return [];
 	const sig = input.byKey.get("off_site.ai_machine_readable_pricing");
 	if (!sig || sig.value !== "present") return [];
 	return [
@@ -872,7 +917,11 @@ function inferWikipediaGapToFill(input: ReconInput): Inference[] {
 }
 
 function inferLlmsTxtQuickWin(input: ReconInput): Inference[] {
-	// Same trigger as no_llms_txt but framed as opportunity action.
+	// Bundle action covers llms.txt + pricing.md as one 15-min win.
+	// pricing.md is plan-tier specific, so gate to SaaS + lead_gen. The
+	// standalone llms.txt-only opportunity stays covered by `no_llms_txt`
+	// (universal). Ecommerce customers see that one instead.
+	if (input.business_model !== "saas" && input.business_model !== "lead_gen") return [];
 	const sig = input.byKey.get("off_site.ai_llms_txt_presence");
 	if (!sig || sig.value === "present") return [];
 	return [

@@ -2026,6 +2026,7 @@
 					"status_pass": "Cumple",
 					"status_warn": "Parcial",
 					"status_fail": "Falla",
+					"status_not_evaluated": "No evaluado",
 					"evidence_label": "Evidencia:",
 					"fix_label": "Sugerencia:",
 					"fix_with_copilot": "Discutir con Copilot",

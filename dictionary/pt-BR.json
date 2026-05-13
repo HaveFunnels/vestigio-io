@@ -2097,6 +2097,7 @@
 					"status_pass": "Atende",
 					"status_warn": "Parcial",
 					"status_fail": "Falha",
+					"status_not_evaluated": "Não avaliado",
 					"evidence_label": "Evidência:",
 					"fix_label": "Sugestão:",
 					"fix_with_copilot": "Discutir com Copilot",

@@ -31,7 +31,7 @@ import {
 	type CopyFramework,
 } from "@/lib/copy-frameworks";
 
-type Status = "pass" | "warn" | "fail";
+type Status = "pass" | "warn" | "fail" | "not_evaluated";
 
 interface CriterionVerdict {
 	id: string;
@@ -58,28 +58,34 @@ const STATUS_DOT: Record<Status, string> = {
 	pass: "bg-emerald-500",
 	warn: "bg-amber-500",
 	fail: "bg-red-500",
+	not_evaluated: "bg-zinc-400 dark:bg-zinc-600",
 };
 
 const STATUS_TEXT: Record<Status, string> = {
 	pass: "text-emerald-600 dark:text-emerald-400",
 	warn: "text-amber-600 dark:text-amber-400",
 	fail: "text-red-500 dark:text-red-400",
+	not_evaluated: "text-content-faint",
 };
 
 const STATUS_ICON: Record<Status, string> = {
 	pass: "✓",
 	warn: "⚠",
 	fail: "✗",
+	not_evaluated: "—",
 };
 
-// Heuristic mapping of crawled URLs to page slots.
+// Heuristic mapping of crawled URLs to page slots. The keyword must
+// occupy a complete path segment — `/blog/pricing-guide` and
+// `/enterprise-features-comparison` must NOT match (would happen with
+// substring regex that has no anchor after the keyword).
 function detectPageSlot(url: string): PageSlot | null {
 	try {
 		const path = new URL(url).pathname.toLowerCase();
 		if (path === "/" || path === "" || path === "/home") return "home";
-		if (/\/(pricing|price|plans|plano|precos|preco)/.test(path)) return "pricing";
-		if (/\/(features|product|recursos|produto|funcionalidades)/.test(path)) return "features";
-		if (/\/(about|company|sobre|empresa|quem-somos)/.test(path)) return "about";
+		if (/\/(pricing|price|plans|plano|precos|preco)(\/|$)/.test(path)) return "pricing";
+		if (/\/(features|product|recursos|produto|funcionalidades)(\/|$)/.test(path)) return "features";
+		if (/\/(about|company|sobre|empresa|quem-somos)(\/|$)/.test(path)) return "about";
 		return null;
 	} catch {
 		return null;
@@ -159,10 +165,12 @@ export default function CopyFrameworkLens() {
 	// Whenever the selected slot has a matching page, fire 10 parallel audit
 	// requests (one per framework). Each cell is cached server-side per
 	// (framework, pageUrl) so re-selecting a previously-visited slot is
-	// instant.
+	// instant. An AbortController is used so rapid slot-switching cancels
+	// in-flight requests instead of accumulating Haiku calls for pages the
+	// user already navigated away from.
 	useEffect(() => {
 		if (!selectedPage) return;
-		let cancelled = false;
+		const controller = new AbortController();
 
 		// Mark all frameworks as loading for this page
 		setAudits((prev) => {
@@ -178,12 +186,13 @@ export default function CopyFrameworkLens() {
 			COPY_FRAMEWORKS.map((fw) =>
 				fetch(
 					`/api/workspace/copy-framework-audit?framework=${encodeURIComponent(fw.id)}&pageUrl=${encodeURIComponent(pageUrl)}&locale=${encodeURIComponent(locale)}`,
+					{ signal: controller.signal },
 				)
 					.then((r) => (r.ok ? r.json() : null))
 					.then((data) => ({ id: fw.id, data })),
 			),
 		).then((results) => {
-			if (cancelled) return;
+			if (controller.signal.aborted) return;
 			setAudits((prev) => {
 				const next = new Map(prev);
 				for (const r of results) {
@@ -204,7 +213,7 @@ export default function CopyFrameworkLens() {
 		});
 
 		return () => {
-			cancelled = true;
+			controller.abort();
 		};
 	}, [selectedPage?.url, locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -218,8 +227,19 @@ export default function CopyFrameworkLens() {
 		if (!selectedPage || !framework) return;
 		const criterion = framework.criteria.find((c) => c.id === criterionId);
 		if (!criterion) return;
+		// Use the actual selected slot ("homepage" / "pricing page" / etc.)
+		// in the Copilot prompt — the previous hardcoded "homepage" wording
+		// produced misleading prompts when auditing /pricing or /features.
+		const pageLabel =
+			selectedSlot === "home"
+				? "homepage"
+				: selectedSlot === "pricing"
+					? "pricing page"
+					: selectedSlot === "features"
+						? "features page"
+						: "about page";
 		const prompt = [
-			`I'm auditing my homepage copy against the ${pickText(framework.name, fwLocale)} framework.`,
+			`I'm auditing my ${pageLabel} copy against the ${pickText(framework.name, fwLocale)} framework.`,
 			`Page: ${selectedPage.url}`,
 			`Current H1: ${selectedPage.h1 ?? "(none)"}`,
 			`Current meta: ${selectedPage.meta_description ?? "(none)"}`,
@@ -353,7 +373,9 @@ export default function CopyFrameworkLens() {
 					<div className="space-y-2">
 						{framework?.criteria.map((crit) => {
 							const verdict = currentAudit.criteria.find((c) => c.id === crit.id);
-							const status: Status = verdict?.status ?? "warn";
+							// Distinguish "not evaluated" (LLM omission) from "warn"
+							// to avoid double-penalty visual when status missing.
+							const status: Status = verdict?.status ?? "not_evaluated";
 							return (
 								<div
 									key={crit.id}

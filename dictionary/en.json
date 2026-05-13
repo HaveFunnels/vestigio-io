@@ -2119,6 +2119,7 @@
 					"status_pass": "Passes",
 					"status_warn": "Partial",
 					"status_fail": "Fails",
+					"status_not_evaluated": "Not evaluated",
 					"evidence_label": "Evidence:",
 					"fix_label": "Suggestion:",
 					"fix_with_copilot": "Discuss with Copilot",

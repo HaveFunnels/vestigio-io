@@ -1896,6 +1896,7 @@
 					"status_pass": "Erfuellt",
 					"status_warn": "Teilweise",
 					"status_fail": "Faellt durch",
+					"status_not_evaluated": "Nicht bewertet",
 					"evidence_label": "Evidenz:",
 					"fix_label": "Vorschlag:",
 					"fix_with_copilot": "Mit Copilot besprechen",

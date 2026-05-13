@@ -29,6 +29,7 @@ import { computeSaasInferences } from '../inference/saas-inference';
 import { computeVerticalInferences } from '../inference/vertical-inference';
 import { computeFunnelMomentInferences } from '../inference/funnel-moment-inference';
 import { computeExternalReconInferences } from '../inference/external-recon-inference';
+import { computeCrossPackSynthesis } from '../inference/cross-pack-synthesis';
 import { computeFunnelGapInferences, type FunnelGapInput } from '../inference/funnel-gap-inference';
 import { computeCrossDomainInferences, computeSubdomainCrossDomainInferences } from '../inference/cross-domain-inference';
 import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
@@ -695,9 +696,30 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   // Cross-domain inferences (Static + LLM correlation)
   const crossDomainInferences = computeCrossDomainInferences(signals, [...inferences, ...saasInferences, ...verticalInferences, ...funnelMomentInferences], scoping, cycle_ref, evidence);
 
+  // Wave 14 — Cross-pack synthesis. Runs LAST after every per-pack
+  // engine has produced its findings; looks for combinations across
+  // packs and emits compound insights. The combined inference array
+  // (including external recon, SaaS, behavioral, etc.) is the input.
+  const preCompoundInferences = [
+    ...inferences,
+    ...saasInferences,
+    ...verticalInferences,
+    ...funnelMomentInferences,
+    ...externalReconInferences,
+    ...subdomainInferences,
+    ...crossDomainInferences,
+    ...(input.additional_inferences || []),
+  ];
+  const compoundInferences = computeCrossPackSynthesis({
+    inferences: preCompoundInferences,
+    scoping,
+    cycle_ref,
+    ids: new IdGenerator('compound'),
+  });
+
   // Merge SaaS signals + additional static-check signals into main arrays
   const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
-  const allInferences = [...inferences, ...saasInferences, ...verticalInferences, ...funnelMomentInferences, ...externalReconInferences, ...subdomainInferences, ...crossDomainInferences, ...(input.additional_inferences || [])];
+  const allInferences = [...preCompoundInferences, ...compoundInferences];
 
   // Collect all decisions and risk evaluations
   let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision, copyAlignmentResult.decision, channelIntegrityResult.decision, discoverabilityResult.decision, brandIntegrityResult.decision];

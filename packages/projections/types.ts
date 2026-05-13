@@ -566,6 +566,17 @@ export interface EngineTranslations {
     discoverability?: Record<string, string>;
     /** Wave 12: Brand Integrity pack actions. Optional — falls back to English. */
     brand_integrity?: Record<string, string>;
+    /** Wave 14: Action-coverage completeness — 9 newly-covered packs. Each optional, English fallback. */
+    saas_growth_readiness?: Record<string, string>;
+    channel_integrity?: Record<string, string>;
+    friction_tax?: Record<string, string>;
+    content_freshness?: Record<string, string>;
+    mobile_revenue_exposure?: Record<string, string>;
+    trust_revenue_gap?: Record<string, string>;
+    first_impression_revenue?: Record<string, string>;
+    action_value_map?: Record<string, string>;
+    acquisition_integrity?: Record<string, string>;
+    path_efficiency?: Record<string, string>;
   };
   summaries: Record<string, string>;
   confidence_narrative: Record<string, string>;

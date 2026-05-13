@@ -4926,7 +4926,19 @@
 			"ai_visibility_trajectory_improved": "AI Visibility Score subiu desde o último audit — mantenha o que está funcionando",
 			"ai_visibility_trajectory_declined": "AI Visibility Score caiu desde o último audit — algo quebrou ou concorrente se mexeu",
 			"new_citation_detected": "Uma nova fonte autoritativa de citação apareceu desde o último audit",
-			"lost_citation_detected": "Uma citação que você tinha no último audit sumiu — investigue antes do peso na IA decair"
+			"lost_citation_detected": "Uma citação que você tinha no último audit sumiu — investigue antes do peso na IA decair",
+			"compound_reputation_blocks_ai_citation": "Sua reputação bloqueia citação por AI — limpe reviews antes de investir em schema",
+			"compound_invisible_and_unclear": "Comprador não te acha na categoria — e quando acha, a proposta de valor está enterrada",
+			"compound_brand_authority_crisis": "Crise de autoridade da marca — concorrentes, afiliados e SEO te minando ao mesmo tempo",
+			"compound_ai_agent_invisibility": "Agentes de IA não conseguem te parsear em llms.txt + schema + pricing machine-readable — fix de 30min",
+			"compound_mobile_commerce_broken": "Mobile commerce quebrado em conversão, forms e timing de CTA — tráfego pago queimando",
+			"compound_funnel_triple_leak": "Receita vazando no topo + meio + fundo do funil — ordem do fix importa",
+			"compound_paid_acquisition_burn": "Aquisição paga compounding waste em fricção + trust + mobile — pause ou refaça",
+			"compound_trust_journey_collapse": "Sinais de confiança colapsam progressivamente da home pro mobile pro checkout",
+			"compound_saas_activation_to_expansion_blocked": "Loop de SaaS quebrado — usuário não ativa, não upgrada, não expande",
+			"compound_dead_ad_spend": "DARK WASTE — ads pra páginas mortas E sem conversion tracking — pause tudo",
+			"compound_pricing_unclear_and_unparseable": "Pricing falha pro humano E pro AI agent — uma reescrita cobre os dois",
+			"compound_category_invisible_and_authority_thin": "Invisível na busca da categoria E sem autoridade Wikipedia — bottom-of-stack"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Falha de confiança no checkout",

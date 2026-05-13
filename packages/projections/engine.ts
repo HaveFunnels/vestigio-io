@@ -197,6 +197,21 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   ai_visibility_trajectory_declined: 'discoverability',
   new_citation_detected: 'discoverability',
   lost_citation_detected: 'discoverability',
+  // Wave 14 — Cross-pack compound insights. Each maps to the pack
+  // where the COMPOUND action is most naturally surfaced. Routing
+  // depends on which pack the unified fix gets executed in.
+  compound_reputation_blocks_ai_citation: 'brand_integrity', // reputation is the root cause
+  compound_invisible_and_unclear: 'discoverability',
+  compound_brand_authority_crisis: 'brand_integrity',
+  compound_ai_agent_invisibility: 'discoverability',
+  compound_mobile_commerce_broken: 'mobile_revenue_exposure',
+  compound_funnel_triple_leak: 'revenue_integrity',
+  compound_paid_acquisition_burn: 'acquisition_integrity',
+  compound_trust_journey_collapse: 'trust_revenue_gap',
+  compound_saas_activation_to_expansion_blocked: 'saas_growth_readiness',
+  compound_dead_ad_spend: 'acquisition_integrity',
+  compound_pricing_unclear_and_unparseable: 'revenue_integrity',
+  compound_category_invisible_and_authority_thin: 'discoverability',
   // Wave 3.10: Copy alignment pack
   value_proposition_buried: 'copy_alignment',
   social_proof_ineffective: 'copy_alignment',

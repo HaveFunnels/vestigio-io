@@ -608,4 +608,20 @@ export enum InferenceCategory {
   AiVisibilityTrajectoryDeclined = 'ai_visibility_trajectory_declined',
   NewCitationDetected = 'new_citation_detected',
   LostCitationDetected = 'lost_citation_detected',
+  // Wave 14 — Cross-pack synthesis. Compound insights that fire only
+  // when specific COMBINATIONS of findings co-occur across multiple
+  // packs. The output isn't just "fix A + fix B" — it's a unified
+  // diagnosis that's stronger than the sum of its parts.
+  CompoundReputationBlocksAiCitation = 'compound_reputation_blocks_ai_citation',
+  CompoundInvisibleAndUnclear = 'compound_invisible_and_unclear',
+  CompoundBrandAuthorityCrisis = 'compound_brand_authority_crisis',
+  CompoundAiAgentInvisibility = 'compound_ai_agent_invisibility',
+  CompoundMobileCommerceBroken = 'compound_mobile_commerce_broken',
+  CompoundFunnelTripleLeak = 'compound_funnel_triple_leak',
+  CompoundPaidAcquisitionBurn = 'compound_paid_acquisition_burn',
+  CompoundTrustJourneyCollapse = 'compound_trust_journey_collapse',
+  CompoundSaasActivationToExpansionBlocked = 'compound_saas_activation_to_expansion_blocked',
+  CompoundDeadAdSpend = 'compound_dead_ad_spend',
+  CompoundPricingUnclearAndUnparseable = 'compound_pricing_unclear_and_unparseable',
+  CompoundCategoryInvisibleAndAuthorityThin = 'compound_category_invisible_and_authority_thin',
 }

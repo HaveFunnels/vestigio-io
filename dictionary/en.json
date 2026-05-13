@@ -4822,7 +4822,19 @@
 			"ai_visibility_trajectory_improved": "AI Visibility Score improved since last audit — keep doing what's working",
 			"ai_visibility_trajectory_declined": "AI Visibility Score dropped since last audit — something broke or a competitor moved",
 			"new_citation_detected": "A new authoritative citation surface has appeared since last audit",
-			"lost_citation_detected": "A citation you had last audit is gone — investigate why before AI weight decays"
+			"lost_citation_detected": "A citation you had last audit is gone — investigate why before AI weight decays",
+			"compound_reputation_blocks_ai_citation": "Your reputation problem is blocking AI search citation — fix reviews before investing in schema",
+			"compound_invisible_and_unclear": "Buyers can't find your category page — and when they do, the value prop is buried",
+			"compound_brand_authority_crisis": "Brand authority crisis on multiple fronts — competitors, affiliates, and SEO all undermining you",
+			"compound_ai_agent_invisibility": "AI agents can't parse your product across llms.txt + schema + machine-readable pricing — 30-min fix",
+			"compound_mobile_commerce_broken": "Mobile commerce broken across conversion, forms, and CTA timing — paid traffic burning",
+			"compound_funnel_triple_leak": "Revenue leaking at top + middle + bottom of funnel — order matters in the fix",
+			"compound_paid_acquisition_burn": "Paid acquisition compounding waste across friction + trust + mobile — pause or rebuild",
+			"compound_trust_journey_collapse": "Trust signals collapse progressively from homepage to mobile to checkout",
+			"compound_saas_activation_to_expansion_blocked": "SaaS loop broken — users don't activate, don't upgrade, don't expand",
+			"compound_dead_ad_spend": "DARK WASTE — ads to dead pages AND no conversion tracking — pause everything",
+			"compound_pricing_unclear_and_unparseable": "Pricing fails on humans AND AI agents — one rewrite covers both",
+			"compound_category_invisible_and_authority_thin": "Invisible in category SERP AND no Wikipedia authority — bottom-of-stack visibility"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Buyers lose trust at the checkout moment",

@@ -4362,7 +4362,19 @@
 			"ai_visibility_trajectory_improved": "AI Visibility Score subió desde el último audit — sigue haciendo lo que funciona",
 			"ai_visibility_trajectory_declined": "AI Visibility Score bajó desde el último audit — algo se rompió o un competidor se movió",
 			"new_citation_detected": "Una nueva fuente autoritativa de citación apareció desde el último audit",
-			"lost_citation_detected": "Una citación que tenías en el último audit desapareció — investiga antes que el peso en IA decaiga"
+			"lost_citation_detected": "Una citación que tenías en el último audit desapareció — investiga antes que el peso en IA decaiga",
+			"compound_reputation_blocks_ai_citation": "Tu problema de reputación bloquea la citación por IA — arregla reseñas antes de invertir en schema",
+			"compound_invisible_and_unclear": "Compradores no te encuentran en la categoría — y cuando lo hacen, la propuesta de valor está enterrada",
+			"compound_brand_authority_crisis": "Crisis de autoridad de marca — competidores, afiliados y SEO socavándote a la vez",
+			"compound_ai_agent_invisibility": "Agentes de IA no pueden parsearte en llms.txt + schema + pricing machine-readable — fix de 30min",
+			"compound_mobile_commerce_broken": "Mobile commerce roto en conversión, forms y timing de CTA — tráfico pagado quemándose",
+			"compound_funnel_triple_leak": "Ingresos fugando en top + middle + bottom del funnel — el orden del fix importa",
+			"compound_paid_acquisition_burn": "Adquisición pagada compounding waste en fricción + trust + mobile — pausa o reconstruye",
+			"compound_trust_journey_collapse": "Señales de confianza colapsan progresivamente de home a mobile a checkout",
+			"compound_saas_activation_to_expansion_blocked": "Loop SaaS roto — usuarios no activan, no upgradean, no expanden",
+			"compound_dead_ad_spend": "DARK WASTE — ads a páginas muertas Y sin conversion tracking — pausa todo",
+			"compound_pricing_unclear_and_unparseable": "Pricing falla con humanos Y con agentes IA — una reescritura cubre ambos",
+			"compound_category_invisible_and_authority_thin": "Invisible en SERP de categoría Y sin autoridad Wikipedia — bottom-of-stack"
 		},
 		"root_cause_titles": {
 			"trust_failure_at_checkout": "Los compradores pierden la confianza en el momento del pago",

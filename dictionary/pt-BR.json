@@ -2070,6 +2070,77 @@
 					"empty": "Sem perdas mensais detectadas neste workspace.",
 					"uncategorized": "Sem causa-raiz mapeada"
 				},
+				"pentester_finds": {
+					"label": "O que um pentester acharia em 1 hora",
+					"subtitle": "Vetores de ataque expostos no seu site, ordenados por velocidade de exploit",
+					"empty_title": "Nenhum vetor de ataque óbvio detectado",
+					"empty_description": "Sem brechas de cybersecurity ativas no momento. Continue monitorando — novos findings aparecem aqui.",
+					"exploit_time_label": "Tempo pra exploit",
+					"exploit_time_minutes": "≈ {minutes} min",
+					"target_surface": "Alvo:",
+					"vectors": {
+						"mitm_unencrypted": {
+							"name": "Man-in-the-middle em endpoints sem HTTPS",
+							"narrative": "Atacante em WiFi público intercepta credenciais e cookies. Ferramenta: bettercap. Resultado: roubo de sessão imediato."
+						},
+						"https_downgrade": {
+							"name": "Downgrade de HTTPS sem HSTS",
+							"narrative": "Atacante força conexão HTTP via SSL strip. Sem HSTS, o browser aceita silenciosamente. Cookies de sessão expostos."
+						},
+						"mixed_content_injection": {
+							"name": "Injeção via assets HTTP em página HTTPS",
+							"narrative": "Atacante MITM os scripts HTTP carregados na página segura e injeta payload arbitrário. Executa no contexto do seu domínio."
+						},
+						"tls_known_bugs": {
+							"name": "Exploração de versão TLS desatualizada",
+							"narrative": "Versões pré-1.2 têm vulnerabilidades conhecidas (BEAST, POODLE). Ferramentas automatizadas tentam essas primeiro."
+						},
+						"xss_unrestricted": {
+							"name": "XSS persistente em campos vulneráveis",
+							"narrative": "Sem headers de proteção, payloads <script> em comentários ou perfis são executados nos browsers de outros usuários. Roubo massivo de sessão."
+						},
+						"csp_xss_open": {
+							"name": "XSS sem Content Security Policy",
+							"narrative": "Atacante injeta inline scripts sem nenhum bloqueio. Sem CSP, qualquer XSS encontrado vira controle total da página."
+						},
+						"clickjack_ui_redress": {
+							"name": "Clickjacking em ações sensíveis",
+							"narrative": "Atacante embute seu site em iframe transparente sobre site malicioso. Usuário clica em 'transferir' sem perceber."
+						},
+						"cors_data_steal": {
+							"name": "Roubo de dados via CORS mal configurado",
+							"narrative": "Wildcard ou origens permissivas permitem que sites maliciosos leiam respostas autenticadas. Vaza dados de qualquer usuário logado."
+						},
+						"iframe_embed_phishing": {
+							"name": "Embed em iframe pra phishing",
+							"narrative": "Sem X-Frame-Options, atacante embute checkout/login em fake site. Vítima entra credenciais achando estar no real."
+						},
+						"cdn_compromise_chain": {
+							"name": "Compromisso via CDN sem SRI",
+							"narrative": "Se o CDN ou conta do provedor é comprometido, scripts maliciosos rodam no seu site. SRI bloqueia execução de scripts modificados."
+						},
+						"admin_endpoint_access": {
+							"name": "Acesso direto a endpoints administrativos expostos",
+							"narrative": "Endpoints /admin, /debug, /.env ou similares acessíveis sem auth. Pentester descobre via wordlist em minutos."
+						},
+						"session_theft": {
+							"name": "Roubo de sessão por cookies sem flags",
+							"narrative": "Cookies sem HttpOnly podem ser lidos via JS de XSS. Sem Secure, transmitidos em HTTP. Sessão de qualquer user comprometida."
+						},
+						"brute_force_credentials": {
+							"name": "Brute force em login sem rate limit",
+							"narrative": "Pentester roda lista de credenciais conhecidas (combolist de breaches anteriores) sem ser bloqueado. Account takeover em escala."
+						},
+						"resource_enumeration": {
+							"name": "Enumeração de recursos por URLs previsíveis",
+							"narrative": "URLs sequenciais (invoice/1, invoice/2...) ou IDs adivinháveis vazam dados de outros usuários. Sem auth check, IDOR clássico."
+						},
+						"stack_trace_recon": {
+							"name": "Recon de infra via vazamento de erros",
+							"narrative": "Stack traces, paths internos e versões de software em respostas de erro. Pentester aprende a stack inteira sem auth."
+						}
+					}
+				},
 				"budget_forecast": {
 					"label": "Forecast de gasto com infra",
 					"subtitle": "Custo mensal estimado dos vendors detectados em cenários de escala",

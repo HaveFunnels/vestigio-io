@@ -2092,6 +2092,77 @@
 					"empty": "No monthly losses detected in this workspace.",
 					"uncategorized": "No root cause mapped"
 				},
+				"pentester_finds": {
+					"label": "What a pentester would find in 1 hour",
+					"subtitle": "Attack vectors exposed on your site, sorted by exploit speed",
+					"empty_title": "No obvious attack vectors detected",
+					"empty_description": "No active cybersecurity gaps right now. Keep monitoring — new findings will appear here.",
+					"exploit_time_label": "Exploit time",
+					"exploit_time_minutes": "≈ {minutes} min",
+					"target_surface": "Target:",
+					"vectors": {
+						"mitm_unencrypted": {
+							"name": "Man-in-the-middle on non-HTTPS endpoints",
+							"narrative": "Attacker on public WiFi intercepts credentials and cookies. Tool: bettercap. Result: immediate session theft."
+						},
+						"https_downgrade": {
+							"name": "HTTPS downgrade without HSTS",
+							"narrative": "Attacker forces HTTP via SSL stripping. Without HSTS, the browser accepts silently. Session cookies exposed."
+						},
+						"mixed_content_injection": {
+							"name": "Injection via HTTP assets on HTTPS page",
+							"narrative": "Attacker MITMs HTTP scripts loaded on the secure page and injects arbitrary payload. Executes in your domain context."
+						},
+						"tls_known_bugs": {
+							"name": "Exploiting outdated TLS versions",
+							"narrative": "Pre-1.2 versions have documented vulnerabilities (BEAST, POODLE). Automated tools try these first."
+						},
+						"xss_unrestricted": {
+							"name": "Persistent XSS in vulnerable fields",
+							"narrative": "Without protection headers, <script> payloads in comments or profiles execute in other users' browsers. Massive session theft."
+						},
+						"csp_xss_open": {
+							"name": "XSS with no Content Security Policy",
+							"narrative": "Attacker injects inline scripts with no block. Without CSP, any XSS found becomes full page control."
+						},
+						"clickjack_ui_redress": {
+							"name": "Clickjacking on sensitive actions",
+							"narrative": "Attacker embeds your site in a transparent iframe over a malicious site. User clicks 'transfer' without realizing."
+						},
+						"cors_data_steal": {
+							"name": "Data theft via misconfigured CORS",
+							"narrative": "Wildcard or permissive origins let malicious sites read authenticated responses. Leaks data from any logged-in user."
+						},
+						"iframe_embed_phishing": {
+							"name": "Iframe embed for phishing",
+							"narrative": "Without X-Frame-Options, attacker embeds checkout/login in a fake site. Victim enters credentials thinking it's the real one."
+						},
+						"cdn_compromise_chain": {
+							"name": "CDN compromise without SRI",
+							"narrative": "If the CDN or provider account is compromised, malicious scripts run on your site. SRI blocks modified scripts from executing."
+						},
+						"admin_endpoint_access": {
+							"name": "Direct access to exposed admin endpoints",
+							"narrative": "Endpoints /admin, /debug, /.env or similar accessible without auth. Pentester finds via wordlist in minutes."
+						},
+						"session_theft": {
+							"name": "Session theft via cookies without flags",
+							"narrative": "Cookies without HttpOnly can be read by XSS JS. Without Secure, transmitted over HTTP. Any user session compromised."
+						},
+						"brute_force_credentials": {
+							"name": "Brute force login without rate limit",
+							"narrative": "Pentester runs known credential lists (combolists from prior breaches) without being blocked. Account takeover at scale."
+						},
+						"resource_enumeration": {
+							"name": "Resource enumeration via predictable URLs",
+							"narrative": "Sequential URLs (invoice/1, invoice/2...) or guessable IDs leak other users' data. Without auth check, classic IDOR."
+						},
+						"stack_trace_recon": {
+							"name": "Infra recon via error leakage",
+							"narrative": "Stack traces, internal paths, and software versions in error responses. Pentester learns the whole stack without auth."
+						}
+					}
+				},
 				"budget_forecast": {
 					"label": "Infrastructure budget forecast",
 					"subtitle": "Estimated monthly cost of detected vendors across growth scenarios",

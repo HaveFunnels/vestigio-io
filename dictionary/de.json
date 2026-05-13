@@ -1878,6 +1878,77 @@
 					"empty": "Keine monatlichen Verluste in diesem Workspace.",
 					"uncategorized": "Keine Grundursache zugeordnet"
 				},
+				"pentester_finds": {
+					"label": "Was ein Pentester in 1 Stunde finden wuerde",
+					"subtitle": "Angriffsvektoren auf Ihrer Seite, sortiert nach Exploit-Geschwindigkeit",
+					"empty_title": "Keine offensichtlichen Angriffsvektoren erkannt",
+					"empty_description": "Keine aktiven Cybersecurity-Luecken im Moment.",
+					"exploit_time_label": "Exploit-Zeit",
+					"exploit_time_minutes": "≈ {minutes} min",
+					"target_surface": "Ziel:",
+					"vectors": {
+						"mitm_unencrypted": {
+							"name": "MITM bei nicht-HTTPS-Endpoints",
+							"narrative": "Attacker on public WiFi intercepts credentials and cookies."
+						},
+						"https_downgrade": {
+							"name": "HTTPS-Downgrade ohne HSTS",
+							"narrative": "Attacker forces HTTP via SSL stripping."
+						},
+						"mixed_content_injection": {
+							"name": "Injection ueber HTTP-Assets auf HTTPS-Seite",
+							"narrative": "Attacker MITMs HTTP scripts and injects arbitrary payload."
+						},
+						"tls_known_bugs": {
+							"name": "Exploit veralteter TLS-Versionen",
+							"narrative": "Pre-1.2 versions have documented vulnerabilities."
+						},
+						"xss_unrestricted": {
+							"name": "Persistentes XSS in verwundbaren Feldern",
+							"narrative": "Without protection headers, payloads execute in other users browsers."
+						},
+						"csp_xss_open": {
+							"name": "XSS ohne Content Security Policy",
+							"narrative": "Attacker injects inline scripts with no block."
+						},
+						"clickjack_ui_redress": {
+							"name": "Clickjacking bei sensiblen Aktionen",
+							"narrative": "Attacker embeds your site in a transparent iframe."
+						},
+						"cors_data_steal": {
+							"name": "Datendiebstahl ueber fehlkonfiguriertes CORS",
+							"narrative": "Wildcard origins let malicious sites read authenticated responses."
+						},
+						"iframe_embed_phishing": {
+							"name": "Iframe-Einbettung fuer Phishing",
+							"narrative": "Without X-Frame-Options, attacker embeds checkout in a fake site."
+						},
+						"cdn_compromise_chain": {
+							"name": "CDN-Kompromittierung ohne SRI",
+							"narrative": "If CDN compromised, malicious scripts run on your site."
+						},
+						"admin_endpoint_access": {
+							"name": "Direkter Zugriff auf exponierte Admin-Endpoints",
+							"narrative": "Endpoints accessible without auth — wordlist finds them quickly."
+						},
+						"session_theft": {
+							"name": "Session-Diebstahl ueber Cookies ohne Flags",
+							"narrative": "Cookies without HttpOnly can be read by XSS JS."
+						},
+						"brute_force_credentials": {
+							"name": "Brute Force bei Login ohne Rate Limit",
+							"narrative": "Pentester runs known credential lists without being blocked."
+						},
+						"resource_enumeration": {
+							"name": "Resource-Enumeration ueber vorhersagbare URLs",
+							"narrative": "Sequential URLs or guessable IDs leak other users data."
+						},
+						"stack_trace_recon": {
+							"name": "Infra-Recon ueber Fehler-Leaks",
+							"narrative": "Stack traces and software versions in error responses."
+						}
+					}
+				},
 				"budget_forecast": {
 					"label": "Infrastruktur-Budget-Forecast",
 					"subtitle": "Geschaetzte monatliche Kosten erkannter Vendors in Wachstumsszenarien",

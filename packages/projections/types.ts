@@ -562,6 +562,10 @@ export interface EngineTranslations {
     copy_alignment?: Record<string, string>;
     /** Wave 8.1: Payment Health pack actions. Optional — falls back to English. */
     payment_health?: Record<string, string>;
+    /** Wave 12 + 13: Discoverability pack actions (Brand Echo + AI Visibility). Optional — falls back to English. */
+    discoverability?: Record<string, string>;
+    /** Wave 12: Brand Integrity pack actions. Optional — falls back to English. */
+    brand_integrity?: Record<string, string>;
   };
   summaries: Record<string, string>;
   confidence_narrative: Record<string, string>;

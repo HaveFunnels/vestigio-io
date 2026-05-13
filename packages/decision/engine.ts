@@ -441,6 +441,12 @@ function buildActions(
   if (questionKey === 'is_payment_health_creating_revenue_risk') {
     return buildPaymentHealthActions(risk, inferences, translations);
   }
+  if (questionKey === 'is_discoverability_limiting_growth') {
+    return buildDiscoverabilityActions(risk, inferences, translations);
+  }
+  if (questionKey === 'is_brand_integrity_at_risk') {
+    return buildBrandIntegrityActions(risk, inferences, translations);
+  }
 
   const ta = translations?.actions;
   return {
@@ -861,6 +867,203 @@ function buildPaymentHealthActions(
     primary: tr('stable_primary', 'Payment health is stable. Failed payment and churn rates are within acceptable ranges.'),
     secondary: [],
     verification: [tr('stable_verify', 'Continue monitoring payment health through Stripe integration.')],
+  };
+}
+
+// ──────────────────────────────────────────────
+// Discoverability actions — covers ~30 findings:
+//   - Phase 3E discoverability (commercial pages, social previews,
+//     brand consistency)
+//   - Wave 12 Brand Echo discoverability subset (industry listings,
+//     branded/category SERP, HN, Reddit)
+//   - Wave 13 AI Visibility (bot access, llms.txt, schema, Wikipedia
+//     depth, comparison ownership) + positives + Wave B opportunities
+//     + trajectory
+//
+// Secondary actions are emitted per finding present, ordered by
+// expected revenue impact. Capped at ~8 to avoid overwhelming.
+// ──────────────────────────────────────────────
+
+function buildDiscoverabilityActions(
+  risk: RiskEvaluation,
+  inferences: Inference[],
+  translations?: EngineTranslations,
+): { primary: string; secondary: string[]; verification: string[] } {
+  const ts = translations?.actions?.discoverability;
+  const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
+  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+
+  const secondary: string[] = [];
+  const verification: string[] = [];
+
+  // Wave 13 AI Visibility — quickest wins first (high ROI / low effort)
+  if (has('no_llms_txt')) {
+    secondary.push(tr('publish_llms_txt', 'Publish /llms.txt at the site root with a one-page summary of what the product does, who it is for, and links to /pricing + /docs. 15-minute action with measurable AI Overview citation lift in 30-60 days.'));
+  }
+  if (has('no_machine_readable_pricing')) {
+    secondary.push(tr('publish_pricing_md', 'Publish /pricing.md (or /pricing.txt) at the site root with plan names, monthly prices, key limits, and what is included per tier. AI agents comparing tools programmatically depend on parseable pricing.'));
+  }
+  if (has('ai_bots_blocked')) {
+    secondary.push(tr('unblock_ai_bots', 'Edit robots.txt to allow GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Bingbot. Each blocked crawler is a platform that physically cannot cite the brand.'));
+  }
+  if (has('schema_markup_missing_for_product') || has('schema_priority_list')) {
+    secondary.push(tr('add_product_schema', 'Add Product (or SoftwareApplication) + Offer JSON-LD to /pricing first, then Organization on homepage, then FAQPage on any page with Q&A content. AI assistants prefer schema-rich content for citation.'));
+  }
+  if (has('wikipedia_article_thin_or_outdated') || has('wikipedia_gap_to_fill')) {
+    secondary.push(tr('improve_wikipedia', 'Strengthen Wikipedia presence: collect 3-5 independent press references about the brand, then either expand the existing article or submit a new article via WP:AfC. Do not author your own edits — recruit independent editors with the sourced material.'));
+  }
+
+  // Wave 12 Brand Echo — industry listings + SERP visibility
+  if (has('g2_listing_void')) {
+    secondary.push(tr('claim_g2', 'Claim your G2 profile (free). Add product description, screenshots, integrations, and seed 10-15 honest reviews from happy customers in the first 30 days. G2 review count >50 unlocks AI assistant preference for category queries.'));
+  }
+  if (has('capterra_listing_void')) {
+    secondary.push(tr('claim_capterra', 'Claim Capterra/GetApp/SoftwareAdvice profiles (all owned by Gartner, single onboarding). B2B buyers research here before vendor calls.'));
+  }
+  if (has('producthunt_listing_void')) {
+    secondary.push(tr('claim_producthunt', 'Submit the product to Product Hunt with a coordinated launch (community pre-warming + day-of hunter outreach). Even without #1 placement, the page becomes a persistent third-party citation asset.'));
+  }
+  if (has('branded_serp_invisible')) {
+    secondary.push(tr('fix_branded_serp', 'Branded SERP fix: ensure homepage <title> includes the brand name, canonical points to root, and the H1 uses the brand verbatim. Submit a Google Search Console "site:" query with the brand to detect indexation gaps.'));
+  }
+  if (has('competitor_brand_hijack_serp')) {
+    secondary.push(tr('reclaim_branded_serp', 'Competitors are outranking you on your own brand name. Publish a brand "vs alternatives" page on your own domain that owns the comparison narrative; file trademark complaints on competitor pages using your trademark in ad copy.'));
+  }
+  if (has('affiliate_outranks_own')) {
+    secondary.push(tr('reclaim_affiliate_traffic', 'Affiliate/review sites earn commission on your branded traffic. Build stronger branded landing pages, partner directly with the highest-volume affiliates instead of paying via networks, and pursue trademark enforcement on misleading review pages.'));
+  }
+  if (has('category_intent_invisible') || has('high_leverage_query_unowned')) {
+    secondary.push(tr('own_category_query', 'Buyers shopping the category never see you. Publish a "best [category] [year]" listicle on your own domain, target the alternatives keyword cluster with 1,500-word landing pages, and outreach to 3-5 independent "best of" listicle authors for inclusion.'));
+  }
+  if (has('competitor_owns_comparison') || has('unfindable_in_comparison_searches')) {
+    secondary.push(tr('own_vs_query', 'Competitors author the "<brand> vs them" pages — they shape how AI describes you. Publish fair side-by-side comparison pages on your own domain for the top 3 competitors, with criteria buyers actually use.'));
+  }
+  if (has('hn_tech_audience_invisible')) {
+    secondary.push(tr('hn_engagement', 'Tech early-adopters have never discussed you on Hacker News. Plan a "Show HN" launch with a real engineering story OR publish one deep-dive technical post that earns front-page traction. Either creates a persistent HN citation surface.'));
+  }
+  if (has('reddit_forum_absence') || has('reddit_category_demand_unmet')) {
+    secondary.push(tr('reddit_authentic_presence', 'Reddit recommendation threads never mention you while buyers ask for tools in your category. Identify 2-3 active subreddits, seed authentic founder presence over 30+ days, and respond helpfully to existing recommendation threads. Avoid promotional posts — Reddit moderation penalizes them.'));
+  }
+  if (has('third_party_citation_target')) {
+    secondary.push(tr('expand_third_party', 'Claim missing third-party listings and seed reviews. AI assistants are 6.5× more likely to cite via third-party sources than via your own domain — this is structural moat.'));
+  }
+
+  // Phase 3E discoverability findings (pre-existing)
+  if (has('commercial_pages_weak_search_representation')) {
+    secondary.push(tr('improve_search_representation', 'Commercial pages have weak search representation. Add proper <title>, meta description, and OpenGraph tags that match buying-intent queries.'));
+  }
+  if (has('social_previews_fail_commercial_value')) {
+    secondary.push(tr('improve_social_previews', 'Social previews fail to communicate commercial value. Add OG image, og:title with value prop, and og:description with the offer for every commercial page.'));
+  }
+  if (has('brand_inconsistent_across_surfaces')) {
+    secondary.push(tr('unify_brand_surfaces', 'Brand name appears inconsistently across pages (e.g., capitalization, abbreviations). Standardize across <title>, H1, OG tags, and copy.'));
+  }
+  if (has('commercial_pages_not_exposed_for_discovery') || has('commercial_pages_unlikely_indexed')) {
+    secondary.push(tr('expose_commercial_pages', 'Commercial pages (pricing, product, checkout entry) may not be indexed by search engines. Verify robots.txt allows crawling, add them to the sitemap, and link from the homepage.'));
+  }
+
+  // Build primary by impact level
+  if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+    const primary = tr('incident_primary', 'AI assistants and search engines cannot find or recommend the brand. Buyers researching your category find competitors instead. Address visibility gaps before any paid acquisition push.');
+    verification.push(tr('incident_verify', 'Re-run the external recon audit in 30 days to confirm AI Visibility Score moved above 60.'));
+    return { primary, secondary: secondary.slice(0, 8), verification };
+  }
+  if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+    const primary = tr('fix_primary', 'Discoverability gaps are limiting growth. Each blocked AI crawler, missing listing, or unowned comparison query is buying-intent traffic going to competitors. Fix high-leverage items first (llms.txt + schema + Wikipedia).');
+    verification.push(tr('fix_verify', 'Re-run external recon in 30-60 days and confirm AI Visibility Score improved by ≥10 points.'));
+    return { primary, secondary: secondary.slice(0, 6), verification };
+  }
+  if (risk.decision_impact === DecisionImpact.Optimize) {
+    const primary = tr('optimize_primary', 'Core discoverability is in place — refine for AI search to compound your visibility.');
+    verification.push(tr('optimize_verify', 'Monitor AI Visibility Score quarterly; investigate any drops promptly.'));
+    return { primary, secondary: secondary.slice(0, 4), verification };
+  }
+  // Observe — strengths visible, protect them
+  return {
+    primary: tr('strong_primary', 'Discoverability is healthy. Continue feeding fresh content + structured data; monitor AI Visibility Score for regressions.'),
+    secondary: secondary.slice(0, 3),
+    verification: [tr('strong_verify', 'Schedule quarterly external recon to catch citation losses early.')],
+  };
+}
+
+// ──────────────────────────────────────────────
+// Brand Integrity actions — covers Phase 3E brand impersonation +
+// Wave 12 Brand Echo brand-integrity subset (Trustpilot, Reclame Aqui,
+// competitor hijack, affiliate dominance).
+// ──────────────────────────────────────────────
+
+function buildBrandIntegrityActions(
+  risk: RiskEvaluation,
+  inferences: Inference[],
+  translations?: EngineTranslations,
+): { primary: string; secondary: string[]; verification: string[] } {
+  const ts = translations?.actions?.brand_integrity;
+  const tr = (key: string, fallback: string): string => ts?.[key] ?? fallback;
+  const has = (key: string): Inference | undefined => inferences.find((i) => i.inference_key === key);
+
+  const secondary: string[] = [];
+  const verification: string[] = [];
+
+  // Wave 12 Brand Echo — reputation review platforms
+  if (has('trustpilot_complaint_cluster')) {
+    secondary.push(tr('respond_trustpilot_complaints', 'Negative Trustpilot reviews are sitting unanswered for prospects to read. Assign someone to respond within 48 hours of each new review with an empathetic acknowledgment + concrete next step. Reply to existing unanswered negatives now — even a 5-month-old reply restores credibility.'));
+  }
+  if (has('trustpilot_response_silence')) {
+    secondary.push(tr('trustpilot_response_cadence', 'Set up a Trustpilot alert that pages someone for any new review. Target sub-48h response rate above 70% — silence is the #1 reason high-intent prospects pick a competitor with similar features but visible care.'));
+  }
+  if (has('reclame_aqui_reputation_critical')) {
+    secondary.push(tr('reclame_aqui_recovery', 'Reclame Aqui flags the brand as critical — BR buyers verify before paying. Resolve pending complaints publicly (status = Resolvido), respond to every new complaint within 5 business days, and target index acima de 7/10 within 90 days.'));
+  }
+
+  // Wave 12 Brand Echo — SERP integrity (these overlap with discoverability
+  // but the response is more about ownership/IP enforcement)
+  if (has('competitor_brand_hijack_serp')) {
+    secondary.push(tr('competitor_hijack_enforcement', 'Competitors outrank your own domain on your brand name. Publish a press kit + about page that aggressively owns brand signal. For repeat offenders running paid ads on your trademark, file Google Ads Trademark Complaints + Meta brand reports.'));
+  }
+  if (has('affiliate_outranks_own')) {
+    secondary.push(tr('affiliate_traffic_recovery', 'Affiliate/review sites earn commission on traffic that should be direct. Negotiate direct deals with the top 3 affiliate sites (better margin than network commissions), file trademark enforcement on misleading review pages, and invest in your own branded landing pages.'));
+  }
+
+  // Phase 3E — Brand impersonation / typosquats
+  if (has('lookalike_domain_competing_for_traffic')) {
+    secondary.push(tr('lookalike_domain_response', 'A lookalike domain is competing for branded traffic. File a UDRP complaint with the relevant registrar, or buy the domain directly if it is for sale and redirects to a competitor.'));
+  }
+  if (has('external_sites_mimicking_brand') || has('customers_exposed_to_phishing_surfaces')) {
+    secondary.push(tr('phishing_response', 'External sites are mimicking the brand — phishing exposure for customers. Submit takedown requests via Google Safe Browsing + Microsoft Defender, notify affected customers via email, and monitor for new lookalikes weekly.'));
+  }
+  if (has('brand_traffic_exposed_to_deceptive_surfaces') || has('suspicious_domains_capturing_purchase_intent')) {
+    secondary.push(tr('deceptive_surface_audit', 'Suspicious domains are capturing brand-intent traffic. Run brand monitoring queries weekly, file trademark complaints on confirmed bad actors, and create a "report a fake site" link on the footer.'));
+  }
+  if (has('brand_presence_diluted_across_variants')) {
+    secondary.push(tr('unify_brand_presence', 'Brand presence is diluted across name variants (.com, .io, country TLDs). Consolidate to one canonical domain with 301 redirects from variants, and unify brand spelling across all surfaces.'));
+  }
+
+  // Wave 13 AI Visibility (brand-integrity adjacent) — handled mostly in
+  // discoverability actions, but a few high-severity ones bleed here too
+  if (has('branded_query_ai_overview_competitor')) {
+    secondary.push(tr('branded_ai_overview_recover', 'When AI summarizes searches for your brand, it cites competitors first. Publish a definitive brand page (homepage + /about + press kit) with consistent entity signals + Wikipedia + Organization schema. AI Overview rebalances within 60-90 days.'));
+  }
+
+  // Build primary by impact level
+  if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+    const primary = tr('incident_primary', 'Brand integrity is critically compromised. Negative reputation, hijacked search, or phishing exposure are actively costing buyers and revenue. Address this before any acquisition spend.');
+    verification.push(tr('incident_verify', 'Re-run external recon in 30 days; confirm reputation labels improved and unanswered complaints addressed.'));
+    return { primary, secondary: secondary.slice(0, 8), verification };
+  }
+  if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+    const primary = tr('fix_primary', 'Brand integrity has real gaps. Unanswered reviews, weakened SERP control, and inconsistent brand surfaces compound — fix before scaling brand awareness spend.');
+    verification.push(tr('fix_verify', 'Re-run external recon in 60 days and confirm reputation + SERP signals improved.'));
+    return { primary, secondary: secondary.slice(0, 6), verification };
+  }
+  if (risk.decision_impact === DecisionImpact.Optimize) {
+    const primary = tr('optimize_primary', 'Brand integrity is largely intact — maintain response cadence on review platforms and watch for new lookalike threats.');
+    verification.push(tr('optimize_verify', 'Monthly brand-monitoring sweep + quarterly external recon.'));
+    return { primary, secondary: secondary.slice(0, 4), verification };
+  }
+  return {
+    primary: tr('strong_primary', 'Brand integrity is strong. Continue monitoring third-party review platforms + lookalike domains.'),
+    secondary: secondary.slice(0, 3),
+    verification: [tr('strong_verify', 'Schedule quarterly external recon and brand monitoring.')],
   };
 }
 

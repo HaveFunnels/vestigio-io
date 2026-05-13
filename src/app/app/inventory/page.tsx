@@ -17,7 +17,7 @@ import {
 } from "@/lib/console-data";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { getPageTypeStyle } from "@/lib/page-type-colors";
-import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
+import { DownloadSimple, Flask } from "@phosphor-icons/react/dist/ssr";
 
 // ──────────────────────────────────────────────
 // Inventory Page — Surface-Level Intelligence
@@ -254,9 +254,11 @@ function SurfaceDrawer({
 	const tPageType = useTranslations("console.maps.page_types");
 	const tDiscovery = useTranslations("console.inventory.discovery_source_labels");
 	const tSkipReason = useTranslations("console.inventory.skip_reason_labels");
+	const tAbTest = useTranslations("console.inventory.ab_test_platforms");
 	const localizePageType = (type: string) => tPageType.has(type) ? tPageType(type) : titleCase(type);
 	const localizeSource = (src: string) => tDiscovery.has(src) ? tDiscovery(src) : titleCase(src);
 	const localizeSkipReason = (reason: string) => tSkipReason.has(reason) ? tSkipReason(reason) : titleCase(reason);
+	const localizeAbPlatform = (platform: string) => tAbTest.has(platform) ? tAbTest(platform) : titleCase(platform.replace(/_/g, " "));
 	const isOpen = surface !== null;
 
 	useEffect(() => {
@@ -521,6 +523,23 @@ function SurfaceDrawer({
 									)}
 								</div>
 							)}
+
+							{/* A/B test platform — only show when something was
+							    detected. Surfacing the platform helps the
+							    customer reason about variance in their
+							    analytics ("results unstable because Optimizely
+							    is splitting traffic"). */}
+							{surface.ab_test_platform && (
+								<div>
+									<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
+										{t("ab_test_platform")}
+									</div>
+									<span className='inline-flex items-center gap-1.5 rounded bg-fuchsia-500/10 px-2 py-1 text-xs text-fuchsia-300'>
+										<Flask size={12} weight='regular' />
+										{localizeAbPlatform(surface.ab_test_platform)}
+									</span>
+								</div>
+							)}
 						</div>
 
 						{/* Actions */}
@@ -599,6 +618,7 @@ export default function InventoryPage() {
 	const tPageType = useTranslations("console.maps.page_types");
 	const tDiscovery = useTranslations("console.inventory.discovery_source_labels");
 	const tSkipReason = useTranslations("console.inventory.skip_reason_labels");
+	const tAbTest = useTranslations("console.inventory.ab_test_platforms");
 	const localizeSource = useCallback(
 		(src: string) => (tDiscovery.has(src) ? tDiscovery(src) : titleCase(src)),
 		[tDiscovery],
@@ -606,6 +626,10 @@ export default function InventoryPage() {
 	const localizeSkipReason = useCallback(
 		(reason: string) => (tSkipReason.has(reason) ? tSkipReason(reason) : titleCase(reason)),
 		[tSkipReason],
+	);
+	const localizeAbPlatform = useCallback(
+		(platform: string) => (tAbTest.has(platform) ? tAbTest(platform) : titleCase(platform.replace(/_/g, " "))),
+		[tAbTest],
 	);
 	const localizePageType = useCallback(
 		(type: string) => (tPageType.has(type) ? tPageType(type) : titleCase(type)),
@@ -892,7 +916,18 @@ export default function InventoryPage() {
 			label: tc("surface"),
 			render: (row: InventorySurface) => (
 				<div>
-					<div className='text-sm text-content-secondary'>{row.label}</div>
+					<div className='flex items-center gap-1.5'>
+						<span className='text-sm text-content-secondary'>{row.label}</span>
+						{row.ab_test_platform && (
+							<span
+								className='inline-flex items-center gap-1 rounded bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-400'
+								title={t("ab_test_detected", { platform: localizeAbPlatform(row.ab_test_platform) })}
+							>
+								<Flask size={10} weight='regular' />
+								{localizeAbPlatform(row.ab_test_platform)}
+							</span>
+						)}
+					</div>
 					<div className='font-mono text-xs text-content-faint'>
 						<span>{row.host}</span>
 						<span className='opacity-50'> · </span>

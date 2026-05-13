@@ -290,6 +290,7 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       // Wave 9.3 — per-URL audit trail.
       discovery_source: item.discoverySource ?? null,
       skip_reason: item.skipReason ?? null,
+      ab_test_platform: item.abTestPlatform ?? null,
       http_status: item.statusCode ?? null,
       title: item.title ?? null,
       description: null,

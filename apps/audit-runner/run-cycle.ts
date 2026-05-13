@@ -474,6 +474,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			// / deduped / disallowed). Reasons in NON_PERSISTED_SKIP_REASONS
 			// never reach this line because of the early continue above.
 			const discoverySource = (entry as any).discoverySource ?? null;
+			const abTestPlatform = (entry as any).abTestPlatform ?? null;
 			const persistedSkipReason = isFresh ? null : skipReason;
 
 			inventoryUpserts.push({
@@ -494,6 +495,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					lastSeenCycleId: isFresh ? cycleId : null,
 					discoverySource,
 					skipReason: persistedSkipReason,
+					abTestPlatform,
 				},
 				update: {
 					title: title ?? undefined,
@@ -508,9 +510,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					criticality: Math.round(entry.confidence ?? 0),
 					...(isFresh ? { lastSeenCycleId: cycleId, removedAt: null } : {}),
 					// discoverySource is sticky — only set on create.
-					// skipReason updates every cycle so the UI reflects
-					// the most recent state.
+					// skipReason + abTestPlatform refresh every cycle so
+					// the UI reflects the most recent state (an A/B test
+					// can be removed from a page between cycles).
 					skipReason: persistedSkipReason,
+					abTestPlatform,
 				},
 			});
 		}

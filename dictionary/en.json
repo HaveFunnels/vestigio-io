@@ -3394,6 +3394,20 @@
 				"disallowed": "Disallowed by robots.txt",
 				"aborted": "Crawl aborted"
 			},
+			"ab_test_platforms": {
+				"optimizely": "Optimizely",
+				"vwo": "VWO",
+				"google_optimize": "Google Optimize",
+				"convert": "Convert",
+				"ab_tasty": "AB Tasty",
+				"kameleoon": "Kameleoon",
+				"adobe_target": "Adobe Target",
+				"statsig": "Statsig",
+				"launchdarkly": "LaunchDarkly",
+				"growthbook": "GrowthBook",
+				"split": "Split"
+			},
+			"ab_test_detected": "A/B test detected: {platform}",
 			"empty": {
 				"title": "No surfaces discovered yet",
 				"description": "Install the Vestigio snippet to start collecting behavioral data and surface inventory."
@@ -3432,6 +3446,7 @@
 				"classification_signals_weight_tooltip": "Voting weight for this signal (higher = more trusted)",
 				"discovery_source": "Discovery source",
 				"skip_reason": "Why we didn't refetch",
+				"ab_test_platform": "A/B test platform",
 				"view_in_journey": "View in journey map",
 				"view_findings": "View {count, plural, one {# finding} other {# findings}} on this page"
 			}

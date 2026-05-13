@@ -1,6 +1,6 @@
 import { URL } from 'url';
 import { httpFetch, HttpResponse } from './http-client';
-import { parsePage, ParsedPage, getRootDomain } from './parser';
+import { parsePage, ParsedPage, getRootDomain, detectAbTestPlatform } from './parser';
 import {
   Evidence, EvidenceType, SourceKind, CollectionMethod,
   FreshnessState, Scoping, Freshness,
@@ -104,6 +104,8 @@ export interface CoverageEntry {
   discoverySource?: DiscoverySource;
   /** Set when validated=false to explain why. */
   skipReason?: SkipReason;
+  /** Detected A/B test platform on this page, if any (Optimizely, VWO, …). */
+  abTestPlatform?: string | null;
 }
 
 export interface CoverageSummary {
@@ -393,7 +395,8 @@ export async function runStagedPipeline(
       }
     }
 
-    coverage.set(rootUrl, { url: rootUrl, discovered: true, validated: true, critical: true, confidence: 80, discoverySource: 'homepage' });
+    const homepageAbTest = detectAbTestPlatform(homepageParsed);
+    coverage.set(rootUrl, { url: rootUrl, discovered: true, validated: true, critical: true, confidence: 80, discoverySource: 'homepage', abTestPlatform: homepageAbTest });
   } catch (err) {
     errors.push({ url: rootUrl, error: err instanceof Error ? err.message : String(err) });
     emit({ type: 'stage_complete', stage: 'bootstrap', data: { success: false, error: errors[0].error }, timestamp: new Date() });
@@ -766,7 +769,14 @@ export async function runStagedPipeline(
           }
         }
 
-        coverage.set(url, { ...coverage.get(url)!, validated: true, confidence: renderedViaPlaywright ? 85 : 75, skipReason: undefined });
+        const abTestPlatform = detectAbTestPlatform(parsed);
+        coverage.set(url, {
+          ...coverage.get(url)!,
+          validated: true,
+          confidence: renderedViaPlaywright ? 85 : 75,
+          skipReason: undefined,
+          abTestPlatform,
+        });
       } else {
         // Non-HTML response — still successful fetch, but tagged as
         // `asset` so the inventory can show "PDF / image / etc."

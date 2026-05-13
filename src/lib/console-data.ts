@@ -309,6 +309,8 @@ export interface InventorySurface {
   discovery_source: string | null;
   /** Reason a discovered URL didn't return a fresh fetch this cycle; null on fresh rows. */
   skip_reason: string | null;
+  /** Detected A/B test platform (optimizely, vwo, google_optimize, …); null when none detected. */
+  ab_test_platform: string | null;
   http_status: number | null;
   title: string | null;
   description: string | null;

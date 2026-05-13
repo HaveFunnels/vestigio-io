@@ -82,6 +82,59 @@ const PAYMENT_FIELD_PATTERNS = [
   'billing', 'payment', 'stripe', 'braintree',
 ];
 
+// ──────────────────────────────────────────────
+// A/B test platform detection
+//
+// Pattern catalogue covering the most common experimentation tools.
+// Each entry has a stable platform key (used as a stored value and as
+// the i18n key in the UI) and a list of substring matchers for
+// script src + inline script content. Matchers are case-insensitive
+// and use plain substring tests (cheap), not regex.
+//
+// Note: Google Optimize was sunset in 2023 but legacy installs still
+// fire its scripts, so the customer's inventory will surface it as a
+// pseudo-finding "you're paying for a tool that no longer exists" —
+// useful even though the platform itself is dead.
+// ──────────────────────────────────────────────
+interface AbTestPlatformPattern {
+  platform: string;
+  matchers: string[];
+}
+
+const AB_TEST_PLATFORMS: AbTestPlatformPattern[] = [
+  { platform: 'optimizely',     matchers: ['cdn.optimizely.com', 'optimizely.com', 'window.optimizely', 'optimizelyedge'] },
+  { platform: 'vwo',            matchers: ['dev.visualwebsiteoptimizer.com', 'vwo.com', '_vwo_code', 'window.vwo'] },
+  { platform: 'google_optimize', matchers: ['optimize.google.com', 'googleoptimize.com', 'gtag(\'event\', \'optimize'] },
+  { platform: 'convert',        matchers: ['convertexperiments.com', 'cdn-3.convertexperiments.com'] },
+  { platform: 'ab_tasty',       matchers: ['try.abtasty.com', 'ab-tasty', 'abtasty.com'] },
+  { platform: 'kameleoon',      matchers: ['kameleoon.io', 'window.kameleoon'] },
+  { platform: 'adobe_target',   matchers: ['tt.omtrdc.net', 'mbox.js', 'at.js', 'adobe.target'] },
+  { platform: 'statsig',        matchers: ['statsig.com', 'window.statsig'] },
+  { platform: 'launchdarkly',   matchers: ['app.launchdarkly.com', 'ld-client.js', 'window.ldclient'] },
+  { platform: 'growthbook',     matchers: ['cdn.growthbook.io', 'growthbook-cdn'] },
+  { platform: 'split',          matchers: ['sdk.split.io', 'cdn.split.io', 'splitio'] },
+];
+
+/**
+ * Returns the first detected A/B test platform on the parsed page, or
+ * null if none are present. Scans both external script srcs and the
+ * first ~50KB of inline-script content (the snippets that load these
+ * tools are always near the top of the page so the cap is safe).
+ */
+export function detectAbTestPlatform(parsed: ParsedPage): string | null {
+  const scriptSrcBlob = parsed.scripts.map((s) => s.src).join(' ').toLowerCase();
+  const inlineBlob = parsed.inline_scripts.join(' ').slice(0, 50_000).toLowerCase();
+  for (const { platform, matchers } of AB_TEST_PLATFORMS) {
+    for (const m of matchers) {
+      const needle = m.toLowerCase();
+      if (scriptSrcBlob.includes(needle) || inlineBlob.includes(needle)) {
+        return platform;
+      }
+    }
+  }
+  return null;
+}
+
 export function parsePage(html: string, pageUrl: string): ParsedPage {
   const pageHost = new URL(pageUrl).hostname;
   const rootDomain = getRootDomain(pageHost);

@@ -835,6 +835,9 @@ model PageInventoryItem {
   // is broken".
   discoverySource String?
   skipReason      String?
+  // Wave 9.3 — detected A/B test platform on this page (optimizely,
+  // vwo, google_optimize, …). null when none detected.
+  abTestPlatform  String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

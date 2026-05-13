@@ -3478,6 +3478,20 @@
 				"disallowed": "Proibida pelo robots.txt",
 				"aborted": "Crawl abortado"
 			},
+			"ab_test_platforms": {
+				"optimizely": "Optimizely",
+				"vwo": "VWO",
+				"google_optimize": "Google Optimize",
+				"convert": "Convert",
+				"ab_tasty": "AB Tasty",
+				"kameleoon": "Kameleoon",
+				"adobe_target": "Adobe Target",
+				"statsig": "Statsig",
+				"launchdarkly": "LaunchDarkly",
+				"growthbook": "GrowthBook",
+				"split": "Split"
+			},
+			"ab_test_detected": "Teste A/B detectado: {platform}",
 			"empty": {
 				"title": "Nenhuma superfície descoberta ainda",
 				"description": "Instale o snippet da Vestigio para começar a coletar dados comportamentais e inventário de superfícies."
@@ -3516,6 +3530,7 @@
 				"classification_signals_weight_tooltip": "Peso de voto deste sinal (maior = mais confiável)",
 				"discovery_source": "Como descobrimos",
 				"skip_reason": "Por que não verificamos",
+				"ab_test_platform": "Plataforma de teste A/B",
 				"view_in_journey": "Ver no mapa da jornada",
 				"view_findings": "Ver {count, plural, one {# descoberta} other {# descobertas}} nesta página"
 			}

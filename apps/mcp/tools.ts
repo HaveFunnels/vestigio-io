@@ -51,7 +51,13 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   {
     name: 'get_decision_explainability',
     description: 'Get detailed explainability for a specific decision pack — why the decision was made, contributing factors, and linked root causes.',
-    input_schema: { pack_key: { type: 'string', enum: ['scale_readiness_pack', 'revenue_integrity_pack', 'saas_growth_readiness'] } },
+    input_schema: {
+      pack_key: {
+        type: 'string',
+        enum: ['scale_readiness_pack', 'revenue_integrity_pack', 'saas_growth_readiness'],
+        description: 'Which decision pack to explain. scale_readiness = traffic scaling. revenue_integrity = leakage/trust. saas_growth_readiness = SaaS-specific.',
+      },
+    },
   },
   {
     name: 'get_root_causes',
@@ -80,38 +86,48 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'request_verification',
-    description: 'Request additional verification to strengthen confidence in a decision. Creates a verification request — does NOT execute collection directly.',
+    description: 'Request additional verification to strengthen confidence in a decision. Creates a verification request — does NOT execute collection directly. Only call when the user explicitly asks to verify, re-check, or collect fresh data.',
     input_schema: {
-      verification_type: { type: 'string', enum: ['reuse_only', 'light_probe', 'browser_verification'] },
-      subject_ref: { type: 'string' },
-      reason: { type: 'string' },
-      decision_ref: { type: 'string', nullable: true },
+      verification_type: {
+        type: 'string',
+        enum: ['reuse_only', 'light_probe', 'browser_verification'],
+        description: 'Cost ladder. reuse_only = recompute from existing evidence. light_probe = quick HTTP check. browser_verification = full Playwright run (most expensive).',
+      },
+      subject_ref: {
+        type: 'string',
+        description: 'What to verify. Usually a finding id, an inference_key, or a URL/surface ref.',
+      },
+      reason: {
+        type: 'string',
+        description: 'One short sentence: why the user wants verification now (e.g. "user shipped fix and asked to re-check").',
+      },
+      decision_ref: {
+        type: 'string',
+        nullable: true,
+        description: 'Optional: the decision pack id this verification supports (scale_readiness_pack, revenue_integrity_pack).',
+      },
     },
   },
   {
-    name: 'answer_can_i_scale',
-    description: 'Answer the business question: "Can I scale traffic?" with structured explanation.',
-    input_schema: {},
-  },
-  {
-    name: 'answer_where_losing_money',
-    description: 'Answer the business question: "Where am I losing money?" with structured explanation.',
-    input_schema: {},
-  },
-  {
-    name: 'answer_underlying_cause',
-    description: 'Answer the business question: "What is the underlying cause?" with root cause analysis.',
-    input_schema: {},
-  },
-  {
-    name: 'answer_fix_first',
-    description: 'Answer the business question: "What should I fix first?" with globally prioritized actions.',
-    input_schema: {},
+    name: 'answer_intent',
+    description: 'Answer one of the four canonical business questions with a structured McpAnswer (direct answer + confidence + freshness + recommended next step + supporting refs). Preferred over the deprecated answer_can_i_scale / answer_where_losing_money / answer_underlying_cause / answer_fix_first tools — same shape, one tool.',
+    input_schema: {
+      intent: {
+        type: 'string',
+        enum: ['can_i_scale', 'where_losing_money', 'underlying_cause', 'fix_first'],
+        description: 'can_i_scale = scale-readiness assessment. where_losing_money = revenue integrity / leakage. underlying_cause = root cause analysis. fix_first = globally prioritized action queue.',
+      },
+    },
   },
   {
     name: 'get_verification_status',
-    description: 'Get the status and result of a verification request.',
-    input_schema: { request_id: { type: 'string' } },
+    description: 'Get the status and result of a verification request — useful after calling request_verification to check if collection has finished and what evidence was gathered.',
+    input_schema: {
+      request_id: {
+        type: 'string',
+        description: 'The id returned by a previous request_verification call.',
+      },
+    },
   },
   {
     name: 'list_verifications',
@@ -129,12 +145,12 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'get_action_projections',
-    description: 'Get all actions with estimated impact, sorted by impact then confidence then severity.',
+    description: 'Get the global action queue: cross-pack remediation tasks with estimated impact, sorted by impact then confidence then severity. Each action carries a root_cause_key and links to its underlying findings (action_refs). Use when the user asks what to fix, what to prioritize, or what is on the queue.',
     input_schema: {},
   },
   {
     name: 'get_workspace_projections',
-    description: 'Get workspace projections with impact summaries and scoped findings.',
+    description: 'Get workspace-scoped projections: one entry per workspace (a logical grouping of pages/findings) with an aggregate impact summary and the findings/actions that belong to it. Use when the user wants to compare workspaces or drill into a specific journey/perspective.',
     input_schema: {},
   },
   {
@@ -144,18 +160,56 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'get_map',
-    description: 'Get a causal visualization map (revenue_leakage, chargeback_risk, or root_cause).',
-    input_schema: { map_type: { type: 'string', enum: ['revenue_leakage', 'chargeback_risk', 'root_cause', 'user_journey'] } },
+    description: 'Get a causal visualization map definition (nodes + edges) for one of the predefined topologies.',
+    input_schema: {
+      map_type: {
+        type: 'string',
+        enum: ['revenue_leakage', 'chargeback_risk', 'root_cause', 'user_journey'],
+        description: 'Which map to fetch. revenue_leakage = money exit points. chargeback_risk = dispute drivers. root_cause = shared causes. user_journey = funnel stages.',
+      },
+    },
   },
   {
     name: 'discuss_finding',
-    description: 'Start a contextual chat about a specific finding. Returns analysis with suggested prompts.',
-    input_schema: { finding_id: { type: 'string' } },
+    description: 'Get a focused analysis of one finding plus suggested follow-up prompts. Use when the user pinned a single finding or asked to deep-dive into a specific issue.',
+    input_schema: {
+      finding_id: {
+        type: 'string',
+        description: 'The finding id (e.g. "finding_<inference_key>") from get_finding_projections.',
+      },
+    },
   },
   {
     name: 'analyze_findings',
-    description: 'Analyze multiple findings together. Detects shared root causes, compounding effects, and combined impact.',
-    input_schema: { finding_ids: { type: 'array', items: { type: 'string' } } },
+    description: 'Analyze 2-10 findings together to detect shared root causes, compounding effects, and combined impact. Cross-pack synthesis. Use when the user wants a cohesive story across multiple issues.',
+    input_schema: {
+      finding_ids: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'List of finding ids to analyze together (2-10 recommended; more than 10 dilutes synthesis quality).',
+      },
+    },
+  },
+  {
+    name: 'get_pack',
+    description: 'Get a single decision pack composed in one call: findings filtered to that pack + actions whose findings touch the pack + aggregate monthly impact range + severity breakdown. Preferred over filtering get_finding_projections by pack when discussing a specific domain (revenue, chargeback, security_posture, copy_alignment, etc.) — saves 2-3 round-trips.',
+    input_schema: {
+      pack_key: {
+        type: 'string',
+        description: 'Pack identifier. Common values: revenue_integrity, scale_readiness, chargeback_resilience, copy_alignment, channel_integrity, discoverability, first_impression, trust_gap, friction_tax, mobile_revenue, payment_health, content_freshness.',
+      },
+      severity: {
+        type: 'string',
+        enum: ['critical', 'high', 'medium', 'low'],
+        nullable: true,
+        description: 'Optional minimum severity filter on the returned findings.',
+      },
+    },
+  },
+  {
+    name: 'get_funnel_state',
+    description: 'Get the funnel-shaped view of findings: groups every active finding into one of 5 buyer-journey stages (awareness, consideration, decision, conversion, post_purchase), with per-stage impact, severity breakdown, and the top 3 findings driving each stage. Preferred when the user asks "where in my funnel...", "which step is leaking...", or wants a journey overview. Returns unstaged_findings when a finding\'s pack doesn\'t map to any stage.',
+    input_schema: {},
   },
   {
     name: 'analyze_copy',
@@ -244,7 +298,54 @@ export type ToolResult =
   | { type: 'trend_analysis'; data: TrendAnalysisView }
   | { type: 'recovery_impact'; data: RecoveryImpactView }
   | { type: 'content_freshness'; data: ContentFreshnessView }
+  | { type: 'pack_summary'; data: PackSummaryDetailView }
+  | { type: 'funnel_state'; data: FunnelStateView }
   | { type: 'error'; data: { message: string } };
+
+export interface FunnelStateView {
+  /** Five-stage canonical journey: awareness → consideration → decision → conversion → post_purchase. */
+  stages: Array<{
+    key: 'awareness' | 'consideration' | 'decision' | 'conversion' | 'post_purchase';
+    label: string;
+    order: number;
+    finding_count: number;
+    severity_counts: { critical: number; high: number; medium: number; low: number };
+    monthly_impact: {
+      min_cents: number;
+      max_cents: number;
+      midpoint_cents: number;
+      currency: string;
+    };
+    /** Top 3 findings by impact midpoint (descending). */
+    top_findings: FindingProjection[];
+  }>;
+  /** Findings whose pack didn't match any stage (eg. operational packs). */
+  unstaged_findings: number;
+  total_findings: number;
+  total_monthly_impact_midpoint_cents: number;
+}
+
+/**
+ * Composed view of one decision pack: findings + actions + aggregate
+ * impact for a single MCP call. The pack_key is matched case-insensitively
+ * against FindingProjection.pack. Actions are joined via action.action_refs
+ * that intersect the pack's findings.
+ */
+export interface PackSummaryDetailView {
+  pack_key: string;
+  finding_count: number;
+  severity_counts: { critical: number; high: number; medium: number; low: number };
+  monthly_impact: {
+    min_cents: number;
+    max_cents: number;
+    midpoint_cents: number;
+    currency: string;
+  };
+  findings: FindingProjection[];
+  actions: ActionProjection[];
+  /** True when no finding matches the requested pack_key. */
+  empty: boolean;
+}
 
 export interface CopyAnalysisView {
   overall_grade: string;
@@ -360,15 +461,35 @@ export function executeTool(
       return { type: 'verification_request', data: createVerificationRequest(req) };
     }
 
+    case 'answer_intent': {
+      const intent = String(params.intent || '').trim();
+      switch (intent) {
+        case 'can_i_scale':
+          return { type: 'answer', data: composeScaleReadinessAnswer(ctx) };
+        case 'where_losing_money':
+          return { type: 'answer', data: composeRevenueIntegrityAnswer(ctx) };
+        case 'underlying_cause':
+          return { type: 'answer', data: composeRootCauseAnswer(ctx) };
+        case 'fix_first':
+          return { type: 'answer', data: composeFixFirstAnswer(ctx) };
+        default:
+          return {
+            type: 'error',
+            data: {
+              message: `Unknown intent "${intent}". Valid: can_i_scale, where_losing_money, underlying_cause, fix_first.`,
+            },
+          };
+      }
+    }
+
+    // Deprecated alias cases — kept for one release to avoid breaking
+    // older LLM-call patterns. New code should use answer_intent.
     case 'answer_can_i_scale':
       return { type: 'answer', data: composeScaleReadinessAnswer(ctx) };
-
     case 'answer_where_losing_money':
       return { type: 'answer', data: composeRevenueIntegrityAnswer(ctx) };
-
     case 'answer_underlying_cause':
       return { type: 'answer', data: composeRootCauseAnswer(ctx) };
-
     case 'answer_fix_first':
       return { type: 'answer', data: composeFixFirstAnswer(ctx) };
 
@@ -410,6 +531,18 @@ export function executeTool(
       if (!findingIds || findingIds.length === 0) return { type: 'error', data: { message: 'finding_ids is required' } };
       return { type: 'answer', data: composeMultiFindingChatAnswer(ctx, findingIds) };
     }
+
+    case 'get_pack': {
+      const packKey = String(params.pack_key || '').trim();
+      if (!packKey) {
+        return { type: 'error', data: { message: 'pack_key is required' } };
+      }
+      const severityFilter = (params.severity as string | undefined) ?? null;
+      return { type: 'pack_summary', data: composePackSummary(ctx, packKey, severityFilter) };
+    }
+
+    case 'get_funnel_state':
+      return { type: 'funnel_state', data: composeFunnelState(ctx) };
 
     case 'analyze_copy': {
       const url = (params.url as string) || null;
@@ -714,4 +847,208 @@ export function executeTool(
     default:
       return { type: 'error', data: { message: `Unknown tool: ${toolName}` } };
   }
+}
+
+// ──────────────────────────────────────────────
+// Pack composition — get_pack
+//
+// Filters findings by pack (case-insensitive substring on the
+// FindingProjection.pack field) and joins actions whose action_refs
+// touch any of those findings. Actions don't carry a pack field
+// directly (they're cross-pack by design); the join via action_refs is
+// the canonical way to surface them.
+// ──────────────────────────────────────────────
+
+function composePackSummary(
+  ctx: EngineContext,
+  packKey: string,
+  severityFilter: string | null,
+): PackSummaryDetailView {
+  const SEVERITY_RANK: Record<string, number> = {
+    low: 1, medium: 2, high: 3, critical: 4,
+  };
+  const minSev = severityFilter ? SEVERITY_RANK[severityFilter] ?? 0 : 0;
+  const normalized = packKey.toLowerCase();
+
+  const allFindings = getFindingProjections(ctx);
+  const packFindings = allFindings.filter((f) => {
+    const fpack = String(f.pack || '').toLowerCase();
+    if (!fpack.includes(normalized) && fpack !== normalized) return false;
+    if (minSev > 0 && (SEVERITY_RANK[f.severity] ?? 0) < minSev) return false;
+    return true;
+  });
+
+  // Aggregate impact
+  let min = 0, max = 0, mid = 0;
+  let currency = 'USD';
+  const severityCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+  for (const f of packFindings) {
+    if (f.impact?.monthly_range) {
+      min += f.impact.monthly_range.min ?? 0;
+      max += f.impact.monthly_range.max ?? 0;
+      mid += f.impact.midpoint ?? 0;
+    }
+    if (f.impact?.currency) currency = f.impact.currency;
+    const sev = f.severity as keyof typeof severityCounts;
+    if (sev in severityCounts) severityCounts[sev]++;
+  }
+
+  // Join actions via finding.action_refs (each finding lists the action
+  // IDs that remediate it). We collect those IDs from the pack's
+  // findings and look them up in the global action projection list.
+  const actionIdRefs = new Set<string>();
+  for (const f of packFindings) {
+    if (Array.isArray(f.action_refs)) {
+      for (const ref of f.action_refs) {
+        if (ref?.id) actionIdRefs.add(ref.id);
+      }
+    }
+  }
+  const allActions = getActionProjections(ctx);
+  const packActions = allActions.filter((a) => actionIdRefs.has(a.id));
+
+  return {
+    pack_key: packKey,
+    finding_count: packFindings.length,
+    severity_counts: severityCounts,
+    monthly_impact: {
+      min_cents: min,
+      max_cents: max,
+      midpoint_cents: mid,
+      currency,
+    },
+    findings: packFindings,
+    actions: packActions,
+    empty: packFindings.length === 0,
+  };
+}
+
+// ──────────────────────────────────────────────
+// Funnel composition — get_funnel_state
+//
+// Buckets every active finding into one of 5 canonical buyer-journey
+// stages by mapping its pack. Operational packs (scale_readiness,
+// preflight, security_posture) live OUTSIDE the journey and count as
+// unstaged. The 5 stages match the funnel-moment-inference taxonomy
+// the engine already produces.
+// ──────────────────────────────────────────────
+
+type FunnelStageKey =
+  | 'awareness'
+  | 'consideration'
+  | 'decision'
+  | 'conversion'
+  | 'post_purchase';
+
+const PACK_TO_STAGE: Record<string, FunnelStageKey> = {
+  // Awareness — visitor lands, first 5 seconds
+  first_impression: 'awareness',
+  discoverability: 'awareness',
+  hero_clarity: 'awareness',
+
+  // Consideration — exploring, trust-building
+  trust_gap: 'consideration',
+  social_proof: 'consideration',
+  content_freshness: 'consideration',
+  copy_alignment: 'consideration',
+
+  // Decision — pricing / comparison / cart
+  revenue_integrity: 'decision',
+  mobile_revenue: 'decision',
+  friction_tax: 'decision',
+  payment_health: 'decision',
+
+  // Conversion — checkout / signup
+  channel_integrity: 'conversion',
+  chargeback_resilience: 'conversion',
+  path_efficiency: 'conversion',
+  acquisition_integrity: 'conversion',
+
+  // Post-purchase — retention, expansion, onboarding
+  action_value: 'post_purchase',
+};
+
+const STAGE_LABELS: Record<FunnelStageKey, string> = {
+  awareness: 'Awareness',
+  consideration: 'Consideration',
+  decision: 'Decision',
+  conversion: 'Conversion',
+  post_purchase: 'Post-purchase',
+};
+
+const STAGE_ORDER: FunnelStageKey[] = [
+  'awareness',
+  'consideration',
+  'decision',
+  'conversion',
+  'post_purchase',
+];
+
+function composeFunnelState(ctx: EngineContext): FunnelStateView {
+  const allFindings = getFindingProjections(ctx);
+
+  // Group by stage
+  const buckets: Record<FunnelStageKey, FindingProjection[]> = {
+    awareness: [],
+    consideration: [],
+    decision: [],
+    conversion: [],
+    post_purchase: [],
+  };
+  let unstaged = 0;
+  let totalImpact = 0;
+
+  for (const f of allFindings) {
+    const stage = PACK_TO_STAGE[String(f.pack || '').toLowerCase()];
+    if (stage) {
+      buckets[stage].push(f);
+    } else {
+      unstaged++;
+    }
+    totalImpact += f.impact?.midpoint ?? 0;
+  }
+
+  const stages = STAGE_ORDER.map((key, idx) => {
+    const findings = buckets[key];
+    // Aggregate
+    let min = 0, max = 0, mid = 0;
+    let currency = 'USD';
+    const severityCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+    for (const f of findings) {
+      if (f.impact?.monthly_range) {
+        min += f.impact.monthly_range.min ?? 0;
+        max += f.impact.monthly_range.max ?? 0;
+        mid += f.impact.midpoint ?? 0;
+      }
+      if (f.impact?.currency) currency = f.impact.currency;
+      const sev = f.severity as keyof typeof severityCounts;
+      if (sev in severityCounts) severityCounts[sev]++;
+    }
+    // Top 3 by impact midpoint
+    const topFindings = [...findings]
+      .sort((a, b) => (b.impact?.midpoint ?? 0) - (a.impact?.midpoint ?? 0))
+      .slice(0, 3);
+
+    return {
+      key,
+      label: STAGE_LABELS[key],
+      order: idx,
+      finding_count: findings.length,
+      severity_counts: severityCounts,
+      monthly_impact: {
+        min_cents: min,
+        max_cents: max,
+        midpoint_cents: mid,
+        currency,
+      },
+      top_findings: topFindings,
+    };
+  });
+
+  return {
+    stages,
+    unstaged_findings: unstaged,
+    total_findings: allFindings.length,
+    total_monthly_impact_midpoint_cents: totalImpact,
+  };
 }

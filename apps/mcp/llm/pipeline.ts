@@ -64,8 +64,9 @@ export interface PipelineCallbacks {
    * Fires when a tool finishes. `meta.cached` is true when the result
    * was served from the per-request cache instead of re-executed.
    * `meta.slow` is true when sync execution exceeded SLOW_TOOL_THRESHOLD_MS.
+   * `meta.error` is true when the tool result was an error (result.type === 'error').
    */
-  onToolDone?: (toolName: string, summary: string, meta?: { cached?: boolean; slow?: boolean; durationMs?: number }) => void;
+  onToolDone?: (toolName: string, summary: string, meta?: { cached?: boolean; slow?: boolean; durationMs?: number; error?: boolean }) => void;
   onTextDelta?: (text: string) => void;
   onError?: (message: string, code: string) => void;
   onPromptSuggestion?: (original: string, suggested: string, reason: string) => void;
@@ -88,6 +89,7 @@ const TOOL_LABELS: Record<string, string> = {
   get_revenue_integrity_summary: 'Assessing revenue integrity...',
   get_decision_explainability: 'Analyzing decision factors...',
   get_graph_path_summary: 'Mapping site structure...',
+  answer_intent: 'Answering...',
   answer_can_i_scale: 'Evaluating scale readiness...',
   answer_where_losing_money: 'Finding revenue leaks...',
   answer_underlying_cause: 'Analyzing root causes...',
@@ -98,6 +100,8 @@ const TOOL_LABELS: Record<string, string> = {
   get_verification_status: 'Checking verification...',
   list_verifications: 'Listing verifications...',
   get_workspace_projections: 'Loading workspaces...',
+  get_pack: 'Composing pack view...',
+  get_funnel_state: 'Mapping the funnel...',
 };
 
 // ── Main Pipeline ────────────────────────────
@@ -418,10 +422,23 @@ export async function executePipeline(
           );
         }
 
+        // Tool errors: when executeTool() catches an exception OR an
+        // engine getter returns { type: 'error', data: { message } }.
+        // We surface this so the failure rate can be tracked per-tool
+        // in admin (was previously invisible — duration was logged but
+        // not whether the call succeeded).
+        const isError = !servedFromCache && toolResult?.type === 'error';
+        if (isError) {
+          console.warn(
+            `[mcp:pipeline] tool ${toolName} returned error in request ${requestId}: ${toolResult?.data?.message ?? 'unknown'}`,
+          );
+        }
+
         callbacks?.onToolDone?.(toolName, summary, {
           cached: servedFromCache,
           slow: isSlow,
           durationMs: execution_ms,
+          error: isError,
         });
         if (!blocked) {
           allToolCalls.push(buildToolCallRecord(toolName, toolInput, toolResult, summary, execution_ms));

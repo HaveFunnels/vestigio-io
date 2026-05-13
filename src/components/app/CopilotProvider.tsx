@@ -173,17 +173,25 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 					model: selectedModel,
 				});
 			},
-			onToolEnd: (tool, durationMs, cached, slow) => {
+			onToolEnd: (tool, durationMs, cached, slow, error) => {
 				track("chat_tool_call", {
 					tool,
 					phase: "end",
 					duration_ms: durationMs,
 					cached,
 					slow,
+					error,
 					model: selectedModel,
 				});
 				if (slow) {
 					track("chat_tool_slow", {
+						tool,
+						duration_ms: durationMs,
+						model: selectedModel,
+					});
+				}
+				if (error) {
+					track("chat_tool_error", {
 						tool,
 						duration_ms: durationMs,
 						model: selectedModel,

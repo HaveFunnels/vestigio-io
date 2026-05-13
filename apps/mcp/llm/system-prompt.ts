@@ -62,7 +62,7 @@ const TOOL_CONTEXT = `TOOLS:
 You have analytical tools that query this organization's audit data. Prefer tool data over memory.
 
 TOOL USAGE RULES:
-- Start with the most specific tool for the question. "Where am I losing money?" → answer_where_losing_money (not get_finding_projections).
+- Start with the most specific tool for the question. "Where am I losing money?" → answer_intent({intent:"where_losing_money"}). "Can I scale?" → answer_intent({intent:"can_i_scale"}). For pack-specific questions ("how is revenue doing?") prefer get_pack({pack_key:"revenue_integrity"}). For funnel-shaped questions prefer get_funnel_state(). All of these beat get_finding_projections.
 - Call ONE tool at a time. Analyze the result. Only call another if needed.
 - Avoid broad sweeps: don't call get_finding_projections + get_action_projections + get_workspace_projections together.
 - If a tool errors, explain honestly and suggest alternatives.

@@ -208,9 +208,65 @@ function summarizeToolResult(toolName: string, result: any): string {
     case 'verification_skipped':
       return `Verification skipped: ${data?.reason || 'policy decision'}`;
 
+    case 'pack_summary':
+      return summarizePack(data);
+
+    case 'funnel_state':
+      return summarizeFunnelState(data);
+
     default:
       return truncateJson(data, 500);
   }
+}
+
+function summarizeFunnelState(data: any): string {
+  if (!data?.stages?.length) return 'No funnel data available.';
+  const lines = data.stages.map((s: any) => {
+    const sev = s.severity_counts || {};
+    const sevLine = ['critical', 'high', 'medium', 'low']
+      .filter((k) => (sev[k] ?? 0) > 0)
+      .map((k) => `${sev[k]}${k[0]}`)
+      .join('/');
+    const impact = s.monthly_impact?.midpoint_cents ?? 0;
+    return `${s.order + 1}. ${s.label}: ${s.finding_count} findings (${sevLine || 'none'}) · ~$${Math.round(impact / 100).toLocaleString()}/mo`;
+  });
+  return [
+    `Funnel state across ${data.total_findings} findings (${data.unstaged_findings} unstaged operational):`,
+    ...lines,
+    `Total monthly impact midpoint: ~$${Math.round(data.total_monthly_impact_midpoint_cents / 100).toLocaleString()}`,
+  ].join('\n');
+}
+
+function summarizePack(data: any): string {
+  if (!data) return 'No pack data.';
+  if (data.empty) {
+    return `Pack "${data.pack_key}" has no matching findings.`;
+  }
+  const sev = data.severity_counts || {};
+  const sevLine = ['critical', 'high', 'medium', 'low']
+    .filter((s) => (sev[s] ?? 0) > 0)
+    .map((s) => `${sev[s]} ${s}`)
+    .join(', ');
+  const impact = data.monthly_impact;
+  const impactLine = impact
+    ? `Monthly impact: ~$${Math.round((impact.midpoint_cents ?? 0) / 100).toLocaleString()} (range $${Math.round((impact.min_cents ?? 0) / 100).toLocaleString()}-$${Math.round((impact.max_cents ?? 0) / 100).toLocaleString()})`
+    : null;
+  const topFindings = (data.findings ?? [])
+    .slice(0, 5)
+    .map((f: any) => `- ${f.severity}: ${f.title} (${f.id})`)
+    .join('\n');
+  const topActions = (data.actions ?? [])
+    .slice(0, 5)
+    .map((a: any) => `- ${a.title} (${a.id})`)
+    .join('\n');
+  return [
+    `Pack ${data.pack_key}: ${data.finding_count} findings (${sevLine}), ${data.actions?.length || 0} actions.`,
+    impactLine,
+    topFindings ? `Top findings:\n${topFindings}` : null,
+    topActions ? `Linked actions:\n${topActions}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 function summarizeAnswer(data: any): string {

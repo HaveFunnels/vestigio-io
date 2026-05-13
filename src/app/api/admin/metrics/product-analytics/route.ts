@@ -204,6 +204,13 @@ interface ChatDynamicsView {
 	// these turns felt slow to the user even when they ultimately
 	// succeeded. High value here = the chat feels sluggish.
 	still_working_events: number;
+	// Per-tool failure: count of chat_tool_call events with
+	// properties.error === true, and the ratio vs total ended calls.
+	tool_errors_total: number;
+	tool_error_rate_pct: number | null;
+	// Top tools by errors (descending). Useful for triaging which MCP
+	// tool keeps failing.
+	top_tool_errors: { tool: string; errors: number }[];
 }
 
 async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
@@ -277,10 +284,11 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 	// Top tools (end-phase only, since duration is on end)
 	const toolStats = new Map<
 		string,
-		{ calls: number; totalDuration: number; durationSamples: number }
+		{ calls: number; totalDuration: number; durationSamples: number; errors: number }
 	>();
 	let toolCallsTotal = 0;
 	let toolCallsCached = 0;
+	let toolErrorsTotal = 0;
 	for (const row of toolEvents) {
 		const props = row.properties as any;
 		const tool = typeof props?.tool === "string" ? props.tool : null;
@@ -290,11 +298,16 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 			calls: 0,
 			totalDuration: 0,
 			durationSamples: 0,
+			errors: 0,
 		};
 		if (phase === "end") {
 			existing.calls++;
 			toolCallsTotal++;
 			if (props?.cached === true) toolCallsCached++;
+			if (props?.error === true) {
+				existing.errors++;
+				toolErrorsTotal++;
+			}
 			const dur = props?.duration_ms;
 			if (typeof dur === "number" && dur >= 0 && dur < 300_000) {
 				existing.totalDuration += dur;
@@ -350,5 +363,15 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 		tool_calls_cached: toolCallsCached,
 		slow_tool_events: slowToolEvents,
 		still_working_events: stillWorkingEvents,
+		tool_errors_total: toolErrorsTotal,
+		tool_error_rate_pct:
+			toolCallsTotal > 0
+				? Math.round((toolErrorsTotal / toolCallsTotal) * 1000) / 10
+				: null,
+		top_tool_errors: Array.from(toolStats.entries())
+			.filter(([, s]) => s.errors > 0)
+			.map(([tool, s]) => ({ tool, errors: s.errors }))
+			.sort((a, b) => b.errors - a.errors)
+			.slice(0, 5),
 	};
 }

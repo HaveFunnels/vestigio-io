@@ -31,6 +31,7 @@ export const PRODUCT_EVENT_TYPES = new Set<string>([
 	"chat_error",
 	"chat_suggested_prompt_click",
 	"chat_tool_slow",
+	"chat_tool_error",
 	"chat_still_working",
 	"chat_context_attached",
 	"chat_context_removed",

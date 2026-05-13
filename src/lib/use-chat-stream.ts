@@ -19,8 +19,8 @@ interface UseChatStreamOptions {
   onFirstToken?: (ttftMs: number) => void;
   /** Fires when a tool starts executing on the server. */
   onToolStart?: (tool: string, label?: string) => void;
-  /** Fires when a tool completes. durationMs measured client-side (includes SSE latency). cached = result served from per-request cache. slow = server-side execution exceeded the slow threshold. */
-  onToolEnd?: (tool: string, durationMs: number, cached: boolean, slow: boolean) => void;
+  /** Fires when a tool completes. durationMs measured client-side. cached = served from per-request cache. slow = server execution exceeded threshold. error = tool returned a server-side error. */
+  onToolEnd?: (tool: string, durationMs: number, cached: boolean, slow: boolean, error: boolean) => void;
   /** Fires when the server signals it's still working past the threshold (default 10s). */
   onStillWorking?: (round: number, elapsedMs: number) => void;
 }
@@ -245,6 +245,7 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
                         Date.now() - startedAt,
                         data.cached === true,
                         data.slow === true,
+                        data.error === true,
                       );
                       toolStartedAt.delete(data.tool);
                     }

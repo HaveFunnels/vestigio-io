@@ -340,6 +340,7 @@ export async function POST(request: Request) {
           cached: meta?.cached === true,
           slow: meta?.slow === true,
           duration_ms: meta?.durationMs ?? null,
+          error: meta?.error === true,
         }),
         onStillWorking: (round, elapsedMs) => sendEvent("still_working", { round, elapsed_ms: elapsedMs }),
         onTextDelta: (text) => sendEvent("delta", { text }),

@@ -55,6 +55,9 @@ interface ProductAnalyticsData {
 		tool_calls_cached: number;
 		slow_tool_events: number;
 		still_working_events: number;
+		tool_errors_total: number;
+		tool_error_rate_pct: number | null;
+		top_tool_errors: { tool: string; errors: number }[];
 	};
 }
 
@@ -426,6 +429,23 @@ export default function ProductAnalyticsPage() {
 										}
 									>
 										{data.chat_dynamics.still_working_events} still-working
+									</span>{" "}
+									·{" "}
+									<span
+										className={
+											data.chat_dynamics.tool_errors_total > 0
+												? "text-red-400"
+												: ""
+										}
+									>
+										{data.chat_dynamics.tool_errors_total} tool errors
+										{data.chat_dynamics.tool_error_rate_pct !== null &&
+											data.chat_dynamics.tool_calls_total > 0 && (
+												<>
+													{" "}
+													({data.chat_dynamics.tool_error_rate_pct}%)
+												</>
+											)}
 									</span>
 								</span>
 							</div>
@@ -618,6 +638,33 @@ export default function ProductAnalyticsPage() {
 									</div>
 								</div>
 							</div>
+
+							{/* Tool errors (only shown when any) */}
+							{data.chat_dynamics.top_tool_errors.length > 0 && (
+								<div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+									<h3 className="mb-3 text-sm font-medium text-content">
+										Tools With Errors{" "}
+										<span className="text-content-faint">
+											({data.chat_dynamics.tool_errors_total} total)
+										</span>
+									</h3>
+									<div className="space-y-2">
+										{data.chat_dynamics.top_tool_errors.map((t) => (
+											<div
+												key={t.tool}
+												className="flex items-center justify-between text-xs"
+											>
+												<span className="font-mono text-content">
+													{t.tool}
+												</span>
+												<span className="text-red-400">
+													{t.errors} errors
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 

@@ -1042,7 +1042,8 @@ function ActionDrawerContent({
 				</section>
 			)}
 
-			{/* Impact Breakdown — accent + colored shadow scaled to severity */}
+			{/* Impact Breakdown — accent + colored shadow scaled to severity.
+			    Wave 15.1: added daily-burn row + priority rationale subtitle. */}
 			{action.impact && (
 				<DrawerSection
 					title={t("drawer.impactBreakdown")}
@@ -1068,10 +1069,83 @@ function ActionDrawerContent({
 								/>
 							}
 						/>
+						{/* Wave 15.1: Daily cost of delay — hammers "fix this NOW" */}
+						<DrawerStatRow
+							label={t("drawer.dailyBurnLabel")}
+							value={
+								<span className="text-xs font-mono font-medium text-content-secondary">
+									{t("drawer.dailyBurn", { amount: formatCurrency(action.impact.midpoint / 30, currSym) })}
+								</span>
+							}
+						/>
 						<DrawerStatRow
 							label={t("drawer.priorityScore")}
 							value={action.priority_score >= 5000 ? t("drawer.priority_critical") : action.priority_score >= 2000 ? t("drawer.priority_high") : action.priority_score >= 500 ? t("drawer.priority_medium") : t("drawer.priority_low")}
 						/>
+						{/* Wave 15.1: Priority rationale — explains WHY this priority */}
+						<div className="border-t border-edge/50 px-4 py-2 text-[10px] text-content-faint leading-relaxed">
+							{t("drawer.priorityRationale")}: {t("drawer.priorityFormula", {
+								impact: formatCurrency(action.impact.midpoint, currSym),
+								confidence: action.confidence,
+								crossPack: action.cross_pack ? t("drawer.crossPackBoost") : "",
+							})}
+						</div>
+					</DrawerStatBox>
+				</DrawerSection>
+			)}
+
+			{/* Wave 15.1 — Contexto section.
+			    Surfaces change history, cluster relationships, and confidence
+			    basis so the user understands WHY NOW + WHY TRUST this action.
+			    Only renders if at least one signal is present. */}
+			{(action.change_class || (action.cluster_count && action.cluster_count > 1) || action.value_case_basis) && (
+				<DrawerSection title={t("drawer.contextTitle")} accent="info">
+					<DrawerStatBox>
+						{action.change_class && (
+							<div className="flex items-start gap-2.5 px-4 py-3">
+								<span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
+									action.change_class === "regression" || action.change_class === "new_issue"
+										? "bg-red-500/10 text-red-500"
+										: action.change_class === "improvement" || action.change_class === "resolved"
+										? "bg-emerald-500/10 text-emerald-500"
+										: "bg-amber-500/10 text-amber-500"
+								}`}>
+									{action.change_class === "regression" ? "↗" :
+									 action.change_class === "improvement" ? "↘" :
+									 action.change_class === "new_issue" ? "!" :
+									 action.change_class === "resolved" ? "✓" : "⏳"}
+								</span>
+								<span className="text-sm leading-relaxed text-content-secondary">
+									{t(`drawer.changeNarrative.${action.change_class}`)}
+								</span>
+							</div>
+						)}
+						{action.cluster_count && action.cluster_count > 1 && (
+							<>
+								{action.change_class && <div className="border-t border-edge/50" />}
+								<div className="flex items-start gap-2.5 px-4 py-3">
+									<span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-[11px] text-emerald-500">
+										⚭
+									</span>
+									<span className="text-sm leading-relaxed text-content-secondary">
+										{t("drawer.clusterText", { count: action.cluster_count })}
+									</span>
+								</div>
+							</>
+						)}
+						{action.value_case_basis && (
+							<>
+								{(action.change_class || (action.cluster_count && action.cluster_count > 1)) && <div className="border-t border-edge/50" />}
+								<div className="flex items-start gap-2.5 px-4 py-3">
+									<span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-[11px] text-blue-500">
+										ⓘ
+									</span>
+									<span className="text-sm leading-relaxed text-content-secondary">
+										{t(`drawer.basis.${action.value_case_basis}`)}
+									</span>
+								</div>
+							</>
+						)}
 					</DrawerStatBox>
 				</DrawerSection>
 			)}

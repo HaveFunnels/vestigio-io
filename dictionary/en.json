@@ -3535,6 +3535,25 @@
 				"operationalStatus": "Operational Status",
 				"linkedFindings": "Findings that justify this action",
 				"linkedFindingsCount": "{count, plural, one {# linked finding} other {# linked findings}}",
+				"dailyBurnLabel": "Daily cost of delay",
+				"dailyBurn": "~{amount}/day lost",
+				"priorityRationale": "Why this priority",
+				"priorityFormula": "{impact}/mo × {confidence}% confidence{crossPack}",
+				"crossPackBoost": " × 1.5 (cross-pack)",
+				"contextTitle": "Context",
+				"changeNarrative": {
+					"new_issue": "Surfaced for the first time in this audit — act before it becomes chronic",
+					"regression": "Got worse since the last audit — something regressed",
+					"stable_risk": "Persistent across recent audits — won't go away on its own",
+					"improvement": "Improved since the last audit — stay the course",
+					"resolved": "Resolved in this cycle — kept for historical reference"
+				},
+				"clusterText": "Part of a cluster of {count} findings with a shared root cause — resolving together amplifies impact",
+				"basis": {
+					"data_driven": "Backed by collected quantitative data — high confidence",
+					"heuristic": "Structural analysis via heuristics — directional confidence",
+					"mixed": "Mix of quantitative signals and structural heuristics"
+				},
 				"remediation": "How to fix",
 				"remediationEmpty": "A remediation recipe for this action is being drafted.",
 				"estimatedEffort": "Estimated effort",

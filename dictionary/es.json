@@ -3367,6 +3367,25 @@
 				"operationalStatus": "Estado Operacional",
 				"linkedFindings": "Findings que justifican esta acción",
 				"linkedFindingsCount": "{count, plural, one {# finding vinculado} other {# findings vinculados}}",
+				"dailyBurnLabel": "Costo diario del atraso",
+				"dailyBurn": "~{amount}/día perdido",
+				"priorityRationale": "Por qué esta prioridad",
+				"priorityFormula": "{impact}/mes × {confidence}% confianza{crossPack}",
+				"crossPackBoost": " × 1.5 (cross-pack)",
+				"contextTitle": "Contexto",
+				"changeNarrative": {
+					"new_issue": "Apareció por primera vez en este audit — actúa antes de que se vuelva crónico",
+					"regression": "Empeoró desde el último audit — algo regresó",
+					"stable_risk": "Persistente en los últimos audits — no va a desaparecer solo",
+					"improvement": "Mejoró desde el último audit — mantén el rumbo",
+					"resolved": "Resuelto en este ciclo — referencia histórica"
+				},
+				"clusterText": "Parte de un cluster de {count} findings con causa raíz común — resolverlos juntos amplifica el impacto",
+				"basis": {
+					"data_driven": "Respaldado por datos cuantitativos recolectados — confianza alta",
+					"heuristic": "Análisis estructural vía heurísticas — confianza direccional",
+					"mixed": "Mezcla de señales cuantitativas y heurísticas estructurales"
+				},
 				"verification": "Verificación",
 				"verificationRequested": "Verificación solicitada",
 				"verificationRunning": "Ejecutando verificación…",

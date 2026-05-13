@@ -672,6 +672,14 @@ function SurfaceDrawer({
 										{t("view_findings", { count: surface.finding_count })}
 									</a>
 								)}
+								{/* Wave 15.2 — 2-way binding with actions page. Filters
+								    actions where affected_surfaces includes this URL. */}
+								<a
+									href={`/app/actions?surface=${encodeURIComponent(surface.normalized_path)}`}
+									className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-center text-xs text-emerald-400 transition-colors hover:bg-emerald-500/10"
+								>
+									{t("view_linked_actions")}
+								</a>
 							</div>
 						</div>
 					</>

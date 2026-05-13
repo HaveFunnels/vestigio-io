@@ -333,6 +333,19 @@ export interface ActionProjection {
     confidence_tier?: string;
     pack_key?: string | null;
   }[];
+
+  /**
+   * Wave 15.2: Specific URLs where this action applies. Resolved by
+   * walking linked_findings → underlying inferences → evidence_refs →
+   * Evidence payloads (url / page_url / fetched_url). Deduplicated +
+   * sorted. Empty array when no resolvable URLs exist (e.g. site-wide
+   * actions without specific surface evidence).
+   *
+   * Enables 2-way binding with the Inventory page — clicking a surface
+   * there shows actions affecting it, and the action drawer surfaces
+   * which pages a fix needs to be applied to.
+   */
+  affected_surfaces: string[];
 }
 
 export type WorkspaceProjectionType =

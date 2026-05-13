@@ -1501,6 +1501,25 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
   return findings.filter((f) => f.confidence_tier !== 'low');
 }
 
+/**
+ * Wave 15.2: extract URL from an Evidence's polymorphic payload. Different
+ * payload types use different field names (url, page_url, fetched_url) so
+ * we try them in order. Returns null for payloads with no surface URL
+ * (e.g. behavioral session aggregates, integration snapshots).
+ */
+function extractEvidenceUrl(ev: { payload?: unknown; url?: string }): string | null {
+  // Some evidence shapes carry url at the top level (off-site recon does).
+  if (typeof ev.url === 'string' && ev.url) return ev.url;
+  const p = ev.payload as Record<string, unknown> | undefined;
+  if (!p) return null;
+  const candidates = ['url', 'page_url', 'fetched_url', 'source_url', 'target_url', 'host'];
+  for (const k of candidates) {
+    const v = p[k];
+    if (typeof v === 'string' && v) return v;
+  }
+  return null;
+}
+
 export function projectActions(
   result: MultiPackResult,
   findings: FindingProjection[],
@@ -1520,6 +1539,14 @@ export function projectActions(
   for (const inf of inferences) inferenceIdToKey.set(inf.id, inf.inference_key);
   const findingByInferenceKey = new Map<string, FindingProjection>();
   for (const f of findings) findingByInferenceKey.set(f.inference_key, f);
+
+  // Wave 15.2: also build inference.id → Inference + evidence.id → Evidence
+  // lookups so we can walk RC.contributing_inferences → inference.evidence_refs →
+  // payload.url and produce affected_surfaces per action.
+  const inferenceById = new Map<string, typeof inferences[number]>();
+  for (const inf of inferences) inferenceById.set(inf.id, inf);
+  const evidenceById = new Map<string, typeof result.evidence[number]>();
+  for (const e of result.evidence) evidenceById.set(e.id, e);
 
   // Build map: root_cause_ref → sum of value case impacts
   const rcImpact = computeRootCauseImpact(rootCauses, valueCases, inferences);
@@ -1595,6 +1622,11 @@ export function projectActions(
     // Wave 15: resolve linked findings from RC.contributing_inferences.
     // Dedupes by inference_key (same finding linked via multiple paths).
     const linkedFindings: ActionProjection['linked_findings'] = [];
+    // Wave 15.2: while walking the inferences, also harvest URLs from
+    // each inference's evidence_refs. Different payload types use
+    // different field names (url, page_url, fetched_url, page_url
+    // again on browser traces) so we try them all.
+    const surfaceSet = new Set<string>();
     if (rc) {
       const seen = new Set<string>();
       for (const infRef of rc.contributing_inferences) {
@@ -1613,11 +1645,27 @@ export function projectActions(
             confidence_tier: fp.confidence_tier,
             pack_key: fp.workspace_refs?.[0]?.id ?? null,
           });
+          // Walk inference.evidence_refs → Evidence.payload.url
+          const inf = inferenceById.get(parsed.id);
+          if (inf?.evidence_refs) {
+            for (const evRef of inf.evidence_refs) {
+              try {
+                const evId = parseRef(evRef).id;
+                const ev = evidenceById.get(evId);
+                if (!ev) continue;
+                const url = extractEvidenceUrl(ev);
+                if (url) surfaceSet.add(url);
+              } catch {
+                // bad ref — skip
+              }
+            }
+          }
         } catch {
           // Invalid ref — skip
         }
       }
     }
+    const affectedSurfaces = Array.from(surfaceSet).sort();
 
     const impact = rc && rcImpact.has(rc.root_cause_key)
       ? rcImpact.get(rc.root_cause_key)!
@@ -1723,6 +1771,8 @@ export function projectActions(
       recovery_narrative: null,
       // Wave 15: findings that justify this action
       linked_findings: linkedFindings,
+      // Wave 15.2: specific URLs where this action applies
+      affected_surfaces: affectedSurfaces,
     };
   });
 
@@ -1789,6 +1839,10 @@ export function projectActions(
           }
           return out;
         })(),
+        // Wave 15.2: compound actions take affected_surfaces from the
+        // CompoundFinding's affected_surfaces array (already aggregated
+        // by the compound builder at composite time).
+        affected_surfaces: Array.isArray(cf.affected_surfaces) ? cf.affected_surfaces : [],
       };
       actions.push(compoundAction);
     }

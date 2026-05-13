@@ -3619,6 +3619,19 @@
 				"operationalStatus": "Status Operacional",
 				"linkedFindings": "Findings que justificam esta ação",
 				"linkedFindingsCount": "{count, plural, one {# finding vinculado} other {# findings vinculados}}",
+				"affectedSurfaces": "Páginas afetadas",
+				"affectedSurfacesCount": "{count, plural, one {# página afetada} other {# páginas afetadas}}",
+				"affectedSurfacesMore": "+ {count, plural, one {# outra} other {# outras}}",
+				"verificationCadenceLabel": "Cadência de re-verificação",
+				"cadence": {
+					"daily": "Diária — verificação leve (HTTP fetch + parse) roda automaticamente em cada audit",
+					"weekly": "Semanal — verificação por browser headless é cara, melhor espaçar",
+					"monthly": "Mensal — scan externo é pesado, re-rodamos sob demanda ou mensalmente",
+					"session_gated": "Quando o threshold de sessões coletadas for atingido — pixel-dependent",
+					"every_audit": "Re-computa em cada ciclo de audit automaticamente",
+					"manual": "Não auto-verifica — confirme manualmente após o fix",
+					"on_demand": "Sob demanda — clique em 'Solicitar Verificação' quando estiver pronto"
+				},
 				"dailyBurnLabel": "Custo diário do atraso",
 				"dailyBurn": "~{amount}/dia perdido",
 				"priorityRationale": "Por que essa prioridade",
@@ -3949,7 +3962,8 @@
 				"ab_test_platform": "Plataforma de teste A/B",
 				"locale": "Idioma",
 				"view_in_journey": "Ver no mapa da jornada",
-				"view_findings": "Ver {count, plural, one {# descoberta} other {# descobertas}} nesta página"
+				"view_findings": "Ver {count, plural, one {# descoberta} other {# descobertas}} nesta página",
+				"view_linked_actions": "Ver ações ligadas a esta página"
 			}
 		},
 		"maps": {

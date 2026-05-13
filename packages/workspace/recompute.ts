@@ -189,6 +189,13 @@ export interface MultiPackResult {
   graph_stats: GraphStats;
   signals: Signal[];
   inferences: Inference[];
+  /**
+   * Wave 15.2: Raw evidence array — needed by projection layer so it can
+   * walk Inference.evidence_refs → Evidence.payload.url and produce
+   * ActionProjection.affected_surfaces. Same shape as input.evidence.
+   * Carries through unchanged from MultiPackInput.
+   */
+  evidence: Evidence[];
   scale_readiness: {
     decision: Decision;
     risk_evaluation: RiskEvaluation;
@@ -1113,6 +1120,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     graph_stats: graphStats,
     signals: allSignals,
     inferences: allInferences,
+    evidence: input.evidence,
     scale_readiness: {
       decision: allDecisions[0],
       risk_evaluation: allRiskEvals[0],

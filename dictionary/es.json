@@ -3367,6 +3367,19 @@
 				"operationalStatus": "Estado Operacional",
 				"linkedFindings": "Findings que justifican esta acción",
 				"linkedFindingsCount": "{count, plural, one {# finding vinculado} other {# findings vinculados}}",
+				"affectedSurfaces": "Páginas afectadas",
+				"affectedSurfacesCount": "{count, plural, one {# página afectada} other {# páginas afectadas}}",
+				"affectedSurfacesMore": "+ {count, plural, one {# más} other {# más}}",
+				"verificationCadenceLabel": "Cadencia de re-verificación",
+				"cadence": {
+					"daily": "Diaria — verificación ligera (HTTP fetch + parse) corre automáticamente en cada audit",
+					"weekly": "Semanal — verificación por browser headless es costosa, mejor espaciar",
+					"monthly": "Mensual — scan externo es pesado, re-corremos a demanda o mensualmente",
+					"session_gated": "Cuando se alcanza el threshold de sesiones recolectadas — pixel-dependent",
+					"every_audit": "Re-computa en cada ciclo de audit automáticamente",
+					"manual": "No auto-verificable — confirma manualmente después del fix",
+					"on_demand": "A demanda — clic en 'Solicitar Verificación' cuando estés listo"
+				},
 				"dailyBurnLabel": "Costo diario del atraso",
 				"dailyBurn": "~{amount}/día perdido",
 				"priorityRationale": "Por qué esta prioridad",
@@ -3586,7 +3599,10 @@
 				"response_time": "Tiempo de Respuesta",
 				"last_checked": "Última Verificación",
 				"never": "Nunca",
-				"discovery_sources": "Fuentes de Descubrimiento"
+				"discovery_sources": "Fuentes de Descubrimiento",
+				"view_in_journey": "Ver en el mapa de jornada",
+				"view_findings": "Ver {count, plural, one {# hallazgo} other {# hallazgos}} en esta página",
+				"view_linked_actions": "Ver acciones vinculadas a esta página"
 			}
 		},
 		"maps": {

@@ -3535,6 +3535,19 @@
 				"operationalStatus": "Operational Status",
 				"linkedFindings": "Findings that justify this action",
 				"linkedFindingsCount": "{count, plural, one {# linked finding} other {# linked findings}}",
+				"affectedSurfaces": "Affected pages",
+				"affectedSurfacesCount": "{count, plural, one {# affected page} other {# affected pages}}",
+				"affectedSurfacesMore": "+ {count, plural, one {# more} other {# more}}",
+				"verificationCadenceLabel": "Re-verification cadence",
+				"cadence": {
+					"daily": "Daily — lightweight verification (HTTP fetch + parse) runs automatically each audit",
+					"weekly": "Weekly — headless browser verification is expensive, better to space it out",
+					"monthly": "Monthly — external scans are heavy, re-run on demand or monthly",
+					"session_gated": "When the collected-sessions threshold is reached — pixel-dependent",
+					"every_audit": "Re-computes on every audit cycle automatically",
+					"manual": "Not auto-verifiable — confirm manually after fixing",
+					"on_demand": "On demand — click 'Request Verification' when you're ready"
+				},
 				"dailyBurnLabel": "Daily cost of delay",
 				"dailyBurn": "~{amount}/day lost",
 				"priorityRationale": "Why this priority",
@@ -3865,7 +3878,8 @@
 				"ab_test_platform": "A/B test platform",
 				"locale": "Locale",
 				"view_in_journey": "View in journey map",
-				"view_findings": "View {count, plural, one {# finding} other {# findings}} on this page"
+				"view_findings": "View {count, plural, one {# finding} other {# findings}} on this page",
+				"view_linked_actions": "View actions linked to this page"
 			}
 		},
 		"maps": {

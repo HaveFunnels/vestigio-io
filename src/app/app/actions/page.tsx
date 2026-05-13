@@ -164,6 +164,20 @@ function formatCurrency(value: number, sym: string = "$"): string {
 	return `${sym}${Math.round(value)}`;
 }
 
+// Wave 15.2: cadence guidance per verification strategy. Maps to i18n keys
+// under console.actions.drawer.cadence.<strategy>. Null = strategy isn't
+// auto-re-verifiable on a fixed cadence (manual / data-gated / never).
+const VERIFICATION_CADENCE_KEY: Record<string, string | null> = {
+	http_static: "daily",
+	browser_runtime: "weekly",
+	integration_pull: "daily",
+	external_scan: "monthly",
+	pixel_accumulation: "session_gated",
+	heuristic_recompute: "every_audit",
+	reuse_only: null,
+	not_verifiable_explain: "manual",
+};
+
 function buildRemediationPrompt(
 	action: ActionProjection,
 	t: (key: string, values?: Record<string, string>) => string,
@@ -438,6 +452,11 @@ function ActionsContent({
 	const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
 	// Filtered actions based on filter bar (pipeline tab)
+	// Wave 15.2: deep-link filter — /app/actions?surface=<url> filters to
+	// actions where affected_surfaces includes the URL. Used by the
+	// inventory page's "View linked actions" button for 2-way binding.
+	const surfaceFilter = searchParams?.get("surface") ?? null;
+
 	const filtered = useMemo(() => {
 		let result = actions;
 		if (typeFilter !== "all") result = result.filter(a => a.category === typeFilter);
@@ -447,8 +466,11 @@ function ActionsContent({
 			else if (effortFilter === "medium") result = result.filter(a => a.effort_hint === "medium");
 			else if (effortFilter === "high") result = result.filter(a => a.effort_hint === "high" || a.effort_hint === "very_high");
 		}
+		if (surfaceFilter) {
+			result = result.filter(a => a.affected_surfaces?.includes(surfaceFilter));
+		}
 		return result;
-	}, [actions, typeFilter, severityFilter, effortFilter]);
+	}, [actions, typeFilter, severityFilter, effortFilter, surfaceFilter]);
 
 	// Total addressable impact
 	const totalImpact = useMemo(() => {
@@ -1251,6 +1273,38 @@ function ActionDrawerContent({
 				</DrawerSection>
 			)}
 
+			{/* Wave 15.2 — Affected Surfaces.
+			    URL list resolved from evidence_refs. Each row deep-links to
+			    /app/inventory filtered by surface, closing the 2-way binding
+			    with the inventory page which shows actions per surface. */}
+			{action.affected_surfaces && action.affected_surfaces.length > 0 && (
+				<DrawerSection title={t("drawer.affectedSurfaces")} accent="info">
+					<DrawerStatBox>
+						<ul className='divide-y divide-edge/50'>
+							{action.affected_surfaces.slice(0, 8).map((url) => (
+								<li key={url} className='px-4 py-2'>
+									<a
+										href={`/app/inventory?surface=${encodeURIComponent(url)}`}
+										className='group flex items-start gap-2 text-xs leading-relaxed text-content-secondary hover:text-accent'
+									>
+										<span className="mt-0.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-content-faint group-hover:bg-accent" />
+										<span className="truncate font-mono">{url}</span>
+									</a>
+								</li>
+							))}
+						</ul>
+						{action.affected_surfaces.length > 8 && (
+							<div className='border-t border-edge/50 px-4 py-2 text-[10px] text-content-faint'>
+								{t("drawer.affectedSurfacesMore", { count: action.affected_surfaces.length - 8 })}
+							</div>
+						)}
+						<div className='border-t border-edge/50 px-4 py-2 text-[10px] text-content-faint'>
+							{t("drawer.affectedSurfacesCount", { count: action.affected_surfaces.length })}
+						</div>
+					</DrawerStatBox>
+				</DrawerSection>
+			)}
+
 			{/* Verification Lifecycle Panel */}
 			<DrawerSection title={t("drawer.verification")} accent='info'>
 				<VerificationPanel
@@ -1273,6 +1327,19 @@ function ActionDrawerContent({
 					<p className='mt-2 text-xs text-content-muted'>
 						{t("drawer.verificationRunning")}
 					</p>
+				)}
+				{/* Wave 15.2 — Verification cadence guidance per strategy.
+				    Tells the user how often re-verification makes sense. */}
+				{action.verification_strategy && VERIFICATION_CADENCE_KEY[action.verification_strategy] && (
+					<div className='mt-3 border-t border-edge/50 pt-2.5'>
+						<div className='flex items-start gap-2 text-[11px] leading-relaxed text-content-muted'>
+							<span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-[10px] text-blue-500">⟳</span>
+							<span>
+								<span className="font-medium text-content-secondary">{t("drawer.verificationCadenceLabel")}:</span>{" "}
+								{t(`drawer.cadence.${VERIFICATION_CADENCE_KEY[action.verification_strategy]}`)}
+							</span>
+						</div>
+					</div>
 				)}
 			</DrawerSection>
 

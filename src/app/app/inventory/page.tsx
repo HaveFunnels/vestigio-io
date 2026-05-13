@@ -603,7 +603,12 @@ export default function InventoryPage() {
 	const [discoverySourceFilter, setDiscoverySourceFilter] =
 		useState<string>("all");
 	const [searchText, setSearchText] = useState("");
-	const [sortKey, setSortKey] = useState<string | null>(null);
+	// Default sort surfaces broken pages first (Down → Live → Not checked).
+	// The Not checked bucket sits last on purpose: it represents URLs our
+	// fetcher couldn't reach, so the customer can't act on them until we
+	// re-attempt the crawl — putting them above working pages would bury
+	// the rows the customer actually needs to look at.
+	const [sortKey, setSortKey] = useState<string | null>("is_live");
 	const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 	function handleSort(key: string) {
 		if (sortKey === key) {
@@ -761,6 +766,15 @@ export default function InventoryPage() {
 				case "finding_count": return s.finding_count ?? -1;
 				case "response_time_ms": return s.response_time_ms ?? -1;
 				case "label": return s.label;
+				case "is_live": {
+					// Map status states to numeric priorities so DESC sort
+					// surfaces broken pages first (Down → Live → Not checked).
+					// Down ranks highest because it's the most actionable
+					// signal; Not checked ranks lowest because it's our
+					// fetcher's failure, not the customer's.
+					const state = classifySurfaceStatus(s);
+					return state === "down" ? 2 : state === "live" ? 1 : 0;
+				}
 				default: return s.normalized_path;
 			}
 		};
@@ -1229,7 +1243,7 @@ export default function InventoryPage() {
 												/>
 											</th>
 											{columns.slice(1).map((col) => {
-												const sortable = ["label", "page_type", "tier", "http_status", "session_count", "finding_count", "response_time_ms"].includes(col.key);
+												const sortable = ["label", "page_type", "tier", "is_live", "http_status", "session_count", "finding_count", "response_time_ms"].includes(col.key);
 												const active = sortKey === col.key;
 												return (
 													<th

@@ -1,7 +1,7 @@
 import AppSidebarLayout from "@/components/app/AppSidebarLayout";
 import { McpDataProvider, type McpDataSnapshot } from "@/components/app/McpDataProvider";
 import { resolveOrgContext } from "@/libs/resolve-org";
-import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps } from "@/lib/console-data";
+import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps, loadProjectionsCacheForEnv } from "@/lib/console-data";
 import { AppProviders } from "./providers";
 import { syncUserLocale } from "@/libs/sync-locale";
 import { loadEngineTranslations } from "@/lib/engine-translations";
@@ -32,17 +32,56 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 	const engineTranslations = await loadEngineTranslations();
 	const isImpersonating = (session?.user as any)?.isImpersonating === true;
 
-	// Auto-bootstrap: load persisted evidence into MCP server singleton
-	// so Analysis / Actions / Maps / Chat pages render data on first visit.
+	// Wave 16 — try the cached projections fast path FIRST. Audit-runner
+	// persists the full ProjectionResult to AuditCycle.projectionsCache when
+	// an audit completes. If we have a cache for this env, we can render
+	// the layout WITHOUT calling ensureContext() (which would synchronously
+	// load all evidence into memory + recompute the engine — the main
+	// source of app-wide 502/524 since Wave 13/14 grew the evidence
+	// table).
+	//
+	// Falls back to legacy ensureContext + MCP path when:
+	//   - admin route (no orgCtx)
+	//   - no cache yet (first audit hasn't finished writing under Wave 16)
+	//   - cache load fails for any reason
+	//
+	// Once the cache is in place, page load = single JSONB read instead of
+	// ~1GB evidence transfer + full recompute.
+	let mcpData: McpDataSnapshot;
+	let usedCacheFastPath = false;
 	if (!orgCtx.isAdmin) {
-		await ensureContext({
-			orgId: orgCtx.orgId,
-			orgName: orgCtx.orgName,
-			orgType: orgCtx.orgType,
-			envId: orgCtx.envId,
-			domain: orgCtx.domain,
-			engineTranslations,
-		});
+		const cached = orgCtx.envId ? await loadProjectionsCacheForEnv(orgCtx.envId) : null;
+		if (cached) {
+			usedCacheFastPath = true;
+			mcpData = {
+				findings: cached.findings.length === 0 ? { status: "empty" } : { status: "ready", data: cached.findings },
+				actions: cached.actions.length === 0 ? { status: "empty" } : { status: "ready", data: cached.actions },
+				changeReport: cached.change_report ? { status: "ready", data: cached.change_report } : { status: "empty" },
+				workspaces: cached.workspaces.length === 0 ? { status: "empty" } : { status: "ready", data: cached.workspaces },
+				maps: cached.maps.length === 0 ? { status: "empty" } : { status: "ready", data: cached.maps },
+				currency: orgCtx.currency,
+			};
+		} else {
+			// Legacy path: bootstrap MCP from evidence (slow but works for
+			// envs whose latest audit predates Wave 16 — they catch up on
+			// next audit completion).
+			await ensureContext({
+				orgId: orgCtx.orgId,
+				orgName: orgCtx.orgName,
+				orgType: orgCtx.orgType,
+				envId: orgCtx.envId,
+				domain: orgCtx.domain,
+				engineTranslations,
+			});
+			mcpData = {
+				findings: loadFindings(),
+				actions: loadActions(),
+				changeReport: loadChangeReport(),
+				workspaces: loadWorkspaces(),
+				maps: loadAllMaps(),
+				currency: orgCtx.currency,
+			};
+		}
 
 		// Wave 5 Fase 2 — activity tracking + auto-resume. Non-blocking best
 		// effort; if DB is unreachable the layout still renders.
@@ -59,19 +98,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 			await touchEnvActivity(orgCtx.envId);
 			await resumeIfPaused(orgCtx.envId);
 		}
+	} else {
+		mcpData = {
+			findings: { status: "not_ready", reason: "Admin route — no MCP context." },
+			actions: { status: "not_ready", reason: "Admin route — no MCP context." },
+			changeReport: { status: "not_ready", reason: "Admin route — no MCP context." },
+			workspaces: { status: "not_ready", reason: "Admin route — no MCP context." },
+			maps: { status: "not_ready", reason: "Admin route — no MCP context." },
+			currency: orgCtx.currency,
+		};
 	}
 
-	// Pre-load all MCP data server-side and pass to client via context.
-	// Client components ("use client") cannot access the MCP server directly
-	// because it only exists in the Node.js server process.
-	const mcpData: McpDataSnapshot = {
-		findings: loadFindings(),
-		actions: loadActions(),
-		changeReport: loadChangeReport(),
-		workspaces: loadWorkspaces(),
-		maps: loadAllMaps(),
-		currency: orgCtx.currency,
-	};
+	if (usedCacheFastPath) {
+		console.log(`[layout] cache fast-path: skipped ensureContext for env=${orgCtx.envId}`);
+	}
 
 	const currentOrg = {
 		orgId: orgCtx.orgId,

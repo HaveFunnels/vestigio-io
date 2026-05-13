@@ -332,6 +332,13 @@ model AuditCycle {
   lastError      String?
   lastErrorAt    DateTime?
   retryCount     Int       @default(0)
+  // Wave 16 — cached ProjectionResult (findings + actions + workspaces +
+  // change_report + maps) serialized to JSONB. Written by audit-runner
+  // after projectAll completes. /api/projections + layout.tsx read this
+  // directly to skip the synchronous recomputeAll() on every page load —
+  // the main source of 502 OOM as Evidence table grew with Wave 13/14.
+  // Null until the next audit completes; legacy MCP path serves as fallback.
+  projectionsCache Json?
 
   organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   environment  Environment     @relation(fields: [environmentId], references: [id], onDelete: Cascade)

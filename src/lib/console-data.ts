@@ -45,6 +45,56 @@ export function isDemoMode(): boolean { return _demoMode; }
 // so ensureContext can reload instead of serving stale projections.
 let _loadedCycleRef: string | null = null;
 
+// ──────────────────────────────────────────────
+// Wave 16 — projections cache fast path
+//
+// On every app page load the layout used to call ensureContext() which
+// ran recomputeAll() + projectAll() synchronously. That loaded the full
+// evidence array into memory (1GB+ on heavy cycles thanks to Wave 13/14
+// off_site_recon + ContentEnrichment payloads) and caused app-wide 502
+// OOM on serverless cold starts.
+//
+// Audit-runner now persists the full ProjectionResult as JSONB on the
+// cycle row when the audit completes. This loader reads that cache
+// directly and lets the layout serve all read pages (inventory,
+// findings, actions, workspaces, maps) without ever touching MCP /
+// recomputeAll.
+//
+// Falls back to null when no cache exists (legacy cycles, or the
+// audit-runner deploy hasn't run a fresh cycle yet) — layout drops to
+// the legacy MCP path in that case.
+// ──────────────────────────────────────────────
+
+export interface CachedProjections {
+  findings: import('../../packages/projections/types').FindingProjection[];
+  actions: import('../../packages/projections/types').ActionProjection[];
+  workspaces: import('../../packages/projections/types').WorkspaceProjection[];
+  change_report: import('../../packages/projections/types').ChangeReportProjection | null;
+  maps: import('../../packages/maps').MapDefinition[];
+  coherence_score: number;
+  system_health: unknown;
+  cached_at: string;
+  cycle_ref: string;
+}
+
+export async function loadProjectionsCacheForEnv(envId: string): Promise<CachedProjections | null> {
+  try {
+    const { prisma } = await import('@/libs/prismaDb');
+    const row = await prisma.auditCycle.findFirst({
+      // Prisma JSON null filter: a null projectionsCache yields a missing
+      // value in the row, so we filter at the application layer below.
+      where: { environmentId: envId, status: 'complete' },
+      orderBy: { completedAt: 'desc' },
+      select: { projectionsCache: true },
+    });
+    if (!row?.projectionsCache) return null;
+    return row.projectionsCache as unknown as CachedProjections;
+  } catch (err) {
+    console.warn('[loadProjectionsCacheForEnv] failed:', err);
+    return null;
+  }
+}
+
 export async function ensureContext(orgCtx: {
   orgId: string;
   orgName: string;

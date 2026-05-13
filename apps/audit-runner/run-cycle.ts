@@ -1589,11 +1589,33 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						`[audit-runner ${cycleId}] persisted ${saveResult.written}/${saveResult.attempted} findings`,
 					);
 
+					// Wave 16 — serialize ProjectionResult (findings, actions,
+					// workspaces, change_report, maps) into the cycle row so
+					// page loads can skip recomputeAll() entirely. Caps total
+					// JSON size at ~10MB by trimming maps (which embed nodes
+					// + edges that can blow up for dense graphs). Done inside
+					// the transaction so cache + cycle status flip together —
+					// no chance of "complete cycle with stale cache."
+					const { buildAllMaps } = await import("../../packages/maps");
+					const maps = buildAllMaps(projections, multiPackResult, translations);
+					const cachePayload = {
+						findings: projections.findings,
+						actions: projections.actions,
+						workspaces: projections.workspaces,
+						change_report: projections.change_report,
+						maps,
+						coherence_score: projections.coherence_score,
+						system_health: projections.system_health,
+						cached_at: new Date().toISOString(),
+						cycle_ref: cycleRefStr,
+					};
+
 					await tx.auditCycle.update({
 						where: { id: cycleId },
 						data: {
 							status: "complete",
 							completedAt: new Date(),
+							projectionsCache: cachePayload as any,
 						},
 					});
 				},

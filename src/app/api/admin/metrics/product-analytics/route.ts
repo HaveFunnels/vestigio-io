@@ -184,10 +184,17 @@ interface ChatDynamicsView {
 	error_rate_pct: number;
 	top_tools: { tool: string; calls: number; avg_duration_ms: number | null }[];
 	avg_message_length: number | null;
+	// Anthropic prompt caching: how much input is being read from cache
+	// vs re-billed at full input rate. Higher = lower cost. Cached reads
+	// bill at 10% of full input rate.
+	cache_hit_ratio_pct: number | null;
+	cache_read_input_tokens: number;
+	cache_creation_input_tokens: number;
+	uncached_input_tokens: number;
 }
 
 async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
-	const [opens, sends, firstTokenEvents, toolEvents, errors] =
+	const [opens, sends, firstTokenEvents, toolEvents, errors, cacheAgg] =
 		await Promise.all([
 			prisma.productEvent.count({
 				where: { event: "chat_opened", createdAt: { gte: cutoff } },
@@ -206,6 +213,14 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 			}),
 			prisma.productEvent.count({
 				where: { event: "chat_error", createdAt: { gte: cutoff } },
+			}),
+			prisma.tokenCostLedger.aggregate({
+				where: { purpose: "core_chat", createdAt: { gte: cutoff } },
+				_sum: {
+					inputTokens: true,
+					cacheCreationInputTokens: true,
+					cacheReadInputTokens: true,
+				},
 			}),
 		]);
 
@@ -271,6 +286,16 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 
 	const errorRate = sends.length > 0 ? (errors / sends.length) * 100 : 0;
 
+	// Cache hit ratio: cache_read / (input + cache_read + cache_creation)
+	// input_tokens in the Anthropic response excludes cached reads, so we
+	// add cache_read back to get total tokens delivered to the model.
+	const uncached = cacheAgg._sum.inputTokens ?? 0;
+	const cacheCreation = cacheAgg._sum.cacheCreationInputTokens ?? 0;
+	const cacheRead = cacheAgg._sum.cacheReadInputTokens ?? 0;
+	const totalInput = uncached + cacheCreation + cacheRead;
+	const cacheHitRatio =
+		totalInput > 0 ? Math.round((cacheRead / totalInput) * 1000) / 10 : null;
+
 	return {
 		opens,
 		sends: sends.length,
@@ -282,5 +307,9 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 		top_tools: topTools,
 		avg_message_length:
 			lenCount > 0 ? Math.round(totalLen / lenCount) : null,
+		cache_hit_ratio_pct: cacheHitRatio,
+		cache_read_input_tokens: cacheRead,
+		cache_creation_input_tokens: cacheCreation,
+		uncached_input_tokens: uncached,
 	};
 }

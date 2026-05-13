@@ -52,7 +52,7 @@ function sanitizeToolOutput(text: string): string {
 // ── Convert to Claude Format ─────────────────
 
 export function buildClaudeTools(): Anthropic.Tool[] {
-  return TOOL_DEFINITIONS.map((def) => {
+  const tools = TOOL_DEFINITIONS.map((def) => {
     const properties: Record<string, any> = {};
     const required: string[] = [];
 
@@ -80,6 +80,17 @@ export function buildClaudeTools(): Anthropic.Tool[] {
       },
     };
   });
+
+  // Anthropic prompt caching: marking the LAST tool with cache_control
+  // caches the entire tools array. ~27 tools × ~30-60 tokens of schema
+  // each = roughly 1k-2k input tokens that previously re-billed on
+  // every turn. With ephemeral TTL this becomes a single creation cost
+  // per 5-minute window.
+  if (tools.length > 0) {
+    (tools[tools.length - 1] as any).cache_control = { type: 'ephemeral' as const };
+  }
+
+  return tools;
 }
 
 // ── Execute Tool Call ────────────────────────

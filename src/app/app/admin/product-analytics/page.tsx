@@ -46,6 +46,10 @@ interface ProductAnalyticsData {
 		error_rate_pct: number;
 		top_tools: { tool: string; calls: number; avg_duration_ms: number | null }[];
 		avg_message_length: number | null;
+		cache_hit_ratio_pct: number | null;
+		cache_read_input_tokens: number;
+		cache_creation_input_tokens: number;
+		uncached_input_tokens: number;
 	};
 }
 
@@ -403,7 +407,7 @@ export default function ProductAnalyticsPage() {
 							</div>
 
 							{/* KPI row */}
-							<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+							<div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
 								<StatCard
 									label="TTFT p50"
 									value={data.chat_dynamics.ttft_p50_ms ?? 0}
@@ -437,6 +441,24 @@ export default function ProductAnalyticsPage() {
 									value={data.chat_dynamics.avg_message_length ?? 0}
 									suffix="chars"
 									icon="✍️"
+								/>
+								<StatCard
+									label="Cache hit ratio"
+									value={data.chat_dynamics.cache_hit_ratio_pct ?? 0}
+									suffix="%"
+									sublabel={
+										data.chat_dynamics.cache_read_input_tokens > 0
+											? `${(data.chat_dynamics.cache_read_input_tokens / 1000).toFixed(1)}k cached`
+											: "no cache hits"
+									}
+									icon="💾"
+									variant={
+										(data.chat_dynamics.cache_hit_ratio_pct ?? 0) <
+											30 &&
+										data.chat_dynamics.uncached_input_tokens > 1000
+											? "warning"
+											: "default"
+									}
 								/>
 							</div>
 

@@ -215,6 +215,18 @@ export async function executePipeline(
     systemPromptBlocks.push(buildVerifyModeContext());
   }
 
+  // Anthropic prompt caching: marking the LAST system block with
+  // cache_control extends the cached prefix to cover everything in
+  // system (personality, tool context, org context, memory, verify
+  // mode). Previously only the first block (PERSONALITY+TOOL_CONTEXT)
+  // was cached and the org context / memory / verify mode were
+  // re-billed on every turn. With ephemeral TTL (5min) every follow-up
+  // within a session now reads ~all system tokens from cache.
+  const lastSystemBlock = systemPromptBlocks[systemPromptBlocks.length - 1];
+  if (lastSystemBlock && !(lastSystemBlock as any).cache_control) {
+    (lastSystemBlock as any).cache_control = { type: 'ephemeral' as const };
+  }
+
   const systemPrompt = systemPromptBlocks;
 
   // Append file content to user message if files are attached

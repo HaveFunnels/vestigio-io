@@ -217,19 +217,28 @@ export const GET = withErrorTracking(async function GET(request: Request) {
 
   // Pull response time from HttpResponse evidence for paginated rows.
   // We use the most recent evidence per URL with a duration_ms payload.
+  //
+  // Perf bound: limited to the last 14 days of observations. Older
+  // response times don't represent the current page anyway (page might
+  // have been re-deployed since). This converts a potentially-massive
+  // scan of historical Evidence rows into a tightly-bounded recent slice.
+  // Evidence table grew significantly with Wave 13/14 (off_site_recon
+  // entries) — the date filter keeps the inventory load fast regardless.
   let responseTimes = new Map<string, number>();
   if (items.length > 0) {
     try {
       const urls = items.map(i => i.normalizedUrl);
+      const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
       const evidenceRows = await prisma.evidence.findMany({
         where: {
           environmentRef: environment.id,
           evidenceType: "http_response",
           subjectRef: { in: urls },
+          observedAt: { gte: fourteenDaysAgo },
         },
         orderBy: { observedAt: "desc" },
-        select: { subjectRef: true, payload: true, observedAt: true },
-        take: 2000,
+        select: { subjectRef: true, payload: true },
+        take: 1000,
       });
       // Keep most recent per URL (orderBy desc, first one wins).
       // Evidence.payload is JSON-as-text — parse to read duration_ms.

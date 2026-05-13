@@ -234,6 +234,15 @@ export async function executePipeline(
     systemPromptBlocks.push(buildVerifyModeContext());
   }
 
+  // Attached context — items the user pinned via chips above the
+  // composer. We inject IDs + kinds so the model knows to fetch them
+  // through the right MCP tool (discuss_finding for finding, etc.)
+  // rather than guessing. Cap to keep system-prompt bloat bounded.
+  const attachedContextBlock = buildAttachedContextBlock(request.attached_context);
+  if (attachedContextBlock) {
+    systemPromptBlocks.push({ type: 'text' as const, text: attachedContextBlock });
+  }
+
   // Anthropic prompt caching: marking the LAST system block with
   // cache_control extends the cached prefix to cover everything in
   // system (personality, tool context, org context, memory, verify
@@ -774,6 +783,37 @@ function getErrorMessage(err: LlmError): string {
     case 'content_filtered': return 'I couldn\'t generate a response for that query. Try rephrasing your question.';
     default: return 'Analysis temporarily unavailable. Please try again shortly.';
   }
+}
+
+/**
+ * Render the user's pinned chips into a system-prompt block. Cap at
+ * 12 items (UI tends to surface 1-3; 12 is a safety ceiling) and 80
+ * chars per title. The block is a hint, not an order: the model
+ * decides which tool to fetch each item through, which keeps the
+ * existing tool-selection heuristics in play.
+ */
+function buildAttachedContextBlock(
+  items: import('./types').AttachedContextItem[] | undefined,
+): string | null {
+  if (!items || items.length === 0) return null;
+  const MAX_ITEMS = 12;
+  const MAX_TITLE_LEN = 80;
+  const KIND_TO_TOOL: Record<string, string> = {
+    finding: 'discuss_finding',
+    action: 'get_action_projections',
+    workspace: 'get_workspace_projections',
+    map: 'get_map',
+  };
+  const lines = items
+    .slice(0, MAX_ITEMS)
+    .map((item) => {
+      const title = String(item.title || '').slice(0, MAX_TITLE_LEN);
+      const tool = KIND_TO_TOOL[item.kind] || 'related tools';
+      return `- ${item.kind} "${title}" (id: ${item.id}) — fetch via ${tool}`;
+    });
+  return `PINNED CONTEXT:
+The user pinned ${items.length} item${items.length === 1 ? '' : 's'} to this conversation. Treat these as the primary subject of the discussion unless the user explicitly redirects. Prefer fetching their data over generic listings.
+${lines.join('\n')}`;
 }
 
 /**

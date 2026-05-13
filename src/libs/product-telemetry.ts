@@ -32,6 +32,8 @@ export const PRODUCT_EVENT_TYPES = new Set<string>([
 	"chat_suggested_prompt_click",
 	"chat_tool_slow",
 	"chat_still_working",
+	"chat_context_attached",
+	"chat_context_removed",
 ]);
 
 /** Feature name → User model field mapping for adoption timestamps. */

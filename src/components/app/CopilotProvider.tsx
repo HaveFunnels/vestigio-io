@@ -70,7 +70,7 @@ interface CopilotState {
 }
 
 interface CopilotActions {
-	open: (context?: { finding?: FindingProjection; action?: { id: string; title: string }; map?: { id: string; title: string }; prompt?: string }) => void;
+	open: (context?: { finding?: FindingProjection; action?: { id: string; title: string }; map?: { id: string; title: string }; workspace?: { id: string; title: string }; prompt?: string }) => void;
 	close: () => void;
 	minimize: () => void;
 	restore: () => void;
@@ -81,6 +81,10 @@ interface CopilotActions {
 	setModel: (model: ModelId) => void;
 	abort: () => void;
 	refreshUsage: () => void;
+	/** Remove one pinned chip. */
+	removeContextItem: (id: string) => void;
+	/** Drop all pinned chips. */
+	clearContextItems: () => void;
 }
 
 type CopilotContextValue = CopilotState & CopilotActions;
@@ -334,7 +338,9 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 				timestamp: m.createdAt.getTime(),
 			}));
 
-			// Send via SSE
+			// Send via SSE — forward pinned chips so the LLM sees them
+			// in the system prompt and can fetch their data via the
+			// right MCP tool without the user re-typing IDs.
 			sendMessage(
 				text,
 				selectedModel,
@@ -342,6 +348,13 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 				history,
 				undefined, // no files in copilot
 				allMessages.length,
+				contextItems.length > 0
+					? contextItems.map((item) => ({
+							kind: item.kind,
+							id: item.id,
+							title: item.title,
+						}))
+					: undefined,
 			);
 		},
 		[
@@ -361,48 +374,69 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	// ── Actions ──
 
 	const open = useCallback(
-		(context?: { finding?: FindingProjection; action?: { id: string; title: string }; map?: { id: string; title: string }; prompt?: string }) => {
+		(context?: {
+			finding?: FindingProjection;
+			action?: { id: string; title: string };
+			map?: { id: string; title: string };
+			workspace?: { id: string; title: string };
+			prompt?: string;
+		}) => {
 			setIsOpen(true);
 			setIsMinimized(false);
 
-			const contextKind = context?.finding
-				? "finding"
-				: context?.action
-					? "action"
-					: context?.map
-						? "map"
-						: null;
+			// Resolve which kind (if any) the caller is attaching.
+			let newItem: CopilotContextItem | null = null;
+			if (context?.finding) {
+				newItem = {
+					kind: "finding",
+					id: context.finding.id,
+					title: context.finding.title,
+				};
+			} else if (context?.action) {
+				newItem = {
+					kind: "action",
+					id: context.action.id,
+					title: context.action.title,
+				};
+			} else if (context?.map) {
+				newItem = {
+					kind: "map",
+					id: context.map.id,
+					title: context.map.title,
+				};
+			} else if (context?.workspace) {
+				newItem = {
+					kind: "workspace",
+					id: context.workspace.id,
+					title: context.workspace.title,
+				};
+			}
+
 			track("chat_opened", {
 				page_context: pageContext.type,
-				context_kind: contextKind,
+				context_kind: newItem?.kind ?? null,
 				has_prompt: !!context?.prompt,
 			});
 
-			if (context?.finding) {
-				setContextItems([
-					{
-						kind: "finding",
-						id: context.finding.id,
-						title: context.finding.title,
-					},
-				]);
-			} else if (context?.action) {
-				setContextItems([
-					{
-						kind: "action",
-						id: context.action.id,
-						title: context.action.title,
-					},
-				]);
-			} else if (context?.map) {
-				setContextItems([
-					{
-						kind: "map",
-						id: context.map.id,
-						title: context.map.title,
-					},
-				]);
+			// Append + dedupe by id+kind. Cap at 12 (matches server cap)
+			// to prevent accidental UI bloat.
+			if (newItem) {
+				const finalItem = newItem;
+				setContextItems((prev) => {
+					const exists = prev.some(
+						(p) => p.id === finalItem.id && p.kind === finalItem.kind,
+					);
+					if (exists) return prev;
+					const next = [...prev, finalItem];
+					return next.slice(-12);
+				});
+				track("chat_context_attached", {
+					kind: newItem.kind,
+					id: newItem.id,
+					page_context: pageContext.type,
+				});
 			}
+
 			// Auto-send prompt regardless of context type
 			if (context?.prompt) {
 				setTimeout(() => send(context.prompt!), 100);
@@ -410,6 +444,30 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		},
 		[send, track, pageContext],
 	);
+
+	const removeContextItem = useCallback(
+		(id: string) => {
+			setContextItems((prev) => {
+				const removed = prev.find((p) => p.id === id);
+				if (removed) {
+					track("chat_context_removed", {
+						kind: removed.kind,
+						id: removed.id,
+					});
+				}
+				return prev.filter((p) => p.id !== id);
+			});
+		},
+		[track],
+	);
+
+	const clearContextItems = useCallback(() => {
+		setContextItems((prev) => {
+			if (prev.length === 0) return prev;
+			track("chat_context_removed", { kind: "all", count: prev.length });
+			return [];
+		});
+	}, [track]);
 
 	const close = useCallback(() => {
 		setIsOpen(false);
@@ -491,6 +549,8 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			setModel: setSelectedModel,
 			abort,
 			refreshUsage: fetchUsage,
+			removeContextItem,
+			clearContextItems,
 		}),
 		[
 			isOpen,
@@ -515,6 +575,8 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			newConversation,
 			abort,
 			fetchUsage,
+			removeContextItem,
+			clearContextItems,
 		],
 	);
 
@@ -553,6 +615,8 @@ export function useCopilot(): CopilotContextValue {
 			setModel: () => {},
 			abort: () => {},
 			refreshUsage: () => {},
+			removeContextItem: () => {},
+			clearContextItems: () => {},
 		};
 	}
 	return ctx;

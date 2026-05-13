@@ -59,6 +59,8 @@ export async function POST(request: Request) {
      *  reason about how much history was truncated. */
     total_message_count?: number;
     attached_files?: Array<{ name: string; type: string; content: string }>;
+    /** Items the user pinned via context chips above the composer. */
+    attached_context?: Array<{ kind: string; id: string; title: string }>;
   };
 
   try {
@@ -276,6 +278,26 @@ export async function POST(request: Request) {
   }
 
   // ── Pipeline request ───────────────────────
+  // Sanitize attached_context: only the four known kinds, IDs and
+  // titles bounded so a malicious client can't bloat the system prompt.
+  const VALID_CONTEXT_KINDS = new Set(["finding", "action", "workspace", "map"]);
+  const attachedContext = Array.isArray(body.attached_context)
+    ? body.attached_context
+        .filter(
+          (item: any) =>
+            item &&
+            VALID_CONTEXT_KINDS.has(item.kind) &&
+            typeof item.id === "string" &&
+            typeof item.title === "string",
+        )
+        .slice(0, 12)
+        .map((item: any) => ({
+          kind: item.kind as "finding" | "action" | "workspace" | "map",
+          id: String(item.id).slice(0, 200),
+          title: String(item.title).slice(0, 200),
+        }))
+    : undefined;
+
   const pipelineRequest: PipelineRequest = {
     user_message: body.message,
     conversation: conversationState,
@@ -289,6 +311,7 @@ export async function POST(request: Request) {
       type: String(f.type || "text/plain").slice(0, 50),
       content: String(f.content || "").slice(0, 50_000),
     })),
+    attached_context: attachedContext,
   };
 
   // ── SSE streaming response with timeout ────

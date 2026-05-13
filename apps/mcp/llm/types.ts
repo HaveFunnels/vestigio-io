@@ -113,6 +113,18 @@ export interface AttachedFile {
   content: string; // text content, max 50KB
 }
 
+/**
+ * Items the user has pinned to the conversation (chips above the
+ * composer). Plumbed all the way to the system prompt so the model
+ * knows which finding/action/workspace/map IDs to discuss without
+ * the user re-typing them.
+ */
+export interface AttachedContextItem {
+  kind: 'finding' | 'action' | 'workspace' | 'map';
+  id: string;
+  title: string;
+}
+
 export interface PipelineRequest {
   user_message: string;
   conversation: ConversationState;
@@ -122,6 +134,7 @@ export interface PipelineRequest {
   model_tier: ModelTier;
   session_context: McpSessionContext;
   attached_files?: AttachedFile[];
+  attached_context?: AttachedContextItem[];
 }
 
 export interface PipelineResponse {

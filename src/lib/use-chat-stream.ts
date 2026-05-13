@@ -25,6 +25,12 @@ interface UseChatStreamOptions {
   onStillWorking?: (round: number, elapsedMs: number) => void;
 }
 
+export interface AttachedContextPayload {
+  kind: "finding" | "action" | "workspace" | "map";
+  id: string;
+  title: string;
+}
+
 interface UseChatStreamReturn {
   sendMessage: (
     message: string,
@@ -42,6 +48,8 @@ interface UseChatStreamReturn {
      * thinks the conversation is shorter than it actually is.
      */
     totalMessageCount?: number,
+    /** Items the user pinned via chips above the composer. */
+    attachedContext?: AttachedContextPayload[],
   ) => void;
   isStreaming: boolean;
   streamingMessage: ChatMessage | null;
@@ -69,6 +77,7 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
       conversationMessages: Array<{ role: string; content: string; timestamp: number }>,
       attachedFiles?: Array<{ name: string; type: string; content: string }>,
       totalMessageCount?: number,
+      attachedContext?: AttachedContextPayload[],
     ) => {
       // Abort any existing stream
       abortRef.current?.abort();
@@ -155,6 +164,7 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
             // backwards compat with older callers.
             total_message_count: totalMessageCount ?? conversationMessages.length,
             ...(attachedFiles?.length ? { attached_files: attachedFiles } : {}),
+            ...(attachedContext?.length ? { attached_context: attachedContext } : {}),
           }),
           signal: controller.signal,
         });

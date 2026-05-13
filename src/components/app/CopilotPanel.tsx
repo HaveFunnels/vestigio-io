@@ -364,6 +364,8 @@ export default function CopilotPanel() {
 		stillWorking,
 		conversationId,
 		contextItems,
+		removeContextItem,
+		clearContextItems,
 		pageContext,
 		usage,
 		selectedModel,
@@ -623,8 +625,8 @@ export default function CopilotPanel() {
 				<div className="flex flex-wrap items-center gap-1.5 border-t border-edge/50 px-4 py-2">
 					{contextItems.map((item) => (
 						<span
-							key={item.id}
-							className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-inset px-2.5 py-1 text-[11px] text-content-secondary"
+							key={`${item.kind}:${item.id}`}
+							className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-inset py-1 pl-2.5 pr-1 text-[11px] text-content-secondary"
 						>
 							<span
 								className={`h-2 w-2 rounded-full ${
@@ -637,11 +639,41 @@ export default function CopilotPanel() {
 												: "bg-amber-500"
 								}`}
 							/>
-							{item.title.length > 50
-								? item.title.slice(0, 50) + "..."
-								: item.title}
+							<span>
+								{item.title.length > 50
+									? item.title.slice(0, 50) + "..."
+									: item.title}
+							</span>
+							<button
+								type="button"
+								onClick={() => removeContextItem(item.id)}
+								aria-label={`Remover ${item.title}`}
+								className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-content-faint hover:bg-surface-card-hover hover:text-content"
+							>
+								<svg
+									className="h-2.5 w-2.5"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M4 4l8 8M12 4l-8 8"
+										stroke="currentColor"
+										strokeWidth="1.5"
+										strokeLinecap="round"
+									/>
+								</svg>
+							</button>
 						</span>
 					))}
+					{contextItems.length > 1 && (
+						<button
+							type="button"
+							onClick={() => clearContextItems()}
+							className="ml-1 text-[10px] uppercase tracking-wide text-content-faint hover:text-content-muted"
+						>
+							limpar tudo
+						</button>
+					)}
 				</div>
 			)}
 			<div className="border-t border-edge">

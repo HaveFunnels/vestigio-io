@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-13 (Wave 10 — Workspaces UI/UX: 7 fixes shipped — Cross-Signal i18n, perspective breadcrumb, unified card styling for perspective-internal workspaces, Resumo Rápido fallback, workspace-scoped Pulse, Pulse truncation, hardcoded locale)
+> Last updated: 2026-05-13 (Wave 11 — Workspaces Feature Depth logged: ~35 ideated widgets across 6 workspaces, each tagged with data dependencies and locked-state UX for users without the required integration)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -85,6 +85,7 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~Inventory frontend — polish residuals~~ | **✅ Shipped 2026-05-12** — Drawer surfaces `classificationSignals` as foldable Details with source/vote/weight per signal. Discovery sources now via `tDiscovery` (6 known labels + titleCase fallback). `isCommercialPageType` helper centralized in `lib/page-type-colors`; removed duplicate Set in inventory API. New `isDemoOrgCtx` helper consolidates the inline `orgType === "demo" \|\| orgId === "demo"` pattern (3 API routes refactored). Cycle banner already uses SSE for status — 10s polling left is just the cycle-discovery loop, which is the intended pattern. Bonus: status semantics reframed after user feedback to result-based (Live = 2xx/3xx, Down = 4xx/5xx, Not checked = fetch failed); inventory upserts now persist failed-fetch rows so Not checked actually populates. | Wave 9.4 |
 | Inventory observability / alerting parity (Sentry/Datadog/Hotjar tier) | **Not started** — Competitive-gap residuals from 2026-05-11 inventory frontend audit. (a) Core Web Vitals per page (LCP/FID/CLS/INP) — needs the behavioral pixel to send `web-vitals` library output; today inventory only has server-side response time. (b) Page template grouping — cluster pages by template signature (same nav/footer/structure) so 200 product pages collapse to one "Product Template" row. (c) Alert rules per page — Vestigio fires a notification when `${metric}` on `${page}` crosses `${threshold}` (e.g. checkout response_time > 2s). (d) Compare across environments — diff staging vs production inventory side-by-side. (e) Page hierarchy / funnel view — group inventory rows by funnel stage with collapse/expand. | Wave 9.5 |
 | ~~Workspaces UI/UX audit~~ | **✅ Shipped 2026-05-13** — All 7 fixes from the audit: (1) Cross-Signal pack labels switched from non-existent `console.analysis.packs` to `console.common.packs` (exists in en/pt-BR/es); (2) perspective page now has real `Panorama / [Perspective]` breadcrumb; (3) workspace-cards inside perspective now have icon + accent gradient + sparkline + hover state matching panorama design, plus locale-aware currency formatter (Intl.NumberFormat with `BRL`→`R$`, `EUR`→`€`, etc) across all 3 workspace pages; (4) Resumo Rápido grid collapses to single column when no change content + "None" severity translated via `tc("severity.{value}")`; (5) `<PulseSummary workspaceName findingIds />` rendered on workspace [id] page, API extended to accept those scope params and filter findings to the workspace's set (workspace-specific prompt); (6) Pulse prompts aligned to 3 sentences + `max_tokens` raised 150→300; (7) `useLocale()` replaces hardcoded `pt-BR` in PulseSummary client (fetch body + time formatter). | Wave 10 |
+| Workspaces feature depth — kill widgets per workspace | **Not started** — Brainstorm 2026-05-13. ~35 ideated features distributed across 6 workspaces (revenue / chargeback / preflight / security / copy / behavioral) + 4 cross-cutting widgets. Each feature tagged with data dependencies (🟢 always available · 🟡 pixel · 🔵 Stripe · 🟣 e-commerce · 🔴 external integration · ⚪ manual). Standouts: "Dinheiro na mesa" report (revenue, 🟢), MRR trajectory dual-scenario (revenue, 🔵), VAMP/VDMP risk meter (chargeback, 🔵), "O que quebra em 10x" simulator (preflight, 🟢), Voice-of-customer copy alignment (copy, 🔴), top frustrating sessions (behavioral, 🟡). Each card must surface its locked state in-place (gradient-blurred preview + integration-specific CTA) when dependencies are missing — never hide. Full spec in Wave 11 detail section below. | Wave 11 |
 
 ---
 
@@ -1461,6 +1462,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **7** | Scaling & Moat Deepening | ✅ 7.11 critical fixes (15+24 bugs), ✅ 7.12 activate 3 packs. Open: batch writes, CWV, trends, recovery, webhooks, maps | **Active** |
 | **8** | New Analysis Packs | ✅ 8.1 Payment Health. Open: Dark Pattern & Compliance, Content Freshness | **Active** |
 | **10** | Workspaces UI/UX Audit | 7 fixes: Cross-Signal i18n, perspective breadcrumb, unified card styling, Resumo Rápido fallback layout, workspace content depth, Pulse truncation, hardcoded locale | ✅ All shipped 2026-05-13 |
+| **11** | Workspaces Feature Depth | ~35 widget ideas across 6 workspaces + 4 cross-cutting, each tagged with availability (🟢/🟡/🔵/🟣/🔴/⚪) and locked-state UX | **Active** |
 
 ---
 
@@ -2178,6 +2180,309 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 | 10.2 | Perspective breadcrumb | P1 | 15min |
 | 10.5 | Workspace [id] content depth | P1 (value gap) | 1-2h |
 | 10.3 | Unified card styling | P2 (consistency) | 2-3h |
+
+---
+
+## Wave 11 — Workspaces Feature Depth
+
+**Goal:** Each workspace today is descriptive (findings table, checklist, score). Wave 11 turns each workspace into a **decision surface** with at least one "killer widget" that answers a business question the user couldn't formulate on their own. The user complaint that motivated this: *"workspaces trazem pouca informação útil — só resumo de issues, funil e tabela."*
+
+**Design principle:** every widget must (a) be predictive or prescriptive, not descriptive; (b) tie observation to a dollar amount or risk threshold; (c) have a clear next action.
+
+### 11.0 Availability tiers & locked-state contract
+
+Every widget must declare its data dependencies up-front, and **never hide** when deps are missing — instead show a gradient-blurred preview of what the widget would render, with a contextual CTA pointing to the integration page. This mirrors the existing pattern at [`workspaces/page.tsx:319`](../src/app/app/workspaces/page.tsx#L319) where locked perspective cards route to `/app/settings/data-sources`.
+
+| Tier | Meaning | Locked CTA |
+|---|---|---|
+| 🟢 | Always available — derived from Vestigio crawl, findings, or LLM. No external dependency. | n/a |
+| 🟡 | Requires Vestigio Pixel active. | "Activate the Vestigio Pixel to see X" → `/app/settings/data-sources#pixel` |
+| 🔵 | Requires Stripe Connect (Wave 3.8). | "Connect Stripe to unlock X" → `/app/settings/data-sources#stripe` |
+| 🟣 | Requires e-commerce integration (Shopify or Nuvemshop, Wave 3.7). | "Connect Shopify/Nuvemshop to see X" → same path |
+| 🔴 | Requires external integration not yet in product (support tool, observability, etc.). Build the integration as part of the feature. | "Connect [Intercom/Zendesk/...] to enable X" — integration may need building first |
+| ⚪ | Requires manual input (uploaded transcripts, configured competitors, etc.). | Inline upload/configure CTA |
+
+**Locked-state visual pattern:** the widget renders at full size with a `backdrop-blur-sm`+ `bg-surface-card/40` overlay showing a faded mock version of the chart/data, a lock icon, a one-line value prop ("Recover lost MRR with..."), and a primary CTA button. This is the same pattern as the existing `UpgradeNudge` blurred-overlay variant from Wave 3.17.
+
+---
+
+### 11.1 Revenue (Análise de Faturamento)
+
+#### a. "Dinheiro na mesa" report ⭐ 🟢
+- **What:** Single-screen synthesis showing the dollar amount currently being lost, decomposed by cause (checkout friction, message misalignment, payment failures, etc.). Top 3 fixes ranked by ROI with explicit timelines: "fix X → recover $Y/mo within 14 days". Replaces today's abstract finding list with a money-first headline.
+- **Data deps:** Vestigio findings + impact baselines (already computed). No external integration.
+- **Locked state:** n/a — always renders.
+- **Effort:** 1-2 days (heavy on copy + ranking logic; data is already there).
+
+#### b. MRR Trajectory dual-scenario ⭐ 🔵
+- **What:** Line chart with two paths from today forward — solid line if no action is taken (extrapolated from current MRR decay), dashed line if top-3 actions ship (using impact estimates). Creates tangible urgency around inaction.
+- **Data deps:** Stripe MRR + churn data (Wave 3.8) + Vestigio impact estimates.
+- **Locked state:** Blurred line chart preview + "Connect Stripe to see your MRR trajectory" CTA → `/app/settings/data-sources#stripe`. For Paddle-only customers (no Stripe), CTA changes to "Coming soon — Paddle integration on roadmap".
+- **Effort:** 2-3 days.
+
+#### c. Pricing leakage map 🟣
+- **What:** Heatmap of pages with discount applied vs full-price catalog price. Surfaces which surfaces are selling below potential (e.g. landing page shows $99 but checkout auto-applies 30% coupon).
+- **Data deps:** Product/price data from Shopify/Nuvemshop (Wave 3.7) + Vestigio crawl of pricing pages.
+- **Locked state:** Blurred preview + "Connect Shopify or Nuvemshop to map your pricing leakage" CTA.
+- **Effort:** 2 days.
+
+#### d. Cart abandonment heatmap por etapa 🟡
+- **What:** Bar chart of conversion rate per checkout step (Cart → Address → Payment → Confirm). Identifies which step kills conversion. Each step clickable to drill into the failing field/element.
+- **Data deps:** Behavioral pixel + checkout flow detection (already present via `payment` page type classification).
+- **Locked state:** Blurred funnel preview + "Activate the Vestigio Pixel to track checkout drop-off" CTA → pixel install instructions.
+- **Effort:** 2-3 days (needs funnel detection refinement).
+
+#### e. Concentração de receita 🔵
+- **What:** Pareto chart showing % of MRR from top N customers. Flags single-point-of-failure risk ("50% of MRR comes from 3 customers — losing 1 wipes out a quarter").
+- **Data deps:** Stripe customer-level MRR data (Wave 3.8).
+- **Locked state:** Blurred Pareto preview + "Connect Stripe to assess revenue concentration" CTA.
+- **Effort:** 1-2 days.
+
+#### f. Refund clustering 🔵
+- **What:** Auto-grouped refund reasons by surface, product, and customer segment. Detects patterns: "32% of refunds last month came from `/pricing` cohort — likely pricing/value mismatch".
+- **Data deps:** Stripe refund data with reason codes (Wave 3.8).
+- **Locked state:** "Connect Stripe to cluster your refunds" CTA.
+- **Effort:** 2 days (clustering heuristic + UI).
+
+---
+
+### 11.2 Chargeback (Análise de Chargeback)
+
+#### a. VAMP/VDMP risk meter ⭐ 🔵
+- **What:** Gauge showing your dispute rate vs Visa VAMP (0.65% monitoring, 0.9% standard, 1.5% excessive) and Mastercard MATCH thresholds. The "danger imminence" that no other tool surfaces. Includes "days until threshold breach" projection.
+- **Data deps:** Stripe disputes API with monthly volume (Wave 3.8).
+- **Locked state:** Blurred gauge + "Connect Stripe to monitor your card-network risk" CTA. Explicitly call out the stakes: "Crossing 1.5% triggers card-network programs that cost $25K-$100K/year in fines."
+- **Effort:** 2 days.
+
+#### b. Dispute defense readiness per transaction ⭐ 🔵
+- **What:** For each recent high-risk transaction, show the evidence you'd have if it became a dispute: TOS clickwrap ✓, AVS match ✓, IP geolocation ✓, delivery confirmation ✗. Outputs an estimated win rate: "You'd win 60% of cases at current evidence levels — closing the ✗ gaps raises it to 80%."
+- **Data deps:** Stripe transaction data + Vestigio crawl evidence (TOS page presence, checkout fields, etc.).
+- **Locked state:** "Connect Stripe to assess your dispute defense" CTA.
+- **Effort:** 3-4 days (evidence-mapping logic is the heavy lift).
+
+#### c. Time-to-dispute distribution 🔵
+- **What:** Histogram of days between purchase and dispute. Buckets segment strategy: 0-3 days = fraud (need fraud rules); 30-60 days = buyer remorse / UX (need clearer expectations); 90+ days = friendly fraud (need better dispute response).
+- **Data deps:** Stripe dispute events with timestamps.
+- **Locked state:** "Connect Stripe to see dispute timing patterns" CTA.
+- **Effort:** 1 day.
+
+#### d. Issuer scorecard 🔵
+- **What:** Table of issuing banks ranked by your dispute rate per bank. Some US banks dispute 3-5x more aggressively than others. Enables selective fraud rule tuning by issuer.
+- **Data deps:** Stripe dispute data with issuer info (available via `payment_method_details.card.issuer`).
+- **Locked state:** "Connect Stripe to scorecard issuers" CTA.
+- **Effort:** 1-2 days.
+
+#### e. Cancel-vs-chargeback funnel 🔵
+- **What:** Sankey-style flow showing how subscribers exit: graceful cancel → support cancel → chargeback. Each chargeback that could've been a cancel signals UX failure (cancel button hidden, support unresponsive). Already have `CancelSurvey` model from Wave 3.19 — pair it with chargeback data.
+- **Data deps:** Stripe disputes + Vestigio `CancelSurvey` data.
+- **Locked state:** "Connect Stripe to map your involuntary churn paths" CTA.
+- **Effort:** 2-3 days.
+
+#### f. 3DS friction analysis 🔵
+- **What:** For each chargeback, show whether 3DS was triggered. Disputes on non-3DS transactions are typically not covered by liability shift → flag rule gaps. Recommends 3DS trigger rule changes.
+- **Data deps:** Stripe payment_intent data with 3DS authentication results.
+- **Locked state:** "Connect Stripe to optimize 3DS rules" CTA.
+- **Effort:** 2 days.
+
+---
+
+### 11.3 Preflight (Scale Readiness)
+
+#### a. "O que quebra em 10x" simulator ⭐ 🟢
+- **What:** Projection: if traffic doubles/10x's, which signals degrade first? Visualization: per-system bar at current load %, with "would saturate in N months at current growth rate". Catches issues like DB connection pool, CDN cache hit rate, third-party API rate limits.
+- **Data deps:** Vestigio crawl + tech detection + behavioral pixel for traffic baseline (more accurate with pixel, but 🟢 with heuristic fallback).
+- **Locked state:** Renders with heuristic-only mode when pixel is missing; banner says "More accurate projections with the Vestigio Pixel".
+- **Effort:** 4-5 days (modeling is the hard part).
+
+#### b. SPOF (Single Point of Failure) map ⭐ 🟢
+- **What:** Network-style diagram of your stack: payment processor, email provider, CDN, DB, auth provider. Each node shows redundancy status. "Stripe is down" → checkout dead = $X/hour loss. Quantifies blast radius per dependency.
+- **Data deps:** Tech detection from Vestigio crawl + impact estimates from Wave 3.4 blast-radius composite.
+- **Locked state:** n/a.
+- **Effort:** 3 days.
+
+#### c. Budget forecast at projected scale 🟢
+- **What:** "At 3x traffic, your infra costs would be $X (assuming same providers) vs $Y on alternatives". Calls out specific upgrade paths (Vercel Pro → Enterprise, Postgres → Aurora).
+- **Data deps:** Tech detection + public pricing data (curated).
+- **Locked state:** n/a.
+- **Effort:** 2-3 days (pricing data maintenance is the recurring cost).
+
+#### d. Pre-launch runbook generator ⚪
+- **What:** Before a major event (sale, product launch, ad campaign), generate a customized checklist: provision capacity, test webhooks, raise alerts, brief support. LLM-driven from the workspace context.
+- **Data deps:** LLM + workspace context. Optional: user-described event details.
+- **Locked state:** Renders an empty state with "Describe your upcoming event" input.
+- **Effort:** 2 days.
+
+#### e. Third-party dependency health 🟢
+- **What:** Live status of every SaaS your tech stack depends on (Stripe, AWS, Vercel, Sendgrid, etc.) pulled from their public status pages. Recent incident timeline per dependency.
+- **Data deps:** Tech detection + scheduled poll of public status APIs.
+- **Locked state:** n/a.
+- **Effort:** 2-3 days (status page aggregator is non-trivial — consider a service like statuspage.io directory).
+
+#### f. Recovery time estimate 🔴
+- **What:** "If your site goes down right now, your TTR is N minutes based on past incidents". Surfaces oncall rotation, runbook coverage, who has admin access.
+- **Data deps:** Integration with PagerDuty/Opsgenie/Linear for incident history.
+- **Locked state:** "Connect PagerDuty/Opsgenie to assess your incident readiness" CTA — integration not yet built.
+- **Effort:** 5-7 days (requires building a new integration).
+
+---
+
+### 11.4 Security Posture
+
+#### a. Compliance gap analyzer ⭐ 🟢
+- **What:** Scorecard for LGPD/GDPR/PCI-DSS/SOC2 with current readiness % per framework. Drilling into each shows specific gaps as actionable items: "Designate a DPO", "Document data retention policy", "Encrypt PII at rest". Turns abstract compliance into measurable progress.
+- **Data deps:** Vestigio crawl (cookie banner, privacy policy presence, HTTPS, etc.) + cybersecurity pack findings.
+- **Locked state:** n/a.
+- **Effort:** 4-5 days (rubric design is the work).
+
+#### b. "What a pentester would find in 1 hour" ⭐ 🟢
+- **What:** Prioritized list of issues an attacker would exploit first: subdomain takeover candidates, exposed S3 buckets, leaked `.env`, weak security headers. More visceral framing than abstract checklist.
+- **Data deps:** Vestigio cybersecurity pack findings + DNS enumeration.
+- **Locked state:** n/a.
+- **Effort:** 2-3 days (mostly reframing existing findings).
+
+#### c. Token rotation aging 🔴
+- **What:** API keys older than 90 days, with last-use timestamp. "Rotate now" CTA.
+- **Data deps:** Integration with the customer's own auth/secrets system. Could be CSV import as a starter.
+- **Locked state:** "Upload API key inventory (CSV)" or "Connect [Vault/AWS Secrets Manager]" CTA.
+- **Effort:** 3-4 days (depending on integration scope; ⚪ CSV import is 1-2 days).
+
+#### d. Phishing surface monitor 🟢
+- **What:** Typo-squat domains targeting your brand (vestlgio.io, vestigio.co, etc.) detected via DNS + similar-name search. Each flagged with brand-similarity score.
+- **Data deps:** External DNS APIs (already could integrate with `dnstwist` or similar libraries).
+- **Locked state:** n/a — but needs scheduled job for live monitoring.
+- **Effort:** 3-4 days.
+
+#### e. Anomaly feed 🔴
+- **What:** Live stream of suspicious events on the customer's app: login from new country, new device, off-hours admin access. Sentry-style but auth-focused.
+- **Data deps:** Integration with customer's auth provider (Auth0, Clerk, Cognito, custom). Requires building an SDK/webhook.
+- **Locked state:** "Connect your auth provider for live anomaly detection" CTA — integration to be built.
+- **Effort:** 5-7 days.
+
+#### f. CVE radar 🟢
+- **What:** Detected tech stack versions cross-referenced with the NVD CVE database. "Next.js 14.0.3 has CVE-2026-XXXX — upgrade to 14.0.5+". With mitigation links.
+- **Data deps:** Tech detection + scheduled CVE feed pull (NVD has a free JSON API).
+- **Locked state:** n/a.
+- **Effort:** 3 days.
+
+---
+
+### 11.5 Copy Alignment
+
+#### a. Voice of customer alignment ⭐ 🔴
+- **What:** Compare your headlines and value props with actual words customers use (from support tickets, NPS comments, sales call transcripts, G2 reviews). Alignment score per page. "Your site says 'unified analytics platform'. Your customers say 'stops me from losing money.'" Surfaces customer phrasing as suggested rewrites.
+- **Data deps:** Integration with Intercom/Zendesk/Crisp for support tickets + optional ⚪ uploaded transcripts. Could also scrape G2/Trustpilot reviews of the customer's product if a profile exists.
+- **Locked state:** "Connect your support tool or upload customer transcripts" CTA. Without it, show a sample/demo state with anonymous example so users can see what they'd get.
+- **Effort:** 5-7 days (support tool integration is the bulk).
+
+#### b. Live competitor copy diff ⭐ ⚪
+- **What:** For each main page (homepage, pricing, features), show your headline next to the top 3 competitors' equivalents. Highlights tonal and message-positioning differences. Refreshes weekly.
+- **Data deps:** Vestigio crawls competitor sites (Vestigio already crawls — this just needs competitor URLs configured per org).
+- **Locked state:** "Configure your competitors in Settings" CTA → competitor URL config UI to be built.
+- **Effort:** 3-4 days (mostly UI + competitor crawl scheduling).
+
+#### c. Test recommendation engine 🟢
+- **What:** Based on copy weak spots, generates concrete A/B test specs: "Test variant: replace homepage H1 'Powerful analytics' with 'Stop bleeding revenue'. Expected lift: 12-18% based on similar tests."
+- **Data deps:** Vestigio findings + LLM + (optional) historical A/B test data.
+- **Locked state:** n/a.
+- **Effort:** 3 days.
+
+#### d. Persona-rewrite preview 🟢
+- **What:** Show your current copy rewritten for each ICP segment defined in `BusinessProfile`. Side-by-side comparison: "For technical founder: ... / For CFO: ... / For marketer: ...". Helps owners see what their copy could feel like for non-default personas.
+- **Data deps:** `BusinessProfile.icpFields` (already exists from Wave 3.10) + LLM.
+- **Locked state:** If `BusinessProfile.icpFields` is empty: "Define your ICPs in Settings" CTA.
+- **Effort:** 2 days.
+
+#### e. Reading level per page 🟢
+- **What:** Flesch-Kincaid grade level per crawled page. Flags pages where reading level > funnel-expectation (checkout at grade 12 = friction; B2B home at grade 6 = potentially too simple).
+- **Data deps:** Vestigio crawl content.
+- **Locked state:** n/a.
+- **Effort:** 1 day.
+
+#### f. Tone consistency timeline 🟢
+- **What:** Heatmap showing tone consistency across pages. Detects funnel breaks where tone shifts (e.g. casual "Hey!" homepage → corporate "Schedule a consultation" pricing).
+- **Data deps:** LLM tone analysis (cheap one-pass per page) on top of Vestigio crawl.
+- **Locked state:** n/a.
+- **Effort:** 3-4 days.
+
+---
+
+### 11.6 Behavioral
+
+> **Pre-condition:** Entire workspace requires 🟡 Pixel active. Today the whole workspace is gated at the perspective level ([`workspaces/page.tsx:241`](../src/app/app/workspaces/page.tsx#L241)). Wave 11.6 features inherit the same gate — when pixel is inactive, the workspace shows the existing locked banner; no need for per-widget locked states inside.
+
+#### a. Top 5 frustrating sessions of the week ⭐ 🟡
+- **What:** Replay-style summaries (no actual replay needed — text-based) of sessions where behavioral pixel detected friction: "User X clicked the Y button 12 times before abandoning. Hovered on pricing for 47s without clicking." Each session gets a 1-line LLM diagnosis.
+- **Data deps:** Behavioral pixel + LLM summarization.
+- **Effort:** 3-4 days.
+
+#### b. Rage click heatmap ⭐ 🟡
+- **What:** Visual heatmap of pages overlaid with rage-click density. Existing pixel already detects rage clicks; surface them spatially.
+- **Data deps:** Behavioral pixel.
+- **Effort:** 3-4 days (visualization is the work).
+
+#### c. Form field killer 🟡
+- **What:** For each form, drop-off rate per field with mean time spent before abandonment. Identifies which field kills conversion ("Address line 2 → 38% abandonment, avg 12s spent").
+- **Data deps:** Behavioral pixel with field-level event capture.
+- **Effort:** 4-5 days (field detection logic).
+
+#### d. Hesitation map 🟡
+- **What:** Long hovers without clicks — moments where the user "thinks too much". Signals unclear messaging or trust gap on that element.
+- **Data deps:** Behavioral pixel.
+- **Effort:** 2-3 days.
+
+#### e. Cross-device journey 🟡
+- **What:** Users who started on mobile and finished on desktop (or vice versa). Identifies mobile-specific friction that pushes the funnel to desktop.
+- **Data deps:** Behavioral pixel + user-ID tracking across devices (requires authenticated tracking).
+- **Effort:** 4-5 days.
+
+#### f. Power user pattern 🟡
+- **What:** Sequence of actions that distinguishes activated users from drop-offs. Lets product onboarding direct new users toward this path.
+- **Data deps:** Behavioral pixel + sufficient user history (~30 days minimum).
+- **Effort:** 3-4 days.
+
+---
+
+### 11.7 Cross-cutting widgets (fit in any workspace)
+
+#### a. "Próxima ação recomendada" persistent strip ⭐ 🟢
+- **What:** Top-of-workspace single-CTA strip showing the ONE thing to do right now (not a list). Uses existing Wave 3.12 priority ranking but elevates to primary visual focus.
+- **Effort:** 1-2 days.
+
+#### b. Trend deltas vs last week 🟢
+- **What:** Every displayed number gets a `+12%` / `-3%` delta annotation next to it. Subtle but creates strong sense-of-movement.
+- **Data deps:** Cycle history (≥2 cycles). Already in place via Wave 7.1.
+- **Effort:** 1-2 days (mostly UI sprinkling).
+
+#### c. Cost-of-inaction timer 🟢
+- **What:** For each finding, surface "This is costing $X/day. Open for Y days = $Z already lost." Healthy emotional pressure.
+- **Data deps:** Finding `firstSeenAt` + impact estimate. Both already present.
+- **Effort:** 1 day.
+
+#### d. Customer-quote contextual 🔴
+- **What:** When a finding touches a theme (e.g. checkout friction), surface a real customer quote complaining about the same thing from support/NPS data. Makes findings emotional, not abstract.
+- **Data deps:** Same support-tool integration as 11.5a — reuse.
+- **Effort:** Bundled with 11.5a (+1 day for thematic matching).
+
+---
+
+### Wave 11 implementation order
+
+**Build sequence ordered by leverage × cheapness:**
+
+1. **11.1a "Dinheiro na mesa"** ⭐ 🟢 — single biggest perception shift, no integration needed (1-2 days)
+2. **11.7a "Próxima ação recomendada" strip** ⭐ 🟢 — small effort, huge UX impact across all workspaces (1-2 days)
+3. **11.7c Cost-of-inaction timer** 🟢 — emotional lever, 1 day
+4. **11.3a "O que quebra em 10x" simulator** ⭐ 🟢 — moat-building feature, no integration (4-5 days)
+5. **11.4b "Pentester would find in 1 hour"** ⭐ 🟢 — reframe existing data, 2-3 days
+6. **11.4a Compliance gap analyzer** ⭐ 🟢 — high-stakes, 4-5 days
+7. **11.5c Test recommendation engine** 🟢 — leverages existing findings + LLM, 3 days
+8. **11.5d Persona-rewrite preview** 🟢 — ICP already captured, 2 days
+9. **11.2a VAMP/VDMP risk meter** ⭐ 🔵 — requires Stripe; bundle with 11.2b dispute defense and 11.2c-f for a "Stripe-powered Chargeback" release (2 weeks)
+10. **11.1b MRR Trajectory dual-scenario** ⭐ 🔵 — bundle in the same Stripe release
+11. **11.6 entire Behavioral workspace** 🟡 — single pixel-dependency release (3-4 weeks for all 6 widgets)
+12. **11.5a Voice of customer** ⭐ 🔴 — biggest moat but needs new integration (5-7 days + Intercom OAuth)
+
+**Anti-pattern to avoid:** building 🔴 features (require new integrations) before 🟢 features are shipped. The 🟢 tier alone could reshape the perception of all 6 workspaces in ~2-3 weeks of focused build.
 
 ---
 

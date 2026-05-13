@@ -2,7 +2,6 @@ import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
 import { withErrorTracking } from "@/libs/error-tracker";
-import { PrismaFindingStore } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
 // Inventory API — Page Inventory Items
@@ -21,33 +20,6 @@ import { PrismaFindingStore } from "../../../../packages/projections";
 import { isCommercialPageType } from "@/lib/page-type-colors";
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
-
-function buildPathMatcher(surfaceCounts: Map<string, number>) {
-  const surfaceList = [...surfaceCounts.entries()];
-  return (normalizedUrl: string, path: string): number => {
-    let total = 0;
-    let matched = false;
-    for (const [surface, count] of surfaceList) {
-      if (surface === path || surface === normalizedUrl) {
-        total += count;
-        matched = true;
-        continue;
-      }
-      if (surface === "/") {
-        if (path === "/" || path === "") {
-          total += count;
-          matched = true;
-        }
-        continue;
-      }
-      if (path.includes(surface)) {
-        total += count;
-        matched = true;
-      }
-    }
-    return matched ? total : 0;
-  };
-}
 
 export const GET = withErrorTracking(async function GET(request: Request) {
   const user = await isAuthorized();
@@ -139,13 +111,24 @@ export const GET = withErrorTracking(async function GET(request: Request) {
     }),
   ]);
 
-  // Lookup finding/session counts in parallel with Promise.allSettled so
-  // one failure doesn't hide both columns silently.
-  const findingStore = new PrismaFindingStore(prisma);
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  // Wave 15.3 — aggregates (findingCount, sessionCount30d, response_time)
+  // come from denormalized columns on PageInventoryItem (written by the
+  // audit-runner at cycle complete). This replaces 3 per-request queries
+  // (Evidence findMany + Finding groupBy + RawBehavioralEvent groupBy)
+  // with point reads on rows we already have in `items`.
+  //
+  // `hasFindingData` / `hasSessionData` are derived from whether ANY row
+  // has aggregatesUpdatedAt set — a clean way to distinguish "0 means we
+  // computed it and it's truly zero" from "0 means we haven't computed
+  // yet" without per-cycle bookkeeping.
+  const findingsLookupOk = true;
+  const sessionsLookupOk = true;
+  const hasFindingData = items.some(it => it.aggregatesUpdatedAt !== null) &&
+    latestCycle?.status === "complete" && latestCycle.completedAt !== null;
+  const hasSessionData = items.some(it => it.aggregatesUpdatedAt !== null && it.sessionCount30d > 0);
 
   // Previous completed cycle for period-over-period deltas
-  const prevCyclePromise = prisma.auditCycle.findFirst({
+  const prevCycle = await prisma.auditCycle.findFirst({
     where: {
       environmentId: environment.id,
       status: "complete",
@@ -155,49 +138,7 @@ export const GET = withErrorTracking(async function GET(request: Request) {
     select: { id: true, completedAt: true },
   });
 
-  const [findingResult, sessionResult, prevCycleResult] = await Promise.allSettled([
-    findingStore.countBySurfaceForLatestCycle(environment.id),
-    prisma.$queryRaw<Array<{ url: string; session_count: number }>>`
-      SELECT url, COUNT(DISTINCT "sessionId")::int AS session_count
-      FROM "RawBehavioralEvent"
-      WHERE "envId" = ${environment.id}
-        AND "occurredAt" >= ${thirtyDaysAgo}
-      GROUP BY url
-    `,
-    prevCyclePromise,
-  ]);
-
-  let surfaceCounts = new Map<string, number>();
-  let hasFindingData = false;
-  let findingsLookupOk = true;
-  if (findingResult.status === "fulfilled") {
-    surfaceCounts = findingResult.value;
-    hasFindingData =
-      surfaceCounts.size > 0 ||
-      (latestCycle?.status === "complete" && latestCycle.completedAt !== null);
-  } else {
-    findingsLookupOk = false;
-    console.warn("[api/inventory] finding_count lookup failed:", findingResult.reason);
-  }
-
-  let sessionCounts = new Map<string, number>();
-  let hasSessionData = false;
-  let sessionsLookupOk = true;
-  if (sessionResult.status === "fulfilled") {
-    for (const row of sessionResult.value) {
-      sessionCounts.set(row.url, Number(row.session_count));
-    }
-    hasSessionData = sessionResult.value.length > 0;
-  } else {
-    sessionsLookupOk = false;
-    console.warn("[api/inventory] session_count lookup failed:", sessionResult.reason);
-  }
-
-  const matchSurface = buildPathMatcher(surfaceCounts);
-  const matchSessions = buildPathMatcher(sessionCounts);
-
   // Period-over-period deltas: count rows + findings created since previous cycle
-  const prevCycle = prevCycleResult.status === "fulfilled" ? prevCycleResult.value : null;
   let deltas: { total: number; findings: number } | null = null;
   if (prevCycle?.completedAt) {
     try {
@@ -212,48 +153,6 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       deltas = { total: newPages, findings: newFindings };
     } catch (err) {
       console.warn("[api/inventory] deltas computation failed:", err);
-    }
-  }
-
-  // Pull response time from HttpResponse evidence for paginated rows.
-  // We use the most recent evidence per URL with a duration_ms payload.
-  //
-  // Perf bound: limited to the last 14 days of observations. Older
-  // response times don't represent the current page anyway (page might
-  // have been re-deployed since). This converts a potentially-massive
-  // scan of historical Evidence rows into a tightly-bounded recent slice.
-  // Evidence table grew significantly with Wave 13/14 (off_site_recon
-  // entries) — the date filter keeps the inventory load fast regardless.
-  let responseTimes = new Map<string, number>();
-  if (items.length > 0) {
-    try {
-      const urls = items.map(i => i.normalizedUrl);
-      const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-      const evidenceRows = await prisma.evidence.findMany({
-        where: {
-          environmentRef: environment.id,
-          evidenceType: "http_response",
-          subjectRef: { in: urls },
-          observedAt: { gte: fourteenDaysAgo },
-        },
-        orderBy: { observedAt: "desc" },
-        select: { subjectRef: true, payload: true },
-        take: 1000,
-      });
-      // Keep most recent per URL (orderBy desc, first one wins).
-      // Evidence.payload is JSON-as-text — parse to read duration_ms.
-      for (const ev of evidenceRows) {
-        if (responseTimes.has(ev.subjectRef)) continue;
-        try {
-          const payload = JSON.parse(ev.payload);
-          const duration = payload?.duration_ms;
-          if (typeof duration === "number" && duration >= 0) {
-            responseTimes.set(ev.subjectRef, Math.round(duration));
-          }
-        } catch { /* skip malformed */ }
-      }
-    } catch (err) {
-      console.warn("[api/inventory] response_time lookup failed:", err);
     }
   }
 
@@ -294,8 +193,11 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       is_live: item.freshnessState === "fresh",
       last_seen_at: item.updatedAt.toISOString(),
       freshness_age: item.freshnessAge ?? null,
-      session_count: hasSessionData ? matchSessions(item.normalizedUrl, item.path) : null,
-      finding_count: hasFindingData ? matchSurface(item.normalizedUrl, item.path) : null,
+      // Wave 15.3 — point reads from denormalized columns. null when the
+      // audit-runner hasn't computed aggregates for this row yet
+      // (aggregatesUpdatedAt === null).
+      session_count: hasSessionData ? item.sessionCount30d : null,
+      finding_count: hasFindingData ? item.findingCount : null,
       // Wave 9.3 — per-URL audit trail.
       discovery_source: item.discoverySource ?? null,
       skip_reason: item.skipReason ?? null,
@@ -304,7 +206,7 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       http_status: item.statusCode ?? null,
       title: item.title ?? null,
       description: null,
-      response_time_ms: responseTimes.get(item.normalizedUrl) ?? null,
+      response_time_ms: item.lastResponseTimeMs ?? null,
       tier: item.tier,
     };
   });

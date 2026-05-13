@@ -136,12 +136,18 @@ interface EvidenceIndex {
 	titleByUrl: Map<string, string>;
 	statusByUrl: Map<string, number>;
 	contentTypeByUrl: Map<string, string>;
+	/** Wave 15.3 — http_response duration_ms by URL, for inventory aggregate. */
+	durationMsByUrl: Map<string, number>;
 }
 
 function buildEvidenceIndex(evidence: Evidence[]): EvidenceIndex {
 	const titleByUrl = new Map<string, string>();
 	const statusByUrl = new Map<string, number>();
 	const contentTypeByUrl = new Map<string, string>();
+	// Wave 15.3 — extract duration_ms from http_response payloads so
+	// PageInventoryItem.lastResponseTimeMs can be written at upsert time,
+	// eliminating the per-request Evidence findMany in /api/inventory.
+	const durationMsByUrl = new Map<string, number>();
 	for (const ev of evidence) {
 		const p = ev.payload as any;
 		if (!p?.url) continue;
@@ -155,9 +161,12 @@ function buildEvidenceIndex(evidence: Evidence[]): EvidenceIndex {
 			if (typeof ct === "string" && !contentTypeByUrl.has(p.url)) {
 				contentTypeByUrl.set(p.url, ct.toLowerCase());
 			}
+			if (typeof p.duration_ms === "number" && p.duration_ms >= 0 && !durationMsByUrl.has(p.url)) {
+				durationMsByUrl.set(p.url, Math.round(p.duration_ms));
+			}
 		}
 	}
-	return { titleByUrl, statusByUrl, contentTypeByUrl };
+	return { titleByUrl, statusByUrl, contentTypeByUrl, durationMsByUrl };
 }
 
 // Backward-compat shims — prefer EvidenceIndex for hot loops.
@@ -477,6 +486,10 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			const abTestPlatform = (entry as any).abTestPlatform ?? null;
 			const localeCode = (entry as any).localeCode ?? null;
 			const persistedSkipReason = isFresh ? null : skipReason;
+			// Wave 15.3 — denormalized aggregate. Pull duration_ms from
+			// the EvidenceIndex; falls back to undefined (no update) when
+			// not present so we don't blow away a previous-cycle value.
+			const responseTimeMs = evIdx.durationMsByUrl.get(url) ?? null;
 
 			inventoryUpserts.push({
 				url,
@@ -498,6 +511,8 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					skipReason: persistedSkipReason,
 					abTestPlatform,
 					localeCode,
+					lastResponseTimeMs: responseTimeMs,
+					aggregatesUpdatedAt: responseTimeMs !== null ? new Date() : null,
 				},
 				update: {
 					title: title ?? undefined,
@@ -511,6 +526,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					pageType: finalPageType,
 					criticality: Math.round(entry.confidence ?? 0),
 					...(isFresh ? { lastSeenCycleId: cycleId, removedAt: null } : {}),
+					// Wave 15.3 — only update response_time when we actually
+					// fetched it this cycle. Same logic as statusCode above.
+					...(responseTimeMs !== null
+						? { lastResponseTimeMs: responseTimeMs, aggregatesUpdatedAt: new Date() }
+						: {}),
 					// discoverySource is sticky — only set on create.
 					// skipReason + abTestPlatform + localeCode refresh
 					// every cycle so the UI reflects the most recent
@@ -1587,6 +1607,68 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 
 			projectionsForNotifications = projections.findings;
 			changeReportForNotifications = projections.change_report;
+
+			// Wave 15.3 — denormalize findingCount per page from the just-
+			// persisted findings. Replaces the per-request groupBy in
+			// /api/inventory with a single bulk update right after the
+			// findings are written. Best-effort: failure logs but doesn't
+			// fail the cycle (inventory falls back to 0 on null aggregates).
+			try {
+				const findingCountBySurface = new Map<string, number>();
+				for (const f of projections.findings) {
+					// Mirror the polarity filter used by the old groupBy.
+					if (f.polarity === 'positive') continue;
+					const surface = f.surface;
+					if (!surface) continue;
+					findingCountBySurface.set(surface, (findingCountBySurface.get(surface) ?? 0) + 1);
+				}
+				const now = new Date();
+				// Reset all rows for this env to 0, then bump matched ones.
+				// Two updateMany calls is dramatically cheaper than per-row
+				// upserts when most pages stay at 0.
+				await prisma.pageInventoryItem.updateMany({
+					where: { environmentRef: env.id },
+					data: { findingCount: 0 },
+				});
+				for (const [surface, count] of findingCountBySurface) {
+					await prisma.pageInventoryItem.updateMany({
+						where: { environmentRef: env.id, normalizedUrl: surface },
+						data: { findingCount: count, aggregatesUpdatedAt: now },
+					});
+				}
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] findingCount denorm failed:`, err);
+			}
+
+			// Wave 15.3 — denormalize sessionCount30d via single GROUP BY on
+			// RawBehavioralEvent, then bulk update. Same idea: replace the
+			// per-request scan in /api/inventory with one query at audit
+			// complete time. The 30-day window matches the old API filter.
+			try {
+				const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+				const rows = await prisma.$queryRaw<Array<{ url: string; session_count: number }>>`
+					SELECT url, COUNT(DISTINCT "sessionId")::int AS session_count
+					FROM "RawBehavioralEvent"
+					WHERE "envId" = ${env.id}
+						AND "occurredAt" >= ${thirtyDaysAgo}
+					GROUP BY url
+				`;
+				const now = new Date();
+				// Reset env-wide to 0 first so deleted/inactive URLs don't
+				// keep stale counts.
+				await prisma.pageInventoryItem.updateMany({
+					where: { environmentRef: env.id },
+					data: { sessionCount30d: 0 },
+				});
+				for (const row of rows) {
+					await prisma.pageInventoryItem.updateMany({
+						where: { environmentRef: env.id, normalizedUrl: row.url },
+						data: { sessionCount30d: Number(row.session_count), aggregatesUpdatedAt: now },
+					});
+				}
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] sessionCount30d denorm failed:`, err);
+			}
 
 			// (f) Retention prune — best-effort, outside the transaction
 			try {

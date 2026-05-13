@@ -842,6 +842,20 @@ model PageInventoryItem {
   // E.g. "en", "en-US", "pt-BR". Lets the inventory group/filter
   // multi-locale variants surfaced via hreflang.
   localeCode      String?
+  // Wave 15.3 — denormalized aggregates so /api/inventory doesn't have
+  // to run 3 separate groupBy/scan queries (Evidence response_times,
+  // Finding count, RawBehavioralEvent session_count). Each is updated
+  // at the natural write moment instead of computed per-request:
+  //   - lastResponseTimeMs: updated by audit-runner when persisting
+  //     http_response evidence for this page
+  //   - findingCount: bulk-updated when a cycle completes, per surface
+  //   - sessionCount30d: bulk-updated by behavioral aggregation cron
+  //   - aggregatesUpdatedAt: timestamp of last aggregate write — null
+  //     means aggregates haven't been computed for this row yet
+  lastResponseTimeMs Int?
+  findingCount       Int      @default(0)
+  sessionCount30d    Int      @default(0)
+  aggregatesUpdatedAt DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

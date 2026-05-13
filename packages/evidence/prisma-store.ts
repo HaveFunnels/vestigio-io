@@ -272,10 +272,30 @@ export class PrismaEvidenceStore {
       return { evidence: [], cycleRef: null };
     }
 
+    // Wave 15.3 — bound evidence load to prevent OOM on serverless workers.
+    // Wave 13/14 added off_site_recon entries; ContentEnrichment payloads
+    // can carry kilobytes of HTML extracts; PageContent payloads carry
+    // body text. A heavy cycle can hit 10k+ rows × 100KB = 1GB+ — well
+    // above any serverless function memory budget.
+    //
+    // Cap at 12k rows ordered by createdAt DESC so we always get the most
+    // recent and most relevant evidence first. Below this threshold, all
+    // findings are produced normally; above it, the bottom of the tail is
+    // trimmed (oldest evidence, typically Wikipedia/HN/Reddit recon that
+    // doesn't change rapidly). When exceeded we log loudly so we can
+    // monitor for cycles that consistently grow past the bound.
+    const HARD_EVIDENCE_CAP = 12_000;
     const rows = await this.prisma.evidence.findMany({
       where: { workspaceRef, environmentRef, cycleRef: latest.cycleRef },
       orderBy: { createdAt: 'desc' },
+      take: HARD_EVIDENCE_CAP,
     });
+    if (rows.length === HARD_EVIDENCE_CAP) {
+      console.warn(
+        `[evidence-store] loadLatestCycle hit HARD_EVIDENCE_CAP=${HARD_EVIDENCE_CAP} for cycle=${latest.cycleRef} ` +
+        `(env=${environmentRef}). Older rows trimmed — findings still produced but verify nothing material was dropped.`,
+      );
+    }
 
     return {
       evidence: rows.map(fromPrismaRow),

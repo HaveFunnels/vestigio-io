@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-03 (7.3 Batch Persistence + 7.12 Activate 3 Packs + 8.1 Payment Health shipped)
+> Last updated: 2026-05-12 (inventory backend hardening shipped; 3 residual waves 9.1–9.3 added)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -79,6 +79,9 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~Payment Health & Involuntary Churn Pack~~ | **✅ Shipped 2026-05-03** — 4 signals (`failed_payment_rate_elevated`, `subscriber_churn_rate_elevated`, `mrr_available`, `payment_health_data_present`), 3 inferences + 3 `InferenceCategory` enum values, 3 impact baselines, 2 root causes (`payment_infrastructure_weakness`, `subscriber_retention_failure`), 3 remediation entries, `INFERENCE_TO_PACK` mappings, pack decision gated on Stripe data, pack eligibility, question key `is_payment_health_creating_revenue_risk` with 3 outcomes, i18n (en + pt-BR). | Wave 8.1 |
 | Dark Pattern & Compliance Risk Pack | **Not started** — `urgency_dark_pattern` signal exists as foundation. DSA Art. 25 enforcement ramping 2026. Fines up to 4% global revenue. | Wave 8.2 |
 | Content Freshness & Decay Pack | **Not started** — `copy_staleness` enrichment exists (Wave 3.10), `asyncGetNthRecent()` built but never called. Content half-life collapsed to 6 months in AI era. | Wave 8.3 |
+| Inventory backend — race & resilience bugs | **Not started** — Residual from 2026-05-12 inventory hardening sweep. (a) `evidence_key` collisions: `nextId()` uses `Date.now()+counter`, two workers in parallel can mint the same key → Prisma unique violation. (b) Partial-classification silent abort: classification catch in run-cycle.ts swallows errors mid-loop, leaving cycle in "running" but only pages 1..N classified. Transactions help, but the specific catch needs `stampCycleError` + re-throw. | Wave 9.1 |
+| Inventory backend — state-of-truth refactors | **Not started** — Residual from 2026-05-12 inventory hardening sweep. (a) 3 sources of truth for page state: `pageType` (regex), `classifiedPageType` (multi-signal), `freshnessState` — pick one as authoritative. (b) Carry-forward without source-hash verify — clones evidence rows without checking original cycle hash. (c) `Evidence.payload` is `@db.Text` JSON, re-parsed on every lookup — migrate to `Json` column. (d) Regex-first classification — regex is the always-available signal so it became primary instead of tiebreaker; rebalance the voter. | Wave 9.2 |
+| Inventory features parity vs Screaming Frog/Sitebulb | **Not started** — Residual from 2026-05-12 inventory hardening sweep. (a) Per-URL audit trail — log of why each discovered URL was skipped (over budget, excluded, deduped, looped, challenged, asset). Today only aggregate counts. (b) A/B test variant awareness — same path with different content via cookie/header. (c) Multi-language/geo variants — `hreflang`-driven discovery. (d) Pagination strategies — "load more" buttons (JS-triggered) and numbered pagination beyond page 1. | Wave 9.3 |
 
 ---
 

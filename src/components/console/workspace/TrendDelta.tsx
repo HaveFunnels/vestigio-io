@@ -25,6 +25,7 @@
  * Zero → renders nothing.
  */
 
+import { useTranslations } from "next-intl";
 import type { WorkspaceProjection } from "../../../../packages/projections/types";
 
 interface Props {
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export default function TrendDelta({ summary, muted = false }: Props) {
+	const t = useTranslations("console.workspaces.detail.trend_delta");
 	if (!summary) return null;
 	const net = (summary.resolved_count ?? 0) - (summary.regression_count ?? 0);
 	if (net === 0) return null;
@@ -48,11 +50,7 @@ export default function TrendDelta({ summary, muted = false }: Props) {
 	return (
 		<span
 			className={`inline-flex items-center gap-0.5 ${muted ? "" : "rounded-full px-1.5 py-0.5"} font-mono text-[10px] font-medium tabular-nums ${colorClass}`}
-			title={
-				isImprovement
-					? `${abs} fewer open issues vs last cycle`
-					: `${abs} more open issues vs last cycle`
-			}
+			title={isImprovement ? t("fewer", { count: abs }) : t("more", { count: abs })}
 		>
 			{sign}
 			{abs}

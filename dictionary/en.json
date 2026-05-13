@@ -2101,6 +2101,10 @@
 					"empty": "No monthly losses detected in this workspace.",
 					"uncategorized": "No root cause mapped"
 				},
+				"trend_delta": {
+					"fewer": "{count} fewer open issues vs last cycle",
+					"more": "{count} more open issues vs last cycle"
+				},
 				"next_action": {
 					"label": "Next action",
 					"subtitle": "The one thing to do now — ranked by impact and effort",

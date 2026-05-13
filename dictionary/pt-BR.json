@@ -2079,6 +2079,10 @@
 					"empty": "Sem perdas mensais detectadas neste workspace.",
 					"uncategorized": "Sem causa-raiz mapeada"
 				},
+				"trend_delta": {
+					"fewer": "{count} issues a menos vs último ciclo",
+					"more": "{count} issues a mais vs último ciclo"
+				},
 				"next_action": {
 					"label": "Próxima ação",
 					"subtitle": "A única coisa pra fazer agora — priorizada por impacto/esforço",

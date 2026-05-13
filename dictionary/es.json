@@ -2008,6 +2008,10 @@
 					"empty": "No se detectaron pérdidas mensuales en este workspace.",
 					"uncategorized": "Sin causa raíz mapeada"
 				},
+				"trend_delta": {
+					"fewer": "{count} issues menos vs último ciclo",
+					"more": "{count} issues más vs último ciclo"
+				},
 				"next_action": {
 					"label": "Próxima acción",
 					"subtitle": "Lo único para hacer ahora — priorizado por impacto y esfuerzo",

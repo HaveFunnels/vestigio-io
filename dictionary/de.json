@@ -1878,6 +1878,10 @@
 					"empty": "Keine monatlichen Verluste in diesem Workspace.",
 					"uncategorized": "Keine Grundursache zugeordnet"
 				},
+				"trend_delta": {
+					"fewer": "{count} offene Issues weniger vs letzter Zyklus",
+					"more": "{count} offene Issues mehr vs letzter Zyklus"
+				},
 				"next_action": {
 					"label": "Naechste Aktion",
 					"subtitle": "Das eine, was jetzt zu tun ist — priorisiert nach Wirkung und Aufwand",

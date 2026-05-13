@@ -10,14 +10,20 @@ import { useTranslations, useLocale } from "next-intl";
 
 interface PulseSummaryProps {
   perspective?: string;
+  /** When provided, narrows the briefing to a specific workspace.
+   *  Pair with `findingIds` so the server filters to just those findings. */
+  workspaceName?: string;
+  findingIds?: string[];
 }
 
-export default function PulseSummary({ perspective }: PulseSummaryProps) {
+export default function PulseSummary({ perspective, workspaceName, findingIds }: PulseSummaryProps) {
   const t = useTranslations("console.pulse_summary");
   const locale = useLocale();
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
+
+  const findingIdsKey = findingIds ? findingIds.slice().sort().join(",") : "";
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +32,12 @@ export default function PulseSummary({ perspective }: PulseSummaryProps) {
         const res = await fetch("/api/workspace/pulse-summary", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ perspective: perspective || "panorama", locale }),
+          body: JSON.stringify({
+            perspective: perspective || "panorama",
+            locale,
+            ...(workspaceName ? { workspaceName } : {}),
+            ...(findingIds && findingIds.length > 0 ? { findingIds } : {}),
+          }),
         });
         if (!res.ok) { if (!cancelled) { setLoading(false); setText(null); } return; }
         const data = await res.json();
@@ -35,7 +46,7 @@ export default function PulseSummary({ perspective }: PulseSummaryProps) {
     }
     fetchPulse();
     return () => { cancelled = true; };
-  }, [perspective, locale]);
+  }, [perspective, locale, workspaceName, findingIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (text && !revealed) { const t = setTimeout(() => setRevealed(true), 50); return () => clearTimeout(t); }

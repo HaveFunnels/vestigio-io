@@ -81,10 +81,15 @@ function buildUserMessage(perspective: string, context: {
   newIssues: number;
   resolved: number;
   positiveChecks: number;
+  workspaceName?: string | null;
 }): string {
   const parts: string[] = [];
 
-  parts.push(`Perspective: ${perspective}`);
+  if (context.workspaceName) {
+    parts.push(`Workspace: ${context.workspaceName} (${perspective} perspective)`);
+  } else {
+    parts.push(`Perspective: ${perspective}`);
+  }
   parts.push(`Domain: ${context.domain}`);
 
   if (context.businessProfile) {
@@ -146,6 +151,17 @@ export async function POST(request: Request) {
 
   const perspective: Perspective = VALID_PERSPECTIVES.has(body.perspective) ? body.perspective : "panorama";
   const locale: Locale = VALID_LOCALES.has(body.locale) ? body.locale : "pt-BR";
+  // Optional workspace scope — narrows the briefing to a specific
+  // workspace's findings. The client passes the workspace's name (for
+  // prompt context) and the finding IDs it already has projected.
+  const workspaceName: string | null =
+    typeof body.workspaceName === "string" && body.workspaceName.trim().length > 0
+      ? body.workspaceName.trim().slice(0, 120)
+      : null;
+  const workspaceFindingIds: string[] | null =
+    Array.isArray(body.findingIds) && body.findingIds.every((x: unknown) => typeof x === "string")
+      ? (body.findingIds as string[]).slice(0, 200)
+      : null;
 
   // ── Resolve environment from user's org ──
   const membership = await prisma.membership.findFirst({
@@ -178,7 +194,12 @@ export async function POST(request: Request) {
   });
 
   const cycleRef = latestCycle?.id || "none";
-  const cacheKey = `${env.id}_${perspective}_${cycleRef}`;
+  // Workspace-scoped cache uses workspaceName + finding-ID-set hash so
+  // briefings stay distinct between sibling workspaces in the same cycle.
+  const wsScope = workspaceName && workspaceFindingIds
+    ? `ws:${workspaceName}:${workspaceFindingIds.slice().sort().join(",").slice(0, 200)}`
+    : perspective;
+  const cacheKey = `${env.id}_${wsScope}_${cycleRef}`;
   const cached = getCached(cacheKey);
   if (cached) {
     return NextResponse.json({ summary: cached });
@@ -200,15 +221,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ summary: null, fallback: true });
   }
 
-  // ── Filter by perspective ──
+  // ── Filter by scope ──
+  // Workspace scope (when client passes findingIds) takes precedence over
+  // perspective scope so workspace pages get a briefing scoped to just
+  // their own findings rather than the whole perspective.
   // Finding rows carry the scalar columns directly; the rich projection
   // (title, impact breakdown, reasoning, …) lives serialised in `projection`.
   // Parse on demand — failing gracefully to the scalar columns if the JSON
   // is missing or malformed (shouldn't happen, but LLM output should never
   // crash the dashboard).
-  const perspectiveFindings = perspective === "panorama"
-    ? findings
-    : findings.filter(f => classifyFindingPerspective(f.pack || "") === perspective);
+  let perspectiveFindings;
+  if (workspaceFindingIds && workspaceFindingIds.length > 0) {
+    const wantedIds = new Set(workspaceFindingIds);
+    perspectiveFindings = findings.filter(f => wantedIds.has(f.id));
+  } else if (perspective === "panorama") {
+    perspectiveFindings = findings;
+  } else {
+    perspectiveFindings = findings.filter(f => classifyFindingPerspective(f.pack || "") === perspective);
+  }
 
   // ── Build context ──
   let totalExposure = 0;
@@ -257,6 +287,7 @@ export async function POST(request: Request) {
         newIssues,
         resolved,
         positiveChecks,
+        workspaceName,
       }) }],
       {
         max_tokens: 300,

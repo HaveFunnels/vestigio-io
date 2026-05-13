@@ -15,6 +15,7 @@ import VerificationBadge from "@/components/console/VerificationBadge";
 import ChangeBadge from "@/components/console/ChangeBadge";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
+import PulseSummary from "@/components/console/PulseSummary";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import ChangeTimeline from "@/components/console/ChangeTimeline";
@@ -299,6 +300,15 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 						)}
 					</div>
 				</div>
+			</div>
+
+			{/* ── Vestigio Pulse — workspace-scoped briefing ── */}
+			<div className="mt-5">
+				<PulseSummary
+					perspective={perspective.slug}
+					workspaceName={workspace.name}
+					findingIds={workspace.findings.map((f) => f.id)}
+				/>
 			</div>
 
 			{/* ── Summary strip: Change Summary + Quick Stats (full width) ── */}

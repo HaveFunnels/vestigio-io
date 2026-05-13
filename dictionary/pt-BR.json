@@ -2070,6 +2070,36 @@
 					"empty": "Sem perdas mensais detectadas neste workspace.",
 					"uncategorized": "Sem causa-raiz mapeada"
 				},
+				"compliance": {
+					"label": "Análise de conformidade",
+					"subtitle": "Quão pronto seu site está pra cada framework regulatório",
+					"loading": "Avaliando conformidade...",
+					"empty_title": "Sem dados de conformidade ainda",
+					"empty_description": "Após o próximo ciclo, gaps de cybersecurity + detecção de stack alimentam essa análise.",
+					"caveat": "Análise mecânica — auditoria legal completa exige revisão por especialista jurídico.",
+					"passed_label": "{passed} de {total} requisitos",
+					"frameworks": {
+						"lgpd": "LGPD (Brasil)",
+						"gdpr": "GDPR (UE)",
+						"pci_dss": "PCI-DSS",
+						"soc2": "SOC 2"
+					},
+					"requirements": {
+						"consent_manager": "Banner de consentimento de cookies configurado",
+						"https_everywhere": "HTTPS em todas as páginas",
+						"tls_current": "Versão TLS atual (1.2+)",
+						"cookie_security": "Cookies com flags HttpOnly + Secure",
+						"no_info_disclosure": "Sem vazamento de informações em erros",
+						"no_predictable_urls": "URLs não previsíveis (IDOR mitigado)",
+						"pci_certified_psp": "Processador de pagamento PCI-DSS Level 1",
+						"csp_present": "Content Security Policy configurada",
+						"no_mixed_content": "Sem mixed content (todo asset HTTPS)",
+						"no_clickjack": "Proteção contra clickjacking ativa",
+						"error_tracking": "Observabilidade de erros (Sentry/Datadog)",
+						"hsts_present": "HSTS configurado",
+						"rate_limiting": "Rate limiting em endpoints sensíveis"
+					}
+				},
 				"pentester_finds": {
 					"label": "O que um pentester acharia em 1 hora",
 					"subtitle": "Vetores de ataque expostos no seu site, ordenados por velocidade de exploit",

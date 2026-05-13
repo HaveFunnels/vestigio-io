@@ -2092,6 +2092,36 @@
 					"empty": "No monthly losses detected in this workspace.",
 					"uncategorized": "No root cause mapped"
 				},
+				"compliance": {
+					"label": "Compliance readiness",
+					"subtitle": "How ready your site is for each regulatory framework",
+					"loading": "Evaluating compliance...",
+					"empty_title": "No compliance data yet",
+					"empty_description": "After the next cycle, cybersecurity gaps + stack detection feed this analysis.",
+					"caveat": "Mechanical analysis — full legal audit requires specialist review.",
+					"passed_label": "{passed} of {total} requirements",
+					"frameworks": {
+						"lgpd": "LGPD (Brazil)",
+						"gdpr": "GDPR (EU)",
+						"pci_dss": "PCI-DSS",
+						"soc2": "SOC 2"
+					},
+					"requirements": {
+						"consent_manager": "Cookie consent banner configured",
+						"https_everywhere": "HTTPS on every page",
+						"tls_current": "Current TLS version (1.2+)",
+						"cookie_security": "Cookies with HttpOnly + Secure flags",
+						"no_info_disclosure": "No info disclosure in error responses",
+						"no_predictable_urls": "Non-predictable URLs (IDOR mitigated)",
+						"pci_certified_psp": "PCI-DSS Level 1 payment processor",
+						"csp_present": "Content Security Policy configured",
+						"no_mixed_content": "No mixed content (all assets HTTPS)",
+						"no_clickjack": "Clickjacking protection active",
+						"error_tracking": "Error observability (Sentry/Datadog)",
+						"hsts_present": "HSTS configured",
+						"rate_limiting": "Rate limiting on sensitive endpoints"
+					}
+				},
 				"pentester_finds": {
 					"label": "What a pentester would find in 1 hour",
 					"subtitle": "Attack vectors exposed on your site, sorted by exploit speed",

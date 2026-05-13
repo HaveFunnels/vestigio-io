@@ -47,6 +47,7 @@ const RESOLVED_STATUSES = new Set([
 
 export default function NextActionStrip({ findings }: Props) {
 	const t = useTranslations("console.workspaces.detail.next_action");
+	const tc = useTranslations("console.common");
 	const mcpData = useMcpData();
 
 	const topAction = useMemo<ActionProjection | null>(() => {
@@ -120,7 +121,8 @@ export default function NextActionStrip({ findings }: Props) {
 					<div className="mt-2 flex flex-wrap items-center gap-3 text-[11px]">
 						{impactMidpoint > 0 && (
 							<span className="font-mono font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-								{t("impact_label")} {fmtCurrency(impactMidpoint, mcpData.currency)}/mo
+								{t("impact_label")} {fmtCurrency(impactMidpoint, mcpData.currency)}
+								{tc("per_month_short")}
 							</span>
 						)}
 						<span className="font-mono tabular-nums text-content-muted">

@@ -19,7 +19,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { getVendorPricing, type VendorPricing } from "@/lib/vendor-pricing";
 import type {
 	DetectedTechnology,
@@ -31,14 +31,27 @@ interface Row {
 	pricing: VendorPricing;
 }
 
-function formatUsd(value: number): string {
-	if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-	if (value >= 1_000) return `$${(value / 1_000).toFixed(1)}k`;
-	return `$${Math.round(value)}`;
+// Always render in USD regardless of the org currency — the underlying
+// vendor pricing catalog is sampled from US-priced plans. Use
+// Intl.NumberFormat with explicit currency=USD so the symbol disambiguates
+// (e.g. "US$ 1.2k" in pt-BR vs "$1.2k" in en-US) and a customer in BRL
+// can't mistake the figure for local currency.
+function formatUsd(value: number, locale: string): string {
+	const fmt = (v: number, frac: number) =>
+		new Intl.NumberFormat(locale, {
+			style: "currency",
+			currency: "USD",
+			maximumFractionDigits: frac,
+			minimumFractionDigits: 0,
+		}).format(v);
+	if (value >= 1_000_000) return `${fmt(value / 1_000_000, 1)}M`;
+	if (value >= 1_000) return `${fmt(value / 1_000, 1)}k`;
+	return fmt(Math.round(value), 0);
 }
 
 export default function BudgetForecast() {
 	const t = useTranslations("console.workspaces.detail.budget_forecast");
+	const locale = useLocale();
 	const [stack, setStack] = useState<TechnologyStackProjection | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -137,13 +150,13 @@ export default function BudgetForecast() {
 									</div>
 								</td>
 								<td className="px-3 py-2 text-right font-mono tabular-nums">
-									{formatUsd(r.pricing.nowUsd)}
+									{formatUsd(r.pricing.nowUsd, locale)}
 								</td>
 								<td className="px-3 py-2 text-right font-mono tabular-nums">
-									{formatUsd(r.pricing.at5xUsd)}
+									{formatUsd(r.pricing.at5xUsd, locale)}
 								</td>
 								<td className="px-3 py-2 text-right font-mono tabular-nums">
-									{formatUsd(r.pricing.at10xUsd)}
+									{formatUsd(r.pricing.at10xUsd, locale)}
 								</td>
 							</tr>
 						))}
@@ -152,13 +165,13 @@ export default function BudgetForecast() {
 								{t("total_label")}
 							</td>
 							<td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-content">
-								{formatUsd(totals.now)}
+								{formatUsd(totals.now, locale)}
 							</td>
 							<td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-amber-600 dark:text-amber-400">
-								{formatUsd(totals.at5x)}
+								{formatUsd(totals.at5x, locale)}
 							</td>
 							<td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-red-500 dark:text-red-400">
-								{formatUsd(totals.at10x)}
+								{formatUsd(totals.at10x, locale)}
 							</td>
 						</tr>
 					</tbody>

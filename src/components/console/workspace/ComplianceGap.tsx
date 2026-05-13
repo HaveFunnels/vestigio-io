@@ -82,7 +82,9 @@ export default function ComplianceGap({ findings }: Props) {
 			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				{results.map((r) => {
 					const color = readinessColor(r.readinessPct);
-					const gaps = r.requirements.filter((req) => !req.passed);
+					const fails = r.requirements.filter((req) => req.outcome === "fail");
+					const notEvaluated = r.requirements.filter((req) => req.outcome === "not_evaluated");
+					const denominator = r.passed + r.failed;
 					return (
 						<div
 							key={r.id}
@@ -93,11 +95,14 @@ export default function ComplianceGap({ findings }: Props) {
 									{t(`frameworks.${r.id}`)}
 								</span>
 								<span className={`font-mono text-xl font-medium tabular-nums leading-none ${color.text}`}>
-									{r.readinessPct}%
+									{denominator === 0 ? "—" : `${r.readinessPct}%`}
 								</span>
 							</div>
 							<div className="mt-1.5 text-[10px] text-content-faint">
-								{t("passed_label", { passed: r.passed, total: r.total })}
+								{t("passed_label", { passed: r.passed, total: denominator })}
+								{r.notEvaluated > 0 && (
+									<span className="ml-1.5">· {t("not_evaluated_label", { count: r.notEvaluated })}</span>
+								)}
 							</div>
 							<div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-inset/60">
 								<div
@@ -105,14 +110,23 @@ export default function ComplianceGap({ findings }: Props) {
 									style={{ width: `${r.readinessPct}%` }}
 								/>
 							</div>
-							{gaps.length > 0 && (
+							{(fails.length > 0 || notEvaluated.length > 0) && (
 								<ul className="mt-3 space-y-1">
-									{gaps.map((req) => (
+									{fails.map((req) => (
 										<li
 											key={req.id}
 											className="flex items-start gap-2 text-[11px] text-content-secondary"
 										>
 											<span className="mt-0.5 text-red-400">✗</span>
+											<span>{t(`requirements.${req.id}`)}</span>
+										</li>
+									))}
+									{notEvaluated.map((req) => (
+										<li
+											key={req.id}
+											className="flex items-start gap-2 text-[11px] text-content-faint italic"
+										>
+											<span className="mt-0.5">—</span>
 											<span>{t(`requirements.${req.id}`)}</span>
 										</li>
 									))}

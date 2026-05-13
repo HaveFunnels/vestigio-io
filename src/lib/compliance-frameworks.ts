@@ -101,15 +101,28 @@ export const COMPLIANCE_FRAMEWORKS: ComplianceFramework[] = [
 	},
 ];
 
+/**
+ * `not_evaluated` means the underlying engine check never ran (no
+ * positive AND no negative finding for the inference key, OR the
+ * tech stack hasn't been detected yet). It is excluded from both
+ * numerator and denominator of the readiness percentage so silent
+ * misses don't inflate the score the way a default-pass would.
+ */
+export type RequirementOutcome = "pass" | "fail" | "not_evaluated";
+
 export interface RequirementResult {
 	id: string;
-	passed: boolean;
+	outcome: RequirementOutcome;
 }
 
 export interface FrameworkResult {
 	id: ComplianceFramework["id"];
 	passed: number;
+	failed: number;
+	notEvaluated: number;
+	/** Total requirements in the framework (includes not_evaluated). */
 	total: number;
+	/** passed / (passed + failed) — excludes not_evaluated from denominator. */
 	readinessPct: number;
 	requirements: RequirementResult[];
 }
@@ -118,28 +131,36 @@ export function evaluateRequirement(
 	req: ComplianceRequirement,
 	findings: FindingProjection[],
 	stack: TechnologyStackProjection | null,
-): boolean {
+): RequirementOutcome {
 	const check = req.check;
 	if (check.type === "no_negative_for_inference") {
-		// PASS unless there's a negative finding matching this inference_key.
-		return !findings.some(
-			(f) => f.inference_key === check.key && f.polarity === "negative",
-		);
+		// "Not evaluated" when the inference never fired in this cycle —
+		// treating absence as pass would inflate the readiness score
+		// silently. Require that the engine actually checked this control
+		// (positive OR negative finding for the key) before grading it.
+		const anyForKey = findings.filter((f) => f.inference_key === check.key);
+		if (anyForKey.length === 0) return "not_evaluated";
+		const hasNegative = anyForKey.some((f) => f.polarity === "negative");
+		return hasNegative ? "fail" : "pass";
 	}
 	if (check.type === "positive_finding_for_inference") {
-		return findings.some(
-			(f) => f.inference_key === check.key && f.polarity === "positive",
-		);
+		const anyForKey = findings.filter((f) => f.inference_key === check.key);
+		if (anyForKey.length === 0) return "not_evaluated";
+		return anyForKey.some((f) => f.polarity === "positive") ? "pass" : "fail";
 	}
 	if (check.type === "tech_category_detected") {
-		if (!stack) return false;
-		return (stack.by_category[check.category]?.length ?? 0) > 0;
+		// Stack not yet detected → not_evaluated. Stack present but no
+		// detection in the category → fail.
+		if (!stack || stack.total_detected === 0) return "not_evaluated";
+		return (stack.by_category[check.category]?.length ?? 0) > 0 ? "pass" : "fail";
 	}
 	if (check.type === "tech_key_detected_any") {
-		if (!stack) return false;
-		return stack.technologies.some((t) => check.keys.includes(t.key));
+		if (!stack || stack.total_detected === 0) return "not_evaluated";
+		return stack.technologies.some((t) => check.keys.includes(t.key))
+			? "pass"
+			: "fail";
 	}
-	return false;
+	return "not_evaluated";
 }
 
 export function evaluateFramework(
@@ -149,15 +170,19 @@ export function evaluateFramework(
 ): FrameworkResult {
 	const requirements = framework.requirements.map((req) => ({
 		id: req.id,
-		passed: evaluateRequirement(req, findings, stack),
+		outcome: evaluateRequirement(req, findings, stack),
 	}));
-	const passed = requirements.filter((r) => r.passed).length;
-	const total = requirements.length;
+	const passed = requirements.filter((r) => r.outcome === "pass").length;
+	const failed = requirements.filter((r) => r.outcome === "fail").length;
+	const notEvaluated = requirements.filter((r) => r.outcome === "not_evaluated").length;
+	const denominator = passed + failed;
 	return {
 		id: framework.id,
 		passed,
-		total,
-		readinessPct: total === 0 ? 0 : Math.round((passed / total) * 100),
+		failed,
+		notEvaluated,
+		total: requirements.length,
+		readinessPct: denominator === 0 ? 0 : Math.round((passed / denominator) * 100),
 		requirements,
 	};
 }

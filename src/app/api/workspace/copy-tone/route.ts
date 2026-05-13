@@ -153,7 +153,7 @@ export const GET = withErrorTracking(
 			const raw = textBlock && "text" in textBlock ? textBlock.text.trim() : "";
 			let parsed: { pages?: Array<{ url?: string; tone?: string }> } = {};
 			try {
-				const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+				const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
 				parsed = JSON.parse(cleaned);
 			} catch {
 				return NextResponse.json({ pages: [], fallback: true });

@@ -2123,7 +2123,12 @@
 					"evidence_label": "Evidência:",
 					"fix_label": "Sugestão:",
 					"fix_with_copilot": "Discutir com Copilot",
-					"about_framework": "Sobre o framework"
+					"about_framework": "Sobre o framework",
+					"copilot_prompt": "Estou auditando minha {pageLabel} contra o framework {framework}.\nPágina: {url}\nH1 atual: {h1}\nMeta atual: {meta}\n\nCritério falhando: {criterion}\nO que seria ideal: {hint}\nEvidência da copy atual: {evidence}\nSugestão de fix: {fix}\n\nMe ajude a pensar em 2-3 opções concretas de reescrita pra testar, com racional pra cada uma.",
+					"copilot_page_home": "homepage",
+					"copilot_page_pricing": "página de pricing",
+					"copilot_page_features": "página de features",
+					"copilot_page_about": "página About"
 				},
 				"reading_level": {
 					"label": "Nível de leitura por página",
@@ -2139,7 +2144,8 @@
 					"assessment_complex": "Complexo",
 					"assessment_very_complex": "Muito complexo",
 					"friction_note": "Páginas com grade ≥ 12 podem criar fricção em personas não-técnicas.",
-					"caveat": "FK calculado sobre title + h1 + meta description. Body completo não é persistido."
+					"caveat": "FK calculado sobre title + h1 + meta description. Body completo não é persistido.",
+					"word_count": "{count} palavras"
 				},
 				"test_recommendations": {
 					"label": "Testes A/B recomendados",
@@ -2228,6 +2234,7 @@
 					"empty_description": "Após o próximo ciclo, gaps de cybersecurity + detecção de stack alimentam essa análise.",
 					"caveat": "Análise mecânica — auditoria legal completa exige revisão por especialista jurídico.",
 					"passed_label": "{passed} de {total} requisitos",
+					"not_evaluated_label": "{count} não avaliados",
 					"frameworks": {
 						"lgpd": "LGPD (Brasil)",
 						"gdpr": "GDPR (UE)",

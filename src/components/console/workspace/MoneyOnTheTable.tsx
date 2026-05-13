@@ -57,6 +57,7 @@ function formatEffort(
 
 export default function MoneyOnTheTable({ findings, onFindingClick }: Props) {
 	const t = useTranslations("console.workspaces.detail.money_on_table");
+	const tc = useTranslations("console.common");
 	const { currency } = useMcpData();
 
 	// Filter: only negative findings with loss role contribute. Retention
@@ -149,7 +150,7 @@ export default function MoneyOnTheTable({ findings, onFindingClick }: Props) {
 					<span className="font-mono text-3xl font-medium tabular-nums leading-none text-red-500 dark:text-red-400">
 						−{fmtCurrency(totalLoss, currency)}
 					</span>
-					<span className="text-[11px] text-content-muted">/mo</span>
+					<span className="text-[11px] text-content-muted">{tc("per_month_short")}</span>
 				</div>
 				<p className="mt-1 text-[12px] text-content-muted">{t("subtitle")}</p>
 			</div>

@@ -2145,7 +2145,12 @@
 					"evidence_label": "Evidence:",
 					"fix_label": "Suggestion:",
 					"fix_with_copilot": "Discuss with Copilot",
-					"about_framework": "About this framework"
+					"about_framework": "About this framework",
+					"copilot_prompt": "I'm auditing my {pageLabel} copy against the {framework} framework.\nPage: {url}\nCurrent H1: {h1}\nCurrent meta: {meta}\n\nCriterion failing: {criterion}\nWhat good looks like: {hint}\nEvidence from current copy: {evidence}\nSuggested fix: {fix}\n\nHelp me think through 2-3 concrete rewrite options I can test, with rationale for each.",
+					"copilot_page_home": "homepage",
+					"copilot_page_pricing": "pricing page",
+					"copilot_page_features": "features page",
+					"copilot_page_about": "about page"
 				},
 				"reading_level": {
 					"label": "Reading level per page",
@@ -2161,7 +2166,8 @@
 					"assessment_complex": "Complex",
 					"assessment_very_complex": "Very complex",
 					"friction_note": "Pages with grade ≥ 12 may create friction for non-technical personas.",
-					"caveat": "FK calculated on title + h1 + meta description. Full body is not persisted."
+					"caveat": "FK calculated on title + h1 + meta description. Full body is not persisted.",
+					"word_count": "{count} words"
 				},
 				"test_recommendations": {
 					"label": "Recommended A/B tests",
@@ -2250,6 +2256,7 @@
 					"empty_description": "After the next cycle, cybersecurity gaps + stack detection feed this analysis.",
 					"caveat": "Mechanical analysis — full legal audit requires specialist review.",
 					"passed_label": "{passed} of {total} requirements",
+					"not_evaluated_label": "{count} not evaluated",
 					"frameworks": {
 						"lgpd": "LGPD (Brazil)",
 						"gdpr": "GDPR (EU)",

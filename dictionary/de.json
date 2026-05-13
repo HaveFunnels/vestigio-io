@@ -1922,7 +1922,12 @@
 					"evidence_label": "Evidenz:",
 					"fix_label": "Vorschlag:",
 					"fix_with_copilot": "Mit Copilot besprechen",
-					"about_framework": "Ueber das Framework"
+					"about_framework": "Ueber das Framework",
+					"copilot_prompt": "Ich pruefe meine {pageLabel} Copy gegen das {framework} Framework.\nSeite: {url}\nAktuelle H1: {h1}\nAktuelle Meta: {meta}\n\nFehlschlagendes Kriterium: {criterion}\nWas ideal waere: {hint}\nEvidenz aus aktueller Copy: {evidence}\nVorgeschlagener Fix: {fix}\n\nHilf mir, 2-3 konkrete Umschreibungs-Optionen zum Testen zu durchdenken, mit Begruendung fuer jede.",
+					"copilot_page_home": "Homepage",
+					"copilot_page_pricing": "Pricing-Seite",
+					"copilot_page_features": "Features-Seite",
+					"copilot_page_about": "About-Seite"
 				},
 				"reading_level": {
 					"label": "Lesestufe pro Seite",
@@ -1938,7 +1943,8 @@
 					"assessment_complex": "Komplex",
 					"assessment_very_complex": "Sehr komplex",
 					"friction_note": "Seiten mit Grade >= 12 koennen Friktion fuer nicht-technische Personas erzeugen.",
-					"caveat": "FK berechnet auf title + h1 + meta description. Vollstaendiger Body wird nicht gespeichert."
+					"caveat": "FK berechnet auf title + h1 + meta description. Vollstaendiger Body wird nicht gespeichert.",
+					"word_count": "{count} Woerter"
 				},
 				"test_recommendations": {
 					"label": "Empfohlene A/B-Tests",
@@ -2027,6 +2033,7 @@
 					"empty_description": "Nach dem naechsten Zyklus liefern Cybersecurity-Luecken und Stack-Erkennung diese Analyse.",
 					"caveat": "Mechanische Analyse — vollstaendiges Legal-Audit erfordert Expertenpruefung.",
 					"passed_label": "{passed} von {total} Anforderungen",
+					"not_evaluated_label": "{count} nicht bewertet",
 					"frameworks": {
 						"lgpd": "LGPD (Brasilien)",
 						"gdpr": "DSGVO (EU)",

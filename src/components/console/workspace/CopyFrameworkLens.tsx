@@ -227,30 +227,18 @@ export default function CopyFrameworkLens() {
 		if (!selectedPage || !framework) return;
 		const criterion = framework.criteria.find((c) => c.id === criterionId);
 		if (!criterion) return;
-		// Use the actual selected slot ("homepage" / "pricing page" / etc.)
-		// in the Copilot prompt — the previous hardcoded "homepage" wording
-		// produced misleading prompts when auditing /pricing or /features.
-		const pageLabel =
-			selectedSlot === "home"
-				? "homepage"
-				: selectedSlot === "pricing"
-					? "pricing page"
-					: selectedSlot === "features"
-						? "features page"
-						: "about page";
-		const prompt = [
-			`I'm auditing my ${pageLabel} copy against the ${pickText(framework.name, fwLocale)} framework.`,
-			`Page: ${selectedPage.url}`,
-			`Current H1: ${selectedPage.h1 ?? "(none)"}`,
-			`Current meta: ${selectedPage.meta_description ?? "(none)"}`,
-			"",
-			`Criterion failing: ${pickText(criterion.label, fwLocale)}`,
-			`What good looks like: ${pickText(criterion.hint, fwLocale)}`,
-			`Evidence from current copy: ${evidence}`,
-			`Suggested fix: ${fix}`,
-			"",
-			"Help me think through 2-3 concrete rewrite options I can test, with rationale for each.",
-		].join("\n");
+		const pageLabel = t(`copilot_page_${selectedSlot}`);
+		const prompt = t("copilot_prompt", {
+			pageLabel,
+			framework: pickText(framework.name, fwLocale),
+			url: selectedPage.url,
+			h1: selectedPage.h1 ?? "(none)",
+			meta: selectedPage.meta_description ?? "(none)",
+			criterion: pickText(criterion.label, fwLocale),
+			hint: pickText(criterion.hint, fwLocale),
+			evidence,
+			fix,
+		});
 		copilot.open({ prompt });
 	}
 

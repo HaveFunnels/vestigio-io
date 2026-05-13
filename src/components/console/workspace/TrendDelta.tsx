@@ -4,21 +4,25 @@
  * TrendDelta — Wave 11.7b.
  *
  * Inline pill placed beside a count metric (issue count, finding
- * total, etc.) showing the net cycle-over-cycle delta. Subtle but
- * creates strong sense-of-movement — the existing WorkspaceChange-
- * Trend renders a separate paragraph; this is the per-number
- * annotation that lives at the metric.
+ * total, etc.) showing the net cycle-over-cycle delta in OPEN
+ * ISSUE COUNT. Subtle but creates strong sense-of-movement — the
+ * existing WorkspaceChangeTrend renders a separate paragraph; this
+ * is the per-number annotation that lives next to the count.
  *
- * Net count change is derived from the existing change_summary:
- *   net_change = improvement_count + resolved_count − regression_count
+ * Net count change is derived from change_summary:
+ *
+ *   net = resolved_count − regression_count
+ *
+ * Important: `improvement_count` is NOT included here. An
+ * "improvement" means a finding's severity went down — the finding
+ * is still open, so the issue count doesn't change. Only
+ * `resolved_count` (findings that no longer fire) reduces the open
+ * count, and only `regression_count` (new or re-fired findings)
+ * increases it.
  *
  * Positive → fewer open issues this cycle (green, prefixed "−").
  * Negative → more open issues this cycle (red, prefixed "+").
  * Zero → renders nothing.
- *
- * Loss-magnitude deltas (% change in dollar exposure) would require
- * loading the previous cycle's WorkspaceProjection summary, which
- * isn't in the current projection layer. Out of scope for V1.
  */
 
 import type { WorkspaceProjection } from "../../../../packages/projections/types";
@@ -31,9 +35,7 @@ interface Props {
 
 export default function TrendDelta({ summary, muted = false }: Props) {
 	if (!summary) return null;
-	const net =
-		(summary.improvement_count ?? 0) + (summary.resolved_count ?? 0) -
-		(summary.regression_count ?? 0);
+	const net = (summary.resolved_count ?? 0) - (summary.regression_count ?? 0);
 	if (net === 0) return null;
 
 	const isImprovement = net > 0;

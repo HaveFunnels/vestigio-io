@@ -30,6 +30,14 @@ interface Props {
 // loss, which is the safer error direction for trust.
 const CYCLE_INTERVAL_DAYS = 1;
 
+// When trend_streak is null the finding may be brand-new in this cycle
+// OR genuinely never trended (cycle 1 of the env). Defaulting to 1 day
+// trivially understates loss for findings that have been hurting
+// silently for weeks. 7 days is the standard "since last business
+// week" anchor and is the lower bound the UI hints at via
+// "Open for ~N days".
+const FALLBACK_DAYS_OPEN = 7;
+
 interface FindingLoss {
 	id: string;
 	title: string;
@@ -48,7 +56,10 @@ export default function CostOfInaction({ findings }: Props) {
 			if (f.polarity !== "negative") continue;
 			if (f.impact.role !== "loss") continue;
 			if (f.impact.midpoint <= 0) continue;
-			const daysOpen = Math.max(1, (f.trend_streak ?? 1) * CYCLE_INTERVAL_DAYS);
+			const daysOpen =
+				f.trend_streak != null && f.trend_streak > 0
+					? f.trend_streak * CYCLE_INTERVAL_DAYS
+					: FALLBACK_DAYS_OPEN;
 			const dailyBurn = f.impact.midpoint / 30;
 			out.push({
 				id: f.id,

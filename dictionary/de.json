@@ -1878,6 +1878,22 @@
 					"empty": "Keine monatlichen Verluste in diesem Workspace.",
 					"uncategorized": "Keine Grundursache zugeordnet"
 				},
+				"budget_forecast": {
+					"label": "Infrastruktur-Budget-Forecast",
+					"subtitle": "Geschaetzte monatliche Kosten erkannter Vendors in Wachstumsszenarien",
+					"loading": "Schaetze Infra-Burn...",
+					"empty_title": "Keine Vendors mit oeffentlichem Pricing erkannt",
+					"empty_description": "Die erkannten Vendors haben noch keine Pricing-Daten in unserem Katalog.",
+					"scenario_now": "Heute",
+					"scenario_5x": "Bei 5x",
+					"scenario_10x": "Bei 10x",
+					"total_label": "Geschaetzte Gesamtsumme / Monat",
+					"per_month": "/ Mon",
+					"caveat": "Konservative Schaetzungen aus oeffentlichem Pricing. Transaktionsgebuehren (%) nicht enthalten.",
+					"vendor_column": "Vendor",
+					"tier_now": "Wahrscheinlicher Tier heute",
+					"tier_growth": "Wahrscheinlicher Tier im Szenario"
+				},
 				"what_breaks_at_10x": {
 					"label": "Was bricht bei 10x",
 					"subtitle": "Bekannte Skalierungsgrenzen fuer die in Ihrem Stack erkannten Vendors",

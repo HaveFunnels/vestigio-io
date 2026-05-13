@@ -1999,6 +1999,22 @@
 					"empty": "No se detectaron pérdidas mensuales en este workspace.",
 					"uncategorized": "Sin causa raíz mapeada"
 				},
+				"budget_forecast": {
+					"label": "Forecast de gasto con infra",
+					"subtitle": "Costo mensual estimado de los vendors detectados en escenarios de escala",
+					"loading": "Estimando burn de infra...",
+					"empty_title": "Sin vendors con pricing público mapeados",
+					"empty_description": "Los vendors detectados aún no tienen datos de precio en nuestro catálogo.",
+					"scenario_now": "Hoy",
+					"scenario_5x": "En 5x",
+					"scenario_10x": "En 10x",
+					"total_label": "Total estimado / mes",
+					"per_month": "/ mes",
+					"caveat": "Estimaciones conservadoras de pricing público. Tarifas transaccionales (%) no incluidas.",
+					"vendor_column": "Vendor",
+					"tier_now": "Tier probable hoy",
+					"tier_growth": "Tier probable en escenario"
+				},
 				"what_breaks_at_10x": {
 					"label": "Qué se rompe a 10x",
 					"subtitle": "Puntos conocidos de saturación para los vendors detectados en tu stack",

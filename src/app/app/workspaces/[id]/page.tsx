@@ -27,6 +27,7 @@ import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
 import SpofMap from "@/components/console/workspace/SpofMap";
 import DependencyHealth from "@/components/console/workspace/DependencyHealth";
 import WhatBreaksAt10x from "@/components/console/workspace/WhatBreaksAt10x";
+import BudgetForecast from "@/components/console/workspace/BudgetForecast";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -377,8 +378,9 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 						<SpofMap />
 						<DependencyHealth />
 					</div>
-					<div className="mt-5">
+					<div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
 						<WhatBreaksAt10x />
+						<BudgetForecast />
 					</div>
 				</>
 			)}

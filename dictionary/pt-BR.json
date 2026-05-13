@@ -2070,6 +2070,22 @@
 					"empty": "Sem perdas mensais detectadas neste workspace.",
 					"uncategorized": "Sem causa-raiz mapeada"
 				},
+				"budget_forecast": {
+					"label": "Forecast de gasto com infra",
+					"subtitle": "Custo mensal estimado dos vendors detectados em cenários de escala",
+					"loading": "Estimando burn de infra...",
+					"empty_title": "Sem vendors com pricing público mapeados",
+					"empty_description": "Os vendors detectados ainda não têm dados de preço no nosso catálogo. Quando o próximo ciclo detectar Stripe, Vercel, Sentry, etc, eles aparecem aqui.",
+					"scenario_now": "Hoje",
+					"scenario_5x": "Em 5x",
+					"scenario_10x": "Em 10x",
+					"total_label": "Total estimado / mês",
+					"per_month": "/ mês",
+					"caveat": "Estimativas conservadoras baseadas em planos públicos. Custos transacionais (taxas %) não incluídos.",
+					"vendor_column": "Vendor",
+					"tier_now": "Tier provável hoje",
+					"tier_growth": "Tier provável no cenário"
+				},
 				"what_breaks_at_10x": {
 					"label": "O que quebra em 10x",
 					"subtitle": "Pontos conhecidos de saturação para os vendors detectados no seu stack",

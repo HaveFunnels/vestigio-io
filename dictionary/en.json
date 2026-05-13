@@ -2092,6 +2092,22 @@
 					"empty": "No monthly losses detected in this workspace.",
 					"uncategorized": "No root cause mapped"
 				},
+				"budget_forecast": {
+					"label": "Infrastructure budget forecast",
+					"subtitle": "Estimated monthly cost of detected vendors across growth scenarios",
+					"loading": "Estimating infra burn...",
+					"empty_title": "No vendors with public pricing detected",
+					"empty_description": "The detected vendors don't have pricing data in our catalog yet. When the next cycle detects Stripe, Vercel, Sentry, etc, they'll show up here.",
+					"scenario_now": "Today",
+					"scenario_5x": "At 5x",
+					"scenario_10x": "At 10x",
+					"total_label": "Estimated total / month",
+					"per_month": "/ mo",
+					"caveat": "Conservative estimates from public pricing. Transactional fees (% rates) not included.",
+					"vendor_column": "Vendor",
+					"tier_now": "Likely tier today",
+					"tier_growth": "Likely tier in scenario"
+				},
 				"what_breaks_at_10x": {
 					"label": "What breaks at 10x",
 					"subtitle": "Known scaling pain points for the vendors detected on your stack",

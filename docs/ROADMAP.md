@@ -1,6 +1,6 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-13 (Wave 11 — Workspaces Feature Depth logged: ~35 ideated widgets across 6 workspaces, each tagged with data dependencies and locked-state UX for users without the required integration)
+> Last updated: 2026-05-13 (Wave 11.1a + 11.3 🟢 tier shipped: Money on the table report for Revenue + SPOF map + Dependency health + What breaks at 10x + Budget forecast for Preflight. Foundation: tech-stack projection API now reads existing TechnologyDetected evidence)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -2289,23 +2289,22 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 
 ### 11.3 Preflight (Scale Readiness)
 
-#### a. "O que quebra em 10x" simulator ⭐ 🟢
-- **What:** Projection: if traffic doubles/10x's, which signals degrade first? Visualization: per-system bar at current load %, with "would saturate in N months at current growth rate". Catches issues like DB connection pool, CDN cache hit rate, third-party API rate limits.
-- **Data deps:** Vestigio crawl + tech detection + behavioral pixel for traffic baseline (more accurate with pixel, but 🟢 with heuristic fallback).
-- **Locked state:** Renders with heuristic-only mode when pixel is missing; banner says "More accurate projections with the Vestigio Pixel".
-- **Effort:** 4-5 days (modeling is the hard part).
+> **Foundation shipped 2026-05-13:** `GET /api/workspace/tech-stack` endpoint aggregates `TechnologyDetected` evidence rows already produced by `workers/ingestion/pipeline.ts:187-210`. Returns a `TechnologyStackProjection` shape consumed by all four widgets below.
 
-#### b. SPOF (Single Point of Failure) map ⭐ 🟢
-- **What:** Network-style diagram of your stack: payment processor, email provider, CDN, DB, auth provider. Each node shows redundancy status. "Stripe is down" → checkout dead = $X/hour loss. Quantifies blast radius per dependency.
-- **Data deps:** Tech detection from Vestigio crawl + impact estimates from Wave 3.4 blast-radius composite.
-- **Locked state:** n/a.
-- **Effort:** 3 days.
+#### a. "O que quebra em 10x" simulator ⭐ 🟢 — ✅ Shipped 2026-05-13
+- **What:** Heuristic scaling-readiness widget. For each detected vendor, surfaces curated scaling pain points (free-tier caps, rate limits, plan thresholds, non-linear pricing dimensions). Sorted critical-first. We do NOT simulate real load — we curate documented vendor thresholds.
+- **Data deps:** Vestigio crawl + tech detection. Pixel-driven projection would replace this with concrete forecasts later.
+- **Implementation:** `src/lib/scaling-pain-points.ts` (37 pain points across 21 vendors), `src/components/console/workspace/WhatBreaksAt10x.tsx`. i18n: ~45 keys × 4 locales.
 
-#### c. Budget forecast at projected scale 🟢
-- **What:** "At 3x traffic, your infra costs would be $X (assuming same providers) vs $Y on alternatives". Calls out specific upgrade paths (Vercel Pro → Enterprise, Postgres → Aurora).
-- **Data deps:** Tech detection + public pricing data (curated).
-- **Locked state:** n/a.
-- **Effort:** 2-3 days (pricing data maintenance is the recurring cost).
+#### b. SPOF (Single Point of Failure) map ⭐ 🟢 — ✅ Shipped 2026-05-13
+- **What:** One row per critical category (payment/platform/cdn/email/error-tracking/tag-manager/consent/analytics/ab-testing/support). Status pill: Single point (1 detected), Has redundancy (2+), Not detected (0). Per-row business-impact narrative ("If checkout dies, each hour = a full day of lost sales").
+- **Data deps:** Tech detection from Vestigio crawl.
+- **Implementation:** `src/components/console/workspace/SpofMap.tsx`. i18n: 32 keys × 4 locales including category names + impact narratives. Wired into preflight workspace + trust perspective.
+
+#### c. Budget forecast at projected scale 🟢 — ✅ Shipped 2026-05-13
+- **What:** For each detected vendor with curated public pricing (~25 vendors), shows estimated monthly cost at three scenarios: today, 5x, 10x. Totals at the bottom (5x and 10x highlighted in amber/red). Transactional fees explicitly excluded.
+- **Data deps:** Tech detection + curated `src/lib/vendor-pricing.ts` table.
+- **Implementation:** `src/components/console/workspace/BudgetForecast.tsx`. i18n: 14 keys × 4 locales.
 
 #### d. Pre-launch runbook generator ⚪
 - **What:** Before a major event (sale, product launch, ad campaign), generate a customized checklist: provision capacity, test webhooks, raise alerts, brief support. LLM-driven from the workspace context.
@@ -2313,11 +2312,10 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 - **Locked state:** Renders an empty state with "Describe your upcoming event" input.
 - **Effort:** 2 days.
 
-#### e. Third-party dependency health 🟢
-- **What:** Live status of every SaaS your tech stack depends on (Stripe, AWS, Vercel, Sendgrid, etc.) pulled from their public status pages. Recent incident timeline per dependency.
-- **Data deps:** Tech detection + scheduled poll of public status APIs.
-- **Locked state:** n/a.
-- **Effort:** 2-3 days (status page aggregator is non-trivial — consider a service like statuspage.io directory).
+#### e. Third-party dependency health 🟢 — ✅ Shipped 2026-05-13
+- **What:** Live status of every SaaS your tech stack depends on. For each detected vendor with a known status page, fetches Atlassian Statuspage v2 JSON, displays indicator (Operational/Minor/Major/Critical) + description + click-through to the public page. Coverage line at top shows X of Y dependencies have public status.
+- **Data deps:** Tech detection + curated `src/lib/status-pages.ts` mapping (~25 vendors). 5-min in-memory cache to be friendly to vendor endpoints.
+- **Implementation:** `GET /api/workspace/dependency-health` route + `src/components/console/workspace/DependencyHealth.tsx`. i18n: 11 keys × 4 locales.
 
 #### f. Recovery time estimate 🔴
 - **What:** "If your site goes down right now, your TTR is N minutes based on past incidents". Surfaces oncall rotation, runbook coverage, who has admin access.

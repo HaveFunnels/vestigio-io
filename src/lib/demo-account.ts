@@ -43,6 +43,24 @@ export function isDemoOrg(
   return false;
 }
 
+/**
+ * True if this org context (from ensureContext / orgCtx) refers to
+ * the demo org. Centralizes the inline `orgCtx.orgType === "demo" ||
+ * orgCtx.orgId === "demo"` pattern that was sprinkled across several
+ * API routes — drift between those copies meant one route would let
+ * a demo session through and another would block it. Always prefer
+ * this helper over inline string compares.
+ */
+export function isDemoOrgCtx(
+  ctx: { orgId?: string | null; orgType?: string | null } | null | undefined,
+): boolean {
+  if (!ctx) return false;
+  if (ctx.orgId === "demo") return true;
+  if (ctx.orgId === DEMO_ORG_ID) return true;
+  if (ctx.orgType === "demo") return true;
+  return false;
+}
+
 /** True if this environment belongs to the demo org. */
 export function isDemoEnvironment(
   env: {

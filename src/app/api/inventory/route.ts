@@ -18,7 +18,7 @@ import { PrismaFindingStore } from "../../../../packages/projections";
 // Auth: requires authenticated user with org membership.
 // ──────────────────────────────────────────────
 
-const COMMERCIAL_PAGE_TYPES = new Set(["checkout", "cart", "product", "pricing"]);
+import { isCommercialPageType } from "@/lib/page-type-colors";
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
 
@@ -269,7 +269,19 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       page_type: effectiveType,
       classified_page_type: item.classifiedPageType ?? null,
       classification_confidence: item.classificationConfidence ?? null,
-      is_commercial: COMMERCIAL_PAGE_TYPES.has(effectiveType),
+      // Parsed signal votes for the drawer's transparency block. We
+      // tolerate empty/legacy values (pre-multi-signal rows store "[]"
+      // or null) by returning [] in those cases.
+      classification_signals: (() => {
+        if (!item.classificationSignals) return [];
+        try {
+          const parsed = JSON.parse(item.classificationSignals);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })(),
+      is_commercial: isCommercialPageType(effectiveType),
       is_live: item.freshnessState === "fresh",
       last_seen_at: item.updatedAt.toISOString(),
       freshness_age: item.freshnessAge ?? null,

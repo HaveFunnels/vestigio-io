@@ -241,9 +241,14 @@ export const PIPELINE_STEPS = [
   'Finalizing your analysis',
 ];
 
-let evidenceCounter = 0;
+// UUID-backed evidence IDs so two parallel workers cannot mint the same
+// key. The previous Date.now()+counter form raced on multi-replica
+// deploys where two processes could legitimately fire the same
+// millisecond with the same in-process counter value, producing a
+// Prisma unique-key violation that we were swallowing.
+import { randomUUID } from 'crypto';
 function nextId(): string {
-  return `ev_stg_${Date.now()}_${++evidenceCounter}`;
+  return `ev_stg_${randomUUID()}`;
 }
 
 /**

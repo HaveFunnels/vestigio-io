@@ -296,6 +296,8 @@ export interface InventorySurface {
   classified_page_type: string | null;
   /** 0-100 agreement ratio between classification signals. */
   classification_confidence: number | null;
+  /** Per-signal votes ([{source, vote, weight}, ...]); empty array if not classified. */
+  classification_signals: Array<{ source: string; vote: string; weight: number }>;
   is_commercial: boolean;
   is_live: boolean;
   last_seen_at: string | null;

@@ -3333,9 +3333,10 @@
 			},
 			"status": {
 				"live": "Live",
+				"down": "Down",
+				"not_checked": "Not checked",
 				"stale": "Awaiting recheck",
 				"not_seen": "Not seen",
-				"down": "Down",
 				"all": "All Status"
 			},
 			"type_filter": {
@@ -3369,6 +3370,14 @@
 			"discovery_source_filter": {
 				"all": "All Sources"
 			},
+			"discovery_source_labels": {
+				"surface": "Crawled page",
+				"sitemap": "Sitemap",
+				"homepage_link": "Homepage link",
+				"critical_path": "Critical path",
+				"redirect": "Redirect target",
+				"behavioral_event": "Behavioral pixel"
+			},
 			"empty": {
 				"title": "No surfaces discovered yet",
 				"description": "Install the Vestigio snippet to start collecting behavioral data and surface inventory."
@@ -3392,8 +3401,9 @@
 				"tier": "Tier",
 				"status": "Status",
 				"live": "Live",
-				"stale": "Awaiting recheck",
 				"down": "Down",
+				"not_checked": "Not checked",
+				"stale": "Awaiting recheck",
 				"not_seen": "Not Seen",
 				"http_code": "HTTP Code",
 				"sessions": "Sessions",
@@ -3402,6 +3412,9 @@
 				"last_checked": "Last Checked",
 				"never": "Never",
 				"discovery_sources": "Discovery Sources",
+				"classification_confidence_tooltip": "How strongly the signals agreed on this page type (0–100%)",
+				"classification_signals_label": "How we classified this page",
+				"classification_signals_weight_tooltip": "Voting weight for this signal (higher = more trusted)",
 				"view_in_journey": "View in journey map",
 				"view_findings": "View {count, plural, one {# finding} other {# findings}} on this page"
 			}

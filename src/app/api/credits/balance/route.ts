@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { resolveOrgContext } from "@/libs/resolve-org";
+import { isDemoOrgCtx } from "@/lib/demo-account";
 
 /**
  * GET /api/credits/balance — authenticated credit balance for the
@@ -20,11 +21,7 @@ export const GET = withErrorTracking(
 		}
 
 		const orgCtx = await resolveOrgContext();
-		const isDemo =
-			orgCtx.orgType === "demo" ||
-			orgCtx.orgId === "demo" ||
-			orgCtx.orgId === "demo_org";
-		if (!orgCtx.orgId || isDemo) {
+		if (!orgCtx.orgId || isDemoOrgCtx(orgCtx)) {
 			return NextResponse.json(
 				{
 					orgId: null,

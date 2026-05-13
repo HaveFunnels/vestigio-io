@@ -3417,9 +3417,10 @@
 			},
 			"status": {
 				"live": "Ativa",
+				"down": "Indisponível",
+				"not_checked": "Não checada",
 				"stale": "Aguardando reverificação",
 				"not_seen": "Não vista",
-				"down": "Indisponível",
 				"all": "Todos os Status"
 			},
 			"type_filter": {
@@ -3453,6 +3454,14 @@
 			"discovery_source_filter": {
 				"all": "Todas as Fontes"
 			},
+			"discovery_source_labels": {
+				"surface": "Página rastreada",
+				"sitemap": "Sitemap",
+				"homepage_link": "Link na home",
+				"critical_path": "Caminho crítico",
+				"redirect": "Destino de redirect",
+				"behavioral_event": "Pixel comportamental"
+			},
 			"empty": {
 				"title": "Nenhuma superfície descoberta ainda",
 				"description": "Instale o snippet da Vestigio para começar a coletar dados comportamentais e inventário de superfícies."
@@ -3476,8 +3485,9 @@
 				"tier": "Camada",
 				"status": "Status",
 				"live": "Ativa",
-				"stale": "Aguardando reverificação",
 				"down": "Indisponível",
+				"not_checked": "Não checada",
+				"stale": "Aguardando reverificação",
 				"not_seen": "Não Vista",
 				"http_code": "Código HTTP",
 				"sessions": "Sessões",
@@ -3486,6 +3496,9 @@
 				"last_checked": "Última Verificação",
 				"never": "Nunca",
 				"discovery_sources": "Fontes de Descoberta",
+				"classification_confidence_tooltip": "Quão fortemente os sinais concordaram sobre o tipo desta página (0–100%)",
+				"classification_signals_label": "Como classificamos esta página",
+				"classification_signals_weight_tooltip": "Peso de voto deste sinal (maior = mais confiável)",
 				"view_in_journey": "Ver no mapa da jornada",
 				"view_findings": "Ver {count, plural, one {# descoberta} other {# descobertas}} nesta página"
 			}

@@ -56,3 +56,30 @@ const FALLBACK: PageTypeStyle = { bg: "bg-zinc-500/10", text: "text-zinc-600 dar
 export function getPageTypeStyle(pageType: string): PageTypeStyle {
 	return PAGE_TYPE_STYLES[pageType] || FALLBACK;
 }
+
+// ──────────────────────────────────────────────
+// Commercial page types — single source of truth
+//
+// "Commercial" = pages that directly host or finalize a buying
+// decision. Surfaces with this label drive the "Commercial" summary
+// card, the table filter, and (downstream) impact baselines.
+//
+// Note: separate from packages/behavioral/surface-normalizer's
+// COMMERCIAL_TYPES (which adds `landing` + `thank_you` because the
+// pixel cares about journey endpoints) and from form-flow-inference's
+// set (which includes `lead_form` + `contact` because forms there can
+// kick off a commercial chain). Those scopes are intentional, not
+// duplication — they are different questions.
+// ──────────────────────────────────────────────
+
+const COMMERCIAL_PAGE_TYPES: ReadonlySet<string> = new Set([
+	"checkout",
+	"cart",
+	"product",
+	"pricing",
+]);
+
+export function isCommercialPageType(pageType: string | null | undefined): boolean {
+	if (!pageType) return false;
+	return COMMERCIAL_PAGE_TYPES.has(pageType);
+}

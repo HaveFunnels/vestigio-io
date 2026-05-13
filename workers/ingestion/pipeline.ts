@@ -112,9 +112,10 @@ const PLATFORM_PATTERNS: Record<string, { regex: RegExp; source: string }[]> = {
   ],
 };
 
-let evidenceCounter = 0;
+// UUID-backed evidence IDs — see staged-pipeline.ts for the rationale.
+import { randomUUID } from 'crypto';
 function nextId(): string {
-  return `ev_${Date.now()}_${++evidenceCounter}`;
+  return `ev_${randomUUID()}`;
 }
 
 export async function runIngestion(input: IngestionInput): Promise<IngestionResult> {

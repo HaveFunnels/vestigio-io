@@ -29,18 +29,24 @@ import { getPageTypeStyle } from "@/lib/page-type-colors";
 // with surface filter applied.
 // ──────────────────────────────────────────────
 
-type LiveFilter = "all" | "live" | "stale" | "down";
+type LiveFilter = "all" | "live" | "down" | "not_checked";
 
-// Status states surfaced to the user. Mapped from is_live + http_status:
-//   live  — successfully fetched in this cycle, status < 400
-//   down  — explicit failure (http_status === 0 or >= 400)
-//   stale — previously OK but not re-fetched this cycle (recheck pending)
-type StatusState = "live" | "stale" | "down";
+// Status states surfaced to the user. Driven by the last known HTTP
+// response — not by *when* we last checked. The "when" is shown as
+// freshness metadata (tooltip / drawer subtext), not as a state.
+//
+//   live        — last response was 2xx/3xx (page works)
+//   down        — last response was 4xx/5xx (page broke — customer-side)
+//   not_checked — we never got a response (timeout, DNS, connection
+//                 refused — our fetcher couldn't reach the page).
+//                 Distinct from `down` because it's NOT the customer's
+//                 page being broken; it's our crawl failing.
+type StatusState = "live" | "down" | "not_checked";
 
-function classifySurfaceStatus(s: { is_live: boolean; http_status: number | null }): StatusState {
-	if (s.http_status === 0 || (s.http_status !== null && s.http_status >= 400)) return "down";
-	if (s.is_live) return "live";
-	return "stale";
+function classifySurfaceStatus(s: { http_status: number | null }): StatusState {
+	if (s.http_status === null || s.http_status === 0) return "not_checked";
+	if (s.http_status >= 400) return "down";
+	return "live";
 }
 type TypeFilter = "all" | "commercial" | "support" | "policy" | "other";
 type HttpStatusFilter = "all" | "2xx" | "3xx" | "4xx" | "5xx";
@@ -243,7 +249,9 @@ function SurfaceDrawer({
 	const t = useTranslations("console.inventory.drawer");
 	const tTooltip = useTranslations("console.common");
 	const tPageType = useTranslations("console.maps.page_types");
+	const tDiscovery = useTranslations("console.inventory.discovery_source_labels");
 	const localizePageType = (type: string) => tPageType.has(type) ? tPageType(type) : titleCase(type);
+	const localizeSource = (src: string) => tDiscovery.has(src) ? tDiscovery(src) : titleCase(src);
 	const isOpen = surface !== null;
 
 	useEffect(() => {
@@ -347,12 +355,34 @@ function SurfaceDrawer({
 											{localizePageType(surface.page_type)}
 										</span>
 										{surface.classification_confidence !== null && surface.classification_confidence > 0 && (
-											<span className="text-[10px] font-mono text-content-faint" title={`Classification confidence`}>
+											<span className="text-[10px] font-mono text-content-faint" title={t("classification_confidence_tooltip")}>
 												{surface.classification_confidence}%
 											</span>
 										)}
 									</div>
 									); })()}
+									{/* Multi-signal transparency: show how each signal
+									    voted so the classification isn't a black box. */}
+									{surface.classification_signals && surface.classification_signals.length > 0 && (
+										<details className='mt-2 group'>
+											<summary className='cursor-pointer text-[10px] font-medium uppercase tracking-wider text-content-faint hover:text-content-muted'>
+												{t("classification_signals_label")}
+											</summary>
+											<ul className='mt-1.5 space-y-1'>
+												{surface.classification_signals.map((sig, idx) => (
+													<li key={`${sig.source}-${idx}`} className='flex items-center justify-between gap-2 rounded bg-surface-inset px-2 py-1 text-[11px]'>
+														<span className='font-mono text-content-faint'>{sig.source}</span>
+														<span className='flex items-center gap-1.5'>
+															<span className='text-content-secondary'>{localizePageType(sig.vote)}</span>
+															<span className='font-mono text-content-faint' title={t("classification_signals_weight_tooltip")}>
+																w{sig.weight.toFixed(1)}
+															</span>
+														</span>
+													</li>
+												))}
+											</ul>
+										</details>
+									)}
 								</div>
 								<div>
 									<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
@@ -376,7 +406,7 @@ function SurfaceDrawer({
 											? { text: "text-emerald-400", dot: "bg-emerald-400" }
 											: state === "down"
 												? { text: "text-red-400", dot: "bg-red-400" }
-												: { text: "text-amber-400", dot: "bg-amber-400" };
+												: { text: "text-zinc-400", dot: "bg-zinc-400" };
 										return (
 											<span className={`inline-flex items-center gap-1.5 text-xs ${tone.text}`}>
 												<span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
@@ -470,7 +500,7 @@ function SurfaceDrawer({
 											key={src}
 											className='rounded bg-surface-inset px-1.5 py-0.5 text-[10px] text-content-faint'
 										>
-											{titleCase(src)}
+											{localizeSource(src)}
 										</span>
 									))}
 								</div>
@@ -551,6 +581,11 @@ export default function InventoryPage() {
 	const tTooltip = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
 	const tPageType = useTranslations("console.maps.page_types");
+	const tDiscovery = useTranslations("console.inventory.discovery_source_labels");
+	const localizeSource = useCallback(
+		(src: string) => (tDiscovery.has(src) ? tDiscovery(src) : titleCase(src)),
+		[tDiscovery],
+	);
 	const localizePageType = useCallback(
 		(type: string) => (tPageType.has(type) ? tPageType(type) : titleCase(type)),
 		[tPageType]
@@ -632,7 +667,7 @@ export default function InventoryPage() {
 		).sort();
 		return [
 			{ value: "all" as const, label: t("discovery_source_filter.all") },
-			...unique.map((src) => ({ value: src, label: titleCase(src) })),
+			...unique.map((src) => ({ value: src, label: localizeSource(src) })),
 		];
 	}, [surfaces, t]);
 
@@ -762,24 +797,25 @@ export default function InventoryPage() {
 
 	// ── Status counts ──
 	//
-	// Three buckets so that live + stale + down = surfaces.length and the
-	// header card matches the table.
+	// Three buckets so live + down + not_checked = surfaces.length and
+	// the header card matches the table.
 	//
-	//   live  — re-fetched this cycle, http < 400
-	//   down  — http_status === 0 (fetch failed) OR http_status >= 400
-	//   stale — previously fetched OK but not re-checked this cycle.
-	//           "Stale" tells the user the page IS visible to Vestigio
-	//           but is awaiting the next audit, instead of the older
-	//           ambiguous "not seen" copy.
-	const { liveCount, staleCount, downCount } = useMemo(() => {
-		let live = 0, stale = 0, down = 0;
+	//   live        — last HTTP response was 2xx/3xx
+	//   down        — last HTTP response was 4xx/5xx (customer's page broken)
+	//   not_checked — fetch never returned a response (timeout, DNS,
+	//                 connection refused → status 0 or null). Separated
+	//                 from `down` so the customer doesn't read it as
+	//                 "my page is broken" when it's actually our crawler
+	//                 that couldn't reach it.
+	const { liveCount, notCheckedCount, downCount } = useMemo(() => {
+		let live = 0, notChecked = 0, down = 0;
 		for (const s of surfaces) {
 			const state = classifySurfaceStatus(s);
 			if (state === "live") live++;
 			else if (state === "down") down++;
-			else stale++;
+			else notChecked++;
 		}
-		return { liveCount: live, staleCount: stale, downCount: down };
+		return { liveCount: live, notCheckedCount: notChecked, downCount: down };
 	}, [surfaces]);
 
 	// Real period-over-period deltas from API (null when no prior cycle)
@@ -870,7 +906,7 @@ export default function InventoryPage() {
 					? { text: "text-emerald-400", dot: "bg-emerald-400" }
 					: state === "down"
 						? { text: "text-red-400", dot: "bg-red-400" }
-						: { text: "text-amber-400", dot: "bg-amber-400" };
+						: { text: "text-zinc-400", dot: "bg-zinc-400" };
 				return (
 					<span className={`inline-flex items-center gap-1 text-xs ${tone.text}`}>
 						<span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
@@ -942,7 +978,7 @@ export default function InventoryPage() {
 							key={src}
 							className='rounded bg-surface-inset px-1.5 py-0.5 text-[10px] text-content-faint'
 						>
-							{titleCase(src)}
+							{localizeSource(src)}
 						</span>
 					))}
 				</div>
@@ -1000,19 +1036,19 @@ export default function InventoryPage() {
 								<div className='w-px bg-edge' />
 								<button
 									onClick={() =>
-										setLiveFilter(liveFilter === "stale" ? "all" : "stale")
+										setLiveFilter(liveFilter === "not_checked" ? "all" : "not_checked")
 									}
 									className={`flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors ${
-										liveFilter === "stale"
-											? "bg-amber-500/10 ring-1 ring-inset ring-amber-500/30"
+										liveFilter === "not_checked"
+											? "bg-zinc-500/15 ring-1 ring-inset ring-zinc-500/30"
 											: "hover:bg-surface-card-hover"
 									}`}
 								>
-									<span className='font-mono text-xl font-medium tabular-nums text-amber-600 dark:text-amber-400'>
-										{staleCount}
+									<span className='font-mono text-xl font-medium tabular-nums text-zinc-600 dark:text-zinc-300'>
+										{notCheckedCount}
 									</span>
-									<span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-600/70 dark:text-amber-400/70'>
-										{t("status.stale")}
+									<span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600/80 dark:text-zinc-400'>
+										{t("status.not_checked")}
 									</span>
 								</button>
 								<div className='w-px bg-edge' />
@@ -1052,8 +1088,8 @@ export default function InventoryPage() {
 								options={[
 									{ value: "all", label: t("status.all") },
 									{ value: "live", label: t("status.live") },
-									{ value: "stale", label: t("status.stale") },
 									{ value: "down", label: t("status.down") },
+									{ value: "not_checked", label: t("status.not_checked") },
 								]}
 							/>
 							<FilterDropdown

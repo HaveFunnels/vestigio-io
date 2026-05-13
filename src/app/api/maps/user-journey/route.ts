@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { resolveOrgContext } from "@/libs/resolve-org";
+import { isDemoOrgCtx } from "@/lib/demo-account";
 import { deserializeStageDefinitions, buildStageOrderMap, type FunnelStageDefinition } from "../../../../../packages/classification";
 import type {
 	MapDefinition,
@@ -81,11 +82,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ map: null });
   }
 
-  const isDemo =
-    orgCtx.orgType === "demo" ||
-    orgCtx.orgId === "demo" ||
-    orgCtx.orgId === "demo_org";
-  if (isDemo) {
+  if (isDemoOrgCtx(orgCtx)) {
     return NextResponse.json({ map: buildDemoJourneyMap(filters) });
   }
 

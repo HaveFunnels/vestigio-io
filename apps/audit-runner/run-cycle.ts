@@ -440,10 +440,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			const path = safePathname(url);
 			const { pageType, tier } = inferPageType(path);
 			const title = evIdx.titleByUrl.get(url) ?? null;
+			// statusCode === null  → fetch never completed (timeout, DNS,
+			// connection refused). We still persist the row so the user
+			// sees it under "Not checked" — the failure is our fetcher's,
+			// not the page being broken.
+			// statusCode  >= 0    → fetch reached the server; whatever it
+			// returned (200, 404, 500…) goes through.
 			const statusCode = evIdx.statusByUrl.get(url) ?? null;
-			if (statusCode == null) continue; // only persist fetched pages
 
-			const isFresh = entry.validated && statusCode < 400;
+			const isFresh = statusCode !== null && entry.validated && statusCode < 400;
 			const ct = evIdx.contentTypeByUrl.get(url) ?? null;
 			const isAssetContent = ct !== null && !ct.includes("text/html");
 			const finalPageType = isAssetContent ? "asset" : pageType;
@@ -467,7 +472,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				},
 				update: {
 					title: title ?? undefined,
-					statusCode,
+					// Never overwrite a previously valid statusCode with
+					// null — once we successfully checked a page, the
+					// historical result is the truth until we re-verify
+					// it. New non-null values always win.
+					...(statusCode !== null ? { statusCode } : {}),
 					freshnessState: isFresh ? "fresh" : "stale",
 					freshnessAge: isFresh ? 0 : undefined,
 					pageType: finalPageType,
@@ -679,15 +688,38 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					},
 				})
 			);
-			// Execute in chunks of 50 to avoid overwhelming connection pool
+			// Execute in chunks of 50 to avoid overwhelming connection pool.
+			// Track rejections explicitly so partial failures are visible
+			// instead of silently dropping rows. If more than half the
+			// chunks fail, stamp the cycle so heal/admin debugging can see
+			// where it broke instead of just "cycle marked complete with
+			// fewer-classifications-than-expected".
 			let classifiedCount = 0;
+			let rejectedCount = 0;
+			let firstRejection: unknown = null;
 			for (let i = 0; i < classificationOps.length; i += 50) {
 				const chunk = classificationOps.slice(i, i + 50);
 				const results = await Promise.allSettled(chunk);
-				classifiedCount += results.filter(r => r.status === 'fulfilled').length;
+				for (const r of results) {
+					if (r.status === 'fulfilled') {
+						classifiedCount++;
+					} else {
+						rejectedCount++;
+						if (firstRejection === null) firstRejection = r.reason;
+					}
+				}
 			}
 
-			console.log(`[audit-runner ${cycleId}] page classification: ${classifiedCount} pages classified (business_model=${businessModel || 'inferred'})`);
+			if (rejectedCount > 0) {
+				console.warn(`[audit-runner ${cycleId}] classification: ${rejectedCount} rows rejected (first reason: ${firstRejection instanceof Error ? firstRejection.message : String(firstRejection)})`);
+				// Systemic failure (>50% rejected) deserves a stamped
+				// cycle error — looks like a schema/connection issue
+				// rather than a one-off row problem.
+				if (classificationOps.length > 0 && rejectedCount * 2 > classificationOps.length) {
+					await stampCycleError(cycleId, "classification_persist", firstRejection ?? new Error(`${rejectedCount} classification rows rejected`));
+				}
+			}
+			console.log(`[audit-runner ${cycleId}] page classification: ${classifiedCount} pages classified, ${rejectedCount} rejected (business_model=${businessModel || 'inferred'})`);
 
 			// Build URL→pageType map for funnel-moment inference engine
 			for (const [url, cls] of classifications) {
@@ -743,15 +775,34 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						});
 					});
 				let scoredCount = 0;
+				let scoreRejected = 0;
+				let firstScoreRejection: unknown = null;
 				for (let i = 0; i < scoreOps.length; i += 50) {
 					const chunk = scoreOps.slice(i, i + 50);
 					const results = await Promise.allSettled(chunk);
-					scoredCount += results.filter(r => r.status === 'fulfilled').length;
+					for (const r of results) {
+						if (r.status === 'fulfilled') scoredCount++;
+						else {
+							scoreRejected++;
+							if (firstScoreRejection === null) firstScoreRejection = r.reason;
+						}
+					}
 				}
-				console.log(`[audit-runner ${cycleId}] edge scoring: ${scoredCount} edges scored`);
+				if (scoreRejected > 0) {
+					console.warn(`[audit-runner ${cycleId}] edge scoring: ${scoreRejected} rows rejected (first reason: ${firstScoreRejection instanceof Error ? firstScoreRejection.message : String(firstScoreRejection)})`);
+					if (scoreOps.length > 0 && scoreRejected * 2 > scoreOps.length) {
+						await stampCycleError(cycleId, "edge_score_persist", firstScoreRejection ?? new Error(`${scoreRejected} edge score rows rejected`));
+					}
+				}
+				console.log(`[audit-runner ${cycleId}] edge scoring: ${scoredCount} edges scored, ${scoreRejected} rejected`);
 			}
 		} catch (err) {
-			console.error(`[audit-runner ${cycleId}] classification/funnel error (non-fatal):`, err);
+			// The classification block crashed BEFORE the chunked persist
+			// loop finished — stamp the cycle so partial state is visible.
+			// Still "non-fatal" in the sense that we continue with engine
+			// + findings, but the lastError lets ops see what failed.
+			console.error(`[audit-runner ${cycleId}] classification/funnel error (non-fatal but stamped):`, err);
+			await stampCycleError(cycleId, "classification_funnel", err);
 		}
 
 		// 6f. Compute funnel-gap inferences (structural journey analysis).

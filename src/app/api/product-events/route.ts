@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorized } from "@/libs/isAuthorized";
 import { resolveOrgContext } from "@/libs/resolve-org";
+import { isDemoOrgCtx } from "@/lib/demo-account";
 import { rateLimitByKey } from "@/libs/limiter";
 import {
 	recordProductEvent,
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
 		const orgCtx = await resolveOrgContext();
 
 		// Skip demo/admin context
-		if (orgCtx.orgId === "demo") {
+		if (isDemoOrgCtx(orgCtx)) {
 			return NextResponse.json({ ok: true });
 		}
 

@@ -44,12 +44,35 @@ export const metadata = {
 // Don't cache — every visit reflects the latest cycle.
 export const dynamic = "force-dynamic";
 
+// Cross-Signal widget grows with content (only when on default layout —
+// custom layouts respect user's sizing). 1 chain → 3 rows, 2-3 → 4 rows,
+// 4+ → 5 rows. Other widgets shift down accordingly via grid compaction.
+function adaptLayoutToContent(
+	layout: WidgetInstance[],
+	data: DashboardData,
+	isDefaultLayout: boolean,
+): WidgetInstance[] {
+	if (!isDefaultLayout) return layout;
+	const chainCount = data.crossSignal?.chains.length ?? 0;
+	const newH = chainCount <= 1 ? 3 : chainCount <= 3 ? 4 : 5;
+	const csIdx = layout.findIndex((w) => w.defId === "cross_signal_hero");
+	if (csIdx === -1 || layout[csIdx].h === newH) return layout;
+	const delta = newH - layout[csIdx].h;
+	return layout.map((w, i) => {
+		if (i === csIdx) return { ...w, h: newH };
+		// Shift down anything below the cross-signal widget
+		if (w.y >= layout[csIdx].y + layout[csIdx].h) return { ...w, y: w.y + delta };
+		return w;
+	});
+}
+
 export default async function DashboardPage() {
-	const { data, layout } = await loadDashboard();
+	const { data, layout, isDefaultLayout } = await loadDashboard();
+	const finalLayout = adaptLayoutToContent(layout, data, isDefaultLayout);
 
 	return (
 		<main className='mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-8'>
-			<DashboardShell initialInstances={layout} data={data} />
+			<DashboardShell initialInstances={finalLayout} data={data} />
 		</main>
 	);
 }
@@ -57,13 +80,14 @@ export default async function DashboardPage() {
 interface LoadResult {
 	data: DashboardData;
 	layout: WidgetInstance[];
+	isDefaultLayout: boolean;
 }
 
 async function loadDashboard(): Promise<LoadResult> {
 	try {
 		const user = await isAuthorized();
 		if (!user) {
-			return { data: MOCK_DASHBOARD_DATA, layout: DEFAULT_LAYOUT };
+			return { data: MOCK_DASHBOARD_DATA, layout: DEFAULT_LAYOUT, isDefaultLayout: true };
 		}
 
 		const membership = await prisma.membership.findFirst({
@@ -72,7 +96,7 @@ async function loadDashboard(): Promise<LoadResult> {
 		});
 
 		if (!membership?.organization) {
-			return { data: MOCK_DASHBOARD_DATA, layout: DEFAULT_LAYOUT };
+			return { data: MOCK_DASHBOARD_DATA, layout: DEFAULT_LAYOUT, isDefaultLayout: true };
 		}
 
 		// Load the saved layout in parallel with everything else.
@@ -81,8 +105,8 @@ async function loadDashboard(): Promise<LoadResult> {
 		// Demo org → mock data, real saved layout (so the demo user can
 		// still rearrange widgets and have it persist).
 		if (isDemoOrg(membership.organization)) {
-			const layout = await layoutPromise;
-			return { data: MOCK_DASHBOARD_DATA, layout };
+			const { layout, isDefault } = await layoutPromise;
+			return { data: MOCK_DASHBOARD_DATA, layout, isDefaultLayout: isDefault };
 		}
 
 		const environment = await prisma.environment.findFirst({
@@ -97,8 +121,8 @@ async function loadDashboard(): Promise<LoadResult> {
 		const captionT = loadCaptionTranslations(locale);
 
 		if (!environment) {
-			const layout = await layoutPromise;
-			return { data: emptyDashboardData(undefined, captionT), layout };
+			const { layout, isDefault } = await layoutPromise;
+			return { data: emptyDashboardData(undefined, captionT), layout, isDefaultLayout: isDefault };
 		}
 
 		// Resolve currency: org override > owner locale > USD
@@ -115,36 +139,37 @@ async function loadDashboard(): Promise<LoadResult> {
 			else if (owner?.locale?.startsWith("de")) resolvedCurrency = "EUR";
 		}
 
-		const [data, layout] = await Promise.all([
+		const [data, { layout, isDefault }] = await Promise.all([
 			computeDashboardData(prisma, membership.organizationId, environment.id, resolvedCurrency, captionT),
 			layoutPromise,
 		]);
 
-		return { data, layout };
+		return { data, layout, isDefaultLayout: isDefault };
 	} catch (err) {
 		// DB unavailable / build phase / unexpected — degrade gracefully
 		// to mock so the page still renders.
 		console.warn("[dashboard/page] loadDashboard failed:", err);
-		return { data: MOCK_DASHBOARD_DATA, layout: DEFAULT_LAYOUT };
+		return { data: MOCK_DASHBOARD_DATA, layout: DEFAULT_LAYOUT, isDefaultLayout: true };
 	}
 }
 
 async function loadLayout(
 	userId: string,
 	organizationId: string
-): Promise<WidgetInstance[]> {
+): Promise<{ layout: WidgetInstance[]; isDefault: boolean }> {
 	try {
 		const saved = await prisma.dashboardLayout.findUnique({
 			where: { userId_organizationId: { userId, organizationId } },
 		});
-		if (!saved) return DEFAULT_LAYOUT;
+		if (!saved) return { layout: DEFAULT_LAYOUT, isDefault: true };
 
 		const parsed = JSON.parse(saved.layout) as WidgetInstance[];
 		const cleaned = parsed.filter(
 			(inst) => getWidgetDef(inst.defId) !== undefined
 		);
-		return cleaned.length > 0 ? cleaned : DEFAULT_LAYOUT;
+		if (cleaned.length === 0) return { layout: DEFAULT_LAYOUT, isDefault: true };
+		return { layout: cleaned, isDefault: false };
 	} catch {
-		return DEFAULT_LAYOUT;
+		return { layout: DEFAULT_LAYOUT, isDefault: true };
 	}
 }

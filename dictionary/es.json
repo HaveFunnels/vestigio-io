@@ -1983,6 +1983,21 @@
 						"analysis": "Análisis",
 						"copy_alignment": "Copy"
 					}
+				},
+				"money_on_table": {
+					"label": "Dinero sobre la mesa",
+					"subtitle": "Pérdida mensual expuesta ahora",
+					"breakdown_heading": "Desglose por causa",
+					"top_fixes_heading": "Top 3 para recuperar primero",
+					"recover_estimate": "Recupera {amount}/mes",
+					"effort_hours": "≈ {hours}h",
+					"effort_days": "≈ {days} días",
+					"effort_weeks": "≈ {weeks} semanas",
+					"effort_unknown": "Esfuerzo por estimar",
+					"others_label": "Otros ({count})",
+					"view_finding": "Ver finding",
+					"empty": "No se detectaron pérdidas mensuales en este workspace.",
+					"uncategorized": "Sin causa raíz mapeada"
 				}
 			},
 			"copy": {

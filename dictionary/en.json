@@ -2076,6 +2076,21 @@
 						"analysis": "Analysis",
 						"copy_alignment": "Copy"
 					}
+				},
+				"money_on_table": {
+					"label": "Money on the table",
+					"subtitle": "Monthly loss exposed right now",
+					"breakdown_heading": "Decomposition by cause",
+					"top_fixes_heading": "Top 3 fixes to recover first",
+					"recover_estimate": "Recovers {amount}/mo",
+					"effort_hours": "≈ {hours}h",
+					"effort_days": "≈ {days} days",
+					"effort_weeks": "≈ {weeks} weeks",
+					"effort_unknown": "Effort TBD",
+					"others_label": "Other ({count})",
+					"view_finding": "View finding",
+					"empty": "No monthly losses detected in this workspace.",
+					"uncategorized": "No root cause mapped"
 				}
 			},
 			"copy": {

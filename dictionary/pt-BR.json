@@ -2054,6 +2054,21 @@
 						"analysis": "Análise",
 						"copy_alignment": "Copy"
 					}
+				},
+				"money_on_table": {
+					"label": "Dinheiro na mesa",
+					"subtitle": "Perda mensal exposta agora",
+					"breakdown_heading": "Decomposição por causa",
+					"top_fixes_heading": "Top 3 pra recuperar primeiro",
+					"recover_estimate": "Recupera {amount}/mês",
+					"effort_hours": "≈ {hours}h",
+					"effort_days": "≈ {days} dias",
+					"effort_weeks": "≈ {weeks} semanas",
+					"effort_unknown": "Esforço a estimar",
+					"others_label": "Outros ({count})",
+					"view_finding": "Ver finding",
+					"empty": "Sem perdas mensais detectadas neste workspace.",
+					"uncategorized": "Sem causa-raiz mapeada"
 				}
 			},
 			"copy": {

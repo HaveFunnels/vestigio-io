@@ -1862,6 +1862,21 @@
 						"analysis": "Analyse",
 						"copy_alignment": "Copy"
 					}
+				},
+				"money_on_table": {
+					"label": "Geld auf dem Tisch",
+					"subtitle": "Aktueller monatlicher Verlust",
+					"breakdown_heading": "Aufschluesselung nach Ursache",
+					"top_fixes_heading": "Top 3 zuerst beheben",
+					"recover_estimate": "Erholt {amount}/Monat",
+					"effort_hours": "≈ {hours}h",
+					"effort_days": "≈ {days} Tage",
+					"effort_weeks": "≈ {weeks} Wochen",
+					"effort_unknown": "Aufwand offen",
+					"others_label": "Andere ({count})",
+					"view_finding": "Finding ansehen",
+					"empty": "Keine monatlichen Verluste in diesem Workspace.",
+					"uncategorized": "Keine Grundursache zugeordnet"
 				}
 			},
 			"copy": {

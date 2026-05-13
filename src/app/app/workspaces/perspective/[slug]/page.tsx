@@ -18,6 +18,7 @@ import ConsoleState from "@/components/console/ConsoleState";
 import PulseSummary from "@/components/console/PulseSummary";
 import OpportunityPreview from "@/components/console/workspace/OpportunityPreview";
 import TrustScoreCard from "@/components/console/workspace/TrustScoreCard";
+import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
 import RevenueMap from "@/components/console/RevenueMap";
 import CycleDelta from "@/components/console/CycleDelta";
 import BraggingRights from "@/components/console/BraggingRights";
@@ -331,6 +332,8 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       {/* Perspective-level enrichment (3.11B Fase 4) — no card wrappers, components self-style */}
       {slug === "revenue" && allFindings.length > 0 && (
         <div className="mt-5 space-y-4">
+          {/* Wave 11.1a — Money on the table headline, perspective-wide */}
+          <MoneyOnTheTable findings={allFindings} onFindingClick={openFinding} />
           <OpportunityPreview findings={allFindings} />
           <TrustScoreCard findings={allFindings} filterPacks={["revenue_integrity", "revenue", "chargeback_resilience", "chargeback"]} />
         </div>

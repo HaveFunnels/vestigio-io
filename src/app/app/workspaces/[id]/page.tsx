@@ -23,6 +23,7 @@ import ChargebackResilience from "@/components/console/workspace/ChargebackResil
 import RevenueIntelligence from "@/components/console/workspace/RevenueIntelligence";
 import SecurityPosture from "@/components/console/workspace/SecurityPosture";
 import CopyAlignment from "@/components/console/workspace/CopyAlignment";
+import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -358,6 +359,13 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					</div>
 				);
 			})()}
+
+			{/* ── Money on the table — Wave 11.1a hero widget for revenue workspaces ── */}
+			{(isRevenue || isChargeback) && (
+				<div className="mt-5">
+					<MoneyOnTheTable findings={workspace.findings} onFindingClick={openFinding} />
+				</div>
+			)}
 
 			{/* ── Domain-specific enrichment (3.11B) — full width, no card wrapper ── */}
 			{isChargeback && (

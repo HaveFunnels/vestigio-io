@@ -161,11 +161,12 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 					model: selectedModel,
 				});
 			},
-			onToolEnd: (tool, durationMs) => {
+			onToolEnd: (tool, durationMs, cached) => {
 				track("chat_tool_call", {
 					tool,
 					phase: "end",
 					duration_ms: durationMs,
+					cached,
 					model: selectedModel,
 				});
 			},

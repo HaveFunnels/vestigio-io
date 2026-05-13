@@ -19,8 +19,8 @@ interface UseChatStreamOptions {
   onFirstToken?: (ttftMs: number) => void;
   /** Fires when a tool starts executing on the server. */
   onToolStart?: (tool: string, label?: string) => void;
-  /** Fires when a tool completes. durationMs measured client-side (includes SSE latency). */
-  onToolEnd?: (tool: string, durationMs: number) => void;
+  /** Fires when a tool completes. durationMs measured client-side (includes SSE latency). cached = result served from per-request cache. */
+  onToolEnd?: (tool: string, durationMs: number, cached: boolean) => void;
 }
 
 interface UseChatStreamReturn {
@@ -222,11 +222,12 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
                     if (existing) {
                       existing.status = "complete";
                       existing.resultPreview = data.summary?.slice(0, 300);
+                      existing.cached = data.cached === true;
                     }
                     activeToolCalls.delete(data.tool);
                     const startedAt = toolStartedAt.get(data.tool);
                     if (startedAt) {
-                      options?.onToolEnd?.(data.tool, Date.now() - startedAt);
+                      options?.onToolEnd?.(data.tool, Date.now() - startedAt, data.cached === true);
                       toolStartedAt.delete(data.tool);
                     }
                     scheduleUpdate();

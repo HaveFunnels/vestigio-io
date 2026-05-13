@@ -25,11 +25,27 @@ const EXPENSIVE_TOOLS = new Set([
   'request_verification',
 ]);
 
+// Tools whose results must NEVER be served from cache within a turn.
+// Either they mutate state, depend on wall-clock state that can shift
+// between rounds in the 8-round tool loop, or carry side effects the
+// LLM may want to see fresh on a deliberate retry.
+const NON_CACHEABLE_TOOLS = new Set([
+  'request_verification',     // side effect: schedules verification work
+  'create_custom_map',        // mutation: creates a new map record
+  'get_verification_status',  // state can change between rounds
+  'list_verifications',       // state can change between rounds
+]);
+
 // Per-request verification call budget
 const MAX_VERIFICATION_CALLS_PER_REQUEST = 1;
 
 export function isExpensiveTool(toolName: string): boolean {
   return EXPENSIVE_TOOLS.has(toolName);
+}
+
+/** Whether the result of this tool can be served from a per-request cache. */
+export function isCacheableTool(toolName: string): boolean {
+  return !NON_CACHEABLE_TOOLS.has(toolName);
 }
 
 /** Sanitize tool result text to prevent injection via tool output.

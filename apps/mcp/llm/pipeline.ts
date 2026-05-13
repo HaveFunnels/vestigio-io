@@ -31,7 +31,7 @@ import {
   isVerifyModeConversation,
   buildVerifyModeContext,
 } from './system-prompt';
-import { buildClaudeTools, executeToolCall, buildToolCallRecord, isExpensiveTool } from './tool-adapter';
+import { buildClaudeTools, executeToolCall, buildToolCallRecord, isExpensiveTool, isCacheableTool } from './tool-adapter';
 import { buildMessagesArray } from './context-manager';
 import { callModel } from './client';
 import { getTokenLedgerStore } from '../../platform/token-ledger';
@@ -48,7 +48,11 @@ const MAX_TOTAL_INPUT_CHARS = 30_000; // Hard cap: message + files + conversatio
 export interface PipelineCallbacks {
   onGuardResult?: (result: InputGuardResult) => void;
   onToolStart?: (toolName: string, label: string) => void;
-  onToolDone?: (toolName: string, summary: string) => void;
+  /**
+   * Fires when a tool finishes. `meta.cached` is true when the result
+   * was served from the per-request cache instead of re-executed.
+   */
+  onToolDone?: (toolName: string, summary: string, meta?: { cached?: boolean }) => void;
   onTextDelta?: (text: string) => void;
   onError?: (message: string, code: string) => void;
   onPromptSuggestion?: (original: string, suggested: string, reason: string) => void;
@@ -269,6 +273,21 @@ export async function executePipeline(
   let finalText = '';
   let currentMessages: Anthropic.MessageParam[] = messages;
 
+  // Per-request tool result cache. The 8-round tool loop frequently
+  // re-issues the same query (e.g. get_finding_projections with no
+  // filters) across rounds, which costs latency + tokens for zero
+  // new information. We cache results keyed by tool name + canonical
+  // JSON of the args, scoped to this single user turn — never across
+  // turns (the model may want fresh data on a deliberate retry).
+  // Non-cacheable tools (verification, mutations, time-sensitive
+  // status reads) bypass this entirely.
+  const toolResultCache = new Map<
+    string,
+    { result: any; summary: string; execution_ms: number }
+  >();
+  let toolCacheHits = 0;
+  let toolCacheMisses = 0;
+
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     if (options?.signal?.aborted) break;
 
@@ -327,9 +346,40 @@ export async function executePipeline(
 
         callbacks?.onToolStart?.(toolName, TOOL_LABELS[toolName] || `Running ${toolName}...`);
 
-        const { result: toolResult, summary, execution_ms, blocked } = executeToolCall(toolName, toolInput, mcpServer, verificationCallCount);
+        // Per-request cache lookup. Cache key is tool name + canonical
+        // JSON (deterministic key ordering). We cache only successful
+        // non-blocked results so a verification budget block in round 1
+        // doesn't poison the cache for round 2.
+        const cacheKey = isCacheableTool(toolName)
+          ? `${toolName}:${canonicalJson(toolInput)}`
+          : null;
 
-        callbacks?.onToolDone?.(toolName, summary);
+        let toolResult: any;
+        let summary: string;
+        let execution_ms: number;
+        let blocked = false;
+        let servedFromCache = false;
+
+        if (cacheKey && toolResultCache.has(cacheKey)) {
+          const cached = toolResultCache.get(cacheKey)!;
+          toolResult = cached.result;
+          summary = cached.summary;
+          execution_ms = 0; // cache lookup is effectively free
+          servedFromCache = true;
+          toolCacheHits++;
+        } else {
+          const exec = executeToolCall(toolName, toolInput, mcpServer, verificationCallCount);
+          toolResult = exec.result;
+          summary = exec.summary;
+          execution_ms = exec.execution_ms;
+          blocked = exec.blocked;
+          if (cacheKey && !blocked) {
+            toolResultCache.set(cacheKey, { result: toolResult, summary, execution_ms });
+            toolCacheMisses++;
+          }
+        }
+
+        callbacks?.onToolDone?.(toolName, summary, { cached: servedFromCache });
         if (!blocked) {
           allToolCalls.push(buildToolCallRecord(toolName, toolInput, toolResult, summary, execution_ms));
         }
@@ -684,4 +734,31 @@ function getErrorMessage(err: LlmError): string {
     case 'content_filtered': return 'I couldn\'t generate a response for that query. Try rephrasing your question.';
     default: return 'Analysis temporarily unavailable. Please try again shortly.';
   }
+}
+
+/**
+ * Deterministic JSON stringify for tool-cache keys. Object key order
+ * varies across LLM tool calls (the model may emit { a, b } once and
+ * { b, a } the next round even though the call is identical) so we
+ * sort keys recursively before stringifying. Falls back to a stable
+ * fallback string if input is non-serializable.
+ */
+function canonicalJson(value: unknown): string {
+  try {
+    return JSON.stringify(sortDeep(value));
+  } catch {
+    return '__unserializable__';
+  }
+}
+
+function sortDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortDeep);
+  if (value && typeof value === 'object') {
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+      sorted[key] = sortDeep((value as Record<string, unknown>)[key]);
+    }
+    return sorted;
+  }
+  return value;
 }

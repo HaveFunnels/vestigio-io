@@ -61,6 +61,16 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
           {block.label}
         </span>
 
+        {/* Cached badge — served from per-request cache instead of re-executed */}
+        {block.cached && (
+          <span
+            title="Served from per-request tool cache"
+            className="rounded-sm bg-cyan-500/10 px-1 py-0.5 font-mono text-[9px] uppercase tracking-wide text-cyan-400"
+          >
+            cached
+          </span>
+        )}
+
         {/* Duration */}
         {block.durationMs != null && (
           <span className="font-mono text-[10px] text-content-faint">

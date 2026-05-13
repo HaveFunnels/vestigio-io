@@ -113,6 +113,8 @@ export interface ToolCallBlock {
   label: string;
   durationMs?: number;
   resultPreview?: string;
+  /** True when the result was served from the per-request tool cache instead of re-executed. */
+  cached?: boolean;
 }
 
 export interface SuggestedPromptsBlock {

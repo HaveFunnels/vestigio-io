@@ -191,6 +191,12 @@ interface ChatDynamicsView {
 	cache_read_input_tokens: number;
 	cache_creation_input_tokens: number;
 	uncached_input_tokens: number;
+	// Per-request tool result cache (orthogonal to Anthropic prompt
+	// cache). Measures how often repeated tool calls within the 8-round
+	// loop were served from the in-memory map instead of re-executed.
+	tool_cache_hit_rate_pct: number | null;
+	tool_calls_total: number;
+	tool_calls_cached: number;
 }
 
 async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
@@ -252,6 +258,8 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 		string,
 		{ calls: number; totalDuration: number; durationSamples: number }
 	>();
+	let toolCallsTotal = 0;
+	let toolCallsCached = 0;
 	for (const row of toolEvents) {
 		const props = row.properties as any;
 		const tool = typeof props?.tool === "string" ? props.tool : null;
@@ -264,6 +272,8 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 		};
 		if (phase === "end") {
 			existing.calls++;
+			toolCallsTotal++;
+			if (props?.cached === true) toolCallsCached++;
 			const dur = props?.duration_ms;
 			if (typeof dur === "number" && dur >= 0 && dur < 300_000) {
 				existing.totalDuration += dur;
@@ -311,5 +321,11 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 		cache_read_input_tokens: cacheRead,
 		cache_creation_input_tokens: cacheCreation,
 		uncached_input_tokens: uncached,
+		tool_cache_hit_rate_pct:
+			toolCallsTotal > 0
+				? Math.round((toolCallsCached / toolCallsTotal) * 1000) / 10
+				: null,
+		tool_calls_total: toolCallsTotal,
+		tool_calls_cached: toolCallsCached,
 	};
 }

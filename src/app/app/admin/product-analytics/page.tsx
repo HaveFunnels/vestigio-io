@@ -50,6 +50,9 @@ interface ProductAnalyticsData {
 		cache_read_input_tokens: number;
 		cache_creation_input_tokens: number;
 		uncached_input_tokens: number;
+		tool_cache_hit_rate_pct: number | null;
+		tool_calls_total: number;
+		tool_calls_cached: number;
 	};
 }
 
@@ -407,7 +410,7 @@ export default function ProductAnalyticsPage() {
 							</div>
 
 							{/* KPI row */}
-							<div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+							<div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
 								<StatCard
 									label="TTFT p50"
 									value={data.chat_dynamics.ttft_p50_ms ?? 0}
@@ -443,7 +446,7 @@ export default function ProductAnalyticsPage() {
 									icon="✍️"
 								/>
 								<StatCard
-									label="Cache hit ratio"
+									label="Prompt cache hit"
 									value={data.chat_dynamics.cache_hit_ratio_pct ?? 0}
 									suffix="%"
 									sublabel={
@@ -459,6 +462,17 @@ export default function ProductAnalyticsPage() {
 											? "warning"
 											: "default"
 									}
+								/>
+								<StatCard
+									label="Tool cache hit"
+									value={data.chat_dynamics.tool_cache_hit_rate_pct ?? 0}
+									suffix="%"
+									sublabel={
+										data.chat_dynamics.tool_calls_total > 0
+											? `${data.chat_dynamics.tool_calls_cached}/${data.chat_dynamics.tool_calls_total} reused`
+											: "no tool calls yet"
+									}
+									icon="♻️"
 								/>
 							</div>
 

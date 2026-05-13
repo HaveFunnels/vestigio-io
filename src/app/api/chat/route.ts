@@ -311,7 +311,7 @@ export async function POST(request: Request) {
       const callbacks: PipelineCallbacks = {
         onGuardResult: (result) => sendEvent("guard", { safe: result.safe, category: result.category }),
         onToolStart: (tool, label) => sendEvent("tool_start", { tool, label }),
-        onToolDone: (tool, summary) => sendEvent("tool_done", { tool, summary: summary.slice(0, 200) }),
+        onToolDone: (tool, summary, meta) => sendEvent("tool_done", { tool, summary: summary.slice(0, 200), cached: meta?.cached === true }),
         onTextDelta: (text) => sendEvent("delta", { text }),
         onError: (message, code) => sendEvent("error", { message, code }),
         onPromptSuggestion: (original, suggested, reason) => sendEvent("prompt_suggestion", { original, suggested, reason }),

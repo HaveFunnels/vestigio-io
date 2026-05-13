@@ -47,6 +47,58 @@ function deriveBrandToken(rootDomain: string): string {
 	return firstLabel.toLowerCase();
 }
 
+const CATEGORY_STOPWORDS = new Set([
+	"the", "a", "an", "your", "our", "best", "all", "for", "with",
+	"and", "or", "of", "to", "in", "on", "at", "by", "as", "is", "are",
+	"will", "be", "no", "yes", "you", "we", "us", "them", "they",
+	// Brazilian Portuguese stopwords (common on havefunnels-style sites)
+	"o", "a", "os", "as", "um", "uma", "uns", "umas", "de", "da", "do",
+	"das", "dos", "para", "por", "com", "sem", "que", "se", "e", "ou",
+]);
+
+/**
+ * Derive a short category hint from the customer's homepage content +
+ * business model. Used as the second axis of the Reddit/category SERP
+ * query. Best-effort: returns null when we can't extract anything
+ * meaningful, which short-circuits the category query.
+ *
+ * Strategy:
+ *   1) Look at HomepagePageContent evidence — pick the H1 / title.
+ *   2) Strip stopwords and punctuation; take 2-3 content words.
+ *   3) Fall back to business_model token when extraction yields nothing.
+ */
+function deriveCategoryHint(
+	evidence: ReadonlyArray<Evidence>,
+	businessModel: string | null,
+): string | null {
+	// Find the homepage PageContent — first PageContent payload should
+	// be the landing entry.
+	let homepageH1: string | null = null;
+	let homepageTitle: string | null = null;
+	for (const e of evidence) {
+		if (e.evidence_type !== EvidenceType.PageContent) continue;
+		const p = e.payload as { type: 'page_content'; h1?: string | null; title?: string | null };
+		if (p.h1 && !homepageH1) homepageH1 = p.h1;
+		if (p.title && !homepageTitle) homepageTitle = p.title;
+		if (homepageH1 && homepageTitle) break;
+	}
+
+	const raw = (homepageH1 || homepageTitle || "").toLowerCase().slice(0, 200);
+	if (!raw) {
+		// Fallback to business_model token when no homepage copy exists yet.
+		return businessModel || null;
+	}
+
+	const words = raw
+		.replace(/[^\p{L}\p{N}\s-]/gu, " ")
+		.split(/\s+/)
+		.filter((w) => w.length >= 3 && !CATEGORY_STOPWORDS.has(w))
+		.slice(0, 3);
+
+	if (words.length === 0) return businessModel || null;
+	return words.join(" ");
+}
+
 function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
 	if (ctx.mode !== "full") {
 		return {
@@ -124,6 +176,7 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
 	const start = Date.now();
 	const ids = new IdGenerator("recon");
 	const brand = deriveBrandToken(ctx.root_domain);
+	const categoryHint = deriveCategoryHint(ctx.evidence, ctx.business_model);
 	const evidence: Evidence[] = [];
 
 	// All fetchers run in parallel — each is independent + bounded by
@@ -136,7 +189,7 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
 		scrapeTrustpilot(brand, ctx.root_domain),
 		scrapeReclameAqui(brand),
 		scrapeHackerNews(brand),
-		queryReddit(brand),
+		queryReddit(brand, { category: categoryHint }),
 	]);
 
 	const sources: OffSiteReconSource[][] = [

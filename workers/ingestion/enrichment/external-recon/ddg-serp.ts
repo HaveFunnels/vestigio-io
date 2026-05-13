@@ -136,7 +136,7 @@ function stripTags(s: string): string {
 		.replace(/\s+/g, " ");
 }
 
-async function fetchDdg(query: string): Promise<DdgSerp | null> {
+export async function fetchDdg(query: string): Promise<DdgSerp | null> {
 	const url = `${DDG_BASE}?q=${encodeURIComponent(query)}&kl=us-en`;
 	const res = await reconFetch(url, {
 		// DDG HTML accepts both GET and POST; GET is simpler. POST with

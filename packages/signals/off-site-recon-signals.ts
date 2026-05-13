@@ -306,12 +306,15 @@ export function extractOffSiteReconSignals(
 		}
 	}
 
-	// ── Reddit — 1 signal (forum_question_orphaned) ──
+	// ── Reddit (via DDG site-restricted search) — 2 signals ──
+	// We hit DuckDuckGo with `site:reddit.com "<brand>"` rather than
+	// the Reddit API (which closed commercial access in 2024). The
+	// signal shape is the same as when this used OAuth: question-thread
+	// absence + versus-mention pattern. Slightly shallower data, no
+	// rate-limit / ToS risk.
 	const reddit = sources.get("reputation_reddit");
 	if (reddit) {
 		const p = reddit.payload as OffSiteReconPayload;
-		// Skip silently if Reddit auth was missing — that's a config gap,
-		// not a real signal of forum absence.
 		if (p.reachable) {
 			const questionThreadCount = (p.data?.question_thread_count as number) ?? 0;
 			const versusMentionCount = (p.data?.versus_mention_count as number) ?? 0;
@@ -349,6 +352,50 @@ export function extractOffSiteReconSignals(
 						cycle_ref,
 						evidence_refs: [makeRef("evidence", reddit.id)],
 						description: `${versusMentionCount} Reddit threads compare the brand AGAINST another product. Customer is being actively compared — make sure the brand is winning the narrative.`,
+					}),
+				);
+			}
+
+			// Category-level demand: did the broader space (category
+			// alternatives, "best X" threads) discuss the brand at all?
+			// When there's visible demand but the brand never surfaces,
+			// that's the strongest "unmet opportunity" signal we can
+			// extract from public Reddit without API access.
+			const categoryDemand = (p.data?.category_demand_signals as number) ?? 0;
+			const categoryBrandSurfaced = (p.data?.category_brand_surfaced as number) ?? 0;
+			const categoryBrandAbsent = (p.data?.category_brand_absent_threads as number) ?? 0;
+
+			if (categoryDemand >= 3 && categoryBrandSurfaced === 0) {
+				signals.push(
+					createSignal({
+						ids,
+						signal_key: "off_site.reddit_category_demand_unmet",
+						category: SignalCategory.Discoverability,
+						attribute: "off_site.reddit.category_demand_unmet",
+						value: categoryDemand >= 8 ? "high" : "medium",
+						numeric_value: categoryDemand,
+						confidence: 70,
+						scoping,
+						cycle_ref,
+						evidence_refs: [makeRef("evidence", reddit.id)],
+						description: `${categoryDemand} Reddit threads in the brand's category are actively asking for tool recommendations — and the brand is mentioned in ZERO of them. Visible demand, invisible brand.`,
+					}),
+				);
+			} else if (categoryDemand >= 5 && categoryBrandSurfaced < categoryDemand * 0.2) {
+				// Weaker variant: brand surfaces in <20% of category threads.
+				signals.push(
+					createSignal({
+						ids,
+						signal_key: "off_site.reddit_category_demand_unmet",
+						category: SignalCategory.Discoverability,
+						attribute: "off_site.reddit.category_demand_unmet",
+						value: "medium",
+						numeric_value: categoryBrandAbsent,
+						confidence: 60,
+						scoping,
+						cycle_ref,
+						evidence_refs: [makeRef("evidence", reddit.id)],
+						description: `Of ${categoryDemand} category-recommendation threads on Reddit, the brand surfaces in only ${categoryBrandSurfaced}. ${categoryBrandAbsent} buyers asking for category tools never see this brand in the answers.`,
 					}),
 				);
 			}

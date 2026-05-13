@@ -1,191 +1,152 @@
-import { reconFetch, unreachable, type ReconResult, RECON_FETCH_TIMEOUT_MS } from "./types";
+import { unreachable, type ReconResult } from "./types";
+import { fetchDdg } from "./ddg-serp";
 
 // ──────────────────────────────────────────────
-// Reddit API — Wave 12 (gated on env vars)
+// Reddit via DDG site:reddit.com search — Wave 12
 //
-// Zero-cost. Reddit's free API uses OAuth client_credentials flow
-// (machine-to-machine). Once we have a token we can hit
-// oauth.reddit.com/r/all/search?q=<brand> for full-text search across
-// all public subreddits.
+// We DO NOT use Reddit's API: their 2024 Responsible Builder Policy
+// and Data API Terms gate commercial small-scale access. Instead we
+// run two parallel site-restricted DDG searches and parse Reddit
+// thread URLs from the results. Zero keys, zero ToS, zero policy.
 //
-// Required env vars (user generates and provides):
-//   REDDIT_CLIENT_ID
-//   REDDIT_CLIENT_SECRET
+// Two queries per audit:
+//   1) BRAND query — `site:reddit.com "<brand>"`
+//      Captures: threads about the customer's brand specifically.
+//      Drives: forum_absence + versus_pattern findings.
 //
-// Without them, this fetcher returns reachable=false with
-// error_kind='auth_missing'. The inference layer treats that as
-// "feature disabled — no findings" rather than as a real silence
-// signal.
+//   2) CATEGORY query — `site:reddit.com "<category>" alternatives`
+//      (or "best <category>") — captures threads where potential
+//      customers are asking about the SPACE the brand operates in,
+//      but where the brand may or may not surface.
+//      Drives: category_demand_unmet finding (when the space is
+//      asking for tools/recommendations but the brand isn't even
+//      mentioned in the conversation).
 //
-// Cache: tokens last 24h. We cache in-process to avoid hitting Reddit
-// for a fresh token on every audit. Module-level Map is fine because
-// the cron pass runs in the same Node process.
+// The category hint is best-effort — derived from a noun phrase on
+// the customer's homepage. When we can't infer one we skip the
+// category query (still emit brand-only data).
 // ──────────────────────────────────────────────
 
-let cachedToken: { value: string; expires_at: number } | null = null;
-
-async function getRedditToken(): Promise<string | null> {
-	const clientId = process.env.REDDIT_CLIENT_ID;
-	const clientSecret = process.env.REDDIT_CLIENT_SECRET;
-	if (!clientId || !clientSecret) return null;
-
-	const now = Date.now();
-	if (cachedToken && cachedToken.expires_at > now + 60_000) {
-		return cachedToken.value;
-	}
-
-	const auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), RECON_FETCH_TIMEOUT_MS);
-
-	try {
-		const res = await fetch("https://www.reddit.com/api/v1/access_token", {
-			method: "POST",
-			signal: controller.signal,
-			headers: {
-				Authorization: `Basic ${auth}`,
-				"Content-Type": "application/x-www-form-urlencoded",
-				"User-Agent": "VestigioBrandEcho/1.0",
-			},
-			body: "grant_type=client_credentials",
-		});
-		clearTimeout(timer);
-		if (!res.ok) return null;
-		const body = (await res.json()) as {
-			access_token?: string;
-			expires_in?: number;
-		};
-		if (!body.access_token) return null;
-		cachedToken = {
-			value: body.access_token,
-			expires_at: now + (body.expires_in ?? 3600) * 1000,
-		};
-		return body.access_token;
-	} catch {
-		clearTimeout(timer);
-		return null;
-	}
+function isRedditThreadUrl(url: string): boolean {
+	return /\breddit\.com\/r\/[^/]+\/comments\//i.test(url);
 }
 
-interface RedditHit {
-	id: string;
-	title: string;
-	subreddit: string;
-	score: number;
-	num_comments: number;
-	created_utc: number;
-	permalink: string;
-	url: string;
-	selftext_excerpt: string;
+function extractSubreddit(url: string): string | null {
+	const match = url.match(/reddit\.com\/r\/([^/]+)/i);
+	return match ? match[1] : null;
 }
 
-export async function queryReddit(brand: string): Promise<ReconResult> {
-	const url = `https://oauth.reddit.com/search?q=${encodeURIComponent(brand)}&limit=25&sort=relevance&type=link`;
+interface ParsedHits {
+	hits: Array<{
+		title: string;
+		url: string;
+		snippet: string;
+		subreddit: string | null;
+	}>;
+	subreddits: string[];
+}
 
-	const token = await getRedditToken();
-	if (!token) {
-		return unreachable(url, "auth_missing", {
-			note: "REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET env vars not configured",
-		});
-	}
-
-	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), RECON_FETCH_TIMEOUT_MS);
-	let res: Response;
-	try {
-		res = await fetch(url, {
-			signal: controller.signal,
-			headers: {
-				Authorization: `Bearer ${token}`,
-				"User-Agent": "VestigioBrandEcho/1.0",
-			},
-		});
-	} catch {
-		clearTimeout(timer);
-		return unreachable(url, "timeout");
-	}
-	clearTimeout(timer);
-
-	if (res.status === 429) return unreachable(url, "rate_limited");
-	if (!res.ok) return unreachable(url, "http_error", { status: res.status });
-
-	let body: {
-		data?: {
-			children?: Array<{
-				data?: {
-					id?: string;
-					title?: string;
-					subreddit?: string;
-					score?: number;
-					num_comments?: number;
-					created_utc?: number;
-					permalink?: string;
-					url?: string;
-					selftext?: string;
-				};
-			}>;
-		};
-	};
-	try {
-		body = await res.json();
-	} catch {
-		return unreachable(url, "parse_error");
-	}
-
-	const hits: RedditHit[] = (body.data?.children ?? [])
-		.map((c) => c.data)
-		.filter(
-			(d): d is NonNullable<typeof d> => !!d && !!d.id && !!d.title,
-		)
-		.map((d) => ({
-			id: d.id!,
-			title: d.title!,
-			subreddit: d.subreddit ?? "",
-			score: d.score ?? 0,
-			num_comments: d.num_comments ?? 0,
-			created_utc: d.created_utc ?? 0,
-			permalink: d.permalink ?? "",
-			url: d.url ?? "",
-			selftext_excerpt: (d.selftext ?? "").slice(0, 240),
+function parseRedditFromDdg(serp: { results: Array<{ domain: string; url: string; title: string; snippet: string }> } | null): ParsedHits {
+	if (!serp) return { hits: [], subreddits: [] };
+	const hits = serp.results
+		.filter((r) => r.domain.endsWith("reddit.com") && isRedditThreadUrl(r.url))
+		.map((r) => ({
+			title: r.title,
+			url: r.url,
+			snippet: r.snippet,
+			subreddit: extractSubreddit(r.url),
 		}));
+	const subreddits = Array.from(new Set(hits.map((h) => h.subreddit ?? ""))).filter(Boolean);
+	return { hits, subreddits };
+}
 
-	// Bucket hits to power inference signals later.
-	const questionThreads = hits.filter(
-		(h) =>
-			/\?$/.test(h.title) ||
-			/^(best|recommend|alternative|vs |which |what)/i.test(h.title),
+export interface RedditQueryHints {
+	/** Optional category noun-phrase derived from the customer's homepage.
+	 *  When provided, we run a second DDG query for category-level demand.
+	 *  When absent or empty, only the brand query runs. */
+	category?: string | null;
+}
+
+export async function queryReddit(
+	brand: string,
+	hints: RedditQueryHints = {},
+): Promise<ReconResult> {
+	const brandQuery = `site:reddit.com "${brand}"`;
+	const brandSearchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(brandQuery)}`;
+
+	const category = (hints.category ?? "").trim();
+	const useCategoryQuery = category.length >= 3;
+	const categoryQuery = useCategoryQuery
+		? `site:reddit.com "${category}" alternatives`
+		: null;
+
+	const [brandSerp, categorySerp] = await Promise.all([
+		fetchDdg(brandQuery),
+		categoryQuery ? fetchDdg(categoryQuery) : Promise.resolve(null),
+	]);
+
+	if (!brandSerp) return unreachable(brandSearchUrl, "http_error");
+
+	const brandHits = parseRedditFromDdg(brandSerp);
+	const categoryHits = parseRedditFromDdg(categorySerp);
+
+	// Brand-specific signals
+	const questionThreads = brandHits.hits.filter(
+		(r) =>
+			/\?$/.test(r.title) ||
+			/^(best|recommend|alternative|vs |which |what )/i.test(r.title),
 	);
-	const versusMentions = hits.filter((h) =>
-		/\b(vs|versus|alternative to|compared)\b/i.test(h.title),
+	const versusMentions = brandHits.hits.filter((r) =>
+		/\b(vs|versus|alternative to|compared)\b/i.test(r.title),
 	);
-	const subreddits = Array.from(new Set(hits.map((h) => h.subreddit))).slice(
-		0,
-		10,
+
+	// Category-level signals — does the brand show up at all in
+	// conversations where buyers are shopping the category? A category
+	// thread is interesting only when the brand DOES NOT appear in it.
+	const brandRegex = new RegExp(`\\b${brand.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+	const categoryThreadsBrandAbsent = categoryHits.hits.filter(
+		(r) => !brandRegex.test(r.title) && !brandRegex.test(r.snippet),
 	);
+	const categoryDemandSignals = categoryHits.hits.length;
+	const brandSurfacedInCategory = categoryHits.hits.length - categoryThreadsBrandAbsent.length;
 
 	return {
 		reachable: true,
-		fetched_url: url,
+		fetched_url: brandSearchUrl,
 		data: {
-			query: brand,
-			total_hits: hits.length,
+			brand_query: brandQuery,
+			fetched_via: "ddg_site_search",
+
+			// Brand-search aggregates
+			total_hits: brandHits.hits.length,
 			question_thread_count: questionThreads.length,
 			versus_mention_count: versusMentions.length,
-			subreddits,
-			top_question_threads: questionThreads.slice(0, 5).map((h) => ({
-				id: h.id,
-				title: h.title,
-				subreddit: h.subreddit,
-				score: h.score,
-				comments: h.num_comments,
-				permalink: h.permalink,
+			subreddits: brandHits.subreddits.slice(0, 10),
+			top_question_threads: questionThreads.slice(0, 5).map((r) => ({
+				title: r.title,
+				url: r.url,
+				subreddit: r.subreddit,
+				snippet: r.snippet,
 			})),
-			top_versus_threads: versusMentions.slice(0, 5).map((h) => ({
-				id: h.id,
-				title: h.title,
-				subreddit: h.subreddit,
-				score: h.score,
-				permalink: h.permalink,
+			top_versus_threads: versusMentions.slice(0, 5).map((r) => ({
+				title: r.title,
+				url: r.url,
+				subreddit: r.subreddit,
+				snippet: r.snippet,
+			})),
+
+			// Category-search aggregates
+			category_query: categoryQuery,
+			category_total_hits: categoryHits.hits.length,
+			category_demand_signals: categoryDemandSignals,
+			category_brand_surfaced: brandSurfacedInCategory,
+			category_brand_absent_threads: categoryThreadsBrandAbsent.length,
+			category_subreddits: categoryHits.subreddits.slice(0, 10),
+			top_category_threads: categoryThreadsBrandAbsent.slice(0, 5).map((r) => ({
+				title: r.title,
+				url: r.url,
+				subreddit: r.subreddit,
+				snippet: r.snippet,
 			})),
 		},
 	};

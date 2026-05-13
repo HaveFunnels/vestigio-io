@@ -328,6 +328,28 @@ function inferRedditForumAbsence(input: ReconInput): Inference[] {
 	];
 }
 
+function inferRedditCategoryDemandUnmet(input: ReconInput): Inference[] {
+	const sig = input.byKey.get("off_site.reddit_category_demand_unmet");
+	if (!sig) return [];
+	const severity = sig.value === "high" ? "high" : "medium";
+	return [
+		createInference({
+			inference_key: "reddit_category_demand_unmet",
+			category: InferenceCategory.RedditCategoryDemandUnmet,
+			conclusion: "reddit_category_demand_unmet",
+			conclusion_value: severity,
+			severity_hint: severity,
+			confidence: sig.confidence,
+			scoping: input.scoping,
+			cycle_ref: input.cycle_ref,
+			ids: input.ids,
+			signal_refs: [makeRef("signal", sig.id)],
+			evidence_refs: sig.evidence_refs,
+			reasoning: `Visible category demand on Reddit but no brand presence. ${sig.description} This is the highest-conversion-potential surface: people actively shopping the category are signal of high purchase intent — and competitors are getting the recommendations instead. Tactics: identify the top 3 most-active subs, share a non-promotional post about a problem the brand solves, and respond to existing threads asking for tools in the space (without spamming — Reddit moderators penalize obvious self-promo).`,
+		}),
+	];
+}
+
 export function computeExternalReconInferences(input: ReconInput): Inference[] {
 	return [
 		...inferIndustryListings(input),
@@ -340,5 +362,6 @@ export function computeExternalReconInferences(input: ReconInput): Inference[] {
 		...inferReclameAquiReputation(input),
 		...inferHnTechAudienceInvisible(input),
 		...inferRedditForumAbsence(input),
+		...inferRedditCategoryDemandUnmet(input),
 	];
 }

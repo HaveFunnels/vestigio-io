@@ -575,4 +575,5 @@ export enum InferenceCategory {
   ReclameAquiReputationCritical = 'reclame_aqui_reputation_critical',
   HnTechAudienceInvisible = 'hn_tech_audience_invisible',
   RedditForumAbsence = 'reddit_forum_absence',
+  RedditCategoryDemandUnmet = 'reddit_category_demand_unmet',
 }

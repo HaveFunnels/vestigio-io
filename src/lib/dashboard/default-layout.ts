@@ -63,22 +63,22 @@ export interface WidgetInstance {
 }
 
 export const DEFAULT_LAYOUT: WidgetInstance[] = [
-	// ── Row 0-3 (h=4): Cross-Signal Hero — Vestigio's moat ──
+	// ── Row 0-2 (h=3): Cross-Signal Hero — Vestigio's moat ──
 	{
 		instanceId: "default-crosssignal",
 		defId: "cross_signal_hero",
 		x: 0,
 		y: 0,
 		w: 12,
-		h: 4,
+		h: 3,
 	},
 
-	// ── Row 4-6 (h=3): KPI strip ──
+	// ── Row 3-5 (h=3): KPI strip ──
 	{
 		instanceId: "default-money",
 		defId: "money_recovered_ticker",
 		x: 0,
-		y: 4,
+		y: 3,
 		w: 4,
 		h: 3,
 	},
@@ -86,7 +86,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-exposure",
 		defId: "exposure_kpi",
 		x: 4,
-		y: 4,
+		y: 3,
 		w: 5,
 		h: 3,
 	},
@@ -94,17 +94,17 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-critical",
 		defId: "open_critical_kpi",
 		x: 9,
-		y: 4,
+		y: 3,
 		w: 3,
 		h: 3,
 	},
 
-	// ── Row 7-10 (h=4): trends + change report ──
+	// ── Row 6-9 (h=4): trends + change report ──
 	{
 		instanceId: "default-health",
 		defId: "health_trend",
 		x: 0,
-		y: 7,
+		y: 6,
 		w: 6,
 		h: 4,
 	},
@@ -112,17 +112,17 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-changed",
 		defId: "what_changed",
 		x: 6,
-		y: 7,
+		y: 6,
 		w: 6,
 		h: 4,
 	},
 
-	// ── Row 11-13 (h=3): heatmap + compact KPI tiles ──
+	// ── Row 10-12 (h=3): heatmap + compact KPI tiles ──
 	{
 		instanceId: "default-heatmap",
 		defId: "activity_heatmap",
 		x: 0,
-		y: 11,
+		y: 10,
 		w: 6,
 		h: 3,
 	},
@@ -130,7 +130,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-streak",
 		defId: "streak_kpi",
 		x: 6,
-		y: 11,
+		y: 10,
 		w: 2,
 		h: 3,
 	},
@@ -138,7 +138,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-verification",
 		defId: "verification_rate_kpi",
 		x: 8,
-		y: 11,
+		y: 10,
 		w: 2,
 		h: 3,
 	},
@@ -146,17 +146,17 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-toppack",
 		defId: "top_pack_kpi",
 		x: 10,
-		y: 11,
+		y: 10,
 		w: 2,
 		h: 3,
 	},
 
-	// ── Row 14-17 (h=4): Trend analysis + Recovery breakdown ──
+	// ── Row 13-16 (h=4): Trend analysis + Recovery breakdown ──
 	{
 		instanceId: "default-trend-analysis",
 		defId: "trend_analysis",
 		x: 0,
-		y: 14,
+		y: 13,
 		w: 6,
 		h: 4,
 	},
@@ -164,7 +164,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
 		instanceId: "default-recovery-breakdown",
 		defId: "recovery_breakdown",
 		x: 6,
-		y: 14,
+		y: 13,
 		w: 6,
 		h: 4,
 	},

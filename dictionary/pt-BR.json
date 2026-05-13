@@ -2231,10 +2231,10 @@
 					"connect_cta_after": "para ver gasto com ads aqui.",
 					"data_sources": "Fontes de Dados"
 				},
-				"cross_signal_hero": "Insights Cross-Signal",
+				"cross_signal_hero": "Insights Cruzados",
 				"cross_signal_hero_desc": "Cadeias causais entre perspectivas de domínio",
 				"cross_signal_card": {
-					"eyebrow": "Insights Cross-Signal",
+					"eyebrow": "Insights Cruzados",
 					"pattern_singular": "padrão",
 					"pattern_plural": "padrões",
 					"empty_title": "Nenhum padrão cross-domain detectado ainda",
@@ -2782,7 +2782,7 @@
 		"cross_signals": {
 			"title": "Insights Cruzados",
 			"subtitle": "Superfícies onde descobertas de múltiplas perspectivas convergem — a correlação exclusiva da Vestigio.",
-			"hero_chains": "Cadeias Cross-Signal",
+			"hero_chains": "Cadeias Cruzadas",
 			"hero_at_risk": "Exposição Mensal",
 			"hero_sequential": "Padrões Causais",
 			"filter_severity": "Severidade",

@@ -26,6 +26,7 @@ import CopyAlignment from "@/components/console/workspace/CopyAlignment";
 import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
 import SpofMap from "@/components/console/workspace/SpofMap";
 import DependencyHealth from "@/components/console/workspace/DependencyHealth";
+import WhatBreaksAt10x from "@/components/console/workspace/WhatBreaksAt10x";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -369,12 +370,17 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 				</div>
 			)}
 
-			{/* ── SPOF map + Dependency health — Wave 11.3b + 11.3e — Preflight workspace ── */}
+			{/* ── Preflight enrichment — Wave 11.3 widgets ── */}
 			{isPreflight && (
-				<div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-					<SpofMap />
-					<DependencyHealth />
-				</div>
+				<>
+					<div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+						<SpofMap />
+						<DependencyHealth />
+					</div>
+					<div className="mt-5">
+						<WhatBreaksAt10x />
+					</div>
+				</>
 			)}
 
 			{/* ── Domain-specific enrichment (3.11B) — full width, no card wrapper ── */}

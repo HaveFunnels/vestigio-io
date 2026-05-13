@@ -107,23 +107,12 @@ const CRITICAL_SURFACE_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
  * stripping trailing slash (except on the root path), and serializing
  * back. Non-URL strings are returned lowercased with edges trimmed.
  */
+// Delegated to packages/url-normalize for single source of truth.
+// Use membershipKey form (drops ALL query params) since allow-list
+// comparisons need to treat `/p?id=1` and `/p?id=2` as the same surface.
+import { membershipKey } from "../../packages/url-normalize";
 export function canonicalizeUrl(raw: string): string {
-	if (!raw) return raw;
-	try {
-		const u = new URL(raw);
-		u.search = "";
-		u.hash = "";
-		u.hostname = u.hostname.toLowerCase();
-		let out = u.toString();
-		// Drop trailing slash on non-root paths so "/checkout" ==
-		// "/checkout/" for membership comparison purposes.
-		if (u.pathname !== "/" && out.endsWith("/")) {
-			out = out.slice(0, -1);
-		}
-		return out;
-	} catch {
-		return raw.trim().toLowerCase();
-	}
+	return membershipKey(raw);
 }
 
 /**
@@ -321,25 +310,37 @@ export async function carryEvidenceForward(
 
 	const now = new Date();
 
-	for (const url of urls) {
-		try {
-			const rows = await prisma.evidence.findMany({
-				where: {
-					cycleRef: previousCycleRef,
-					environmentRef,
-					subjectRef: url,
-				},
-			});
-			if (rows.length === 0) {
+	// Batch all URLs in a single SELECT, then group by subjectRef.
+	// Previously: N SELECTs (one per URL). For 100 uncovered URLs in a
+	// hot cycle, this cuts 99 DB round-trips.
+	try {
+		const allRows = await prisma.evidence.findMany({
+			where: {
+				cycleRef: previousCycleRef,
+				environmentRef,
+				subjectRef: { in: urls },
+			},
+		});
+		const rowsByUrl = new Map<string, typeof allRows>();
+		for (const r of allRows) {
+			const existing = rowsByUrl.get(r.subjectRef) ?? [];
+			existing.push(r);
+			rowsByUrl.set(r.subjectRef, existing);
+		}
+		const toCreate: typeof allRows = [];
+		for (const url of urls) {
+			const rows = rowsByUrl.get(url);
+			if (!rows || rows.length === 0) {
 				result.uncoveredUrls.push(url);
 				continue;
 			}
-			// Use createMany for bulk insert. Skip rows that would
-			// collide on (cycleRef, evidenceKey) — shouldn't happen
-			// since the new cycle is fresh, but skipDuplicates keeps
-			// this idempotent in case of a retry.
+			result.carriedUrls.push(url);
+			result.rowsCarried += rows.length;
+			toCreate.push(...rows);
+		}
+		if (toCreate.length > 0) {
 			await prisma.evidence.createMany({
-				data: rows.map((r) => ({
+				data: toCreate.map((r) => ({
 					evidenceKey: r.evidenceKey,
 					evidenceType: r.evidenceType,
 					subjectRef: r.subjectRef,
@@ -347,12 +348,11 @@ export async function carryEvidenceForward(
 					environmentRef: r.environmentRef,
 					pathScope: r.pathScope,
 					cycleRef: newCycleRef,
-					observedAt: now, // refresh so freshness-based checks see the reuse
+					observedAt: now,
 					freshUntil: r.freshUntil,
 					freshnessState: r.freshnessState,
 					stalenessReason: r.stalenessReason,
 					sourceKind: r.sourceKind,
-					// Fase 3 fix #19: valid CollectionMethod enum value.
 					collectionMethod: "carried_forward",
 					qualityScore: r.qualityScore,
 					payload: r.payload,
@@ -360,14 +360,12 @@ export async function carryEvidenceForward(
 				})),
 				skipDuplicates: true,
 			});
-			result.carriedUrls.push(url);
-			result.rowsCarried += rows.length;
-		} catch (err) {
-			console.warn(
-				`[cycle-modes.carryForward] failed url=${url} cycle=${newCycleRef}:`,
-				err,
-			);
-			result.uncoveredUrls.push(url);
+		}
+	} catch (err) {
+		console.warn(`[cycle-modes.carryForward] batch failed for ${urls.length} urls cycle=${newCycleRef}:`, err);
+		// On batch failure, mark all as uncovered so caller can fall back to re-fetch
+		for (const url of urls) {
+			if (!result.carriedUrls.includes(url)) result.uncoveredUrls.push(url);
 		}
 	}
 

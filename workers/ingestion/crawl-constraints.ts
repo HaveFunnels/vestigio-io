@@ -174,25 +174,8 @@ export function hashContent(content: string): string {
 // URL normalization for dedup
 // ──────────────────────────────────────────────
 
+// Delegated to packages/url-normalize for single source of truth.
+import { canonicalUrl } from '../../packages/url-normalize';
 function normalizeForDedup(raw: string): string {
-  try {
-    const u = new URL(raw);
-    u.hostname = u.hostname.toLowerCase();
-    u.hash = '';
-    // Remove common tracking params
-    u.searchParams.delete('utm_source');
-    u.searchParams.delete('utm_medium');
-    u.searchParams.delete('utm_campaign');
-    u.searchParams.delete('utm_term');
-    u.searchParams.delete('utm_content');
-    u.searchParams.delete('ref');
-    u.searchParams.delete('fbclid');
-    u.searchParams.delete('gclid');
-    if (u.pathname.length > 1 && u.pathname.endsWith('/')) {
-      u.pathname = u.pathname.slice(0, -1);
-    }
-    return u.toString();
-  } catch {
-    return raw.toLowerCase();
-  }
+  return canonicalUrl(raw);
 }

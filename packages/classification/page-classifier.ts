@@ -88,6 +88,11 @@ function classifyByPath(path: string): ClassificationVote | null {
   if (path === '/' || path === '') {
     return { source: 'pathname', vote: 'homepage', confidence: 90, weight: 0.2 };
   }
+  // API/admin/internal routes should NOT be classified as commercial pages.
+  // /api/checkout/webhooks should not become a "checkout" page.
+  if (/^\/(api|webhook|admin|internal|_next|static|assets|wp-admin|wp-json)\b/i.test(path)) {
+    return null;
+  }
   for (const { pattern, type } of PATH_RULES) {
     if (pattern.test(path)) {
       return { source: 'pathname', vote: type, confidence: 75, weight: 0.2 };

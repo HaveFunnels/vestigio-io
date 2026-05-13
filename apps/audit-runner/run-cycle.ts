@@ -85,7 +85,36 @@ function safePathname(rawUrl: string): string {
 	}
 }
 
-// Extract title from a PageContent evidence payload for the same URL, if any.
+// ── Evidence index — built once per cycle, O(1) lookups per URL ──
+interface EvidenceIndex {
+	titleByUrl: Map<string, string>;
+	statusByUrl: Map<string, number>;
+	contentTypeByUrl: Map<string, string>;
+}
+
+function buildEvidenceIndex(evidence: Evidence[]): EvidenceIndex {
+	const titleByUrl = new Map<string, string>();
+	const statusByUrl = new Map<string, number>();
+	const contentTypeByUrl = new Map<string, string>();
+	for (const ev of evidence) {
+		const p = ev.payload as any;
+		if (!p?.url) continue;
+		if (ev.evidence_type === "page_content" && p.title && !titleByUrl.has(p.url)) {
+			titleByUrl.set(p.url, String(p.title));
+		} else if (ev.evidence_type === "http_response") {
+			if (typeof p.status_code === "number" && !statusByUrl.has(p.url)) {
+				statusByUrl.set(p.url, p.status_code);
+			}
+			const ct = p?.headers?.["content-type"] ?? p?.content_type;
+			if (typeof ct === "string" && !contentTypeByUrl.has(p.url)) {
+				contentTypeByUrl.set(p.url, ct.toLowerCase());
+			}
+		}
+	}
+	return { titleByUrl, statusByUrl, contentTypeByUrl };
+}
+
+// Backward-compat shims — prefer EvidenceIndex for hot loops.
 function findTitleForUrl(evidence: Evidence[], url: string): string | null {
 	for (const ev of evidence) {
 		if (ev.evidence_type === "page_content") {
@@ -96,12 +125,24 @@ function findTitleForUrl(evidence: Evidence[], url: string): string | null {
 	return null;
 }
 
-// Extract HTTP status from HttpResponse evidence for the same URL.
 function findStatusForUrl(evidence: Evidence[], url: string): number | null {
 	for (const ev of evidence) {
 		if (ev.evidence_type === "http_response") {
 			const p = ev.payload as any;
 			if (p?.url === url && typeof p?.status_code === "number") return p.status_code;
+		}
+	}
+	return null;
+}
+
+function findContentTypeForUrl(evidence: Evidence[], url: string): string | null {
+	for (const ev of evidence) {
+		if (ev.evidence_type === "http_response") {
+			const p = ev.payload as any;
+			if (p?.url === url) {
+				const ct = p?.headers?.["content-type"] ?? p?.content_type;
+				if (typeof ct === "string") return ct.toLowerCase();
+			}
 		}
 	}
 	return null;
@@ -333,27 +374,25 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		}
 
 		// 6. Persist PageInventoryItem rows from coverage map
-		// Each entry in coverage_entries represents a discovered surface (URL).
-		// Only persist pages that were actually fetched (have a confirmed statusCode).
-		// Pages discovered from sitemap/links but never fetched would pollute
-		// the inventory with ghost URLs the customer can't navigate to.
+		// Build evidence index once for O(1) lookups in the upsert loop
+		// (was O(N²) before — 3 full evidence scans per page).
+		const evIdx = buildEvidenceIndex(result.evidence);
+
 		for (const entry of result.coverage_entries || []) {
 			try {
 				const url = entry.url;
 				const path = safePathname(url);
 				const { pageType, tier } = inferPageType(path);
-				const title = findTitleForUrl(result.evidence, url);
-				const statusCode = findStatusForUrl(result.evidence, url);
+				const title = evIdx.titleByUrl.get(url) ?? null;
+				const statusCode = evIdx.statusByUrl.get(url) ?? null;
 
 				// Only persist pages that were actually fetched and got an HTTP response.
-				// Pages discovered via links but never fetched (crawl budget, allow-list)
-				// have no statusCode and should NOT enter inventory — they're not
-				// "unreachable", just "not checked". The coverage entry can't
-				// distinguish "never attempted" from "attempted and timed out" so
-				// the only reliable signal is the presence of an http_response evidence.
 				if (statusCode == null) continue;
 
 				const isFresh = entry.validated && statusCode < 400;
+				const ct = evIdx.contentTypeByUrl.get(url) ?? null;
+				const isAssetContent = ct !== null && !ct.includes("text/html");
+				const finalPageType = isAssetContent ? "asset" : pageType;
 
 				await prisma.pageInventoryItem.upsert({
 					where: {
@@ -367,18 +406,22 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						environmentRef: env.id,
 						normalizedUrl: url,
 						path,
-						pageType,
+						pageType: finalPageType,
 						tier,
 						priority: entry.critical ? 10 : 0,
 						criticality: Math.round(entry.confidence ?? 0),
 						title,
 						statusCode: statusCode,
 						freshnessState: isFresh ? "fresh" : "stale",
+						// Freshly fetched in this cycle → age = 0
+						freshnessAge: isFresh ? 0 : null,
 					},
 					update: {
 						title: title ?? undefined,
 						statusCode: statusCode,
 						freshnessState: isFresh ? "fresh" : "stale",
+						freshnessAge: isFresh ? 0 : undefined,
+						pageType: finalPageType,
 						criticality: Math.round(entry.confidence ?? 0),
 					},
 				});
@@ -387,6 +430,56 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				console.error(`[audit-runner ${cycleId}] inventory upsert error for ${entry.url}:`, err);
 				// Per-row failure is non-fatal — continue with the rest.
 			}
+		}
+
+		// Inventory telemetry — operators need to know what happened.
+		const totalEntries = (result.coverage_entries || []).length;
+		const fetchedCount = (result.coverage_entries || []).filter(
+			(e: any) => evIdx.statusByUrl.has(e.url),
+		).length;
+		const skippedCount = totalEntries - fetchedCount;
+		const downCount = (result.coverage_entries || []).filter((e: any) => {
+			const s = evIdx.statusByUrl.get(e.url);
+			return s !== undefined && s >= 400;
+		}).length;
+		const assetCount = (result.coverage_entries || []).filter((e: any) => {
+			const ct = evIdx.contentTypeByUrl.get(e.url);
+			return ct && !ct.includes("text/html");
+		}).length;
+		console.log(
+			`[audit-runner ${cycleId}] inventory: persisted=${pagesDiscovered} fetched=${fetchedCount}/${totalEntries} ` +
+			`skipped=${skippedCount} 4xx_5xx=${downCount} assets=${assetCount}`,
+		);
+
+		// 6a-aging: pages NOT freshly fetched in this cycle get their
+		// freshnessAge bumped by the cycle duration. Rows upserted above
+		// already have freshnessAge=0. After this step, every row has an
+		// accurate "seconds since last successful check".
+		try {
+			const cycleDurationSec = Math.round((Date.now() - new Date(cycle.createdAt).getTime()) / 1000);
+			const updatedUrls = (result.coverage_entries || [])
+				.filter((e: any) => evIdx.statusByUrl.has(e.url))
+				.map((e: any) => e.url);
+			if (cycleDurationSec > 0) {
+				await prisma.pageInventoryItem.updateMany({
+					where: {
+						environmentRef: env.id,
+						normalizedUrl: { notIn: updatedUrls },
+					},
+					data: { freshnessAge: { increment: cycleDurationSec } },
+				});
+				// Transition rows older than 7d to stale (typical cycle cadence)
+				await prisma.pageInventoryItem.updateMany({
+					where: {
+						environmentRef: env.id,
+						freshnessAge: { gt: 7 * 24 * 60 * 60 },
+						freshnessState: "fresh",
+					},
+					data: { freshnessState: "stale" },
+				});
+			}
+		} catch (err) {
+			console.warn(`[audit-runner ${cycleId}] freshness aging failed:`, err);
 		}
 
 		// 6a-cleanup: Remove rows with statusCode=0 (bad sentinel from a

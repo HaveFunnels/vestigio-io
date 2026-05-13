@@ -16,6 +16,7 @@ import {
   type CrawlConstraints,
 } from './crawl-constraints';
 import { runEnrichmentPasses } from './enrichment/runner';
+import { canonicalUrl as canonicalUrlShared } from '../../packages/url-normalize';
 
 // ──────────────────────────────────────────────
 // Staged Pipeline — Progressive Analysis
@@ -793,50 +794,128 @@ function detectPlatforms(evidence: Evidence[], response: HttpResponse, parsed: P
 async function tryFetchMeta(rootUrl: string, scoping: Scoping, cycleRef: string, evidence: Evidence[], errors: any[], coverage: Map<string, CoverageEntry>): Promise<string[]> {
   const discoveredUrls: string[] = [];
   const rootDomain = getRootDomain(new URL(rootUrl).hostname);
-  const metaUrls = [`${rootUrl}/robots.txt`, `${rootUrl}/sitemap.xml`];
-  for (const url of metaUrls) {
-    try {
-      const response = await httpFetch(url);
-      if (response.status_code === 200) {
-        addHttpEvidence(evidence, response, url, scoping, cycleRef);
-        coverage.set(url, { url, discovered: true, validated: true, critical: false, confidence: 60 });
+  const sitemapsToFetch: string[] = [`${rootUrl}/sitemap.xml`];
+  const disallowPaths: string[] = [];
 
-        // Parse sitemap.xml to discover additional page URLs
-        if (url.endsWith('/sitemap.xml') && response.body) {
-          const sitemapUrls = parseSitemapUrls(response.body, rootDomain);
-          discoveredUrls.push(...sitemapUrls);
+  // 1. Fetch and parse robots.txt — extract Sitemap: directives and
+  // basic Disallow rules. We don't enforce Disallow at fetch time (we
+  // already respect site policies via rate limiting), but we DO use
+  // them to filter discovered URLs.
+  try {
+    const robotsUrl = `${rootUrl}/robots.txt`;
+    const response = await httpFetch(robotsUrl);
+    if (response.status_code === 200 && response.body) {
+      addHttpEvidence(evidence, response, robotsUrl, scoping, cycleRef);
+      coverage.set(robotsUrl, { url: robotsUrl, discovered: true, validated: true, critical: false, confidence: 60 });
+      const { sitemaps, disallows } = parseRobotsTxt(response.body);
+      sitemapsToFetch.push(...sitemaps);
+      disallowPaths.push(...disallows);
+    }
+  } catch { /* non-critical */ }
+
+  // 2. Fetch sitemaps (including any discovered via robots.txt directives).
+  // Handles sitemap-index files (which point to multiple sitemap files).
+  const seenSitemaps = new Set<string>();
+  for (const sitemapUrl of sitemapsToFetch) {
+    if (seenSitemaps.has(sitemapUrl)) continue;
+    seenSitemaps.add(sitemapUrl);
+    try {
+      const response = await httpFetch(sitemapUrl);
+      if (response.status_code === 200 && response.body) {
+        addHttpEvidence(evidence, response, sitemapUrl, scoping, cycleRef);
+        coverage.set(sitemapUrl, { url: sitemapUrl, discovered: true, validated: true, critical: false, confidence: 60 });
+        const parsed = parseSitemap(response.body, rootDomain);
+        // If this was a sitemap-index, recurse into child sitemaps (one level)
+        for (const childSitemap of parsed.childSitemaps) {
+          if (seenSitemaps.has(childSitemap)) continue;
+          seenSitemaps.add(childSitemap);
+          try {
+            const child = await httpFetch(childSitemap);
+            if (child.status_code === 200 && child.body) {
+              addHttpEvidence(evidence, child, childSitemap, scoping, cycleRef);
+              const childParsed = parseSitemap(child.body, rootDomain);
+              discoveredUrls.push(...childParsed.urls);
+            }
+          } catch { /* skip child */ }
         }
+        discoveredUrls.push(...parsed.urls);
       }
-    } catch { /* non-critical, skip */ }
+    } catch { /* skip */ }
+  }
+
+  // 3. Filter out disallowed paths
+  if (disallowPaths.length > 0) {
+    const filtered = discoveredUrls.filter((u) => {
+      try {
+        const p = new URL(u).pathname;
+        return !disallowPaths.some((d) => p.startsWith(d));
+      } catch { return true; }
+    });
+    return filtered;
   }
   return discoveredUrls;
 }
 
 /**
- * Extract page URLs from a sitemap.xml body. Lightweight regex-based
- * parser -- handles standard <url><loc>...</loc></url> sitemaps and
- * ignores sitemap index files (those contain <sitemap> not <url>).
- * Only returns URLs on the same root domain to avoid cross-site crawls.
+ * Parse robots.txt for Sitemap: directives and User-agent: * Disallow rules.
+ * We only honor wildcard user-agent rules (Vestigio doesn't identify itself
+ * as a known crawler).
  */
-function parseSitemapUrls(xml: string, rootDomain: string): string[] {
+function parseRobotsTxt(body: string): { sitemaps: string[]; disallows: string[] } {
+  const sitemaps: string[] = [];
+  const disallows: string[] = [];
+  let inWildcardGroup = false;
+  for (const rawLine of body.split('\n')) {
+    const line = rawLine.split('#')[0].trim();
+    if (!line) continue;
+    const colonIdx = line.indexOf(':');
+    if (colonIdx < 0) continue;
+    const directive = line.slice(0, colonIdx).trim().toLowerCase();
+    const value = line.slice(colonIdx + 1).trim();
+    if (directive === 'sitemap' && /^https?:\/\//i.test(value)) {
+      sitemaps.push(value);
+    } else if (directive === 'user-agent') {
+      inWildcardGroup = value === '*';
+    } else if (directive === 'disallow' && inWildcardGroup && value && value !== '/') {
+      disallows.push(value);
+    }
+  }
+  return { sitemaps, disallows };
+}
+
+/**
+ * Parse a sitemap XML — supports both URL sitemaps (<urlset>) and
+ * sitemap-index files (<sitemapindex>). Returns child sitemap URLs
+ * separately so the caller can fetch them.
+ */
+function parseSitemap(xml: string, rootDomain: string): { urls: string[]; childSitemaps: string[] } {
   const urls: string[] = [];
+  const childSitemaps: string[] = [];
+  const isIndex = /<sitemapindex/i.test(xml);
   const locRegex = /<loc>\s*(https?:\/\/[^<\s]+)\s*<\/loc>/gi;
   let match;
   while ((match = locRegex.exec(xml)) !== null) {
     const foundUrl = match[1].trim();
     try {
       const host = new URL(foundUrl).hostname;
-      // Only include same-domain URLs
       if (host === rootDomain || host.endsWith('.' + rootDomain)) {
-        // Skip non-page resources
-        const path = new URL(foundUrl).pathname;
-        if (!/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|pdf|zip|xml|json)$/i.test(path)) {
-          urls.push(foundUrl);
+        if (isIndex) {
+          childSitemaps.push(foundUrl);
+        } else {
+          const path = new URL(foundUrl).pathname;
+          if (!/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|pdf|zip|xml|json)$/i.test(path)) {
+            urls.push(foundUrl);
+          }
         }
       }
-    } catch { /* invalid URL, skip */ }
+    } catch { /* invalid URL */ }
   }
-  return urls;
+  return { urls, childSitemaps };
+}
+
+// Backward-compat: keep the original name for any external callers.
+function parseSitemapUrls(xml: string, rootDomain: string): string[] {
+  return parseSitemap(xml, rootDomain).urls;
 }
 
 function detectChallenge(response: HttpResponse): string | null {
@@ -951,14 +1030,9 @@ function normalizeUrl(domain: string): string {
   return domain.startsWith('http') ? domain : `https://${domain}`;
 }
 
+// Delegated to packages/url-normalize for single source of truth.
 function normalizeUrlForDedup(raw: string): string {
-  try {
-    const u = new URL(raw);
-    u.hostname = u.hostname.toLowerCase();
-    u.hash = '';
-    if (u.pathname.length > 1 && u.pathname.endsWith('/')) u.pathname = u.pathname.slice(0, -1);
-    return u.toString();
-  } catch { return raw; }
+  return canonicalUrlShared(raw);
 }
 
 function safePathname(url: string): string {

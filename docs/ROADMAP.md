@@ -2208,11 +2208,12 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 
 ### 11.1 Revenue (Análise de Faturamento)
 
-#### a. "Dinheiro na mesa" report ⭐ 🟢
+#### a. "Dinheiro na mesa" report ⭐ 🟢 — ✅ Shipped 2026-05-13
 - **What:** Single-screen synthesis showing the dollar amount currently being lost, decomposed by cause (checkout friction, message misalignment, payment failures, etc.). Top 3 fixes ranked by ROI with explicit timelines: "fix X → recover $Y/mo within 14 days". Replaces today's abstract finding list with a money-first headline.
 - **Data deps:** Vestigio findings + impact baselines (already computed). No external integration.
-- **Locked state:** n/a — always renders.
+- **Locked state:** n/a — always renders. Empty state when there are no loss-role findings.
 - **Effort:** 1-2 days (heavy on copy + ranking logic; data is already there).
+- **Implementation:** `src/components/console/workspace/MoneyOnTheTable.tsx`. Filter to `polarity === "negative" && impact.role === "loss"`. Buckets group by `root_cause` (top-4 + "Others (N)"). Top-3 are individual findings sorted by `impact.midpoint`. Effort tier from `estimated_effort_hours` (hours/days/weeks/TBD). i18n key: `console.workspaces.detail.money_on_table.*` × 4 locales. Wired into workspace `[id]` (revenue + chargeback types) and the revenue perspective page.
 
 #### b. MRR Trajectory dual-scenario ⭐ 🔵
 - **What:** Line chart with two paths from today forward — solid line if no action is taken (extrapolated from current MRR decay), dashed line if top-3 actions ship (using impact estimates). Creates tangible urgency around inaction.

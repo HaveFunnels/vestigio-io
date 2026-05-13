@@ -122,11 +122,17 @@ export const GET = withErrorTracking(async function GET(request: Request) {
     });
   }
 
-  // Total count (for pagination) + paginated query in parallel
+  // Total count (for pagination) + paginated query in parallel. Filter
+  // out orphan-marked rows by default; an opt-in `?include_removed=1`
+  // flag surfaces them for forensics.
+  const includeRemoved = url.searchParams.get("include_removed") === "1";
+  const inventoryWhere = includeRemoved
+    ? { websiteRef: website.id }
+    : { websiteRef: website.id, removedAt: null };
   const [total, items] = await Promise.all([
-    prisma.pageInventoryItem.count({ where: { websiteRef: website.id } }),
+    prisma.pageInventoryItem.count({ where: inventoryWhere }),
     prisma.pageInventoryItem.findMany({
-      where: { websiteRef: website.id },
+      where: inventoryWhere,
       orderBy: { updatedAt: "desc" },
       take: limit,
       skip: offset,

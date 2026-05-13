@@ -416,6 +416,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						freshnessState: isFresh ? "fresh" : "stale",
 						// Freshly fetched in this cycle → age = 0
 						freshnessAge: isFresh ? 0 : null,
+						lastSeenCycleId: isFresh ? cycleId : null,
 					},
 					update: {
 						title: title ?? undefined,
@@ -424,6 +425,8 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						freshnessAge: isFresh ? 0 : undefined,
 						pageType: finalPageType,
 						criticality: Math.round(entry.confidence ?? 0),
+						// Stamp lastSeen + resurrect (clear removedAt) on every successful fetch.
+						...(isFresh ? { lastSeenCycleId: cycleId, removedAt: null } : {}),
 					},
 				});
 				pagesDiscovered++;
@@ -494,6 +497,29 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				console.log(`[audit-runner ${cycleId}] cleaned ${cleaned.count} inventory rows with statusCode=0`);
 			}
 		} catch { /* non-fatal */ }
+
+		// 6a-orphan: pages not seen in 14d (across multiple cycles) get a
+		// removedAt timestamp. They stay in DB for analytics / resurrection
+		// but are filtered from the default inventory view. Hard-delete is
+		// the responsibility of a separate maintenance cron (cleanup
+		// after another 60d).
+		try {
+			const orphanThresholdSec = 14 * 24 * 60 * 60;
+			const orphaned = await prisma.pageInventoryItem.updateMany({
+				where: {
+					environmentRef: env.id,
+					lastSeenCycleId: { not: cycleId },
+					freshnessAge: { gt: orphanThresholdSec },
+					removedAt: null,
+				},
+				data: { removedAt: new Date() },
+			});
+			if (orphaned.count > 0) {
+				console.log(`[audit-runner ${cycleId}] orphan-marked ${orphaned.count} rows (not seen in >14d)`);
+			}
+		} catch (err) {
+			console.warn(`[audit-runner ${cycleId}] orphan marking failed:`, err);
+		}
 
 		// 6b. Persist SurfaceRelation records from crawled link graph.
 		// Uses createMany + skipDuplicates for single-query batch insert.

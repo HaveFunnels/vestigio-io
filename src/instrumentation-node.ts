@@ -465,6 +465,38 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	setInterval(runProductEventPrune, PRODUCT_EVENT_PRUNE_INTERVAL_MS);
 	console.log("✓ Product event prune cron registered (24h interval)");
 
+	// ── Inventory orphan hard-delete cron ──
+	// Daily, leader-elected. Hard-deletes PageInventoryItem rows that
+	// were soft-deleted (removedAt set) more than 60 days ago. The
+	// 60-day grace window lets a page be "resurrected" if the customer
+	// reinstates a removed URL — beyond that, the row is genuinely dead.
+	const INVENTORY_PRUNE_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+	const INVENTORY_PRUNE_GRACE_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+	const runInventoryPrune = async () => {
+		await withLeadership(
+			"inventory-orphan-prune",
+			{ ttlSec: 120 },
+			async () => {
+				try {
+					const cutoff = new Date(Date.now() - INVENTORY_PRUNE_GRACE_MS);
+					const result = await prisma.pageInventoryItem.deleteMany({
+						where: { removedAt: { lt: cutoff } },
+					});
+					if (result.count > 0) {
+						console.log(
+							`[inventory-orphan-prune] hard-deleted ${result.count} rows (removed > 60d ago)`,
+						);
+					}
+				} catch (err) {
+					console.error("[inventory-orphan-prune] pass failed:", err);
+				}
+			},
+		);
+	};
+	runInventoryPrune(); // boot pass — drain anything past cutoff
+	setInterval(runInventoryPrune, INVENTORY_PRUNE_INTERVAL_MS);
+	console.log("✓ Inventory orphan prune cron registered (24h interval, 60d grace)");
+
 	// ── 3.13: Daily digest email ──
 	const { sendDailyDigests } = await import("./libs/cycle-digest");
 	const runDigest = async () => {

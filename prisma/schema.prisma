@@ -816,6 +816,11 @@ model PageInventoryItem {
   classifiedPageType       String?  // resolved type from multi-signal voter (overrides pageType)
   classificationConfidence Int      @default(0) // 0-100 agreement ratio
   classificationSignals    String   @default("[]") @db.Text // JSON: [{ source, vote, weight }]
+  // Orphan tracking: lastSeenCycleId is updated on every successful fetch.
+  // removedAt is set when the page hasn't been seen for > 14 days (across
+  // multiple cycles) — soft-delete marker. Re-discovery clears it.
+  lastSeenCycleId String?
+  removedAt       DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -826,6 +831,7 @@ model PageInventoryItem {
   @@index([environmentRef, pageType])
   @@index([environmentRef, classifiedPageType])
   @@index([environmentRef, tier])
+  @@index([environmentRef, removedAt])
 }
 
 model SurfaceRelation {

@@ -17,6 +17,7 @@ import {
 } from "@/lib/console-data";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { getPageTypeStyle } from "@/lib/page-type-colors";
+import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 
 // ──────────────────────────────────────────────
 // Inventory Page — Surface-Level Intelligence
@@ -1167,6 +1168,15 @@ export default function InventoryPage() {
 								onChange={(e) => setSearchText(e.target.value)}
 								className='whitespace-nowrap rounded-md border border-edge bg-surface-card py-1.5 pl-2.5 pr-6 text-xs text-content-secondary transition-colors placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30'
 							/>
+							<button
+								type='button'
+								onClick={() => exportToCsv(filtered, "vestigio-inventory.csv")}
+								aria-label={t("export_csv")}
+								title={t("export_csv")}
+								className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-card text-content-faint transition-colors hover:bg-surface-card-hover hover:text-content'
+							>
+								<DownloadSimple size={14} weight='regular' />
+							</button>
 							{(liveFilter !== "all" ||
 								typeFilter !== "all" ||
 								httpStatusFilter !== "all" ||
@@ -1197,14 +1207,6 @@ export default function InventoryPage() {
 									total: surfaces.length,
 								})}
 							</span>
-							<button
-								type="button"
-								onClick={() => exportToCsv(filtered, "vestigio-inventory.csv")}
-								className='rounded border border-edge bg-surface-card px-2.5 py-1 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content'
-								title={t("export_csv")}
-							>
-								{t("export_csv")}
-							</button>
 						</div>
 
 						{filtered.length === 0 && !isAuditOngoing ? (

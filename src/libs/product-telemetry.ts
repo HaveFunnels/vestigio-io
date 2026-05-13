@@ -23,6 +23,13 @@ export const PRODUCT_EVENT_TYPES = new Set<string>([
 	"finding_action",
 	"drawer_open",
 	"playbook_run",
+	// Chat dynamics (MCP copilot)
+	"chat_opened",
+	"chat_send",
+	"chat_first_token",
+	"chat_tool_call",
+	"chat_error",
+	"chat_suggested_prompt_click",
 ]);
 
 /** Feature name → User model field mapping for adoption timestamps. */

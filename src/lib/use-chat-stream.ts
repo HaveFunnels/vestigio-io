@@ -15,6 +15,12 @@ interface UseChatStreamOptions {
   onDone?: (response: any) => void;
   onError?: (message: string) => void;
   onPromptSuggestion?: (original: string, suggested: string, reason: string) => void;
+  /** Fires once per request, when the first text delta arrives. ttftMs = time from sendMessage() to first delta. */
+  onFirstToken?: (ttftMs: number) => void;
+  /** Fires when a tool starts executing on the server. */
+  onToolStart?: (tool: string, label?: string) => void;
+  /** Fires when a tool completes. durationMs measured client-side (includes SSE latency). */
+  onToolEnd?: (tool: string, durationMs: number) => void;
 }
 
 interface UseChatStreamReturn {
@@ -88,6 +94,11 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
       let currentText = "";
       let activeToolCalls = new Map<string, ToolCallBlock>();
       let updateScheduled = false;
+
+      // Telemetry timing
+      const requestStartedAt = Date.now();
+      let firstTokenFired = false;
+      const toolStartedAt = new Map<string, number>();
 
       // Batched update: coalesce rapid state changes into a single React render
       function scheduleUpdate() {
@@ -200,6 +211,8 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
                     };
                     activeToolCalls.set(data.tool, toolBlock);
                     currentBlocks.push(toolBlock);
+                    toolStartedAt.set(data.tool, Date.now());
+                    options?.onToolStart?.(data.tool, data.label);
                     scheduleUpdate();
                     break;
                   }
@@ -211,11 +224,20 @@ export function useChatStream(options?: UseChatStreamOptions): UseChatStreamRetu
                       existing.resultPreview = data.summary?.slice(0, 300);
                     }
                     activeToolCalls.delete(data.tool);
+                    const startedAt = toolStartedAt.get(data.tool);
+                    if (startedAt) {
+                      options?.onToolEnd?.(data.tool, Date.now() - startedAt);
+                      toolStartedAt.delete(data.tool);
+                    }
                     scheduleUpdate();
                     break;
                   }
 
                   case "delta":
+                    if (!firstTokenFired && data.text) {
+                      firstTokenFired = true;
+                      options?.onFirstToken?.(Date.now() - requestStartedAt);
+                    }
                     currentText += data.text;
                     // Flush periodically for smooth rendering
                     flushText();

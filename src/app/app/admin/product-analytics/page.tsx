@@ -36,6 +36,17 @@ interface ProductAnalyticsData {
 		organization: { name: string; plan: string };
 	}[];
 	events_by_type: { event: string; count: number }[];
+	chat_dynamics?: {
+		opens: number;
+		sends: number;
+		first_tokens: number;
+		errors: number;
+		ttft_p50_ms: number | null;
+		ttft_p95_ms: number | null;
+		error_rate_pct: number;
+		top_tools: { tool: string; calls: number; avg_duration_ms: number | null }[];
+		avg_message_length: number | null;
+	};
 }
 
 type Period = "7d" | "30d" | "90d";
@@ -373,6 +384,185 @@ export default function ProductAnalyticsPage() {
 							</div>
 						</div>
 					</div>
+
+					{/* Chat Dynamics */}
+					{data.chat_dynamics && (
+						<div className="space-y-4">
+							<div className="flex items-baseline justify-between border-b border-edge pb-2">
+								<h2 className="text-sm font-medium text-content">
+									Chat Dynamics{" "}
+									<span className="text-content-faint">
+										(MCP copilot)
+									</span>
+								</h2>
+								<span className="text-[10px] text-content-faint">
+									{data.chat_dynamics.opens} opens ·{" "}
+									{data.chat_dynamics.sends} sends ·{" "}
+									{data.chat_dynamics.errors} errors
+								</span>
+							</div>
+
+							{/* KPI row */}
+							<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+								<StatCard
+									label="TTFT p50"
+									value={data.chat_dynamics.ttft_p50_ms ?? 0}
+									suffix="ms"
+									icon="⚡"
+								/>
+								<StatCard
+									label="TTFT p95"
+									value={data.chat_dynamics.ttft_p95_ms ?? 0}
+									suffix="ms"
+									icon="⏱"
+									variant={
+										(data.chat_dynamics.ttft_p95_ms ?? 0) > 5000
+											? "warning"
+											: "default"
+									}
+								/>
+								<StatCard
+									label="Error rate"
+									value={data.chat_dynamics.error_rate_pct}
+									suffix="%"
+									icon="⚠️"
+									variant={
+										data.chat_dynamics.error_rate_pct > 5
+											? "warning"
+											: "default"
+									}
+								/>
+								<StatCard
+									label="Avg message length"
+									value={data.chat_dynamics.avg_message_length ?? 0}
+									suffix="chars"
+									icon="✍️"
+								/>
+							</div>
+
+							{/* Funnel + Top tools */}
+							<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+								{/* Chat funnel */}
+								<div className="rounded-lg border border-edge bg-surface-card p-4">
+									<h3 className="mb-3 text-sm font-medium text-content">
+										Chat Funnel
+									</h3>
+									<div className="space-y-2">
+										{[
+											{
+												label: "Opens",
+												value: data.chat_dynamics.opens,
+											},
+											{
+												label: "Sends",
+												value: data.chat_dynamics.sends,
+											},
+											{
+												label: "First token received",
+												value: data.chat_dynamics
+													.first_tokens,
+											},
+										].map((step, i) => {
+											const maxVal = Math.max(
+												data.chat_dynamics!.opens,
+												1,
+											);
+											return (
+												<div
+													key={step.label}
+													className="flex items-center gap-3"
+												>
+													<span className="w-4 shrink-0 text-center text-xs font-medium text-content-muted">
+														{i + 1}
+													</span>
+													<div className="min-w-0 flex-1">
+														<div className="flex items-center justify-between text-xs">
+															<span className="text-content">
+																{step.label}
+															</span>
+															<span className="text-content-muted">
+																{step.value}
+																<span className="ml-1 text-content-faint">
+																	(
+																	{Math.round(
+																		(step.value /
+																			maxVal) *
+																			100,
+																	)}
+																	%)
+																</span>
+															</span>
+														</div>
+														<div className="mt-0.5 h-1.5 w-full rounded-full bg-zinc-800">
+															<div
+																className="h-1.5 rounded-full bg-cyan-500/70 transition-all"
+																style={{
+																	width: `${(step.value / maxVal) * 100}%`,
+																}}
+															/>
+														</div>
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+
+								{/* Top tools */}
+								<div className="rounded-lg border border-edge bg-surface-card p-4">
+									<h3 className="mb-3 text-sm font-medium text-content">
+										Top MCP Tools Called
+									</h3>
+									<div className="space-y-2">
+										{data.chat_dynamics.top_tools.length === 0 ? (
+											<p className="text-xs text-content-faint">
+												No tool calls recorded yet
+											</p>
+										) : (
+											data.chat_dynamics.top_tools.map((t) => {
+												const maxCount =
+													data.chat_dynamics!.top_tools[0]
+														?.calls || 1;
+												return (
+													<div
+														key={t.tool}
+														className="flex items-center gap-3"
+													>
+														<div className="min-w-0 flex-1">
+															<div className="flex items-center justify-between text-xs">
+																<span className="truncate font-mono text-content">
+																	{t.tool}
+																</span>
+																<span className="shrink-0 text-content-muted">
+																	{t.calls}
+																	{t.avg_duration_ms !==
+																		null && (
+																		<span className="ml-1 text-content-faint">
+																			·{" "}
+																			{t.avg_duration_ms}
+																			ms avg
+																		</span>
+																	)}
+																</span>
+															</div>
+															<div className="mt-0.5 h-1.5 w-full rounded-full bg-zinc-800">
+																<div
+																	className="h-1.5 rounded-full bg-fuchsia-500/70 transition-all"
+																	style={{
+																		width: `${(t.calls / maxCount) * 100}%`,
+																	}}
+																/>
+															</div>
+														</div>
+													</div>
+												);
+											})
+										)}
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
 
 					{/* At-Risk Table */}
 					{data.at_risk_environments.length > 0 && (

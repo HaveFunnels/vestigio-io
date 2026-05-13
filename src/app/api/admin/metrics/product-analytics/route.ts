@@ -138,6 +138,12 @@ export const GET = withErrorTracking(
 			_avg: { engagementScore: true },
 		});
 
+		// ── Chat dynamics ─────────────────────────────────────
+		// Computes TTFT percentiles, tool-call distribution, error rate,
+		// and conversation depth for the MCP copilot. Anything in the
+		// `properties` JSON is opportunistic — we tolerate nulls.
+		const chatDynamics = await computeChatDynamics(cutoff);
+
 		return NextResponse.json({
 			period,
 			generated_at: new Date().toISOString(),
@@ -151,7 +157,130 @@ export const GET = withErrorTracking(
 			engagement_distribution: engagementDistribution,
 			at_risk_environments: atRiskEnvs,
 			events_by_type: eventsByType,
+			chat_dynamics: chatDynamics,
 		});
 	},
 	{ endpoint: "/api/admin/metrics/product-analytics", method: "GET" },
 );
+
+// ──────────────────────────────────────────────
+// Chat dynamics — MCP copilot observability
+//
+// Reads from the same ProductEvent stream that everything else uses,
+// filtered to the chat_* event family. Aggregates:
+//   - chat_opened / chat_send counts (funnel: open → send → first_token → done)
+//   - TTFT p50 / p95 from chat_first_token.ttft_ms
+//   - top tools called + average duration
+//   - error rate
+// ──────────────────────────────────────────────
+
+interface ChatDynamicsView {
+	opens: number;
+	sends: number;
+	first_tokens: number;
+	errors: number;
+	ttft_p50_ms: number | null;
+	ttft_p95_ms: number | null;
+	error_rate_pct: number;
+	top_tools: { tool: string; calls: number; avg_duration_ms: number | null }[];
+	avg_message_length: number | null;
+}
+
+async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
+	const [opens, sends, firstTokenEvents, toolEvents, errors] =
+		await Promise.all([
+			prisma.productEvent.count({
+				where: { event: "chat_opened", createdAt: { gte: cutoff } },
+			}),
+			prisma.productEvent.findMany({
+				where: { event: "chat_send", createdAt: { gte: cutoff } },
+				select: { properties: true },
+			}),
+			prisma.productEvent.findMany({
+				where: { event: "chat_first_token", createdAt: { gte: cutoff } },
+				select: { properties: true },
+			}),
+			prisma.productEvent.findMany({
+				where: { event: "chat_tool_call", createdAt: { gte: cutoff } },
+				select: { properties: true },
+			}),
+			prisma.productEvent.count({
+				where: { event: "chat_error", createdAt: { gte: cutoff } },
+			}),
+		]);
+
+	// TTFT percentiles
+	const ttfts: number[] = [];
+	for (const row of firstTokenEvents) {
+		const ttft = (row.properties as any)?.ttft_ms;
+		if (typeof ttft === "number" && ttft >= 0 && ttft < 300_000) {
+			ttfts.push(ttft);
+		}
+	}
+	ttfts.sort((a, b) => a - b);
+	const p50 = ttfts.length > 0 ? ttfts[Math.floor(ttfts.length * 0.5)] : null;
+	const p95 = ttfts.length > 0 ? ttfts[Math.floor(ttfts.length * 0.95)] : null;
+
+	// Avg message length
+	let totalLen = 0;
+	let lenCount = 0;
+	for (const row of sends) {
+		const len = (row.properties as any)?.message_length;
+		if (typeof len === "number" && len > 0) {
+			totalLen += len;
+			lenCount++;
+		}
+	}
+
+	// Top tools (end-phase only, since duration is on end)
+	const toolStats = new Map<
+		string,
+		{ calls: number; totalDuration: number; durationSamples: number }
+	>();
+	for (const row of toolEvents) {
+		const props = row.properties as any;
+		const tool = typeof props?.tool === "string" ? props.tool : null;
+		if (!tool) continue;
+		const phase = props?.phase;
+		const existing = toolStats.get(tool) ?? {
+			calls: 0,
+			totalDuration: 0,
+			durationSamples: 0,
+		};
+		if (phase === "end") {
+			existing.calls++;
+			const dur = props?.duration_ms;
+			if (typeof dur === "number" && dur >= 0 && dur < 300_000) {
+				existing.totalDuration += dur;
+				existing.durationSamples++;
+			}
+		}
+		toolStats.set(tool, existing);
+	}
+	const topTools = Array.from(toolStats.entries())
+		.map(([tool, s]) => ({
+			tool,
+			calls: s.calls,
+			avg_duration_ms:
+				s.durationSamples > 0
+					? Math.round(s.totalDuration / s.durationSamples)
+					: null,
+		}))
+		.sort((a, b) => b.calls - a.calls)
+		.slice(0, 10);
+
+	const errorRate = sends.length > 0 ? (errors / sends.length) * 100 : 0;
+
+	return {
+		opens,
+		sends: sends.length,
+		first_tokens: firstTokenEvents.length,
+		errors,
+		ttft_p50_ms: p50,
+		ttft_p95_ms: p95,
+		error_rate_pct: Math.round(errorRate * 10) / 10,
+		top_tools: topTools,
+		avg_message_length:
+			lenCount > 0 ? Math.round(totalLen / lenCount) : null,
+	};
+}

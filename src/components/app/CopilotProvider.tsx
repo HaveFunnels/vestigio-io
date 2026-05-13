@@ -20,6 +20,7 @@ import {
 import { usePathname } from "next/navigation";
 import { useChatStream } from "@/lib/use-chat-stream";
 import { serializeBlocksToText } from "@/lib/chat-block-parser";
+import { useTrack } from "@/hooks/useProductTrack";
 import type {
 	ChatMessage,
 	ContentBlock,
@@ -90,6 +91,7 @@ const STORAGE_KEY = "vestigio_copilot_conv";
 
 export function CopilotProvider({ children }: { children: ReactNode }) {
 	const pathname = usePathname();
+	const { track } = useTrack();
 
 	// Visibility
 	const [isOpen, setIsOpen] = useState(false);
@@ -145,6 +147,33 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 				}
 				// Refresh budget after each response
 				fetchUsage();
+			},
+			onFirstToken: (ttftMs) => {
+				track("chat_first_token", {
+					ttft_ms: ttftMs,
+					model: selectedModel,
+				});
+			},
+			onToolStart: (tool) => {
+				track("chat_tool_call", {
+					tool,
+					phase: "start",
+					model: selectedModel,
+				});
+			},
+			onToolEnd: (tool, durationMs) => {
+				track("chat_tool_call", {
+					tool,
+					phase: "end",
+					duration_ms: durationMs,
+					model: selectedModel,
+				});
+			},
+			onError: (message) => {
+				track("chat_error", {
+					message: message.slice(0, 200),
+					model: selectedModel,
+				});
 			},
 		});
 
@@ -219,6 +248,15 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		async (text: string) => {
 			if (!text.trim() || isStreaming) return;
 
+			track("chat_send", {
+				message_length: text.length,
+				history_size: messages.length,
+				model: selectedModel,
+				has_context: contextItems.length > 0,
+				context_kind: contextItems[0]?.kind ?? null,
+				page_context: pageContext.type,
+			});
+
 			// Budget exhausted — inject canned upgrade message instead of calling API
 			if (usage && usage.remaining <= 0) {
 				const userMsg: ChatMessage = {
@@ -288,6 +326,9 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			sendMessage,
 			createConversation,
 			usage,
+			contextItems,
+			pageContext,
+			track,
 		],
 	);
 
@@ -297,6 +338,19 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		(context?: { finding?: FindingProjection; action?: { id: string; title: string }; map?: { id: string; title: string }; prompt?: string }) => {
 			setIsOpen(true);
 			setIsMinimized(false);
+
+			const contextKind = context?.finding
+				? "finding"
+				: context?.action
+					? "action"
+					: context?.map
+						? "map"
+						: null;
+			track("chat_opened", {
+				page_context: pageContext.type,
+				context_kind: contextKind,
+				has_prompt: !!context?.prompt,
+			});
 
 			if (context?.finding) {
 				setContextItems([
@@ -328,7 +382,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 				setTimeout(() => send(context.prompt!), 100);
 			}
 		},
-		[send],
+		[send, track, pageContext],
 	);
 
 	const close = useCallback(() => {

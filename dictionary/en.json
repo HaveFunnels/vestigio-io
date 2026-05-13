@@ -3333,6 +3333,7 @@
 			},
 			"status": {
 				"live": "Live",
+				"stale": "Awaiting recheck",
 				"not_seen": "Not seen",
 				"down": "Down",
 				"all": "All Status"
@@ -3391,6 +3392,8 @@
 				"tier": "Tier",
 				"status": "Status",
 				"live": "Live",
+				"stale": "Awaiting recheck",
+				"down": "Down",
 				"not_seen": "Not Seen",
 				"http_code": "HTTP Code",
 				"sessions": "Sessions",

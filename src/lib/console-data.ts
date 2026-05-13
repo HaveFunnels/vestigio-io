@@ -286,7 +286,10 @@ export function loadAllMaps(): DataState<MapDefinition[]> {
 export interface InventorySurface {
   surface_id: string;
   label: string;
+  /** Full canonical URL (https://host/path). Used as a stable identifier. */
   normalized_path: string;
+  /** Path portion only (e.g. "/checkout"). Use this for display next to host. */
+  path: string;
   host: string;
   page_type: string;
   /** Multi-signal classified type (null if not yet classified). */

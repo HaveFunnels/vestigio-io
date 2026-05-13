@@ -3417,6 +3417,7 @@
 			},
 			"status": {
 				"live": "Ativa",
+				"stale": "Aguardando reverificação",
 				"not_seen": "Não vista",
 				"down": "Indisponível",
 				"all": "Todos os Status"
@@ -3475,6 +3476,8 @@
 				"tier": "Camada",
 				"status": "Status",
 				"live": "Ativa",
+				"stale": "Aguardando reverificação",
+				"down": "Indisponível",
 				"not_seen": "Não Vista",
 				"http_code": "Código HTTP",
 				"sessions": "Sessões",

@@ -264,6 +264,7 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       surface_id: item.id,
       label: item.title || item.path,
       normalized_path: item.normalizedUrl,
+      path: item.path,
       host,
       page_type: effectiveType,
       classified_page_type: item.classifiedPageType ?? null,

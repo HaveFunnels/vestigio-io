@@ -29,7 +29,19 @@ import { getPageTypeStyle } from "@/lib/page-type-colors";
 // with surface filter applied.
 // ──────────────────────────────────────────────
 
-type LiveFilter = "all" | "live" | "not_live";
+type LiveFilter = "all" | "live" | "stale" | "down";
+
+// Status states surfaced to the user. Mapped from is_live + http_status:
+//   live  — successfully fetched in this cycle, status < 400
+//   down  — explicit failure (http_status === 0 or >= 400)
+//   stale — previously OK but not re-fetched this cycle (recheck pending)
+type StatusState = "live" | "stale" | "down";
+
+function classifySurfaceStatus(s: { is_live: boolean; http_status: number | null }): StatusState {
+	if (s.http_status === 0 || (s.http_status !== null && s.http_status >= 400)) return "down";
+	if (s.is_live) return "live";
+	return "stale";
+}
 type TypeFilter = "all" | "commercial" | "support" | "policy" | "other";
 type HttpStatusFilter = "all" | "2xx" | "3xx" | "4xx" | "5xx";
 type HasFindingsFilter = "all" | "with" | "without";
@@ -62,7 +74,7 @@ function exportToCsv(rows: InventorySurface[], filename: string) {
 			JSON.stringify(r.host),
 			JSON.stringify(r.page_type),
 			JSON.stringify(r.tier),
-			r.is_live ? "live" : (r.http_status !== null && r.http_status >= 400 ? "down" : "stale"),
+			classifySurfaceStatus(r),
 			r.http_status ?? "",
 			r.session_count ?? "",
 			r.finding_count ?? "",
@@ -295,8 +307,9 @@ function SurfaceDrawer({
 									{t("url")}
 								</div>
 								<div className='break-all font-mono text-sm text-content'>
-									{surface.host}
-									{surface.normalized_path}
+									<span>{surface.host}</span>
+									<span className='text-content-faint'> · </span>
+									<span>{surface.path}</span>
 								</div>
 							</div>
 
@@ -357,14 +370,20 @@ function SurfaceDrawer({
 									<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
 										{t("status")}
 									</div>
-									<span
-										className={`inline-flex items-center gap-1.5 text-xs ${surface.is_live ? "text-emerald-400" : "text-content-faint"}`}
-									>
-										<span
-											className={`h-1.5 w-1.5 rounded-full ${surface.is_live ? "bg-emerald-400" : "bg-content-faint"}`}
-										/>
-										{surface.is_live ? t("live") : t("not_seen")}
-									</span>
+									{(() => {
+										const state = classifySurfaceStatus(surface);
+										const tone = state === "live"
+											? { text: "text-emerald-400", dot: "bg-emerald-400" }
+											: state === "down"
+												? { text: "text-red-400", dot: "bg-red-400" }
+												: { text: "text-amber-400", dot: "bg-amber-400" };
+										return (
+											<span className={`inline-flex items-center gap-1.5 text-xs ${tone.text}`}>
+												<span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+												{t(state)}
+											</span>
+										);
+									})()}
 								</div>
 								<div>
 									<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
@@ -619,8 +638,7 @@ export default function InventoryPage() {
 
 	const filtered = useMemo(() => {
 		return surfaces.filter((s) => {
-			if (liveFilter === "live" && !s.is_live) return false;
-			if (liveFilter === "not_live" && !isPageDown(s)) return false;
+			if (liveFilter !== "all" && classifySurfaceStatus(s) !== liveFilter) return false;
 			if (typeFilter === "commercial" && !s.is_commercial) return false;
 			if (typeFilter === "support" && s.page_type !== "support") return false;
 			if (typeFilter === "policy" && s.page_type !== "policy") return false;
@@ -742,25 +760,30 @@ export default function InventoryPage() {
 		copilot.open({ prompt: tp("inventory_bulk_analysis", { count: String(selectedIds.size) }) });
 	}, [selectedIds, copilot]);
 
-	// ── Down pages count ──
-
-	// "Unavailable" = pages with a confirmed error or unreachable status:
-	//   - HTTP 4xx/5xx (explicit server error)
-	//   - http_status === 0 (fetch failed — timeout, DNS, SSL, connection refused)
-	// Pages with http_status null are simply not yet checked — NOT down.
-	const isPageDown = (s: InventorySurface) =>
-		s.http_status === 0 ||
-		(s.http_status !== null && s.http_status >= 400);
-
-	const downCount = useMemo(
-		() => surfaces.filter(isPageDown).length,
-		[surfaces]
-	);
+	// ── Status counts ──
+	//
+	// Three buckets so that live + stale + down = surfaces.length and the
+	// header card matches the table.
+	//
+	//   live  — re-fetched this cycle, http < 400
+	//   down  — http_status === 0 (fetch failed) OR http_status >= 400
+	//   stale — previously fetched OK but not re-checked this cycle.
+	//           "Stale" tells the user the page IS visible to Vestigio
+	//           but is awaiting the next audit, instead of the older
+	//           ambiguous "not seen" copy.
+	const { liveCount, staleCount, downCount } = useMemo(() => {
+		let live = 0, stale = 0, down = 0;
+		for (const s of surfaces) {
+			const state = classifySurfaceStatus(s);
+			if (state === "live") live++;
+			else if (state === "down") down++;
+			else stale++;
+		}
+		return { liveCount: live, staleCount: stale, downCount: down };
+	}, [surfaces]);
 
 	// Real period-over-period deltas from API (null when no prior cycle)
 	const formatDelta = (n: number) => (n === 0 ? undefined : `${n > 0 ? "+" : ""}${n} ${t("from_last_period")}`);
-
-	const liveCount = surfaces.filter((s) => s.is_live).length;
 
 	const summaryCards: SummaryCard[] = [
 		{
@@ -812,8 +835,9 @@ export default function InventoryPage() {
 				<div>
 					<div className='text-sm text-content-secondary'>{row.label}</div>
 					<div className='font-mono text-xs text-content-faint'>
-						{row.host}
-						{row.normalized_path}
+						<span>{row.host}</span>
+						<span className='opacity-50'> · </span>
+						<span>{row.path}</span>
 					</div>
 				</div>
 			),
@@ -841,32 +865,17 @@ export default function InventoryPage() {
 			key: "is_live",
 			label: tc("status"),
 			render: (row: InventorySurface) => {
-				const down = isPageDown(row);
+				const state = classifySurfaceStatus(row);
+				const tone = state === "live"
+					? { text: "text-emerald-400", dot: "bg-emerald-400" }
+					: state === "down"
+						? { text: "text-red-400", dot: "bg-red-400" }
+						: { text: "text-amber-400", dot: "bg-amber-400" };
 				return (
-				<span
-					className={`inline-flex items-center gap-1 text-xs ${
-						down
-							? "text-red-400"
-							: !row.is_live
-								? "text-content-faint"
-								: "text-emerald-400"
-					}`}
-				>
-					<span
-						className={`h-1.5 w-1.5 rounded-full ${
-							down
-								? "bg-red-400"
-								: !row.is_live
-									? "bg-content-faint"
-									: "bg-emerald-400"
-						}`}
-					/>
-					{down
-						? t("status.down")
-						: !row.is_live
-							? t("status.not_seen")
-							: t("status.live")}
-				</span>
+					<span className={`inline-flex items-center gap-1 text-xs ${tone.text}`}>
+						<span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+						{t(`status.${state}`)}
+					</span>
 				);
 			},
 		},
@@ -966,8 +975,11 @@ export default function InventoryPage() {
 								<SummaryCards cards={summaryCards} />
 							</div>
 
-							{/* Live / Down split card */}
-							<div className='flex w-full shrink-0 overflow-hidden rounded-xl border border-edge bg-surface-card lg:w-48'>
+							{/* Live / Stale / Down split card — three buckets sum
+							    to surfaces.length so the table count always
+							    matches the cards. Each bucket toggles the
+							    status filter on/off. */}
+							<div className='flex w-full shrink-0 overflow-hidden rounded-xl border border-edge bg-surface-card lg:w-64'>
 								<button
 									onClick={() =>
 										setLiveFilter(liveFilter === "live" ? "all" : "live")
@@ -982,18 +994,34 @@ export default function InventoryPage() {
 										{liveCount}
 									</span>
 									<span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-600/70 dark:text-emerald-400/70'>
-										{t("cards.live")}
+										{t("status.live")}
 									</span>
 								</button>
 								<div className='w-px bg-edge' />
 								<button
 									onClick={() =>
-										setLiveFilter(
-											liveFilter === "not_live" ? "all" : "not_live"
-										)
+										setLiveFilter(liveFilter === "stale" ? "all" : "stale")
 									}
 									className={`flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors ${
-										liveFilter === "not_live"
+										liveFilter === "stale"
+											? "bg-amber-500/10 ring-1 ring-inset ring-amber-500/30"
+											: "hover:bg-surface-card-hover"
+									}`}
+								>
+									<span className='font-mono text-xl font-medium tabular-nums text-amber-600 dark:text-amber-400'>
+										{staleCount}
+									</span>
+									<span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-600/70 dark:text-amber-400/70'>
+										{t("status.stale")}
+									</span>
+								</button>
+								<div className='w-px bg-edge' />
+								<button
+									onClick={() =>
+										setLiveFilter(liveFilter === "down" ? "all" : "down")
+									}
+									className={`flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-colors ${
+										liveFilter === "down"
 											? "bg-red-500/10 ring-1 ring-inset ring-red-500/30"
 											: "hover:bg-surface-card-hover"
 									}`}
@@ -1024,7 +1052,8 @@ export default function InventoryPage() {
 								options={[
 									{ value: "all", label: t("status.all") },
 									{ value: "live", label: t("status.live") },
-									{ value: "not_live", label: t("status.not_seen") },
+									{ value: "stale", label: t("status.stale") },
+									{ value: "down", label: t("status.down") },
 								]}
 							/>
 							<FilterDropdown

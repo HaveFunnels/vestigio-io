@@ -30,6 +30,7 @@ import WhatBreaksAt10x from "@/components/console/workspace/WhatBreaksAt10x";
 import BudgetForecast from "@/components/console/workspace/BudgetForecast";
 import PentesterFinds from "@/components/console/workspace/PentesterFinds";
 import ComplianceGap from "@/components/console/workspace/ComplianceGap";
+import PhishingSurface from "@/components/console/workspace/PhishingSurface";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -407,6 +408,10 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					{/* Wave 11.4a — Compliance gap analyzer */}
 					<div className="mt-5">
 						<ComplianceGap findings={workspace.findings} />
+					</div>
+					{/* Wave 11.4d — Phishing surface monitor */}
+					<div className="mt-5">
+						<PhishingSurface />
 					</div>
 					<div className="mt-5">
 						<SecurityPosture findings={workspace.findings} />

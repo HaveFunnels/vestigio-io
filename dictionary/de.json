@@ -1878,6 +1878,23 @@
 					"empty": "Keine monatlichen Verluste in diesem Workspace.",
 					"uncategorized": "Keine Grundursache zugeordnet"
 				},
+				"phishing_surface": {
+					"label": "Phishing-Oberflaeche",
+					"subtitle": "Registrierte Typo-Squat-Domains, die Ihre imitieren koennten",
+					"loading": "Suche nach Typo-Squats...",
+					"empty_title": "Keine aktiven Typo-Squats erkannt",
+					"empty_description": "Wir haben {checked} Varianten geprueft, keine loest auf.",
+					"hits_label": "{count} registrierte Varianten von {total} geprueft",
+					"caveat": "Nur DNS-Aufloesung — aktives Phishing manuell via Whois bestaetigen.",
+					"patterns": {
+						"typo": "Tastatur-Tippfehler",
+						"visual_swap": "Visueller Tausch (0/o, 1/i)",
+						"brand_appendage": "Marken-Anhang (get-, -app)",
+						"tld_swap": "Andere TLD"
+					},
+					"check_whois": "Whois pruefen",
+					"ipv4_label": "Loest auf zu"
+				},
 				"compliance": {
 					"label": "Compliance-Analyse",
 					"subtitle": "Wie bereit Ihre Site fuer jedes regulatorische Framework ist",

@@ -1999,6 +1999,23 @@
 					"empty": "No se detectaron pérdidas mensuales en este workspace.",
 					"uncategorized": "Sin causa raíz mapeada"
 				},
+				"phishing_surface": {
+					"label": "Superficie de phishing",
+					"subtitle": "Dominios typo-squat registrados que podrían suplantar el tuyo",
+					"loading": "Escaneando typo-squats...",
+					"empty_title": "Sin typo-squats activos detectados",
+					"empty_description": "Verificamos {checked} variantes y ninguna resuelve. Mantén el monitoreo activo.",
+					"hits_label": "{count} variantes registradas de {total} probadas",
+					"caveat": "Solo resolución DNS — para confirmar phishing activo, revisa whois + contenido manualmente.",
+					"patterns": {
+						"typo": "Typo de teclado",
+						"visual_swap": "Sustitución visual (0/o, 1/i)",
+						"brand_appendage": "Apéndice de marca (get-, -app)",
+						"tld_swap": "TLD diferente"
+					},
+					"check_whois": "Verificar whois",
+					"ipv4_label": "Resuelve a"
+				},
 				"compliance": {
 					"label": "Análisis de cumplimiento",
 					"subtitle": "Qué tan listo está tu sitio para cada framework regulatorio",

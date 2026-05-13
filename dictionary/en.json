@@ -2092,6 +2092,23 @@
 					"empty": "No monthly losses detected in this workspace.",
 					"uncategorized": "No root cause mapped"
 				},
+				"phishing_surface": {
+					"label": "Phishing surface",
+					"subtitle": "Registered typo-squat domains that could impersonate yours",
+					"loading": "Scanning for typo-squats...",
+					"empty_title": "No active typo-squats detected",
+					"empty_description": "We checked {checked} variants of your domain and none resolved. Keep monitoring on.",
+					"hits_label": "{count} registered variants out of {total} tested",
+					"caveat": "DNS resolution only — confirm active phishing via whois + page content manually.",
+					"patterns": {
+						"typo": "Keyboard typo",
+						"visual_swap": "Visual swap (0/o, 1/i)",
+						"brand_appendage": "Brand appendage (get-, -app)",
+						"tld_swap": "Different TLD"
+					},
+					"check_whois": "Check whois",
+					"ipv4_label": "Resolves to"
+				},
 				"compliance": {
 					"label": "Compliance readiness",
 					"subtitle": "How ready your site is for each regulatory framework",

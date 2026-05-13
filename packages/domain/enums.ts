@@ -215,6 +215,11 @@ export enum EvidenceType {
   // post-render console errors). Sits alongside HttpResponse so both
   // raw and rendered views of the same URL are inspectable.
   PlaywrightRender = 'playwright_render',
+  // Wave 12 — Brand Echo pack: signals collected from OUTSIDE the
+  // customer's domain. One evidence entry per recon source (Trustpilot,
+  // Reclame Aqui, DDG search, HN, Reddit, Wikipedia, G2, Capterra,
+  // Product Hunt). Payload kind discriminates which source it is.
+  OffSiteRecon = 'off_site_recon',
 }
 
 export enum SourceKind {
@@ -556,4 +561,18 @@ export enum InferenceCategory {
   NetworkErrorWeighted = 'network_error_weighted',
   MobileTrustGap = 'mobile_trust_gap',
   BehavioralMicroPatternCascade = 'behavioral_micro_pattern_cascade',
+  // Wave 12 — Brand Echo (off-site reconnaissance)
+  G2ListingVoid = 'g2_listing_void',
+  CapterraListingVoid = 'capterra_listing_void',
+  ProductHuntListingVoid = 'producthunt_listing_void',
+  WikipediaListingVoid = 'wikipedia_listing_void',
+  BrandedSerpInvisible = 'branded_serp_invisible',
+  CompetitorBrandHijackSerp = 'competitor_brand_hijack_serp',
+  AffiliateOutranksOwn = 'affiliate_outranks_own',
+  CategoryIntentInvisible = 'category_intent_invisible',
+  TrustpilotComplaintCluster = 'trustpilot_complaint_cluster',
+  TrustpilotResponseSilence = 'trustpilot_response_silence',
+  ReclameAquiReputationCritical = 'reclame_aqui_reputation_critical',
+  HnTechAudienceInvisible = 'hn_tech_audience_invisible',
+  RedditForumAbsence = 'reddit_forum_absence',
 }

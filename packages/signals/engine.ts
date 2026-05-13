@@ -33,6 +33,7 @@ import {
   ContentEnrichmentPayload,
 } from '../domain';
 import type { BehavioralCohortPayload } from '../behavioral';
+import { extractOffSiteReconSignals } from './off-site-recon-signals';
 import type { CommerceContext } from '../integrations/commerce-context';
 import { BuiltGraph, GraphQuery } from '../graph';
 import {
@@ -155,6 +156,10 @@ export function extractSignals(
 
   // Phase 3E: Brand integrity signals from impersonation evidence
   extractBrandIntegritySignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Wave 12: Brand Echo (off-site recon) signals — Trustpilot, Reclame
+  // Aqui, DDG SERP, HN, Reddit, industry listings.
+  extractOffSiteReconSignals(byType, scoping, cycle_ref, signals, ids);
 
   // Phase 4B: Behavioral intelligence signals from snippet evidence
   extractBehavioralSignals(byType, scoping, cycle_ref, signals, ids);

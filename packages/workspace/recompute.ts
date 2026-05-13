@@ -9,6 +9,7 @@ import {
   Opportunity,
   SuppressionRule,
   BusinessProfile,
+  IdGenerator,
   makeRef,
 } from '../domain';
 import { buildGraph } from '../graph';
@@ -27,6 +28,7 @@ import { extractSaasSignals } from '../signals/saas-signals';
 import { computeSaasInferences } from '../inference/saas-inference';
 import { computeVerticalInferences } from '../inference/vertical-inference';
 import { computeFunnelMomentInferences } from '../inference/funnel-moment-inference';
+import { computeExternalReconInferences } from '../inference/external-recon-inference';
 import { computeFunnelGapInferences, type FunnelGapInput } from '../inference/funnel-gap-inference';
 import { computeCrossDomainInferences, computeSubdomainCrossDomainInferences } from '../inference/cross-domain-inference';
 import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
@@ -645,6 +647,20 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     input.classified_pages,
   );
 
+  // Wave 12 — Brand Echo inferences (off-site reconnaissance).
+  // Reads OffSiteRecon signals produced earlier in extractSignals.
+  const allSignalsForRecon = [...signals, ...saasSignals];
+  const reconByKey = new Map<string, typeof signals[number]>();
+  for (const s of allSignalsForRecon) reconByKey.set(s.signal_key, s);
+  const externalReconInferences = computeExternalReconInferences({
+    first: (attr) => allSignalsForRecon.find((s) => s.attribute === attr),
+    byKey: reconByKey,
+    scoping,
+    cycle_ref,
+    ids: new IdGenerator('inf'),
+    business_model: input.onboarding_business_model || null,
+  });
+
   // Produce a decision for funnel-moment findings so they get actions derived
   let funnelJourneyDecisionResult: DecisionResult | null = null;
   if (funnelMomentInferences.length > 0) {
@@ -665,7 +681,7 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // Merge SaaS signals + additional static-check signals into main arrays
   const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
-  const allInferences = [...inferences, ...saasInferences, ...verticalInferences, ...funnelMomentInferences, ...subdomainInferences, ...crossDomainInferences, ...(input.additional_inferences || [])];
+  const allInferences = [...inferences, ...saasInferences, ...verticalInferences, ...funnelMomentInferences, ...externalReconInferences, ...subdomainInferences, ...crossDomainInferences, ...(input.additional_inferences || [])];
 
   // Collect all decisions and risk evaluations
   let allDecisions = [scaleResult.decision, revenueResult.decision, chargebackResult.decision, securityResult.decision, copyAlignmentResult.decision, channelIntegrityResult.decision, discoverabilityResult.decision, brandIntegrityResult.decision];

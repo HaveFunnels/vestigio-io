@@ -10,6 +10,7 @@ import { nucleiScanPass } from "./nuclei-scan";
 import { katanaDiscoveryPass } from "./katana-discovery";
 import { brandIntelScanPass } from "./brand-intel-scan";
 import { subdomainDiscoveryPass } from "./subdomain-discovery";
+import { externalReconPass } from "./external-recon";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -39,6 +40,7 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   katanaDiscoveryPass,
   nucleiScanPass,
   brandIntelScanPass,
+  externalReconPass,
   semanticEnrichmentPass,
 ];
 

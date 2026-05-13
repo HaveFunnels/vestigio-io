@@ -70,7 +70,8 @@ export type EvidencePayload =
   | BehavioralSessionPayload
   | SurfaceVitalityPayload
   | ContentEnrichmentPayload
-  | CopyElementsPayload;
+  | CopyElementsPayload
+  | OffSiteReconPayload;
 
 export interface HttpResponsePayload {
   type: 'http_response';
@@ -830,4 +831,50 @@ export interface CopyElementsPayload {
   has_form: boolean;
   has_pricing_table: boolean;
   has_faq: boolean;
+}
+
+// ──────────────────────────────────────────────
+// Wave 12 — Brand Echo (Off-Site Reconnaissance)
+//
+// Signals collected from OUTSIDE the customer's domain. One evidence
+// entry per source per cycle. The `source` field discriminates
+// downstream — inferences read the relevant slice and ignore the rest.
+//
+// Cost discipline: every source must be zero-cost (DDG HTML scrape,
+// public APIs, HEAD checks). No paid APIs, no free-tier with limits
+// that scale per-customer.
+// ──────────────────────────────────────────────
+
+export type OffSiteReconSource =
+  // Industry listings — simple presence checks (HTTP HEAD)
+  | 'industry_listing_g2'
+  | 'industry_listing_capterra'
+  | 'industry_listing_producthunt'
+  | 'industry_listing_wikipedia'
+  // Off-site discoverability — SERP scraping (DuckDuckGo HTML)
+  | 'serp_branded_search'
+  | 'serp_category_intent'
+  // Off-site reputation — review platforms + forums
+  | 'reputation_trustpilot'
+  | 'reputation_reclame_aqui'
+  | 'reputation_hackernews'
+  | 'reputation_reddit';
+
+export interface OffSiteReconPayload {
+  type: 'off_site_recon';
+  source: OffSiteReconSource;
+  /** Brand token used to query (e.g. "havefunnels"). */
+  brand_token: string;
+  /** True when the source was reachable and parsed; false when fetch
+   *  failed or response was unexpected. Inferences gate on this. */
+  reachable: boolean;
+  /** Whatever the recon source returned, in a normalized shape.
+   *  Inferences read specific keys per source. Stays loose-typed
+   *  (Record<string, unknown>) on purpose — schemas evolve per
+   *  source and we don't want a payload union explosion. */
+  data: Record<string, unknown>;
+  /** The URL we fetched (for evidence audit trail). */
+  fetched_url: string;
+  /** Error category when reachable=false. */
+  error_kind?: 'timeout' | 'http_error' | 'parse_error' | 'rate_limited' | 'auth_missing' | 'unknown';
 }

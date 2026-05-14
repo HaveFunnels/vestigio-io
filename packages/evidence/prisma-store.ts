@@ -272,19 +272,24 @@ export class PrismaEvidenceStore {
       return { evidence: [], cycleRef: null };
     }
 
-    // Wave 15.3 — bound evidence load to prevent OOM on serverless workers.
-    // Wave 13/14 added off_site_recon entries; ContentEnrichment payloads
-    // can carry kilobytes of HTML extracts; PageContent payloads carry
-    // body text. A heavy cycle can hit 10k+ rows × 100KB = 1GB+ — well
-    // above any serverless function memory budget.
+    // Bound evidence load to prevent OOM. Wave 13/14 added off_site_recon
+    // entries and ContentEnrichment payloads that can each carry kilobytes
+    // of HTML extracts; PageContent payloads carry body text. A heavy cycle
+    // can hit 10k+ rows × 100KB = 1GB+, well above any serverless budget.
     //
-    // Cap at 12k rows ordered by createdAt DESC so we always get the most
-    // recent and most relevant evidence first. Below this threshold, all
-    // findings are produced normally; above it, the bottom of the tail is
-    // trimmed (oldest evidence, typically Wikipedia/HN/Reddit recon that
-    // doesn't change rapidly). When exceeded we log loudly so we can
-    // monitor for cycles that consistently grow past the bound.
-    const HARD_EVIDENCE_CAP = 12_000;
+    // Cap defaults to 20k rows ordered by createdAt DESC so we always
+    // get the most recent and most relevant evidence first. Below this
+    // threshold, all findings are produced normally; above it, the
+    // bottom of the tail is trimmed (oldest evidence, typically off-site
+    // recon that doesn't change rapidly).
+    //
+    // Tunable via EVIDENCE_HARD_CAP env var for hosts with more RAM
+    // headroom. EVIDENCE_WARN_THRESHOLD lets ops monitor cycles
+    // approaching the cap (defaults to 80% of cap).
+    const HARD_EVIDENCE_CAP = Number(process.env.EVIDENCE_HARD_CAP || "20000");
+    const WARN_THRESHOLD = Number(
+      process.env.EVIDENCE_WARN_THRESHOLD || String(Math.floor(HARD_EVIDENCE_CAP * 0.8)),
+    );
     const rows = await this.prisma.evidence.findMany({
       where: { workspaceRef, environmentRef, cycleRef: latest.cycleRef },
       orderBy: { createdAt: 'desc' },
@@ -293,7 +298,14 @@ export class PrismaEvidenceStore {
     if (rows.length === HARD_EVIDENCE_CAP) {
       console.warn(
         `[evidence-store] loadLatestCycle hit HARD_EVIDENCE_CAP=${HARD_EVIDENCE_CAP} for cycle=${latest.cycleRef} ` +
-        `(env=${environmentRef}). Older rows trimmed — findings still produced but verify nothing material was dropped.`,
+        `(env=${environmentRef}). Older rows trimmed — findings still produced but verify nothing material was dropped. ` +
+        `Bump EVIDENCE_HARD_CAP if this is recurring on a high-memory host.`,
+      );
+    } else if (rows.length >= WARN_THRESHOLD) {
+      console.warn(
+        `[evidence-store] loadLatestCycle loaded ${rows.length} rows for cycle=${latest.cycleRef} ` +
+        `(env=${environmentRef}), within ${HARD_EVIDENCE_CAP - rows.length} of the cap. ` +
+        `Plan capacity headroom or smarter trimming.`,
       );
     }
 

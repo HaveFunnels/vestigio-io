@@ -31,6 +31,9 @@ import {
 	clearCycleState,
 	getQueueDepth,
 	markDispatchAttempted,
+	tryAcquireOrgSlot,
+	releaseOrgSlot,
+	requeueForOrgContention,
 	MAX_ATTEMPTS,
 	type CyclePriority,
 } from "../platform/audit-cycle-queue";
@@ -45,6 +48,10 @@ const IDLE_POLL_MS = 1000;
 // Delay before a contention-requeue is tried again. Spreads out env-
 // blocked cycles so we don't spin.
 const CONTENTION_COOLDOWN_MS = 2000;
+// Org-cap requeue cooldown — longer than env contention because a
+// saturated org is likely to stay saturated for a while (the cycle
+// that's running is going to take a while to finish).
+const ORG_CONTENTION_COOLDOWN_MS = 5000;
 // Exponential backoff base + cap for retries after dispatch failure.
 const RETRY_BACKOFF_BASE_MS = 5_000;
 const RETRY_BACKOFF_CAP_MS = 60_000;
@@ -129,6 +136,20 @@ async function processCycle(
 	}
 	if (envId) heldEnvLocks.add(envId);
 
+	// Per-org concurrency cap (fairness). Prevents a single customer
+	// with many environments from monopolizing the worker pool. If at
+	// cap, release the env lock and requeue with a longer cooldown.
+	const orgSlotOk = orgId ? await tryAcquireOrgSlot(orgId) : true;
+	if (orgId && !orgSlotOk) {
+		log.info("org at cycle concurrency cap, requeueing");
+		if (envId) {
+			await releaseEnvLock(envId);
+			heldEnvLocks.delete(envId);
+		}
+		await requeueForOrgContention(cycleId, priority);
+		return { backoffMs: ORG_CONTENTION_COOLDOWN_MS };
+	}
+
 	// Wave 5 Fase 1A fix (C3): increment the attempt counter only after
 	// the lock is held — env-contention requeues don't burn the budget,
 	// and a crash before this point doesn't penalize the cycle.
@@ -184,6 +205,9 @@ async function processCycle(
 		if (envId) {
 			await releaseEnvLock(envId);
 			heldEnvLocks.delete(envId);
+		}
+		if (orgId) {
+			await releaseOrgSlot(orgId);
 		}
 	}
 }

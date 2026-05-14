@@ -76,6 +76,11 @@ export class McpServer {
     });
   }
 
+  /** Returns the environment_ref of the currently-loaded context, or null. */
+  getLoadedEnvironmentRef(): string | null {
+    return this.scope?.environment_ref ?? null;
+  }
+
   loadContext(
     evidence: Evidence[],
     scope: McpRequestScope,
@@ -86,6 +91,26 @@ export class McpServer {
     // Wave 0.7: Optional previous snapshot for change detection.
     previousSnapshot?: import('../../packages/change-detection').CycleSnapshot | null,
   ): void {
+    // Cross-tenant contamination guard. McpServer is a process-wide
+    // singleton (see src/lib/mcp-client.ts). When two requests for
+    // different orgs hit the same Node process, one's loadContext can
+    // clobber the other's context, and a subsequent read of the
+    // singleton returns the wrong org's data. Wave 16's projections
+    // cache fast-path bypasses MCP for the common case so this is
+    // mostly latent — but when it does happen we want a loud signal,
+    // not a silent data leak.
+    if (
+      this.scope &&
+      this.scope.environment_ref &&
+      this.scope.environment_ref !== scope.environment_ref
+    ) {
+      console.warn(
+        `[mcp-server] cross-tenant context swap detected ` +
+        `(previous env=${this.scope.environment_ref} → new env=${scope.environment_ref}). ` +
+        `If this fires under steady load, harden the singleton with per-request isolation.`,
+      );
+    }
+
     this.scope = scope;
     this.cycleRef = cycle_ref;
     this.rootDomain = root_domain;

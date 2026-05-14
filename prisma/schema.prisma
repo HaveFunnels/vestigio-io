@@ -345,6 +345,19 @@ model AuditCycle {
   evidence     Evidence[]
   findings     Finding[]
   snapshots    CycleSnapshot[]
+
+  // Hottest read pattern: layout cache fast-path
+  //   findFirst({ environmentId, status: 'complete' }, orderBy: completedAt desc)
+  // and the impersonate guardrail
+  //   count({ environmentId, status: 'running' }).
+  // Both share a (environmentId, status, completedAt) order.
+  @@index([environmentId, status, completedAt])
+  // Heal cron + cycle-mode lookups: status + age scans across all envs.
+  //   findMany({ status: 'running', createdAt: { lt: cutoff } })
+  //   findMany({ status: 'pending', createdAt: { lt: cutoff } })
+  @@index([status, createdAt])
+  // Per-org dashboards / billing rollups.
+  @@index([organizationId, createdAt])
 }
 
 // ──────────────────────────────────────────────

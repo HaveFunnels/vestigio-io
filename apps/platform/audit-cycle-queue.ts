@@ -48,12 +48,25 @@ const PRIORITY_TIERS: CyclePriority[] = ["hot", "warm", "cold"];
 const ENV_LOCK_TTL_SEC = 15 * 60; // 15 minutes
 // A cycle that has failed 3 times (initial + 2 retries) goes to DLQ.
 const MAX_ATTEMPTS = 3;
+// Per-org concurrent-cycle cap. One customer with 50 environments could
+// otherwise drain the entire worker pool with hot cycles (every other
+// org would starve). Cap defaults to 3 and is env-tunable; for hosts
+// with many small worker replicas, this should be lower than the total
+// number of concurrent slots across the fleet so cross-org fairness
+// holds even when a single org has every worker busy.
+const ORG_CYCLE_CAP_DEFAULT = Number(process.env.ORG_CYCLE_CAP || "3");
+// Safety net: if a worker crashes between INCR and release, the key
+// would leak. Reset every 30 min so the cap can self-heal.
+const ORG_INFLIGHT_TTL_SEC = 30 * 60;
 
 function priorityKey(tier: CyclePriority): string {
 	return `${PREFIX}:priority:${tier}`;
 }
 function envLockKey(envId: string): string {
 	return `${PREFIX}:envlock:${envId}`;
+}
+function orgInflightKey(orgId: string): string {
+	return `${PREFIX}:orginflight:${orgId}`;
 }
 function attemptsKey(cycleId: string): string {
 	return `${PREFIX}:attempts:${cycleId}`;
@@ -153,6 +166,87 @@ export async function releaseEnvLock(envId: string): Promise<void> {
 		await redis.del(envLockKey(envId));
 	} catch {
 		// lock will TTL out eventually
+	}
+}
+
+// ──────────────────────────────────────────────
+// Per-org concurrency cap (fairness)
+// ──────────────────────────────────────────────
+
+/**
+ * Attempt to claim a per-org concurrency slot. Returns `true` if under
+ * cap and the slot was claimed; `false` if at cap (caller should requeue
+ * via `requeueForOrgContention`). Atomic via Redis INCR — concurrent
+ * callers that race past the cap roll their increment back. The TTL
+ * acts as a safety net for crashes that bypass `releaseOrgSlot`.
+ *
+ * When Redis is unavailable, returns `true` (no-op) — same fail-open
+ * pattern as the env lock so single-box dev still works.
+ */
+export async function tryAcquireOrgSlot(
+	orgId: string,
+	cap: number = ORG_CYCLE_CAP_DEFAULT,
+): Promise<boolean> {
+	const redis = getRedis();
+	if (!redis) return true;
+	try {
+		const current = await redis.incr(orgInflightKey(orgId));
+		// Always refresh TTL so the safety net doesn't expire mid-cycle
+		// on a long-running audit.
+		await redis.expire(orgInflightKey(orgId), ORG_INFLIGHT_TTL_SEC);
+		if (current > cap) {
+			// Roll back — we exceeded the cap. Race with concurrent
+			// callers is safe because INCR is atomic; the one that
+			// crossed the cap rolls back, the one that landed at the
+			// cap stays.
+			await redis.decr(orgInflightKey(orgId));
+			return false;
+		}
+		return true;
+	} catch {
+		// Fail-open on Redis hiccup: better to overrun the cap briefly
+		// than to drop cycles entirely.
+		return true;
+	}
+}
+
+/**
+ * Release a per-org concurrency slot. Idempotent and safe to call from
+ * `finally` blocks. If the counter would go below 0 (drift from crashes
+ * or duplicate releases), it's clamped back to 0.
+ */
+export async function releaseOrgSlot(orgId: string): Promise<void> {
+	const redis = getRedis();
+	if (!redis) return;
+	try {
+		const after = await redis.decr(orgInflightKey(orgId));
+		if (after < 0) {
+			// Counter drifted negative — happens if a crash leaves an
+			// orphan release. Pin it back to 0 so the cap stays accurate.
+			await redis.set(orgInflightKey(orgId), 0, "EX", ORG_INFLIGHT_TTL_SEC);
+		}
+	} catch {
+		// TTL will reset eventually
+	}
+}
+
+/**
+ * Requeue a cycle whose org is at the concurrency cap. Pushes to the
+ * back of its tier — gives other orgs a chance before this one is
+ * retried. The cooldown returned to the worker is intentionally a bit
+ * longer than env contention's so a saturated org doesn't burn dequeue
+ * cycles in a tight loop.
+ */
+export async function requeueForOrgContention(
+	cycleId: string,
+	priority: CyclePriority,
+): Promise<void> {
+	const redis = getRedis();
+	if (!redis) return;
+	try {
+		await redis.rpush(priorityKey(priority), cycleId);
+	} catch {
+		// best-effort
 	}
 }
 
@@ -363,4 +457,4 @@ export async function clearFromDlq(cycleId: string): Promise<void> {
 	}
 }
 
-export { MAX_ATTEMPTS, ENV_LOCK_TTL_SEC };
+export { MAX_ATTEMPTS, ENV_LOCK_TTL_SEC, ORG_CYCLE_CAP_DEFAULT };

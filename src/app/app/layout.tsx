@@ -90,14 +90,41 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 				domain: orgCtx.domain,
 				engineTranslations,
 			});
-			mcpData = {
-				findings: loadFindings(),
-				actions: loadActions(),
-				changeReport: loadChangeReport(),
-				workspaces: loadWorkspaces(),
-				maps: loadAllMaps(),
-				currency: orgCtx.currency,
-			};
+
+			// Cross-tenant contamination guard. McpServer is a process-wide
+			// singleton, so two concurrent ensureContext calls from
+			// different orgs can race and the loser sees the winner's
+			// data. Wave 16 cache fast-path bypasses MCP for the common
+			// case, but the legacy path here still touches the singleton.
+			// Verify the loaded scope matches THIS request's env before
+			// serving its data. If it doesn't, render loading instead of
+			// risking a data leak — the next request will retry.
+			const { getMcpServer } = await import("@/lib/mcp-client");
+			const loadedEnvRef = getMcpServer().getLoadedEnvironmentRef?.();
+			const expectedEnvRef = `environment:${orgCtx.envId}`;
+			if (loadedEnvRef && loadedEnvRef !== expectedEnvRef) {
+				console.warn(
+					`[layout] mcp singleton env mismatch — expected=${expectedEnvRef} loaded=${loadedEnvRef}. ` +
+					`Rendering loading state instead of serving cross-tenant data.`,
+				);
+				mcpData = {
+					findings: { status: "loading" },
+					actions: { status: "loading" },
+					changeReport: { status: "loading" },
+					workspaces: { status: "loading" },
+					maps: { status: "loading" },
+					currency: orgCtx.currency,
+				};
+			} else {
+				mcpData = {
+					findings: loadFindings(),
+					actions: loadActions(),
+					changeReport: loadChangeReport(),
+					workspaces: loadWorkspaces(),
+					maps: loadAllMaps(),
+					currency: orgCtx.currency,
+				};
+			}
 		}
 
 		// Wave 5 Fase 2 — activity tracking + auto-resume. Non-blocking best

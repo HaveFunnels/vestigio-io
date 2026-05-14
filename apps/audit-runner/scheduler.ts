@@ -138,37 +138,54 @@ export async function runSchedulerPass(): Promise<SchedulerResult> {
 		enqueuedByType: { hot: 0, warm: 0, cold: 0 },
 	};
 
-	let envs: Array<{
+	// Cursor pagination — process every eligible environment in batches
+	// without an arbitrary upper bound. Previous version capped at 500
+	// envs/tick which would have starved the long tail past ~1500
+	// customers × 5 envs (10h before the scheduler revisited an env).
+	//
+	// SCHEDULER_BATCH_SIZE bounds the per-batch DB load (default 200);
+	// SCHEDULER_MAX_ENVS_PER_TICK is a runaway safety net (default 10_000)
+	// so a one-off bad query plan can't loop forever. Real load should
+	// never approach this.
+	const BATCH_SIZE = Number(process.env.SCHEDULER_BATCH_SIZE || "200");
+	const MAX_PER_TICK = Number(process.env.SCHEDULER_MAX_ENVS_PER_TICK || "10000");
+	let cursor: string | undefined;
+	let allEnvs: Array<{
 		id: string;
 		organizationId: string;
 		organization: { plan: string | null; status: string | null } | null;
-	}>;
+	}> = [];
 	try {
-		envs = await prisma.environment.findMany({
-			where: {
-				activated: true,
-				continuousPaused: false,
-				organization: {
-					status: { not: "suspended" },
+		while (allEnvs.length < MAX_PER_TICK) {
+			const batch = await prisma.environment.findMany({
+				where: {
+					activated: true,
+					continuousPaused: false,
+					organization: {
+						status: { not: "suspended" },
+					},
 				},
-			},
-			select: {
-				id: true,
-				organizationId: true,
-				organization: {
-					select: { plan: true, status: true },
+				select: {
+					id: true,
+					organizationId: true,
+					organization: {
+						select: { plan: true, status: true },
+					},
 				},
-			},
-			// Generous cap — 500 is enough to cover medium-term scale.
-			// If we ever blow past this in one tick, the rest catches up
-			// on the next tick. A cursor-based pagination would eliminate
-			// the cap but adds state we don't need yet.
-			take: 500,
-		});
+				orderBy: { id: "asc" },
+				take: BATCH_SIZE,
+				...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+			});
+			if (batch.length === 0) break;
+			allEnvs = allEnvs.concat(batch);
+			cursor = batch[batch.length - 1].id;
+			if (batch.length < BATCH_SIZE) break; // last page
+		}
 	} catch (err) {
 		console.error("[audit-scheduler] env enumeration failed:", err);
 		return result;
 	}
+	const envs = allEnvs;
 
 	result.envsEvaluated = envs.length;
 

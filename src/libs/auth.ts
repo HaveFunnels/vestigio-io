@@ -193,12 +193,18 @@ export const authOptions: NextAuthOptions = {
 	},
 	adapter: wrapAdapterForActivation(PrismaAdapter(prisma)),
 	secret: process.env.SECRET,
+	// Cookie lifetime is the upper bound: 30 days. The actual session
+	// expiry is per-login — when the user checks "Remember me" we honor
+	// the full 30 days; when they don't, we enforce a 12h hard cap via
+	// `token.expiresAt` in the JWT callback (see below). This is how
+	// NextAuth's JWT strategy lets us do per-session lifetimes without
+	// fighting the static cookie config.
 	session: {
 		strategy: "jwt",
-		maxAge: 12 * 60 * 60, // 12 hours
+		maxAge: 30 * 24 * 60 * 60, // 30 days
 	},
 	jwt: {
-		maxAge: 12 * 60 * 60, // 12 hours
+		maxAge: 30 * 24 * 60 * 60, // 30 days
 	},
 
 	providers: [
@@ -208,6 +214,7 @@ export const authOptions: NextAuthOptions = {
 			credentials: {
 				email: { label: "Email", type: "text" },
 				password: { label: "Password", type: "password" },
+				remember: { label: "Remember me", type: "text" },
 			},
 
 			async authorize(credentials) {
@@ -244,7 +251,12 @@ export const authOptions: NextAuthOptions = {
 
 				// Successful login — clear failed attempts
 				clearFailedAttempts(email);
-				return user;
+				// Carry the "remember me" choice onto the user object so the
+				// JWT callback can set the right per-session expiry. The
+				// `_remember` key is local to this hand-off and is not
+				// persisted in the database; the JWT callback reads it and
+				// then drops it.
+				return { ...user, _remember: credentials.remember === "true" } as any;
 			},
 		}),
 
@@ -429,6 +441,17 @@ export const authOptions: NextAuthOptions = {
 				const isRestoreAdmin = account?.provider === "restore-admin";
 				const anyUser = user as any;
 
+				// Per-login session lifetime. Default to 12h; if the user
+				// checked "Remember me" on the password form, extend to 30
+				// days (matches the cookie ceiling). OAuth, magic link, and
+				// impersonate logins keep the 12h default — they have no
+				// way to opt into the longer lifetime, which is conservative.
+				const remember = anyUser._remember === true;
+				const sessionTtlMs = remember
+					? 30 * 24 * 60 * 60 * 1000 // 30d
+					: 12 * 60 * 60 * 1000; // 12h
+				const expiresAt = Date.now() + sessionTtlMs;
+
 				return {
 					...token,
 					uid: user.id,
@@ -441,6 +464,10 @@ export const authOptions: NextAuthOptions = {
 					// the admin to type their email. Cleared when restoring back.
 					originalAdminId: isImpersonating ? anyUser.originalAdminId ?? null : isRestoreAdmin ? undefined : token.originalAdminId,
 					originalAdminEmail: isImpersonating ? anyUser.originalAdminEmail ?? null : isRestoreAdmin ? undefined : token.originalAdminEmail,
+					// Per-login expiry: the session callback rejects tokens
+					// past this timestamp regardless of cookie lifetime.
+					sessionExpiresAt: expiresAt,
+					rememberMe: remember,
 					role: user.role,
 					picture: user.image,
 					image: user.image,
@@ -454,8 +481,30 @@ export const authOptions: NextAuthOptions = {
 
 		session: async ({ session, token }) => {
 			if (session?.user) {
+				// Per-login expiry enforcement. Cookie persists up to 30
+				// days, but `sessionExpiresAt` on the JWT defines the real
+				// cutoff for THIS login. If we're past it, return a session
+				// with an `expires` in the past so middleware and
+				// useSession treat the user as logged out. Existing
+				// tokens without sessionExpiresAt (legacy or
+				// magic-link/oauth login that didn't set it) fall back to
+				// the cookie max-age implicitly.
+				const expiresAt = (token as any).sessionExpiresAt as number | undefined;
+				if (typeof expiresAt === "number" && Date.now() > expiresAt) {
+					return {
+						...session,
+						expires: new Date(0).toISOString(),
+						user: {} as any,
+					};
+				}
+
+				const sessionExpiresIso = typeof expiresAt === "number"
+					? new Date(expiresAt).toISOString()
+					: session.expires;
+
 				return {
 					...session,
+					expires: sessionExpiresIso,
 					user: {
 						...session.user,
 						id: token.sub,

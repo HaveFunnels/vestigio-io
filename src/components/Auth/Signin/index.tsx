@@ -26,8 +26,12 @@ import DemoSignin from "./DemoSignin";
 export default function Signin() {
 	const searchParams = useSearchParams();
 	const justActivated = searchParams?.get("activated") === "1";
+	// Password is the default tab — most users are returning logins with
+	// a saved password manager, so showing them the password form first
+	// removes a step. Magic link is still one click away as the secondary
+	// option for users without a saved password.
 	const [tab, setTab] = useState<"magic-link" | "password">(
-		justActivated ? "password" : "magic-link",
+		justActivated ? "password" : "password",
 	);
 	const t = useTranslations("signInPage");
 	const [showPassword, setShowPassword] = useState(false);
@@ -153,18 +157,8 @@ export default function Signin() {
 						<span className="block h-px flex-1 bg-white/[0.06]" />
 					</div>
 
-					{/* Tab toggle: magic link / password */}
+					{/* Tab toggle: password / magic link (password first — see comment in component) */}
 					<div className="auth-fade-in auth-delay-400 mb-5 flex w-full items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">
-						<button
-							onClick={() => setTab("magic-link")}
-							className={`h-9 w-full rounded-lg text-sm font-medium transition-all ${
-								tab === "magic-link"
-									? "bg-white/10 text-white"
-									: "text-zinc-500 hover:text-zinc-300"
-							}`}
-						>
-							{t("magicLink")}
-						</button>
 						<button
 							onClick={() => setTab("password")}
 							className={`h-9 w-full rounded-lg text-sm font-medium transition-all ${
@@ -174,6 +168,16 @@ export default function Signin() {
 							}`}
 						>
 							{t("password")}
+						</button>
+						<button
+							onClick={() => setTab("magic-link")}
+							className={`h-9 w-full rounded-lg text-sm font-medium transition-all ${
+								tab === "magic-link"
+									? "bg-white/10 text-white"
+									: "text-zinc-500 hover:text-zinc-300"
+							}`}
+						>
+							{t("magicLink")}
 						</button>
 					</div>
 

@@ -161,6 +161,87 @@ const LOCALE_OPTIONS = [
 	{ code: "de", label: "Deutsch" },
 ] as const;
 
+// Single-select language picker inside the user menu. Renders a compact
+// trigger row showing the current locale; clicking it expands a list of
+// options. Click-outside collapses. Kept inline (no portal) so it stays
+// scoped to the parent menu's stacking context.
+function LanguageDropdown({
+	currentCode,
+	onSelect,
+}: {
+	currentCode: string;
+	onSelect: (code: string) => Promise<void> | void;
+}) {
+	const [expanded, setExpanded] = useState(false);
+	const current =
+		LOCALE_OPTIONS.find((o) => o.code === currentCode) ?? LOCALE_OPTIONS[0];
+
+	return (
+		<div>
+			<p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-faint">
+				Language
+			</p>
+			<button
+				type="button"
+				onClick={() => setExpanded((v) => !v)}
+				className="flex w-full items-center justify-between rounded-md border border-edge bg-surface-inset px-2.5 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:border-content-faint hover:text-content"
+				aria-haspopup="listbox"
+				aria-expanded={expanded}
+			>
+				<span>{current.label}</span>
+				<svg
+					className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`}
+					fill="none"
+					viewBox="0 0 24 24"
+					strokeWidth={2}
+					stroke="currentColor"
+				>
+					<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+				</svg>
+			</button>
+			{expanded && (
+				<div
+					role="listbox"
+					className="mt-1 overflow-hidden rounded-md border border-edge bg-surface-card"
+				>
+					{LOCALE_OPTIONS.map((opt) => {
+						const active = opt.code === current.code;
+						return (
+							<button
+								key={opt.code}
+								role="option"
+								aria-selected={active}
+								onClick={async () => {
+									setExpanded(false);
+									await onSelect(opt.code);
+								}}
+								className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left text-xs transition-colors ${
+									active
+										? "bg-accent/10 text-accent-text"
+										: "text-content-muted hover:bg-surface-card-hover hover:text-content"
+								}`}
+							>
+								<span>{opt.label}</span>
+								{active && (
+									<svg
+										className="h-3 w-3"
+										fill="none"
+										viewBox="0 0 24 24"
+										strokeWidth={2.5}
+										stroke="currentColor"
+									>
+										<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+									</svg>
+								)}
+							</button>
+						);
+					})}
+				</div>
+			)}
+		</div>
+	);
+}
+
 function UserMenu() {
 	const { data: session, status, update: updateSession } = useSession();
 	const [open, setOpen] = useState(false);
@@ -210,39 +291,27 @@ function UserMenu() {
 							</Link>
 						))}
 					</div>
-					{/* Admin-only language selector */}
+					{/* Admin-only language selector — proper single-select.
+					    Lives inside the user menu but renders its own
+					    expandable dropdown so it doesn't visually mix with
+					    the rest of the org-level nav items. */}
 					{(session?.user as any)?.role === "ADMIN" && (
 						<div className="border-t border-edge px-3 py-2">
-							<p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-faint">Language</p>
-							<div className="flex flex-wrap gap-1">
-								{LOCALE_OPTIONS.map((opt) => {
-									const active = (session?.user as any)?.locale === opt.code || (!((session?.user as any)?.locale) && opt.code === "en");
-									return (
-										<button
-											key={opt.code}
-											onClick={async () => {
-												const { switchLanguage } = await import("@/components/Header/action");
-												await switchLanguage(opt.code);
-												await fetch("/api/user/update", {
-													method: "POST",
-													headers: { "Content-Type": "application/json" },
-													body: JSON.stringify({ locale: opt.code }),
-												});
-												await updateSession({ user: { locale: opt.code } });
-												setOpen(false);
-												router.refresh();
-											}}
-											className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
-												active
-													? "bg-accent/20 text-accent-text"
-													: "text-content-faint hover:bg-surface-card-hover hover:text-content-muted"
-											}`}
-										>
-											{opt.label}
-										</button>
-									);
-								})}
-							</div>
+							<LanguageDropdown
+								currentCode={(session?.user as any)?.locale ?? "en"}
+								onSelect={async (code) => {
+									const { switchLanguage } = await import("@/components/Header/action");
+									await switchLanguage(code);
+									await fetch("/api/user/update", {
+										method: "POST",
+										headers: { "Content-Type": "application/json" },
+										body: JSON.stringify({ locale: code }),
+									});
+									await updateSession({ user: { locale: code } });
+									setOpen(false);
+									router.refresh();
+								}}
+							/>
 						</div>
 					)}
 					<div className="border-t border-edge pt-1">

@@ -20,7 +20,13 @@ const nextConfig = {
 	// webpack from trying to bundle them for the browser.
 	// Externalize packages that depend on Node.js builtins (stream, crypto, dns, net)
 	// to prevent webpack from trying to bundle them for the client
-	serverExternalPackages: ['sanity', 'next-sanity', '@sanity/client', '@sanity/image-url', '@sanity/asset-utils', 'ioredis'],
+	// esbuild is required at runtime by apps/audit-runner/recompute-pool.ts
+	// (bundles the worker-thread entry on first spawn). The require is
+	// reachable from API routes (trigger-audit -> run-cycle -> pool),
+	// but only fires when RECOMPUTE_USE_WORKER_THREADS=1 in the worker
+	// service. Marking esbuild external keeps webpack from trying to
+	// parse its .d.ts files (which contain TypeScript-only syntax).
+	serverExternalPackages: ['sanity', 'next-sanity', '@sanity/client', '@sanity/image-url', '@sanity/asset-utils', 'ioredis', 'esbuild'],
 	webpack: (config, { isServer }) => {
 		if (!isServer) {
 			config.resolve.fallback = {

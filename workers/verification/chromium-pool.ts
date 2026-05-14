@@ -1,66 +1,209 @@
 /**
- * Chromium pool  (Wave 5 Fase 1A)
+ * Chromium pool — keeps a small set of warm browser processes around,
+ * dispenses fresh `BrowserContext` objects to callers, and reclaims
+ * them on release. Each context starts clean (no cookies, no storage),
+ * so isolation between unrelated renders is preserved even though the
+ * underlying browser is reused.
  *
- * For now this is a CONCURRENCY GUARDRAIL, not a true reuse pool. The
- * primary goal at Fase 1A is preventing OOM under burst — without a
- * global semaphore, a wave of 50 cycles each launching Chromium in
- * parallel would consume ~15GB of RAM (300MB × 50) and crash the
- * worker. The semaphore caps simultaneous launches to N (default 3),
- * so worst-case RAM stays under ~1GB.
+ * Why pool: Chromium cold-launch is ~1–3s and ~300MB of RSS per
+ * process. A typical cycle renders 10–30 pages; without pooling, every
+ * render pays that cold-start cost and the worker memory profile
+ * oscillates by ~3GB per minute (allocate, run, free). With pooling
+ * three warm browsers stay resident, the contexts are cheap (~30ms,
+ * ~50MB), and the GC has much less to do.
  *
- * True browser-context reuse (skip the 1-3s cold-launch on every call,
- * cycle through a small set of warm browsers) is a Fase 3 concern when
- * Max-tier orgs run hot sweeps every 15min and the per-cycle launch
- * cost adds up. For Fase 1A the semaphore alone is the meaningful win.
- *
- * The semaphore is in-process: each worker (or each Next.js node) caps
- * its own launches independently. Cluster-wide limits are enforced by
- * the redis-job-queue's per-worker concurrency cap + the queue itself
- * limiting total in-flight cycles.
+ * Legacy `acquireBrowserSlot`/`releaseBrowserSlot` API is preserved so
+ * any caller that still launches its own browser keeps the
+ * concurrency-cap behaviour. New callers should prefer
+ * `withBrowserContext()` to get a clean context backed by a warm
+ * browser.
  *
  * Tunable via env: `CHROMIUM_POOL_SIZE` (default 3).
  */
 
-const POOL_SIZE = Math.max(
-	1,
-	Number(process.env.CHROMIUM_POOL_SIZE || "3"),
-);
+import { chromium, type Browser, type BrowserContext, type LaunchOptions } from "playwright";
+
+const POOL_SIZE = Math.max(1, Number(process.env.CHROMIUM_POOL_SIZE || "3"));
+
+// ──────────────────────────────────────────────
+// Legacy semaphore (slot only — still used by callers that launch their
+// own browser, e.g. authenticated-runtime which needs custom args)
+// ──────────────────────────────────────────────
 
 let inUse = 0;
-const waiters: Array<() => void> = [];
+const slotWaiters: Array<() => void> = [];
 
-/**
- * Wait for an available slot. Resolves immediately if one is free,
- * otherwise queues until release() is called. Always pair with
- * releaseBrowserSlot() in a finally{} block.
- */
 export async function acquireBrowserSlot(): Promise<void> {
 	if (inUse < POOL_SIZE) {
 		inUse += 1;
 		return;
 	}
 	await new Promise<void>((resolve) => {
-		waiters.push(() => {
+		slotWaiters.push(() => {
 			inUse += 1;
 			resolve();
 		});
 	});
 }
 
-/**
- * Release a previously-acquired slot. Wakes the next waiter if any.
- * Idempotent against double-release (won't go negative).
- */
 export function releaseBrowserSlot(): void {
 	if (inUse > 0) inUse -= 1;
-	const next = waiters.shift();
+	const next = slotWaiters.shift();
 	if (next) next();
 }
 
+// ──────────────────────────────────────────────
+// Browser pool — warm Chromium processes ready for context creation
+// ──────────────────────────────────────────────
+
+interface PoolEntry {
+	browser: Browser;
+	inUseContexts: number;
+	createdAt: number;
+}
+
+const idleBrowsers: PoolEntry[] = [];
+const browserWaiters: Array<(entry: PoolEntry) => void> = [];
+let totalBrowsers = 0;
+
+// Recycle browsers after this many uses to prevent memory leaks from
+// long-running Chromium processes (history pages, leftover render data).
+const MAX_USES_PER_BROWSER = Number(process.env.CHROMIUM_MAX_USES || "200");
+
+const LAUNCH_OPTIONS: LaunchOptions = {
+	headless: true,
+	// Disabling /dev/shm helps with low-RAM Docker containers (Railway,
+	// Render small instances). Without it Chromium tries to use 64MB of
+	// /dev/shm by default and crashes when it can't.
+	args: ["--disable-dev-shm-usage", "--no-sandbox"],
+};
+
+async function spawnBrowser(): Promise<PoolEntry> {
+	const browser = await chromium.launch(LAUNCH_OPTIONS);
+	totalBrowsers += 1;
+	// If the browser ever disconnects unexpectedly (crash, OOM, GPU
+	// glitch), make sure we don't keep handing out a dead Browser.
+	browser.on("disconnected", () => {
+		totalBrowsers = Math.max(0, totalBrowsers - 1);
+		// Remove from idle pool if it was idle when it died.
+		const idx = idleBrowsers.findIndex((e) => e.browser === browser);
+		if (idx >= 0) idleBrowsers.splice(idx, 1);
+	});
+	return { browser, inUseContexts: 0, createdAt: Date.now() };
+}
+
+async function acquirePoolEntry(): Promise<PoolEntry> {
+	const reusable = idleBrowsers.pop();
+	if (reusable && reusable.browser.isConnected()) {
+		return reusable;
+	}
+	if (totalBrowsers < POOL_SIZE) {
+		return await spawnBrowser();
+	}
+	return await new Promise<PoolEntry>((resolve) => {
+		browserWaiters.push(resolve);
+	});
+}
+
+async function releasePoolEntry(entry: PoolEntry): Promise<void> {
+	if (!entry.browser.isConnected()) {
+		// Crashed mid-use. Drop it.
+		const next = browserWaiters.shift();
+		if (next) {
+			try {
+				const replacement = await spawnBrowser();
+				next(replacement);
+			} catch {
+				// best-effort; the waiter will time out via its caller
+			}
+		}
+		return;
+	}
+	// Recycle after MAX_USES_PER_BROWSER uses to bound memory drift.
+	if (entry.inUseContexts >= MAX_USES_PER_BROWSER) {
+		try {
+			await entry.browser.close();
+		} catch {
+			// disconnect handler will decrement totalBrowsers
+		}
+		const next = browserWaiters.shift();
+		if (next) {
+			try {
+				const replacement = await spawnBrowser();
+				next(replacement);
+			} catch {
+				// best-effort
+			}
+		}
+		return;
+	}
+	const next = browserWaiters.shift();
+	if (next) {
+		next(entry);
+	} else {
+		idleBrowsers.push(entry);
+	}
+}
+
 /**
- * For metrics endpoints (Fase 1B observability). Returns a snapshot of
- * pool utilization at the moment of the call.
+ * Run `callback` with a fresh `BrowserContext` backed by a pooled,
+ * warm Chromium. Context is closed on exit so cookies/storage from
+ * one render don't leak into the next. The browser itself stays in
+ * the pool.
+ *
+ * Honours the same `CHROMIUM_POOL_SIZE` concurrency limit as the
+ * legacy `acquireBrowserSlot` — callers don't need both.
  */
-export function getPoolStats(): { inUse: number; capacity: number; waiters: number } {
-	return { inUse, capacity: POOL_SIZE, waiters: waiters.length };
+export async function withBrowserContext<T>(
+	contextOptions: Parameters<Browser["newContext"]>[0],
+	callback: (context: BrowserContext) => Promise<T>,
+): Promise<T> {
+	const entry = await acquirePoolEntry();
+	entry.inUseContexts += 1;
+	const context = await entry.browser.newContext(contextOptions);
+	try {
+		return await callback(context);
+	} finally {
+		try {
+			await context.close();
+		} catch {
+			// page already closed / disconnected — ignore
+		}
+		await releasePoolEntry(entry);
+	}
+}
+
+// ──────────────────────────────────────────────
+// Observability
+// ──────────────────────────────────────────────
+
+export function getPoolStats(): {
+	inUse: number;
+	capacity: number;
+	waiters: number;
+	idleBrowsers: number;
+	totalBrowsers: number;
+	browserWaiters: number;
+} {
+	return {
+		inUse,
+		capacity: POOL_SIZE,
+		waiters: slotWaiters.length,
+		idleBrowsers: idleBrowsers.length,
+		totalBrowsers,
+		browserWaiters: browserWaiters.length,
+	};
+}
+
+/** Test/shutdown hook — close every warm browser. */
+export async function shutdownChromiumPool(): Promise<void> {
+	const all = [...idleBrowsers];
+	idleBrowsers.length = 0;
+	for (const entry of all) {
+		try {
+			await entry.browser.close();
+		} catch {
+			// best-effort
+		}
+	}
 }

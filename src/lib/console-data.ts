@@ -45,6 +45,24 @@ export function isDemoMode(): boolean { return _demoMode; }
 // so ensureContext can reload instead of serving stale projections.
 let _loadedCycleRef: string | null = null;
 
+// Cross-tenant serialization mutex around ensureContext.
+//
+// The MCP server is a process-wide singleton (see src/lib/mcp-client.ts).
+// ensureContext has multiple `await` points after `server.loadContext()`
+// — notably the persisted-findings fetch which writes back into the
+// CURRENT singleton context (`server.getContext().persistedFindings = …`).
+// If two requests for different envs are racing, request B can swap the
+// singleton out from under request A's persisted-findings write, ending
+// up with env A's findings stored against env B's context.
+//
+// Wave 16's projections-cache fast-path bypasses ensureContext entirely
+// for the common case, so this mutex only serializes the rare legacy
+// fallback path. Latency cost is negligible; correctness is binary.
+//
+// The proper fix is to make MCP context per-request (no global singleton).
+// That's a multi-day refactor on the roadmap; this mutex bridges until.
+let _ensureContextChain: Promise<unknown> = Promise.resolve();
+
 // ──────────────────────────────────────────────
 // Wave 16 — projections cache fast path
 //
@@ -123,6 +141,33 @@ export async function hasRunningCycleForEnv(envId: string): Promise<boolean> {
 }
 
 export async function ensureContext(orgCtx: {
+  orgId: string;
+  orgName: string;
+  orgType?: string;
+  envId: string;
+  domain: string;
+  engineTranslations?: import('../../packages/projections/types').EngineTranslations;
+}): Promise<void> {
+  // Serialize all ensureContext calls per Node process. See the
+  // `_ensureContextChain` comment above for why.
+  const previousChain = _ensureContextChain;
+  let release!: () => void;
+  _ensureContextChain = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  try {
+    await previousChain;
+  } catch {
+    // previous chain rejected — irrelevant to us
+  }
+  try {
+    return await _ensureContextBody(orgCtx);
+  } finally {
+    release();
+  }
+}
+
+async function _ensureContextBody(orgCtx: {
   orgId: string;
   orgName: string;
   orgType?: string;

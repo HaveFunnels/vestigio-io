@@ -17,8 +17,7 @@
 // scenarios, capped by env `CHROMIUM_POOL_SIZE`.
 // ──────────────────────────────────────────────
 
-import { chromium, type Browser } from 'playwright';
-import { acquireBrowserSlot, releaseBrowserSlot } from '../verification/chromium-pool';
+import { withBrowserContext } from '../verification/chromium-pool';
 
 export interface IngestionRenderOptions {
   // Total time budget for navigate + content extraction. Hard cap —
@@ -72,70 +71,61 @@ export async function renderForIngestion(
   const waitUntil = options.waitUntil || DEFAULTS.waitUntil;
   const viewport = options.viewport || DEFAULTS.viewport;
 
-  let slotHeld = false;
-  let browser: Browser | null = null;
   const consoleErrors: string[] = [];
-
   try {
-    await acquireBrowserSlot();
-    slotHeld = true;
+    return await withBrowserContext(
+      {
+        viewport,
+        userAgent: 'Vestigio-Ingestion/1.0',
+        ignoreHTTPSErrors: true,
+      },
+      async (context) => {
+        const page = await context.newPage();
+        let mainStatus = -1;
+        let mainContentType: string | null = null;
 
-    browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext({
-      viewport,
-      userAgent: 'Vestigio-Ingestion/1.0',
-      ignoreHTTPSErrors: true,
-    });
-    const page = await context.newPage();
+        page.on('console', (msg) => {
+          if (msg.type() === 'error' && consoleErrors.length < MAX_CONSOLE_ERROR_SAMPLES) {
+            consoleErrors.push(msg.text());
+          }
+        });
 
-    let mainStatus = -1;
-    let mainContentType: string | null = null;
+        page.on('response', (response) => {
+          if (mainStatus !== -1) return;
+          try {
+            const reqUrl = response.url();
+            if (reqUrl === url || reqUrl === response.request().url()) {
+              mainStatus = response.status();
+              mainContentType = response.headers()['content-type'] || null;
+            }
+          } catch { /* ignore */ }
+        });
 
-    page.on('console', (msg) => {
-      if (msg.type() === 'error' && consoleErrors.length < MAX_CONSOLE_ERROR_SAMPLES) {
-        consoleErrors.push(msg.text());
-      }
-    });
+        const navResponse = await page.goto(url, {
+          waitUntil,
+          timeout: options.timeoutMs,
+        });
 
-    page.on('response', (response) => {
-      // Only capture the first navigation response (the main document).
-      if (mainStatus !== -1) return;
-      try {
-        const reqUrl = response.url();
-        if (reqUrl === url || reqUrl === response.request().url()) {
-          mainStatus = response.status();
-          mainContentType = response.headers()['content-type'] || null;
+        if (mainStatus === -1 && navResponse) {
+          mainStatus = navResponse.status();
+          mainContentType = navResponse.headers()['content-type'] || mainContentType;
         }
-      } catch { /* ignore */ }
-    });
 
-    const navResponse = await page.goto(url, {
-      waitUntil,
-      timeout: options.timeoutMs,
-    });
+        const finalUrl = page.url();
+        const html = await page.content();
 
-    // Fallback: if the response listener didn't fire (rare for the very
-    // first navigation), pull status from the goto() return value.
-    if (mainStatus === -1 && navResponse) {
-      mainStatus = navResponse.status();
-      mainContentType = navResponse.headers()['content-type'] || mainContentType;
-    }
-
-    const finalUrl = page.url();
-    const html = await page.content();
-
-    await context.close();
-
-    return {
-      success: true,
-      finalUrl,
-      html,
-      statusCode: mainStatus,
-      contentType: mainContentType,
-      consoleErrorCount: consoleErrors.length,
-      consoleErrorSamples: consoleErrors,
-      durationMs: Date.now() - startedAt,
-    };
+        return {
+          success: true,
+          finalUrl,
+          html,
+          statusCode: mainStatus,
+          contentType: mainContentType,
+          consoleErrorCount: consoleErrors.length,
+          consoleErrorSamples: consoleErrors,
+          durationMs: Date.now() - startedAt,
+        };
+      },
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return {
@@ -149,10 +139,5 @@ export async function renderForIngestion(
       durationMs: Date.now() - startedAt,
       error: message,
     };
-  } finally {
-    if (browser) {
-      try { await browser.close(); } catch { /* best effort */ }
-    }
-    if (slotHeld) releaseBrowserSlot();
   }
 }

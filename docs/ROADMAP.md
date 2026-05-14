@@ -2489,6 +2489,62 @@ Every widget must declare its data dependencies up-front, and **never hide** whe
 
 ---
 
+## Wave 17 — 10k Customer Scale Plan
+
+Working backwards from "support 10,000 active customers with 5 envs avg = 50k envs, ~14 cycles/sec sustained at hot-tier cadence". Wave 5 Fase 2 brought capacity to ~700-1000. Each row below is a discrete cliff that breaks somewhere between 1k and 10k.
+
+### Tier A — Foundations that unblock the rest
+
+| # | Bottleneck | Solution | Effort | Where it bites first |
+|---|---|---|---|---|
+| A1 | Postgres connection pool exhaustion | Stand up **PgBouncer** in transaction-pool mode on Railway. Set `connection_limit=1` on Prisma URL (PgBouncer manages the real pool). Web/worker share a pgbouncer URL; pgbouncer multiplexes onto a small real Postgres connection set (50-100). | 1 day | ~150 concurrent workers/web replicas hit Postgres max_connections (~200 default). |
+| A2 | Single-process MCP singleton still latent | **Per-request MCP context model.** Replace `globalThis.__vestigio_mcp_server__` with a request-scoped factory (Next.js `headers()` + a cache keyed by envRef). Eliminates the singleton entirely. Wave 5 Fase 2 added a mutex bridge; A2 is the real fix. | 2-3 days | When legacy MCP fallback fires under load (rare today; common if cache writes start failing). |
+| A3 | Worker autoscaling | Railway HPA on queue depth: scale `audit-worker` replicas based on `vestigio:auditq:priority:hot` length. `worker-loop.ts` already supports multi-replica via env-lock. Configure: scale-up at depth > 20, scale-down at depth < 5, max replicas based on plan limits. | 0.5 day (Railway dashboard) | ~100 concurrent cycles needed in the hot tier. |
+
+### Tier B — Throughput multipliers
+
+| # | Bottleneck | Solution | Effort | Where it bites first |
+|---|---|---|---|---|
+| B1 | Evidence storage cost + load time | **S3 tiering for large payloads.** Move `ContentEnrichment`, `PageContent.body`, `off_site_recon` payloads >8KB to S3. Keep only a pointer + metadata in Postgres. Evidence load skips the heavy column entirely; engine fetches S3 lazily for the inferences that actually need it. | 3-4 days | When Evidence table grows past ~10M rows or 100GB; OOM on `loadLatestCycle()`. |
+| B2 | recomputeAll is per-cycle pure CPU | **Move to Node `worker_threads`** per concurrent cycle. Each thread runs `recomputeAllAsync` on its own V8 isolate → true CPU parallelism, not just event-loop yields. Main thread keeps polling Redis + serving heal. Wave 5 Fase 2's generator refactor was the prerequisite. | 2 days | When per-worker concurrency > 2 starts queueing on the event loop. |
+| B3 | Postgres read replicas | Route layout's projections-cache read to a read replica (Railway / Neon / RDS). Audit-runner writes stay on primary. Wave 16 cache load is the dominant read pattern, so even one replica halves primary load. | 1 day | ~50 page renders/sec sustained. |
+
+### Tier C — Fairness and observability
+
+| # | Bottleneck | Solution | Effort | Where it bites first |
+|---|---|---|---|---|
+| C1 | Queue priority decay (aged cold cycles never run if hot is always full) | Add **priority aging**: every 10min the worker-loop promotes the head of `cold` → `warm` and `warm` → `hot` if dwell time exceeds threshold. Prevents the long tail from being permanently starved. | 1 day | When hot+warm sustained queue depth > 50 for hours. |
+| C2 | Per-tenant rate limiting beyond cycle cap | Wave 5 Fase 2 has `ORG_CYCLE_CAP` (concurrent). Add a **per-org daily cycle quota** so a customer with broken cron-triggers can't burn 10x their plan limit in a day. Track via Redis `INCR` with daily TTL. | 1 day | A buggy integration triggers excess cycles for one customer. |
+| C3 | Metrics, traces, alerting | Wire OpenTelemetry into worker-loop + audit-runner phases. Export to Grafana Cloud / Datadog. Critical signals: queue depth per tier, p95 cycle duration, recompute duration, DB pool saturation, Chromium pool waiters, OOM events. | 2-3 days | Always useful; pays for itself the first time prod degrades. |
+
+### Tier D — Specific known sharp edges
+
+| # | Bottleneck | Solution | Effort |
+|---|---|---|---|
+| D1 | `RawBehavioralEvent` 30-day scan at end of every cycle | Replace SELECT/GROUP BY with a **rolling materialized view** refreshed every N minutes. Cycle reads the matview (instant) instead of scanning raw events. | 1 day |
+| D2 | `EnvLock` 15-min TTL on crash blocks env for 15 min | Reduce TTL to 5 min, add a graceful-shutdown release hook in worker-loop (SIGTERM handler already exists — extend it). | 0.5 day |
+| D3 | Scheduler revisits all envs every tick | Cursor pagination from Wave 5 Fase 2 fixes the cap, but at 50k envs the scheduler tick itself becomes slow. Partition by org-id hash modulo N tick buckets; each hourly tick processes 1/N of the fleet. | 1 day |
+| D4 | Notification dispatcher cron blocks on Brevo API | Already async, but no concurrency cap. Add a small task queue (Redis BLPOP) so a slow Brevo response doesn't back up the dispatcher cron. | 1 day |
+
+### Capacity ceiling per tier
+
+| Customer count | Status |
+|---|---|
+| 0–200 active | Comfortable as-is (post-Wave 5 Fase 2 + this commit). |
+| 200–1k | Comfortable; watch queue depth + chromium pool waiters. |
+| 1k–5k | Need **Tier A** (PgBouncer + MCP per-request + autoscaling). |
+| 5k–10k | Need **Tier B** (S3 tiering + worker_threads + read replica) on top of A. |
+| 10k+ | Need **Tier C** + **D** for fairness and the long tail. Beyond 10k, multi-region Postgres + sharded Redis become real considerations. |
+
+### Anti-patterns to avoid
+
+- **Don't shard Postgres prematurely.** Single Postgres + PgBouncer + read replica gets to ~5k customers cleanly. Sharding adds operational complexity that's hard to undo.
+- **Don't move to managed queue (SQS/Kafka) yet.** Redis lists + the env-lock pattern handle this scale and lose no semantics.
+- **Don't replace Prisma.** The pool sizing change in Wave 5 Fase 2 + PgBouncer covers the connection issue without changing the ORM.
+- **Don't run engine workers in Lambda.** Audit-runner is long-running (1-3min per cycle) and stateful within a cycle. Long-running container model (Railway / Render / Fly) is correct.
+
+---
+
 ## What is NOT on this roadmap
 
 Per the [North Star anti-drift commitments](NORTHSTAR.md):

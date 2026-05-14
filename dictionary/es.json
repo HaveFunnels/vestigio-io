@@ -4006,6 +4006,7 @@
 			"support_tickets": "Tickets de Soporte",
 			"feedback": "Feedback",
 			"system_health": "Salud del Sistema",
+			"mcp_observability": "Observabilidad MCP",
 			"error_tracking": "Seguimiento de Errores",
 			"audit_log": "Registro de Auditoría",
 			"alerts": "Alertas",

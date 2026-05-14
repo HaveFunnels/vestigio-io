@@ -4411,6 +4411,7 @@
 			"support_tickets": "Tickets de Suporte",
 			"feedback": "Feedback",
 			"system_health": "Saúde do Sistema",
+			"mcp_observability": "Observabilidade MCP",
 			"error_tracking": "Rastreamento de Erros",
 			"audit_log": "Log de Auditoria",
 			"alerts": "Alertas",

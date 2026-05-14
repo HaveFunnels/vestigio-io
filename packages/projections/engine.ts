@@ -1813,69 +1813,64 @@ export function projectWorkspaces(
     ),
   ];
 
-  // Add Copy Alignment workspace when copy findings exist
-  if (copyAlignmentFindings.length > 0) {
-    workspaces.push(
-      buildWorkspaceProjection(
-        'copy_alignment', wn?.copy_alignment ?? 'Copy Alignment', 'copy_alignment',
-        'copy_alignment_pack',
-        result.copy_alignment.decision.decision_key,
-        result.copy_alignment.decision.decision_impact,
-        copyAlignmentFindings,
-        coherenceByDecisionRef.get(makeRef('decision', result.copy_alignment.decision.id)) || null,
-        narrative,
-        changeSummaryMap.get('copy_alignment_pack') ?? null,
-      ),
-    );
-  }
+  // Copy Alignment, Channel Integrity, Discoverability, and Brand
+  // Integrity workspaces always render — even with zero findings — so
+  // the user gets a visible state decision (e.g. "copy_aligned",
+  // "brand_integrity_strong") instead of the workspace silently
+  // disappearing. Empty findings + a state decision is meaningful UX:
+  // "we looked, nothing to report". Hiding the workspace makes it
+  // ambiguous whether the pack ran at all.
+  workspaces.push(
+    buildWorkspaceProjection(
+      'copy_alignment', wn?.copy_alignment ?? 'Copy Alignment', 'copy_alignment',
+      'copy_alignment_pack',
+      result.copy_alignment.decision.decision_key,
+      result.copy_alignment.decision.decision_impact,
+      copyAlignmentFindings,
+      coherenceByDecisionRef.get(makeRef('decision', result.copy_alignment.decision.id)) || null,
+      narrative,
+      changeSummaryMap.get('copy_alignment_pack') ?? null,
+    ),
+  );
 
-  // Add Channel Integrity workspace when findings exist
-  if (channelIntegrityFindings.length > 0) {
-    workspaces.push(
-      buildWorkspaceProjection(
-        'channel_integrity', wn?.channel_integrity ?? 'Channel Integrity', 'channel_integrity',
-        'channel_integrity_pack',
-        result.channel_integrity.decision.decision_key,
-        result.channel_integrity.decision.decision_impact,
-        channelIntegrityFindings,
-        coherenceByDecisionRef.get(makeRef('decision', result.channel_integrity.decision.id)) || null,
-        narrative,
-        changeSummaryMap.get('channel_integrity_pack') ?? null,
-      ),
-    );
-  }
+  workspaces.push(
+    buildWorkspaceProjection(
+      'channel_integrity', wn?.channel_integrity ?? 'Channel Integrity', 'channel_integrity',
+      'channel_integrity_pack',
+      result.channel_integrity.decision.decision_key,
+      result.channel_integrity.decision.decision_impact,
+      channelIntegrityFindings,
+      coherenceByDecisionRef.get(makeRef('decision', result.channel_integrity.decision.id)) || null,
+      narrative,
+      changeSummaryMap.get('channel_integrity_pack') ?? null,
+    ),
+  );
 
-  // Add Discoverability workspace when findings exist
-  if (discoverabilityFindings.length > 0) {
-    workspaces.push(
-      buildWorkspaceProjection(
-        'discoverability', wn?.discoverability ?? 'Discoverability', 'discoverability',
-        'discoverability_pack',
-        result.discoverability.decision.decision_key,
-        result.discoverability.decision.decision_impact,
-        discoverabilityFindings,
-        coherenceByDecisionRef.get(makeRef('decision', result.discoverability.decision.id)) || null,
-        narrative,
-        changeSummaryMap.get('discoverability_pack') ?? null,
-      ),
-    );
-  }
+  workspaces.push(
+    buildWorkspaceProjection(
+      'discoverability', wn?.discoverability ?? 'Discoverability', 'discoverability',
+      'discoverability_pack',
+      result.discoverability.decision.decision_key,
+      result.discoverability.decision.decision_impact,
+      discoverabilityFindings,
+      coherenceByDecisionRef.get(makeRef('decision', result.discoverability.decision.id)) || null,
+      narrative,
+      changeSummaryMap.get('discoverability_pack') ?? null,
+    ),
+  );
 
-  // Add Brand Integrity workspace when findings exist
-  if (brandIntegrityFindings.length > 0) {
-    workspaces.push(
-      buildWorkspaceProjection(
-        'brand_integrity', wn?.brand_integrity ?? 'Brand Integrity', 'brand_integrity',
-        'brand_integrity_pack',
-        result.brand_integrity.decision.decision_key,
-        result.brand_integrity.decision.decision_impact,
-        brandIntegrityFindings,
-        coherenceByDecisionRef.get(makeRef('decision', result.brand_integrity.decision.id)) || null,
-        narrative,
-        changeSummaryMap.get('brand_integrity_pack') ?? null,
-      ),
-    );
-  }
+  workspaces.push(
+    buildWorkspaceProjection(
+      'brand_integrity', wn?.brand_integrity ?? 'Brand Integrity', 'brand_integrity',
+      'brand_integrity_pack',
+      result.brand_integrity.decision.decision_key,
+      result.brand_integrity.decision.decision_impact,
+      brandIntegrityFindings,
+      coherenceByDecisionRef.get(makeRef('decision', result.brand_integrity.decision.id)) || null,
+      narrative,
+      changeSummaryMap.get('brand_integrity_pack') ?? null,
+    ),
+  );
 
   // Add SaaS workspace only if pack is eligible and has findings
   if (result.saas_growth_readiness && saasFindings.length > 0) {

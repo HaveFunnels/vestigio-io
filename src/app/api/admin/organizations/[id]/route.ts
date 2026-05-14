@@ -61,6 +61,93 @@ export const GET = withErrorTracking(async function GET(
       select: { createdAt: true, completedAt: true, status: true },
     });
 
+    // ── Audit history (last 20) with per-cycle aggregates ──
+    // The admin org page card needs each cycle's outcome at a glance so
+    // we can spot regressions (e.g. an env that consistently fails after
+    // a deploy) without opening the runner logs.
+    //
+    // findingCount/evidenceCount are computed via groupBy so we get one
+    // round-trip regardless of how many cycles are returned. actionCount
+    // is read from the projections cache (the engine doesn't persist
+    // actions as a separate Prisma table).
+    const recentCycles = await prisma.auditCycle.findMany({
+      where: { organizationId: id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        environmentId: true,
+        status: true,
+        cycleType: true,
+        createdAt: true,
+        completedAt: true,
+        lastError: true,
+        lastErrorAt: true,
+        retryCount: true,
+        projectionsCache: true,
+      },
+    });
+
+    const cycleIds = recentCycles.map((c) => c.id);
+    const [findingCounts, evidenceCounts] = await Promise.all([
+      cycleIds.length === 0
+        ? Promise.resolve([] as { cycleId: string; _count: number }[])
+        : prisma.finding.groupBy({
+            by: ["cycleId"],
+            where: { cycleId: { in: cycleIds } },
+            _count: true,
+          }),
+      cycleIds.length === 0
+        ? Promise.resolve(
+            [] as { auditCycleId: string | null; _count: number }[],
+          )
+        : prisma.evidence.groupBy({
+            by: ["auditCycleId"],
+            where: { auditCycleId: { in: cycleIds } },
+            _count: true,
+          }),
+    ]);
+
+    const findingCountByCycle = new Map<string, number>();
+    for (const row of findingCounts) {
+      findingCountByCycle.set(row.cycleId, row._count);
+    }
+    const evidenceCountByCycle = new Map<string, number>();
+    for (const row of evidenceCounts) {
+      if (row.auditCycleId) {
+        evidenceCountByCycle.set(row.auditCycleId, row._count);
+      }
+    }
+
+    function readActionCount(cache: unknown): number | null {
+      if (!cache || typeof cache !== "object") return null;
+      const c = cache as Record<string, unknown>;
+      const actions = c.actions;
+      if (Array.isArray(actions)) return actions.length;
+      return null;
+    }
+
+    const envDomainById = new Map(org.environments.map((e) => [e.id, e.domain]));
+
+    const auditHistory = recentCycles.map((c) => ({
+      id: c.id,
+      environmentId: c.environmentId,
+      environmentDomain: envDomainById.get(c.environmentId) ?? null,
+      status: c.status,
+      cycleType: c.cycleType,
+      createdAt: c.createdAt.toISOString(),
+      completedAt: c.completedAt ? c.completedAt.toISOString() : null,
+      durationMs: c.completedAt
+        ? c.completedAt.getTime() - c.createdAt.getTime()
+        : null,
+      lastError: c.lastError,
+      lastErrorAt: c.lastErrorAt ? c.lastErrorAt.toISOString() : null,
+      retryCount: c.retryCount,
+      findingCount: findingCountByCycle.get(c.id) ?? 0,
+      evidenceCount: evidenceCountByCycle.get(c.id) ?? 0,
+      actionCount: readActionCount(c.projectionsCache),
+    }));
+
     // ── Usage stats: current period (YYYY-MM) ──
     const currentPeriod = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
@@ -130,6 +217,7 @@ export const GET = withErrorTracking(async function GET(
               status: lastAudit.status,
             }
           : null,
+        auditHistory,
         usageStats: {
           period: currentPeriod,
           mcpQueries,

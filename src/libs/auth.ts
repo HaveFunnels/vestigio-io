@@ -2,6 +2,7 @@ import { prisma } from "@/libs/prismaDb";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { User } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import {
 	type NextAuthOptions,
 	DefaultSession,
@@ -13,6 +14,54 @@ import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import AppleProvider from "next-auth/providers/apple";
 import { sendMagicLink } from "@/libs/notification-triggers";
+
+// ──────────────────────────────────────────────
+// Restore-admin token helpers
+//
+// The exit-impersonation endpoint mints a short-lived HMAC token bound
+// to the admin's email + an expiry. The restore-admin Credentials
+// provider verifies it. Server-side only — never exposed to the client
+// outside of the one-shot exit flow.
+// ──────────────────────────────────────────────
+
+const RESTORE_TOKEN_TTL_MS = 60 * 1000; // 60 seconds is plenty for a redirect.
+
+function getRestoreSecret(): string {
+	const secret = process.env.NEXTAUTH_SECRET;
+	if (!secret) throw new Error("NEXTAUTH_SECRET is required to mint restore tokens");
+	return secret;
+}
+
+export function signRestoreToken(adminEmail: string): string {
+	const expiresAt = Date.now() + RESTORE_TOKEN_TTL_MS;
+	const payload = `${adminEmail.toLowerCase()}.${expiresAt}`;
+	const sig = crypto
+		.createHmac("sha256", getRestoreSecret())
+		.update(payload)
+		.digest("hex");
+	// Token format: <expiresAt>.<sig>. AdminEmail is passed alongside as
+	// a separate credential so the verify side can re-derive the payload.
+	return `${expiresAt}.${sig}`;
+}
+
+export function verifyRestoreToken(token: string, adminEmail: string): boolean {
+	const parts = token.split(".");
+	if (parts.length !== 2) return false;
+	const expiresAt = parseInt(parts[0], 10);
+	if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
+	const expectedSig = crypto
+		.createHmac("sha256", getRestoreSecret())
+		.update(`${adminEmail.toLowerCase()}.${expiresAt}`)
+		.digest("hex");
+	try {
+		return crypto.timingSafeEqual(
+			Buffer.from(parts[1], "hex"),
+			Buffer.from(expectedSig, "hex"),
+		);
+	} catch {
+		return false;
+	}
+}
 
 declare module "next-auth" {
 	interface Session extends DefaultSession {
@@ -232,7 +281,50 @@ export const authOptions: NextAuthOptions = {
 					throw new Error("Target user not found");
 				}
 
-				return user;
+				// Carry the admin's identity onto the user we return so the
+				// JWT callback can persist it. That way "exit impersonation"
+				// can restore the admin's session without a full sign-out +
+				// re-login (which kicks the admin out of the platform).
+				return {
+					...user,
+					originalAdminId: admin.id,
+					originalAdminEmail: admin.email,
+				} as any;
+			},
+		}),
+
+		// "Exit impersonation" — restores the admin session without making
+		// the admin sign in again. The endpoint /api/admin/exit-impersonation
+		// mints a short-lived signed token from the current impersonation
+		// JWT (after verifying isImpersonating === true). This provider
+		// validates that signature, so the credential cannot be forged from
+		// the outside without NEXTAUTH_SECRET.
+		CredentialsProvider({
+			name: "restore-admin",
+			id: "restore-admin",
+			credentials: {
+				adminEmail: { label: "Admin Email", type: "text" },
+				token: { label: "Restore Token", type: "text" },
+			},
+
+			async authorize(credentials) {
+				if (!credentials?.adminEmail || !credentials?.token) {
+					throw new Error("Restore token required");
+				}
+
+				const adminEmail = credentials.adminEmail.toLowerCase();
+				const valid = verifyRestoreToken(credentials.token, adminEmail);
+				if (!valid) {
+					throw new Error("Invalid or expired restore token");
+				}
+
+				const admin = await prisma.user.findUnique({
+					where: { email: adminEmail },
+				});
+				if (!admin || admin.role !== "ADMIN") {
+					throw new Error("Admin no longer has ADMIN role");
+				}
+				return admin;
 			},
 		}),
 
@@ -334,6 +426,8 @@ export const authOptions: NextAuthOptions = {
 			if (user) {
 				const signals = await resolveActivationSignals(user.id);
 				const isImpersonating = account?.provider === "impersonate";
+				const isRestoreAdmin = account?.provider === "restore-admin";
+				const anyUser = user as any;
 
 				return {
 					...token,
@@ -342,6 +436,11 @@ export const authOptions: NextAuthOptions = {
 					hasActivatedEnv: signals.hasActivatedEnv,
 					isImpersonating,
 					impersonationStartedAt: isImpersonating ? Date.now() : undefined,
+					// Carry the admin identity through the impersonation JWT so
+					// the exit endpoint can mint a restore token without asking
+					// the admin to type their email. Cleared when restoring back.
+					originalAdminId: isImpersonating ? anyUser.originalAdminId ?? null : isRestoreAdmin ? undefined : token.originalAdminId,
+					originalAdminEmail: isImpersonating ? anyUser.originalAdminEmail ?? null : isRestoreAdmin ? undefined : token.originalAdminEmail,
 					role: user.role,
 					picture: user.image,
 					image: user.image,
@@ -363,6 +462,10 @@ export const authOptions: NextAuthOptions = {
 						hasOrganization: token.hasOrganization ?? true,
 						hasActivatedEnv: token.hasActivatedEnv ?? false,
 						isImpersonating: token.isImpersonating ?? false,
+						// Surface originalAdminEmail to the client only while
+						// impersonating, so the exit button can address the
+						// right admin. Stripped out once the admin restores.
+						originalAdminEmail: token.isImpersonating ? (token.originalAdminEmail ?? null) : null,
 						role: token.role,
 						image: token.picture,
 						locale: token.locale ?? "en",

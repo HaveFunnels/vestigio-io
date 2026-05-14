@@ -4327,6 +4327,7 @@
 			"support_tickets": "Support Tickets",
 			"feedback": "Feedback",
 			"system_health": "System Health",
+			"mcp_observability": "MCP Observability",
 			"error_tracking": "Error Tracking",
 			"audit_log": "Audit Log",
 			"alerts": "Alerts",

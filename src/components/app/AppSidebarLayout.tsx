@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -248,7 +248,35 @@ function UserMenu() {
 					<div className="border-t border-edge pt-1">
 						{(session?.user as any)?.isImpersonating && (
 							<button
-								onClick={() => signOut({ callbackUrl: "/app/admin/organizations" })}
+								onClick={async () => {
+									// Restore the admin session in place — don't
+									// signOut, which would log the admin out too.
+									// Mint a short-lived signed restore token via
+									// the server (it reads the impersonation JWT
+									// directly, so the admin email can't be forged
+									// from the client), then signIn against the
+									// "restore-admin" credentials provider.
+									try {
+										const res = await fetch("/api/admin/exit-impersonation", {
+											method: "POST",
+										});
+										if (!res.ok) {
+											// Fall back to signOut only when the
+											// restore flow is unavailable (e.g.,
+											// the impersonation JWT was wiped).
+											signOut({ callbackUrl: "/app/admin/organizations" });
+											return;
+										}
+										const { adminEmail, token } = await res.json();
+										await signIn("restore-admin", {
+											adminEmail,
+											token,
+											callbackUrl: "/app/admin/organizations",
+										});
+									} catch {
+										signOut({ callbackUrl: "/app/admin/organizations" });
+									}
+								}}
 								className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-xs text-amber-400 transition-colors hover:bg-amber-500/10"
 							>
 								<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

@@ -54,6 +54,7 @@ interface OrgDetail {
     date: string;
     status: string;
   } | null;
+  auditHistory: AuditHistoryRow[];
   usageStats: {
     period: string;
     mcpQueries: number;
@@ -70,6 +71,23 @@ interface OrgDetail {
 interface PlanOption {
   key: string;
   label: string;
+}
+
+interface AuditHistoryRow {
+  id: string;
+  environmentId: string;
+  environmentDomain: string | null;
+  status: string;
+  cycleType: string;
+  createdAt: string;
+  completedAt: string | null;
+  durationMs: number | null;
+  lastError: string | null;
+  lastErrorAt: string | null;
+  retryCount: number;
+  findingCount: number;
+  evidenceCount: number;
+  actionCount: number | null;
 }
 
 /* ---------- Helpers ---------- */
@@ -962,6 +980,160 @@ export default function AdminOrganizationDetailPage() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Audit History ── */}
+      {!loading && org && <AuditHistoryCard rows={org.auditHistory} />}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────
+// Audit History Card
+//
+// Per-cycle outcome at a glance: status, duration, finding + action +
+// evidence counts, and the lastError text when a run fails. Useful for
+// spotting regressions ("env X consistently fails after deploys") and
+// support flows ("did the run actually complete? how many findings?")
+// without opening the runner logs.
+// ──────────────────────────────────────────────
+
+function formatDuration(ms: number | null): string {
+  if (ms == null) return "—";
+  if (ms < 1000) return `${ms}ms`;
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem === 0 ? `${m}m` : `${m}m ${rem}s`;
+}
+
+function auditStatusBadge(status: string) {
+  const base = "rounded px-1.5 py-0.5 text-[10px] font-medium";
+  switch (status) {
+    case "complete":
+      return <span className={`${base} bg-emerald-500/10 text-emerald-400`}>complete</span>;
+    case "failed":
+      return <span className={`${base} bg-red-500/10 text-red-400`}>failed</span>;
+    case "running":
+      return <span className={`${base} bg-blue-500/10 text-blue-400`}>running</span>;
+    case "pending":
+      return <span className={`${base} bg-amber-500/10 text-amber-400`}>pending</span>;
+    default:
+      return <span className={`${base} bg-surface-inset text-content-muted`}>{status}</span>;
+  }
+}
+
+function AuditHistoryCard({ rows }: { rows: AuditHistoryRow[] }) {
+  const [expandedError, setExpandedError] = useState<string | null>(null);
+
+  return (
+    <div className="rounded-lg border border-edge bg-surface-card">
+      <div className="border-b border-edge px-5 py-4">
+        <h2 className="text-sm font-semibold text-content">
+          Audit History{rows.length > 0 ? ` (last ${rows.length})` : ""}
+        </h2>
+        <p className="mt-0.5 text-xs text-content-faint">
+          Per-cycle outcome with finding, action, and evidence counts. Failed
+          runs expose the captured error so you don't have to grep the runner
+          logs.
+        </p>
+      </div>
+      {rows.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm text-content-faint">
+          No audits run yet.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-edge">
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">When</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Env</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Type</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Status</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">Duration</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">Findings</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">Actions</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">Evidence</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Notes</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-edge">
+              {rows.map((row) => {
+                const isExpanded = expandedError === row.id;
+                const hasError = Boolean(row.lastError);
+                return (
+                  <>
+                    <tr key={row.id} className="transition-colors hover:bg-surface-card-hover">
+                      <td className="px-5 py-3">
+                        <div>
+                          <p className="text-xs font-medium text-content">{timeAgo(row.createdAt)}</p>
+                          <p className="text-[10px] text-content-faint">{formatDate(row.createdAt)}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="truncate text-xs text-content-secondary">
+                          {row.environmentDomain || row.environmentId.slice(0, 8)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="rounded bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-content-muted">
+                          {row.cycleType}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">{auditStatusBadge(row.status)}</td>
+                      <td className="px-5 py-3 text-right text-xs font-mono text-content-muted">
+                        {formatDuration(row.durationMs)}
+                      </td>
+                      <td className="px-5 py-3 text-right text-xs font-mono tabular-nums text-content">
+                        {row.findingCount}
+                      </td>
+                      <td className="px-5 py-3 text-right text-xs font-mono tabular-nums text-content">
+                        {row.actionCount ?? "—"}
+                      </td>
+                      <td className="px-5 py-3 text-right text-xs font-mono tabular-nums text-content-muted">
+                        {row.evidenceCount.toLocaleString()}
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          {row.retryCount > 0 && (
+                            <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-400">
+                              {row.retryCount} retry
+                            </span>
+                          )}
+                          {hasError && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedError(isExpanded ? null : row.id)}
+                              className="text-[10px] text-red-400 underline hover:text-red-300"
+                            >
+                              {isExpanded ? "hide error" : "view error"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {isExpanded && hasError && (
+                      <tr key={`${row.id}-error`} className="bg-red-500/5">
+                        <td colSpan={9} className="px-5 py-3">
+                          <div className="rounded-md border border-red-500/30 bg-red-500/5 p-3">
+                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-red-400">
+                              lastError {row.lastErrorAt ? `(${timeAgo(row.lastErrorAt)})` : ""}
+                            </p>
+                            <pre className="whitespace-pre-wrap break-words text-xs text-red-300">
+                              {row.lastError}
+                            </pre>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

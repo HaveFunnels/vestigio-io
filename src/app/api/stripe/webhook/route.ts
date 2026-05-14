@@ -155,11 +155,20 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 					priority: "cold",
 				});
 				if (!enqueued) {
-					import("../../../../../apps/audit-runner/run-cycle")
-						.then((m) => m.runAuditCycle(cycle.id))
-						.catch((err) => {
-							console.error(`[stripe-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
-						});
+					const { inProcessFallbackAllowed } = await import(
+						"@/libs/audit-dispatch"
+					);
+					if (inProcessFallbackAllowed()) {
+						import("../../../../../apps/audit-runner/run-cycle")
+							.then((m) => m.runAuditCycle(cycle.id))
+							.catch((err) => {
+								console.error(`[stripe-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
+							});
+					} else {
+						console.error(
+							`[stripe-webhook] worker dispatch failed and in-process fallback disabled in production. cycle=${cycle.id}`,
+						);
+					}
 				}
 			}
 		}

@@ -234,11 +234,31 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 								},
 							});
 							logEvent(eventType, `Triggered upgrade audit cycle ${cycle.id} for org ${org.id}`);
-							import("../../../../../apps/audit-runner/run-cycle")
-								.then((m) => m.runAuditCycle(cycle.id))
-								.catch((err) => {
-									console.error(`[paddle/webhook] upgrade audit dispatch failed for cycle ${cycle.id}:`, err);
-								});
+							const { enqueueAuditCycle } = await import(
+								"../../../../../apps/platform/audit-cycle-queue"
+							);
+							const enqueued = await enqueueAuditCycle({
+								cycleId: cycle.id,
+								environmentId: env.id,
+								organizationId: org.id,
+								priority: "cold",
+							});
+							if (!enqueued) {
+								const { inProcessFallbackAllowed } = await import(
+									"@/libs/audit-dispatch"
+								);
+								if (inProcessFallbackAllowed()) {
+									import("../../../../../apps/audit-runner/run-cycle")
+										.then((m) => m.runAuditCycle(cycle.id))
+										.catch((err) => {
+											console.error(`[paddle/webhook] upgrade audit dispatch failed for cycle ${cycle.id}:`, err);
+										});
+								} else {
+									console.error(
+										`[paddle/webhook] upgrade audit worker dispatch failed and in-process fallback disabled in production. cycle=${cycle.id}`,
+									);
+								}
+							}
 						}
 					}
 				}
@@ -616,11 +636,20 @@ async function handleOnboardingActivation(
 			priority: "cold",
 		});
 		if (!enqueued) {
-			import("../../../../../apps/audit-runner/run-cycle")
-				.then((m) => m.runAuditCycle(cycle.id))
-				.catch((err) => {
-					console.error(`[paddle-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
-				});
+			const { inProcessFallbackAllowed } = await import(
+				"@/libs/audit-dispatch"
+			);
+			if (inProcessFallbackAllowed()) {
+				import("../../../../../apps/audit-runner/run-cycle")
+					.then((m) => m.runAuditCycle(cycle.id))
+					.catch((err) => {
+						console.error(`[paddle-webhook] audit dispatch failed for cycle ${cycle.id}:`, err);
+					});
+			} else {
+				console.error(
+					`[paddle-webhook] worker dispatch failed and in-process fallback disabled in production. cycle=${cycle.id}`,
+				);
+			}
 		}
 	}
 

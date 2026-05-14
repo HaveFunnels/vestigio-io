@@ -56,12 +56,33 @@ export async function POST(request: Request) {
 		},
 	});
 
-	// Fire-and-forget: dispatch immediately instead of waiting for heal cron
-	import("../../../../../apps/audit-runner/run-cycle")
-		.then((m) => m.runAuditCycle(cycle.id))
-		.catch((err) => {
-			console.error(`[admin/trigger-audit] dispatch failed for cycle ${cycle.id}:`, err);
-		});
+	// Dispatch (Wave 5 Fase 1A): Redis queue → worker service. Falls back
+	// to in-process when fallback is allowed (dev/demos), otherwise the
+	// cycle row stays pending and the heal cron will retry once the worker
+	// service comes back online.
+	const { enqueueAuditCycle } = await import(
+		"../../../../../apps/platform/audit-cycle-queue"
+	);
+	const enqueued = await enqueueAuditCycle({
+		cycleId: cycle.id,
+		environmentId: env.id,
+		organizationId,
+		priority: "hot",
+	});
+	if (!enqueued) {
+		const { inProcessFallbackAllowed } = await import("@/libs/audit-dispatch");
+		if (inProcessFallbackAllowed()) {
+			import("../../../../../apps/audit-runner/run-cycle")
+				.then((m) => m.runAuditCycle(cycle.id))
+				.catch((err) => {
+					console.error(`[admin/trigger-audit] dispatch failed for cycle ${cycle.id}:`, err);
+				});
+		} else {
+			console.error(
+				`[admin/trigger-audit] worker dispatch failed and in-process fallback disabled in production. cycle=${cycle.id}`,
+			);
+		}
+	}
 
 	return NextResponse.json({
 		cycleId: cycle.id,

@@ -234,14 +234,25 @@ export const POST = withErrorTracking(
 				priority: "cold",
 			});
 			if (!enqueued) {
-				import("../../../../../apps/audit-runner/run-cycle")
-					.then((m) => m.runAuditCycle(cycle.id))
-					.catch((err) => {
-						console.error(
-							`[environments.activate] audit dispatch failed for cycle ${cycle.id}:`,
-							err,
-						);
-					});
+				const { inProcessFallbackAllowed } = await import(
+					"@/libs/audit-dispatch"
+				);
+				if (inProcessFallbackAllowed()) {
+					import("../../../../../apps/audit-runner/run-cycle")
+						.then((m) => m.runAuditCycle(cycle.id))
+						.catch((err) => {
+							console.error(
+								`[environments.activate] audit dispatch failed for cycle ${cycle.id}:`,
+								err,
+							);
+						});
+				} else {
+					console.error(
+						`[environments.activate] worker dispatch failed and in-process fallback disabled in production. cycle=${cycle.id}`,
+					);
+					// Cycle row stays pending; the heal cron in worker-loop
+					// re-enqueues stale pending rows on the next Redis recovery.
+				}
 			}
 
 			return NextResponse.json(

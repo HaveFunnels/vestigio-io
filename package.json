@@ -13,7 +13,7 @@
 		"db:push:dev": "prisma db push",
 		"db:setup": "prisma migrate deploy && tsx scripts/setup-timescaledb.ts",
 		"start": "next start",
-		"start:worker": "tsx apps/audit-runner/worker-loop.ts",
+		"start:worker": "WORKER_ROLE=1 tsx apps/audit-runner/worker-loop.ts",
 		"stripe:listen": "stripe listen --forward-to http://localhost:3000/api/stripe/webhook",
 		"check-format": "prettier --check .",
 		"check-lint": "eslint . --ext ts --ext tsx --ext js",

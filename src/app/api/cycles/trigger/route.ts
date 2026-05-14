@@ -198,18 +198,30 @@ export async function POST(request: Request) {
 		if (enqueued) {
 			dispatched = true;
 		} else {
-			// Redis unavailable — fall back to in-process dispatch so demos
-			// and local dev aren't blocked. Same pattern as the activation
-			// endpoint.
-			void import("../../../../../apps/audit-runner/run-cycle")
-				.then((m) => m.runAuditCycle(cycle.id))
-				.catch((err) => {
-					console.error(
-						`[api/cycles/trigger] in-process dispatch failed cycle=${cycle.id}:`,
-						err,
-					);
-				});
-			dispatched = true;
+			const { inProcessFallbackAllowed } = await import(
+				"@/libs/audit-dispatch"
+			);
+			if (inProcessFallbackAllowed()) {
+				// Local dev / demo — fall back to in-process dispatch so
+				// `npm run dev` works without a Redis service.
+				void import("../../../../../apps/audit-runner/run-cycle")
+					.then((m) => m.runAuditCycle(cycle.id))
+					.catch((err) => {
+						console.error(
+							`[api/cycles/trigger] in-process dispatch failed cycle=${cycle.id}:`,
+							err,
+						);
+					});
+				dispatched = true;
+			} else {
+				// Production with worker missing or Redis down. Surface
+				// loudly instead of silently running the audit in the web
+				// process — the latter degrades every page load.
+				console.error(
+					`[api/cycles/trigger] worker dispatch failed and in-process fallback disabled in production. cycle=${cycle.id}`,
+				);
+				// dispatched stays false → outer cleanup marks the cycle FAILED.
+			}
 		}
 	} catch (err) {
 		console.error(

@@ -94,6 +94,43 @@ export default function FindingsPage() {
 	const [selectedFinding, setSelectedFinding] =
 		useState<FindingProjection | null>(null);
 
+	// Deep-link support: if /app/findings?finding=<id> is opened (e.g. from
+	// an action drawer's linked findings list), auto-open the matching
+	// finding's drawer. Runs whenever the findings list or the query param
+	// changes so the drawer follows back/forward navigation.
+	useEffect(() => {
+		const id = searchParams.get("finding");
+		if (!id) {
+			// Param cleared — close any open drawer to keep URL ↔ UI in sync.
+			if (selectedFinding) setSelectedFinding(null);
+			return;
+		}
+		if (selectedFinding?.id === id) return;
+		const match = findings.find((f) => f.id === id);
+		if (match) setSelectedFinding(match);
+	}, [searchParams, findings]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Open/close helpers keep the URL in sync with drawer state so deep
+	// links work both ways: clicking a row updates ?finding=<id>, closing
+	// the drawer strips it. Uses router.replace to avoid polluting history.
+	function openFindingDrawer(row: FindingProjection) {
+		setSelectedFinding(row);
+		track("drawer_open", { entity_type: "finding", entity_id: row.id });
+		const url = new URL(window.location.href);
+		url.searchParams.set("finding", row.id);
+		router.replace(`${url.pathname}?${url.searchParams.toString()}`, { scroll: false });
+	}
+
+	function closeFindingDrawer() {
+		setSelectedFinding(null);
+		const url = new URL(window.location.href);
+		if (url.searchParams.has("finding")) {
+			url.searchParams.delete("finding");
+			const qs = url.searchParams.toString();
+			router.replace(qs ? `${url.pathname}?${qs}` : url.pathname, { scroll: false });
+		}
+	}
+
 	// ── Column save debounce ──
 	const columnSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -698,8 +735,7 @@ export default function FindingsPage() {
 					groups={groups}
 					columns={columns}
 					onRowClick={(row) => {
-						setSelectedFinding(row);
-						track("drawer_open", { entity_type: "finding", entity_id: row.id });
+						openFindingDrawer(row);
 					}}
 				/>
 			) : (
@@ -707,8 +743,7 @@ export default function FindingsPage() {
 					columns={columns}
 					data={sorted}
 					onRowClick={(row) => {
-						setSelectedFinding(row);
-						track("drawer_open", { entity_type: "finding", entity_id: row.id });
+						openFindingDrawer(row);
 					}}
 					getRowKey={(row) => row.id}
 					emptyMessage={t("no_match")}
@@ -718,7 +753,7 @@ export default function FindingsPage() {
 			{/* Finding Drawer */}
 			<SideDrawer
 				open={selectedFinding !== null}
-				onClose={() => setSelectedFinding(null)}
+				onClose={closeFindingDrawer}
 				title={selectedFinding?.title || ""}
 			>
 				{selectedFinding && (

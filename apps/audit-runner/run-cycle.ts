@@ -26,7 +26,7 @@ import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/s
 import { PrismaEvidenceStore } from "../../packages/evidence";
 import { PrismaSnapshotStore } from "../../packages/change-detection";
 import { PrismaFindingStore, projectAll } from "../../packages/projections";
-import { recomputeAllAsync } from "../../packages/workspace";
+import { recomputeWithPool } from "./recompute-pool";
 import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
 import { processBehavioralEventsForEnv } from "./process-behavioral";
 import { pollShopifyData } from "../../workers/shopify/poller";
@@ -1487,13 +1487,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 
 			const recomputeStartMs = Date.now();
-			// Async generator drainer: yields between ~8 phase boundaries so
-			// the worker process keeps its event loop responsive (health
-			// endpoint, queue polling, heal cron, the second concurrent
-			// cycle slot) during a long recompute. Total wall time is
-			// roughly unchanged; what changes is that we stop monopolising
-			// the main thread for the full duration.
-			const multiPackResult = await recomputeAllAsync({
+			// Recompute offload. When RECOMPUTE_USE_WORKER_THREADS=1 the
+			// engine runs on its own V8 isolate via worker_threads (true
+			// CPU parallelism between concurrent cycles); otherwise it
+			// falls back to the in-process generator drainer (event-loop
+			// yields between phases). Both produce identical output.
+			const multiPackResult = await recomputeWithPool({
 				evidence: result.evidence,
 				additional_signals: staticCheckSignals,
 				scoping: {

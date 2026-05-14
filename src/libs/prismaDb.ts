@@ -29,6 +29,17 @@ function resolveDatabaseUrl(): string | undefined {
 	if (!baseUrl) return undefined;
 	if (baseUrl.includes("connection_limit=")) return baseUrl;
 
+	// PgBouncer transaction-pool mode: PgBouncer owns the real pool, so
+	// each app instance only needs ONE Prisma-side connection (it gets
+	// multiplexed by PgBouncer onto the shared real pool). Detected via
+	// `?pgbouncer=true` in the URL (the standard Prisma flag). Without
+	// this the app would compete with PgBouncer's pool and lose.
+	const isPgBouncer = /[?&]pgbouncer=true(?:&|$)/.test(baseUrl);
+	if (isPgBouncer) {
+		const sep = baseUrl.includes("?") ? "&" : "?";
+		return `${baseUrl}${sep}connection_limit=1`;
+	}
+
 	const isWorker = process.env.WORKER_ROLE === "1";
 	const defaultLimit = isWorker ? 20 : 8;
 	const envOverride = isWorker
@@ -41,11 +52,24 @@ function resolveDatabaseUrl(): string | undefined {
 	return `${baseUrl}${sep}connection_limit=${limit}`;
 }
 
-export const prisma =
-	globalForPrisma.prisma ||
-	new PrismaClient({
+function buildPrisma(): PrismaClient {
+	const url = resolveDatabaseUrl();
+	// Only pass `datasources` when we have a URL to substitute. Passing
+	// `{ url: undefined }` explicitly fails Prisma's constructor
+	// validation, which broke the Next.js build on Railway (page-data
+	// collection instantiates PrismaClient before DATABASE_URL is in
+	// scope). Without the explicit datasources block, Prisma falls back
+	// to its default env resolution at first query time — same behaviour
+	// as before this file gained role-aware pool sizing.
+	const opts: ConstructorParameters<typeof PrismaClient>[0] = {
 		log: process.env.NODE_ENV === "development" ? ["query"] : [],
-		datasources: { db: { url: resolveDatabaseUrl() } },
-	});
+	};
+	if (url) {
+		opts.datasources = { db: { url } };
+	}
+	return new PrismaClient(opts);
+}
+
+export const prisma = globalForPrisma.prisma || buildPrisma();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

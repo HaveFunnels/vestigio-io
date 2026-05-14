@@ -1,6 +1,13 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // PgBouncer mode: DATABASE_URL points to the pool (transaction mode);
+  // DIRECT_URL points to Postgres directly. Prisma uses DIRECT_URL for
+  // migrations + introspection (operations PgBouncer can't proxy
+  // safely) and DATABASE_URL for runtime queries.
+  // Falls back to DATABASE_URL when DIRECT_URL isn't set, so local dev
+  // without PgBouncer still works unchanged.
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {

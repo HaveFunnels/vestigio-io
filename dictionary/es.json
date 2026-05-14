@@ -1653,6 +1653,17 @@
 			}
 		},
 		"findings": {
+			"discutir": {
+				"label": "Discutir",
+				"verifyFinding": "Verificar Hallazgo",
+				"understand": "Entender",
+				"createAction": "Crear Acción",
+				"creating": "Creando…",
+				"alreadyHasAction": "Este hallazgo ya tiene una acción vinculada.",
+				"createSuccess": "Acción creada. Ya está en \"Mis Acciones\".",
+				"createError": "No se pudo crear la acción.",
+				"createNetworkError": "Error de red. Inténtalo de nuevo."
+			},
 			"views": {
 				"page_title": "Hallazgos",
 				"all": "Todas",

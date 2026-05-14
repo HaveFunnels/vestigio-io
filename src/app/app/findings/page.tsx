@@ -20,11 +20,11 @@ import ColumnSelector, {
 	DEFAULT_COLUMNS,
 } from "@/components/console/ColumnSelector";
 import FindingDetailPanel from "@/components/console/FindingDetailPanel";
+import DiscutirPopover from "@/components/console/findings/DiscutirPopover";
 import { loadFindings, loadChangeReport } from "@/lib/console-data";
 import ChangeSummaryBanner from "@/components/console/ChangeSummaryBanner";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { useCopilot } from "@/components/app/CopilotProvider";
-import { ShinyButton } from "@/components/ui/shiny-button";
 import type { FindingProjection } from "../../../../packages/projections";
 
 // ──────────────────────────────────────────────
@@ -59,6 +59,7 @@ export default function FindingsPage() {
 	const tv = useTranslations("console.findings.views");
 	const tc = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
+	const td = useTranslations("console.findings.discutir");
 	const { track } = useTrack();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -93,6 +94,62 @@ export default function FindingsPage() {
 	// ── Drawer state ──
 	const [selectedFinding, setSelectedFinding] =
 		useState<FindingProjection | null>(null);
+
+	// "Criar ação" is per-row async; track which row is mid-flight so the
+	// popover can show "Criando…" instead of letting the user spam clicks.
+	const [creatingActionFor, setCreatingActionFor] = useState<string | null>(null);
+
+	async function handleCreateActionFromFinding(finding: FindingProjection) {
+		if (creatingActionFor) return;
+		// Block duplicate user-actions on the same finding — the popover
+		// disables the option already but a fast double-click could slip
+		// through before re-render.
+		if ((finding.action_refs?.length ?? 0) > 0) {
+			toast(td("alreadyHasAction"), { icon: "ℹ️" });
+			return;
+		}
+		setCreatingActionFor(finding.id);
+		try {
+			const res = await fetch("/api/actions/from-finding", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					finding_id: finding.id,
+					title: finding.title,
+					description: finding.cause || finding.effect || null,
+					remediation_steps: finding.remediation_steps ?? null,
+					estimated_effort_hours: finding.estimated_effort_hours ?? null,
+				}),
+			});
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				toast.error(data.message || td("createError"));
+				return;
+			}
+			toast.success(td("createSuccess"));
+			track("user_action_created_from_finding", {
+				finding_id: finding.id,
+				inference_key: finding.inference_key,
+			});
+		} catch {
+			toast.error(td("createNetworkError"));
+		} finally {
+			setCreatingActionFor(null);
+		}
+	}
+
+	function handleVerifyFinding(finding: FindingProjection) {
+		router.push(
+			`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
+		);
+	}
+
+	function handleUnderstandFinding(finding: FindingProjection) {
+		copilot.open({
+			finding,
+			prompt: tp("discuss_finding", { title: finding.title }),
+		});
+	}
 
 	// Deep-link support: if /app/findings?finding=<id> is opened (e.g. from
 	// an action drawer's linked findings list), auto-open the matching
@@ -600,21 +657,16 @@ export default function FindingsPage() {
 		{
 			key: "discuss",
 			label: "",
-			className: "w-20",
+			className: "w-24",
 			render: (row) =>
 				row.polarity !== "positive" ? (
-					<ShinyButton
-						variant="console"
-						onClick={(e) => {
-							e.stopPropagation();
-							copilot.open({
-								finding: row,
-								prompt: tp("discuss_finding", { title: row.title }),
-							});
-						}}
-					>
-						{t("discuss")}
-					</ShinyButton>
+					<DiscutirPopover
+						finding={row}
+						onVerify={handleVerifyFinding}
+						onUnderstand={handleUnderstandFinding}
+						onCreateAction={handleCreateActionFromFinding}
+						creating={creatingActionFor === row.id}
+					/>
 				) : null,
 		},
 	];

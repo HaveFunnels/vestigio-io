@@ -54,12 +54,13 @@ export default function RichFindingDrawer({
     );
   }
 
-  const packLabels: Record<string, string> = {
-    scale_readiness: tc("pack_labels.scale_readiness"),
-    revenue_integrity: tc("pack_labels.revenue_integrity"),
-    chargeback_resilience: tc("pack_labels.chargeback_resilience"),
-    saas_growth_readiness: tc("pack_labels.saas_growth_readiness"),
-  };
+  function humanizePackKey(key: string): string {
+    return key.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  }
+  function packLabel(key: string): string {
+    const k = `pack_labels.${key}`;
+    return tc.has(k) ? tc(k) : humanizePackKey(key);
+  }
   const impactTypeLabels: Record<string, string> = {
     revenue_loss: tc("impact_types.revenue_loss"),
     conversion_loss: tc("impact_types.conversion_loss"),
@@ -82,7 +83,7 @@ export default function RichFindingDrawer({
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
           <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
-            {packLabels[finding.pack] || finding.pack}
+            {packLabel(finding.pack)}
           </span>
         </div>
       </section>

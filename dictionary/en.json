@@ -1680,6 +1680,17 @@
 			}
 		},
 		"findings": {
+			"discutir": {
+				"label": "Discuss",
+				"verifyFinding": "Verify Finding",
+				"understand": "Understand",
+				"createAction": "Create Action",
+				"creating": "Creating…",
+				"alreadyHasAction": "This finding already has a linked action.",
+				"createSuccess": "Action created. It's now in \"My Actions\".",
+				"createError": "Couldn't create the action.",
+				"createNetworkError": "Network error. Please try again."
+			},
 			"views": {
 				"page_title": "Findings",
 				"all": "All",

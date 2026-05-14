@@ -1688,6 +1688,17 @@
 			}
 		},
 		"findings": {
+			"discutir": {
+				"label": "Discutir",
+				"verifyFinding": "Verificar Descoberta",
+				"understand": "Entender",
+				"createAction": "Criar Ação",
+				"creating": "Criando…",
+				"alreadyHasAction": "Essa descoberta já tem uma ação vinculada.",
+				"createSuccess": "Ação criada. Ela já está em \"Minhas Ações\".",
+				"createError": "Não foi possível criar a ação.",
+				"createNetworkError": "Falha de rede. Tente novamente."
+			},
 			"views": {
 				"page_title": "Descobertas",
 				"all": "Todas",

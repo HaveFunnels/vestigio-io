@@ -107,12 +107,29 @@ export default function FindingDetailPanel({
 		return () => { if (dwellTimer.current) clearTimeout(dwellTimer.current); };
 	}, [finding.id]);
 
-	const packLabels: Record<string, string> = {
-		scale_readiness: tc("pack_labels.scale_readiness"),
-		revenue_integrity: tc("pack_labels.revenue_integrity"),
-		chargeback_resilience: tc("pack_labels.chargeback_resilience"),
-		saas_growth_readiness: tc("pack_labels.saas_growth_readiness"),
-	};
+	// All pack keys ship with dictionary entries under `pack_labels.*`.
+	// Use `tc.has` to avoid throwing on unmapped keys (e.g. a brand-new
+	// pack added in the engine but missing in the dictionary). Falls
+	// back to a humanized version of the raw key so the user never sees
+	// raw snake_case like "money_moment_exposure" or "funnel_journey".
+	function humanizePackKey(key: string): string {
+		return key
+			.split("_")
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(" ");
+	}
+	function packLabel(key: string): string {
+		const k = `pack_labels.${key}`;
+		return tc.has(k) ? tc(k) : humanizePackKey(key);
+	}
+	// Drop any trailing parenthetical context that's baked into the
+	// surface string in code (e.g. "/checkout, /payment (clickjack
+	// protection)"). The parenthetical is untranslated English jargon;
+	// the finding title + cause already convey the same context in the
+	// user's language.
+	function cleanSurface(s: string): string {
+		return s.replace(/\s*\(.+?\)\s*$/, "").trim() || s;
+	}
 
 	const impactTypeLabels: Record<string, string> = {
 		revenue_loss: tc("impact_types.revenue_loss"),
@@ -152,11 +169,11 @@ export default function FindingDetailPanel({
 					<span
 						className={`rounded border px-2 py-0.5 text-xs ${packBadgeStyles[finding.pack] || "border-edge text-content-muted"}`}
 					>
-						{packLabels[finding.pack] || finding.pack}
+						{packLabel(finding.pack)}
 					</span>
 					{finding.surface && (
 						<code className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
-							{finding.surface}
+							{cleanSurface(finding.surface)}
 						</code>
 					)}
 				</div>

@@ -964,6 +964,14 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
     inferenceByKey.set(inf.inference_key, inf);
   }
 
+  // Wave 15.6: evidence index by id for source_url + freshness lookups.
+  // Same path used by projectActions for affected_surfaces, but here we
+  // resolve PER FINDING (not aggregated) so the drawer can show "we
+  // checked URL X on date Y" for each individual finding.
+  const evidenceById = new Map<string, typeof result.evidence[number]>();
+  for (const e of result.evidence) evidenceById.set(e.id, e);
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
   const findings: FindingProjection[] = [];
 
   for (const vc of valueCases) {
@@ -1047,11 +1055,47 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
       ? (translations?.root_cause_titles?.[rc.root_cause_key] ?? rc.title)
       : null;
 
+    // Wave 15.6: resolve source_url + observed_at + data_freshness by
+    // walking the first evidence ref. For off-site recon findings this
+    // surfaces the actual URL we checked (trustpilot.com/review/<brand>,
+    // reclameaqui.com.br/empresa/<slug>, the lookalike domain, etc.).
+    // For on-site findings, it's the customer page we crawled.
+    let sourceUrl: string | null = null;
+    let sourceObservedAt: string | null = null;
+    let dataFreshness: 'fresh' | 'stale' | 'unknown' = 'unknown';
+    for (const evRef of inf.evidence_refs ?? []) {
+      try {
+        const evId = parseRef(evRef).id;
+        const ev = evidenceById.get(evId);
+        if (!ev) continue;
+        const url = extractEvidenceUrl(ev);
+        if (!url) continue;
+        sourceUrl = url;
+        const observedAtRaw = (ev as { freshness?: { observed_at?: Date | string }; collected_at?: Date | string }).freshness?.observed_at
+          ?? (ev as { collected_at?: Date | string }).collected_at
+          ?? null;
+        if (observedAtRaw) {
+          const observedDate = observedAtRaw instanceof Date ? observedAtRaw : new Date(observedAtRaw);
+          if (!isNaN(observedDate.getTime())) {
+            sourceObservedAt = observedDate.toISOString();
+            const ageMs = Date.now() - observedDate.getTime();
+            dataFreshness = ageMs <= SEVEN_DAYS_MS ? 'fresh' : 'stale';
+          }
+        }
+        break; // first evidence with URL wins
+      } catch {
+        // bad ref — skip
+      }
+    }
+
     findings.push({
       id: `finding_${vc.inference_key}`,
       title,
       root_cause: rootCauseTitle,
       severity: mapSeverityFromInference(inf),
+      source_url: sourceUrl,
+      source_url_observed_at: sourceObservedAt,
+      data_freshness: dataFreshness,
       confidence: vc.confidence,
       confidence_tier: deriveConfidenceTier(vc.confidence),
       impact: {
@@ -2164,6 +2208,9 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         title,
         root_cause: null,
         severity: 'none',
+        source_url: null,
+        source_url_observed_at: null,
+        data_freshness: 'unknown',
         confidence: 60,
         confidence_tier: 'medium',
         // Positive findings without a matching POSITIVE_IMPACT_BASELINES

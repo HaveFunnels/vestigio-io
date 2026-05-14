@@ -106,6 +106,31 @@ export interface FindingProjection {
   title: string;
   root_cause: string | null;
   severity: string;
+  /**
+   * Wave 15.6: URL we actually fetched/inspected to produce this finding.
+   * For external recon findings, this is the off-site URL (e.g.
+   * trustpilot.com/review/<brand>, reclameaqui.com.br/empresa/<slug>, the
+   * actual lookalike domain, etc.). For on-site findings, it's the customer
+   * page we crawled. Null when the finding has no single source URL (e.g.
+   * compound findings, behavioral aggregates).
+   *
+   * Surfaced in the finding drawer so users can verify the source of the
+   * claim ("we checked URL X on date Y") — answers the "is this real or a
+   * false positive?" question that pure inference text can't.
+   */
+  source_url: string | null;
+  /**
+   * Wave 15.6: ISO timestamp of when the evidence backing this finding
+   * was observed. Drives data_freshness. Null when source_url is null.
+   */
+  source_url_observed_at: string | null;
+  /**
+   * Wave 15.6: 'fresh' = evidence within 7 days; 'stale' = older but still
+   * the most recent we have; 'unknown' = no evidence timestamp available.
+   * Drawer renders a yellow/orange warning when stale so users know the
+   * underlying state may have changed since the audit ran.
+   */
+  data_freshness: 'fresh' | 'stale' | 'unknown';
   /** Numeric confidence score from the engine (0-100). NOT exposed to the UI
    * directly anymore — use `confidence_tier` for any user-facing logic. */
   confidence: number;

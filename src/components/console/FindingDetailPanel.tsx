@@ -266,6 +266,50 @@ export default function FindingDetailPanel({
 				</DrawerStatBox>
 			</DrawerSection>
 
+			{/* Wave 15.6 — Source URL + freshness.
+			    Surfaces "we checked X on date Y" so users can verify the
+			    finding isn't based on stale/wrong data. Renders for any
+			    finding with a resolvable source URL (external recon,
+			    on-site crawl, brand impersonation, etc.). */}
+			{finding.source_url && (
+				<DrawerSection title={td("source")}>
+					<DrawerStatBox accent={finding.data_freshness === "stale" ? "warning" : "default"}>
+						<div className="px-4 py-3 space-y-2">
+							<div className="flex items-start gap-2">
+								<span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-[10px] text-blue-500">🔗</span>
+								<a
+									href={finding.source_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="break-all text-xs font-mono text-content-secondary hover:text-accent"
+								>
+									{finding.source_url}
+								</a>
+							</div>
+							{finding.source_url_observed_at && (
+								<div className="flex items-start gap-2">
+									<span className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+										finding.data_freshness === "stale"
+											? "bg-amber-500/10 text-amber-500"
+											: finding.data_freshness === "fresh"
+												? "bg-emerald-500/10 text-emerald-500"
+												: "bg-blue-500/10 text-blue-500"
+									}`}>
+										{finding.data_freshness === "stale" ? "⏳" : "✓"}
+									</span>
+									<span className="text-xs text-content-muted">
+										{td("checked_on", { date: new Date(finding.source_url_observed_at).toLocaleDateString() })}
+										{finding.data_freshness === "stale" && (
+											<span className="ml-2 text-amber-500">— {td("stale_warning")}</span>
+										)}
+									</span>
+								</div>
+							)}
+						</div>
+					</DrawerStatBox>
+				</DrawerSection>
+			)}
+
 			{/* Remediation Steps (full variant only) */}
 			{isFull && finding.polarity !== "positive" && (
 				<DrawerSection title={td("remediation")} accent={severityAccent}>

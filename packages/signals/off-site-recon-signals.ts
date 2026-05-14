@@ -42,6 +42,28 @@ function bySource(
 	return map;
 }
 
+/**
+ * Wave 15.6 — brand wrong-match guard. Off-site scrapers find a profile
+ * page (Trustpilot, Reclame Aqui) for the brand name they were given.
+ * For short/generic brand names ("Pulse", "Echo") DDG can return a
+ * profile for a DIFFERENT company that happens to match the query —
+ * which would make us emit reputation findings about an unrelated brand.
+ *
+ * Guard: when brand_token is ≥4 chars, require the company page URL
+ * to contain the brand token (slug-normalized: lowercase, alphanum-only).
+ * Brands with <4 char tokens skip the guard to avoid blocking legit
+ * short brands (these are rare anyway).
+ *
+ * Returns true if we should TRUST the match, false if it's likely
+ * wrong-brand and the signal should be skipped.
+ */
+function brandMatchesProfileUrl(brandToken: string, profileUrl: unknown): boolean {
+	if (typeof profileUrl !== "string" || !profileUrl) return false;
+	const slug = (brandToken ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+	if (slug.length < 4) return true; // skip guard for short/generic brands
+	return profileUrl.toLowerCase().includes(slug);
+}
+
 export function extractOffSiteReconSignals(
 	byType: Map<EvidenceType, Evidence[]>,
 	scoping: Scoping,
@@ -193,7 +215,11 @@ export function extractOffSiteReconSignals(
 	const trustpilot = sources.get("reputation_trustpilot");
 	if (trustpilot) {
 		const p = trustpilot.payload as OffSiteReconPayload;
-		if (p.reachable && p.data?.listed === true) {
+		// Wave 15.6 — brand-match guard. If Trustpilot profile URL doesn't
+		// contain the brand token (slug-normalized), skip signal emission —
+		// likely a wrong-brand match (common for short/generic brand names).
+		const trustpilotUrlOk = brandMatchesProfileUrl(p.brand_token, p.data?.company_page_url);
+		if (p.reachable && p.data?.listed === true && trustpilotUrlOk) {
 			const negUnanswered = (p.data?.negative_unanswered_count as number) ?? 0;
 			const responseRate = (p.data?.owner_response_rate as number) ?? 0;
 			const reviewCount = (p.data?.review_count as number) ?? 0;
@@ -241,7 +267,11 @@ export function extractOffSiteReconSignals(
 	const reclameAqui = sources.get("reputation_reclame_aqui");
 	if (reclameAqui) {
 		const p = reclameAqui.payload as OffSiteReconPayload;
-		if (p.reachable && p.data?.listed === true) {
+		// Wave 15.6 — brand-match guard. Same logic as Trustpilot: the
+		// /empresa/<slug>/ path should contain the brand token to avoid
+		// surfacing reputation data for an unrelated company.
+		const reclameAquiUrlOk = brandMatchesProfileUrl(p.brand_token, p.data?.company_page_url);
+		if (p.reachable && p.data?.listed === true && reclameAquiUrlOk) {
 			const resolutionIndex = (p.data?.resolution_index as number | null) ?? null;
 			const reputationLabel = (p.data?.reputation_label as string | null) ?? null;
 			const complaintsLast6mo = (p.data?.complaints_last_6mo as number | null) ?? null;

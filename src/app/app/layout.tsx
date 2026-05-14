@@ -1,7 +1,7 @@
 import AppSidebarLayout from "@/components/app/AppSidebarLayout";
 import { McpDataProvider, type McpDataSnapshot } from "@/components/app/McpDataProvider";
 import { resolveOrgContext } from "@/libs/resolve-org";
-import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps, loadProjectionsCacheForEnv } from "@/lib/console-data";
+import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps, loadProjectionsCacheForEnv, hasRunningCycleForEnv } from "@/lib/console-data";
 import { AppProviders } from "./providers";
 import { syncUserLocale } from "@/libs/sync-locale";
 import { loadEngineTranslations } from "@/lib/engine-translations";
@@ -59,6 +59,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 				changeReport: cached.change_report ? { status: "ready", data: cached.change_report } : { status: "empty" },
 				workspaces: cached.workspaces.length === 0 ? { status: "empty" } : { status: "ready", data: cached.workspaces },
 				maps: cached.maps.length === 0 ? { status: "empty" } : { status: "ready", data: cached.maps },
+				currency: orgCtx.currency,
+			};
+		} else if (orgCtx.envId && (await hasRunningCycleForEnv(orgCtx.envId))) {
+			// A cycle is in flight AND no completed cycle has produced a
+			// projections cache yet. Running ensureContext here would block
+			// for minutes: it loads up to 12k partial-cycle evidence rows
+			// and runs the engine synchronously, all while the audit-runner
+			// is competing for the same Prisma connection pool in the same
+			// Node process. Surfaced by admin impersonation during a
+			// customer's first audit. Render with loading state — pages
+			// already handle it cleanly.
+			mcpData = {
+				findings: { status: "loading" },
+				actions: { status: "loading" },
+				changeReport: { status: "loading" },
+				workspaces: { status: "loading" },
+				maps: { status: "loading" },
 				currency: orgCtx.currency,
 			};
 		} else {

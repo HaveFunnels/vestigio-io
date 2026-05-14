@@ -95,6 +95,33 @@ export async function loadProjectionsCacheForEnv(envId: string): Promise<CachedP
   }
 }
 
+/**
+ * Returns true when a cycle is currently in flight for the env.
+ *
+ * Used by the layout to short-circuit the legacy ensureContext path
+ * when no projectionsCache exists yet AND a cycle is actively running.
+ * Without this guard, the layout would try to bootstrap the MCP engine
+ * from a partially-written cycle (up to 12k evidence rows + sync engine
+ * recompute) — which competes with the audit-runner for Prisma
+ * connections and ends up blocking the request for minutes. The
+ * impersonation flow surfaced this because admins typically click
+ * Impersonate during a first audit while there's no cache fallback.
+ */
+export async function hasRunningCycleForEnv(envId: string): Promise<boolean> {
+  try {
+    const { prisma } = await import('@/libs/prismaDb');
+    const running = await prisma.auditCycle.count({
+      where: { environmentId: envId, status: 'running' },
+    });
+    return running > 0;
+  } catch (err) {
+    console.warn('[hasRunningCycleForEnv] failed:', err);
+    // Fail-open: if the check itself errors, fall through to legacy
+    // path so we don't break the happy case.
+    return false;
+  }
+}
+
 export async function ensureContext(orgCtx: {
   orgId: string;
   orgName: string;

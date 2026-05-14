@@ -80,10 +80,10 @@ export default function FixWithAiSection({
 	}
 
 	return (
-		<div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+		<div className="rounded-lg border border-edge bg-surface-card p-3">
 			<div className="flex items-center gap-2 mb-2">
 				<svg
-					className="h-4 w-4 text-emerald-400"
+					className="h-4 w-4 text-content-muted"
 					fill="none"
 					viewBox="0 0 24 24"
 					strokeWidth={1.5}
@@ -95,7 +95,7 @@ export default function FixWithAiSection({
 						d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"
 					/>
 				</svg>
-				<span className="text-xs font-semibold text-emerald-400">
+				<span className="text-xs font-semibold text-content-secondary">
 					{t("title")}
 				</span>
 				<span className="text-[10px] text-content-faint">{t("cost")}</span>
@@ -121,7 +121,7 @@ export default function FixWithAiSection({
 						<button
 							onClick={handleGenerate}
 							disabled={loading}
-							className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+							className="flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-transparent px-3 py-1.5 text-[11px] font-medium text-content-secondary transition-colors hover:border-emerald-500 hover:bg-emerald-500/5 disabled:opacity-50"
 						>
 							{loading ? (
 								<>
@@ -171,7 +171,7 @@ export default function FixWithAiSection({
 							</button>
 							<button
 								onClick={handleCopy}
-								className="flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-medium text-white transition-colors hover:bg-emerald-500"
+								className="flex items-center gap-1 rounded-md border border-emerald-500/40 bg-transparent px-2.5 py-1 text-[11px] font-medium text-content-secondary transition-colors hover:border-emerald-500 hover:bg-emerald-500/5"
 							>
 								{copied ? (
 									<>

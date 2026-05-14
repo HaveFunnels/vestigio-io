@@ -51,7 +51,13 @@ export default function SideDrawer({
 			>
 				{/* Header */}
 				<div className='flex items-center justify-between border-b border-edge px-4 py-4 sm:px-6'>
-					<h2 className='truncate text-base font-semibold text-content'>
+					{/* Desktop: native tooltip on hover when title overflows.
+					    Mobile: horizontal scroll for the title so users can
+					    read long action names without losing context. */}
+					<h2
+						title={title}
+						className='min-w-0 flex-1 truncate text-base font-semibold text-content max-sm:overflow-x-auto max-sm:whitespace-nowrap max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden'
+					>
 						{title}
 					</h2>
 					<button

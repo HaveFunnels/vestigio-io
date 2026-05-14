@@ -1108,7 +1108,6 @@ function ActionDrawerContent({
 						<div className="border-t border-edge/50 px-4 py-2 text-[10px] text-content-faint leading-relaxed">
 							{t("drawer.priorityRationale")}: {t("drawer.priorityFormula", {
 								impact: formatCurrency(action.impact.midpoint, currSym),
-								confidence: action.confidence,
 								crossPack: action.cross_pack ? t("drawer.crossPackBoost") : "",
 							})}
 						</div>
@@ -1323,11 +1322,6 @@ function ActionDrawerContent({
 							: () => onRunVerification("confirm_resolution")
 					}
 				/>
-				{isVerifying && (
-					<p className='mt-2 text-xs text-content-muted'>
-						{t("drawer.verificationRunning")}
-					</p>
-				)}
 				{/* Wave 15.2 — Verification cadence guidance per strategy.
 				    Tells the user how often re-verification makes sense. */}
 				{action.verification_strategy && VERIFICATION_CADENCE_KEY[action.verification_strategy] && (
@@ -1341,6 +1335,21 @@ function ActionDrawerContent({
 						</div>
 					</div>
 				)}
+				{/* Primary verification CTA — lives INSIDE the verification card so
+				    the action is co-located with the cadence guidance and the
+				    lifecycle panel that explains what verification means. */}
+				<div className='mt-3 border-t border-edge/50 pt-3'>
+					<button
+						type='button'
+						onClick={() => onRunVerification("re_verify")}
+						disabled={isVerifying}
+						className='w-full rounded-md border border-emerald-500/40 px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:border-emerald-500 hover:bg-emerald-500/5 disabled:cursor-not-allowed disabled:opacity-50'
+					>
+						{isVerifying
+							? t("drawer.verificationRunning")
+							: t("decidir.runVerification")}
+					</button>
+				</div>
 			</DrawerSection>
 
 			{/* Verification Sufficiency Warning */}
@@ -1418,29 +1427,27 @@ function ActionDrawerContent({
 				</section>
 			)}
 
-			{/* Action Buttons */}
+			{/* Action Buttons — outline-only styling so the verification CTA
+			    (which lives inside the Verification card) remains the primary
+			    visual action. Resolve_path === "verify" is intentionally not
+			    rendered here: it would duplicate the in-card Run Verification
+			    button. */}
 			<section className='space-y-2 pt-2'>
 				<button
 					onClick={() => onNavigateChat()}
-					className='w-full rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-600 transition-colors hover:border-emerald-500 hover:bg-emerald-500/15 dark:text-emerald-400'
+					className='w-full rounded-md border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/5'
 				>
 					{t("drawer.discussInChat")}
 				</button>
-				{resolveCfg && (
+				{resolveCfg && action.resolve_path !== "verify" && (
 					<button
-						disabled={action.resolve_path === "verify" && isVerifying}
 						onClick={() => {
-							// Only the "verify" resolve path has a wired backend handler today;
 							// fix/track/dismiss are placeholders awaiting their own pipelines.
-							if (action.resolve_path === "verify") {
-								onRunVerification("re_verify");
-							}
+							// verify is handled by the in-card CTA, not here.
 						}}
-						className={`w-full rounded-md border px-4 py-2 text-sm font-medium transition-colors ${resolveCfg.style} disabled:opacity-50`}
+						className='w-full rounded-md border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/5 disabled:opacity-50'
 					>
-						{action.resolve_path === "verify" && isVerifying
-							? t("drawer.verificationRunning")
-							: t(`resolve.${resolveCfg.labelKey}`)}
+						{t(`resolve.${resolveCfg.labelKey}`)}
 					</button>
 				)}
 			</section>

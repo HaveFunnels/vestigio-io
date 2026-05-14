@@ -1900,80 +1900,80 @@ function buildSummary(decisionKey: string, risk: RiskEvaluation, translations?: 
 
   switch (decisionKey) {
     case 'unsafe_to_scale_traffic':
-      return `Scaling traffic is unsafe. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Critical issues must be resolved first.`;
+      return `Scaling traffic is unsafe. Critical issues must be resolved first.`;
     case 'fix_before_scale':
-      return `Issues should be fixed before scaling traffic. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100.`;
+      return `Issues should be fixed before scaling traffic.`;
     case 'ready_with_risks':
-      return `Traffic can be scaled with caution. Some risks remain (score: ${risk.raw_risk_score}/100) but are not blocking.`;
+      return `Traffic can be scaled with caution. Some risks remain but are not blocking.`;
     case 'safe_to_scale':
-      return `Safe to scale traffic. No significant risks detected (score: ${risk.raw_risk_score}/100).`;
+      return `Safe to scale traffic. No significant risks detected.`;
     case 'revenue_leakage_detected':
-      return `Active revenue leakage detected. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Conversion path has critical structural issues losing money.`;
+      return `Active revenue leakage detected. Conversion path has critical structural issues losing money.`;
     case 'revenue_at_risk':
-      return `Revenue path has significant issues. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Fix before increasing ad spend.`;
+      return `Revenue path has significant issues. Fix before increasing ad spend.`;
     case 'revenue_path_fragile':
-      return `Revenue path is functional but fragile. Risk score: ${risk.raw_risk_score}/100. Optimization opportunities exist to reduce leakage.`;
+      return `Revenue path is functional but fragile. Optimization opportunities exist to reduce leakage.`;
     case 'revenue_integrity_stable':
-      return `Revenue integrity is stable. No significant leakage detected (score: ${risk.raw_risk_score}/100).`;
+      return `Revenue integrity is stable. No significant leakage detected.`;
     case 'high_chargeback_risk':
-      return `High chargeback risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Missing policies, support gaps, and expectation issues create significant dispute exposure.`;
+      return `High chargeback risk. Missing policies, support gaps, and expectation issues create significant dispute exposure.`;
     case 'moderate_chargeback_risk':
-      return `Moderate chargeback risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Some protective measures are missing.`;
+      return `Moderate chargeback risk. Some protective measures are missing.`;
     case 'low_chargeback_risk':
-      return `Low chargeback risk. Risk score: ${risk.raw_risk_score}/100. Minor improvements available but not blocking.`;
+      return `Low chargeback risk. Minor improvements available but not blocking.`;
     case 'chargeback_resilience_strong':
-      return `Chargeback resilience is strong. No significant dispute risk detected (score: ${risk.raw_risk_score}/100).`;
+      return `Chargeback resilience is strong. No significant dispute risk detected.`;
     case 'security_posture_critical':
-      return `Critical security exposures detected. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Sensitive files or mixed content on commercial pages create immediate financial risk.`;
+      return `Critical security exposures detected. Sensitive files or mixed content on commercial pages create immediate financial risk.`;
     case 'security_posture_elevated':
-      return `Elevated security posture risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Weak headers or open redirects increase exposure.`;
+      return `Elevated security posture risk. Weak headers or open redirects increase exposure.`;
     case 'security_posture_weak':
-      return `Security posture has minor gaps. Risk score: ${risk.raw_risk_score}/100. Hardening opportunities exist but are not blocking.`;
+      return `Security posture has minor gaps. Hardening opportunities exist but are not blocking.`;
     case 'security_posture_adequate':
-      return `Security posture is adequate. No significant exposures detected (score: ${risk.raw_risk_score}/100).`;
+      return `Security posture is adequate. No significant exposures detected.`;
     case 'copy_misaligned':
-      return `Copy is misaligned with commercial intent. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Messaging is failing to convert high-intent visitors across multiple dimensions.`;
+      return `Copy is misaligned with commercial intent. Messaging is failing to convert high-intent visitors across multiple dimensions.`;
     case 'copy_significant_gaps':
-      return `Copy has significant alignment gaps. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Multiple CRO dimensions need attention before scaling.`;
+      return `Copy has significant alignment gaps. Multiple CRO dimensions need attention before scaling.`;
     case 'copy_minor_gaps':
-      return `Copy has minor alignment gaps. Risk score: ${risk.raw_risk_score}/100. Messaging is mostly effective but refinements could lift conversion.`;
+      return `Copy has minor alignment gaps. Messaging is mostly effective but refinements could lift conversion.`;
     case 'copy_aligned':
-      return `Copy is aligned with commercial intent. No significant gaps detected (score: ${risk.raw_risk_score}/100).`;
+      return `Copy is aligned with commercial intent. No significant gaps detected.`;
     // Channel Integrity
     case 'channel_integrity_critical':
-      return `Critical channel integrity compromise detected. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Payment surfaces, scripts, or infrastructure are exposed to tampering or hijack.`;
+      return `Critical channel integrity compromise detected. Payment surfaces, scripts, or infrastructure are exposed to tampering or hijack.`;
     case 'channel_integrity_elevated':
-      return `Elevated channel integrity risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Abuse vectors or brittle infrastructure need attention before scaling.`;
+      return `Elevated channel integrity risk. Abuse vectors or brittle infrastructure need attention before scaling.`;
     case 'channel_integrity_weak':
-      return `Channel integrity has minor gaps. Risk score: ${risk.raw_risk_score}/100. Hardening opportunities exist but are not blocking.`;
+      return `Channel integrity has minor gaps. Hardening opportunities exist but are not blocking.`;
     case 'channel_integrity_strong':
-      return `Channel integrity is strong. No significant compromise vectors detected (score: ${risk.raw_risk_score}/100).`;
+      return `Channel integrity is strong. No significant compromise vectors detected.`;
     // Discoverability
     case 'discoverability_critically_weak':
-      return `Discoverability is critically weak. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Commercial pages are invisible to search engines and social platforms.`;
+      return `Discoverability is critically weak. Commercial pages are invisible to search engines and social platforms.`;
     case 'discoverability_gaps_significant':
-      return `Significant discoverability gaps. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Search representation and social previews need improvement before scaling traffic.`;
+      return `Significant discoverability gaps. Search representation and social previews need improvement before scaling traffic.`;
     case 'discoverability_improvable':
-      return `Discoverability has optimization opportunities. Risk score: ${risk.raw_risk_score}/100. Pages are indexable but not well-represented.`;
+      return `Discoverability has optimization opportunities. Pages are indexable but not well-represented.`;
     case 'discoverability_adequate':
-      return `Discoverability is adequate. No significant gaps detected (score: ${risk.raw_risk_score}/100).`;
+      return `Discoverability is adequate. No significant gaps detected.`;
     // Brand Integrity
     case 'brand_integrity_critical':
-      return `Critical brand integrity threat. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Active impersonation or phishing surfaces are diverting customer trust and revenue.`;
+      return `Critical brand integrity threat. Active impersonation or phishing surfaces are diverting customer trust and revenue.`;
     case 'brand_integrity_elevated':
-      return `Elevated brand integrity risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Lookalike domains or deceptive surfaces are competing for brand traffic.`;
+      return `Elevated brand integrity risk. Lookalike domains or deceptive surfaces are competing for brand traffic.`;
     case 'brand_integrity_weak':
-      return `Brand integrity has minor exposure. Risk score: ${risk.raw_risk_score}/100. Brand presence is diluted but not under active threat.`;
+      return `Brand integrity has minor exposure. Brand presence is diluted but not under active threat.`;
     case 'brand_integrity_strong':
-      return `Brand integrity is strong. No significant impersonation or dilution detected (score: ${risk.raw_risk_score}/100).`;
+      return `Brand integrity is strong. No significant impersonation or dilution detected.`;
     // Payment Health (Wave 8.1)
     case 'payment_health_critical':
-      return `Payment health is critical. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Failed payment rate or subscriber churn has crossed dangerous thresholds — revenue is being lost to involuntary churn.`;
+      return `Payment health is critical. Failed payment rate or subscriber churn has crossed dangerous thresholds — revenue is being lost to involuntary churn.`;
     case 'payment_health_at_risk':
-      return `Payment health is at risk. Risk score: ${risk.raw_risk_score}/100, confidence: ${risk.confidence_score}/100. Elevated failed payments or subscriber churn are creating preventable revenue loss.`;
+      return `Payment health is at risk. Elevated failed payments or subscriber churn are creating preventable revenue loss.`;
     case 'payment_health_stable':
-      return `Payment health is stable. Failed payment and churn rates are within acceptable ranges (score: ${risk.raw_risk_score}/100).`;
+      return `Payment health is stable. Failed payment and churn rates are within acceptable ranges.`;
     default:
-      return `Decision: ${decisionKey}. Risk: ${risk.raw_risk_score}/100, Confidence: ${risk.confidence_score}/100.`;
+      return `Decision: ${decisionKey}.`;
   }
 }

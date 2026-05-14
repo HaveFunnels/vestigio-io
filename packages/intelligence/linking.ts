@@ -123,9 +123,19 @@ export function prioritizeActions(
   for (const [decisionRef, actions] of actionsByDecision) {
     const link = linkByDecision.get(decisionRef);
     const decision = decisions.find(d => makeRef('decision', d.id) === decisionRef);
-    const primaryRcRef = link?.root_cause_refs.find(r => r.contribution_strength === 'primary')?.root_cause_ref
-      || link?.root_cause_refs[0]?.root_cause_ref
-      || null;
+    // State decisions describe a healthy state — they have no underlying
+    // "root cause" to fix. Attaching one (especially via evidence-only
+    // 'related' linking, which can cross packs) confuses users by pairing
+    // verification actions with unrelated root causes from other packs.
+    const isStateDecision = decision?.category === 'state';
+    // For Risk decisions, only accept primary/contributing RC matches —
+    // those are inference-based connections. 'related' is evidence-only
+    // overlap which is too weak to surface as the action's root cause.
+    const primaryRcRef = isStateDecision
+      ? null
+      : (link?.root_cause_refs.find(r => r.contribution_strength === 'primary')?.root_cause_ref
+        || link?.root_cause_refs.find(r => r.contribution_strength === 'contributing')?.root_cause_ref
+        || null);
 
     for (const action of actions) {
       allActions.push({

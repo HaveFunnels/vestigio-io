@@ -1,9 +1,18 @@
 import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { getPlanByKey } from "@/libs/plan-config";
 import { prisma } from "@/libs/prismaDb";
 import { notifyOrganization, renderBrandedEmail } from "@/libs/notifications";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+
+// Downgrade ladder used by the "too_expensive → downgrade" save offer.
+// vestigio is the entry tier so it has no downgrade target — accepting
+// the offer on that plan is rejected. Each value is the next plan down.
+const DOWNGRADE_TARGET: Record<string, string> = {
+	max: "pro",
+	pro: "vestigio",
+};
 
 // ──────────────────────────────────────────────
 // Cancel Flow API — survey, save offers, confirm
@@ -101,6 +110,32 @@ async function paddleApplyDiscount(
 	if (!res.ok) {
 		const text = await res.text();
 		throw new Error(`Paddle discount failed: ${res.status} ${text}`);
+	}
+	return res.json();
+}
+
+// Swap the subscription's price for a different plan. Used by the
+// "downgrade" save offer (max → pro, pro → vestigio). prorated_immediately
+// matches the upgrade flow at /api/paddle/change-plan so the customer's
+// next invoice reflects the lower price right away.
+async function paddleChangeSubscriptionPlan(
+	subscriptionId: string,
+	priceId: string,
+) {
+	const res = await fetch(
+		`${paddleBaseUrl()}/subscriptions/${subscriptionId}`,
+		{
+			method: "PATCH",
+			headers: paddleHeaders(),
+			body: JSON.stringify({
+				proration_billing_mode: "prorated_immediately",
+				items: [{ price_id: priceId, quantity: 1 }],
+			}),
+		},
+	);
+	if (!res.ok) {
+		const text = await res.text();
+		throw new Error(`Paddle change-plan failed: ${res.status} ${text}`);
 	}
 	return res.json();
 }
@@ -227,12 +262,60 @@ export const POST = withErrorTracking(
 							discountId,
 						);
 					}
+				} else if (offerType === "downgrade") {
+					// Actually downgrade: max → pro, pro → vestigio. Earlier
+					// builds marked the survey as accepted but never touched
+					// the subscription, so customers who chose "Downgrade
+					// instead of cancel" stayed on the same plan + price.
+					const currentPlan = (org.plan || "vestigio").toLowerCase();
+					const targetPlan = DOWNGRADE_TARGET[currentPlan];
+					if (!targetPlan) {
+						return NextResponse.json(
+							{ message: "No downgrade target available for this plan." },
+							{ status: 400 },
+						);
+					}
+					const targetConfig = await getPlanByKey(targetPlan);
+					if (!targetConfig?.paddlePriceId) {
+						return NextResponse.json(
+							{ message: `Downgrade target ${targetPlan} is not configured in pricing.` },
+							{ status: 500 },
+						);
+					}
+					if (session.user.subscriptionId) {
+						await paddleChangeSubscriptionPlan(
+							session.user.subscriptionId,
+							targetConfig.paddlePriceId,
+						);
+					}
+					// Reflect the new plan locally so feature gates flip
+					// before Paddle's webhook lands. The webhook will
+					// re-confirm it.
+					await prisma.organization.update({
+						where: { id: org.id },
+						data: { plan: targetPlan },
+					});
+					await prisma.user.updateMany({
+						where: { id: session.user.id, subscriptionId: session.user.subscriptionId ?? undefined },
+						data: { priceId: targetConfig.paddlePriceId },
+					});
 				}
-				// For "support", "roadmap", "downgrade" — no Paddle action needed,
-				// just mark the survey as accepted so the UI shows the right state.
+				// For "support", "roadmap" — no provider action needed,
+				// just mark the survey as accepted so the UI shows the
+				// right state.
 			} catch (err: any) {
 				console.error("[cancel/accept-offer] Paddle error:", err?.message);
-				// Don't fail — still mark as accepted in DB
+				// For the discount + pause offers we still write the
+				// accepted state so the user isn't stuck in the cancel
+				// flow on a transient Paddle error. The downgrade path
+				// is different — if Paddle fails, plan + Paddle stay
+				// out of sync, so propagate the error.
+				if (offerType === "downgrade") {
+					return NextResponse.json(
+						{ message: "Failed to downgrade subscription. Please try again or contact support." },
+						{ status: 500 },
+					);
+				}
 			}
 
 			await prisma.cancelSurvey.update({

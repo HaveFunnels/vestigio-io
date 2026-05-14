@@ -13,31 +13,35 @@ interface AdminUser {
   id: string;
   name: string;
   email: string;
-  role: string;
+  adminRole: string;
   createdAt: string;
 }
 
 interface AdminUsersResponse {
-  users: AdminUser[];
-  total: number;
+  admins: AdminUser[];
+  totalUsers: number;
 }
 
 /* ---------- Constants ---------- */
 
+// Only two roles are actually enforced today:
+//   - super_admin → can invite/update/remove other admins
+//   - admin       → everything else; full read+write on admin pages
+//
+// The earlier "support / marketing / viewer / billing" granular roles
+// were UI labels with no enforcement — a "viewer" admin could suspend
+// orgs and edit pricing identically to a super_admin. Until per-page
+// gates exist, we collapse them to a single "admin" tier so the UI
+// reflects reality. The DB column still accepts legacy values; existing
+// rows with adminRole = "viewer" etc. render as "Admin".
 const ROLES: { value: string; label: string; description: string }[] = [
-  { value: "super_admin", label: "Super Admin", description: "Full access to all admin features" },
-  { value: "support", label: "Support", description: "Support Tickets, Feedback" },
-  { value: "marketing", label: "Marketing", description: "Marketing, Newsletters" },
-  { value: "viewer", label: "Viewer", description: "Read-only access to all sections" },
-  { value: "billing", label: "Billing", description: "Usage & Billing, Pricing, Organizations" },
+  { value: "super_admin", label: "Super Admin", description: "Can invite, remove, and change roles of other admins" },
+  { value: "admin", label: "Admin", description: "Full access to admin pages (no admin user management)" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
   super_admin: "bg-red-500/10 text-red-400 border-red-500/20",
-  support: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  marketing: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-  viewer: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-  billing: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  admin: "bg-blue-500/10 text-blue-400 border-blue-500/20",
 };
 
 /* ---------- Helpers ---------- */
@@ -159,8 +163,11 @@ function StatCard({
 /* ---------- Role Badge ---------- */
 
 function RoleBadge({ role }: { role: string }) {
-  const roleInfo = ROLES.find((r) => r.value === role);
-  const colorClass = ROLE_COLORS[role] || "bg-surface-inset text-content-muted border-edge";
+  // Legacy adminRole values (viewer/support/marketing/billing) render as
+  // generic "Admin" since they were never enforced anyway.
+  const normalized = role === "super_admin" ? "super_admin" : "admin";
+  const roleInfo = ROLES.find((r) => r.value === normalized);
+  const colorClass = ROLE_COLORS[normalized] || "bg-surface-inset text-content-muted border-edge";
   return (
     <span className={`inline-block rounded border px-2 py-0.5 text-[11px] font-medium ${colorClass}`}>
       {roleInfo?.label || role}
@@ -180,7 +187,7 @@ export default function AdminUsersPage() {
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePassword, setInvitePassword] = useState("");
-  const [inviteRole, setInviteRole] = useState("viewer");
+  const [inviteRole, setInviteRole] = useState("admin");
   const [inviteError, setInviteError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -196,8 +203,8 @@ export default function AdminUsersPage() {
       const res = await fetch("/api/admin/users");
       if (res.ok) {
         const data: AdminUsersResponse = await res.json();
-        setUsers(data.users || []);
-        setTotal(data.total || 0);
+        setUsers(data.admins || []);
+        setTotal(data.totalUsers || 0);
       }
     } catch {
       // silently fail
@@ -227,7 +234,7 @@ export default function AdminUsersPage() {
           name: inviteName,
           email: inviteEmail,
           password: invitePassword,
-          role: inviteRole,
+          adminRole: inviteRole,
         }),
       });
       if (!res.ok) {
@@ -238,7 +245,7 @@ export default function AdminUsersPage() {
       setInviteName("");
       setInviteEmail("");
       setInvitePassword("");
-      setInviteRole("viewer");
+      setInviteRole("admin");
       setShowInvite(false);
       fetchUsers();
     } catch {
@@ -249,21 +256,28 @@ export default function AdminUsersPage() {
   }
 
   async function handleRoleChange(userId: string, newRole: string) {
+    // Optimistic update — revert on failure so the UI doesn't lie.
+    const previous = users.find((u) => u.id === userId)?.adminRole;
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, adminRole: newRole } : u))
+    );
+    setEditingRoleId(null);
     try {
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, role: newRole }),
+        body: JSON.stringify({ userId, adminRole: newRole }),
       });
-      if (res.ok) {
+      if (!res.ok) {
         setUsers((prev) =>
-          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+          prev.map((u) => (u.id === userId ? { ...u, adminRole: previous ?? u.adminRole } : u))
         );
       }
     } catch {
-      // silently fail
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, adminRole: previous ?? u.adminRole } : u))
+      );
     }
-    setEditingRoleId(null);
   }
 
   async function handleRemove(userId: string) {
@@ -282,9 +296,11 @@ export default function AdminUsersPage() {
 
   /* ---------- Computed ---------- */
 
+  // Count by normalized role (legacy granular values collapse to "admin").
   const roleCounts: Record<string, number> = {};
   for (const u of users) {
-    roleCounts[u.role] = (roleCounts[u.role] || 0) + 1;
+    const k = u.adminRole === "super_admin" ? "super_admin" : "admin";
+    roleCounts[k] = (roleCounts[k] || 0) + 1;
   }
 
   return (
@@ -316,7 +332,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Total Admins"
           value={loading ? "--" : String(total)}
@@ -465,10 +481,9 @@ export default function AdminUsersPage() {
                       {editingRoleId === user.id ? (
                         <CustomSelect
                           size="sm"
-                          value={user.role}
+                          value={user.adminRole === "super_admin" ? "super_admin" : "admin"}
                           onChange={(val) => {
                             handleRoleChange(user.id, val);
-                            setEditingRoleId(null);
                           }}
                           options={ROLES.map((r) => ({
                             value: r.value,
@@ -481,7 +496,7 @@ export default function AdminUsersPage() {
                           className="transition-opacity hover:opacity-80"
                           title="Click to change role"
                         >
-                          <RoleBadge role={user.role} />
+                          <RoleBadge role={user.adminRole} />
                         </button>
                       )}
                     </td>

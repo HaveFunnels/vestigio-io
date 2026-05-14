@@ -1,4 +1,6 @@
 import { authOptions } from "@/libs/auth";
+import { logAuditEvent } from "@/libs/audit-log";
+import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
 import bcrypt from "bcryptjs";
 import { getServerSession } from "next-auth";
@@ -108,7 +110,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const validAdminRoles = ["super_admin", "support", "marketing", "viewer", "billing"];
+    // Only two roles are actually enforced today (super_admin gets admin
+    // user-management privileges; "admin" gets everything else). The
+    // earlier granular roles (support/marketing/viewer/billing) had no
+    // enforcement so they're no longer accepted on write. Existing DB
+    // rows with those values remain unchanged and render as "Admin".
+    const validAdminRoles = ["super_admin", "admin"];
     if (!validAdminRoles.includes(adminRole)) {
       return NextResponse.json(
         { message: `Invalid adminRole. Must be one of: ${validAdminRoles.join(", ")}` },
@@ -145,6 +152,19 @@ export async function POST(req: NextRequest) {
         adminRole,
         password: hashedPassword,
       },
+    });
+
+    // Audit trail — sensitive op (admin user creation).
+    const ip = await getIp();
+    logAuditEvent({
+      actorId: admin.user.id,
+      actorEmail: admin.user.email ?? "unknown",
+      action: "user.invite",
+      targetType: "user",
+      targetId: newAdmin.id,
+      targetName: newAdmin.email ?? undefined,
+      metadata: { adminRole },
+      ipAddress: ip ?? undefined,
     });
 
     return NextResponse.json(
@@ -208,7 +228,12 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const validAdminRoles = ["super_admin", "support", "marketing", "viewer", "billing"];
+    // Only two roles are actually enforced today (super_admin gets admin
+    // user-management privileges; "admin" gets everything else). The
+    // earlier granular roles (support/marketing/viewer/billing) had no
+    // enforcement so they're no longer accepted on write. Existing DB
+    // rows with those values remain unchanged and render as "Admin".
+    const validAdminRoles = ["super_admin", "admin"];
     const data: Record<string, string> = {};
 
     if (adminRole) {
@@ -256,6 +281,23 @@ export async function PATCH(req: NextRequest) {
         createdAt: true,
       },
     });
+
+    // Audit trail — sensitive op (role change). Always log when adminRole
+    // is included in the patch so reviewers can match invites + role
+    // changes in the audit-log filter.
+    if (adminRole) {
+      const ip = await getIp();
+      logAuditEvent({
+        actorId: admin.user.id,
+        actorEmail: admin.user.email ?? "unknown",
+        action: "user.role_change",
+        targetType: "user",
+        targetId: updated.id,
+        targetName: updated.email ?? undefined,
+        metadata: { adminRole },
+        ipAddress: ip ?? undefined,
+      });
+    }
 
     return NextResponse.json({
       admin: {
@@ -324,12 +366,26 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    await prisma.user.update({
+    const removed = await prisma.user.update({
       where: { id: userId },
       data: {
         role: "USER",
         adminRole: null,
       },
+      select: { id: true, email: true },
+    });
+
+    // Audit trail — sensitive op (admin removal). Matches the `user.delete`
+    // entry shown in the audit-log filter dropdown.
+    const ip = await getIp();
+    logAuditEvent({
+      actorId: admin.user.id,
+      actorEmail: admin.user.email ?? "unknown",
+      action: "user.delete",
+      targetType: "user",
+      targetId: removed.id,
+      targetName: removed.email ?? undefined,
+      ipAddress: ip ?? undefined,
     });
 
     return NextResponse.json({

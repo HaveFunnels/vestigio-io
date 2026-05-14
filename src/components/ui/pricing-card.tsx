@@ -36,6 +36,16 @@ interface PricingComponentProps {
 	subheading?: string;
 	className?: string;
 	currencySymbol?: string;
+	/**
+	 * Show the Monthly/Annual toggle. Defaults to false because no plan
+	 * ships with an annual Paddle price ID yet — keeping the toggle on
+	 * lets users pick "Annual", see the discounted price + "Save X%",
+	 * then get billed at the monthly rate. Flip back to true once
+	 * `paddleAnnualPriceId` is wired through `/api/pricing` and
+	 * `handlePlanSelect` in the billing page picks the right priceId
+	 * based on the cycle.
+	 */
+	annualPricingEnabled?: boolean;
 }
 
 // --- Feature Row ---
@@ -132,6 +142,7 @@ export default function PricingComponent({
 	subheading = "Intelig\u00eancia que se paga sozinha. Comece gr\u00e1tis, evolua quando quiser.",
 	className,
 	currencySymbol = "$",
+	annualPricingEnabled = false,
 }: PricingComponentProps) {
 	const annualDiscountPercent = 20;
 	const allFeatures = Array.from(
@@ -148,52 +159,56 @@ export default function PricingComponent({
 				<p className='mt-3 text-base text-zinc-400'>{subheading}</p>
 			</div>
 
-			{/* Cycle Toggle */}
-			<div className='mb-12 flex flex-col items-center gap-2'>
-				<div className='relative inline-flex items-center rounded-lg border border-white/10 bg-white/[0.03] p-1'>
-					{/* Sliding highlight */}
-					<div
-						className='absolute bottom-1 top-1 rounded-md bg-white/10 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]'
-						style={{
-							left: billingCycle === "monthly" ? "4px" : "50%",
-							width: "calc(50% - 4px)",
-						}}
-					/>
-					<button
-						onClick={() => onCycleChange("monthly")}
+			{/* Cycle Toggle — only shown when annual SKUs are wired
+			    end-to-end. Otherwise users would pick "Annual", see the
+			    discount, and be billed monthly. */}
+			{annualPricingEnabled && (
+				<div className='mb-12 flex flex-col items-center gap-2'>
+					<div className='relative inline-flex items-center rounded-lg border border-white/10 bg-white/[0.03] p-1'>
+						{/* Sliding highlight */}
+						<div
+							className='absolute bottom-1 top-1 rounded-md bg-white/10 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]'
+							style={{
+								left: billingCycle === "monthly" ? "4px" : "50%",
+								width: "calc(50% - 4px)",
+							}}
+						/>
+						<button
+							onClick={() => onCycleChange("monthly")}
+							className={cn(
+								"relative z-10 rounded-md px-5 py-2 text-sm font-medium transition-colors duration-200",
+								billingCycle === "monthly"
+									? "text-white"
+									: "text-zinc-400 hover:text-zinc-200"
+							)}
+						>
+							Monthly
+						</button>
+						<button
+							onClick={() => onCycleChange("annually")}
+							className={cn(
+								"relative z-10 rounded-md px-5 py-2 text-sm font-medium transition-colors duration-200",
+								billingCycle === "annually"
+									? "text-white"
+									: "text-zinc-400 hover:text-zinc-200"
+							)}
+						>
+							Annually
+						</button>
+					</div>
+					{/* Save badge — below the toggle, fades in on annual */}
+					<span
 						className={cn(
-							"relative z-10 rounded-md px-5 py-2 text-sm font-medium transition-colors duration-200",
-							billingCycle === "monthly"
-								? "text-white"
-								: "text-zinc-400 hover:text-zinc-200"
-						)}
-					>
-						Monthly
-					</button>
-					<button
-						onClick={() => onCycleChange("annually")}
-						className={cn(
-							"relative z-10 rounded-md px-5 py-2 text-sm font-medium transition-colors duration-200",
+							"rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400 transition-all duration-300",
 							billingCycle === "annually"
-								? "text-white"
-								: "text-zinc-400 hover:text-zinc-200"
+								? "translate-y-0 opacity-100"
+								: "-translate-y-1 opacity-0"
 						)}
 					>
-						Annually
-					</button>
+						Save {annualDiscountPercent}%
+					</span>
 				</div>
-				{/* Save badge — below the toggle, fades in on annual */}
-				<span
-					className={cn(
-						"rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400 transition-all duration-300",
-						billingCycle === "annually"
-							? "translate-y-0 opacity-100"
-							: "-translate-y-1 opacity-0"
-					)}
-				>
-					Save {annualDiscountPercent}%
-				</span>
-			</div>
+			)}
 
 			{/* Cards */}
 			<div className='mx-auto grid max-w-[1170px] gap-6 px-4 sm:px-8 md:grid-cols-3 xl:px-0'>

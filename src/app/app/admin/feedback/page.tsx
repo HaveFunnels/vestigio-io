@@ -285,7 +285,9 @@ export default function AdminFeedbackPage() {
       const res = await fetch("/api/admin/feedback", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ feedbackId, status: newStatus }),
+        // API expects `id`, not `feedbackId` — prior mismatch silently
+        // 400'd while optimistic UI made it look like a success.
+        body: JSON.stringify({ id: feedbackId, status: newStatus }),
       });
       if (res.ok) {
         setFeedbacks((prev) =>

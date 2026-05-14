@@ -316,7 +316,10 @@ export default function AdminSupportTicketsPage() {
       const res = await fetch(`/api/admin/support-tickets`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticketId: selectedTicket.id, [field]: value }),
+        // API expects `id`, not `ticketId` — prior mismatch silently
+        // 400'd while optimistic UI made every status/priority/category
+        // change (and "Mark as Spam") look like a success.
+        body: JSON.stringify({ id: selectedTicket.id, [field]: value }),
       });
       if (res.ok) {
         const updated = { ...selectedTicket, [field]: value, updatedAt: new Date().toISOString() };

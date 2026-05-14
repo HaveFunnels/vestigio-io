@@ -318,7 +318,21 @@ export interface MultiPackResult {
   revenue_recovery: RevenueRecoveryResult | null;
 }
 
-export function recomputeAll(input: MultiPackInput): MultiPackResult {
+/**
+ * Underlying generator that produces the MultiPackResult in ~10 distinct
+ * phases. The `yield` statements demarcate safe points where an async
+ * orchestrator can hand control back to the event loop (setImmediate)
+ * between phases, so long compute does not stall the audit-runner main
+ * thread (healthcheck, queue polling, heal cron, parallel cycle slots).
+ *
+ * Sync API (`recomputeAll`) drains this generator synchronously — same
+ * behaviour as before for tests + the legacy MCP fallback.
+ *
+ * Async API (`recomputeAllAsync`) drains it across event-loop ticks —
+ * used by the audit-runner so a 60-120s recompute does not block other
+ * work on the same Node process.
+ */
+function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResult, void> {
   const {
     evidence, scoping, cycle_ref, root_domain, landing_url,
     conversion_proximity, is_production, translations,
@@ -343,10 +357,14 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     dataProvenance = reconciliation.provenance;
   }
 
+  yield; // ── phase boundary: evidence quality + integration reconciliation done
+
   // ─── Shared pipeline: graph + signals + inferences ───
   const graph = buildGraph(evidence, root_domain, cycle_ref, integrationSnapshots);
   const graphStats = summarizeGraph(graph);
   const rawSignals = extractSignals(evidence, graph, scoping, cycle_ref, commerceContext);
+
+  yield; // ── phase boundary: graph + signals extracted
 
   // ─── Phase 26: Truth resolution — harmonize multi-source signals ───
   const truthHarmonization = harmonizeSignals(rawSignals, evidence);
@@ -362,6 +380,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
 
   // ─── Inferences from quality-adjusted, truth-resolved signals ───
   const inferences = computeInferences(signals, scoping, cycle_ref);
+
+  yield; // ── phase boundary: core inferences computed (heaviest single step)
 
   // Wave 15.4 — pre-filter inferences per pack before each decision so
   // builders only see inferences that actually belong to their pack.
@@ -477,6 +497,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     { name: 'Brand Integrity', type: 'analysis', scoping, landing_url, cycle_ref },
     brandIntegrityResult.decision, brandIntegrityActions, inferences,
   );
+
+  yield; // ── phase boundary: 8 per-pack decisions (scale → brand_integrity) done
 
   // Wave 8.1: Payment Health decision (gated on Stripe integration data)
   let paymentHealthPack: MultiPackResult['payment_health'] = null;
@@ -653,6 +675,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     }
   }
 
+  yield; // ── phase boundary: behavioral packs (7 decisions) done
+
   // Vertical-specific inferences (gated by businessModel)
   const verticalInferences = computeVerticalInferences(
     [...signals, ...saasSignals],
@@ -752,6 +776,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     cycle_ref,
     ids: new IdGenerator('compound'),
   });
+
+  yield; // ── phase boundary: cross-domain + recon + compound inferences done
 
   // Merge SaaS signals + additional static-check signals into main arrays
   const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
@@ -894,6 +920,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
       });
     }
   }
+
+  yield; // ── phase boundary: suppression + profile-freshness penalties applied
 
   // Intelligence layer — populated here, called AFTER all penalties below (E7 fix).
   const actionsByDecision = new Map<string, Action[]>();
@@ -1144,6 +1172,8 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
     has_integrations: hasIntegrations,
   });
 
+  yield; // ── phase boundary: intelligence layer + maturity stage done
+
   // Reassemble pack results with possibly-adjusted decisions and risk evaluations
   const assembledResult: MultiPackResult = {
     graph_stats: graphStats,
@@ -1293,6 +1323,37 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
   };
 
   return assembledResult;
+}
+
+/**
+ * Sync drain of `recomputeAllGen`. Preserves the original synchronous
+ * API for tests, the legacy MCP fallback, and any caller that runs
+ * outside of a hot-path event loop. Behaviourally identical to the
+ * pre-yieldable function — yields are no-ops in this drainer.
+ */
+export function recomputeAll(input: MultiPackInput): MultiPackResult {
+  const gen = recomputeAllGen(input);
+  while (true) {
+    const step = gen.next();
+    if (step.done) return step.value;
+  }
+}
+
+/**
+ * Async drain of `recomputeAllGen`. Awaits `setImmediate` between phase
+ * yields so the event loop can serve other work (healthchecks, queue
+ * polling, the heal cron, the second concurrent cycle slot) during a
+ * long recompute. Used by the audit-runner; total wall time per cycle
+ * is roughly unchanged but the worker process stays responsive.
+ */
+export async function recomputeAllAsync(input: MultiPackInput): Promise<MultiPackResult> {
+  const gen = recomputeAllGen(input);
+  while (true) {
+    const step = gen.next();
+    if (step.done) return step.value;
+    // setImmediate (not queueMicrotask) so I/O callbacks get a turn.
+    await new Promise<void>((resolve) => setImmediate(resolve));
+  }
 }
 
 function summarizeGraph(graph: ReturnType<typeof buildGraph>): GraphStats {

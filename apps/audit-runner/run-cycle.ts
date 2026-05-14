@@ -26,7 +26,7 @@ import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/s
 import { PrismaEvidenceStore } from "../../packages/evidence";
 import { PrismaSnapshotStore } from "../../packages/change-detection";
 import { PrismaFindingStore, projectAll } from "../../packages/projections";
-import { recomputeAll } from "../../packages/workspace";
+import { recomputeAllAsync } from "../../packages/workspace";
 import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
 import { processBehavioralEventsForEnv } from "./process-behavioral";
 import { pollShopifyData } from "../../workers/shopify/poller";
@@ -1487,7 +1487,13 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 
 			const recomputeStartMs = Date.now();
-			const multiPackResult = recomputeAll({
+			// Async generator drainer: yields between ~8 phase boundaries so
+			// the worker process keeps its event loop responsive (health
+			// endpoint, queue polling, heal cron, the second concurrent
+			// cycle slot) during a long recompute. Total wall time is
+			// roughly unchanged; what changes is that we stop monopolising
+			// the main thread for the full duration.
+			const multiPackResult = await recomputeAllAsync({
 				evidence: result.evidence,
 				additional_signals: staticCheckSignals,
 				scoping: {

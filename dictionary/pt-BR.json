@@ -2112,6 +2112,7 @@
 					"loading_scores": "Calculando scores agregados...",
 					"empty_title": "Sem copy detectada nas páginas top 4",
 					"empty_description": "Após o próximo ciclo crawlear home/pricing/features/about, frameworks ficam disponíveis aqui.",
+					"awaiting_pages": "Páginas ainda não foram crawleadas — checklist mostrado para referência. Os critérios serão pontuados após o próximo ciclo de auditoria.",
 					"framework_dropdown": "Framework",
 					"page_dropdown": "Página",
 					"page_home": "Homepage",

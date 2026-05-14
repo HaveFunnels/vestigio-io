@@ -2041,6 +2041,7 @@
 					"loading_scores": "Calculando scores agregados...",
 					"empty_title": "Sin copy detectada en top 4 páginas",
 					"empty_description": "Tras el próximo ciclo, los frameworks estarán disponibles aquí.",
+					"awaiting_pages": "Páginas aún no rastreadas — checklist mostrado como referencia. Los criterios se puntuarán tras el próximo ciclo de auditoría.",
 					"framework_dropdown": "Framework",
 					"page_dropdown": "Página",
 					"page_home": "Homepage",

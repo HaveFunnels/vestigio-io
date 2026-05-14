@@ -1911,6 +1911,7 @@
 					"loading_scores": "Berechne aggregierte Scores...",
 					"empty_title": "Keine Copy auf den Top-4-Seiten erkannt",
 					"empty_description": "Nach dem naechsten Zyklus werden Frameworks hier verfuegbar.",
+					"awaiting_pages": "Seiten noch nicht gecrawlt — Checkliste zur Referenz angezeigt. Kriterien werden nach dem naechsten Audit-Zyklus bewertet.",
 					"framework_dropdown": "Framework",
 					"page_dropdown": "Seite",
 					"page_home": "Homepage",

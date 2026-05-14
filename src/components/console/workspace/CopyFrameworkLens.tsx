@@ -110,6 +110,23 @@ function pickPageForSlot(slot: PageSlot, pages: CopyPage[]): CopyPage | null {
 			}
 		}
 	}
+	// Fallback: when asking for "home" and no URL path-segment matched,
+	// use the shortest-path page from the crawl set. This keeps the
+	// framework lens populated even on sites whose homepage isn't at "/"
+	// or whose top-4 slugs use non-standard names.
+	if (slot === "home" && !best && pages.length > 0) {
+		for (const p of pages) {
+			try {
+				const len = new URL(p.url).pathname.length;
+				if (len < bestPathLength) {
+					bestPathLength = len;
+					best = p;
+				}
+			} catch {
+				// skip
+			}
+		}
+	}
 	return best;
 }
 
@@ -151,13 +168,16 @@ export default function CopyFrameworkLens() {
 		[selectedSlot, pages],
 	);
 
-	// Available page slots: only those that actually have a matching crawl.
+	// Available page slots: those with a matching crawl, plus "home"
+	// whenever any page exists at all (pickPageForSlot falls back to the
+	// shortest-path page so the user can always inspect ≥1 page).
 	const availableSlots = useMemo<PageSlot[]>(() => {
 		const slots: Set<PageSlot> = new Set();
 		for (const p of pages) {
 			const s = detectPageSlot(p.url);
 			if (s) slots.add(s);
 		}
+		if (pages.length > 0) slots.add("home");
 		const ordered: PageSlot[] = ["home", "pricing", "features", "about"];
 		return ordered.filter((s) => slots.has(s));
 	}, [pages]);
@@ -253,20 +273,14 @@ export default function CopyFrameworkLens() {
 		);
 	}
 
-	if (availableSlots.length === 0) {
-		return (
-			<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-				<h2 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-					{t("label")}
-				</h2>
-				<p className="text-[13px] font-medium text-content">{t("empty_title")}</p>
-				<p className="mt-1 text-[12px] text-content-muted">{t("empty_description")}</p>
-			</section>
-		);
-	}
-
-	// Make sure the currently selected slot is available — fall back to first available.
-	const effectiveSlot = availableSlots.includes(selectedSlot) ? selectedSlot : availableSlots[0];
+	// When zero pages exist yet, we still render the framework structure
+	// (all criteria as `not_evaluated`) so the user can browse the 38
+	// checklist items per framework. Wires up after the next audit cycle
+	// adds page_content evidence rows.
+	const hasNoPages = pages.length === 0;
+	const effectiveSlot: PageSlot = availableSlots.includes(selectedSlot)
+		? selectedSlot
+		: (availableSlots[0] ?? "home");
 
 	return (
 		<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
@@ -278,6 +292,15 @@ export default function CopyFrameworkLens() {
 					<p className="mt-1 text-[12px] text-content-muted">{t("subtitle")}</p>
 				</div>
 			</div>
+
+			{/* Pre-data banner — only when crawler hasn't produced any
+			    page_content evidence yet. The checklist below still shows
+			    every criterion so the user can study the framework. */}
+			{hasNoPages && (
+				<div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-50 px-3 py-2 text-[11px] text-amber-700 dark:bg-amber-500/[0.04] dark:text-amber-300/90">
+					{t("awaiting_pages")}
+				</div>
+			)}
 
 			{/* Dropdowns */}
 			<div className="mb-4 flex flex-wrap items-center gap-3">
@@ -300,20 +323,22 @@ export default function CopyFrameworkLens() {
 						})}
 					</select>
 				</label>
-				<label className="flex items-center gap-2 text-[12px]">
-					<span className="text-content-muted">{t("page_dropdown")}:</span>
-					<select
-						value={effectiveSlot}
-						onChange={(e) => setSelectedSlot(e.target.value as PageSlot)}
-						className="rounded-md border border-edge bg-surface-card px-2 py-1 font-mono text-[12px] text-content focus:outline-none focus:ring-1 focus:ring-emerald-500"
-					>
-						{availableSlots.map((s) => (
-							<option key={s} value={s}>
-								{t(`page_${s}`)}
-							</option>
-						))}
-					</select>
-				</label>
+				{!hasNoPages && (
+					<label className="flex items-center gap-2 text-[12px]">
+						<span className="text-content-muted">{t("page_dropdown")}:</span>
+						<select
+							value={effectiveSlot}
+							onChange={(e) => setSelectedSlot(e.target.value as PageSlot)}
+							className="rounded-md border border-edge bg-surface-card px-2 py-1 font-mono text-[12px] text-content focus:outline-none focus:ring-1 focus:ring-emerald-500"
+						>
+							{availableSlots.map((s) => (
+								<option key={s} value={s}>
+									{t(`page_${s}`)}
+								</option>
+							))}
+						</select>
+					</label>
+				)}
 				<button
 					type="button"
 					onClick={() => setShowAbout(!showAbout)}
@@ -332,37 +357,42 @@ export default function CopyFrameworkLens() {
 			)}
 
 			{/* Audit content */}
-			{!selectedPage || currentAudit === "loading" || currentAudit === undefined ? (
+			{!hasNoPages && (!selectedPage || currentAudit === "loading" || currentAudit === undefined) ? (
 				<p className="text-[12px] text-content-muted">{t("loading")}</p>
-			) : currentAudit === "error" ? (
+			) : !hasNoPages && currentAudit === "error" ? (
 				<p className="text-[12px] text-amber-600 dark:text-amber-400">{t("loading")}</p>
 			) : (
 				<>
-					{/* Score summary */}
-					<div className="mb-3 flex items-baseline gap-3">
-						<span className={`font-mono text-2xl font-medium tabular-nums ${
-							currentAudit.score_pct >= 75
-								? "text-emerald-600 dark:text-emerald-400"
-								: currentAudit.score_pct >= 40
-									? "text-amber-600 dark:text-amber-400"
-									: "text-red-500 dark:text-red-400"
-						}`}>
-							{currentAudit.score_pct}%
-						</span>
-						<span className="text-[12px] text-content-muted">
-							{t("score_summary", {
-								passed: currentAudit.criteria.filter((c) => c.status === "pass").length,
-								total: framework?.criteria.length ?? 0,
-							})}
-						</span>
-					</div>
+					{/* Score summary — hidden when no pages (all criteria not_evaluated). */}
+					{!hasNoPages && currentAudit && currentAudit !== "loading" && currentAudit !== "error" && (
+						<div className="mb-3 flex items-baseline gap-3">
+							<span className={`font-mono text-2xl font-medium tabular-nums ${
+								currentAudit.score_pct >= 75
+									? "text-emerald-600 dark:text-emerald-400"
+									: currentAudit.score_pct >= 40
+										? "text-amber-600 dark:text-amber-400"
+										: "text-red-500 dark:text-red-400"
+							}`}>
+								{currentAudit.score_pct}%
+							</span>
+							<span className="text-[12px] text-content-muted">
+								{t("score_summary", {
+									passed: currentAudit.criteria.filter((c) => c.status === "pass").length,
+									total: framework?.criteria.length ?? 0,
+								})}
+							</span>
+						</div>
+					)}
 
 					{/* Criteria list */}
 					<div className="space-y-2">
 						{framework?.criteria.map((crit) => {
-							const verdict = currentAudit.criteria.find((c) => c.id === crit.id);
-							// Distinguish "not evaluated" (LLM omission) from "warn"
-							// to avoid double-penalty visual when status missing.
+							const verdict =
+								!hasNoPages && currentAudit && currentAudit !== "loading" && currentAudit !== "error"
+									? currentAudit.criteria.find((c) => c.id === crit.id)
+									: undefined;
+							// Distinguish "not evaluated" (LLM omission OR no page data
+							// yet) from "warn" to avoid double-penalty visual.
 							const status: Status = verdict?.status ?? "not_evaluated";
 							return (
 								<div

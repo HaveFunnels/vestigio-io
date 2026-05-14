@@ -2134,6 +2134,7 @@
 					"loading_scores": "Computing aggregate scores...",
 					"empty_title": "No copy detected on top 4 pages",
 					"empty_description": "After the next cycle crawls home/pricing/features/about, frameworks become available here.",
+					"awaiting_pages": "Page content not yet crawled — checklist shown for reference. Criteria will be scored after the next audit cycle.",
 					"framework_dropdown": "Framework",
 					"page_dropdown": "Page",
 					"page_home": "Homepage",

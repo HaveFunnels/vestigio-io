@@ -30,6 +30,10 @@ export interface CopyFramework {
 	name: CriterionText;
 	/** 1-line description shown when framework is selected */
 	intro: CriterionText;
+	/** 2-3 word strategic tag (e.g. "Loss frame", "Top of funnel"). */
+	useCase: CriterionText;
+	/** 1-sentence guidance on when this framework is the right pick. */
+	whenToUse: CriterionText;
 	criteria: FrameworkCriterion[];
 }
 
@@ -45,6 +49,11 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 		intro: {
 			en: "Attention, Interest, Desire, Action — the classic 4-stage funnel for landing pages and ads.",
 			pt: "Atenção, Interesse, Desejo, Ação — o clássico funil de 4 estágios pra landing pages e ads.",
+		},
+		useCase: { en: "Top of funnel", pt: "Topo do funil" },
+		whenToUse: {
+			en: "Drag a cold reader from awareness to action in 4 beats. Best for ads, hero sections, cold landing pages.",
+			pt: "Conduz o leitor frio de awareness a ação em 4 batidas. Ideal pra ads, heros e landing pages frias.",
 		},
 		criteria: [
 			{
@@ -88,6 +97,11 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 			en: "Problem, Agitation, Solution — short-form persuasion that opens a wound before offering the cure.",
 			pt: "Problema, Agitação, Solução — persuasão curta que abre a ferida antes de oferecer a cura.",
 		},
+		useCase: { en: "Loss frame", pt: "Frame de perda" },
+		whenToUse: {
+			en: "Lead with the pain, agitate the cost of inaction, then deliver the solution. Built for problem-aware audiences.",
+			pt: "Comece com a dor, agite o custo de não agir, então entregue a solução. Feito pra audiências problem-aware.",
+		},
 		criteria: [
 			{
 				id: "problem",
@@ -121,6 +135,11 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 		intro: {
 			en: "Promise, Picture, Proof, Push — Henry Hoke's framework for headline + subhead structure.",
 			pt: "Promessa, Imagem, Prova, Empurrão — framework do Henry Hoke pra estrutura de headline.",
+		},
+		useCase: { en: "Long-form sales", pt: "Vendas long-form" },
+		whenToUse: {
+			en: "Paint the outcome, promise the path, prove it works, push to act. Classic direct-response structure.",
+			pt: "Pinte o resultado, prometa o caminho, prove que funciona, empurre pra ação. Estrutura clássica de direct-response.",
 		},
 		criteria: [
 			{
@@ -164,6 +183,11 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 			en: "Before, After, Bridge — three-beat structure perfect for emails and short pages.",
 			pt: "Antes, Depois, Ponte — estrutura de 3 batidas perfeita pra emails e páginas curtas.",
 		},
+		useCase: { en: "Transformation", pt: "Transformação" },
+		whenToUse: {
+			en: "Anchor a vivid 'before', contrast with the 'after', position your product as the bridge. Perfect for outcome-driven copy.",
+			pt: "Ancore um 'antes' vívido, contraste com o 'depois', posicione seu produto como a ponte. Perfeito pra copy orientada a resultado.",
+		},
 		criteria: [
 			{
 				id: "before",
@@ -197,6 +221,11 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 		intro: {
 			en: "Situation, Problem, Implication, Need-payoff — Neil Rackham's B2B framework, perfect for SaaS.",
 			pt: "Situação, Problema, Implicação, Need-payoff — framework B2B do Neil Rackham, ideal pra SaaS.",
+		},
+		useCase: { en: "Enterprise sales", pt: "Vendas enterprise" },
+		whenToUse: {
+			en: "Situation, Problem, Implication, Need-payoff. Built for high-ticket consultative selling.",
+			pt: "Situação, Problema, Implicação, Need-payoff. Feito pra vendas consultivas de ticket alto.",
 		},
 		criteria: [
 			{
@@ -240,6 +269,11 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 			en: "Features, Advantages, Benefits — translates product specs into user outcomes.",
 			pt: "Features, Vantagens, Benefícios — traduz specs do produto em resultados pro usuário.",
 		},
+		useCase: { en: "Feature pages", pt: "Páginas de features" },
+		whenToUse: {
+			en: "Translate features into advantages into customer benefits. Stops the 'feature dump' anti-pattern cold.",
+			pt: "Traduz features em vantagens em benefícios do cliente. Mata o anti-padrão de 'feature dump'.",
+		},
 		criteria: [
 			{
 				id: "features",
@@ -269,10 +303,15 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 	},
 	{
 		id: "dos",
-		name: { en: "Dream-Obstacle-Solution", pt: "Sonho-Obstáculo-Solução" },
+		name: { en: "DOS", pt: "DOS" },
 		intro: {
 			en: "Dream, Obstacle, Solution — common in coaching and info-product copy.",
 			pt: "Sonho, Obstáculo, Solução — comum em copy de coaching e info-produtos.",
+		},
+		useCase: { en: "Storytelling", pt: "Storytelling" },
+		whenToUse: {
+			en: "Anchor an aspirational dream, name the obstacle, position your solution. Story-arc copy that resonates.",
+			pt: "Ancore um sonho aspiracional, nomeie o obstáculo, posicione sua solução. Copy em arco narrativo que ressoa.",
 		},
 		criteria: [
 			{
@@ -303,10 +342,15 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 	},
 	{
 		id: "pixar",
-		name: { en: "Pixar storytelling", pt: "Storytelling Pixar" },
+		name: { en: "Pixar", pt: "Pixar" },
 		intro: {
 			en: "Once upon a time / Every day / One day / Because of that / Until finally — narrative arc for About / manifesto pages.",
 			pt: "Era uma vez / Todo dia / Um dia / Por causa disso / Até que finalmente — arco narrativo pra About / manifesto.",
+		},
+		useCase: { en: "Narrative copy", pt: "Copy narrativa" },
+		whenToUse: {
+			en: "Mythic story structure: 'Once upon a time… every day… until one day…'. Perfect for About pages and brand narratives.",
+			pt: "Estrutura mítica: 'Era uma vez… todo dia… até que um dia…'. Perfeito pra páginas About e narrativas de marca.",
 		},
 		criteria: [
 			{
@@ -358,6 +402,11 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 			en: "Qualify, Understand, Educate, Stimulate, Transition — Michel Fortin's structure for demo / consult pages.",
 			pt: "Qualificar, Entender, Educar, Estimular, Transicionar — estrutura do Michel Fortin pra páginas de demo / consult.",
 		},
+		useCase: { en: "Premium offers", pt: "Ofertas premium" },
+		whenToUse: {
+			en: "Qualify, Understand, Educate, Stimulate, Transition. Designed for high-trust demo and consult pages.",
+			pt: "Qualifica, Entende, Educa, Estimula, Transiciona. Feito pra páginas de demo e consult de alta confiança.",
+		},
 		criteria: [
 			{
 				id: "qualify",
@@ -407,6 +456,11 @@ export const COPY_FRAMEWORKS: CopyFramework[] = [
 		intro: {
 			en: "Clear, Concise, Compelling, Credible — Atwan & Aronson's general quality audit for any copy.",
 			pt: "Clara, Concisa, Convincente, Crível — audit de qualidade geral do Atwan & Aronson pra qualquer copy.",
+		},
+		useCase: { en: "Hygiene check", pt: "Checagem de higiene" },
+		whenToUse: {
+			en: "Clear, Concise, Compelling, Credible. Not a story arc — a quality bar every line of copy should pass.",
+			pt: "Claro, Conciso, Convincente, Crível. Não é um arco narrativo — é uma régua de qualidade que toda linha deve passar.",
 		},
 		criteria: [
 			{

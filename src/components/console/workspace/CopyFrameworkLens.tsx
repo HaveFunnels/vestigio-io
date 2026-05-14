@@ -143,7 +143,6 @@ export default function CopyFrameworkLens() {
 	const [selectedFramework, setSelectedFramework] = useState<string>(COPY_FRAMEWORKS[0].id);
 	// Map<frameworkId, AuditResult | "loading" | "error">
 	const [audits, setAudits] = useState<Map<string, AuditResult | "loading" | "error">>(new Map());
-	const [showAbout, setShowAbout] = useState(false);
 
 	// Load the page list once.
 	useEffect(() => {
@@ -282,15 +281,49 @@ export default function CopyFrameworkLens() {
 		? selectedSlot
 		: (availableSlots[0] ?? "home");
 
+	const auditPassed =
+		!hasNoPages && currentAudit && currentAudit !== "loading" && currentAudit !== "error"
+			? currentAudit.criteria.filter((c) => c.status === "pass").length
+			: null;
+	const auditScore =
+		!hasNoPages && currentAudit && currentAudit !== "loading" && currentAudit !== "error"
+			? currentAudit.score_pct
+			: null;
+	const scoreClass = (s: number | null) =>
+		s === null
+			? "text-content-faint"
+			: s >= 75
+				? "text-emerald-600 dark:text-emerald-400"
+				: s >= 40
+					? "text-amber-600 dark:text-amber-400"
+					: "text-red-500 dark:text-red-400";
+
 	return (
 		<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-			<div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-				<div>
+			{/* Top header — title + subtitle on the left, page selector on the right. */}
+			<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+				<div className="min-w-0">
 					<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
 						{t("label")}
 					</h2>
 					<p className="mt-1 text-[12px] text-content-muted">{t("subtitle")}</p>
 				</div>
+				{!hasNoPages && (
+					<label className="flex shrink-0 items-center gap-2 text-[11px]">
+						<span className="text-content-faint">{t("page_dropdown")}</span>
+						<select
+							value={effectiveSlot}
+							onChange={(e) => setSelectedSlot(e.target.value as PageSlot)}
+							className="rounded-md border border-edge bg-surface-card px-2 py-1 font-mono text-[11px] text-content focus:outline-none focus:ring-1 focus:ring-emerald-500"
+						>
+							{availableSlots.map((s) => (
+								<option key={s} value={s}>
+									{t(`page_${s}`)}
+								</option>
+							))}
+						</select>
+					</label>
+				)}
 			</div>
 
 			{/* Pre-data banner — only when crawler hasn't produced any
@@ -302,57 +335,116 @@ export default function CopyFrameworkLens() {
 				</div>
 			)}
 
-			{/* Dropdowns */}
-			<div className="mb-4 flex flex-wrap items-center gap-3">
-				<label className="flex items-center gap-2 text-[12px]">
-					<span className="text-content-muted">{t("framework_dropdown")}:</span>
-					<select
-						value={selectedFramework}
-						onChange={(e) => setSelectedFramework(e.target.value)}
-						className="rounded-md border border-edge bg-surface-card px-2 py-1 font-mono text-[12px] text-content focus:outline-none focus:ring-1 focus:ring-emerald-500"
-					>
-						{COPY_FRAMEWORKS.map((fw) => {
-							const a = selectedPage ? audits.get(`${fw.id}::${selectedPage.url}`) : undefined;
-							const score = a && a !== "loading" && a !== "error" ? a.score_pct : null;
-							return (
-								<option key={fw.id} value={fw.id}>
+			{/* Chip switcher — 10 frameworks as a horizontal row. Each
+			    chip = name + per-criterion status dots + score, with a
+			    tooltip on hover explaining use case + when to reach for
+			    it. The dot row gives at-a-glance scanning across all 10
+			    frameworks so the user can spot the worst-scoring one
+			    before clicking. */}
+			<div className="mb-5 flex flex-wrap gap-2">
+				{COPY_FRAMEWORKS.map((fw) => {
+					const a = selectedPage ? audits.get(`${fw.id}::${selectedPage.url}`) : undefined;
+					const ready = a && a !== "loading" && a !== "error";
+					const score = ready ? a.score_pct : null;
+					const isActive = selectedFramework === fw.id;
+					return (
+						<div key={fw.id} className="group relative">
+							<button
+								type="button"
+								onClick={() => setSelectedFramework(fw.id)}
+								aria-pressed={isActive}
+								className={`flex min-w-[72px] flex-col items-center gap-1.5 rounded-xl border px-3 py-2 transition-all duration-200 ${
+									isActive
+										? "border-emerald-500/60 bg-emerald-500/[0.08] shadow-[inset_0_0_0_1px_rgba(16,185,129,0.18)]"
+										: "border-edge bg-surface-card/40 hover:-translate-y-px hover:border-edge-strong hover:bg-surface-card-hover"
+								}`}
+							>
+								<span
+									className={`font-[family-name:var(--font-jetbrains-mono)] text-[11px] font-semibold uppercase tracking-[0.06em] ${
+										isActive
+											? "text-emerald-700 dark:text-emerald-300"
+											: "text-content"
+									}`}
+								>
 									{pickText(fw.name, fwLocale)}
-									{score !== null ? ` — ${score}%` : ""}
-								</option>
-							);
-						})}
-					</select>
-				</label>
-				{!hasNoPages && (
-					<label className="flex items-center gap-2 text-[12px]">
-						<span className="text-content-muted">{t("page_dropdown")}:</span>
-						<select
-							value={effectiveSlot}
-							onChange={(e) => setSelectedSlot(e.target.value as PageSlot)}
-							className="rounded-md border border-edge bg-surface-card px-2 py-1 font-mono text-[12px] text-content focus:outline-none focus:ring-1 focus:ring-emerald-500"
-						>
-							{availableSlots.map((s) => (
-								<option key={s} value={s}>
-									{t(`page_${s}`)}
-								</option>
-							))}
-						</select>
-					</label>
-				)}
-				<button
-					type="button"
-					onClick={() => setShowAbout(!showAbout)}
-					className="text-[11px] text-content-faint underline transition-colors hover:text-content-muted"
-				>
-					{t("about_framework")}
-				</button>
+								</span>
+								<div className="flex items-center gap-[3px]">
+									{fw.criteria.map((crit) => {
+										const verdict = ready
+											? a.criteria.find((c) => c.id === crit.id)
+											: undefined;
+										const st: Status = verdict?.status ?? "not_evaluated";
+										return (
+											<span
+												key={crit.id}
+												className={`h-1 w-1 rounded-full ${STATUS_DOT[st]}`}
+												aria-hidden="true"
+											/>
+										);
+									})}
+								</div>
+								<span
+									className={`font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium tabular-nums ${scoreClass(score)}`}
+								>
+									{score !== null ? `${score}%` : "—"}
+								</span>
+							</button>
+							{/* Tooltip — appears above the chip on hover/focus.
+							    Explains the framework's strategic positioning. */}
+							<div
+								role="tooltip"
+								className="pointer-events-none invisible absolute bottom-full left-1/2 z-30 mb-2 w-60 -translate-x-1/2 rounded-xl border border-edge bg-surface-card p-3 opacity-0 shadow-xl transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+							>
+								<div className="flex items-baseline justify-between gap-2">
+									<div className="font-[family-name:var(--font-jetbrains-mono)] text-[11px] font-bold uppercase tracking-[0.06em] text-content">
+										{pickText(fw.name, fwLocale)}
+									</div>
+									<span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-emerald-600 dark:text-emerald-400">
+										{pickText(fw.useCase, fwLocale)}
+									</span>
+								</div>
+								<p className="mt-2 text-[11px] leading-snug text-content-muted">
+									{pickText(fw.whenToUse, fwLocale)}
+								</p>
+								{/* Arrow */}
+								<div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-edge bg-surface-card" />
+							</div>
+						</div>
+					);
+				})}
 			</div>
 
-			{/* About blurb */}
-			{showAbout && framework && (
-				<div className="mb-4 rounded-xl border border-edge bg-surface-inset/40 p-3 text-[12px] leading-snug text-content-muted">
-					<div className="font-semibold text-content">{pickText(framework.name, fwLocale)}</div>
-					<p className="mt-1">{pickText(framework.intro, fwLocale)}</p>
+			{/* Active framework header — name + intro + big score. */}
+			{framework && (
+				<div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-edge/60 pb-4">
+					<div className="min-w-0 max-w-xl">
+						<div className="flex items-baseline gap-2">
+							<h3 className="font-[family-name:var(--font-jetbrains-mono)] text-[12px] font-bold uppercase tracking-[0.08em] text-content">
+								{pickText(framework.name, fwLocale)}
+							</h3>
+							<span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-emerald-600 dark:text-emerald-400">
+								{pickText(framework.useCase, fwLocale)}
+							</span>
+						</div>
+						<p className="mt-1.5 text-[12px] leading-snug text-content-muted">
+							{pickText(framework.intro, fwLocale)}
+						</p>
+					</div>
+					{auditScore !== null && auditPassed !== null && (
+						<div className="shrink-0 text-right">
+							<div
+								className={`font-[family-name:var(--font-jetbrains-mono)] text-3xl font-medium tabular-nums leading-none ${scoreClass(auditScore)}`}
+							>
+								{auditScore}%
+							</div>
+							<div className="mt-1.5 text-[10px] uppercase tracking-[0.08em] text-content-faint">
+								{t("score_summary", {
+									passed: auditPassed,
+									total: framework.criteria.length,
+								})}
+							</div>
+						</div>
+					)}
 				</div>
 			)}
 
@@ -363,27 +455,6 @@ export default function CopyFrameworkLens() {
 				<p className="text-[12px] text-amber-600 dark:text-amber-400">{t("loading")}</p>
 			) : (
 				<>
-					{/* Score summary — hidden when no pages (all criteria not_evaluated). */}
-					{!hasNoPages && currentAudit && currentAudit !== "loading" && currentAudit !== "error" && (
-						<div className="mb-3 flex items-baseline gap-3">
-							<span className={`font-mono text-2xl font-medium tabular-nums ${
-								currentAudit.score_pct >= 75
-									? "text-emerald-600 dark:text-emerald-400"
-									: currentAudit.score_pct >= 40
-										? "text-amber-600 dark:text-amber-400"
-										: "text-red-500 dark:text-red-400"
-							}`}>
-								{currentAudit.score_pct}%
-							</span>
-							<span className="text-[12px] text-content-muted">
-								{t("score_summary", {
-									passed: currentAudit.criteria.filter((c) => c.status === "pass").length,
-									total: framework?.criteria.length ?? 0,
-								})}
-							</span>
-						</div>
-					)}
-
 					{/* Criteria list */}
 					<div className="space-y-2">
 						{framework?.criteria.map((crit) => {

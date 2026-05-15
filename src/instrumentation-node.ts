@@ -45,6 +45,18 @@ const NOTIFICATION_DISPATCHER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const SCHEDULER_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 export async function registerNodeInstrumentation(): Promise<void> {
+	// OpenTelemetry SDK MUST initialize before any other module loads its
+	// http/Prisma/Redis client — the SDK patches those modules at boot so
+	// subsequent imports can be traced transparently. Putting init here
+	// (Node-only file, dynamically imported from instrumentation.ts) keeps
+	// the OTel SDK + gRPC transitive deps out of the Edge bundle entirely.
+	try {
+		const { initOtel } = await import("@/libs/otel");
+		initOtel({ serviceName: "vestigio-web" });
+	} catch (err) {
+		console.warn("⚠ OTel initialization failed:", err);
+	}
+
 	const { healStuckCycles, redispatchOrphanedPending } = await import(
 		"../apps/audit-runner/run-cycle"
 	);

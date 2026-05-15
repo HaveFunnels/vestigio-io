@@ -26,7 +26,24 @@ const nextConfig = {
 	// but only fires when RECOMPUTE_USE_WORKER_THREADS=1 in the worker
 	// service. Marking esbuild external keeps webpack from trying to
 	// parse its .d.ts files (which contain TypeScript-only syntax).
-	serverExternalPackages: ['sanity', 'next-sanity', '@sanity/client', '@sanity/image-url', '@sanity/asset-utils', 'ioredis', 'esbuild'],
+	//
+	// OpenTelemetry SDK depends on @grpc/grpc-js which uses Node builtins
+	// (tls, net, zlib). Externalizing the OTel packages + grpc-js keeps
+	// webpack from trying to bundle these Node-only modules into the
+	// runtime artifact.
+	serverExternalPackages: [
+		'sanity', 'next-sanity', '@sanity/client', '@sanity/image-url', '@sanity/asset-utils',
+		'ioredis', 'esbuild',
+		'@opentelemetry/sdk-node',
+		'@opentelemetry/exporter-trace-otlp-http',
+		'@opentelemetry/exporter-metrics-otlp-http',
+		'@opentelemetry/sdk-metrics',
+		'@opentelemetry/instrumentation-http',
+		'@opentelemetry/instrumentation-undici',
+		'@opentelemetry/instrumentation-ioredis',
+		'@prisma/instrumentation',
+		'@grpc/grpc-js',
+	],
 	webpack: (config, { isServer }) => {
 		if (!isServer) {
 			config.resolve.fallback = {

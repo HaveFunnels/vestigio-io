@@ -24,6 +24,10 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
+  // OpenTelemetry init lives in instrumentation-node.ts so the
+  // Node-only OTel SDK + transitive gRPC deps never leak into the Edge
+  // bundle. See that file for the actual initOtel() call.
+
   const { vestigioStartup } = await import('../apps/platform/startup');
   const { enforceProductionLock, initializeProductionStores } = await import('../apps/platform/production-state-lock');
   const { setMcpPersistenceStore, PrismaMcpPersistenceStore } = await import('../apps/platform/mcp-persistence');

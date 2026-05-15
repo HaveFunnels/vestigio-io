@@ -19,6 +19,9 @@
  * dispatch in that mode.
  */
 
+// OpenTelemetry SDK boot — MUST be the first import. Patches Prisma,
+// Redis, http, etc. so subsequent imports get traced transparently.
+import "./otel-boot";
 import * as http from "node:http";
 import { prisma } from "../../src/libs/prismaDb";
 import { getRedis, initRedis } from "../../src/libs/redis";

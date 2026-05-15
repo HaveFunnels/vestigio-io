@@ -12,6 +12,9 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  // Prisma OpenTelemetry tracing is stable in 5.x and on by default
+  // when @prisma/instrumentation is registered. We register it in
+  // src/libs/otel.ts; no preview-feature flag needed.
 }
 
 // ──────────────────────────────────────────────

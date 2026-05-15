@@ -332,7 +332,7 @@ export interface MultiPackResult {
  * used by the audit-runner so a 60-120s recompute does not block other
  * work on the same Node process.
  */
-function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResult, void> {
+function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackResult, void> {
   const {
     evidence, scoping, cycle_ref, root_domain, landing_url,
     conversion_proximity, is_production, translations,
@@ -357,14 +357,14 @@ function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResul
     dataProvenance = reconciliation.provenance;
   }
 
-  yield; // ── phase boundary: evidence quality + integration reconciliation done
+  yield "evidence_quality_and_integration"; // ── phase boundary
 
   // ─── Shared pipeline: graph + signals + inferences ───
   const graph = buildGraph(evidence, root_domain, cycle_ref, integrationSnapshots);
   const graphStats = summarizeGraph(graph);
   const rawSignals = extractSignals(evidence, graph, scoping, cycle_ref, commerceContext);
 
-  yield; // ── phase boundary: graph + signals extracted
+  yield "graph_and_signals"; // ── phase boundary
 
   // ─── Phase 26: Truth resolution — harmonize multi-source signals ───
   const truthHarmonization = harmonizeSignals(rawSignals, evidence);
@@ -381,7 +381,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResul
   // ─── Inferences from quality-adjusted, truth-resolved signals ───
   const inferences = computeInferences(signals, scoping, cycle_ref);
 
-  yield; // ── phase boundary: core inferences computed (heaviest single step)
+  yield "core_inferences"; // ── phase boundary: heaviest single step
 
   // Wave 15.4 — pre-filter inferences per pack before each decision so
   // builders only see inferences that actually belong to their pack.
@@ -498,7 +498,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResul
     brandIntegrityResult.decision, brandIntegrityActions, inferences,
   );
 
-  yield; // ── phase boundary: 8 per-pack decisions (scale → brand_integrity) done
+  yield "per_pack_decisions"; // ── phase boundary: 8 packs scale → brand_integrity
 
   // Wave 8.1: Payment Health decision (gated on Stripe integration data)
   let paymentHealthPack: MultiPackResult['payment_health'] = null;
@@ -675,7 +675,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResul
     }
   }
 
-  yield; // ── phase boundary: behavioral packs (7 decisions) done
+  yield "behavioral_packs"; // ── phase boundary: 7 behavioral decisions
 
   // Vertical-specific inferences (gated by businessModel)
   const verticalInferences = computeVerticalInferences(
@@ -777,7 +777,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResul
     ids: new IdGenerator('compound'),
   });
 
-  yield; // ── phase boundary: cross-domain + recon + compound inferences done
+  yield "cross_domain_compound_inferences"; // ── phase boundary
 
   // Merge SaaS signals + additional static-check signals into main arrays
   const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
@@ -921,7 +921,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResul
     }
   }
 
-  yield; // ── phase boundary: suppression + profile-freshness penalties applied
+  yield "suppression_penalties"; // ── phase boundary
 
   // Intelligence layer — populated here, called AFTER all penalties below (E7 fix).
   const actionsByDecision = new Map<string, Action[]>();
@@ -1172,7 +1172,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<void, MultiPackResul
     has_integrations: hasIntegrations,
   });
 
-  yield; // ── phase boundary: intelligence layer + maturity stage done
+  yield "intelligence_layer"; // ── phase boundary
 
   // Reassemble pack results with possibly-adjusted decisions and risk evaluations
   const assembledResult: MultiPackResult = {
@@ -1345,12 +1345,52 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
  * polling, the heal cron, the second concurrent cycle slot) during a
  * long recompute. Used by the audit-runner; total wall time per cycle
  * is roughly unchanged but the worker process stays responsive.
+ *
+ * Emits an OpenTelemetry span per phase boundary. Each yield value
+ * names the phase that just finished; we measure wall-clock duration
+ * between yields and emit `recompute.<phase>` spans nested under the
+ * caller's active span (so the parent cycle trace contains a clean
+ * breakdown).
+ *
+ * Importing `@opentelemetry/api` is lazy + best-effort so the function
+ * still works on machines where OTel isn't installed (e.g. tests).
  */
 export async function recomputeAllAsync(input: MultiPackInput): Promise<MultiPackResult> {
+  // Best-effort tracer acquisition. When OTel isn't present (tests,
+  // legacy environments), we get a no-op tracer and the rest of the
+  // code path is unaffected.
+  let tracer: { startSpan: (name: string, opts: { startTime: number }) => { end: (endTime: number) => void } } | null = null;
+  try {
+    const api = await import("@opentelemetry/api");
+    const realTracer = api.trace.getTracer("vestigio.workspace.recompute");
+    tracer = {
+      startSpan(name, opts) {
+        const s = realTracer.startSpan(name, { startTime: opts.startTime });
+        return { end: (endTime: number) => s.end(endTime) };
+      },
+    };
+  } catch {
+    // OTel not available — spans become no-ops.
+  }
+
   const gen = recomputeAllGen(input);
+  let phaseStart = Date.now();
   while (true) {
     const step = gen.next();
+    const now = Date.now();
+
+    if (tracer) {
+      // Phase name comes from the yield value (or "final_assembly" for
+      // the implicit phase that runs after the last yield).
+      const phaseName = step.done ? "final_assembly" : step.value;
+      tracer
+        .startSpan(`recompute.${phaseName}`, { startTime: phaseStart })
+        .end(now);
+    }
+
     if (step.done) return step.value;
+
+    phaseStart = now;
     // setImmediate (not queueMicrotask) so I/O callbacks get a turn.
     await new Promise<void>((resolve) => setImmediate(resolve));
   }

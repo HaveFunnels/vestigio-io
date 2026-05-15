@@ -11,7 +11,13 @@
  */
 
 import { initOtel } from "../../src/libs/otel";
+import { registerCustomMetrics } from "../../src/libs/otel-metrics";
 
 console.log("[otel-boot] running…");
 export const __otelBooted = initOtel({ serviceName: "audit-worker" });
+if (__otelBooted) {
+	// Async gauges need the SDK to be initialized before they register.
+	// Without this guard a no-op meter swallows the callbacks.
+	registerCustomMetrics();
+}
 console.log(`[otel-boot] initOtel returned ${__otelBooted}`);

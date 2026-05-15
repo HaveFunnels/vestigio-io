@@ -19,16 +19,20 @@
  * dispatch in that mode.
  */
 
+// Diagnostic: write SYNCHRONOUSLY to stdout to confirm file load.
+// process.stdout.write is unbuffered + synchronous, unlike console.log
+// which uses an internal buffer that might be flushed late.
+process.stdout.write("[worker-loop] FILE LOADED — booting OpenTelemetry…\n");
+
 // OpenTelemetry SDK boot — MUST be at the top, before any module that
 // uses http/Prisma/Redis. Inlined here (rather than a separate file)
 // because side-effect-only imports from sibling files were being
 // elided somewhere in the tsx/esbuild pipeline.
 import { initOtel } from "../../src/libs/otel";
 import { registerCustomMetrics } from "../../src/libs/otel-metrics";
-console.log("[worker-loop] booting OpenTelemetry…");
 const __otelStarted = initOtel({ serviceName: "audit-worker" });
 if (__otelStarted) registerCustomMetrics();
-console.log(`[worker-loop] OpenTelemetry started=${__otelStarted}`);
+process.stdout.write(`[worker-loop] OpenTelemetry started=${__otelStarted}\n`);
 import * as http from "node:http";
 import { prisma } from "../../src/libs/prismaDb";
 import { getRedis, initRedis } from "../../src/libs/redis";

@@ -2603,34 +2603,38 @@ The `accessToken` from the CLI session is read-only. For service-level mutations
 
 ---
 
-## Wave 18a — Body text + copy elements extraction (in progress)
+## Wave 18a — Body text + copy elements extraction (shipped 2026-05-15, commit `3dbc877`)
 
 Goal: make every crawled page produce evidence rich enough that (a) the engine's `copy_alignment` inferences fire on actual page copy, not just metadata, and (b) the LLM-powered `Copy Framework Lens` widget can audit against the full body, not just title + h1 + meta_description.
 
-### What needs to ship
+### What shipped
 
-1. **Schema** — `PageContentPayload.body_text_snippet: string | null` (up to 2000 chars of visible body text). `headings: string[]` (h1/h2/h3 ordered). Already in `parser.ts` output as `body_text_snippet` but not threaded through.
+1. **Schema** — `PageContentPayload.body_text_snippet: string | null` (up to 2000 chars of visible body text) + `headings: Array<{ level: 1 | 2 | 3; text: string }>` (cap 50). New `EvidenceType.CopyElements = 'copy_elements'` enum entry (the payload type existed since Wave 3.10 but was never written).
 
-2. **Parser** — confirm `body_text_snippet` is extracted from rendered DOM, not just raw HTML. For SPA pages, the initial HTML response has no body so the snippet must be derived from the Playwright-rendered output.
+2. **Parser** — `extractHeadings(html)` in [workers/ingestion/parser.ts](workers/ingestion/parser.ts) added alongside the existing `body_text_snippet` extraction. Both are derived from whatever HTML the upstream pipeline hands to `parsePage()`, so when the caller already swapped to Playwright-rendered HTML for SPA pages, the snippet/headings reflect the hydrated DOM automatically.
 
-3. **`addPageContentEvidence`** in `workers/ingestion/staged-pipeline.ts` — include `body_text_snippet` + `headings` in the payload.
+3. **`addPageContentEvidence`** in [workers/ingestion/staged-pipeline.ts](workers/ingestion/staged-pipeline.ts) threads `body_text_snippet` + `headings` into the evidence payload.
 
-4. **`CopyElementsPayload` evidence** — currently the type exists but no row is ever produced. `extractCopyElements()` is used only inline for LLM prompts in enrichment scripts. Add a step that pushes a `copy_elements` evidence row per crawled page so the engine's copy_alignment inferences have structured input (h1, subhead, ctas, social_proof_elements, trust_signals, urgency_indicators, above_fold_text, body_text).
+4. **`addCopyElementsEvidence`** — new helper invoked after every `addPageContentEvidence` call (both Stage A homepage bootstrap and Stage C per-page crawl). Classifies page_type from URL (homepage / pricing / checkout / product / onboarding / blog / about / feature / landing_page / all_commercial) + infers funnel_stage (awareness / consideration / decision / retention), then runs the existing `extractCopyElements()` pure parser and pushes a `copy_elements` evidence row. Guarded — skips emission when the page has no h1, no CTAs, fewer than 30 words, no social proof, and no trust signals (avoids empty rows from 404s).
 
-5. **SPA / Playwright fallback** — the crawl pipeline already detects SPA via `shouldTriggerPlaywright(body, scripts.length, body.length)`. After Stage D (headless) renders, re-parse the rendered HTML and emit fresh PageContent + CopyElements evidence from the rendered DOM. The current code emits headless-rendered evidence but it's not clear if copy_elements is re-extracted.
+5. **SPA / Playwright fallback** — Stage A now runs `shouldTriggerPlaywright` on the bootstrap fetch and renders headlessly when the raw HTML is a thin shell. Re-parses the rendered DOM before emitting evidence so the homepage `body_text_snippet` populates for JS-hydrated landing pages. Shares the same `playwrightBudget` + `PLAYWRIGHT_PER_DOMAIN_CAP=3` as Stage C. The homepage was excluded from Stage C's crawl loop (added to `seen` before the loop runs), so without this branch a SPA-shell homepage produced empty copy for findings.
 
-6. **`/api/workspace/copy-content`** — return `body_text_snippet` so the Framework Lens widget can include it in the Haiku prompt.
+6. **`/api/workspace/copy-content`** — returns `body_text_snippet` + `headings` per page so future widgets can consume body without going back to the evidence table.
 
-7. **`CopyFrameworkLens.tsx`** + `/api/workspace/copy-framework-audit` — extend the audit prompt to include `body_text_snippet`. Update token budget — Haiku 4.5 handles ~200K input so 8 pages × 2000 chars + framework spec fits comfortably.
+7. **`/api/workspace/copy-framework-audit`** — Haiku prompt now includes `<headings>` (capped at 30, sanitized) + `<body_text>` (1800 chars, sanitized) alongside title/h1/meta. Token budget unchanged — Haiku 4.5's ~200K input window easily absorbs body × headings + framework spec.
 
-### Acceptance criteria
+### Acceptance criteria — to verify on next havefunnels audit
 
-After a fresh full cycle on havefunnels.com:
-- Every `page_content` evidence payload has `body_text_snippet` non-null for pages that returned HTML (excluding 404/redirect-only)
+- Every `page_content` evidence payload has `body_text_snippet` non-null for pages that returned HTML (excluding 404 / redirect-only)
 - At least one `copy_elements` evidence row per crawled page
-- Engine produces `value_proposition_buried`, `social_proof_ineffective`, `objection_unaddressed`, `cta_clarity_weak_on_commercial`, or `copy_funnel_misalignment` findings when applicable (today produces 1 copy_alignment finding; expect 3-5 after this lands)
-- Framework Lens scores increase from "always around 25% because of empty body" to something that varies meaningfully per framework
-- For SPA-detected pages, body_text_snippet still populates (via Playwright)
+- Engine produces `value_proposition_buried`, `social_proof_ineffective`, `objection_unaddressed`, `cta_clarity_weak_on_commercial`, or `copy_funnel_misalignment` findings when applicable (cycle `cmp72nbea0001ckemoposjpgb` produced 1 copy_alignment finding; expect 3-5 after this lands)
+- Framework Lens scores vary meaningfully per framework (no longer all clustered at ~25% because of empty body)
+- For SPA-detected homepages, `body_text_snippet` still populates via Playwright
+
+### Bonus shipped this session
+
+- **Live audit-status polling** (commit `a2c5ef2`) — `AuditStatusBadge` now polls `/api/cycles/latest` every 8s while the tab is visible. A cycle kicked off from `/app/dashboard` flips the header badge to "Analyzing" without requiring a navigation. Polls pause when the tab is hidden.
+- **Dismissable impersonation banner** (same commit) — small X in the amber strip. Persisted in `sessionStorage` so closing it once hides it across navigations for the same tab but reappears on fresh tab / new login. Existing UserMenu "Exit impersonation" flow unchanged.
 
 ### Out of scope (still future)
 

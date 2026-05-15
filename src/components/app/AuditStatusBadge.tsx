@@ -8,7 +8,8 @@ import { useTranslations } from "next-intl";
 //
 // Shows "Analyzing..." with a pulsing dot when a cycle is running,
 // or "Last: <relative time>" when the most recent cycle completed.
-// Polls on mount only (no interval — header remounts on navigation).
+// Polls every 8s so a cycle started from the dashboard flips the
+// badge in-place without requiring a navigation.
 // ──────────────────────────────────────────────
 
 interface CycleInfo {
@@ -64,11 +65,24 @@ export function AuditStatusBadge() {
 				}
 			} catch { /* ignore */ }
 
-			if (!cancelled) setLoaded(true);
+			if (!cancelled) {
+				setCycle(null);
+				setLoaded(true);
+			}
 		}
 
 		load();
-		return () => { cancelled = true; };
+		// Poll while the tab is visible so a cycle started from /app/dashboard
+		// flips the badge to "Analyzing" without requiring a navigation, and
+		// the relative timestamp on completed cycles stays accurate.
+		const interval = setInterval(() => {
+			if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+			load();
+		}, 8_000);
+		return () => {
+			cancelled = true;
+			clearInterval(interval);
+		};
 	}, []);
 
 	if (!loaded || !cycle) return null;

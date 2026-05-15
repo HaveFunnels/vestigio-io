@@ -481,6 +481,23 @@ export default function AppSidebarLayout({
 	const showCycleBanner =
 		!isAdmin && !isOnboarding && shouldShowCycleBanner(pathnameForBanner);
 
+	// Impersonation banner dismiss — sessionStorage so closing it once
+	// hides it across navigations for the same tab/session but the next
+	// fresh tab/login re-surfaces it (still a safety net against
+	// forgetting you are inside another org).
+	const [impersonationDismissed, setImpersonationDismissed] = useState(false);
+	useEffect(() => {
+		if (!isImpersonating) return;
+		try {
+			const flag = sessionStorage.getItem("impersonation_banner_dismissed");
+			if (flag === "1") setImpersonationDismissed(true);
+		} catch { /* ignore */ }
+	}, [isImpersonating]);
+	const dismissImpersonationBanner = () => {
+		setImpersonationDismissed(true);
+		try { sessionStorage.setItem("impersonation_banner_dismissed", "1"); } catch { /* ignore */ }
+	};
+
 	// Ensure active_env cookie is always set so client components
 	// (Data Sources, etc.) can resolve the real environment ID.
 	useEffect(() => {
@@ -523,10 +540,20 @@ export default function AppSidebarLayout({
 
 			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 				{/* ── Impersonation indicator ── */}
-				{isImpersonating && (
-					<div className="flex h-7 shrink-0 items-center justify-center gap-2 bg-amber-500/10 border-b border-amber-500/20 text-[11px] font-medium text-amber-400">
+				{isImpersonating && !impersonationDismissed && (
+					<div className="relative flex h-7 shrink-0 items-center justify-center gap-2 bg-amber-500/10 border-b border-amber-500/20 text-[11px] font-medium text-amber-400">
 						<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-						Impersonating <strong>{impersonatingEmail}</strong>
+						<span>Impersonating <strong>{impersonatingEmail}</strong></span>
+						<button
+							type="button"
+							onClick={dismissImpersonationBanner}
+							aria-label="Dismiss impersonation banner"
+							className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-amber-400/70 transition-colors hover:bg-amber-500/15 hover:text-amber-300"
+						>
+							<svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+								<path d="M18 6L6 18M6 6l12 12" />
+							</svg>
+						</button>
 					</div>
 				)}
 				{/* ── Top bar (part of the shell) ── */}

@@ -32,7 +32,7 @@ import type { FindingProjection } from "../../../packages/projections/types";
 // ── Types ──
 
 export interface CopilotContextItem {
-	kind: "finding" | "action" | "workspace" | "map";
+	kind: "finding" | "action" | "workspace" | "map" | "surface";
 	id: string;
 	title: string;
 }
@@ -70,7 +70,7 @@ interface CopilotState {
 }
 
 interface CopilotActions {
-	open: (context?: { finding?: FindingProjection; action?: { id: string; title: string }; map?: { id: string; title: string }; workspace?: { id: string; title: string }; prompt?: string }) => void;
+	open: (context?: { finding?: FindingProjection; action?: { id: string; title: string }; map?: { id: string; title: string }; workspace?: { id: string; title: string }; surfaces?: { id: string; title: string }[]; prompt?: string }) => void;
 	close: () => void;
 	minimize: () => void;
 	restore: () => void;
@@ -387,62 +387,74 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 			action?: { id: string; title: string };
 			map?: { id: string; title: string };
 			workspace?: { id: string; title: string };
+			surfaces?: { id: string; title: string }[];
 			prompt?: string;
 		}) => {
 			setIsOpen(true);
 			setIsMinimized(false);
 
 			// Resolve which kind (if any) the caller is attaching.
-			let newItem: CopilotContextItem | null = null;
+			let newItems: CopilotContextItem[] = [];
 			if (context?.finding) {
-				newItem = {
+				newItems.push({
 					kind: "finding",
 					id: context.finding.id,
 					title: context.finding.title,
-				};
+				});
 			} else if (context?.action) {
-				newItem = {
+				newItems.push({
 					kind: "action",
 					id: context.action.id,
 					title: context.action.title,
-				};
+				});
 			} else if (context?.map) {
-				newItem = {
+				newItems.push({
 					kind: "map",
 					id: context.map.id,
 					title: context.map.title,
-				};
+				});
 			} else if (context?.workspace) {
-				newItem = {
+				newItems.push({
 					kind: "workspace",
 					id: context.workspace.id,
 					title: context.workspace.title,
-				};
+				});
+			}
+			// Surfaces are attached as a list (e.g. inventory bulk-select
+			// → "Use as context" sends the URLs the user picked). They
+			// can stack with a finding/action/etc. attached above.
+			if (context?.surfaces && context.surfaces.length > 0) {
+				for (const s of context.surfaces) {
+					newItems.push({ kind: "surface", id: s.id, title: s.title });
+				}
 			}
 
 			track("chat_opened", {
 				page_context: pageContext.type,
-				context_kind: newItem?.kind ?? null,
+				context_kind: newItems[0]?.kind ?? null,
+				context_count: newItems.length,
 				has_prompt: !!context?.prompt,
 			});
 
 			// Append + dedupe by id+kind. Cap at 12 (matches server cap)
 			// to prevent accidental UI bloat.
-			if (newItem) {
-				const finalItem = newItem;
+			if (newItems.length > 0) {
 				setContextItems((prev) => {
-					const exists = prev.some(
-						(p) => p.id === finalItem.id && p.kind === finalItem.kind,
-					);
-					if (exists) return prev;
-					const next = [...prev, finalItem];
+					const next = [...prev];
+					for (const item of newItems) {
+						if (!next.some((p) => p.id === item.id && p.kind === item.kind)) {
+							next.push(item);
+						}
+					}
 					return next.slice(-12);
 				});
-				track("chat_context_attached", {
-					kind: newItem.kind,
-					id: newItem.id,
-					page_context: pageContext.type,
-				});
+				for (const item of newItems) {
+					track("chat_context_attached", {
+						kind: item.kind,
+						id: item.id,
+						page_context: pageContext.type,
+					});
+				}
 			}
 
 			// Auto-send prompt regardless of context type

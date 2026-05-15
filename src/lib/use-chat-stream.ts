@@ -26,7 +26,7 @@ interface UseChatStreamOptions {
 }
 
 export interface AttachedContextPayload {
-  kind: "finding" | "action" | "workspace" | "map";
+  kind: "finding" | "action" | "workspace" | "map" | "surface";
   id: string;
   title: string;
 }

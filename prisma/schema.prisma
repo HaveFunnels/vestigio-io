@@ -322,6 +322,10 @@ model BusinessProfile {
   targetIndustry       String?   // "saas", "ecommerce", "fintech", "healthcare", etc.
   buyerSophistication  String?   // "technical" | "non_technical" | "mixed"
 
+  // Timestamp the owner ticked "I own this domain" during onboarding.
+  // Captured for legal/abuse posture if a domain is ever disputed.
+  ownershipConfirmedAt DateTime?
+
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 

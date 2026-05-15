@@ -26,6 +26,7 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
       select: {
         id: true,
         domain: true,
+        organizationId: true,
         isProduction: true,
         createdAt: true,
         organization: {
@@ -43,6 +44,7 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
     const rows = environments.map((env) => ({
       id: env.id,
       domain: env.domain,
+      organizationId: env.organizationId,
       orgName: env.organization.name,
       isProduction: env.isProduction,
       lastAuditStatus: env.auditCycles[0]?.status || "none",

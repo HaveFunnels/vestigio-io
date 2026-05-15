@@ -278,9 +278,11 @@ export async function POST(request: Request) {
   }
 
   // ── Pipeline request ───────────────────────
-  // Sanitize attached_context: only the four known kinds, IDs and
-  // titles bounded so a malicious client can't bloat the system prompt.
-  const VALID_CONTEXT_KINDS = new Set(["finding", "action", "workspace", "map"]);
+  // Sanitize attached_context: only the known kinds, IDs and titles
+  // bounded so a malicious client can't bloat the system prompt.
+  // `surface` was added when inventory bulk-select started attaching
+  // selected URLs to the chat.
+  const VALID_CONTEXT_KINDS = new Set(["finding", "action", "workspace", "map", "surface"]);
   const attachedContext = Array.isArray(body.attached_context)
     ? body.attached_context
         .filter(
@@ -292,7 +294,7 @@ export async function POST(request: Request) {
         )
         .slice(0, 12)
         .map((item: any) => ({
-          kind: item.kind as "finding" | "action" | "workspace" | "map",
+          kind: item.kind as "finding" | "action" | "workspace" | "map" | "surface",
           id: String(item.id).slice(0, 200),
           title: String(item.title).slice(0, 200),
         }))

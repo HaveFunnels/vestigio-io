@@ -22,6 +22,11 @@ import { z } from "zod";
 const CONFIG_KEY_PLANS = "plan_configs";
 const CONFIG_KEY_CREDITS = "credit_config";
 
+const planFeatureSchema = z.object({
+  name: z.string(),
+  included: z.boolean(),
+});
+
 const planSchema = z.object({
   key: z.string(),
   label: z.string(),
@@ -35,6 +40,11 @@ const planSchema = z.object({
   creditsEnabled: z.boolean(),
   maxEnvironments: z.number(),
   maxMembers: z.number(),
+  // Admin-configurable per-plan feature list shown in the customer-facing
+  // pricing comparison table. Earlier the field was missing from the
+  // schema entirely, so Zod stripped it on every save — the admin saw
+  // "Saved!", reloaded, and the previous values reappeared.
+  features: z.array(planFeatureSchema).optional(),
 });
 
 const saveSchema = z.object({

@@ -38,6 +38,16 @@ const activateSchema = z.object({
 		.default("checkout"),
 	monthlyRevenue: z.number().nullable().optional(),
 	averageOrderValue: z.number().nullable().optional(),
+	// Industry vertical captured in the onboarding "Industry" step. The
+	// schema was missing this field, so Zod stripped it and BusinessProfile
+	// .targetIndustry was always null — even though copy-persona-rewrite
+	// reads it. Free-form string keeps the door open for verticals we
+	// haven't enumerated yet.
+	targetIndustry: z.string().trim().min(1).optional().nullable(),
+	// Legal/abuse posture captured in the onboarding "I own this domain"
+	// checkbox. Persisted as a timestamp on BusinessProfile so an audit
+	// trail exists if the domain is ever disputed.
+	ownershipConfirmed: z.boolean().optional(),
 	// SaaS optional fields — mirror the self-serve shape so a single
 	// onboarding form can POST here.
 	saasLoginUrl: z.string().url().optional(),
@@ -148,6 +158,11 @@ export const POST = withErrorTracking(
 					});
 
 			// Step 3: BusinessProfile upsert. One per org (unique constraint).
+			// `targetIndustry` and `ownershipConfirmedAt` were previously
+			// captured in the onboarding UI but stripped by Zod here and
+			// never persisted. They are now part of the schema + persistence.
+			const targetIndustry = data.targetIndustry?.trim() || null;
+			const ownershipConfirmedAt = data.ownershipConfirmed ? new Date() : undefined;
 			await prisma.businessProfile.upsert({
 				where: { organizationId: org.id },
 				create: {
@@ -156,12 +171,18 @@ export const POST = withErrorTracking(
 					conversionModel: data.conversionModel,
 					monthlyRevenue: data.monthlyRevenue ?? null,
 					averageOrderValue: data.averageOrderValue ?? null,
+					targetIndustry,
+					ownershipConfirmedAt: ownershipConfirmedAt ?? null,
 				},
 				update: {
 					businessModel: data.businessModel,
 					conversionModel: data.conversionModel,
 					monthlyRevenue: data.monthlyRevenue ?? null,
 					averageOrderValue: data.averageOrderValue ?? null,
+					targetIndustry,
+					// Only stamp confirmation when the checkbox is ticked —
+					// never blank out an earlier confirmation on re-activate.
+					...(ownershipConfirmedAt ? { ownershipConfirmedAt } : {}),
 				},
 			});
 

@@ -820,12 +820,19 @@ function buildAttachedContextBlock(
     action: 'get_action_projections',
     workspace: 'get_workspace_projections',
     map: 'get_map',
+    // Surfaces are concrete URLs (e.g. selected inventory rows). For these
+    // the title IS the URL, so the model doesn't need a fetch tool — it
+    // can reason about / cross-reference the URLs directly.
+    surface: 'inventory data',
   };
   const lines = items
     .slice(0, MAX_ITEMS)
     .map((item) => {
       const title = String(item.title || '').slice(0, MAX_TITLE_LEN);
       const tool = KIND_TO_TOOL[item.kind] || 'related tools';
+      if (item.kind === 'surface') {
+        return `- surface URL: ${title}`;
+      }
       return `- ${item.kind} "${title}" (id: ${item.id}) — fetch via ${tool}`;
     });
   return `PINNED CONTEXT:

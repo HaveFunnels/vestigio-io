@@ -999,8 +999,18 @@ export default function InventoryPage() {
 	const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
 	const handleUseAsContext = useCallback(() => {
-		copilot.open({ prompt: tp("inventory_bulk_analysis", { count: String(selectedIds.size) }) });
-	}, [selectedIds, copilot]);
+		// Resolve the selected surface_ids back to {id, title} pairs so the
+		// copilot sees the actual URLs the user picked — not just a count.
+		// Earlier the count was the only signal that reached the chat, so
+		// the LLM had no idea which pages the user wanted analyzed.
+		const selectedSurfaces = surfaces
+			.filter((s) => selectedIds.has(s.surface_id))
+			.map((s) => ({ id: s.surface_id, title: s.normalized_path }));
+		copilot.open({
+			prompt: tp("inventory_bulk_analysis", { count: String(selectedIds.size) }),
+			surfaces: selectedSurfaces,
+		});
+	}, [selectedIds, surfaces, copilot, tp]);
 
 	// ── Status counts ──
 	//

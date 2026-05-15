@@ -54,48 +54,44 @@ Silently broken, real money or trust on the line. Most are same-class bugs
 
 ## Tier 2 — This week
 
-- [ ] **#4 Admin Pricing "Features per Plan" edits never persist**
-  `planSchema` Zod object has no `features` field; the edits are silently
-  stripped before write. Customer-facing pricing comparison table is
-  unaffected.
-  - UI: [src/app/app/admin/pricing/page.tsx:225](src/app/app/admin/pricing/page.tsx#L225)
-  - API: [src/app/api/admin/pricing/route.ts:25](src/app/api/admin/pricing/route.ts#L25)
+- [x] **#4 Admin Pricing "Features per Plan" edits never persist** — ✅ shipped
+  Added `planFeatureSchema` + `features` field to the Zod schema in
+  `/api/admin/pricing` so edits round-trip instead of being stripped.
 
-- [ ] **#7 Action drawer Fix / Track / Dismiss CTA does nothing**
-  `onClick` intentionally empty ("placeholders awaiting their own pipelines").
-  Most common bottom CTA shown in the action drawer.
-  - UI: [src/app/app/actions/page.tsx:1443](src/app/app/actions/page.tsx#L1443)
+- [x] **#7 Action drawer Fix / Track / Dismiss CTA does nothing** — ✅ shipped
+  Removed the bottom resolve button entirely (along with `resolveConfig`).
+  It rendered with an empty onClick. The verification CTA already lives
+  in its own card and Discuss in Chat remains. If/when fix/track/dismiss
+  pipelines actually exist, wire them back in.
 
-- [ ] **#8 Onboarding "Industry vertical" is dead-storage**
-  Sent as `targetIndustry` but the Zod schema strips it.
-  `BusinessProfile.targetIndustry` exists and is consumed by
-  copy-persona-rewrite — it's always null.
-  - UI: [src/app/app/onboarding/page.tsx:227](src/app/app/onboarding/page.tsx#L227)
-  - API: [src/app/api/environments/activate/route.ts:30](src/app/api/environments/activate/route.ts#L30)
+- [x] **#8 Onboarding "Industry vertical" persists** — ✅ shipped
+  Added `targetIndustry` to the activate-route + onboard-route Zod schemas
+  and the persistence path. The onboarding form already sent the value;
+  it just got stripped on the server.
 
-- [ ] **#9 Onboarding "I own this domain" checkbox is never persisted**
-  Required UI control. Activate route's body doesn't include
-  `ownershipConfirmed`; no `Environment.ownershipConfirmedAt` column exists.
-  Pure UI speedbump.
-  - UI: [src/app/app/onboarding/page.tsx:178](src/app/app/onboarding/page.tsx#L178)
-  - Handler: [src/app/app/onboarding/useOnboardingForm.ts:411](src/app/app/onboarding/useOnboardingForm.ts#L411)
+- [x] **#9 Onboarding "I own this domain" checkbox persists** — ✅ shipped
+  Added `BusinessProfile.ownershipConfirmedAt` column + migration
+  `20260515120000_business_profile_ownership_timestamp`. Both onboarding
+  flows now send `ownershipConfirmed` and the activate/onboard routes
+  stamp the timestamp.
 
-- [ ] **#10 Inventory "Use as context" loses selected surfaces**
-  Only the count is sent in the prompt; the surface IDs are not attached.
-  `CopilotContextItem.kind` doesn't even include `"surface"`.
-  - UI: [src/app/app/inventory/page.tsx:1001](src/app/app/inventory/page.tsx#L1001)
-  - Context type: [src/components/app/CopilotProvider.tsx:34](src/components/app/CopilotProvider.tsx#L34)
+- [x] **#10 Inventory "Use as context" attaches selected surfaces** — ✅ shipped
+  `CopilotContextItem.kind` now includes `"surface"`. The copilot
+  `open()` accepts a `surfaces: {id, title}[]` array (stacks with
+  finding/action attachments). The chat API + system-prompt builder
+  whitelist `surface` and render it as `- surface URL: <url>` so the
+  model sees the actual URLs the user picked instead of just a count.
 
-- [ ] **#12 `/app/admin/environments` "Trigger Audit" explicitly stubbed**
-  Pops an `alert("not yet implemented")` despite `/api/admin/trigger-audit`
-  existing and working from the org detail page. One-line fix.
-  - UI: [src/app/app/admin/environments/page.tsx:97](src/app/app/admin/environments/page.tsx#L97)
+- [x] **#12 `/app/admin/environments` "Trigger Audit" wired** — ✅ shipped
+  Now POSTs to `/api/admin/trigger-audit` with the env's
+  `organizationId` (added to the GET response). Refreshes the table on
+  success; surfaces 409 (already running) explicitly. Loading state
+  on the per-row button.
 
-- [ ] **#16 Chat ActionCard navigates to `?action=`, actions page reads `?selected=`**
-  Drawer never auto-opens from chat. (FindingCard ↔ findings page does work,
-  so this is a one-sided break.)
-  - UI: [src/components/console/chat/ActionCard.tsx:34](src/components/console/chat/ActionCard.tsx#L34)
-  - Reader: [src/app/app/actions/page.tsx:440](src/app/app/actions/page.tsx#L440)
+- [x] **#16 Chat ActionCard → actions page deep-link** — ✅ shipped
+  Actions page reads both `?action=<id>` (chat cards + drawer
+  linked-actions list) and `?selected=<key>` (dashboard KPI tile).
+  Both consumed params are stripped from the URL afterwards.
 
 ---
 

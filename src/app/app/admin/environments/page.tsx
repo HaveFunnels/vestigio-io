@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 interface EnvRow {
   id: string;
   domain: string;
+  organizationId: string;
   orgName: string;
   isProduction: boolean;
   lastAuditStatus: string;
@@ -23,6 +24,7 @@ export default function AdminEnvironmentsPage() {
   const [search, setSearch] = useState("");
   const [environments, setEnvironments] = useState<EnvRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [triggeringId, setTriggeringId] = useState<string | null>(null);
 
   const fetchEnvironments = useCallback(async (query: string) => {
     setLoading(true);
@@ -44,8 +46,35 @@ export default function AdminEnvironmentsPage() {
     fetchEnvironments(search);
   }, [fetchEnvironments, search]);
 
-  function handleTriggerAudit(env: EnvRow) {
-    alert(`Trigger audit for: ${env.domain} (${env.id})\n\nThis feature is not yet implemented.`);
+  // Triggers a full (cold) audit for the env's organization via the same
+  // endpoint the org detail page uses. The endpoint resolves the prod env
+  // server-side, so we pass `organizationId` rather than `environmentId`.
+  // 409 means a cycle is already running — we surface that explicitly
+  // instead of as a generic failure.
+  async function handleTriggerAudit(env: EnvRow) {
+    if (triggeringId) return;
+    setTriggeringId(env.id);
+    try {
+      const res = await fetch("/api/admin/trigger-audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: env.organizationId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        alert(`Audit started for ${env.domain} — cycle ${data.cycleId}`);
+        // Refresh so the row's status flips to running.
+        fetchEnvironments(search);
+      } else if (res.status === 409) {
+        alert(data.message || `An audit is already in progress for ${env.domain}.`);
+      } else {
+        alert(data.message || `Failed to trigger audit for ${env.domain}.`);
+      }
+    } catch {
+      alert(`Network error triggering audit for ${env.domain}.`);
+    } finally {
+      setTriggeringId(null);
+    }
   }
 
   function handleViewFindings(env: EnvRow) {
@@ -94,7 +123,13 @@ export default function AdminEnvironmentsPage() {
                   <td className="hidden px-4 py-3 text-content-muted lg:table-cell">{new Date(env.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <button onClick={() => handleTriggerAudit(env)} className="text-xs text-accent-text hover:underline">Trigger Audit</button>
+                      <button
+                        onClick={() => handleTriggerAudit(env)}
+                        disabled={triggeringId === env.id}
+                        className="text-xs text-accent-text hover:underline disabled:opacity-50"
+                      >
+                        {triggeringId === env.id ? "Triggering…" : "Trigger Audit"}
+                      </button>
                       <button onClick={() => handleViewFindings(env)} className="text-xs text-content-muted hover:underline">View Findings</button>
                     </div>
                   </td>

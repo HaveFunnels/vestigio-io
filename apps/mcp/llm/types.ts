@@ -120,7 +120,7 @@ export interface AttachedFile {
  * the user re-typing them.
  */
 export interface AttachedContextItem {
-  kind: 'finding' | 'action' | 'workspace' | 'map';
+  kind: 'finding' | 'action' | 'workspace' | 'map' | 'surface';
   id: string;
   title: string;
 }

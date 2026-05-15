@@ -418,6 +418,7 @@ export default function useOnboardingForm() {
 						monthlyRevenue: form.monthlyRevenue,
 						averageOrderValue: form.averageTicket || null,
 						targetIndustry: form.industryVertical || null,
+						ownershipConfirmed: form.ownershipConfirmed,
 					}),
 				});
 
@@ -459,6 +460,8 @@ export default function useOnboardingForm() {
 					conversionModel: form.conversionModel,
 					priceId: selectedPlan.paddlePriceId,
 					paymentProvider: "paddle",
+					targetIndustry: form.industryVertical || null,
+					ownershipConfirmed: form.ownershipConfirmed,
 				}),
 			});
 

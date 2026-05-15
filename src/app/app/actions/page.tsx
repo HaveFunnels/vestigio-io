@@ -114,28 +114,6 @@ const effortConfig: Record<string, { labelKey: string; style: string }> = {
 	very_high: { labelKey: "very_high", style: "text-red-600 dark:text-red-400" },
 };
 
-const resolveConfig: Record<string, { labelKey: string; style: string }> = {
-	fix: {
-		labelKey: "fix",
-		style:
-			"bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 hover:bg-red-500/20",
-	},
-	verify: {
-		labelKey: "verify",
-		style:
-			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/20",
-	},
-	track: {
-		labelKey: "track",
-		style:
-			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20",
-	},
-	dismiss: {
-		labelKey: "dismiss",
-		style:
-			"bg-zinc-500/10 text-content-muted border-zinc-500/30 hover:bg-zinc-500/20",
-	},
-};
 
 // ──────────────────────────────────────────────
 // Incident operational timeline steps
@@ -430,21 +408,26 @@ function ActionsContent({
 		}
 	}
 
-	// Deep-link support: when the URL carries `?selected=<key>`, find the
-	// matching action and open its drawer. Triggered by the dashboard's
-	// OpenCriticalKpi tile (passes inferenceKey) — exact match first,
-	// then fuzzy match against the action_key (which often embeds the
-	// inferenceKey). Drops the param from the URL after consuming so a
-	// browser back-button doesn't re-trigger the open.
+	// Deep-link support: opens the matching action's drawer when the URL
+	// carries either `?action=<id>` (used by chat ActionCard cards and
+	// the linked-actions list in the findings drawer — exact id match)
+	// or `?selected=<key>` (used by the dashboard's OpenCriticalKpi tile
+	// — fuzzy match against the action_key, which often embeds the
+	// inferenceKey). Drops the consumed param from the URL afterwards
+	// so a browser back-button doesn't re-trigger the open.
 	useEffect(() => {
-		const key = searchParams?.get("selected");
-		if (!key || actions.length === 0) return;
+		if (actions.length === 0) return;
+		const actionId = searchParams?.get("action");
+		const selectedKey = searchParams?.get("selected");
+		const key = actionId ?? selectedKey;
+		if (!key) return;
 		const match =
 			actions.find((a) => a.id === key) ||
 			actions.find((a) => a.id.includes(key) || key.includes(a.id));
 		if (match) setSelected(match);
 		const url = new URL(window.location.href);
-		url.searchParams.delete("selected");
+		if (actionId) url.searchParams.delete("action");
+		if (selectedKey) url.searchParams.delete("selected");
 		window.history.replaceState({}, "", url.toString());
 	}, [searchParams, actions]);
 	// Wave 0.6: Track which action is currently being verified so the
@@ -953,9 +936,6 @@ function ActionDrawerContent({
 	const { currency: orgCurrency } = useMcpData();
 	const currSym = CURRENCY_SYMBOLS[orgCurrency] || "$";
 	const cfg = categoryConfig[action.category];
-	const resolveCfg = action.resolve_path
-		? resolveConfig[action.resolve_path]
-		: null;
 
 	const [kbLink, setKbLink] = useState<{
 		slug: string;
@@ -1427,11 +1407,12 @@ function ActionDrawerContent({
 				</section>
 			)}
 
-			{/* Action Buttons — outline-only styling so the verification CTA
-			    (which lives inside the Verification card) remains the primary
-			    visual action. Resolve_path === "verify" is intentionally not
-			    rendered here: it would duplicate the in-card Run Verification
-			    button. */}
+			{/* Action Buttons. The fix / track / dismiss bottom CTAs were
+			    previously rendered with an empty onClick (placeholder for
+			    pipelines that don't exist yet) — looked clickable, did
+			    nothing. Removed until those pipelines exist. The
+			    verification CTA already lives in its own card; Discuss
+			    in Chat is always available. */}
 			<section className='space-y-2 pt-2'>
 				<button
 					onClick={() => onNavigateChat()}
@@ -1439,17 +1420,6 @@ function ActionDrawerContent({
 				>
 					{t("drawer.discussInChat")}
 				</button>
-				{resolveCfg && action.resolve_path !== "verify" && (
-					<button
-						onClick={() => {
-							// fix/track/dismiss are placeholders awaiting their own pipelines.
-							// verify is handled by the in-card CTA, not here.
-						}}
-						className='w-full rounded-md border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/5 disabled:opacity-50'
-					>
-						{t(`resolve.${resolveCfg.labelKey}`)}
-					</button>
-				)}
 			</section>
 		</div>
 	);

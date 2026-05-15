@@ -636,7 +636,9 @@ export default function CopilotPanel() {
 											? "bg-emerald-500"
 											: item.kind === "map"
 												? "bg-indigo-500"
-												: "bg-amber-500"
+												: item.kind === "surface"
+													? "bg-sky-500"
+													: "bg-amber-500"
 								}`}
 							/>
 							<span>

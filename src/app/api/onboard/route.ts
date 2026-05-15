@@ -41,6 +41,11 @@ const onboardSchema = z.object({
   conversionModel: z.enum(["checkout", "whatsapp", "form", "external"]),
   priceId: z.string(),
   paymentProvider: z.enum(["stripe", "paddle"]).optional().default("stripe"),
+  // Industry vertical captured in the onboarding "Industry" step. Mirrors
+  // the /api/environments/activate shape so the BusinessProfile row carries
+  // the value regardless of which path created it.
+  targetIndustry: z.string().trim().min(1).optional().nullable(),
+  ownershipConfirmed: z.boolean().optional(),
   // SaaS optional fields
   saasLoginUrl: z.string().url().optional(),
   saasEmail: z.string().email().optional(),
@@ -82,6 +87,8 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     conversionModel,
     priceId,
     paymentProvider,
+    targetIndustry,
+    ownershipConfirmed,
     saasLoginUrl,
     saasEmail,
     saasAuthMethod,
@@ -135,6 +142,9 @@ export const POST = withErrorTracking(async function POST(request: Request) {
         monthlyRevenue: monthlyRevenue || null,
         averageOrderValue: averageOrderValue || null,
         conversionModel,
+        // Persist the onboarding fields that used to be silently dropped.
+        targetIndustry: targetIndustry?.trim() || null,
+        ownershipConfirmedAt: ownershipConfirmed ? new Date() : null,
       },
     });
 

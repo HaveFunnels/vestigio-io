@@ -64,11 +64,18 @@ export default function AdminEnvironmentsPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        alert(`Audit started for ${env.domain} — cycle ${data.cycleId}`);
+        const parts: string[] = [
+          data.message || `Audit started for ${env.domain} — cycle ${data.cycleId}`,
+        ];
+        if (data.cancelledPending && data.cancelledPending > 0) {
+          parts.push(`(cancelled ${data.cancelledPending} pending hot/warm)`);
+        }
+        if (data.queuedBehind) {
+          parts.push(`(will start after ${data.queuedBehind.cycleType} ${data.queuedBehind.id})`);
+        }
+        alert(parts.join("\n"));
         // Refresh so the row's status flips to running.
         fetchEnvironments(search);
-      } else if (res.status === 409) {
-        alert(data.message || `An audit is already in progress for ${env.domain}.`);
       } else {
         alert(data.message || `Failed to trigger audit for ${env.domain}.`);
       }

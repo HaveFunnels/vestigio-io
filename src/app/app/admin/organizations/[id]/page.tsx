@@ -501,7 +501,19 @@ export default function AdminOrganizationDetailPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(t("audit_cycle_started", { cycleId: data.cycleId }));
+        // Surface override side-effects so the operator knows whether
+        // their click actually replaced a scheduled hot/warm or just
+        // queued the full behind one that is already running.
+        const parts: string[] = [
+          data.message || t("audit_cycle_started", { cycleId: data.cycleId }),
+        ];
+        if (data.cancelledPending && data.cancelledPending > 0) {
+          parts.push(`(cancelled ${data.cancelledPending} pending hot/warm)`);
+        }
+        if (data.queuedBehind) {
+          parts.push(`(will start after ${data.queuedBehind.cycleType} ${data.queuedBehind.id})`);
+        }
+        alert(parts.join("\n"));
       } else {
         alert(data.message || t("failed_to_trigger_audit"));
       }

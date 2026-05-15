@@ -24,6 +24,8 @@ import {
   isHighValuePath,
   isErrorOrSystemPath,
   isCommercialCriticalUrl,
+  CHECKOUT_SUBDOMAIN_REGEX,
+  getCheckoutSubdomainProbes,
 } from '../../packages/page-priority';
 import { renderForIngestion } from './playwright-renderer';
 
@@ -549,6 +551,26 @@ export async function runStagedPipeline(
   const criticalPaths = getPagePriorityCriticalPaths(input.onboarding_business_model);
 
   let candidates = discoverHighValueCandidates(homepageParsed!, rootDomain, rootUrl, criticalPaths, mode);
+
+  // Wave 18b — speculative checkout-subdomain probes. Brazilian info-
+  // product platforms (Hotmart / Kiwify / Eduzz) often custom-domain
+  // their checkout to seguro.X / pay.X / checkout.X. Those subdomains
+  // are usually NOT linked from the homepage (customers land there via
+  // ad campaigns) so depth-1 discovery misses them. We seed the 4 most
+  // common subdomain hosts; DNS fails fast for non-existent ones so
+  // the cost is bounded even when none exist. Only seed in full mode —
+  // hot/warm budgets are too tight to spend on speculative misses.
+  if (mode === 'full') {
+    const probes = getCheckoutSubdomainProbes(rootDomain);
+    const seenProbes = new Set<string>(candidates.map((c) => normalizeUrlForDedup(c.url)));
+    seenProbes.add(normalizeUrlForDedup(rootUrl));
+    for (const probeUrl of probes) {
+      const key = normalizeUrlForDedup(probeUrl);
+      if (seenProbes.has(key)) continue;
+      seenProbes.add(key);
+      candidates.push({ url: probeUrl, source: 'critical_path' });
+    }
+  }
 
   // Wave 18b — drop /404, /500, /search, /wp-admin and other meta
   // surfaces. These slip in via homepage links + sitemap and produce
@@ -1128,7 +1150,13 @@ const PT_LANDING = /\/(lp|landing|promo|campaign|offer|oferta|campanha)\b/i;
 function classifyPageTypeFromUrl(url: string): string {
   try {
     const u = new URL(url);
+    const host = u.hostname.toLowerCase();
     const path = (u.pathname || '/').toLowerCase();
+    // Wave 18b — subdomain-based checkouts (seguro.X, pay.X, cobranca.X,
+    // etc., common for Hotmart / Kiwify / Eduzz / Monetizze) are checkout
+    // pages even though their pathname is just "/". Without this branch
+    // they'd be classified as homepage and miss decision-stage findings.
+    if (CHECKOUT_SUBDOMAIN_REGEX.test(host)) return 'checkout';
     if (path === '/' || path === '') return 'homepage';
     if (PT_ERROR.test(path)) return 'error';
     if (PT_CHECKOUT.test(path)) return 'checkout';
@@ -1474,9 +1502,14 @@ function discoverHighValueCandidates(parsed: ParsedPage, rootDomain: string, roo
       if (/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|pdf|zip|xml|json)$/i.test(path)) continue;
       candidates.push({ url: link.href, source: 'homepage_link' });
     } else {
-      const path = new URL(link.href).pathname.toLowerCase();
+      const parsedLink = new URL(link.href);
+      const path = parsedLink.pathname.toLowerCase();
+      const host = parsedLink.hostname.toLowerCase();
       const text = (link.text || '').toLowerCase();
-      if (isHighValuePath(path, text)) candidates.push({ url: link.href, source: 'homepage_link' });
+      // Pass host so subdomain hints (seguro.X, pay.X) survive the
+      // shallow_plus filter even when the path is just "/" and the
+      // link text is generic ("clique aqui", "buy now").
+      if (isHighValuePath(path, text, host)) candidates.push({ url: link.href, source: 'homepage_link' });
     }
   }
 

@@ -95,7 +95,10 @@ export const CYCLE_MODE_CONFIG: Record<CycleMode, CycleModeConfig> = {
 // /precos was in pricing here but NOT in the speculative discovery
 // list, so a pt-BR site without /precos linked from the homepage
 // would have it allowed-in-warm but never seeded for cold discovery.
-import { CRITICAL_SURFACE_REGEX_LIST } from "../../packages/page-priority";
+import {
+	CRITICAL_SURFACE_REGEX_LIST,
+	CHECKOUT_SUBDOMAIN_REGEX,
+} from "../../packages/page-priority";
 const CRITICAL_SURFACE_PATTERNS = CRITICAL_SURFACE_REGEX_LIST;
 
 /**
@@ -123,12 +126,22 @@ export function canonicalizeUrl(raw: string): string {
  * page? Called by the runner + scheduler to build the hot allow-list.
  */
 export function isCriticalSurfaceUrl(url: string): boolean {
+	let host: string;
 	let path: string;
 	try {
-		path = new URL(url).pathname || "/";
+		const u = new URL(url);
+		host = u.hostname.toLowerCase();
+		path = u.pathname || "/";
 	} catch {
 		return false;
 	}
+	// Wave 18b — subdomain-based checkouts (seguro.X, pay.X, cobranca.X)
+	// are critical regardless of path. Common pt-BR pattern for Hotmart /
+	// Kiwify / Eduzz hosted checkouts. Without this branch, those URLs
+	// land in the warm random sample instead of the hot allow-list —
+	// meaning your highest-revenue page only gets refreshed ~30% of
+	// cycles.
+	if (CHECKOUT_SUBDOMAIN_REGEX.test(host)) return true;
 	// Landing page (home) is always critical — it's the most-visited
 	// surface and regressions here hit every downstream funnel.
 	if (path === "/" || path === "") return true;

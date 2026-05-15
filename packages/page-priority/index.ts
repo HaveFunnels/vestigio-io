@@ -52,14 +52,72 @@ export function getCriticalPaths(businessModel?: string | null): string[] {
 }
 
 /**
- * Does the URL path + link text look like a high-value commercial
- * surface? Used by Stage C discovery on homepage `<a>` links in
- * shallow_plus mode (where we can't afford to crawl every internal
- * link, so we filter to commerce/funnel/trust links).
+ * Does the URL path + host + link text look like a high-value
+ * commercial surface? Used by Stage C discovery on homepage `<a>`
+ * links in shallow_plus mode (where we can't afford to crawl every
+ * internal link, so we filter to commerce/funnel/trust links).
+ *
+ * The host is included so subdomain-based checkouts (the dominant
+ * pattern in pt-BR — Hotmart / Kiwify / Eduzz host on
+ * seguro.dominio.com or pay.dominio.com) survive the filter even when
+ * the link text is generic ("clique aqui") and the path is just "/".
  */
-export function isHighValuePath(path: string, linkText?: string | null): boolean {
-	const haystack = `${path} ${linkText || ""}`.toLowerCase();
+export function isHighValuePath(
+	path: string,
+	linkText?: string | null,
+	host?: string | null,
+): boolean {
+	const haystack = `${host || ""} ${path} ${linkText || ""}`.toLowerCase();
 	return HIGH_VALUE_REGEX.test(haystack);
+}
+
+/**
+ * Subdomain hint for checkout / payment hosting. Brazilian SaaS &
+ * info-product platforms (Hotmart, Kiwify, Eduzz, Monetizze, Hubla)
+ * almost always host the checkout on a dedicated subdomain rather
+ * than a path: `seguro.X`, `pay.X`, `pagamento.X`, `compra.X`. We use
+ * this as a first-class signal for critical-surface classification,
+ * page-type assignment, and depth-2 crawl gating — none of which used
+ * to look at the host before Wave 18b.
+ *
+ * Matches at the START of the hostname only (anchored). `myseguro.com`
+ * doesn't match; `seguro.havefunnels.com` does.
+ */
+export const CHECKOUT_SUBDOMAIN_REGEX =
+	/^(seguro|secure|pay|payment|checkout|compra|comprar|carrinho|carro|cart|finalizar|cobranca|cobrança|billing|gateway|order|comprar-agora)\./i;
+
+/**
+ * Does this URL live on a checkout / payment subdomain? Used by
+ * `isCommercialCriticalUrl` + `classifyPageTypeFromUrl` (staged-
+ * pipeline.ts) so a URL like `seguro.havefunnels.com/produto/123` is
+ * recognized as checkout/decision-stage even though its path looks
+ * like a product page.
+ */
+export function isCheckoutSubdomainUrl(url: string): boolean {
+	try {
+		const host = new URL(url).hostname.toLowerCase();
+		return CHECKOUT_SUBDOMAIN_REGEX.test(host);
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Speculative checkout-subdomain probes to seed into discovery when the
+ * homepage doesn't link them directly. Common pattern: customers buy a
+ * Hotmart / Kiwify product → land on `seguro.dominio.com` via the ad
+ * campaign, never via a homepage link, so depth-1 crawl never sees it.
+ * These probes catch the case at low cost: DNS fails fast for non-
+ * existent subdomains, and existing ones produce a real candidate.
+ *
+ * We keep the list short (most common 4 in pt-BR / es) so the extra
+ * latency is bounded — even if every probe DNS-fails it's <1s total.
+ * Returns full URLs with rootDomain substituted in.
+ */
+export function getCheckoutSubdomainProbes(rootDomain: string): string[] {
+	if (!rootDomain || rootDomain.includes("/")) return [];
+	const subdomains = ["seguro", "pay", "checkout", "compra"];
+	return subdomains.map((sd) => `https://${sd}.${rootDomain}/`);
 }
 
 /**
@@ -91,14 +149,23 @@ export const CRITICAL_SURFACE_REGEX_LIST: Array<{ pattern: RegExp; label: string
  * staged-pipeline.ts to decide whether to explore the page's outgoing
  * internal links. A pricing page that links to /signup → /demo is a
  * funnel chain we want to traverse; a generic blog post is not.
+ *
+ * Subdomain hint takes precedence over path. `seguro.havefunnels.com/`
+ * is checkout even though pathname is "/"; without the subdomain
+ * branch this URL would be silently classified as a homepage and
+ * skipped by depth-2 expansion.
  */
 export function isCommercialCriticalUrl(url: string): boolean {
+	let host: string;
 	let path: string;
 	try {
-		path = new URL(url).pathname || "/";
+		const u = new URL(url);
+		host = u.hostname.toLowerCase();
+		path = u.pathname || "/";
 	} catch {
 		return false;
 	}
+	if (CHECKOUT_SUBDOMAIN_REGEX.test(host)) return true;
 	if (path === "/" || path === "") return false; // homepage handled separately
 	return CRITICAL_SURFACE_REGEX_LIST.some((p) => p.pattern.test(path));
 }
@@ -193,12 +260,18 @@ const HIGH_VALUE_REGEX = new RegExp(
 		"checkout", "finalizar-compra", "finalizar", "pagamento",
 		"cart", "carrinho", "carro", "carrito",
 		"pricing", "preco", "precos", "preço", "planos", "plans", "precios", "planes",
-		"comprar", "buy", "shop", "loja", "tienda",
+		"compra", "comprar", "buy", "shop", "loja", "tienda",
 		"signup", "sign-up", "register", "cadastro", "registro",
 		"login", "signin", "sign-in", "entrar",
 		"demo", "trial", "teste-gratis", "prueba",
 		"contact", "contato", "contacto", "agendar", "schedule", "book",
 		"quote", "orcamento", "cotacao",
+		// Subdomain-only hints — common for pt-BR info-product / SaaS
+		// platforms (Hotmart, Kiwify, Eduzz, Monetizze, Hubla) that
+		// host checkout on `seguro.X`, `pay.X`, `cobranca.X`. These
+		// tokens never show up in nav-link path components but DO show
+		// up in the hostname when we concat host into the haystack.
+		"seguro", "secure", "pay\\.", "cobranca", "cobrança", "gateway", "billing", "order\\.",
 		// Trust + company
 		"privacy", "privacidade", "privacidad",
 		"terms", "termos", "terminos",

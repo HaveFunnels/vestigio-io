@@ -22,9 +22,19 @@ export interface ParsedPage {
   structured_data: ParsedStructuredData[];
   body_word_count: number;
   body_text_snippet: string | null;
+  // Wave 18a — heading structure (h1/h2/h3 in document order) gives the
+  // engine + Framework Lens a way to understand page hierarchy without
+  // parsing raw HTML. Capped at 50 entries so an outlier page with
+  // hundreds of subheaders doesn't bloat the evidence row.
+  headings: ParsedHeading[];
   // Wave 9.3 — hreflang alternates + structured pagination links.
   hreflang_alternates: HreflangAlternate[];
   pagination_links: PaginationLink[];
+}
+
+export interface ParsedHeading {
+  level: 1 | 2 | 3;
+  text: string;
 }
 
 export interface HreflangAlternate {
@@ -174,9 +184,32 @@ export function parsePage(html: string, pageUrl: string): ParsedPage {
     structured_data: extractStructuredData(html),
     body_word_count: wordCount,
     body_text_snippet: bodyText ? bodyText.slice(0, 2000) : null,
+    headings: extractHeadings(html),
     hreflang_alternates: extractHreflang(html, pageUrl),
     pagination_links: extractPagination(html, pageUrl),
   };
+}
+
+// Wave 18a — heading extractor. Captures h1/h2/h3 in document order so
+// the engine can reason about page structure without re-parsing HTML.
+// h4+ ignored — rarely material for copy classification and limiting
+// keeps payload small.
+function extractHeadings(html: string): ParsedHeading[] {
+  const out: ParsedHeading[] = [];
+  const re = /<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(html)) !== null) {
+    const level = Number(match[1]) as 1 | 2 | 3;
+    const text = match[2]
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (text.length > 0 && text.length < 300) {
+      out.push({ level, text });
+    }
+    if (out.length >= 50) break;
+  }
+  return out;
 }
 
 /**

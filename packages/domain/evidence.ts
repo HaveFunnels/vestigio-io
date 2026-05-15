@@ -99,6 +99,22 @@ export interface PageContentPayload {
   external_link_count: number;
   // Phase 2C: body word count for content depth assessment
   body_word_count: number;
+  // Wave 18a — visible body text excerpt (up to 2000 chars). Stripped of
+  // HTML tags + script/style blocks + collapsed whitespace. Sourced from
+  // either the raw HTML or, when the page is SPA-detected, from the
+  // Playwright-rendered DOM (staged-pipeline.ts re-parses `finalHtml`
+  // after Playwright runs).
+  //
+  // 2000 chars is the safe cap for Postgres + downstream LLM prompts
+  // (Haiku 4.5 handles 200K input; 32 pages × 2000 chars + framework
+  // spec fits comfortably). Pages with no extractable body text (404,
+  // redirects, asset URLs) get null.
+  body_text_snippet: string | null;
+  // Wave 18a — heading hierarchy in document order. Capped at 50
+  // entries. Used by the engine to detect "value proposition buried"
+  // (no h1 above the fold), "social proof absent" (no h2 mentions
+  // customers), etc.
+  headings: Array<{ level: 1 | 2 | 3; text: string }>;
 }
 
 export interface RedirectPayload {

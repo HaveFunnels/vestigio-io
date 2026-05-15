@@ -2545,6 +2545,101 @@ Working backwards from "support 10,000 active customers with 5 envs avg = 50k en
 
 ---
 
+## Wave 18 — Production fixes shipped 2026-05-15
+
+Multi-bug session. Surface symptom was "Copy workspace empty after a 56s cycle on havefunnels". Investigation cascaded into four separate production bugs, all now fixed.
+
+### What was wrong
+
+| Bug | Symptom | Root cause | Fix commit |
+|---|---|---|---|
+| **#1 Deploy drift** | audit-worker running code from Apr 14 despite many May pushes | Railway service was configured with `builder=RAILPACK` (the auto-detection builder) instead of `DOCKERFILE`. RAILPACK ignored our `/Dockerfile` and built something different. Env-var bumps + `railway redeploy` only re-tagged the cached image; they never rebuilt from git. | User changed builder to `/Dockerfile` in dashboard. **Future pushes now auto-deploy correctly.** |
+| **#2 `projectionsCache` always NULL** | Zero rows in entire DB had `projectionsCache` populated. Layout always fell through to slow legacy `ensureContext`. | Cache write was the last step of an atomic `$transaction` that aborted earlier on finding-upsert conflicts. The catch block tried individual upserts on the same aborted tx, every one returned PostgreSQL 25P02, then catastrophic-loss check threw. Cache was never reached. | **`8e14d63`** — dedupe in `prisma-finding-store.ts` |
+| **#3 Only 4 packs producing findings** (expected 8-10) | Findings table for havefunnels had: saas_growth_readiness (4), money_moment_exposure (3), scale_readiness (3), revenue_integrity (1). Missing: copy_alignment, chargeback, content_freshness, funnel_*, vertical_specific. | The engine WAS producing findings for all packs, but persistence was failing for the bigger packs (e.g., `funnel_dead_end_page` emitted 6× across pages, hit the `(cycleId, inferenceKey)` unique constraint). Transaction aborted, only the small ones (which happened to be processed first) made it. | **`8e14d63`** (same as #2) |
+| **#4 Copy Framework Lens limited** | Widget audits only against title + h1 + meta_description. Body text never available. | `PageContentPayload` never included body text. Parser already extracts `body_text_snippet` but it's not in the payload schema. Engine signals + Framework Lens both starve of input. | **Wave 18a** below — in progress, this session's main feature work |
+
+### Infrastructure shipped this session (before bug discovery)
+
+- **A1 PgBouncer** (`pgbouncer` Railway service, transaction-pool, edoburu image, SCRAM auth). Web + worker DATABASE_URL → pgbouncer at port 6432 with `?pgbouncer=true`. DIRECT_URL stays direct for migrations.
+- **A3 Worker static scaling**: 3 replicas of audit-worker in us-west2 region. `AUDIT_WORKER_CONCURRENCY=2` per replica = 6 concurrent cycles cluster-wide.
+- **B2 worker_threads recompute pool**: `apps/audit-runner/recompute-pool.ts` + esbuild-bundled `recompute-worker.ts`. Flag `RECOMPUTE_USE_WORKER_THREADS=1` enables it on audit-worker. True CPU parallelism across concurrent cycles.
+- **C3 OpenTelemetry**: `@opentelemetry/sdk-node` + selected instrumentations (http/undici/redis/prisma) wired to Grafana Cloud free tier at `https://otlp-gateway-prod-sa-east-1.grafana.net/otlp`. Custom spans on the 8 `recompute.*` phases (named yields in `recomputeAllGen`). Custom metrics: `vestigio.queue.depth{tier}`, `vestigio.recompute.pool.{total,idle,busy,queued}`, `vestigio.chromium.pool.{in_use,idle_browsers}`. Worker init lives inside `mainLoop()` (top-level statements were swallowed by Railway log shipper; in-mainLoop logs surface).
+
+### Verification (cycle `cmp72nbea0001ckemoposjpgb`, run 2026-05-15 15:31 UTC)
+
+```
+status: complete
+hasCache: true                              <-- Wave 16 cache populated for first time ever
+dur_ms: 190111                              <-- 190s (longer than 56s pre-fix; OTel + worker_threads overhead)
+deduped 39 -> 33 findings (merged surfaces)
+persisted 33/39
+10 packs producing findings:
+  chargeback_resilience: 2
+  content_freshness: 1
+  copy_alignment: 1                         <-- previously zero
+  funnel_integrity: 3
+  funnel_journey: 9
+  money_moment_exposure: 3
+  revenue_integrity: 4
+  saas_growth_readiness: 4
+  scale_readiness: 4
+  vertical_specific: 2
+```
+
+### Reference: Railway service config
+
+To diagnose deploy drift in the future, the GraphQL API exposes per-service `serviceManifest.build.builder`:
+
+```bash
+# accessToken sourced from ~/.railway/config.json user.accessToken
+curl -s -H "Authorization: Bearer $ACCESS" -H "Content-Type: application/json" \
+  -d "{\"query\":\"{ project(id: \\\"$PROJECT_ID\\\") { services { edges { node { name serviceInstances { edges { node { latestDeployment { meta } } } } } } } } }\"}" \
+  https://backboard.railway.com/graphql/v2
+```
+
+Look for `serviceManifest.build.builder`. Must be `DOCKERFILE` for any service that should respect the repo's `/Dockerfile`. `RAILPACK` / `NIXPACKS` ignore it.
+
+The `accessToken` from the CLI session is read-only. For service-level mutations (e.g. `serviceInstanceUpdate`), a Personal Access Token from `railway.com/account/tokens` is required. Project tokens (UUID format) are scoped to the project but didn't have write access in this session's testing — Personal Token is the safe default for ops scripts.
+
+---
+
+## Wave 18a — Body text + copy elements extraction (in progress)
+
+Goal: make every crawled page produce evidence rich enough that (a) the engine's `copy_alignment` inferences fire on actual page copy, not just metadata, and (b) the LLM-powered `Copy Framework Lens` widget can audit against the full body, not just title + h1 + meta_description.
+
+### What needs to ship
+
+1. **Schema** — `PageContentPayload.body_text_snippet: string | null` (up to 2000 chars of visible body text). `headings: string[]` (h1/h2/h3 ordered). Already in `parser.ts` output as `body_text_snippet` but not threaded through.
+
+2. **Parser** — confirm `body_text_snippet` is extracted from rendered DOM, not just raw HTML. For SPA pages, the initial HTML response has no body so the snippet must be derived from the Playwright-rendered output.
+
+3. **`addPageContentEvidence`** in `workers/ingestion/staged-pipeline.ts` — include `body_text_snippet` + `headings` in the payload.
+
+4. **`CopyElementsPayload` evidence** — currently the type exists but no row is ever produced. `extractCopyElements()` is used only inline for LLM prompts in enrichment scripts. Add a step that pushes a `copy_elements` evidence row per crawled page so the engine's copy_alignment inferences have structured input (h1, subhead, ctas, social_proof_elements, trust_signals, urgency_indicators, above_fold_text, body_text).
+
+5. **SPA / Playwright fallback** — the crawl pipeline already detects SPA via `shouldTriggerPlaywright(body, scripts.length, body.length)`. After Stage D (headless) renders, re-parse the rendered HTML and emit fresh PageContent + CopyElements evidence from the rendered DOM. The current code emits headless-rendered evidence but it's not clear if copy_elements is re-extracted.
+
+6. **`/api/workspace/copy-content`** — return `body_text_snippet` so the Framework Lens widget can include it in the Haiku prompt.
+
+7. **`CopyFrameworkLens.tsx`** + `/api/workspace/copy-framework-audit` — extend the audit prompt to include `body_text_snippet`. Update token budget — Haiku 4.5 handles ~200K input so 8 pages × 2000 chars + framework spec fits comfortably.
+
+### Acceptance criteria
+
+After a fresh full cycle on havefunnels.com:
+- Every `page_content` evidence payload has `body_text_snippet` non-null for pages that returned HTML (excluding 404/redirect-only)
+- At least one `copy_elements` evidence row per crawled page
+- Engine produces `value_proposition_buried`, `social_proof_ineffective`, `objection_unaddressed`, `cta_clarity_weak_on_commercial`, or `copy_funnel_misalignment` findings when applicable (today produces 1 copy_alignment finding; expect 3-5 after this lands)
+- Framework Lens scores increase from "always around 25% because of empty body" to something that varies meaningfully per framework
+- For SPA-detected pages, body_text_snippet still populates (via Playwright)
+
+### Out of scope (still future)
+
+- Storing FULL body (not just 2000-char snippet) — current cap is the safe choice for evidence row size + R2 tiering will come later
+- Per-funnel-stage copy classification (homepage vs pricing vs about) — already roughed in by `extractCopyElements` page_type parameter, but no engine inferences use it yet
+- LLM body summarization for super-long pages — defer until we see real customers blowing past 2000 chars meaningfully
+
+---
+
 ## What is NOT on this roadmap
 
 Per the [North Star anti-drift commitments](NORTHSTAR.md):

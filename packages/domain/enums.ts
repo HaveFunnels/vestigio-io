@@ -220,6 +220,12 @@ export enum EvidenceType {
   // Reclame Aqui, DDG search, HN, Reddit, Wikipedia, G2, Capterra,
   // Product Hunt). Payload kind discriminates which source it is.
   OffSiteRecon = 'off_site_recon',
+  // Wave 18a — structured copy elements per crawled page. Feeds the
+  // `copy_alignment` pack's value_proposition / social_proof /
+  // objection_unaddressed / cta_clarity / trust_copy / funnel_alignment
+  // inferences. Produced by `extractCopyElements` after Playwright (if
+  // SPA-detected) or directly from raw HTML.
+  CopyElements = 'copy_elements',
 }
 
 export enum SourceKind {

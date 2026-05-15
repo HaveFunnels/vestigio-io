@@ -7,7 +7,9 @@ import {
   HttpResponsePayload, PageContentPayload, RedirectPayload,
   ScriptPayload, FormPayload, CheckoutIndicatorPayload,
   ProviderIndicatorPayload, PolicyPagePayload, PlatformIndicatorPayload,
+  CopyElementsPayload,
 } from '../../packages/domain';
+import { extractCopyElements } from './enrichment/copy-elements-extractor';
 import {
   computeClassification, extractClassificationInput, ClassificationState,
 } from '../../packages/classification';
@@ -331,6 +333,9 @@ export async function runStagedPipeline(
   const playwrightPerDomain = new Map<string, number>();
   const PLAYWRIGHT_PER_DOMAIN_CAP = 3;
   const PLAYWRIGHT_TIMEOUT_MS = 15_000;
+  // SPA detection flag is set from both Stage A (homepage bootstrap)
+  // and Stage C (per-page crawl), so it is declared at function scope.
+  let spaDetected = false;
   let stepIndex = 0;
 
   const emitStep = (message?: string) => {
@@ -358,11 +363,74 @@ export async function runStagedPipeline(
 
     homepageParsed = parsePage(homepageResponse.body, homepageResponse.final_url);
 
-    // Emit bootstrap evidence
+    // Wave 18a — SPA detection + Playwright fallback for the homepage.
+    // The homepage is excluded from Stage C's crawl loop (it is added
+    // to the `seen` set before the loop runs) so without this branch a
+    // SPA-shell homepage produces empty body_text_snippet / copy
+    // elements and the copy_alignment pack misfires. We re-use the
+    // exact same shouldTriggerPlaywright heuristic + render budget.
+    let homepageHtml: string = homepageResponse.body;
+    let homepageFinalUrl: string = homepageResponse.final_url;
+    let homepageRenderedViaPlaywright = false;
+    const homepageLooksLikeSpa = shouldTriggerPlaywright(
+      homepageResponse.body,
+      homepageParsed.scripts.length,
+      homepageResponse.body.length,
+    );
+    if (homepageLooksLikeSpa) {
+      spaDetected = true;
+      if (playwrightBudget > 0 && playwrightUsed < playwrightBudget) {
+        const domainKey = homepageParsed.host || rootDomain;
+        const perDomainUsed = playwrightPerDomain.get(domainKey) ?? 0;
+        if (perDomainUsed < PLAYWRIGHT_PER_DOMAIN_CAP) {
+          const render = await renderForIngestion(homepageResponse.final_url, {
+            timeoutMs: PLAYWRIGHT_TIMEOUT_MS,
+            waitUntil: 'networkidle',
+          });
+          playwrightUsed++;
+          playwrightPerDomain.set(domainKey, perDomainUsed + 1);
+          playwrightDurations.push(render.durationMs);
+          if (render.success && render.html && render.html.length > homepageResponse.body.length) {
+            homepageHtml = render.html;
+            homepageFinalUrl = render.finalUrl || homepageResponse.final_url;
+            homepageParsed = parsePage(homepageHtml, homepageFinalUrl);
+            homepageRenderedViaPlaywright = true;
+          }
+          evidence.push(createEvidence(
+            EvidenceType.PlaywrightRender,
+            `surface:${homepageResponse.final_url}`,
+            scoping,
+            input.cycle_ref,
+            {
+              type: 'playwright_render',
+              url: homepageResponse.final_url,
+              rendered_url: render.finalUrl,
+              success: render.success,
+              rendered: homepageRenderedViaPlaywright,
+              status_code: render.statusCode,
+              content_type: render.contentType,
+              console_error_count: render.consoleErrorCount,
+              console_error_samples: render.consoleErrorSamples,
+              duration_ms: render.durationMs,
+              raw_body_length: homepageResponse.body.length,
+              rendered_body_length: render.html.length,
+              error: render.error ?? null,
+            },
+          ));
+        } else {
+          playwrightSkippedBudget++;
+        }
+      } else if (playwrightBudget > 0) {
+        playwrightSkippedBudget++;
+      }
+    }
+
+    // Emit bootstrap evidence (uses Playwright-rendered DOM when SPA was detected)
     addHttpEvidence(evidence, homepageResponse, rootUrl, scoping, input.cycle_ref);
-    addPageContentEvidence(evidence, homepageParsed, homepageResponse.final_url, scoping, input.cycle_ref);
-    addScriptEvidence(evidence, homepageParsed, homepageResponse.final_url, scoping, input.cycle_ref);
-    addFormEvidence(evidence, homepageParsed, homepageResponse.final_url, scoping, input.cycle_ref);
+    addPageContentEvidence(evidence, homepageParsed, homepageFinalUrl, scoping, input.cycle_ref);
+    addCopyElementsEvidence(evidence, homepageHtml, homepageFinalUrl, scoping, input.cycle_ref);
+    addScriptEvidence(evidence, homepageParsed, homepageFinalUrl, scoping, input.cycle_ref);
+    addFormEvidence(evidence, homepageParsed, homepageFinalUrl, scoping, input.cycle_ref);
 
     // Collect homepage surface relations (Stage A runs BEFORE the batch loop
     // in Stage C where normal pages have their links collected. Without this,
@@ -371,7 +439,7 @@ export async function runStagedPipeline(
     for (const link of homepageParsed.links) {
       if (!link.is_external && link.href) {
         surfaceRelations.push({
-          sourceUrl: homepageResponse.final_url,
+          sourceUrl: homepageFinalUrl,
           targetUrl: link.href,
           relationType: 'anchor',
           sourceHost: homepageParsed.host,
@@ -385,7 +453,7 @@ export async function runStagedPipeline(
     for (const form of homepageParsed.forms) {
       if (form.action && !form.is_external) {
         surfaceRelations.push({
-          sourceUrl: homepageResponse.final_url,
+          sourceUrl: homepageFinalUrl,
           targetUrl: form.action,
           relationType: 'form_action',
           sourceHost: homepageParsed.host,
@@ -631,7 +699,6 @@ export async function runStagedPipeline(
   // Every "skip" branch below stamps a `skipReason` on the coverage entry
   // so the inventory can explain why a discovered URL didn't get persisted.
   let fetchCount = 0;
-  let spaDetected = false;
   for (const c of candidates) {
     const url = c.url;
     // User-supplied exclusion gate (also enforced at discovery, but a
@@ -776,6 +843,7 @@ export async function runStagedPipeline(
         // the page or carry forward the previous cycle's evidence.
         addHttpEvidence(evidence, response, url, scoping, input.cycle_ref, cHash);
         addPageContentEvidence(evidence, parsed, finalUrlForExtractors, scoping, input.cycle_ref);
+        addCopyElementsEvidence(evidence, finalHtml, finalUrlForExtractors, scoping, input.cycle_ref);
         addScriptEvidence(evidence, parsed, finalUrlForExtractors, scoping, input.cycle_ref);
         addFormEvidence(evidence, parsed, finalUrlForExtractors, scoping, input.cycle_ref);
         extractIndicators(parsed, finalUrlForExtractors, scoping, input.cycle_ref, evidence);
@@ -966,7 +1034,103 @@ function addPageContentEvidence(evidence: Evidence[], parsed: ParsedPage, finalU
     internal_link_count: parsed.links.filter(l => !l.is_external).length,
     external_link_count: parsed.links.filter(l => l.is_external).length,
     body_word_count: parsed.body_word_count ?? 0,
+    // Wave 18a — body text + heading hierarchy. For SPA-detected
+    // pages, the caller has already swapped `parsed` to the
+    // Playwright-rendered DOM before invoking us, so these fields
+    // reflect the hydrated content, not the empty SPA shell.
+    body_text_snippet: parsed.body_text_snippet,
+    headings: parsed.headings,
   } as PageContentPayload));
+}
+
+// ── Wave 18a — URL-based page-type / funnel-stage classifier ──
+//
+// Lightweight URL-only classifier so every crawled page produces a
+// `copy_elements` evidence row right after the HTTP fetch. We avoid
+// pulling the heavier classifier in `semantic-enrichment.ts` because
+// that one runs in the enrichment pass and is parameterized by
+// evidence; here we only need a fast first-pass label keyed on URL.
+const PT_CHECKOUT = /\/(checkout|cart|payment|pay|order|compra|carrinho|pagamento|finalizar)/i;
+const PT_PRICING = /\/(pricing|plans|precos|prices|planos|assinatura|assine)/i;
+const PT_PRODUCT = /\/(product|item|p|produto|produit)\//i;
+const PT_ONBOARDING = /\/(app|dashboard|onboard|welcome|getting-started|setup|primeiros-passos)\b/i;
+const PT_ERROR = /\/(404|500|error|not-found|page-not-found)\b/i;
+const PT_BLOG = /\/(blog|article|post|news|noticias)/i;
+const PT_ABOUT = /\/(about|sobre|company|empresa|equipe|team)/i;
+const PT_FEATURE = /\/(features|recursos|funcionalidades)/i;
+const PT_LANDING = /\/(lp|landing|promo|campaign|offer|oferta|campanha)\b/i;
+
+function classifyPageTypeFromUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    const path = (u.pathname || '/').toLowerCase();
+    if (path === '/' || path === '') return 'homepage';
+    if (PT_ERROR.test(path)) return 'error';
+    if (PT_CHECKOUT.test(path)) return 'checkout';
+    if (PT_PRICING.test(path)) return 'pricing';
+    if (PT_PRODUCT.test(path)) return 'product';
+    if (PT_ONBOARDING.test(path)) return 'onboarding';
+    if (PT_LANDING.test(path)) return 'landing_page';
+    if (PT_FEATURE.test(path)) return 'feature';
+    if (PT_ABOUT.test(path)) return 'about';
+    if (PT_BLOG.test(path)) return 'blog';
+    return 'all_commercial';
+  } catch {
+    return 'all_commercial';
+  }
+}
+
+function inferFunnelStageFromPageType(pageType: string): string {
+  switch (pageType) {
+    case 'homepage':
+    case 'landing_page':
+    case 'blog':
+      return 'awareness';
+    case 'feature':
+    case 'product':
+    case 'about':
+      return 'consideration';
+    case 'pricing':
+    case 'checkout':
+      return 'decision';
+    case 'onboarding':
+      return 'retention';
+    default:
+      return 'awareness';
+  }
+}
+
+// ── Wave 18a — Copy Elements evidence ──
+//
+// Produced per crawled page right after the page_content row so that
+// downstream copy_alignment inferences (value_proposition_buried,
+// social_proof_ineffective, cta_clarity_weak_on_commercial, etc.) have
+// structured copy to reason about. When the upstream caller already
+// swapped `finalHtml` to a Playwright-rendered DOM for SPA pages, the
+// `html` we receive here is the hydrated copy — so SPAs are handled
+// implicitly without an extra branch.
+function addCopyElementsEvidence(
+  evidence: Evidence[],
+  html: string,
+  finalUrl: string,
+  scoping: Scoping,
+  cycleRef: string,
+): void {
+  const pageType = classifyPageTypeFromUrl(finalUrl);
+  const funnelStage = inferFunnelStageFromPageType(pageType);
+  const payload: CopyElementsPayload = extractCopyElements(html, finalUrl, pageType, funnelStage);
+
+  // Guard against empty pages (no h1, no body, no CTAs). Emitting an
+  // empty row would just waste DB space without enabling any finding.
+  const hasSignal =
+    !!payload.h1 ||
+    payload.cta_texts.length > 0 ||
+    payload.word_count > 30 ||
+    payload.social_proof_elements.length > 0 ||
+    payload.trust_signals.length > 0;
+  if (!hasSignal) return;
+
+  evidence.push(createEvidence(EvidenceType.CopyElements, finalUrl, scoping, cycleRef, payload));
 }
 
 function addScriptEvidence(evidence: Evidence[], parsed: ParsedPage, finalUrl: string, scoping: Scoping, cycleRef: string): void {

@@ -28,6 +28,12 @@ interface CopyPage {
 	meta_description: string | null;
 	lang: string | null;
 	word_count: number;
+	// Wave 18a — visible body copy + heading hierarchy. body_text_snippet is
+	// the first ~2000 chars of extracted body text (or the Playwright-rendered
+	// DOM for SPA pages). Framework Lens, persona-rewrite, and tone-consistency
+	// widgets all read this to score copy quality, not just the title/h1.
+	body_text_snippet: string | null;
+	headings: Array<{ level: 1 | 2 | 3; text: string }>;
 }
 
 export const GET = withErrorTracking(
@@ -77,6 +83,18 @@ export const GET = withErrorTracking(
 			try {
 				const p = JSON.parse(row.payload);
 				if (p && p.type === "page_content") {
+					const rawHeadings = Array.isArray(p.headings) ? p.headings : [];
+					const headings: Array<{ level: 1 | 2 | 3; text: string }> = [];
+					for (const h of rawHeadings) {
+						if (
+							h &&
+							(h.level === 1 || h.level === 2 || h.level === 3) &&
+							typeof h.text === "string" &&
+							h.text.length > 0
+						) {
+							headings.push({ level: h.level, text: h.text });
+						}
+					}
 					pages.push({
 						url: typeof p.url === "string" ? p.url : row.subjectRef,
 						title: typeof p.title === "string" ? p.title : null,
@@ -86,6 +104,9 @@ export const GET = withErrorTracking(
 						lang: typeof p.lang === "string" ? p.lang : null,
 						word_count:
 							typeof p.body_word_count === "number" ? p.body_word_count : 0,
+						body_text_snippet:
+							typeof p.body_text_snippet === "string" ? p.body_text_snippet : null,
+						headings,
 					});
 				}
 			} catch {

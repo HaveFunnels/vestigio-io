@@ -89,11 +89,14 @@ export const CYCLE_MODE_CONFIG: Record<CycleMode, CycleModeConfig> = {
  * Ordering matters — first match wins, so checkout takes priority
  * over product, product over pricing, etc.
  */
-const CRITICAL_SURFACE_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
-	{ pattern: /\/(checkout|cart|carrinho|comprar|pay|payment|billing)/i, label: "checkout" },
-	{ pattern: /\/(pricing|preco|planos|plans)/i, label: "pricing" },
-	{ pattern: /\/(product|produto|item|p\/)/i, label: "product" },
-];
+// Wave 18b — moved to packages/page-priority so discovery (staged-
+// pipeline.ts) and allow-list (this file) share the same regex set.
+// Previously these were two hard-coded lists that drifted apart —
+// /precos was in pricing here but NOT in the speculative discovery
+// list, so a pt-BR site without /precos linked from the homepage
+// would have it allowed-in-warm but never seeded for cold discovery.
+import { CRITICAL_SURFACE_REGEX_LIST } from "../../packages/page-priority";
+const CRITICAL_SURFACE_PATTERNS = CRITICAL_SURFACE_REGEX_LIST;
 
 /**
  * Canonicalize a URL for set-membership comparisons. The pipeline
@@ -228,7 +231,13 @@ export async function resolveCriticalSurfaces(
 export interface AllowListInput {
 	mode: CycleMode;
 	critical: Set<string>;
-	allInventoryUrls: string[];
+	/**
+	 * Wave 18b — pass URLs with their 30-day session count so warm
+	 * rotation can prioritize by real traffic. When session counts
+	 * are unavailable (pre-pixel customers), all values are 0 and
+	 * the behavior degrades to the legacy random sample.
+	 */
+	allInventoryUrls: Array<{ url: string; sessionCount30d: number }>;
 	warmSampleRatio?: number; // default 0.3
 }
 
@@ -238,25 +247,49 @@ export function buildUrlAllowList(input: AllowListInput): string[] | null {
 	const criticalList = Array.from(input.critical);
 	if (input.mode === "hot") return criticalList;
 
-	// warm: critical + random sample
+	// warm: critical + behaviorally-prioritized sample. We split the
+	// per-cycle non-critical budget 70/30:
+	//   - 70% goes to the highest-traffic pages (sessionCount30d desc)
+	//     so a page that gets 10k sessions/day is always re-checked
+	//     and weak signals there (slow page, broken checkout link)
+	//     are surfaced quickly.
+	//   - 30% goes to a random tail sample so low-traffic and brand-
+	//     new pages still get caught within a few warm cycles instead
+	//     of starving forever behind the popular ones.
+	//
+	// Customers without a behavioral pixel have all session counts = 0;
+	// in that case the desc sort is a no-op and the random tail
+	// effectively becomes the full sample — i.e. the legacy behavior.
 	const nonCritical = input.allInventoryUrls.filter(
-		(u) => !input.critical.has(u),
+		(u) => !input.critical.has(u.url),
 	);
 	const ratio = input.warmSampleRatio ?? 0.3;
-	const sampleSize = Math.max(1, Math.floor(nonCritical.length * ratio));
-	// Fase 3 fix #10: proper Fisher-Yates. The previous
-	// `sort(() => Math.random() - 0.5)` is biased (the sort comparator
-	// must be a transitive ordering; returning random breaks that
-	// contract and real engines produce skewed distributions — tail
-	// URLs get consistently under-represented across cycles, breaking
-	// the "warm guarantee: every surface seen ~1x per window" claim).
-	const shuffled = [...nonCritical];
-	for (let i = shuffled.length - 1; i > 0; i--) {
+	const totalSampleSize = Math.max(1, Math.floor(nonCritical.length * ratio));
+
+	const trafficShare = Math.floor(totalSampleSize * 0.7);
+	const randomShare = totalSampleSize - trafficShare;
+
+	const byTraffic = [...nonCritical].sort(
+		(a, b) => b.sessionCount30d - a.sessionCount30d,
+	);
+	const topByTraffic = byTraffic
+		.slice(0, trafficShare)
+		.filter((u) => u.sessionCount30d > 0) // exclude zero-traffic from the "traffic" share
+		.map((u) => u.url);
+	const topByTrafficSet = new Set<string>(topByTraffic);
+
+	// Random tail — Fisher-Yates over URLs not already picked by traffic.
+	const tail = nonCritical.filter((u) => !topByTrafficSet.has(u.url));
+	for (let i = tail.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
-		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+		[tail[i], tail[j]] = [tail[j], tail[i]];
 	}
-	const sample = shuffled.slice(0, sampleSize);
-	return [...criticalList, ...sample];
+	// Use whatever traffic-share slots went unused (zero-traffic envs)
+	// to bump the random tail, so we still hit `totalSampleSize`.
+	const tailShare = totalSampleSize - topByTraffic.length;
+	const randomSample = tail.slice(0, tailShare).map((u) => u.url);
+
+	return [...criticalList, ...topByTraffic, ...randomSample];
 }
 
 // ──────────────────────────────────────────────

@@ -326,14 +326,22 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// allow-list intersect so trailing-slash / query-string
 				// drift doesn't silently exclude valid pages. The set
 				// produced by resolveCriticalSurfaces is already canonical.
-				const inventoryUrls = await prisma.pageInventoryItem
+				//
+				// Wave 18b: also pull sessionCount30d so warm allow-list
+				// prioritizes the rotation by real traffic instead of
+				// pure-random shuffle. Customers without pixel events have
+				// all values = 0 → degrades gracefully to random sampling.
+				const inventoryRows = await prisma.pageInventoryItem
 					.findMany({
 						where: { environmentRef: env.id },
-						select: { normalizedUrl: true },
+						select: { normalizedUrl: true, sessionCount30d: true },
 						take: 500,
 					})
-					.then((rows) => rows.map((r) => canonicalizeUrl(r.normalizedUrl)))
-					.catch(() => [] as string[]);
+					.catch(() => [] as Array<{ normalizedUrl: string; sessionCount30d: number }>);
+				const inventoryUrls = inventoryRows.map((r) => ({
+					url: canonicalizeUrl(r.normalizedUrl),
+					sessionCount30d: r.sessionCount30d ?? 0,
+				}));
 				urlFilter = buildUrlAllowList({
 					mode: cycleMode,
 					critical: criticalSet,
@@ -351,7 +359,9 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// URL), biasing averages in signal extraction.
 				if (!modeConfig.disableCarryForward && urlFilter) {
 					const allowSet = new Set<string>(urlFilter);
-					const urlsToCarry = inventoryUrls.filter((u) => !allowSet.has(u));
+					const urlsToCarry = inventoryUrls
+						.filter((u) => !allowSet.has(u.url))
+						.map((u) => u.url);
 					if (urlsToCarry.length > 0) {
 						const cf = await carryEvidenceForward(prisma, {
 							previousCycleRef: prevCycle.cycleRef,

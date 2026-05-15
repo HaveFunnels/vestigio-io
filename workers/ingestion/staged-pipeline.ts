@@ -19,6 +19,12 @@ import {
 } from './crawl-constraints';
 import { runEnrichmentPasses } from './enrichment/runner';
 import { canonicalUrl as canonicalUrlShared, urlMatchesExclusion } from '../../packages/url-normalize';
+import {
+  getCriticalPaths as getPagePriorityCriticalPaths,
+  isHighValuePath,
+  isErrorOrSystemPath,
+  isCommercialCriticalUrl,
+} from '../../packages/page-priority';
 import { renderForIngestion } from './playwright-renderer';
 
 // ──────────────────────────────────────────────
@@ -535,11 +541,25 @@ export async function runStagedPipeline(
 
   emitStep('Looking at how you guide people to take action');
 
-  // Discover high-value candidates
-  const criticalPaths = ['/checkout', '/cart', '/login', '/contact', '/pricing',
-    '/privacy', '/terms', '/refund-policy', '/return-policy', '/shipping', '/about'];
+  // Discover high-value candidates. Critical paths now come from the
+  // page-priority module which returns business-model-aware + multi-
+  // locale (en/pt/es) lists. Before Wave 18b this was a hard-coded
+  // English list that silently excluded /precos, /sobre, /contato for
+  // every pt-BR customer.
+  const criticalPaths = getPagePriorityCriticalPaths(input.onboarding_business_model);
 
   let candidates = discoverHighValueCandidates(homepageParsed!, rootDomain, rootUrl, criticalPaths, mode);
+
+  // Wave 18b — drop /404, /500, /search, /wp-admin and other meta
+  // surfaces. These slip in via homepage links + sitemap and produce
+  // noisy findings ("missing h1" on the 404 page itself). The check
+  // runs AFTER discovery so the inventory still shows them as
+  // discovered-but-skipped instead of silently disappearing.
+  const beforeErrorFilter = candidates.length;
+  candidates = candidates.filter((c) => !isErrorOrSystemPath(c.url));
+  if (candidates.length < beforeErrorFilter) {
+    console.log(`[staged-pipeline] dropped ${beforeErrorFilter - candidates.length} error/system page candidates`);
+  }
 
   // Merge sitemap-discovered URLs into the candidate list. These are
   // added AFTER the homepage-link candidates so that speculative
@@ -847,6 +867,51 @@ export async function runStagedPipeline(
         addScriptEvidence(evidence, parsed, finalUrlForExtractors, scoping, input.cycle_ref);
         addFormEvidence(evidence, parsed, finalUrlForExtractors, scoping, input.cycle_ref);
         extractIndicators(parsed, finalUrlForExtractors, scoping, input.cycle_ref, evidence);
+
+        // Wave 18b — depth-2 expansion. When we just crawled a commercial-
+        // critical page (pricing / checkout / signup / demo), push its
+        // outgoing internal links onto the candidate queue so we follow
+        // the funnel one more hop. Pricing → /signup → /demo-request is
+        // a chain we couldn't see before (only homepage links were
+        // expanded). Guarded by mode === 'full' because hot/warm have
+        // tight budgets and shouldn't widen the crawl set; cold/full has
+        // max_pages_per_domain=30 which already bounds runaway.
+        //
+        // for-of over a mutable array picks up later pushes — the array
+        // iterator re-checks length on each step. crawlSession.canFetch
+        // is still the gate that enforces the page cap.
+        if (mode === 'full' && isCommercialCriticalUrl(finalUrlForExtractors)) {
+          let pushed = 0;
+          for (const link of parsed.links) {
+            if (link.is_external || !link.href) continue;
+            const key = normalizeUrlForDedup(link.href);
+            // Skip if we've already queued/seen this URL via discovery
+            // or a previous depth-2 push.
+            if (coverage.has(link.href) || coverage.has(key)) continue;
+            if (candidates.some((c) => normalizeUrlForDedup(c.url) === key)) continue;
+            if (isErrorOrSystemPath(link.href)) continue;
+            // Drop obvious asset paths.
+            const linkPath = safePathname(link.href);
+            if (/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|pdf|zip|xml|json)$/i.test(linkPath)) continue;
+            // Cap depth-2 pushes per source page to avoid one over-linked
+            // page (a footer with 200 anchors) consuming the whole crawl
+            // budget. 8 is enough to capture the meaningful CTAs + nav.
+            if (pushed >= 8) break;
+            candidates.push({ url: link.href, source: 'internal_link' });
+            coverage.set(link.href, {
+              url: link.href,
+              discovered: true,
+              validated: false,
+              critical: false,
+              confidence: 0,
+              discoverySource: 'internal_link',
+            });
+            pushed++;
+          }
+          if (pushed > 0) {
+            console.log(`[staged-pipeline] depth-2: pushed ${pushed} new candidates from ${finalUrlForExtractors}`);
+          }
+        }
 
         // Collect internal links for SurfaceRelation persistence
         for (const link of parsed.links) {
@@ -1411,7 +1476,7 @@ function discoverHighValueCandidates(parsed: ParsedPage, rootDomain: string, roo
     } else {
       const path = new URL(link.href).pathname.toLowerCase();
       const text = (link.text || '').toLowerCase();
-      if (isHighValue(path, text)) candidates.push({ url: link.href, source: 'homepage_link' });
+      if (isHighValuePath(path, text)) candidates.push({ url: link.href, source: 'homepage_link' });
     }
   }
 
@@ -1419,10 +1484,6 @@ function discoverHighValueCandidates(parsed: ParsedPage, rootDomain: string, roo
   // max_pages_per_domain still caps actual fetches at 30).
   const cap = mode === 'full' ? 50 : 20;
   return candidates.slice(0, cap);
-}
-
-function isHighValue(path: string, text: string): boolean {
-  return /checkout|cart|login|signin|contact|pricing|privacy|terms|refund|shipping|about|support|faq|help/i.test(path + ' ' + text);
 }
 
 // ──────────────────────────────────────────────

@@ -41,6 +41,68 @@ export interface SaveForCycleResult {
 	failed: Array<{ inference_key: string; error: string }>;
 }
 
+const SEVERITY_RANK: Record<string, number> = {
+	critical: 4,
+	high: 3,
+	medium: 2,
+	low: 1,
+	none: 0,
+};
+
+/**
+ * Collapse multiple findings with the same `inference_key` into a
+ * single row. The DB unique constraint is `(cycleId, inferenceKey)`,
+ * so an INSERT batch containing duplicates would fail with
+ * `ON CONFLICT DO UPDATE command cannot affect row a second time`
+ * and abort the entire transaction.
+ *
+ * Strategy: keep the highest-severity finding (ties: highest
+ * confidence). Merge distinct surfaces from all duplicates into a
+ * single comma-separated string so the row records every place the
+ * issue was detected.
+ */
+function dedupeFindingsByInferenceKey(
+	findings: FindingProjection[],
+): FindingProjection[] {
+	const byKey = new Map<string, FindingProjection>();
+	const surfacesByKey = new Map<string, Set<string>>();
+
+	for (const f of findings) {
+		// Track unique surfaces seen for this inferenceKey.
+		const surfaces = surfacesByKey.get(f.inference_key) ?? new Set<string>();
+		if (f.surface) {
+			for (const s of f.surface.split(",").map((x) => x.trim())) {
+				if (s) surfaces.add(s);
+			}
+		}
+		surfacesByKey.set(f.inference_key, surfaces);
+
+		const existing = byKey.get(f.inference_key);
+		if (!existing) {
+			byKey.set(f.inference_key, f);
+			continue;
+		}
+		const newRank = SEVERITY_RANK[f.severity] ?? 0;
+		const oldRank = SEVERITY_RANK[existing.severity] ?? 0;
+		if (newRank > oldRank) {
+			byKey.set(f.inference_key, f);
+		} else if (newRank === oldRank && f.confidence > existing.confidence) {
+			byKey.set(f.inference_key, f);
+		}
+	}
+
+	const out: FindingProjection[] = [];
+	for (const [key, winner] of byKey) {
+		const surfaces = surfacesByKey.get(key);
+		if (surfaces && surfaces.size > 1) {
+			out.push({ ...winner, surface: Array.from(surfaces).join(", ") });
+		} else {
+			out.push(winner);
+		}
+	}
+	return out;
+}
+
 export class PrismaFindingStore {
 	constructor(private prisma: any) {}
 
@@ -76,13 +138,34 @@ export class PrismaFindingStore {
 		},
 		tx?: any,
 	): Promise<SaveForCycleResult> {
-		const { cycleId, environmentId, cycleRef, findings } = args;
+		const { cycleId, environmentId, cycleRef, findings: rawFindings } = args;
 		const result: SaveForCycleResult = {
 			written: 0,
-			attempted: findings.length,
+			attempted: rawFindings.length,
 			failed: [],
 		};
-		if (findings.length === 0) return result;
+		if (rawFindings.length === 0) return result;
+
+		// Dedupe by inferenceKey. The schema's unique constraint is
+		// `(cycleId, inferenceKey)`, so a batch INSERT ... ON CONFLICT
+		// fails with `ON CONFLICT DO UPDATE command cannot affect row a
+		// second time` whenever two findings in the same batch share a
+		// key (engine emits one finding per surface for some
+		// inferences — funnel_dead_end_page across 6 pages would
+		// trigger this). The DB constraint then aborts the entire
+		// transaction; every subsequent finding upsert (and the cache
+		// write) gets 25P02. Diagnosed on havefunnels cycle
+		// cmp6grsuz0001l9jp52kwh170.
+		//
+		// Strategy: keep one finding per key, preferring highest
+		// severity, and merge distinct surfaces into a single comma-
+		// separated string so we don't lose the information.
+		const findings = dedupeFindingsByInferenceKey(rawFindings);
+		if (findings.length < rawFindings.length) {
+			console.log(
+				`[prisma-finding-store] deduped ${rawFindings.length} -> ${findings.length} findings (merged surfaces)`,
+			);
+		}
 
 		const client = tx ?? this.prisma;
 
